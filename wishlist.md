@@ -166,6 +166,17 @@ Sonic1 qualification open.
   sanitizer, materialized large-file, production-CVD, and Sonic1 qualification
   open.
 
+## OOXML direct-entry qualification — 2026-08-25
+
+- The current-source production-linked GCC `ooxml_entry` case passes 1/1
+  across Word, PowerPoint, Excel, and HWP `cli_process_ooxml()` branches;
+  `ppt_entry` passes 1/1 and `msxml` passes 4/4. These checks preserve
+  `CL_ENULLARG` and XML-reader fault visibility before ZIP-part traversal.
+- Complete OOXML ZIP-part/content-types/core-properties corpus and full-C
+  ABI-consistent execution, then add sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service parity, and Sonic1 evidence
+  before certification.
+
 ## UUEncode direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null UUEncode parser context, but mark a

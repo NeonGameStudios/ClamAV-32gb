@@ -74,6 +74,19 @@ zero optional temporary-reservation result. The dedicated production-linked
 sanitizer, materialized large-file, production-CVD, and Sonic1 qualification
 remain open.
 
+## OOXML direct-entry qualification — 2026-08-25
+
+The current-source production-linked GCC `ooxml_entry` case passes 1/1 across
+all four `cli_process_ooxml()` type branches (Word, PowerPoint, Excel, and
+HWP), preserving `CL_ENULLARG` before ZIP lookup or XML-reader access. The
+existing `ppt_entry` helper case passes 1/1 and the `msxml` case passes 4/4;
+these are direct-entry and XML-reader boundaries only.
+
+Complete OOXML ZIP-part lookup/content-types/core-properties corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so all `CL_TYPE_OOXML_*` rows stay pending.
+
 ## UUEncode direct-entry admission — 2026-08-25
 
 The UUEncode helper now distinguishes a null parser context from a recognized

@@ -8172,6 +8172,21 @@ START_TEST(test_ppt_vba_null_context_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ooxml_null_context_is_fail_visible)
+{
+    static const int types[] = {
+        CL_TYPE_OOXML_WORD,
+        CL_TYPE_OOXML_PPT,
+        CL_TYPE_OOXML_XL,
+        CL_TYPE_OOXML_HWP,
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(types) / sizeof(types[0]); i++)
+        ck_assert_int_eq(cli_process_ooxml(NULL, types[i]), CL_ENULLARG);
+}
+END_TEST
+
 #if HAVE_UNRAR
 static int test_rar_progress_was_called;
 static int test_rar_handle;
@@ -35367,6 +35382,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_nulsft_map = tcase_create("nulsft_map");
     TCase *tc_ole10_entry = tcase_create("ole10_entry");
     TCase *tc_ppt_entry = tcase_create("ppt_entry");
+    TCase *tc_ooxml_entry = tcase_create("ooxml_entry");
     TCase *tc_swf_map = tcase_create("swf_map");
     TCase *tc_swf_api = tcase_create("swf_api");
     TCase *tc_arj_map = tcase_create("arj_map");
@@ -35822,6 +35838,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole10_entry, test_ole10_null_context_is_fail_visible);
     suite_add_tcase(s, tc_ppt_entry);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
+    suite_add_tcase(s, tc_ooxml_entry);
+    tcase_add_test(tc_ooxml_entry, test_ooxml_null_context_is_fail_visible);
     suite_add_tcase(s, tc_swf_map);
     tcase_add_test(tc_swf_map, test_swf_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_swf_api);
