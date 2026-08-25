@@ -2496,8 +2496,10 @@ cl_error_t cli_scanhwpml(cli_ctx *ctx)
     if (!ctx)
         return CL_ENULLARG;
 
-    if (!ctx->fmap)
-        return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "HWPML input map is unavailable");
+        return CL_EPARSE;
+    }
 
     memset(&mxctx, 0, sizeof(mxctx));
     mxctx.scan_cb = hwpml_binary_cb;

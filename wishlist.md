@@ -1,5 +1,13 @@
 # Wishlist
 
+## HWPML missing-map entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null HWPML parser context, but mark a
+  recognized HWPML layer with no input fmap incomplete and return `CL_EPARSE`.
+- The isolated production-linked `hwpml_map` regression passes and records the
+  sticky reason. Keep full HWPML/XML corpus, sanitizer, materialized
+  large-file, production-CVD, and Sonic1 qualification open.
+
 ## InstallShield missing-map confirmed-entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for null InstallShield parser contexts, but mark

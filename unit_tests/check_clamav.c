@@ -19262,6 +19262,17 @@ START_TEST(test_ishield_missing_map_confirmed_entries_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwpml_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanhwpml(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWPML input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_apm_missing_map_is_fail_visible)
 {
     struct cl_engine engine;
@@ -33259,6 +33270,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_7z_map = tcase_create("7z_map");
     TCase *tc_sis_map = tcase_create("sis_map");
     TCase *tc_ishield_map = tcase_create("ishield_map");
+    TCase *tc_hwpml_map = tcase_create("hwpml_map");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -33356,6 +33368,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_ishield_map);
     tcase_add_checked_fixture(tc_ishield_map, cl_setup, cl_teardown);
     tcase_add_test(tc_ishield_map, test_ishield_missing_map_confirmed_entries_are_fail_visible);
+    suite_add_tcase(s, tc_hwpml_map);
+    tcase_add_checked_fixture(tc_hwpml_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_hwpml_map, test_hwpml_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_zip_sfx);
     tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_central_extent_and_read_failure);

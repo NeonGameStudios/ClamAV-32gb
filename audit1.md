@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access  
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## HWPML missing-map entry classification — 2026-08-25
+
+The HWPML direct parser now distinguishes a null parser context from a
+recognized HWPML layer whose input fmap is unavailable. The former remains
+`CL_ENULLARG`; the latter marks the scan incomplete with the explicit `HWPML
+input map is unavailable` reason and returns `CL_EPARSE`. The dedicated
+production-linked `hwpml_map` case passes with the sticky reason, and source
+and capability-manifest guards cover the boundary. Full HWPML/XML corpus,
+sanitizer, materialized large-file, production-CVD, and Sonic1 qualification
+remain open.
+
 ## InstallShield missing-map confirmed-entry classification — 2026-08-25
 
 The confirmed InstallShield MSI and legacy extraction entries now distinguish
