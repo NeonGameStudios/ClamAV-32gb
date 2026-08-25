@@ -8602,6 +8602,9 @@ passes 2/2: a fully in-range fmap callback failure returns `CL_EREAD` with
 the sticky incomplete reason and non-cacheable map state, while an eight-byte
 input that cannot contain the 16-byte prefix returns `CL_EPARSE` with the
 malformed/incomplete reason. The shared `rust_map` case passes 1/1 as well.
+The focused current-source production-linked `onenote` TCase also passes 1/1,
+proving that independent document/archive dynamic-configuration bits do not
+silently dispatch the OneNote parser when disabled.
 
 This boundary evidence does not certify legacy attachment traversal, modern
 OneNote parsing, or large-file staging. Full OneNote corpus, current full-C

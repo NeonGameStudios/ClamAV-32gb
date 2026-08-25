@@ -35343,6 +35343,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hwpml_map = tcase_create("hwpml_map");
     TCase *tc_rust_map = tcase_create("rust_map");
     TCase *tc_rust_lha = tcase_create("rust_lha");
+    TCase *tc_onenote = tcase_create("onenote");
     TCase *tc_rust_onenote = tcase_create("rust_onenote");
     TCase *tc_msxml = tcase_create("msxml");
     TCase *tc_msxml_map = tcase_create("msxml_map");
@@ -35712,6 +35713,9 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_rust_lha, cl_setup, cl_teardown);
     tcase_add_test(tc_rust_lha, test_rust_lha_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_public_api_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_onenote);
+    tcase_add_checked_fixture(tc_onenote, cl_setup, cl_teardown);
+    tcase_add_test(tc_onenote, test_onenote_dispatch_honors_document_dconf);
     suite_add_tcase(s, tc_rust_onenote);
     tcase_add_checked_fixture(tc_rust_onenote, cl_setup, cl_teardown);
     tcase_add_test(tc_rust_onenote, test_rust_onenote_initial_read_failure_is_fail_visible);
