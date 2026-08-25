@@ -6489,6 +6489,15 @@ null context. The isolated production-linked `msxml_map` regression covers
 both cases. Compiled XML/OOXML corpus, sanitizer, and Sonic1 qualification
 remain release gates.
 
+## OLE2 direct extraction map admission — 2026-08-25
+
+The OLE2 extraction entry rejected a null context but could dereference the
+engine or input fmap for a recognized layer whose map was unavailable. It now
+returns `CL_EPARSE` with sticky incomplete state before those accesses while
+retaining `CL_ENULLARG` for a null context. The isolated production-linked
+`ole2_map` regression covers both direct-entry boundaries. Compiled OLE2
+corpus, sanitizer, and Sonic1 qualification remain release gates.
+
 ## Embedded EGG SFX read-result classification — 2026-08-23
 
 The embedded EGG SFX admission helper already distinguished a fully in-range

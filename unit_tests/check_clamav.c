@@ -24348,6 +24348,25 @@ START_TEST(test_tnef_attachment_temporary_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole2_missing_map_is_fail_visible)
+{
+    struct cl_engine engine;
+    cli_ctx ctx;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cli_ole2_extract(NULL, NULL, NULL, NULL, NULL, NULL), CL_ENULLARG);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    ret = cli_ole2_extract(NULL, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE2 input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_ole2_truncated_property_tree_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -33759,6 +33778,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
     TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
+    TCase *tc_ole2_map = tcase_create("ole2_map");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
@@ -33891,6 +33911,8 @@ static Suite *test_cl_suite(void)
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_ole2_xlm, test_ole2_xlm_biff_read_failure_is_fail_visible);
 #endif
+    suite_add_tcase(s, tc_ole2_map);
+    tcase_add_test(tc_ole2_map, test_ole2_missing_map_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
