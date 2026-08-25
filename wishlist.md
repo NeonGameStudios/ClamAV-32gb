@@ -3442,3 +3442,14 @@ and Sonic1 qualification as release gates.
   complete old/ODC/newc/CRC corpus, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service parity, and Sonic1 evidence
   are complete.
+
+## CryptFF public API read-failure audit — 2026-08-25
+
+- The current-source production-linked `cryptff` TCase passes 3/3 for
+  temporary-output write/close, quota, and timeout boundaries, while the
+  isolated `cryptff_api` TCase covers a public `CL_TYPE_CRYPTFF` source-window
+  callback failure, preserving `CL_EREAD`, clean verdict state, and
+  non-cacheability.
+- Complete CryptFF corpus and full-C ABI-consistent execution, then add
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.

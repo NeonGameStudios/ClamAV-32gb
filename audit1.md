@@ -8842,3 +8842,17 @@ Direct missing-map/null-context matrices, complete old/ODC/newc/CRC corpus,
 sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
 service parity, and Sonic1 evidence remain release gates; all four CPIO
 capability rows therefore stay pending.
+
+## CryptFF public API read-failure audit — 2026-08-25
+
+The current-source production-linked `cryptff` TCase passes 3/3 for
+temporary-output write/close failures, temporary quota exhaustion, and
+expired scan time. The isolated `cryptff_api` TCase passes 1/1 for a public
+`cl_scanmap_ex(..., "CL_TYPE_CRYPTFF", ...)` scan whose in-range decrypted
+source window callback failure returns `CL_EREAD`, resets the verdict and
+alert outputs, and marks the fmap non-cacheable.
+
+This is public source-window dispatch evidence only. Complete CryptFF corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_CRYPTFF` stays pending.

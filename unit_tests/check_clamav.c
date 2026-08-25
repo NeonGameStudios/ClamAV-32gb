@@ -6203,6 +6203,62 @@ START_TEST(test_cryptff_staging_failures_are_fail_visible)
 }
 END_TEST
 
+static size_t cryptff_read_failure_offset = SIZE_MAX;
+
+static const void *cryptff_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == cryptff_read_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_cryptff_public_api_read_failure_is_fail_visible)
+{
+    static const uint8_t cryptff[] = {
+        0xb6, 0xb9, 0xac, 0xae, 0xfe, 0xff, 0xff, 0xff,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x9c, 0x8d, 0x86,
+    };
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(cryptff, sizeof(cryptff));
+    ck_assert_ptr_nonnull(map);
+    cryptff_read_failure_offset = 16U;
+    map->need                       = cryptff_targeted_read_failure;
+    verdict                         = CL_VERDICT_STRONG_INDICATOR;
+    last_alert                      = "stale";
+    scanned                         = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_CRYPTFF", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cryptff_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_cryptff_temporary_quota_is_fail_visible)
 {
     static const uint8_t cryptff[] = {
@@ -6291,7 +6347,7 @@ START_TEST(test_cryptff_time_limit_is_fail_visible)
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "CryptFF inspection reached the configured time limit");
+                     "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -34893,6 +34949,8 @@ static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
     TCase *tc_cl       = tcase_create("cl_api");
+    TCase *tc_cryptff  = tcase_create("cryptff");
+    TCase *tc_cryptff_api = tcase_create("cryptff_api");
     TCase *tc_elf_map  = tcase_create("elf_map");
     TCase *tc_tnef_map = tcase_create("tnef_map");
     TCase *tc_graphics_map = tcase_create("graphics_map");
@@ -34981,6 +35039,18 @@ static Suite *test_cl_suite(void)
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
+    suite_add_tcase(s, tc_cryptff);
+    tcase_add_checked_fixture(tc_cryptff, cl_setup, cl_teardown);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cryptff, test_cryptff_staging_failures_are_fail_visible);
+#endif
+    tcase_add_test(tc_cryptff, test_cryptff_temporary_quota_is_fail_visible);
+#ifndef _WIN32
+    tcase_add_test(tc_cryptff, test_cryptff_time_limit_is_fail_visible);
+#endif
+    suite_add_tcase(s, tc_cryptff_api);
+    tcase_add_checked_fixture(tc_cryptff_api, cl_setup, cl_teardown);
+    tcase_add_test(tc_cryptff_api, test_cryptff_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_elf_map);
     tcase_add_checked_fixture(tc_elf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_map, test_elf_missing_map_is_fail_visible);
