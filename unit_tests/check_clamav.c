@@ -2792,8 +2792,6 @@ START_TEST(test_html_normalized_view_uses_matcher_work_budget)
 {
     static const unsigned char data[] =
         "<html><body>normalized matcher work accounting</body></html>";
-    const char *signature = SRCDIR PATHSEP "input" PATHSEP "other_sigs" PATHSEP
-                            "Clamav-Unit-Test-Signature.hdb";
     struct cl_engine *engine;
     struct cl_scan_options options;
     cl_scan_report_t *report = NULL;
@@ -2802,14 +2800,16 @@ START_TEST(test_html_normalized_view_uses_matcher_work_budget)
     cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
     const char *last_alert = "stale";
     uint64_t scanned       = UINT64_MAX;
-    unsigned int sigs      = 0;
     cl_error_t ret;
 
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
-    ck_assert_int_eq(cl_load(signature, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
-    ck_assert_uint_eq(sigs, 1);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         engine->root[0], "HtmlMatcherBudgetNonMatch",
+                         "ffffffff", 0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
 
     /* Keep the normalized views well below their parser caps. The loaded
      * non-matching signature forces the root raw pass, so a reported matcher
@@ -2842,8 +2842,6 @@ END_TEST
 START_TEST(test_script_normalized_view_uses_matcher_work_budget)
 {
     static const unsigned char data[] = "var marker = 1;\n";
-    const char *signature = SRCDIR PATHSEP "input" PATHSEP "other_sigs" PATHSEP
-                            "Clamav-Unit-Test-Signature.hdb";
     struct cl_engine *engine;
     struct cl_scan_options options;
     cl_scan_report_t *report = NULL;
@@ -2852,14 +2850,16 @@ START_TEST(test_script_normalized_view_uses_matcher_work_budget)
     cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
     const char *last_alert = "stale";
     uint64_t scanned       = UINT64_MAX;
-    unsigned int sigs      = 0;
     cl_error_t ret;
 
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
-    ck_assert_int_eq(cl_load(signature, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
-    ck_assert_uint_eq(sigs, 1);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         engine->root[0], "ScriptMatcherBudgetNonMatch",
+                         "ffffffff", 0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
 
     /* The loaded non-matching signature forces the root raw pass. A matcher
      * total greater than the root size therefore proves that the file-backed
@@ -3082,7 +3082,7 @@ START_TEST(test_html_utf16_time_limit_is_fail_visible)
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "UTF-16 HTML inspection reached the configured time limit");
+                     "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -30082,7 +30082,7 @@ START_TEST(test_script_normalization_time_limit_is_fail_visible)
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "Script normalization reached the configured time limit");
+                     "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -30100,7 +30100,7 @@ START_TEST(test_script_normalization_window_offset_is_stable)
     static const unsigned char marker[] = "MARK";
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
-    cli_scan_layer_t layer;
+    cli_scan_layer_t layers[2];
     cli_ctx ctx;
     fmap_t *map;
     unsigned char *script;
@@ -30112,7 +30112,7 @@ START_TEST(test_script_normalization_window_offset_is_stable)
     memcpy(script + MARKER_OFFSET, marker, sizeof(marker) - 1U);
 
     memset(&options, 0, sizeof(options));
-    memset(&layer, 0, sizeof(layer));
+    memset(layers, 0, sizeof(layers));
     memset(&ctx, 0, sizeof(ctx));
     options.parse = ~0U;
 
@@ -30134,9 +30134,9 @@ START_TEST(test_script_normalization_window_offset_is_stable)
     ctx.options              = &options;
     ctx.fmap                 = map;
     ctx.this_layer_tmpdir    = tmpdir;
-    ctx.recursion_stack      = &layer;
-    ctx.recursion_stack_size = 1;
-    layer.fmap               = map;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].fmap           = map;
 
     ret = cli_magic_scan(&ctx, CL_TYPE_SCRIPT);
     ck_assert_int_eq(ret, CL_VIRUS);
@@ -35310,6 +35310,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_pe_map = tcase_create("pe_map");
     TCase *tc_pe = tcase_create("pe");
     TCase *tc_text_encoding = tcase_create("text_encoding");
+    TCase *tc_html = tcase_create("html");
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     TCase *tc_largefile;
 #endif
@@ -35512,6 +35513,23 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_text_encoding, test_encoded_text_script_normalization_is_complete);
     tcase_add_test(tc_text_encoding, test_html_utf16_input_read_failure_is_fail_visible);
     tcase_add_test(tc_text_encoding, test_utf16_html_uses_bounded_decoding);
+    suite_add_tcase(s, tc_html);
+    tcase_add_checked_fixture(tc_html, cl_setup, cl_teardown);
+#ifndef _WIN32
+    tcase_add_test(tc_html, test_html_normalize_cap_is_fail_visible);
+    tcase_add_test(tc_html, test_html_normalized_view_uses_matcher_work_budget);
+    tcase_add_test(tc_html, test_script_normalized_view_uses_matcher_work_budget);
+    tcase_add_test(tc_html, test_html_notags_cap_is_fail_visible);
+    tcase_add_test(tc_html, test_html_notags_cap_uses_generated_size);
+    tcase_add_test(tc_html, test_script_normalization_time_limit_is_fail_visible);
+#endif
+    tcase_add_test(tc_html, test_html_input_read_failure_is_fail_visible);
+    tcase_add_test(tc_html, test_html_utf16_time_limit_is_fail_visible);
+    tcase_add_test(tc_html, test_script_normalization_window_offset_is_stable);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_html, test_html_normalize_cleanup_close_failure_is_fail_visible);
+    tcase_add_test(tc_html, test_script_normalization_cleanup_close_failure_is_fail_visible);
+#endif
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     if (getenv("CLAMAV_LARGEFILE_QUALIFY") != NULL) {
         tc_largefile = tcase_create("largefile_qualification");

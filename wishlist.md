@@ -1,5 +1,18 @@
 # Wishlist
 
+## HTML normalization boundary qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `html` case passes
+  11/11 for normalization-cap admission, normalized HTML/script matcher-work
+  accounting, no-tags input and generated-size limits, HTML input and UTF-16
+  read/timeout boundaries, script timeout and window stability, and cleanup
+  close-failure propagation with JS I/O wrappers enabled.
+- Keep the raw-fallback regression open: the original broad-suite fixture
+  path/ABI returned `CL_EPARSE` without an alert in this mixed linked harness,
+  so it is not counted as complete until reproduced with the full C ABI. Keep
+  full HTML corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release qualification open.
+
 ## RAR unavailable-backend qualification — 2026-08-25
 
 - The current-source production-linked GCC `rar` case passes 2/2 in the

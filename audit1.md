@@ -6,6 +6,21 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## HTML normalization boundary qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `html` case passes
+11/11. It covers normalization-cap admission, normalized HTML and script
+matcher-work accounting, no-tags input and generated-size limits, HTML input
+read failure, UTF-16 HTML timeout, script normalization timeout and window
+offset stability, and cleanup close-failure propagation with the enabled JS
+I/O wrappers. The original raw-fallback regression remains in the broad suite
+but is not counted as qualified: this mixed production-linked public test
+fixture path/ABI returned `CL_EPARSE` without an alert, so raw matching after
+normalization admission failure still requires a clean full-C-ABI reproduction.
+Full HTML corpus, full-C ABI, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## RAR unavailable-backend qualification — 2026-08-25
 
 The current-source production-linked GCC `rar` case passes 2/2 in the
