@@ -7398,6 +7398,17 @@ non-cacheable; the direct production-linked regression covers the boundary.
 Parser-family corpus, sanitizer, and Sonic1 qualification remain release
 gates.
 
+## RIFF bounded-parser qualification — 2026-08-25
+
+The current-source production-linked GCC `riff` case passes 6/6 for null
+context, RIFF header callback failure, chunk-header callback failure,
+truncated chunks, declared `LIST`/container boundaries, and the deadline
+path. Timeout retains the canonical `Heuristics.Limits.Exceeded.MaxScanTime`
+reason. The separate `riff_map` case passes 1/1 for missing-map admission.
+This is bounded parser evidence only; complete RIFF corpus, sanitizer,
+production-CVD/service parity, materialized large-file, and Sonic1
+qualification remain open.
+
 ## RTF missing-map admission — 2026-08-25
 
 The RTF direct parser previously entered its deadline and temporary-directory

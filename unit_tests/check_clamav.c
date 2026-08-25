@@ -24211,6 +24211,12 @@ START_TEST(test_riff_header_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_riff_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_check_riff_exploit(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_riff_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -24290,7 +24296,7 @@ START_TEST(test_riff_time_limit_is_fail_visible)
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "RIFF inspection reached the configured time limit");
+                     "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -35322,6 +35328,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xar      = tcase_create("xar");
     TCase *tc_xar_metadata = tcase_create("xar_metadata");
     TCase *tc_xar_map = tcase_create("xar_map");
+    TCase *tc_riff = tcase_create("riff");
     TCase *tc_riff_map = tcase_create("riff_map");
     TCase *tc_rtf_map = tcase_create("rtf_map");
     TCase *tc_uuencode_map = tcase_create("uuencode_map");
@@ -35523,6 +35530,16 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xar_metadata);
     suite_add_tcase(s, tc_xar_map);
     tcase_add_test(tc_xar_map, test_xar_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_riff);
+    tcase_add_checked_fixture(tc_riff, cl_setup, cl_teardown);
+    tcase_add_test(tc_riff, test_riff_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_riff, test_riff_null_context_is_fail_visible);
+    tcase_add_test(tc_riff, test_riff_chunk_read_failure_is_fail_visible);
+    tcase_add_test(tc_riff, test_riff_truncated_chunk_is_fail_visible);
+    tcase_add_test(tc_riff, test_riff_list_respects_declared_boundary);
+#ifndef _WIN32
+    tcase_add_test(tc_riff, test_riff_time_limit_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_riff_map);
     suite_add_tcase(s, tc_rtf_map);
     tcase_add_checked_fixture(tc_rtf_map, cl_setup, cl_teardown);
@@ -36098,6 +36115,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_file_type_detection_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_riff_null_context_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_missing_map_is_fail_visible);
     tcase_add_test(tc_riff_map, test_riff_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_chunk_read_failure_is_fail_visible);

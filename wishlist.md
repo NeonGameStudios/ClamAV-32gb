@@ -2201,6 +2201,15 @@ qualification as release gates.
 boundary; retain compiled callback-fault, malformed RIFF, sanitizer,
 production RIFF corpus, and Sonic1 qualification as release gates.
 
+## RIFF bounded-parser qualification — 2026-08-25
+
+- The current-source production-linked GCC `riff` case passes 6/6 for null
+  context, header/chunk callback failures, truncated chunks, declared
+  container boundaries, and timeout; `riff_map` passes 1/1 for missing-map
+  admission, with the canonical MaxScanTime reason preserved.
+- Add complete RIFF corpus, sanitizer, production-CVD/service parity,
+  materialized large-file, and Sonic1 evidence before certification.
+
 ## RTF implicit embedded-object close status — 2026-08-23
 
 - Propagate non-clean status from an implicitly closed RTF embedded-object
