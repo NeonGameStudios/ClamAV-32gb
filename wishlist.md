@@ -3242,8 +3242,9 @@ and Sonic1 qualification as release gates.
 
 - Preserve the bounded context-aware `FMapReader`, quota-accounted member
   spools, output/deadline checks, and fail-closed decoder panic boundary. The
-  dedicated current-source production-linked `rust_lha` case passes 1/1 for
-  an in-range initial fmap read failure, while `rust_map` passes 1/1.
+  dedicated current-source production-linked `rust_lha` case passes 2/2 for
+  direct and public-API in-range initial fmap read failures, while `rust_map`
+  passes 1/1.
 - Add valid LHA/LZH corpus and nested-member detection evidence, then complete
   the current full-C ABI build, sanitizer, certified Linux x86-64, materialized
   large-file, production CVD/service, and Sonic1 qualification before moving
