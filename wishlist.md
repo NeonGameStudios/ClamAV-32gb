@@ -3414,6 +3414,19 @@ and Sonic1 qualification as release gates.
   large-file, production-CVD/service parity, and Sonic1 evidence before
   certification.
 
+## PE focused parser qualification — 2026-08-25
+
+- The focused current-source production-linked GCC `pe` TCase passes 11/11,
+  and `pe_map` passes 2/2 across missing-map admission, public-API and direct
+  header read/truncation boundaries, native-width PE coordinates, version
+  resources, and icon-resource truncation/range/tree failures. Required
+  failures remain incomplete and non-cacheable; in-range callback failures
+  preserve `CL_EREAD`.
+- Complete the PE corpus and unpacker/heuristic/resource-fault matrix in
+  full-C ABI-consistent execution, then add sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service parity, and Sonic1 evidence
+  before certification.
+
 ## HWPOLE2 current-source qualification audit — 2026-08-25
 
 - The current-source production-linked `hwpole2_map` TCase passes 2/2 for

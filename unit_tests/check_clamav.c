@@ -35284,6 +35284,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_descriptor_map = tcase_create("descriptor_map");
     TCase *tc_pe32plus = tcase_create("pe32plus_common");
     TCase *tc_pe_map = tcase_create("pe_map");
+    TCase *tc_pe = tcase_create("pe");
     TCase *tc_text_encoding = tcase_create("text_encoding");
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     TCase *tc_largefile;
@@ -35432,6 +35433,21 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_pe_map, cl_setup, cl_teardown);
     tcase_add_test(tc_pe_map, test_pe_missing_map_is_fail_visible);
     tcase_add_test(tc_pe_map, test_pe_public_api_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_pe);
+    tcase_add_checked_fixture(tc_pe, cl_setup, cl_teardown);
+    tcase_add_test(tc_pe, test_pe_missing_map_is_fail_visible);
+    tcase_add_test(tc_pe, test_pe_public_api_read_failure_is_fail_visible);
+    tcase_add_test(tc_pe, test_pe_truncated_header_is_fail_visible);
+    tcase_add_test(tc_pe, test_pe_header_read_failure_is_fail_visible);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_pe, test_pe_rawaddr_preserves_native_coordinate);
+    tcase_add_test(tc_pe, test_pe_header_preserves_unsigned_high_bit_section_fields);
+    tcase_add_test(tc_pe, test_pe_header_nested_fmap_accepts_native_offset);
+#endif
+    tcase_add_test(tc_pe, test_pe_version_resource_read_failure_is_fail_visible);
+    tcase_add_test(tc_pe, test_pe_icon_truncated_resource_is_fail_visible);
+    tcase_add_test(tc_pe, test_pe_icon_bitmap_header_range_is_fail_visible);
+    tcase_add_test(tc_pe, test_pe_icon_resource_tree_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_text_encoding);
     tcase_add_checked_fixture(tc_text_encoding, cl_setup, cl_teardown);
     tcase_add_test(tc_text_encoding, test_encoded_text_script_normalization_is_complete);

@@ -8803,6 +8803,25 @@ materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_MSCAB` and `CL_TYPE_MSCHM` stay
 pending.
 
+## PE focused parser qualification — 2026-08-25
+
+The focused current-source production-linked GCC `pe` TCase passes 11/11,
+and `pe_map` passes 2/2. The matrix covers missing-map admission, public-API
+in-range DOS-header read failure, truncated and callback-failed PE headers,
+native-width raw-address and unsigned section-field handling, nested fmap
+admission above the 32-bit coordinate boundary, version-resource failure, and
+truncated/range/tree failures while traversing icon resources. Required
+failures remain incomplete and non-cacheable, with in-range callback failures
+preserving `CL_EREAD`.
+
+This is focused boundary evidence only. The broader direct PE matrix was not
+claimed because the reusable Docker fixture lacks the corpus executables for
+the MEW/UPX/FSG paths and several heuristic/resource cases require distinct
+fixture contexts. Complete PE corpus and unpacker/heuristic/resource-fault
+coverage, full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_MSEXE` stays pending.
+
 ## PE public API read-failure audit — 2026-08-25
 
 The isolated current-source production-linked `pe_map` TCase passes 2/2.
