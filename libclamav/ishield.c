@@ -228,7 +228,13 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
     unsigned int fcount, scanned = 0;
     fmap_t *map;
 
-    if (!ctx || !ctx->engine || !ctx->fmap)
+    if (!ctx)
+        return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "InstallShield MSI input map is unavailable");
+        return CL_EPARSE;
+    }
+    if (!ctx->engine)
         return CL_ENULLARG;
     map = ctx->fmap;
 
@@ -552,7 +558,13 @@ cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
     size_t input_end;
     cl_error_t string_status;
 
-    if (!ctx || !ctx->engine || !ctx->fmap)
+    if (!ctx)
+        return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "InstallShield input map is unavailable");
+        return CL_EPARSE;
+    }
+    if (!ctx->engine)
         return CL_ENULLARG;
     map = ctx->fmap;
 

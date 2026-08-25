@@ -6,6 +6,19 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access  
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## InstallShield missing-map confirmed-entry classification — 2026-08-25
+
+The confirmed InstallShield MSI and legacy extraction entries now distinguish
+null parser contexts from recognized layers whose input fmap is unavailable.
+Null contexts remain `CL_ENULLARG`; missing fmaps mark the scan incomplete
+with explicit `InstallShield MSI input map is unavailable` or
+`InstallShield input map is unavailable` reasons and return `CL_EPARSE`. The
+weak MSI header-admission helper remains non-confirming. The dedicated
+production-linked `ishield_map` case passes both entries, and source and
+capability-manifest guards cover the boundary. Full InstallShield/CAB corpus,
+sanitizer, materialized large-file, production-CVD, and Sonic1 qualification
+remain open.
+
 ## SIS missing-map entry classification — 2026-08-25
 
 The SIS direct parser now distinguishes a null parser context from a

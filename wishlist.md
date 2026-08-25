@@ -1,5 +1,15 @@
 # Wishlist
 
+## InstallShield missing-map confirmed-entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for null InstallShield parser contexts, but mark
+  recognized MSI and legacy extraction layers with no input fmap incomplete
+  and return `CL_EPARSE`; leave the weak MSI header-admission probe
+  non-confirming.
+- The isolated production-linked `ishield_map` regression passes for both
+  confirmed entries. Keep full InstallShield/CAB corpus, sanitizer,
+  materialized large-file, production-CVD, and Sonic1 qualification open.
+
 ## SIS missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null SIS parser context, but mark a recognized
