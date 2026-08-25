@@ -130,6 +130,17 @@ static cl_error_t cpio_checktimelimit(cli_ctx *ctx)
     return status;
 }
 
+static cl_error_t cpio_validate_context(cli_ctx *ctx)
+{
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "CPIO input map is unavailable");
+        return CL_EPARSE;
+    }
+    return CL_SUCCESS;
+}
+
 static int cpio_parse_hex_u32(const char field[8], uint32_t *value)
 {
     uint32_t parsed = 0;
@@ -252,6 +263,10 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
     int complete = 0;
     size_t hdr_read = 0;
     size_t pos = 0;
+
+    status = cpio_validate_context(ctx);
+    if (status != CL_SUCCESS)
+        return status;
 
     memset(name, 0, sizeof(name));
 
@@ -389,6 +404,10 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
     size_t hdr_read = 0;
     size_t pos = 0;
 
+    status = cpio_validate_context(ctx);
+    if (status != CL_SUCCESS)
+        return status;
+
     memset(&hdr_odc, 0, sizeof(hdr_odc));
 
     while (1) {
@@ -512,6 +531,10 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
     int complete = 0;
     size_t hdr_read = 0;
     size_t pos = 0;
+
+    status = cpio_validate_context(ctx);
+    if (status != CL_SUCCESS)
+        return status;
 
     memset(name, 0, 513);
 

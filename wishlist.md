@@ -2767,4 +2767,12 @@ and Sonic1 qualification as release gates.
   source guards, and extend the passing current-source production-linked
   ingress harness to the full scanner/archive build with the parser corpus,
   sanitizer, certified Linux x86-64, materialized large-file,
-  production-CVD/service, and Sonic1 gates.
+
+
+## CPIO direct-entry context admission — 2026-08-25
+
+- Keep old, ODC, and newc/CRC direct parser calls explicit for null contexts
+  and missing maps; run the registered regression against current CPIO-linked
+  production objects, then extend the numeric/CRC evidence to full corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, and Sonic1 qualification.

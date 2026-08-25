@@ -17615,6 +17615,31 @@ START_TEST(test_cpio_time_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_cpio_missing_maps_are_fail_visible)
+{
+    cli_ctx ctx;
+
+    ck_assert_int_eq(cli_scancpio_old(NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scancpio_odc(NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scancpio_newc(NULL, 0), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scancpio_old(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "CPIO input map is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scancpio_odc(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "CPIO input map is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scancpio_newc(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "CPIO input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_cpio_truncated_header_is_fail_visible)
 {
     static const char *const types[] = {
@@ -33644,6 +33669,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_tar_invalid_magic_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cpio_time_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_cpio_missing_maps_are_fail_visible);
     tcase_add_test(tc_cl, test_cpio_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_cpio_member_name_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_cpio_impossible_next_header_is_parse_error);

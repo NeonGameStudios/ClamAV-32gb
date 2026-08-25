@@ -7892,6 +7892,17 @@ turning missing-layer state into a crash or an unreported clean result.
 The main Check-suite regression is registered and the modified test object
 compiles with production GCC flags. The source guards and capability manifest
 pass, and the current-source production-linked ingress harness passes 1/1 with
-the exact incomplete reason. Parser-family corpus, sanitizer,
-certified Linux x86-64, materialized large-file, production-CVD/service, and
-Sonic1 qualification remain open.
+
+
+## CPIO direct-entry context admission — 2026-08-25
+
+The old, ODC, and newc/CRC CPIO entry points previously entered deadline and
+fmap traversal with no context or no input-map classification. They now return
+`CL_ENULLARG` for a null context and mark a recognized layer incomplete with
+`CL_EPARSE` for a missing fmap before any format-specific reads.
+
+The main Check-suite regression and source guards are registered. Current-source
+CPIO object/test compilation and a production-linked focused execution remain
+to be run; the existing CPIO numeric/CRC focused evidence remains separate.
+Complete CPIO corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, and Sonic1 qualification remain open.
