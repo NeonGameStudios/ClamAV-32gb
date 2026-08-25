@@ -1,5 +1,17 @@
 # Wishlist
 
+## ELF focused-coordinate qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `elf` case passes
+  4/4 for canonical timeout propagation and ELF64/ELF32 native-coordinate
+  boundary fixtures; the ELF32 fixture uses an aging fmap and verifies that
+  the fetched section-table range reaches beyond 4 GiB.
+- The existing `elf_map` case passes 6/6 for null/missing-map,
+  truncated-header/program-table, program-header callback, and metadata
+  callback boundaries. Keep complete executable corpus, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service parity, and
+  Sonic1 qualification open.
+
 ## Child-descriptor entry null-context admission — 2026-08-25
 
 - Return `CL_ENULLARG` from the descriptor-based nested-scan entry before

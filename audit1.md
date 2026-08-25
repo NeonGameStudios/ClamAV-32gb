@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## ELF focused-coordinate qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `elf` case passes 4/4
+for canonical timeout propagation and ELF64/ELF32 native-coordinate boundary
+fixtures. The ELF32 fixture uses an aging fmap and verifies that the fetched
+section-table range reaches beyond 4 GiB rather than asserting a page-aligned
+callback origin. The existing `elf_map` case passes 6/6 for null/missing-map,
+truncated-header/program-table, program-header callback, and metadata callback
+boundaries. Complete executable corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open.
+
 ## Child-descriptor entry null-context admission — 2026-08-25
 
 The descriptor-based nested-scan entry previously returned legacy `CL_EARG`

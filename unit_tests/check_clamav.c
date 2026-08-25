@@ -31325,7 +31325,7 @@ START_TEST(test_elf_time_limit_is_fail_visible)
     ret = cli_scanelf(&ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -31618,7 +31618,7 @@ START_TEST(test_elf64_metadata_preserves_native_coordinates)
     elf_large_metadata_fixture_init(&state, 0);
     memset(&ctx, 0, sizeof(ctx));
     cli_exe_info_init(&exeinfo, 0);
-    map = cl_fmap_open_handle(&state, 0, state.length, elf_large_metadata_pread_cb, 0);
+    map = cl_fmap_open_handle(&state, 0, state.length, elf_large_metadata_pread_cb, 1);
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
 
@@ -31662,7 +31662,7 @@ START_TEST(test_elf64_entry_offset_overflow_is_fail_visible)
     elf_large_metadata_fixture_init(&state, 1);
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
-    map = cl_fmap_open_handle(&state, 0, state.length, elf_large_metadata_pread_cb, 0);
+    map = cl_fmap_open_handle(&state, 0, state.length, elf_large_metadata_pread_cb, 1);
     ck_assert_ptr_nonnull(map);
     ctx.options = &options;
     ctx.fmap = map;
@@ -31693,8 +31693,8 @@ static off_t elf32_large_table_pread_cb(void *handle, void *buf, size_t count, o
         return 0;
     if (count > state->length - (size_t)offset)
         count = state->length - (size_t)offset;
-    if ((uint64_t)offset > state->max_offset)
-        state->max_offset = (uint64_t)offset;
+    if ((uint64_t)offset + count > state->max_offset)
+        state->max_offset = (uint64_t)offset + count;
 
     memset(buf, 0, count);
     elf_large_metadata_copy(buf, count, (uint64_t)offset, 0, state->file_header,
@@ -31758,13 +31758,14 @@ START_TEST(test_elf32_table_coordinates_are_native_width)
 
     memset(&ctx, 0, sizeof(ctx));
     cli_exe_info_init(&exeinfo, 0);
-    map = cl_fmap_open_handle(&state, 0, state.length, elf32_large_table_pread_cb, 0);
+    map = cl_fmap_open_handle(&state, 0, state.length, elf32_large_table_pread_cb, 1);
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
 
     ret = cli_elfheader(&ctx, &exeinfo);
     ck_assert_int_eq(ret, CL_SUCCESS);
-    ck_assert_uint_eq(state.max_offset, state.section_offset + sizeof(struct elf_section_hdr32));
+    ck_assert_uint_ge(state.max_offset,
+                      state.section_offset + 2U * sizeof(struct elf_section_hdr32));
     ck_assert_uint_eq(exeinfo.ep64, (uint64_t)state.section_offset + 0x100U);
     ck_assert_uint_eq(exeinfo.ep, 0);
     ck_assert(exeinfo.legacy_metadata_incomplete);
@@ -35299,6 +35300,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_cryptff  = tcase_create("cryptff");
     TCase *tc_cryptff_api = tcase_create("cryptff_api");
     TCase *tc_elf_map  = tcase_create("elf_map");
+    TCase *tc_elf = tcase_create("elf");
     TCase *tc_tnef = tcase_create("tnef");
     TCase *tc_tnef_map = tcase_create("tnef_map");
     TCase *tc_graphics_map = tcase_create("graphics_map");
@@ -35430,6 +35432,14 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_elf_map, test_elf_truncated_program_header_is_parse_error);
     tcase_add_test(tc_elf_map, test_elf_scan_program_header_read_failure_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_elf);
+    tcase_add_checked_fixture(tc_elf, cl_setup, cl_teardown);
+    tcase_add_test(tc_elf, test_elf_time_limit_is_fail_visible);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_elf, test_elf64_metadata_preserves_native_coordinates);
+    tcase_add_test(tc_elf, test_elf64_entry_offset_overflow_is_fail_visible);
+    tcase_add_test(tc_elf, test_elf32_table_coordinates_are_native_width);
+#endif
     suite_add_tcase(s, tc_tnef_map);
     tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_tnef);
