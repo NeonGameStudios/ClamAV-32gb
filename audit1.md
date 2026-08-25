@@ -6,6 +6,15 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## PowerPoint VBA helper context admission — 2026-08-25
+
+The PowerPoint VBA extraction helper now rejects a null context before
+temporary-directory creation, iterator access, or cleanup, while preserving a
+zero optional temporary-reservation result. The dedicated production-linked
+`ppt_entry` case passes with `/dev/null`; full OOXML/PowerPoint corpus,
+sanitizer, materialized large-file, production-CVD, and Sonic1 qualification
+remain open.
+
 ## UUEncode direct-entry admission — 2026-08-25
 
 The UUEncode helper now distinguishes a null parser context from a recognized

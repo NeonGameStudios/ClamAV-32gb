@@ -1,5 +1,13 @@
 # Wishlist
 
+## PowerPoint VBA helper context admission — 2026-08-25
+
+- Reject a null context in `cli_ppt_vba_read_ex()` before temporary-directory
+  creation or iterator access, and return a zero optional reservation result.
+- The focused `ppt_entry` regression passes. Keep full OOXML/PowerPoint corpus,
+  sanitizer, materialized large-file, production-CVD, and Sonic1 qualification
+  open.
+
 ## UUEncode direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null UUEncode parser context, but mark a

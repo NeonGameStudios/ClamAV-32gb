@@ -2786,8 +2786,11 @@ cli_ppt_vba_read_ex(int ifd, cli_ctx *ctx, uint64_t *temporary_reserved_out)
     if (temporary_reserved_out != NULL)
         *temporary_reserved_out = 0;
 
+    if (ctx == NULL)
+        return NULL;
+
     /* Create a directory to store the extracted OLE2 objects */
-    dir = cli_gentemp_with_prefix(ctx ? ctx->this_layer_tmpdir : NULL, "ppt-ole2-tmp");
+    dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "ppt-ole2-tmp");
     if (dir == NULL) {
         cli_mark_scan_incomplete(ctx, "PowerPoint temporary directory could not be allocated");
         return NULL;

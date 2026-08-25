@@ -2790,6 +2790,8 @@ contains libclamav/vba_extract.c 'PowerPoint temporary output could not be creat
 contains libclamav/vba_extract.c 'PowerPoint input ended before an atom header was complete'
 contains libclamav/vba_extract.c 'PowerPoint compressed atom exceeds the input'
 contains libclamav/vba_extract.c 'cli_ppt_vba_read_ex'
+contains libclamav/vba_extract.c 'if (ctx == NULL)'
+contains unit_tests/check_clamav.c 'test_ppt_vba_null_context_is_fail_visible'
 contains libclamav/vba_extract.c 'Word macro directory ended before its metadata was complete'
 contains libclamav/vba_extract.c 'Word macro directory exceeds the input'
 contains libclamav/vba_extract.c 'Word macro directory contains an unknown record'

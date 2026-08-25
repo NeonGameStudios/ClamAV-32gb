@@ -7913,6 +7913,19 @@ START_TEST(test_ole10_temporary_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ppt_vba_null_context_is_fail_visible)
+{
+    uint64_t temporary_reserved = UINT64_MAX;
+    int fd;
+
+    fd = open("/dev/null", O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(/dev/null) failed: %s", strerror(errno));
+    ck_assert_ptr_null(cli_ppt_vba_read_ex(fd, NULL, &temporary_reserved));
+    ck_assert_uint_eq(temporary_reserved, 0);
+    close(fd);
+}
+END_TEST
+
 #if HAVE_UNRAR
 static int test_rar_progress_was_called;
 static int test_rar_handle;
@@ -33839,6 +33852,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ole2_map = tcase_create("ole2_map");
     TCase *tc_nulsft_map = tcase_create("nulsft_map");
     TCase *tc_ole10_entry = tcase_create("ole10_entry");
+    TCase *tc_ppt_entry = tcase_create("ppt_entry");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
@@ -33981,6 +33995,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_nulsft_map, test_nsis_missing_map_entry_points_are_fail_visible);
     suite_add_tcase(s, tc_ole10_entry);
     tcase_add_test(tc_ole10_entry, test_ole10_null_context_is_fail_visible);
+    suite_add_tcase(s, tc_ppt_entry);
+    tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
