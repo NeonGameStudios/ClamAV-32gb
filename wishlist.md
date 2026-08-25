@@ -408,6 +408,9 @@ large-file, and Sonic1 qualification open.
 - ELF metadata-only parser admission now rejects missing maps and null output
   metadata before dereference; add compiled ELF corpus, sanitizer, and
   parser-family qualification.
+- TNEF direct parser admission now distinguishes null context from missing
+  recognized input fmap and returns a sticky incomplete parse for the latter;
+  add compiled TNEF corpus, sanitizer, and parser-family qualification.
 - Mach-O 32-bit and native-width section-table allocation failures now mark
   required executable inspection incomplete; add compiled allocation-fault,
   malformed-Mach-O, sanitizer, and parser-family qualification.

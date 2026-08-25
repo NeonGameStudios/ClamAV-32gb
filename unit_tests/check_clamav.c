@@ -23581,7 +23581,7 @@ START_TEST(test_tnef_missing_map_is_fail_visible)
     cli_ctx ctx;
 
     memset(&ctx, 0, sizeof(ctx));
-    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_ENULLARG);
+    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "TNEF input map is unavailable");
 }
@@ -33627,6 +33627,7 @@ static Suite *test_cl_suite(void)
     Suite *s           = suite_create("cl_suite");
     TCase *tc_cl       = tcase_create("cl_api");
     TCase *tc_elf_map  = tcase_create("elf_map");
+    TCase *tc_tnef_map = tcase_create("tnef_map");
     TCase *tc_pe32plus = tcase_create("pe32plus_common");
     TCase *tc_text_encoding = tcase_create("text_encoding");
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
@@ -33674,6 +33675,8 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_elf_map);
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_tnef_map);
+    tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_pe32plus);
     tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);
     tcase_add_test(tc_pe32plus, test_pe32plus_common_inspection_and_import_failures_are_visible);
@@ -34042,7 +34045,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_tnef_exact_eof_ends_attribute_list);
     tcase_add_test(tc_cl, test_tnef_zero_length_attribute_consumes_checksum);
     tcase_add_test(tc_cl, test_tnef_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_tnef_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_attribute_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_truncated_attribute_header_is_parse_error);

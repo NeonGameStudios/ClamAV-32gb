@@ -5167,6 +5167,15 @@ reason when recognized metadata input cannot be inspected. The focused direct
 regression is registered; compiled ELF corpus, sanitizer, and Sonic1
 qualification remain open.
 
+## TNEF missing-map admission — 2026-08-25
+
+The TNEF direct parser previously returned `CL_ENULLARG` for both a null
+context and a non-null context whose recognized input fmap was unavailable.
+The latter now returns `CL_EPARSE` after recording `TNEF input map is
+unavailable`, preserving `CL_ENULLARG` only for a null caller context. The
+focused direct regression passes; compiled TNEF corpus, sanitizer, and Sonic1
+qualification remain open.
+
 ## MSPack temporary-output creation failure — 2026-08-22
 
 CAB and CHM member staging reserve temporary space before creating the output
