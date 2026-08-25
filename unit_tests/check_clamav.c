@@ -15597,6 +15597,12 @@ START_TEST(test_binhex_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_binhex_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_binhex(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_cli_magic_scan_missing_map_is_fail_visible)
 {
     struct cl_engine engine;
@@ -33877,6 +33883,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ole10_entry = tcase_create("ole10_entry");
     TCase *tc_ppt_entry = tcase_create("ppt_entry");
     TCase *tc_arj_map = tcase_create("arj_map");
+    TCase *tc_binhex_map = tcase_create("binhex_map");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
@@ -34023,6 +34030,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
     suite_add_tcase(s, tc_arj_map);
     tcase_add_test(tc_arj_map, test_arj_header_missing_context_or_map_is_fail_visible);
+    suite_add_tcase(s, tc_binhex_map);
+    tcase_add_test(tc_binhex_map, test_binhex_missing_map_is_fail_visible);
+    tcase_add_test(tc_binhex_map, test_binhex_null_context_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
@@ -34132,7 +34142,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_binhex_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_header_lengths_are_not_read_before_header_completion);
     tcase_add_test(tc_cl, test_binhex_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_binhex_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_short_resource_fork_is_fail_visible);

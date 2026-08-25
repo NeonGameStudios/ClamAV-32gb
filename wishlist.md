@@ -1,5 +1,13 @@
 # Wishlist
 
+## BinHex direct-entry admission — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null BinHex parser context, while marking a
+  recognized layer with no input fmap incomplete and returning `CL_EPARSE`.
+- The dedicated `binhex_map` regression covers both admission states. Keep full
+  BinHex corpus, sanitizer, materialized large-file, production-CVD, service,
+  and Sonic1 qualification open.
+
 ## ARJ header-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null ARJ parser context and output-size

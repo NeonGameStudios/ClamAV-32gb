@@ -91,7 +91,7 @@ int cli_binhex(cli_ctx *ctx)
     cli_dbgmsg("in cli_binhex\n");
     if (ctx == NULL) {
         cli_dbgmsg("BinHex: passed context was NULL\n");
-        return CL_EARG;
+        return CL_ENULLARG;
     }
     map = ctx->fmap;
     if (map == NULL) {
