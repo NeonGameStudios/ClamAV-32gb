@@ -9064,6 +9064,18 @@ full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_SWF` stays pending.
 
+## SWF bounded-parser qualification — 2026-08-25
+
+The current-source production-linked GCC `swf` case passes 10/10 across CWS
+truncation, ZWS declared-size failure, temporary quota, timeout, fixed
+header/frame read failures, clipped compressed-input truncation, injected
+close failure, and FWS header/frame/tag truncation. Timeout retains the
+canonical `Heuristics.Limits.Exceeded.MaxScanTime` reason. The `swf_map` and
+`swf_api` cases pass 1/1 each for direct admission and public fixed-header
+read-failure dispatch. This is bounded parser evidence only; complete SWF
+corpus, sanitizer, production-CVD/service parity, materialized large-file,
+and Sonic1 qualification remain open.
+
 ## CPIO production-linked focused audit — 2026-08-25
 
 The rebuilt current-source production-linked harness passes the dedicated

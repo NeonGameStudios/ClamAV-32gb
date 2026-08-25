@@ -48,6 +48,15 @@
   SWF corpus, sanitizer, materialized large-file, production-CVD, service, and
 Sonic1 qualification open.
 
+## SWF bounded-parser qualification — 2026-08-25
+
+- The current-source production-linked GCC `swf` case passes 10/10 across
+  compressed/uncompressed truncation, callback faults, clipped input,
+  temporary quota, injected cleanup failure, and timeout; `swf_map` and
+  `swf_api` pass 1/1 each. Timeout preserves the canonical MaxScanTime reason.
+- Add complete SWF corpus, sanitizer, production-CVD/service parity,
+  materialized large-file, and Sonic1 evidence before certification.
+
 ## XAR direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null XAR parser context and keep missing input
