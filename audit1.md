@@ -6961,6 +6961,15 @@ non-cacheable; the direct production-linked regression covers the boundary.
 Parser-family corpus, sanitizer, and Sonic1 qualification remain release
 gates.
 
+## RTF missing-map admission — 2026-08-25
+
+The RTF direct parser previously entered its deadline and temporary-directory
+path without checking whether the recognized layer still had an input fmap.
+It now returns `CL_ENULLARG` for a null context, or `CL_EPARSE` with the
+sticky reason `RTF input map is unavailable` for a missing map. An isolated
+production-linked direct regression covers the latter boundary; compiled RTF
+and OLE corpus, sanitizer, and Sonic1 qualification remain release gates.
+
 ## BinHex and XAR missing-map admission — 2026-08-23
 
 The BinHex and XAR public parser entries also initialized `ctx->fmap` before

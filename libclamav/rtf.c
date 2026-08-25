@@ -648,6 +648,13 @@ int cli_scanrtf(cli_ctx* ctx)
 
     cli_dbgmsg("in cli_scanrtf()\n");
 
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "RTF input map is unavailable");
+        return CL_EPARSE;
+    }
+
     ret = rtf_checktimelimit(ctx, "RTF inspection reached the configured time limit");
     if (ret != CL_SUCCESS)
         return ret;

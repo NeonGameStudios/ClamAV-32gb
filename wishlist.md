@@ -1278,6 +1278,8 @@ large-file, and Sonic1 qualification open.
 - Confirmed RIFF parser entry now treats a missing input fmap as an explicit
   incomplete parse instead of `CL_ENULLARG`; add compiled RIFF corpus and
   sanitizer qualification.
+- RTF direct parser admission now rejects a missing input fmap as an explicit
+  incomplete parse; add compiled RTF/OLE corpus and sanitizer qualification.
 - XAR TOC XML/decoder, subdocument, gzip/LZMA member, and raw-member walks now
   honor the shared scan deadline with decoder and temporary-file cleanup; add
   compiled timeout-injection and long-member/TOC corpus qualification.

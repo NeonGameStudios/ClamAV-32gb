@@ -23327,6 +23327,17 @@ START_TEST(test_mydoom_detector_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_rtf_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanrtf(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "RTF input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_riff_header_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {
@@ -33703,6 +33714,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xar      = tcase_create("xar");
     TCase *tc_xar_metadata = tcase_create("xar_metadata");
     TCase *tc_riff_map = tcase_create("riff_map");
+    TCase *tc_rtf_map = tcase_create("rtf_map");
     TCase *tc_hwpml    = tcase_create("hwpml");
     TCase *tc_xdp      = tcase_create("xdp");
     TCase *tc_egg_metadata = tcase_create("egg_metadata");
@@ -33768,6 +33780,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xar);
     suite_add_tcase(s, tc_xar_metadata);
     suite_add_tcase(s, tc_riff_map);
+    suite_add_tcase(s, tc_rtf_map);
     suite_add_tcase(s, tc_hwpml);
     tcase_add_checked_fixture(tc_hwpml, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_xdp);
@@ -34097,6 +34110,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_file_type_detection_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_rtf_map, test_rtf_missing_map_is_fail_visible);
     tcase_add_test(tc_riff_map, test_riff_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_chunk_read_failure_is_fail_visible);
 #ifndef _WIN32
