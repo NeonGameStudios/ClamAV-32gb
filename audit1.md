@@ -1093,6 +1093,21 @@ the child uses the already-held reservation rather than double-counting the
 same bytes. Compiled force-to-disk fault-injection and Linux/Sonic1 quota
 qualification remain open.
 
+## XZ trailing-stream admission — 2026-08-24
+
+The XZ path stopped at the first `XZ_STREAM_END` and immediately dispatched
+the decompressed temporary file. If the decoder left bytes in its current
+input window, or the fmap still held another unread window, concatenated or
+trailing XZ content was silently skipped and the first output could appear
+clean.
+
+The path now requires both the decoder input window and the containing fmap to
+be exhausted before nested scanning. Any trailing input is marked
+incomplete/non-cacheable and returns `CL_EUNPACK`; a focused production-linked
+regression concatenates two valid XZ streams and requires that result. Full XZ
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD, and Sonic1 qualification remain open.
+
 ## APM declared partition-map boundary — 2026-08-23
 
 APM entry reads previously checked only the image fmap. The parser now validates

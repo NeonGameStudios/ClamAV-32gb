@@ -2353,6 +2353,17 @@ static cl_error_t cli_scanxz(cli_ctx *ctx)
         }
     } while (XZ_STREAM_END != rc);
 
+    /* A stream end does not prove that the containing XZ input is exhausted:
+     * the decoder may leave a concatenated stream or trailing bytes in its
+     * current input window, or the fmap may contain another window that was
+     * never requested. Do not publish a clean result while that required
+     * content remains uninspected. */
+    if (strm.avail_in != 0 || off < ctx->fmap->len) {
+        cli_mark_scan_incomplete(ctx, "XZ trailing compressed input was not inspected");
+        ret = CL_EUNPACK;
+        goto xz_exit;
+    }
+
     /* scan decompressed file; the output quota is already held by this layer */
     ret = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
 

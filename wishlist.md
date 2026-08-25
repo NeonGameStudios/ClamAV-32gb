@@ -1,5 +1,14 @@
 # Wishlist
 
+## XZ trailing-stream admission — 2026-08-24
+
+- Do not dispatch a clean XZ output when the first decoder stream ends while
+  buffered or unrequested trailing input remains; return explicit incomplete
+  `CL_EUNPACK` and preserve non-cacheability.
+- The focused regression concatenates two valid XZ streams. Keep complete XZ
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD, and Sonic1 qualification open.
+
 ## Rust current-layer fmap boundary — 2026-08-24
 
 - Reject a missing or zero-length recursion stack and an out-of-range current
