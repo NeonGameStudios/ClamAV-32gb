@@ -24894,6 +24894,7 @@ START_TEST(test_mbox_oversized_line_is_fail_visible)
 
     map = cl_fmap_open_memory(input, input_len);
     ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
 
     ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -24976,7 +24977,9 @@ START_TEST(test_mbox_truncated_binhex_is_fail_visible)
 
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_MAIL", NULL);
-    ck_assert_int_eq(ret, CL_EPARSE);
+    /* A valid mbox whose BinHex attachment cannot be decoded is reported as
+     * a format failure, while the incomplete flag keeps it fail-visible. */
+    ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
@@ -35304,6 +35307,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_zip = tcase_create("zip");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_zip_map = tcase_create("zip_map");
+    TCase *tc_mail = tcase_create("mail");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_cabsfx = tcase_create("cabsfx");
     TCase *tc_arjsfx = tcase_create("arjsfx");
@@ -35360,6 +35364,17 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_mail_api, cl_setup, cl_teardown);
     tcase_add_test(tc_mail_api, test_mbox_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_mail_api, test_mhtml_public_api_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_mail);
+    tcase_add_checked_fixture(tc_mail, cl_setup, cl_teardown);
+    tcase_add_test(tc_mail, test_mbox_uuencode_attachment_read_failure_is_fail_visible);
+    tcase_add_test(tc_mail, test_mbox_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_mail, test_mbox_missing_map_is_fail_visible);
+    tcase_add_test(tc_mail, test_mbox_time_limit_is_fail_visible);
+    tcase_add_test(tc_mail, test_mbox_line_read_failure_is_fail_visible);
+    tcase_add_test(tc_mail, test_mbox_header_lookahead_read_failure_is_fail_visible);
+    tcase_add_test(tc_mail, test_mbox_oversized_line_is_fail_visible);
+    tcase_add_test(tc_mail, test_mbox_truncated_uuencode_is_fail_visible);
+    tcase_add_test(tc_mail, test_mbox_truncated_binhex_is_fail_visible);
     suite_add_tcase(s, tc_graphics_map);
     tcase_add_test(tc_graphics_map, test_bmp_jp2_missing_maps_are_fail_visible);
     tcase_add_test(tc_graphics_map, test_media_parsers_reject_null_contexts);

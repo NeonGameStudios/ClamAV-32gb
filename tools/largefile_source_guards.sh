@@ -887,6 +887,8 @@ contains unit_tests/check_clamav.c 'test_mhtml_public_api_read_failure_is_fail_v
 contains unit_tests/check_clamav.c 'tcase_create("mail_api")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_mail_api, test_mbox_public_api_read_failure_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_mail_api, test_mhtml_public_api_read_failure_is_fail_visible)'
+contains unit_tests/check_clamav.c 'tcase_create("mail")'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_mail, test_mbox_truncated_binhex_is_fail_visible)'
 contains unit_tests/check_clamav.c 'test_mbox_missing_map_is_fail_visible'
 contains libclamav/mbox.c 'MIME message line input could not be read completely'
 contains libclamav/mbox.c 'MIME message header lookahead could not be read completely'

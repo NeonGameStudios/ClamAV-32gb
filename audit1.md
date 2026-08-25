@@ -8736,6 +8736,24 @@ full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_MAIL` and `mbox-map` stay pending.
 
+## Mail/mbox focused parser audit — 2026-08-25
+
+The current-source production-linked GCC harness passes the dedicated `mail`
+TCase 9/9. The matrix covers initial MIME input reads, missing input maps,
+MIME line and header-lookahead callback failures, parser timeout, oversized
+line admission, UUEncode attachment read failure, truncated UUEncode, and
+truncated BinHex. The BinHex case returns the parser's explicit `CL_EFORMAT`
+failure while retaining the incomplete and non-cacheable state; it is not
+silently converted into a clean result. The existing `mail_api` case also
+passes 2/2 for public `CL_TYPE_MAIL` and `CL_TYPE_MHTML` initial-read
+failures.
+
+This is focused boundary evidence, not family certification. Complete
+MIME/mbox/MHTML corpus, streaming 64–65 MiB CVD-backed tests, full-C
+ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service parity, and Sonic1 qualification remain
+open, so `CL_TYPE_MAIL`, `mbox-map`, and `CL_TYPE_MHTML` stay pending.
+
 ## MSPack current-source boundary qualification — 2026-08-25
 
 The focused current-source production-linked `mspack_map` TCase now passes

@@ -3356,6 +3356,20 @@ and Sonic1 qualification as release gates.
   add sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
 
+## Mail/mbox focused parser audit — 2026-08-25
+
+- The current-source production-linked GCC harness passes the dedicated
+  `mail` TCase 9/9 across initial MIME input, missing-map, line and
+  header-lookahead callback, timeout, oversized-line, UUEncode, and truncated
+  BinHex boundaries. Truncated BinHex returns the parser's explicit
+  `CL_EFORMAT` failure while retaining incomplete/non-cacheable state; the
+  existing `mail_api` TCase passes 2/2 for public `CL_TYPE_MAIL` and
+  `CL_TYPE_MHTML` initial-read failures.
+- Complete the MIME/mbox/MHTML corpus, streaming 64–65 MiB CVD-backed tests,
+  full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+  materialized large-file, production CVD/service parity, and Sonic1 evidence
+  before certification.
+
 ## MSEXPAND public API read-failure audit — 2026-08-25
 
 - The isolated current-source production-linked `msexpand_map` TCase passes
