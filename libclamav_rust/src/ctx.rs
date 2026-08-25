@@ -71,13 +71,50 @@ pub unsafe fn current_fmap(ctx: *mut cli_ctx) -> Result<FMap, Error> {
         return Err(Error::NullPointer("ctx"));
     }
 
-    let recursion_stack_size = unsafe { *ctx }.recursion_stack_size as usize;
-    let recursion_level = unsafe { *ctx }.recursion_level as usize;
+    let ctx_ref = unsafe { &*ctx };
+    if ctx_ref.recursion_stack.is_null() {
+        return Err(Error::NullParam("recursion_stack"));
+    }
 
-    let recursion_stack =
-        unsafe { slice::from_raw_parts((*ctx).recursion_stack, recursion_stack_size) };
+    let recursion_stack_size = ctx_ref.recursion_stack_size as usize;
+    let recursion_level = ctx_ref.recursion_level as usize;
+    if recursion_stack_size == 0 || recursion_level >= recursion_stack_size {
+        return Err(Error::Format);
+    }
+
+    let recursion_stack = unsafe {
+        slice::from_raw_parts(ctx_ref.recursion_stack, recursion_stack_size)
+    };
 
     let current_level = recursion_stack[recursion_level];
 
     current_level.fmap.try_into().map_err(Error::BadMap)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::sys::{cli_ctx, cli_scan_layer_t};
+
+    #[test]
+    fn current_fmap_rejects_missing_recursion_stack() {
+        let mut ctx: cli_ctx = unsafe { std::mem::zeroed() };
+
+        let result = unsafe { current_fmap(&mut ctx) };
+
+        assert!(matches!(result, Err(Error::NullParam("recursion_stack"))));
+    }
+
+    #[test]
+    fn current_fmap_rejects_recursion_level_outside_stack() {
+        let mut layers: [cli_scan_layer_t; 1] = unsafe { std::mem::zeroed() };
+        let mut ctx: cli_ctx = unsafe { std::mem::zeroed() };
+        ctx.recursion_stack = layers.as_mut_ptr();
+        ctx.recursion_stack_size = layers.len() as u32;
+        ctx.recursion_level = layers.len() as u32;
+
+        let result = unsafe { current_fmap(&mut ctx) };
+
+        assert!(matches!(result, Err(Error::Format)));
+    }
 }

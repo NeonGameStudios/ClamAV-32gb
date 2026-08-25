@@ -7593,3 +7593,22 @@ incomplete reason. The touched `unzip.c`, `scanners.c`, and unit translation
 units compile with GCC; source guards and manifest evidence pass. Complete ZIP
 corpus, sanitizer, materialized large-file,
 certified Linux x86-64, production-CVD, and Sonic1 qualification remain open.
+
+## Rust current-layer fmap boundary — 2026-08-24
+
+The next shared boundary audit found that the Rust `current_fmap()` adapter
+checked only the context pointer before forming a slice from
+`ctx->recursion_stack` and indexing `ctx->recursion_level`. A missing stack
+could therefore reach an invalid raw slice, while a stale level could panic or
+read outside the declared stack.
+
+`current_fmap()` now rejects a null recursion stack with `Error::NullParam`,
+rejects a zero-length stack or an out-of-range level with `Error::Format`, and
+performs those checks before `slice::from_raw_parts()` or indexing. Rust unit
+regressions cover both malformed context states, and source guards plus the
+capability manifest record the boundary. The host Rust 1.97.1 toolchain
+attempted the focused Cargo test but the existing environment lacks OpenSSL
+development metadata (`pkg-config`/headers), so the crate did not reach test
+execution; no package was installed. Parser-family corpus, production-linked
+Rust qualification, sanitizer, certified Linux x86-64, materialized
+large-file, and Sonic1 evidence remain open.

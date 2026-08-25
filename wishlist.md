@@ -1,5 +1,14 @@
 # Wishlist
 
+## Rust current-layer fmap boundary — 2026-08-24
+
+- Reject a missing or zero-length recursion stack and an out-of-range current
+  recursion level before Rust forms or indexes the raw scan-layer slice.
+- Focused Rust unit regressions and source guards cover the two malformed
+  context states. Keep ALZ, LHA/LZH, and OneNote parser-family corpus,
+  production-linked, sanitizer, certified Linux x86-64, materialized
+  large-file, and Sonic1 qualification open.
+
 ## CAB/CHM missing-map entry hardening — 2026-08-24
 
 - Reject missing input fmaps before CAB header admission, CAB extraction, or
