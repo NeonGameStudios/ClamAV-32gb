@@ -2931,3 +2931,21 @@ and Sonic1 qualification as release gates.
 - The dedicated `elf_map` regression covers both direct entries. Keep
   executable corpus, sanitizer, materialized large-file, production-CVD,
   service, and Sonic1 qualification open.
+
+## OLE2/XAR/RTF/JPEG boundary audit — 2026-08-25
+
+- Retain the OLE2 XLM/BIFF declared-length and callback-failure semantics;
+  the isolated production-linked `ole2_xlm` regression passes 1/1. Extend it
+  to full OLE2/XLM corpus, sanitizer, materialized large-file, certified
+  Linux x86-64, production-CVD/service, and Sonic1 qualification.
+- Keep XAR TOC root-close admission, RTF complete description consumption, and
+  JPEG clipped-versus-callback read classification pinned by source guards.
+  The isolated map-boundary cases pass, but the broader XAR TCase must be
+  rerun after relinking a current, ABI-consistent production harness; the
+  mixed-generation binary's three XAR crashes are not current-source
+  evidence.
+- Rebuild the Rust archive from the authoritative source with a compatible
+  Linux toolchain before accepting the `rust_map` null-context oracle. The
+  current source guards are correct; the existing linked archive is stale,
+  and the host offline Rust attempt stopped at missing OpenSSL development
+  metadata without installing software.

@@ -8173,3 +8173,36 @@ contexts, while a recognized layer with no input fmap remains `CL_EPARSE` with
 sticky incomplete state. The dedicated `elf_map` case covers both direct
 entries; executable corpus, sanitizer, materialized large-file, production-CVD,
 service, and Sonic1 qualification remain open.
+
+## OLE2/XAR/RTF/JPEG boundary audit — 2026-08-25
+
+The next pending parser-family review confirmed that the canonical source
+contains the required fail-visible boundaries for four adjacent families. The
+OLE2 XLM/BIFF path rejects chains and records that end before their declared
+lengths and preserves `CL_EREAD` for an in-range sector callback failure. Its
+isolated production-linked `ole2_xlm` regression passes 1/1 after the
+canonical workbook fixture was materialized into the existing scratch
+harness. The XAR TOC path requires an observed closing root element, the RTF
+object path consumes the complete declared description while retaining only a
+bounded display prefix, and JPEG fixed reads distinguish clipped ranges from
+in-range callback failures. The isolated `xar_map`, `xar_metadata`,
+`ole2_map`, `rtf_map`, and `jpeg_map` boundary cases pass.
+
+The broader XAR synthetic TCase still produces three segmentation faults in
+the mixed-generation production-linked binary. Those failures are not
+attributed to current parser source because the harness combines current C
+objects with stale ABI generations; a current full C build and isolated
+current-source XAR execution remain required. Source guards now pin the XAR
+root-close, RTF description-consumption, and JPEG read-status requirements.
+Complete OLE2/XAR/RTF/media corpora, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, and Sonic1 qualification
+remain open.
+
+The Rust boundary review also confirmed that the authoritative source already
+returns `CL_ENULLARG` before fmap lookup for OneNote, ALZ, and LHA/LZH. The
+linked `rust_map` failure is from the stale Rust archive (`scan_onenote(NULL)`
+returns the old generic error), not from the current source. An offline host
+Rust 1.97.1 test attempt reached `openssl-sys` and stopped because this host
+has no OpenSSL development metadata; no software was installed. Current C/Rust
+rebuild and Rust, sanitizer, Linux x86-64, materialized large-file, and
+Sonic1 evidence remain release gates.
