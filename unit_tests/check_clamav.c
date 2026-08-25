@@ -30399,6 +30399,42 @@ START_TEST(test_macho_truncated_load_command_is_parse_error)
 }
 END_TEST
 
+START_TEST(test_macho_load_command_boundary_is_fail_visible)
+{
+    uint8_t data[32 + 8] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    macho_test_write_u32(data + 0, 0xfeedfacfU);
+    macho_test_write_u32(data + 4, 0x01000007U); /* CPU_TYPE_X86_64. */
+    macho_test_write_u32(data + 12, 2U);         /* MH_EXECUTE. */
+    macho_test_write_u32(data + 16, 1U);         /* one load command. */
+    macho_test_write_u32(data + 20, 8U);         /* command table contains only its header. */
+    macho_test_write_u32(data + 32, 0x19U);       /* LC_SEGMENT_64. */
+    macho_test_write_u32(data + 36, 8U);         /* too short for the segment payload. */
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.options = &options;
+    ctx.fmap   = map;
+
+    ret = cli_scanmacho(&ctx, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O parsing ended before inspection completed");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static void macho_test_write_u32(uint8_t *dst, uint32_t value)
 {
     dst[0] = (uint8_t)value;
@@ -33604,6 +33640,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
     TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
+    TCase *tc_macho_boundary = tcase_create("macho_boundary");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -33684,6 +33721,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_partition_map, test_gpt_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_dmg_map);
     tcase_add_checked_fixture(tc_dmg_map, cl_setup, cl_teardown);
+    suite_add_tcase(s, tc_macho_boundary);
+    tcase_add_test(tc_macho_boundary, test_macho_load_command_boundary_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_xdp_map);
     tcase_add_checked_fixture(tc_xdp_map, cl_setup, cl_teardown);

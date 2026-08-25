@@ -5135,6 +5135,19 @@ and section alignment uses a widened temporary and rejects an extent above
 fixture and source guards are registered; compiled Mach-O, sanitizer, and
 Sonic1 qualification remain open.
 
+## Mach-O load-command boundary admission — 2026-08-25
+
+The Mach-O parser previously advanced through the load-command table using the
+fixed header and segment sizes without enforcing the file header's
+`sizeofcmds` or each command's declared `cmdsize`. A short segment command
+could therefore consume bytes belonging to the next command and make malformed
+metadata appear inspectable. The parser now range-checks the complete command
+table, each command header and declared extent, segment headers and section
+tables, and supported architecture thread-state payloads before reading them;
+command traversal resumes at the checked command end. The focused
+production-linked malformed-segment regression passes, while full Mach-O corpus,
+sanitizer, and Sonic1 qualification remain open.
+
 ## MSPack temporary-output creation failure — 2026-08-22
 
 CAB and CHM member staging reserve temporary space before creating the output

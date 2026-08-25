@@ -270,7 +270,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
     struct cli_exe_section64 *sections64 = NULL;
     char name[16];
     fmap_t *map;
-    uint64_t at;
+    uint64_t at, command_start, command_end, load_commands_end;
     cl_error_t read_status;
 
     if (ctx == NULL) {
@@ -406,6 +406,13 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
     if (m64)
         at += 4;
 
+    hdr.sizeofcmds = EC32(hdr.sizeofcmds, conv);
+    if (at > (uint64_t)map->len || (uint64_t)hdr.sizeofcmds > (uint64_t)map->len - at) {
+        cli_dbgmsg("cli_scanmacho: Load-command table extends past the input\n");
+        RETURN_MACHO_BROKEN;
+    }
+    load_commands_end = at + (uint64_t)hdr.sizeofcmds;
+
     hdr.ncmds = EC32(hdr.ncmds, conv);
     if (!hdr.ncmds || hdr.ncmds > 1024) {
         cli_dbgmsg("cli_scanmacho: Invalid number of load commands (%u)\n", hdr.ncmds);
@@ -413,12 +420,22 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
     }
 
     for (i = 0; i < hdr.ncmds; i++) {
+        uint32_t command_size;
+
         read_status = cli_checktimelimit(ctx);
         if (read_status != CL_SUCCESS) {
             free(sections);
             free(sections64);
             cli_mark_scan_incomplete(ctx, "Mach-O load-command traversal reached the configured time limit");
             return read_status;
+        }
+
+        command_start = at;
+        if (command_start > load_commands_end || load_commands_end - command_start < sizeof(load_cmd)) {
+            cli_dbgmsg("cli_scanmacho: Load-command header is outside the declared table\n");
+            free(sections);
+            free(sections64);
+            RETURN_MACHO_BROKEN;
         }
 
         read_status = cli_macho_read_status(cli_macho_readn(map, at, &load_cmd, sizeof(load_cmd)), sizeof(load_cmd));
@@ -434,6 +451,14 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
             RETURN_MACHO_BROKEN;
         }
         at += sizeof(load_cmd);
+        command_size = EC32(load_cmd.cmdsize, conv);
+        if (command_size < sizeof(load_cmd) || (uint64_t)command_size > load_commands_end - command_start) {
+            cli_dbgmsg("cli_scanmacho: Load-command size is outside the declared table\n");
+            free(sections);
+            free(sections64);
+            RETURN_MACHO_BROKEN;
+        }
+        command_end = command_start + (uint64_t)command_size;
         /*
         if((m64 && EC32(load_cmd.cmdsize, conv) % 8) || (!m64 && EC32(load_cmd.cmdsize, conv) % 4)) {
             cli_dbgmsg("cli_scanmacho: Invalid command size (%u)\n", EC32(load_cmd.cmdsize, conv));
@@ -444,6 +469,12 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
         load_cmd.cmd = EC32(load_cmd.cmd, conv);
         if ((m64 && load_cmd.cmd == 0x19) || (!m64 && load_cmd.cmd == 0x01)) { /* LC_SEGMENT */
             if (m64) {
+                if (at > command_end || sizeof(segment_cmd64) > command_end - at) {
+                    cli_dbgmsg("cli_scanmacho: 64-bit segment command exceeds its load-command boundary\n");
+                    free(sections);
+                    free(sections64);
+                    RETURN_MACHO_BROKEN;
+                }
                 read_status = cli_macho_read_status(cli_macho_readn(map, at, &segment_cmd64, sizeof(segment_cmd64)), sizeof(segment_cmd64));
                 if (read_status != CL_SUCCESS) {
                     cli_dbgmsg("cli_scanmacho: Can't read segment command\n");
@@ -461,6 +492,12 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 strncpy(name, segment_cmd64.segname, sizeof(name));
                 name[sizeof(name) - 1] = '\0';
             } else {
+                if (at > command_end || sizeof(segment_cmd) > command_end - at) {
+                    cli_dbgmsg("cli_scanmacho: 32-bit segment command exceeds its load-command boundary\n");
+                    free(sections);
+                    free(sections64);
+                    RETURN_MACHO_BROKEN;
+                }
                 read_status = cli_macho_read_status(cli_macho_readn(map, at, &segment_cmd, sizeof(segment_cmd)), sizeof(segment_cmd));
                 if (read_status != CL_SUCCESS) {
                     cli_dbgmsg("cli_scanmacho: Can't read segment command\n");
@@ -491,7 +528,14 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
             if (!nsects) {
                 if (!get_fileinfo)
                     cli_dbgmsg("MACHO: ------------------\n");
+                at = command_end;
                 continue;
+            }
+            if (at > command_end || (uint64_t)nsects > (command_end - at) / (m64 ? sizeof(struct macho_section64) : sizeof(struct macho_section))) {
+                cli_dbgmsg("cli_scanmacho: Section table exceeds its load-command boundary\n");
+                free(sections);
+                free(sections64);
+                RETURN_MACHO_BROKEN;
             }
             sections = (struct cli_exe_section *)cli_max_realloc_or_free(sections, (sect + nsects) * sizeof(struct cli_exe_section));
             if (!sections) {
@@ -624,14 +668,27 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
             }
             if (!get_fileinfo)
                 cli_dbgmsg("MACHO: ------------------\n");
+            at = command_end;
 
         } else if (arch && (load_cmd.cmd == 0x4 || load_cmd.cmd == 0x5)) { /* LC_(UNIX)THREAD */
+            if (at > command_end || command_end - at < 8) {
+                cli_dbgmsg("cli_scanmacho: Thread command header exceeds its load-command boundary\n");
+                free(sections);
+                free(sections64);
+                RETURN_MACHO_BROKEN;
+            }
             at += 8;
             switch (arch) {
                 case 1: /* x86 */
                 {
                     struct macho_thread_state_x86 thread_state_x86;
 
+                    if (at > command_end || sizeof(thread_state_x86) > command_end - at) {
+                        cli_dbgmsg("cli_scanmacho: x86 thread state exceeds its load-command boundary\n");
+                        free(sections);
+                        free(sections64);
+                        RETURN_MACHO_BROKEN;
+                    }
                     read_status = cli_macho_read_status(cli_macho_readn(map, at, &thread_state_x86, sizeof(thread_state_x86)), sizeof(thread_state_x86));
                     if (read_status != CL_SUCCESS) {
                         cli_dbgmsg("cli_scanmacho: Can't read thread_state_x86\n");
@@ -652,6 +709,12 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 {
                     struct macho_thread_state_ppc thread_state_ppc;
 
+                    if (at > command_end || sizeof(thread_state_ppc) > command_end - at) {
+                        cli_dbgmsg("cli_scanmacho: PPC thread state exceeds its load-command boundary\n");
+                        free(sections);
+                        free(sections64);
+                        RETURN_MACHO_BROKEN;
+                    }
                     read_status = cli_macho_read_status(cli_macho_readn(map, at, &thread_state_ppc, sizeof(thread_state_ppc)), sizeof(thread_state_ppc));
                     if (read_status != CL_SUCCESS) {
                         cli_dbgmsg("cli_scanmacho: Can't read thread_state_ppc\n");
@@ -673,6 +736,12 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 {
                     struct macho_thread_state_ppc64 thread_state_ppc64;
 
+                    if (at > command_end || sizeof(thread_state_ppc64) > command_end - at) {
+                        cli_dbgmsg("cli_scanmacho: PPC64 thread state exceeds its load-command boundary\n");
+                        free(sections);
+                        free(sections64);
+                        RETURN_MACHO_BROKEN;
+                    }
                     read_status = cli_macho_read_status(cli_macho_readn(map, at, &thread_state_ppc64, sizeof(thread_state_ppc64)), sizeof(thread_state_ppc64));
                     if (read_status != CL_SUCCESS) {
                         cli_dbgmsg("cli_scanmacho: Can't read thread_state_ppc64\n");
@@ -695,9 +764,9 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                     free(sections64);
                     return CL_EARG;
             }
+            at = command_end;
         } else {
-            if (EC32(load_cmd.cmdsize, conv) > sizeof(load_cmd))
-                at += EC32(load_cmd.cmdsize, conv) - sizeof(load_cmd);
+            at = command_end;
         }
     }
 

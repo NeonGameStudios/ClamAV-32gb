@@ -398,6 +398,10 @@ large-file, and Sonic1 qualification open.
 - Mach-O 32-bit entry-point and section-alignment arithmetic now rejects
   native-coordinate wraparound; add compiled malformed-Mach-O, sanitizer, and
   parser-family qualification.
+- Mach-O load-command admission now enforces the declared command-table and
+  per-command boundaries across segment, section, and thread-state payloads;
+  add compiled malformed-command corpus, sanitizer, and parser-family
+  qualification.
 - Mach-O 32-bit and native-width section-table allocation failures now mark
   required executable inspection incomplete; add compiled allocation-fault,
   malformed-Mach-O, sanitizer, and parser-family qualification.
