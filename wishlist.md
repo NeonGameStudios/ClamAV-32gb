@@ -1280,6 +1280,8 @@ large-file, and Sonic1 qualification open.
   sanitizer qualification.
 - RTF direct parser admission now rejects a missing input fmap as an explicit
   incomplete parse; add compiled RTF/OLE corpus and sanitizer qualification.
+- CHM direct MSPack admission now checks the null context before initializing
+  its fmap wrapper; add compiled CHM corpus and sanitizer qualification.
 - XAR TOC XML/decoder, subdocument, gzip/LZMA member, and raw-member walks now
   honor the shared scan deadline with decoder and temporary-file cleanup; add
   compiled timeout-injection and long-member/TOC corpus qualification.

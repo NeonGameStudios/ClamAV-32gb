@@ -812,9 +812,7 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
     struct mschmd_header *mschm_h      = NULL;
     struct mschmd_file *mschm_f        = NULL;
     int files;
-    struct mspack_name mspack_fmap = {
-        .fmap = ctx->fmap,
-    };
+    struct mspack_name mspack_fmap = {0};
     struct mspack_system_ex ops_ex;
 
     char *tmp_fname      = NULL;
@@ -827,6 +825,7 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "MSPack CHM input map is unavailable");
         return CL_EPARSE;
     }
+    mspack_fmap.fmap = ctx->fmap;
 
     memset(&ops_ex, 0, sizeof(struct mspack_system_ex));
     ops_ex.ops = mspack_sys_fmap_ops;

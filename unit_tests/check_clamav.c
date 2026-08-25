@@ -28794,6 +28794,7 @@ START_TEST(test_mspack_missing_map_is_fail_visible)
     size_t cab_size = 0;
     cl_error_t ret;
 
+    ck_assert_int_eq(cli_scanmschm(NULL), CL_ENULLARG);
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine = &engine;

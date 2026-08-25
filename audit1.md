@@ -6979,6 +6979,15 @@ Focused direct-entry regressions cover both paths; compiled encoded-document
 and archive corpora, sanitizer, and Sonic1 qualification remain release
 gates.
 
+## CHM null-context admission — 2026-08-25
+
+The CHM direct MSPack entry initialized its fmap wrapper from `ctx` before
+checking the context pointer, so a null direct call could fault before the
+documented argument result. The wrapper is now initialized empty and populated
+only after the null-context and missing-map checks; the isolated production-
+linked `mspack_map` regression covers both boundaries. Compiled CHM corpus,
+sanitizer, and Sonic1 qualification remain release gates.
+
 ## Mydoom detector missing-map admission — 2026-08-23
 
 The Mydoom log detector was the remaining standalone raw-detector entry that
