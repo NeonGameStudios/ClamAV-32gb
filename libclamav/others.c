@@ -1464,13 +1464,13 @@ void cli_append_potentially_unwanted_if_heur_exceedsmax(cli_ctx *ctx, const char
         ctx->limit_exceeded        = true; // guard against adding an alert (or metadata) a million times for non-fatal exceeds-max conditions
                                            // TODO: consider changing this from a bool to a threshold so we could at least see more than 1 limits exceeded
 
-        if (SCAN_HEURISTIC_EXCEEDS_MAX) {
+        if (ctx->options && SCAN_HEURISTIC_EXCEEDS_MAX) {
             cli_append_potentially_unwanted(ctx, vname);
             cli_dbgmsg("%s: scanning may be incomplete and additional analysis needed for this file.\n", vname);
         }
 
         /* Also record the event in the scan metadata, under "ParseErrors" */
-        if (SCAN_COLLECT_METADATA && ctx->this_layer_metadata_json) {
+        if (ctx->options && SCAN_COLLECT_METADATA && ctx->this_layer_metadata_json) {
             cli_json_parse_error(ctx->this_layer_metadata_json, vname);
         }
     }

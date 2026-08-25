@@ -194,7 +194,7 @@ static cl_error_t cli_macho_broken_result(cli_ctx *ctx, cl_error_t fallback, con
 {
     cl_error_t ret;
 
-    if (ctx && SCAN_HEURISTIC_BROKEN) {
+    if (ctx && ctx->options && SCAN_HEURISTIC_BROKEN) {
         ret = cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable");
         if (ret != CL_SUCCESS) {
             if (ret != CL_VIRUS && ret != CL_VERIFIED && ret != CL_BREAK)
@@ -702,6 +702,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(thread_state_x86);
+                    ep = EC32(thread_state_x86.eip, conv);
                     break;
                 }
 

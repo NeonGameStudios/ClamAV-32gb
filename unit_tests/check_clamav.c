@@ -31762,7 +31762,7 @@ START_TEST(test_macho_time_limit_is_fail_visible)
     ret = cli_scanmacho(&ctx, NULL);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -31810,7 +31810,7 @@ START_TEST(test_macho_unibin_time_limit_is_fail_visible)
     ret = cli_scanmacho_unibin(&ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O universal-binary inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -31992,8 +31992,8 @@ START_TEST(test_macho_native_metadata_preserves_64bit_sections)
     macho_test_write_u32(data + MACHO_HEADER_SIZE, 0x19U); /* LC_SEGMENT_64 */
     macho_test_write_u32(data + MACHO_HEADER_SIZE + 4, LOAD_COMMAND_SIZE + SEGMENT64_SIZE + SECTION64_SIZE);
     macho_test_write_u32(data + MACHO_HEADER_SIZE + LOAD_COMMAND_SIZE + 56, 1U); /* nsects */
-    macho_test_write_u64(data + section_offset + 16, UINT64_C(0x100000000)); /* addr */
-    macho_test_write_u64(data + section_offset + 24, UINT64_C(0x100000000)); /* size */
+    macho_test_write_u64(data + section_offset + 32, UINT64_C(0x100000000)); /* addr */
+    macho_test_write_u64(data + section_offset + 40, UINT64_C(0x100000000)); /* size */
     macho_test_write_u32(data + section_offset + 48, 0x200U);                 /* file offset */
 
     memset(&info, 0, sizeof(info));
@@ -32028,24 +32028,19 @@ struct macho_unibin_range_state {
     uint8_t data[8U + 20U]; /* fat_header plus one fat_arch */
 };
 
-static off_t macho_unibin_range_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+static const void *macho_unibin_sparse_need(fmap_t *map, size_t at, size_t len, int lock)
 {
-    struct macho_unibin_range_state *state = handle;
-    size_t source_length;
+    struct macho_unibin_range_state *state = map->handle;
 
-    if (offset < 0 || (uint64_t)offset >= state->length)
-        return 0;
-    if (count > state->length - (size_t)offset)
-        count = state->length - (size_t)offset;
+    (void)lock;
+    if (at > sizeof(state->data) || len > sizeof(state->data) - at)
+        return NULL;
+    return state->data + at;
+}
 
-    memset(buf, 0, count);
-    if ((size_t)offset < sizeof(state->data)) {
-        source_length = sizeof(state->data) - (size_t)offset;
-        if (source_length > count)
-            source_length = count;
-        memcpy(buf, state->data + (size_t)offset, source_length);
-    }
-    return (off_t)count;
+static void macho_unibin_sparse_unmap(fmap_t *map)
+{
+    free(map);
 }
 
 START_TEST(test_macho_unibin_member_range_is_fail_visible)
@@ -32065,8 +32060,13 @@ START_TEST(test_macho_unibin_member_range_is_fail_visible)
 
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
-    map = cl_fmap_open_handle(&state, 0, state.length, macho_unibin_range_pread_cb, 0);
+    map = calloc(1, sizeof(*map));
     ck_assert_ptr_nonnull(map);
+    map->handle = &state;
+    map->len = state.length;
+    map->real_len = state.length;
+    map->need = macho_unibin_sparse_need;
+    map->unmap = macho_unibin_sparse_unmap;
     ctx.engine = &engine;
     ctx.fmap   = map;
 
@@ -32076,7 +32076,7 @@ START_TEST(test_macho_unibin_member_range_is_fail_visible)
     ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O universal-binary architecture range is outside the input map");
     ck_assert(map->dont_cache_flag);
 
-    cl_fmap_close(map);
+    fmap_free(map);
 }
 END_TEST
 #endif
@@ -32153,7 +32153,7 @@ START_TEST(test_macho_32bit_section_alignment_overflow_is_fail_visible)
     macho_test_write_u32(data + 20, LOAD_COMMAND_SIZE + SEGMENT_SIZE + SECTION_SIZE);
     macho_test_write_u32(data + MACHO_HEADER_SIZE, 0x1U); /* LC_SEGMENT. */
     macho_test_write_u32(data + MACHO_HEADER_SIZE + 4, LOAD_COMMAND_SIZE + SEGMENT_SIZE + SECTION_SIZE);
-    macho_test_write_u32(data + segment_offset + 44, 1U); /* nsects. */
+    macho_test_write_u32(data + segment_offset + 40, 1U); /* nsects. */
     macho_test_write_u32(data + section_offset + 36, UINT32_MAX); /* size. */
     macho_test_write_u32(data + section_offset + 44, 31U);         /* align. */
 
@@ -32203,7 +32203,7 @@ START_TEST(test_macho_32bit_entrypoint_coordinate_overflow_is_fail_visible)
     macho_test_write_u32(data + 20, SEGMENT_COMMAND_SIZE + THREAD_COMMAND_SIZE);
     macho_test_write_u32(data + MACHO_HEADER_SIZE, 0x1U); /* LC_SEGMENT. */
     macho_test_write_u32(data + MACHO_HEADER_SIZE + 4, SEGMENT_COMMAND_SIZE);
-    macho_test_write_u32(data + segment_offset + 44, 1U); /* nsects. */
+    macho_test_write_u32(data + segment_offset + 40, 1U); /* nsects. */
     macho_test_write_u32(data + section_offset + 36, 0x20000000U); /* size. */
     macho_test_write_u32(data + section_offset + 40, 0xf0000000U); /* raw. */
     macho_test_write_u32(data + thread_offset, 0x4U); /* LC_UNIXTHREAD. */
@@ -35324,6 +35324,8 @@ static Suite *test_cl_suite(void)
     TCase *tc_mydoom_map = tcase_create("mydoom_map");
     TCase *tc_bz_map = tcase_create("bz_map");
     TCase *tc_bz_core = tcase_create("bz_core");
+    TCase *tc_macho = tcase_create("macho");
+    TCase *tc_macho_timeout = tcase_create("macho_timeout");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
     TCase *tc_macho_map = tcase_create("macho_map");
     char *user_timeout = NULL;
@@ -35542,6 +35544,23 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_macho_boundary, test_macho_load_command_boundary_is_fail_visible);
     suite_add_tcase(s, tc_macho_map);
     tcase_add_test(tc_macho_map, test_macho_missing_maps_are_fail_visible);
+    suite_add_tcase(s, tc_macho);
+    tcase_add_test(tc_macho, test_macho_truncated_header_is_fail_visible);
+    tcase_add_test(tc_macho, test_macho_time_limit_is_fail_visible);
+    tcase_add_test(tc_macho, test_macho_unibin_time_limit_is_fail_visible);
+    tcase_add_test(tc_macho, test_macho_metadata_read_failure_is_fail_visible);
+    tcase_add_test(tc_macho, test_macho_scan_load_command_read_failure_is_fail_visible);
+    tcase_add_test(tc_macho, test_macho_truncated_load_command_is_parse_error);
+    tcase_add_test(tc_macho, test_macho_native_metadata_preserves_64bit_sections);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_macho, test_macho_unibin_member_range_is_fail_visible);
+#endif
+    tcase_add_test(tc_macho, test_macho_section_alignment_exponent_is_fail_visible);
+    tcase_add_test(tc_macho, test_macho_32bit_section_alignment_overflow_is_fail_visible);
+    tcase_add_test(tc_macho, test_macho_32bit_entrypoint_coordinate_overflow_is_fail_visible);
+    suite_add_tcase(s, tc_macho_timeout);
+    tcase_add_test(tc_macho_timeout, test_macho_time_limit_is_fail_visible);
+    tcase_add_test(tc_macho_timeout, test_macho_unibin_time_limit_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_missing_map_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg_map, test_dmg_in_memory_stripes_keep_host_order);

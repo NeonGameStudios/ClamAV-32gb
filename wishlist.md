@@ -3138,9 +3138,24 @@ and Sonic1 qualification as release gates.
 
 - Preserve `CL_ENULLARG` for thin, universal, and metadata-wrapper Mach-O null
   contexts while keeping missing input maps fail-visible as incomplete parses.
-- The dedicated `macho_map` regression covers both boundaries. Keep executable
-  corpus, sanitizer, materialized large-file, production-CVD, service, and
-  Sonic1 qualification open.
+- The dedicated `macho_map` regression covers both boundaries, and
+  `macho_boundary` passes 1/1 for a declared load-command boundary. The
+  current-source production-linked `macho` case passes 11/11 while
+  `macho_timeout` passes 2/2 across callback/truncation, timeout,
+  native-width, universal-range, alignment, and 32-bit entry-point overflow
+  coverage. Keep executable corpus, sanitizer, materialized large-file,
+  production-CVD, service, and Sonic1 qualification open.
+
+## Mach-O focused parser audit — 2026-08-25
+
+- Retain the null-options guards for optional heuristic/metadata reporting,
+  reject 32-bit raw-address addition beyond `UINT32_MAX`, and keep x86 thread
+  state entry-point extraction covered by source guards and the focused
+  production-linked GCC regressions.
+- The current-source `macho` TCase passes 11/11 and `macho_timeout` passes
+  2/2, including a sparse synthetic universal-binary fmap. Complete full
+  Mach-O corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, and Sonic1 qualification before parser completion.
 
 ## ELF direct-entry admission — 2026-08-25
 

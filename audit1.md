@@ -8474,9 +8474,30 @@ The thin and universal Mach-O parser entries now return `CL_ENULLARG` for a
 null context. The metadata wrapper also exits before attempting to mark a null
 context incomplete. Missing input maps remain explicit `CL_EPARSE` results with
 sticky incomplete state. The dedicated production-linked `macho_map` case
-covers both null-context and missing-map boundaries; executable corpus,
-sanitizer, materialized large-file, production-CVD, service, and Sonic1
-qualification remain open.
+covers both null-context and missing-map boundaries, while `macho_boundary`
+passes 1/1 for a declared load-command boundary. The current-source
+production-linked `macho` case now passes 11/11, and `macho_timeout` passes
+2/2. This run also exercises native-width section metadata, universal-binary
+member-range bounds through a sparse synthetic fmap, callback/truncation
+classification, section/entry-point overflow, and timeout handling without a
+fully initialized scan-options context. The parser now guards optional
+heuristic and metadata checks when `ctx->options` is absent, rejects 32-bit
+raw-address addition beyond `UINT32_MAX`, and records x86 thread-state entry
+points. Executable corpus, sanitizer, materialized large-file, production-CVD,
+service, and Sonic1 qualification remain open.
+
+## Mach-O focused parser audit — 2026-08-25
+
+The current-source production-linked GCC harness passes `macho` 11/11 and
+`macho_timeout` 2/2. The focused set covers thin and universal admission,
+missing maps and null contexts, truncated headers and commands, in-range
+callback failures, timeout status, native-width 64-bit sections, universal
+architecture range overflow, 64-bit and 32-bit section-alignment bounds, and
+32-bit entry-point coordinate overflow. The production change also prevents
+direct parser contexts with no scan-options object from crashing while marking
+timeout or broken-executable results incomplete. Full Mach-O corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD,
+service, and Sonic1 evidence remain required.
 
 ## ELF direct-entry admission — 2026-08-25
 
