@@ -19699,6 +19699,17 @@ START_TEST(test_hwp3_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwpole2_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanhwpole2(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWPOLE2 input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_hwp3_truncated_font_table_is_parse_error)
 {
     enum { HWP3_CONTENT_OFFSET = 30 + 128 + 1008 };
@@ -33142,6 +33153,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_iso_map = tcase_create("iso_map");
     TCase *tc_udf_map = tcase_create("udf_map");
     TCase *tc_apm_map = tcase_create("apm_map");
+    TCase *tc_hwpole2_map = tcase_create("hwpole2_map");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -33214,6 +33226,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_apm_map);
     tcase_add_checked_fixture(tc_apm_map, cl_setup, cl_teardown);
     tcase_add_test(tc_apm_map, test_apm_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_hwpole2_map);
+    tcase_add_checked_fixture(tc_hwpole2_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_hwpole2_map, test_hwpole2_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_zip_sfx);
     tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_central_extent_and_read_failure);

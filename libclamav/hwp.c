@@ -326,8 +326,12 @@ cl_error_t cli_scanhwpole2(cli_ctx *ctx)
     uint32_t usize, asize;
     size_t payload_size;
 
-    if (!ctx || !ctx->fmap)
+    if (!ctx)
         return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "HWPOLE2 input map is unavailable");
+        return CL_EPARSE;
+    }
 
     map = ctx->fmap;
 

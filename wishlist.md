@@ -1,5 +1,14 @@
 # Wishlist
 
+## HWPOLE2 missing-map entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null HWPOLE2 parser context, but mark a
+  recognized HWPOLE2 parser with no input fmap incomplete and return
+  `CL_EPARSE`.
+- The isolated production-linked `hwpole2_map` regression passes and records
+  the sticky reason. Keep full HWPOLE2/OLE corpus, sanitizer, materialized
+  large-file, production-CVD, and Sonic1 qualification open.
+
 ## APM missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null APM parser context, but mark a recognized

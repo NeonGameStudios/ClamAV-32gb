@@ -1399,6 +1399,8 @@ not_contains libclamav/msxml_parser.c 'ret = cli_magic_scan_desc(frame->b64_fd, 
 contains libclamav/msxml_parser.h 'cli_msxml_parse_document_streaming'
 contains libclamav/hwp.c 'HWPOLE2 payload exceeds its 32-bit size field'
 contains libclamav/hwp.c 'HWPOLE2 uncompressed prefix disagreed with payload size'
+contains libclamav/hwp.c 'HWPOLE2 input map is unavailable'
+contains unit_tests/check_clamav.c 'test_hwpole2_missing_map_is_fail_visible'
 contains libclamav/hwp.c 'fmap_readn_full(map, &usize'
 contains libclamav/hwp.c 'Do not read past a declared compressed stream'
 contains libclamav/hwp.c 'HWP compressed input could not be read completely'

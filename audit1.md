@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access  
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## HWPOLE2 missing-map entry classification — 2026-08-25
+
+The HWPOLE2 parser now distinguishes a null parser context from a recognized
+HWPOLE2 layer whose input fmap is unavailable. The former remains
+`CL_ENULLARG`; the latter marks the scan incomplete with the explicit
+`HWPOLE2 input map is unavailable` reason and returns `CL_EPARSE`. The
+dedicated production-linked `hwpole2_map` case passes with the sticky reason,
+and source and capability-manifest guards cover the boundary. Full
+HWPOLE2/OLE corpus, sanitizer, materialized large-file, production-CVD, and
+Sonic1 qualification remain open.
+
 ## APM missing-map entry classification — 2026-08-25
 
 The APM parser now distinguishes a null parser context from a recognized APM
