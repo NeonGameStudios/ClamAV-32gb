@@ -8825,3 +8825,20 @@ This is public fixed-header dispatch evidence only. Complete SWF corpus,
 full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_SWF` stays pending.
+
+## CPIO production-linked focused audit — 2026-08-25
+
+The rebuilt current-source production-linked harness passes the dedicated
+CPIO cases: `cpio_map` 4/4, `cpio_crc` 4/4, and `cpio_numeric` 1/1. The map
+case covers truncated fixed headers across old, ODC, newc, and CRC forms, plus
+NEWC member-name and initial-read callback failures and an impossible next
+header. The CRC case covers nested matching, checksum mismatch, a child
+signature after more than two 64 KiB checksum windows, and an injected
+in-range checksum read failure. The numeric case covers strict ODC and newc
+fixed-width field parsing and non-cacheability.
+
+This is focused current-source evidence, not complete parser qualification.
+Direct missing-map/null-context matrices, complete old/ODC/newc/CRC corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service parity, and Sonic1 evidence remain release gates; all four CPIO
+capability rows therefore stay pending.

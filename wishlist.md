@@ -3430,3 +3430,15 @@ and Sonic1 qualification as release gates.
 - Complete SWF corpus and full-C ABI-consistent execution, then add sanitizer,
   certified Linux x86-64, materialized large-file, production-CVD/service
   parity, and Sonic1 evidence before certification.
+
+## CPIO production-linked focused audit — 2026-08-25
+
+- The rebuilt current-source production-linked harness passes `cpio_map` 4/4,
+  `cpio_crc` 4/4, and `cpio_numeric` 1/1. These cases cover all four CPIO
+  fixed-header forms, NEWC callback boundaries, impossible coordinates, CRC
+  nested matching/mismatch/multiwindow/read-failure behavior, and strict ODC
+  plus newc numeric fields.
+- Keep all CPIO rows pending until direct missing-map/null-context matrices,
+  complete old/ODC/newc/CRC corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service parity, and Sonic1 evidence
+  are complete.
