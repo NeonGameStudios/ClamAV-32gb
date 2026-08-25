@@ -1,5 +1,13 @@
 # Wishlist
 
+## APM missing-map entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null APM parser context, but mark a recognized
+  APM parser with no input fmap incomplete and return `CL_EPARSE`.
+- The isolated production-linked `apm_map` regression passes and records the
+  sticky reason. Keep full APM corpus, sanitizer, materialized large-file,
+  production-CVD, and Sonic1 qualification open.
+
 ## HFS+ missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null HFS+ parser context, but mark a recognized

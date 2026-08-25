@@ -86,9 +86,12 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     unsigned i;
     uint32_t max_prtns = 0;
 
-    if (!ctx || !ctx->fmap) {
+    if (!ctx)
+        return CL_ENULLARG;
+    if (!ctx->fmap) {
         cli_errmsg("cli_scanapm: Invalid context\n");
-        status = CL_ENULLARG;
+        cli_mark_scan_incomplete(ctx, "APM input map is unavailable");
+        status = CL_EPARSE;
         goto done;
     }
 
