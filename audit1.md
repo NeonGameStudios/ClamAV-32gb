@@ -1141,6 +1141,10 @@ guards pin all three focused registrations; compiled detector corpus,
 raw-dispatch, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 evidence remain open.
 
+The 7/7 focused result was re-run against the current production-linked GCC
+harness after the adjacent CPIO, CryptFF, and CABSFX audits; no DMG focused
+regression changed outcome.
+
 ## BZip2 focused-stream audit — 2026-08-25
 
 The focused production-linked `bz_map` TCase now runs the deterministic shared
