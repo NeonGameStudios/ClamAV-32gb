@@ -3314,6 +3314,17 @@ and Sonic1 qualification as release gates.
   add sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
 
+## MSEXPAND public API read-failure audit — 2026-08-25
+
+- The isolated current-source production-linked `msexpand_map` TCase passes
+  2/2 for missing-map admission and a public `CL_TYPE_MSSZDD` fixed-header
+  callback failure, preserving `CL_EREAD`, a clean verdict, and
+  non-cacheability; direct tests retain truncation, output, temporary-limit,
+  and timeout coverage.
+- Complete SZDD/MSEXPAND corpus and full-C ABI-consistent execution, then add
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.
+
 ## MSPack current-source boundary qualification — 2026-08-25
 
 - The focused current-source production-linked `mspack_map` TCase passes 5/5

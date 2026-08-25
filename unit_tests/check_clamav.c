@@ -15405,6 +15405,47 @@ START_TEST(test_msexpand_header_range_classes_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msexpand_public_api_read_failure_is_fail_visible)
+{
+    static const uint8_t input[14] = {
+        0x53, 0x5a, 0x44, 0x44,
+        0x88, 0xf0, 0x27, 0x33,
+        0x41, 0x00,
+        0x01, 0x00, 0x00, 0x00};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    map->need  = msexpand_header_read_failure;
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_MSSZDD", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_msexpand_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -34646,6 +34687,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_zip_map = tcase_create("zip_map");
     TCase *tc_mspack_map = tcase_create("mspack_map");
+    TCase *tc_msexpand_map = tcase_create("msexpand_map");
     TCase *tc_xz = tcase_create("xz");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
     TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
@@ -34940,6 +34982,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mspack_map, test_mspack_constructor_failures_are_fail_visible);
     tcase_add_test(tc_mspack_map, test_mspack_callback_time_limit_is_fail_visible);
 #endif
+    suite_add_tcase(s, tc_msexpand_map);
+    tcase_add_checked_fixture(tc_msexpand_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_msexpand_map, test_msexpand_missing_map_is_fail_visible);
+    tcase_add_test(tc_msexpand_map, test_msexpand_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_xz);
     tcase_add_checked_fixture(tc_xz, cl_setup, cl_teardown);
     tcase_add_test(tc_xz, test_xz_limit_is_fail_visible);

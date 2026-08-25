@@ -8710,3 +8710,18 @@ This is initial dispatch/header evidence only. PE-specific corpus, full-C
 ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service parity, and Sonic1 qualification remain
 open, so `CL_TYPE_MSEXE` stays pending.
+
+## MSEXPAND public API read-failure audit — 2026-08-25
+
+The isolated current-source production-linked `msexpand_map` TCase passes
+2/2. It covers recognized missing-map admission and a public
+`cl_scanmap_ex(..., "CL_TYPE_MSSZDD", ...)` scan whose in-range fixed-header
+callback failure returns `CL_EREAD`, leaves the verdict clean with no alert,
+and marks the fmap non-cacheable. The direct MSEXPAND matrix continues to
+cover truncation, output, temporary-limit, and timeout classification.
+
+This is fixed-header dispatch evidence only. Complete SZDD/MSEXPAND corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_MSSZDD` and `msexpand-map` stay
+pending.
