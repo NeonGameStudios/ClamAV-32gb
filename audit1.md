@@ -6105,6 +6105,15 @@ reason. Focused `cli_scannulsft` coverage asserts both classes and the
 non-cacheable state. Compiled scanner, sanitizer, production NSIS corpus, and
 Sonic1 qualification remain open.
 
+## NSIS direct-entry map admission — 2026-08-25
+
+The NSIS header-admission and decoder entry points treated a recognized layer
+with no input fmap as the same `CL_ENULLARG` result as a null context, without
+recording incomplete state. They now retain `CL_ENULLARG` for null contexts and
+return `CL_EPARSE` with explicit sticky reasons for missing maps. The isolated
+production-linked `nulsft_map` regression covers both entry points. Compiled
+NSIS corpus, sanitizer, and Sonic1 qualification remain release gates.
+
 ## InstallShield MSI fixed-header range classification — 2026-08-23
 
 The direct InstallShield MSI scanner now preflights its 0x20-byte control

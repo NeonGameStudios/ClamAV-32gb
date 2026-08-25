@@ -1288,6 +1288,9 @@ large-file, and Sonic1 qualification open.
 - OLE2 extraction now rejects a recognized layer with no input fmap as an
   explicit incomplete parse; add compiled OLE2 corpus and sanitizer
   qualification.
+- NSIS header admission and direct extraction now reject recognized layers with
+  no input fmap as explicit incomplete parses; add compiled NSIS corpus and
+  sanitizer qualification.
 - XAR TOC XML/decoder, subdocument, gzip/LZMA member, and raw-member walks now
   honor the shared scan deadline with decoder and temporary-file cleanup; add
   compiled timeout-injection and long-member/TOC corpus qualification.
