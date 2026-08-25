@@ -6,6 +6,16 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## RAR unavailable-backend qualification — 2026-08-25
+
+The current-source production-linked GCC `rar` case passes 2/2 in the
+authoritative build, whose optional UnRAR backend is unavailable. Recognized
+RAR and RAR-SFX inputs remain explicit incomplete/non-cacheable results, and
+the confirmed SFX header read fault remains visible. This is unavailable-
+backend evidence only; optional UnRAR extraction, compiled RAR corpus,
+sanitizer, production-CVD/service parity, materialized large-file, and Sonic1
+qualification remain open.
+
 ## MSPack bounded-parser qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `mspack` case passes

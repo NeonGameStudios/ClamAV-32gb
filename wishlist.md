@@ -1,5 +1,15 @@
 # Wishlist
 
+## RAR unavailable-backend qualification — 2026-08-25
+
+- The current-source production-linked GCC `rar` case passes 2/2 in the
+  authoritative build, whose optional UnRAR backend is unavailable. RAR and
+  RAR-SFX recognition remains explicit incomplete/non-cacheable, and the
+  confirmed SFX header read fault remains visible.
+- Treat this as unavailable-backend evidence only. Keep optional UnRAR
+  extraction, compiled RAR corpus, sanitizer, production-CVD/service parity,
+  materialized large-file, and Sonic1 qualification open.
+
 ## MSPack bounded-parser qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `mspack` case passes

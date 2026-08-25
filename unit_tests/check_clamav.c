@@ -35380,6 +35380,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_mail = tcase_create("mail");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_mspack = tcase_create("mspack");
+    TCase *tc_rar = tcase_create("rar");
     TCase *tc_cabsfx = tcase_create("cabsfx");
     TCase *tc_arjsfx = tcase_create("arjsfx");
     TCase *tc_autoit_sfx = tcase_create("autoit_sfx");
@@ -36224,6 +36225,17 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_rar_nested_stage_read_failure_is_publicly_fail_visible);
 #endif
 #endif
+    suite_add_tcase(s, tc_rar);
+    tcase_add_checked_fixture(tc_rar, cl_setup, cl_teardown);
+#if HAVE_UNRAR
+    tcase_add_test(tc_rar, test_rar_truncated_header_is_fail_visible);
+    tcase_add_test(tc_rar, test_rar_time_limit_callback_is_fail_visible);
+#ifndef _WIN32
+    tcase_add_test(tc_rar, test_rar_nested_stage_read_failure_is_publicly_fail_visible);
+#endif
+#endif
+    tcase_add_test(tc_rar, test_rar_without_backend_is_explicitly_unsupported);
+    tcase_add_test(tc_rar, test_rar_sfx_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_rar_without_backend_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_rar_sfx_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_truncated_header_is_fail_visible);
