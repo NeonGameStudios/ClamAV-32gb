@@ -14,6 +14,14 @@
   unavailable. Add compiled media corpus, sanitizer, production parser-family,
   and Sonic1 qualification before release.
 
+## GIF focused-boundary qualification — 2026-08-25
+
+- The production-linked `gif` TCase passes 5/5 for truncated block forms,
+  header callback failures, truncated screen-descriptor classification, shared
+  deadline expiry, and missing-map admission. Retain full GIF corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, and Sonic1 qualification as release gates.
+
 ## SWF direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null SWF parser context, while marking a

@@ -1148,6 +1148,18 @@ the shared scan-options context. The focused production-linked run passes 5/5.
 Full EGG/EGGSFX corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, and Sonic1 evidence remain open.
 
+## GIF focused-map audit — 2026-08-25
+
+The focused production-linked `gif` TCase now covers truncated block forms,
+in-range header callback failures, truncated screen-descriptor classification,
+an expired shared deadline, and missing-map admission. The timeout fixture
+supplies the shared scan-options context and asserts the sticky
+`Heuristics.Limits.Exceeded.MaxScanTime` reason. The focused production-linked
+run passes 5/5, and the existing source guards pin the corresponding GIF
+range, read-status, deadline, and focused-test contracts. Full GIF corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, and Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,
