@@ -8669,11 +8669,12 @@ qualification remain open, so `CL_TYPE_HWPOLE2` stays pending.
 ## MIME public API read-failure audit — 2026-08-25
 
 The dedicated current-source production-linked `mail_api` TCase now passes
-1/1 through `cl_scanmap_ex` with the explicit `CL_TYPE_MAIL` hint. An
-in-range failure from the MIME line reader preserves `CL_EREAD`, resets the
-public verdict and alert outputs to a clean/no-alert result, and marks the
-input map non-cacheable. This complements the existing direct `cli_mbox`
-line/header-lookahead failures and public truncated UUEncode/BinHex cases.
+2/2 through `cl_scanmap_ex`, covering both the `CL_TYPE_MAIL` and
+`CL_TYPE_MHTML` dispatch hints. An in-range failure from the MIME line reader
+preserves `CL_EREAD`, resets the public verdict and alert outputs to a
+clean/no-alert result, and marks the input map non-cacheable. This complements
+the existing direct `cli_mbox` line/header-lookahead failures and public
+truncated UUEncode/BinHex cases.
 
 This is dispatch-boundary evidence only. Complete MIME/mbox/MHTML corpus,
 full-C ABI-consistent execution, sanitizer, certified Linux x86-64,

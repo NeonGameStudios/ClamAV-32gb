@@ -3305,11 +3305,11 @@ and Sonic1 qualification as release gates.
 
 ## MIME public API read-failure audit — 2026-08-25
 
-- The dedicated current-source production-linked `mail_api` TCase passes 1/1
-  through `cl_scanmap_ex` for an in-range MIME line read failure, preserving
-  `CL_EREAD`, a clean verdict, and non-cacheability. Existing direct mbox
-  line/header-lookahead failures and public truncated attachment cases remain
-  in the boundary matrix.
+- The dedicated current-source production-linked `mail_api` TCase passes 2/2
+  through `cl_scanmap_ex` for `CL_TYPE_MAIL` and `CL_TYPE_MHTML` in-range MIME
+  line read failures, preserving `CL_EREAD`, clean verdicts, and
+  non-cacheability. Existing direct mbox line/header-lookahead failures and
+  public truncated attachment cases remain in the boundary matrix.
 - Complete MIME/mbox/MHTML corpus and full-C ABI-consistent execution, then
   add sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
