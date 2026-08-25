@@ -29354,7 +29354,7 @@ struct mschm_decompressor *__wrap_mspack_create_chm_decompressor(struct mspack_s
 
 START_TEST(test_mspack_constructor_failures_are_fail_visible)
 {
-    static const uint8_t data[] = {'M', 'S', 'C', 'F'};
+    uint8_t data[44] = {0};
     struct cl_engine engine;
     struct cl_scan_options options;
     cli_scan_layer_t layer;
@@ -29371,6 +29371,16 @@ START_TEST(test_mspack_constructor_failures_are_fail_visible)
     ctx.recursion_stack      = &layer;
     ctx.recursion_stack_size = 1;
     ctx.this_layer_tmpdir    = tmpdir;
+
+    memcpy(data, "MSCF", 4);
+    mspack_test_write_u32(data + 8, sizeof(data));
+    mspack_test_write_u32(data + 16, sizeof(data));
+    data[24] = 3;
+    data[25] = 1;
+    mspack_test_write_u16(data + 26, 1);
+    mspack_test_write_u16(data + 28, 1);
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec += 60;
 
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
@@ -29443,7 +29453,7 @@ START_TEST(test_mspack_callback_time_limit_is_fail_visible)
     mspack_test_expire_cab_callbacks = 0;
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "CAB decoder reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     ctx.scan_incomplete        = false;
@@ -29457,7 +29467,7 @@ START_TEST(test_mspack_callback_time_limit_is_fail_visible)
     mspack_test_expire_ctx            = NULL;
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "CHM decoder reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -34842,7 +34852,14 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_zip_map);
     tcase_add_test(tc_zip_map, test_zip_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_mspack_map);
+    tcase_add_checked_fixture(tc_mspack_map, cl_setup, cl_teardown);
     tcase_add_test(tc_mspack_map, test_mspack_missing_map_is_fail_visible);
+    tcase_add_test(tc_mspack_map, test_mspack_decoder_read_failure_is_fail_visible);
+    tcase_add_test(tc_mspack_map, test_mspack_clipped_read_failure_is_truncation);
+#ifdef CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP
+    tcase_add_test(tc_mspack_map, test_mspack_constructor_failures_are_fail_visible);
+    tcase_add_test(tc_mspack_map, test_mspack_callback_time_limit_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_xz);
     tcase_add_checked_fixture(tc_xz, cl_setup, cl_teardown);
     tcase_add_test(tc_xz, test_xz_limit_is_fail_visible);

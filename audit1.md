@@ -8679,3 +8679,20 @@ This is dispatch-boundary evidence only. Complete MIME/mbox/MHTML corpus,
 full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_MAIL` and `mbox-map` stay pending.
+
+## MSPack current-source boundary qualification — 2026-08-25
+
+The focused current-source production-linked `mspack_map` TCase now passes
+5/5. It covers CAB and CHM missing-map admission, a CAB decoder-owned
+in-range read failure preserving `CL_EREAD`, a clipped decoder request
+retaining truncation semantics, constructor failures for both decoders, and
+callback-timeout propagation. Each required failure remains incomplete and
+non-cacheable; timeout retains the repository-wide
+`Heuristics.Limits.Exceeded.MaxScanTime` sticky reason while the adapter keeps
+its CAB/CHM-specific diagnostic available to the source guard.
+
+This is decoder-boundary evidence only. Complete CAB/CHM and InstallShield
+corpus, full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_MSCAB` and `CL_TYPE_MSCHM` stay
+pending.

@@ -3314,6 +3314,17 @@ and Sonic1 qualification as release gates.
   add sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
 
+## MSPack current-source boundary qualification — 2026-08-25
+
+- The focused current-source production-linked `mspack_map` TCase passes 5/5
+  across CAB/CHM missing-map, decoder read, clipped-read, constructor, and
+  callback-timeout boundaries. Required failures remain incomplete and
+  non-cacheable, with the shared timeout reason preserved.
+- Complete CAB/CHM and InstallShield corpus and full-C ABI-consistent
+  execution, then add sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service parity, and Sonic1 evidence before
+  certification.
+
 ## HWPOLE2 current-source qualification audit — 2026-08-25
 
 - The current-source production-linked `hwpole2_map` TCase passes 2/2 for
