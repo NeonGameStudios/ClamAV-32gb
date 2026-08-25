@@ -1,5 +1,13 @@
 # Wishlist
 
+## XDP missing-map entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null XDP parser context, but mark a recognized
+  XDP layer with no input fmap incomplete and return `CL_EPARSE`.
+- The isolated production-linked `xdp_map` regression passes and records the
+  sticky reason. Keep full XDP/XML corpus, sanitizer, materialized large-file,
+  production-CVD, and Sonic1 qualification open.
+
 ## DMG missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null DMG parser context, but mark a recognized

@@ -160,8 +160,12 @@ cl_error_t cli_scanxdp(cli_ctx *ctx)
     cl_error_t ret;
     uint64_t dump_reserved = 0;
 
-    if (!ctx || !ctx->fmap)
+    if (!ctx)
         return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "XDP input map is unavailable");
+        return CL_EPARSE;
+    }
 
     if (ctx->engine && ctx->engine->keeptmp) {
         ret = dump_xdp(ctx, ctx->fmap, &dumpname, &dump_reserved);
