@@ -164,6 +164,15 @@ service, and Sonic1 qualification open.
   materialized large-file, production-CVD/service, and Sonic1 qualification as
   release gates.
 
+## TNEF bounded-attachment qualification — 2026-08-25
+
+- The current-source production-linked GCC `tnef` case passes 12/12 for
+  checksum/EOF handling, callback faults, truncation, attachment/message-body
+  paths, timeout, and temporary limit; `tnef_map` passes 1/1. Timeout retains
+  the canonical MaxScanTime reason.
+- Add complete TNEF corpus, sanitizer, production-CVD/service parity,
+  materialized large-file, and Sonic1 evidence before certification.
+
 ## HFS+ focused-boundary qualification — 2026-08-25
 
 - `hfs_map` passes 9/9 and `hfs_inline` passes 1/1 for tree/catalog/fork/

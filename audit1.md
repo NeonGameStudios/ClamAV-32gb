@@ -151,6 +151,17 @@ crashes were uninitialized direct-test setup rather than parser evidence.
 Full XAR corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 qualification remain open.
 
+## TNEF bounded-attachment qualification — 2026-08-25
+
+The current-source production-linked GCC `tnef` case passes 12/12 across
+exact-EOF/checksum handling, timeout, initial and attribute read failures,
+truncated headers/attachments, attachment read failure, message-body
+handling, and temporary limit. The separate `tnef_map` case passes 1/1 for
+missing-map admission, and timeout retains the canonical
+`Heuristics.Limits.Exceeded.MaxScanTime` reason. Complete TNEF corpus,
+sanitizer, production-CVD/service parity, materialized large-file, and
+Sonic1 qualification remain open.
+
 
 ## HWPML missing-map entry classification — 2026-08-25
 

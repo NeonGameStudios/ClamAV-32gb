@@ -24492,7 +24492,7 @@ START_TEST(test_tnef_time_limit_is_fail_visible)
     ret = cli_tnef(tmpdir, &ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "TNEF inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -35299,6 +35299,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_cryptff  = tcase_create("cryptff");
     TCase *tc_cryptff_api = tcase_create("cryptff_api");
     TCase *tc_elf_map  = tcase_create("elf_map");
+    TCase *tc_tnef = tcase_create("tnef");
     TCase *tc_tnef_map = tcase_create("tnef_map");
     TCase *tc_graphics_map = tcase_create("graphics_map");
     TCase *tc_graphics_api = tcase_create("graphics_api");
@@ -35431,6 +35432,20 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_elf_map, test_elf_metadata_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_tnef_map);
     tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_tnef);
+    tcase_add_checked_fixture(tc_tnef, cl_setup, cl_teardown);
+    tcase_add_test(tc_tnef, test_tnef_exact_eof_ends_attribute_list);
+    tcase_add_test(tc_tnef, test_tnef_zero_length_attribute_consumes_checksum);
+    tcase_add_test(tc_tnef, test_tnef_time_limit_is_fail_visible);
+    tcase_add_test(tc_tnef, test_tnef_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_tnef, test_tnef_attribute_read_failure_is_fail_visible);
+    tcase_add_test(tc_tnef, test_tnef_truncated_attribute_header_is_parse_error);
+    tcase_add_test(tc_tnef, test_tnef_truncated_header_is_fail_visible);
+    tcase_add_test(tc_tnef, test_tnef_short_header_is_fail_visible);
+    tcase_add_test(tc_tnef, test_tnef_truncated_attachment_is_parse_error);
+    tcase_add_test(tc_tnef, test_tnef_attachment_read_failure_is_fail_visible);
+    tcase_add_test(tc_tnef, test_tnef_message_body_is_fail_visible);
+    tcase_add_test(tc_tnef, test_tnef_attachment_temporary_limit_is_fail_visible);
     suite_add_tcase(s, tc_uuencode_map);
     tcase_add_test(tc_uuencode_map, test_uuencode_missing_context_or_map_is_fail_visible);
     suite_add_tcase(s, tc_mail_api);
