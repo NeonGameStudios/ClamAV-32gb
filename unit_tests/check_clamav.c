@@ -8816,7 +8816,7 @@ END_TEST
 
 START_TEST(test_zip64_metadata_read_failures_are_fail_visible)
 {
-    uint8_t locator_archive[42] = {0};
+    uint8_t locator_archive[46] = {0};
     uint8_t eocd_archive[98]    = {0};
     const uint8_t *fixtures[]   = {locator_archive, eocd_archive};
     const size_t lengths[]      = {sizeof(locator_archive), sizeof(eocd_archive)};
@@ -34071,6 +34071,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_rust_map = tcase_create("rust_map");
     TCase *tc_msxml = tcase_create("msxml");
     TCase *tc_msxml_map = tcase_create("msxml_map");
+    TCase *tc_zip = tcase_create("zip");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_zip_map = tcase_create("zip_map");
     TCase *tc_mspack_map = tcase_create("mspack_map");
@@ -34308,6 +34309,20 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_rust_map, test_rust_parser_missing_maps_are_fail_visible);
     suite_add_tcase(s, tc_msxml_map);
     tcase_add_test(tc_msxml_map, test_msxml_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_zip);
+    tcase_add_checked_fixture(tc_zip, cl_setup, cl_teardown);
+    tcase_add_test(tc_zip, test_zip_unsupported_flags_and_method_are_fail_visible);
+    tcase_add_test(tc_zip, test_zip_central_directory_resolves_masked_local_values);
+    tcase_add_test(tc_zip, test_zip_central_filename_read_failure_is_fail_visible);
+    tcase_add_test(tc_zip, test_zip_central_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_zip, test_zip_eocd_read_failure_is_fail_visible);
+    tcase_add_test(tc_zip, test_zip64_metadata_read_failures_are_fail_visible);
+    tcase_add_test(tc_zip, test_zip64_extra_read_failures_are_fail_visible);
+    tcase_add_test(tc_zip, test_zip_data_descriptor_read_failures_are_fail_visible);
+    tcase_add_test(tc_zip, test_zip_local_only_masked_header_is_fail_visible);
+    tcase_add_test(tc_zip, test_zip_local_index_propagates_callback_abort);
+    tcase_add_test(tc_zip, test_zip_central_index_propagates_callback_status);
+    tcase_add_test(tc_zip, test_zip_maxfiles_is_inclusive_and_detection_precedes_limit);
     suite_add_tcase(s, tc_zip_sfx);
     tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_candidate_is_not_confirmed);
@@ -34923,17 +34938,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_truncated_tag_payload_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_truncated_object_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_temporary_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_zip_unsupported_flags_and_method_are_fail_visible);
-    tcase_add_test(tc_cl, test_zip_central_directory_resolves_masked_local_values);
-    tcase_add_test(tc_cl, test_zip_central_filename_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_zip_eocd_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_zip64_metadata_read_failures_are_fail_visible);
-    tcase_add_test(tc_cl, test_zip64_extra_read_failures_are_fail_visible);
-    tcase_add_test(tc_cl, test_zip_data_descriptor_read_failures_are_fail_visible);
-    tcase_add_test(tc_cl, test_zip_local_only_masked_header_is_fail_visible);
-    tcase_add_test(tc_cl, test_zip_local_index_propagates_callback_abort);
-    tcase_add_test(tc_cl, test_zip_central_index_propagates_callback_status);
-    tcase_add_test(tc_cl, test_zip_maxfiles_is_inclusive_and_detection_precedes_limit);
 #endif
 
     suite_add_tcase(s, tc_cl_scan);

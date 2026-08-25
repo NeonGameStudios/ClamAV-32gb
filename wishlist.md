@@ -204,6 +204,10 @@ Sonic1 qualification open.
 
 ## ZIP-SFX and ZIP map focused qualification — 2026-08-25
 
+- The authoritative current-source production-linked GCC `zip` TCase passes
+  12/12 across central metadata, ZIP64, descriptor, callback, masked-header,
+  and max-files boundary behavior. EOCD/ZIP64 in-range read failures now
+  preserve `CL_EREAD` instead of being hidden by local-header fallback.
 - The authoritative current-source production-linked GCC `zip_sfx` case passes
   3/3 for weak masked-header rejection, confirmed central-directory
   extent/read-failure classification, and exact child matching; `zip_map`

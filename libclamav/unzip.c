@@ -3360,6 +3360,12 @@ cl_error_t cli_unzip(cli_ctx *ctx)
     } else if (CL_ETIMEOUT == ret || CL_BREAK == ret) {
         status = ret;
         goto done;
+    } else if (ret != CL_EPARSE && ret != CL_EFORMAT) {
+        /* A bounded metadata read can fail before a central directory is
+         * available.  Preserve that operational result instead of falling
+         * back to local-header discovery and hiding it as a format error. */
+        status = ret;
+        goto done;
     } else {
         cli_dbgmsg("cli_unzip: central directory header not found, must rely purely on local file headers\n");
 

@@ -315,6 +315,8 @@ contains unit_tests/check_clamav.c 'test_zip64_metadata_read_failures_are_fail_v
 contains unit_tests/check_clamav.c 'test_zip_local_header_index_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_zip_local_header_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_zip_data_descriptor_read_failures_are_fail_visible'
+contains unit_tests/check_clamav.c 'TCase *tc_zip = tcase_create("zip")'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_zip, test_zip_central_directory_resolves_masked_local_values)'
 contains unit_tests/check_clamav.c 'test_descriptor_limit_preflight_precedes_fmap_creation'
 contains unit_tests/check_clamav.c 'test_child_descriptor_inspection_failure_is_fail_visible'
 contains libclamav/scanners.c 'return CL_ENULLARG;'
