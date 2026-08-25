@@ -3280,3 +3280,13 @@ and Sonic1 qualification as release gates.
   full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
   materialized large-file, production CVD/service parity, and Sonic1
   qualification before certification.
+
+## UTF-16 HTML current-source qualification audit — 2026-08-25
+
+- The current-source production-linked `text_encoding` TCase passes 3/3,
+  including the dedicated UTF-16 HTML initial-byte-order read-failure oracle,
+  which preserves `CL_EREAD`, a clean verdict, and non-cacheability.
+- Extend UTF-16 HTML evidence to complete corpus, full-C ABI-consistent
+  execution, sanitizer, certified Linux x86-64, materialized large-file,
+  production CVD/service parity, and Sonic1 qualification before
+  certification.

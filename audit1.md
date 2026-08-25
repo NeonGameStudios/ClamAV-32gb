@@ -8621,3 +8621,17 @@ normalization. Full HTML/RFC2397/script corpus, current full-C ABI-consistent
 execution, sanitizer, certified Linux x86-64, materialized large-file,
 production CVD/service parity, and Sonic1 qualification remain open, so
 `CL_TYPE_HTML` stays pending.
+
+## UTF-16 HTML current-source qualification audit — 2026-08-25
+
+The UTF-16 HTML dispatch already preserved `CL_EREAD` for a fully in-range
+fmap callback failure at both the byte-order probe and streaming conversion
+windows. A dedicated current-source production-linked test now exercises the
+initial two-byte probe and verifies `CL_EREAD`, a clean verdict, and
+non-cacheability; the `text_encoding` TCase passes 3/3 with the existing
+normalization and bounded-decoding cases.
+
+This is dispatch-boundary evidence only. Full UTF-16 HTML corpus, current
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_HTML_UTF16` stays pending.

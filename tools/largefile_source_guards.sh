@@ -823,6 +823,8 @@ contains libclamav/scanners.c 'ret = ctx->scan_timed_out ? CL_ETIMEOUT : CL_EPAR
 contains unit_tests/check_htmlnorm.c 'test_htmlnorm_time_limit_is_fail_visible'
 contains unit_tests/check_htmlnorm.c 'test_screnc_time_limit_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_html_utf16_time_limit_is_fail_visible'
+contains unit_tests/check_clamav.c 'test_html_utf16_input_read_failure_is_fail_visible'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_text_encoding, test_html_utf16_input_read_failure_is_fail_visible)'
 contains libclamav/scanners.c 'Script normalization reached the configured time limit'
 contains unit_tests/check_clamav.c 'test_script_normalization_time_limit_is_fail_visible'
 contains libclamav/tnef.c 'TNEF signature could not be read completely'
