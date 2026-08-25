@@ -1275,6 +1275,9 @@ large-file, and Sonic1 qualification open.
 - Confirmed XAR TOC metadata and XML-reader failures now retain sticky
   incomplete state through the direct parser entry; add broader malformed-TOC
   and XML fault-injection coverage.
+- Confirmed RIFF parser entry now treats a missing input fmap as an explicit
+  incomplete parse instead of `CL_ENULLARG`; add compiled RIFF corpus and
+  sanitizer qualification.
 - XAR TOC XML/decoder, subdocument, gzip/LZMA member, and raw-member walks now
   honor the shared scan deadline with decoder and temporary-file cleanup; add
   compiled timeout-injection and long-member/TOC corpus qualification.

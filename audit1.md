@@ -6951,6 +6951,16 @@ direct production-linked regression asserts the metadata reason and
 non-cacheable state. Broader compiled XAR corpus, sanitizer, and Sonic1
 qualification remain release gates.
 
+## RIFF missing-map admission — 2026-08-25
+
+The confirmed RIFF exploit parser previously returned `CL_ENULLARG` when a
+non-null scan context had no input fmap, allowing a recognized layer to be
+treated as an argument omission rather than an incomplete parse. The entry
+now returns `CL_EPARSE`, records `RIFF input map is unavailable`, and remains
+non-cacheable; the direct production-linked regression covers the boundary.
+Parser-family corpus, sanitizer, and Sonic1 qualification remain release
+gates.
+
 ## BinHex and XAR missing-map admission — 2026-08-23
 
 The BinHex and XAR public parser entries also initialized `ctx->fmap` before

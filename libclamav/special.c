@@ -280,8 +280,12 @@ int cli_check_riff_exploit(cli_ctx *ctx)
 
     cli_dbgmsg("in cli_check_riff_exploit()\n");
 
-    if (ctx == NULL || ctx->fmap == NULL)
+    if (ctx == NULL)
         return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "RIFF input map is unavailable");
+        return CL_EPARSE;
+    }
     map = ctx->fmap;
 
     time_status = riff_checktimelimit(ctx);
