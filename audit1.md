@@ -33,6 +33,16 @@ classes and sticky incomplete state. Complete APM partition corpus,
 sanitizer, production-CVD/service parity, materialized large-file, and
 Sonic1 qualification remain open.
 
+## GPT bounded-partition qualification — 2026-08-25
+
+The current-source production-linked GCC `gpt` case passes 4/4 across
+protective-MBR read failure, sector-size probe read failure, primary-table
+read failure not hidden by secondary fallback, and invalid-partition bounds.
+The existing `partition_map` case passes 3/3 for MBR/GPT missing-map and
+native-coordinate boundaries. Complete GPT/partition-image corpus,
+sanitizer, production-CVD/service parity, materialized large-file, and
+Sonic1 qualification remain open.
+
 ## GIF/PNG/TIFF direct-entry admission — 2026-08-25
 
 The direct GIF, PNG, and TIFF parser entries previously returned legacy

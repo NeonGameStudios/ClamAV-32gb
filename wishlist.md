@@ -121,6 +121,14 @@ service, and Sonic1 qualification open.
 - Add complete APM partition corpus, sanitizer, production-CVD/service parity,
   materialized large-file, and Sonic1 evidence before certification.
 
+## GPT bounded-partition qualification — 2026-08-25
+
+- The current-source production-linked GCC `gpt` case passes 4/4 for
+  protective-MBR/sector-size/primary-table read faults and invalid-partition
+  bounds; `partition_map` passes 3/3 for MBR/GPT map and coordinate cases.
+- Add complete GPT/partition-image corpus, sanitizer, production-CVD/service
+  parity, materialized large-file, and Sonic1 evidence before certification.
+
 ## JPEG direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null JPEG parser context while keeping missing

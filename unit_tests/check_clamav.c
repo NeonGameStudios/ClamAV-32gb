@@ -35353,6 +35353,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_apm = tcase_create("apm");
     TCase *tc_hwpole2_map = tcase_create("hwpole2_map");
     TCase *tc_partition_map = tcase_create("partition_map");
+    TCase *tc_gpt = tcase_create("gpt");
     TCase *tc_mbr = tcase_create("mbr");
     TCase *tc_mhtml = tcase_create("mhtml");
     TCase *tc_dmg_map = tcase_create("dmg_map");
@@ -35665,6 +35666,12 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_partition_map, test_mbr_partition_coordinate_overflow_is_fail_visible);
 #endif
     tcase_add_test(tc_partition_map, test_gpt_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_gpt);
+    tcase_add_checked_fixture(tc_gpt, cl_setup, cl_teardown);
+    tcase_add_test(tc_gpt, test_gpt_partition_read_failure_is_fail_visible);
+    tcase_add_test(tc_gpt, test_gpt_sector_size_probe_read_failure_is_fail_visible);
+    tcase_add_test(tc_gpt, test_gpt_primary_table_read_failure_is_not_hidden_by_secondary);
+    tcase_add_test(tc_gpt, test_gpt_invalid_partition_is_fail_visible);
     suite_add_tcase(s, tc_mbr);
     tcase_add_checked_fixture(tc_mbr, cl_setup, cl_teardown);
     tcase_add_test(tc_mbr, test_mbr_partition_read_failure_is_fail_visible);
