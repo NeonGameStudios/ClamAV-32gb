@@ -99,6 +99,15 @@ Sonic1 qualification open.
   materialized large-file, production-CVD/service, and Sonic1 qualification as
   release gates.
 
+## ISO9660 focused-boundary qualification — 2026-08-25
+
+- The production-linked `iso_map` case passes 10/10 for admission,
+  truncation/terminator/read faults, timeout, extent and name bounds,
+  coordinate overflow, Joliet expansion, and declared-volume accounting.
+  Retain full ISO9660 corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, and Sonic1 qualification as release
+  gates.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 - Reject a null context in `cli_ppt_vba_read_ex()` before temporary-directory

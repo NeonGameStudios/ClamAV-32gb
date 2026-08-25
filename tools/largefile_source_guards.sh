@@ -1530,6 +1530,7 @@ contains unit_tests/check_clamav.c 'test_tiff_bigtiff_malformed_structures_are_f
 contains unit_tests/check_clamav.c 'test_tiff_bigtiff_read_failures_are_fail_visible'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_tiff_large, test_tiff_ifd_cursor_does_not_wrap_above_uint32)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_exact_eof_is_complete)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_iso_map, test_iso_file_extent_respects_volume_space)'
 contains libclamav/png.c 'PNG chunk traversal reached the configured time limit'
 contains libclamav/tiff.c 'TIFF magic could not be read completely'
 contains libclamav/tiff.c 'TIFF first IFD offset could not be read completely'

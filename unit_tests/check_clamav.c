@@ -17955,22 +17955,25 @@ END_TEST
 START_TEST(test_iso_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.options = &options;
+    ctx.engine  = &engine;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
     ck_assert_int_eq(cli_scaniso(&ctx, 32768), CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "ISO inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -18457,10 +18460,13 @@ START_TEST(test_iso_file_extent_respects_volume_space)
         ISO_LENGTH  = (ROOT_BLOCK + 3) * 2048
     };
     uint8_t data[ISO_LENGTH] = {0};
-    struct cl_engine engine;
+    struct cl_engine *scan_engine;
     struct cl_scan_options options;
-    cli_ctx ctx;
     fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
 
     /* Build the smallest descriptor sequence that reaches an empty LIST-like
      * root directory. The file entry below points at block 34, which is in
@@ -18491,23 +18497,29 @@ START_TEST(test_iso_file_extent_respects_volume_space)
     data[ROOT_OFFSET + 33] = 'x';
     data[34 * 2048]        = 'O'; /* mapped overlay byte */
 
-    memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
     options.parse         = CL_SCAN_PARSE_ARCHIVE;
-    memset(&ctx, 0, sizeof(ctx));
-    ctx.engine            = &engine;
-    ctx.options           = &options;
-    ctx.this_layer_tmpdir = tmpdir;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
 
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.fmap = map;
 
-    ck_assert_int_eq(cli_scaniso(&ctx, ISO_OFFSET), CL_EPARSE);
-    ck_assert(ctx.scan_incomplete);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ISO9660", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 
@@ -34071,6 +34083,15 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_iso_map);
     tcase_add_checked_fixture(tc_iso_map, cl_setup, cl_teardown);
     tcase_add_test(tc_iso_map, test_iso_missing_map_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_truncated_directory_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_missing_volume_descriptor_terminator_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_time_limit_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_volume_read_failure_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_unsupported_extent_layouts_are_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_long_directory_name_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_joliet_name_conversion_truncation_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_directory_coordinate_overflow_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_file_extent_respects_volume_space);
     suite_add_tcase(s, tc_udf_map);
     tcase_add_checked_fixture(tc_udf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_udf_map, test_udf_missing_map_is_fail_visible);
@@ -34333,15 +34354,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_parser_temporary_directory_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_nsis_header_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_nsis_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_iso_truncated_directory_is_fail_visible);
-    tcase_add_test(tc_cl, test_iso_missing_volume_descriptor_terminator_is_fail_visible);
-    tcase_add_test(tc_cl, test_iso_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_iso_volume_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_iso_unsupported_extent_layouts_are_fail_visible);
-    tcase_add_test(tc_cl, test_iso_long_directory_name_is_fail_visible);
-    tcase_add_test(tc_cl, test_iso_joliet_name_conversion_truncation_is_fail_visible);
-    tcase_add_test(tc_cl, test_iso_directory_coordinate_overflow_is_fail_visible);
-    tcase_add_test(tc_cl, test_iso_file_extent_respects_volume_space);
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_xar_header_read_failure_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_time_limit_is_fail_visible);

@@ -1198,6 +1198,18 @@ resource fixtures. Full JPEG corpus, current full-build large-coordinate
 evidence, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 evidence remain open.
 
+## ISO9660 focused-map audit — 2026-08-25
+
+The dedicated production-linked `iso_map` TCase passes 10/10 across missing
+map admission, truncated directories, missing volume-descriptor termination,
+shared-deadline expiry, in-range volume-read failure, unsupported extent
+layouts, long directory names, Joliet UTF-16BE expansion, directory-coordinate
+overflow, and declared-volume/file-extent bounds. The timeout and deep
+file-extent oracles use the shared scan options and the public
+`cl_scanmap_ex`/compiled-engine path. Full ISO9660 corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service, and
+Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,
