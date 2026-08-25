@@ -14,6 +14,14 @@ input fmap. The dedicated production-linked `swf_map` case covers both
 states; full SWF corpus, sanitizer, materialized large-file, production-CVD,
 service, and Sonic1 qualification remain open.
 
+## JPEG direct-entry admission — 2026-08-25
+
+The JPEG direct parser now returns `CL_ENULLARG` for a null context while a
+recognized layer with no input fmap remains an explicit incomplete parse. The
+dedicated `jpeg_map` production-linked case covers both states; JPEG corpus,
+sanitizer, materialized large-file, production-CVD, service, and Sonic1
+qualification remain open.
+
 ## Mydoom detector direct-entry admission — 2026-08-25
 
 The Mydoom log detector now returns `CL_ENULLARG` for a null context while

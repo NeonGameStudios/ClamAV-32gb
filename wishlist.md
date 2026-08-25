@@ -42,6 +42,14 @@ Sonic1 qualification open.
   full ARJ/ARJ-SFX corpus, sanitizer, materialized large-file, production-CVD,
   service, and Sonic1 qualification open.
 
+## JPEG direct-entry admission — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null JPEG parser context while keeping missing
+  input maps fail-visible as incomplete parses.
+- The dedicated `jpeg_map` regression covers both states. Keep JPEG corpus,
+  sanitizer, materialized large-file, production-CVD, service, and Sonic1
+  qualification open.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 - Reject a null context in `cli_ppt_vba_read_ex()` before temporary-directory

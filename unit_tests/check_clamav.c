@@ -33006,6 +33006,8 @@ START_TEST(test_jpeg_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
 
+    ck_assert_int_eq(cli_parsejpeg(NULL), CL_ENULLARG);
+
     memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -33862,6 +33864,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_png      = tcase_create("png");
     TCase *tc_tiff     = tcase_create("tiff");
     TCase *tc_tiff_map = tcase_create("tiff_map");
+    TCase *tc_jpeg_map = tcase_create("jpeg_map");
     TCase *tc_pdf      = tcase_create("pdf");
     TCase *tc_hwp3     = tcase_create("hwp3");
     TCase *tc_xar      = tcase_create("xar");
@@ -33944,6 +33947,8 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_tiff);
     suite_add_tcase(s, tc_tiff_map);
     tcase_add_test(tc_tiff_map, test_tiff_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_jpeg_map);
+    tcase_add_test(tc_jpeg_map, test_jpeg_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_pdf);
     tcase_add_checked_fixture(tc_pdf, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_hwp3);
@@ -34587,7 +34592,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_riff_truncated_chunk_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_list_respects_declared_boundary);
     tcase_add_test(tc_cl, test_jpeg_truncated_structures_are_fail_visible);
-    tcase_add_test(tc_cl, test_jpeg_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_required_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_truncated_segment_size_is_parse_error);
