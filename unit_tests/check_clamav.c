@@ -33908,6 +33908,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xdp_map = tcase_create("xdp_map");
     TCase *tc_autoit_map = tcase_create("autoit_map");
     TCase *tc_7z_map = tcase_create("7z_map");
+    TCase *tc_7z_sfx = tcase_create("7z_sfx");
     TCase *tc_sis_map = tcase_create("sis_map");
     TCase *tc_ishield_map = tcase_create("ishield_map");
     TCase *tc_hwpml_map = tcase_create("hwpml_map");
@@ -34046,6 +34047,8 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_7z_map);
     tcase_add_checked_fixture(tc_7z_map, cl_setup, cl_teardown);
     tcase_add_test(tc_7z_map, test_7z_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_7z_sfx);
+    tcase_add_test(tc_7z_sfx, test_7z_sfx_header_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_sis_map);
     tcase_add_checked_fixture(tc_sis_map, cl_setup, cl_teardown);
     tcase_add_test(tc_sis_map, test_sis_missing_map_is_fail_visible);

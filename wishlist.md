@@ -2962,3 +2962,14 @@ and Sonic1 qualification as release gates.
   raises a teardown signal in `cl_engine_free()` after the hash case; do not
   treat that signal as current matcher-source evidence, but do not certify the
   matcher family until the clean rebuild passes.
+
+## 7-Zip SFX admission audit — 2026-08-25
+
+- Keep complete start-header admission for embedded 7-Zip candidates: weak
+  magic must remain non-confirming, clipped headers must not taint the parent,
+  and confirmed in-range callback failures must remain `CL_EREAD`, incomplete,
+  and non-cacheable.
+- The dedicated production-linked `7z_sfx` TCase passes 1/1 for the read
+  failure oracle. Add valid nested-member, malformed, unsupported, production
+  CVD, sanitizer, materialized large-file, and Sonic1 completion evidence
+  before certifying the branch.

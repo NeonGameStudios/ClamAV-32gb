@@ -8223,3 +8223,15 @@ teardown after the hash case in the mixed-generation harness; this is retained
 as an ABI-consistency qualification gap and is not attributed to the current
 matcher source under the repository's mixed-ABI warning. A current full C
 build is required before matcher production certification.
+
+## 7-Zip SFX admission audit — 2026-08-25
+
+The embedded 7-Zip SFX branch already requires the complete start header
+before admitting a nested layer: weak six-byte magic is rejected as a
+non-confirming candidate, clipped headers remain non-layers, and confirmed
+in-range fmap callback failures return `CL_EREAD` with a sticky incomplete
+reason. The existing read-failure regression is now registered in a dedicated
+`7z_sfx` TCase; the production-linked focused run passes 1/1. Full 7-Zip/SFX
+corpus, successful nested-member detection, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, and Sonic1 evidence remain
+required.
