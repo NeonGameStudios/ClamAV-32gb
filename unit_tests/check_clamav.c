@@ -23814,6 +23814,43 @@ START_TEST(test_pdf_parser_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_public_api_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "%PDF-1.7\n";
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_PDF;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->need  = embedded_header_read_failure;
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_PDF", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_pdf_trailer_xref_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "%PDF-1.7\nstartxref\n10\n%%EOF\n";
@@ -34755,6 +34792,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_tiff_map = tcase_create("tiff_map");
     TCase *tc_jpeg_map = tcase_create("jpeg_map");
     TCase *tc_pdf      = tcase_create("pdf");
+    TCase *tc_pdf_map  = tcase_create("pdf_map");
     TCase *tc_hwp3     = tcase_create("hwp3");
     TCase *tc_hwp3_api = tcase_create("hwp3_api");
     TCase *tc_xar      = tcase_create("xar");
@@ -34887,6 +34925,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_exact_eof_is_complete);
     suite_add_tcase(s, tc_pdf);
     tcase_add_checked_fixture(tc_pdf, cl_setup, cl_teardown);
+    suite_add_tcase(s, tc_pdf_map);
+    tcase_add_checked_fixture(tc_pdf_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_pdf_map, test_pdf_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_hwp3);
     suite_add_tcase(s, tc_hwp3_api);
     tcase_add_checked_fixture(tc_hwp3_api, cl_setup, cl_teardown);

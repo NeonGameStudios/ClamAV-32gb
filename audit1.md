@@ -8769,3 +8769,17 @@ This is header/dispatch evidence only. Complete AutoIt EA05/EA06 corpus,
 full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_AUTOIT` stays pending.
+
+## PDF public API read-failure audit — 2026-08-25
+
+The focused current-source production-linked `pdf_map` TCase now includes a
+public `cl_scanmap_ex(..., "CL_TYPE_PDF", ...)` scan whose in-range parser
+version-window callback failure returns `CL_EREAD`, leaves the verdict clean
+with no alert, and marks the fmap non-cacheable. Existing direct PDF tests
+continue to cover parser/trailer-xref failures, malformed objects, filters,
+crypt selection, supported encryption, quotas, and cleanup.
+
+This is dispatch/version-window evidence only. Complete PDF corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_PDF` stays pending.

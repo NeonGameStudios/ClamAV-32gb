@@ -3388,3 +3388,13 @@ and Sonic1 qualification as release gates.
 - Complete AutoIt EA05/EA06 corpus and full-C ABI-consistent execution, then
   add sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
+
+## PDF public API read-failure audit — 2026-08-25
+
+- The focused current-source production-linked `pdf_map` TCase now includes a
+  public `CL_TYPE_PDF` version-window callback failure, preserving `CL_EREAD`,
+  a clean verdict, and non-cacheability; direct parser, trailer-xref,
+  malformed-object, filter, crypt, quota, and cleanup cases remain covered.
+- Complete PDF corpus and full-C ABI-consistent execution, then add sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service
+  parity, and Sonic1 evidence before certification.
