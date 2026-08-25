@@ -2927,6 +2927,14 @@ and Sonic1 qualification as release gates.
   certified Linux x86-64, materialized large-file, production-CVD/service, and
   Sonic1 qualification.
 
+## ELF focused-map audit — 2026-08-25
+
+- Promote truncated-header/program-table and program-header/metadata callback
+  failures into `elf_map` beside the existing null/missing-map entry tests.
+- The focused ELF map run passes 6/6. Complete executable corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service, and
+  Sonic1 qualification.
+
 ## DMG retained stripe endian conversion — 2026-08-25
 
 - Keep retained in-memory `blkx` stripe records in host order after one

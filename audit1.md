@@ -1592,6 +1592,16 @@ This closes the specific HWPML whole-text-node/64 MiB gate. Parser-family
 fixtures, compressed-attachment qualification, and supported-build Sonic1
 evidence remain open.
 
+## ELF focused-map audit — 2026-08-25
+
+The focused production-linked `elf_map` TCase now covers null/missing-map
+entry points, truncated ELF headers, truncated program-table admission, an
+in-range program-header callback failure, and metadata-only callback failure.
+The existing source guards pin native-width coordinate checks, bounded header
+reads, and incomplete results. The focused production-linked run passes 6/6.
+Full executable corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, and Sonic1 evidence remain open.
+
 ## XDP bounded XML streaming — 2026-08-19
 
 XDP no longer rejects the complete XML layer at the former 64 MiB gate or

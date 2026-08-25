@@ -33942,8 +33942,13 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_cl);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_elf_map);
+    tcase_add_checked_fixture(tc_elf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_map, test_elf_missing_map_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
+    tcase_add_test(tc_elf_map, test_elf_truncated_header_is_fail_visible);
+    tcase_add_test(tc_elf_map, test_elf_truncated_program_header_is_parse_error);
+    tcase_add_test(tc_elf_map, test_elf_scan_program_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_elf_map, test_elf_metadata_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_tnef_map);
     tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_uuencode_map);
