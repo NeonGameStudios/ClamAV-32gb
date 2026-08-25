@@ -17500,7 +17500,7 @@ START_TEST(test_tar_time_limit_is_fail_visible)
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "TAR inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -35320,6 +35320,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hfs_map = tcase_create("hfs_map");
     TCase *tc_hfs_fork = tcase_create("hfs_fork");
     TCase *tc_sis_member = tcase_create("sis_member");
+    TCase *tc_tar = tcase_create("tar");
     TCase *tc_tar_member = tcase_create("tar_member");
     TCase *tc_cpio_crc = tcase_create("cpio_crc");
     TCase *tc_cpio_numeric = tcase_create("cpio_numeric");
@@ -35552,6 +35553,14 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_sis_member);
     tcase_add_checked_fixture(tc_sis_member, cl_setup, cl_teardown);
     tcase_add_test(tc_sis_member, test_sis_compressed_member_streams_to_nested_scan);
+    suite_add_tcase(s, tc_tar);
+    tcase_add_checked_fixture(tc_tar, cl_setup, cl_teardown);
+    tcase_add_test(tc_tar, test_tar_truncated_header_is_fail_visible);
+    tcase_add_test(tc_tar, test_tar_end_marker_is_fail_visible);
+    tcase_add_test(tc_tar, test_tar_time_limit_is_fail_visible);
+    tcase_add_test(tc_tar, test_tar_initial_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_tar, test_tar_invalid_magic_is_fail_visible);
+    tcase_add_test(tc_tar, test_tar_temporary_limit_is_fail_visible);
     suite_add_tcase(s, tc_tar_member);
     tcase_add_checked_fixture(tc_tar_member, cl_setup, cl_teardown);
     tcase_add_test(tc_tar_member, test_tar_base256_size_is_supported);

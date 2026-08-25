@@ -3465,6 +3465,18 @@ and Sonic1 qualification as release gates.
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
 
+## TAR focused boundary qualification — 2026-08-25
+
+- The focused current-source production-linked GCC `tar` TCase passes 6/6
+  across truncated headers/end markers, timeout, initial-header read failure,
+  invalid magic, and temporary-size admission, preserving fail-visible
+  incomplete/non-cacheable state, `CL_EREAD`, and the shared timeout reason.
+- The signature-driven `tar_member` cases remain unclaimed because temporary
+  custom-signature loading failed in the reusable fixture; complete GNU
+  base-256/PAX/member corpus and full-C ABI-consistent execution, then add
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.
+
 ## HWPOLE2 current-source qualification audit — 2026-08-25
 
 - The current-source production-linked `hwpole2_map` TCase passes 2/2 for

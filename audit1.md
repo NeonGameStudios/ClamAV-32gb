@@ -8889,6 +8889,23 @@ ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service parity, and Sonic1 qualification remain
 open, so `CL_TYPE_NULSFT` stays pending.
 
+## TAR focused boundary qualification — 2026-08-25
+
+The focused current-source production-linked GCC `tar` TCase passes 6/6. It
+covers truncated headers and missing end markers, timeout propagation,
+initial-header callback failure, invalid magic, and temporary-size admission;
+required failures remain incomplete and non-cacheable, in-range callback
+failures preserve `CL_EREAD`, and timeout state retains
+`Heuristics.Limits.Exceeded.MaxScanTime`.
+
+The signature-driven `tar_member` cases were not included in this score
+because three temporary custom-signature loads failed in the reusable Docker
+fixture before parser execution. Complete GNU base-256/PAX/member corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_OLD_TAR` and `CL_TYPE_POSIX_TAR` stay
+pending.
+
 ## MSEXPAND public API read-failure audit — 2026-08-25
 
 The isolated current-source production-linked `msexpand_map` TCase passes
