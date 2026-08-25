@@ -23817,6 +23817,19 @@ START_TEST(test_uuencode_initial_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_uuencode_missing_context_or_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    ck_assert_int_eq(cli_uuencode(NULL, NULL, NULL), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_uuencode(&ctx, NULL, NULL), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UUencoded input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_uuencode_attachment_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "begin 644 payload\n#0V%T\n";
@@ -33795,6 +33808,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xar_metadata = tcase_create("xar_metadata");
     TCase *tc_riff_map = tcase_create("riff_map");
     TCase *tc_rtf_map = tcase_create("rtf_map");
+    TCase *tc_uuencode_map = tcase_create("uuencode_map");
     TCase *tc_hwpml    = tcase_create("hwpml");
     TCase *tc_xdp      = tcase_create("xdp");
     TCase *tc_egg_metadata = tcase_create("egg_metadata");
@@ -33834,6 +33848,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_tnef_map);
     tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_uuencode_map);
+    tcase_add_test(tc_uuencode_map, test_uuencode_missing_context_or_map_is_fail_visible);
     suite_add_tcase(s, tc_graphics_map);
     tcase_add_test(tc_graphics_map, test_bmp_jp2_missing_maps_are_fail_visible);
     suite_add_tcase(s, tc_pe32plus);

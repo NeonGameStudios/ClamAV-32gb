@@ -62,6 +62,13 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
     char buffer[RFC2821LENGTH + 1];
     size_t at = 0;
 
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "UUencoded input map is unavailable");
+        return CL_EPARSE;
+    }
+
     status = uuencode_checktimelimit(ctx, "UUencoded inspection reached the configured time limit");
     if (status != CL_SUCCESS)
         return status;

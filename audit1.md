@@ -3,8 +3,19 @@
 **Review date:** 2026-08-16  
 **Reviewed report:** audit.md, SHA-256 ce78ba7003031e6007bfe000c8ee6718175252ec5fed5e149ddda47617fb4e48  
 **Review target:** the delivered source tree at /Volumes/512gbNVME/github-external/ClamAV  
-**Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access  
+**Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
+
+## UUEncode direct-entry admission — 2026-08-25
+
+The UUEncode helper now distinguishes a null parser context from a recognized
+layer whose input fmap is unavailable. Null contexts return `CL_ENULLARG`;
+missing fmaps mark the scan incomplete with the explicit `UUencoded input map
+is unavailable` reason and return `CL_EPARSE`, preventing the helper from
+entering the deadline or line-reader paths with invalid state. The direct-entry
+regression is compiled into the production-linked test harness; full UUEncode
+corpus, sanitizer, materialized large-file, production-CVD, and Sonic1
+qualification remain open.
 
 ## HWPML missing-map entry classification — 2026-08-25
 

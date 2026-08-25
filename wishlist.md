@@ -1,5 +1,14 @@
 # Wishlist
 
+## UUEncode direct-entry admission — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null UUEncode parser context, but mark a
+  recognized layer with no input fmap incomplete and return `CL_EPARSE` before
+  deadline or line-reader access.
+- The direct-entry regression covers both boundaries. Keep full UUEncode
+  corpus, sanitizer, materialized large-file, production-CVD, and Sonic1
+  qualification open.
+
 ## HWPML missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null HWPML parser context, but mark a
