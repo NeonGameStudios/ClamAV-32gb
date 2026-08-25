@@ -1,5 +1,17 @@
 # Wishlist
 
+## LHA/LZH corpus qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `rust_lha` case
+  passes 3/3: direct and public-API in-range fmap read failures remain
+  `CL_EREAD` and non-cacheable, and all 13 materialized LHA/LZH corpus files
+  produce a nested PNG exact-signature detection. The shared `rust_map` case
+  passes 1/1.
+- Keep full current-C-ABI execution, sanitizer, certified Linux x86-64,
+  materialized large-file boundaries, production-CVD/service parity, Sonic1,
+  and release qualification open before changing `CL_TYPE_LHA_LZH` from
+  pending.
+
 ## HTML normalization boundary qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `html` case passes

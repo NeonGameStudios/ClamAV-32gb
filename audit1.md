@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## LHA/LZH corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `rust_lha` case passes
+3/3. The two existing tests preserve direct and public-API in-range fmap
+callback failures as `CL_EREAD` with sticky incomplete/non-cacheable state;
+the new corpus test scans all 13 materialized LHA/LZH fixtures and detects a
+nested PNG member through the exact child signature. The shared `rust_map`
+case passes 1/1. Full current-C-ABI-consistent execution, sanitizer,
+certified Linux x86-64, materialized large-file boundary fixtures,
+production-CVD/service parity, and Sonic1 qualification remain open, so
+`CL_TYPE_LHA_LZH` stays pending.
+
 ## HTML normalization boundary qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `html` case passes
