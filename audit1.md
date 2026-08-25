@@ -5148,6 +5148,15 @@ command traversal resumes at the checked command end. The focused
 production-linked malformed-segment regression passes, while full Mach-O corpus,
 sanitizer, and Sonic1 qualification remain open.
 
+## TIFF missing-map admission — 2026-08-25
+
+The direct TIFF parser marked a missing current fmap as incomplete but returned
+`CL_EARG`, conflating unavailable recognized input with an invalid caller
+argument. It now returns `CL_EPARSE` with the sticky reason `TIFF input map is
+unavailable`, matching the confirmed-layer contract used by the other native
+parsers. A focused direct regression is registered; compiled TIFF corpus,
+sanitizer, and Sonic1 qualification remain open.
+
 ## MSPack temporary-output creation failure — 2026-08-22
 
 CAB and CHM member staging reserve temporary space before creating the output

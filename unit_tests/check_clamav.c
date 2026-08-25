@@ -32332,6 +32332,17 @@ START_TEST(test_tiff_truncated_structures_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tiff_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_parsetiff(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "TIFF input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_tiff_initial_read_failure_is_fail_visible)
 {
     static const uint8_t data[] = {'I', 'I', 0x2a, 0x00};
@@ -33611,6 +33622,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_gif      = tcase_create("gif");
     TCase *tc_png      = tcase_create("png");
     TCase *tc_tiff     = tcase_create("tiff");
+    TCase *tc_tiff_map = tcase_create("tiff_map");
     TCase *tc_pdf      = tcase_create("pdf");
     TCase *tc_hwp3     = tcase_create("hwp3");
     TCase *tc_xar      = tcase_create("xar");
@@ -33665,6 +33677,8 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_gif);
     suite_add_tcase(s, tc_png);
     suite_add_tcase(s, tc_tiff);
+    suite_add_tcase(s, tc_tiff_map);
+    tcase_add_test(tc_tiff_map, test_tiff_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_pdf);
     tcase_add_checked_fixture(tc_pdf, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_hwp3);

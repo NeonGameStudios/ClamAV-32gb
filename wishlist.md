@@ -402,6 +402,9 @@ large-file, and Sonic1 qualification open.
   per-command boundaries across segment, section, and thread-state payloads;
   add compiled malformed-command corpus, sanitizer, and parser-family
   qualification.
+- TIFF direct parser missing-map admission now returns `CL_EPARSE` with a
+  sticky incomplete result; add compiled TIFF corpus, sanitizer, and
+  parser-family qualification.
 - Mach-O 32-bit and native-width section-table allocation failures now mark
   required executable inspection incomplete; add compiled allocation-fault,
   malformed-Mach-O, sanitizer, and parser-family qualification.

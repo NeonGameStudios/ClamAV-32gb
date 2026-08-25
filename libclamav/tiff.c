@@ -144,7 +144,7 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
     map = ctx->fmap;
     if (map == NULL) {
         cli_mark_scan_incomplete(ctx, "TIFF input map is unavailable");
-        status = CL_EARG;
+        status = CL_EPARSE;
         goto done;
     }
 
