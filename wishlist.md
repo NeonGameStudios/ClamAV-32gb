@@ -3290,3 +3290,14 @@ and Sonic1 qualification as release gates.
   execution, sanitizer, certified Linux x86-64, materialized large-file,
   production CVD/service parity, and Sonic1 qualification before
   certification.
+
+## HWP3 current-source qualification audit — 2026-08-25
+
+- The isolated current-source production-linked `hwp3_api` TCase passes 1/1
+  through `cl_scanmap_ex` for an in-range document-info read failure, keeping
+  `CL_EREAD`, clean verdict, and non-cacheability visible. The detailed direct
+  `cli_ctx` matrix remains a mixed-ABI full-C rebuild gate after 8 signal
+  errors in its 16-check run.
+- Complete the HWP3 corpus and full-C ABI-consistent matrix, then add
+  sanitizer, certified Linux x86-64, materialized large-file, production
+  CVD/service parity, and Sonic1 evidence before certification.

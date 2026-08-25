@@ -8635,3 +8635,18 @@ This is dispatch-boundary evidence only. Full UTF-16 HTML corpus, current
 full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_HTML_UTF16` stays pending.
+
+## HWP3 current-source qualification audit — 2026-08-25
+
+The isolated current-source production-linked `hwp3_api` TCase passes 1/1
+through `cl_scanmap_ex`: an in-range document-info fmap callback failure
+returns `CL_EREAD`, leaves the verdict clean, and marks the map non-cacheable.
+The existing direct `cli_ctx` HWP3 matrix remains useful for detailed
+truncation, paragraph, information-block, and raw-deflate boundaries, but its
+mixed-generation run produced 16 checks with 8 ABI-induced signal errors; no
+production conclusion is drawn from those crashes. A full C ABI-consistent
+rebuild is required before promoting that matrix.
+
+HWP3 corpus, current full-C execution, sanitizer, certified Linux x86-64,
+materialized large-file, production CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_HWP3` stays pending.
