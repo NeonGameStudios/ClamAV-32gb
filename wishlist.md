@@ -2740,3 +2740,13 @@ and Sonic1 qualification as release gates.
   source and its mixed C/Rust run is not authoritative; rebuild current C and
   Rust together, then run the TCase, Rust suite, parser corpus, sanitizer,
   materialized large-file, certified Linux x86-64, and Sonic1 gates.
+
+## ARJ declared-header string boundaries — 2026-08-25
+
+- Keep the ARJ filename/comment fmap requests bounded to the exact declared
+  header remainder; retain the regression proving a terminator immediately
+  outside that remainder is malformed and non-cacheable. The modified Check
+  object compiles and the isolated production-linked GCC harness passes 1/1;
+  run the complete ARJ corpus, sanitizer and fault-injection matrix, certified
+  Linux x86-64 build, materialized large-file case, production-CVD/service
+  smoke, and Sonic1 qualification before release certification.

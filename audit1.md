@@ -7847,3 +7847,20 @@ execution is therefore not attributed as current-source evidence. A current
 C/Rust rebuild, isolated TCase, Rust suite, parser corpus, sanitizer,
 materialized large-file, certified Linux x86-64, and Sonic1 qualification are
 still required.
+
+## ARJ declared-header string boundaries — 2026-08-25
+
+ARJ main and member filename/comment admission previously asked the bounded fmap
+string helper for one byte beyond each declared string window. A terminator just
+outside the declared header remainder could therefore be consumed and metadata
+traversal could continue under a header boundary that the format did not provide.
+Both callers now pass the exact declared remainder; an absent terminator remains
+`CL_EPARSE`, while an in-range backing callback failure remains `CL_EREAD`.
+
+The boundary regression is registered in the main Check suite and the modified
+test object compiles with the production GCC flags. An isolated production-linked
+GCC harness passes 1/1 and reports the expected incomplete, non-cacheable
+`CL_EPARSE` result. The full monolithic test binary was not relinked because the
+existing container archive is stale for unrelated newer test symbols. Complete
+ARJ corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 qualification remain open.

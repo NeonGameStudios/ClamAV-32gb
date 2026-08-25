@@ -26555,6 +26555,43 @@ START_TEST(test_arj_main_header_string_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_arj_main_header_strings_stay_within_declared_header)
+{
+    uint8_t data[45];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t archive_size = 0;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    data[0] = 0x60;
+    data[1] = 0xea;
+    arj_test_write_u16(data + 2, 34);
+    data[4]  = 30;
+    data[34] = 'a';
+    data[35] = 0;
+    data[36] = 'x';
+    data[37] = 'y';
+    data[38] = 0;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_unarj_header_check(&ctx, 0, &archive_size);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ main header is malformed or truncated");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_arj_truncated_main_header_is_fail_visible)
 {
     uint8_t data[4];
@@ -33810,6 +33847,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ishield_invalid_embedded_header_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_main_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_main_header_string_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_arj_main_header_strings_stay_within_declared_header);
     tcase_add_test(tc_cl, test_arj_truncated_main_header_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_signature_is_parse_error);
     tcase_add_test(tc_cl, test_arj_time_limit_is_fail_visible);

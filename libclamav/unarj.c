@@ -1027,7 +1027,7 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
             goto done;
         }
         filename = fmap_need_offstr_once_status(metadata->map, metadata->offset,
-                                                 filename_max_len + 1, &string_status);
+                                                 filename_max_len, &string_status);
         if (!filename) {
             cli_dbgmsg("UNARJ: Unable to read filename metadata: %s\n", cl_strerror(string_status));
             ret = string_status;
@@ -1051,7 +1051,7 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
             goto done;
         }
         comment = fmap_need_offstr_once_status(metadata->map, metadata->offset,
-                                               comment_max_len + 1, &string_status);
+                                               comment_max_len, &string_status);
         if (!comment) {
             cli_dbgmsg("UNARJ: Unable to read comment metadata: %s\n", cl_strerror(string_status));
             ret = string_status;
@@ -1190,7 +1190,7 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
             goto done;
         }
         filename = fmap_need_offstr_once_status(metadata->map, metadata->offset,
-                                                 filename_max_len + 1, &string_status);
+                                                 filename_max_len, &string_status);
         if (!filename) {
             cli_dbgmsg("UNARJ: Unable to read filename metadata: %s\n", cl_strerror(string_status));
             ret = string_status;
@@ -1214,7 +1214,7 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
             goto done;
         }
         comment = fmap_need_offstr_once_status(metadata->map, metadata->offset,
-                                               comment_max_len + 1, &string_status);
+                                               comment_max_len, &string_status);
         if (!comment) {
             cli_dbgmsg("UNARJ: Unable to read comment metadata: %s\n", cl_strerror(string_status));
             ret = string_status;
