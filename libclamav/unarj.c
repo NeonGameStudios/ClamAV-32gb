@@ -1327,7 +1327,16 @@ cl_error_t cli_unarj_header_check(
 
     cli_dbgmsg("in cli_unarj_header_check\n");
 
-    if (!ctx || !ctx->fmap || !size) {
+    if (ctx == NULL) {
+        status = CL_ENULLARG;
+        goto done;
+    }
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "ARJ input map is unavailable");
+        status = CL_EPARSE;
+        goto done;
+    }
+    if (size == NULL) {
         status = CL_ENULLARG;
         goto done;
     }

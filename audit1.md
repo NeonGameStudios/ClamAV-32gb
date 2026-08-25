@@ -6,6 +6,16 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## ARJ header-entry admission — 2026-08-25
+
+`cli_unarj_header_check()` now distinguishes a null parser context
+(`CL_ENULLARG`) from a recognized ARJ layer without an input fmap
+(`CL_EPARSE` with sticky incomplete state), while retaining `CL_ENULLARG` for
+a missing output-size destination. The dedicated production-linked `arj_map`
+case covers all three boundaries; full ARJ/ARJ-SFX corpus, sanitizer,
+materialized large-file, production-CVD, service, and Sonic1 qualification
+remain open.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 The PowerPoint VBA extraction helper now rejects a null context before

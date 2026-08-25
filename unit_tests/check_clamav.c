@@ -7913,6 +7913,29 @@ START_TEST(test_ole10_temporary_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_arj_header_missing_context_or_map_is_fail_visible)
+{
+    static const uint8_t input[] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t archive_size = 0;
+
+    ck_assert_int_eq(cli_unarj_header_check(NULL, 0, &archive_size), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_unarj_header_check(&ctx, 0, &archive_size), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ input map is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_unarj_header_check(&ctx, 0, NULL), CL_ENULLARG);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_ppt_vba_null_context_is_fail_visible)
 {
     uint64_t temporary_reserved = UINT64_MAX;
@@ -33853,6 +33876,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_nulsft_map = tcase_create("nulsft_map");
     TCase *tc_ole10_entry = tcase_create("ole10_entry");
     TCase *tc_ppt_entry = tcase_create("ppt_entry");
+    TCase *tc_arj_map = tcase_create("arj_map");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
@@ -33997,6 +34021,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole10_entry, test_ole10_null_context_is_fail_visible);
     suite_add_tcase(s, tc_ppt_entry);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
+    suite_add_tcase(s, tc_arj_map);
+    tcase_add_test(tc_arj_map, test_arj_header_missing_context_or_map_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

@@ -1,5 +1,14 @@
 # Wishlist
 
+## ARJ header-entry admission — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null ARJ parser context and output-size
+  destination, but mark a recognized ARJ layer with no input fmap incomplete
+  and return `CL_EPARSE`.
+- The dedicated `arj_map` regression covers the three argument states. Keep
+  full ARJ/ARJ-SFX corpus, sanitizer, materialized large-file, production-CVD,
+  service, and Sonic1 qualification open.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 - Reject a null context in `cli_ppt_vba_read_ex()` before temporary-directory
