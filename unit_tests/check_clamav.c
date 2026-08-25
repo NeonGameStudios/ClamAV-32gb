@@ -18596,6 +18596,8 @@ START_TEST(test_xar_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
 
+    ck_assert_int_eq(cli_scanxar(NULL), CL_ENULLARG);
+
     memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cli_scanxar(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -33860,6 +33862,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hwp3     = tcase_create("hwp3");
     TCase *tc_xar      = tcase_create("xar");
     TCase *tc_xar_metadata = tcase_create("xar_metadata");
+    TCase *tc_xar_map = tcase_create("xar_map");
     TCase *tc_riff_map = tcase_create("riff_map");
     TCase *tc_rtf_map = tcase_create("rtf_map");
     TCase *tc_uuencode_map = tcase_create("uuencode_map");
@@ -33941,6 +33944,8 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hwp3);
     suite_add_tcase(s, tc_xar);
     suite_add_tcase(s, tc_xar_metadata);
+    suite_add_tcase(s, tc_xar_map);
+    tcase_add_test(tc_xar_map, test_xar_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_riff_map);
     suite_add_tcase(s, tc_rtf_map);
     suite_add_tcase(s, tc_hwpml);
@@ -34219,7 +34224,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_iso_file_extent_respects_volume_space);
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_xar_header_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_xar_missing_map_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_time_limit_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_invalid_file_metadata_is_fail_visible);
     tcase_add_test(tc_xar_metadata, test_xar_invalid_file_metadata_public_is_fail_visible);

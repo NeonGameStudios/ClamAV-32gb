@@ -60,6 +60,14 @@ regression is compiled into the production-linked test harness; full UUEncode
 corpus, sanitizer, materialized large-file, production-CVD, and Sonic1
 qualification remain open.
 
+## XAR direct-entry admission — 2026-08-25
+
+The XAR direct parser now returns `CL_ENULLARG` for a null context while a
+recognized layer with no input fmap remains an explicit `CL_EPARSE` with sticky
+incomplete state. The dedicated production-linked `xar_map` case covers both
+admission states; TOC-root closure, XAR corpus, sanitizer, materialized
+large-file, production-CVD, service, and Sonic1 qualification remain open.
+
 
 ## HWPML missing-map entry classification — 2026-08-25
 

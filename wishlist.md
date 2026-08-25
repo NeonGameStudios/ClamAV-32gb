@@ -8,6 +8,14 @@
   SWF corpus, sanitizer, materialized large-file, production-CVD, service, and
 Sonic1 qualification open.
 
+## XAR direct-entry admission — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null XAR parser context and keep missing input
+  maps fail-visible as incomplete parses.
+- The dedicated `xar_map` regression covers both states. Keep TOC-root closure,
+  XAR corpus, sanitizer, materialized large-file, production-CVD, service, and
+  Sonic1 qualification open.
+
 
 ## Mydoom detector direct-entry admission — 2026-08-25
 
