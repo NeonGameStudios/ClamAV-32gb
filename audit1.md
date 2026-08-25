@@ -8856,3 +8856,17 @@ This is public source-window dispatch evidence only. Complete CryptFF corpus,
 full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_CRYPTFF` stays pending.
+
+## CAB SFX nested admission audit — 2026-08-25
+
+The current-source production-linked `cabsfx` TCase passes 1/1. It scans a
+valid one-file CAB prefixed by one non-CAB byte through the public map API;
+the leading offset forces CABSFX typing, and the extracted child reaches an
+exact offset-0 signature with the expected alert. This proves CABSFX
+admission and nested matcher handoff without treating an ordinary root CAB as
+SFX.
+
+Malformed-header, in-range callback-failure, complete CAB/SFX corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service parity, and Sonic1 qualification remain open, so
+`CL_TYPE_CABSFX` stays pending.

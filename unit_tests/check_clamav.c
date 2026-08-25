@@ -30832,6 +30832,79 @@ START_TEST(test_mspack_scan_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_cabsfx_admission_reaches_nested_matcher)
+{
+    enum {
+        CAB_SFX_OFFSET  = 1,
+        CAB_HEADER_SIZE = 36,
+        CAB_FOLDER_SIZE = 8,
+        CAB_FILE_SIZE   = 18,
+        CAB_DATA_SIZE   = 11,
+        CAB_TOTAL_SIZE  = CAB_HEADER_SIZE + CAB_FOLDER_SIZE + CAB_FILE_SIZE + CAB_DATA_SIZE,
+        INPUT_SIZE       = CAB_SFX_OFFSET + CAB_TOTAL_SIZE
+    };
+    uint8_t data[INPUT_SIZE] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* Prefix the valid one-file CAB so magic typing must use the CABSFX
+     * dispatch branch instead of the ordinary MSCAB root type. */
+    memcpy(data + CAB_SFX_OFFSET, "MSCF", 4);
+    mspack_test_write_u32(data + CAB_SFX_OFFSET + 8, CAB_TOTAL_SIZE);
+    mspack_test_write_u32(data + CAB_SFX_OFFSET + 16, CAB_HEADER_SIZE + CAB_FOLDER_SIZE);
+    data[CAB_SFX_OFFSET + 24] = 3;
+    data[CAB_SFX_OFFSET + 25] = 1;
+    mspack_test_write_u16(data + CAB_SFX_OFFSET + 26, 1);
+    mspack_test_write_u16(data + CAB_SFX_OFFSET + 28, 1);
+    mspack_test_write_u32(data + CAB_SFX_OFFSET + 36,
+                          CAB_HEADER_SIZE + CAB_FOLDER_SIZE + CAB_FILE_SIZE);
+    mspack_test_write_u16(data + CAB_SFX_OFFSET + 40, 1);
+    mspack_test_write_u16(data + CAB_SFX_OFFSET + 42, 0);
+    mspack_test_write_u32(data + CAB_SFX_OFFSET + 44, 3);
+    mspack_test_write_u32(data + CAB_SFX_OFFSET + 48, 0);
+    mspack_test_write_u16(data + CAB_SFX_OFFSET + 52, 0);
+    memcpy(data + CAB_SFX_OFFSET + 60, "a", 2);
+    mspack_test_write_u16(data + CAB_SFX_OFFSET + 66, 3);
+    mspack_test_write_u16(data + CAB_SFX_OFFSET + 68, 3);
+    data[CAB_SFX_OFFSET + 70] = 'x';
+    data[CAB_SFX_OFFSET + 71] = 'x';
+    data[CAB_SFX_OFFSET + 72] = 'x';
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(scan_engine->root[0],
+                                                   "CabSfxChild",
+                                                   "787878", 0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "CabSfxChild.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_mspack_output_size_mismatch_is_fail_visible)
 {
     static const uint8_t data[] = "MSPack output-size regression";
@@ -35019,6 +35092,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_zip_map = tcase_create("zip_map");
     TCase *tc_mspack_map = tcase_create("mspack_map");
+    TCase *tc_cabsfx = tcase_create("cabsfx");
     TCase *tc_msexpand_map = tcase_create("msexpand_map");
     TCase *tc_xz = tcase_create("xz");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -35337,6 +35411,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mspack_map, test_mspack_constructor_failures_are_fail_visible);
     tcase_add_test(tc_mspack_map, test_mspack_callback_time_limit_is_fail_visible);
 #endif
+    suite_add_tcase(s, tc_cabsfx);
+    tcase_add_checked_fixture(tc_cabsfx, cl_setup, cl_teardown);
+    tcase_add_test(tc_cabsfx, test_cabsfx_admission_reaches_nested_matcher);
     suite_add_tcase(s, tc_msexpand_map);
     tcase_add_checked_fixture(tc_msexpand_map, cl_setup, cl_teardown);
     tcase_add_test(tc_msexpand_map, test_msexpand_missing_map_is_fail_visible);

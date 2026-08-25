@@ -3453,3 +3453,12 @@ and Sonic1 qualification as release gates.
 - Complete CryptFF corpus and full-C ABI-consistent execution, then add
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
+
+## CAB SFX nested admission audit — 2026-08-25
+
+- The current-source production-linked `cabsfx` TCase passes 1/1 for a valid
+  prefixed CAB SFX whose extracted child reaches an exact offset-0 matcher
+  through public map scanning.
+- Add malformed-header and in-range callback-failure cases, then complete CAB
+  and SFX corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.
