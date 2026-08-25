@@ -6845,6 +6845,15 @@ stream instead of silently scanning only the first. Full XZ/compressed corpus,
 sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
 service, and Sonic1 qualification remain open.
 
+## ZIP-SFX and ZIP map focused qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `zip_sfx` TCase passes
+3/3 for weak masked-header rejection, confirmed central-directory
+extent/read-failure classification, and exact child matching. The dedicated
+`zip_map` case passes 1/1 for missing-map admission. Full ZIP/ZIP-SFX corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, and Sonic1 qualification remain open.
+
 ## OLE2 direct extraction map admission — 2026-08-25
 
 The OLE2 extraction entry rejected a null context but could dereference the

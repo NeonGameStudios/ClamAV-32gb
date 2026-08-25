@@ -202,6 +202,16 @@ Sonic1 qualification open.
   materialized large-file, production-CVD/service, and Sonic1 qualification as
   release gates.
 
+## ZIP-SFX and ZIP map focused qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `zip_sfx` case passes
+  3/3 for weak masked-header rejection, confirmed central-directory
+  extent/read-failure classification, and exact child matching; `zip_map`
+  passes 1/1 for missing-map admission.
+- Retain full ZIP/ZIP-SFX corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification as
+  release gates.
+
 ## HWPML focused-boundary qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `hwpml` case passes

@@ -34072,6 +34072,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_msxml = tcase_create("msxml");
     TCase *tc_msxml_map = tcase_create("msxml_map");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
+    TCase *tc_zip_map = tcase_create("zip_map");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_xz = tcase_create("xz");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -34309,8 +34310,11 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_msxml_map, test_msxml_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_zip_sfx);
     tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
+    tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_candidate_is_not_confirmed);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_central_extent_and_read_failure);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_reaches_exact_child_matcher);
+    suite_add_tcase(s, tc_zip_map);
+    tcase_add_test(tc_zip_map, test_zip_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_mspack_map);
     tcase_add_test(tc_mspack_map, test_mspack_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_xz);
@@ -34574,7 +34578,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_input_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_zip_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
     tcase_add_test(tc_cl, test_egg_fixed_header_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_egg_extra_field_range_classes_are_fail_visible);
@@ -34927,7 +34930,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip64_metadata_read_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_zip64_extra_read_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_zip_data_descriptor_read_failures_are_fail_visible);
-    tcase_add_test(tc_cl, test_zip_masked_sfx_candidate_is_not_confirmed);
     tcase_add_test(tc_cl, test_zip_local_only_masked_header_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_index_propagates_callback_abort);
     tcase_add_test(tc_cl, test_zip_central_index_propagates_callback_status);
