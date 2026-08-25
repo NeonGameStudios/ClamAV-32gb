@@ -19213,6 +19213,17 @@ START_TEST(test_xdp_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_autoit_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanautoit(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "AutoIt input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_apm_missing_map_is_fail_visible)
 {
     struct cl_engine engine;
@@ -33206,6 +33217,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_partition_map = tcase_create("partition_map");
     TCase *tc_dmg_map = tcase_create("dmg_map");
     TCase *tc_xdp_map = tcase_create("xdp_map");
+    TCase *tc_autoit_map = tcase_create("autoit_map");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -33291,6 +33303,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xdp_map);
     tcase_add_checked_fixture(tc_xdp_map, cl_setup, cl_teardown);
     tcase_add_test(tc_xdp_map, test_xdp_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_autoit_map);
+    tcase_add_checked_fixture(tc_autoit_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_autoit_map, test_autoit_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_zip_sfx);
     tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_central_extent_and_read_failure);

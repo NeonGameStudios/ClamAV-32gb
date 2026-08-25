@@ -1,5 +1,14 @@
 # Wishlist
 
+## AutoIt missing-map confirmed-entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null confirmed AutoIt parser context, but mark
+  a recognized AutoIt layer with no input fmap incomplete and return
+  `CL_EPARSE`; leave the weak header-admission probe non-confirming.
+- The isolated production-linked `autoit_map` regression passes and records
+  the sticky reason. Keep full AutoIt corpus, sanitizer, materialized
+  large-file, production-CVD, and Sonic1 qualification open.
+
 ## XDP missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null XDP parser context, but mark a recognized

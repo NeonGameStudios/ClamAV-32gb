@@ -2551,8 +2551,12 @@ cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset)
 
     cli_dbgmsg("in scanautoit()\n");
 
-    if (!ctx || !ctx->fmap)
+    if (!ctx)
         return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "AutoIt input map is unavailable");
+        return CL_EPARSE;
+    }
     if (autoit_checktimelimit(ctx, "AutoIt inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;
 
