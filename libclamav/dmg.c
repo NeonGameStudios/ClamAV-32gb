@@ -202,9 +202,12 @@ int cli_scandmg(cli_ctx *ctx)
     static const struct key_entry dmg_xml_keys[] = {
         {"data", "DMGData", MSXML_SCAN_B64}};
 
-    if (!ctx || !ctx->fmap) {
-        cli_errmsg("cli_scandmg: Invalid context\n");
+    if (!ctx)
         return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_errmsg("cli_scandmg: Invalid context\n");
+        cli_mark_scan_incomplete(ctx, "DMG input map is unavailable");
+        return CL_EPARSE;
     }
 
     maplen = ctx->fmap->len;

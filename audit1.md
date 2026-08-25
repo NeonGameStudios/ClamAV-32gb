@@ -6,6 +6,16 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access  
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## DMG missing-map entry classification — 2026-08-25
+
+The DMG direct parser now distinguishes a null parser context from a
+recognized DMG layer whose input fmap is unavailable. The former remains
+`CL_ENULLARG`; the latter marks the scan incomplete with the explicit `DMG
+input map is unavailable` reason and returns `CL_EPARSE`. The dedicated
+production-linked `dmg_map` case passes with the sticky reason, and source and
+capability-manifest guards cover the boundary. Full DMG corpus, sanitizer,
+materialized large-file, production-CVD, and Sonic1 qualification remain open.
+
 ## MBR/GPT missing-map entry classification — 2026-08-25
 
 The partition dispatch boundary now distinguishes null contexts from

@@ -1,5 +1,13 @@
 # Wishlist
 
+## DMG missing-map entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null DMG parser context, but mark a recognized
+  DMG layer with no input fmap incomplete and return `CL_EPARSE`.
+- The isolated production-linked `dmg_map` regression passes and records the
+  sticky reason. Keep full DMG corpus, sanitizer, materialized large-file,
+  production-CVD, and Sonic1 qualification open.
+
 ## MBR/GPT missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for null partition-parser contexts, but mark
