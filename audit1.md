@@ -8507,6 +8507,22 @@ current full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production CVD/service parity, and Sonic1 evidence
 remain open, so `CL_TYPE_ALZ` stays pending.
 
+## LHA/LZH current-source qualification audit — 2026-08-25
+
+The bounded Rust LHA/LZH path uses the context-aware `FMapReader`, checked
+member output admission, quota-accounted spools, deadline checks between
+decoder output chunks, and a fail-closed panic boundary. The new dedicated
+current-source production-linked `rust_lha` TCase passes 1/1 for an
+in-range initial fmap callback failure: it returns `CL_EREAD`, records the
+sticky incomplete reason, and marks the map non-cacheable. The shared
+`rust_map` case also passes 1/1 across the Rust parser entry points.
+
+This is boundary evidence only. A valid LHA/LZH corpus, successful nested
+member detection, full current-C ABI-consistent execution, sanitizer,
+certified Linux x86-64, materialized large-file, production CVD/service
+parity, and Sonic1 qualification remain open, so `CL_TYPE_LHA_LZH` stays
+pending.
+
 ## Matcher fixture and fail-visible boundary audit — 2026-08-25
 
 The matcher unit fixture now provides a bounded synthetic fmap read callback

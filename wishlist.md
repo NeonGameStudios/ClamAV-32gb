@@ -3237,3 +3237,14 @@ and Sonic1 qualification as release gates.
 - Complete ALZ corpus, current full-C ABI-consistent C execution, sanitizer,
   certified Linux x86-64, materialized large-file, production CVD/service,
   and Sonic1 evidence before changing `CL_TYPE_ALZ` from pending.
+
+## LHA/LZH current-source qualification audit — 2026-08-25
+
+- Preserve the bounded context-aware `FMapReader`, quota-accounted member
+  spools, output/deadline checks, and fail-closed decoder panic boundary. The
+  dedicated current-source production-linked `rust_lha` case passes 1/1 for
+  an in-range initial fmap read failure, while `rust_map` passes 1/1.
+- Add valid LHA/LZH corpus and nested-member detection evidence, then complete
+  the current full-C ABI build, sanitizer, certified Linux x86-64, materialized
+  large-file, production CVD/service, and Sonic1 qualification before moving
+  `CL_TYPE_LHA_LZH` beyond pending.
