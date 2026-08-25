@@ -29785,6 +29785,20 @@ START_TEST(test_elf_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_elf_metadata_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+    struct cli_exe_info exeinfo;
+
+    memset(&ctx, 0, sizeof(ctx));
+    cli_exe_info_init(&exeinfo, 0);
+    ck_assert_int_eq(cli_elfheader(&ctx, &exeinfo), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF input map is unavailable");
+    cli_exe_info_destroy(&exeinfo);
+}
+END_TEST
+
 static const void *elf_truncated_program_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -33612,6 +33626,7 @@ static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
     TCase *tc_cl       = tcase_create("cl_api");
+    TCase *tc_elf_map  = tcase_create("elf_map");
     TCase *tc_pe32plus = tcase_create("pe32plus_common");
     TCase *tc_text_encoding = tcase_create("text_encoding");
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
@@ -33657,6 +33672,8 @@ static Suite *test_cl_suite(void)
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
+    suite_add_tcase(s, tc_elf_map);
+    tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_pe32plus);
     tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);
     tcase_add_test(tc_pe32plus, test_pe32plus_common_inspection_and_import_failures_are_visible);

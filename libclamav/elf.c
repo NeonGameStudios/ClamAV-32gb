@@ -996,6 +996,15 @@ cl_error_t cli_elfheader(cli_ctx *ctx, struct cli_exe_info *elfinfo)
 
     cli_dbgmsg("in cli_elfheader\n");
 
+    if (ctx == NULL)
+        return CL_EARG;
+    if (elfinfo == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "ELF input map is unavailable");
+        return CL_EPARSE;
+    }
+
     // TODO This code assumes elfinfo->offset == 0, which might not always
     // be the case.  For now just print this debug message and continue on
     if (0 != elfinfo->offset) {

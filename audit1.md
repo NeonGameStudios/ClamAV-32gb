@@ -5157,6 +5157,16 @@ unavailable`, matching the confirmed-layer contract used by the other native
 parsers. A focused direct regression is registered; compiled TIFF corpus,
 sanitizer, and Sonic1 qualification remain open.
 
+## ELF metadata-entry missing-map admission — 2026-08-25
+
+The executable metadata-only entry `cli_elfheader()` previously assumed both a
+non-null context and an available fmap even though the main ELF scanner had
+already adopted explicit missing-map admission. It now rejects null caller
+arguments and returns `CL_EPARSE` with the sticky `ELF input map is unavailable`
+reason when recognized metadata input cannot be inspected. The focused direct
+regression is registered; compiled ELF corpus, sanitizer, and Sonic1
+qualification remain open.
+
 ## MSPack temporary-output creation failure — 2026-08-22
 
 CAB and CHM member staging reserve temporary space before creating the output
