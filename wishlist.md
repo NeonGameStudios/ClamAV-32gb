@@ -14,6 +14,14 @@
   unavailable. Add compiled media corpus, sanitizer, production parser-family,
   and Sonic1 qualification before release.
 
+## PNG focused-boundary qualification — 2026-08-25
+
+- The production-linked `png` TCase passes 5/5 for truncated chunks, an
+  in-range callback failure, truncated-header classification, shared deadline
+  expiry, and sparse 2-GiB ancillary-chunk bounded mapping. Retain full PNG
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, and Sonic1 qualification as release gates.
+
 ## GIF focused-boundary qualification — 2026-08-25
 
 - The production-linked `gif` TCase passes 5/5 for truncated block forms,

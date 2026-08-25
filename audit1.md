@@ -1160,6 +1160,19 @@ range, read-status, deadline, and focused-test contracts. Full GIF corpus,
 sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
 service, and Sonic1 evidence remain open.
 
+## PNG focused-map audit — 2026-08-25
+
+The focused production-linked `png` TCase covers truncated chunks, an
+in-range chunk-header callback failure, truncated chunk-header
+classification, an expired shared deadline, and the sparse 2-GiB ancillary
+chunk bounded-mapping fixture. Its checked fixture supplies the temporary
+directory required by the materialized sparse case, while the timeout fixture
+supplies scan options and asserts the sticky
+`Heuristics.Limits.Exceeded.MaxScanTime` reason. The focused production-linked
+run passes 5/5; the manifest and source guards record the same evidence. Full
+PNG corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,

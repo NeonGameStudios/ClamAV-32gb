@@ -32438,19 +32438,22 @@ START_TEST(test_png_chunk_timeout_is_fail_visible)
     static const uint8_t data[] = {
         0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a,
     };
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.fmap = map;
+    ctx.options = &options;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
     ck_assert_int_eq(cli_parsepng(&ctx), CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "PNG chunk traversal reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -33984,6 +33987,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_dmg, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_gif);
     suite_add_tcase(s, tc_png);
+    tcase_add_checked_fixture(tc_png, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_tiff);
     suite_add_tcase(s, tc_tiff_map);
     tcase_add_test(tc_tiff_map, test_tiff_missing_map_is_fail_visible);
