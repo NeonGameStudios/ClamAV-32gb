@@ -112,6 +112,15 @@ service, and Sonic1 qualification open.
 - Add complete ARJ/ARJ-SFX corpus, sanitizer, production-CVD/service parity,
   materialized large-file, and Sonic1 evidence before certification.
 
+## APM bounded-partition qualification — 2026-08-25
+
+- The current-source production-linked GCC `apm` case passes 5/5 for
+  partition limits, malformed maps/partitions, table boundaries, and native
+  coordinate overflow; `apm_map` passes 2/2. Explicit format/record-limit
+  classes and sticky incomplete state remain fail-visible.
+- Add complete APM partition corpus, sanitizer, production-CVD/service parity,
+  materialized large-file, and Sonic1 evidence before certification.
+
 ## JPEG direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null JPEG parser context while keeping missing

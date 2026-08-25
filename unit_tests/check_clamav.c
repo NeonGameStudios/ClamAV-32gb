@@ -20055,7 +20055,7 @@ START_TEST(test_apm_partition_limit_is_fail_visible)
     layer.fmap                = map;
 
     ret = cli_scanapm(&ctx);
-    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
@@ -20327,7 +20327,7 @@ START_TEST(test_apm_invalid_partition_is_fail_visible)
     layer.fmap               = map;
 
     ret = cli_scanapm(&ctx);
-    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert_int_eq(ret, CL_EMAXREC);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
@@ -20449,7 +20449,7 @@ START_TEST(test_apm_partition_coordinate_overflow_is_fail_visible)
     layer.fmap               = map;
 
     ret = cli_scanapm(&ctx);
-    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert_int_eq(ret, CL_EMAXREC);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
@@ -35350,6 +35350,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_iso_map = tcase_create("iso_map");
     TCase *tc_udf_map = tcase_create("udf_map");
     TCase *tc_apm_map = tcase_create("apm_map");
+    TCase *tc_apm = tcase_create("apm");
     TCase *tc_hwpole2_map = tcase_create("hwpole2_map");
     TCase *tc_partition_map = tcase_create("partition_map");
     TCase *tc_mbr = tcase_create("mbr");
@@ -35646,6 +35647,13 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_apm_map, cl_setup, cl_teardown);
     tcase_add_test(tc_apm_map, test_apm_missing_map_is_fail_visible);
     tcase_add_test(tc_apm_map, test_apm_partition_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_apm);
+    tcase_add_checked_fixture(tc_apm, cl_setup, cl_teardown);
+    tcase_add_test(tc_apm, test_apm_partition_limit_is_fail_visible);
+    tcase_add_test(tc_apm, test_apm_truncated_driver_map_is_format_error);
+    tcase_add_test(tc_apm, test_apm_invalid_partition_is_fail_visible);
+    tcase_add_test(tc_apm, test_apm_partition_table_boundary_is_fail_visible);
+    tcase_add_test(tc_apm, test_apm_partition_coordinate_overflow_is_fail_visible);
     suite_add_tcase(s, tc_hwpole2_map);
     tcase_add_checked_fixture(tc_hwpole2_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_missing_map_is_fail_visible);

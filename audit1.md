@@ -22,6 +22,17 @@ input fmap. The dedicated production-linked `swf_map` case covers both
 states; full SWF corpus, sanitizer, materialized large-file, production-CVD,
 service, and Sonic1 qualification remain open.
 
+## APM bounded-partition qualification — 2026-08-25
+
+The current-source production-linked GCC `apm` case passes 5/5 across
+partition limits, truncated driver maps, invalid partitions, table-boundary
+checks, and native-coordinate overflow. The separate `apm_map` case passes
+2/2 for missing-map admission and in-range partition-read failure. Current
+returns preserve the parser’s explicit `CL_EFORMAT`/`CL_EMAXREC` boundary
+classes and sticky incomplete state. Complete APM partition corpus,
+sanitizer, production-CVD/service parity, materialized large-file, and
+Sonic1 qualification remain open.
+
 ## GIF/PNG/TIFF direct-entry admission — 2026-08-25
 
 The direct GIF, PNG, and TIFF parser entries previously returned legacy
