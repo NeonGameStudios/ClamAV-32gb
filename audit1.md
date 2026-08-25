@@ -6,6 +6,14 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## Mydoom detector direct-entry admission — 2026-08-25
+
+The Mydoom log detector now returns `CL_ENULLARG` for a null context while
+retaining the explicit incomplete `CL_EPARSE` result for a recognized layer
+without an input fmap. The dedicated production-linked `mydoom_map` case
+covers both states; compiled detector corpus, raw-dispatch, sanitizer,
+production-CVD, service, and Sonic1 qualification remain open.
+
 ## BinHex direct-entry admission — 2026-08-25
 
 The BinHex parser now returns `CL_ENULLARG` for a null context while retaining

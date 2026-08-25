@@ -57,7 +57,7 @@ int cli_check_mydoom_log(cli_ctx *ctx)
     cli_dbgmsg("in cli_check_mydoom_log()\n");
     if (ctx == NULL) {
         cli_dbgmsg("Mydoom log detector: passed context was NULL\n");
-        return CL_EARG;
+        return CL_ENULLARG;
     }
     map = ctx->fmap;
     if (map == NULL) {

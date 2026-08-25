@@ -1,5 +1,13 @@
 # Wishlist
 
+## Mydoom detector direct-entry admission — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null Mydoom detector context, while marking a
+  recognized layer with no input fmap incomplete and returning `CL_EPARSE`.
+- The dedicated `mydoom_map` regression covers both admission states. Keep
+  compiled detector corpus, raw-dispatch, sanitizer, production-CVD, service,
+  and Sonic1 qualification open.
+
 ## BinHex direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null BinHex parser context, while marking a

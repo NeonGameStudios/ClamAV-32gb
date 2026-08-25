@@ -23415,6 +23415,12 @@ START_TEST(test_mydoom_detector_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mydoom_detector_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_check_mydoom_log(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_rtf_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -33884,6 +33890,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ppt_entry = tcase_create("ppt_entry");
     TCase *tc_arj_map = tcase_create("arj_map");
     TCase *tc_binhex_map = tcase_create("binhex_map");
+    TCase *tc_mydoom_map = tcase_create("mydoom_map");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
@@ -34033,6 +34040,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_binhex_map);
     tcase_add_test(tc_binhex_map, test_binhex_missing_map_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_null_context_is_fail_visible);
+    suite_add_tcase(s, tc_mydoom_map);
+    tcase_add_test(tc_mydoom_map, test_mydoom_detector_missing_map_is_fail_visible);
+    tcase_add_test(tc_mydoom_map, test_mydoom_detector_null_context_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
@@ -34267,7 +34277,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_embedded_header_read_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_autoit_version_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_encoded_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_mydoom_detector_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_file_type_detection_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_header_read_failure_is_fail_visible);
