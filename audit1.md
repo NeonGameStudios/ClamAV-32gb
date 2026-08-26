@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## ELF data-encoding admission — 2026-08-26
+
+ELF `EI_DATA` now accepts only the defined little-endian and big-endian
+encodings. Reserved values no longer fall through as big-endian input; they
+produce a fail-visible incomplete parse before any program or section table is
+read. The current-source ELF parser compiles warning-clean under GCC
+`-Wall -Wextra -Wformat-security`; `elf_map` passes 7/7, and `elf_corpus`
+passes 1/1. The existing mixed harness still reproduces a timeout-test
+SIGSEGV in the four-test `elf` case, so full ELF corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
 ## TNEF nonzero-attribute checksum accounting — 2026-08-26
 
 TNEF attributes carry a mandatory two-byte checksum after their payload. The

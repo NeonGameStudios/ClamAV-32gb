@@ -34210,6 +34210,39 @@ START_TEST(test_elf_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_elf_unknown_data_encoding_is_fail_visible)
+{
+    uint8_t data[sizeof(struct elf_file_hdr32)] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    data[0] = 0x7f;
+    data[1] = 'E';
+    data[2] = 'L';
+    data[3] = 'F';
+    data[4] = 1; /* ELFCLASS32. */
+    data[5] = 3; /* Reserved EI_DATA value. */
+    data[6] = 1;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    map         = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scanelf(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_elf_metadata_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -39754,6 +39787,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_elf_map);
     tcase_add_checked_fixture(tc_elf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_map, test_elf_missing_map_is_fail_visible);
+    tcase_add_test(tc_elf_map, test_elf_unknown_data_encoding_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_truncated_header_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_truncated_program_header_is_parse_error);

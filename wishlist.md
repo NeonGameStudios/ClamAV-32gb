@@ -1,5 +1,15 @@
 # Wishlist
 
+## ELF data-encoding admission — 2026-08-26
+
+- Accept only ELF's defined `EI_DATA` values and make reserved encodings
+  fail-visible before program or section-table traversal.
+- The current-source GCC parser build is warning-clean; `elf_map` passes 7/7
+  and `elf_corpus` passes 1/1. The mixed-harness timeout SIGSEGV remains
+  reproducible in the four-test `elf` case; retain sanitizer, production-CVD/
+  service, materialized large-file, Sonic1, and parser-family qualification as
+  release gates.
+
 ## TNEF nonzero-attribute checksum accounting — 2026-08-26
 
 - Read and range-check the mandatory two-byte checksum after every nonzero

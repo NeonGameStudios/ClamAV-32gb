@@ -213,7 +213,7 @@ static cl_error_t cli_elf_fileheader(cli_ctx *ctx, fmap_t *map, union elf_file_h
             cli_dbgmsg("ELF: File is little-endian - data conversion enabled\n");
         conv = 1;
 #endif
-    } else {
+    } else if (file_hdr->hdr64.e_ident[5] == 2) {
 #if WORDS_BIGENDIAN == 0
         if (ctx)
             cli_dbgmsg("ELF: File is big-endian - data conversion enabled\n");
@@ -223,6 +223,9 @@ static cl_error_t cli_elf_fileheader(cli_ctx *ctx, fmap_t *map, union elf_file_h
             cli_dbgmsg("ELF: File is big-endian - conversion not required\n");
         conv = 0;
 #endif
+    } else {
+        cli_dbgmsg("ELF: Unknown data encoding (%u)\n", file_hdr->hdr64.e_ident[5]);
+        return cli_elf_broken_result(ctx, CL_BREAK);
     }
 
     *do_convert = conv;
