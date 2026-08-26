@@ -562,9 +562,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                 size_t nskip = size;
                 size_t padding = size % BLOCKSIZE ? BLOCKSIZE - (size % BLOCKSIZE) : 0;
 
-                if (size == 0)
-                    nskip = BLOCKSIZE;
-                else if (padding && size > SIZE_MAX - padding) {
+                if (padding && size > SIZE_MAX - padding) {
                     cli_dbgmsg("cli_untar: got overflowing skip size, giving up\n");
                     cli_mark_scan_incomplete(ctx, "TAR entry skip size overflowed");
                     return CL_EPARSE;
@@ -614,7 +612,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
 
             cli_dbgmsg("cli_untar: extracting to %s\n", fullname);
 
-            in_block = 1;
+            in_block = (size != 0);
         } else { /* write or continue writing file contents */
             size_t nbytes, nwritten;
             char err[128];

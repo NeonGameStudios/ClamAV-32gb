@@ -1,5 +1,14 @@
 # Independent read-only audit of audit.md
 
+## TAR zero-length member traversal — 2026-08-26
+
+TAR extraction no longer enters the content loop for a zero-length regular
+member or advances an extra block when a zero-length entry is skipped. The
+following header is parsed normally, and a fresh current-source production-
+linked GCC `tar_member` TCase passes 5/5, including an exact nested `MZP`
+alert from the member after an empty member. Full TAR corpus, sanitizer,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## PNG structural admission — 2026-08-26
 
 The confirmed PNG parser now requires `IHDR` to be the first and only header,
@@ -147,11 +156,13 @@ Sonic1, and release evidence remain open.
 ## TAR member-size and PAX-scope qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `tar_member` case
-passes 4/4 after replacing mixed-harness temporary signature loading with
+passes 5/5 after replacing mixed-harness temporary signature loading with
 direct compiled matchers. Coverage proves GNU base-256 and PAX members reach
 nested matching at child offset zero, local PAX size override applies to one
 member before the global value resumes, and unrepresentable positive and
-negative base-256 values fail visibly and remain non-cacheable. The existing
+negative base-256 values fail visibly and remain non-cacheable; the new
+zero-length-member regression preserves the following header for nested
+matching. The existing
 `tar` case passes 6/6 and `tar_corpus` 1/1. Full TAR corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and release evidence remain open.

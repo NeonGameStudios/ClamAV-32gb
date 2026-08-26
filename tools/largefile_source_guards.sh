@@ -2685,6 +2685,7 @@ contains libclamav/untar.c 'TAR member traversal reached the configured time lim
 contains libclamav/untar.c 'TAR member temporary admission reached the configured time limit'
 contains libclamav/untar.c 'TAR member output reached the configured time limit'
 contains unit_tests/check_clamav.c 'test_tar_temporary_limit_is_fail_visible'
+contains unit_tests/check_clamav.c 'test_tar_zero_length_member_does_not_skip_next_header'
 contains unit_tests/check_clamav.c 'test_parser_temporary_directory_failures_are_fail_visible'
 contains libclamav/cpio.c 'CPIO archive ended before a complete trailer'
 contains libclamav/cpio.c 'static size_t cpio_readn'

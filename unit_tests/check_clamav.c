@@ -18419,6 +18419,51 @@ static void tar_test_make_posix_header(uint8_t *header, const char *name, uint64
     header[155] = '\0';
 }
 
+START_TEST(test_tar_zero_length_member_does_not_skip_next_header)
+{
+    uint8_t data[5 * 512] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    tar_test_make_posix_header(data, "empty", 0, '0');
+    tar_test_make_posix_header(data + 512, "payload", 3, '0');
+    memcpy(data + 1024, "MZP", 3);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Tar.ZeroLength.Next", "4d5a50",
+                         0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_POSIX_TAR", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Tar.ZeroLength.Next.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_tar_pax_global_local_size_scope_reaches_nested_matchers)
 {
     uint8_t local_override[4096] = {0};
@@ -39410,6 +39455,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tar_member, test_tar_pax_size_is_supported);
     tcase_add_test(tc_tar_member, test_tar_base256_unrepresentable_and_negative_sizes_fail_visible);
     tcase_add_test(tc_tar_member, test_tar_pax_global_local_size_scope_reaches_nested_matchers);
+    tcase_add_test(tc_tar_member, test_tar_zero_length_member_does_not_skip_next_header);
     suite_add_tcase(s, tc_cpio);
     tcase_add_checked_fixture(tc_cpio, cl_setup, cl_teardown);
     tcase_add_test(tc_cpio, test_cpio_corpus_detects_embedded_mz);

@@ -1,5 +1,13 @@
 # Wishlist
 
+## TAR zero-length member traversal — 2026-08-26
+
+- Keep zero-length regular and skipped entries from consuming the following
+  512-byte header. The focused production-linked GCC `tar_member` TCase passes
+  5/5, including exact nested matching in the member after an empty member.
+- Keep full TAR corpus, sanitizer, production-CVD/service, Sonic1, and release
+  gates open.
+
 ## PNG structural admission — 2026-08-26
 
 - Require `IHDR` to be first and unique, validate chunk-type bytes, and reject
@@ -120,9 +128,10 @@
 ## TAR member-size and PAX-scope qualification — 2026-08-26
 
 - The authoritative current-source production-linked GCC `tar_member` case
-  passes 4/4 after direct compiled matcher setup, covering GNU base-256 and
+  passes 5/5 after direct compiled matcher setup, covering GNU base-256 and
   PAX child handoff, local PAX override/global-scope restoration, and visible
-  rejection of unrepresentable positive and negative base-256 sizes. Existing
+  rejection of unrepresentable positive and negative base-256 sizes, plus the
+  zero-length-member next-header regression. Existing
   `tar` passes 6/6 and `tar_corpus` passes 1/1.
 - Keep complete TAR corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release gates open.

@@ -79,10 +79,11 @@ qualification remain open.
 ## TAR member-size and PAX-scope qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `tar_member` case
-passes 4/4 after direct compiled matcher setup. It covers GNU base-256 and
+passes 5/5 after direct compiled matcher setup. It covers GNU base-256 and
 PAX member handoff, local PAX size override followed by global scope
 restoration, and visible rejection of unrepresentable positive and negative
-base-256 sizes. Existing `tar` passes 6/6 and `tar_corpus` passes 1/1. Full
+base-256 sizes, plus preservation of the next header after a zero-length
+member. Existing `tar` passes 6/6 and `tar_corpus` passes 1/1. Full
 TAR corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and release qualification remain open.
 
