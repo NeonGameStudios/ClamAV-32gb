@@ -2484,7 +2484,7 @@ static bool html_screnc_write(cli_ctx *ctx, int fd, const void *data, size_t len
 }
 
 static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirname,
-                                    uint64_t *temporary_reserved)
+                                    uint64_t *temporary_reserved, bool *read_error)
 {
     int count;
     bool retval         = false;
@@ -2493,6 +2493,9 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
     int ofd;
     struct screnc_state screnc_state;
     m_area_t m_area;
+
+    if (read_error)
+        *read_error = false;
 
     if (map == NULL || dirname == NULL || (ctx == NULL) != (temporary_reserved == NULL))
         return false;
@@ -2591,6 +2594,8 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
     retval = true;
 
 done:
+    if (read_error)
+        *read_error = m_area.read_error;
     if (m_area.read_error) {
         if (ctx)
             cli_mark_scan_incomplete(ctx, "HTML script-encoded input could not be read completely");
@@ -2609,10 +2614,16 @@ done:
 
 bool html_screnc_decode(fmap_t *map, const char *dirname)
 {
-    return html_screnc_decode_impl(NULL, map, dirname, NULL);
+    return html_screnc_decode_impl(NULL, map, dirname, NULL, NULL);
 }
 
 bool html_screnc_decode_ctx(cli_ctx *ctx, fmap_t *map, const char *dirname, uint64_t *temporary_reserved)
 {
-    return html_screnc_decode_impl(ctx, map, dirname, temporary_reserved);
+    return html_screnc_decode_impl(ctx, map, dirname, temporary_reserved, NULL);
+}
+
+bool html_screnc_decode_ctx_status(cli_ctx *ctx, fmap_t *map, const char *dirname,
+                                   uint64_t *temporary_reserved, bool *read_error)
+{
+    return html_screnc_decode_impl(ctx, map, dirname, temporary_reserved, read_error);
 }

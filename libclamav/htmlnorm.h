@@ -68,6 +68,8 @@ void html_tag_arg_free(tag_arguments_t *tags);
 bool html_screnc_decode(fmap_t *map, const char *dirname);
 bool html_screnc_decode_ctx(cli_ctx *ctx, fmap_t *map, const char *dirname,
                             uint64_t *temporary_reserved);
+bool html_screnc_decode_ctx_status(cli_ctx *ctx, fmap_t *map, const char *dirname,
+                                   uint64_t *temporary_reserved, bool *read_error);
 bool html_tag_arg_add(tag_arguments_t *tags, const char *tag, char *value);
 
 void html_form_data_tag_free(form_data_t *tags);

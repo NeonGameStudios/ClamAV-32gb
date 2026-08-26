@@ -5117,6 +5117,19 @@ incomplete result without scanning partial normalized data. Source guards cover
 both output APIs; deterministic timeout injection, compiled HTML/MHTML corpus,
 sanitizer, and Sonic1 qualification remain release gates.
 
+## Script-encoded HTML read-status propagation — 2026-08-26
+
+The SCRENC scanner already marked mapped-input failures incomplete, but its
+boolean decoder API gave `cli_scanscrenc()` no way to distinguish an in-range
+read failure from malformed or truncated script-encoded content. The scanner
+therefore flattened a required read failure to `CL_EPARSE`. A status-bearing
+decoder entry point now reports the mapped read condition separately, so the
+SCRENC path preserves `CL_EREAD` while retaining sticky incomplete and
+non-cacheable state. The current-source production-linked ARM64 GCC `screnc`
+case passes 1/1 through the public `CL_TYPE_SCRENC` scanner path. Full SCRENC
+parser-family, corpus, sanitizer, materialized large-file, production-CVD,
+service, and Sonic1 qualification remain open.
+
 ## InstallShield output deadlines — 2026-08-22
 
 InstallShield MSI member, embedded-file, and CAB output paths now re-check the

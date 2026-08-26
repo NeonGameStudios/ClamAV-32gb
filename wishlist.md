@@ -2045,6 +2045,10 @@ large-file, and Sonic1 qualification open.
   before quota admission, after reservation, and immediately before writing;
   add deterministic output-timeout injection and full HTML/MHTML corpus
   qualification.
+- SCRENC mapped-input failures now preserve `CL_EREAD` through the scanner
+  instead of flattening them to `CL_EPARSE`; add malformed-header, output
+  close/write, full corpus, sanitizer, production-CVD/service, and Sonic1
+  qualification.
 - The mandatory service gate now directly exercises and oracle-validates all
   six structured clamd command families; full production qualification remains open.
 - CAB/CHM fmap callbacks now reject unrepresentable or wrapping origin/seek

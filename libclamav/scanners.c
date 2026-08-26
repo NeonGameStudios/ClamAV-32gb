@@ -4745,6 +4745,7 @@ static cl_error_t cli_scanscrenc(cli_ctx *ctx)
     char *tempname;
     cl_error_t ret = CL_SUCCESS;
     uint64_t temporary_reserved = 0;
+    bool read_error = false;
 
     cli_dbgmsg("in cli_scanscrenc()\n");
 
@@ -4760,10 +4761,10 @@ static cl_error_t cli_scanscrenc(cli_ctx *ctx)
         return CL_ETMPDIR;
     }
 
-    if (!html_screnc_decode_ctx(ctx, ctx->fmap, tempname, &temporary_reserved)) {
+    if (!html_screnc_decode_ctx_status(ctx, ctx->fmap, tempname, &temporary_reserved, &read_error)) {
         if (!ctx->scan_timed_out)
             cli_mark_scan_incomplete(ctx, "HTML script-encoded content could not be decoded completely");
-        ret = ctx->scan_timed_out ? CL_ETIMEOUT : CL_EPARSE;
+        ret = read_error ? CL_EREAD : ctx->scan_timed_out ? CL_ETIMEOUT : CL_EPARSE;
     } else {
         cli_scan_release_temporary(ctx, temporary_reserved);
         temporary_reserved = 0;
