@@ -562,6 +562,19 @@ direct-context TCase remains a mixed old/current `cli_ctx` ABI rebuild gate.
 Full HWP3 corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and release qualification remain open.
 
+## HWP3 information-block range classification — 2026-08-26
+
+The HWP3 information-block parser now classifies a declared payload that
+extends past the input fmap as malformed structure. It marks the scan
+incomplete with the explicit reason `HWP3 information block extends beyond the
+input map` and returns `CL_EPARSE`; genuinely in-range fmap callback failures
+continue to return `CL_EREAD`. The new regression passes within the direct
+HWP3 TCase. That current-source production-linked TCase reports 16 checks, 0
+assertion failures, and 8 known errors from the mixed old/current `cli_ctx`
+ABI harness. The isolated `hwp3_api` and `hwp3_corpus` cases remain 1/1. Full
+HWP3 corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## HWPML decoded-member corpus qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `hwpml_corpus` case passes

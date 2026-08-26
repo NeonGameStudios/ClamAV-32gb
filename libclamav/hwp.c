@@ -1773,7 +1773,8 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
         size_t remaining = (*offset <= map->len) ? map->len - *offset : 0;
         cli_errmsg("HWP3.x: Information block length %u exceeds remaining map length %zu at offset %zu\n",
                    infolen, remaining, *offset);
-        return CL_EREAD;
+        cli_mark_scan_incomplete(ctx, "HWP3 information block extends beyond the input map");
+        return CL_EPARSE;
     }
 
     /* Information Blocks */

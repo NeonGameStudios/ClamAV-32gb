@@ -579,6 +579,19 @@
   certified Linux x86-64, materialized large-file, production-CVD/service,
   Sonic1, and release gates open.
 
+## HWP3 information-block range classification — 2026-08-26
+
+- A declared HWP3 information-block payload that extends beyond the input fmap
+  now marks the scan incomplete with reason `HWP3 information block extends
+  beyond the input map` and returns `CL_EPARSE`; actual in-range fmap callback
+  failures remain `CL_EREAD`.
+- The new regression passes within the direct HWP3 TCase. The current-source
+  production-linked TCase reports 16 checks, 0 assertion failures, and 8 known
+  errors from the mixed old/current `cli_ctx` ABI harness; isolated `hwp3_api`
+  and `hwp3_corpus` remain 1/1. Keep full HWP3 corpus, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  release gates open.
+
 ## HWPML decoded-member corpus qualification — 2026-08-26
 
 - The isolated current-source production-linked GCC `hwpml_corpus` case

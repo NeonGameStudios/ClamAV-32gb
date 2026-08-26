@@ -690,6 +690,20 @@ not complete HWP3 qualification; sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and release evidence
 remain open.
 
+## HWP3 information-block range classification — 2026-08-26
+
+The HWP3 information-block parser now treats a declared payload that extends
+past the input fmap as malformed structure: it marks the scan incomplete with
+the explicit reason `HWP3 information block extends beyond the input map` and
+returns `CL_EPARSE`. This preserves `CL_EREAD` for actual in-range fmap
+callback failures. The added regression passes within the direct HWP3 TCase;
+that current-source production-linked TCase reports 16 checks, 0 assertion
+failures, and 8 known errors from the mixed old/current `cli_ctx` ABI harness.
+The isolated `hwp3_api` and `hwp3_corpus` cases remain 1/1. This is a bounded
+classification improvement, not complete HWP3 qualification; sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## HWPML decoded-member corpus qualification — 2026-08-26
 
 The isolated authoritative current-source production-linked GCC
