@@ -1,5 +1,14 @@
 # Wishlist
 
+## OneNote and OOXML current-source boundary rerun — 2026-08-26
+
+- The authoritative current-source production-linked GCC harness passes
+  `rust_onenote` 2/2 and `onenote` 2/2, plus `ooxml_entry` 1/1,
+  `ppt_entry` 1/1, and `msxml` 4/4.
+- Keep complete OneNote/OOXML part corpora, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## TAR member-size and PAX-scope qualification — 2026-08-26
 
 - The authoritative current-source production-linked GCC `tar_member` case

@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OneNote and OOXML current-source boundary rerun — 2026-08-26
+
+The authoritative current-source production-linked GCC harness passes
+`rust_onenote` 2/2 and `onenote` 2/2, plus `ooxml_entry` 1/1, `ppt_entry` 1/1,
+and `msxml` 4/4. These cover the Rust prefix read/truncation boundary,
+OneNote configuration and materialized attachment handoff, OOXML null-entry
+admission, the PowerPoint helper context boundary, and adjacent MSXML parser
+errors. Complete OneNote/OOXML part corpora, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## TAR member-size and PAX-scope qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `tar_member` case

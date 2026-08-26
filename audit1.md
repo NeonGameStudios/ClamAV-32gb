@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## OneNote and OOXML current-source boundary rerun — 2026-08-26
+
+The authoritative current-source production-linked GCC harness passes
+`rust_onenote` 2/2 and `onenote` 2/2, including the Rust prefix read/truncation
+distinction, the document/archive configuration boundary, and the three-file
+OneNote attachment corpus oracle. The adjacent document boundaries also pass
+`ooxml_entry` 1/1, `ppt_entry` 1/1, and `msxml` 4/4. These are fresh focused
+boundary/corpus results; complete OneNote and OOXML part corpora, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## TAR member-size and PAX-scope qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `tar_member` case
