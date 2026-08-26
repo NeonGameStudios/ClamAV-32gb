@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## GIF Graphic Control Extension field validation — 2026-08-26
+
+The GIF parser now validates the fixed Graphic Control Extension's declared
+four-byte data length and zero block terminator before trusting the next block
+boundary. Either malformed field produces a fail-visible `CL_EPARSE`, sticky
+incomplete state, and no-cache state. The current-source `gif.c` build is
+warning-clean under GCC `-Wall -Wextra -Wformat-security`; the
+current-source production-linked `gif` TCase passes 6/6, including both
+malformed-field regressions, and `gif_api` passes 1/1 for public in-range
+read-failure propagation. Full GIF corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## RTF parser state and child-dispatch hardening — 2026-08-26
 
 RTF parser-stack growth now checks the shared allocation ceiling before native

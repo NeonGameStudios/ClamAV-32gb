@@ -37126,6 +37126,42 @@ START_TEST(test_gif_header_read_failures_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gif_graphic_control_fields_are_validated)
+{
+    static const uint8_t invalid_block_size[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0, 0, 0, 0, 0, 0, 0,
+        0x21, 0xf9, 0x03, 0, 0, 0, 0, 0x3b};
+    static const uint8_t invalid_terminator[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0, 0, 0, 0, 0, 0, 0,
+        0x21, 0xf9, 0x04, 0, 0, 0, 0, 0x01, 0x3b};
+    const uint8_t *cases[] = {invalid_block_size, invalid_terminator};
+    const size_t lengths[] = {sizeof(invalid_block_size), sizeof(invalid_terminator)};
+    const char *reasons[] = {
+        "Heuristics.Broken.Media.GIF.InvalidGraphicControlBlockSize",
+        "Heuristics.Broken.Media.GIF.InvalidGraphicControlTerminator",
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t i;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(cases[i], lengths[i]);
+        ck_assert_ptr_nonnull(map);
+        ctx.fmap = map;
+
+        ck_assert_int_eq(cli_parsegif(&ctx), CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, reasons[i]);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+    }
+}
+END_TEST
+
 START_TEST(test_gif_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {'G', 'I', 'F'};
@@ -40569,6 +40605,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_macho_32bit_entrypoint_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);
     tcase_add_test(tc_gif, test_gif_header_read_failures_are_fail_visible);
+    tcase_add_test(tc_gif, test_gif_graphic_control_fields_are_validated);
     tcase_add_test(tc_gif, test_gif_truncated_screen_descriptor_is_parse_error);
     tcase_add_test(tc_gif, test_gif_block_timeout_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_png_missing_maps_are_fail_visible);

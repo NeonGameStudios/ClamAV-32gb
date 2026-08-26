@@ -1,5 +1,15 @@
 # Wishlist
 
+## GIF Graphic Control Extension field validation — 2026-08-26
+
+- Validate the fixed Graphic Control Extension block size and zero terminator
+  before advancing the GIF cursor; malformed confirmed fields now return
+  `CL_EPARSE` with sticky incomplete/non-cacheable state.
+- The current-source production-linked GCC `gif` TCase passes 6/6, including
+  both malformed-field regressions, and `gif_api` passes 1/1. Keep complete
+  GIF corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## Bytecode malformed-record boundary hardening — 2026-08-26
 
 - Keep variable/fixed-width bytecode reads bounded, reject zero or

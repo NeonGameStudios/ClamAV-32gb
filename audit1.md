@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## GIF Graphic Control Extension field validation — 2026-08-26
+
+The GIF parser previously consumed the fixed Graphic Control Extension payload
+without validating its declared four-byte data length or zero block
+terminator. A malformed confirmed GIF could therefore reach a following
+trailer as if the block boundary were trustworthy. The parser now returns a
+fail-visible `CL_EPARSE`, marks the layer incomplete, and disables caching for
+either malformed field. The current-source `gif.c` compiles warning-clean with
+GCC `-Wall -Wextra -Wformat-security`; the current-source production-linked
+`gif` TCase passes 6/6, including both malformed-field cases, and `gif_api`
+passes 1/1 for public in-range read-failure propagation. Full GIF corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, Sonic1, and parser-family qualification remain open.
+
 ## RTF parser state and child-dispatch hardening — 2026-08-26
 
 The RTF parser now checks its state-stack growth before the allocation-size

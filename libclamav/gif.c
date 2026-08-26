@@ -368,6 +368,21 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                             goto scan_overlay;
                         }
                     }
+
+                    /* The fixed payload is structurally confirmed only when
+                     * its declared data length and terminator agree with the
+                     * GIF grammar. Otherwise the following bytes cannot be
+                     * trusted as the next block boundary. */
+                    if (graphic_control_extension.block_size != 4) {
+                        status = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.InvalidGraphicControlBlockSize");
+                        parse_error = true;
+                        goto scan_overlay;
+                    }
+                    if (graphic_control_extension.block_terminator != GIF_BLOCK_TERMINATOR) {
+                        status = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.InvalidGraphicControlTerminator");
+                        parse_error = true;
+                        goto scan_overlay;
+                    }
                     offset += sizeof(graphic_control_extension);
                 } else {
                     switch (extension_label) {
