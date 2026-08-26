@@ -277,13 +277,11 @@
 
 ## 7-Zip current-source qualification — 2026-08-26
 
-- Fresh current-source `scanners.c`, `7z_iface.c`, and `7zIn.c` objects in the
-  production-linked GCC harness pass the seven focused 7-Zip boundary/oracle
-  checks; the eighth `7z` check over materialized `clam.7z` returns `CL_EPARSE`
-  before the custom nested alert is surfaced. `7z_map` and `7z_sfx` each pass
-  1/1. The materialized `7z_sfx_corpus` case also returns `CL_EPARSE` in the
-  mixed static/shared-ABI harness, so the corpus observations are withheld
-  until a full current C rebuild is available.
+- The current-source production-linked GCC harness, relinked with current
+  scanner, PE, `others`, `fmap`, and 7-Zip objects, passes all eight `7z`
+  checks, including materialized `clam.7z` nested detection. `7z_map` and
+  `7z_sfx` each pass 1/1, and `7z_sfx_corpus` passes 1/1. This replaces the
+  earlier mixed static/shared-ABI corpus result.
 - Keep full 7-Zip/SFX corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release gates open.
 

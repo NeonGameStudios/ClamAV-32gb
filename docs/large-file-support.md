@@ -222,15 +222,14 @@ open.
 
 ## 7-Zip current-source qualification — 2026-08-26
 
-Fresh current-source `scanners.c`, `7z_iface.c`, and `7zIn.c` objects in the
-production-linked GCC harness pass the seven focused 7-Zip boundary/oracle
-checks; the eighth `7z` check over materialized `clam.7z` returns `CL_EPARSE`
-before the custom nested alert is surfaced. `7z_map` and `7z_sfx` each pass
-1/1. The materialized `7z_sfx_corpus` case also returns `CL_EPARSE` in the
-mixed static/shared-ABI harness, so those corpus observations are withheld
-until a full current C rebuild is available. Full 7-Zip/SFX corpus, sanitizer,
-certified Linux x86-64, materialized large-file, production-CVD/service,
-Sonic1, and release qualification remain open.
+The current-source production-linked GCC harness, relinked with current
+scanner, PE, `others`, `fmap`, and 7-Zip objects, passes all eight `7z` checks,
+including the materialized `clam.7z` member, and reaches its exact nested
+child alert. `7z_map` and `7z_sfx` each pass 1/1, and the materialized
+`7z_sfx_corpus` case passes 1/1. This replaces the earlier mixed
+static/shared-ABI corpus result. Full 7-Zip/SFX corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release qualification remain open.
 
 ## HWPOLE2 embedded-OLE2 corpus qualification — 2026-08-26
 
@@ -666,10 +665,11 @@ dispatching it to nested scanning: the decoder-produced byte count and the
 materialized regular file's `st_size` must both equal the archive-declared
 member size. A mismatch is an incomplete `CL_EUNPACK` result and the partial
 output is never scanned. The current-source production-linked boundary cases
-pass `7z_map` and `7z_sfx` 1/1; the materialized `clam.7z` corpus path is
-currently withheld because the mixed static/shared-ABI harness returns
-`CL_EPARSE` before its custom nested marker is surfaced. 7-Zip parser-corpus
-and supported-build qualification remain release gates.
+pass `7z_map` and `7z_sfx` 1/1. A current-helper relink now passes all eight
+`7z` checks, including exact nested matching from materialized `clam.7z`, and
+the `7z_sfx_corpus` case passes 1/1. Full 7-Zip parser-corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release qualification remain gates.
 
 Local macOS validation has begun with a native host-preflight and runtime gate;
 its first result is documented in

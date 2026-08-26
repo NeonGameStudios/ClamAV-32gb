@@ -348,15 +348,14 @@ evidence remain open.
 
 ## 7-Zip current-source qualification — 2026-08-26
 
-Fresh current-source `scanners.c`, `7z_iface.c`, and `7zIn.c` objects in the
-production-linked GCC harness pass the seven focused 7-Zip boundary/oracle
-checks; the eighth `7z` check, which uses the materialized `clam.7z` member,
-returns `CL_EPARSE` before the custom nested alert is surfaced. `7z_map` and
-`7z_sfx` each pass 1/1. The materialized `7z_sfx_corpus` case likewise returns
-`CL_EPARSE` in this mixed static/shared-ABI harness. The corpus observations
-are therefore withheld as qualification evidence until a full current C
-rebuild is available; sanitizer, certified Linux x86-64, materialized
-large-file, production-CVD/service, Sonic1, and release evidence remain open.
+The current-source production-linked GCC harness, relinked with current
+scanner, PE, `others`, `fmap`, and 7-Zip objects, passes all eight `7z` checks,
+including the materialized `clam.7z` member, and reaches its exact nested
+child alert. `7z_map` and `7z_sfx` each pass 1/1, and the materialized
+`7z_sfx_corpus` case passes 1/1. This replaces the earlier mixed
+static/shared-ABI corpus result; sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
 
 ## HWPOLE2 embedded-OLE2 corpus qualification — 2026-08-26
 
