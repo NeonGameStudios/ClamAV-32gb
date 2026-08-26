@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UUEncode member corpus qualification — 2026-08-26
+
+The isolated current-source production-linked GCC `uuencode_corpus` case
+passes 1/1 over a complete terminated UUEncode stream. Its decoded member
+reaches the exact `Uuencode.Member.Marker.UNOFFICIAL` matcher through public
+`CL_TYPE_UUENCODED` dispatch and bounded temporary materialization. Full
+UUEncode/mail corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## UDF descriptor/member corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `udf_map` case passes 9/9, and the

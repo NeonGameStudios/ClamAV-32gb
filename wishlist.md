@@ -1,5 +1,14 @@
 # Wishlist
 
+## UUEncode member corpus qualification — 2026-08-26
+
+- The isolated current-source production-linked GCC `uuencode_corpus` case
+  passes 1/1 over a complete terminated stream whose decoded member reaches
+  an exact child marker through public `CL_TYPE_UUENCODED` dispatch.
+- Keep full UUEncode/mail corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## UDF descriptor/member corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC `udf_map` case passes 9/9, and the

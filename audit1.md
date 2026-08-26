@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## UUEncode member corpus qualification — 2026-08-26
+
+The isolated authoritative current-source production-linked GCC
+`uuencode_corpus` case passes 1/1 over a complete terminated UUEncode stream.
+Its decoded member reaches the exact `Uuencode.Member.Marker.UNOFFICIAL`
+matcher through public `CL_TYPE_UUENCODED` dispatch and bounded temporary
+materialization. This is bounded UUEncode/member-handoff evidence, not
+complete UUEncode qualification; sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## UDF descriptor/member corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `udf_map` case passes
