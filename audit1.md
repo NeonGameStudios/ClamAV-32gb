@@ -38,6 +38,21 @@ Full CAB/CHM and InstallShield corpus, current full-C ABI, sanitizer,
 certified Linux x86-64, materialized large-file, production CVD/service
 parity, Sonic1, and release qualification remain open.
 
+## MSEXPAND parser corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `msexpand` TCase
+passes 5/5, including the existing four SZDD boundary cases and a new public
+`CL_TYPE_MSSZDD` scan of materialized `clam.exe.szdd`. Its exact `MZP`
+matcher is anchored at child offset 0 while the compressed source's marker is
+at offset 15, so the alert requires MSEXPAND decompression and nested child
+handoff. The current MSEXPAND translation unit was linked into the focused
+binary; `msexpand_map` remains 2/2.
+
+This is one valid SZDD dispatch path, not complete MSEXPAND qualification.
+Full SZDD corpus, current full-C ABI, sanitizer, certified Linux x86-64,
+materialized large-file, production CVD/service parity, Sonic1, and release
+qualification remain open.
+
 ## BZip2 and GZip corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `bz_core` case passes

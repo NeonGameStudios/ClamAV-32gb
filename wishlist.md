@@ -3561,6 +3561,17 @@ and Sonic1 qualification as release gates.
   production-CVD/service parity, and Sonic1 qualification before moving
   `CL_TYPE_MSCAB` or `CL_TYPE_MSCHM` beyond pending.
 
+## MSEXPAND current-source corpus qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `msexpand` TCase now
+  passes 5/5, including materialized `clam.exe.szdd` through public
+  `CL_TYPE_MSSZDD` dispatch. Its child-offset matcher proves the exact marker
+  is found after decompression and nested handoff rather than in the
+  compressed root.
+- Complete the SZDD corpus and full-C ABI-consistent execution, then add
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.
+
 ## GZip current-source qualification audit — 2026-08-25
 
 - The expanded current-source production-linked `bz_core` TCase passes 5/5,

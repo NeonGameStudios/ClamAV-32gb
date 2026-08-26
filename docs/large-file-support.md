@@ -3007,6 +3007,16 @@ InstallShield corpus, full-C ABI, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, and Sonic1 qualification
 remain open.
 
+## MSEXPAND materialized corpus dispatch — 2026-08-25
+
+The current production-linked GCC MSEXPAND oracle scans materialized
+`clam.exe.szdd` through public `CL_TYPE_MSSZDD` dispatch. Its exact child-offset
+matcher is not satisfied by the compressed root and is reported only after
+decompression and nested handoff. The focused `msexpand` case passes 5/5;
+complete SZDD corpus, full-C ABI, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, and Sonic1 qualification
+remain open.
+
 ## PDF decoder input-width boundary — 2026-08-19
 
 The PDF stream decoder API now carries the source stream length as `size_t`

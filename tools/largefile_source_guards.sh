@@ -3635,6 +3635,7 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_ole2, test_ole2_mso_prefix
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_ole2, test_ole2_encryption_probe_read_failure_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_create("msexpand")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_msexpand, test_msexpand_truncated_output_is_fail_visible)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_msexpand, test_msexpand_corpus_detects_embedded_mz)'
 contains unit_tests/check_clamav.c 'tcase_create("nulsft")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_nulsft, test_nsis_header_range_classes_are_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_create("tar")'
