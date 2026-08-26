@@ -16248,6 +16248,14 @@ START_TEST(test_msexpand_header_range_classes_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msexpand_null_context_is_fail_visible)
+{
+    uint64_t temporary_reserved = 0;
+
+    ck_assert_int_eq(cli_msexpand(NULL, -1, &temporary_reserved), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_msexpand_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[14] = {
@@ -39616,6 +39624,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_msexpand);
     tcase_add_checked_fixture(tc_msexpand, cl_setup, cl_teardown);
     tcase_add_test(tc_msexpand, test_msexpand_header_range_classes_are_fail_visible);
+    tcase_add_test(tc_msexpand, test_msexpand_null_context_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_missing_map_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_truncated_output_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_time_limit_is_fail_visible);
@@ -39848,6 +39857,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwpml, test_hwpml_base64_decoder_is_bounded_and_fail_visible);
     tcase_add_test(tc_cl, test_legacy_parser_limit_returns_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_header_range_classes_are_fail_visible);
+    tcase_add_test(tc_cl, test_msexpand_null_context_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_truncated_output_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_time_limit_is_fail_visible);

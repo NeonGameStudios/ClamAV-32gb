@@ -1,5 +1,16 @@
 # Wishlist
 
+## MSEXPAND null-context classification — 2026-08-26
+
+- `cli_msexpand()` now returns `CL_ENULLARG` for a null scan context, while a
+  recognized SZDD layer with no input map remains `CL_EPARSE` and incomplete.
+- The current-source production-linked `msexpand_map` case passes 2/2, and the
+  new null-context regression passes inside the six-check `msexpand` TCase.
+  That TCase is 4/6 because the existing time-limit case segfaults and the
+  materialized corpus oracle mismatches in the mixed static/shared-ABI
+  harness. Full SZDD corpus, sanitizer, service, Sonic1, and release
+  qualification remain open.
+
 ## Logical-signature definition validation — 2026-08-26
 
 - `cli_exp_eval()` and `lsig_eval()` now reject unavailable logical matcher

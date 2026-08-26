@@ -130,7 +130,7 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
 
     if (ctx == NULL) {
         cli_dbgmsg("MSEXPAND: passed context was NULL\n");
-        return CL_EARG;
+        return CL_ENULLARG;
     }
     map = ctx->fmap;
     if (map == NULL) {

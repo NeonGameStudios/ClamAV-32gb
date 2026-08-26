@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## MSEXPAND null-context classification — 2026-08-26
+
+The direct SZDD/MSEXPAND decoder returned the generic `CL_EARG` when passed
+no scan context, unlike the other audited parser entry points that expose
+invalid API context as `CL_ENULLARG`. It now returns `CL_ENULLARG` without
+touching output or input state; the recognized-layer/no-fmap path remains
+`CL_EPARSE` with sticky incomplete state. The new direct regression is
+registered in both the focused MSEXPAND case and the broad library case.
+The current-source production-linked `msexpand_map` case passes 2/2, and the
+new null-context check passes inside the six-check `msexpand` TCase. That
+TCase is 4/6 because its existing time-limit case segfaults and its
+materialized corpus oracle returns a non-virus result in the mixed
+static/shared-ABI harness. Full current-source corpus, sanitizer,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## Logical-signature definition validation — 2026-08-26
 
 The logical matcher previously assumed that a loaded root always had a
