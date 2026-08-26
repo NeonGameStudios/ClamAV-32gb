@@ -389,8 +389,10 @@ materialized large-file, production-CVD, and Sonic1 qualification remain open.
 ## 7-Zip missing-map confirmed-entry classification — 2026-08-25
 
 The authoritative current-source production-linked GCC `7z` TCase now passes
-7/7 for truncated-header, in-range input-read, truncated-member,
-output-size/range, and both timeout boundaries. The current `7z_iface`,
+8/8 for truncated-header, in-range input-read, truncated-member,
+output-size/range, both timeout boundaries, and the materialized `clam.7z`
+corpus fixture. That fixture has no outer `MZP` marker and extraction reaches
+an exact nested `MZP` matcher result. The current `7z_iface`,
 `7zIn`, and `7zDec` objects were linked explicitly; the earlier timeout
 segfaults came from a stale static-library interface and uninitialized direct
 test options. The dedicated `7z_map` and `7z_sfx` cases pass 1/1 each.

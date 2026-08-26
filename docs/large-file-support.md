@@ -1122,6 +1122,12 @@ does not provide sanitizer, production-parser, or concurrency evidence.
   fixture/environment failures. Sonic1's 7-Zip source differs from the current
   worktree, so no remote rebuild qualification claim is made.
 
+- The current-source production-linked GCC 7-Zip TCase now passes 8/8,
+  including the materialized `clam.7z` fixture. The fixture contains no outer
+  `MZP` marker, and bounded extraction reaches an exact nested marker. Full
+  BCJ2/archive, sanitizer, materialized-large-file, production-CVD/service,
+  and Sonic1 qualification remain release gates.
+
 - A follow-up SIS slice found the old and 9.x handlers discarding member scan
   limits and allowing decompression, short-read, or output-write failures to
   fall through as clean. Those paths now preserve the first non-clean result,
