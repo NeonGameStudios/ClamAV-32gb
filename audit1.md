@@ -6,6 +6,23 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## CPIO materialized corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `cpio` TCase passes
+1/1 across four materialized 1 KiB fixtures: old binary big-endian, old binary
+little-endian, NEWC, and ODC. Each fixture has no `MZP` at archive offset 0;
+the exact offset-0 child matcher reports `Cpio.Member.MZ.UNOFFICIAL`, proving
+that the result comes through the CPIO member handoff. The existing current
+source `cpio_map` and `cpio_numeric` cases pass 4/4 and 1/1 respectively.
+
+A rerun of the older CRC and neighboring TAR signature-loader cases stops in
+their existing `cl_load()` setup with `CL_EMALFDB` in this mixed ABI harness,
+before parser execution; it is not evidence of a CPIO parser result. The
+corpus result is independent because it registers the deliberately short test
+matcher directly in memory. Complete CPIO parser-family, CRC loader-harness,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, Sonic1, and release evidence remain open.
+
 ## OneNote parser corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `onenote` TCase passes

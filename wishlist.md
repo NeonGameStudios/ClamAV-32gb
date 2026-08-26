@@ -1,5 +1,18 @@
 # Wishlist
 
+## CPIO materialized corpus qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `cpio` TCase passes
+  1/1 across materialized 1 KiB old-binary big-endian, old-binary little-
+  endian, NEWC, and ODC fixtures. Each exact offset-0 `MZP` alert is reached
+  through member extraction; the archive roots do not satisfy the matcher.
+- The existing current-source `cpio_map` and `cpio_numeric` cases pass 4/4 and
+  1/1. The older CRC and neighboring TAR loader cases stop at `cl_load()` with
+  `CL_EMALFDB` in the mixed ABI harness before parser execution; keep full CPIO
+  corpus, CRC loader-harness, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## BZip2 and GZip corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `bz_core` case

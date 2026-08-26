@@ -18519,6 +18519,87 @@ START_TEST(test_cpio_crc_member_reaches_nested_matchers)
 }
 END_TEST
 
+START_TEST(test_cpio_corpus_detects_embedded_mz)
+{
+    static const char *const archives[] = {
+        "clam.bin-be.cpio",
+        "clam.bin-le.cpio",
+        "clam.newc.cpio",
+        "clam.odc.cpio",
+    };
+    static const char *const types[] = {
+        "CL_TYPE_CPIO_OLD",
+        "CL_TYPE_CPIO_OLD",
+        "CL_TYPE_CPIO_NEWC",
+        "CL_TYPE_CPIO_ODC",
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    char file_path[PATH_MAX];
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Cpio.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(archives) / sizeof(archives[0]); i++) {
+        struct stat st;
+        fmap_t *map;
+        uint8_t *data;
+        size_t data_size;
+        size_t offset = 0;
+        int fd;
+
+        snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/%s", OBJDIR,
+                 archives[i]);
+        fd = open(file_path, O_RDONLY | O_BINARY);
+        ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+        ck_assert_int_eq(FSTAT(fd, &st), 0);
+        ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                      "invalid CPIO corpus size for %s", file_path);
+        data_size = (size_t)st.st_size;
+        data = malloc(data_size);
+        ck_assert_ptr_nonnull(data);
+        while (offset < data_size) {
+            ssize_t nread = read(fd, data + offset, data_size - offset);
+            ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+            offset += (size_t)nread;
+        }
+        ck_assert_int_eq(close(fd), 0);
+
+        ck_assert_msg(data_size >= 3 && memcmp(data, "MZP", 3) != 0,
+                      "CPIO root unexpectedly satisfies child signature for %s", file_path);
+        map = cl_fmap_open_memory(data, data_size);
+        ck_assert_ptr_nonnull(map);
+        verdict    = CL_VERDICT_NOTHING_FOUND;
+        last_alert = NULL;
+        scanned    = 0;
+        ck_assert_int_eq(
+            cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                          scan_engine, &options, NULL, NULL, NULL, NULL, types[i], NULL),
+            CL_VIRUS);
+        ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+        ck_assert_ptr_nonnull(last_alert);
+        ck_assert_str_eq(last_alert, "Cpio.Member.MZ.UNOFFICIAL");
+        cl_fmap_close(map);
+        free(data);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 static void cpio_test_assert_parse_incomplete(const uint8_t *archive, size_t archive_size,
                                                const struct cl_engine *scan_engine,
                                                struct cl_scan_options *options)
@@ -36743,6 +36824,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_sis_member = tcase_create("sis_member");
     TCase *tc_tar = tcase_create("tar");
     TCase *tc_tar_member = tcase_create("tar_member");
+    TCase *tc_cpio = tcase_create("cpio");
     TCase *tc_cpio_crc = tcase_create("cpio_crc");
     TCase *tc_cpio_numeric = tcase_create("cpio_numeric");
     TCase *tc_cpio_map = tcase_create("cpio_map");
@@ -37056,6 +37138,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tar_member, test_tar_pax_size_is_supported);
     tcase_add_test(tc_tar_member, test_tar_base256_unrepresentable_and_negative_sizes_fail_visible);
     tcase_add_test(tc_tar_member, test_tar_pax_global_local_size_scope_reaches_nested_matchers);
+    suite_add_tcase(s, tc_cpio);
+    tcase_add_checked_fixture(tc_cpio, cl_setup, cl_teardown);
+    tcase_add_test(tc_cpio, test_cpio_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_cpio_crc);
     tcase_add_checked_fixture(tc_cpio_crc, cl_setup, cl_teardown);
     tcase_add_test(tc_cpio_crc, test_cpio_crc_member_reaches_nested_matchers);

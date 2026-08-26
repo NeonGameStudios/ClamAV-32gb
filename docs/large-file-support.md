@@ -3,6 +3,22 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## CPIO materialized corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `cpio` TCase passes
+1/1 across four materialized 1 KiB fixtures: old binary big-endian, old binary
+little-endian, NEWC, and ODC. The outer CPIO bytes do not begin with `MZP`;
+each exact offset-0 `MZP` alert is therefore reached through member extraction
+and nested matcher handoff. The existing `cpio_map` and `cpio_numeric` cases
+pass 4/4 and 1/1.
+
+The older CRC and neighboring TAR signature-loader cases currently stop in
+their `cl_load()` setup with `CL_EMALFDB` in the mixed ABI harness before
+parser execution. That harness limitation is recorded separately from the
+successful direct-matcher corpus oracle. Complete CPIO corpus, CRC loader
+harness, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## Current qualification contract
 
 The service/release gate now requires an external eight-column TSV oracle in
