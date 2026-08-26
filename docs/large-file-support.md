@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PE packer corpus qualification — 2026-08-25
+
+The current-source production-linked GCC `pe` case passes 11/11 and `pe_map`
+passes 2/2. The isolated `pe_corpus` case passes 1/1 across materialized
+`clam-fsg.exe` and `clam-upx.exe`; neither outer PE root begins with `MZP`,
+while the exact offset-0 child matcher reports `Pe.Member.MZ.UNOFFICIAL`
+after unpacking. Full PE packer/resource corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## CPIO materialized corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `cpio` TCase passes

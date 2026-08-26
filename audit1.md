@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## PE packer corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `pe` case passes
+11/11, `pe_map` passes 2/2, and the isolated `pe_corpus` case passes 1/1 for
+materialized `clam-fsg.exe` and `clam-upx.exe`. Their outer PE roots do not
+begin with `MZP`; the exact offset-0 child matcher reports
+`Pe.Member.MZ.UNOFFICIAL` only after the FSG/UPX unpacking handoff. This is
+bounded PE packer evidence, not complete PE unpacker/resource qualification;
+full packer corpus, fault injection, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## PDF decoder and corpus qualification — 2026-08-25
 
 The current-source production-linked GCC `pdf` TCase now passes 13/13 after
