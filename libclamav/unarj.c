@@ -100,6 +100,16 @@ static cl_error_t arj_read_fixed_range(fmap_t *map, void *dst, size_t offset, si
     return CL_EFORMAT;
 }
 
+static bool arj_advance_offset(arj_metadata_t *metadata, size_t amount)
+{
+    if (metadata == NULL || metadata->map == NULL || metadata->offset > metadata->map->len ||
+        amount > metadata->map->len - metadata->offset)
+        return false;
+
+    metadata->offset += amount;
+    return true;
+}
+
 static const void *unarj_need_off_once_len(fmap_t *map, size_t offset, size_t length, size_t *length_out,
                                            cl_error_t *read_status)
 {
@@ -1019,7 +1029,10 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
         goto done;
     }
     if (main_hdr.first_hdr_size > 30) {
-        metadata->offset += main_hdr.first_hdr_size - 30;
+        if (!arj_advance_offset(metadata, main_hdr.first_hdr_size - 30)) {
+            ret = CL_EFORMAT;
+            goto done;
+        }
     }
 
     filename_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
@@ -1044,7 +1057,10 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
         }
         filename_len = CLI_STRNLEN(filename, filename_max_len);
     }
-    metadata->offset += filename_len + 1;
+    if (!arj_advance_offset(metadata, filename_len + 1)) {
+        ret = CL_EFORMAT;
+        goto done;
+    }
 
     comment_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
     if (comment_max_len > header_size) {
@@ -1068,7 +1084,10 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
         }
         comment_len = CLI_STRNLEN(comment, comment_max_len);
     }
-    metadata->offset += comment_len + 1;
+    if (!arj_advance_offset(metadata, comment_len + 1)) {
+        ret = CL_EFORMAT;
+        goto done;
+    }
 
     text_normalize_init(&fnstate, fnnorm, filename_max_len);
     text_normalize_init(&comstate, comnorm, comment_max_len);
@@ -1079,7 +1098,10 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
     cli_dbgmsg("Filename: %s\n", fnnorm);
     cli_dbgmsg("Comment: %s\n", comnorm);
 
-    metadata->offset += 4; /* crc */
+    if (!arj_advance_offset(metadata, 4U)) {
+        ret = CL_EFORMAT;
+        goto done;
+    }
     /* Skip past any extended header data */
     for (;;) {
         if (arj_checktimelimit(metadata->ctx, "ARJ main-header traversal reached the configured time limit") != CL_SUCCESS) {
@@ -1091,13 +1113,19 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
         if (ret != CL_SUCCESS)
             goto done;
         count = le16_to_host(count_wire);
-        metadata->offset += 2;
+        if (!arj_advance_offset(metadata, sizeof(count_wire))) {
+            ret = CL_EFORMAT;
+            goto done;
+        }
         cli_dbgmsg("Extended header size: %d\n", count);
         if (count == 0) {
             break;
         }
         /* Skip extended header + 4byte CRC */
-        metadata->offset += count + 4;
+        if (!arj_advance_offset(metadata, (size_t)count + 4U)) {
+            ret = CL_EFORMAT;
+            goto done;
+        }
     }
 
 done:
@@ -1182,7 +1210,10 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
 
     /* Note: this skips past any extended file start position data (multi-volume) */
     if (file_hdr.first_hdr_size > 30) {
-        metadata->offset += file_hdr.first_hdr_size - 30;
+        if (!arj_advance_offset(metadata, file_hdr.first_hdr_size - 30)) {
+            ret = CL_EFORMAT;
+            goto done;
+        }
     }
 
     filename_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
@@ -1207,7 +1238,10 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
         }
         filename_len = CLI_STRNLEN(filename, filename_max_len);
     }
-    metadata->offset += filename_len + 1;
+    if (!arj_advance_offset(metadata, filename_len + 1)) {
+        ret = CL_EFORMAT;
+        goto done;
+    }
 
     comment_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
     if (comment_max_len > header_size) {
@@ -1231,7 +1265,10 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
         }
         comment_len += CLI_STRNLEN(comment, comment_max_len);
     }
-    metadata->offset += comment_len + 1;
+    if (!arj_advance_offset(metadata, comment_len + 1)) {
+        ret = CL_EFORMAT;
+        goto done;
+    }
 
     text_normalize_init(&fnstate, fnnorm, filename_max_len);
     text_normalize_init(&comstate, comnorm, comment_max_len);
@@ -1244,7 +1281,14 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
     metadata->filename = CLI_STRNDUP(filename, filename_len);
 
     /* Skip CRC */
-    metadata->offset += 4;
+    if (!arj_advance_offset(metadata, 4U)) {
+        ret = CL_EFORMAT;
+        if (metadata->filename) {
+            free(metadata->filename);
+            metadata->filename = NULL;
+        }
+        goto done;
+    }
 
     /* Skip past any extended header data */
     for (;;) {
@@ -1266,13 +1310,27 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
             goto done;
         }
         count = le16_to_host(count_wire);
-        metadata->offset += 2;
+        if (!arj_advance_offset(metadata, sizeof(count_wire))) {
+            ret = CL_EFORMAT;
+            if (metadata->filename) {
+                free(metadata->filename);
+                metadata->filename = NULL;
+            }
+            goto done;
+        }
         cli_dbgmsg("Extended header size: %d\n", count);
         if (count == 0) {
             break;
         }
         /* Skip extended header + 4byte CRC */
-        metadata->offset += count + 4;
+        if (!arj_advance_offset(metadata, (size_t)count + 4U)) {
+            ret = CL_EFORMAT;
+            if (metadata->filename) {
+                free(metadata->filename);
+                metadata->filename = NULL;
+            }
+            goto done;
+        }
     }
     metadata->comp_size = file_hdr.comp_size;
     metadata->orig_size = file_hdr.orig_size;
@@ -1477,7 +1535,10 @@ cl_error_t cli_unarj_extract_file(const char *dirname, arj_metadata_t *metadata)
 
     if (metadata->encrypted) {
         cli_dbgmsg("PASSWORDed file (skipping)\n");
-        metadata->offset += metadata->comp_size;
+        if (!arj_advance_offset(metadata, metadata->comp_size)) {
+            cli_mark_scan_incomplete(metadata->ctx, "ARJ encrypted member is truncated or outside the input map");
+            return CL_EFORMAT;
+        }
         cli_dbgmsg("Target offset: %lu\n", (unsigned long int)metadata->offset);
         return CL_SUCCESS;
     }

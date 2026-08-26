@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ARJ metadata-offset range hardening — 2026-08-26
+
+ARJ parsing now range-checks fmap offset advances over variable first-header
+fields, CRCs, and extended-header records before movement. Encrypted members
+also fail visibly instead of skipping beyond the input map. The current-source
+ARJ object and unit-test source pass warning-enabled GCC syntax checks; a
+focused current-source harness passes the encrypted-member range regression
+with `CL_EFORMAT`, incomplete state, and non-cacheability, with source guards
+covering the boundary. Full ARJ corpus, sanitizer, production-CVD/service,
+Sonic1, and release qualification remain required.
+
 ## APM MaxPartitions loop-bound hardening — 2026-08-26
 
 Both APM partition walks now use `uint64_t` counters for their inclusive

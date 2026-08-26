@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## ARJ metadata-offset range hardening — 2026-08-26
+
+ARJ header parsing advanced its fmap offset directly over variable first-header
+fields, CRCs, and extended-header records. Near the native `size_t` boundary,
+an addition could wrap before the next read. Header offset movement now checks
+the remaining fmap range before every variable skip, and encrypted members
+cannot skip past the mapped input without a fail-visible `CL_EFORMAT` result.
+The current-source ARJ object and unit-test source pass warning-enabled GCC
+syntax checks; a focused current-source harness passes the encrypted-member
+range regression with `CL_EFORMAT`, incomplete state, and non-cacheability,
+and source guards cover the new boundary. Full ARJ corpus, sanitizer,
+production-CVD, service, Sonic1, and release qualification remain open.
+
 ## APM MaxPartitions loop-bound hardening — 2026-08-26
 
 APM's normal and partition-intersection walks used inclusive `unsigned`

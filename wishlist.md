@@ -1,5 +1,15 @@
 # Wishlist
 
+## ARJ metadata-offset range hardening — 2026-08-26
+
+- Range-check variable first-header, CRC, and extended-header offset advances;
+  encrypted members must not skip beyond the input fmap.
+- The current-source ARJ object and unit-test source pass warning-enabled GCC
+  syntax checks; a focused current-source harness passes the encrypted-member
+  range regression with `CL_EFORMAT`, incomplete state, and non-cacheability,
+  with source guards added. Keep full ARJ corpus, sanitizer,
+  production-CVD/service, Sonic1, and release qualification open.
+
 ## APM MaxPartitions loop-bound hardening — 2026-08-26
 
 - Keep both inclusive APM partition walks on a counter wider than the full

@@ -40011,6 +40011,40 @@ START_TEST(test_raw_matching_inspects_nonempty_subfive_byte_input)
 }
 END_TEST
 
+START_TEST(test_arj_encrypted_member_range_is_fail_visible)
+{
+    static const uint8_t data[] = {'x'};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    arj_metadata_t metadata;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&metadata, 0, sizeof(metadata));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine         = &engine;
+    ctx.fmap           = map;
+    metadata.ctx       = &ctx;
+    metadata.map       = map;
+    metadata.offset    = 0;
+    metadata.comp_size = 2;
+    metadata.encrypted = 1;
+
+    ret = cli_unarj_extract_file(".", &metadata);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ARJ encrypted member is truncated or outside the input map");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -40865,6 +40899,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_arj_compressed, test_arj_truncated_compressed_member_is_fail_visible);
     suite_add_tcase(s, tc_arj_map);
     tcase_add_test(tc_arj_map, test_arj_header_missing_context_or_map_is_fail_visible);
+    tcase_add_test(tc_arj_map, test_arj_encrypted_member_range_is_fail_visible);
     tcase_add_test(tc_arj_map, test_arj_main_header_read_failure_is_fail_visible);
     tcase_add_test(tc_arj_map, test_arj_main_header_string_read_failure_is_fail_visible);
     tcase_add_test(tc_arj_map, test_arj_main_header_strings_stay_within_declared_header);
@@ -41290,6 +41325,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ishield_truncated_metadata_is_fail_visible);
     tcase_add_test(tc_cl, test_ishield_metadata_string_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ishield_invalid_embedded_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_arj_encrypted_member_range_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_main_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_main_header_string_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_main_header_strings_stay_within_declared_header);
