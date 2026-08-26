@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## Fresh current-source MSEXPAND qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC rebuild, with a
+fresh `msexpand.c` object ahead of the existing static helper archive, passes
+the complete `msexpand` TCase 6/6 and `msexpand_map` 2/2. The run includes
+null-context and missing-map admission, fixed-header truncation/read failure,
+output and temporary limits, timeout, and the materialized `clam.exe.szdd`
+decompression/nested-child oracle. The earlier 4/6 and 5/6 results came from
+stale or mixed helper linkage; no MSEXPAND source regression remains in this
+current-source harness. Complete SZDD corpus, sanitizer, certified Linux,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## Fresh current-source ZIP corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC rebuild, using the

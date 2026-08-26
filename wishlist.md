@@ -1,5 +1,16 @@
 # Wishlist
 
+## Fresh current-source MSEXPAND qualification — 2026-08-26
+
+- A fresh current-source production-linked GCC rebuild passes the complete
+  `msexpand` TCase 6/6 and `msexpand_map` 2/2, including null-context and
+  missing-map admission, header/read boundaries, output and temporary limits,
+  timeout, and materialized `clam.exe.szdd` decompression with exact nested
+  matching.
+- The earlier 4/6 and 5/6 results were stale/mixed helper-linkage artifacts.
+  Keep complete SZDD corpus, sanitizer, certified Linux, production-CVD/
+  service, Sonic1, and release qualification open.
+
 ## Fresh current-source ZIP corpus qualification — 2026-08-26
 
 - The authoritative current-source production-linked GCC rebuild passes the
