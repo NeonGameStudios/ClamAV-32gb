@@ -278,9 +278,11 @@
 
 ## XAR member corpus qualification — 2026-08-26
 
-- The current-source production-linked GCC `xar` case passes 8/8,
-  `xar_map` passes 1/1, and the isolated `xar_corpus` case passes 1/1 over a
-  complete compressed TOC with an exact nested uncompressed-member matcher.
+- The `xar.c` object was freshly rebuilt with the production GCC flags. The
+  current-source production-linked GCC `xar` case passes 8/8, `xar_map` and
+  `xar_metadata` pass 1/1 each, and the isolated `xar_corpus` case passes 1/1
+  over a complete compressed TOC with an exact nested uncompressed-member
+  matcher. This supersedes the earlier mixed-object XAR crash observation.
 - Keep full XAR corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release gates open.
 

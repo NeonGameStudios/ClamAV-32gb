@@ -27742,8 +27742,7 @@ START_TEST(test_ole2_stream_size_preserves_high_word)
     ck_assert_msg(entry_offset <= data_size - 128U, "workbook directory entry is truncated");
 
     /* Remove the final byte from the declared WorkBook stream while leaving
-     * its block chain intact. The BIFF walker must reject the resulting
-     * partial record instead of treating the stream as completely inspected. */
+     * its block chain intact. The BIFF walker must reject the resulting partial record. */
     {
         uint64_t workbook_size;
 

@@ -7009,6 +7009,16 @@ incomplete/non-cacheable result instead of a normal end-of-TOC condition. A
 focused missing-root-close regression is registered; compiled XAR corpus,
 sanitizer, and supported-build Sonic1 qualification remain release gates.
 
+## XAR current-source corpus relink — 2026-08-26
+
+The current `xar.c` object was freshly rebuilt with the production GCC flags.
+The focused `xar` case passes 8/8, `xar_map` and `xar_metadata` pass 1/1 each,
+and `xar_corpus` passes 1/1 over a complete compressed TOC and in-range
+uncompressed member with exact nested matching. This supersedes the earlier
+mixed-object crash observation; full XAR corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, and Sonic1
+qualification remain release gates.
+
 ## RTF long-description state accounting — 2026-08-23
 
 RTF object descriptions now consume their full declared byte count across fmap
