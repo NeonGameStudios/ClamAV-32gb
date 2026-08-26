@@ -427,12 +427,15 @@ production-CVD/service, Sonic1, and release qualification remain open.
 ## Mail, MHTML, and MBR current-source qualification — 2026-08-26
 
 The rebuilt current-source production-linked GCC harness passes `mail_api`
-2/2, `mail` 10/10, `mbr` 5/5, `mbr_corpus` 1/1, `mhtml` 4/4, and
-`partition_map` 3/3. Coverage includes MIME streaming/error boundaries,
-MHTML large-body handling, MBR coordinate/read/limit checks, and exact
-partition-child matching. Full MIME/MHTML and partition-image corpora,
-sanitizer, certified Linux x86-64, materialized large-file,
-production-CVD/service, Sonic1, and release qualification remain open.
+2/2, `mbr` 5/5, `mbr_corpus` 1/1, `mhtml` 4/4, and `partition_map` 3/3.
+The `mail` TCase executes 10 checks with zero assertion failures but retains
+the known mixed old/current `cli_ctx` ABI SIGSEGV in its timeout test; the
+isolated `mail_partial` regression passes 1/1 for invalid RFC 1341 counts.
+Coverage includes MIME streaming/error boundaries, MHTML large-body handling,
+MBR coordinate/read/limit checks, and exact partition-child matching. Full
+MIME/MHTML and partition-image corpora, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
 
 ## InstallShield current-source admission qualification — 2026-08-26
 

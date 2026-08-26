@@ -453,10 +453,12 @@
 ## Mail, MHTML, and MBR current-source qualification — 2026-08-26
 
 - The rebuilt current-source production-linked GCC harness passes `mail_api`
-  2/2, `mail` 10/10, `mbr` 5/5, `mbr_corpus` 1/1, `mhtml` 4/4, and
-  `partition_map` 3/3, including MIME streaming/error boundaries, MHTML
-  large-body handling, MBR coordinate/limit cases, and exact partition-child
-  matching.
+  2/2, `mbr` 5/5, `mbr_corpus` 1/1, `mhtml` 4/4, and `partition_map` 3/3.
+  The `mail` TCase executes 10 checks with zero assertion failures but retains
+  the known mixed old/current `cli_ctx` ABI SIGSEGV in its timeout test; the
+  isolated `mail_partial` regression passes 1/1. Coverage includes MIME
+  streaming/error boundaries, MHTML large-body handling, MBR coordinate/limit
+  cases, and exact partition-child matching.
 - Keep complete MIME/MHTML and partition-image corpora, sanitizer, certified
   Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
   release gates open.
@@ -886,11 +888,13 @@
 
 ## Mail encoded-attachment corpus qualification — 2026-08-25
 
-- The authoritative current-source production-linked GCC `mail` case passes
-  10/10, including a public fmap scan of materialized `clam.mail`; its exact
-  embedded `MZP` marker is absent from the outer message and is detected only
-  after encoded-attachment extraction and nested handoff. The `mail_api` case
-  remains 2/2.
+- The authoritative current-source production-linked GCC `mail` case executes
+  10 checks with zero assertion failures, including a public fmap scan of
+  materialized `clam.mail`; its timeout test retains the known mixed
+  old/current `cli_ctx` ABI SIGSEGV. The exact embedded `MZP` marker is absent
+  from the outer message and is detected only after encoded-attachment
+  extraction and nested handoff. The `mail_api` case remains 2/2, and the
+  isolated invalid-partial-count regression passes 1/1.
 - Keep full MIME/mbox corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release qualification open.
 
@@ -4522,13 +4526,15 @@ and Sonic1 qualification as release gates.
 
 ## Mail/mbox focused parser audit — 2026-08-25
 
-- The current-source production-linked GCC harness passes the dedicated
-  `mail` TCase 9/9 across initial MIME input, missing-map, line and
-  header-lookahead callback, timeout, oversized-line, UUEncode, and truncated
-  BinHex boundaries. Truncated BinHex returns the parser's explicit
-  `CL_EFORMAT` failure while retaining incomplete/non-cacheable state; the
-  existing `mail_api` TCase passes 2/2 for public `CL_TYPE_MAIL` and
-  `CL_TYPE_MHTML` initial-read failures.
+- The current-source production-linked GCC harness executes the dedicated
+  `mail` TCase as 10 checks with zero assertion failures across initial MIME
+  input, missing-map, line and header-lookahead callback, timeout, oversized-
+  line, UUEncode, and truncated BinHex boundaries, but the timeout test
+  retains the known mixed old/current `cli_ctx` ABI SIGSEGV. The isolated
+  invalid-partial-count `mail_partial` TCase passes 1/1. Truncated BinHex
+  returns the parser's explicit `CL_EFORMAT` failure while retaining
+  incomplete/non-cacheable state; the existing `mail_api` TCase passes 2/2
+  for public `CL_TYPE_MAIL` and `CL_TYPE_MHTML` initial-read failures.
 - Complete the MIME/mbox/MHTML corpus, streaming 64–65 MiB CVD-backed tests,
   full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
   materialized large-file, production CVD/service parity, and Sonic1 evidence
