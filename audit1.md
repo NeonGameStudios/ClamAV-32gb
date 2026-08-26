@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## OLE2 embedded-member qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `ole2` case passes
+12/12, including the existing map, property-tree, MSO, VBA, timeout, and
+output-failure boundaries plus a public-API scan of the materialized
+`has_png_and_jpeg.xls` corpus fixture. The new regression detects an exact
+embedded PNG child signature, proving the OLE2 extraction-to-child matcher
+handoff for this corpus. The `ole2_xlm` and `ole2_map` cases remain 2/2 each.
+Full OLE2/VBA/XLM corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## ALZ corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `rust_alz` case passes

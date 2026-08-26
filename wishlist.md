@@ -1,5 +1,15 @@
 # Wishlist
 
+## OLE2 embedded-member qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `ole2` case passes
+  12/12, including the materialized `has_png_and_jpeg.xls` fixture and an
+  exact embedded-PNG child detection. The existing `ole2_xlm` and `ole2_map`
+  cases pass 2/2 each.
+- Keep complete OLE2/VBA/XLM corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release
+  qualification open.
+
 ## ALZ corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `rust_alz` case

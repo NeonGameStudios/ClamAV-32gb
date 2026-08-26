@@ -3660,6 +3660,7 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_html, test_script_normaliz
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_rust_lha, test_rust_lha_corpus_detects_nested_png)'
 contains unit_tests/check_clamav.c 'tcase_create("rust_alz")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_rust_alz, test_rust_alz_corpus_detects_nested_members)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_ole2, test_ole2_corpus_detects_embedded_png)'
 contains libclamav/pe.c 'PE unpacked content exceeded configured scan limits'
 contains libclamav/pe.c 'unpacked output exceeds temporary storage limits'
 contains libclamav/pe.c 'PE UPX/FSG unpacked output could not be written completely'
