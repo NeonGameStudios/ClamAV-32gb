@@ -1,5 +1,13 @@
 # Wishlist
 
+## CAB-SFX nested-dispatch qualification — 2026-08-26
+
+- The current-source production-linked GCC `cabsfx` case passes 1/1: a valid
+  prefixed CAB SFX reaches an exact offset-0 nested child matcher through
+  public `CL_TYPE_CABSFX` dispatch.
+- Keep full CAB-SFX corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## BZip2 parser boundary and concatenated-stream qualification — 2026-08-26
 
 - The current-source production-linked GCC `bz_core` case passes 6/6 after

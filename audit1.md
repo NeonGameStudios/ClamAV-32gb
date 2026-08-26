@@ -1,5 +1,14 @@
 # Independent read-only audit of audit.md
 
+## CAB-SFX nested-dispatch qualification — 2026-08-26
+
+The current-source production-linked GCC `cabsfx` case passes 1/1. A valid
+prefixed CAB SFX is admitted through the public `CL_TYPE_CABSFX` dispatch
+branch, and its extracted child reaches an exact offset-0 matcher. This is
+bounded SFX admission and nested-dispatch evidence, not complete CAB-SFX
+qualification; full corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release evidence remain open.
+
 ## BZip2 parser boundary and concatenated-stream qualification — 2026-08-26
 
 The current-source production-linked GCC `bz_core` case passes 6/6 after
