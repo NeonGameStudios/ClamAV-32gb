@@ -3664,6 +3664,7 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_ole2, test_ole2_corpus_det
 contains unit_tests/check_clamav.c 'tcase_create("iso")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_iso, test_iso_corpus_detects_embedded_png)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_zip, test_zip_corpus_detects_embedded_png)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_rtf, test_rtf_corpus_detects_embedded_mz)'
 contains libclamav/pe.c 'PE unpacked content exceeded configured scan limits'
 contains libclamav/pe.c 'unpacked output exceeds temporary storage limits'
 contains libclamav/pe.c 'PE UPX/FSG unpacked output could not be written completely'

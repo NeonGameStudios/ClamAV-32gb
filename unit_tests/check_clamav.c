@@ -8046,6 +8046,69 @@ START_TEST(test_rtf_implicit_object_close_status_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_rtf_corpus_detects_embedded_mz)
+{
+    char file_path[PATH_MAX];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    struct stat st;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    size_t offset = 0;
+    int fd;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "RTF.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/clam.exe.rtf",
+             OBJDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+    ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                  "invalid RTF corpus size");
+    data_size = (size_t)st.st_size;
+    data = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < data_size) {
+        ssize_t nread = read(fd, data + offset, data_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    ck_assert_int_eq(close(fd), 0);
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_RTF", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_str_eq(last_alert, "RTF.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    free(data);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_ole10_truncated_object_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -35685,6 +35748,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xar_map = tcase_create("xar_map");
     TCase *tc_riff = tcase_create("riff");
     TCase *tc_riff_map = tcase_create("riff_map");
+    TCase *tc_rtf     = tcase_create("rtf");
     TCase *tc_rtf_map = tcase_create("rtf_map");
     TCase *tc_uuencode_map = tcase_create("uuencode_map");
     TCase *tc_mail_api = tcase_create("mail_api");
@@ -35952,6 +36016,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_rtf_map, test_rtf_long_description_is_consumed);
     tcase_add_test(tc_rtf_map, test_rtf_split_object_zero_field_preserves_payload_size);
     tcase_add_test(tc_rtf_map, test_rtf_implicit_object_close_status_is_fail_visible);
+    suite_add_tcase(s, tc_rtf);
+    tcase_add_checked_fixture(tc_rtf, cl_setup, cl_teardown);
+    tcase_add_test(tc_rtf, test_rtf_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_hwpml);
     tcase_add_checked_fixture(tc_hwpml, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_xdp);

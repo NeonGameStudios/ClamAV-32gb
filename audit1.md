@@ -6,6 +6,15 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## RTF embedded-object corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `rtf` case passes
+1/1 against the materialized `clam.exe.rtf` fixture. The exact embedded `MZP`
+marker is absent from the outer RTF bytes and is detected after RTF object
+decoding and nested handoff. The existing `rtf_map` case passes 8/8. Full RTF
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## ZIP ordinary corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `zip` case passes
