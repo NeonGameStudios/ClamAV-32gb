@@ -796,8 +796,8 @@ cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
     /* The four bytes immediately before the NullsoftInst signature are the
      * NSIS archive marker. The complete fixed header is required before an
      * embedded candidate can create a nested layer. */
-    if (cli_readint32(buf) != UINT32_C(0xdeadbeef) &&
-        cli_readint32(buf + 4) != UINT32_C(0xdeadbeef)) {
+    if ((uint32_t)cli_readint32(buf) != UINT32_C(0xdeadbeef) &&
+        (uint32_t)cli_readint32(buf + 4) != UINT32_C(0xdeadbeef)) {
         if (fd < 0)
             fmap_unneed_off(ctx->fmap, offset, sizeof(header));
         return CL_EFORMAT;
@@ -823,7 +823,7 @@ cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
 
 int cli_scannulsft(cli_ctx *ctx, off_t offset)
 {
-    int ret;
+    cl_error_t ret;
     struct nsis_st nsist;
 
     cli_dbgmsg("in scannulsft()\n");

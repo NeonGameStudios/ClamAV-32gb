@@ -3481,6 +3481,8 @@ fixed-width-integer	libclamav/nsis/nulsft.c	755	    uint32_t archive_size;
 fixed-width-integer	libclamav/nsis/nulsft.c	765	    if (offset < 0 || (uint64_t)offset > ctx->fmap->len)
 fixed-width-integer	libclamav/nsis/nulsft.c	78	    uint64_t temporary_reserved;
 fixed-width-integer	libclamav/nsis/nulsft.c	782	        if ((off_t)read_offset < 0 || (uint64_t)(off_t)read_offset != read_offset)
+fixed-width-integer	libclamav/nsis/nulsft.c	799	    if ((uint32_t)cli_readint32(buf) != UINT32_C(0xdeadbeef) &&
+fixed-width-integer	libclamav/nsis/nulsft.c	800	        (uint32_t)cli_readint32(buf + 4) != UINT32_C(0xdeadbeef)) {
 fixed-width-integer	libclamav/nsis/nulsft.c	806	    header_size  = (uint32_t)cli_readint32(buf + 0x14);
 fixed-width-integer	libclamav/nsis/nulsft.c	807	    archive_size = (uint32_t)cli_readint32(buf + 0x18);
 fixed-width-integer	libclamav/nsis/nulsft.c	817	    if ((uint64_t)archive_size > remaining &&
@@ -12205,7 +12207,6 @@ native-width-integer	libclamav/nsis/nulsft.c	784	        if (pread(fd, header, s
 native-width-integer	libclamav/nsis/nulsft.c	79	    size_t solid_input_pos;
 native-width-integer	libclamav/nsis/nulsft.c	80	    size_t solid_input_remaining;
 native-width-integer	libclamav/nsis/nulsft.c	824	int cli_scannulsft(cli_ctx *ctx, off_t offset)
-native-width-integer	libclamav/nsis/nulsft.c	826	    int ret;
 native-width-integer	libclamav/nsis/nulsft.c	843	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset > ctx->fmap->len) {
 native-width-integer	libclamav/nsis/nulsft.c	847	    nsist.off = (size_t)offset;
 native-width-integer	libclamav/nsis/nulsft.h	25	cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset);

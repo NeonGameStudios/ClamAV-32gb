@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Fresh current-source NSIS/MSXML qualification — 2026-08-26
+
+The current-source production-linked GCC harness, with fresh NSIS and MSXML
+objects, passes `nulsft` 4/4, `nulsft_map` 2/2, `nulsft_corpus` 1/1,
+`msxml` 4/4, `msxml_map` 1/1, `msxml_corpus` 1/1, `ooxml_entry` 1/1, and
+`ppt_entry` 1/1. The NSIS materialized archive reaches the exact nested child
+matcher, and missing-map entry points retain their explicit incomplete status.
+The NSIS object is warning-clean under GCC `-Wall -Wextra -Wformat-security`.
+Full NSIS/MSXML/OOXML corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## Fresh current-source OneNote qualification — 2026-08-26
 
 The current-source production-linked GCC harness, with canonical Rust OneNote

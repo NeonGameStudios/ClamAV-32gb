@@ -1,5 +1,15 @@
 # Wishlist
 
+## Fresh current-source NSIS/MSXML qualification — 2026-08-26
+
+- The current-source production-linked GCC harness passes `nulsft` 4/4,
+  `nulsft_map` 2/2, `nulsft_corpus` 1/1, `msxml` 4/4, `msxml_map` 1/1,
+  `msxml_corpus` 1/1, `ooxml_entry` 1/1, and `ppt_entry` 1/1.
+- The NSIS object is warning-clean under GCC `-Wall -Wextra
+  -Wformat-security`; the materialized archive reaches the exact nested child
+  matcher. Keep full NSIS/MSXML/OOXML corpus, sanitizer, certified Linux,
+  production-CVD/service, Sonic1, and release qualification open.
+
 ## Fresh current-source OneNote qualification — 2026-08-26
 
 - The current-source production-linked GCC harness passes `onenote` 2/2,
