@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## XAR fixed-header size admission — 2026-08-26
+
+The XAR parser now requires the declared header size to cover the complete
+fixed header before accepting the compressed TOC range. A smaller declaration
+produces a fail-visible incomplete parse and disables caching. The
+current-source parser compiles warning-clean under GCC
+`-Wall -Wextra -Wformat-security`; the production-linked `xar` TCase passes
+9/9, and `xar_map`, `xar_metadata`, `xar_corpus`, and `xar_subdoc` pass 1/1
+each. Full XAR corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain open.
+
 ## ELF data-encoding admission — 2026-08-26
 
 ELF `EI_DATA` now accepts only the defined little-endian and big-endian

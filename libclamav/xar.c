@@ -912,6 +912,10 @@ int cli_scanxar(cli_ctx *ctx)
     hdr.toc_length_decompressed = be64_to_host(hdr.toc_length_decompressed);
     hdr.chksum_alg              = be32_to_host(hdr.chksum_alg);
 
+    if (hdr.size < sizeof(hdr)) {
+        cli_dbgmsg("cli_scanxar: XAR header size is smaller than its fixed header\n");
+        return xar_incomplete(ctx, "XAR header size is smaller than its fixed header");
+    }
     if (hdr.toc_length_compressed > SIZE_MAX || hdr.toc_length_decompressed > SIZE_MAX ||
         hdr.size > map->len || hdr.toc_length_compressed > map->len - hdr.size) {
         cli_dbgmsg("cli_scanxar: TOC dimensions exceed the native/parser range or the input map\n");

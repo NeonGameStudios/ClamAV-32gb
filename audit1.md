@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## XAR fixed-header size admission — 2026-08-26
+
+The XAR parser now requires the declared header size to cover the complete
+fixed header before accepting the compressed TOC range. A smaller declaration
+is a confirmed, fail-visible incomplete parse rather than allowing the TOC to
+begin inside the fixed header. The current-source parser compiles
+warning-clean under GCC `-Wall -Wextra -Wformat-security`; the production-
+linked `xar` TCase passes 9/9, while `xar_map`, `xar_metadata`, `xar_corpus`,
+and `xar_subdoc` pass 1/1 each. Full XAR corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
 ## ELF data-encoding admission — 2026-08-26
 
 ELF `EI_DATA` now accepts only the defined little-endian and big-endian

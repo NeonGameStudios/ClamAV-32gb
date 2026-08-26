@@ -1,5 +1,16 @@
 # Wishlist
 
+## XAR fixed-header size admission — 2026-08-26
+
+- Require the declared XAR header size to cover the fixed header before
+  accepting the TOC range; smaller declarations must be incomplete and
+  non-cacheable.
+- The current-source GCC parser build is warning-clean. The production-linked
+  `xar` TCase passes 9/9, and `xar_map`, `xar_metadata`, `xar_corpus`, and
+  `xar_subdoc` pass 1/1 each. Retain full corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification as release gates.
+
 ## ELF data-encoding admission — 2026-08-26
 
 - Accept only ELF's defined `EI_DATA` values and make reserved encodings

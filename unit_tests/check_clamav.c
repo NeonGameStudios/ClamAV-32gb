@@ -20530,6 +20530,47 @@ static uint8_t *xar_test_make_archive(size_t *data_length)
     return xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, data_length);
 }
 
+START_TEST(test_xar_header_size_below_fixed_header_is_fail_visible)
+{
+    uint8_t *data;
+    size_t data_length;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive(&data_length);
+    ck_assert_ptr_nonnull(data);
+    data[5] = (uint8_t)(sizeof(struct xar_header) - 1U);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_XAR", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_xar_corpus_detects_embedded_mz)
 {
     static const uint8_t toc[] =
@@ -40648,6 +40689,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_xar_header_read_failure_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_time_limit_is_fail_visible);
+    tcase_add_test(tc_xar, test_xar_header_size_below_fixed_header_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_invalid_file_metadata_is_fail_visible);
     tcase_add_test(tc_xar_metadata, test_xar_invalid_file_metadata_public_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_compressed_member_read_failure_is_fail_visible);
