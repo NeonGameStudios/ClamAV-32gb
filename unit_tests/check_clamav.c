@@ -22026,6 +22026,87 @@ START_TEST(test_onenote_dispatch_honors_document_dconf)
 }
 END_TEST
 
+START_TEST(test_onenote_corpus_detects_embedded_mz)
+{
+    static const char *const documents[] = {
+        "clam.exe.2007.one",
+        "clam.exe.2010.one",
+        "clam.exe.webapp-export.one",
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    char file_path[PATH_MAX];
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ONENOTE | CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "OneNote.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(documents) / sizeof(documents[0]); i++) {
+        struct stat st;
+        cli_scan_layer_t layers[2];
+        cli_ctx ctx;
+        fmap_t *map;
+        uint8_t *data;
+        size_t data_size;
+        size_t offset = 0;
+        int fd;
+
+        snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/%s", OBJDIR,
+                 documents[i]);
+        fd = open(file_path, O_RDONLY | O_BINARY);
+        ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+        ck_assert_int_eq(FSTAT(fd, &st), 0);
+        ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                      "invalid OneNote corpus size for %s", file_path);
+        data_size = (size_t)st.st_size;
+        data = malloc(data_size);
+        ck_assert_ptr_nonnull(data);
+        while (offset < data_size) {
+            ssize_t nread = read(fd, data + offset, data_size - offset);
+            ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+            offset += (size_t)nread;
+        }
+        ck_assert_int_eq(close(fd), 0);
+
+        map = fmap_open_memory(data, data_size, file_path);
+        ck_assert_ptr_nonnull(map);
+        memset(&layers, 0, sizeof(layers));
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine               = scan_engine;
+        ctx.dconf                = scan_engine->dconf;
+        ctx.options              = &options;
+        ctx.fmap                 = map;
+        ctx.this_layer_tmpdir    = tmpdir;
+        ctx.recursion_stack      = layers;
+        ctx.recursion_stack_size = sizeof(layers) / sizeof(layers[0]);
+        layers[0].fmap           = map;
+        layers[0].type           = CL_TYPE_ONENOTE;
+        layers[0].size           = data_size;
+        layers[0].tmpdir         = tmpdir;
+
+        /* Call the parser entrypoint directly so the raw scan of the OneNote
+         * container cannot satisfy this assertion. CL_VIRUS must therefore
+         * come from the parser's extracted-attachment handoff. */
+        ck_assert_int_eq(scan_onenote(&ctx), CL_VIRUS);
+        ck_assert(!ctx.scan_incomplete);
+        ck_assert_str_eq(cli_get_last_virus(&ctx), "OneNote.Member.MZ.UNOFFICIAL");
+        fmap_free(map);
+        free(data);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_hwp3_truncated_raw_deflate_is_fail_visible)
 {
     enum {
@@ -37006,6 +37087,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_onenote);
     tcase_add_checked_fixture(tc_onenote, cl_setup, cl_teardown);
     tcase_add_test(tc_onenote, test_onenote_dispatch_honors_document_dconf);
+    tcase_add_test(tc_onenote, test_onenote_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_rust_onenote);
     tcase_add_checked_fixture(tc_rust_onenote, cl_setup, cl_teardown);
     tcase_add_test(tc_rust_onenote, test_rust_onenote_initial_read_failure_is_fail_visible);

@@ -6,6 +6,23 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## OneNote parser corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `onenote` TCase passes
+2/2. In addition to the dynamic-configuration boundary, the new corpus oracle
+reads all three materialized fixtures (`clam.exe.2007.one`,
+`clam.exe.2010.one`, and `clam.exe.webapp-export.one`) and invokes
+`scan_onenote()` directly with a compiled exact child matcher. This bypasses
+the OneNote root's raw scan; each document therefore has to reach `CL_VIRUS`
+through the parser's extracted-attachment handoff and produces
+`OneNote.Member.MZ.UNOFFICIAL`. The existing `rust_onenote` boundary passes
+2/2 and `rust_map` passes 1/1.
+
+This is bounded legacy/modern corpus-dispatch evidence, not complete parser
+qualification. Full OneNote corpus, current full-C ABI, sanitizer, certified
+Linux x86-64, materialized large-file, production CVD/service parity, Sonic1,
+and release qualification remain open, so `CL_TYPE_ONENOTE` stays pending.
+
 ## BZip2 and GZip corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `bz_core` case passes

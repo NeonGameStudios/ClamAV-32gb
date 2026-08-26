@@ -2986,6 +2986,16 @@ is a deliberate unsupported boundary until the upstream parser exposes a
 reader-backed API; OneNote corpus, sanitizer, and RSS qualification remain
 open.
 
+## OneNote materialized corpus dispatch — 2026-08-25
+
+The current production-linked GCC OneNote oracle exercises all three
+materialized `.one` fixtures through the scanner-facing `scan_onenote()` entry
+point with an exact child matcher. Because the root raw scan is bypassed, the
+expected alert demonstrates that parser dispatch and the extracted-attachment
+handoff are active. The focused `onenote` case passes 2/2; complete corpus,
+full-C ABI, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 qualification remain open.
+
 ## PDF decoder input-width boundary — 2026-08-19
 
 The PDF stream decoder API now carries the source stream length as `size_t`

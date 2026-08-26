@@ -3541,9 +3541,10 @@ and Sonic1 qualification as release gates.
 - Preserve the OneNote fixed-prefix distinction: the current-source
   production-linked `rust_onenote` TCase passes 2/2 for in-range read failure
   versus genuine truncation, the shared `rust_map` case passes 1/1, and the
-  focused `onenote` dispatch case passes 1/1 for independent dynamic
-  configuration bits.
-- Add legacy-attachment and modern-parser corpus evidence, then complete the
+  focused `onenote` case passes 2/2, including the direct parser-entrypoint
+  corpus oracle over all three materialized fixtures and the independent
+  dynamic-configuration boundary.
+- Preserve the direct extracted-attachment matcher evidence, then complete the
   current full-C ABI build, sanitizer, certified Linux x86-64, materialized
   large-file, production CVD/service, and Sonic1 qualification before moving
   `CL_TYPE_ONENOTE` beyond pending.
