@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## ELF program-table admission without an entry point — 2026-08-26
+
+ELF32 and ELF64 program-header traversal no longer depends on a nonzero
+`e_entry`; every declared program table is now range-checked and read, while
+entry-point-to-file mapping remains conditional on an actual entry point. A
+declared out-of-range table in an ET_REL-style header therefore returns a
+fail-visible incomplete parse instead of clean. The current-source ELF parser
+builds warning-clean with GCC `-Wall -Wextra -Wformat-security`; production-
+linked `elf_map` and `elf_corpus` pass 8/8 and 1/1. Full ELF corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
+
 ## EGG archive-header admission — 2026-08-26
 
 The direct EGG archive parser now enforces the same supported version,

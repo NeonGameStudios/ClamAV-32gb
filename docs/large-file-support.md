@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ELF program-table admission without an entry point — 2026-08-26
+
+ELF32 and ELF64 program-header traversal now validates every declared table
+even when `e_entry` is zero; entry-point-to-file mapping remains conditional
+on a nonzero entry. A declared out-of-range table in an ET_REL-style header
+returns a fail-visible incomplete parse instead of clean. The current-source
+ELF parser builds warning-clean with GCC `-Wall -Wextra -Wformat-security`;
+production-linked `elf_map` and `elf_corpus` pass 8/8 and 1/1. Full ELF corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## EGG archive-header admission — 2026-08-26
 
 The direct EGG archive parser now enforces the supported version, nonzero

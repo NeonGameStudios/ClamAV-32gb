@@ -1,5 +1,15 @@
 # Wishlist
 
+## ELF program-table admission without an entry point — 2026-08-26
+
+- Traverse and validate every declared ELF32/ELF64 program table even when
+  `e_entry` is zero; keep entry-point mapping conditional on a nonzero entry.
+- The current-source GCC parser build is warning-clean, and the production-
+  linked `elf_map` and `elf_corpus` cases pass 8/8 and 1/1. Keep complete ELF
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification as release
+  gates.
+
 ## EGG archive-header admission — 2026-08-26
 
 - Enforce the supported EGG version, nonzero header ID, and zero reserved

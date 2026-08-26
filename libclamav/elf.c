@@ -301,7 +301,7 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
     }
     entry = file_hdr->e_entry;
 
-    if (phnum && entry) {
+    if (phnum) {
         phentsize = file_hdr->e_phentsize;
         /* Sanity check */
         if (phentsize != sizeof(struct elf_program_hdr32)) {
@@ -369,16 +369,19 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
             }
         }
 
-        fentry = cli_rawaddr32(entry, program_hdr, phnum, conv, &err);
+        if (entry) {
+            fentry = cli_rawaddr32(entry, program_hdr, phnum, conv, &err);
+            if (err) {
+                cli_dbgmsg("ELF: Can't calculate file offset of entry point\n");
+                free(program_hdr);
+                return cli_elf_broken_result(ctx, CL_EFORMAT);
+            }
+            if (ctx) {
+                cli_dbgmsg("ELF: Entry point address: 0x%.8x\n", entry);
+                cli_dbgmsg("ELF: Entry point offset: 0x" STDx64 " (" STDu64 ")\n", fentry, fentry);
+            }
+        }
         free(program_hdr);
-        if (err) {
-            cli_dbgmsg("ELF: Can't calculate file offset of entry point\n");
-            return cli_elf_broken_result(ctx, CL_EFORMAT);
-        }
-        if (ctx) {
-            cli_dbgmsg("ELF: Entry point address: 0x%.8x\n", entry);
-            cli_dbgmsg("ELF: Entry point offset: 0x" STDx64 " (" STDu64 ")\n", fentry, fentry);
-        }
     }
 
     if (elfinfo) {
@@ -414,7 +417,7 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
     }
     entry = file_hdr->e_entry;
 
-    if (phnum && entry) {
+    if (phnum) {
         phentsize = file_hdr->e_phentsize;
         /* Sanity check */
         if (phentsize != sizeof(struct elf_program_hdr64)) {
@@ -482,16 +485,19 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
             }
         }
 
-        fentry = cli_rawaddr64(entry, program_hdr, phnum, conv, &err);
+        if (entry) {
+            fentry = cli_rawaddr64(entry, program_hdr, phnum, conv, &err);
+            if (err) {
+                cli_dbgmsg("ELF: Can't calculate file offset of entry point\n");
+                free(program_hdr);
+                return cli_elf_broken_result(ctx, CL_EFORMAT);
+            }
+            if (ctx) {
+                cli_dbgmsg("ELF: Entry point address: 0x%.16" PRIx64 "\n", entry);
+                cli_dbgmsg("ELF: Entry point offset: 0x%.16" PRIx64 " (" STDi64 ")\n", fentry, fentry);
+            }
+        }
         free(program_hdr);
-        if (err) {
-            cli_dbgmsg("ELF: Can't calculate file offset of entry point\n");
-            return cli_elf_broken_result(ctx, CL_EFORMAT);
-        }
-        if (ctx) {
-            cli_dbgmsg("ELF: Entry point address: 0x%.16" PRIx64 "\n", entry);
-            cli_dbgmsg("ELF: Entry point offset: 0x%.16" PRIx64 " (" STDi64 ")\n", fentry, fentry);
-        }
     }
 
     if (elfinfo) {

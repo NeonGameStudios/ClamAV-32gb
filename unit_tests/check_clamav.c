@@ -34553,6 +34553,49 @@ START_TEST(test_elf_truncated_program_header_is_parse_error)
 }
 END_TEST
 
+START_TEST(test_elf_program_table_is_required_without_entrypoint)
+{
+    uint8_t data[64] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data[0] = 0x7f;
+    data[1] = 'E';
+    data[2] = 'L';
+    data[3] = 'F';
+    data[4] = 2; /* ELFCLASS64. */
+    data[5] = 1; /* ELFDATA2LSB. */
+    data[6] = 1;
+    zip_stream_write_u16(data + 16, 1); /* ET_REL; no entry point. */
+    zip_stream_write_u16(data + 18, 62);
+    zip_stream_write_u32(data + 20, 1);
+    zip_stream_write_u64(data + 32, sizeof(data));
+    zip_stream_write_u16(data + 52, sizeof(struct elf_file_hdr64));
+    zip_stream_write_u16(data + 54, sizeof(struct elf_program_hdr64));
+    zip_stream_write_u16(data + 56, 1);
+    zip_stream_write_u16(data + 58, sizeof(struct elf_section_hdr64));
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    ret = cli_scanelf(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_elf_scan_program_header_read_failure_is_fail_visible)
 {
     uint8_t data[64 + 56] = {0};
@@ -40029,6 +40072,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_truncated_header_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_truncated_program_header_is_parse_error);
+    tcase_add_test(tc_elf_map, test_elf_program_table_is_required_without_entrypoint);
     tcase_add_test(tc_elf_map, test_elf_scan_program_header_read_failure_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_elf_corpus);
