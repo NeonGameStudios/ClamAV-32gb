@@ -1546,12 +1546,15 @@ production-CVD/service, and Sonic1 evidence remain open.
 
 The focused production-linked `binhex_map` TCase now includes admission,
 header-completion, timeout, data/resource truncation, temporary-quota,
-cleanup-close, and injected encoded-input read-failure oracles. The timeout
+cleanup-close, injected encoded-input read-failure, and a public scan of the
+materialized `clam.exe.binhex` corpus fixture. The timeout
 fixture supplies scan options and asserts the repository-wide sticky
 `Heuristics.Limits.Exceeded.MaxScanTime` reason. The existing source guards
 continue to pin bounded decoding, temporary accounting, write/handoff
 deadlines, and non-cacheable failures. The focused production-linked run passes
-10/10; a current full C build remains required before certifying BinHex. Corpus,
+11/11; a current full C build remains required before certifying BinHex. The
+fixture's exact embedded `MZP` marker is absent from the encoded outer bytes
+and is detected after BinHex extraction and nested handoff. Complete corpus,
 sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
 service, and Sonic1 evidence remain open.
 

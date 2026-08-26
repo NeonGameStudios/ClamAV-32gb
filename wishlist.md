@@ -3472,9 +3472,12 @@ and Sonic1 qualification as release gates.
 ## BinHex focused-boundary audit — 2026-08-25
 
 - Expand the focused `binhex_map` TCase with admission, header-completion,
-  timeout, data/resource truncation, temporary-quota, cleanup-close, and
-  encoded-input read-failure oracles; the current production-linked run passes
-  10/10. A current full C rebuild remains required before certification.
+  timeout, data/resource truncation, temporary-quota, cleanup-close,
+  encoded-input read-failure, and materialized `clam.exe.binhex` corpus
+  oracles; the current production-linked run passes 11/11. Its exact embedded
+  `MZP` marker is absent from the encoded outer bytes and is detected after
+  BinHex extraction and nested handoff. A current full C rebuild remains
+  required before certification.
 - Preserve the bounded decoding, temporary-accounting, write/handoff deadline,
   and non-cacheable failure contracts; then complete BinHex corpus, sanitizer,
   certified Linux x86-64, materialized large-file, production-CVD/service, and

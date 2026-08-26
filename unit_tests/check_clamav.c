@@ -16424,6 +16424,68 @@ START_TEST(test_binhex_output_temporary_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_binhex_corpus_detects_embedded_mz)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    char file_path[PATH_MAX];
+    struct stat st;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    size_t offset = 0;
+    int fd;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "BinHex.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/clam.exe.binhex", OBJDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+    ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                  "invalid BinHex corpus size");
+    data_size = (size_t)st.st_size;
+    data = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < data_size) {
+        ssize_t nread = read(fd, data + offset, data_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    ck_assert_int_eq(close(fd), 0);
+
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ck_assert_int_eq(
+        cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                      scan_engine, &options, NULL, NULL, NULL, NULL,
+                      "CL_TYPE_BINHEX", NULL),
+        CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_str_eq(last_alert, "BinHex.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    free(data);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_binhex_cleanup_close_failure_is_fail_visible)
 {
@@ -36850,6 +36912,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_binhex_map, test_binhex_truncated_data_fork_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_short_resource_fork_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_output_temporary_limit_is_fail_visible);
+    tcase_add_test(tc_binhex_map, test_binhex_corpus_detects_embedded_mz);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_binhex_map, test_binhex_cleanup_close_failure_is_fail_visible);
 #endif

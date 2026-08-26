@@ -3907,6 +3907,7 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_binhex_map, test_binhex_ti
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_binhex_map, test_binhex_truncated_data_fork_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_binhex_map, test_binhex_short_resource_fork_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_binhex_map, test_binhex_output_temporary_limit_is_fail_visible)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_binhex_map, test_binhex_corpus_detects_embedded_mz)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_binhex_map, test_binhex_encoded_read_failure_is_fail_visible)'
 contains libclamav/autoit.c 'autoit_scan_temp_member'
 contains libclamav/autoit.c 'AutoIt EA06 member nested-scan handoff reached the configured time limit'
