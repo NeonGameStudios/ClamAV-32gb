@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## NSIS member-table corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `nulsft` case passes
+4/4, and the isolated `nulsft_corpus` case passes 1/1. The corpus oracle
+constructs a valid fixed-header NSIS archive with an uncompressed 64-byte
+member whose exact offset-0 `MZP` signature is reached only after NSIS member
+extraction; the NSIS root does not begin with `MZP`. This is bounded
+member-table/raw-output evidence, not complete NSIS/SFX corpus or decoder
+qualification; sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## PNG materialized overlay corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `png` case passes 5/5,

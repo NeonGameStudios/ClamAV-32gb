@@ -198,6 +198,15 @@
   Linux x86-64, materialized large-file, production-CVD/service parity, and
   Sonic1 qualification open.
 
+## NSIS member-table corpus qualification — 2026-08-25
+
+- The current-source production-linked GCC `nulsft` case passes 4/4, and the
+  isolated `nulsft_corpus` case passes 1/1 over a valid fixed-header NSIS
+  archive with a bounded uncompressed `MZP` member reached through member
+  extraction. Keep complete NSIS/SFX and decoder corpus, sanitizer,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## PNG materialized overlay corpus qualification — 2026-08-25
 
 - The current-source production-linked GCC `png` case passes 5/5, and the

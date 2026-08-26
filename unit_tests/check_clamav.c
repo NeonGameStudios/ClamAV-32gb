@@ -2383,6 +2383,61 @@ START_TEST(test_nsis_crc_trailer_is_not_a_member_header)
 }
 END_TEST
 
+START_TEST(test_nsis_corpus_detects_embedded_mz)
+{
+    static const uint8_t child[64] = {'M', 'Z', 'P'};
+    uint8_t archive[28 + 4 + sizeof(child) + 4];
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    struct cl_scan_options options;
+    fmap_t *map;
+    int ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(archive, 0, sizeof(archive));
+    cli_writeint32(archive, UINT32_C(0xdeadbeef));
+    memcpy(archive + 4, "NullsoftInst", 12);
+    cli_writeint32(archive + 0x14, 0x1c);
+    cli_writeint32(archive + 0x18, sizeof(archive));
+    cli_writeint32(archive + 0x1c, sizeof(child));
+    memcpy(archive + 0x20, child, sizeof(child));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "NSIS.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(archive, "MZP", 3) != 0,
+                  "NSIS root unexpectedly satisfies child signature");
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_NULSFT", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "NSIS member extraction did not reach the child matcher: %s",
+                  cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "NSIS.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_cl_scanfile_callback)
 {
     const char *virname = NULL;
@@ -37159,6 +37214,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
     TCase *tc_ole2_map = tcase_create("ole2_map");
     TCase *tc_nulsft = tcase_create("nulsft");
+    TCase *tc_nulsft_corpus = tcase_create("nulsft_corpus");
     TCase *tc_nulsft_map = tcase_create("nulsft_map");
     TCase *tc_ole10_entry = tcase_create("ole10_entry");
     TCase *tc_ppt_entry = tcase_create("ppt_entry");
@@ -37720,6 +37776,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_nulsft, test_nsis_missing_map_entry_points_are_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_time_limit_is_fail_visible);
+    suite_add_tcase(s, tc_nulsft_corpus);
+    tcase_add_checked_fixture(tc_nulsft_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_nulsft_corpus, test_nsis_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_nulsft_map);
     tcase_add_checked_fixture(tc_nulsft_map, cl_setup, cl_teardown);
     tcase_add_test(tc_nulsft_map, test_nsis_missing_map_entry_points_are_fail_visible);

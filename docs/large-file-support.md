@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## NSIS member-table corpus qualification — 2026-08-25
+
+The current-source production-linked GCC `nulsft` case passes 4/4, and the
+isolated `nulsft_corpus` case passes 1/1. It constructs a valid fixed-header
+NSIS archive with an uncompressed 64-byte member beginning with `MZP`; the
+exact `NSIS.Member.MZ.UNOFFICIAL` alert is reached only after NSIS member
+extraction, while the NSIS root does not begin with `MZP`. Full NSIS/SFX and
+decoder corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## PNG materialized overlay corpus qualification — 2026-08-25
 
 The current-source production-linked GCC `png` case passes 5/5, and the
