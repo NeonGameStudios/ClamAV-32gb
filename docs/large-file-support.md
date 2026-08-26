@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Fresh current-source OneNote qualification — 2026-08-26
+
+The current-source production-linked GCC harness, with canonical Rust OneNote
+sources matching the Docker build inputs, passes `onenote` 2/2,
+`rust_onenote` 2/2, and `rust_map` 1/1. The materialized OneNote corpus
+reaches the exact nested MZP matcher, while the Rust boundary and map cases
+retain their read/truncation and missing-map checks. The earlier CL_EPARSE
+comparison was a stale or mixed C/Rust linkage artifact. Full OneNote/OOXML
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## Fresh current-source SIS corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC rebuild, with a fresh

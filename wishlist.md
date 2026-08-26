@@ -1,5 +1,15 @@
 # Wishlist
 
+## Fresh current-source OneNote qualification — 2026-08-26
+
+- The current-source production-linked GCC harness passes `onenote` 2/2,
+  `rust_onenote` 2/2, and `rust_map` 1/1. The materialized OneNote corpus
+  reaches the exact nested MZP matcher, with Rust read/truncation and map
+  boundaries preserved.
+- The earlier CL_EPARSE comparison was stale/mixed C/Rust linkage. Keep full
+  OneNote/OOXML corpus, sanitizer, certified Linux, materialized large-file,
+  production-CVD/service, Sonic1, and release qualification open.
+
 ## Fresh current-source SIS corpus qualification — 2026-08-26
 
 - A source-consistent current-source production-linked GCC rebuild passes
