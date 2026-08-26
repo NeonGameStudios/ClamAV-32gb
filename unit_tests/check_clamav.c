@@ -3139,6 +3139,43 @@ START_TEST(test_screnc_input_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_script_input_read_failure_is_fail_visible)
+{
+    static const uint8_t data[] = "var script_read_failure = 1;";
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_HTML;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->need   = compressed_input_read_failure;
+    verdict     = CL_VERDICT_STRONG_INDICATOR;
+    last_alert  = "stale";
+    scanned     = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_SCRIPT", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_html_utf16_time_limit_is_fail_visible)
 {
     static const uint8_t input[] = {'<', 0x00, 'h', 0x00};
@@ -39078,6 +39115,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_text_encoding = tcase_create("text_encoding");
     TCase *tc_html = tcase_create("html");
     TCase *tc_screnc = tcase_create("screnc");
+    TCase *tc_script = tcase_create("script");
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     TCase *tc_largefile;
 #endif
@@ -39342,6 +39380,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_screnc);
     tcase_add_checked_fixture(tc_screnc, cl_setup, cl_teardown);
     tcase_add_test(tc_screnc, test_screnc_input_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_script);
+    tcase_add_checked_fixture(tc_script, cl_setup, cl_teardown);
+    tcase_add_test(tc_script, test_script_input_read_failure_is_fail_visible);
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     if (getenv("CLAMAV_LARGEFILE_QUALIFY") != NULL) {
         tc_largefile = tcase_create("largefile_qualification");

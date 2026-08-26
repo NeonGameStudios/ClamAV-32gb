@@ -5130,6 +5130,17 @@ case passes 1/1 through the public `CL_TYPE_SCRENC` scanner path. Full SCRENC
 parser-family, corpus, sanitizer, materialized large-file, production-CVD,
 service, and Sonic1 qualification remain open.
 
+## Script normalization scanner read-status qualification — 2026-08-26
+
+The script normalizer's large-map path already distinguishes an in-range fmap
+callback failure (`CL_EREAD`) from an impossible offset or clipped input
+(`CL_EPARSE`). A dedicated public scanner regression now exercises
+`CL_TYPE_SCRIPT` dispatch with an in-range callback failure and verifies the
+non-cacheable, fail-visible result. The current-source production-linked ARM64
+GCC `script` case passes 1/1. Full script parser-family, corpus, sanitizer,
+materialized large-file, production-CVD, service, and Sonic1 qualification
+remain open.
+
 ## InstallShield output deadlines — 2026-08-22
 
 InstallShield MSI member, embedded-file, and CAB output paths now re-check the

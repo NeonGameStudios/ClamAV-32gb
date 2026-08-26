@@ -1925,6 +1925,9 @@ large-file, and Sonic1 qualification open.
   status, preserving in-range callback failures as `CL_EREAD` instead of
   generic parse errors; add compiled scanner-level callback-fault and
   production script corpus qualification.
+- The public `CL_TYPE_SCRIPT` scanner now has a focused in-range callback-fault
+  oracle; add malformed-input, output cleanup, full corpus, sanitizer,
+  production-CVD/service, materialized large-file, and Sonic1 qualification.
 - Script normalization now writes the complete generated view to a
   quota-accounted temporary fmap and scans it through the native-width matcher
   path, removing the obsolete 4-GiB buffer-ABI boundary; compiled timeout,
