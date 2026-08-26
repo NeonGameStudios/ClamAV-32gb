@@ -1,5 +1,16 @@
 # Wishlist
 
+## ALZ corpus qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `rust_alz` case
+  passes 1/1 across all five materialized ALZ archives, detecting exact
+  nested-member signatures for text and ELF payloads through stored, deflate,
+  and BZip2 paths. The cached Rust release suite passes all 34 ALZ unit tests,
+  and `rust_map` passes 1/1.
+- Keep full current-C-ABI execution, sanitizer, certified Linux x86-64,
+  materialized large-file boundaries, production-CVD/service parity, Sonic1,
+  and release qualification open before changing `CL_TYPE_ALZ` from pending.
+
 ## LHA/LZH corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `rust_lha` case

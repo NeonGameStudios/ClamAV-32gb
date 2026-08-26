@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## ALZ corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `rust_alz` case passes
+1/1 across all five materialized ALZ fixtures. It detects exact nested-member
+signatures from text and ELF payloads, covering stored, deflate, and BZip2
+members, including both binary/ELF fixtures. The existing cached Rust release
+suite passes all 34 ALZ unit tests, and `rust_map` passes 1/1. Full
+current-C-ABI-consistent C execution, sanitizer, certified Linux x86-64,
+materialized large-file boundaries, production-CVD/service parity, Sonic1,
+and release qualification remain open, so `CL_TYPE_ALZ` stays pending.
+
 ## LHA/LZH corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `rust_lha` case passes

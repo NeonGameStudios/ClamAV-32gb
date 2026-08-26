@@ -20248,6 +20248,85 @@ START_TEST(test_rust_lha_corpus_detects_nested_png)
 }
 END_TEST
 
+START_TEST(test_rust_alz_corpus_detects_nested_members)
+{
+    static const char *const archives[] = {
+        "bzip2.alz", "bzip2.bin.alz", "deflate.alz", "uncompressed.alz",
+        "uncompressed.bin.alz"
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    char file_path[PATH_MAX];
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "ALZ.Member.Text",
+                         "746573742066696c65", 0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "ALZ.Member.ELF",
+                         "7f454c4602010100", 0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(archives) / sizeof(archives[0]); i++) {
+        struct stat st;
+        fmap_t *map;
+        uint8_t *data;
+        size_t data_size;
+        int fd;
+        size_t offset = 0;
+        const char *expected_alert;
+
+        snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/alz/%s",
+                 SRCDIR, archives[i]);
+        fd = open(file_path, O_RDONLY | O_BINARY);
+        ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+        ck_assert_int_eq(FSTAT(fd, &st), 0);
+        ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                      "invalid ALZ corpus size for %s", file_path);
+        data_size = (size_t)st.st_size;
+        data = malloc(data_size);
+        ck_assert_ptr_nonnull(data);
+        while (offset < data_size) {
+            ssize_t nread = read(fd, data + offset, data_size - offset);
+            ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+            offset += (size_t)nread;
+        }
+        ck_assert_int_eq(close(fd), 0);
+
+        map = cl_fmap_open_memory(data, data_size);
+        ck_assert_ptr_nonnull(map);
+        verdict    = CL_VERDICT_NOTHING_FOUND;
+        last_alert = NULL;
+        scanned    = 0;
+        expected_alert = strstr(archives[i], ".bin.") != NULL
+                             ? "ALZ.Member.ELF.UNOFFICIAL"
+                             : "ALZ.Member.Text.UNOFFICIAL";
+        ck_assert_int_eq(
+            cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                          scan_engine, &options, NULL, NULL, NULL, NULL,
+                          "CL_TYPE_ALZ", NULL),
+            CL_VIRUS);
+        ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+        ck_assert_str_eq(last_alert, expected_alert);
+        cl_fmap_close(map);
+        free(data);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_rust_onenote_initial_read_failure_is_fail_visible)
 {
     static const uint8_t data[32] = {0};
@@ -35445,6 +35524,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hwpml_map = tcase_create("hwpml_map");
     TCase *tc_rust_map = tcase_create("rust_map");
     TCase *tc_rust_lha = tcase_create("rust_lha");
+    TCase *tc_rust_alz = tcase_create("rust_alz");
     TCase *tc_onenote = tcase_create("onenote");
     TCase *tc_rust_onenote = tcase_create("rust_onenote");
     TCase *tc_msxml = tcase_create("msxml");
@@ -35883,6 +35963,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_rust_lha, test_rust_lha_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_corpus_detects_nested_png);
+    suite_add_tcase(s, tc_rust_alz);
+    tcase_add_checked_fixture(tc_rust_alz, cl_setup, cl_teardown);
+    tcase_add_test(tc_rust_alz, test_rust_alz_corpus_detects_nested_members);
     suite_add_tcase(s, tc_onenote);
     tcase_add_checked_fixture(tc_onenote, cl_setup, cl_teardown);
     tcase_add_test(tc_onenote, test_onenote_dispatch_honors_document_dconf);
