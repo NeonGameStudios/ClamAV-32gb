@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Logical-signature definition validation — 2026-08-26
+
+The logical matcher previously assumed that a loaded root always had a
+non-null signature table, entry, and expression. A malformed or partially
+constructed signature set could therefore fault before the existing
+fail-closed bytecode and unknown-type checks ran. `cli_exp_eval()` and
+`lsig_eval()` now validate the evaluation context, table, entry, expression,
+and input fmap before dereference, mark the current layer incomplete, and
+disable caching on malformed confirmed matcher state. The focused
+production-linked matcher TCase passes the new malformed-definition
+regression; the same TCase remains at 35/36 because the pre-existing
+`test_fp_hash_read_failure_is_fail_visible` mixed static/shared-ABI harness
+case still segfaults. Full logical-expression, production-signature,
+sanitizer, service, Sonic1, and release gates remain open.
+
 ## OneNote modern-fallback admission — 2026-08-26
 
 When the modern `onenote_parser` rejected a document with the OneNote magic,

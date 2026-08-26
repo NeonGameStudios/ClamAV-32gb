@@ -1,5 +1,16 @@
 # Wishlist
 
+## Logical-signature definition validation — 2026-08-26
+
+- `cli_exp_eval()` and `lsig_eval()` now reject unavailable logical matcher
+  context, tables, entries, expressions, and input maps before dereference,
+  marking confirmed malformed matcher state incomplete and non-cacheable.
+- The production-linked matcher TCase passes the new malformed-definition
+  regression. Its remaining 35/36 result is the known mixed static/shared-ABI
+  `test_fp_hash_read_failure_is_fail_visible` segfault; full logical
+  expressions, production signatures, sanitizer, service, Sonic1, and release
+  qualification remain open.
+
 ## OneNote modern-fallback admission — 2026-08-26
 
 - A OneNote document that fails the modern parser now falls back to the

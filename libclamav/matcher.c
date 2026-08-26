@@ -1121,9 +1121,28 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
     unsigned evalcnt            = 0;
     uint64_t evalids            = 0;
     fmap_t *new_map             = NULL;
-    struct cli_ac_lsig *ac_lsig = root->ac_lsigtable[lsid];
-    char *exp                   = ac_lsig->u.logic;
-    char *exp_end               = exp + strlen(exp);
+    struct cli_ac_lsig *ac_lsig;
+    char *exp;
+    char *exp_end;
+
+    if (!ctx || !root || !root->ac_lsigtable || lsid >= root->ac_lsigs ||
+        !acdata || !ctx->fmap) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "logical signature evaluation context is unavailable");
+        if (ctx && ctx->fmap)
+            ctx->fmap->dont_cache_flag = 1;
+        return CL_EPARSE;
+    }
+
+    ac_lsig = root->ac_lsigtable[lsid];
+    if (!ac_lsig || !ac_lsig->u.logic) {
+        cli_mark_scan_incomplete(ctx, "logical signature expression is unavailable");
+        ctx->fmap->dont_cache_flag = 1;
+        return CL_EPARSE;
+    }
+
+    exp     = ac_lsig->u.logic;
+    exp_end = exp + strlen(exp);
 
     status = cli_ac_chkmacro(root, acdata, lsid, ctx);
     if (status != CL_SUCCESS)
@@ -1366,8 +1385,26 @@ cl_error_t cli_exp_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_da
     cl_error_t current;
     bool yara_work_accounted = false;
 
+    if (!ctx || !root || !ctx->fmap) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "logical matcher evaluation context is unavailable");
+        if (ctx && ctx->fmap)
+            ctx->fmap->dont_cache_flag = 1;
+        return CL_ENULLARG;
+    }
+
+    if (root->ac_lsigs && !root->ac_lsigtable) {
+        cli_mark_scan_incomplete(ctx, "logical signature table is unavailable");
+        ctx->fmap->dont_cache_flag = 1;
+        return CL_EPARSE;
+    }
+
     for (i = 0; i < root->ac_lsigs; i++) {
-        if (root->ac_lsigtable[i]->type == CLI_LSIG_NORMAL) {
+        if (!root->ac_lsigtable[i]) {
+            cli_mark_scan_incomplete(ctx, "logical signature entry is unavailable");
+            ctx->fmap->dont_cache_flag = 1;
+            current = CL_EPARSE;
+        } else if (root->ac_lsigtable[i]->type == CLI_LSIG_NORMAL) {
             current = lsig_eval(ctx, root, acdata, target_info, i);
         }
 #ifdef HAVE_YARA
