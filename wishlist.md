@@ -1,5 +1,15 @@
 # Wishlist
 
+## HWPML decoded-member corpus qualification — 2026-08-26
+
+- The isolated current-source production-linked GCC `hwpml_corpus` case
+  passes 1/1 over a complete HWPML document whose attribute-driven Base64
+  `BINDATA` member reaches an exact child marker after bounded decoded
+  temporary materialization and nested scanning through `CL_TYPE_XML_HWP`;
+  the existing HWPML boundary TCase passes 2/2.
+- Keep full HWPML/XML corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## MSXML decoded-member corpus qualification — 2026-08-26
 
 - The isolated current-source production-linked GCC `msxml_corpus` case

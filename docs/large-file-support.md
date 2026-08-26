@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HWPML decoded-member corpus qualification — 2026-08-26
+
+The isolated current-source production-linked GCC `hwpml_corpus` case passes
+1/1 over a complete HWPML document. Its attribute-driven Base64 `BINDATA`
+member reaches the exact `HWPML.Member.Marker.UNOFFICIAL` matcher after
+bounded decoded temporary materialization and nested output scanning through
+public `CL_TYPE_XML_HWP` dispatch; the outer XML does not contain the marker.
+The existing HWPML boundary TCase also passes 2/2. Full HWPML/XML corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## MSXML decoded-member corpus qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `msxml_corpus` case passes

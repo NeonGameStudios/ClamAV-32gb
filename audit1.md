@@ -6,6 +6,19 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## HWPML decoded-member corpus qualification — 2026-08-26
+
+The isolated authoritative current-source production-linked GCC
+`hwpml_corpus` case passes 1/1 over a complete HWPML document. Its
+attribute-driven Base64 `BINDATA` member reaches the exact
+`HWPML.Member.Marker.UNOFFICIAL` matcher after bounded decoded temporary
+materialization and nested output scanning through public `CL_TYPE_XML_HWP`
+dispatch; the outer XML does not contain the marker. The existing HWPML
+boundary TCase also passes 2/2. This is bounded HWPML decoded-member evidence,
+not complete HWPML/XML qualification; sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## MSXML decoded-member corpus qualification — 2026-08-26
 
 The isolated authoritative current-source production-linked GCC

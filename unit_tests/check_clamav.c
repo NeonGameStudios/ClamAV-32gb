@@ -35427,6 +35427,55 @@ START_TEST(test_xdp_corpus_detects_embedded_marker)
 }
 END_TEST
 
+START_TEST(test_hwpml_corpus_detects_embedded_marker)
+{
+    static const uint8_t data[] =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><HWPML><HEAD/><BODY/><TAIL>"
+        "<BINDATASTORAGE><BINDATA Encoding=\"Base64\" Compress=\"false\">\nVURG\n"
+        "</BINDATA></BINDATASTORAGE></TAIL></HWPML>";
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "HWPML.Member.Marker", "554446", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert(strstr((const char *)data, "UDF") == NULL);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_XML_HWP", NULL);
+    ck_assert_msg(ret == CL_SUCCESS || ret == CL_VIRUS,
+                  "HWPML decoded member was not scanned: %s (%d)",
+                  cl_strerror(ret), ret);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "HWPML.Member.Marker.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_msxml_corpus_detects_embedded_marker)
 {
     static const uint8_t data[] = "<document><bindata>\nVURG\n</bindata></document>";
@@ -38376,6 +38425,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_sis_map = tcase_create("sis_map");
     TCase *tc_ishield_map = tcase_create("ishield_map");
     TCase *tc_hwpml_map = tcase_create("hwpml_map");
+    TCase *tc_hwpml_corpus = tcase_create("hwpml_corpus");
     TCase *tc_rust_map = tcase_create("rust_map");
     TCase *tc_rust_lha = tcase_create("rust_lha");
     TCase *tc_rust_alz = tcase_create("rust_alz");
@@ -38878,6 +38928,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hwpml_map);
     tcase_add_checked_fixture(tc_hwpml_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpml_map, test_hwpml_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_hwpml_corpus);
+    tcase_add_checked_fixture(tc_hwpml_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_hwpml_corpus, test_hwpml_corpus_detects_embedded_marker);
     suite_add_tcase(s, tc_msxml);
     tcase_add_checked_fixture(tc_msxml, cl_setup, cl_teardown);
     tcase_add_test(tc_msxml, test_msxml_truncated_document_is_fail_visible);
