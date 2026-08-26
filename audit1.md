@@ -58,12 +58,13 @@ production-CVD/service, Sonic1, and release qualification remain open.
 ## ZIP ordinary corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `zip` case passes
-13/13, including both materialized split `logos.zip` and `logos.z01` corpus
-fixtures. The new regression detects the exact nested PNG child signature
-through ordinary ZIP dispatch; the existing 12 boundary cases remain green.
-The `zip_sfx` case passes 3/3 and `zip_map` passes 1/1. Full ZIP corpus,
-sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
-service, Sonic1, and release qualification remain open.
+14/14, including both materialized split `logos.zip` and `logos.z01` corpus
+fixtures plus `clam.zip` and `clam.split.oneseg.zip` fixtures. The new
+regressions detect exact nested PNG and MZP child signatures through ordinary
+ZIP dispatch; the existing 12 boundary cases remain green. The `zip_sfx` case
+passes 3/3 and `zip_map` passes 1/1. Full ZIP corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release qualification remain open.
 
 ## ISO9660 corpus qualification — 2026-08-25
 

@@ -3673,6 +3673,7 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_sis, test_sis_corpus_detec
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_mail, test_mbox_corpus_detects_embedded_mz)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_tnef, test_tnef_corpus_detects_embedded_mz)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_7z, test_7z_corpus_detects_embedded_mz)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_zip, test_zip_corpus_detects_embedded_mz)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_core, test_bzip_corpus_detects_embedded_mz)'
 contains libclamav/pe.c 'PE unpacked content exceeded configured scan limits'
 contains libclamav/pe.c 'unpacked output exceeds temporary storage limits'

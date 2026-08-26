@@ -129,8 +129,10 @@ The 7-Zip path likewise validates each successfully decoded member twice before
 dispatching it to nested scanning: the decoder-produced byte count and the
 materialized regular file's `st_size` must both equal the archive-declared
 member size. A mismatch is an incomplete `CL_EUNPACK` result and the partial
-output is never scanned. 7-Zip parser-corpus and supported-build qualification
-remain release gates.
+output is never scanned. The current-source production-linked GCC corpus case
+also passes against `clam.7z`, whose outer bytes contain no `MZP` marker while
+the extracted member reaches an exact nested marker. 7-Zip parser-corpus and
+supported-build qualification remain release gates.
 
 Local macOS validation has begun with a native host-preflight and runtime gate;
 its first result is documented in
