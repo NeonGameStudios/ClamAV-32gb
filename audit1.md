@@ -6,6 +6,15 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## BZip2 corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `bz_core` case passes
+4/4, including the materialized `clam.exe.bz2` fixture. Its exact embedded
+`MZP` marker is absent from the compressed outer bytes and is detected after
+decompression and nested handoff. Full BZip2 concatenated-member/corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## Mail encoded-attachment corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `mail` case passes

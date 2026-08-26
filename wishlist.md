@@ -1,5 +1,15 @@
 # Wishlist
 
+## BZip2 corpus qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `bz_core` case
+  passes 4/4, including materialized `clam.exe.bz2`; its exact embedded `MZP`
+  marker is absent from the compressed outer bytes and is detected after
+  decompression and nested handoff.
+- Keep full BZip2 concatenated-member/corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+  qualification open.
+
 ## Mail encoded-attachment corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `mail` case passes
