@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## XDP decoded-member corpus qualification — 2026-08-26
+
+The isolated current-source production-linked GCC `xdp_corpus` case passes
+1/1 over a complete XML XDP document. Its base64 `chunk` decodes to a bounded
+member that reaches the exact `Xdp.Chunk.Marker.UNOFFICIAL` matcher through
+public `CL_TYPE_XDP` dispatch and nested output scanning; the outer XML does
+not contain the marker. Full XDP/MSXML corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## UUEncode member corpus qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `uuencode_corpus` case

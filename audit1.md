@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## XDP decoded-member corpus qualification — 2026-08-26
+
+The isolated authoritative current-source production-linked GCC
+`xdp_corpus` case passes 1/1 over a complete XML XDP document. Its base64
+`chunk` decodes to a bounded member that reaches the exact
+`Xdp.Chunk.Marker.UNOFFICIAL` matcher through public `CL_TYPE_XDP` dispatch
+and nested output scanning; the outer XML does not contain the marker. This
+is bounded XDP/MSXML output evidence, not complete XDP qualification;
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## UUEncode member corpus qualification — 2026-08-26
 
 The isolated authoritative current-source production-linked GCC

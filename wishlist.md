@@ -1,5 +1,14 @@
 # Wishlist
 
+## XDP decoded-member corpus qualification — 2026-08-26
+
+- The isolated current-source production-linked GCC `xdp_corpus` case passes
+  1/1 over a complete XML XDP document whose base64 chunk reaches an exact
+  child marker through public `CL_TYPE_XDP` dispatch and nested output
+  scanning.
+- Keep full XDP/MSXML corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## UUEncode member corpus qualification — 2026-08-26
 
 - The isolated current-source production-linked GCC `uuencode_corpus` case
