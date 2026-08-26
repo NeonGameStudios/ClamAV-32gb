@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## DMG warning-clean source qualification — 2026-08-26
+
+The canonical DMG source was rebuilt with the established GCC
+`-Wall -Wextra -Wformat-security` flags after removing an unused
+`read_failed` declaration from the zero-stripe writer. The production-linked
+current-source `dmg_map` case passes 7/7 across strict Base64/terminal-END,
+host-order stripes, bounded external sorting, malformed metadata, trailer
+read failure, invalid trailer, and missing-map admission. Full DMG corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## CPIO zero-name member admission — 2026-08-26
 
 The old binary, ODC, newc, and CRC CPIO handlers previously accepted a member

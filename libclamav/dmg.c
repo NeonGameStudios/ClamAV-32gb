@@ -1137,7 +1137,6 @@ static int dmg_stripe_zeroes(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mi
     int ret;
     uint64_t expected;
     uint64_t written = 0;
-    int read_failed;
     uint8_t obuf[BUFSIZ];
 
     cli_dbgmsg("dmg_stripe_zeroes: stripe " STDu32 "\n", index);

@@ -3705,6 +3705,15 @@ contains libclamav/dmg.c 'DMG ADC decompressor could not be allocated'
 contains libclamav/dmg.c 'DMG deflate decompressor could not be allocated'
 contains libclamav/dmg.c 'DMG bzip2 decompressor could not be allocated'
 contains libclamav/dmg.c 'DMG XML temporary path could not be allocated'
+if ! awk '
+/^static int dmg_stripe_zeroes\(/ { in_fn = 1; found = 1; next }
+in_fn && /^[[:space:]]*int read_failed;/ { bad = 1 }
+in_fn && /^}/ { in_fn = 0 }
+END { exit (!found || bad) }
+' "$root/libclamav/dmg.c"; then
+    echo 'large-file source guard failed: dmg_stripe_zeroes retains an unused read_failed declaration' >&2
+    exit 1
+fi
 contains libclamav/dmg.c 'cli_magic_scan_desc_type_reserved(ofd, outfile'
 contains libclamav/msxml_parser.c 'MSXML base64 stream contains invalid trailing data'
 contains libclamav/msxml_parser.c 'MSXML base64 stream contains invalid padding'

@@ -1,5 +1,16 @@
 # Wishlist
 
+## DMG warning-clean source qualification — 2026-08-26
+
+- Rebuild canonical `dmg.c` with GCC `-Wall -Wextra -Wformat-security` after
+  removing the unused zero-stripe `read_failed` declaration.
+- The current-source production-linked `dmg_map` case passes 7/7 across strict
+  Base64/terminal-END, host-order stripes, bounded external sorting, malformed
+  metadata, trailer read failure, invalid trailer, and missing-map admission.
+- Keep full DMG corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  as release gates.
+
 ## CPIO zero-name member admission — 2026-08-26
 
 - Reject zero `namesize` members in old binary, ODC, newc, and CRC CPIO
