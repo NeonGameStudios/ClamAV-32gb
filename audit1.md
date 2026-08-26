@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Mydoom detector corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `mydoom_map` case
+passes 4/4, including the existing null-context, missing-map, and in-range
+detector-window read-failure boundaries plus a valid two-record Mydoom log
+corpus. With heuristic scanning and precedence explicitly enabled, the corpus
+reaches `Heuristics.Worm.Mydoom.M.log` through public
+`CL_TYPE_BINARY_DATA` dispatch and remains cacheable on detection. This is
+focused detector and dispatch evidence, not complete raw-signature or service
+qualification; broader ingress parity, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## Binary-data raw-matcher dispatch qualification — 2026-08-26
 
 The isolated authoritative current-source production-linked GCC

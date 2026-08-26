@@ -1,5 +1,15 @@
 # Wishlist
 
+## Mydoom detector corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC `mydoom_map` case passes 4/4,
+  including three boundary/read-failure checks and a valid two-record corpus
+  that reaches `Heuristics.Worm.Mydoom.M.log` through public
+  `CL_TYPE_BINARY_DATA` dispatch with heuristic precedence enabled.
+- Keep broader raw-signature/ingress parity, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+  gates open.
+
 ## Binary-data raw-matcher dispatch qualification — 2026-08-26
 
 - The isolated current-source production-linked GCC `binary_data` case

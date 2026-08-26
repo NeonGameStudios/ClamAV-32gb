@@ -25990,6 +25990,52 @@ START_TEST(test_mydoom_detector_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mydoom_detector_corpus_reaches_public_dispatch)
+{
+    static const uint8_t data[] = {
+        0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xfc,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xfc,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_HEURISTICS | CL_SCAN_GENERAL_HEURISTIC_PRECEDENCE;
+    options.parse   = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->dconf->other |= OTHER_CONF_MYDOOMLOG;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_BINARY_DATA", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_str_eq(last_alert, "Heuristics.Worm.Mydoom.M.log");
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_mydoom_detector_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -39516,6 +39562,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_missing_map_is_fail_visible);
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_null_context_is_fail_visible);
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_read_failure_is_fail_visible);
+    tcase_add_test(tc_mydoom_map, test_mydoom_detector_corpus_reaches_public_dispatch);
     suite_add_tcase(s, tc_bz_map);
     tcase_add_checked_fixture(tc_bz_map, cl_setup, cl_teardown);
     tcase_add_test(tc_bz_map, test_gzip_bzip_truncated_streams_are_fail_visible);

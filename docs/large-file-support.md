@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Mydoom detector corpus qualification — 2026-08-26
+
+The current-source production-linked GCC `mydoom_map` case passes 4/4,
+including the null-context, missing-map, and in-range read-failure boundaries
+plus a valid two-record corpus. With heuristic scanning and precedence enabled,
+the corpus reaches `Heuristics.Worm.Mydoom.M.log` through public
+`CL_TYPE_BINARY_DATA` dispatch and remains cacheable on detection. Broader
+raw-signature/ingress parity, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## Binary-data raw-matcher dispatch qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `binary_data` case passes
