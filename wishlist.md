@@ -1,5 +1,14 @@
 # Wishlist
 
+## XZ decompressed-output corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC `xz` case passes 2/2,
+  `xz_trailing` passes 1/1, and the isolated `xz_corpus` case passes 1/1 over
+  a complete valid XZ stream whose bounded decompressed output reaches an
+  exact child matcher after temporary spooling and nested scanning.
+- Keep complete XZ corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## RIFF nested-container corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC `riff` case passes 6/6,

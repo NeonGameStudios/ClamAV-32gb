@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## XZ decompressed-output corpus qualification — 2026-08-26
+
+The current-source production-linked GCC `xz` case passes 2/2, `xz_trailing`
+passes 1/1, and the isolated `xz_corpus` case passes 1/1. It uses a complete
+valid XZ stream whose bounded decompressed output is matched exactly after
+temporary spooling and nested scanning; the compressed outer root does not
+begin with the decompressed child. Full XZ corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## RIFF nested-container corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `riff` case passes 6/6, `riff_map`

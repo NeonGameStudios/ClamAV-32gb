@@ -7358,6 +7358,62 @@ START_TEST(test_xz_trailing_stream_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_xz_corpus_detects_decompressed_text)
+{
+    static const uint8_t archive[] = {
+        0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00, 0x00, 0x04,
+        0xe6, 0xd6, 0xb4, 0x46, 0x02, 0x00, 0x21, 0x01,
+        0x16, 0x00, 0x00, 0x00, 0x74, 0x2f, 0xe5,
+        0xa3, 0x01, 0x00, 0x0c, 0x78, 0x7a, 0x2d, 0x6c,
+        0x69, 0x6d, 0x69, 0x74, 0x2d, 0x74, 0x65, 0x73,
+        0x74, 0x00, 0x00, 0x00, 0x00, 0x6f, 0xc7, 0xf2, 0xf6,
+        0xa5, 0x44, 0x03, 0x64, 0x00, 0x01, 0x25, 0x0d,
+        0x71, 0x19, 0xc4, 0xb6, 0x1f, 0xb6, 0xf3, 0x7d,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x04, 0x59, 0x5a};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    int ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "XZ.Member.Text", "787a2d6c696d69742d74657374",
+                         0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(archive, "xz-limit-test", 13) != 0,
+                  "XZ outer root unexpectedly contains the decompressed child at offset zero");
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_XZ", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "XZ decompressed output did not reach the child matcher: %s",
+                  cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "XZ.Member.Text.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_compressed_output_temporary_limit_is_fail_visible)
 {
     static const uint8_t xz_archive[] = {
@@ -37536,6 +37592,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_msexpand = tcase_create("msexpand");
     TCase *tc_msexpand_map = tcase_create("msexpand_map");
     TCase *tc_xz = tcase_create("xz");
+    TCase *tc_xz_corpus = tcase_create("xz_corpus");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
     TCase *tc_ole2 = tcase_create("ole2");
     TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
@@ -38078,6 +38135,9 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_xz, cl_setup, cl_teardown);
     tcase_add_test(tc_xz, test_xz_limit_is_fail_visible);
     tcase_add_test(tc_xz, test_xz_truncated_stream_is_fail_visible);
+    suite_add_tcase(s, tc_xz_corpus);
+    tcase_add_checked_fixture(tc_xz_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_xz_corpus, test_xz_corpus_detects_decompressed_text);
     suite_add_tcase(s, tc_xz_trailing);
     tcase_add_checked_fixture(tc_xz_trailing, cl_setup, cl_teardown);
     tcase_add_test(tc_xz_trailing, test_xz_trailing_stream_is_fail_visible);

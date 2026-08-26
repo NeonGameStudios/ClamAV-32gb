@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## XZ decompressed-output corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `xz` case passes 2/2,
+`xz_trailing` passes 1/1, and the isolated `xz_corpus` case passes 1/1. The
+corpus is a complete valid XZ stream whose bounded decompressed output is
+matched exactly after temporary spooling and nested scanning; the compressed
+outer root does not begin with the decompressed child. This is bounded XZ
+decoder/output evidence, not complete XZ corpus qualification; sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## RIFF nested-container corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `riff` case passes
