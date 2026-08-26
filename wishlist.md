@@ -162,6 +162,19 @@
   Java/FAT corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.
 
+## Mach-O universal-binary empty-table admission — 2026-08-26
+
+- A confirmed `cafebabe` header with zero architectures now returns explicit
+  incomplete/non-cacheable `CL_EPARSE` with reason `Mach-O universal-binary
+  architecture table is invalid`; a zero-entry FAT header has no child to
+  inspect.
+- The current-source production-linked GCC `macho_unsupported` TCase passes
+  2/2 for count-39 and count-0, while `macho_map` and `macho_corpus` remain
+  1/1. The broader direct `macho`/`macho_timeout` matrix retains known mixed
+  old/current `cli_ctx` ABI errors. Keep full Mach-O qualification, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and release gates open.
+
 ## PNG palette structural admission — 2026-08-26
 
 - Reject invalid PLTE lengths, PLTE-after-IDAT, duplicate PLTE chunks,

@@ -35112,6 +35112,37 @@ START_TEST(test_macho_unibin_unsupported_architecture_count_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_macho_unibin_empty_architecture_table_is_fail_visible)
+{
+    uint8_t data[8] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* A cafebabe header with no architecture records is a confirmed but
+     * malformed universal binary; it must not normalize to a clean result. */
+    macho_test_write_u32(data + 0, 0xcafebabeU);
+    macho_test_write_u32(data + 4, 0U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanmacho_unibin(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Mach-O universal-binary architecture table is invalid");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_macho_metadata_read_failure_is_fail_visible)
 {
     uint8_t data[32 + 8] = {0};
@@ -40486,6 +40517,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_macho_map, test_macho_missing_maps_are_fail_visible);
     suite_add_tcase(s, tc_macho_unsupported);
     tcase_add_test(tc_macho_unsupported, test_macho_unibin_unsupported_architecture_count_is_fail_visible);
+    tcase_add_test(tc_macho_unsupported, test_macho_unibin_empty_architecture_table_is_fail_visible);
     suite_add_tcase(s, tc_macho);
     tcase_add_test(tc_macho, test_macho_truncated_header_is_fail_visible);
     tcase_add_test(tc_macho, test_macho_time_limit_is_fail_visible);

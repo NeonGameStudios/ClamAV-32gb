@@ -185,6 +185,19 @@ current-source production-linked `macho_unsupported` TCase passes 1/1, while
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain open.
 
+## Mach-O universal-binary empty-table admission — 2026-08-26
+
+A confirmed `cafebabe` universal-binary header with zero architectures is
+malformed and cannot represent a child to inspect. The parser now returns
+`CL_EPARSE`, records `Mach-O universal-binary architecture table is invalid`,
+and disables caching instead of returning a clean result. The current-source
+production-linked GCC `macho_unsupported` TCase passes 2/2 for the count-39
+unsupported case and the new count-0 malformed case; `macho_map` and
+`macho_corpus` remain 1/1. The broader direct `macho`/`macho_timeout` matrix
+still has the known mixed old/current `cli_ctx` ABI errors. Full Mach-O
+qualification, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## PNG palette structural admission — 2026-08-26
 
 PNG structural admission now rejects invalid PLTE lengths, PLTE chunks after

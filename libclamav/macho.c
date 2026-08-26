@@ -888,8 +888,8 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
         return CL_EPARSE;
     }
 
-    if (fat_header.nfats > 32) {
-        cli_dbgmsg("cli_scanmacho_unibin: Invalid number of architectures\n");
+    if (fat_header.nfats == 0 || fat_header.nfats > 32) {
+        cli_dbgmsg("cli_scanmacho_unibin: Invalid number of architectures (%u)\n", fat_header.nfats);
         cli_mark_scan_incomplete(ctx, "Mach-O universal-binary architecture table is invalid");
         return CL_EPARSE;
     }
