@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## Binary-data raw-matcher dispatch qualification — 2026-08-26
+
+The isolated authoritative current-source production-linked GCC
+`binary_data` case passes 1/1 over a 65,556-byte synthetic binary payload.
+Its custom matcher is placed at the exact tail and is reached through public
+`CL_TYPE_BINARY_DATA` dispatch, proving that the no-parser binary-data branch
+retains the generic raw matcher through the end of the fmap. This is focused
+dispatch evidence, not complete raw-signature or parser-family qualification;
+broader hash/AC/BM/logical/YARA coverage, ingress parity, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release evidence remain open.
+
 ## AutoIt parser-family corpus qualification — 2026-08-26
 
 The isolated authoritative current-source production-linked GCC

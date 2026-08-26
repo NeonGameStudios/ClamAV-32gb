@@ -35786,6 +35786,52 @@ START_TEST(test_autoit_corpus_detects_embedded_markers)
 }
 END_TEST
 
+START_TEST(test_binary_data_runs_raw_matcher_through_exact_tail)
+{
+    static const uint8_t marker[] = "BinaryData.ExactTail";
+    uint8_t data[65536U + sizeof(marker) - 1U];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    size_t marker_offset;
+
+    memset(data, 0xa5, sizeof(data));
+    marker_offset = sizeof(data) - (sizeof(marker) - 1U);
+    memcpy(data + marker_offset, marker, sizeof(marker) - 1U);
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "BinaryData.ExactTail", "42696e617279446174612e45786163745461696c",
+                         0, 0, 0, "*", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ck_assert_int_eq(
+        cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                      scan_engine, &options, NULL, NULL, NULL, NULL,
+                      "CL_TYPE_BINARY_DATA", NULL),
+        CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_str_eq(last_alert, "BinaryData.ExactTail.UNOFFICIAL");
+    ck_assert_uint_ge(scanned, (uint64_t)(marker_offset + sizeof(marker) - 1U));
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_msxml_corpus_detects_embedded_marker)
 {
     static const uint8_t data[] = "<document><bindata>\nVURG\n</bindata></document>";
@@ -38732,6 +38778,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xdp_corpus = tcase_create("xdp_corpus");
     TCase *tc_autoit_map = tcase_create("autoit_map");
     TCase *tc_autoit_corpus = tcase_create("autoit_corpus");
+    TCase *tc_binary_data = tcase_create("binary_data");
     TCase *tc_7z = tcase_create("7z");
     TCase *tc_7z_map = tcase_create("7z_map");
     TCase *tc_7z_sfx = tcase_create("7z_sfx");
@@ -39224,6 +39271,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_autoit_corpus);
     tcase_add_checked_fixture(tc_autoit_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_autoit_corpus, test_autoit_corpus_detects_embedded_markers);
+    suite_add_tcase(s, tc_binary_data);
+    tcase_add_checked_fixture(tc_binary_data, cl_setup, cl_teardown);
+    tcase_add_test(tc_binary_data, test_binary_data_runs_raw_matcher_through_exact_tail);
     suite_add_tcase(s, tc_7z);
     tcase_add_checked_fixture(tc_7z, cl_setup, cl_teardown);
     tcase_add_test(tc_7z, test_7z_truncated_header_is_fail_visible);

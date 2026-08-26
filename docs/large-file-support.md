@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Binary-data raw-matcher dispatch qualification — 2026-08-26
+
+The isolated current-source production-linked GCC `binary_data` case passes
+1/1 over a 65,556-byte synthetic binary payload whose exact-tail custom matcher
+is reached through public `CL_TYPE_BINARY_DATA` dispatch. This proves the
+no-parser binary-data branch retains the generic raw matcher through the end
+of the fmap. Broader hash/AC/BM/logical/YARA coverage, ingress parity,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## AutoIt parser-family corpus qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `autoit_corpus` case passes
