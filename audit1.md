@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## RTF OLE10 magic validation — 2026-08-26
+
+RTF embedded-object processing previously logged an OLE10 magic mismatch and
+continued decoding the object. That could let a malformed confirmed object
+reach nested scanning. The parser now returns `CL_EPARSE`, marks the layer
+incomplete and non-cacheable, and stops before temporary output or child
+dispatch. The current-source production-linked GCC `rtf_map` case passes 9/9,
+including the new invalid-magic regression. The RTF corpus case remains a
+mixed current/old ABI integration gate and is not used as evidence for this
+boundary.
+
 ## SIS compressed-member current-source qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `sis_member` case

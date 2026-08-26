@@ -360,6 +360,8 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
                 for (i = 0; i < out_cnt && data->bread < rtf_data_magic_len; i++, data->bread++)
                     if (rtf_data_magic[data->bread] != out_data[i]) {
                         cli_dbgmsg("Warning: rtf objdata magic number not matched, expected:%d, got: %d, at pos:%lu\n", rtf_data_magic[i], out_data[i], (unsigned long int)data->bread);
+                        cli_mark_scan_incomplete(data->ctx, "RTF embedded object has invalid OLE10 magic");
+                        return CL_EPARSE;
                     }
                 out_cnt -= i;
                 if (data->bread == rtf_data_magic_len) {
