@@ -1,5 +1,16 @@
 # Wishlist
 
+## HWPOLE2 embedded-OLE2 corpus qualification — 2026-08-26
+
+- The isolated current-source production-linked GCC `hwpole2_corpus` case
+  passes 1/1 through public `CL_TYPE_HWPOLE2` dispatch over a materialized
+  `clam.ppt` OLE2 payload with a matching 32-bit size prefix; bounded nested
+  scanning reaches an exact child marker, and the public map-boundary TCase
+  passes 2/2.
+- Keep full HWPOLE2/OLE2 corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## HWP3 structural/member corpus qualification — 2026-08-26
 
 - The isolated current-source production-linked GCC `hwp3_corpus` case

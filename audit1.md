@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## HWPOLE2 embedded-OLE2 corpus qualification — 2026-08-26
+
+The isolated authoritative current-source production-linked GCC
+`hwpole2_corpus` case passes 1/1 through public `CL_TYPE_HWPOLE2` dispatch over
+a materialized `clam.ppt` OLE2 payload wrapped by a matching 32-bit
+uncompressed-size prefix. The bounded embedded OLE2 scan reaches the exact
+`HWPOLE2.Member.MZ.UNOFFICIAL` matcher, and the existing public HWPOLE2
+map-boundary TCase passes 2/2. This is bounded HWPOLE2/OLE2 wrapper evidence,
+not complete HWPOLE2 qualification; sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## HWP3 structural/member corpus qualification — 2026-08-26
 
 The isolated authoritative current-source production-linked GCC

@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HWPOLE2 embedded-OLE2 corpus qualification — 2026-08-26
+
+The isolated current-source production-linked GCC `hwpole2_corpus` case passes
+1/1 through public `CL_TYPE_HWPOLE2` dispatch over a materialized `clam.ppt`
+OLE2 payload wrapped by a matching 32-bit uncompressed-size prefix. The
+bounded embedded OLE2 scan reaches the exact `HWPOLE2.Member.MZ.UNOFFICIAL`
+matcher, and the existing public HWPOLE2 map-boundary TCase passes 2/2. Full
+HWPOLE2/OLE2 corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## HWP3 structural/member corpus qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `hwp3_corpus` case passes

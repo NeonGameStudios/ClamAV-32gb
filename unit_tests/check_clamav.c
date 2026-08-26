@@ -35539,6 +35539,80 @@ START_TEST(test_hwp3_corpus_detects_embedded_marker)
 }
 END_TEST
 
+START_TEST(test_hwpole2_corpus_detects_embedded_member)
+{
+    char file_path[PATH_MAX];
+    struct stat st;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    uint8_t *ole_data;
+    uint8_t *wrapped_data;
+    size_t data_size;
+    size_t offset = 0;
+    int fd;
+    cl_error_t ret;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/clam.ppt", OBJDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+    ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= UINT32_MAX,
+                  "invalid HWPOLE2 corpus size");
+    data_size = (size_t)st.st_size;
+    ole_data = malloc(data_size);
+    ck_assert_ptr_nonnull(ole_data);
+    while (offset < data_size) {
+        ssize_t nread = read(fd, ole_data + offset, data_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    ck_assert_int_eq(close(fd), 0);
+
+    wrapped_data = malloc(data_size + sizeof(uint32_t));
+    ck_assert_ptr_nonnull(wrapped_data);
+    wrapped_data[0] = (uint8_t)data_size;
+    wrapped_data[1] = (uint8_t)(data_size >> 8);
+    wrapped_data[2] = (uint8_t)(data_size >> 16);
+    wrapped_data[3] = (uint8_t)(data_size >> 24);
+    memcpy(wrapped_data + sizeof(uint32_t), ole_data, data_size);
+    free(ole_data);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_OLE2 | CL_SCAN_PARSE_PE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "HWPOLE2.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(wrapped_data, data_size + sizeof(uint32_t));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_HWPOLE2", NULL);
+    ck_assert_msg(ret == CL_SUCCESS || ret == CL_VIRUS,
+                  "HWPOLE2 embedded member was not scanned: %s (%d)",
+                  cl_strerror(ret), ret);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "HWPOLE2.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(wrapped_data);
+}
+END_TEST
+
 START_TEST(test_msxml_corpus_detects_embedded_marker)
 {
     static const uint8_t data[] = "<document><bindata>\nVURG\n</bindata></document>";
@@ -38436,6 +38510,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hwp3     = tcase_create("hwp3");
     TCase *tc_hwp3_api = tcase_create("hwp3_api");
     TCase *tc_hwp3_corpus = tcase_create("hwp3_corpus");
+    TCase *tc_hwpole2_corpus = tcase_create("hwpole2_corpus");
     TCase *tc_xar      = tcase_create("xar");
     TCase *tc_xar_metadata = tcase_create("xar_metadata");
     TCase *tc_xar_map = tcase_create("xar_map");
@@ -38995,6 +39070,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hwpml_map);
     tcase_add_checked_fixture(tc_hwpml_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpml_map, test_hwpml_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_hwpole2_corpus);
+    tcase_add_checked_fixture(tc_hwpole2_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_hwpole2_corpus, test_hwpole2_corpus_detects_embedded_member);
     suite_add_tcase(s, tc_hwpml_corpus);
     tcase_add_checked_fixture(tc_hwpml_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpml_corpus, test_hwpml_corpus_detects_embedded_marker);
