@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## GIF version admission audit — 2026-08-26
+
+The GIF parser previously logged but accepted arbitrary three-byte version
+fields after the `GIF` signature. A confirmed GIF layer with an unsupported
+version could therefore continue into screen and block parsing and potentially
+reach a clean result. The parser now requires `87a` or `89a`; other versions
+return `CL_EPARSE`, set sticky incomplete state, and disable caching. The new
+direct regression asserts the exact reason and non-cacheability. The current
+source production-linked `gif` case passes 7/7 and `gif_api` 1/1. The separate
+`gif_corpus` overlay case remains 0/1 in this harness and reproduces in the
+pre-GIF linked harness, so child-overlay corpus qualification remains open;
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, and Sonic1 qualification also remain open.
+
 ## HFS+ attributes-tree UTF-16 name boundary — 2026-08-26
 
 The HFS+ attributes-tree walker previously compared the UTF-16 character

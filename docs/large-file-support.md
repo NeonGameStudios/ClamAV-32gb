@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## GIF version admission audit — 2026-08-26
+
+The GIF parser now requires the version field after the `GIF` signature to be
+exactly `87a` or `89a`. An unsupported version is a confirmed-format parse
+failure, so the parser returns fail-visible `CL_EPARSE`, records sticky
+incomplete state, and disables caching before reading the screen descriptor or
+blocks. The direct regression asserts the exact reason and no-cache state; the
+current-source production-linked `gif` case passes 7/7 and `gif_api` passes
+1/1. The separate `gif_corpus` overlay case remains 0/1 in this harness and
+reproduces in the pre-GIF linked harness, so full child-overlay corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, Sonic1, and parser-family qualification remain open.
+
 ## JPEG parser counter width audit — 2026-08-26
 
 The JPEG parser now stores its segment ordinal and JFIF, Exif, and SPIFF

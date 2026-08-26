@@ -37235,6 +37235,26 @@ START_TEST(test_gif_header_read_failures_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gif_invalid_version_is_fail_visible)
+{
+    static const uint8_t data[] = {'G', 'I', 'F', '9', '0', 'a'};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_parsegif(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Broken.Media.GIF.InvalidVersion");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_gif_graphic_control_fields_are_validated)
 {
     static const uint8_t invalid_block_size[] = {
@@ -40799,6 +40819,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_macho_32bit_entrypoint_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);
     tcase_add_test(tc_gif, test_gif_header_read_failures_are_fail_visible);
+    tcase_add_test(tc_gif, test_gif_invalid_version_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_graphic_control_fields_are_validated);
     tcase_add_test(tc_gif, test_gif_truncated_screen_descriptor_is_parse_error);
     tcase_add_test(tc_gif, test_gif_block_timeout_is_fail_visible);

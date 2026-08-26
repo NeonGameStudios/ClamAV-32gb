@@ -269,6 +269,12 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
     version[3] = '\0';
     cli_dbgmsg("GIF: Version: %s\n", version);
 
+    if (memcmp(version, "87a", 3) != 0 && memcmp(version, "89a", 3) != 0) {
+        status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.InvalidVersion");
+        parse_error = true;
+        goto scan_overlay;
+    }
+
     /*
      * Read the Logical Screen Descriptor
      */
