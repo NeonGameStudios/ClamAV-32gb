@@ -1,5 +1,16 @@
 # Wishlist
 
+## CPIO CRC parser qualification — 2026-08-26
+
+- The authoritative current-source production-linked GCC `cpio_crc` case
+  passes 4/4 using direct compiled matcher setup. It covers exact nested
+  member matching, checksum-mismatch precedence, a tail marker after more
+  than two 64 KiB checksum windows, and an injected checksum read failure;
+  the existing `cpio` corpus passes 1/1, `cpio_map` 4/4, and `cpio_numeric`
+  1/1.
+- Keep full CPIO corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## CAB-SFX nested-dispatch qualification — 2026-08-26
 
 - The current-source production-linked GCC `cabsfx` case passes 1/1: a valid

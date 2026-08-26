@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## CPIO CRC parser qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `cpio_crc` case passes
+4/4. Direct compiled matcher setup now avoids the mixed public `cl_load()`
+harness failure and exercises exact nested member matching, checksum-mismatch
+detection precedence, a tail marker after more than two 64 KiB checksum
+windows, and an injected checksum read failure. The existing `cpio` corpus
+passes 1/1, `cpio_map` 4/4, and `cpio_numeric` 1/1. This is bounded CPIO/CRC
+evidence, not full qualification; full CPIO corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+evidence remain open.
+
 ## CAB-SFX nested-dispatch qualification — 2026-08-26
 
 The current-source production-linked GCC `cabsfx` case passes 1/1. A valid

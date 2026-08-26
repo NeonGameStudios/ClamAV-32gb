@@ -18737,21 +18737,17 @@ static size_t cpio_test_append_crc_entry(uint8_t *archive, size_t capacity, size
 START_TEST(test_cpio_crc_member_reaches_nested_matchers)
 {
     static const uint8_t payload[] = "CPIO-OK!";
-    static const char signature[] = "Cpio.Crc.Member.Exact:0:0:4350494f2d4f4b21\n";
     uint8_t archive[256] = {0};
     uint8_t mismatch[256];
     struct cl_scan_options options;
     struct cl_engine *scan_engine;
-    char signature_path[PATH_MAX];
     unsigned int checksum = 0;
-    unsigned int sigs = 0;
     const char *last_alert;
     cl_verdict_t verdict;
     uint64_t scanned;
     size_t archive_size;
     size_t i;
     fmap_t *map;
-    int signature_fd;
     cl_error_t ret;
 
     for (i = 0; i < sizeof(payload) - 1U; i++)
@@ -18766,20 +18762,15 @@ START_TEST(test_cpio_crc_member_reaches_nested_matchers)
     memset(&options, 0, sizeof(options));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
-    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
-                              "%s/cpio-crc-member.ndb", tmpdir),
-                     (int)(strlen(tmpdir) + strlen("/cpio-crc-member.ndb")));
-    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
-    ck_assert_int_ge(signature_fd, 0);
-    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1U),
-                     (ssize_t)(sizeof(signature) - 1U));
-    ck_assert_int_eq(close(signature_fd), 0);
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
-    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
-    ck_assert_uint_eq(sigs, 1U);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Cpio.Crc.Member.Exact", "4350494f2d4f4b21",
+                         0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
-    ck_assert_int_eq(cli_unlink(signature_path), 0);
 
     map = cl_fmap_open_memory(archive, archive_size);
     ck_assert_ptr_nonnull(map);
@@ -18954,21 +18945,17 @@ END_TEST
 START_TEST(test_cpio_crc_multiwindow_tail_reaches_nested_matcher)
 {
     enum { PAYLOAD_SIZE = (2 * 64 * 1024) + 8, ARCHIVE_CAPACITY = PAYLOAD_SIZE + 256 };
-    static const char signature[] = "Cpio.Crc.Multiwindow.Tail:0:EOF-8:4350494f2d454e44\n";
     uint8_t *archive;
     uint8_t *payload;
     struct cl_scan_options options;
     struct cl_engine *scan_engine;
-    char signature_path[PATH_MAX];
     unsigned int checksum = 0;
-    unsigned int sigs = 0;
     const char *last_alert;
     cl_verdict_t verdict;
     uint64_t scanned;
     size_t archive_size;
     size_t i;
     fmap_t *map;
-    int signature_fd;
     cl_error_t ret;
 
     archive = calloc(1, ARCHIVE_CAPACITY);
@@ -18986,20 +18973,15 @@ START_TEST(test_cpio_crc_multiwindow_tail_reaches_nested_matcher)
     memset(&options, 0, sizeof(options));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
-    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
-                              "%s/cpio-crc-multiwindow.ndb", tmpdir),
-                     (int)(strlen(tmpdir) + strlen("/cpio-crc-multiwindow.ndb")));
-    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
-    ck_assert_int_ge(signature_fd, 0);
-    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1U),
-                     (ssize_t)(sizeof(signature) - 1U));
-    ck_assert_int_eq(close(signature_fd), 0);
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
-    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
-    ck_assert_uint_eq(sigs, 1U);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Cpio.Crc.Multiwindow.Tail",
+                         "4350494f2d454e44", 0, 0, 0, "EOF-8", NULL, 0),
+                     CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
-    ck_assert_int_eq(cli_unlink(signature_path), 0);
 
     map = cl_fmap_open_memory(archive, archive_size);
     ck_assert_ptr_nonnull(map);
