@@ -1,5 +1,14 @@
 # Wishlist
 
+## PNG structural admission — 2026-08-26
+
+- Require `IHDR` to be first and unique, validate chunk-type bytes, and reject
+  invalid IHDR color/depth, compression, filter, and interlace combinations as
+  incomplete/non-cacheable results. The focused production-linked GCC `png`
+  TCase passes 6/6 with exact reason assertions.
+- Keep full PNG/image corpus, sanitizer, production-CVD/service, Sonic1, and
+  release gates open.
+
 ## PDF ASCII85 partial-tail classification — 2026-08-26
 
 - Markerless ASCII85 remains compatible when the stream ends on complete
@@ -661,7 +670,7 @@
 
 ## PNG materialized overlay corpus qualification — 2026-08-25
 
-- The current-source production-linked GCC `png` case passes 5/5, and the
+- The current-source production-linked GCC `png` case passes 6/6, and the
   isolated `png_corpus` case passes 1/1. It starts from materialized
   `logo.png`, appends a bounded 64-byte `MZP` child, and requires the exact
   `PNG.Member.MZ.UNOFFICIAL` alert through the valid IEND-overlay handoff;

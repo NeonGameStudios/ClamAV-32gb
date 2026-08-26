@@ -1,5 +1,15 @@
 # Independent read-only audit of audit.md
 
+## PNG structural admission — 2026-08-26
+
+The confirmed PNG parser now requires `IHDR` to be the first and only header,
+rejects non-alphabetic chunk-type bytes, and makes invalid IHDR color/depth,
+compression, filter, or interlace combinations fail-visible. The focused
+current-source production-linked GCC `png` TCase passes 6/6, including exact
+incomplete/non-cacheable reasons for missing or duplicate IHDR, invalid chunk
+types, and invalid IHDR fields. Full PNG/image corpus, sanitizer,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## PDF ASCII85 partial-tail classification — 2026-08-26
 
 The bounded ASCII85 decoder intentionally accepts stream-length-terminated
@@ -569,7 +579,7 @@ production-CVD/service, Sonic1, and release evidence remain open.
 
 ## PNG materialized overlay corpus qualification — 2026-08-25
 
-The authoritative current-source production-linked GCC `png` case passes 5/5,
+The authoritative current-source production-linked GCC `png` case passes 6/6,
 and the isolated `png_corpus` case passes 1/1. The corpus starts with the
 canonical materialized `logo.png`, appends a bounded 64-byte child whose exact
 offset-0 signature is `MZP`, and requires the alert

@@ -117,6 +117,7 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
     uint32_t chunk_data_length_u32 = 0;
     bool have_IEND                 = false;
     bool have_PLTE                 = false;
+    bool have_IHDR                 = false;
 
     uint64_t width  = 0;
     uint64_t height = 0;
@@ -179,6 +180,34 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
         /* GRR:  add 4-character EBCDIC conversion here (chunk_type) */
 
         chunk_type[4] = '\0';
+
+        if (((chunk_type[0] < 'A' || chunk_type[0] > 'Z') &&
+             (chunk_type[0] < 'a' || chunk_type[0] > 'z')) ||
+            ((chunk_type[1] < 'A' || chunk_type[1] > 'Z') &&
+             (chunk_type[1] < 'a' || chunk_type[1] > 'z')) ||
+            ((chunk_type[2] < 'A' || chunk_type[2] > 'Z') &&
+             (chunk_type[2] < 'a' || chunk_type[2] > 'z')) ||
+            ((chunk_type[3] < 'A' || chunk_type[3] > 'Z') &&
+             (chunk_type[3] < 'a' || chunk_type[3] > 'z'))) {
+            cli_dbgmsg("PNG: invalid chunk type bytes\n");
+            status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.InvalidChunkType");
+            parse_error = true;
+            goto scan_overlay;
+        }
+
+        if (!have_IHDR && strcmp(chunk_type, "IHDR") != 0) {
+            cli_dbgmsg("PNG: IHDR is not the first chunk\n");
+            status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.IHDRNotFirst");
+            parse_error = true;
+            goto scan_overlay;
+        }
+
+        if (strcmp(chunk_type, "IHDR") == 0 && have_IHDR) {
+            cli_dbgmsg("PNG: duplicate IHDR chunk\n");
+            status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.DuplicateIHDR");
+            parse_error = true;
+            goto scan_overlay;
+        }
 
         cli_dbgmsg("Chunk Type: %s, Data Length: " STDu64 " bytes\n", chunk_type, chunk_data_length);
 
@@ -269,7 +298,30 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
                 case 6:
                     sample_depth = bit_depth * 4; /* RGBA */
                     break;
+                case 0:
+                case 3:
+                    break;
+                default:
+                    cli_dbgmsg("PNG: invalid color type (%u)\n", color_type);
+                    status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.InvalidIHDR");
+                    parse_error = true;
+                    goto scan_overlay;
             }
+
+            if ((color_type == 0 && bit_depth != 1 && bit_depth != 2 && bit_depth != 4 &&
+                 bit_depth != 8 && bit_depth != 16) ||
+                (color_type == 2 && bit_depth != 8 && bit_depth != 16) ||
+                (color_type == 3 && bit_depth != 1 && bit_depth != 2 && bit_depth != 4 &&
+                 bit_depth != 8) ||
+                (color_type == 4 && bit_depth != 8 && bit_depth != 16) ||
+                (color_type == 6 && bit_depth != 8 && bit_depth != 16) ||
+                compression_method != 0 || filter_method != 0 || interlace_method > 1) {
+                cli_dbgmsg("PNG: invalid IHDR fields\n");
+                status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.InvalidIHDR");
+                parse_error = true;
+                goto scan_overlay;
+            }
+            have_IHDR = true;
             cli_dbgmsg("  Width:                 " STDu64 "\n", width);
             cli_dbgmsg("  Height:                " STDu64 "\n", height);
             cli_dbgmsg("  Bit Depth:             " STDu32 " (Sample Depth: " STDu32 ")\n", bit_depth, sample_depth);

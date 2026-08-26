@@ -458,7 +458,7 @@ production-CVD/service, Sonic1, and release qualification remain open.
 
 ## PNG materialized overlay corpus qualification — 2026-08-25
 
-The current-source production-linked GCC `png` case passes 5/5, and the
+The current-source production-linked GCC `png` case passes 6/6, and the
 isolated `png_corpus` case passes 1/1. It starts from canonical materialized
 `logo.png`, appends a bounded 64-byte child beginning with `MZP`, and reaches
 the exact `PNG.Member.MZ.UNOFFICIAL` alert through the valid PNG IEND-overlay
@@ -5471,6 +5471,12 @@ mark the layer incomplete and return `CL_EREAD`; ordinary short input remains
 a parser error. A focused chunk-boundary fault-injection regression, source
 guard, and capability-manifest entry are registered. Compiled Linux/Sonic1,
 sanitizer, and broader PNG corpus qualification remain open.
+
+Confirmed PNG admission also requires a unique `IHDR` as the first chunk,
+valid alphabetic chunk-type bytes, and compatible IHDR color/depth,
+compression, filter, and interlace fields. Missing or duplicate IHDR,
+invalid chunk types, and invalid IHDR fields are now explicit
+incomplete/non-cacheable results; the focused `png` TCase passes 6/6.
 
 ## RTF in-range fmap read failure — 2026-08-21
 
