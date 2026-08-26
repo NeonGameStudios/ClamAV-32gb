@@ -115,10 +115,9 @@
   versions must return explicit incomplete/non-cacheable parse results before
   screen and block parsing.
 - The exact invalid-version regression is registered alongside the existing
-  warning-clean GIF build and production-linked `gif` 7/7 plus `gif_api` 1/1
-  evidence. The separate `gif_corpus` overlay case is 0/1 in this harness and
-  reproduces in the pre-GIF linked harness; keep child-overlay corpus,
-  sanitizer, certified Linux x86-64, materialized large-file,
+  warning-clean GIF build and production-linked `gif` 7/7, `gif_api` 1/1, and
+  rebuilt `gif_corpus` 1/1 evidence with the exact child marker. Keep complete
+  GIF corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.
 
 ## JPEG parser counter width audit — 2026-08-26

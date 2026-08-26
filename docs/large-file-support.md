@@ -127,11 +127,11 @@ exactly `87a` or `89a`. An unsupported version is a confirmed-format parse
 failure, so the parser returns fail-visible `CL_EPARSE`, records sticky
 incomplete state, and disables caching before reading the screen descriptor or
 blocks. The direct regression asserts the exact reason and no-cache state; the
-current-source production-linked `gif` case passes 7/7 and `gif_api` passes
-1/1. The separate `gif_corpus` overlay case remains 0/1 in this harness and
-reproduces in the pre-GIF linked harness, so full child-overlay corpus,
-sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
-service, Sonic1, and parser-family qualification remain open.
+current-source production-linked `gif` case passes 7/7, `gif_api` passes 1/1,
+and the rebuilt `gif_corpus` overlay case passes 1/1 with the exact child
+marker. Full GIF corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain open.
 
 ## JPEG parser counter width audit — 2026-08-26
 

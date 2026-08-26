@@ -132,12 +132,11 @@ fields after the `GIF` signature. A confirmed GIF layer with an unsupported
 version could therefore continue into screen and block parsing and potentially
 reach a clean result. The parser now requires `87a` or `89a`; other versions
 return `CL_EPARSE`, set sticky incomplete state, and disable caching. The new
-direct regression asserts the exact reason and non-cacheability. The current
-source production-linked `gif` case passes 7/7 and `gif_api` 1/1. The separate
-`gif_corpus` overlay case remains 0/1 in this harness and reproduces in the
-pre-GIF linked harness, so child-overlay corpus qualification remains open;
-sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
-service, and Sonic1 qualification also remain open.
+direct regression asserts the exact reason and non-cacheability. The
+current-source production-linked `gif` case passes 7/7, `gif_api` passes 1/1,
+and the rebuilt `gif_corpus` overlay case passes 1/1 with the exact child
+marker. Complete GIF corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, and Sonic1 qualification remain open.
 
 ## HFS+ attributes-tree UTF-16 name boundary — 2026-08-26
 
