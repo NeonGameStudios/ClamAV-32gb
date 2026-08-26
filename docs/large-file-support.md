@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HWP3 structural/member corpus qualification — 2026-08-26
+
+The isolated current-source production-linked GCC `hwp3_corpus` case passes
+1/1 through public `CL_TYPE_HWP3` dispatch over a complete synthetic HWP3
+identity, document-info, summary, content, paragraph-terminator, and
+information-block sequence. Its bounded OLE-data information block reaches
+the exact `HWP3.Member.Marker.UNOFFICIAL` matcher through nested traversal;
+the isolated public HWP3 API boundary case also passes 1/1. The broader
+direct-context TCase remains a mixed old/current `cli_ctx` ABI rebuild gate.
+Full HWP3 corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## HWPML decoded-member corpus qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `hwpml_corpus` case passes

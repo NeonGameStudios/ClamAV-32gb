@@ -6,6 +6,20 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## HWP3 structural/member corpus qualification — 2026-08-26
+
+The isolated authoritative current-source production-linked GCC
+`hwp3_corpus` case passes 1/1 through public `CL_TYPE_HWP3` dispatch over a
+complete synthetic HWP3 identity, document-info, summary, content,
+paragraph-terminator, and information-block sequence. Its bounded OLE-data
+information block reaches the exact `HWP3.Member.Marker.UNOFFICIAL` matcher
+through nested traversal; the isolated public HWP3 API boundary case also
+passes 1/1. The broader direct-context TCase remains a mixed old/current
+`cli_ctx` ABI rebuild gate. This is bounded HWP3 structural/member evidence,
+not complete HWP3 qualification; sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## HWPML decoded-member corpus qualification — 2026-08-26
 
 The isolated authoritative current-source production-linked GCC

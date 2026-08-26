@@ -35476,6 +35476,69 @@ START_TEST(test_hwpml_corpus_detects_embedded_marker)
 }
 END_TEST
 
+START_TEST(test_hwp3_corpus_detects_embedded_marker)
+{
+    enum {
+        HWP3_CONTENT_OFFSET = 30 + 128 + 1008,
+        HWP3_PARAGRAPH_OFFSET = HWP3_CONTENT_OFFSET + (7 * 2) + 2,
+        HWP3_INFO_OFFSET = HWP3_PARAGRAPH_OFFSET + 43,
+        HWP3_MEMBER_OFFSET = HWP3_INFO_OFFSET + 8,
+        HWP3_TERMINATOR_OFFSET = HWP3_MEMBER_OFFSET + 3,
+        HWP3_DATA_LENGTH = HWP3_TERMINATOR_OFFSET + 8
+    };
+    static const uint8_t identity[30] = {
+        0x48, 0x57, 0x50, 0x20, 0x44, 0x6f, 0x63, 0x75, 0x6d, 0x65,
+        0x6e, 0x74, 0x20, 0x46, 0x69, 0x6c, 0x65, 0x20, 0x56, 0x33,
+        0x2e, 0x30, 0x30, 0x20, 0x1a, 0x01, 0x02, 0x03, 0x04, 0x05};
+    uint8_t data[HWP3_DATA_LENGTH] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memcpy(data, identity, sizeof(identity));
+    data[HWP3_INFO_OFFSET] = 2; /* OLE2 Data information block. */
+    data[HWP3_INFO_OFFSET + 4] = 3;
+    memcpy(data + HWP3_MEMBER_OFFSET, "UDF", 3);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "HWP3.Member.Marker", "554446", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_mem_eq(data + HWP3_MEMBER_OFFSET, "UDF", 3);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_HWP3", NULL);
+    ck_assert_msg(ret == CL_SUCCESS || ret == CL_VIRUS,
+                  "HWP3 embedded member was not scanned: %s (%d)",
+                  cl_strerror(ret), ret);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "HWP3.Member.Marker.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_msxml_corpus_detects_embedded_marker)
 {
     static const uint8_t data[] = "<document><bindata>\nVURG\n</bindata></document>";
@@ -38372,6 +38435,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_pdf_map  = tcase_create("pdf_map");
     TCase *tc_hwp3     = tcase_create("hwp3");
     TCase *tc_hwp3_api = tcase_create("hwp3_api");
+    TCase *tc_hwp3_corpus = tcase_create("hwp3_corpus");
     TCase *tc_xar      = tcase_create("xar");
     TCase *tc_xar_metadata = tcase_create("xar_metadata");
     TCase *tc_xar_map = tcase_create("xar_map");
@@ -38664,6 +38728,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hwp3_api);
     tcase_add_checked_fixture(tc_hwp3_api, cl_setup, cl_teardown);
     tcase_add_test(tc_hwp3_api, test_hwp3_public_api_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_hwp3_corpus);
+    tcase_add_checked_fixture(tc_hwp3_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_hwp3_corpus, test_hwp3_corpus_detects_embedded_marker);
     suite_add_tcase(s, tc_xar);
     tcase_add_checked_fixture(tc_xar, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_xar_metadata);

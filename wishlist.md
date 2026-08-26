@@ -1,5 +1,16 @@
 # Wishlist
 
+## HWP3 structural/member corpus qualification — 2026-08-26
+
+- The isolated current-source production-linked GCC `hwp3_corpus` case
+  passes 1/1 through public `CL_TYPE_HWP3` dispatch over a complete synthetic
+  HWP3 structure whose bounded OLE-data information block reaches an exact
+  child marker through nested traversal; the isolated public HWP3 API boundary
+  case passes 1/1.
+- Keep the direct-context mixed-ABI rebuild gate, full HWP3 corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and release gates open.
+
 ## HWPML decoded-member corpus qualification — 2026-08-26
 
 - The isolated current-source production-linked GCC `hwpml_corpus` case
