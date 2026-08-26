@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Fresh current-source ZIP corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC rebuild, using the
+current test and parser sources, configured corpus paths, and static-test
+wrappers, passes the ordinary `zip` TCase 14/14 with zero failures. Both
+split-logo fixtures, materialized `clam.zip`, and all focused ZIP boundary
+cases pass. The same binary passes `zip_sfx` 3/3 and `zip_map` 1/1. The
+earlier 13/14 result came from a mixed or incompletely relinked harness and is
+superseded by this source-consistent result. Full ZIP corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release qualification remain open.
+
 ## OneNote modern-fallback admission — 2026-08-26
 
 When the modern `onenote_parser` rejects a document carrying the OneNote

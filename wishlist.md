@@ -1,5 +1,15 @@
 # Wishlist
 
+## Fresh current-source ZIP corpus qualification — 2026-08-26
+
+- The authoritative current-source production-linked GCC rebuild passes the
+  ordinary `zip` TCase 14/14 with zero failures, including both split-logo
+  fixtures, materialized `clam.zip`, and the focused ZIP boundaries.
+- The same current-source binary passes `zip_sfx` 3/3 and `zip_map` 1/1. The
+  earlier 13/14 result was a mixed/incompletely relinked harness artifact and
+  is superseded. Keep full ZIP corpus, sanitizer, certified Linux,
+  production-CVD/service, Sonic1, and release qualification open.
+
 ## TAR zero-length member traversal — 2026-08-26
 
 - Keep zero-length regular and skipped entries from consuming the following

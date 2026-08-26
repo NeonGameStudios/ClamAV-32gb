@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## Fresh current-source ZIP corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC rebuild, using the
+current `check_clamav.c`, `unzip.c`, scanner, helper objects, configured
+corpus paths, and static-test wrappers, passes the ordinary `zip` TCase 14/14
+with zero failures. This includes both split-logo fixtures, the materialized
+`clam.zip`, and all focused ZIP boundary cases. The same binary passes
+`zip_sfx` 3/3 and `zip_map` 1/1. The earlier 13/14 result was a mixed or
+incompletely relinked harness artifact and is superseded by this
+source-consistent result. Full ZIP corpus, sanitizer, certified Linux,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## TAR zero-length member traversal — 2026-08-26
 
 TAR extraction no longer enters the content loop for a zero-length regular
