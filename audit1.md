@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## TIFF valid-structure corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `tiff` case passes
+8/8, `tiff_map` passes 1/1, and the isolated `tiff_corpus` case passes 1/1
+over valid classic TIFF and BigTIFF IFD fixtures. Both roots are structurally
+complete and do not begin with `MZP`; this is bounded structural parser
+evidence, not complete TIFF/image corpus qualification. The three `tiff_large`
+callback-map cases remain a mixed-harness gate because `cl_fmap_open_handle()`
+returns a null map before parser entry. Sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## JPEG Photoshop-thumbnail corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `jpeg_map` case

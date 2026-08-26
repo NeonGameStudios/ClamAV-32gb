@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## TIFF valid-structure corpus qualification — 2026-08-26
+
+The current-source production-linked GCC `tiff` case passes 8/8, `tiff_map`
+passes 1/1, and the isolated `tiff_corpus` case passes 1/1 over valid classic
+TIFF and BigTIFF IFD fixtures. Both roots are structurally complete and do not
+begin with `MZP`. Full TIFF/image corpus remains open; the three `tiff_large`
+callback-map cases are still a mixed-harness gate because
+`cl_fmap_open_handle()` returns a null map before parser entry. Sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release qualification remain open.
+
 ## JPEG Photoshop-thumbnail corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `jpeg_map` case passes 12/12, and the

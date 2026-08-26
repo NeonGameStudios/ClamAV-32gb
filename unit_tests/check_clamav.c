@@ -35765,6 +35765,71 @@ START_TEST(test_gif_corpus_detects_embedded_mz)
 }
 END_TEST
 
+START_TEST(test_tiff_corpus_valid_structures_complete)
+{
+    static const uint8_t classic[] = {
+        'I', 'I', 0x2a, 0x00,
+        0x08, 0x00, 0x00, 0x00,
+        0x01, 0x00,
+        0x00, 0x01, 0x03, 0x00,
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    };
+    static const uint8_t big_tiff[] = {
+        'I', 'I', 0x2b, 0x00,
+        0x08, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x03, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    const uint8_t *cases[] = {classic, big_tiff};
+    const size_t lengths[] = {sizeof(classic), sizeof(big_tiff)};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    size_t i;
+    int ret;
+
+    memset(&options, 0, sizeof(options));
+    options.general   = CL_SCAN_GENERAL_HEURISTICS;
+    options.heuristic = CL_SCAN_HEURISTIC_BROKEN_MEDIA;
+    options.parse     = CL_SCAN_PARSE_IMAGE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        ck_assert_msg(memcmp(cases[i], "MZP", 3) != 0,
+                      "TIFF root unexpectedly satisfies an embedded signature");
+        map = cl_fmap_open_memory(cases[i], lengths[i]);
+        ck_assert_ptr_nonnull(map);
+        verdict    = CL_VERDICT_STRONG_INDICATOR;
+        last_alert = "stale";
+        scanned    = UINT64_MAX;
+        ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                            "CL_TYPE_TIFF", NULL);
+        ck_assert_int_eq(ret, CL_SUCCESS);
+        ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+        ck_assert_ptr_null(last_alert);
+        ck_assert(!map->dont_cache_flag);
+        cl_fmap_close(map);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_jpeg_corpus_detects_embedded_mz)
 {
     static const uint8_t child[64] = {'M', 'Z', 'P'};
@@ -37267,6 +37332,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_png      = tcase_create("png");
     TCase *tc_png_corpus = tcase_create("png_corpus");
     TCase *tc_tiff     = tcase_create("tiff");
+    TCase *tc_tiff_corpus = tcase_create("tiff_corpus");
 #if SIZE_MAX > UINT32_MAX
     TCase *tc_tiff_large = tcase_create("tiff_large");
 #endif
@@ -37518,6 +37584,9 @@ static Suite *test_cl_suite(void)
 #if SIZE_MAX > UINT32_MAX
     suite_add_tcase(s, tc_tiff_large);
 #endif
+    suite_add_tcase(s, tc_tiff_corpus);
+    tcase_add_checked_fixture(tc_tiff_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_tiff_corpus, test_tiff_corpus_valid_structures_complete);
     suite_add_tcase(s, tc_tiff_map);
     tcase_add_test(tc_tiff_map, test_tiff_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_jpeg_map);
