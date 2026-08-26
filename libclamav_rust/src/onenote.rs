@@ -347,6 +347,10 @@ impl<'a> OneNote<'a> {
             return Err(Error::Format);
         }
 
+        if find_bytes(data, FILE_DATA_STORE_OBJECT).is_none() {
+            return Err(Error::Parse);
+        }
+
         scan_legacy_bytes(data, &mut callback)
     }
 
@@ -634,6 +638,14 @@ mod tests {
 
         assert!(matches!(
             scan_legacy_bytes(&fixture, &mut |_name, _data| true),
+            Err(Error::Parse)
+        ));
+    }
+
+    #[test]
+    fn scan_bytes_rejects_modern_parse_failure_without_legacy_record() {
+        assert!(matches!(
+            OneNote::scan_bytes(ONE_MAGIC, Path::new("malformed.one"), |_name, _data| true),
             Err(Error::Parse)
         ));
     }

@@ -22761,7 +22761,10 @@ END_TEST
 
 START_TEST(test_onenote_dispatch_honors_document_dconf)
 {
-    static const uint8_t malformed[] = {0, 0, 0, 0, 0, 0, 0, 0};
+    static const uint8_t malformed[] = {
+        0xe4, 0x52, 0x5c, 0x7b, 0x8c, 0xd8, 0xa7, 0x4d,
+        0xae, 0xb1, 0x53, 0x78, 0xd0, 0x29, 0x96, 0xd3,
+    };
     struct cl_scan_options options;
     struct cl_engine *scan_engine;
     cl_fmap_t *map;

@@ -3,6 +3,21 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OneNote modern-fallback admission — 2026-08-26
+
+When the modern `onenote_parser` rejects a document carrying the OneNote
+magic, the compatibility fallback now requires a legacy file-data-store
+marker. A full-magic document with no legacy record is otherwise a confirmed
+but uninspectable layer, so it returns an explicit parse-incomplete,
+non-cacheable result instead of clean. The current-source Rust OneNote test
+filter passes 7/7, `rust_onenote` passes 2/2, and the modified dispatch test
+rejects the no-record fixture. The older materialized corpus still needs a
+full ABI-consistent rerun: a mixed static/shared-C-ABI comparison returns
+`CL_EPARSE` on its first fixture in both pre-change and current binaries and
+is not treated as qualification evidence. Full C/Rust ABI, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release qualification remain open.
+
 ## ALZ member CRC validation — 2026-08-26
 
 The ALZ parser now computes the standard CRC-32 incrementally over every fully

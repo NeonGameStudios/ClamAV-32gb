@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## OneNote modern-fallback admission — 2026-08-26
+
+When the modern `onenote_parser` rejected a document with the OneNote magic,
+the compatibility fallback previously returned success even if no legacy file
+data-store record existed. A malformed confirmed document could therefore
+normalize to a clean result. The fallback now requires at least one legacy
+record marker; otherwise it returns `Error::Parse`, which the scanner exposes
+as an incomplete, non-cacheable result. The new Rust test passes, the full
+OneNote Rust test filter passes 7/7, and the current-source production-linked
+`rust_onenote` boundary case passes 2/2. The modified dispatch boundary also
+rejects a full-magic/no-record fixture. A separate mixed static/shared-C-ABI
+rerun of the older materialized `onenote` corpus still returns `CL_EPARSE` on
+its first fixture in both pre-change and current comparisons; it is retained
+as an integration gate, not interpreted as a new parser regression or
+qualification result. Full C/Rust ABI, sanitizer, certified Linux,
+materialized large-file, production-CVD/service, Sonic1, and release gates
+remain open.
+
 ## ALZ member CRC validation — 2026-08-26
 
 The ALZ parser read each local-header `file_crc` field but never compared it

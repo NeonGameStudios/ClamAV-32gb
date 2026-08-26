@@ -1,5 +1,16 @@
 # Wishlist
 
+## OneNote modern-fallback admission — 2026-08-26
+
+- A OneNote document that fails the modern parser now falls back to the
+  legacy extractor only when a legacy file-data-store marker is present; a
+  full-magic document with no such record is an explicit parse-incomplete,
+  non-cacheable result instead of clean.
+- The current-source Rust test filter passes 7/7, `rust_onenote` passes 2/2,
+  and the modified dispatch boundary rejects the no-record fixture. Keep the
+  mixed full-corpus ABI rerun, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## ALZ member CRC validation — 2026-08-26
 
 - ALZ now validates the standard streaming CRC-32 for every complete stored,
