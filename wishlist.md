@@ -147,6 +147,22 @@
   signatures, sanitizer, service, Sonic1, and release qualification remain
   open.
 
+## RTF parser state and child-dispatch hardening — 2026-08-26
+
+- RTF parser-stack growth is checked before native allocation arithmetic;
+  unmatched closing groups no longer underflow the nesting counter; object
+  state uses quota-accounted zero initialization; action-table allocation
+  failure returns `CL_EMEM` without asserting on a null table; and zero-valued
+  temporary descriptors are recognized.
+- The object-end decode branch is reachable for completed descriptors, and
+  split reserved-field chunks advance by the bytes consumed so the following
+  payload-size field is preserved. The current-source GCC parser compile is
+  warning-clean; the current-source production-linked `rtf_map` TCase passes
+  9/9 and `rtf` passes 1/1 against materialized `clam.exe.rtf`, including the
+  exact split-field assertion. Keep full RTF corpus, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  release gates open.
+
 ## OneNote modern-fallback admission — 2026-08-26
 
 - A OneNote document that fails the modern parser now falls back to the

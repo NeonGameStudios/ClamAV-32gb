@@ -8405,7 +8405,7 @@ START_TEST(test_rtf_split_object_zero_field_preserves_payload_size)
     ctx.this_layer_tmpdir = tmpdir;
 
     ret = cli_scanrtf(&ctx);
-    ck_assert_msg(ret == CL_EPARSE || ret == CL_ERESOURCE,
+    ck_assert_msg(ret == CL_EPARSE,
                   "RTF malformed split object returned unexpected status %d", ret);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);

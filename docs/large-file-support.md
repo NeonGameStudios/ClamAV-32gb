@@ -3,6 +3,24 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## RTF parser state and child-dispatch hardening — 2026-08-26
+
+RTF parser-stack growth now checks the shared allocation ceiling before native
+size multiplication, unmatched closing groups cannot underflow the nesting
+counter, and embedded-object state uses quota-accounted zero initialization.
+Action-table allocation failure returns `CL_EMEM` without calling
+`tableDestroy()` on a null table. Completed embedded descriptors can reach the
+object-end decode path even when their temporary descriptor is zero, and a
+split eight-byte reserved field advances by the bytes actually consumed so it
+cannot skip the following payload-size field. The current-source RTF parser
+compiles warning-clean with GCC `-Wall -Wextra -Wformat-security`. A
+current-source production-linked GCC harness with current RTF, scanner,
+matcher, fmap, PE, and helper objects passes `rtf_map` 9/9 and `rtf` 1/1
+against the materialized `clam.exe.rtf` fixture, including the exact
+split-reserved-field assertion. Full RTF corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
 ## Bytecode malformed-record boundary hardening — 2026-08-26
 
 The bytecode loader bounds variable and fixed-width primitive reads, rejects

@@ -169,6 +169,8 @@ static int push_state(struct stack* stack, struct rtf_state* state)
     if (stack->stack_cnt >= stack->stack_size) {
         /* grow stack */
         struct rtf_state* states;
+        if (stack->stack_size > CLI_MAX_ALLOCATION / sizeof(*stack->states) - 128)
+            return CL_EMEM;
         stack->stack_size += 128;
         states = cli_max_realloc(stack->states, stack->stack_size * sizeof(*stack->states));
         if (!states) {
@@ -189,7 +191,8 @@ static int push_state(struct stack* stack, struct rtf_state* state)
 
 static int pop_state(struct stack* stack, struct rtf_state* state)
 {
-    stack->elements--;
+    if (stack->elements)
+        stack->elements--;
     if (state->default_elements) {
         const size_t default_elements = state->default_elements - 1;
         const int toplevel            = state->encounteredTopLevel;
@@ -221,7 +224,7 @@ static int load_actions(table_t* t)
 
 static int rtf_object_begin(struct rtf_state* state, cli_ctx* ctx, const char* tmpdir)
 {
-    struct rtf_object_data* data = malloc(sizeof(*data));
+    struct rtf_object_data* data = cli_max_calloc(1, sizeof(*data));
     if (!data) {
         cli_errmsg("rtf_object_begin: Unable to allocate memory for object data\n");
         cli_mark_scan_incomplete(ctx, "RTF embedded-object state could not be allocated");
@@ -283,7 +286,7 @@ static cl_error_t decode_and_scan(struct rtf_object_data* data, cli_ctx* ctx)
 
     cli_dbgmsg("RTF:Scanning embedded object: %s\n", data->name);
 
-    if (data->fd > 0) {
+    if (data->fd >= 0) {
         if (data->bread == 1) {
             cli_dbgmsg("Decoding ole object\n");
 
@@ -424,15 +427,16 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
                 break;
             }
             case WAIT_ZERO: {
-                if (out_cnt < 8 - data->bread) {
+                const size_t zero_remaining = 8 - data->bread;
+                if (out_cnt < zero_remaining) {
                     data->bread += out_cnt;
                     out_cnt = 0;
                 } else {
-                    out_cnt -= 8 - data->bread;
+                    out_data += zero_remaining;
+                    out_cnt -= zero_remaining;
                     data->bread = 8;
                 }
                 if (data->bread == 8) {
-                    out_data += 8;
                     data->bread = 0;
                     cli_dbgmsg("RTF: next state: wait_data_size\n");
                     data->internal_state = WAIT_DATA_SIZE;
@@ -547,7 +551,7 @@ static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
      * before the enclosing RTF group closed. The old cleanup path treated the
      * partial temporary file as complete and could normalize the parent scan
      * to clean. */
-    if (data->internal_state != WAIT_MAGIC || data->fd >= 0 || data->has_partial) {
+    if (data->internal_state != WAIT_MAGIC || data->has_partial) {
         cli_mark_scan_incomplete(ctx, "RTF embedded object ended before its payload was complete");
         if (data->fd >= 0) {
             if (close(data->fd) != 0)
@@ -566,7 +570,7 @@ static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
             data->temporary_reserved = 0;
         }
         rc = CL_EPARSE;
-    } else if (data->fd > 0) {
+    } else if (data->fd >= 0) {
         rc = decode_and_scan(data, ctx);
     }
     if (data->name)
@@ -693,13 +697,18 @@ int cli_scanrtf(cli_ctx* ctx)
     }
 
     actiontable = tableCreate();
-    if ((ret = load_actions(actiontable))) {
+    if (!actiontable)
+        ret = CL_EMEM;
+    else
+        ret = load_actions(actiontable);
+    if (ret != CL_SUCCESS) {
         cli_dbgmsg("RTF: Unable to load rtf action table\n");
         free(stack.states);
         if (!ctx->engine->keeptmp && cli_rmdirs(tempname) != 0)
             cli_mark_scan_incomplete(ctx, "RTF temporary directory could not be removed");
         free(tempname);
-        tableDestroy(actiontable);
+        if (actiontable)
+            tableDestroy(actiontable);
         return ret;
     }
 

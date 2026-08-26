@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## RTF parser state and child-dispatch hardening — 2026-08-26
+
+The RTF parser now checks its state-stack growth before the allocation-size
+multiplication, avoids underflowing the nesting counter on an unmatched close,
+uses quota-accounted zero-initialized object state, and handles action-table
+allocation failure as `CL_EMEM` without asserting on `tableDestroy(NULL)`.
+Embedded descriptors with value zero are admitted, the object-end decode path
+is reachable for a completed descriptor, and split eight-byte reserved fields
+advance by the bytes actually consumed rather than skipping the following
+payload-size field. The current-source `rtf.c` compiles warning-clean with GCC
+`-Wall -Wextra -Wformat-security`. A current-source production-linked GCC
+harness using current RTF, scanner, matcher, fmap, PE, and helper objects passes
+`rtf_map` 9/9 and `rtf` 1/1 against the materialized `clam.exe.rtf` fixture,
+including the exact split-reserved-field assertion. Full RTF corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, Sonic1, and parser-family qualification remain open.
+
 ## Bytecode malformed-record boundary hardening — 2026-08-26
 
 The bytecode loader now bounds every variable and fixed-width primitive read,
