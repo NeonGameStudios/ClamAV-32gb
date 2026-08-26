@@ -38,10 +38,13 @@
 - RTF `\objdata` now rejects an invalid OLE10 magic prefix as `CL_EPARSE`
   before allocating or scanning a malformed embedded object; the layer is
   incomplete and non-cacheable.
-- The current-source production-linked GCC `rtf_map` case passes 9/9,
-  including the invalid-magic regression. Keep full RTF corpus, sanitizer,
-  certified Linux x86-64, materialized large-file, production-CVD/service,
-  Sonic1, and release gates open.
+- A fresh current-source `rtf.c` object linked into the production GCC
+  harness passes `rtf_map` 9/9, including the invalid-magic regression. The
+  materialized RTF corpus case returns `CL_EFORMAT` in the mixed
+  static/shared-ABI harness, so the earlier 1/1 corpus observation is
+  withdrawn until a full current C rebuild is available. Keep full RTF
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release gates open.
 
 ## SIS compressed-member current-source qualification — 2026-08-26
 

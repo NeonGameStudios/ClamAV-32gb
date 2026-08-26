@@ -51,10 +51,12 @@ RTF embedded-object processing previously logged an OLE10 magic mismatch and
 continued decoding the object. That could let a malformed confirmed object
 reach nested scanning. The parser now returns `CL_EPARSE`, marks the layer
 incomplete and non-cacheable, and stops before temporary output or child
-dispatch. The current-source production-linked GCC `rtf_map` case passes 9/9,
-including the new invalid-magic regression. The RTF corpus case remains a
-mixed current/old ABI integration gate and is not used as evidence for this
-boundary.
+dispatch. A fresh current-source `rtf.c` object linked into the production
+GCC harness passes the `rtf_map` case 9/9, including the new invalid-magic
+regression. The materialized RTF corpus case still returns `CL_EFORMAT` in
+that mixed static/shared-ABI harness, so the earlier 1/1 corpus observation
+is withdrawn as qualification evidence until a full current C rebuild is
+available. The RTF parser-family and release gates remain open.
 
 ## SIS compressed-member current-source qualification — 2026-08-26
 

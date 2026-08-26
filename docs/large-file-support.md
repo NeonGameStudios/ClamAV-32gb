@@ -48,10 +48,13 @@ service, Sonic1, and release qualification remain open.
 RTF `\objdata` now treats a mismatch in the required OLE10 magic prefix as a
 confirmed malformed embedded object: it returns `CL_EPARSE`, marks the layer
 incomplete and non-cacheable, and does not create temporary output or dispatch
-a child. The current-source production-linked GCC `rtf_map` case passes 9/9,
-including the invalid-magic regression. Full RTF corpus, sanitizer, certified
-Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
-release qualification remain open.
+a child. A fresh current-source `rtf.c` object linked into the production GCC
+harness passes `rtf_map` 9/9, including the invalid-magic regression. The
+materialized RTF corpus case returns `CL_EFORMAT` in the mixed static/shared
+ABI harness, so the earlier 1/1 corpus observation is withheld until a full
+current C rebuild is available. Full RTF corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
 
 ## SIS compressed-member current-source qualification — 2026-08-26
 
