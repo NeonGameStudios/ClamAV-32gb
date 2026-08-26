@@ -35641,6 +35641,30 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     ck_assert_msg(!ctx.scan_incomplete, "UDF corpus unexpectedly incomplete: %s",
                   ctx.scan_incomplete_reason ? ctx.scan_incomplete_reason : "(no reason)");
 
+    /* A valid clean volume must complete after its descriptor run. The
+     * parser historically kept indexing payload blocks as descriptors until
+     * the fmap ended, converting this clean case into CL_EPARSE. */
+    memset(data + base + (16 * VOLUME_DESCRIPTOR_SIZE), 0, UDF_TEST_PAYLOAD_LENGTH);
+    memset(&ctx, 0, sizeof(ctx));
+    memset(layers, 0, sizeof(layers));
+    map->dont_cache_flag = false;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_UDF;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_msg(!ctx.scan_incomplete, "valid clean UDF unexpectedly incomplete: %s",
+                  ctx.scan_incomplete_reason ? ctx.scan_incomplete_reason : "(no reason)");
+    ck_assert(!map->dont_cache_flag);
+
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
     free(data);

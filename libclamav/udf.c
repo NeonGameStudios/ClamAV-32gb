@@ -1089,6 +1089,7 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
     cl_error_t read_status                  = CL_EPARSE;
 
     bool isInitialized             = false;
+    bool completed_volume           = false;
     PointerList fileIdentifierList = {0};
     PointerList fileEntryList      = {0};
 
@@ -1424,23 +1425,14 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 goto done;
             }
 
-            case TERMINATING_DESCRIPTOR: {
-                // Skip.
-                break;
-            }
-
-            case INVALID_DESCRIPTOR: {
-                // Skip.
-                break;
-            }
-
+            case TERMINATING_DESCRIPTOR:
+            case INVALID_DESCRIPTOR:
             default: {
-                // TODO: Something feels wrong about doing this in `default:`.
-                // Is there a specific value we can look for to be certain we found them all?
-                // Right now this code appears to work by running into an invalid tagId when
-                // actually is out of descriptors and starts indexing into file data.
-                // Ideally we would end the loop when we know we've found all the descriptors,
-                // and then do this after the loop.
+                /* A non-file-entry block marks the end of the linear
+                 * descriptor run. UDF does not encode a file count here, so
+                 * the paired lists are the bounded set accumulated for this
+                 * volume; invalid/terminating tags are valid payload-boundary
+                 * markers as well as the historical default case. */
 
                 cli_dbgmsg("cli_scanudf: Parsing %d file entries.\n", fileEntryList.cnt);
 
@@ -1481,6 +1473,7 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 file_volume_tag = NULL;
 
                 isInitialized = false;
+                completed_volume = true;
                 break;
             }
         }
@@ -1491,6 +1484,43 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
             goto done;
         }
         idx += VOLUME_DESCRIPTOR_SIZE;
+
+        /* Once the paired file-identifier/file-entry run has been
+         * materialized, the next non-file-entry block is the boundary between
+         * descriptor content and the partition payload.  The old loop kept
+         * treating that payload as another descriptor volume until the fmap
+         * ended, so a valid clean UDF image was returned as CL_EPARSE.  A
+         * primary-volume descriptor is the one supported signal for another
+         * volume; otherwise the completed volume is a complete scan. */
+        if (completed_volume) {
+            DescriptorTag *next_tag;
+
+            if (idx >= ctx->fmap->len) {
+                ret = CL_SUCCESS;
+                goto done;
+            }
+
+            next_tag = (DescriptorTag *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, &read_status);
+            if (NULL == next_tag) {
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF next-volume descriptor could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "UDF next-volume descriptor is incomplete");
+                    ret = CL_EPARSE;
+                }
+                goto done;
+            }
+
+            if (PRIMARY_VOLUME_DESCRIPTOR != getDescriptorTagId(next_tag)) {
+                fmap_unneed_ptr(ctx->fmap, next_tag, VOLUME_DESCRIPTOR_SIZE);
+                ret = CL_SUCCESS;
+                goto done;
+            }
+
+            fmap_unneed_ptr(ctx->fmap, next_tag, VOLUME_DESCRIPTOR_SIZE);
+            completed_volume = false;
+        }
     }
 
 done:

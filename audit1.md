@@ -420,6 +420,22 @@ is bounded XDP/MSXML output evidence, not complete XDP qualification;
 sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and release evidence remain open.
 
+## UDF clean-volume completion — 2026-08-26
+
+The UDF loop previously treated the first partition payload block after a
+completed file-identifier/file-entry run as another volume descriptor. A clean
+synthetic volume therefore reached the end of its fmap and returned
+`CL_EPARSE`, despite its required descriptors and extracted-file accounting
+having completed. The authoritative current-source production-linked GCC
+`udf_corpus` regression reproduced that pre-fix result. The parser now treats
+the next non-primary block as the completed volume boundary, while permitting a
+following primary-volume descriptor to begin another supported volume. The
+same `udf_corpus` case passes 1/1 after the fix for both exact child detection
+and clean-volume completion with a cacheable map; `udf_map` remains 9/9. This
+is bounded UDF completion evidence, not complete UDF qualification; sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## UUEncode member corpus qualification — 2026-08-26
 
 The isolated authoritative current-source production-linked GCC

@@ -347,6 +347,19 @@
   materialized large-file, production-CVD/service, Sonic1, and release gates
   open.
 
+## UDF clean-volume completion — 2026-08-26
+
+- The UDF scanner previously indexed the first payload block after a completed
+  file-identifier/file-entry run as another descriptor volume, turning a valid
+  clean volume into `CL_EPARSE` at fmap end.
+- The current-source production-linked GCC `udf_corpus` case now passes 1/1
+  for exact child detection and clean-volume completion; a following primary
+  descriptor remains the supported signal for another volume. `udf_map` passes
+  9/9.
+- Keep full UDF corpus, native-width review, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+  gates open.
+
 ## UDF descriptor/member corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC `udf_map` case passes 9/9, and the

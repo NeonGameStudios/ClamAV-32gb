@@ -297,6 +297,18 @@ UUEncode/mail corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and release qualification remain
 open.
 
+## UDF clean-volume completion — 2026-08-26
+
+The UDF scanner previously treated the first partition payload block after a
+completed file-identifier/file-entry run as another descriptor volume. A valid
+clean volume consequently reached fmap end and returned `CL_EPARSE`. The
+current-source production-linked GCC `udf_corpus` case now passes 1/1 for both
+the exact child match and clean-volume completion, with the clean map remaining
+cacheable; `udf_map` passes 9/9. A following primary-volume descriptor remains
+the supported signal for another volume. Full UDF corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release qualification remain open.
+
 ## UDF descriptor/member corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `udf_map` case passes 9/9, and the
