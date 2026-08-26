@@ -1,5 +1,15 @@
 # Wishlist
 
+## Graphics current-source qualification — 2026-08-26
+
+- The current-source production-linked GCC harness passes `graphics_map` 2/2,
+  `graphics_api` 1/1, and `graphics_corpus` 1/1. Coverage includes BMP and
+  JPEG-2000 map admission, public in-range read-failure classification, and
+  exact pixel-offset matching from a complete BMP corpus fixture.
+- Keep full graphics decoding/corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## DMG and ELF current-source qualification — 2026-08-26
 
 - The current-source production-linked GCC harness passes `dmg` 6/6 and

@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Graphics current-source qualification — 2026-08-26
+
+The current-source production-linked GCC harness passes `graphics_map` 2/2,
+`graphics_api` 1/1, and `graphics_corpus` 1/1. The cases cover BMP and
+JPEG-2000 admission boundaries, public in-range read-failure classification,
+and exact pixel-offset matching from a structurally complete BMP fixture.
+Full graphics decoding/corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## DMG and ELF current-source qualification — 2026-08-26
 
 The current-source production-linked GCC harness passes the DMG cases `dmg`

@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## Graphics current-source qualification — 2026-08-26
+
+The current-source production-linked GCC harness passes `graphics_map` 2/2,
+`graphics_api` 1/1, and `graphics_corpus` 1/1. The map case covers BMP and
+JPEG-2000 null/missing-map admission, the public API case preserves an
+in-range graphics read failure as `CL_EREAD` with a clean non-cacheable
+result, and the corpus case reaches an exact pixel-offset marker through a
+structurally complete BMP. This is bounded graphics admission and matching
+evidence; full graphics decoding/corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## DMG and ELF current-source qualification — 2026-08-26
 
 The current-source production-linked GCC harness passes the DMG cases
