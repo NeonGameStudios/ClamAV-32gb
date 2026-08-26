@@ -6,14 +6,25 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
-## BZip2 corpus qualification — 2026-08-25
+## BZip2 and GZip corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `bz_core` case passes
-4/4, including the materialized `clam.exe.bz2` fixture. Its exact embedded
-`MZP` marker is absent from the compressed outer bytes and is detected after
-decompression and nested handoff. Full BZip2 concatenated-member/corpus,
-sanitizer, certified Linux x86-64, materialized large-file,
-production-CVD/service, Sonic1, and release qualification remain open.
+5/5. It includes the materialized `clam.exe.bz2` BZip2 fixture and the
+materialized `clam.tar.gz` and `clam.exe_and_mail.tar.gz` GZip fixtures. In
+each corpus case the exact embedded `MZP` marker is absent from the compressed
+outer bytes and is detected only after decompression and nested handoff. Full
+BZip2 concatenated-member/corpus, GZip legacy-fallback/corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release qualification remain open.
+
+## GZip corpus dispatch qualification — 2026-08-25
+
+The new `test_gzip_corpus_detects_embedded_mz` oracle runs both materialized
+GZip fixtures through public `cl_scanmap_ex` with `CL_TYPE_GZ`, archive/PE
+parsing enabled, and an exact nested `MZP` matcher. The compressed outer bytes
+contain no `MZP`; both alerts are produced only after GZip extraction and the
+nested child handoff. This extends the focused `bz_core` evidence to 5/5 while
+leaving legacy-fallback and complete parser-family qualification open.
 
 ## Mail encoded-attachment corpus qualification — 2026-08-25
 
@@ -8877,17 +8888,21 @@ evidence remain open.
 
 ## GZip current-source qualification audit — 2026-08-25
 
-The current-source production-linked `bz_core` TCase now passes 3/3. In
-addition to the shared truncated-stream and compressed-input callback-failure
-oracles, the new dedicated GZip case injects an in-range fmap read failure into
-a valid GZip stream and verifies `CL_EREAD`, a clean verdict, and
-non-cacheability. This independently exercises the GZip dispatch path while
-retaining the common GZip/BZip2/XZ boundary coverage.
+The expanded current-source production-linked `bz_core` TCase now passes 5/5.
+In addition to the shared truncated-stream and compressed-input callback-
+failure oracles, the dedicated GZip case injects an in-range fmap read failure
+into a valid GZip stream and verifies `CL_EREAD`, a clean verdict, and
+non-cacheability. The same TCase now scans `clam.tar.gz` and
+`clam.exe_and_mail.tar.gz`; their exact `MZP` markers are absent from the
+compressed outer bytes and are detected only after GZip extraction and nested
+handoff. This independently exercises the GZip dispatch path while retaining
+the common GZip/BZip2/XZ boundary coverage.
 
-This is parser-boundary evidence, not release certification. Full GZip and
-legacy-fallback corpus, current full-C ABI-consistent execution, sanitizer,
-certified Linux x86-64, materialized large-file, production CVD/service parity,
-and Sonic1 qualification remain open, so `CL_TYPE_GZ` stays pending.
+This is parser-boundary and materialized-corpus evidence, not release
+certification. Full GZip and legacy-fallback corpus, current full-C
+ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+large-file, production CVD/service parity, and Sonic1 qualification remain
+open, so `CL_TYPE_GZ` stays pending.
 
 ## HTML normalization read-status audit — 2026-08-25
 
@@ -9311,11 +9326,12 @@ production-CVD/service parity, and Sonic1 qualification remain open, so
 
 The broader `bz_map` TCase still includes an HTML dispatch oracle that is not
 ABI-consistent in this mixed production harness. The isolated current-source
-production-linked `bz_core` TCase passes 3/3 for truncated compressed streams,
-shared compressed-input callback failure, and the GZip-only input callback
-failure; the BZ and GZip manifest rows record this subset explicitly.
+production-linked `bz_core` TCase passes 5/5 for truncated compressed streams,
+shared compressed-input callback failure, the GZip-only input callback failure,
+and the BZip2/GZip materialized nested-MZP corpus cases; the BZ and GZip
+manifest rows record this subset explicitly.
 
-Complete BZ/GZip concatenated-member and temporary-quota corpus, full-C
-ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
-large-file, production-CVD/service parity, and Sonic1 qualification remain
-open.
+Complete BZ/GZip concatenated-member, legacy-fallback, and temporary-quota
+corpus, full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open.

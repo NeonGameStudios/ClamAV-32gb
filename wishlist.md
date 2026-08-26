@@ -1,14 +1,25 @@
 # Wishlist
 
-## BZip2 corpus qualification — 2026-08-25
+## BZip2 and GZip corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `bz_core` case
-  passes 4/4, including materialized `clam.exe.bz2`; its exact embedded `MZP`
-  marker is absent from the compressed outer bytes and is detected after
-  decompression and nested handoff.
-- Keep full BZip2 concatenated-member/corpus, sanitizer, certified Linux
-  x86-64, materialized large-file, production-CVD/service, Sonic1, and release
-  qualification open.
+  passes 5/5, including materialized `clam.exe.bz2`, `clam.tar.gz`, and
+  `clam.exe_and_mail.tar.gz`; each exact embedded `MZP` marker is absent from
+  the compressed outer bytes and is detected after decompression and nested
+  handoff.
+- Keep full BZip2 concatenated-member/corpus, GZip legacy-fallback/corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release qualification open.
+
+## GZip corpus dispatch qualification — 2026-08-25
+
+- `test_gzip_corpus_detects_embedded_mz` passes as part of the current-source
+  production-linked `bz_core` 5/5 run for both materialized GZip fixtures via
+  public `cl_scanmap_ex` and exact nested matching; neither compressed outer
+  byte stream contains `MZP`.
+- Preserve the legacy-fallback and complete GZip corpus, full-C ABI,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release qualification gates.
 
 ## Mail encoded-attachment corpus qualification — 2026-08-25
 
@@ -3517,10 +3528,11 @@ and Sonic1 qualification as release gates.
 
 ## GZip current-source qualification audit — 2026-08-25
 
-- The current-source production-linked `bz_core` TCase passes 3/3, including a
-  dedicated valid-GZip in-range callback-failure oracle that preserves
-  `CL_EREAD`, a clean verdict, and non-cacheability alongside the shared
-  truncated-stream and compressed-input boundaries.
+- The expanded current-source production-linked `bz_core` TCase passes 5/5,
+  including the dedicated valid-GZip in-range callback-failure oracle that
+  preserves `CL_EREAD`, a clean verdict, and non-cacheability, the shared
+  truncated-stream/compressed-input boundaries, and both materialized GZip
+  corpus fixtures with nested `MZP` detection.
 - Extend GZip and legacy-fallback evidence to complete corpus, full-C
   ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
   large-file, production CVD/service parity, and Sonic1 qualification before
@@ -3824,10 +3836,12 @@ and Sonic1 qualification as release gates.
 
 ## BZip2/GZip isolated core audit — 2026-08-25
 
-- The isolated current-source production-linked `bz_core` TCase passes 3/3
-  for truncated compressed streams and BZ/GZip callback failures; retain the
-  broader HTML dispatch mismatch as a mixed-harness rebuild gate rather than
-  counting it as compressed-parser evidence.
-- Complete BZ/GZip concatenated-member and temporary-quota corpus, full-C
-  ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
-  large-file, production-CVD/service parity, and Sonic1 qualification.
+- The isolated current-source production-linked `bz_core` TCase passes 5/5
+  for truncated compressed streams, BZ/GZip callback failures, and the
+  BZip2/GZip materialized nested-MZP corpus cases; retain the broader HTML
+  dispatch mismatch as a mixed-harness rebuild gate rather than counting it
+  as compressed-parser evidence.
+- Complete BZ/GZip concatenated-member, legacy-fallback, and temporary-quota
+  corpus, full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service parity, and Sonic1
+  qualification.
