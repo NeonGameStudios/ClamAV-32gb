@@ -27741,6 +27741,42 @@ START_TEST(test_ole2_stream_size_preserves_high_word)
     ck_assert_msg(entry_offset != SIZE_MAX, "workbook directory entry not found");
     ck_assert_msg(entry_offset <= data_size - 128U, "workbook directory entry is truncated");
 
+    /* Remove the final byte from the declared WorkBook stream while leaving
+     * its block chain intact. The BIFF walker must reject the resulting
+     * partial record instead of treating the stream as completely inspected. */
+    {
+        uint64_t workbook_size;
+
+        memcpy(&workbook_size, data + entry_offset + 120U, sizeof(workbook_size));
+        workbook_size = le64_to_host(workbook_size);
+        ck_assert_msg(workbook_size > 1U && workbook_size <= SIZE_MAX,
+                      "invalid WorkBook stream size");
+        workbook_size--;
+        cli_writeint32(data + entry_offset + 120U, (uint32_t)workbook_size);
+        cli_writeint32(data + entry_offset + 124U, (uint32_t)(workbook_size >> 32));
+
+        map = cl_fmap_open_memory(data, data_size);
+        ck_assert_ptr_nonnull(map);
+        memset(&engine, 0, sizeof(engine));
+        memset(&options, 0, sizeof(options));
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine            = &engine;
+        ctx.options           = &options;
+        ctx.fmap              = map;
+        ctx.this_layer_tmpdir = tmpdir;
+
+        ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         "OLE2 XLM/image BIFF record ended before its declared length");
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+
+        cli_writeint32(data + entry_offset + 120U, (uint32_t)(workbook_size + 1U));
+        cli_writeint32(data + entry_offset + 124U, (uint32_t)((workbook_size + 1U) >> 32));
+    }
+
     /* Directory-entry stream sizes are 64-bit at offset 120. Preserve the
      * valid low word but set bit 32 so a 32-bit-only parser would scan a
      * silently shortened workbook. */

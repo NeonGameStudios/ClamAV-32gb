@@ -4173,8 +4173,9 @@ and Sonic1 qualification as release gates.
   `ole2_xlm` and `ole2_map` pass 2/2 each across missing-map/API admission,
   header/property-tree faults, MSO prefix and CFB geometry boundaries, VBA
   materialization, timeout, native encryption-window read faults, output-close
-  propagation, XLM sector handling, 64-bit stream sizes, and materialized
-  PowerPoint child detection. Required failures
+  propagation, XLM sector handling, a partial BIFF record at the declared
+  WorkBook boundary, 64-bit stream sizes, and materialized PowerPoint child
+  detection. Required failures
   remain incomplete and non-cacheable, with `CL_EREAD` and the shared timeout
   reason preserved.
 - Complete the OLE/VBA/XLM corpus and fixture-specific sector, quota, and

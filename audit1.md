@@ -9419,6 +9419,21 @@ Complete OLE2/XAR/RTF/media corpora, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, and Sonic1 qualification
 remain open.
 
+## OLE2/XLM BIFF-boundary qualification — 2026-08-26
+
+The current `ole2_extract.c` object was rebuilt with the production GCC flags
+before running the OLE2/XLM case. The `ole2_xlm` TCase passes 2/2: its
+sector-callback failure remains `CL_EREAD` with a clean, non-cacheable result,
+and the WorkBook stream-size mutation now also proves that a BIFF record cut
+short at the declared stream boundary returns `CL_EPARSE` with the dedicated
+incomplete reason. The existing 64-bit declared-size check remains in the same
+case. The broader `ole2` TCase still contains the known mixed-generation
+static/shared `cli_ctx` failures in both current-object relinks, so they remain
+an integration gate rather than evidence against this isolated XLM result.
+Complete OLE2/VBA/XLM corpus, sanitizer, certified Linux x86-64,
+materialized-large-file, production-CVD/service, and Sonic1 qualification
+remain open.
+
 The Rust boundary review confirmed that the authoritative source returns
 `CL_ENULLARG` before fmap lookup for OneNote, ALZ, and LHA/LZH. The first
 linked `rust_map` run used a stale Rust archive and was discarded. After

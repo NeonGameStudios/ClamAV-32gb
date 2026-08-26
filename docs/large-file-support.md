@@ -6989,6 +6989,18 @@ Both cases remain explicit incomplete/non-cacheable results instead of clean
 OLE2 scans. Compiled truncation corpus, sanitizer, and supported-build Sonic1
 qualification remain release gates.
 
+## OLE2 XLM/BIFF declared-boundary regression — 2026-08-26
+
+The current OLE2 parser object was rebuilt with the production GCC flags and
+the focused `ole2_xlm` TCase passes 2/2. In addition to the operational sector
+callback failure, the materialized WorkBook fixture is mutated to declare one
+fewer byte while retaining its block chain. The BIFF walker reaches the
+declared boundary in the middle of the final record and returns `CL_EPARSE`,
+marks the layer incomplete, and suppresses caching. The existing 64-bit stream
+size mutation remains covered. The broader OLE2 TCase still has mixed
+static/shared-ABI harness failures, so full OLE2/VBA/XLM corpus and
+full-C/sanitizer/Sonic1 qualification remain release gates.
+
 ## XAR TOC root-completion check — 2026-08-23
 
 XAR TOC traversal now distinguishes a properly observed closing `</xar>` from
