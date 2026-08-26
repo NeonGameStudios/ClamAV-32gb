@@ -210,9 +210,13 @@ impl AlzLocalFileHeader {
     }
 
     const fn is_known_scan_limit_exempt(&self) -> bool {
-        self.compressed_size == 0
-            || (self.compression_method == ALZ_COMP_NOCOMP
-                && self.compressed_size <= MIN_SCANNED_FILE_SIZE as u64)
+        self.compression_method == ALZ_COMP_NOCOMP
+            && self.compressed_size <= MIN_SCANNED_FILE_SIZE as u64
+    }
+
+    const fn has_valid_compressed_size(&self) -> bool {
+        self.compressed_size != 0
+            || (self.compression_method == ALZ_COMP_NOCOMP && self.uncompressed_size == 0)
     }
 
     const fn has_valid_compressed_data_bounds(&self) -> bool {
@@ -783,6 +787,12 @@ impl<'aa> Alz {
         let extraction_decision = should_extract(&metadata);
         if matches!(extraction_decision, AlzExtractionDecision::Stop) {
             return Err(Error::Stop);
+        }
+
+        if !local_fileheader.has_valid_compressed_size() {
+            return Err(Error::Parse(
+                "Compressed data is empty for a non-empty or compressed member",
+            ));
         }
 
         if !local_fileheader.is_directory() {
@@ -1754,7 +1764,7 @@ mod tests {
     }
 
     #[test]
-    fn exhausted_total_limit_does_not_charge_empty_compressed_entry_by_declared_size() {
+    fn zero_compressed_nonzero_declared_size_is_parse_error() {
         const ALZ_COMP_NOCOMP: u8 = 0;
         const ALZ_COMP_DEFLATE: u8 = 2;
 
@@ -1775,9 +1785,29 @@ mod tests {
         .unwrap();
 
         assert_eq!(alz.total_limit_exceeded_size, None);
+        assert!(alz.has_parse_error());
         assert_eq!(alz.embedded_files.len(), 1);
         assert_eq!(alz.embedded_files[0].name.as_deref(), Some("first.txt"));
         assert_eq!(alz.embedded_files[0].data, b"first!");
+    }
+
+    #[test]
+    fn zero_compressed_deflate_member_is_parse_error() {
+        const ALZ_COMP_DEFLATE: u8 = 2;
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_file(&mut bytes, "empty.deflate", ALZ_COMP_DEFLATE, 0, b"");
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+
+        let alz = Alz::from_bytes_with_filter(&bytes, |_| {
+            AlzExtractionDecision::Extract(extraction_limits())
+        })
+        .unwrap();
+
+        assert!(alz.has_parse_error());
+        assert!(alz.embedded_files.is_empty());
     }
 
     #[test]

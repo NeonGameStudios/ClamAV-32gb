@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## ALZ zero-byte compressed-member admission — 2026-08-26
+
+The ALZ parser previously treated every member with zero compressed bytes as a
+known-empty, limit-exempt entry. That allowed a confirmed member declaring
+nonzero output, or selecting a compressed method with no compressed payload,
+to be skipped and leave the archive clean. Admission now permits only a
+zero-byte stored member whose declared output is also zero; the malformed
+boundaries become parse errors. A standalone current-source Rust harness,
+linked only with the existing cached decoder artifacts, passes both cases;
+full Rust/C ABI, production-CVD, sanitizer, service, Sonic1, and release
+qualification remain open.
+
 ## 7-Zip substream-size arithmetic — 2026-08-26
 
 7-Zip substream metadata previously accumulated declared sizes without

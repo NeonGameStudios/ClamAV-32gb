@@ -1,5 +1,14 @@
 # Wishlist
 
+## ALZ zero-byte compressed-member admission — 2026-08-26
+
+- Permit a zero-byte member only when it is stored and declares zero output;
+  reject zero compressed bytes paired with nonzero output or a compressed
+  method as malformed instead of treating the member as cleanly skipped.
+- The standalone current-source Rust harness passes both malformed cases.
+  Keep full Rust/C ABI, production-CVD, sanitizer, service, Sonic1, and
+  release qualification open.
+
 ## 7-Zip substream-size arithmetic — 2026-08-26
 
 - Reject a substream-size sum that overflows `UInt64` or exceeds the folder's

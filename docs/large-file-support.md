@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ALZ zero-byte compressed-member admission — 2026-08-26
+
+ALZ admission now treats zero compressed bytes as valid only for a stored
+member whose declared output is also zero. A confirmed member with nonzero
+declared output, or any compressed method with no compressed payload, is now a
+malformed parse result instead of a known-empty entry that could be skipped
+cleanly. A standalone current-source Rust harness passes both malformed
+boundaries against the existing cached decoder artifacts. Full Rust/C ABI,
+production-CVD, sanitizer, service, Sonic1, and release qualification remain
+required.
+
 ## 7-Zip substream-size arithmetic — 2026-08-26
 
 7-Zip substream metadata now checks native-width accumulation and rejects a
