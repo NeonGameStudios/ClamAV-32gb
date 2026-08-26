@@ -1,5 +1,14 @@
 # Wishlist
 
+## ZIP ordinary corpus qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `zip` case passes
+  13/13, including both materialized split `logos.zip` and `logos.z01`
+  fixtures with exact nested PNG child detection. The existing `zip_sfx`
+  case passes 3/3 and `zip_map` passes 1/1.
+- Keep full ZIP corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release qualification open.
+
 ## ISO9660 corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `iso` case passes
