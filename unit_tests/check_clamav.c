@@ -14468,19 +14468,19 @@ START_TEST(test_pdf_ascii85_partial_groups_are_exact)
 }
 END_TEST
 
-START_TEST(test_pdf_ascii85_markerless_trailing_group_matches_legacy)
+START_TEST(test_pdf_ascii85_markerless_partial_group_is_fail_visible)
 {
     static const uint8_t encoded[]  = "87cURD_*#TDfTZ)!!";
-    static const uint8_t expected[] = "Hello, world";
     struct pdf_single_filter_result result;
 
     pdf_test_decode_single_filter(encoded, sizeof(encoded) - 1U,
                                   sizeof(encoded) - 1U, OBJ_FILTER_A85, 0, &result);
-    ck_assert_int_eq(result.status, CL_SUCCESS);
-    ck_assert_uint_eq(result.written, sizeof(expected) - 1U);
-    ck_assert_uint_eq(result.output_size, sizeof(expected) - 1U);
-    ck_assert_int_eq(memcmp(result.output, expected, sizeof(expected) - 1U), 0);
-    ck_assert(!result.scan_incomplete);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert_uint_eq(result.written, sizeof(encoded) - 1U);
+    ck_assert_uint_eq(result.output_size, sizeof(encoded) - 1U);
+    ck_assert_int_eq(memcmp(result.output, encoded, sizeof(encoded) - 1U), 0);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
     free(result.output);
 }
 END_TEST
@@ -40122,7 +40122,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_ascii_filters_accept_pdf_whitespace);
     tcase_add_test(tc_cl, test_pdf_ascii85_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_ascii85_partial_groups_are_exact);
-    tcase_add_test(tc_cl, test_pdf_ascii85_markerless_trailing_group_matches_legacy);
     tcase_add_test(tc_cl, test_pdf_ascii85_overflow_groups_are_fail_visible);
     tcase_add_test(tc_cl, test_pdf_ascii85_stream_quota_failure_rolls_back_output);
     tcase_add_test(tc_cl, test_pdf_invalid_ascii85_after_prefix_is_fail_visible);
@@ -40278,6 +40277,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_explicit_identity_crypt_precedes_supported_filters);
     tcase_add_test(tc_pdf, test_pdf_truncated_flate_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_lzw_after_prefix_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_ascii85_markerless_partial_group_is_fail_visible);
     tcase_add_test(tc_cl, test_top_level_maxfilesize_descriptor_is_fail_visible);
     tcase_add_test(tc_cl, test_action_setup_quarantine_lock_uses_validated_directory_handle);
     tcase_add_test(tc_cl, test_action_source_open_relative_path_stores_absolute_action_path);

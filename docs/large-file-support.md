@@ -509,7 +509,7 @@ The streaming Flate and LZW resynchronization paths now preserve the original
 decode `CL_EPARSE` when a successful fallback-line search reaches EOF without
 finding another compressed stream. This prevents malformed filtered data from
 being reported as clean. The current-source production-linked GCC `pdf` TCase
-passes 13/13, and the isolated `pdf_corpus` TCase passes 1/1 for materialized
+passes 14/14, and the isolated `pdf_corpus` TCase passes 1/1 for materialized
 `clam.pdf`; its exact offset-0 child `MZP` alert is reached after extraction,
 not by the PDF root. Full PDF corpus, encrypted large-stream, sanitizer,
 certified Linux x86-64, production-CVD/service, Sonic1, and release
@@ -7222,12 +7222,14 @@ deadline at 64 KiB input intervals and flush through one 256 KiB buffer with
 scan-limit and temporary-quota admission.
 
 ASCIIHex accepts all PDF whitespace, pads an odd final nibble with zero, and
-ignores data after `>`. ASCII85 retains the established marker-less behavior,
-supports whitespace and `z` groups, validates `z` placement and one-character
-final groups, rejects full or partial groups whose numeric value exceeds the
-32-bit ASCII85 tuple, completes two- through four-character groups at `~>`, and
-ignores post-marker data. Invalid input after a written decoded prefix rolls
-back the file and reservations before exact raw fallback.
+ignores data after `>`. ASCII85 retains the established marker-less behavior
+for complete groups, supports whitespace and `z` groups, validates `z`
+placement and one-character final groups, rejects full or partial groups whose
+numeric value exceeds the 32-bit ASCII85 tuple, rejects a marker-less partial
+trailing group instead of silently discarding it, completes two- through
+four-character groups at `~>`, and ignores post-marker data. Invalid input
+after a written decoded prefix rolls back the file and reservations before
+exact raw fallback.
 
 Focused tests cover exact output beyond one window, odd nibbles, known ASCII85
 vectors, zero groups, partial groups, whitespace, post-marker bytes,

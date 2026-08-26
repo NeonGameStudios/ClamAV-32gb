@@ -2839,8 +2839,16 @@ static cl_error_t pdf_stream_ascii85decode_reader(
         }
     }
 
-    if (!found_eod && status == CL_SUCCESS)
+    if (!found_eod && status == CL_SUCCESS) {
         cli_dbgmsg("cli_pdf: streamed ASCII85 input has no EOF marker\n");
+        if (quintet != 0U) {
+            /* A stream-length-terminated ASCII85 stream may omit ~> when it
+             * ends on a complete group, but a partial trailing group is
+             * necessarily an uninspected suffix. Do not silently discard it
+             * and publish a clean decoded prefix. */
+            status = CL_EPARSE;
+        }
+    }
     if (status == CL_SUCCESS)
         status = pdf_stream_output_flush(pdf, fout, output_buffer, &output_buffered, decoded,
                                          "PDF streamed ASCII85 output exceeded configured scan limits");

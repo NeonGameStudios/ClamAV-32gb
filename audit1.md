@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## PDF ASCII85 partial-tail classification — 2026-08-26
+
+The bounded ASCII85 decoder intentionally accepts stream-length-terminated
+input when it ends on complete groups, but it previously discarded a
+markerless partial trailing group and returned a clean decoded prefix. That
+suffix is not fully inspected. The decoder now rolls back the decoded output,
+returns `CL_EPARSE`, marks the PDF layer incomplete/non-cacheable, and lets
+the exact raw fallback remain visible. The focused PDF TCase now passes 14/14;
+the regression checks the partial tail, rollback, raw bytes, and sticky state;
+full PDF corpus,
+sanitizer, production-CVD/service, Sonic1, and release gates remain open.
+
 ## Fresh ZIP corpus evidence correction — 2026-08-26
 
 The fresh production-linked GCC rebuild of the current `unzip.c` and
@@ -593,7 +605,7 @@ remain open.
 
 ## PDF decoder and corpus qualification — 2026-08-25
 
-The current-source production-linked GCC `pdf` TCase now passes 13/13 after
+The current-source production-linked GCC `pdf` TCase now passes 14/14 after
 fixing a fail-open resynchronization path in both streaming Flate and LZW
 decoders: a successful search that reaches EOF without finding an alternate
 line no longer overwrites the original decode `CL_EPARSE`. The materialized
@@ -8524,8 +8536,9 @@ write. Failures roll back all decoded bytes and only the current attempt's
 reservation before raw fallback.
 
 ASCIIHex now handles the complete PDF whitespace set and odd-nibble padding;
-ASCII85 preserves marker-less compatibility while validating final groups,
-32-bit tuple range, and `z` placement. Regressions bind exact multi-window
+ASCII85 preserves marker-less compatibility for complete groups while
+rejecting a partial markerless tail, and validates final groups, 32-bit tuple
+range, and `z` placement. Regressions bind exact multi-window
 output, all PDF whitespace bytes, known vectors, partial groups, marker
 behavior, one-byte-short quota rollback, invalid or overflowing input after
 written prefixes, and early terminators under logical lengths above
