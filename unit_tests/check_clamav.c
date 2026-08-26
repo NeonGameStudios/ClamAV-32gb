@@ -18182,7 +18182,6 @@ END_TEST
 
 START_TEST(test_tar_base256_size_is_supported)
 {
-    static const char signature[] = "Tar.Member.Exact:0:0:5441522d4f4b2121\n";
     uint8_t data[2048] = {0};
     unsigned int checksum = 0;
     struct cl_scan_options options;
@@ -18190,10 +18189,7 @@ START_TEST(test_tar_base256_size_is_supported)
     struct cl_engine *scan_engine;
     cl_verdict_t verdict;
     const char *last_alert;
-    char signature_path[PATH_MAX];
-    unsigned int sigs = 0;
     uint64_t scanned;
-    int signature_fd = -1;
     cl_error_t ret;
     size_t i;
 
@@ -18214,21 +18210,14 @@ START_TEST(test_tar_base256_size_is_supported)
     memset(&options, 0, sizeof(options));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
-    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
-                              "%s/tar-base256-member.ndb", tmpdir),
-                     (int)(strlen(tmpdir) + strlen("/tar-base256-member.ndb")));
-    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
-    ck_assert_int_ge(signature_fd, 0);
-    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1U),
-                     (ssize_t)(sizeof(signature) - 1U));
-    ck_assert_int_eq(close(signature_fd), 0);
-    signature_fd = -1;
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
-    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
-    ck_assert_uint_eq(sigs, 1U);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Tar.Member.Exact", "5441522d4f4b2121",
+                         0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
-    ck_assert_int_eq(cli_unlink(signature_path), 0);
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     verdict    = CL_VERDICT_NOTHING_FOUND;
@@ -18250,7 +18239,6 @@ END_TEST
 
 START_TEST(test_tar_pax_size_is_supported)
 {
-    static const char signature[] = "Tar.Member.Exact:0:0:5441522d4f4b2121\n";
     uint8_t data[3072] = {0};
     unsigned int checksum = 0;
     struct cl_scan_options options;
@@ -18258,10 +18246,7 @@ START_TEST(test_tar_pax_size_is_supported)
     struct cl_engine *scan_engine;
     cl_verdict_t verdict;
     const char *last_alert;
-    char signature_path[PATH_MAX];
-    unsigned int sigs = 0;
     uint64_t scanned;
-    int signature_fd = -1;
     cl_error_t ret;
     size_t i;
 
@@ -18293,21 +18278,14 @@ START_TEST(test_tar_pax_size_is_supported)
     memset(&options, 0, sizeof(options));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
-    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
-                              "%s/tar-pax-member.ndb", tmpdir),
-                     (int)(strlen(tmpdir) + strlen("/tar-pax-member.ndb")));
-    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
-    ck_assert_int_ge(signature_fd, 0);
-    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1U),
-                     (ssize_t)(sizeof(signature) - 1U));
-    ck_assert_int_eq(close(signature_fd), 0);
-    signature_fd = -1;
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
-    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
-    ck_assert_uint_eq(sigs, 1U);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Tar.Member.Exact", "5441522d4f4b2121",
+                         0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
-    ck_assert_int_eq(cli_unlink(signature_path), 0);
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     verdict    = CL_VERDICT_NOTHING_FOUND;
@@ -18415,20 +18393,14 @@ static void tar_test_make_posix_header(uint8_t *header, const char *name, uint64
 
 START_TEST(test_tar_pax_global_local_size_scope_reaches_nested_matchers)
 {
-    static const char signatures[] =
-        "Tar.Pax.LocalOverride:0:0:4c4f43414c2d4f4b21\n"
-        "Tar.Pax.GlobalResume:0:EOF-8:474c4f42414c2121\n";
     uint8_t local_override[4096] = {0};
     uint8_t global_resume[5120]  = {0};
     struct cl_scan_options options;
     struct cl_engine *scan_engine;
     const char *last_alert;
-    char signature_path[PATH_MAX];
-    unsigned int sigs = 0;
     cl_verdict_t verdict;
     uint64_t scanned;
     fmap_t *map;
-    int signature_fd;
     cl_error_t ret;
 
     tar_test_make_posix_header(local_override, "global-pax", 9, 'g');
@@ -18450,20 +18422,18 @@ START_TEST(test_tar_pax_global_local_size_scope_reaches_nested_matchers)
     memset(&options, 0, sizeof(options));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
-    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
-                              "%s/tar-pax-scope.ndb", tmpdir),
-                     (int)(strlen(tmpdir) + strlen("/tar-pax-scope.ndb")));
-    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
-    ck_assert_int_ge(signature_fd, 0);
-    ck_assert_int_eq(write(signature_fd, signatures, sizeof(signatures) - 1U),
-                     (ssize_t)(sizeof(signatures) - 1U));
-    ck_assert_int_eq(close(signature_fd), 0);
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
-    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
-    ck_assert_uint_eq(sigs, 2U);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Tar.Pax.LocalOverride", "4c4f43414c2d4f4b21",
+                         0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Tar.Pax.GlobalResume", "474c4f42414c2121",
+                         0, 0, 0, "EOF-8", NULL, 0),
+                     CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
-    ck_assert_int_eq(cli_unlink(signature_path), 0);
 
     map = cl_fmap_open_memory(local_override, sizeof(local_override));
     ck_assert_ptr_nonnull(map);

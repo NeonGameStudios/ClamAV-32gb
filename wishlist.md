@@ -1,5 +1,15 @@
 # Wishlist
 
+## TAR member-size and PAX-scope qualification — 2026-08-26
+
+- The authoritative current-source production-linked GCC `tar_member` case
+  passes 4/4 after direct compiled matcher setup, covering GNU base-256 and
+  PAX child handoff, local PAX override/global-scope restoration, and visible
+  rejection of unrepresentable positive and negative base-256 sizes. Existing
+  `tar` passes 6/6 and `tar_corpus` passes 1/1.
+- Keep complete TAR corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## Mail, MHTML, and MBR current-source qualification — 2026-08-26
 
 - The rebuilt current-source production-linked GCC harness passes `mail_api`

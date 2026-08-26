@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## TAR member-size and PAX-scope qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `tar_member` case
+passes 4/4 after replacing mixed-harness temporary signature loading with
+direct compiled matchers. Coverage proves GNU base-256 and PAX members reach
+nested matching at child offset zero, local PAX size override applies to one
+member before the global value resumes, and unrepresentable positive and
+negative base-256 values fail visibly and remain non-cacheable. The existing
+`tar` case passes 6/6 and `tar_corpus` 1/1. Full TAR corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## Mail, MHTML, and MBR current-source qualification — 2026-08-26
 
 The rebuilt current-source production-linked GCC harness passes `mail_api`
