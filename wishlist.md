@@ -1,5 +1,17 @@
 # Wishlist
 
+## ARJ truncated compressed-member fail-closed audit — 2026-08-26
+
+- ARJ compressed bit-window refills now stop with `CL_EFORMAT` when the
+  declared compressed member is exhausted instead of synthesizing zero
+  padding; the overflow path records the same fail-visible status.
+- The current-source production-linked GCC `arj_compressed` regression passes
+  1/1 with a clean verdict and non-cacheable fmap; the established `arj`,
+  `arj_map`, and `arjsfx` evidence is 10/10, 4/4, and 3/3. Keep complete
+  ARJ/ARJ-SFX corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  as release gates.
+
 ## XAR fixed-header size admission — 2026-08-26
 
 - Require the declared XAR header size to cover the fixed header before

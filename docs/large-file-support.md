@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ARJ truncated compressed-member fail-closed audit — 2026-08-26
+
+The ARJ bit-window refill path now stops with `CL_EFORMAT` when the declared
+compressed member is exhausted; it no longer synthesizes zero padding that
+could let a truncated method-1 member reach its declared output size. Bit
+buffer overflow is recorded as the same fail-visible parser error. The
+current-source production-linked GCC `arj_compressed` TCase passes 1/1 with a
+clean verdict and non-cacheable fmap; the established `arj`, `arj_map`, and
+`arjsfx` evidence is 10/10, 4/4, and 3/3. Full ARJ/ARJ-SFX corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
+
 ## XAR fixed-header size admission — 2026-08-26
 
 The XAR parser now requires the declared header size to cover the complete

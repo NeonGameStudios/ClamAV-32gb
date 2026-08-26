@@ -30670,6 +30670,59 @@ START_TEST(test_arj_truncated_member_extraction_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_arj_truncated_compressed_member_is_fail_visible)
+{
+    uint8_t data[87];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    data[0] = 0x60;
+    data[1] = 0xea;
+    arj_test_write_u16(data + 2, 34);
+    data[4]  = 30;
+    data[34] = 'a';
+
+    data[43] = 0x60;
+    data[44] = 0xea;
+    arj_test_write_u16(data + 45, 35);
+    data[47] = 30;
+    data[52] = 1; /* Method 1 uses the compressed bit-window decoder. */
+    arj_test_write_u32(data + 59, 1);
+    arj_test_write_u32(data + 63, 1);
+    data[77] = 'f';
+    data[86] = 0;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ARJ", NULL);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_arj_output_size_mismatch_is_fail_visible)
 {
     uint8_t data[87];
@@ -39798,6 +39851,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_swf_map = tcase_create("swf_map");
     TCase *tc_swf_api = tcase_create("swf_api");
     TCase *tc_arj = tcase_create("arj");
+    TCase *tc_arj_compressed = tcase_create("arj_compressed");
     TCase *tc_arj_map = tcase_create("arj_map");
     TCase *tc_binhex_map = tcase_create("binhex_map");
     TCase *tc_mydoom_map = tcase_create("mydoom_map");
@@ -40492,6 +40546,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_arj, test_arj_member_limit_is_fail_visible);
     tcase_add_test(tc_arj, test_arj_temporary_limit_is_fail_visible);
     tcase_add_test(tc_arj, test_arj_corpus_detects_embedded_mz);
+    suite_add_tcase(s, tc_arj_compressed);
+    tcase_add_checked_fixture(tc_arj_compressed, cl_setup, cl_teardown);
+    tcase_add_test(tc_arj_compressed, test_arj_truncated_compressed_member_is_fail_visible);
     suite_add_tcase(s, tc_arj_map);
     tcase_add_test(tc_arj_map, test_arj_header_missing_context_or_map_is_fail_visible);
     tcase_add_test(tc_arj_map, test_arj_main_header_read_failure_is_fail_visible);

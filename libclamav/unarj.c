@@ -217,8 +217,10 @@ static cl_error_t fill_buf(arj_decode_t *decode_data, int n)
         decode_data->status = time_status;
         return time_status;
     }
-    if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX)
+    if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX) {
+        decode_data->status = CL_EFORMAT;
         return CL_EFORMAT;
+    }
     decode_data->bit_buf = (((uint64_t)decode_data->bit_buf) << n) & 0xFFFF;
     while (n > decode_data->bit_count) {
         time_status = arj_checktimelimit(decode_data->ctx, "ARJ compressed decoder reached the configured time limit");
@@ -244,7 +246,14 @@ static cl_error_t fill_buf(arj_decode_t *decode_data, int n)
             decode_data->sub_bit_buf = *decode_data->buf++;
             decode_data->offset++;
         } else {
-            decode_data->sub_bit_buf = 0;
+            /* Do not resume by synthesizing zero padding after a declared
+             * member ends: a truncated member must not appear to decode
+             * successfully. The remaining bits in the last byte are
+             * valid padding only when the caller does not request another
+             * byte; a request here proves that the compressed stream ended
+             * before the declared output was decoded. */
+            decode_data->status = CL_EFORMAT;
+            return CL_EFORMAT;
         }
         decode_data->bit_count = CHAR_BIT;
     }

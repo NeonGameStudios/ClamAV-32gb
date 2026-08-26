@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## ARJ truncated compressed-member fail-closed audit — 2026-08-26
+
+The ARJ bit-window refill path previously synthesized zero padding after the
+declared compressed member was exhausted. A truncated method-1 member could
+therefore continue decoding instead of producing a fail-visible malformed
+result. The refill now records `CL_EFORMAT` and stops as soon as the declared
+compressed range is consumed; bit-buffer overflow is likewise recorded before
+return. The new current-source production-linked GCC `arj_compressed` TCase
+passes 1/1, with `CL_EFORMAT`, a clean verdict, and a non-cacheable fmap. The
+established `arj` evidence remains 10/10, while `arj_map` and `arjsfx` pass
+4/4 and 3/3 respectively. Full ARJ/ARJ-SFX corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
 ## XAR fixed-header size admission — 2026-08-26
 
 The XAR parser now requires the declared header size to cover the complete
