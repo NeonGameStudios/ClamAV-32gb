@@ -1,5 +1,16 @@
 # Wishlist
 
+## AutoIt decoded-size portability audit — 2026-08-26
+
+- Decode the EA05 and EA06 compressed-member output sizes bytewise in
+  big-endian order; do not type-pun an unaligned `uint32_t *` over the local
+  header buffer.
+- The current-source GCC parser build is warning-clean, and the production-
+  linked `autoit_map`, `autoit_corpus`, and `autoit_sfx` TCases pass 5/5, 1/1,
+  and 1/1. Keep full corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  as release gates.
+
 ## ARJ truncated compressed-member fail-closed audit — 2026-08-26
 
 - ARJ compressed bit-window refills now stop with `CL_EFORMAT` when the

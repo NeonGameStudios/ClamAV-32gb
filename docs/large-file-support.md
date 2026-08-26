@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## AutoIt decoded-size portability audit — 2026-08-26
+
+AutoIt EA05 and EA06 compressed-member handlers now decode their big-endian
+output-size fields bytewise rather than through unaligned, type-punned
+`uint32_t *` loads. The current-source parser compiles warning-clean with GCC
+`-Wall -Wextra -Wformat-security`; the production-linked `autoit_map`,
+`autoit_corpus`, and `autoit_sfx` TCases pass 5/5, 1/1, and 1/1. Full AutoIt
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## ARJ truncated compressed-member fail-closed audit — 2026-08-26
 
 The ARJ bit-window refill path now stops with `CL_EFORMAT` when the declared

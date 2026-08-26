@@ -495,53 +495,54 @@ fixed-width-integer	libclamav/aspack.c	70	    uint32_t ticks;
 fixed-width-integer	libclamav/aspack.c	99	static uint32_t getdec(struct ASPK *stream, uint8_t which, int *err)
 fixed-width-integer	libclamav/aspack.h	45	int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, struct cli_ctx_tag *);
 fixed-width-integer	libclamav/autoit.c	1060	                                           size_t offset, uint32_t size, void *key_ctx,
-fixed-width-integer	libclamav/autoit.c	1098	static uint32_t getbits(struct UNP *UNP, uint32_t size)
-fixed-width-integer	libclamav/autoit.c	1125	    return (uint32_t)UNP->bitmap.half.h;
-fixed-width-integer	libclamav/autoit.c	1138	    uint32_t s, m4sum = 0;
-fixed-width-integer	libclamav/autoit.c	1143	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/autoit.c	1173	        if ((uint32_t)cli_readint32(base) != 0xceb06dff) {
-fixed-width-integer	libclamav/autoit.c	1179	        if ((int32_t)s < 0) {
-fixed-width-integer	libclamav/autoit.c	1202	        if ((int32_t)s < 0) {
-fixed-width-integer	libclamav/autoit.c	1227	        if ((int32_t)UNP.csize < 0) {
-fixed-width-integer	libclamav/autoit.c	1307	            if (!(UNP.usize = be32_to_host(*(uint32_t *)(decoded_header + 4)))) {
-fixed-width-integer	libclamav/autoit.c	1349	                    uint32_t bb, bs, addme = 0;
-fixed-width-integer	libclamav/autoit.c	1393	                    uint32_t literal = getbits(&UNP, 8);
-fixed-width-integer	libclamav/autoit.c	1561	    uint32_t c0;
-fixed-width-integer	libclamav/autoit.c	1562	    uint32_t c1;
-fixed-width-integer	libclamav/autoit.c	1563	    uint32_t grp1[17];
-fixed-width-integer	libclamav/autoit.c	1571	            uint32_t lo;
-fixed-width-integer	libclamav/autoit.c	1572	            uint32_t hi;
-fixed-width-integer	libclamav/autoit.c	1576	    uint32_t rolled = ROFL(l->grp1[l->c0], 9) + ROFL(l->grp1[l->c1], 13);
-fixed-width-integer	libclamav/autoit.c	1584	    /*     if (!memcmp(l->grp1, (uint32_t *)l + 0x24 - l->c0, 0x44)) */
-fixed-width-integer	libclamav/autoit.c	1598	static void LAME_srand(struct LAME *l, uint32_t seed)
-fixed-width-integer	libclamav/autoit.c	1622	    if ((int32_t)x < 256)
-fixed-width-integer	libclamav/autoit.c	1634	static void LAME_decrypt(uint8_t *cypher, uint32_t size, uint16_t seed)
-fixed-width-integer	libclamav/autoit.c	1639	    LAME_srand(&lame, (uint32_t)seed);
-fixed-width-integer	libclamav/autoit.c	1653	    uint32_t s;
-fixed-width-integer	libclamav/autoit.c	1658	    uint64_t stream_reserved = 0;
-fixed-width-integer	libclamav/autoit.c	1766	        if ((int32_t)UNP.csize < 0) {
-fixed-width-integer	libclamav/autoit.c	1835	            if (!(UNP.usize = be32_to_host(*(uint32_t *)(decoded_header + 4)))) {
-fixed-width-integer	libclamav/autoit.c	1899	                    uint32_t bb, bs, addme = 0;
-fixed-width-integer	libclamav/autoit.c	1952	                    uint32_t literal = getbits(&UNP, 8);
-fixed-width-integer	libclamav/autoit.c	2104	            if (!autoit_script_read(ctx, stream_tempfd, 0, b, sizeof(uint32_t),
-fixed-width-integer	libclamav/autoit.c	2144	                        uint32_t keyword_id;
-fixed-width-integer	libclamav/autoit.c	2145	                        uint32_t keyword_len;
-fixed-width-integer	libclamav/autoit.c	2146	                        uint8_t value[sizeof(uint32_t)];
-fixed-width-integer	libclamav/autoit.c	2180	                        uint32_t function_id;
-fixed-width-integer	libclamav/autoit.c	2181	                        uint32_t function_len;
-fixed-width-integer	libclamav/autoit.c	2182	                        uint8_t value[sizeof(uint32_t)];
-fixed-width-integer	libclamav/autoit.c	2225	                            uint8_t value[sizeof(uint32_t)];
-fixed-width-integer	libclamav/autoit.c	2247	                        uint64_t val;
-fixed-width-integer	libclamav/autoit.c	2255	                            uint8_t value[sizeof(uint64_t)];
-fixed-width-integer	libclamav/autoit.c	2261	                            val = (uint64_t)cli_readint32((char *)&value[4]);
-fixed-width-integer	libclamav/autoit.c	2263	                            val += (uint64_t)cli_readint32((char *)value);
-fixed-width-integer	libclamav/autoit.c	2323	                        uint32_t chars, dchars, i;
-fixed-width-integer	libclamav/autoit.c	2324	                        uint8_t value[sizeof(uint32_t)];
-fixed-width-integer	libclamav/autoit.c	2402	                                    if (!autoit_script_read(ctx, stream_tempfd, (uint32_t)input_at, input_chunk, count * 2,
-fixed-width-integer	libclamav/autoit.c	2411	                                    i += (uint32_t)count;
-fixed-width-integer	libclamav/autoit.c	2416	                                    if (!autoit_script_read(ctx, stream_tempfd, (uint32_t)(input_at + i), input_chunk, chunk,
-fixed-width-integer	libclamav/autoit.c	2425	                                    i += (uint32_t)chunk;
-fixed-width-integer	libclamav/autoit.c	2565	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset >= map->len) {
+fixed-width-integer	libclamav/autoit.c	1098	static uint32_t autoit_read_be32(const uint8_t *value)
+fixed-width-integer	libclamav/autoit.c	1100	    return ((uint32_t)value[0] << 24) | ((uint32_t)value[1] << 16) |
+fixed-width-integer	libclamav/autoit.c	1101	           ((uint32_t)value[2] << 8) | (uint32_t)value[3];
+fixed-width-integer	libclamav/autoit.c	1104	static uint32_t getbits(struct UNP *UNP, uint32_t size)
+fixed-width-integer	libclamav/autoit.c	1131	    return (uint32_t)UNP->bitmap.half.h;
+fixed-width-integer	libclamav/autoit.c	1144	    uint32_t s, m4sum = 0;
+fixed-width-integer	libclamav/autoit.c	1149	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/autoit.c	1179	        if ((uint32_t)cli_readint32(base) != 0xceb06dff) {
+fixed-width-integer	libclamav/autoit.c	1185	        if ((int32_t)s < 0) {
+fixed-width-integer	libclamav/autoit.c	1208	        if ((int32_t)s < 0) {
+fixed-width-integer	libclamav/autoit.c	1233	        if ((int32_t)UNP.csize < 0) {
+fixed-width-integer	libclamav/autoit.c	1355	                    uint32_t bb, bs, addme = 0;
+fixed-width-integer	libclamav/autoit.c	1399	                    uint32_t literal = getbits(&UNP, 8);
+fixed-width-integer	libclamav/autoit.c	1567	    uint32_t c0;
+fixed-width-integer	libclamav/autoit.c	1568	    uint32_t c1;
+fixed-width-integer	libclamav/autoit.c	1569	    uint32_t grp1[17];
+fixed-width-integer	libclamav/autoit.c	1577	            uint32_t lo;
+fixed-width-integer	libclamav/autoit.c	1578	            uint32_t hi;
+fixed-width-integer	libclamav/autoit.c	1582	    uint32_t rolled = ROFL(l->grp1[l->c0], 9) + ROFL(l->grp1[l->c1], 13);
+fixed-width-integer	libclamav/autoit.c	1590	    /*     if (!memcmp(l->grp1, (uint32_t *)l + 0x24 - l->c0, 0x44)) */
+fixed-width-integer	libclamav/autoit.c	1604	static void LAME_srand(struct LAME *l, uint32_t seed)
+fixed-width-integer	libclamav/autoit.c	1628	    if ((int32_t)x < 256)
+fixed-width-integer	libclamav/autoit.c	1640	static void LAME_decrypt(uint8_t *cypher, uint32_t size, uint16_t seed)
+fixed-width-integer	libclamav/autoit.c	1645	    LAME_srand(&lame, (uint32_t)seed);
+fixed-width-integer	libclamav/autoit.c	1659	    uint32_t s;
+fixed-width-integer	libclamav/autoit.c	1664	    uint64_t stream_reserved = 0;
+fixed-width-integer	libclamav/autoit.c	1772	        if ((int32_t)UNP.csize < 0) {
+fixed-width-integer	libclamav/autoit.c	1905	                    uint32_t bb, bs, addme = 0;
+fixed-width-integer	libclamav/autoit.c	1958	                    uint32_t literal = getbits(&UNP, 8);
+fixed-width-integer	libclamav/autoit.c	2110	            if (!autoit_script_read(ctx, stream_tempfd, 0, b, sizeof(uint32_t),
+fixed-width-integer	libclamav/autoit.c	2150	                        uint32_t keyword_id;
+fixed-width-integer	libclamav/autoit.c	2151	                        uint32_t keyword_len;
+fixed-width-integer	libclamav/autoit.c	2152	                        uint8_t value[sizeof(uint32_t)];
+fixed-width-integer	libclamav/autoit.c	2186	                        uint32_t function_id;
+fixed-width-integer	libclamav/autoit.c	2187	                        uint32_t function_len;
+fixed-width-integer	libclamav/autoit.c	2188	                        uint8_t value[sizeof(uint32_t)];
+fixed-width-integer	libclamav/autoit.c	2231	                            uint8_t value[sizeof(uint32_t)];
+fixed-width-integer	libclamav/autoit.c	2253	                        uint64_t val;
+fixed-width-integer	libclamav/autoit.c	2261	                            uint8_t value[sizeof(uint64_t)];
+fixed-width-integer	libclamav/autoit.c	2267	                            val = (uint64_t)cli_readint32((char *)&value[4]);
+fixed-width-integer	libclamav/autoit.c	2269	                            val += (uint64_t)cli_readint32((char *)value);
+fixed-width-integer	libclamav/autoit.c	2329	                        uint32_t chars, dchars, i;
+fixed-width-integer	libclamav/autoit.c	2330	                        uint8_t value[sizeof(uint32_t)];
+fixed-width-integer	libclamav/autoit.c	2408	                                    if (!autoit_script_read(ctx, stream_tempfd, (uint32_t)input_at, input_chunk, count * 2,
+fixed-width-integer	libclamav/autoit.c	2417	                                    i += (uint32_t)count;
+fixed-width-integer	libclamav/autoit.c	2422	                                    if (!autoit_script_read(ctx, stream_tempfd, (uint32_t)(input_at + i), input_chunk, chunk,
+fixed-width-integer	libclamav/autoit.c	2431	                                    i += (uint32_t)chunk;
+fixed-width-integer	libclamav/autoit.c	2571	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset >= map->len) {
 fixed-width-integer	libclamav/autoit.c	540	    uint32_t *next;
 fixed-width-integer	libclamav/autoit.c	541	    uint32_t items;
 fixed-width-integer	libclamav/autoit.c	542	    uint32_t mt[624];
@@ -9230,67 +9231,67 @@ native-width-integer	libclamav/autoit.c	1063	    if (offset > map->len || (size_
 native-width-integer	libclamav/autoit.c	1068	    UNP->input_capacity = MIN((size_t)size, (size_t)AUTOIT_INPUT_CHUNK);
 native-width-integer	libclamav/autoit.c	1087	static bool autoit_input_read(struct UNP *UNP, cli_ctx *ctx, uint8_t *buffer, size_t length)
 native-width-integer	libclamav/autoit.c	1089	    size_t i;
-native-width-integer	libclamav/autoit.c	1139	    int i;
-native-width-integer	libclamav/autoit.c	1140	    unsigned int files          = 0;
-native-width-integer	libclamav/autoit.c	1142	    int tempfd                  = -1;
-native-width-integer	libclamav/autoit.c	1147	    size_t input_offset;
-native-width-integer	libclamav/autoit.c	1148	    size_t next_offset;
-native-width-integer	libclamav/autoit.c	1271	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
-native-width-integer	libclamav/autoit.c	1276	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-native-width-integer	libclamav/autoit.c	1281	            next_offset = input_offset + (size_t)UNP.csize;
-native-width-integer	libclamav/autoit.c	1432	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
-native-width-integer	libclamav/autoit.c	1437	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-native-width-integer	libclamav/autoit.c	1442	            next_offset = input_offset + (size_t)UNP.csize;
-native-width-integer	libclamav/autoit.c	1463	                size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
-native-width-integer	libclamav/autoit.c	1464	                size_t j;
-native-width-integer	libclamav/autoit.c	1600	    unsigned int i;
-native-width-integer	libclamav/autoit.c	1656	    int stream_tempfd = -1;
-native-width-integer	libclamav/autoit.c	1657	    int script_tempfd = -1;
-native-width-integer	libclamav/autoit.c	1666	    size_t input_offset;
-native-width-integer	libclamav/autoit.c	1667	    size_t next_offset;
-native-width-integer	libclamav/autoit.c	1715	        if (!autoit_require_range(ctx, map, base, (size_t)s * 2, "AutoIt EA06 magic string is truncated"))
-native-width-integer	libclamav/autoit.c	1719	            memcpy(b, base, (size_t)s * 2);
-native-width-integer	libclamav/autoit.c	1728	            cli_dbgmsg("autoit: magic string too long to print\n");
-native-width-integer	libclamav/autoit.c	1731	        base += (size_t)s * 2;
-native-width-integer	libclamav/autoit.c	1745	        if (!autoit_require_range(ctx, map, base, (size_t)s * 2, "AutoIt EA06 filename is truncated"))
-native-width-integer	libclamav/autoit.c	1749	            memcpy(b, base, (size_t)s * 2);
-native-width-integer	libclamav/autoit.c	1758	        base += (size_t)s * 2;
-native-width-integer	libclamav/autoit.c	1800	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
-native-width-integer	libclamav/autoit.c	1804	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-native-width-integer	libclamav/autoit.c	1808	            next_offset = input_offset + (size_t)UNP.csize;
-native-width-integer	libclamav/autoit.c	1997	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
-native-width-integer	libclamav/autoit.c	2001	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-native-width-integer	libclamav/autoit.c	2005	            next_offset = input_offset + (size_t)UNP.csize;
-native-width-integer	libclamav/autoit.c	2032	                size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
-native-width-integer	libclamav/autoit.c	2033	                size_t j;
-native-width-integer	libclamav/autoit.c	2218	                            cli_dbgmsg("autoit: not enough space for an int\n");
-native-width-integer	libclamav/autoit.c	2224	                            int formatted_len;
-native-width-integer	libclamav/autoit.c	2233	                            if (formatted_len < 0 || (size_t)formatted_len >= sizeof(formatted)) {
-native-width-integer	libclamav/autoit.c	2238	                                autoit_script_output_append(&script_output, formatted, (size_t)formatted_len));
-native-width-integer	libclamav/autoit.c	2246	                        int formatted_len;
-native-width-integer	libclamav/autoit.c	2265	                        formatted_len = snprintf(formatted, sizeof(formatted), "0x%016lx ", (unsigned long int)val);
-native-width-integer	libclamav/autoit.c	2266	                        if (formatted_len < 0 || (size_t)formatted_len >= sizeof(formatted)) {
-native-width-integer	libclamav/autoit.c	2271	                            autoit_script_output_append(&script_output, formatted, (size_t)formatted_len));
-native-width-integer	libclamav/autoit.c	2288	                            unsigned int k;
-native-width-integer	libclamav/autoit.c	2289	                            int formatted_len;
-native-width-integer	libclamav/autoit.c	2304	                            if (formatted_len < 0 || (size_t)formatted_len >= sizeof(formatted)) {
-native-width-integer	libclamav/autoit.c	2309	                                autoit_script_output_append(&script_output, formatted, (size_t)formatted_len));
-native-width-integer	libclamav/autoit.c	2327	                        size_t probe_len;
-native-width-integer	libclamav/autoit.c	2328	                        size_t sample_len;
-native-width-integer	libclamav/autoit.c	2329	                        size_t j;
-native-width-integer	libclamav/autoit.c	2330	                        size_t chunk;
-native-width-integer	libclamav/autoit.c	2333	                        size_t input_at;
-native-width-integer	libclamav/autoit.c	2334	                        size_t converted_chars;
-native-width-integer	libclamav/autoit.c	2335	                        size_t count;
-native-width-integer	libclamav/autoit.c	2336	                        size_t unicode_count;
-native-width-integer	libclamav/autoit.c	2369	                            probe_len = MIN((size_t)dchars, sizeof(probe));
-native-width-integer	libclamav/autoit.c	2384	                                sample_len = MIN((size_t)20, (size_t)(dchars & ~1U));
-native-width-integer	libclamav/autoit.c	2397	                                    count = MIN((size_t)(converted_chars - i), sizeof(input_chunk) / 2);
-native-width-integer	libclamav/autoit.c	2399	                                        input_at = (size_t)UNP.cur_input + 2 + (size_t)i * 2;
-native-width-integer	libclamav/autoit.c	2401	                                        input_at = (size_t)UNP.cur_input + (size_t)i * 2;
-native-width-integer	libclamav/autoit.c	2415	                                    chunk = MIN((size_t)(chars - i), sizeof(input_chunk));
-native-width-integer	libclamav/autoit.c	2545	cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset)
-native-width-integer	libclamav/autoit.c	2565	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset >= map->len) {
+native-width-integer	libclamav/autoit.c	1145	    int i;
+native-width-integer	libclamav/autoit.c	1146	    unsigned int files          = 0;
+native-width-integer	libclamav/autoit.c	1148	    int tempfd                  = -1;
+native-width-integer	libclamav/autoit.c	1153	    size_t input_offset;
+native-width-integer	libclamav/autoit.c	1154	    size_t next_offset;
+native-width-integer	libclamav/autoit.c	1277	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+native-width-integer	libclamav/autoit.c	1282	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+native-width-integer	libclamav/autoit.c	1287	            next_offset = input_offset + (size_t)UNP.csize;
+native-width-integer	libclamav/autoit.c	1438	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+native-width-integer	libclamav/autoit.c	1443	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+native-width-integer	libclamav/autoit.c	1448	            next_offset = input_offset + (size_t)UNP.csize;
+native-width-integer	libclamav/autoit.c	1469	                size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
+native-width-integer	libclamav/autoit.c	1470	                size_t j;
+native-width-integer	libclamav/autoit.c	1606	    unsigned int i;
+native-width-integer	libclamav/autoit.c	1662	    int stream_tempfd = -1;
+native-width-integer	libclamav/autoit.c	1663	    int script_tempfd = -1;
+native-width-integer	libclamav/autoit.c	1672	    size_t input_offset;
+native-width-integer	libclamav/autoit.c	1673	    size_t next_offset;
+native-width-integer	libclamav/autoit.c	1721	        if (!autoit_require_range(ctx, map, base, (size_t)s * 2, "AutoIt EA06 magic string is truncated"))
+native-width-integer	libclamav/autoit.c	1725	            memcpy(b, base, (size_t)s * 2);
+native-width-integer	libclamav/autoit.c	1734	            cli_dbgmsg("autoit: magic string too long to print\n");
+native-width-integer	libclamav/autoit.c	1737	        base += (size_t)s * 2;
+native-width-integer	libclamav/autoit.c	1751	        if (!autoit_require_range(ctx, map, base, (size_t)s * 2, "AutoIt EA06 filename is truncated"))
+native-width-integer	libclamav/autoit.c	1755	            memcpy(b, base, (size_t)s * 2);
+native-width-integer	libclamav/autoit.c	1764	        base += (size_t)s * 2;
+native-width-integer	libclamav/autoit.c	1806	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+native-width-integer	libclamav/autoit.c	1810	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+native-width-integer	libclamav/autoit.c	1814	            next_offset = input_offset + (size_t)UNP.csize;
+native-width-integer	libclamav/autoit.c	2003	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+native-width-integer	libclamav/autoit.c	2007	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+native-width-integer	libclamav/autoit.c	2011	            next_offset = input_offset + (size_t)UNP.csize;
+native-width-integer	libclamav/autoit.c	2038	                size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
+native-width-integer	libclamav/autoit.c	2039	                size_t j;
+native-width-integer	libclamav/autoit.c	2224	                            cli_dbgmsg("autoit: not enough space for an int\n");
+native-width-integer	libclamav/autoit.c	2230	                            int formatted_len;
+native-width-integer	libclamav/autoit.c	2239	                            if (formatted_len < 0 || (size_t)formatted_len >= sizeof(formatted)) {
+native-width-integer	libclamav/autoit.c	2244	                                autoit_script_output_append(&script_output, formatted, (size_t)formatted_len));
+native-width-integer	libclamav/autoit.c	2252	                        int formatted_len;
+native-width-integer	libclamav/autoit.c	2271	                        formatted_len = snprintf(formatted, sizeof(formatted), "0x%016lx ", (unsigned long int)val);
+native-width-integer	libclamav/autoit.c	2272	                        if (formatted_len < 0 || (size_t)formatted_len >= sizeof(formatted)) {
+native-width-integer	libclamav/autoit.c	2277	                            autoit_script_output_append(&script_output, formatted, (size_t)formatted_len));
+native-width-integer	libclamav/autoit.c	2294	                            unsigned int k;
+native-width-integer	libclamav/autoit.c	2295	                            int formatted_len;
+native-width-integer	libclamav/autoit.c	2310	                            if (formatted_len < 0 || (size_t)formatted_len >= sizeof(formatted)) {
+native-width-integer	libclamav/autoit.c	2315	                                autoit_script_output_append(&script_output, formatted, (size_t)formatted_len));
+native-width-integer	libclamav/autoit.c	2333	                        size_t probe_len;
+native-width-integer	libclamav/autoit.c	2334	                        size_t sample_len;
+native-width-integer	libclamav/autoit.c	2335	                        size_t j;
+native-width-integer	libclamav/autoit.c	2336	                        size_t chunk;
+native-width-integer	libclamav/autoit.c	2339	                        size_t input_at;
+native-width-integer	libclamav/autoit.c	2340	                        size_t converted_chars;
+native-width-integer	libclamav/autoit.c	2341	                        size_t count;
+native-width-integer	libclamav/autoit.c	2342	                        size_t unicode_count;
+native-width-integer	libclamav/autoit.c	2375	                            probe_len = MIN((size_t)dchars, sizeof(probe));
+native-width-integer	libclamav/autoit.c	2390	                                sample_len = MIN((size_t)20, (size_t)(dchars & ~1U));
+native-width-integer	libclamav/autoit.c	2403	                                    count = MIN((size_t)(converted_chars - i), sizeof(input_chunk) / 2);
+native-width-integer	libclamav/autoit.c	2405	                                        input_at = (size_t)UNP.cur_input + 2 + (size_t)i * 2;
+native-width-integer	libclamav/autoit.c	2407	                                        input_at = (size_t)UNP.cur_input + (size_t)i * 2;
+native-width-integer	libclamav/autoit.c	2421	                                    chunk = MIN((size_t)(chars - i), sizeof(input_chunk));
+native-width-integer	libclamav/autoit.c	2551	cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset)
+native-width-integer	libclamav/autoit.c	2571	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset >= map->len) {
 native-width-integer	libclamav/autoit.c	46	static int fpu_words = FPU_ENDIAN_INITME;
 native-width-integer	libclamav/autoit.c	505	static unsigned int u2a(uint8_t *dest, unsigned int len)
 native-width-integer	libclamav/autoit.c	508	    unsigned int i, j;
@@ -20122,18 +20123,18 @@ boundary-constant	libclamav/7z_iface.c	672	            if (f->Size > SIZE_MAX) {
 boundary-constant	libclamav/apm.c	127	    if (ddm.blockSize != 0 && ddm.blockCount > SIZE_MAX / ddm.blockSize) {
 boundary-constant	libclamav/apm.c	392	                if (apentry.pBlockCount > UINT32_MAX / 4U) {
 boundary-constant	libclamav/apm.c	53	    if ((NULL == bytes) || (0 == sectorsize) || (blocks > SIZE_MAX / sectorsize))
-boundary-constant	libclamav/autoit.c	1276	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-boundary-constant	libclamav/autoit.c	1361	                                        if (addme > UINT32_MAX - 255) {
-boundary-constant	libclamav/autoit.c	1371	                    if (UNP.error || addme > UINT32_MAX - 3 || bs > UINT32_MAX - 3 - addme) {
-boundary-constant	libclamav/autoit.c	1437	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-boundary-constant	libclamav/autoit.c	1708	        if (s > UINT32_MAX / 2) {
-boundary-constant	libclamav/autoit.c	1738	        if (s > UINT32_MAX / 2) {
-boundary-constant	libclamav/autoit.c	1804	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-boundary-constant	libclamav/autoit.c	1911	                                        if (addme > UINT32_MAX - 255) {
-boundary-constant	libclamav/autoit.c	1921	                    if (UNP.error || addme > UINT32_MAX - 3 || bs > UINT32_MAX - 3 - addme) {
-boundary-constant	libclamav/autoit.c	2001	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-boundary-constant	libclamav/autoit.c	2350	                        if (chars > UINT32_MAX / 2) {
-boundary-constant	libclamav/autoit.c	2565	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset >= map->len) {
+boundary-constant	libclamav/autoit.c	1282	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+boundary-constant	libclamav/autoit.c	1367	                                        if (addme > UINT32_MAX - 255) {
+boundary-constant	libclamav/autoit.c	1377	                    if (UNP.error || addme > UINT32_MAX - 3 || bs > UINT32_MAX - 3 - addme) {
+boundary-constant	libclamav/autoit.c	1443	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+boundary-constant	libclamav/autoit.c	1714	        if (s > UINT32_MAX / 2) {
+boundary-constant	libclamav/autoit.c	1744	        if (s > UINT32_MAX / 2) {
+boundary-constant	libclamav/autoit.c	1810	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+boundary-constant	libclamav/autoit.c	1917	                                        if (addme > UINT32_MAX - 255) {
+boundary-constant	libclamav/autoit.c	1927	                    if (UNP.error || addme > UINT32_MAX - 3 || bs > UINT32_MAX - 3 - addme) {
+boundary-constant	libclamav/autoit.c	2007	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+boundary-constant	libclamav/autoit.c	2356	                        if (chars > UINT32_MAX / 2) {
+boundary-constant	libclamav/autoit.c	2571	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset >= map->len) {
 boundary-constant	libclamav/blob.c	842	                            uint32_t scan_length = available > UINT32_MAX ? UINT32_MAX : (uint32_t)available;
 boundary-constant	libclamav/bmp.c	183	    if ((dib_end > map_length) || (dib_end > (uint64_t)SIZE_MAX))
 boundary-constant	libclamav/bytecode.c	1348	    if (num_md64 > UINT_MAX || num_md64 > UINT_MAX - bc->dbgnode_cnt) {
@@ -21323,13 +21324,13 @@ format-width	libclamav/asn1.c	633	            cli_dbgmsg("asn1_get_time: invalid
 format-width	libclamav/asn1.c	696	        cli_dbgmsg("asn1_get_rsa_pubkey: modulus has got an unsupported length (%u)\n", obj.size * 8);
 format-width	libclamav/asn1.c	715	        cli_dbgmsg("asn1_get_rsa_pubkey: exponent has got an unsupported length (%u)\n", obj.size * 8);
 format-width	libclamav/asn1.c	932	                        cli_dbgmsg("asn1_get_x509: bad extension value type %u\n", value.type);
-format-width	libclamav/autoit.c	1100	    // cli_dbgmsg("In getbits, (size: %u, bits_avail: %u, UNP->cur_input: %u)\n", size, UNP->bits_avail, UNP->cur_input);
-format-width	libclamav/autoit.c	1104	            // cli_dbgmsg("cur_input: %u (size: %u)\n", UNP->cur_input, size);
-format-width	libclamav/autoit.c	1420	                cli_dbgmsg("autoit: decompression error after %u bytes  - partial file may exist\n", UNP.cur_output);
-format-width	libclamav/autoit.c	1933	                    // cli_dbgmsg("cur_output: %u, bs: %u, bb: %u\n", UNP.cur_output, bs, bb);
-format-width	libclamav/autoit.c	1972	                cli_dbgmsg("autoit: decompression error after %u bytes - partial file may exist\n", UNP.cur_output);
-format-width	libclamav/autoit.c	2114	            cli_dbgmsg("autoit: script has got %u lines\n", UNP.bits_avail);
-format-width	libclamav/autoit.c	2360	                            cli_dbgmsg("autoit: size too big - needed %d, total %d, avail %d\n", dchars, UNP.usize, UNP.usize - UNP.cur_input);
+format-width	libclamav/autoit.c	1106	    // cli_dbgmsg("In getbits, (size: %u, bits_avail: %u, UNP->cur_input: %u)\n", size, UNP->bits_avail, UNP->cur_input);
+format-width	libclamav/autoit.c	1110	            // cli_dbgmsg("cur_input: %u (size: %u)\n", UNP->cur_input, size);
+format-width	libclamav/autoit.c	1426	                cli_dbgmsg("autoit: decompression error after %u bytes  - partial file may exist\n", UNP.cur_output);
+format-width	libclamav/autoit.c	1939	                    // cli_dbgmsg("cur_output: %u, bs: %u, bb: %u\n", UNP.cur_output, bs, bb);
+format-width	libclamav/autoit.c	1978	                cli_dbgmsg("autoit: decompression error after %u bytes - partial file may exist\n", UNP.cur_output);
+format-width	libclamav/autoit.c	2120	            cli_dbgmsg("autoit: script has got %u lines\n", UNP.bits_avail);
+format-width	libclamav/autoit.c	2366	                            cli_dbgmsg("autoit: size too big - needed %d, total %d, avail %d\n", dchars, UNP.usize, UNP.usize - UNP.cur_input);
 format-width	libclamav/binhex.c	171	                cli_dbgmsg("cli_binhex: decoding '%s' - %u bytes of data to %s - %u bytes or resources to %s\n", decoded + 1, datalen, dname, reslen, rname);
 format-width	libclamav/blob.c	121	        cli_dbgmsg("blobArrayDestroy: %d\n", n);
 format-width	libclamav/blob.c	245	    /*cli_dbgmsg("blobGrow: b->size %lu, b->len %lu, len %lu, growth = %u\n",
@@ -25072,69 +25073,69 @@ offset-size-arithmetic	libclamav/autoit.c	1051	    if (UNP->input_window_pos == 
 offset-size-arithmetic	libclamav/autoit.c	1054	    *value = UNP->inputbuf[UNP->input_window_pos++];
 offset-size-arithmetic	libclamav/autoit.c	1060	                                           size_t offset, uint32_t size, void *key_ctx,
 offset-size-arithmetic	libclamav/autoit.c	1063	    if (offset > map->len || (size_t)size > map->len - offset) {
-offset-size-arithmetic	libclamav/autoit.c	1100	    // cli_dbgmsg("In getbits, (size: %u, bits_avail: %u, UNP->cur_input: %u)\n", size, UNP->bits_avail, UNP->cur_input);
-offset-size-arithmetic	libclamav/autoit.c	1104	            // cli_dbgmsg("cur_input: %u (size: %u)\n", UNP->cur_input, size);
-offset-size-arithmetic	libclamav/autoit.c	1107	                if (UNP->cur_input > UNP->csize || UNP->csize - UNP->cur_input < 2) {
-offset-size-arithmetic	libclamav/autoit.c	1123	        size--;
-offset-size-arithmetic	libclamav/autoit.c	1226	        UNP.csize = cli_readint32(base + 1) ^ 0x45aa;
-offset-size-arithmetic	libclamav/autoit.c	1228	            cli_dbgmsg("autoit: bad file size - giving up\n");
-offset-size-arithmetic	libclamav/autoit.c	1240	        cli_dbgmsg("autoit: advertised uncompressed size %x\n", cli_readint32(base + 5) ^ 0x45aa);
-offset-size-arithmetic	libclamav/autoit.c	1271	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
-offset-size-arithmetic	libclamav/autoit.c	1276	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-offset-size-arithmetic	libclamav/autoit.c	1281	            next_offset = input_offset + (size_t)UNP.csize;
-offset-size-arithmetic	libclamav/autoit.c	1282	            if (next_offset == map->len) {
-offset-size-arithmetic	libclamav/autoit.c	1307	            if (!(UNP.usize = be32_to_host(*(uint32_t *)(decoded_header + 4)))) {
-offset-size-arithmetic	libclamav/autoit.c	1383	                    if (bb == 0 || bb > AUTOIT_OUTPUT_HISTORY || bb > UNP.cur_output || bs > UNP.usize - UNP.cur_output) {
-offset-size-arithmetic	libclamav/autoit.c	1432	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
-offset-size-arithmetic	libclamav/autoit.c	1437	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-offset-size-arithmetic	libclamav/autoit.c	1442	            next_offset = input_offset + (size_t)UNP.csize;
-offset-size-arithmetic	libclamav/autoit.c	1443	            if (next_offset == map->len) {
-offset-size-arithmetic	libclamav/autoit.c	1463	                size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
-offset-size-arithmetic	libclamav/autoit.c	1482	                input_offset += chunk;
-offset-size-arithmetic	libclamav/autoit.c	1500	        if (lseek(tempfd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/autoit.c	1558	#define ROFL(a, b) ((a << (b % (sizeof(a) << 3))) | (a >> ((sizeof(a) << 3) - (b % (sizeof(a) << 3)))))
-offset-size-arithmetic	libclamav/autoit.c	1640	    while (size--)
-offset-size-arithmetic	libclamav/autoit.c	1715	        if (!autoit_require_range(ctx, map, base, (size_t)s * 2, "AutoIt EA06 magic string is truncated"))
-offset-size-arithmetic	libclamav/autoit.c	1718	        if (s < sizeof(b) / 2) {
-offset-size-arithmetic	libclamav/autoit.c	1719	            memcpy(b, base, (size_t)s * 2);
-offset-size-arithmetic	libclamav/autoit.c	1731	        base += (size_t)s * 2;
-offset-size-arithmetic	libclamav/autoit.c	1745	        if (!autoit_require_range(ctx, map, base, (size_t)s * 2, "AutoIt EA06 filename is truncated"))
-offset-size-arithmetic	libclamav/autoit.c	1748	        if (cli_debug_flag && s < sizeof(b) / 2) {
-offset-size-arithmetic	libclamav/autoit.c	1749	            memcpy(b, base, (size_t)s * 2);
-offset-size-arithmetic	libclamav/autoit.c	1758	        base += (size_t)s * 2;
-offset-size-arithmetic	libclamav/autoit.c	1765	        UNP.csize = cli_readint32(base + 1) ^ 0x87bc;
-offset-size-arithmetic	libclamav/autoit.c	1767	            cli_dbgmsg("autoit: bad file size - giving up\n");
-offset-size-arithmetic	libclamav/autoit.c	1779	        cli_dbgmsg("autoit: advertised uncompressed size %x\n", cli_readint32(base + 5) ^ 0x87bc);
-offset-size-arithmetic	libclamav/autoit.c	1800	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
-offset-size-arithmetic	libclamav/autoit.c	1804	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-offset-size-arithmetic	libclamav/autoit.c	1808	            next_offset = input_offset + (size_t)UNP.csize;
-offset-size-arithmetic	libclamav/autoit.c	1809	            if (next_offset == map->len) {
-offset-size-arithmetic	libclamav/autoit.c	1835	            if (!(UNP.usize = be32_to_host(*(uint32_t *)(decoded_header + 4)))) {
-offset-size-arithmetic	libclamav/autoit.c	1935	                        bs > UNP.usize - UNP.cur_output) {
-offset-size-arithmetic	libclamav/autoit.c	1997	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
-offset-size-arithmetic	libclamav/autoit.c	2001	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
-offset-size-arithmetic	libclamav/autoit.c	2005	            next_offset = input_offset + (size_t)UNP.csize;
-offset-size-arithmetic	libclamav/autoit.c	2006	            if (next_offset == map->len) {
-offset-size-arithmetic	libclamav/autoit.c	2032	                size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
-offset-size-arithmetic	libclamav/autoit.c	2059	                input_offset += chunk;
-offset-size-arithmetic	libclamav/autoit.c	2147	                        if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
-offset-size-arithmetic	libclamav/autoit.c	2159	                        if (keyword_id >= (sizeof(autoit_keywords) / sizeof(autoit_keywords[0]))) {
-offset-size-arithmetic	libclamav/autoit.c	2183	                        if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
-offset-size-arithmetic	libclamav/autoit.c	2195	                        if (function_id >= (sizeof(autoit_functions) / sizeof(autoit_functions[0]))) {
-offset-size-arithmetic	libclamav/autoit.c	2216	                        if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
-offset-size-arithmetic	libclamav/autoit.c	2232	                            formatted_len = snprintf(formatted, sizeof(formatted), "0x%08x ", cli_readint32((char *)value));
-offset-size-arithmetic	libclamav/autoit.c	2248	                        if (UNP.cur_input > UNP.usize || 8 > UNP.usize - UNP.cur_input) {
-offset-size-arithmetic	libclamav/autoit.c	2277	                        if (UNP.cur_input > UNP.usize || 8 > UNP.usize - UNP.cur_input) {
-offset-size-arithmetic	libclamav/autoit.c	2338	                        if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
-offset-size-arithmetic	libclamav/autoit.c	2358	                        if (UNP.cur_input > UNP.usize || dchars > UNP.usize - UNP.cur_input) {
-offset-size-arithmetic	libclamav/autoit.c	2360	                            cli_dbgmsg("autoit: size too big - needed %d, total %d, avail %d\n", dchars, UNP.usize, UNP.usize - UNP.cur_input);
-offset-size-arithmetic	libclamav/autoit.c	2397	                                    count = MIN((size_t)(converted_chars - i), sizeof(input_chunk) / 2);
-offset-size-arithmetic	libclamav/autoit.c	2399	                                        input_at = (size_t)UNP.cur_input + 2 + (size_t)i * 2;
-offset-size-arithmetic	libclamav/autoit.c	2401	                                        input_at = (size_t)UNP.cur_input + (size_t)i * 2;
-offset-size-arithmetic	libclamav/autoit.c	2415	                                    chunk = MIN((size_t)(chars - i), sizeof(input_chunk));
-offset-size-arithmetic	libclamav/autoit.c	2473	                            autoit_script_output_token(&script_output, opers[op - 0x40], strlen(opers[op - 0x40])));
-offset-size-arithmetic	libclamav/autoit.c	2565	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset >= map->len) {
-offset-size-arithmetic	libclamav/autoit.c	2569	    if (!(version = fmap_need_off_once(map, offset, sizeof(*version)))) {
+offset-size-arithmetic	libclamav/autoit.c	1106	    // cli_dbgmsg("In getbits, (size: %u, bits_avail: %u, UNP->cur_input: %u)\n", size, UNP->bits_avail, UNP->cur_input);
+offset-size-arithmetic	libclamav/autoit.c	1110	            // cli_dbgmsg("cur_input: %u (size: %u)\n", UNP->cur_input, size);
+offset-size-arithmetic	libclamav/autoit.c	1113	                if (UNP->cur_input > UNP->csize || UNP->csize - UNP->cur_input < 2) {
+offset-size-arithmetic	libclamav/autoit.c	1129	        size--;
+offset-size-arithmetic	libclamav/autoit.c	1232	        UNP.csize = cli_readint32(base + 1) ^ 0x45aa;
+offset-size-arithmetic	libclamav/autoit.c	1234	            cli_dbgmsg("autoit: bad file size - giving up\n");
+offset-size-arithmetic	libclamav/autoit.c	1246	        cli_dbgmsg("autoit: advertised uncompressed size %x\n", cli_readint32(base + 5) ^ 0x45aa);
+offset-size-arithmetic	libclamav/autoit.c	1277	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+offset-size-arithmetic	libclamav/autoit.c	1282	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+offset-size-arithmetic	libclamav/autoit.c	1287	            next_offset = input_offset + (size_t)UNP.csize;
+offset-size-arithmetic	libclamav/autoit.c	1288	            if (next_offset == map->len) {
+offset-size-arithmetic	libclamav/autoit.c	1313	            if (!(UNP.usize = autoit_read_be32(decoded_header + 4))) {
+offset-size-arithmetic	libclamav/autoit.c	1389	                    if (bb == 0 || bb > AUTOIT_OUTPUT_HISTORY || bb > UNP.cur_output || bs > UNP.usize - UNP.cur_output) {
+offset-size-arithmetic	libclamav/autoit.c	1438	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+offset-size-arithmetic	libclamav/autoit.c	1443	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+offset-size-arithmetic	libclamav/autoit.c	1448	            next_offset = input_offset + (size_t)UNP.csize;
+offset-size-arithmetic	libclamav/autoit.c	1449	            if (next_offset == map->len) {
+offset-size-arithmetic	libclamav/autoit.c	1469	                size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
+offset-size-arithmetic	libclamav/autoit.c	1488	                input_offset += chunk;
+offset-size-arithmetic	libclamav/autoit.c	1506	        if (lseek(tempfd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/autoit.c	1564	#define ROFL(a, b) ((a << (b % (sizeof(a) << 3))) | (a >> ((sizeof(a) << 3) - (b % (sizeof(a) << 3)))))
+offset-size-arithmetic	libclamav/autoit.c	1646	    while (size--)
+offset-size-arithmetic	libclamav/autoit.c	1721	        if (!autoit_require_range(ctx, map, base, (size_t)s * 2, "AutoIt EA06 magic string is truncated"))
+offset-size-arithmetic	libclamav/autoit.c	1724	        if (s < sizeof(b) / 2) {
+offset-size-arithmetic	libclamav/autoit.c	1725	            memcpy(b, base, (size_t)s * 2);
+offset-size-arithmetic	libclamav/autoit.c	1737	        base += (size_t)s * 2;
+offset-size-arithmetic	libclamav/autoit.c	1751	        if (!autoit_require_range(ctx, map, base, (size_t)s * 2, "AutoIt EA06 filename is truncated"))
+offset-size-arithmetic	libclamav/autoit.c	1754	        if (cli_debug_flag && s < sizeof(b) / 2) {
+offset-size-arithmetic	libclamav/autoit.c	1755	            memcpy(b, base, (size_t)s * 2);
+offset-size-arithmetic	libclamav/autoit.c	1764	        base += (size_t)s * 2;
+offset-size-arithmetic	libclamav/autoit.c	1771	        UNP.csize = cli_readint32(base + 1) ^ 0x87bc;
+offset-size-arithmetic	libclamav/autoit.c	1773	            cli_dbgmsg("autoit: bad file size - giving up\n");
+offset-size-arithmetic	libclamav/autoit.c	1785	        cli_dbgmsg("autoit: advertised uncompressed size %x\n", cli_readint32(base + 5) ^ 0x87bc);
+offset-size-arithmetic	libclamav/autoit.c	1806	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+offset-size-arithmetic	libclamav/autoit.c	1810	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+offset-size-arithmetic	libclamav/autoit.c	1814	            next_offset = input_offset + (size_t)UNP.csize;
+offset-size-arithmetic	libclamav/autoit.c	1815	            if (next_offset == map->len) {
+offset-size-arithmetic	libclamav/autoit.c	1841	            if (!(UNP.usize = autoit_read_be32(decoded_header + 4))) {
+offset-size-arithmetic	libclamav/autoit.c	1941	                        bs > UNP.usize - UNP.cur_output) {
+offset-size-arithmetic	libclamav/autoit.c	2003	            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+offset-size-arithmetic	libclamav/autoit.c	2007	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+offset-size-arithmetic	libclamav/autoit.c	2011	            next_offset = input_offset + (size_t)UNP.csize;
+offset-size-arithmetic	libclamav/autoit.c	2012	            if (next_offset == map->len) {
+offset-size-arithmetic	libclamav/autoit.c	2038	                size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
+offset-size-arithmetic	libclamav/autoit.c	2065	                input_offset += chunk;
+offset-size-arithmetic	libclamav/autoit.c	2153	                        if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
+offset-size-arithmetic	libclamav/autoit.c	2165	                        if (keyword_id >= (sizeof(autoit_keywords) / sizeof(autoit_keywords[0]))) {
+offset-size-arithmetic	libclamav/autoit.c	2189	                        if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
+offset-size-arithmetic	libclamav/autoit.c	2201	                        if (function_id >= (sizeof(autoit_functions) / sizeof(autoit_functions[0]))) {
+offset-size-arithmetic	libclamav/autoit.c	2222	                        if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
+offset-size-arithmetic	libclamav/autoit.c	2238	                            formatted_len = snprintf(formatted, sizeof(formatted), "0x%08x ", cli_readint32((char *)value));
+offset-size-arithmetic	libclamav/autoit.c	2254	                        if (UNP.cur_input > UNP.usize || 8 > UNP.usize - UNP.cur_input) {
+offset-size-arithmetic	libclamav/autoit.c	2283	                        if (UNP.cur_input > UNP.usize || 8 > UNP.usize - UNP.cur_input) {
+offset-size-arithmetic	libclamav/autoit.c	2344	                        if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
+offset-size-arithmetic	libclamav/autoit.c	2364	                        if (UNP.cur_input > UNP.usize || dchars > UNP.usize - UNP.cur_input) {
+offset-size-arithmetic	libclamav/autoit.c	2366	                            cli_dbgmsg("autoit: size too big - needed %d, total %d, avail %d\n", dchars, UNP.usize, UNP.usize - UNP.cur_input);
+offset-size-arithmetic	libclamav/autoit.c	2403	                                    count = MIN((size_t)(converted_chars - i), sizeof(input_chunk) / 2);
+offset-size-arithmetic	libclamav/autoit.c	2405	                                        input_at = (size_t)UNP.cur_input + 2 + (size_t)i * 2;
+offset-size-arithmetic	libclamav/autoit.c	2407	                                        input_at = (size_t)UNP.cur_input + (size_t)i * 2;
+offset-size-arithmetic	libclamav/autoit.c	2421	                                    chunk = MIN((size_t)(chars - i), sizeof(input_chunk));
+offset-size-arithmetic	libclamav/autoit.c	2479	                            autoit_script_output_token(&script_output, opers[op - 0x40], strlen(opers[op - 0x40])));
+offset-size-arithmetic	libclamav/autoit.c	2571	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset >= map->len) {
+offset-size-arithmetic	libclamav/autoit.c	2575	    if (!(version = fmap_need_off_once(map, offset, sizeof(*version)))) {
 offset-size-arithmetic	libclamav/autoit.c	514	        len -= 2;
 offset-size-arithmetic	libclamav/autoit.c	528	    len >>= 1;
 offset-size-arithmetic	libclamav/autoit.c	593	    while (size--)

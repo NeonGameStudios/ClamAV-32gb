@@ -1095,6 +1095,12 @@ static bool autoit_input_read(struct UNP *UNP, cli_ctx *ctx, uint8_t *buffer, si
     return true;
 }
 
+static uint32_t autoit_read_be32(const uint8_t *value)
+{
+    return ((uint32_t)value[0] << 24) | ((uint32_t)value[1] << 16) |
+           ((uint32_t)value[2] << 8) | (uint32_t)value[3];
+}
+
 static uint32_t getbits(struct UNP *UNP, uint32_t size)
 {
     // cli_dbgmsg("In getbits, (size: %u, bits_avail: %u, UNP->cur_input: %u)\n", size, UNP->bits_avail, UNP->cur_input);
@@ -1304,7 +1310,7 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base)
                 goto done;
             }
 
-            if (!(UNP.usize = be32_to_host(*(uint32_t *)(decoded_header + 4)))) {
+            if (!(UNP.usize = autoit_read_be32(decoded_header + 4))) {
                 cli_mark_scan_incomplete(ctx, "AutoIt EA05 compressed member declares a zero output size");
                 status = CL_EFORMAT;
                 goto done;
@@ -1832,7 +1838,7 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                 return CL_EFORMAT;
             }
 
-            if (!(UNP.usize = be32_to_host(*(uint32_t *)(decoded_header + 4)))) {
+            if (!(UNP.usize = autoit_read_be32(decoded_header + 4))) {
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 compressed member declares a zero output size");
                 free(UNP.inputbuf);
                 UNP.inputbuf = NULL;

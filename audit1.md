@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## AutoIt decoded-size portability audit — 2026-08-26
+
+Both AutoIt EA05 and EA06 compressed-member handlers previously loaded their
+big-endian decoded output size through an unaligned, type-punned `uint32_t *`.
+They now use an explicit bytewise decoder, preserving the format value without
+undefined or architecture-dependent access. The current-source parser compiles
+warning-clean with GCC `-Wall -Wextra -Wformat-security`; the production-linked
+`autoit_map`, `autoit_corpus`, and `autoit_sfx` TCases pass 5/5, 1/1, and 1/1.
+Full AutoIt corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## ARJ truncated compressed-member fail-closed audit — 2026-08-26
 
 The ARJ bit-window refill path previously synthesized zero padding after the
