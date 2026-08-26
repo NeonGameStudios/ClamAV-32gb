@@ -4774,6 +4774,8 @@ contains unit_tests/check_clamav.c 'oversized filename parser requested %zu cont
 contains unit_tests/check_clamav.c 'legacy oversized filename parser requested %zu contiguous bytes'
 contains unit_tests/check_clamav.c 'oversized archive comment parser requested %zu contiguous bytes'
 contains unit_tests/check_clamav.c 'test_egg_codepage_filename_is_streamed_and_scanned'
+contains unit_tests/check_clamav.c 'Egg.Metadata.Converted'
+contains unit_tests/check_clamav.c 'e38386e382b9e383882e747874'
 contains unit_tests/check_clamav.c 'Egg.Metadata.Converted.UNOFFICIAL'
 not_contains libclamav/egg.c 'extra field exceeds bounded metadata limit'
 not_contains libclamav/egg.c 'le32_to_host(*((uint32_t*)index))'

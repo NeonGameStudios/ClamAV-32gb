@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## EGG metadata and SFX focused qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC harness passes
+`egg_map` 5/5, `egg_metadata` 1/1, and `egg_sfx` 1/1. The metadata case uses
+the public `CL_TYPE_EGG` map API and a direct compiled matcher for the
+codepage-932 converted filename, while retaining scan-report matcher and
+temporary-byte metrics. The map cases cover fixed-header and extra-field
+range classification, oversized skippable fields, bounded LZMA extraction,
+and metadata admission; the SFX case covers valid, unsupported-version,
+malformed-header, and truncated-header admission. This is bounded EGG and
+SFX evidence, not full qualification; complete EGG corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## CPIO CRC parser qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `cpio_crc` case passes

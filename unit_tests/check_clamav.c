@@ -24603,8 +24603,6 @@ START_TEST(test_egg_codepage_filename_is_streamed_and_scanned)
     static const uint8_t shift_jis_name[] = {
         0x83, 0x65, 0x83, 0x58, 0x83, 0x67, '.', 't', 'x', 't' /* テスト.txt */
     };
-    static const char signature[] =
-        "Egg.Metadata.Converted:0:*:e38386e382b9e383882e747874\n";
     uint8_t archive[96];
     struct cl_engine *engine;
     struct cl_scan_options options;
@@ -24613,11 +24611,8 @@ START_TEST(test_egg_codepage_filename_is_streamed_and_scanned)
     cl_fmap_t *map;
     cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
     const char *last_alert = NULL;
-    char signature_path[PATH_MAX];
-    unsigned int sigs = 0;
     uint64_t scanned = 0;
     size_t offset = 0;
-    int signature_fd = -1;
     cl_error_t status;
 
     memset(archive, 0, sizeof(archive));
@@ -24653,22 +24648,15 @@ START_TEST(test_egg_codepage_filename_is_streamed_and_scanned)
     ck_assert(offset <= sizeof(archive));
 
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
-    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
-                              "%s/egg-metadata.ndb", tmpdir),
-                     (int)(strlen(tmpdir) + strlen("/egg-metadata.ndb")));
-    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
-    ck_assert_int_ge(signature_fd, 0);
-    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1U),
-                     (ssize_t)(sizeof(signature) - 1U));
-    ck_assert_int_eq(close(signature_fd), 0);
-    signature_fd = -1;
-
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
-    ck_assert_int_eq(cl_load(signature_path, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
-    ck_assert_uint_eq(sigs, 1U);
     ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_DISABLE_CACHE, 1), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         engine->root[0], "Egg.Metadata.Converted",
+                         "e38386e382b9e383882e747874", 0, 0, 0, "*", NULL, 0),
+                     CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
 
     memset(&options, 0, sizeof(options));
@@ -24690,7 +24678,6 @@ START_TEST(test_egg_codepage_filename_is_streamed_and_scanned)
     cl_scan_report_free(report);
     cl_fmap_close(map);
     cl_engine_free(engine);
-    ck_assert_int_eq(cli_unlink(signature_path), 0);
 }
 END_TEST
 

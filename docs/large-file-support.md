@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## EGG metadata and SFX focused qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC harness passes
+`egg_map` 5/5, `egg_metadata` 1/1, and `egg_sfx` 1/1. The metadata case uses
+public `CL_TYPE_EGG` map scanning and an exact compiled matcher for the
+codepage-932 converted filename, with matcher and temporary-byte report
+metrics asserted. The map cases cover fixed-header/extra-field range classes,
+oversized skippable fields, bounded LZMA extraction, and metadata admission;
+the SFX case covers valid and malformed or unsupported header admission. Full
+EGG corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## CPIO CRC parser qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `cpio_crc` case passes

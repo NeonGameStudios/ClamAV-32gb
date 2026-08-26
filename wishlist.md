@@ -1,5 +1,15 @@
 # Wishlist
 
+## EGG metadata and SFX focused qualification — 2026-08-26
+
+- The authoritative current-source production-linked GCC harness passes
+  `egg_map` 5/5, `egg_metadata` 1/1, and `egg_sfx` 1/1. The metadata case
+  exercises a codepage-932 converted filename through public `CL_TYPE_EGG`
+  scanning with exact converted-byte matching and report metrics; the map
+  and SFX cases cover bounded metadata/LZMA and header-admission boundaries.
+- Keep complete EGG corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## CPIO CRC parser qualification — 2026-08-26
 
 - The authoritative current-source production-linked GCC `cpio_crc` case
