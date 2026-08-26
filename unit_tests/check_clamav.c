@@ -20391,6 +20391,67 @@ static uint8_t *xar_test_make_archive(size_t *data_length)
     return xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, data_length);
 }
 
+START_TEST(test_xar_corpus_detects_embedded_mz)
+{
+    static const uint8_t toc[] =
+        "<?xml version=\"1.0\"?><xar><toc><file><data>"
+        "<offset>0</offset><length>3</length><size>3</size>"
+        "<encoding style=\"application/octet-stream\"/>"
+        "</data></file></toc></xar>";
+    static const uint8_t heap[] = {'M', 'Z', 'P'};
+    uint8_t *data;
+    size_t data_length;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    int ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    data = realloc(data, data_length + sizeof(heap));
+    ck_assert_ptr_nonnull(data);
+    memcpy(data + data_length, heap, sizeof(heap));
+    data_length += sizeof(heap);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Xar.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(data, "MZP", 3) != 0,
+                  "XAR root unexpectedly satisfies member child signature");
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_XAR", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "XAR member was not scanned: %s", cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Xar.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
 static size_t xar_member_failure_offset = SIZE_MAX;
 static size_t xar_member_failure_length = SIZE_MAX;
 
@@ -37994,6 +38055,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xar      = tcase_create("xar");
     TCase *tc_xar_metadata = tcase_create("xar_metadata");
     TCase *tc_xar_map = tcase_create("xar_map");
+    TCase *tc_xar_corpus = tcase_create("xar_corpus");
     TCase *tc_riff = tcase_create("riff");
     TCase *tc_riff_corpus = tcase_create("riff_corpus");
     TCase *tc_riff_map = tcase_create("riff_map");
@@ -38282,6 +38344,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xar_metadata);
     suite_add_tcase(s, tc_xar_map);
     tcase_add_test(tc_xar_map, test_xar_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_xar_corpus);
+    tcase_add_checked_fixture(tc_xar_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_xar_corpus, test_xar_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_riff);
     tcase_add_checked_fixture(tc_riff, cl_setup, cl_teardown);
     tcase_add_test(tc_riff, test_riff_header_read_failure_is_fail_visible);

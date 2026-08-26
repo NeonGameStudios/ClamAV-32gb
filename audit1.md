@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## XAR member corpus qualification — 2026-08-26
+
+The current-source production-linked GCC `xar` case passes 8/8,
+`xar_map` passes 1/1, and the isolated `xar_corpus` case passes 1/1. The
+corpus contains a complete compressed TOC and an in-range uncompressed
+member; the XAR root does not begin with MZP, and the exact
+`Xar.Member.MZ.UNOFFICIAL` alert is reached after bounded member extraction
+and nested scanning. This is bounded XAR TOC/member-handoff evidence, not
+complete XAR qualification; sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release evidence remain open.
+
 ## Generic graphics BMP corpus qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `graphics_corpus` case
