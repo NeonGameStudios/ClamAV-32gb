@@ -111,13 +111,13 @@
 - RTF `\objdata` now rejects an invalid OLE10 magic prefix as `CL_EPARSE`
   before allocating or scanning a malformed embedded object; the layer is
   incomplete and non-cacheable.
-- A fresh current-source `rtf.c` object linked into the production GCC
-  harness passes `rtf_map` 9/9, including the invalid-magic regression. The
-  materialized RTF corpus case returns `CL_EFORMAT` in the mixed
-  static/shared-ABI harness, so the earlier 1/1 corpus observation is
-  withdrawn until a full current C rebuild is available. Keep full RTF
-  corpus, sanitizer, certified Linux x86-64, materialized large-file,
-  production-CVD/service, Sonic1, and release gates open.
+- A clean current-source production-linked GCC relink of the test, RTF,
+  scanner, matcher, PE, and helper objects passes `rtf` 1/1 against the
+  materialized `clam.exe.rtf` fixture and passes `rtf_map` 9/9, including the
+  invalid-magic regression. This replaces the earlier mixed static/shared-ABI
+  result. Keep full RTF parser-family, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
 
 ## SIS compressed-member current-source qualification — 2026-08-26
 
@@ -379,6 +379,15 @@
   matcher. This supersedes the earlier mixed-object XAR crash observation.
 - Keep full XAR corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release gates open.
+
+## XAR subdocument inner-content handoff — 2026-08-26
+
+- The production-linked GCC `xar_subdoc` case passes 1/1 over a complete TOC
+  with `<subdoc><x>OK</x></subdoc>` and reaches the exact child end marker at
+  offset 5 in the streamed inner payload. The `subdoc` wrapper remains outside
+  the nested scan by design.
+- Keep sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release qualification open.
 
 ## Generic graphics BMP corpus qualification — 2026-08-26
 
