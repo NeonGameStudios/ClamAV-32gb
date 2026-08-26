@@ -1,5 +1,14 @@
 # Wishlist
 
+## InstallShield current-source admission qualification — 2026-08-26
+
+- The current-source production-linked GCC harness passes `ishield_map` 1/1
+  for confirmed-entry missing-map admission and `ishield_sfx` 1/1 for a valid
+  PE-backed SFX whose child reaches an exact matcher.
+- Keep complete MSI/legacy/CAB corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## Explicit ignored-type boundary — 2026-08-26
 
 - Record `CL_TYPE_IGNORED` as unsupported: its legacy classifier entries have
