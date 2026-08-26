@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## BinHex parser boundary and corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `binhex_map` case
+passes 11/11. It covers null-context and missing-map admission, truncated
+header/data/resource states, expired traversal, temporary quota and cleanup
+failures, encoded-input read failure, and the materialized
+`clam.exe.binhex` fixture whose extracted data fork reaches the exact
+`BinHex.Member.MZ.UNOFFICIAL` nested matcher. This is bounded BinHex evidence,
+not full parser-family qualification; complete encoded-document corpus,
+sanitizer, certified Linux x86-64, materialized large-file, ingress/service,
+production-CVD, Sonic1, and release evidence remain open.
+
 ## Mydoom detector corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `mydoom_map` case

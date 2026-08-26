@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## BinHex parser boundary and corpus qualification — 2026-08-26
+
+The current-source production-linked GCC `binhex_map` case passes 11/11,
+covering admission, truncation, timeout, temporary quota/cleanup,
+encoded-input read failure, and the materialized `clam.exe.binhex` fixture
+whose extracted data fork reaches the exact
+`BinHex.Member.MZ.UNOFFICIAL` nested matcher. Complete encoded-document
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+ingress/service, production-CVD, Sonic1, and release qualification remain
+open.
+
 ## Mydoom detector corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `mydoom_map` case passes 4/4,
