@@ -1,5 +1,17 @@
 # Wishlist
 
+## Fresh ZIP corpus evidence correction — 2026-08-26
+
+- Fresh current-source `unzip.c`/`scanners.c` objects pass `zip_sfx` 3/3 and
+  `zip_map` 1/1, confirming the masked ZIP-SFX admission and exact child-only
+  regressions.
+- The same ordinary `zip` TCase is 13/14: the existing materialized
+  `clam.zip` corpus oracle returns `CL_EPARSE`. The prior 14/14 claim is
+  withdrawn pending a full current C rebuild; this does not regress the
+  masked-SFX milestone.
+- Keep full ZIP corpus, sanitizer, certified Linux, production-CVD/service,
+  Sonic1, and release qualification open.
+
 ## MSEXPAND null-context classification — 2026-08-26
 
 - `cli_msexpand()` now returns `CL_ENULLARG` for a null scan context, while a
@@ -529,11 +541,10 @@
 ## ZIP ordinary corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `zip` case passes
-  14/14, including both materialized split `logos.zip` and `logos.z01`
-  fixtures plus `clam.zip`, `clam.split.oneseg.zip`, and the BZip2-compressed
-  `clam.bz2.zip` fixture, with exact nested PNG and MZP child detection
-  including ZIP method 12. The existing `zip_sfx` case passes 3/3 and
-  `zip_map` passes 1/1.
+  13/14 in the fresh current-source rebuild. Both split-logo fixtures and the
+  focused boundary cases are green, but the existing materialized `clam.zip`
+  corpus oracle returns `CL_EPARSE`; the earlier 14/14 claim is withheld. The
+  masked `zip_sfx` case passes 3/3 and `zip_map` passes 1/1.
 - Keep full ZIP corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release qualification open.
 

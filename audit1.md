@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Fresh ZIP corpus evidence correction — 2026-08-26
+
+The fresh production-linked GCC rebuild of the current `unzip.c` and
+`scanners.c` confirms the masked ZIP-SFX milestone: `zip_sfx` passes 3/3 and
+`zip_map` passes 1/1, including weak-candidate rejection, malformed-central
+classification, in-range central-record read failure, and exact child-only
+matching. The same fresh binary's ordinary `zip` TCase passes 13/14; the
+existing materialized `test_zip_corpus_detects_embedded_mz` oracle returns
+`CL_EPARSE` for `clam.zip`, so the prior 14/14 ordinary-corpus claim is
+withdrawn. This is an evidence correction, not a masked-SFX regression. Full
+ZIP corpus, sanitizer, certified Linux, production-CVD/service, Sonic1, and
+release qualification remain open.
+
 ## MSEXPAND null-context classification — 2026-08-26
 
 The direct SZDD/MSEXPAND decoder returned the generic `CL_EARG` when passed
@@ -706,14 +719,13 @@ production-CVD/service, Sonic1, and release qualification remain open.
 ## ZIP ordinary corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `zip` case passes
-14/14, including both materialized split `logos.zip` and `logos.z01` corpus
-fixtures plus `clam.zip`, `clam.split.oneseg.zip`, and the BZip2-compressed
-`clam.bz2.zip` fixture. The new regressions detect exact nested PNG and MZP
-child signatures through ordinary ZIP dispatch, including ZIP method 12; the
-existing 12 boundary cases remain green. The `zip_sfx` case
-passes 3/3 and `zip_map` passes 1/1. Full ZIP corpus, sanitizer, certified
-Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
-release qualification remain open.
+13/14 in the fresh current-source rebuild. Both materialized split `logos.zip`
+and `logos.z01` fixtures and the focused boundary cases remain green, but the
+existing `clam.zip` materialized corpus oracle returns `CL_EPARSE`, so the
+earlier 14/14 claim is withheld. The masked `zip_sfx` case passes 3/3 and
+`zip_map` passes 1/1. Full ZIP corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
 
 ## ISO9660 corpus qualification — 2026-08-25
 
