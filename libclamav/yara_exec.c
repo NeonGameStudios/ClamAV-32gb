@@ -974,8 +974,8 @@ int yr_execute_code(
         break;
 
       default:
-        // Unknown instruction, this shouldn't happen.
-        assert(FALSE);
+        cli_dbgmsg("yara_exec: unknown YARA opcode %u\n", (unsigned int)*ip);
+        return CL_EPARSE;
     }
 
     if (timeout > 0)  // timeout == 0 means no timeout

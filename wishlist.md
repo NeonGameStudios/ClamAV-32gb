@@ -11,6 +11,15 @@
   logical-expression, production-signature, sanitizer, service, Sonic1, and
   release qualification open.
 
+## Bundled YARA VM unknown-opcode handling — 2026-08-26
+
+- Return `CL_EPARSE` for an unknown bundled-YARA opcode so malformed bytecode
+  cannot reach an assertion or continue as a clean execution.
+- A focused current-source GCC section-garbage-collected harness passes the
+  unknown-opcode check. Rerun the full production-linked matcher TCase, and
+  keep sanitizer, production-CVD/service, Sonic1, and release qualification
+  open.
+
 ## JPEG short-SOI admission — 2026-08-26
 
 - Treat a forced JPEG layer containing only the two-byte `FF D8` start-of-image

@@ -15,6 +15,16 @@ full production-linked matcher TCase must be rerun with this regression. Full
 logical-expression, production-signature, sanitizer, service, Sonic1, and
 release qualification remain required.
 
+## Bundled YARA VM unknown-opcode handling — 2026-08-26
+
+The bundled YARA interpreter previously asserted on an unknown opcode, which
+could abort a debug build instead of producing a visible result for malformed
+bytecode. Unknown opcodes now return `CL_EPARSE`; the YARA matcher converts that
+to an incomplete, non-cacheable result. A focused current-source GCC
+section-garbage-collected harness passes the unknown-opcode check. The full
+production-linked matcher TCase, sanitizer, production-CVD/service, Sonic1,
+and release qualification remain required.
+
 ## JPEG short-SOI admission — 2026-08-26
 
 The JPEG parser now treats a forced layer containing only the two-byte `FF D8`

@@ -1300,6 +1300,43 @@ START_TEST(test_yara_execution_error_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_yara_unknown_opcode_is_fail_visible)
+{
+#ifdef HAVE_YARA
+    static uint8_t code[] = {0, OP_HALT};
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id           = 0;
+    lsig.type         = CLI_YARA_NORMAL;
+    lsig.u.code_start = code;
+    lsig.virname      = (char *)"YaraUnknownOpcode";
+    lsigtable[0]      = &lsig;
+    root.ac_lsigs     = 1;
+    root.ac_lsigtable = lsigtable;
+
+    map = cl_fmap_open_memory((const unsigned char *)"x", 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_exp_eval(&ctx, &root, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ctx.fmap = &thefmap;
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_yara_stack_underflow_is_fail_visible)
 {
 #ifdef HAVE_YARA
@@ -1976,6 +2013,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_yara_map_read_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
     tcase_add_test(tc_matchers, test_yara_execution_error_is_fail_visible);
+    tcase_add_test(tc_matchers, test_yara_unknown_opcode_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_stack_underflow_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_invalid_memory_index_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_call_operand_count_is_fail_visible);
