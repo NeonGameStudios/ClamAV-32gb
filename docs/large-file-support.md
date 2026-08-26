@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Fresh current-source SIS corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC rebuild, with a fresh
+`sis.c` object ahead of the existing static helper archive, passes `sis` 1/1,
+`sis_member` 1/1, and `sis_map` 1/1. The materialized `clam.sis` oracle now
+reaches the exact nested MZP matcher after SIS compressed-member extraction;
+the earlier clean result was caused by stale or mixed helper linkage. Full SIS
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## Fresh current-source MSEXPAND qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC rebuild, with a fresh

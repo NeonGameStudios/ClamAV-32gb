@@ -1,5 +1,14 @@
 # Wishlist
 
+## Fresh current-source SIS corpus qualification — 2026-08-26
+
+- A source-consistent current-source production-linked GCC rebuild passes
+  `sis` 1/1, `sis_member` 1/1, and `sis_map` 1/1. The materialized
+  `clam.sis` oracle reaches the exact nested MZP matcher after compressed-
+  member extraction; the earlier clean result was stale/mixed helper linkage.
+- Keep full SIS corpus, sanitizer, certified Linux, production-CVD/service,
+  materialized-large-file, Sonic1, and release qualification open.
+
 ## Fresh current-source MSEXPAND qualification — 2026-08-26
 
 - A fresh current-source production-linked GCC rebuild passes the complete
