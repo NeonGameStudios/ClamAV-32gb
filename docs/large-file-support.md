@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Explicit ignored-type boundary — 2026-08-26
+
+`CL_TYPE_IGNORED` is an explicit unsupported capability. Its legacy
+classifier entries have no deep parser, and the dispatch branch intentionally
+bypasses both raw scans; recognized ignored input is therefore not claimed as
+clean or deeply inspected. Source guards pin this branch and its classifier
+entries. No parser-family or large-file qualification is claimed for these
+deliberately ignored types.
+
 ## Graphics current-source qualification — 2026-08-26
 
 The current-source production-linked GCC harness passes `graphics_map` 2/2,

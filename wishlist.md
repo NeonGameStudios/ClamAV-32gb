@@ -1,5 +1,13 @@
 # Wishlist
 
+## Explicit ignored-type boundary — 2026-08-26
+
+- Record `CL_TYPE_IGNORED` as unsupported: its legacy classifier entries have
+  no deep parser and intentionally bypass raw matching, so recognized input
+  is not presented as clean or deeply inspected.
+- Reopen this boundary only if a future release enables a bounded parser for
+  one of the ignored formats.
+
 ## Graphics current-source qualification — 2026-08-26
 
 - The current-source production-linked GCC harness passes `graphics_map` 2/2,

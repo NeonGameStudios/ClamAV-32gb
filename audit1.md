@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## Explicit ignored-type boundary — 2026-08-26
+
+`CL_TYPE_IGNORED` is now recorded as an explicit unsupported capability. Its
+classifier entries cover legacy formats for which this fork intentionally
+provides no deep parser, and the dispatch branch bypasses both the pre-parser
+raw scan and the post-parser raw scan. This is a documented non-clean,
+non-qualification boundary rather than a claim that recognized ignored input
+was inspected successfully; source guards pin the branch and classifier
+entries. No parser-family or large-file qualification is claimed for these
+deliberately ignored types.
+
 ## Graphics current-source qualification — 2026-08-26
 
 The current-source production-linked GCC harness passes `graphics_map` 2/2,
