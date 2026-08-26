@@ -4908,6 +4908,19 @@ path. A focused four-byte public-map regression and source guards cover this
 boundary. Full ARJ corpus, sanitizer, and supported-build Sonic1 qualification
 remain release gates.
 
+## ARJ SFX failure-visible admission — 2026-08-26
+
+The current-source production-linked GCC `arjsfx` TCase passes 3/3. It covers
+successful prefixed-SFX admission and nested stored-member matching, a
+confirmed SFX candidate with a truncated main header, and an in-range fmap
+callback failure during the SFX header read. The latter two cases preserve
+clean verdict state, distinguish `CL_EPARSE` from `CL_EREAD`, and suppress
+caching by marking the fmap non-cacheable. The full ARJ TCase retains the
+pre-existing mixed static/shared `cli_ctx` harness failures in both compared
+binaries, so that integration issue remains separate from this SFX evidence.
+Full ARJ-SFX corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 qualification remain release gates.
+
 ## ARJ extraction read status — 2026-08-21
 
 ARJ compressed bit-window refills and stored-member copies now distinguish an

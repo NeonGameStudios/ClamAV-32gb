@@ -3935,11 +3935,16 @@ and Sonic1 qualification as release gates.
 
 ## ARJ-SFX nested admission audit — 2026-08-25
 
-- The current-source production-linked `arjsfx` TCase passes 1/1: a valid
+- The current-source production-linked `arjsfx` TCase now passes 3/3: a valid
   prefixed ARJ SFX is admitted through the embedded branch and its stored
-  child reaches an exact offset-0 matcher.
-- Add malformed and callback-failure SFX cases, then complete ARJ-SFX corpus,
-  sanitizer, certified Linux x86-64, materialized large-file,
+  child reaches an exact offset-0 matcher; a confirmed but truncated main
+  header returns `CL_EPARSE`; and an in-range header callback failure returns
+  `CL_EREAD`. Both failure cases leave a clean verdict and mark the fmap
+  non-cacheable.
+- The full ARJ TCase still has the pre-existing mixed static/shared `cli_ctx`
+  harness failures in both prior and newly relinked binaries; isolate and
+  resolve that integration issue before release certification. Complete the
+  ARJ-SFX corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, and Sonic1 evidence before certification.
 
 ## BinHex focused-boundary audit — 2026-08-25

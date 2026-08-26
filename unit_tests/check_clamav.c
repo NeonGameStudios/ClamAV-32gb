@@ -29881,6 +29881,17 @@ static void arj_test_write_u32(uint8_t *dst, uint32_t value)
         dst[i] = (uint8_t)(value >> (8U * i));
 }
 
+static void arj_test_build_sfx_prefix(uint8_t *data, size_t length)
+{
+    ck_assert_msg(length >= 12U, "ARJ SFX prefix buffer is too short");
+    memset(data, 0, length);
+    data[1] = 0x60;
+    data[2] = 0xea;
+    arj_test_write_u16(data + 3, 34);
+    data[5]  = 30;
+    data[11] = 2;
+}
+
 static size_t arj_read_failure_offset = SIZE_MAX;
 
 static const void *arj_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
@@ -33135,6 +33146,90 @@ START_TEST(test_cabsfx_admission_reaches_nested_matcher)
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
 }
+END_TEST
+
+START_TEST(test_arjsfx_malformed_confirmed_header_is_fail_visible)
+{
+    uint8_t data[12];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* Preserve the raw ARJ-SFX magic, but truncate the confirmed main header
+     * after the matcher has admitted the candidate. */
+    arj_test_build_sfx_prefix(data, sizeof(data));
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_arjsfx_header_read_failure_is_fail_visible)
+{
+    uint8_t data[41];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* The range is large enough for the fixed main header, then the fmap
+     * callback fails exactly when the SFX admission path reads it. */
+    arj_test_build_sfx_prefix(data, sizeof(data));
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    arj_read_failure_offset = 5U;
+    map->need               = arj_targeted_read_failure;
+    verdict                 = CL_VERDICT_STRONG_INDICATOR;
+    last_alert              = "stale";
+    scanned                 = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    arj_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+
 END_TEST
 
 START_TEST(test_arjsfx_admission_reaches_nested_matcher)
@@ -39474,6 +39569,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cabsfx, test_cabsfx_admission_reaches_nested_matcher);
     suite_add_tcase(s, tc_arjsfx);
     tcase_add_checked_fixture(tc_arjsfx, cl_setup, cl_teardown);
+    tcase_add_test(tc_arjsfx, test_arjsfx_malformed_confirmed_header_is_fail_visible);
+    tcase_add_test(tc_arjsfx, test_arjsfx_header_read_failure_is_fail_visible);
     tcase_add_test(tc_arjsfx, test_arjsfx_admission_reaches_nested_matcher);
     suite_add_tcase(s, tc_autoit_sfx);
     tcase_add_checked_fixture(tc_autoit_sfx, cl_setup, cl_teardown);

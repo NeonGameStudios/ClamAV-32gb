@@ -9256,6 +9256,20 @@ evidence only; full ARJ-SFX corpus, malformed and callback-failure coverage,
 sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 qualification remain open.
 
+## ARJ-SFX failure-visible admission — 2026-08-26
+
+The ARJ-SFX admission audit now has three current-source production-linked
+GCC checks: the valid nested-child detection, a confirmed ARJ-SFX candidate
+whose main header is truncated, and an in-range fmap callback failure while
+the SFX admission path reads that header. The `arjsfx` TCase passes 3/3. The
+two failure cases preserve clean verdict state, return `CL_EPARSE` versus
+`CL_EREAD`, and set the fmap non-cacheable flag. The full ARJ TCase still
+has the pre-existing mixed static/shared `cli_ctx` harness failures in both
+the prior and newly relinked binaries; those remain an integration gate and
+are not attributed to this SFX regression. Full ARJ-SFX corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service, and
+Sonic1 qualification remain open.
+
 ## BinHex header-length preflight — 2026-08-25
 
 BinHex decoded-header processing previously read the data and resource fork
