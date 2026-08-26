@@ -1,5 +1,15 @@
 # Wishlist
 
+## PNG palette structural admission — 2026-08-26
+
+- Reject invalid PLTE lengths, PLTE-after-IDAT, duplicate PLTE chunks,
+  grayscale PLTE chunks, and indexed images missing PLTE with explicit
+  incomplete/non-cacheable parse results.
+- The current-source `png.c` GCC build is warning-clean and the
+  production-linked `png` TCase passes 7/7 checks. Keep complete PNG corpus,
+  sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+  service, Sonic1, and parser-family qualification open.
+
 ## GIF Graphic Control Extension field validation — 2026-08-26
 
 - Validate the fixed Graphic Control Extension block size and zero terminator

@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## PNG palette structural admission — 2026-08-26
+
+The PNG parser now rejects invalid PLTE lengths, PLTE chunks after IDAT,
+duplicate PLTE chunks, PLTE chunks on grayscale images, and indexed images
+whose first IDAT arrives without a PLTE. Each confirmed structural violation
+returns a fail-visible `CL_EPARSE`, marks the layer incomplete, and disables
+caching. The current-source `png.c` compiles warning-clean with GCC
+`-Wall -Wextra -Wformat-security`, and the current-source production-linked
+`png` TCase passes 7/7 checks covering all five cases. The existing mixed
+harness cannot currently locate its `logo.png` corpus fixture, so complete PNG
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## GIF Graphic Control Extension field validation — 2026-08-26
 
 The GIF parser previously consumed the fixed Graphic Control Extension payload

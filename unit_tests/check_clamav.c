@@ -37392,6 +37392,87 @@ START_TEST(test_png_invalid_structure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_png_palette_structure_is_fail_visible)
+{
+    static const uint8_t valid_ihdr[] = {
+        0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a,
+        0, 0, 0, 13, 'I', 'H', 'D', 'R',
+        0, 0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0,
+        0, 0, 0, 0,
+    };
+    static const char *const reasons[] = {
+        "Heuristics.Broken.Media.PNG.InvalidPLTELength",
+        "Heuristics.Broken.Media.PNG.PLTEForGrayscale",
+        "Heuristics.Broken.Media.PNG.DuplicatePLTE",
+        "Heuristics.Broken.Media.PNG.IndexedImageMissingPLTE",
+        "Heuristics.Broken.Media.PNG.PLTEAfterIDAT",
+    };
+    uint8_t invalid_length[sizeof(valid_ihdr) + 14];
+    uint8_t grayscale[sizeof(valid_ihdr) + 15];
+    uint8_t duplicate[sizeof(valid_ihdr) + 30];
+    uint8_t missing_palette[sizeof(valid_ihdr) + 12];
+    uint8_t after_idat[sizeof(valid_ihdr) + 27];
+    const uint8_t *cases[] = {invalid_length, grayscale, duplicate, missing_palette, after_idat};
+    const size_t lengths[] = {
+        sizeof(invalid_length), sizeof(grayscale), sizeof(duplicate), sizeof(missing_palette), sizeof(after_idat),
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t offset;
+    size_t i;
+
+    memset(invalid_length, 0, sizeof(invalid_length));
+    memcpy(invalid_length, valid_ihdr, sizeof(valid_ihdr));
+    offset = sizeof(valid_ihdr);
+    invalid_length[offset + 3] = 2;
+    memcpy(invalid_length + offset + 4, "PLTE", 4);
+
+    memset(grayscale, 0, sizeof(grayscale));
+    memcpy(grayscale, valid_ihdr, sizeof(valid_ihdr));
+    grayscale[25] = 0;
+    offset = sizeof(valid_ihdr);
+    grayscale[offset + 3] = 3;
+    memcpy(grayscale + offset + 4, "PLTE", 4);
+
+    memset(duplicate, 0, sizeof(duplicate));
+    memcpy(duplicate, valid_ihdr, sizeof(valid_ihdr));
+    offset = sizeof(valid_ihdr);
+    duplicate[offset + 3] = 3;
+    memcpy(duplicate + offset + 4, "PLTE", 4);
+    offset += 15;
+    duplicate[offset + 3] = 3;
+    memcpy(duplicate + offset + 4, "PLTE", 4);
+
+    memset(missing_palette, 0, sizeof(missing_palette));
+    memcpy(missing_palette, valid_ihdr, sizeof(valid_ihdr));
+    missing_palette[25] = 3;
+    offset = sizeof(valid_ihdr);
+    memcpy(missing_palette + offset + 4, "IDAT", 4);
+
+    memset(after_idat, 0, sizeof(after_idat));
+    memcpy(after_idat, valid_ihdr, sizeof(valid_ihdr));
+    offset = sizeof(valid_ihdr);
+    memcpy(after_idat + offset + 4, "IDAT", 4);
+    offset += 12;
+    after_idat[offset + 3] = 3;
+    memcpy(after_idat + offset + 4, "PLTE", 4);
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(cases[i], lengths[i]);
+        ck_assert_ptr_nonnull(map);
+        ctx.fmap = map;
+
+        ck_assert_int_eq(cli_parsepng(&ctx), CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, reasons[i]);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+    }
+}
+END_TEST
+
 START_TEST(test_png_chunk_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {
@@ -40611,6 +40692,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif, test_gif_png_missing_maps_are_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunks_are_fail_visible);
     tcase_add_test(tc_png, test_png_invalid_structure_is_fail_visible);
+    tcase_add_test(tc_png, test_png_palette_structure_is_fail_visible);
     tcase_add_test(tc_png, test_png_chunk_read_failure_is_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunk_header_is_parse_error);
     tcase_add_test(tc_png, test_png_chunk_timeout_is_fail_visible);

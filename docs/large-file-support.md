@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PNG palette structural admission — 2026-08-26
+
+PNG structural admission now rejects invalid PLTE lengths, PLTE chunks after
+IDAT, duplicate PLTE chunks, PLTE chunks on grayscale images, and indexed
+images whose first IDAT has no PLTE. Each case returns fail-visible
+`CL_EPARSE`, sticky incomplete state, and no-cache state. The current-source
+`png.c` build is warning-clean under GCC `-Wall -Wextra -Wformat-security`,
+and the current-source production-linked `png` TCase passes 7/7 checks. The
+existing mixed harness lacks its expected `logo.png` corpus fixture; complete
+PNG corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## GIF Graphic Control Extension field validation — 2026-08-26
 
 The GIF parser now validates the fixed Graphic Control Extension's declared

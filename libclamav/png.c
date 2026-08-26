@@ -118,6 +118,7 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
     bool have_IEND                 = false;
     bool have_PLTE                 = false;
     bool have_IHDR                 = false;
+    bool have_IDAT                 = false;
 
     uint64_t width  = 0;
     uint64_t height = 0;
@@ -334,27 +335,47 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
              | PLTE |
              *------*/
             if (have_PLTE) {
-                cli_dbgmsg("PNG: More than one PTLE chunk found in a PNG file, which is not valid\n");
+                status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.DuplicatePLTE");
+                parse_error = true;
+                goto scan_overlay;
             }
 
-            if (!(chunk_data_length > sizeof(png_palette_entry) * 256 || chunk_data_length % 3 != 0)) {
-                num_palette_entries = chunk_data_length / 3;
+            if (have_IDAT) {
+                status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.PLTEAfterIDAT");
+                parse_error = true;
+                goto scan_overlay;
             }
-            if (color_type == 1) /* for MNG and tRNS */ {
-                color_type = 3;
+
+            if (chunk_data_length < sizeof(png_palette_entry) ||
+                chunk_data_length > (uint64_t)(sizeof(png_palette_entry) * 256U) ||
+                chunk_data_length % sizeof(png_palette_entry) != 0) {
+                status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.InvalidPLTELength");
+                parse_error = true;
+                goto scan_overlay;
             }
 
             if (color_type == 0 || color_type == 4) {
-                cli_dbgmsg("PNG: PTLE chunk found in a PNG file with color type set to (%u), which is not valid\n", color_type);
+                status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.PLTEForGrayscale");
+                parse_error = true;
+                goto scan_overlay;
             }
+
+            num_palette_entries = chunk_data_length / sizeof(png_palette_entry);
             have_PLTE = true;
 
             cli_dbgmsg("  # palette entries: " STDu64 "\n", num_palette_entries);
-        } else if (interlace_method == 0 && strcmp(chunk_type, "IDAT") == 0) {
+        } else if (strcmp(chunk_type, "IDAT") == 0) {
             /*------*
              | IDAT |
              *------*/
-            cli_dbgmsg("  IDAT chunk: image data decompression no longer performed in PNG CVE checker.\n");
+            if (color_type == 3 && !have_PLTE) {
+                status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.IndexedImageMissingPLTE");
+                parse_error = true;
+                goto scan_overlay;
+            }
+            have_IDAT = true;
+            if (interlace_method == 0)
+                cli_dbgmsg("  IDAT chunk: image data decompression no longer performed in PNG CVE checker.\n");
         } else if (strcmp(chunk_type, "IEND") == 0) {
             /*------*
              | IEND |
