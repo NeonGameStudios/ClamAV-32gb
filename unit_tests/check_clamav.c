@@ -21418,6 +21418,53 @@ START_TEST(test_rust_lha_public_api_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_rust_lha_truncated_zero_output_member_is_fail_visible)
+{
+    /* A valid level-0 directory header followed by no member data. The
+     * compressed-size field is changed from zero to one and its header
+     * checksum adjusted, so the declared member range ends one byte beyond
+     * the fmap. delharc otherwise treats this zero-output discard as EOF. */
+    uint8_t archive[60] = {
+        0x3a, 0x43, 0x2d, 0x6c, 0x68, 0x64, 0x2d, 0x01, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x7b, 0x62, 0x58, 0x10,
+        0x00, 0x18, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x5f,
+        0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x73, 0xff, 0x69,
+        0x6d, 0x61, 0x67, 0x65, 0x73, 0xff, 0x00, 0x00, 0x55, 0x00,
+        0xeb, 0x8a, 0xe3, 0x65, 0xff, 0x41, 0xe9, 0x03, 0xea, 0x03,
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_LHA_LZH", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_rust_lha_corpus_detects_nested_png)
 {
     static const char *const archives[] = {
@@ -39317,6 +39364,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_rust_lha, cl_setup, cl_teardown);
     tcase_add_test(tc_rust_lha, test_rust_lha_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_public_api_read_failure_is_fail_visible);
+    tcase_add_test(tc_rust_lha, test_rust_lha_truncated_zero_output_member_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_corpus_detects_nested_png);
     suite_add_tcase(s, tc_rust_alz);
     tcase_add_checked_fixture(tc_rust_alz, cl_setup, cl_teardown);

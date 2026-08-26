@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## LHA/LZH compressed-range admission — 2026-08-26
+
+The cached delharc path could treat a zero-output member whose declared
+compressed range extended beyond the fmap as complete because its discard loop
+stopped at EOF without exhausting the bounded `Take`. The Rust scanner now
+tracks bytes consumed through the bounded `FMapReader` and checks each parsed
+member's checked `[start, start + compressed_size)` range against the fmap
+before decode or skip. The current-source Rust 1.97.1 release build and
+production-linked GCC `rust_lha` case pass 4/4, including the regression that
+exposed the pre-fix clean-success defect; `rust_map` passes 1/1. Full C/Rust
+ABI, sanitizer, certified Linux, materialized large-file, production-CVD/
+service, Sonic1, and release gates remain open.
+
 ## RTF OLE10 magic validation — 2026-08-26
 
 RTF embedded-object processing previously logged an OLE10 magic mismatch and

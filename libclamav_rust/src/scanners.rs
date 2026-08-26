@@ -21,11 +21,13 @@
  */
 
 use std::{
+    cell::Cell,
     ffi::{c_char, CStr, CString},
     io::{self, Read},
     panic,
     path::Path,
     ptr::null_mut,
+    rc::Rc,
 };
 
 use delharc::LhaDecodeReader;
@@ -163,6 +165,46 @@ fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool 
         None => return false,
     };
     chunk_len <= remaining
+}
+
+fn lha_member_range_fits(start: u64, length: u64, map_len: u64) -> bool {
+    match start.checked_add(length) {
+        Some(end) => end <= map_len,
+        None => false,
+    }
+}
+
+/// Track the source position while delharc owns the bounded fmap reader.
+/// delharc's `next_file()` skips any unused compressed bytes internally, so
+/// the scanner needs the position after each parsed header to validate the
+/// next member's declared compressed range before decoding or skipping it.
+struct LhaPositionReader<'a> {
+    inner: FMapReader<'a>,
+    position: Rc<Cell<u64>>,
+}
+
+impl<'a> LhaPositionReader<'a> {
+    fn new(fmap: &'a FMap, ctx: *mut cli_ctx, position: Rc<Cell<u64>>) -> Self {
+        Self {
+            inner: FMapReader::new_with_context(fmap, ctx),
+            position,
+        }
+    }
+}
+
+impl Read for LhaPositionReader<'_> {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        let read = self.inner.read(buffer)?;
+        let position = self
+            .position
+            .get()
+            .checked_add(u64::try_from(read).map_err(|_| {
+                io::Error::new(io::ErrorKind::InvalidInput, "LHA source position overflow")
+            })?)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "LHA source position overflow"))?;
+        self.position.set(position);
+        Ok(read)
+    }
 }
 
 /// Rust wrapper of libclamav's cli_magic_scan_buff() function.
@@ -857,7 +899,12 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
     // Try to parse the LHA/LZH file data using the delharc crate.
     debug!("Attempting to parse the LHA/LZH file data using the delharc crate.");
 
-    let mut decoder = match LhaDecodeReader::new(FMapReader::new_with_context(&fmap, ctx)) {
+    let source_position = Rc::new(Cell::new(0u64));
+    let mut decoder = match LhaDecodeReader::new(LhaPositionReader::new(
+        &fmap,
+        ctx,
+        source_position.clone(),
+    )) {
         Ok(result) => result,
         Err(err) => {
             let io_err: io::Error = err.into();
@@ -877,6 +924,7 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
 
     debug!("Opened the LHA/LZH archive");
 
+    let mut member_data_start = source_position.get();
     let mut index: usize = 0;
     loop {
         // Check if we've already exceeded the limits and should bail out.
@@ -888,6 +936,19 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
 
         // Get the file header.
         let header = decoder.header();
+
+        if !lha_member_range_fits(
+            member_data_start,
+            header.compressed_size,
+            fmap.len() as u64,
+        ) {
+            return parser_failure(
+                ctx,
+                "LHA/LZH",
+                cl_error_t_CL_EPARSE,
+                "member compressed range exceeds the input map",
+            );
+        }
 
         let filepath = header.parse_pathname();
         let filename = filepath.to_string_lossy();
@@ -1076,6 +1137,7 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
         match decoder.next_file() {
             Ok(true) => {
                 debug!("Found another file in the archive!");
+                member_data_start = source_position.get();
             }
             Ok(false) => {
                 debug!("No more files in the archive.");
@@ -1507,6 +1569,14 @@ mod tests {
         assert!(!lha_output_chunk_fits(65, 64, 0));
         assert!(!lha_output_chunk_fits(64, 64, 1));
         assert!(!lha_output_chunk_fits(u64::MAX, u64::MAX, 1));
+    }
+
+    #[test]
+    fn lha_member_range_rejects_truncation_and_overflow() {
+        assert!(lha_member_range_fits(0, 0, 0));
+        assert!(lha_member_range_fits(60, 0, 60));
+        assert!(!lha_member_range_fits(60, 1, 60));
+        assert!(!lha_member_range_fits(u64::MAX, 1, u64::MAX));
     }
 
     #[test]

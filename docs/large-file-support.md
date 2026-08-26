@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## LHA/LZH compressed-range admission — 2026-08-26
+
+LHA/LZH scanning now tracks source bytes consumed through the bounded Rust
+`FMapReader` and performs checked admission of every parsed member's compressed
+range before decoding or skipping it. This closes a delharc edge case where a
+zero-output member could declare compressed bytes beyond the fmap and be
+treated as successfully discarded at EOF. The current-source Rust 1.97.1
+release build and production-linked GCC `rust_lha` case pass 4/4, including the
+truncated zero-output regression; `rust_map` passes 1/1. Full C/Rust ABI,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, Sonic1, and release qualification remain open.
+
 ## RTF OLE10 magic validation — 2026-08-26
 
 RTF `\objdata` now treats a mismatch in the required OLE10 magic prefix as a

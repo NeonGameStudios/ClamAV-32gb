@@ -1,5 +1,16 @@
 # Wishlist
 
+## LHA/LZH compressed-range admission — 2026-08-26
+
+- LHA/LZH now tracks bounded source consumption and rejects a parsed member
+  whose checked compressed range extends beyond the input fmap, including the
+  zero-output/truncated-member case that delharc could otherwise normalize to
+  a clean result.
+- The current-source Rust 1.97.1 release build and production-linked GCC
+  `rust_lha` case pass 4/4; `rust_map` passes 1/1. Keep full C/Rust ABI,
+  sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+  service, Sonic1, and release gates open.
+
 ## RTF OLE10 magic validation — 2026-08-26
 
 - RTF `\objdata` now rejects an invalid OLE10 magic prefix as `CL_EPARSE`
