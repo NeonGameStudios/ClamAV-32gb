@@ -69,6 +69,12 @@ static void binhex_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
         *status = CL_EUNLINK;
 }
 
+static uint32_t binhex_read_be32(const uint8_t *value)
+{
+    return ((uint32_t)value[0] << 24) | ((uint32_t)value[1] << 16) |
+           ((uint32_t)value[2] << 8) | (uint32_t)value[3];
+}
+
 int cli_binhex(cli_ctx *ctx)
 {
     fmap_t *map;
@@ -79,7 +85,8 @@ int cli_binhex(cli_ctx *ctx)
     uint32_t datalen = 0, reslen = 0;
     uint64_t data_size = 0, resource_size = 0;
     uint64_t data_reserved = 0, resource_reserved = 0;
-    int in_data = 0, in_run = 0, datafd, resfd, ret = CL_CLEAN;
+    int in_data = 0, in_run = 0, datafd, resfd;
+    cl_error_t ret = CL_CLEAN;
     enum binhex_phase { IN_BANNER,
                         IN_HEADER,
                         IN_DATA,
@@ -145,9 +152,9 @@ int cli_binhex(cli_ctx *ctx)
                     ret = CL_EPARSE;
                     break;
                 }
-                datalen = (decoded[hdrlen] << 24) | (decoded[hdrlen + 1] << 16) | (decoded[hdrlen + 2] << 8) | decoded[hdrlen + 3];
+                datalen = binhex_read_be32(decoded + hdrlen);
                 hdrlen += 4;
-                reslen = (decoded[hdrlen] << 24) | (decoded[hdrlen + 1] << 16) | (decoded[hdrlen + 2] << 8) | decoded[hdrlen + 3];
+                reslen = binhex_read_be32(decoded + hdrlen);
                 hdrlen = header_end;
                 data_size            = datalen;
                 resource_size        = reslen;

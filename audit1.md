@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## BinHex length and cleanup-status audit — 2026-08-26
+
+BinHex data/resource fork lengths were assembled by shifting promoted signed
+bytes, so a high length byte relied on undefined signed overflow behavior. The
+parser now decodes both fields bytewise in big-endian order. Its cleanup status
+was also declared as `int` while being passed to a `cl_error_t *`; it now uses
+the correct error type, removing the incompatible-pointer warnings. The
+current-source parser compiles warning-clean with GCC
+`-Wall -Wextra -Wformat-security`, and the production-linked `binhex_map` TCase
+passes 11/11. Full BinHex corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## AutoIt decoded-size portability audit — 2026-08-26
 
 Both AutoIt EA05 and EA06 compressed-member handlers previously loaded their

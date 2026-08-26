@@ -1,5 +1,15 @@
 # Wishlist
 
+## BinHex length and cleanup-status audit — 2026-08-26
+
+- Decode data/resource fork lengths bytewise in big-endian order so high-bit
+  bytes do not invoke undefined signed shifts, and keep cleanup status typed as
+  `cl_error_t` when passing it to cleanup helpers.
+- The current-source GCC parser build is warning-clean and the production-
+  linked `binhex_map` TCase passes 11/11. Keep full corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification as release gates.
+
 ## AutoIt decoded-size portability audit — 2026-08-26
 
 - Decode the EA05 and EA06 compressed-member output sizes bytewise in

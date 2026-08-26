@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## BinHex length and cleanup-status audit — 2026-08-26
+
+BinHex data/resource fork lengths now use bytewise big-endian decoding, avoiding
+undefined signed shifts when a high length byte is set. Cleanup status is also
+carried as `cl_error_t` rather than an incompatible `int` pointer, removing the
+parser’s GCC incompatible-pointer warnings. The current-source parser compiles
+warning-clean with GCC `-Wall -Wextra -Wformat-security`, and the
+production-linked `binhex_map` TCase passes 11/11. Full BinHex corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## AutoIt decoded-size portability audit — 2026-08-26
 
 AutoIt EA05 and EA06 compressed-member handlers now decode their big-endian
