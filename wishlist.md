@@ -1,5 +1,15 @@
 # Wishlist
 
+## MSXML decoded-member corpus qualification — 2026-08-26
+
+- The isolated current-source production-linked GCC `msxml_corpus` case
+  passes 1/1 across both public `CL_TYPE_XML_WORD` and `CL_TYPE_XML_XL`
+  dispatch paths over a complete XML document whose newline-delimited Base64
+  `bindata` member reaches an exact child marker after temporary materialization
+  and nested scanning.
+- Keep full MSXML/XML corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## XDP decoded-member corpus qualification — 2026-08-26
 
 - The isolated current-source production-linked GCC `xdp_corpus` case passes

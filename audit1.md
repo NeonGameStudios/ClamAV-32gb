@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## MSXML decoded-member corpus qualification — 2026-08-26
+
+The isolated authoritative current-source production-linked GCC
+`msxml_corpus` case passes 1/1 across both public `CL_TYPE_XML_WORD` and
+`CL_TYPE_XML_XL` dispatch paths over a complete XML document. Its
+newline-delimited Base64 `bindata` member reaches the exact
+`MSXML.Member.Marker.UNOFFICIAL` matcher after legacy MSXML temporary
+materialization and nested output scanning; the outer XML does not contain the
+marker. This is bounded MSXML decoded-member evidence, not complete MSXML/XML
+qualification; sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## XDP decoded-member corpus qualification — 2026-08-26
 
 The isolated authoritative current-source production-linked GCC
