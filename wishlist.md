@@ -1,5 +1,15 @@
 # Wishlist
 
+## Current-source GZip/HTML harness refresh — 2026-08-26
+
+- After synchronizing the current normalizer header and relinking the GCC
+  production harness against the current scanner, `bz_core` passes 6/6 and
+  `bz_map` passes 4/4; the current HTML boundary case remains 12/12,
+  including raw matching when normalization is skipped.
+- Keep malformed-normalization raw fallback, full HTML/GZip corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification open.
+
 ## ELF program-table admission without an entry point — 2026-08-26
 
 - Traverse and validate every declared ELF32/ELF64 program table even when

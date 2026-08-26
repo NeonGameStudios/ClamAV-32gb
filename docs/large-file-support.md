@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Current-source GZip/HTML harness refresh — 2026-08-26
+
+After synchronizing the current normalizer header and relinking the GCC
+production harness against the current scanner, the compressed-stream
+`bz_core` case passes 6/6 and the broader `bz_map` case passes 4/4. The
+current HTML boundary case remains 12/12, including raw matching when
+normalization is skipped. The separate malformed-normalization raw-fallback
+contract remains open; full HTML/GZip corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and parser-
+family qualification remain required.
+
 ## ELF program-table admission without an entry point — 2026-08-26
 
 ELF32 and ELF64 program-header traversal now validates every declared table
