@@ -1029,8 +1029,12 @@ does not provide sanitizer, production-parser, or concurrency evidence.
 
 - The same audit found TNEF's truncated-attribute branch explicitly returning
   clean. It now returns `CL_EPARSE`, marks the fmap non-cacheable, and has a
-  public `CL_TYPE_TNEF` regression; remote source/build qualification remains
-  separate because Sonic1 does not contain the local follow-up sources.
+  public `CL_TYPE_TNEF` regression. The current-source production-linked GCC
+  TNEF case passes 13/13, including the materialized `clam.tnef` fixture,
+  which has no outer `MZP` marker and reaches an exact nested marker after
+  attachment extraction. Full TNEF corpus, sanitizer, production-CVD/service,
+  materialized-large-file, and Sonic1 qualification remain separate release
+  gates.
 
 - The next legacy-parser pass found UUENCODE accepting an attachment that ended
   at EOF, a blank line, or malformed encoded data without requiring the `end`

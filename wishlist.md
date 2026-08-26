@@ -324,10 +324,12 @@ service, and Sonic1 qualification open.
 
 ## TNEF bounded-attachment qualification — 2026-08-25
 
-- The current-source production-linked GCC `tnef` case passes 12/12 for
+- The current-source production-linked GCC `tnef` case passes 13/13 for
   checksum/EOF handling, callback faults, truncation, attachment/message-body
-  paths, timeout, and temporary limit; `tnef_map` passes 1/1. Timeout retains
-  the canonical MaxScanTime reason.
+  paths, timeout, temporary limit, and the materialized `clam.tnef` corpus
+  fixture. The fixture has no outer `MZP` marker and reaches an exact nested
+  `MZP` matcher result after attachment extraction; `tnef_map` passes 1/1.
+  Timeout retains the canonical MaxScanTime reason.
 - Add complete TNEF corpus, sanitizer, production-CVD/service parity,
   materialized large-file, and Sonic1 evidence before certification.
 
