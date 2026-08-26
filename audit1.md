@@ -83,12 +83,12 @@ constructed signature set could therefore fault before the existing
 fail-closed bytecode and unknown-type checks ran. `cli_exp_eval()` and
 `lsig_eval()` now validate the evaluation context, table, entry, expression,
 and input fmap before dereference, mark the current layer incomplete, and
-disable caching on malformed confirmed matcher state. The focused
-production-linked matcher TCase passes the new malformed-definition
-regression; the same TCase remains at 35/36 because the pre-existing
-`test_fp_hash_read_failure_is_fail_visible` mixed static/shared-ABI harness
-case still segfaults. Full logical-expression, production-signature,
-sanitizer, service, Sonic1, and release gates remain open.
+disable caching on malformed confirmed matcher state. The hash-read fixture
+now owns its registered name in the engine memory pool, matching the teardown
+contract. The standalone current-source production-linked matcher TCase passes
+36/36, including the malformed-definition and fail-visible hash regressions.
+Full logical-expression, production-signature, sanitizer, service, Sonic1, and
+release gates remain open.
 
 ## OneNote modern-fallback admission — 2026-08-26
 

@@ -1505,14 +1505,19 @@ END_TEST
 START_TEST(test_fp_hash_read_failure_is_fail_visible)
 {
     static const uint8_t digest[MD5_HASH_SIZE] = {0};
+    static const char name[]                 = "FalsePositiveHashReadFailure";
+    char *owned_name;
     cl_error_t ret;
 
     thefmap.len = 1;
     thefmap.need = matcher_test_fmap_read_failure;
+    owned_name = MPOOL_CALLOC(ctx.engine->mempool, sizeof(name), 1);
+    ck_assert_ptr_nonnull(owned_name);
+    memcpy(owned_name, name, sizeof(name));
     ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine,
                                     HASH_PURPOSE_WHOLE_FILE_FP_CHECK,
                                     digest, CLI_HASH_MD5, thefmap.len,
-                                    "FalsePositiveHashReadFailure"),
+                                    owned_name),
                      CL_SUCCESS);
     hm_flush(ctx.engine->hm_fp);
 
