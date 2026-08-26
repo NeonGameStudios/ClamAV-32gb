@@ -302,47 +302,50 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
 
         cli_dbgmsg("CPIO: -- File %u --\n", ++file);
 
-        if (hdr_old.namesize) {
-            hdr_namesize = EC16(hdr_old.namesize, conv);
-            namesize     = MIN(sizeof(name), hdr_namesize);
-            hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
-            if (hdr_read != namesize) {
-                cli_dbgmsg("cli_scancpio_old: Can't read file name\n");
-                cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
-                status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
-                goto done;
+        hdr_namesize = EC16(hdr_old.namesize, conv);
+        if (!hdr_namesize) {
+            cli_mark_scan_incomplete(ctx, "CPIO member name size was zero");
+            status = CL_EPARSE;
+            goto done;
+        }
+        namesize = MIN(sizeof(name), hdr_namesize);
+        hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
+        if (hdr_read != namesize) {
+            cli_dbgmsg("cli_scancpio_old: Can't read file name\n");
+            cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
+            status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+            goto done;
+        }
+        if (cpio_advance(&pos, namesize) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+            status = CL_EPARSE;
+            goto done;
+        }
+        name[namesize - 1] = 0;
+        sanitname(name);
+        cli_dbgmsg("CPIO: Name: %s\n", name);
+        if (!strcmp(name, "TRAILER!!!")) {
+            trailer = 1;
+        }
+
+        if (namesize < hdr_namesize) {
+            if (hdr_namesize % 2) {
+                hdr_namesize++;
             }
-            if (cpio_advance(&pos, namesize) < 0) {
+            if (cpio_advance(&pos, hdr_namesize - namesize) < 0) {
                 cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
                 status = CL_EPARSE;
                 goto done;
             }
-            name[namesize - 1] = 0;
-            sanitname(name);
-            cli_dbgmsg("CPIO: Name: %s\n", name);
-            if (!strcmp(name, "TRAILER!!!")) {
-                trailer = 1;
+        } else if (hdr_namesize % 2) {
+            if (cpio_advance(&pos, 1) < 0) {
+                cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                status = CL_EPARSE;
+                goto done;
             }
-
-            if (namesize < hdr_namesize) {
-                if (hdr_namesize % 2) {
-                    hdr_namesize++;
-                }
-                if (cpio_advance(&pos, hdr_namesize - namesize) < 0) {
-                    cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
-                    status = CL_EPARSE;
-                    goto done;
-                }
-            } else if (hdr_namesize % 2) {
-                if (cpio_advance(&pos, 1) < 0) {
-                    cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
-                    status = CL_EPARSE;
-                    goto done;
-                }
-            }
-
-            fmap_name = name;
         }
+
+        fmap_name = name;
         parsed_filesize = (uint32_t)((uint32_t)EC16(hdr_old.filesize[0], conv) << 16 | EC16(hdr_old.filesize[1], conv));
         filesize        = (size_t)parsed_filesize;
         cli_dbgmsg("CPIO: Filesize: %zu\n", filesize);
@@ -444,34 +447,37 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
             status = CL_EPARSE;
             goto done;
         }
+        if (!parsed_namesize) {
+            cli_mark_scan_incomplete(ctx, "CPIO ODC member name size was zero");
+            status = CL_EPARSE;
+            goto done;
+        }
         hdr_namesize = (size_t)parsed_namesize;
-        if (hdr_namesize) {
-            namesize = MIN(sizeof(name), hdr_namesize);
-            hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
-            if (hdr_read != namesize) {
-                cli_dbgmsg("cli_scancpio_odc: Can't read file name\n");
-                cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
-                status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
-                goto done;
-            }
-            if (cpio_advance(&pos, namesize) < 0) {
+        namesize = MIN(sizeof(name), hdr_namesize);
+        hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
+        if (hdr_read != namesize) {
+            cli_dbgmsg("cli_scancpio_odc: Can't read file name\n");
+            cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
+            status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+            goto done;
+        }
+        if (cpio_advance(&pos, namesize) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+            status = CL_EPARSE;
+            goto done;
+        }
+        name[namesize - 1] = 0;
+        sanitname(name);
+        cli_dbgmsg("CPIO: Name: %s\n", name);
+        if (!strcmp(name, "TRAILER!!!")) {
+            trailer = 1;
+        }
+
+        if (namesize < hdr_namesize) {
+            if (cpio_advance(&pos, hdr_namesize - namesize) < 0) {
                 cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
                 status = CL_EPARSE;
                 goto done;
-            }
-            name[namesize - 1] = 0;
-            sanitname(name);
-            cli_dbgmsg("CPIO: Name: %s\n", name);
-            if (!strcmp(name, "TRAILER!!!")) {
-                trailer = 1;
-            }
-
-            if (namesize < hdr_namesize) {
-                if (cpio_advance(&pos, hdr_namesize - namesize) < 0) {
-                    cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
-                    status = CL_EPARSE;
-                    goto done;
-                }
             }
         }
 
@@ -574,51 +580,54 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
             status = CL_EPARSE;
             goto done;
         }
+        if (!parsed_namesize) {
+            cli_mark_scan_incomplete(ctx, "CPIO newc member name size was zero");
+            status = CL_EPARSE;
+            goto done;
+        }
         hdr_namesize = (size_t)parsed_namesize;
-        if (hdr_namesize) {
-            namesize = MIN(sizeof(name), hdr_namesize);
-            hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
-            if (hdr_read != namesize) {
-                cli_dbgmsg("cli_scancpio_newc: Can't read file name\n");
-                cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
-                status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
-                goto done;
-            }
-            if (cpio_advance(&pos, namesize) < 0) {
-                cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
-                status = CL_EPARSE;
-                goto done;
-            }
-            name[namesize - 1] = 0;
-            sanitname(name);
-            cli_dbgmsg("CPIO: Name: %s\n", name);
-            if (!strcmp(name, "TRAILER!!!")) {
-                trailer = 1;
-            }
+        namesize = MIN(sizeof(name), hdr_namesize);
+        hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
+        if (hdr_read != namesize) {
+            cli_dbgmsg("cli_scancpio_newc: Can't read file name\n");
+            cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
+            status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+            goto done;
+        }
+        if (cpio_advance(&pos, namesize) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+            status = CL_EPARSE;
+            goto done;
+        }
+        name[namesize - 1] = 0;
+        sanitname(name);
+        cli_dbgmsg("CPIO: Name: %s\n", name);
+        if (!strcmp(name, "TRAILER!!!")) {
+            trailer = 1;
+        }
 
-            if (hdr_namesize > SIZE_MAX - sizeof(hdr_newc)) {
+        if (hdr_namesize > SIZE_MAX - sizeof(hdr_newc)) {
+            cli_mark_scan_incomplete(ctx, "CPIO member name exceeds the coordinate range");
+            status = CL_EPARSE;
+            goto done;
+        }
+        pad = (4 - (sizeof(hdr_newc) + hdr_namesize) % 4) % 4;
+        if (namesize < hdr_namesize) {
+            if (cpio_align_size(hdr_namesize, 4, &hdr_namesize) < 0) {
                 cli_mark_scan_incomplete(ctx, "CPIO member name exceeds the coordinate range");
                 status = CL_EPARSE;
                 goto done;
             }
-            pad = (4 - (sizeof(hdr_newc) + hdr_namesize) % 4) % 4;
-            if (namesize < hdr_namesize) {
-                if (cpio_align_size(hdr_namesize, 4, &hdr_namesize) < 0) {
-                    cli_mark_scan_incomplete(ctx, "CPIO member name exceeds the coordinate range");
-                    status = CL_EPARSE;
-                    goto done;
-                }
-                if (cpio_advance(&pos, hdr_namesize - namesize) < 0) {
-                    cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
-                    status = CL_EPARSE;
-                    goto done;
-                }
-            } else if (pad) {
-                if (cpio_advance(&pos, pad) < 0) {
-                    cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
-                    status = CL_EPARSE;
-                    goto done;
-                }
+            if (cpio_advance(&pos, hdr_namesize - namesize) < 0) {
+                cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                status = CL_EPARSE;
+                goto done;
+            }
+        } else if (pad) {
+            if (cpio_advance(&pos, pad) < 0) {
+                cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                status = CL_EPARSE;
+                goto done;
             }
         }
 

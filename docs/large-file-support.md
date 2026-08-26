@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## CPIO zero-name member admission — 2026-08-26
+
+The old binary, ODC, newc, and CRC CPIO handlers now reject zero `namesize`
+members as malformed, marking the layer incomplete and returning `CL_EPARSE`
+before member dispatch. The current-source production-linked GCC
+`cpio_numeric` case passes 2/2, including all four format paths; the existing
+`cpio`, `cpio_map`, and `cpio_crc` cases pass 1/1, 4/4, and 4/4. Full CPIO
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## BinHex length and cleanup-status audit — 2026-08-26
 
 BinHex data/resource fork lengths now use bytewise big-endian decoding, avoiding

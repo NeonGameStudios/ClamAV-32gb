@@ -19484,12 +19484,81 @@ static void cpio_test_assert_malformed_numeric_field(const uint8_t *data, size_t
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, options, NULL, NULL, NULL, NULL,
                         type, NULL);
-    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_msg(ret == CL_EPARSE, "%s returned %s (%d)", type, cl_strerror(ret), ret);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert_ptr_null(last_alert);
     ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
 }
+
+static void cpio_test_write_u16le(uint8_t *field, uint16_t value)
+{
+    field[0] = (uint8_t)(value & 0xffU);
+    field[1] = (uint8_t)(value >> 8);
+}
+
+static void cpio_test_make_newc_zero_name_archive(uint8_t *archive, const char *magic)
+{
+    memset(archive, '0', 232);
+    memcpy(archive, magic, 6);
+    memcpy(archive + 110, magic, 6);
+    cpio_test_write_hex8(archive + 110 + 94, 11);
+    memcpy(archive + 220, "TRAILER!!!", 10);
+    archive[230] = '\0';
+}
+
+static void cpio_test_make_odc_zero_name_archive(uint8_t *archive)
+{
+    memset(archive, '0', 163);
+    memcpy(archive, "070707", 6);
+    memcpy(archive + 76, "070707", 6);
+    memcpy(archive + 76 + 59, "000011", 6);
+    memcpy(archive + 152, "TRAILER!!!", 10);
+    archive[162] = '\0';
+}
+
+static void cpio_test_make_old_zero_name_archive(uint8_t *archive)
+{
+    memset(archive, 0, 64);
+    cpio_test_write_u16le(archive, 070707);
+    cpio_test_write_u16le(archive + 26, 070707);
+    cpio_test_write_u16le(archive + 26 + 20, 11);
+    memcpy(archive + 52, "TRAILER!!!", 10);
+    archive[62] = '\0';
+}
+
+START_TEST(test_cpio_zero_name_size_is_fail_visible)
+{
+    uint8_t newc[232];
+    uint8_t crc[232];
+    uint8_t odc[163];
+    uint8_t old[64];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    cpio_test_make_newc_zero_name_archive(newc, "070701");
+    cpio_test_assert_malformed_numeric_field(newc, sizeof(newc), "CL_TYPE_CPIO_NEWC",
+                                              scan_engine, &options);
+    cpio_test_make_newc_zero_name_archive(crc, "070702");
+    cpio_test_assert_malformed_numeric_field(crc, sizeof(crc), "CL_TYPE_CPIO_CRC",
+                                              scan_engine, &options);
+    cpio_test_make_odc_zero_name_archive(odc);
+    cpio_test_assert_malformed_numeric_field(odc, sizeof(odc), "CL_TYPE_CPIO_ODC",
+                                              scan_engine, &options);
+    cpio_test_make_old_zero_name_archive(old);
+    cpio_test_assert_malformed_numeric_field(old, sizeof(old), "CL_TYPE_CPIO_OLD",
+                                              scan_engine, &options);
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
 
 START_TEST(test_cpio_fixed_numeric_fields_reject_prefixes)
 {
@@ -40177,6 +40246,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cpio_crc, test_cpio_crc_checksum_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_cpio_numeric);
     tcase_add_checked_fixture(tc_cpio_numeric, cl_setup, cl_teardown);
+    tcase_add_test(tc_cpio_numeric, test_cpio_zero_name_size_is_fail_visible);
     tcase_add_test(tc_cpio_numeric, test_cpio_fixed_numeric_fields_reject_prefixes);
     suite_add_tcase(s, tc_cpio_map);
     tcase_add_checked_fixture(tc_cpio_map, cl_setup, cl_teardown);

@@ -1,5 +1,15 @@
 # Wishlist
 
+## CPIO zero-name member admission — 2026-08-26
+
+- Reject zero `namesize` members in old binary, ODC, newc, and CRC CPIO
+  streams as explicit incomplete `CL_EPARSE` results before member dispatch.
+- The current-source production-linked GCC `cpio_numeric` case passes 2/2,
+  while `cpio`, `cpio_map`, and `cpio_crc` pass 1/1, 4/4, and 4/4. Keep
+  complete CPIO corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  as release gates.
+
 ## BinHex length and cleanup-status audit — 2026-08-26
 
 - Decode data/resource fork lengths bytewise in big-endian order so high-bit

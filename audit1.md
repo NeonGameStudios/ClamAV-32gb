@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## CPIO zero-name member admission — 2026-08-26
+
+The old binary, ODC, newc, and CRC CPIO handlers previously accepted a member
+with a zero `namesize` and could still complete cleanly at a later trailer.
+Each handler now rejects that malformed member as `CL_EPARSE`, marks the layer
+incomplete, and preserves non-cacheability before any member data is handed to
+the matcher. The current-source production-linked GCC `cpio_numeric` case now
+passes 2/2, including newc, CRC, ODC, and old-binary zero-name regressions;
+`cpio`, `cpio_map`, and `cpio_crc` remain 1/1, 4/4, and 4/4. Full CPIO
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## BinHex length and cleanup-status audit — 2026-08-26
 
 BinHex data/resource fork lengths were assembled by shifting promoted signed
