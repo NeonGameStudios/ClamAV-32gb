@@ -860,6 +860,11 @@ int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigne
             return -1;
         }
 
+        if (id >= MAX_LDB_SUBSIGS) {
+            cli_errmsg("cli_ac_chklsig: Subsignature id %u exceeds MAX_LDB_SUBSIGS\n", id);
+            return -1;
+        }
+
         if (parse_only)
             val = id;
         else

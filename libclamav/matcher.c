@@ -1120,6 +1120,7 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
     cl_error_t status           = CL_CLEAN;
     unsigned evalcnt            = 0;
     uint64_t evalids            = 0;
+    int expression_status;
     fmap_t *new_map             = NULL;
     struct cli_ac_lsig *ac_lsig;
     char *exp;
@@ -1148,8 +1149,16 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
     if (status != CL_SUCCESS)
         return status;
 
-    if (cli_ac_chklsig(exp, exp_end, acdata->lsigcnt[lsid], &evalcnt, &evalids, 0) != 1) {
+    expression_status = cli_ac_chklsig(exp, exp_end, acdata->lsigcnt[lsid], &evalcnt, &evalids, 0);
+    if (expression_status < 0) {
+        cli_mark_scan_incomplete(ctx, "logical signature expression is malformed");
+        ctx->fmap->dont_cache_flag = 1;
+        status = CL_EPARSE;
+        goto done;
+    }
+    if (expression_status != 1) {
         // Logical expression did not match.
+        status = CL_CLEAN;
         goto done;
     }
 

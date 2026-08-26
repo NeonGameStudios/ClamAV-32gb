@@ -1,5 +1,16 @@
 # Wishlist
 
+## Logical-expression parse-status propagation — 2026-08-26
+
+- Reject out-of-range logical subsignature IDs before indexing the fixed
+  64-entry arrays, and preserve `CL_EPARSE` for malformed expressions instead
+  of allowing the evaluator's initial clean status to escape.
+- A focused current-source GCC section-garbage-collected harness passes direct
+  parser and `cli_exp_eval()` checks for the boundary. Rerun the full
+  production-linked matcher TCase with this regression; keep full
+  logical-expression, production-signature, sanitizer, service, Sonic1, and
+  release qualification open.
+
 ## JPEG short-SOI admission — 2026-08-26
 
 - Treat a forced JPEG layer containing only the two-byte `FF D8` start-of-image

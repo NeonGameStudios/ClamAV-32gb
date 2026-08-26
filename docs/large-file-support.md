@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Logical-expression parse-status propagation — 2026-08-26
+
+The logical matcher now rejects an out-of-range subsignature ID before it can
+index beyond the fixed 64-entry arrays. It also preserves the `-1` syntax
+failure from `cli_ac_chklsig()` as `CL_EPARSE`, marks the current layer
+incomplete, and disables caching instead of treating malformed logic as a
+clean non-match. A focused current-source GCC section-garbage-collected
+harness passes direct parser and `cli_exp_eval()` checks for the boundary; the
+full production-linked matcher TCase must be rerun with this regression. Full
+logical-expression, production-signature, sanitizer, service, Sonic1, and
+release qualification remain required.
+
 ## JPEG short-SOI admission — 2026-08-26
 
 The JPEG parser now treats a forced layer containing only the two-byte `FF D8`

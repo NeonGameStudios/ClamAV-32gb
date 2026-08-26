@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Logical-expression parse-status propagation — 2026-08-26
+
+The logical matcher previously collapsed a malformed expression into an
+ordinary non-match: `cli_ac_chklsig()` returned `-1`, but `lsig_eval()` tested
+only for `1` and retained its initial clean status. Out-of-range subsignature
+IDs could also address beyond the fixed 64-entry logical-signature arrays.
+Runtime expression evaluation now bounds IDs and turns parse errors into
+`CL_EPARSE`, marks the layer incomplete, and disables caching. A focused
+current-source GCC section-garbage-collected harness passes direct parser and
+`cli_exp_eval()` out-of-range-ID checks; the full production-linked matcher
+TCase must be rerun with the added regression. Full logical-expression,
+production-signature, sanitizer, service, Sonic1, and release qualification
+remain open.
+
 ## JPEG short-SOI admission — 2026-08-26
 
 The JPEG parser previously returned its initial `CL_SUCCESS` when a forced
