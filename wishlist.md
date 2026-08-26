@@ -1,5 +1,14 @@
 # Wishlist
 
+## Mach-O universal-binary corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC macho case passes 11/11,
+  macho_timeout passes 2/2, and the isolated macho_corpus case passes 1/1
+  over a valid one-architecture FAT binary whose bounded thin Mach-O member
+  reaches an exact child matcher through universal-member traversal.
+- Keep full Mach-O corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## XZ decompressed-output corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC `xz` case passes 2/2,

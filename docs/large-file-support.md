@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Mach-O universal-binary corpus qualification — 2026-08-26
+
+The current-source production-linked GCC macho case passes 11/11,
+macho_timeout passes 2/2, and the isolated macho_corpus case passes 1/1.
+It uses a valid one-architecture FAT binary with a complete thin Mach-O member
+and bounded child payload; the universal root does not begin with MZP, and the
+exact Macho.Member.MZ.UNOFFICIAL alert is reached through universal-member
+traversal. Full Mach-O corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## XZ decompressed-output corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `xz` case passes 2/2, `xz_trailing`

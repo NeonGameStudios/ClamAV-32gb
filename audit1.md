@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## Mach-O universal-binary corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC macho case passes
+11/11, macho_timeout passes 2/2, and the isolated macho_corpus case passes
+1/1. The corpus is a valid one-architecture FAT binary containing a complete
+thin Mach-O member and a bounded child payload; the universal root does not
+begin with MZP, and the exact Macho.Member.MZ.UNOFFICIAL alert is reached
+through universal-member traversal. This is bounded universal-binary and
+nested-dispatch evidence, not complete Mach-O corpus qualification; sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## XZ decompressed-output corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `xz` case passes 2/2,

@@ -33885,6 +33885,83 @@ static void macho_test_write_u64(uint8_t *dst, uint64_t value)
     macho_test_write_u32(dst + 4, (uint32_t)(value >> 32));
 }
 
+START_TEST(test_macho_unibin_corpus_detects_embedded_mz)
+{
+    enum {
+        FAT_HEADER_SIZE   = 8,
+        FAT_ARCH_SIZE     = 20,
+        MEMBER_OFFSET     = FAT_HEADER_SIZE + FAT_ARCH_SIZE,
+        MACHO_HEADER_SIZE = 28,
+        CHILD_SIZE        = 64,
+        MEMBER_SIZE       = MACHO_HEADER_SIZE + CHILD_SIZE,
+        ARCHIVE_SIZE      = MEMBER_OFFSET + MEMBER_SIZE
+    };
+    static const uint8_t child[CHILD_SIZE] = {'M', 'Z', 'P'};
+    uint8_t data[ARCHIVE_SIZE] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    int ret;
+
+    /* A one-architecture FAT binary contains a complete thin 32-bit Mach-O
+     * member followed by a bounded child payload. The member offset is equal
+     * to the end of the architecture table, which is the minimum valid
+     * forward reference for cli_scanmacho_unibin(). */
+    macho_test_write_u32(data + 0, 0xcafebabeU);
+    macho_test_write_u32(data + 4, 1U);
+    macho_test_write_u32(data + 8, 7U);  /* CPU_TYPE_I386. */
+    macho_test_write_u32(data + 12, 3U); /* CPU_SUBTYPE_I386_ALL. */
+    macho_test_write_u32(data + 16, MEMBER_OFFSET);
+    macho_test_write_u32(data + 20, MEMBER_SIZE);
+    macho_test_write_u32(data + 24, 2U); /* 4-byte alignment. */
+    macho_test_write_u32(data + MEMBER_OFFSET, 0xfeedfaceU);
+    macho_test_write_u32(data + MEMBER_OFFSET + 4, 7U);
+    macho_test_write_u32(data + MEMBER_OFFSET + 8, 3U);
+    macho_test_write_u32(data + MEMBER_OFFSET + 12, 2U); /* MH_EXECUTE. */
+    macho_test_write_u32(data + MEMBER_OFFSET + 16, 0U);
+    macho_test_write_u32(data + MEMBER_OFFSET + 20, 0U);
+    macho_test_write_u32(data + MEMBER_OFFSET + 24, 0U);
+    memcpy(data + MEMBER_OFFSET + MACHO_HEADER_SIZE, child, sizeof(child));
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Macho.Member.MZ", "4d5a50", 0, 0, 0,
+                         "28", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(data, "MZP", 3) != 0,
+                  "Mach-O universal-binary root unexpectedly satisfies child signature");
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_MACHO_UNIBIN", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "Mach-O universal-binary member was not scanned: %s", cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Macho.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_macho_native_metadata_preserves_64bit_sections)
 {
     enum {
@@ -37614,6 +37691,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_bz_map = tcase_create("bz_map");
     TCase *tc_bz_core = tcase_create("bz_core");
     TCase *tc_macho = tcase_create("macho");
+    TCase *tc_macho_corpus = tcase_create("macho_corpus");
     TCase *tc_macho_timeout = tcase_create("macho_timeout");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
     TCase *tc_macho_map = tcase_create("macho_map");
@@ -37997,6 +38075,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_macho, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_macho, test_macho_32bit_section_alignment_overflow_is_fail_visible);
     tcase_add_test(tc_macho, test_macho_32bit_entrypoint_coordinate_overflow_is_fail_visible);
+    suite_add_tcase(s, tc_macho_corpus);
+    tcase_add_checked_fixture(tc_macho_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_macho_corpus, test_macho_unibin_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_macho_timeout);
     tcase_add_test(tc_macho_timeout, test_macho_time_limit_is_fail_visible);
     tcase_add_test(tc_macho_timeout, test_macho_unibin_time_limit_is_fail_visible);
