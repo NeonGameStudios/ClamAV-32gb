@@ -6,6 +6,16 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## Mail encoded-attachment corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `mail` case passes
+10/10, including a public fmap scan of the materialized `clam.mail` fixture.
+Its exact embedded `MZP` marker is absent from the outer message and is
+detected only after encoded-attachment extraction and nested handoff. The
+`mail_api` case remains 2/2. Full MIME/mbox corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## SIS compressed-member corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `sis` case passes 1/1

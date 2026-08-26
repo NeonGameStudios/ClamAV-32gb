@@ -1,5 +1,15 @@
 # Wishlist
 
+## Mail encoded-attachment corpus qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `mail` case passes
+  10/10, including a public fmap scan of materialized `clam.mail`; its exact
+  embedded `MZP` marker is absent from the outer message and is detected only
+  after encoded-attachment extraction and nested handoff. The `mail_api` case
+  remains 2/2.
+- Keep full MIME/mbox corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release qualification open.
+
 ## SIS compressed-member corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `sis` case passes
