@@ -415,13 +415,14 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
     uint8_t buff[50]; /* 50 should be sufficient for now */
     uint16_t len_u16;
     size_t offset = 0;
-    unsigned int i, len, segment = 0;
+    unsigned int i, len;
+    uint64_t segment = 0;
     bool found_comment = false;
     bool found_app     = false;
 
-    uint32_t num_JFIF  = 0;
-    uint32_t num_Exif  = 0;
-    uint32_t num_SPIFF = 0;
+    uint64_t num_JFIF  = 0;
+    uint64_t num_Exif  = 0;
+    uint64_t num_SPIFF = 0;
 
     cli_dbgmsg("in cli_parsejpeg()\n");
 
@@ -489,10 +490,10 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
         }
         if (i == 16) {
             if (SCAN_HEURISTIC_BROKEN_MEDIA) {
-                cli_warnmsg("JPEG: Spurious bytes before segment %u\n", segment);
+                cli_warnmsg("JPEG: Spurious bytes before segment " STDu64 "\n", segment);
                 status = cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Media.JPEG.SpuriousBytesBeforeSegment");
             } else {
-                cli_dbgmsg("Spurious bytes before segment %u\n", segment);
+                cli_dbgmsg("Spurious bytes before segment " STDu64 "\n", segment);
             }
             goto done;
         }
@@ -531,7 +532,7 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
             }
         }
         len = (unsigned int)be16_to_host(len_u16);
-        cli_dbgmsg("segment[%d] = 0x%02x, Length %u\n", segment, marker, len);
+        cli_dbgmsg("segment[" STDu64 "] = 0x%02x, Length %u\n", segment, marker, len);
 
         if (len < 2) {
             cli_warnmsg("JPEG: Invalid segment size\n");
@@ -565,7 +566,8 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                     if (SCAN_HEURISTIC_BROKEN_MEDIA) {
                         if (found_app && num_JFIF > 0) {
                             cli_warnmsg("JPEG: Duplicate Application Marker found (JFIF)\n");
-                            cli_warnmsg("JPEG: Already observed JFIF: %d, Exif: %d, SPIFF: %d\n", num_JFIF, num_Exif, num_SPIFF);
+                            cli_warnmsg("JPEG: Already observed JFIF: " STDu64 ", Exif: " STDu64 ", SPIFF: " STDu64 "\n",
+                                        num_JFIF, num_Exif, num_SPIFF);
                             status = cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Media.JPEG.JFIFdupAppMarker");
                             goto done;
                         }
@@ -576,8 +578,9 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                             /* The JFIF segment is technically required to appear first, though it has been observed
                              * appearing in segment 2 in functional images when segment 1 is a comment or an Exif segment.
                              * If segment 1 wasn't a comment or Exif, then the file structure is unusual. */
-                            cli_warnmsg("JPEG: JFIF marker at wrong position, found in segment # %d\n", segment);
-                            cli_warnmsg("JPEG: Already observed JFIF: %d, Exif: %d, SPIFF: %d\n", num_JFIF, num_Exif, num_SPIFF);
+                            cli_warnmsg("JPEG: JFIF marker at wrong position, found in segment # " STDu64 "\n", segment);
+                            cli_warnmsg("JPEG: Already observed JFIF: " STDu64 ", Exif: " STDu64 ", SPIFF: " STDu64 "\n",
+                                        num_JFIF, num_Exif, num_SPIFF);
                             status = cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Media.JPEG.JFIFmarkerBadPosition");
                             goto done;
                         }
@@ -615,7 +618,8 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                     if (SCAN_HEURISTIC_BROKEN_MEDIA) {
                         if (found_app && (num_Exif > 0 || num_SPIFF > 0)) {
                             cli_warnmsg("JPEG: Duplicate Application Marker found (Exif)\n");
-                            cli_warnmsg("JPEG: Already observed JFIF: %d, Exif: %d, SPIFF: %d\n", num_JFIF, num_Exif, num_SPIFF);
+                            cli_warnmsg("JPEG: Already observed JFIF: " STDu64 ", Exif: " STDu64 ", SPIFF: " STDu64 "\n",
+                                        num_JFIF, num_Exif, num_SPIFF);
                             status = cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Media.JPEG.ExifDupAppMarker");
                             goto done;
                         }
@@ -691,7 +695,8 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                     if (SCAN_HEURISTIC_BROKEN_MEDIA) {
                         if (found_app) {
                             cli_warnmsg("JPEG: Duplicate Application Marker found (SPIFF)\n");
-                            cli_warnmsg("JPEG: Already observed JFIF: %d, Exif: %d, SPIFF: %d\n", num_JFIF, num_Exif, num_SPIFF);
+                            cli_warnmsg("JPEG: Already observed JFIF: " STDu64 ", Exif: " STDu64 ", SPIFF: " STDu64 "\n",
+                                        num_JFIF, num_Exif, num_SPIFF);
                             status = cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Media.JPEG.SPIFFdupAppMarker");
                             goto done;
                         }

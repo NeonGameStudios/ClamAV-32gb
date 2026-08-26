@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## JPEG parser counter width audit — 2026-08-26
+
+The JPEG parser now stores its segment ordinal and JFIF, Exif, and SPIFF
+application-marker counters as `uint64_t`. A valid 32-GiB input can contain
+more than 2^32 minimum-sized segments, so 32-bit counters could wrap and alter
+duplicate-marker or marker-position heuristics after the parser's native-width
+coordinate fix. Diagnostics use the native-width format macro. The
+current-source JPEG object compiles warning-clean under GCC
+`-Wall -Wextra -Wformat-security`; the production-linked `jpeg_map` case
+passes 12/12 and `jpeg_corpus` passes 1/1. Full JPEG corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
+
 ## HFS+ attributes-tree UTF-16 name boundary — 2026-08-26
 
 The HFS+ attributes-tree walker previously compared a UTF-16 character count

@@ -1,5 +1,16 @@
 # Wishlist
 
+## JPEG parser counter width audit — 2026-08-26
+
+- Keep the JPEG segment ordinal and JFIF, Exif, and SPIFF application-marker
+  counters at native 64-bit width so they cannot wrap during a 32-GiB parse and
+  alter duplicate-marker or marker-position decisions.
+- The current-source JPEG object compiles warning-clean under GCC
+  `-Wall -Wextra -Wformat-security`; production-linked `jpeg_map` passes
+  12/12 and `jpeg_corpus` passes 1/1. Keep full JPEG corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification open.
+
 ## HFS+ attributes-tree UTF-16 name boundary — 2026-08-26
 
 - Validate the UTF-16 byte span, fixed attribute record, and declared payload

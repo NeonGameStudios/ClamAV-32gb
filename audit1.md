@@ -10198,6 +10198,19 @@ full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_PDF` stays pending.
 
+## JPEG parser counter width audit — 2026-08-26
+
+The JPEG parser's segment ordinal and JFIF, Exif, and SPIFF application-marker
+counters were still 32-bit. A valid 32-GiB input can contain more than 2^32
+minimum-sized segments, so those values could wrap and change duplicate-marker
+or marker-position decisions after the raw coordinate fix. The counters now
+use `uint64_t` and their diagnostics use the native-width format macro. The
+current-source JPEG object compiles warning-clean under GCC
+`-Wall -Wextra -Wformat-security`; the production-linked `jpeg_map` case
+passes 12/12 and `jpeg_corpus` passes 1/1. Full JPEG corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service, and
+Sonic1 qualification remain open.
+
 ## Graphics fallback public API read-failure audit — 2026-08-25
 
 The isolated current-source production-linked `graphics_map`/`graphics_api`
