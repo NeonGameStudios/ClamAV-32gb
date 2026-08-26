@@ -71,9 +71,9 @@
 ## OLE2 embedded-member qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `ole2` case passes
-  12/12, including the materialized `has_png_and_jpeg.xls` fixture and an
-  exact embedded-PNG child detection. The existing `ole2_xlm` and `ole2_map`
-  cases pass 2/2 each.
+  13/13, including materialized `has_png_and_jpeg.xls` and `clam.ppt` fixtures
+  with exact embedded-PNG and embedded-MZP child detection. The existing
+  `ole2_xlm` and `ole2_map` cases pass 2/2 each.
 - Keep complete OLE2/VBA/XLM corpus, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, Sonic1, and release
   qualification open.
@@ -3664,11 +3664,12 @@ and Sonic1 qualification as release gates.
 
 ## OLE2 focused parser qualification — 2026-08-25
 
-- The focused current-source production-linked GCC `ole2` TCase passes 11/11;
+- The focused current-source production-linked GCC `ole2` TCase passes 13/13;
   `ole2_xlm` and `ole2_map` pass 2/2 each across missing-map/API admission,
   header/property-tree faults, MSO prefix and CFB geometry boundaries, VBA
   materialization, timeout, native encryption-window read faults, output-close
-  propagation, XLM sector handling, and 64-bit stream sizes. Required failures
+  propagation, XLM sector handling, 64-bit stream sizes, and materialized
+  PowerPoint child detection. Required failures
   remain incomplete and non-cacheable, with `CL_EREAD` and the shared timeout
   reason preserved.
 - Complete the OLE/VBA/XLM corpus and fixture-specific sector, quota, and

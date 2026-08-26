@@ -3664,6 +3664,7 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_rust_lha, test_rust_lha_co
 contains unit_tests/check_clamav.c 'tcase_create("rust_alz")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_rust_alz, test_rust_alz_corpus_detects_nested_members)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_ole2, test_ole2_corpus_detects_embedded_png)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_ole2, test_ole2_ppt_corpus_detects_embedded_mz)'
 contains unit_tests/check_clamav.c 'tcase_create("iso")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_iso, test_iso_corpus_detects_embedded_png)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_zip, test_zip_corpus_detects_embedded_png)'

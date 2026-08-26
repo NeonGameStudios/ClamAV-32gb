@@ -79,11 +79,12 @@ open.
 ## OLE2 embedded-member qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `ole2` case passes
-12/12, including the existing map, property-tree, MSO, VBA, timeout, and
-output-failure boundaries plus a public-API scan of the materialized
-`has_png_and_jpeg.xls` corpus fixture. The new regression detects an exact
-embedded PNG child signature, proving the OLE2 extraction-to-child matcher
-handoff for this corpus. The `ole2_xlm` and `ole2_map` cases remain 2/2 each.
+13/13, including the existing map, property-tree, MSO, VBA, timeout, and
+output-failure boundaries plus public-API scans of the materialized
+`has_png_and_jpeg.xls` and `clam.ppt` corpus fixtures. The new regressions
+detect exact embedded PNG and MZP child signatures, proving the OLE2
+extraction-to-child matcher handoff for both corpus paths. The `ole2_xlm` and
+`ole2_map` cases remain 2/2 each.
 Full OLE2/VBA/XLM corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and release qualification remain
 open.
@@ -9084,13 +9085,14 @@ open, so `CL_TYPE_MSEXE` stays pending.
 
 ## OLE2 focused parser qualification — 2026-08-25
 
-The focused current-source production-linked GCC `ole2` TCase passes 11/11;
+The focused current-source production-linked GCC `ole2` TCase passes 13/13;
 the existing `ole2_xlm` and `ole2_map` TCases pass 2/2 each. Together they
 cover missing-map and public-API admission, truncated and callback-failed
 headers, property-tree truncation, MSO prefix range classification, invalid
 CFB geometry, VBA materialization failure, shared timeout propagation, native
 encryption-window admission/read failure, output-close failure, XLM sector
-read failure, and 64-bit directory stream-size handling. Required failures
+read failure, 64-bit directory stream-size handling, and materialized
+PowerPoint child detection. Required failures
 remain incomplete and non-cacheable; fully in-range fmap callbacks preserve
 `CL_EREAD`, while shared timeout state retains
 `Heuristics.Limits.Exceeded.MaxScanTime`.
