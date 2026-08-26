@@ -87,6 +87,31 @@ function(decrypt_testfile test_file)
     ADD_DEPENDENCIES(tgt_${test_file_tgt} tgt_build_unit_tests_directories)
 endfunction()
 
+set(LARGEFILE_AUTOIT_FIXTURE_SCRIPT
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/largefile_autoit_stored_fixture.py)
+set(LARGEFILE_AUTOIT_FIXTURES
+    ${CMAKE_CURRENT_BINARY_DIR}/autoit-ea05-stored.bin
+    ${CMAKE_CURRENT_BINARY_DIR}/autoit-ea05-compressed.bin
+    ${CMAKE_CURRENT_BINARY_DIR}/autoit-ea06-script.bin)
+
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/autoit-ea05-stored.bin
+    COMMAND ${Python3_EXECUTABLE} ${LARGEFILE_AUTOIT_FIXTURE_SCRIPT}
+            ${CMAKE_CURRENT_BINARY_DIR}/autoit-ea05-stored.bin
+    DEPENDS ${LARGEFILE_AUTOIT_FIXTURE_SCRIPT})
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/autoit-ea05-compressed.bin
+    COMMAND ${Python3_EXECUTABLE} ${LARGEFILE_AUTOIT_FIXTURE_SCRIPT}
+            --compressed ${CMAKE_CURRENT_BINARY_DIR}/autoit-ea05-compressed.bin
+    DEPENDS ${LARGEFILE_AUTOIT_FIXTURE_SCRIPT})
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/autoit-ea06-script.bin
+    COMMAND ${Python3_EXECUTABLE} ${LARGEFILE_AUTOIT_FIXTURE_SCRIPT}
+            --ea06-script ${CMAKE_CURRENT_BINARY_DIR}/autoit-ea06-script.bin
+    DEPENDS ${LARGEFILE_AUTOIT_FIXTURE_SCRIPT})
+add_custom_target(tgt_largefile_autoit_fixtures ALL DEPENDS ${LARGEFILE_AUTOIT_FIXTURES})
+add_dependencies(tgt_largefile_autoit_fixtures tgt_build_unit_tests_directories)
+
 foreach(TESTFILE ${ENCRYPTED_TESTFILES})
     decrypt_testfile(${TESTFILE})
 endforeach()

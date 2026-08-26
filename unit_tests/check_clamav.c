@@ -35686,6 +35686,106 @@ START_TEST(test_7z_sfx_corpus_detects_embedded_member)
 }
 END_TEST
 
+START_TEST(test_autoit_corpus_detects_embedded_markers)
+{
+    static const struct {
+        const char *filename;
+        const char *signature;
+        const char *name;
+        bool expect_detection;
+    } fixtures[] = {
+        {"autoit-ea05-stored.bin", "41424344", "AutoIt.EA05.Stored.ABCD", true},
+        {"autoit-ea05-compressed.bin", "41424344", "AutoIt.EA05.Compressed.ABCD", true},
+        {"autoit-ea06-script.bin", "6175746f6974656130366d61726b6572", "AutoIt.EA06.Script.Marker", false}
+    };
+    struct cl_scan_options options;
+    unsigned int i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(fixtures) / sizeof(fixtures[0]); i++) {
+        struct cl_engine *scan_engine;
+        char file_path[PATH_MAX];
+        struct stat st;
+        uint8_t *data;
+        size_t data_size;
+        size_t offset = 0;
+        int fd;
+        fmap_t *map;
+        cl_verdict_t verdict;
+        const char *last_alert;
+        uint64_t scanned;
+        cl_error_t ret;
+
+        scan_engine = cl_engine_new();
+        ck_assert_ptr_nonnull(scan_engine);
+        ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+        ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+        ck_assert_int_eq(cli_add_content_match_pattern(
+                             scan_engine->root[0], fixtures[i].name,
+                             fixtures[i].signature, 0, 0, 0, "0", NULL, 0),
+                         CL_SUCCESS);
+        ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+        ck_assert_msg(snprintf(file_path, sizeof(file_path), "%s/input/%s", OBJDIR,
+                               fixtures[i].filename) < (int)sizeof(file_path),
+                      "AutoIt fixture path was truncated");
+        fd = open(file_path, O_RDONLY | O_BINARY);
+        ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+        ck_assert_int_eq(FSTAT(fd, &st), 0);
+        ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                      "invalid AutoIt fixture size");
+        data_size = (size_t)st.st_size;
+        data = malloc(data_size);
+        ck_assert_ptr_nonnull(data);
+        while (offset < data_size) {
+            ssize_t nread = read(fd, data + offset, data_size - offset);
+            ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+            offset += (size_t)nread;
+        }
+        ck_assert_int_eq(close(fd), 0);
+
+        map = cl_fmap_open_memory(data, data_size);
+        ck_assert_ptr_nonnull(map);
+        verdict    = CL_VERDICT_NOTHING_FOUND;
+        last_alert = NULL;
+        scanned    = 0;
+        ret        = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                                   scan_engine, &options, NULL, NULL, NULL, NULL,
+                                   "CL_TYPE_AUTOIT", NULL);
+        if (fixtures[i].expect_detection) {
+            ck_assert_msg(ret == CL_VIRUS,
+                          "AutoIt fixture %s was not scanned: %s", fixtures[i].filename,
+                          cl_strerror(ret));
+            ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+            ck_assert_ptr_nonnull(last_alert);
+            {
+                char expected_alert[PATH_MAX];
+                ck_assert_msg(snprintf(expected_alert, sizeof(expected_alert), "%s.UNOFFICIAL",
+                                       fixtures[i].name) < (int)sizeof(expected_alert),
+                              "AutoIt alert was truncated");
+                ck_assert_str_eq(last_alert, expected_alert);
+            }
+        } else {
+            ck_assert_msg(ret == CL_SUCCESS,
+                          "AutoIt fixture %s did not complete: %s", fixtures[i].filename,
+                          cl_strerror(ret));
+            ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+            ck_assert_ptr_null(last_alert);
+        }
+        ck_assert_msg(!map->dont_cache_flag,
+                      "complete AutoIt fixture %s was marked non-cacheable",
+                      fixtures[i].filename);
+
+        cl_fmap_close(map);
+        free(data);
+        cl_engine_free(scan_engine);
+    }
+}
+END_TEST
+
 START_TEST(test_msxml_corpus_detects_embedded_marker)
 {
     static const uint8_t data[] = "<document><bindata>\nVURG\n</bindata></document>";
@@ -38631,6 +38731,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xdp_map = tcase_create("xdp_map");
     TCase *tc_xdp_corpus = tcase_create("xdp_corpus");
     TCase *tc_autoit_map = tcase_create("autoit_map");
+    TCase *tc_autoit_corpus = tcase_create("autoit_corpus");
     TCase *tc_7z = tcase_create("7z");
     TCase *tc_7z_map = tcase_create("7z_map");
     TCase *tc_7z_sfx = tcase_create("7z_sfx");
@@ -39120,6 +39221,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_autoit_map, test_autoit_time_limit_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_version_read_failure_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_public_api_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_autoit_corpus);
+    tcase_add_checked_fixture(tc_autoit_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_autoit_corpus, test_autoit_corpus_detects_embedded_markers);
     suite_add_tcase(s, tc_7z);
     tcase_add_checked_fixture(tc_7z, cl_setup, cl_teardown);
     tcase_add_test(tc_7z, test_7z_truncated_header_is_fail_visible);

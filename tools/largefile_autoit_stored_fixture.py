@@ -132,9 +132,37 @@ def build_fixture(compressed):
 
 
 def build_ea06_script_fixture():
+    prefix = bytes(
+        [
+            0xA3,
+            0x48,
+            0x4B,
+            0xBE,
+            0x98,
+            0x6C,
+            0x4A,
+            0xA9,
+            0x99,
+            0x4C,
+            0x53,
+            0x0A,
+            0x86,
+            0xD6,
+            0x48,
+            0x7D,
+            0x41,
+            0x55,
+            0x33,
+            0x21,
+            0x45,
+            0x41,
+            0x30,
+        ]
+    )
     script_magic = ">>>AUTOIT SCRIPT<<<".encode("utf-16le")
     text_length = (64 * 1024) + 17
-    plain_text = b"A\x00" * text_length
+    marker = "AutoItEA06Marker"
+    plain_text = marker.encode("utf-16le") + b"A\x00" * (text_length - len(marker))
     encoded_text = bytes(
         value ^ (((text_length >> 8) if index & 1 else text_length) & 0xFF)
         for index, value in enumerate(plain_text)
@@ -146,7 +174,7 @@ def build_ea06_script_fixture():
         + encoded_text
         + bytes([0x7F])
     )
-    result = bytearray([0x36]) + bytes(16)
+    result = bytearray(prefix + bytes([0x36]) + bytes(16))
     result += struct.pack("<II", 0x52CA436B, 19 ^ 0xADBC)
     result += lame_encrypt(script_magic, 19 + 0xB33F)
     result += struct.pack("<I", 0 ^ 0xF820)

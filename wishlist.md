@@ -1,5 +1,16 @@
 # Wishlist
 
+## AutoIt parser-family corpus qualification — 2026-08-26
+
+- The isolated current-source production-linked GCC `autoit_corpus` case
+  passes 1/1 over build-generated EA05 stored, EA05 compressed, and EA06
+  stored-script fixtures. The EA05 variants reach exact nested ABCD alerts
+  through public `CL_TYPE_AUTOIT` dispatch; the EA06 fixture completes its
+  one-line script decompilation and remains cacheable. Existing `autoit_map`
+  passes 5/5 and `autoit_sfx` passes 1/1.
+- Keep sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release gates open.
+
 ## 7-Zip SFX nested corpus qualification — 2026-08-26
 
 - The isolated current-source production-linked GCC `7z_sfx_corpus` case

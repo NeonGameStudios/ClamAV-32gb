@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## AutoIt parser-family corpus qualification — 2026-08-26
+
+The isolated authoritative current-source production-linked GCC
+`autoit_corpus` case passes 1/1 over three build-generated deterministic
+fixtures: EA05 stored, EA05 compressed, and EA06 stored-script input. The
+EA05 variants reach exact nested
+`AutoIt.EA05.Stored.ABCD.UNOFFICIAL` and
+`AutoIt.EA05.Compressed.ABCD.UNOFFICIAL` alerts through public
+`CL_TYPE_AUTOIT` dispatch; the EA06 fixture completes its one-line script
+decompilation and remains cacheable. The existing `autoit_map` TCase passes
+5/5 and `autoit_sfx` passes 1/1. This is parser-family corpus and bounded
+completion evidence, not full qualification; sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+evidence remain open.
+
 **Review date:** 2026-08-16  
 **Reviewed report:** audit.md, SHA-256 ce78ba7003031e6007bfe000c8ee6718175252ec5fed5e149ddda47617fb4e48  
 **Review target:** the delivered source tree at /Volumes/512gbNVME/github-external/ClamAV  

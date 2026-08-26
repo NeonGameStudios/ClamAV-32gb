@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## AutoIt parser-family corpus qualification — 2026-08-26
+
+The isolated current-source production-linked GCC `autoit_corpus` case passes
+1/1 over three build-generated deterministic fixtures: EA05 stored, EA05
+compressed, and EA06 stored-script input. The EA05 variants reach exact nested
+`AutoIt.EA05.Stored.ABCD.UNOFFICIAL` and
+`AutoIt.EA05.Compressed.ABCD.UNOFFICIAL` alerts through public
+`CL_TYPE_AUTOIT` dispatch; the EA06 fixture completes its one-line script
+decompilation and remains cacheable. Existing `autoit_map` passes 5/5 and
+`autoit_sfx` passes 1/1. Full sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## 7-Zip SFX nested corpus qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `7z_sfx_corpus` case passes
