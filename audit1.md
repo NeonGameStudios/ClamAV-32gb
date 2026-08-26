@@ -601,15 +601,15 @@ remain open.
 
 ## JPEG Photoshop-thumbnail corpus qualification — 2026-08-26
 
-The fresh current-source `jpeg.c` object linked into the production GCC
-harness passes `jpeg_map` 12/12, and the isolated `jpeg_corpus` case passes
-1/1. The corpus is a valid APP13 Photoshop resource containing a bounded
-thumbnail payload; the outer JPEG does not begin with `MZP`, and the exact
-`JPEG.Member.MZ.UNOFFICIAL` alert is reached through the 8BIM thumbnail nested
-scan. This is bounded JPEG resource-extraction evidence, not complete
-JPEG/image corpus qualification; sanitizer, certified Linux x86-64,
-materialized large-file, production-CVD/service, Sonic1, and release evidence
-remain open.
+The current-source production-linked GCC harness, relinked with current
+scanner, PE, `others`, `fmap`, and JPEG objects, passes `jpeg_map` 12/12 and
+the isolated `jpeg_corpus` case 1/1. The corpus is a valid APP13 Photoshop
+resource containing a bounded thumbnail payload; the outer JPEG does not begin
+with `MZP`, and the exact `JPEG.Member.MZ.UNOFFICIAL` alert is reached through
+the 8BIM thumbnail nested scan. This is bounded JPEG resource-extraction
+evidence, not complete JPEG/image corpus qualification; sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release evidence remain open.
 
 ## GIF bounded overlay corpus qualification — 2026-08-25
 
