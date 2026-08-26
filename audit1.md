@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## JPEG short-SOI admission — 2026-08-26
+
+The JPEG parser previously returned its initial `CL_SUCCESS` when a forced
+JPEG layer contained only the two-byte `FF D8` start-of-image marker: the
+four-byte header preflight failed, but the short fallback checked only for a
+three-byte `FF D8 FF` prefix. Short SOI input now returns the existing
+fail-visible truncated-header parse result, while an in-range callback failure
+during the two-byte confirmation remains `CL_EREAD`. The current-source JPEG
+object builds with GCC `-Wall -Wextra -Wformat-security`; the production-linked
+`jpeg_map` case passes 12/12, including the new two-byte SOI regression, and
+`jpeg_corpus` passes 1/1. Full media corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
 ## RFC 1341 partial-message parameter admission — 2026-08-26
 
 The `message/partial` path now requires a nonempty identifier and strictly

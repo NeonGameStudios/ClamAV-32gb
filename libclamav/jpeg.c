@@ -449,8 +449,15 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                                            "Heuristics.Broken.Media.JPEG.CantReadHeader");
                 goto done;
             }
-            if ((map->len >= 3) && (jpeg_readn(map, buff, offset, 3) == 3) &&
-                !memcmp(buff, "\xff\xd8\xff", 3)) {
+            if (map->len >= 2) {
+                bytes_read = jpeg_readn(map, buff, offset, 2);
+                if (bytes_read == (size_t)-1) {
+                    status = jpeg_read_status(ctx, bytes_read, 2,
+                                               "Heuristics.Broken.Media.JPEG.CantReadHeader");
+                    goto done;
+                }
+            }
+            if ((bytes_read == 2) && !memcmp(buff, "\xff\xd8", 2)) {
                 status = jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.TruncatedHeader");
             }
             goto done;

@@ -1,5 +1,16 @@
 # Wishlist
 
+## JPEG short-SOI admission — 2026-08-26
+
+- Treat a forced JPEG layer containing only the two-byte `FF D8` start-of-image
+  marker as a truncated header instead of returning the initial clean status;
+  preserve `CL_EREAD` if the in-range two-byte confirmation read fails.
+- The current-source JPEG object builds warning-clean with GCC, and the
+  production-linked `jpeg_map` and `jpeg_corpus` cases pass 12/12 and 1/1,
+  respectively, including the short-SOI regression. Keep full media corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## RFC 1341 partial-message parameter admission — 2026-08-26
 
 - Require a nonempty `message/partial` identifier and strictly positive

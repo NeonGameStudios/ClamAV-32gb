@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## JPEG short-SOI admission — 2026-08-26
+
+The JPEG parser now treats a forced layer containing only the two-byte `FF D8`
+start-of-image marker as a truncated header. Previously the four-byte header
+preflight failed and the short fallback recognized only a three-byte `FF D8 FF`
+prefix, allowing the two-byte case to retain the initial clean status. An
+in-range callback failure during the two-byte confirmation remains `CL_EREAD`.
+The current-source JPEG object builds with GCC `-Wall -Wextra
+-Wformat-security`; production-linked `jpeg_map` passes 12/12, including the
+short-SOI regression, and `jpeg_corpus` passes 1/1. Full media corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-
+CVD/service, Sonic1, and parser-family qualification remain required.
+
 ## RFC 1341 partial-message parameter admission — 2026-08-26
 
 The `message/partial` parser now rejects missing or empty identifiers,

@@ -39002,6 +39002,9 @@ END_TEST
 
 START_TEST(test_jpeg_truncated_structures_are_fail_visible)
 {
+    static const uint8_t truncated_soi[] = {
+        0xff, 0xd8,
+    };
     static const uint8_t truncated_header[] = {
         0xff, 0xd8, 0xff,
     };
@@ -39015,11 +39018,13 @@ START_TEST(test_jpeg_truncated_structures_are_fail_visible)
         '8',  'B',  'I',  'M',
     };
     const uint8_t *cases[] = {
+        truncated_soi,
         truncated_header,
         truncated_segment_size,
         truncated_photoshop_resource,
     };
     const size_t lengths[] = {
+        sizeof(truncated_soi),
         sizeof(truncated_header),
         sizeof(truncated_segment_size),
         sizeof(truncated_photoshop_resource),
