@@ -36833,6 +36833,74 @@ START_TEST(test_riff_truncated_chunk_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_riff_corpus_valid_nested_list_is_complete)
+{
+    static const uint8_t data[96] = {
+        'R', 'I', 'F', 'F',
+        0x58, 0x00, 0x00, 0x00,
+        'A', 'C', 'O', 'N',
+        'L', 'I', 'S', 'T',
+        0x4c, 0x00, 0x00, 0x00,
+        'I', 'N', 'F', 'O',
+        'd', 'a', 't', 'a',
+        0x40, 0x00, 0x00, 0x00,
+        'M', 'Z', 'P',
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cli_ctx ctx;
+    fmap_t *map;
+    int ret;
+
+    memset(&options, 0, sizeof(options));
+    options.general   = CL_SCAN_GENERAL_HEURISTICS;
+    options.heuristic = CL_SCAN_HEURISTIC_BROKEN_MEDIA;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "RIFF.Member.MZ", "4d5a50", 0, 0, 0,
+                         "32", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_int_eq(sizeof(data), 96);
+    ck_assert_msg(memcmp(data, "MZP", 3) != 0,
+                  "RIFF root unexpectedly satisfies child signature");
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine  = scan_engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+    ck_assert_int_eq(cli_check_riff_exploit(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_RIFF", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "RIFF typed scan did not reach the fixed-offset child matcher: %s",
+                  cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "RIFF.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_riff_list_respects_declared_boundary)
 {
     static const uint8_t input[] = {
@@ -37405,6 +37473,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xar_metadata = tcase_create("xar_metadata");
     TCase *tc_xar_map = tcase_create("xar_map");
     TCase *tc_riff = tcase_create("riff");
+    TCase *tc_riff_corpus = tcase_create("riff_corpus");
     TCase *tc_riff_map = tcase_create("riff_map");
     TCase *tc_rtf     = tcase_create("rtf");
     TCase *tc_rtf_map = tcase_create("rtf_map");
@@ -37690,6 +37759,9 @@ static Suite *test_cl_suite(void)
 #ifndef _WIN32
     tcase_add_test(tc_riff, test_riff_time_limit_is_fail_visible);
 #endif
+    suite_add_tcase(s, tc_riff_corpus);
+    tcase_add_checked_fixture(tc_riff_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_riff_corpus, test_riff_corpus_valid_nested_list_is_complete);
     suite_add_tcase(s, tc_riff_map);
     suite_add_tcase(s, tc_rtf_map);
     tcase_add_checked_fixture(tc_rtf_map, cl_setup, cl_teardown);

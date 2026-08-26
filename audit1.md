@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## RIFF nested-container corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `riff` case passes
+6/6, `riff_map` passes 1/1, and the isolated `riff_corpus` case passes 1/1.
+The corpus is a valid ACON RIFF containing a bounded nested LIST and child
+chunk; direct RIFF traversal completes at the declared container boundary,
+the root does not begin with `MZP`, and the typed public scan reaches the
+exact fixed-offset `RIFF.Member.MZ.UNOFFICIAL` matcher. This is bounded RIFF
+structural/raw evidence, not member-extraction qualification; sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## SWF compressed corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `swf` case passes

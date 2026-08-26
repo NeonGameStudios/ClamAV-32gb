@@ -1,5 +1,16 @@
 # Wishlist
 
+## RIFF nested-container corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC `riff` case passes 6/6,
+  `riff_map` passes 1/1, and the isolated `riff_corpus` case passes 1/1 over
+  a valid ACON RIFF with a bounded nested LIST and child chunk; direct
+  traversal reaches the declared boundary and the typed scan reaches an
+  exact fixed-offset child matcher.
+- Keep full RIFF/member-extraction qualification, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+  gates open.
+
 ## SWF compressed corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC `swf` case passes 10/10,

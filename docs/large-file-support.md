@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## RIFF nested-container corpus qualification — 2026-08-26
+
+The current-source production-linked GCC `riff` case passes 6/6, `riff_map`
+passes 1/1, and the isolated `riff_corpus` case passes 1/1. It uses a valid
+ACON RIFF with a bounded nested LIST and child chunk; direct traversal reaches
+the declared boundary, the root does not begin with `MZP`, and the typed
+public scan reaches the exact fixed-offset `RIFF.Member.MZ.UNOFFICIAL`
+matcher. Full RIFF/member-extraction qualification, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release qualification remain open.
+
 ## SWF compressed corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `swf` case passes 10/10, `swf_api`
