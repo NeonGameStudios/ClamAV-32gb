@@ -3,6 +3,21 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HFS+ attributes-tree UTF-16 name boundary — 2026-08-26
+
+The HFS+ attributes-tree walker previously compared a UTF-16 character count
+as though it were a byte count before reading the following attribute record.
+A confirmed node could therefore make the walker read past the declared node
+boundary. The parser now validates the encoded UTF-16 byte span, fixed
+attribute record, and declared payload before access, returning fail-visible
+`CL_EFORMAT` with sticky incomplete/non-cacheable state. The current-source
+`hfsplus.c` build is warning-clean under GCC
+`-Wall -Wextra -Wformat-security`; the current-source production-linked
+`hfs_map` TCase passes 10/10, including the boundary regression, and
+`hfs_inline` passes 1/1. The mixed-harness `hfs_fork` materialization case,
+full HFS+ corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## Mach-O universal-binary unsupported-count admission — 2026-08-26
 
 The generic `cafebabe` universal-binary fallback previously returned clean

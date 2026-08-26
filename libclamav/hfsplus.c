@@ -796,6 +796,7 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
             uint16_t keylen;
             hfsPlusAttributeKey attrKey;
             hfsPlusAttributeRecord attrRec;
+            size_t attrRecordOffset;
 
             /* Locate next record */
             nextDist  = nodeSize - (recordNum * 2) - 2;
@@ -834,7 +835,8 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
                 goto done;
             }
 
-            if (recordStart + sizeof(hfsPlusAttributeKey) + attrKey.nameLength >= topOfOffsets) {
+            if ((size_t)recordStart + sizeof(hfsPlusAttributeKey) +
+                    (size_t)attrKey.nameLength * 2U >= (size_t)topOfOffsets) {
                 cli_dbgmsg("hfsplus_check_attribute: Attribute name is longer than expected: %u\n", attrKey.nameLength);
                 cli_mark_scan_incomplete(ctx, "HFS+ attributes tree name is malformed");
                 status = CL_EFORMAT;
@@ -842,7 +844,15 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
             }
 
             if (attrKey.cnid == expectedCnid && attrKey.nameLength * 2 == nameLen && memcmp(&nodeBuf[recordStart + 14], name, nameLen) == 0) {
-                memcpy(&attrRec, &(nodeBuf[recordStart + sizeof(hfsPlusAttributeKey) + attrKey.nameLength * 2]), sizeof(attrRec));
+                attrRecordOffset = (size_t)recordStart + sizeof(hfsPlusAttributeKey) + (size_t)attrKey.nameLength * 2U;
+                if (attrRecordOffset > (size_t)topOfOffsets ||
+                    sizeof(attrRec) > (size_t)topOfOffsets - attrRecordOffset) {
+                    cli_mark_scan_incomplete(ctx, "HFS+ attributes tree record is incomplete");
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+
+                memcpy(&attrRec, &nodeBuf[attrRecordOffset], sizeof(attrRec));
                 attrRec.recordType    = be32_to_host(attrRec.recordType);
                 attrRec.attributeSize = be32_to_host(attrRec.attributeSize);
 
@@ -857,7 +867,13 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
                     goto done;
                 }
 
-                memcpy(record, &(nodeBuf[recordStart + sizeof(hfsPlusAttributeKey) + attrKey.nameLength * 2 + sizeof(attrRec)]), attrRec.attributeSize);
+                if ((size_t)attrRec.attributeSize > (size_t)topOfOffsets - attrRecordOffset - sizeof(attrRec)) {
+                    cli_mark_scan_incomplete(ctx, "HFS+ attributes tree record is incomplete");
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+
+                memcpy(record, &nodeBuf[attrRecordOffset + sizeof(attrRec)], attrRec.attributeSize);
                 *recordSize = attrRec.attributeSize;
 
                 if (found) {

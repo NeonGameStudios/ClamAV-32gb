@@ -36955,6 +36955,83 @@ START_TEST(test_hfsplus_attribute_tree_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hfsplus_attribute_name_boundary_is_fail_visible)
+{
+    static const uint8_t compressed_attr[] = {0, 'c', 0, 'o', 0, 'm', 0, '.', 0, 'a', 0, 'p', 0, 'p', 0, 'l',
+                                              0, 'e', 0, '.', 0, 'd', 0, 'e', 0, 'c', 0, 'm', 0, 'p', 0, 'f', 0, 's'};
+    uint8_t data[1024 + (40 * 512)];
+    uint8_t *volume;
+    uint8_t *fork;
+    uint8_t *node;
+    size_t record_offset = 4044;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    volume = data + 1024;
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, signature), 0x482b);
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, version), 4);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, blockSize), 512);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, totalBlocks), 40);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, extentsFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 1);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 4);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, catalogFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 8192);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 16);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 8);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 16);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, attributesFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 8192);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 16);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 24);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 16);
+
+    test_hfsplus_tree_header(data, 4 * 512, 512, 10);
+    test_hfsplus_tree_header(data, 8 * 512, 4096, 6);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, firstLeafNode), 1);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, totalNodes), 2);
+    test_hfsplus_tree_header(data, 24 * 512, 4096, 0);
+    test_hfsplus_put_be32(data + (24 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, firstLeafNode), 1);
+    test_hfsplus_put_be32(data + (24 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, totalNodes), 2);
+    test_hfsplus_catalog_file_leaf(data, 16 * 512);
+
+    node = data + (32 * 512);
+    memset(node, 0, 4096);
+    node[offsetof(hfsNodeDescriptor, kind)]   = HFS_NODEKIND_LEAF;
+    node[offsetof(hfsNodeDescriptor, height)] = 1;
+    test_hfsplus_put_be16(node + offsetof(hfsNodeDescriptor, numRecords), 1);
+    test_hfsplus_put_be16(node + record_offset, 40);
+    test_hfsplus_put_be32(node + record_offset + offsetof(hfsPlusAttributeKey, cnid), hfsFirstUserCatalogNodeID);
+    test_hfsplus_put_be16(node + record_offset + offsetof(hfsPlusAttributeKey, nameLength), 17);
+    memcpy(node + record_offset + sizeof(hfsPlusAttributeKey), compressed_attr, sizeof(compressed_attr));
+    test_hfsplus_put_be16(node + 4096 - 2, (uint16_t)record_offset);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ attributes tree name is malformed");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hfsplus_catalog_size_accounting_is_fail_visible)
 {
     uint8_t data[1024 + (32 * 512)];
@@ -39793,6 +39870,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hfs_map, test_hfsplus_tree_header_read_failure_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_catalog_node_read_failure_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_attribute_tree_failure_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_attribute_name_boundary_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_catalog_size_accounting_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_truncated_header_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_time_limit_is_fail_visible);

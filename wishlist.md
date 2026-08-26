@@ -1,5 +1,16 @@
 # Wishlist
 
+## HFS+ attributes-tree UTF-16 name boundary — 2026-08-26
+
+- Validate the UTF-16 byte span, fixed attribute record, and declared payload
+  before reading an HFS+ attributes-tree record; malformed confirmed nodes
+  must remain explicit incomplete/non-cacheable results.
+- The current-source production-linked GCC `hfs_map` TCase passes 10/10,
+  including the boundary regression, and `hfs_inline` passes 1/1. Keep the
+  mixed-harness `hfs_fork` gate, full HFS+ corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification open.
+
 ## Mach-O universal-binary unsupported-count admission — 2026-08-26
 
 - Replace the generic `cafebabe` architecture-count clean skip with an
