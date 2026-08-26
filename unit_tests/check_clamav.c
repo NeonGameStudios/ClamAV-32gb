@@ -10075,7 +10075,7 @@ END_TEST
 
 START_TEST(test_zip_corpus_detects_embedded_mz)
 {
-    static const char *const archives[] = {"clam.zip", "clam.split.oneseg.zip"};
+    static const char *const archives[] = {"clam.zip", "clam.split.oneseg.zip", "clam.bz2.zip"};
     struct cl_scan_options options;
     struct cl_engine *scan_engine;
     cl_verdict_t verdict;
