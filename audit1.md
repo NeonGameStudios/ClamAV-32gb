@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## Mail, MHTML, and MBR current-source qualification — 2026-08-26
+
+The rebuilt current-source production-linked GCC harness passes `mail_api`
+2/2, `mail` 10/10, `mbr` 5/5, `mbr_corpus` 1/1, `mhtml` 4/4, and
+`partition_map` 3/3. Coverage includes MIME initial-read, line and
+header-lookahead, timeout, oversized-line, encoded-attachment, streaming
+MHTML, MBR coordinate/read/limit boundaries, and exact partition-child
+matching. This is bounded parser and partition evidence, not full
+qualification; complete MIME/MHTML and partition-image corpora, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## InstallShield current-source admission qualification — 2026-08-26
 
 The current-source production-linked GCC harness passes `ishield_map` 1/1
