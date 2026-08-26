@@ -9,6 +9,22 @@ linked GCC `tar_member` TCase passes 5/5, including an exact nested `MZP`
 alert from the member after an empty member. Full TAR corpus, sanitizer,
 production-CVD/service, Sonic1, and release evidence remain open.
 
+## SIS legacy option-skip bounds — 2026-08-26
+
+A focused current-source production-linked GCC regression reproduced a legacy
+SIS `PKGoption` count-wrap defect: a declared count whose expanded byte count
+wrapped to zero was silently skipped and the confirmed layer returned clean.
+The parser now retains the expanded skip in 64-bit arithmetic, checks the
+buffered skip against the remaining fmap, and returns an incomplete,
+non-cacheable `CL_EPARSE` result when the declared range cannot fit. The
+pre-fix case returned `CL_CLEAN`; the post-fix `sis_structure` case passes
+1/1. Existing `sis_member` and `sis_map` focused cases pass 1/1 each. A
+current-source static relink of the materialized `sis` corpus still returns
+clean where the cached pre-change shared-library harness returned the
+historical nested-MZP alert, so current-source corpus qualification remains
+open. Sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## PNG structural admission — 2026-08-26
 
 The confirmed PNG parser now requires `IHDR` to be the first and only header,
@@ -137,9 +153,11 @@ available. The RTF parser-family and release gates remain open.
 The authoritative current-source production-linked GCC `sis_member` case
 passes 1/1 after replacing mixed-harness temporary signature loading with a
 direct compiled matcher. The synthetic legacy SIS package decompresses its
-member and reaches the exact `SIS.Member.Exact.UNOFFICIAL` child alert; the
-materialized `sis` case passes 1/1 and `sis_map` passes 1/1. Full SIS corpus,
-sanitizer, certified Linux x86-64, materialized large-file,
+member and reaches the exact `SIS.Member.Exact.UNOFFICIAL` child alert, and
+`sis_map` passes 1/1. The materialized `sis` result is withheld from current-
+source qualification because the fresh static relink returns clean while the
+cached pre-change shared-library harness retains the historical 1/1 alert.
+Full SIS corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and release evidence remain open.
 
 ## OneNote and OOXML current-source boundary rerun — 2026-08-26

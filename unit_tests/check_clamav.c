@@ -17300,6 +17300,55 @@ START_TEST(test_sis_language_table_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_sis_option_skip_overflow_is_fail_visible)
+{
+    uint8_t data[94] = {0};
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    /* An old SIS package can declare an option record whose count expands
+     * beyond the remaining archive. The parser must reject that skip instead
+     * of wrapping the byte count and returning a clean result. */
+    data[8]  = 0x19;
+    data[9]  = 0x04;
+    data[11] = 0x10;
+    data[18] = 1;
+    data[20] = 1;
+    data[36] = 0x08;
+    cli_writeint32(data + 48, 84); /* language table */
+    cli_writeint32(data + 52, 86); /* option record */
+    cli_writeint32(data + 86, 2); /* PKGoption */
+    cli_writeint32(data + 90, 0x20000000U); /* expands to zero in the 32-bit byte count */
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_SIS", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_sis_truncated_compressed_member_is_fail_visible)
 {
     uint8_t data[134] = {0};
@@ -39161,6 +39210,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hfs_map = tcase_create("hfs_map");
     TCase *tc_hfs_fork = tcase_create("hfs_fork");
     TCase *tc_sis        = tcase_create("sis");
+    TCase *tc_sis_structure = tcase_create("sis_structure");
     TCase *tc_sis_member = tcase_create("sis_member");
     TCase *tc_tar = tcase_create("tar");
     TCase *tc_tar_corpus = tcase_create("tar_corpus");
@@ -39520,6 +39570,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_sis);
     tcase_add_checked_fixture(tc_sis, cl_setup, cl_teardown);
     tcase_add_test(tc_sis, test_sis_corpus_detects_embedded_mz);
+    suite_add_tcase(s, tc_sis_structure);
+    tcase_add_checked_fixture(tc_sis_structure, cl_setup, cl_teardown);
+    tcase_add_test(tc_sis_structure, test_sis_option_skip_overflow_is_fail_visible);
     suite_add_tcase(s, tc_tar);
     tcase_add_checked_fixture(tc_tar, cl_setup, cl_teardown);
     tcase_add_test(tc_tar, test_tar_truncated_header_is_fail_visible);

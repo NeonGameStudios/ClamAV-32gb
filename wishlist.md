@@ -8,6 +8,18 @@
 - Keep full TAR corpus, sanitizer, production-CVD/service, Sonic1, and release
   gates open.
 
+## SIS legacy option-skip bounds — 2026-08-26
+
+- Keep legacy SIS `PKGoption` skip expansion in 64-bit arithmetic and require
+  every buffered skip to fit within the remaining fmap. The pre-fix regression
+  returned clean for a wrapped count; the current-source production-linked GCC
+  `sis_structure` case now passes 1/1 with incomplete/non-cacheable `CL_EPARSE`.
+- `sis_member` and `sis_map` each pass 1/1. The fresh current-source static
+  relink does not reproduce the historical materialized `sis` nested-MZP
+  result, so current-source corpus qualification remains open. Keep sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and release gates open.
+
 ## PNG structural admission — 2026-08-26
 
 - Require `IHDR` to be first and unique, validate chunk-type bytes, and reject
@@ -111,8 +123,10 @@
 
 - The authoritative current-source production-linked GCC `sis_member` case
   passes 1/1 after direct compiled matcher setup for a zlib-compressed legacy
-  member; `sis` passes 1/1 over materialized `clam.sis` and `sis_map` passes
-  1/1.
+  member, and `sis_map` passes 1/1. The materialized `sis` result is withheld
+  from current-source qualification because the fresh static relink returns
+  clean while the cached pre-change shared-library harness retains the
+  historical 1/1 alert.
 - Keep full SIS corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release gates open.
 

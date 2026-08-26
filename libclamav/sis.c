@@ -426,26 +426,38 @@ enum {
         sleft -= 4;                                                                            \
     }
 
-#define SKIP(N)                                                                                     \
-    /* cli_dbgmsg("SKIP smax: %d sleft: %d\n", smax, sleft); */                                     \
-    if (sleft >= (N))                                                                               \
-        sleft -= (N);                                                                               \
-    else {                                                                                          \
-        if ((N) < sleft) {                                                                          \
-            cli_dbgmsg("SIS: Refusing to seek back\n");                                             \
-            free((void *)alangs);                                                                   \
-            return sis_incomplete(ctx, "SIS parser attempted to seek outside its buffered stream"); \
-        }                                                                                           \
-        pos += (N)-sleft;                                                                           \
-        size_t tmp = fmap_readn(map, buff, pos, BUFSIZ);                                            \
-        if (((size_t)-1) == tmp) {                                                                  \
-            cli_dbgmsg("SIS: Read failed during SKIP\n");                                           \
-            free((void *)alangs);                                                                   \
-            return sis_incomplete(ctx, "SIS skip could not be read completely");                    \
-        }                                                                                           \
-        sleft = smax = tmp;                                                                         \
-        pos += smax;                                                                                \
-    }
+#define SKIP(N)                                                                                       \
+    do {                                                                                              \
+        /* cli_dbgmsg("SKIP smax: %d sleft: %d\n", smax, sleft); */                                       \
+        uint64_t sis_skip_size = (uint64_t)(N);                                                       \
+        uint64_t sis_remaining;                                                                       \
+        if (pos > map->len) {                                                                        \
+            cli_dbgmsg("SIS: Refusing to seek beyond the mapped archive\n");                        \
+            status = sis_incomplete(ctx, "SIS parser skip exceeded the archive bounds");             \
+            goto done;                                                                                \
+        }                                                                                             \
+        sis_remaining = (uint64_t)(map->len - pos);                                                   \
+        if (sis_remaining <= UINT64_MAX - (uint64_t)sleft &&                                         \
+            sis_skip_size > sis_remaining + (uint64_t)sleft) {                                       \
+            cli_dbgmsg("SIS: Refusing to seek beyond the mapped archive\n");                        \
+            status = sis_incomplete(ctx, "SIS parser skip exceeded the archive bounds");             \
+            goto done;                                                                                \
+        }                                                                                             \
+        if (sis_skip_size <= (uint64_t)sleft)                                                        \
+            sleft -= (uint32_t)sis_skip_size;                                                        \
+        else {                                                                                        \
+            size_t seekto = (size_t)(sis_skip_size - (uint64_t)sleft);                               \
+            pos += seekto;                                                                            \
+            size_t tmp = fmap_readn(map, buff, pos, BUFSIZ);                                         \
+            if (((size_t)-1) == tmp) {                                                               \
+                cli_dbgmsg("SIS: Read failed during SKIP\n");                                        \
+                status = sis_incomplete(ctx, "SIS skip could not be read completely");               \
+                goto done;                                                                            \
+            }                                                                                         \
+            sleft = smax = tmp;                                                                       \
+            pos += smax;                                                                              \
+        }                                                                                             \
+    } while (0)
 
 const char *sislangs[] = {"UNKNOWN", "UK English", "French", "German", "Spanish", "Italian", "Swedish", "Danish", "Norwegian", "Finnish", "American", "Swiss French", "Swiss German", "Portuguese", "Turkish", "Icelandic", "Russian", "Hungarian", "Dutch", "Belgian Flemish", "Australian English", "Belgian French", "Austrian German", "New Zealand English", "International French", "Czech", "Slovak", "Polish", "Slovenian", "Taiwanese Chinese", "Hong Kong Chinese", "PRC Chinese", "Japanese", "Thai", "Afrikaans", "Albanian", "Amharic", "Arabic", "Armenian", "Tagalog", "Belarussian", "Bengali", "Bulgarian", "Burmese", "Catalan", "Croation", "Canadian English", "International English", "South African English", "Estonian", "Farsi", "Canadian French", "Gaelic", "Georgian", "Greek", "Cyprus Greek", "Gujarati", "Hebrew", "Hindi", "Indonesian", "Irish", "Swiss Italian", "Kannada", "Kazakh", "Kmer", "Korean", "Lao", "Latvian", "Lithuanian", "Macedonian", "Malay", "Malayalam", "Marathi", "Moldovian", "Mongolian", "Norwegian Nynorsk", "Brazilian Portuguese", "Punjabi", "Romanian", "Serbian", "Sinhalese", "Somali", "International Spanish", "American Spanish", "Swahili", "Finland Swedish", "Reserved", "Tamil", "Telugu", "Tibetan", "Tigrinya", "Cyprus Turkish", "Turkmen", "Ukrainian", "Urdu", "Reserved", "Vietnamese", "Welsh", "Zulu", "Other"};
 #define MAXLANG (sizeof(sislangs) / sizeof(sislangs[0]))
@@ -709,7 +721,8 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
     pos = sis.pfiles;
     for (i = 0; i < sis.files; i++) {
-        uint32_t pkgtype, fcount = 1;
+        uint32_t pkgtype;
+        uint64_t fcount = 1;
         uint32_t j;
 
         status = sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit");
