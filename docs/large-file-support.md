@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## SWF compressed corpus qualification — 2026-08-26
+
+The current-source production-linked GCC `swf` case passes 10/10, `swf_api`
+passes 1/1, `swf_map` passes 1/1, and the isolated SWF corpus case passes
+1/1. It uses a zlib-compressed CWS stream whose decompressed output contains
+a bounded child at a fixed offset; the outer compressed root does not begin
+with `MZP`, and the exact `SWF.Member.MZ.UNOFFICIAL` alert is reached after
+decompression and nested output scanning. Full SWF corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release qualification remain open.
+
 ## TIFF valid-structure corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `tiff` case passes 8/8, `tiff_map`

@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## SWF compressed corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `swf` case passes
+10/10, `swf_api` passes 1/1, `swf_map` passes 1/1, and the isolated SWF
+corpus case passes 1/1. The corpus is a zlib-compressed CWS stream whose
+decompressed output contains a bounded child at a fixed offset; the outer
+compressed root does not begin with `MZP`, and the exact
+`SWF.Member.MZ.UNOFFICIAL` alert is reached after decompression and nested
+output scanning. This is bounded decoder/output evidence, not complete SWF
+corpus qualification; sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release evidence remain open.
+
 ## TIFF valid-structure corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `tiff` case passes

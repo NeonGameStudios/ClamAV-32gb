@@ -1,5 +1,14 @@
 # Wishlist
 
+## SWF compressed corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC `swf` case passes 10/10,
+  `swf_api` passes 1/1, `swf_map` passes 1/1, and the isolated SWF corpus
+  case passes 1/1 over a zlib-compressed CWS stream whose decompressed output
+  reaches an exact fixed-offset child matcher after nested output scanning.
+- Keep complete SWF corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## TIFF valid-structure corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC `tiff` case passes 8/8,

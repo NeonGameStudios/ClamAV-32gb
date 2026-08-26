@@ -8894,6 +8894,63 @@ START_TEST(test_rar_sfx_header_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_swf_corpus_detects_embedded_mz)
+{
+    static const uint8_t body_prefix[] = {0x08, 0x00, 0x00, 0x00, 0x00, 0x00};
+    static const uint8_t child[64] = {'M', 'Z', 'P'};
+    uint8_t body[sizeof(body_prefix) + sizeof(child)];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    uint8_t *archive;
+    size_t archive_length;
+    fmap_t *map;
+    int ret;
+
+    memcpy(body, body_prefix, sizeof(body_prefix));
+    memcpy(body + sizeof(body_prefix), child, sizeof(child));
+    archive = swf_cws_stream(body, sizeof(body), &archive_length);
+    ck_assert_ptr_nonnull(archive);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "SWF.Member.MZ", "4d5a50", 0, 0, 0,
+                         "14", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(archive, "MZP", 3) != 0,
+                  "SWF root unexpectedly satisfies child signature");
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_SWF", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "SWF decompression did not reach the child matcher: %s",
+                  cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "SWF.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(archive);
+}
+END_TEST
+
 START_TEST(test_swf_zlib_truncated_stream_is_fail_visible)
 {
     static const uint8_t body[6] = {0};
@@ -37421,6 +37478,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ppt_entry = tcase_create("ppt_entry");
     TCase *tc_ooxml_entry = tcase_create("ooxml_entry");
     TCase *tc_swf = tcase_create("swf");
+    TCase *tc_swf_corpus = tcase_create("swf_corpus");
     TCase *tc_swf_map = tcase_create("swf_map");
     TCase *tc_swf_api = tcase_create("swf_api");
     TCase *tc_arj = tcase_create("arj");
@@ -38013,6 +38071,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_swf, test_swf_truncated_uncompressed_header_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_truncated_frame_metadata_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_truncated_tag_payload_is_fail_visible);
+    suite_add_tcase(s, tc_swf_corpus);
+    tcase_add_checked_fixture(tc_swf_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_swf_corpus, test_swf_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_swf_map);
     tcase_add_test(tc_swf_map, test_swf_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_swf_api);
