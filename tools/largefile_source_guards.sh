@@ -1377,6 +1377,8 @@ contains libclamav/macho.c 'Mach-O coordinates exceed the legacy 32-bit metadata
 contains unit_tests/check_clamav.c 'test_macho_native_metadata_preserves_64bit_sections'
 contains libclamav/macho.c 'Mach-O universal-binary architecture range is outside the input map'
 contains unit_tests/check_clamav.c 'test_macho_unibin_member_range_is_fail_visible'
+contains libclamav/macho.c 'Mach-O universal-binary architecture table is unsupported by the bounded parser'
+contains unit_tests/check_clamav.c 'test_macho_unibin_unsupported_architecture_count_is_fail_visible'
 contains libclamav/tiff.c 'TIFF input map is unavailable'
 contains unit_tests/check_clamav.c 'test_tiff_missing_map_is_fail_visible'
 contains libclamav/udf.c 'UDF generic volume descriptor area is incomplete'

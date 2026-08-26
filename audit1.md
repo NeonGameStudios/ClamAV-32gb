@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Mach-O universal-binary unsupported-count admission — 2026-08-26
+
+The generic `cafebabe` universal-binary fallback previously returned clean
+when its architecture-count field was at least 39, silently skipping both
+Java-bytecode-like inputs outside the explicit classifier range and malformed
+or future FAT headers. The bounded parser now records an explicit incomplete,
+non-cacheable result with `CL_EPARSE`. The current-source `macho.c` compiles
+warning-clean with GCC `-Wall -Wextra -Wformat-security`, and the isolated
+current-source production-linked `macho_unsupported` TCase passes 1/1 for the
+count-39 regression; `macho_map` and `macho_corpus` each pass 1/1 as adjacent
+regressions. Full Java/FAT corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## PNG palette structural admission — 2026-08-26
 
 The PNG parser now rejects invalid PLTE lengths, PLTE chunks after IDAT,

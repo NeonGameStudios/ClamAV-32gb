@@ -883,8 +883,10 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
     }
 
     fat_header.nfats = EC32(fat_header.nfats, conv);
-    if ((fat_header.nfats & 0xffff) >= 39) /* Java Bytecode */
-        return CL_CLEAN;
+    if ((fat_header.nfats & 0xffff) >= 39) /* Java Bytecode or an unsupported FAT header */ {
+        cli_mark_scan_incomplete(ctx, "Mach-O universal-binary architecture table is unsupported by the bounded parser");
+        return CL_EPARSE;
+    }
 
     if (fat_header.nfats > 32) {
         cli_dbgmsg("cli_scanmacho_unibin: Invalid number of architectures\n");

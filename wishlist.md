@@ -1,5 +1,15 @@
 # Wishlist
 
+## Mach-O universal-binary unsupported-count admission — 2026-08-26
+
+- Replace the generic `cafebabe` architecture-count clean skip with an
+  explicit incomplete/non-cacheable `CL_EPARSE` result for Java-bytecode-like
+  values outside the classifier range and malformed or future FAT headers.
+- The current-source production-linked GCC `macho_unsupported` TCase passes
+  1/1, with `macho_map` and `macho_corpus` each passing 1/1. Keep full
+  Java/FAT corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## PNG palette structural admission — 2026-08-26
 
 - Reject invalid PLTE lengths, PLTE-after-IDAT, duplicate PLTE chunks,

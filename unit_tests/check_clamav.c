@@ -34637,6 +34637,38 @@ END_TEST
 
 static void macho_test_write_u32(uint8_t *dst, uint32_t value);
 
+START_TEST(test_macho_unibin_unsupported_architecture_count_is_fail_visible)
+{
+    uint8_t data[8] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* The generic cafebabe fallback also admits Java bytecode and future or
+     * malformed FAT headers. An architecture count at or above 39 must not
+     * silently turn an otherwise recognized input into a clean result. */
+    macho_test_write_u32(data + 0, 0xcafebabeU);
+    macho_test_write_u32(data + 4, 39U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanmacho_unibin(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Mach-O universal-binary architecture table is unsupported by the bounded parser");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_macho_metadata_read_failure_is_fail_visible)
 {
     uint8_t data[32 + 8] = {0};
@@ -39495,6 +39527,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_macho_timeout = tcase_create("macho_timeout");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
     TCase *tc_macho_map = tcase_create("macho_map");
+    TCase *tc_macho_unsupported = tcase_create("macho_unsupported");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -39902,6 +39935,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_macho_boundary, test_macho_load_command_boundary_is_fail_visible);
     suite_add_tcase(s, tc_macho_map);
     tcase_add_test(tc_macho_map, test_macho_missing_maps_are_fail_visible);
+    suite_add_tcase(s, tc_macho_unsupported);
+    tcase_add_test(tc_macho_unsupported, test_macho_unibin_unsupported_architecture_count_is_fail_visible);
     suite_add_tcase(s, tc_macho);
     tcase_add_test(tc_macho, test_macho_truncated_header_is_fail_visible);
     tcase_add_test(tc_macho, test_macho_time_limit_is_fail_visible);
