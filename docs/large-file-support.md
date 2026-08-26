@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PNG materialized overlay corpus qualification — 2026-08-25
+
+The current-source production-linked GCC `png` case passes 5/5, and the
+isolated `png_corpus` case passes 1/1. It starts from canonical materialized
+`logo.png`, appends a bounded 64-byte child beginning with `MZP`, and reaches
+the exact `PNG.Member.MZ.UNOFFICIAL` alert through the valid PNG IEND-overlay
+handoff. The PNG root does not begin with `MZP`. Full PNG/image corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## TAR materialized corpus qualification — 2026-08-25
 
 The current-source production-linked GCC `tar` case passes 6/6, and the

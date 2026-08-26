@@ -198,6 +198,15 @@
   Linux x86-64, materialized large-file, production-CVD/service parity, and
   Sonic1 qualification open.
 
+## PNG materialized overlay corpus qualification — 2026-08-25
+
+- The current-source production-linked GCC `png` case passes 5/5, and the
+  isolated `png_corpus` case passes 1/1. It starts from materialized
+  `logo.png`, appends a bounded 64-byte `MZP` child, and requires the exact
+  `PNG.Member.MZ.UNOFFICIAL` alert through the valid IEND-overlay handoff;
+  full PNG/image corpus, sanitizer, materialized large-file,
+  production-CVD/service, Sonic1, and release gates remain open.
+
 ## Child-descriptor entry null-context admission — 2026-08-25
 
 - Return `CL_ENULLARG` from the descriptor-based nested-scan entry before

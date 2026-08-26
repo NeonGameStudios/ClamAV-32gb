@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## PNG materialized overlay corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `png` case passes 5/5,
+and the isolated `png_corpus` case passes 1/1. The corpus starts with the
+canonical materialized `logo.png`, appends a bounded 64-byte child whose exact
+offset-0 signature is `MZP`, and requires the alert
+`PNG.Member.MZ.UNOFFICIAL` through the valid PNG IEND-overlay handoff. The PNG
+root itself does not begin with `MZP`. This is bounded structural and overlay
+evidence, not complete PNG/image corpus qualification; sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release evidence remain open.
+
 ## TAR materialized corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `tar` case passes

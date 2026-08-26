@@ -35584,6 +35584,75 @@ START_TEST(test_png_large_ancillary_chunk_uses_bounded_mapping)
 }
 END_TEST
 
+START_TEST(test_png_corpus_detects_embedded_mz)
+{
+    static const uint8_t child[64] = {'M', 'Z', 'P'};
+    const char *source_file = SRCDIR PATHSEP ".." PATHSEP "logo.png";
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    struct stat st;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    size_t offset = 0;
+    int fd;
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_HEURISTICS;
+    options.parse = CL_SCAN_PARSE_IMAGE | CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    options.heuristic = CL_SCAN_HEURISTIC_BROKEN_MEDIA;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "PNG.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    fd = open(source_file, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", source_file, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+    ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                  "invalid PNG corpus size");
+    data_size = (size_t)st.st_size;
+    data = malloc(data_size + sizeof(child));
+    ck_assert_ptr_nonnull(data);
+    while (offset < data_size) {
+        ssize_t nread = read(fd, data + offset, data_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", source_file, strerror(errno));
+        offset += (size_t)nread;
+    }
+    ck_assert_int_eq(close(fd), 0);
+
+    ck_assert_msg(data_size >= 8 && memcmp(data, "MZP", 3) != 0,
+                  "PNG root unexpectedly satisfies child signature");
+    memcpy(data + data_size, child, sizeof(child));
+    data_size += sizeof(child);
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ck_assert_int_eq(
+        cl_scanmap_ex(map, source_file, &verdict, &last_alert, &scanned,
+                      scan_engine, &options, NULL, NULL, NULL, NULL,
+                      "CL_TYPE_PNG", NULL),
+        CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "PNG.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    free(data);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_tiff_truncated_structures_are_fail_visible)
 {
     static const uint8_t truncated_first_ifd_offset[] = {
@@ -37007,6 +37076,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_gif      = tcase_create("gif");
     TCase *tc_gif_api  = tcase_create("gif_api");
     TCase *tc_png      = tcase_create("png");
+    TCase *tc_png_corpus = tcase_create("png_corpus");
     TCase *tc_tiff     = tcase_create("tiff");
 #if SIZE_MAX > UINT32_MAX
     TCase *tc_tiff_large = tcase_create("tiff_large");
@@ -37247,6 +37317,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif_api, test_gif_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_png);
     tcase_add_checked_fixture(tc_png, cl_setup, cl_teardown);
+    suite_add_tcase(s, tc_png_corpus);
+    tcase_add_checked_fixture(tc_png_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_png_corpus, test_png_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_tiff);
 #if SIZE_MAX > UINT32_MAX
     suite_add_tcase(s, tc_tiff_large);
