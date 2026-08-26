@@ -260,6 +260,16 @@ service, and Sonic1 qualification open.
 - Add complete ARJ/ARJ-SFX corpus, sanitizer, production-CVD/service parity,
   materialized large-file, and Sonic1 evidence before certification.
 
+## ARJ corpus dispatch qualification — 2026-08-25
+
+- The expanded current-source production-linked GCC `arj` case passes 10/10,
+  including public `cl_scanmap_ex` scanning of materialized `clam.arj`; its
+  exact embedded `MZP` marker is absent from the ARJ outer bytes and is
+  detected after member extraction and nested handoff.
+- Add complete ARJ/ARJ-SFX corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service parity, Sonic1, and release
+  evidence before certification.
+
 ## APM bounded-partition qualification — 2026-08-25
 
 - The current-source production-linked GCC `apm` case passes 5/5 for

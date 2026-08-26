@@ -251,6 +251,15 @@ is bounded decoder evidence only; complete ARJ/ARJ-SFX corpus, sanitizer,
 production-CVD/service parity, materialized large-file, and Sonic1
 qualification remain open.
 
+## ARJ corpus dispatch qualification — 2026-08-25
+
+The expanded current-source production-linked GCC `arj` case passes 10/10,
+including a public `cl_scanmap_ex` scan of the materialized `clam.arj` fixture.
+Its exact embedded `MZP` marker is absent from the ARJ outer bytes and is
+detected after member extraction and nested handoff. Full ARJ/ARJ-SFX corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-
+CVD/service, Sonic1, and release qualification remain open.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 The PowerPoint VBA extraction helper now rejects a null context before
