@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## PDF decoder and corpus qualification — 2026-08-25
+
+The current-source production-linked GCC `pdf` TCase now passes 13/13 after
+fixing a fail-open resynchronization path in both streaming Flate and LZW
+decoders: a successful search that reaches EOF without finding an alternate
+line no longer overwrites the original decode `CL_EPARSE`. The materialized
+`clam.pdf` corpus oracle is isolated in `pdf_corpus` and passes 1/1; its outer
+bytes do not begin with `MZP`, while the exact offset-0 child matcher reports
+`Pdf.Member.MZ.UNOFFICIAL` after PDF extraction. Full PDF corpus, encrypted
+large-stream, sanitizer, certified Linux x86-64, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## CPIO materialized corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `cpio` TCase passes

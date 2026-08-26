@@ -2384,11 +2384,14 @@ static cl_error_t pdf_stream_flatedecode_reader(struct pdf_struct *pdf,
     status = pdf_inflate_stream_attempt(pdf, reader, fout, &decoded, &zstat);
     if (status == CL_EPARSE && decoded == 0) {
         size_t resynchronized;
+        cl_error_t resync_status;
 
-        status = pdf_stream_reader_find_next_line(reader, payload_start,
-                                                  &resynchronized);
-        if (status != CL_SUCCESS)
+        resync_status = pdf_stream_reader_find_next_line(reader, payload_start,
+                                                         &resynchronized);
+        if (resync_status != CL_SUCCESS) {
+            status = resync_status;
             goto rollback;
+        }
 
         if (resynchronized > payload_start &&
             resynchronized < reader->length) {
@@ -2399,6 +2402,11 @@ static cl_error_t pdf_stream_flatedecode_reader(struct pdf_struct *pdf,
             decoded = 0;
             status  = pdf_inflate_stream_attempt(pdf, reader, fout, &decoded,
                                                  &zstat);
+        } else {
+            /* A successful search that reaches EOF found no alternate
+             * compressed stream. Preserve the original decode failure; the
+             * search helper's CL_SUCCESS is not a decode result. */
+            status = CL_EPARSE;
         }
     }
 
@@ -3111,11 +3119,14 @@ static cl_error_t pdf_stream_lzwdecode_reader(struct pdf_struct *pdf,
                                     &decoded, &lzwstat);
     if (status == CL_EPARSE && decoded == 0) {
         size_t resynchronized;
+        cl_error_t resync_status;
 
-        status = pdf_stream_reader_find_next_line(reader, payload_start,
-                                                  &resynchronized);
-        if (status != CL_SUCCESS)
+        resync_status = pdf_stream_reader_find_next_line(reader, payload_start,
+                                                         &resynchronized);
+        if (resync_status != CL_SUCCESS) {
+            status = resync_status;
             goto rollback;
+        }
 
         if (resynchronized > payload_start &&
             resynchronized < reader->length) {
@@ -3126,6 +3137,9 @@ static cl_error_t pdf_stream_lzwdecode_reader(struct pdf_struct *pdf,
             pdfobj_flag(pdf, obj, BAD_FLATESTART);
             status = pdf_lzw_stream_attempt(pdf, reader, early_change, fout,
                                             &decoded, &lzwstat);
+        } else {
+            /* No later line means there is no fallback stream to try. */
+            status = CL_EPARSE;
         }
     }
 

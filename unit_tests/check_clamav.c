@@ -25190,6 +25190,77 @@ START_TEST(test_pdf_public_api_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_corpus_detects_embedded_mz)
+{
+    static const char *const documents[] = {"clam.pdf"};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    char file_path[PATH_MAX];
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_PDF | CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Pdf.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(documents) / sizeof(documents[0]); i++) {
+        struct stat st;
+        fmap_t *map;
+        uint8_t *data;
+        size_t data_size;
+        size_t offset = 0;
+        int fd;
+
+        snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/%s", OBJDIR,
+                 documents[i]);
+        fd = open(file_path, O_RDONLY | O_BINARY);
+        ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+        ck_assert_int_eq(FSTAT(fd, &st), 0);
+        ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                      "invalid PDF corpus size for %s", file_path);
+        data_size = (size_t)st.st_size;
+        data = malloc(data_size);
+        ck_assert_ptr_nonnull(data);
+        while (offset < data_size) {
+            ssize_t nread = read(fd, data + offset, data_size - offset);
+            ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+            offset += (size_t)nread;
+        }
+        ck_assert_int_eq(close(fd), 0);
+
+        ck_assert_msg(data_size >= 3 && memcmp(data, "MZP", 3) != 0,
+                      "PDF root unexpectedly satisfies child signature for %s", file_path);
+        map = cl_fmap_open_memory(data, data_size);
+        ck_assert_ptr_nonnull(map);
+        verdict    = CL_VERDICT_NOTHING_FOUND;
+        last_alert = NULL;
+        scanned    = 0;
+        ck_assert_int_eq(
+            cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                          scan_engine, &options, NULL, NULL, NULL, NULL,
+                          "CL_TYPE_PDF", NULL),
+            CL_VIRUS);
+        ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+        ck_assert_ptr_nonnull(last_alert);
+        ck_assert_str_eq(last_alert, "Pdf.Member.MZ.UNOFFICIAL");
+        cl_fmap_close(map);
+        free(data);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_pdf_trailer_xref_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "%PDF-1.7\nstartxref\n10\n%%EOF\n";
@@ -36800,6 +36871,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_tiff_map = tcase_create("tiff_map");
     TCase *tc_jpeg_map = tcase_create("jpeg_map");
     TCase *tc_pdf      = tcase_create("pdf");
+    TCase *tc_pdf_corpus = tcase_create("pdf_corpus");
     TCase *tc_pdf_map  = tcase_create("pdf_map");
     TCase *tc_hwp3     = tcase_create("hwp3");
     TCase *tc_hwp3_api = tcase_create("hwp3_api");
@@ -37049,6 +37121,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_exact_eof_is_complete);
     suite_add_tcase(s, tc_pdf);
     tcase_add_checked_fixture(tc_pdf, cl_setup, cl_teardown);
+    suite_add_tcase(s, tc_pdf_corpus);
+    tcase_add_checked_fixture(tc_pdf_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_pdf_corpus, test_pdf_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_pdf_map);
     tcase_add_checked_fixture(tc_pdf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_pdf_map, test_pdf_public_api_read_failure_is_fail_visible);

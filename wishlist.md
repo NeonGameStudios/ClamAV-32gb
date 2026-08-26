@@ -1,5 +1,16 @@
 # Wishlist
 
+## PDF decoder and materialized corpus qualification — 2026-08-25
+
+- Preserve `CL_EPARSE` in streaming Flate and LZW decoders when fallback-line
+  resynchronization reaches EOF without finding an alternate stream; a helper
+  `CL_SUCCESS` must not overwrite the original decode failure. The current
+  production-linked GCC `pdf` case passes 13/13 after this fix.
+- The isolated `pdf_corpus` case passes 1/1 for materialized `clam.pdf`, with
+  an exact offset-0 child `MZP` matcher reached through PDF extraction. Keep
+  full PDF corpus, encrypted large-stream, sanitizer, certified Linux x86-64,
+  production-CVD/service, Sonic1, and release gates open.
+
 ## CPIO materialized corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `cpio` TCase passes
