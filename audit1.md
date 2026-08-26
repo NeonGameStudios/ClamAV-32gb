@@ -6,6 +6,16 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## SIS compressed-member corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `sis` case passes 1/1
+against the materialized `clam.sis` fixture. The exact embedded `MZP` marker
+is absent from the outer package bytes and is detected after SIS compressed-
+member extraction and nested handoff. The existing `sis_member` compressed
+stream oracle remains green. Full SIS corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## RTF embedded-object corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `rtf` case passes

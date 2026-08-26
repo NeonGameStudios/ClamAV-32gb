@@ -1,5 +1,15 @@
 # Wishlist
 
+## SIS compressed-member corpus qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `sis` case passes
+  1/1 against materialized `clam.sis`; the exact embedded `MZP` marker is
+  absent from the outer package and is detected after compressed-member
+  extraction and nested handoff. The existing `sis_member` compressed stream
+  oracle remains green.
+- Keep full SIS corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release qualification open.
+
 ## RTF embedded-object corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `rtf` case passes
