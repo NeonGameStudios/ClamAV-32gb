@@ -23181,6 +23181,7 @@ format-width	unit_tests/check_clamav.c	29618	                          "decoded 
 format-width	unit_tests/check_clamav.c	29621	    ck_assert_msg(verified == decoded_size, "verified %llu of %llu decoded bytes",
 format-width	unit_tests/check_clamav.c	29638	    ck_assert_msg(ret == CL_EPARSE, "malformed HWPML Base64 returned %d", ret);
 format-width	unit_tests/check_clamav.c	30306	                  "ARJ temporary limit returned %s (%d)", cl_strerror(ret), ret);
+format-width	unit_tests/check_clamav.c	35420	                  "XDP decoded member was not scanned: %s (%d)", cl_strerror(ret), ret);
 format-width	unit_tests/check_clamav.c	3933	    ck_assert_msg(testfiles_n == expect, "testfiles: %d != %d", testfiles_n, expect);
 format-width	unit_tests/check_clamav.c	39674	        printf("Using test case timeout of %d seconds set by user\n", timeout);
 format-width	unit_tests/check_clamav.c	40236	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);

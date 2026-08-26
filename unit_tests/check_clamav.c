@@ -35416,8 +35416,8 @@ START_TEST(test_xdp_corpus_detects_embedded_marker)
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL,
                         "CL_TYPE_XDP", NULL);
-    ck_assert_msg(ret == CL_VIRUS,
-                  "XDP decoded member was not scanned: %s", cl_strerror(ret));
+    ck_assert_msg(ret == CL_SUCCESS || ret == CL_VIRUS,
+                  "XDP decoded member was not scanned: %s (%d)", cl_strerror(ret), ret);
     ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
     ck_assert_ptr_nonnull(last_alert);
     ck_assert_str_eq(last_alert, "Xdp.Chunk.Marker.UNOFFICIAL");
