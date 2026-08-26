@@ -1,5 +1,16 @@
 # Wishlist
 
+## EGG archive-header admission — 2026-08-26
+
+- Enforce the supported EGG version, nonzero header ID, and zero reserved
+  field in direct archive parsing, matching SFX admission; malformed fields
+  return `CL_EPARSE` and remain incomplete/non-cacheable.
+- The current-source GCC parser build is warning-clean, and the
+  production-linked `egg_map`, `egg_metadata`, and `egg_sfx` cases pass 6/6,
+  1/1, and 1/1. Keep complete EGG corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification as release gates.
+
 ## DMG warning-clean source qualification — 2026-08-26
 
 - Rebuild canonical `dmg.c` with GCC `-Wall -Wextra -Wformat-security` after
