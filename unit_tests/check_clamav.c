@@ -33403,6 +33403,86 @@ START_TEST(test_elf_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_elf_corpus_detects_embedded_mz)
+{
+    enum { ELF_HEADER_SIZE = 64, PROGRAM_HEADER_SIZE = 56, PAYLOAD_OFFSET = 120, DATA_SIZE = 184 };
+    uint8_t data[DATA_SIZE] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    int ret;
+
+    /* A complete ELF64 header and one PT_LOAD program header describe the
+     * bounded payload at its exact file offset. */
+    data[0] = 0x7f;
+    data[1] = 'E';
+    data[2] = 'L';
+    data[3] = 'F';
+    data[4] = 2; /* ELFCLASS64. */
+    data[5] = 1; /* ELFDATA2LSB. */
+    data[6] = 1;
+    zip_stream_write_u16(data + 16, 2); /* ET_EXEC. */
+    zip_stream_write_u16(data + 18, 62); /* EM_X86_64. */
+    zip_stream_write_u32(data + 20, 1);
+    zip_stream_write_u64(data + 24, UINT64_C(0x400000));
+    zip_stream_write_u64(data + 32, ELF_HEADER_SIZE);
+    zip_stream_write_u64(data + 40, 0);
+    zip_stream_write_u32(data + 48, 0);
+    zip_stream_write_u16(data + 52, ELF_HEADER_SIZE);
+    zip_stream_write_u16(data + 54, PROGRAM_HEADER_SIZE);
+    zip_stream_write_u16(data + 56, 1);
+    zip_stream_write_u16(data + 58, 64);
+    zip_stream_write_u16(data + 60, 0);
+    zip_stream_write_u16(data + 62, 0);
+    zip_stream_write_u32(data + ELF_HEADER_SIZE, 1); /* PT_LOAD. */
+    zip_stream_write_u32(data + ELF_HEADER_SIZE + 4, 5); /* R_X. */
+    zip_stream_write_u64(data + ELF_HEADER_SIZE + 8, PAYLOAD_OFFSET);
+    zip_stream_write_u64(data + ELF_HEADER_SIZE + 16, UINT64_C(0x400000));
+    zip_stream_write_u64(data + ELF_HEADER_SIZE + 24, UINT64_C(0x400000));
+    zip_stream_write_u64(data + ELF_HEADER_SIZE + 32, 64);
+    zip_stream_write_u64(data + ELF_HEADER_SIZE + 40, 64);
+    zip_stream_write_u64(data + ELF_HEADER_SIZE + 48, 0x1000);
+    memcpy(data + PAYLOAD_OFFSET, "MZP", 3);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ELF | CL_SCAN_PARSE_ARCHIVE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Elf.Segment.MZ", "4d5a50", 0, 0, 0,
+                         "120", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(data, "MZP", 3) != 0,
+                  "ELF root unexpectedly satisfies segment child signature");
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ELF", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "ELF segment payload was not scanned: %s", cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Elf.Segment.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_elf_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -37810,6 +37890,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_cryptff  = tcase_create("cryptff");
     TCase *tc_cryptff_api = tcase_create("cryptff_api");
     TCase *tc_elf_map  = tcase_create("elf_map");
+    TCase *tc_elf_corpus = tcase_create("elf_corpus");
     TCase *tc_elf = tcase_create("elf");
     TCase *tc_tnef = tcase_create("tnef");
     TCase *tc_tnef_map = tcase_create("tnef_map");
@@ -37965,6 +38046,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_elf_map, test_elf_truncated_program_header_is_parse_error);
     tcase_add_test(tc_elf_map, test_elf_scan_program_header_read_failure_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_elf_corpus);
+    tcase_add_checked_fixture(tc_elf_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_elf_corpus, test_elf_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_elf);
     tcase_add_checked_fixture(tc_elf, cl_setup, cl_teardown);
     tcase_add_test(tc_elf, test_elf_time_limit_is_fail_visible);

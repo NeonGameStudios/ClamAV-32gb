@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ELF executable corpus qualification — 2026-08-26
+
+The current-source production-linked GCC elf case passes 4/4, elf_map passes
+6/6, and the isolated elf_corpus case passes 1/1. It uses a complete ELF64
+executable description with one bounded PT_LOAD payload; the ELF root does
+not begin with MZP, and the exact Elf.Segment.MZ.UNOFFICIAL alert is reached
+at the declared segment file offset. Full ELF corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release qualification remain open.
+
 ## MBR partition corpus qualification — 2026-08-26
 
 The current-source production-linked GCC mbr case passes 5/5, partition_map

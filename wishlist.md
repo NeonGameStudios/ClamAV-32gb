@@ -1,5 +1,14 @@
 # Wishlist
 
+## ELF executable corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC elf case passes 4/4, elf_map
+  passes 6/6, and the isolated elf_corpus case passes 1/1 over a complete
+  ELF64 executable description with a bounded PT_LOAD payload and an exact
+  segment-offset child matcher.
+- Keep full ELF corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## MBR partition corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC mbr case passes 5/5,

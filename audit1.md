@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## ELF executable corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC elf case passes 4/4,
+elf_map passes 6/6, and the isolated elf_corpus case passes 1/1. The corpus
+is a complete ELF64 executable description with one bounded PT_LOAD payload;
+the ELF root does not begin with MZP, and the exact Elf.Segment.MZ.UNOFFICIAL
+alert is reached at the declared segment file offset. This is bounded ELF
+structural and raw-coordinate evidence, not complete ELF corpus
+qualification; sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## MBR partition corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC mbr case passes 5/5,
