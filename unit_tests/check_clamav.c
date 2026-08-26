@@ -20839,6 +20839,63 @@ START_TEST(test_xar_subdocument_temporary_quota_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_xar_subdocument_serializes_inner_close)
+{
+    static const uint8_t toc[] =
+        "<?xml version=\"1.0\"?><xar><subdoc><x>OK</x></subdoc><toc></toc></xar>";
+    uint8_t *data;
+    size_t data_length;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    const char *last_virus;
+    cl_error_t ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Xar.Subdoc.Close", "3c2f783e", 0, 0, 0, "5", NULL,
+                         0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_XAR;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
+
+    ret = cli_scanxar(&ctx);
+    ck_assert_msg(ret == CL_VIRUS, "XAR subdocument inner close was not serialized: %s", cl_strerror(ret));
+    last_virus = cli_get_last_virus_str(&ctx);
+    ck_assert_ptr_nonnull(last_virus);
+    ck_assert_str_eq(last_virus, "Xar.Subdoc.Close.UNOFFICIAL");
+    ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_partition_parser_errors_are_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -39218,6 +39275,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xar_metadata = tcase_create("xar_metadata");
     TCase *tc_xar_map = tcase_create("xar_map");
     TCase *tc_xar_corpus = tcase_create("xar_corpus");
+    TCase *tc_xar_subdoc = tcase_create("xar_subdoc");
     TCase *tc_riff = tcase_create("riff");
     TCase *tc_riff_corpus = tcase_create("riff_corpus");
     TCase *tc_riff_map = tcase_create("riff_map");
@@ -39527,6 +39585,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xar_corpus);
     tcase_add_checked_fixture(tc_xar_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_xar_corpus, test_xar_corpus_detects_embedded_mz);
+    suite_add_tcase(s, tc_xar_subdoc);
+    tcase_add_checked_fixture(tc_xar_subdoc, cl_setup, cl_teardown);
+    tcase_add_test(tc_xar_subdoc, test_xar_subdocument_serializes_inner_close);
     suite_add_tcase(s, tc_riff);
     tcase_add_checked_fixture(tc_riff, cl_setup, cl_teardown);
     tcase_add_test(tc_riff, test_riff_header_read_failure_is_fail_visible);

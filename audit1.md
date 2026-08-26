@@ -471,6 +471,18 @@ observation; it is bounded XAR TOC/member-handoff evidence, not complete XAR
 qualification. Sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and release evidence remain open.
 
+## XAR subdocument inner-content handoff — 2026-08-26
+
+The production-linked GCC `xar_subdoc` case passes 1/1 over a complete XAR
+TOC containing `<subdoc><x>OK</x></subdoc>`. The exact
+`Xar.Subdoc.Close.UNOFFICIAL` matcher is reached at offset 5 in the
+quota-accounted inner XML payload (`<x>OK</x>`), confirming that the streaming
+serializer emits the child end element while intentionally excluding the
+`subdoc` wrapper from the nested scan. This is bounded subdocument handoff
+evidence, not complete XAR qualification; sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## Generic graphics BMP corpus qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `graphics_corpus` case
