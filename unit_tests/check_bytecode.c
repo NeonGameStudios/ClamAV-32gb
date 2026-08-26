@@ -1112,6 +1112,69 @@ START_TEST(test_bytecode_loader_enforces_v2_format_boundary)
 }
 END_TEST
 
+START_TEST(test_bytecode_loader_accepts_valid_fixture)
+{
+    const char *fixture = "input" PATHSEP "bytecode_sigs" PATHSEP
+                          "Clamav-Unit-Test-Signature.cbc";
+    struct cli_bc bc;
+    FILE *input;
+    int fd;
+
+    fd = open_testfile(fixture, O_RDONLY);
+    ck_assert_int_ge(fd, 0);
+    input = fdopen(fd, "r");
+    ck_assert_ptr_nonnull(input);
+
+    memset(&bc, 0, sizeof(bc));
+    ck_assert_int_eq(cli_bytecode_load(&bc, input, NULL, 1, 0), CL_SUCCESS);
+    cli_bytecode_destroy(&bc);
+    fclose(input);
+}
+END_TEST
+
+START_TEST(test_bytecode_loader_rejects_truncated_records)
+{
+    char line[8192];
+    struct cli_bc bc;
+    FILE *input;
+    FILE *truncated;
+    size_t length;
+    size_t cut;
+    int fd;
+
+    fd = open_testfile("input" PATHSEP "bytecode_sigs" PATHSEP
+                       "Clamav-Unit-Test-Signature.cbc", O_RDONLY);
+    ck_assert_int_ge(fd, 0);
+    input = fdopen(fd, "r");
+    ck_assert_ptr_nonnull(input);
+    ck_assert_ptr_nonnull(fgets(line, sizeof(line), input));
+    fclose(input);
+
+    length = strlen(line);
+    while (length && (line[length - 1] == '\n' || line[length - 1] == '\r'))
+        line[--length] = '\0';
+    ck_assert_int_gt((int)length, (int)(sizeof(BC_HEADER) - 1));
+
+    /* Every proper prefix of the supported header, including the complete
+     * header with all subsequent records absent, must fail closed.  This
+     * exercises all end-of-line reads without relying on an allocator fault. */
+    for (cut = sizeof(BC_HEADER) - 1; cut <= length; cut++) {
+        truncated = tmpfile();
+        ck_assert_ptr_nonnull(truncated);
+        ck_assert_uint_eq(fwrite(line, 1, cut, truncated), cut);
+        ck_assert_int_eq(fputc('\n', truncated), '\n');
+        ck_assert_int_eq(fseek(truncated, 0, SEEK_SET), 0);
+
+        memset(&bc, 0, sizeof(bc));
+        ck_assert_msg(cli_bytecode_load(&bc, truncated, NULL, 1, 0) != CL_SUCCESS,
+                      "truncated bytecode header prefix of %zu bytes was accepted",
+                      cut);
+        cli_bytecode_destroy(&bc);
+        fclose(truncated);
+    }
+}
+END_TEST
+
 START_TEST(test_bytecode_engine_scan_options_query)
 {
     static const uint8_t general_name[]   = "GeNeRaL AlLmAtCh";
@@ -1596,10 +1659,16 @@ Suite *test_bytecode_suite(void)
     Suite *s            = suite_create("bytecode");
     TCase *tc_cli_arith = tcase_create("arithmetic");
     TCase *tc_cli_read  = tcase_create("map_read");
+    TCase *tc_cli_loader = tcase_create("loader");
+    TCase *tc_cli_valid_loader = tcase_create("valid_loader");
     suite_add_tcase(s, tc_cli_arith);
     suite_add_tcase(s, tc_cli_read);
+    suite_add_tcase(s, tc_cli_loader);
+    suite_add_tcase(s, tc_cli_valid_loader);
     tcase_set_timeout(tc_cli_arith, 20);
     tcase_set_timeout(tc_cli_read, 20);
+    tcase_set_timeout(tc_cli_loader, 20);
+    tcase_set_timeout(tc_cli_valid_loader, 20);
     tcase_add_test(tc_cli_arith, test_retmagic_jit);
     tcase_add_test(tc_cli_arith, test_arith_jit);
     tcase_add_test(tc_cli_arith, test_apicalls_jit);
@@ -1667,6 +1736,8 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_v1_coordinate_narrowing_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);
     tcase_add_test(tc_cli_read, test_bytecode_jsnorm_limit_failure_releases_input);
+    tcase_add_test(tc_cli_valid_loader, test_bytecode_loader_accepts_valid_fixture);
+    tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_truncated_records);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
 #endif

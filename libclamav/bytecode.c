@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdint.h>
@@ -50,6 +51,7 @@
 #endif
 #define BC_EVENTS_PER_SIG 2
 #define MAX_BC_SIGEVENT_ID MAX_TRACKED_BC *BC_EVENTS_PER_SIG
+#define NUM_STATIC_TYPES 4
 
 cli_events_t *g_sigevents = NULL;
 unsigned int g_sigid;
@@ -510,7 +512,16 @@ cl_error_t cli_bytecode_context_setparam_ptr(struct cli_bc_ctx *ctx, unsigned i,
 static inline uint64_t readNumber(const unsigned char *p, unsigned *off, unsigned len, bool *ok)
 {
     uint64_t n = 0;
-    unsigned i, newoff, lim, p0 = p[*off], shift = 0;
+    unsigned i, newoff, lim, p0, shift = 0;
+
+    if (!p || !off || !ok || !*ok || *off >= len) {
+        cli_errmsg("End of line encountered while reading number\n");
+        if (ok)
+            *ok = false;
+        return 0;
+    }
+
+    p0 = p[*off];
 
     lim = p0 - 0x60;
     if (lim > 0x10) {
@@ -518,12 +529,12 @@ static inline uint64_t readNumber(const unsigned char *p, unsigned *off, unsigne
         *ok = false;
         return 0;
     }
-    newoff = *off + lim + 1;
-    if (newoff > len) {
+    if (lim >= len - *off) {
         cli_errmsg("End of line encountered while reading number\n");
         *ok = false;
         return 0;
     }
+    newoff = *off + lim + 1;
 
     if (p0 == 0x60) {
         *off = newoff;
@@ -546,23 +557,69 @@ static inline uint64_t readNumber(const unsigned char *p, unsigned *off, unsigne
     return n;
 }
 
+static inline unsigned readUnsigned(const unsigned char *p, unsigned *off,
+                                    unsigned len, bool *ok)
+{
+    uint64_t value = readNumber(p, off, len, ok);
+
+    if (*ok && value > UINT_MAX) {
+        cli_errmsg("Bytecode number is too large for the host representation: %llu\n",
+                   (unsigned long long)value);
+        *ok = false;
+        return 0;
+    }
+    return (unsigned)value;
+}
+
+static inline uint16_t readU16(const unsigned char *p, unsigned *off,
+                               unsigned len, bool *ok)
+{
+    uint64_t value = readNumber(p, off, len, ok);
+
+    if (*ok && value > UINT16_MAX) {
+        cli_errmsg("Bytecode number is too large for a 16-bit field: %llu\n",
+                   (unsigned long long)value);
+        *ok = false;
+        return 0;
+    }
+    return (uint16_t)value;
+}
+
+static inline bool line_has(unsigned off, unsigned len, unsigned width)
+{
+    return off <= len && width <= len - off;
+}
+
 static inline funcid_t readFuncID(struct cli_bc *bc, unsigned char *p,
                                   unsigned *off, unsigned len, bool *ok)
 {
-    funcid_t id = readNumber(p, off, len, ok) - 1;
-    if (*ok && id >= bc->num_func) {
-        cli_errmsg("Called function out of range: %u >= %u\n", id, bc->num_func);
+    uint64_t encoded = readNumber(p, off, len, ok);
+    funcid_t id;
+
+    if (!*ok || encoded == 0 || encoded > bc->num_func) {
+        cli_errmsg("Called function out of range: %llu >= %u\n",
+                   (unsigned long long)encoded, bc->num_func);
         *ok = false;
         return ~0;
     }
+    id = (funcid_t)(encoded - 1);
     return id;
 }
 
 static inline funcid_t readAPIFuncID(struct cli_bc *bc, unsigned char *p,
                                      unsigned *off, unsigned len, bool *ok)
 {
-    funcid_t id = readNumber(p, off, len, ok) - 1;
-    if (*ok && !cli_bitset_test(bc->uses_apis, id)) {
+    uint64_t encoded = readNumber(p, off, len, ok);
+    funcid_t id;
+
+    if (!*ok || encoded == 0 || encoded > cli_apicall_maxapi) {
+        cli_errmsg("Called API function out of range: %llu\n",
+                   (unsigned long long)encoded);
+        *ok = false;
+        return ~0;
+    }
+    id = (funcid_t)(encoded - 1);
+    if (!cli_bitset_test(bc->uses_apis, id)) {
         cli_errmsg("Called undeclared API function: %u\n", id);
         *ok = false;
         return ~0;
@@ -573,13 +630,15 @@ static inline funcid_t readAPIFuncID(struct cli_bc *bc, unsigned char *p,
 static inline unsigned readFixedNumber(const unsigned char *p, unsigned *off,
                                        unsigned len, bool *ok, unsigned width)
 {
-    unsigned i, n = 0, shift = 0;
-    unsigned newoff = *off + width;
-    if (newoff > len) {
+    unsigned i, newoff, n = 0, shift = 0;
+
+    if (!p || !off || !ok || !*ok || *off > len || width > len - *off) {
         cli_errmsg("Newline encountered while reading number\n");
-        *ok = false;
+        if (ok)
+            *ok = false;
         return 0;
     }
+    newoff = *off + width;
     for (i = *off; i < newoff; i++) {
         unsigned v = p[i];
         if (UNLIKELY((v & 0xf0) != 0x60)) {
@@ -600,12 +659,20 @@ static inline operand_t readOperand(struct cli_bc_func *func, unsigned char *p,
                                     unsigned *off, unsigned len, bool *ok)
 {
     uint64_t v;
+    if (!p || !off || !ok || !*ok || *off >= len) {
+        cli_errmsg("End of line encountered while reading operand\n");
+        if (ok)
+            *ok = false;
+        return MAX_OP;
+    }
     if ((p[*off] & 0xf0) == 0x40 || p[*off] == 0x50) {
         uint64_t *dest;
         uint16_t ty;
         p[*off] |= 0x20;
         /* TODO: unique constants */
-        if (func->numConstants == UINT32_MAX) {
+        if (func->numConstants == UINT32_MAX ||
+            (size_t)(func->numConstants + 1) >
+                CLI_MAX_ALLOCATION / sizeof(*func->constants)) {
             cli_errmsg("bytecode: constant table is too large\n");
             *ok = false;
             return MAX_OP;
@@ -650,16 +717,30 @@ static inline operand_t readOperand(struct cli_bc_func *func, unsigned char *p,
 static inline char *readData(const unsigned char *p, unsigned *off, unsigned len, bool *ok, unsigned *datalen)
 {
     unsigned char *dat, *q;
+    uint64_t l64;
     unsigned l, newoff, i;
+    if (!p || !off || !ok || !datalen || !*ok || *off >= len) {
+        cli_errmsg("End of line encountered while reading data\n");
+        if (ok)
+            *ok = false;
+        return NULL;
+    }
     if (p[*off] != '|') {
         cli_errmsg("Data start marker missing: %c\n", p[*off]);
         *ok = false;
         return NULL;
     }
     (*off)++;
-    l = readNumber(p, off, len, ok);
-    if (!l || !ok) {
-        *datalen = l;
+    l64 = readNumber(p, off, len, ok);
+    if (!*ok || l64 > UINT_MAX) {
+        cli_errmsg("Bytecode data length is out of range\n");
+        *ok = false;
+        *datalen = 0;
+        return NULL;
+    }
+    l = (unsigned)l64;
+    if (!l) {
+        *datalen = 0;
         return NULL;
     }
     if (*off > len || l > (len - *off) / 2) {
@@ -719,7 +800,7 @@ static cl_error_t parseHeader(struct cli_bc *bc, unsigned char *buffer, unsigned
     }
     offset                   = sizeof(BC_HEADER) - 1;
     len                      = strlen((const char *)buffer);
-    bc->metadata.formatlevel = readNumber(buffer, &offset, len, &ok);
+    bc->metadata.formatlevel = readUnsigned(buffer, &offset, len, &ok);
     if (!ok) {
         cli_errmsg("Unable to parse (format) functionality level in bytecode header\n");
         return CL_EMALFDB;
@@ -735,10 +816,10 @@ static cl_error_t parseHeader(struct cli_bc *bc, unsigned char *buffer, unsigned
     /* Optimistic parsing, check for error only at the end.*/
     bc->metadata.timestamp     = readNumber(buffer, &offset, len, &ok);
     bc->metadata.sigmaker      = readString(buffer, &offset, len, &ok);
-    bc->metadata.targetExclude = readNumber(buffer, &offset, len, &ok);
-    bc->kind                   = readNumber(buffer, &offset, len, &ok);
-    bc->metadata.minfunc       = readNumber(buffer, &offset, len, &ok);
-    bc->metadata.maxfunc       = readNumber(buffer, &offset, len, &ok);
+    bc->metadata.targetExclude = readUnsigned(buffer, &offset, len, &ok);
+    bc->kind                   = readUnsigned(buffer, &offset, len, &ok);
+    bc->metadata.minfunc       = readUnsigned(buffer, &offset, len, &ok);
+    bc->metadata.maxfunc       = readUnsigned(buffer, &offset, len, &ok);
     flevel                     = cl_retflevel();
     /* in 0.96 these 2 fields are unused / zero, in post 0.96 these mean
      * min/max flevel.
@@ -752,16 +833,20 @@ static cl_error_t parseHeader(struct cli_bc *bc, unsigned char *buffer, unsigned
                    bc->metadata.minfunc, bc->metadata.maxfunc, flevel);
         return CL_BREAK;
     }
-    bc->metadata.maxresource = readNumber(buffer, &offset, len, &ok);
+    bc->metadata.maxresource = readUnsigned(buffer, &offset, len, &ok);
     bc->metadata.compiler    = readString(buffer, &offset, len, &ok);
-    bc->num_types            = readNumber(buffer, &offset, len, &ok);
-    bc->num_func             = readNumber(buffer, &offset, len, &ok);
+    bc->num_types            = readUnsigned(buffer, &offset, len, &ok);
+    bc->num_func             = readUnsigned(buffer, &offset, len, &ok);
     bc->state                = bc_loaded;
     bc->uses_apis            = NULL;
     bc->dbgnodes             = NULL;
     bc->dbgnode_cnt          = 0;
     if (!ok) {
         cli_errmsg("Invalid bytecode header at %u\n", offset);
+        return CL_EMALFDB;
+    }
+    if (bc->num_func > UINT16_MAX) {
+        cli_errmsg("Bytecode function table exceeds the function-id width\n");
         return CL_EMALFDB;
     }
     magic1 = readNumber(buffer, &offset, len, &ok);
@@ -772,15 +857,25 @@ static cl_error_t parseHeader(struct cli_bc *bc, unsigned char *buffer, unsigned
         cli_errmsg("Magic numbers don't match: %lx%lx, %u\n", m0, m1, magic2);
         return CL_EMALFDB;
     }
-    if (buffer[offset] != ':') {
-        cli_errmsg("Expected : but found: %c\n", buffer[offset]);
+    if (offset >= len || buffer[offset] != ':') {
+        cli_errmsg("Expected : but found: %c\n", offset < len ? buffer[offset] : '\0');
         return CL_EMALFDB;
     }
     offset++;
-    *linelength = strtol((const char *)buffer + offset, &pos, 10);
-    if (*pos != '\0') {
-        cli_errmsg("Invalid number: %s\n", buffer + offset);
+    if (offset >= len) {
+        cli_errmsg("Missing bytecode line length\n");
         return CL_EMALFDB;
+    }
+    errno = 0;
+    {
+        long line_length = strtol((const char *)buffer + offset, &pos, 10);
+        if (errno || *pos != '\0' || line_length <= 0 ||
+            (uint64_t)line_length > CLI_MAX_ALLOCATION ||
+            (uint64_t)line_length > UINT_MAX) {
+            cli_errmsg("Invalid bytecode line length: %s\n", buffer + offset);
+            return CL_EMALFDB;
+        }
+        *linelength = (unsigned)line_length;
     }
 
     bc->funcs = cli_max_calloc(bc->num_func, sizeof(*bc->funcs));
@@ -819,9 +914,14 @@ static uint16_t readTypeID(struct cli_bc *bc, unsigned char *buffer,
                            unsigned *offset, unsigned len, bool *ok)
 {
     uint64_t t = readNumber(buffer, offset, len, ok);
-    if (!ok)
+    if (!*ok)
         return ~0;
-    if (t >= bc->num_types + bc->start_tid) {
+    /* The final type-table slot is reserved by the bytecode format.  Static
+     * pointer types occupy 65..68 and parsed types start at BC_START_TID. */
+    if (t > UINT16_MAX ||
+        (t >= BC_START_TID &&
+        (bc->num_types <= NUM_STATIC_TYPES ||
+         t - 65 >= bc->num_types - 1))) {
         cli_errmsg("Invalid type id: %llu\n", (unsigned long long)t);
         *ok = false;
         return ~0;
@@ -835,9 +935,14 @@ static void parseType(struct cli_bc *bc, struct cli_bc_type *ty,
 {
     unsigned j;
 
-    ty->numElements = readNumber(buffer, off, len, ok);
+    ty->numElements = readUnsigned(buffer, off, len, ok);
     if (!*ok) {
         cli_errmsg("Error parsing type\n");
+        *ok = false;
+        return;
+    }
+    if (ty->numElements > CLI_MAX_ALLOCATION / sizeof(*ty->containedTypes)) {
+        cli_errmsg("Too many contained types: %u\n", ty->numElements);
         *ok = false;
         return;
     }
@@ -853,8 +958,6 @@ static void parseType(struct cli_bc *bc, struct cli_bc_type *ty,
 }
 
 static uint16_t containedTy[] = {8, 16, 32, 64};
-
-#define NUM_STATIC_TYPES 4
 static void add_static_types(struct cli_bc *bc)
 {
     unsigned i;
@@ -880,6 +983,10 @@ static cl_error_t parseTypes(struct cli_bc *bc, unsigned char *buffer)
         cli_warnmsg("Type start id mismatch: %u != %u\n", bc->start_tid,
                     BC_START_TID);
         return CL_BREAK;
+    }
+    if (bc->num_types <= NUM_STATIC_TYPES) {
+        cli_errmsg("Bytecode type table is missing its reserved terminator\n");
+        return CL_EMALFDB;
     }
     add_static_types(bc);
     for (i = (BC_START_TID - 65); i < bc->num_types - 1; i++) {
@@ -917,7 +1024,7 @@ static cl_error_t parseTypes(struct cli_bc *bc, unsigned char *buffer)
             case 4:
                 ty->kind = DArrayType;
                 /* number of elements of array, not subtypes! */
-                ty->numElements = readNumber(buffer, &offset, len, &ok);
+                ty->numElements = readUnsigned(buffer, &offset, len, &ok);
                 if (!ok) {
                     cli_errmsg("Error parsing type %u\n", i);
                     return CL_EMALFDB;
@@ -1011,7 +1118,7 @@ static cl_error_t parseApis(struct cli_bc *bc, unsigned char *buffer)
         return CL_EMALFDB;
     }
 
-    maxapi = readNumber(buffer, &offset, len, &ok);
+    maxapi = readUnsigned(buffer, &offset, len, &ok);
     if (!ok)
         return CL_EMALFDB;
     if (maxapi > cli_apicall_maxapi) {
@@ -1022,7 +1129,7 @@ static cl_error_t parseApis(struct cli_bc *bc, unsigned char *buffer)
         cli_errmsg("bytecode format %u cannot declare API %u\n", bc->metadata.formatlevel, maxapi);
         return CL_EMALFDB;
     }
-    calls = readNumber(buffer, &offset, len, &ok);
+    calls = readUnsigned(buffer, &offset, len, &ok);
     if (!ok)
         return CL_EMALFDB;
     if (calls > maxapi) {
@@ -1040,7 +1147,7 @@ static cl_error_t parseApis(struct cli_bc *bc, unsigned char *buffer)
         return CL_EMEM;
     }
     for (i = 0; i < calls; i++) {
-        unsigned id  = readNumber(buffer, &offset, len, &ok);
+        unsigned id  = readUnsigned(buffer, &offset, len, &ok);
         uint16_t tid = readTypeID(bc, buffer, &offset, len, &ok);
         char *name   = readString(buffer, &offset, len, &ok);
 
@@ -1079,8 +1186,16 @@ static uint16_t type_components(struct cli_bc *bc, uint16_t id, bool *ok)
 {
     unsigned i, sum = 0;
     const struct cli_bc_type *ty;
+    if (!*ok)
+        return 0;
     if (id <= 64)
         return 1;
+    if (bc->num_types <= NUM_STATIC_TYPES ||
+        (unsigned)id - 65 >= bc->num_types - 1) {
+        cli_errmsg("bytecode: type id out of range for constant: %u\n", id);
+        *ok = false;
+        return 0;
+    }
     ty = &bc->types[id - 65];
     /* TODO: protect against recursive types */
     switch (ty->kind) {
@@ -1110,14 +1225,20 @@ static void readConstant(struct cli_bc *bc, unsigned i, unsigned comp,
                          unsigned len, bool *ok)
 {
     unsigned j = 0;
-    if (*ok && buffer[*offset] == 0x40 &&
+    if (!*ok || !line_has(*offset, len, 1))
+        goto malformed;
+    if (line_has(*offset, len, 2) && buffer[*offset] == 0x40 &&
         buffer[*offset + 1] == 0x60) {
         /* zero initializer */
         memset(bc->globals[i], 0, sizeof(*bc->globals[0]) * comp);
         (*offset) += 2;
         return;
     }
-    while (*ok && buffer[*offset] != 0x60) {
+    while (*ok) {
+        if (!line_has(*offset, len, 1))
+            goto malformed;
+        if (buffer[*offset] == 0x60)
+            break;
         if (j >= comp) {
             cli_errmsg("bytecode: constant has too many subcomponents, expected %u\n", comp);
             *ok = false;
@@ -1126,11 +1247,18 @@ static void readConstant(struct cli_bc *bc, unsigned i, unsigned comp,
         buffer[*offset] |= 0x20;
         bc->globals[i][j++] = readNumber(buffer, offset, len, ok);
     }
-    if (*ok && j != comp) {
+    if (!*ok)
+        return;
+    if (j != comp) {
         cli_errmsg("bytecode: constant has too few subcomponents: %u < %u\n", j, comp);
         *ok = false;
     }
     (*offset)++;
+    return;
+
+malformed:
+    cli_errmsg("bytecode: constant initializer exceeds line\n");
+    *ok = false;
 }
 
 /* parse constant globals with constant initializers */
@@ -1144,7 +1272,7 @@ static cl_error_t parseGlobals(struct cli_bc *bc, unsigned char *buffer)
         cli_errmsg("bytecode: Invalid globals header: %c\n", buffer[0]);
         return CL_EMALFDB;
     }
-    maxglobal = readNumber(buffer, &offset, len, &ok);
+    maxglobal = readUnsigned(buffer, &offset, len, &ok);
     if (maxglobal > cli_apicall_maxglobal) {
         cli_dbgmsg("bytecode using global %u, but highest global known to libclamav is %u, skipping\n", maxglobal, cli_apicall_maxglobal);
         return CL_BREAK;
@@ -1154,7 +1282,9 @@ static cl_error_t parseGlobals(struct cli_bc *bc, unsigned char *buffer)
         cli_errmsg("bytecode format %u cannot declare global %u\n", bc->metadata.formatlevel, maxglobal);
         return CL_EMALFDB;
     }
-    numglobals  = readNumber(buffer, &offset, len, &ok);
+    numglobals  = readUnsigned(buffer, &offset, len, &ok);
+    if (!ok)
+        return CL_EMALFDB;
     bc->globals = cli_max_calloc(numglobals, sizeof(*bc->globals));
     if (!bc->globals) {
         cli_errmsg("bytecode: OOM allocating memory for %u globals\n", numglobals);
@@ -1171,6 +1301,8 @@ static cl_error_t parseGlobals(struct cli_bc *bc, unsigned char *buffer)
     for (i = 0; i < numglobals; i++) {
         unsigned comp;
         bc->globaltys[i] = readTypeID(bc, buffer, &offset, len, &ok);
+        if (!ok)
+            return CL_EMALFDB;
         comp             = type_components(bc, bc->globaltys[i], &ok);
         if (!ok)
             return CL_EMALFDB;
@@ -1239,7 +1371,7 @@ static cl_error_t parseMD(struct cli_bc *bc, unsigned char *buffer)
     for (i = 0; i < numMD; i++) {
         unsigned j;
         struct cli_bc_dbgnode_element *elts;
-        unsigned el = readNumber(buffer, &offset, len, &ok);
+        unsigned el = readUnsigned(buffer, &offset, len, &ok);
         if (!ok) {
             cli_errmsg("Unable to parse number of elements\n");
             return CL_EMALFDB;
@@ -1249,18 +1381,22 @@ static cl_error_t parseMD(struct cli_bc *bc, unsigned char *buffer)
         if (!elts)
             return CL_EMEM;
         for (j = 0; j < el; j++) {
+            if (!line_has(offset, len, 1)) {
+                cli_errmsg("Unable to parse debug node element\n");
+                return CL_EMALFDB;
+            }
             if (buffer[offset] == '|') {
                 elts[j].string = readData(buffer, &offset, len, &ok, &elts[j].len);
                 if (!ok)
                     return CL_EMALFDB;
             } else {
-                elts[j].len = readNumber(buffer, &offset, len, &ok);
+                elts[j].len = readUnsigned(buffer, &offset, len, &ok);
                 if (!ok)
                     return CL_EMALFDB;
                 if (elts[j].len) {
                     elts[j].constant = readNumber(buffer, &offset, len, &ok);
                 } else
-                    elts[j].nodeid = readNumber(buffer, &offset, len, &ok);
+                    elts[j].nodeid = readUnsigned(buffer, &offset, len, &ok);
                 if (!ok)
                     return CL_EMALFDB;
             }
@@ -1291,14 +1427,19 @@ static cl_error_t parseFunctionHeader(struct cli_bc *bc, unsigned fn, unsigned c
     offset           = 1;
     func->numArgs    = readFixedNumber(buffer, &offset, len, &ok, 1);
     func->returnType = readTypeID(bc, buffer, &offset, len, &ok);
-    if (buffer[offset] != 'L') {
-        cli_errmsg("Invalid function locals header: %c\n", buffer[offset]);
+    if (!ok || !line_has(offset, len, 1) || buffer[offset] != 'L') {
+        cli_errmsg("Invalid function locals header: %c\n",
+                   line_has(offset, len, 1) ? buffer[offset] : '\0');
         return CL_EMALFDB;
     }
     offset++;
-    func->numLocals = readNumber(buffer, &offset, len, &ok);
+    func->numLocals = readU16(buffer, &offset, len, &ok);
     if (!ok) {
         cli_errmsg("Invalid number of arguments/locals\n");
+        return CL_EMALFDB;
+    }
+    if ((uint64_t)func->numLocals + (uint64_t)func->numArgs > UINT_MAX) {
+        cli_errmsg("Too many function arguments and locals\n");
         return CL_EMALFDB;
     }
     all_locals = func->numArgs + func->numLocals;
@@ -1312,7 +1453,7 @@ static cl_error_t parseFunctionHeader(struct cli_bc *bc, unsigned fn, unsigned c
         }
     }
     for (i = 0; i < all_locals; i++) {
-        func->types[i] = readNumber(buffer, &offset, len, &ok);
+        func->types[i] = readTypeID(bc, buffer, &offset, len, &ok);
         if (readFixedNumber(buffer, &offset, len, &ok, 1))
             func->types[i] |= 0x8000;
     }
@@ -1320,12 +1461,13 @@ static cl_error_t parseFunctionHeader(struct cli_bc *bc, unsigned fn, unsigned c
         cli_errmsg("Invalid local types\n");
         return CL_EMALFDB;
     }
-    if (buffer[offset] != 'F') {
-        cli_errmsg("Invalid function body header: %c\n", buffer[offset]);
+    if (!line_has(offset, len, 1) || buffer[offset] != 'F') {
+        cli_errmsg("Invalid function body header: %c\n",
+                   line_has(offset, len, 1) ? buffer[offset] : '\0');
         return CL_EMALFDB;
     }
     offset++;
-    func->numInsts = readNumber(buffer, &offset, len, &ok);
+    func->numInsts = readUnsigned(buffer, &offset, len, &ok);
     if (!ok) {
         cli_errmsg("Invalid instructions count\n");
         return CL_EMALFDB;
@@ -1338,7 +1480,7 @@ static cl_error_t parseFunctionHeader(struct cli_bc *bc, unsigned fn, unsigned c
         cli_errmsg("Out of memory allocating instructions\n");
         return CL_EMEM;
     }
-    func->numBB = readNumber(buffer, &offset, len, &ok);
+    func->numBB = readU16(buffer, &offset, len, &ok);
     if (!ok) {
         cli_errmsg("Invalid basic block count\n");
         return CL_EMALFDB;
@@ -1353,7 +1495,7 @@ static cl_error_t parseFunctionHeader(struct cli_bc *bc, unsigned fn, unsigned c
 
 static bbid_t readBBID(struct cli_bc_func *func, const unsigned char *buffer, unsigned *off, unsigned len, bool *ok)
 {
-    unsigned id = readNumber(buffer, off, len, ok);
+    unsigned id = readUnsigned(buffer, off, len, ok);
     if (!id || id >= func->numBB) {
         cli_errmsg("Basic block ID out of range: %u\n", id);
         *ok = false;
@@ -1405,6 +1547,10 @@ static cl_error_t parseBB(struct cli_bc *bc, unsigned func, unsigned bb, unsigne
         // Initialize instruction to zero
         memset(&inst, 0, sizeof(inst));
 
+        if (!line_has(offset, len, 1)) {
+            cli_errmsg("Missing basic block instruction\n");
+            return CL_EMALFDB;
+        }
         if (buffer[offset] == 'T') {
             last = 1;
             offset++;
@@ -1412,8 +1558,8 @@ static cl_error_t parseBB(struct cli_bc *bc, unsigned func, unsigned bb, unsigne
             inst.type = 0;
             inst.dest = 0;
         } else {
-            inst.type = readNumber(buffer, &offset, len, &ok);
-            inst.dest = readNumber(buffer, &offset, len, &ok);
+            inst.type = readTypeID(bc, buffer, &offset, len, &ok);
+            inst.dest = readUnsigned(buffer, &offset, len, &ok);
         }
         inst.opcode = readFixedNumber(buffer, &offset, len, &ok, 2);
         if (!ok) {
@@ -1430,7 +1576,7 @@ static cl_error_t parseBB(struct cli_bc *bc, unsigned func, unsigned bb, unsigne
                 inst.u.jump = readBBID(bcfunc, buffer, &offset, len, &ok);
                 break;
             case OP_BC_RET:
-                inst.type      = readNumber(buffer, &offset, len, &ok);
+                inst.type      = readTypeID(bc, buffer, &offset, len, &ok);
                 inst.u.unaryop = readOperand(bcfunc, buffer, &offset, len, &ok);
                 break;
             case OP_BC_BRANCH:
@@ -1466,6 +1612,10 @@ static cl_error_t parseBB(struct cli_bc *bc, unsigned func, unsigned bb, unsigne
             case OP_BC_SEXT:
             case OP_BC_TRUNC:
                 inst.u.cast.source = readOperand(bcfunc, buffer, &offset, len, &ok);
+                if (!ok || inst.u.cast.source >= bcfunc->numValues) {
+                    ok = false;
+                    break;
+                }
                 inst.u.cast.mask   = bcfunc->types[inst.u.cast.source];
                 if (inst.u.cast.mask == 1)
                     inst.u.cast.size = 0;
@@ -1483,7 +1633,7 @@ static cl_error_t parseBB(struct cli_bc *bc, unsigned func, unsigned bb, unsigne
                 break;
             case OP_BC_GEP1:
             case OP_BC_GEPZ:
-                inst.u.three[0] = readNumber(buffer, &offset, len, &ok);
+                inst.u.three[0] = readTypeID(bc, buffer, &offset, len, &ok);
                 inst.u.three[1] = readOperand(bcfunc, buffer, &offset, len, &ok);
                 inst.u.three[2] = readOperand(bcfunc, buffer, &offset, len, &ok);
                 break;
@@ -1497,7 +1647,7 @@ static cl_error_t parseBB(struct cli_bc *bc, unsigned func, unsigned bb, unsigne
                         cli_errmsg("Out of memory allocating operands\n");
                         return CL_EMEM;
                     }
-                    inst.u.ops.ops[0] = readNumber(buffer, &offset, len, &ok);
+                    inst.u.ops.ops[0] = readUnsigned(buffer, &offset, len, &ok);
                     for (i = 1; i < numOp + 2; i++)
                         inst.u.ops.ops[i] = readOperand(bcfunc, buffer, &offset, len, &ok);
                 }
@@ -1571,7 +1721,8 @@ static cl_error_t parseBB(struct cli_bc *bc, unsigned func, unsigned bb, unsigne
             return CL_EMALFDB;
         }
 
-        if (bcfunc->insn_idx + BB->numInsts >= bcfunc->numInsts) {
+        if (bcfunc->insn_idx >= bcfunc->numInsts ||
+            BB->numInsts >= bcfunc->numInsts - bcfunc->insn_idx) {
             cli_errmsg("More instructions than declared in total: %u > %u!\n",
                        bcfunc->insn_idx + BB->numInsts, bcfunc->numInsts);
             return CL_EMALFDB;
@@ -1594,22 +1745,27 @@ static cl_error_t parseBB(struct cli_bc *bc, unsigned func, unsigned bb, unsigne
         BB->insts[BB->numInsts++] = inst;
     }
     if (bb + 1 == bc->funcs[func].numBB) {
-        if (buffer[offset] != 'E') {
-            cli_errmsg("Missing basicblock terminator, got: %c\n", buffer[offset]);
+        if (!line_has(offset, len, 1) || buffer[offset] != 'E') {
+            cli_errmsg("Missing basicblock terminator, got: %c\n",
+                       line_has(offset, len, 1) ? buffer[offset] : '\0');
             return CL_EMALFDB;
         }
         offset++;
     }
-    if (buffer[offset] == 'D') {
+    if (line_has(offset, len, 1) && buffer[offset] == 'D') {
         uint32_t num;
-        offset += 3;
-        if (offset >= len)
+        if (!line_has(offset, len, 3))
             return CL_EMALFDB;
-        num = (uint32_t)readNumber(buffer, &offset, len, &ok);
+        offset += 3;
+        num = readUnsigned(buffer, &offset, len, &ok);
         if (!ok)
             return CL_EMALFDB;
         if (num != bcfunc->numInsts) {
             cli_errmsg("invalid number of dbg nodes, expected: %u, got: %u\n", bcfunc->numInsts, num);
+            return CL_EMALFDB;
+        }
+        if (num > CLI_MAX_ALLOCATION / sizeof(*bcfunc->dbgnodes)) {
+            cli_errmsg("Too many debug nodes: %u\n", num);
             return CL_EMALFDB;
         }
         bcfunc->dbgnodes = cli_max_malloc(num * sizeof(*bcfunc->dbgnodes));
@@ -1790,9 +1946,16 @@ cl_error_t cli_bytecode_load(struct cli_bc *bc, FILE *f, struct cli_dbio *dbio, 
     if (rc == CL_BREAK) {
         const char *len = strchr(firstbuf, ':');
         bc->state       = bc_skip;
-        if (!linelength) {
-            linelength = len ? atoi(len + 1) : 4096;
+        if (!linelength && len) {
+            char *end;
+            unsigned long parsed;
+            errno = 0;
+            parsed = strtoul(len + 1, &end, 10);
+            if (!errno && end != len + 1 && *end == '\0' && parsed <= UINT_MAX)
+                linelength = (unsigned)parsed;
         }
+        if (!linelength)
+            linelength = 4096;
         if (linelength < 4096)
             linelength = 4096;
         cli_dbgmsg("line: %d\n", linelength);
@@ -2192,8 +2355,8 @@ void cli_bytecode_destroy(struct cli_bc *bc)
         operand_t o = val;                                                                                                  \
         if (o & 0x80000000) {                                                                                               \
             o &= 0x7fffffff;                                                                                                \
-            if (o > bc->num_globals) {                                                                                      \
-                cli_errmsg("bytecode: global out of range: %u > %u, for instruction %u in function %u\n",                   \
+            if (o >= bc->num_globals) {                                                                                     \
+                cli_errmsg("bytecode: global out of range: %u >= %u, for instruction %u in function %u\n",                  \
                            o, (unsigned)bc->num_globals, j, i);                                                             \
                 free(map);                                                                                                  \
                 free(gmap);                                                                                                 \
@@ -2228,7 +2391,7 @@ static inline int64_t ptr_compose(int32_t id, uint32_t offset)
 static inline int get_geptypesize(const struct cli_bc *bc, uint16_t tid)
 {
     const struct cli_bc_type *ty;
-    if (tid >= bc->num_types + 65) {
+    if (tid >= bc->num_types + 64) {
         cli_errmsg("bytecode: typeid out of range %u >= %u\n", tid, bc->num_types);
         return -1;
     }
@@ -2249,7 +2412,7 @@ static int calc_gepz(struct cli_bc *bc, struct cli_bc_func *func, uint16_t tid, 
     unsigned off = 0, i;
     uint32_t *gepoff;
     const struct cli_bc_type *ty;
-    if (tid >= bc->num_types + 65) {
+    if (tid >= bc->num_types + 64) {
         cli_errmsg("bytecode: typeid out of range %u >= %u\n", tid, bc->num_types);
         return -1;
     }
@@ -2265,6 +2428,11 @@ static int calc_gepz(struct cli_bc *bc, struct cli_bc_func *func, uint16_t tid, 
     ty = &bc->types[ty->containedTypes[0] - 65];
     if (ty->kind != DStructType && ty->kind != DPackedStructType)
         return 0;
+    if ((op & 0x80000000) || op < func->numValues ||
+        op - func->numValues >= func->numConstants) {
+        cli_errmsg("bytecode: gep offset is not a valid constant\n");
+        return -1;
+    }
     gepoff = (uint32_t *)&func->constants[op - func->numValues];
     if (*gepoff >= ty->numElements) {
         cli_errmsg("bytecode: gep offset out of range: %d >= %d\n", (uint32_t)*gepoff, ty->numElements);
@@ -2284,6 +2452,10 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
     unsigned bcglobalid = cli_apicall_maxglobal - _FIRST_GLOBAL + 2;
     cl_error_t ret      = CL_SUCCESS;
     bc->numGlobalBytes  = 0;
+    if (bc->num_globals > CLI_MAX_ALLOCATION / sizeof(*gmap)) {
+        cli_errmsg("interpreter: global map is too large: %zu\n", bc->num_globals);
+        return CL_EMEM;
+    }
     gmap                = cli_max_malloc(bc->num_globals * sizeof(*gmap));
     if (!gmap) {
         cli_errmsg("interpreter: Unable to allocate memory for global map: %zu\n", bc->num_globals * sizeof(*gmap));
@@ -2319,7 +2491,7 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
                     ptr = ptr_compose(bc->globals[j][1] - _FIRST_GLOBAL + 1,
                                       bc->globals[j][0]);
                 } else {
-                    if (bc->globals[j][1] > bc->num_globals)
+                    if (bc->globals[j][1] >= bc->num_globals)
                         continue;
                     ptr = ptr_compose(bcglobalid,
                                       gmap[bc->globals[j][1]] + bc->globals[j][0]);
@@ -2363,8 +2535,19 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
 
     for (i = 0; i < bc->num_func && ret == CL_SUCCESS; i++) {
         struct cli_bc_func *bcfunc = &bc->funcs[i];
-        unsigned totValues         = bcfunc->numValues + bcfunc->numConstants + bc->num_globals;
-        unsigned *map              = cli_max_malloc(sizeof(*map) * (size_t)totValues);
+        uint64_t total_values      = (uint64_t)bcfunc->numValues +
+                                     (uint64_t)bcfunc->numConstants +
+                                     (uint64_t)bc->num_globals;
+        unsigned totValues;
+        unsigned *map;
+        if (total_values > UINT_MAX ||
+            total_values > CLI_MAX_ALLOCATION / sizeof(*map)) {
+            cli_errmsg("interpreter: value map is too large\n");
+            free(gmap);
+            return CL_EMEM;
+        }
+        totValues = (unsigned)total_values;
+        map       = cli_max_malloc(sizeof(*map) * (size_t)totValues);
         if (!map) {
             cli_errmsg("interpreter: Unable to allocate memory for map: %zu\n", sizeof(*map) * (size_t)totValues);
             free(gmap);
@@ -2390,7 +2573,17 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
         }
         for (j = 0; j < bcfunc->numInsts && ret == CL_SUCCESS; j++) {
             struct cli_bc_inst *inst = &bcfunc->allinsts[j];
-            inst->dest               = map[inst->dest];
+            if (inst->opcode != OP_BC_JMP && inst->opcode != OP_BC_BRANCH &&
+                inst->opcode != OP_BC_RET && inst->opcode != OP_BC_RET_VOID) {
+                if (inst->dest >= totValues) {
+                    cli_errmsg("bytecode: destination out of range: %u >= %u, for instruction %u in function %u\n",
+                               inst->dest, totValues, j, i);
+                    free(map);
+                    free(gmap);
+                    return CL_EBYTECODE;
+                }
+                inst->dest = map[inst->dest];
+            }
             switch (inst->opcode) {
                 case OP_BC_ADD:
                 case OP_BC_SUB:
@@ -2442,11 +2635,13 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
                 case OP_BC_CALL_DIRECT: {
                     struct cli_bc_func *target = NULL;
                     if (inst->opcode == OP_BC_CALL_DIRECT) {
-                        target = &bc->funcs[inst->u.ops.funcid];
-                        if (inst->u.ops.funcid > bc->num_func) {
-                            cli_errmsg("bytecode: called function out of range: %u > %u\n", inst->u.ops.funcid, bc->num_func);
+                        if (inst->u.ops.funcid >= bc->num_func) {
+                            cli_errmsg("bytecode: called function out of range: %u >= %u\n", inst->u.ops.funcid, bc->num_func);
                             ret = CL_EBYTECODE;
-                        } else if (inst->u.ops.numOps != target->numArgs) {
+                        } else {
+                            target = &bc->funcs[inst->u.ops.funcid];
+                        }
+                        if (ret == CL_SUCCESS && inst->u.ops.numOps != target->numArgs) {
                             cli_errmsg("bytecode: call operands don't match function prototype\n");
                             ret = CL_EBYTECODE;
                         }

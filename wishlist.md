@@ -1,5 +1,16 @@
 # Wishlist
 
+## Bytecode malformed-record boundary hardening — 2026-08-26
+
+- Keep variable/fixed-width bytecode reads bounded, reject zero or
+  host-unrepresentable encoded IDs before narrowing, validate type/global/
+  destination maps, require constant GEP offsets, and check allocation
+  products against the shared ceiling.
+- The current-source production-linked GCC parser build is warning-clean; the
+  isolated valid-fixture loader and truncated-record prefix TCase each pass
+  1/1. Keep full bytecode execution, independent format-8 fixture, sanitizer,
+  production-CVD/service, Sonic1, and release qualification open.
+
 ## Bundled YARA VM malformed-state hardening — 2026-08-26
 
 - The bundled YARA VM now rejects empty-stack pops, out-of-range fixed

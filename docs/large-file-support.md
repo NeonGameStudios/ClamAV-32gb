@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Bytecode malformed-record boundary hardening — 2026-08-26
+
+The bytecode loader bounds variable and fixed-width primitive reads, rejects
+zero and host-unrepresentable encoded function/API IDs before narrowing,
+validates the reserved type-table range, and prevents malformed global,
+destination, and GEP operands from indexing interpreter tables. Skipped-format
+line lengths use checked conversion, and constant/debug/global/interpreter map
+allocation products are checked against the shared allocation ceiling. A
+current-source production-linked GCC build compiles the modified parser
+warning-clean; isolated valid-fixture and truncated-record loader TCases pass
+1/1 each. Full bytecode execution, independently compiled format-8 fixture,
+sanitizer, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## Bundled YARA VM malformed-state hardening — 2026-08-26
 
 The bundled YARA interpreter now rejects empty-stack pops, out-of-range fixed

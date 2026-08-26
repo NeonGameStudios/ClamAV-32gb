@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Bytecode malformed-record boundary hardening — 2026-08-26
+
+The bytecode loader now bounds every variable and fixed-width primitive read,
+rejects encoded function/API-ID zero and host-width overflow before narrowing,
+validates the reserved type-table range, rejects invalid global/destination
+maps and non-constant GEP offsets before interpreter indexing, and parses
+skipped-format line lengths without `atoi()` overflow. Allocation products for
+constant, debug-node, global, and interpreter maps are checked against the
+shared ceiling. A current-source production-linked GCC build compiles the
+modified parser warning-clean; its isolated valid-fixture loader TCase passes
+1/1 and its truncated-record prefix TCase passes 1/1. Full bytecode execution,
+independently compiled format-8 fixture, sanitizer, production-CVD/service,
+Sonic1, and release qualification remain open.
+
 ## Bundled YARA VM malformed-state hardening — 2026-08-26
 
 The bundled YARA interpreter previously decremented an empty VM stack and
