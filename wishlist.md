@@ -1,5 +1,15 @@
 # Wishlist
 
+## GIF bounded overlay corpus qualification — 2026-08-25
+
+- The current-source production-linked GCC `gif` case passes 5/5, and the
+  isolated `gif_corpus` case passes 1/1 over a valid minimal GIF root with a
+  bounded child after the trailer; exact offset-0 `MZP` matching is reached
+  through the broken-media overlay handoff.
+- Keep complete GIF/image corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## TAR materialized corpus qualification — 2026-08-25
 
 - The current-source production-linked GCC `tar` case passes 6/6, and the

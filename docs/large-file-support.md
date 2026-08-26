@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## GIF bounded overlay corpus qualification — 2026-08-25
+
+The current-source production-linked GCC `gif` case passes 5/5, and the
+isolated `gif_corpus` case passes 1/1. It uses a valid minimal GIF root with a
+bounded child after the GIF trailer; the root does not begin with `MZP`, and
+the exact `GIF.Member.MZ.UNOFFICIAL` alert is reached through the broken-media
+overlay handoff. Full GIF/image corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## NSIS member-table corpus qualification — 2026-08-25
 
 The current-source production-linked GCC `nulsft` case passes 4/4, and the

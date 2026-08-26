@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## GIF bounded overlay corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `gif` case passes
+5/5, and the isolated `gif_corpus` case passes 1/1. The corpus uses a valid
+minimal GIF root with a bounded 64-byte child appended after the GIF trailer;
+the root does not begin with `MZP`, and the exact `GIF.Member.MZ.UNOFFICIAL`
+alert is reached through the broken-media overlay handoff. This is bounded
+GIF structural and overlay evidence, not complete GIF/image corpus
+qualification; sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## NSIS member-table corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `nulsft` case passes

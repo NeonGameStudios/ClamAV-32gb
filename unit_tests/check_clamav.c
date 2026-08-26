@@ -35708,6 +35708,63 @@ START_TEST(test_png_corpus_detects_embedded_mz)
 }
 END_TEST
 
+START_TEST(test_gif_corpus_detects_embedded_mz)
+{
+    static const uint8_t gif[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+        0x3b,
+    };
+    static const uint8_t child[64] = {'M', 'Z', 'P'};
+    uint8_t data[sizeof(gif) + sizeof(child)];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    int ret;
+
+    memset(&options, 0, sizeof(options));
+    options.general   = CL_SCAN_GENERAL_HEURISTICS;
+    options.heuristic = CL_SCAN_HEURISTIC_BROKEN_MEDIA;
+    options.parse     = CL_SCAN_PARSE_IMAGE | CL_SCAN_PARSE_ARCHIVE;
+    memcpy(data, gif, sizeof(gif));
+    memcpy(data + sizeof(gif), child, sizeof(child));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "GIF.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(data, "MZP", 3) != 0,
+                  "GIF root unexpectedly satisfies child signature");
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_GIF", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "GIF overlay did not reach the child matcher: %s",
+                  cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "GIF.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_tiff_truncated_structures_are_fail_visible)
 {
     static const uint8_t truncated_first_ifd_offset[] = {
@@ -37129,6 +37186,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_cl_scan  = tcase_create("cl_scan_api");
     TCase *tc_dmg      = tcase_create("dmg");
     TCase *tc_gif      = tcase_create("gif");
+    TCase *tc_gif_corpus = tcase_create("gif_corpus");
     TCase *tc_gif_api  = tcase_create("gif_api");
     TCase *tc_png      = tcase_create("png");
     TCase *tc_png_corpus = tcase_create("png_corpus");
@@ -37368,6 +37426,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_dmg);
     tcase_add_checked_fixture(tc_dmg, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_gif);
+    suite_add_tcase(s, tc_gif_corpus);
+    tcase_add_checked_fixture(tc_gif_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_gif_corpus, test_gif_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_gif_api);
     tcase_add_checked_fixture(tc_gif_api, cl_setup, cl_teardown);
     tcase_add_test(tc_gif_api, test_gif_public_api_read_failure_is_fail_visible);
