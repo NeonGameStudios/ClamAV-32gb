@@ -1,5 +1,15 @@
 # Wishlist
 
+## MBR partition corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC mbr case passes 5/5,
+  partition_map passes 3/3, and the isolated mbr_corpus case passes 1/1 over
+  a valid two-sector master boot record whose in-range partition reaches an
+  exact child matcher through partition traversal.
+- Keep full MBR/partition-image corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## APM partition corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC apm case passes 5/5, apm_map

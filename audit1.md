@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## MBR partition corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC mbr case passes 5/5,
+partition_map passes 3/3, and the isolated mbr_corpus case passes 1/1. The
+corpus is a valid two-sector master boot record with one in-range partition
+and a bounded payload; the MBR root does not begin with MZP, and the exact
+Mbr.Partition.MZ.UNOFFICIAL alert is reached through partition traversal.
+This is bounded MBR validation and partition-handoff evidence, not complete
+partition-image qualification; sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release evidence remain open.
+
 ## APM partition corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC apm case passes 5/5,

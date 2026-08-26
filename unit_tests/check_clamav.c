@@ -20900,6 +20900,64 @@ START_TEST(test_mbr_partition_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbr_corpus_detects_embedded_mz)
+{
+    enum { SECTOR_SIZE = 512, PARTITION_LBA = 1, DISK_SECTORS = 2 };
+    uint8_t data[SECTOR_SIZE * DISK_SECTORS] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    int ret;
+
+    /* One valid primary MBR partition points at a complete bounded payload
+     * sector. All remaining table entries stay empty and valid. */
+    data[446] = MBR_STATUS_INACTIVE;
+    data[446 + 4] = 0x83; /* Linux partition type. */
+    cli_writeint32(data + 446 + 8, PARTITION_LBA);
+    cli_writeint32(data + 446 + 12, 1);
+    data[510] = 0x55;
+    data[511] = 0xaa;
+    memcpy(data + PARTITION_LBA * SECTOR_SIZE, "MZP", 3);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Mbr.Partition.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(data, "MZP", 3) != 0,
+                  "MBR root unexpectedly satisfies partition child signature");
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_MBR", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "MBR partition was not scanned: %s", cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Mbr.Partition.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_mbr_missing_map_entry_points_are_fail_visible)
 {
     cli_ctx ctx;
@@ -37825,6 +37883,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_gpt = tcase_create("gpt");
     TCase *tc_gpt_corpus = tcase_create("gpt_corpus");
     TCase *tc_mbr = tcase_create("mbr");
+    TCase *tc_mbr_corpus = tcase_create("mbr_corpus");
     TCase *tc_mhtml = tcase_create("mhtml");
     TCase *tc_dmg_map = tcase_create("dmg_map");
     TCase *tc_xdp_map = tcase_create("xdp_map");
@@ -38242,6 +38301,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mbr, test_mbr_partition_coordinate_overflow_is_fail_visible);
 #endif
     tcase_add_test(tc_mbr, test_partition_time_limit_is_fail_visible);
+    suite_add_tcase(s, tc_mbr_corpus);
+    tcase_add_checked_fixture(tc_mbr_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_mbr_corpus, test_mbr_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_mhtml);
     tcase_add_checked_fixture(tc_mhtml, mhtml_engine_setup, mhtml_engine_teardown);
     tcase_add_test(tc_mhtml, test_mhtml_unterminated_comment_is_fail_visible);

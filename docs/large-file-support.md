@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MBR partition corpus qualification — 2026-08-26
+
+The current-source production-linked GCC mbr case passes 5/5, partition_map
+passes 3/3, and the isolated mbr_corpus case passes 1/1. It uses a valid
+two-sector master boot record with one in-range partition and bounded payload;
+the MBR root does not begin with MZP, and the exact
+Mbr.Partition.MZ.UNOFFICIAL alert is reached through partition traversal.
+Full MBR/partition-image corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## APM partition corpus qualification — 2026-08-26
 
 The current-source production-linked GCC apm case passes 5/5, apm_map passes
