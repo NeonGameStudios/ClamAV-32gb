@@ -1062,6 +1062,27 @@ static char *create_partial_message_missing_fragment_fixture(void)
     return path;
 }
 
+static char *create_partial_message_invalid_parameters_fixture(void)
+{
+    static const char fixture[] =
+        "From: sender@example.com\n"
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "MIME-Version: 1.0\n"
+        "Content-Type: message/partial; id=invalid-parameters-regression; number=0; total=0\n"
+        "\n"
+        "Invalid RFC 1341 fragment counts must not produce an empty clean result.\n";
+    char *path = NULL;
+    int fd     = -1;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, fixture, sizeof(fixture) - 1),
+                     (ssize_t)(sizeof(fixture) - 1));
+    ck_assert_int_eq(close(fd), 0);
+
+    return path;
+}
+
 static char *create_unknown_message_subtype_fixture(void)
 {
     static const char fixture[] =
@@ -1207,6 +1228,38 @@ START_TEST(test_partial_message_missing_fragment_is_fail_visible)
     ck_assert_msg(ret != CL_SUCCESS,
                   "missing RFC 1341 fragment returned clean");
 
+    free(path);
+}
+END_TEST
+
+START_TEST(test_partial_message_invalid_parameters_are_fail_visible)
+{
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict   = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    uint64_t scanned       = 0;
+    char *path;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    options.mail  = CL_SCAN_MAIL_PARTIAL_MESSAGE;
+    path          = create_partial_message_invalid_parameters_fixture();
+
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ret = cl_scanfile_ex(path, &verdict, &last_alert, &scanned,
+                         scan_engine, &options, NULL, NULL, NULL, NULL,
+                         NULL, NULL);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+
+    cl_engine_free(scan_engine);
     free(path);
 }
 END_TEST
@@ -40062,6 +40115,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_zip_map = tcase_create("zip_map");
     TCase *tc_mail = tcase_create("mail");
+    TCase *tc_mail_partial = tcase_create("mail_partial");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_mspack = tcase_create("mspack");
     TCase *tc_rar = tcase_create("rar");
@@ -40175,6 +40229,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mail, test_mbox_truncated_uuencode_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_truncated_binhex_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_corpus_detects_embedded_mz);
+    suite_add_tcase(s, tc_mail_partial);
+    tcase_add_checked_fixture(tc_mail_partial, cl_setup, cl_teardown);
+    tcase_add_test(tc_mail_partial, test_partial_message_invalid_parameters_are_fail_visible);
     suite_add_tcase(s, tc_graphics_map);
     tcase_add_test(tc_graphics_map, test_bmp_jp2_missing_maps_are_fail_visible);
     tcase_add_test(tc_graphics_map, test_media_parsers_reject_null_contexts);

@@ -1,5 +1,20 @@
 # Wishlist
 
+## RFC 1341 partial-message parameter admission — 2026-08-26
+
+- Require a nonempty `message/partial` identifier and strictly positive
+  decimal `number`/`total` values, bound each count at the existing 1024-part
+  MIME limit, and reject `number > total` before saving or reassembling a
+  fragment. Reassembly and directory enumeration now honor the shared
+  `MaxScanTime` deadline.
+- The current-source production-linked GCC `mail_partial` regression passes
+  1/1 and the public `mail_api` case passes 2/2. The broader `mail` case has
+  zero assertion failures in 10 checks but retains the known mixed old/current
+  `cli_ctx` ABI SIGSEGV in its timeout test; keep full MIME/mbox/MHTML corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification as release
+  gates.
+
 ## Current-source GZip/HTML harness refresh — 2026-08-26
 
 - After synchronizing the current normalizer header and relinking the GCC

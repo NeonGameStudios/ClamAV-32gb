@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## RFC 1341 partial-message parameter admission — 2026-08-26
+
+The `message/partial` path now requires a nonempty identifier and strictly
+positive decimal `number` and `total` values, bounds each count at the existing
+1024-part MIME limit, and rejects an out-of-order fragment before it is saved
+or reassembled. Reassembly and directory enumeration also re-check the shared
+deadline. Invalid `number=0; total=0` reaches the public API as `CL_EFORMAT`
+with a clean verdict and no alert, while the context remains incomplete and
+non-cacheable. The current-source production-linked GCC `mail_partial` TCase
+passes 1/1 and `mail_api` passes 2/2. The broader `mail` TCase executes 10
+checks with zero assertion failures but retains the known mixed old/current
+`cli_ctx` ABI SIGSEGV in its timeout test; it is not treated as production
+evidence. Full MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## Current-source GZip/HTML harness refresh — 2026-08-26
 
 After synchronizing the current normalizer header and relinking the GCC

@@ -4417,13 +4417,51 @@ rfc2047(const char *in, cli_ctx *ctx)
 /*
  * Handle partial messages
  */
+static bool
+parsePartialCount(const char *value, unsigned int *count)
+{
+    const char *start;
+    char *end;
+    unsigned long parsed;
+
+    if (value == NULL || count == NULL)
+        return false;
+
+    start = value;
+    while (isspace((unsigned char)*start))
+        start++;
+    if (!isdigit((unsigned char)*start))
+        return false;
+
+    errno  = 0;
+    parsed = strtoul(start, &end, 10);
+    if (errno == ERANGE || end == start || parsed == 0 ||
+        parsed > HEURISTIC_EMAIL_MAX_MIME_PARTS_PER_MESSAGE)
+        return false;
+
+    while (isspace((unsigned char)*end))
+        end++;
+    if (*end == ';') {
+        end++;
+        while (isspace((unsigned char)*end))
+            end++;
+    }
+    if (*end != '\0')
+        return false;
+
+    *count = (unsigned int)parsed;
+    return true;
+}
+
 static int
 rfc1341(mbox_ctx *mctx, message *m)
 {
     char *arg, *id, *number, *total, *oldfilename;
     const char *tmpdir = NULL;
-    int n;
+    unsigned int n, t = 0;
+    bool have_total = false;
     char pdir[PATH_MAX + 1];
+    int pdir_length;
     unsigned char md5_val[16];
     char *md5_hex;
 
@@ -4433,8 +4471,40 @@ rfc1341(mbox_ctx *mctx, message *m)
     }
 
     id = (char *)messageFindArgument(m, "id");
-    if (id == NULL) {
+    if (id == NULL || *id == '\0') {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "MIME partial message identifier is missing or empty");
+        free(id);
         return -1;
+    }
+
+    number = (char *)messageFindArgument(m, "number");
+    if (number == NULL || !parsePartialCount(number, &n)) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "MIME partial message number is invalid");
+        free(id);
+        free(number);
+        return CL_EPARSE;
+    }
+
+    total = (char *)messageFindArgument(m, "total");
+    if (total != NULL) {
+        if (!parsePartialCount(total, &t) || n > t) {
+            cli_mark_scan_incomplete(mctx->ctx,
+                                     "MIME partial message total is invalid");
+            free(id);
+            free(number);
+            free(total);
+            return CL_EPARSE;
+        }
+        have_total = true;
+    }
+
+    if (mbox_check_deadline(mctx->ctx)) {
+        free(id);
+        free(number);
+        free(total);
+        return CL_ETIMEOUT;
     }
 
     if (NULL != mctx->ctx) {
@@ -4444,11 +4514,26 @@ rfc1341(mbox_ctx *mctx, message *m)
         tmpdir = cli_gettmpdir();
     }
 
-    snprintf(pdir, sizeof(pdir) - 1, "%s" PATHSEP "clamav-partial", tmpdir);
+    pdir_length = (tmpdir == NULL)
+                      ? -1
+                      : snprintf(pdir, sizeof(pdir), "%s" PATHSEP "clamav-partial", tmpdir);
+    if (pdir_length < 0 || pdir_length >= (int)sizeof(pdir)) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "Partial MIME directory path is too long");
+        free(id);
+        free(number);
+        free(total);
+        return CL_EPARSE;
+    }
 
+    errno = 0;
     if ((mkdir(pdir, S_IRUSR | S_IWUSR) < 0) && (errno != EEXIST)) {
         cli_errmsg("Can't create the directory '%s'\n", pdir);
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "Partial MIME directory could not be created");
         free(id);
+        free(number);
+        free(total);
         return -1;
     } else if (errno == EEXIST) {
         STATBUF statb;
@@ -4457,7 +4542,11 @@ rfc1341(mbox_ctx *mctx, message *m)
             char err[128];
             cli_errmsg("Partial directory %s: %s\n", pdir,
                        cli_strerror(errno, err, sizeof(err)));
+            cli_mark_scan_incomplete(mctx->ctx,
+                                     "Partial MIME directory could not be inspected");
             free(id);
+            free(number);
+            free(total);
             return -1;
         }
         if (statb.st_mode & 077)
@@ -4471,15 +4560,18 @@ rfc1341(mbox_ctx *mctx, message *m)
             );
     }
 
-    number = (char *)messageFindArgument(m, "number");
-    if (number == NULL) {
-        free(id);
-        return -1;
-    }
-
     oldfilename = messageGetFilename(m);
 
-    arg = cli_max_malloc(10 + strlen(id) + strlen(number));
+    if (strlen(id) > SIZE_MAX - 10U ||
+        strlen(number) > SIZE_MAX - 10U - strlen(id)) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "MIME partial message filename length overflowed");
+        free(id);
+        free(number);
+        free(total);
+        return CL_ERESOURCE;
+    }
+    arg = cli_max_malloc(10U + strlen(id) + strlen(number));
     if (arg) {
         sprintf(arg, "filename=%s%s", id, number);
         messageAddArgument(m, arg);
@@ -4491,7 +4583,6 @@ rfc1341(mbox_ctx *mctx, message *m)
         free(oldfilename);
     }
 
-    n = atoi(number);
     cl_hash_data("md5", id, strlen(id), md5_val, NULL);
     md5_hex = cli_str2hex((const char *)md5_val, 16);
 
@@ -4499,6 +4590,7 @@ rfc1341(mbox_ctx *mctx, message *m)
         cli_mark_scan_incomplete(mctx->ctx, "MIME partial message identifier could not be allocated");
         free(id);
         free(number);
+        free(total);
         return CL_EMEM;
     }
 
@@ -4507,16 +4599,16 @@ rfc1341(mbox_ctx *mctx, message *m)
         free(md5_hex);
         free(id);
         free(number);
+        free(total);
         return -1;
     }
 
-    total = (char *)messageFindArgument(m, "total");
     cli_dbgmsg("rfc1341: %s, %s of %s\n", id, number, (total) ? total : "?");
-    if (total) {
-        int t   = atoi(total);
+    if (have_total) {
         DIR *dd = NULL;
 
         free(total);
+        total = NULL;
         /*
          * If it's the last one - reassemble it
          * FIXME: this assumes that we receive the parts in order
@@ -4562,6 +4654,15 @@ rfc1341(mbox_ctx *mctx, message *m)
                 struct dirent *dent;
                 bool found_part = false;
 
+                if (mbox_check_deadline(mctx->ctx)) {
+                    destroyPartialOutput(fout, outname);
+                    free(md5_hex);
+                    free(id);
+                    free(number);
+                    closedir(dd);
+                    return CL_ETIMEOUT;
+                }
+
                 snprintf(filename, sizeof(filename), "_%s-%u", md5_hex, n);
 
                 for (;;) {
@@ -4573,6 +4674,15 @@ rfc1341(mbox_ctx *mctx, message *m)
                     STATBUF statb;
                     const char *dentry_idpart;
                     int test_fd;
+
+                    if (mbox_check_deadline(mctx->ctx)) {
+                        destroyPartialOutput(fout, outname);
+                        free(md5_hex);
+                        free(id);
+                        free(number);
+                        closedir(dd);
+                        return CL_ETIMEOUT;
+                    }
 
                     errno = 0;
                     dent  = readdir(dd);

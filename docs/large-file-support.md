@@ -3,6 +3,22 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## RFC 1341 partial-message parameter admission — 2026-08-26
+
+The `message/partial` parser now rejects missing or empty identifiers,
+malformed or non-positive decimal fragment counts, totals above the existing
+1024-part MIME limit, and fragments whose `number` exceeds `total`. These
+failures are recorded as incomplete/non-cacheable before partial output is
+saved. Reassembly and partial-directory enumeration re-check the shared scan
+deadline. The invalid `number=0; total=0` public-API regression returns
+`CL_EFORMAT` with a clean verdict and no alert; the current-source
+production-linked GCC `mail_partial` TCase passes 1/1 and `mail_api` passes
+2/2. The broader `mail` TCase has zero assertion failures in 10 checks but
+retains the known mixed old/current `cli_ctx` ABI SIGSEGV in its timeout test.
+Full MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain required.
+
 ## Current-source GZip/HTML harness refresh — 2026-08-26
 
 After synchronizing the current normalizer header and relinking the GCC
