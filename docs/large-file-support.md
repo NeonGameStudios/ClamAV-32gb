@@ -2996,6 +2996,17 @@ handoff are active. The focused `onenote` case passes 2/2; complete corpus,
 full-C ABI, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 qualification remain open.
 
+## CAB materialized corpus dispatch — 2026-08-25
+
+The current production-linked GCC MSPack oracle invokes `cli_scanmscab()`
+directly on the materialized `clam.cab` fixture, bypassing the root raw scan.
+Its embedded marker is therefore detected only after CAB member extraction and
+nested child scanning. The focused `mspack` case passes 6/6, including the
+existing CHM corpus and decoder-boundary cases; complete CAB/CHM and
+InstallShield corpus, full-C ABI, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, and Sonic1 qualification
+remain open.
+
 ## PDF decoder input-width boundary — 2026-08-19
 
 The PDF stream decoder API now carries the source stream length as `size_t`

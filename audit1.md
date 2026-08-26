@@ -23,6 +23,21 @@ qualification. Full OneNote corpus, current full-C ABI, sanitizer, certified
 Linux x86-64, materialized large-file, production CVD/service parity, Sonic1,
 and release qualification remain open, so `CL_TYPE_ONENOTE` stays pending.
 
+## CAB parser corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `mspack` TCase passes
+6/6. The new direct-parser oracle reads the materialized 621-byte `clam.cab`
+fixture and invokes `cli_scanmscab()` directly with an exact child matcher;
+the root raw scan is bypassed, so the `MZP` marker at offset 77 must be
+reported after CAB member extraction and nested handoff. The existing
+materialized CHM dispatch and five MSPack boundary cases remain green, while
+`mspack_map` passes 5/5.
+
+This is CAB/CHM corpus-dispatch evidence, not complete MSPack qualification.
+Full CAB/CHM and InstallShield corpus, current full-C ABI, sanitizer,
+certified Linux x86-64, materialized large-file, production CVD/service
+parity, Sonic1, and release qualification remain open.
+
 ## BZip2 and GZip corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `bz_core` case passes

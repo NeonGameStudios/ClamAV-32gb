@@ -3549,6 +3549,18 @@ and Sonic1 qualification as release gates.
   large-file, production CVD/service, and Sonic1 qualification before moving
   `CL_TYPE_ONENOTE` beyond pending.
 
+## CAB current-source corpus qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `mspack` TCase now
+  passes 6/6, including the direct `cli_scanmscab()` oracle over materialized
+  `clam.cab`; its nonzero-offset marker is detected only after CAB member
+  extraction and nested handoff. Preserve the `mspack_map` 5/5 boundary
+  evidence.
+- Complete CAB/CHM and InstallShield corpus, full-C ABI-consistent execution,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 qualification before moving
+  `CL_TYPE_MSCAB` or `CL_TYPE_MSCHM` beyond pending.
+
 ## GZip current-source qualification audit — 2026-08-25
 
 - The expanded current-source production-linked `bz_core` TCase passes 5/5,
