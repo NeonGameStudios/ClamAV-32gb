@@ -1,5 +1,15 @@
 # Wishlist
 
+## UDF descriptor/member corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC `udf_map` case passes 9/9, and the
+  isolated `udf_corpus` case passes 1/1 over a complete UDF descriptor
+  sequence whose bounded extracted-file materialization reaches an exact
+  child marker matcher.
+- Keep full UDF corpus, native-width review, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+  gates open.
+
 ## XAR member corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC `xar` case passes 8/8,

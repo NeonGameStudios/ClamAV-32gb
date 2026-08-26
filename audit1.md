@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## UDF descriptor/member corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `udf_map` case passes
+9/9, and the isolated `udf_corpus` case passes 1/1 over a complete UDF
+descriptor sequence with a declared one-block partition, short allocation
+descriptor, and exact `Udf.File.Marker.UNOFFICIAL` child match after
+extracted-file materialization. This is bounded UDF descriptor/member-handoff
+evidence, not complete UDF qualification; sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## XAR member corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `xar` case passes 8/8,

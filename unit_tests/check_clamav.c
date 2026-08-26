@@ -35126,6 +35126,132 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_udf_corpus_detects_embedded_mz)
+{
+    enum {
+        UDF_TEST_VOLUME_BLOCKS   = 17,
+        UDF_TEST_SIZE            = UDF_EMPTY_LEN + (UDF_TEST_VOLUME_BLOCKS * VOLUME_DESCRIPTOR_SIZE),
+        UDF_TEST_PRIMARY         = 1,
+        UDF_TEST_IMPLEMENTATION_USE = 4,
+        UDF_TEST_LOGICAL         = 6,
+        UDF_TEST_PARTITION       = 5,
+        UDF_TEST_UNALLOCATED     = 7,
+        UDF_TEST_TERMINATING     = 8,
+        UDF_TEST_LVID            = 9,
+        UDF_TEST_ANCHOR          = 2,
+        UDF_TEST_FILE_SET        = 256,
+        UDF_TEST_FILE_IDENTIFIER = 257,
+        UDF_TEST_FILE_ENTRY      = 261,
+        UDF_TEST_SENTINEL        = 0xff03,
+        UDF_TEST_PAYLOAD_LENGTH  = 3
+    };
+    uint8_t *data;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t base = UDF_EMPTY_LEN;
+    size_t fed_offset;
+    size_t lvd_offset;
+    size_t pd_offset;
+    size_t fid_offset;
+    size_t allocation_offset;
+    const char *last_virus;
+    cl_error_t ret;
+
+    data = calloc(1, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(data);
+    test_udf_set_generic_identifiers(data, base);
+
+    data[base + (3 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_PRIMARY & 0xff;
+    data[base + (3 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_PRIMARY >> 8;
+    data[base + (4 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_IMPLEMENTATION_USE & 0xff;
+    data[base + (4 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_IMPLEMENTATION_USE >> 8;
+    data[base + (5 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_LOGICAL & 0xff;
+    data[base + (5 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_LOGICAL >> 8;
+    data[base + (6 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_PARTITION & 0xff;
+    data[base + (6 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_PARTITION >> 8;
+    data[base + (7 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_UNALLOCATED & 0xff;
+    data[base + (7 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_UNALLOCATED >> 8;
+    data[base + (8 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_TERMINATING & 0xff;
+    data[base + (8 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_TERMINATING >> 8;
+    data[base + (9 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_LVID & 0xff;
+    data[base + (9 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_LVID >> 8;
+    data[base + (10 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_TERMINATING & 0xff;
+    data[base + (10 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_TERMINATING >> 8;
+    data[base + (11 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_ANCHOR & 0xff;
+    data[base + (11 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_ANCHOR >> 8;
+    data[base + (12 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_FILE_SET & 0xff;
+    data[base + (12 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_FILE_SET >> 8;
+
+    fid_offset = base + (13 * VOLUME_DESCRIPTOR_SIZE);
+    data[fid_offset]     = UDF_TEST_FILE_IDENTIFIER & 0xff;
+    data[fid_offset + 1] = UDF_TEST_FILE_IDENTIFIER >> 8;
+    data[fid_offset + offsetof(FileIdentifierDescriptor, fileIdentifierLength)] = 0;
+    test_udf_put_le16(data + fid_offset + offsetof(FileIdentifierDescriptor, implementationLength), 0);
+
+    fed_offset = base + (14 * VOLUME_DESCRIPTOR_SIZE);
+    data[fed_offset]     = UDF_TEST_FILE_ENTRY & 0xff;
+    data[fed_offset + 1] = UDF_TEST_FILE_ENTRY >> 8;
+    test_udf_put_le16(data + fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, flags), 0);
+    test_udf_put_le64(data + fed_offset + offsetof(FileEntryDescriptor, infoLength), UDF_TEST_PAYLOAD_LENGTH);
+    test_udf_put_le32(data + fed_offset + offsetof(FileEntryDescriptor, allocationDescLen), sizeof(short_ad));
+    allocation_offset = fed_offset + offsetof(FileEntryDescriptor, rest);
+    test_udf_put_le32(data + allocation_offset + offsetof(short_ad, length), UDF_TEST_PAYLOAD_LENGTH);
+    test_udf_put_le32(data + allocation_offset + offsetof(short_ad, position), 0);
+
+    data[base + (15 * VOLUME_DESCRIPTOR_SIZE)]     = UDF_TEST_SENTINEL & 0xff;
+    data[base + (15 * VOLUME_DESCRIPTOR_SIZE) + 1] = UDF_TEST_SENTINEL >> 8;
+    memcpy(data + base + (16 * VOLUME_DESCRIPTOR_SIZE), "UDF", UDF_TEST_PAYLOAD_LENGTH);
+
+    lvd_offset = base + (5 * VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + lvd_offset + offsetof(LogicalVolumeDescriptor, logicalBlockSize), VOLUME_DESCRIPTOR_SIZE);
+    pd_offset = base + (6 * VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + pd_offset + offsetof(PartitionDescriptor, partitionStartingLocation), 32);
+    test_udf_put_le32(data + pd_offset + offsetof(PartitionDescriptor, partitionLength), 1);
+
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Udf.File.Marker", "554446", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    options.parse           = CL_SCAN_PARSE_ARCHIVE;
+    ctx.engine              = scan_engine;
+    ctx.dconf               = scan_engine->dconf;
+    ctx.options             = &options;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+    ctx.recursion_stack     = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type          = CL_TYPE_UDF;
+    layers[0].size          = map->len;
+    layers[0].fmap          = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    last_virus = cli_get_last_virus_str(&ctx);
+    ck_assert_str_eq(last_virus, "Udf.File.Marker.UNOFFICIAL");
+    ck_assert_msg(!ctx.scan_incomplete, "UDF corpus unexpectedly incomplete: %s",
+                  ctx.scan_incomplete_reason ? ctx.scan_incomplete_reason : "(no reason)");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_udf_allocation_descriptor_alignment_is_fail_visible)
 {
     enum {
@@ -38083,6 +38209,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_iso = tcase_create("iso");
     TCase *tc_iso_map = tcase_create("iso_map");
     TCase *tc_udf_map = tcase_create("udf_map");
+    TCase *tc_udf_corpus = tcase_create("udf_corpus");
     TCase *tc_apm_map = tcase_create("apm_map");
     TCase *tc_apm = tcase_create("apm");
     TCase *tc_apm_corpus = tcase_create("apm_corpus");
@@ -38475,6 +38602,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_udf_map, test_udf_missing_file_set_descriptor_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_declared_information_length_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_allocation_descriptor_alignment_is_fail_visible);
+    suite_add_tcase(s, tc_udf_corpus);
+    tcase_add_checked_fixture(tc_udf_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_udf_corpus, test_udf_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_apm_map);
     tcase_add_checked_fixture(tc_apm_map, cl_setup, cl_teardown);
     tcase_add_test(tc_apm_map, test_apm_missing_map_is_fail_visible);
