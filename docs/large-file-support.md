@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## TAR materialized corpus qualification — 2026-08-25
+
+The current-source production-linked GCC `tar` case passes 6/6, and the
+isolated `tar_corpus` case passes 1/1. It decompresses materialized
+`clam.tar.gz` and `clam.exe_and_mail.tar.gz` to TAR roots whose bytes do not
+begin with `MZP`; each exact offset-0 child alert is reached through TAR
+member traversal. The focused GNU base-256/PAX signature-loader cases remain
+limited by the mixed harness's `cl_load()`/`CL_EMALFDB` setup. Full TAR corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## PE packer corpus qualification — 2026-08-25
 
 The current-source production-linked GCC `pe` case passes 11/11 and `pe_map`

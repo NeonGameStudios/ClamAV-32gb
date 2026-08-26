@@ -1,5 +1,26 @@
 # Wishlist
 
+## TAR materialized corpus qualification — 2026-08-25
+
+- The current-source production-linked GCC `tar` case passes 6/6, and the
+  isolated `tar_corpus` case passes 1/1 over TAR roots decompressed from
+  materialized `clam.tar.gz` and `clam.exe_and_mail.tar.gz`; exact offset-0
+  child `MZP` matching is reached through TAR member traversal.
+- GNU base-256/PAX signature-loader cases remain limited by the mixed
+  harness's `cl_load()`/`CL_EMALFDB` setup. Keep complete TAR corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release gates open.
+
+## PE packer corpus qualification — 2026-08-25
+
+- The current-source production-linked GCC `pe` case passes 11/11 and
+  `pe_map` passes 2/2. The isolated `pe_corpus` case passes 1/1 across
+  materialized FSG and UPX fixtures; exact offset-0 `MZP` matching is reached
+  only after their unpacking handoff.
+- Keep complete PE packer/heuristic/resource corpus, fault injection,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release gates open.
+
 ## PDF decoder and materialized corpus qualification — 2026-08-25
 
 - Preserve `CL_EPARSE` in streaming Flate and LZW decoders when fallback-line

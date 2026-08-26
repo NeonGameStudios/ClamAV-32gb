@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## TAR materialized corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `tar` case passes
+6/6, and the isolated `tar_corpus` case passes 1/1. The corpus oracle
+decompresses the two materialized TAR-bearing fixtures (`clam.tar.gz` and
+`clam.exe_and_mail.tar.gz`) into TAR roots, verifies that neither root begins
+with `MZP`, and requires the exact offset-0 `Tar.Member.MZ.UNOFFICIAL` alert
+from member traversal. GNU base-256/PAX focused signature-loader cases remain
+separately limited by the mixed harness's `cl_load()`/`CL_EMALFDB` behavior;
+full TAR corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## PE packer corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `pe` case passes

@@ -17810,6 +17810,77 @@ START_TEST(test_tar_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tar_corpus_detects_embedded_mz)
+{
+    static const char *const archives[] = {"clam.tar.gz", "clam.exe_and_mail.tar.gz"};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    char file_path[PATH_MAX];
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Tar.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(archives) / sizeof(archives[0]); i++) {
+        gzFile input;
+        fmap_t *map;
+        uint8_t *data;
+        size_t data_size = 0;
+        const size_t capacity = 32U * 1024U;
+        int nread;
+
+        snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/%s", OBJDIR,
+                 archives[i]);
+        input = gzopen(file_path, "rb");
+        ck_assert_msg(input != NULL, "gzopen(%s) failed: %s", file_path, strerror(errno));
+        data = malloc(capacity);
+        ck_assert_ptr_nonnull(data);
+        while (data_size < capacity) {
+            nread = gzread(input, data + data_size, (unsigned int)(capacity - data_size));
+            ck_assert_msg(nread >= 0, "gzread(%s) failed", file_path);
+            if (nread == 0)
+                break;
+            data_size += (size_t)nread;
+        }
+        ck_assert_msg(data_size < capacity, "TAR corpus output exceeded test buffer for %s",
+                      file_path);
+        ck_assert_int_eq(gzclose(input), Z_OK);
+        ck_assert_msg(data_size >= 3 && memcmp(data, "MZP", 3) != 0,
+                      "TAR root unexpectedly satisfies child signature for %s", file_path);
+
+        map = cl_fmap_open_memory(data, data_size);
+        ck_assert_ptr_nonnull(map);
+        verdict    = CL_VERDICT_NOTHING_FOUND;
+        last_alert = NULL;
+        scanned    = 0;
+        ck_assert_int_eq(
+            cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                          scan_engine, &options, NULL, NULL, NULL, NULL,
+                          "CL_TYPE_POSIX_TAR", NULL),
+            CL_VIRUS);
+        ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+        ck_assert_ptr_nonnull(last_alert);
+        ck_assert_str_eq(last_alert, "Tar.Member.MZ.UNOFFICIAL");
+        cl_fmap_close(map);
+        free(data);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_tar_end_marker_is_fail_visible)
 {
     uint8_t data[1536] = {0};
@@ -36967,6 +37038,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_sis        = tcase_create("sis");
     TCase *tc_sis_member = tcase_create("sis_member");
     TCase *tc_tar = tcase_create("tar");
+    TCase *tc_tar_corpus = tcase_create("tar_corpus");
     TCase *tc_tar_member = tcase_create("tar_member");
     TCase *tc_cpio = tcase_create("cpio");
     TCase *tc_cpio_crc = tcase_create("cpio_crc");
@@ -37282,6 +37354,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tar, test_tar_initial_header_read_failure_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_invalid_magic_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_temporary_limit_is_fail_visible);
+    suite_add_tcase(s, tc_tar_corpus);
+    tcase_add_checked_fixture(tc_tar_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_tar_corpus, test_tar_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_tar_member);
     tcase_add_checked_fixture(tc_tar_member, cl_setup, cl_teardown);
     tcase_add_test(tc_tar_member, test_tar_base256_size_is_supported);
