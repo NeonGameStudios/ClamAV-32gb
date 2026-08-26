@@ -83,7 +83,10 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     size_t tableoff = 0, tablesize = 0;
     size_t tableend = 0;
     size_t pos = 0, partoff = 0;
-    unsigned i;
+    /* maxpartitions is a full uint32_t setting. Keep the loop counter wider
+     * than that setting so its inclusive terminal iteration cannot wrap back
+     * to zero when MaxPartitions is UINT32_MAX. */
+    uint64_t i;
     uint32_t max_prtns = 0;
 
     if (!ctx)
@@ -304,7 +307,7 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
         }
 
         /* print debugging info on partition */
-        cli_dbgmsg("APM Partition Entry %u:\n", i);
+        cli_dbgmsg("APM Partition Entry %u:\n", (unsigned)i);
         cli_dbgmsg("Name: %s\n", (char *)apentry.name);
         cli_dbgmsg("Type: %s\n", (char *)apentry.type);
         cli_dbgmsg("Signature: %x\n", apentry.signature);
@@ -341,7 +344,9 @@ static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_
     cl_error_t ret;
     partition_intersection_list_t prtncheck;
     struct apm_partition_info apentry;
-    unsigned i, pitxn;
+    /* Keep the inclusive walk safe when MaxPartitions is UINT32_MAX. */
+    uint64_t i;
+    unsigned pitxn;
     size_t pos;
     uint32_t max_prtns = 0;
 

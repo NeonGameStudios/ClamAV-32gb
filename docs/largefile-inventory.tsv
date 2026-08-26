@@ -422,9 +422,12 @@ fixed-width-integer	libclamav/adc.h	38	    uint32_t buffered;
 fixed-width-integer	libclamav/adc.h	39	    uint16_t state;
 fixed-width-integer	libclamav/adc.h	40	    uint16_t length;
 fixed-width-integer	libclamav/adc.h	41	    uint32_t offset;
-fixed-width-integer	libclamav/apm.c	346	    uint32_t max_prtns = 0;
+fixed-width-integer	libclamav/apm.c	348	    uint64_t i;
+fixed-width-integer	libclamav/apm.c	351	    uint32_t max_prtns = 0;
 fixed-width-integer	libclamav/apm.c	51	static bool apm_scale_blocks(uint64_t blocks, size_t sectorsize, size_t *bytes)
-fixed-width-integer	libclamav/apm.c	87	    uint32_t max_prtns = 0;
+fixed-width-integer	libclamav/apm.c	86	    /* maxpartitions is a full uint32_t setting. Keep the loop counter wider
+fixed-width-integer	libclamav/apm.c	89	    uint64_t i;
+fixed-width-integer	libclamav/apm.c	90	    uint32_t max_prtns = 0;
 fixed-width-integer	libclamav/apm.h	100	    uint32_t bootEntry __attribute__((packed));
 fixed-width-integer	libclamav/apm.h	101	    uint32_t bootEntry2 __attribute__((packed));
 fixed-width-integer	libclamav/apm.h	102	    uint32_t bootChecksum __attribute__((packed));
@@ -9117,12 +9120,12 @@ native-width-integer	libclamav/adc.h	67	 * long phrase  - 3 byte header + data, 
 native-width-integer	libclamav/adc.h	70	int adc_decompressInit(adc_stream *strm);
 native-width-integer	libclamav/adc.h	71	int adc_decompress(adc_stream *strm);
 native-width-integer	libclamav/adc.h	72	int adc_decompressEnd(adc_stream *strm);
-native-width-integer	libclamav/apm.c	132	    described_size = (size_t)ddm.blockSize * ddm.blockCount;
-native-width-integer	libclamav/apm.c	135	                   described_size, (unsigned long)maplen);
-native-width-integer	libclamav/apm.c	220	               (unsigned long)tableoff, (unsigned long)tablesize);
-native-width-integer	libclamav/apm.c	337	static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_info *aptable, size_t sectorsize,
-native-width-integer	libclamav/apm.c	338	                                              bool old_school, size_t tableoff, size_t tableend)
-native-width-integer	libclamav/apm.c	345	    size_t pos;
+native-width-integer	libclamav/apm.c	135	    described_size = (size_t)ddm.blockSize * ddm.blockCount;
+native-width-integer	libclamav/apm.c	138	                   described_size, (unsigned long)maplen);
+native-width-integer	libclamav/apm.c	223	               (unsigned long)tableoff, (unsigned long)tablesize);
+native-width-integer	libclamav/apm.c	340	static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_info *aptable, size_t sectorsize,
+native-width-integer	libclamav/apm.c	341	                                              bool old_school, size_t tableoff, size_t tableend)
+native-width-integer	libclamav/apm.c	350	    size_t pos;
 native-width-integer	libclamav/apm.c	48	static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_info *aptable, size_t sectorsize,
 native-width-integer	libclamav/apm.c	49	                                             bool old_school, size_t tableoff, size_t tableend);
 native-width-integer	libclamav/apm.c	51	static bool apm_scale_blocks(uint64_t blocks, size_t sectorsize, size_t *bytes)
@@ -20139,9 +20142,11 @@ boundary-constant	common/optparser.c	90	        if (parsed > (UINT32_MAX - digit
 boundary-constant	libclamav/7z/7zIn.c	789	        if (*numUnpackStreams > UINT32_MAX - numStreams)
 boundary-constant	libclamav/7z_iface.c	650	                    if (newnamelen > SIZE_MAX / sizeof(*utf16name)) {
 boundary-constant	libclamav/7z_iface.c	672	            if (f->Size > SIZE_MAX) {
-boundary-constant	libclamav/apm.c	127	    if (ddm.blockSize != 0 && ddm.blockCount > SIZE_MAX / ddm.blockSize) {
-boundary-constant	libclamav/apm.c	392	                if (apentry.pBlockCount > UINT32_MAX / 4U) {
+boundary-constant	libclamav/apm.c	130	    if (ddm.blockSize != 0 && ddm.blockCount > SIZE_MAX / ddm.blockSize) {
+boundary-constant	libclamav/apm.c	347	    /* Keep the inclusive walk safe when MaxPartitions is UINT32_MAX. */
+boundary-constant	libclamav/apm.c	397	                if (apentry.pBlockCount > UINT32_MAX / 4U) {
 boundary-constant	libclamav/apm.c	53	    if ((NULL == bytes) || (0 == sectorsize) || (blocks > SIZE_MAX / sectorsize))
+boundary-constant	libclamav/apm.c	88	     * to zero when MaxPartitions is UINT32_MAX. */
 boundary-constant	libclamav/autoit.c	1282	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
 boundary-constant	libclamav/autoit.c	1367	                                        if (addme > UINT32_MAX - 255) {
 boundary-constant	libclamav/autoit.c	1377	                    if (UNP.error || addme > UINT32_MAX - 3 || bs > UINT32_MAX - 3 - addme) {
@@ -21314,13 +21319,13 @@ format-width	libclamav/adc.c	239	                    /* adc_dbgmsg("adc_decompre
 format-width	libclamav/adc.c	247	                cli_errmsg("adc_decompress: invalid state %u\n", strm->state);
 format-width	libclamav/adc.c	260	            cli_dbgmsg("adc_decompress: stream ended mid-phrase, state %u\n", strm->state);
 format-width	libclamav/adc.c	89	    cli_dbgmsg("adc_decompress: avail_in %llu avail_out %llu state %u\n",
-format-width	libclamav/apm.c	134	        cli_dbgmsg("cli_scanapm: File described %zu size does not match %lu actual size\n",
-format-width	libclamav/apm.c	217	    cli_dbgmsg("Partition Count: %u\n", aptable.numPartitions);
-format-width	libclamav/apm.c	218	    cli_dbgmsg("Blocks: [%u, +%u), ([%lu, +%lu))\n",
-format-width	libclamav/apm.c	307	        cli_dbgmsg("APM Partition Entry %u:\n", i);
-format-width	libclamav/apm.c	311	        cli_dbgmsg("Partition Count: %u\n", apentry.numPartitions);
-format-width	libclamav/apm.c	312	        cli_dbgmsg("Blocks: [%u, +%u), ([%zu, +%zu))\n",
-format-width	libclamav/apm.c	408	                           "[%u, %u]\n",
+format-width	libclamav/apm.c	137	        cli_dbgmsg("cli_scanapm: File described %zu size does not match %lu actual size\n",
+format-width	libclamav/apm.c	220	    cli_dbgmsg("Partition Count: %u\n", aptable.numPartitions);
+format-width	libclamav/apm.c	221	    cli_dbgmsg("Blocks: [%u, +%u), ([%lu, +%lu))\n",
+format-width	libclamav/apm.c	310	        cli_dbgmsg("APM Partition Entry %u:\n", (unsigned)i);
+format-width	libclamav/apm.c	314	        cli_dbgmsg("Partition Count: %u\n", apentry.numPartitions);
+format-width	libclamav/apm.c	315	        cli_dbgmsg("Blocks: [%u, +%u), ([%zu, +%zu))\n",
+format-width	libclamav/apm.c	413	                           "[%u, %u]\n",
 format-width	libclamav/arc4.c	100		    printf("Bad result at %zu\n", i);
 format-width	libclamav/asn1.c	1028	                                    cli_dbgmsg("asn1_get_x509: wrong bool size in basic constraint %u\n", ext.size);
 format-width	libclamav/asn1.c	1174	            cli_dbgmsg("asn1_parse_countersignature: expected INTEGER of size 1, got size %u\n", deep.size);
@@ -24910,22 +24915,22 @@ offset-size-arithmetic	libclamav/adc.c	45	 * NOTE: buffer size must be larger th
 offset-size-arithmetic	libclamav/adc.h	65	 * store phrase - 1 byte header + data, first byte 0x80-0xFF, max length 0x80 (7 bits + 1), no offset
 offset-size-arithmetic	libclamav/adc.h	66	 * short phrase - 2 byte header + data, first byte 0x00-0x3F, max length 0x12 (4 bits + 3), max offset 0x3FF (10 bits)
 offset-size-arithmetic	libclamav/adc.h	67	 * long phrase  - 3 byte header + data, first byte 0x40-0x7F, max length 0x43 (6 bits + 4), max offset 0xFFFF (16 bits)
-offset-size-arithmetic	libclamav/apm.c	109	    /* convert driver description map big-endian to host */
-offset-size-arithmetic	libclamav/apm.c	121	    /* sector size is determined by the ddm */
-offset-size-arithmetic	libclamav/apm.c	126	    maplen = ctx->fmap->len;
-offset-size-arithmetic	libclamav/apm.c	132	    described_size = (size_t)ddm.blockSize * ddm.blockCount;
-offset-size-arithmetic	libclamav/apm.c	169	    /* convert partition table big endian to host */
-offset-size-arithmetic	libclamav/apm.c	197	    if (tableoff > maplen || tablesize > maplen - tableoff) {
-offset-size-arithmetic	libclamav/apm.c	202	    tableend = tableoff + tablesize;
-offset-size-arithmetic	libclamav/apm.c	241	        if (pos < tableoff || pos > tableend || sizeof(apentry) > tableend - pos) {
-offset-size-arithmetic	libclamav/apm.c	252	        /* convert partition entry big endian to host */
-offset-size-arithmetic	libclamav/apm.c	299	        if ((partoff == 0) || (partoff > maplen) || (partsize > maplen - partoff)) {
-offset-size-arithmetic	libclamav/apm.c	315	        /* send the partition to cli_magic_scan_nested_fmap_type */
-offset-size-arithmetic	libclamav/apm.c	316	        status = cli_magic_scan_nested_fmap_type(ctx->fmap, partoff, partsize, ctx, CL_TYPE_PART_ANY, (const char *)apentry.name, LAYER_ATTRIBUTES_NONE);
-offset-size-arithmetic	libclamav/apm.c	368	        if (pos < tableoff || pos > tableend || sizeof(apentry) > tableend - pos) {
-offset-size-arithmetic	libclamav/apm.c	380	        /* convert necessary info big endian to host */
-offset-size-arithmetic	libclamav/apm.c	422	        /* increment the offsets to next partition entry */
-offset-size-arithmetic	libclamav/apm.c	423	        pos += sectorsize;
+offset-size-arithmetic	libclamav/apm.c	112	    /* convert driver description map big-endian to host */
+offset-size-arithmetic	libclamav/apm.c	124	    /* sector size is determined by the ddm */
+offset-size-arithmetic	libclamav/apm.c	129	    maplen = ctx->fmap->len;
+offset-size-arithmetic	libclamav/apm.c	135	    described_size = (size_t)ddm.blockSize * ddm.blockCount;
+offset-size-arithmetic	libclamav/apm.c	172	    /* convert partition table big endian to host */
+offset-size-arithmetic	libclamav/apm.c	200	    if (tableoff > maplen || tablesize > maplen - tableoff) {
+offset-size-arithmetic	libclamav/apm.c	205	    tableend = tableoff + tablesize;
+offset-size-arithmetic	libclamav/apm.c	244	        if (pos < tableoff || pos > tableend || sizeof(apentry) > tableend - pos) {
+offset-size-arithmetic	libclamav/apm.c	255	        /* convert partition entry big endian to host */
+offset-size-arithmetic	libclamav/apm.c	302	        if ((partoff == 0) || (partoff > maplen) || (partsize > maplen - partoff)) {
+offset-size-arithmetic	libclamav/apm.c	318	        /* send the partition to cli_magic_scan_nested_fmap_type */
+offset-size-arithmetic	libclamav/apm.c	319	        status = cli_magic_scan_nested_fmap_type(ctx->fmap, partoff, partsize, ctx, CL_TYPE_PART_ANY, (const char *)apentry.name, LAYER_ATTRIBUTES_NONE);
+offset-size-arithmetic	libclamav/apm.c	373	        if (pos < tableoff || pos > tableend || sizeof(apentry) > tableend - pos) {
+offset-size-arithmetic	libclamav/apm.c	385	        /* convert necessary info big endian to host */
+offset-size-arithmetic	libclamav/apm.c	427	        /* increment the offsets to next partition entry */
+offset-size-arithmetic	libclamav/apm.c	428	        pos += sectorsize;
 offset-size-arithmetic	libclamav/apm.c	51	static bool apm_scale_blocks(uint64_t blocks, size_t sectorsize, size_t *bytes)
 offset-size-arithmetic	libclamav/apm.c	53	    if ((NULL == bytes) || (0 == sectorsize) || (blocks > SIZE_MAX / sectorsize))
 offset-size-arithmetic	libclamav/apm.c	56	    *bytes = (size_t)blocks * sectorsize;

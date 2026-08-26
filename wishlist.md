@@ -1,5 +1,14 @@
 # Wishlist
 
+## APM MaxPartitions loop-bound hardening — 2026-08-26
+
+- Keep both inclusive APM partition walks on a counter wider than the full
+  `uint32_t` `MaxPartitions` setting so `UINT32_MAX` cannot wrap the loop back
+  to zero.
+- The current-source APM object passes the warning-enabled GCC syntax check
+  and a source guard covers the widened counter. Keep full APM corpus,
+  sanitizer, production-CVD/service, Sonic1, and release qualification open.
+
 ## ALZ zero-byte compressed-member admission — 2026-08-26
 
 - Permit a zero-byte member only when it is stored and declares zero output;

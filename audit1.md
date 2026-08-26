@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## APM MaxPartitions loop-bound hardening — 2026-08-26
+
+APM's normal and partition-intersection walks used inclusive `unsigned`
+counters against the full-width `uint32_t` `MaxPartitions` setting. If the
+setting and declared count reached `UINT32_MAX`, the terminal increment could
+wrap to zero and repeat the walk. Both counters now use `uint64_t`, preserving
+the inclusive bound without wraparound. The current-source APM object passes
+the warning-enabled GCC syntax check, and the source guard covers the widened
+counter. Full APM corpus, sanitizer, production-CVD, service, Sonic1, and
+release qualification remain open.
+
 ## ALZ zero-byte compressed-member admission — 2026-08-26
 
 The ALZ parser previously treated every member with zero compressed bytes as a

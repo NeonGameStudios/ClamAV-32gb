@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## APM MaxPartitions loop-bound hardening — 2026-08-26
+
+Both APM partition walks now use `uint64_t` counters for their inclusive
+iteration over the full-width `uint32_t` `MaxPartitions` setting. This prevents
+the terminal `UINT32_MAX` increment from wrapping to zero and repeating the
+walk. The current-source APM object passes the warning-enabled GCC syntax
+check, with a source guard covering the widened counter. Full APM corpus,
+sanitizer, production-CVD/service, Sonic1, and release qualification remain
+required.
+
 ## ALZ zero-byte compressed-member admission — 2026-08-26
 
 ALZ admission now treats zero compressed bytes as valid only for a stored
