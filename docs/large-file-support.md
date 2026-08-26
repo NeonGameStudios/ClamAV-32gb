@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## DMG and ELF current-source qualification — 2026-08-26
+
+The current-source production-linked GCC harness passes the DMG cases `dmg`
+6/6 and `dmg_map` 7/7, and the ELF cases `elf_map` 6/6, `elf` 4/4, and
+`elf_corpus` 1/1. Coverage includes bounded DMG metadata/reconstruction and
+external sorting, strict metadata validation and trailer boundaries, ELF
+missing-map and metadata failures, timeout/native-coordinate boundaries, and
+exact matching from a complete ELF64 PT_LOAD corpus. Full sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release qualification remain open.
+
 ## EGG metadata and SFX focused qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC harness passes

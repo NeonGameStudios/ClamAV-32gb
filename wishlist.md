@@ -1,5 +1,15 @@
 # Wishlist
 
+## DMG and ELF current-source qualification — 2026-08-26
+
+- The current-source production-linked GCC harness passes `dmg` 6/6 and
+  `dmg_map` 7/7, plus `elf_map` 6/6, `elf` 4/4, and `elf_corpus` 1/1. The
+  cases cover bounded DMG metadata/reconstruction and external sorting, ELF
+  missing-map and metadata boundaries, native-coordinate limits, timeout,
+  and exact ELF64 segment matching.
+- Keep sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release gates open.
+
 ## EGG metadata and SFX focused qualification — 2026-08-26
 
 - The authoritative current-source production-linked GCC harness passes

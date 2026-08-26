@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## DMG and ELF current-source qualification — 2026-08-26
+
+The current-source production-linked GCC harness passes the DMG cases
+`dmg` 6/6 and `dmg_map` 7/7, including strict Base64 and terminal-end
+validation, host-order stripe handling, bounded external sorting, malformed
+metadata, trailer read failure, invalid trailer, and missing-map admission.
+The same relink passes `elf_map` 6/6, `elf` 4/4, and `elf_corpus` 1/1; ELF
+coverage includes missing-map/header and metadata boundaries, timeout and
+native-coordinate fixtures, and a complete ELF64 PT_LOAD corpus with exact
+segment-offset matching. These are bounded parser and corpus results, not full
+qualification; sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## EGG metadata and SFX focused qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC harness passes
