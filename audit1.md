@@ -1,5 +1,15 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip substream-size arithmetic — 2026-08-26
+
+7-Zip substream metadata previously accumulated declared sizes without
+checking addition or the inferred final stream size. A wrapped sum could turn
+malformed folder metadata into a small-looking final stream. The parser now
+uses checked native-width arithmetic and rejects sums that exceed the folder
+output size. A crafted current-source GCC harness passes the `UInt64`
+overflow boundary; full 7-Zip corpus, sanitizer, production-CVD, service,
+Sonic1, and release qualification remain open.
+
 ## Logical-expression parse-status propagation — 2026-08-26
 
 The logical matcher previously collapsed a malformed expression into an

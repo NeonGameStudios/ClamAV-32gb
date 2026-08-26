@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## 7-Zip substream-size arithmetic — 2026-08-26
+
+7-Zip substream metadata now checks native-width accumulation and rejects a
+declared substream sum that exceeds either `UInt64` or the folder's declared
+output before inferring the final stream size. This prevents malformed folder
+metadata from wrapping into a small-looking output. A crafted current-source
+GCC harness passes the overflow boundary, and the unit-test helper covers both
+overflow and declared-size overrun. Full 7-Zip corpus, sanitizer,
+production-CVD/service, Sonic1, and release qualification remain required.
+
 ## Logical-expression parse-status propagation — 2026-08-26
 
 The logical matcher now rejects an out-of-range subsignature ID before it can

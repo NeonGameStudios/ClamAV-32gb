@@ -3382,6 +3382,8 @@ contains unit_tests/check_clamav.c 'test_7z_sfx_header_read_failure_is_fail_visi
 contains unit_tests/check_clamav.c 'test_7z_truncated_member_is_parse_error'
 contains unit_tests/check_clamav.c 'test_7z_output_size_mismatch_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_7z_output_range_is_bounded'
+contains libclamav/7z/7zIn.c 'SzSubStreamsSizeAllowed'
+contains unit_tests/check_clamav.c 'test_7z_substream_size_overflow_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_gzip_bzip_truncated_streams_are_fail_visible'
 contains unit_tests/check_clamav.c 'test_bzip_concatenated_stream_is_fully_inspected'
 contains unit_tests/check_clamav.c 'test_xz_limit_is_fail_visible'

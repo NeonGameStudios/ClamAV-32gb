@@ -19,6 +19,12 @@ Byte k7zSignature[k7zSignatureSize] = {'7', 'z', 0xBC, 0xAF, 0x27, 0x1C};
 #define NUM_FOLDER_CODERS_MAX 32
 #define NUM_CODER_STREAMS_MAX 32
 
+static int SzSizeOverflow(UInt32 count, size_t itemSize, size_t extra)
+{
+  return itemSize == 0 ||
+         (size_t)count > ((size_t)-1 - extra) / itemSize;
+}
+
 void SzFolder_Free(CSzFolder *p, ISzAlloc *alloc);
 int SzFolder_FindBindPairForOutStream(CSzFolder *p, UInt32 outStreamIndex);
 
@@ -67,6 +73,13 @@ UInt32 SzFolder_GetNumOutStreams(CSzFolder *p)
   for (i = 0; i < p->NumCoders; i++)
     result += p->Coders[i].NumOutStreams;
   return result;
+}
+
+int SzSubStreamsSizeAllowed(UInt64 folderSize, UInt64 accumulatedSize, UInt64 nextSize)
+{
+  return accumulatedSize <= folderSize &&
+         nextSize <= folderSize - accumulatedSize &&
+         accumulatedSize <= (UInt64)-1 - nextSize;
 }
 
 int SzFolder_FindBindPairForInStream(CSzFolder *p, UInt32 inStreamIndex)
@@ -797,6 +810,10 @@ static SRes SzReadSubStreamsInfo(
   }
   else
   {
+    if (SzSizeOverflow(*numUnpackStreams, sizeof(UInt64), sizeof(UInt64)) ||
+        SzSizeOverflow(*numUnpackStreams, sizeof(Byte), 1) ||
+        SzSizeOverflow(*numUnpackStreams, sizeof(UInt32), sizeof(UInt32)))
+      return SZ_ERROR_MEM;
     *unpackSizes = (UInt64 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt64) + sizeof(UInt64));
     RINOM(*unpackSizes);
     *digestsDefined = (Byte *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(Byte) + 1);
@@ -812,6 +829,7 @@ static SRes SzReadSubStreamsInfo(
     v4.07: we check that folder is empty
     */
     UInt64 sum = 0;
+    UInt64 folderSize = SzFolder_GetUnpackSize(folders + i);
     UInt32 j;
     UInt32 numSubstreams = folders[i].NumUnpackStreams;
     if (numSubstreams == 0)
@@ -821,10 +839,14 @@ static SRes SzReadSubStreamsInfo(
     {
       UInt64 size;
       RINOK(SzReadNumber(sd, &size));
+      if (!SzSubStreamsSizeAllowed(folderSize, sum, size))
+        return SZ_ERROR_ARCHIVE;
       (*unpackSizes)[si++] = size;
       sum += size;
     }
-    (*unpackSizes)[si++] = SzFolder_GetUnpackSize(folders + i) - sum;
+    if (sum > folderSize)
+      return SZ_ERROR_ARCHIVE;
+    (*unpackSizes)[si++] = folderSize - sum;
   }
   if (type == k7zIdSize)
   {

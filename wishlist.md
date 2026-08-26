@@ -1,5 +1,14 @@
 # Wishlist
 
+## 7-Zip substream-size arithmetic — 2026-08-26
+
+- Reject a substream-size sum that overflows `UInt64` or exceeds the folder's
+  declared output before inferring the final substream size.
+- A crafted current-source GCC harness passes the overflow boundary, and the
+  unit-test helper covers both overflow and declared-size overrun. Keep full
+  7-Zip corpus, sanitizer, production-CVD/service, Sonic1, and release
+  qualification open.
+
 ## Logical-expression parse-status propagation — 2026-08-26
 
 - Reject out-of-range logical subsignature IDs before indexing the fixed

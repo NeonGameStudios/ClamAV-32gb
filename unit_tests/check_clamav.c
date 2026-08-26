@@ -24275,6 +24275,16 @@ START_TEST(test_7z_output_range_is_bounded)
 }
 END_TEST
 
+START_TEST(test_7z_substream_size_overflow_is_fail_visible)
+{
+    ck_assert(SzSubStreamsSizeAllowed(10, 0, 10));
+    ck_assert(SzSubStreamsSizeAllowed(10, 5, 5));
+    ck_assert(!SzSubStreamsSizeAllowed(10, 10, 1));
+    ck_assert(!SzSubStreamsSizeAllowed(UINT64_MAX, UINT64_MAX, 1));
+    ck_assert(!SzSubStreamsSizeAllowed(UINT64_MAX, UINT64_MAX - 1, 2));
+}
+END_TEST
+
 static cli_ctx *sevenzip_test_expire_ctx;
 static unsigned int sevenzip_test_read_calls;
 
@@ -40633,6 +40643,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_truncated_member_is_parse_error);
     tcase_add_test(tc_7z, test_7z_output_size_mismatch_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_output_range_is_bounded);
+    tcase_add_test(tc_7z, test_7z_substream_size_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_input_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_corpus_detects_embedded_mz);
