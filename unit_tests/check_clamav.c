@@ -21708,6 +21708,88 @@ START_TEST(test_apm_partition_coordinate_overflow_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_apm_corpus_detects_embedded_mz)
+{
+    enum {
+        BLOCK_SIZE   = 512,
+        BLOCK_COUNT  = 4,
+        TABLE_BLOCK  = 1,
+        PARTITION_BLOCK = 2,
+        PAYLOAD_BLOCK = 3
+    };
+    uint8_t data[BLOCK_SIZE * BLOCK_COUNT] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    int ret;
+
+    /* A complete Apple Partition Map contains the driver map, map header,
+     * and one usable partition. The partition payload is a bounded child
+     * whose exact signature must be reached through table traversal. */
+    data[0] = 0x45;
+    data[1] = 0x52; /* DDM signature: ER. */
+    data[2] = 0x02;
+    data[3] = 0x00; /* 512-byte blocks. */
+    data[4] = 0x00;
+    data[5] = 0x00;
+    data[6] = 0x00;
+    data[7] = BLOCK_COUNT;
+
+    data[TABLE_BLOCK * BLOCK_SIZE] = 0x50;
+    data[TABLE_BLOCK * BLOCK_SIZE + 1] = 0x4d; /* APM signature: PM. */
+    data[TABLE_BLOCK * BLOCK_SIZE + 7] = 0x02; /* map plus one partition. */
+    data[TABLE_BLOCK * BLOCK_SIZE + 11] = 0x01; /* map starts at block 1. */
+    data[TABLE_BLOCK * BLOCK_SIZE + 15] = 0x02; /* map occupies blocks 1-2. */
+    memcpy(data + TABLE_BLOCK * BLOCK_SIZE + 48, "Apple_partition_map", 19);
+
+    data[PARTITION_BLOCK * BLOCK_SIZE] = 0x50;
+    data[PARTITION_BLOCK * BLOCK_SIZE + 1] = 0x4d;
+    data[PARTITION_BLOCK * BLOCK_SIZE + 7] = 0x02;
+    data[PARTITION_BLOCK * BLOCK_SIZE + 11] = 0x03; /* payload block. */
+    data[PARTITION_BLOCK * BLOCK_SIZE + 15] = 0x01;
+    memcpy(data + PARTITION_BLOCK * BLOCK_SIZE + 16, "MZ partition", 12);
+    memcpy(data + PARTITION_BLOCK * BLOCK_SIZE + 48, "Apple_HFS", 9);
+    memcpy(data + PAYLOAD_BLOCK * BLOCK_SIZE, "MZP", 3);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Apm.Partition.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(data, "MZP", 3) != 0,
+                  "APM root unexpectedly satisfies partition child signature");
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_APM", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "APM partition was not scanned: %s", cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Apm.Partition.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 static const void *apm_partition_read_failure(fmap_t *map, size_t at, size_t len, int lock);
 
 START_TEST(test_apm_partition_read_failure_is_fail_visible)
@@ -37737,6 +37819,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_udf_map = tcase_create("udf_map");
     TCase *tc_apm_map = tcase_create("apm_map");
     TCase *tc_apm = tcase_create("apm");
+    TCase *tc_apm_corpus = tcase_create("apm_corpus");
     TCase *tc_hwpole2_map = tcase_create("hwpole2_map");
     TCase *tc_partition_map = tcase_create("partition_map");
     TCase *tc_gpt = tcase_create("gpt");
@@ -38127,6 +38210,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_apm, test_apm_invalid_partition_is_fail_visible);
     tcase_add_test(tc_apm, test_apm_partition_table_boundary_is_fail_visible);
     tcase_add_test(tc_apm, test_apm_partition_coordinate_overflow_is_fail_visible);
+    suite_add_tcase(s, tc_apm_corpus);
+    tcase_add_checked_fixture(tc_apm_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_apm_corpus, test_apm_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_hwpole2_map);
     tcase_add_checked_fixture(tc_hwpole2_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_missing_map_is_fail_visible);

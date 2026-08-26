@@ -1,5 +1,15 @@
 # Wishlist
 
+## APM partition corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC apm case passes 5/5, apm_map
+  passes 2/2, and the isolated apm_corpus case passes 1/1 over a valid
+  four-block Apple Partition Map whose payload partition reaches an exact
+  child matcher through partition traversal.
+- Keep full APM partition corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## GPT partition-image corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC gpt case passes 4/4, and the
