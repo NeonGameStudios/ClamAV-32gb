@@ -9040,6 +9040,16 @@ materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_MSCAB` and `CL_TYPE_MSCHM` stay
 pending.
 
+## CHM corpus dispatch qualification — 2026-08-25
+
+The expanded current-source production-linked GCC `mspack` case passes 5/5,
+including a public `cl_scanmap_ex` scan of the materialized `clam.chm`
+fixture. Its exact embedded `MZP` marker is absent from the CHM outer bytes
+and is detected after CHM member extraction and nested handoff. Full CAB/CHM
+and InstallShield corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## PE focused parser qualification — 2026-08-25
 
 The focused current-source production-linked GCC `pe` TCase passes 11/11,

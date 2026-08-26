@@ -3639,6 +3639,16 @@ and Sonic1 qualification as release gates.
   large-file, production-CVD/service parity, and Sonic1 evidence before
   certification.
 
+## CHM corpus dispatch qualification — 2026-08-25
+
+- The expanded current-source production-linked GCC `mspack` case passes 5/5,
+  including public `cl_scanmap_ex` scanning of materialized `clam.chm`; its
+  exact embedded `MZP` marker is absent from the CHM outer bytes and is
+  detected after member extraction and nested handoff.
+- Add full CAB/CHM and InstallShield corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+  evidence before certification.
+
 ## PE focused parser qualification — 2026-08-25
 
 - The focused current-source production-linked GCC `pe` TCase passes 11/11,
