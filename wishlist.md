@@ -1,5 +1,13 @@
 # Wishlist
 
+## BZip2 parser boundary and concatenated-stream qualification — 2026-08-26
+
+- The current-source production-linked GCC `bz_core` case passes 6/6 after
+  isolating concatenated-member tail detection with the existing boundary and
+  materialized BZip2/GZip nested-MZP corpus checks.
+- Keep sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release gates open.
+
 ## BinHex parser boundary and corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC `binhex_map` case passes 11/11,

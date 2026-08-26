@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## BZip2 parser boundary and concatenated-stream qualification — 2026-08-26
+
+The current-source production-linked GCC `bz_core` case passes 6/6 after
+isolating the existing concatenated-stream regression alongside the boundary
+and corpus tests. Coverage includes truncated streams, shared and GZip-only
+fmap callback failures, materialized BZip2/GZip nested-MZP corpus fixtures,
+and a second concatenated BZip2 member whose tail reaches the exact matcher.
+This is bounded compressed-stream evidence, not full qualification; sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## BinHex parser boundary and corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `binhex_map` case

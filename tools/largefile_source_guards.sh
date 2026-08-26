@@ -3322,6 +3322,7 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_core, test_gzip_bzip_tr
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_core, test_compressed_input_read_failure_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_core, test_gzip_input_read_failure_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_core, test_gzip_corpus_detects_embedded_mz)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_core, test_bzip_concatenated_stream_is_fully_inspected)'
 contains unit_tests/check_clamav.c 'test_swf_truncated_uncompressed_header_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_swf_truncated_frame_metadata_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_swf_truncated_tag_payload_is_fail_visible'

@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## BZip2 parser boundary and concatenated-stream qualification — 2026-08-26
+
+The current-source production-linked GCC `bz_core` case passes 6/6 after
+isolating concatenated-member tail detection with the existing boundary and
+materialized BZip2/GZip nested-MZP corpus checks. Coverage includes truncated
+streams and shared/GZip-only fmap callback failures. Sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## BinHex parser boundary and corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `binhex_map` case passes 11/11,

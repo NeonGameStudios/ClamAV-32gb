@@ -6904,17 +6904,12 @@ START_TEST(test_bzip_concatenated_stream_is_fully_inspected)
 {
     static const uint8_t first[] = "bzip concatenated first stream";
     static const uint8_t second[] = "BZIP-CONCATENATED-TAIL";
-    static const char signature[] =
-        "Bzip.Concat.Tail:0:*:425a49502d434f4e434154454e415445442d5441494c\n";
     uint8_t *first_bzip;
     uint8_t *second_bzip;
     uint8_t *combined;
     size_t first_length;
     size_t second_length;
     size_t combined_length;
-    char *signature_path = NULL;
-    int signature_fd       = -1;
-    unsigned int sigs      = 0;
     struct cl_engine *engine;
     struct cl_scan_options options;
     cl_fmap_t *map;
@@ -6932,21 +6927,17 @@ START_TEST(test_bzip_concatenated_stream_is_fully_inspected)
     memcpy(combined + first_length, second_bzip, second_length);
 
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
-    ck_assert_int_eq(cli_gentempfd(tmpdir, &signature_path, &signature_fd), CL_SUCCESS);
-    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1), (ssize_t)(sizeof(signature) - 1));
-    ck_assert_int_eq(close(signature_fd), 0);
-    signature_fd = -1;
-
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
-    ck_assert_int_eq(cl_load(signature_path, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
-    ck_assert_uint_eq(sigs, 1U);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         engine->root[0], "Bzip.Concat.Tail",
+                         "425a49502d434f4e434154454e415445442d5441494c",
+                         0, 0, 0, "*", NULL, 0),
+                     CL_SUCCESS);
     ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_DISABLE_CACHE, 1), CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
-    ck_assert_int_eq(cli_unlink(signature_path), 0);
-    free(signature_path);
-    signature_path = NULL;
 
     memset(&options, 0, sizeof(options));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
@@ -39576,6 +39567,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_bz_core, test_gzip_input_read_failure_is_fail_visible);
     tcase_add_test(tc_bz_core, test_bzip_corpus_detects_embedded_mz);
     tcase_add_test(tc_bz_core, test_gzip_corpus_detects_embedded_mz);
+    tcase_add_test(tc_bz_core, test_bzip_concatenated_stream_is_fully_inspected);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
