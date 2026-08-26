@@ -199,14 +199,16 @@
 - Keep sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and release gates open.
 
-## 7-Zip SFX nested corpus qualification — 2026-08-26
+## 7-Zip current-source qualification — 2026-08-26
 
-- The isolated current-source production-linked GCC `7z_sfx_corpus` case
-  passes 1/1 over a real materialized `clam.7z` archive behind a non-archive
-  stub; public raw-scan SFX recognition and start-header admission reach an
-  exact nested child marker, while the confirmed SFX read-failure case passes
-  1/1.
-- Keep full 7-Zip SFX corpus, sanitizer, certified Linux x86-64, materialized
+- Fresh current-source `scanners.c`, `7z_iface.c`, and `7zIn.c` objects in the
+  production-linked GCC harness pass the seven focused 7-Zip boundary/oracle
+  checks; the eighth `7z` check over materialized `clam.7z` returns `CL_EPARSE`
+  before the custom nested alert is surfaced. `7z_map` and `7z_sfx` each pass
+  1/1. The materialized `7z_sfx_corpus` case also returns `CL_EPARSE` in the
+  mixed static/shared-ABI harness, so the corpus observations are withheld
+  until a full current C rebuild is available.
+- Keep full 7-Zip/SFX corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release gates open.
 
 ## HWPOLE2 embedded-OLE2 corpus qualification — 2026-08-26
@@ -948,14 +950,14 @@ service, and Sonic1 qualification open.
 
 ## 7-Zip missing-map confirmed-entry classification — 2026-08-25
 
-- The authoritative current-source production-linked GCC `7z` TCase passes
-  8/8 for truncated-header, input-read, truncated-member, output-size/range,
-  timeout boundaries, and the materialized `clam.7z` corpus fixture. The
-  fixture has no outer `MZP` marker and extraction reaches an exact nested
-  `MZP` matcher result; `7z_map` and `7z_sfx` pass 1/1 each. Keep the
-  current 7-Zip interface and decoder objects explicit in the qualification
-  link, and retain full BCJ2/archive, sanitizer, materialized large-folder,
-  production-CVD/service, and Sonic1 qualification as release gates.
+- Fresh current-source `scanners.c`, `7z_iface.c`, and `7zIn.c` objects in the
+  production-linked GCC harness pass 7/8 focused `7z` checks; the eighth
+  check over materialized `clam.7z` returns `CL_EPARSE` before its custom
+  nested alert is surfaced. `7z_map` and `7z_sfx` pass 1/1 each. Withhold the
+  corpus result until a full current C rebuild resolves the mixed
+  static/shared-ABI harness boundary, and retain full BCJ2/archive,
+  sanitizer, materialized large-folder, production-CVD/service, and Sonic1
+  qualification as release gates.
 - Preserve `CL_ENULLARG` for a null confirmed 7-Zip parser context, but mark a
   recognized layer with no input fmap incomplete and return `CL_EPARSE`; keep
   the weak header-admission probe non-confirming.

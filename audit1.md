@@ -252,18 +252,17 @@ evidence remain open.
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
-## 7-Zip SFX nested corpus qualification — 2026-08-26
+## 7-Zip current-source qualification — 2026-08-26
 
-The isolated authoritative current-source production-linked GCC
-`7z_sfx_corpus` case passes 1/1 over a real materialized `clam.7z` archive
-prefixed by a non-archive SFX stub. Public raw-scan recognition admits the
-7-Zip SFX candidate, validates the start header, dispatches bounded nested
-`CL_TYPE_7Z` extraction, and reaches the exact
-`7z.SFX.Member.MZ.UNOFFICIAL` matcher. The existing confirmed SFX start-header
-read-failure case also passes 1/1. This is bounded 7-Zip SFX admission and
-nested-dispatch evidence, not complete SFX qualification; sanitizer, certified
-Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
-release evidence remain open.
+Fresh current-source `scanners.c`, `7z_iface.c`, and `7zIn.c` objects in the
+production-linked GCC harness pass the seven focused 7-Zip boundary/oracle
+checks; the eighth `7z` check, which uses the materialized `clam.7z` member,
+returns `CL_EPARSE` before the custom nested alert is surfaced. `7z_map` and
+`7z_sfx` each pass 1/1. The materialized `7z_sfx_corpus` case likewise returns
+`CL_EPARSE` in this mixed static/shared-ABI harness. The corpus observations
+are therefore withheld as qualification evidence until a full current C
+rebuild is available; sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release evidence remain open.
 
 ## HWPOLE2 embedded-OLE2 corpus qualification — 2026-08-26
 
@@ -1011,14 +1010,12 @@ materialized large-file, production-CVD, and Sonic1 qualification remain open.
 
 ## 7-Zip missing-map confirmed-entry classification — 2026-08-25
 
-The authoritative current-source production-linked GCC `7z` TCase now passes
-8/8 for truncated-header, in-range input-read, truncated-member,
-output-size/range, both timeout boundaries, and the materialized `clam.7z`
-corpus fixture. That fixture has no outer `MZP` marker and extraction reaches
-an exact nested `MZP` matcher result. The current `7z_iface`,
-`7zIn`, and `7zDec` objects were linked explicitly; the earlier timeout
-segfaults came from a stale static-library interface and uninitialized direct
-test options. The dedicated `7z_map` and `7z_sfx` cases pass 1/1 each.
+Fresh current-source `scanners.c`, `7z_iface.c`, and `7zIn.c` objects in the
+production-linked GCC harness pass 7/8 focused 7-Zip checks. The eighth check
+over the materialized `clam.7z` corpus returns `CL_EPARSE` before its custom
+nested alert is surfaced. The dedicated `7z_map` and `7z_sfx` cases pass 1/1
+each; the corpus result is withheld until a full current C rebuild resolves
+the mixed static/shared-ABI harness boundary.
 
 The confirmed 7-Zip parser now distinguishes a null parser context from a
 recognized 7-Zip layer whose input fmap is unavailable. The former remains
