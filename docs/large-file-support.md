@@ -1038,6 +1038,13 @@ does not provide sanitizer, production-parser, or concurrency evidence.
   materialized-large-file, and Sonic1 qualification remain separate release
   gates.
 
+- The current-source production-linked GCC HTML case now passes 12/12,
+  including `clam.exe.html`. Its outer HTML bytes contain no `MZP` marker;
+  the RFC2397 base64 child is decoded through the synthetic mail layer and
+  reaches an exact nested marker. Raw fallback after normalization admission
+  failure, full HTML corpus, sanitizer, supported-build, materialized-large-
+  file, production-CVD/service, and Sonic1 qualification remain open.
+
 - The next legacy-parser pass found UUENCODE accepting an attachment that ended
   at EOF, a blank line, or malformed encoded data without requiring the `end`
   terminator. The decoder now requires that exact terminator, returns
