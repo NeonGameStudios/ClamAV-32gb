@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## GPT partition-image corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC gpt case passes 4/4,
+and the isolated gpt_corpus case passes 1/1. The corpus is a valid
+six-sector GPT image with a protective MBR, CRC-validated primary and backup
+headers, one usable partition, and a bounded child payload; the GPT root does
+not begin with MZP, and the exact Gpt.Partition.MZ.UNOFFICIAL alert is reached
+through partition traversal. This is bounded GPT validation and
+partition-handoff evidence, not complete partition-image qualification;
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## Mach-O universal-binary corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC macho case passes

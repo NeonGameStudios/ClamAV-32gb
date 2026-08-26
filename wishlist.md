@@ -1,5 +1,15 @@
 # Wishlist
 
+## GPT partition-image corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC gpt case passes 4/4, and the
+  isolated gpt_corpus case passes 1/1 over a valid six-sector GPT image with
+  CRC-validated primary and backup headers, one usable partition, and an
+  exact child matcher reached through partition traversal.
+- Keep full GPT/partition-image corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## Mach-O universal-binary corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC macho case passes 11/11,

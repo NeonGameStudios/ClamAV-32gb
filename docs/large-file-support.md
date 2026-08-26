@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## GPT partition-image corpus qualification — 2026-08-26
+
+The current-source production-linked GCC gpt case passes 4/4, and the
+isolated gpt_corpus case passes 1/1. It uses a valid six-sector GPT image with
+a protective MBR, CRC-validated primary and backup headers, one usable
+partition, and bounded child payload; the GPT root does not begin with MZP,
+and the exact Gpt.Partition.MZ.UNOFFICIAL alert is reached through partition
+traversal. Full GPT/partition-image corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## Mach-O universal-binary corpus qualification — 2026-08-26
 
 The current-source production-linked GCC macho case passes 11/11,

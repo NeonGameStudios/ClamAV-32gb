@@ -21851,6 +21851,109 @@ START_TEST(test_gpt_invalid_partition_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gpt_corpus_detects_embedded_mz)
+{
+    enum {
+        SECTOR_SIZE    = 512,
+        DISK_SECTORS   = 6,
+        PRIMARY_LBA    = 1,
+        PRIMARY_TABLE  = 2,
+        PARTITION_LBA  = 3,
+        SECONDARY_TABLE = 4,
+        SECONDARY_LBA  = 5,
+        TABLE_ENTRIES  = 1
+    };
+    static const uint8_t child[SECTOR_SIZE] = {'M', 'Z', 'P'};
+    uint8_t data[DISK_SECTORS * SECTOR_SIZE] = {0};
+    uint8_t *primary = data + PRIMARY_LBA * SECTOR_SIZE;
+    uint8_t *primary_table = data + PRIMARY_TABLE * SECTOR_SIZE;
+    uint8_t *secondary_table = data + SECONDARY_TABLE * SECTOR_SIZE;
+    uint8_t *secondary = data + SECONDARY_LBA * SECTOR_SIZE;
+    uint32_t table_crc;
+    uint32_t header_crc;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    int ret;
+
+    /* Protective MBR. */
+    data[446 + 4] = MBR_PROTECTIVE;
+    cli_writeint32(data + 446 + 8, PRIMARY_LBA);
+    cli_writeint32(data + 446 + 12, DISK_SECTORS - PRIMARY_LBA);
+    data[510] = 0x55;
+    data[511] = 0xaa;
+
+    /* One valid partition entry points to a complete sector containing the
+     * exact child signature. Keep the primary and backup partition tables
+     * identical so GPT validation can complete without a secondary fallback. */
+    primary_table[0] = 1;
+    write_test_le64(primary_table + 32, PARTITION_LBA);
+    write_test_le64(primary_table + 40, PARTITION_LBA);
+    memcpy(secondary_table, primary_table, sizeof(struct gpt_partition_entry));
+    memcpy(data + PARTITION_LBA * SECTOR_SIZE, child, sizeof(child));
+    table_crc = (uint32_t)crc32(0L, primary_table, sizeof(struct gpt_partition_entry));
+
+    memcpy(primary, GPT_SIGNATURE_STR, 8);
+    cli_writeint32(primary + 8, 0x00010000U);
+    cli_writeint32(primary + 12, sizeof(struct gpt_header));
+    write_test_le64(primary + 24, PRIMARY_LBA);
+    write_test_le64(primary + 32, SECONDARY_LBA);
+    write_test_le64(primary + 40, PARTITION_LBA);
+    write_test_le64(primary + 48, PARTITION_LBA);
+    write_test_le64(primary + 72, PRIMARY_TABLE);
+    cli_writeint32(primary + 80, TABLE_ENTRIES);
+    cli_writeint32(primary + 84, sizeof(struct gpt_partition_entry));
+    cli_writeint32(primary + 88, table_crc);
+    header_crc = (uint32_t)crc32(0L, primary, sizeof(struct gpt_header));
+    cli_writeint32(primary + 16, header_crc);
+
+    memcpy(secondary, primary, sizeof(struct gpt_header));
+    write_test_le64(secondary + 24, SECONDARY_LBA);
+    write_test_le64(secondary + 32, PRIMARY_LBA);
+    write_test_le64(secondary + 72, SECONDARY_TABLE);
+    cli_writeint32(secondary + 16, 0);
+    header_crc = (uint32_t)crc32(0L, secondary, sizeof(struct gpt_header));
+    cli_writeint32(secondary + 16, header_crc);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Gpt.Partition.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(data, "MZP", 3) != 0,
+                  "GPT root unexpectedly satisfies partition child signature");
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_GPT", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "GPT partition was not scanned: %s", cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Gpt.Partition.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 static const void *hwp3_docinfo_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -37637,6 +37740,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hwpole2_map = tcase_create("hwpole2_map");
     TCase *tc_partition_map = tcase_create("partition_map");
     TCase *tc_gpt = tcase_create("gpt");
+    TCase *tc_gpt_corpus = tcase_create("gpt_corpus");
     TCase *tc_mbr = tcase_create("mbr");
     TCase *tc_mhtml = tcase_create("mhtml");
     TCase *tc_dmg_map = tcase_create("dmg_map");
@@ -38040,6 +38144,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gpt, test_gpt_sector_size_probe_read_failure_is_fail_visible);
     tcase_add_test(tc_gpt, test_gpt_primary_table_read_failure_is_not_hidden_by_secondary);
     tcase_add_test(tc_gpt, test_gpt_invalid_partition_is_fail_visible);
+    suite_add_tcase(s, tc_gpt_corpus);
+    tcase_add_checked_fixture(tc_gpt_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_gpt_corpus, test_gpt_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_mbr);
     tcase_add_checked_fixture(tc_mbr, cl_setup, cl_teardown);
     tcase_add_test(tc_mbr, test_mbr_partition_read_failure_is_fail_visible);
