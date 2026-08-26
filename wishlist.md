@@ -1,5 +1,17 @@
 # Wishlist
 
+## Bundled YARA VM malformed-state hardening — 2026-08-26
+
+- The bundled YARA VM now rejects empty-stack pops, out-of-range fixed
+  memory-slot operands, impossible call argument counts, and insufficient call
+  operands; VM locals are initialized before execution.
+- The edited interpreter compiles warning-clean with GCC
+  `-Wall -Wextra -Wformat-security`, and the current-source
+  production-linked matcher TCase passes 39/39, including empty-stack,
+  invalid-memory, and impossible-call-operand regressions with explicit non-cacheable parse-incomplete
+  results. Keep full YARA corpus, sanitizer, production-CVD/service, Sonic1,
+  and release qualification open.
+
 ## Fresh current-source NSIS/MSXML qualification — 2026-08-26
 
 - The current-source production-linked GCC harness passes `nulsft` 4/4,

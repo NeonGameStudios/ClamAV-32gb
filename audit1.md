@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Bundled YARA VM malformed-state hardening — 2026-08-26
+
+The bundled YARA interpreter previously decremented an empty VM stack and
+trusted bytecode memory-slot operands, allowing malformed logical signatures
+to read or write outside their fixed execution state before the matcher could
+mark the scan incomplete. Stack pops now reject underflow, fixed VM-memory
+accesses validate their signed/native-width index, call operands reject
+impossible argument counts or insufficient stack operands, and VM locals are
+initialized before execution. The current-source interpreter compiles
+warning-clean under GCC `-Wall -Wextra -Wformat-security`; the rebuilt
+production-linked matcher TCase passes 39/39, including empty-stack,
+out-of-range-memory, and impossible-call-operand regressions, with `CL_EPARSE`, sticky incomplete state,
+and disabled caching. Full YARA rule corpus, sanitizer, production-CVD,
+service, Sonic1, and release qualification remain open.
+
 ## Fresh current-source NSIS/MSXML qualification — 2026-08-26
 
 The current-source production-linked GCC harness, with fresh NSIS and MSXML

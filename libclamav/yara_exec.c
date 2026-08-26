@@ -65,7 +65,18 @@ typedef struct _YR_MATCH
     } while(0)
 
 
-#define pop(x)  x = stack[--sp]
+#define pop(x)  \
+    do { \
+      if (sp <= 0) return ERROR_EXEC_STACK_OVERFLOW; \
+      (x) = stack[--sp]; \
+    } while(0)
+
+
+#define check_mem_index(x)  \
+    do { \
+      if ((x) < 0 || (uint64_t)(x) >= (uint64_t)MEM_SIZE) \
+        return ERROR_EXEC_STACK_OVERFLOW; \
+    } while(0)
 
 
 #define operation(operator, op1, op2) \
@@ -202,6 +213,10 @@ int yr_execute_code(
   clock_t start = clock();
   #endif
 
+  /* The compiler normally emits CLEAR_M for every local, but malformed or
+   * partially loaded bytecode must not expose uninitialized VM state. */
+  memset(mem, 0, sizeof(mem));
+
   while(1)
   {
     cli_dbgmsg("yara_exec: executing %d\n", *ip);
@@ -235,12 +250,14 @@ int yr_execute_code(
       case OP_CLEAR_M:
         memcpy(&r1, ip + 1, sizeof(uint64_t));
         ip += sizeof(uint64_t);
+        check_mem_index(r1);
         mem[r1] = 0;
         break;
 
       case OP_ADD_M:
         memcpy(&r1, ip + 1, sizeof(uint64_t));
         ip += sizeof(uint64_t);
+        check_mem_index(r1);
         pop(r2);
         mem[r1] += r2;
         break;
@@ -248,24 +265,28 @@ int yr_execute_code(
       case OP_INCR_M:
         memcpy(&r1, ip + 1, sizeof(uint64_t));
         ip += sizeof(uint64_t);
+        check_mem_index(r1);
         mem[r1]++;
         break;
 
       case OP_PUSH_M:
         memcpy(&r1, ip + 1, sizeof(uint64_t));
         ip += sizeof(uint64_t);
+        check_mem_index(r1);
         push(mem[r1]);
         break;
 
       case OP_POP_M:
         memcpy(&r1, ip + 1, sizeof(uint64_t));
         ip += sizeof(uint64_t);
+        check_mem_index(r1);
         pop(mem[r1]);
         break;
 
       case OP_SWAPUNDEF:
         memcpy(&r1, ip + 1, sizeof(uint64_t));
         ip += sizeof(uint64_t);
+        check_mem_index(r1);
         pop(r2);
         if (r2 != UNDEFINED)
           push(r2);
@@ -582,6 +603,9 @@ int yr_execute_code(
         memcpy(&r1, ip + 1, sizeof(uint64_t));
         ip += sizeof(uint64_t);
 
+        if (r1 < 0 || r1 > MAX_FUNCTION_ARGS || sp < r1 + 1)
+          return ERROR_EXEC_STACK_OVERFLOW;
+
         // pop arguments from stack and copy them to args array
 
         while (r1 > 0)
@@ -649,12 +673,12 @@ int yr_execute_code(
             if (ss_matches != NULL) {
                 offs = ss_matches->offsets;
                 for (i_u32 = 0; i_u32 < ss_matches->next; i_u32++) {
-                    if (offs[i_u32] == r1) {
+                    if (r1 >= 0 && offs[i_u32] == (uint64_t)r1) {
                         push(1);
                         found = 1;
                         break;
                     }
-                    if (r1 < offs[i_u32])
+                    if (r1 < 0 || (uint64_t)r1 < offs[i_u32])
                         break;
                 }
             }
@@ -703,13 +727,14 @@ int yr_execute_code(
             if (ss_matches != NULL) {
                 offs = ss_matches->offsets;
                 for (i_u32 = 0; i_u32 < ss_matches->next; i_u32++) {
-                    if (offs[i_u32] >= r1 &&
-                        offs[i_u32] <= r2) {
+                    if (r2 >= 0 &&
+                        (r1 < 0 || offs[i_u32] >= (uint64_t)r1) &&
+                        offs[i_u32] <= (uint64_t)r2) {
                         push(1);
                         found = TRUE;
                         break;
                     }
-                    if (r2 < offs[i_u32])
+                    if (r2 < 0 || (uint64_t)r2 < offs[i_u32])
                         break;
                 }
             }

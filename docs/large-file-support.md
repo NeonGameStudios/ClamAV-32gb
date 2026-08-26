@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Bundled YARA VM malformed-state hardening — 2026-08-26
+
+The bundled YARA interpreter now rejects empty-stack pops, out-of-range fixed
+VM-memory operands, impossible call argument counts, and insufficient call
+operands before they can corrupt execution state; VM locals are initialized
+for malformed or partial bytecode. The current-source interpreter is
+warning-clean under GCC `-Wall -Wextra -Wformat-security`, and the rebuilt
+production-linked matcher TCase passes 39/39 with all three malformed-VM
+regressions returning `CL_EPARSE`, sticky incomplete state, and no-cache state.
+Full YARA corpus, sanitizer, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## Fresh current-source NSIS/MSXML qualification — 2026-08-26
 
 The current-source production-linked GCC harness, with fresh NSIS and MSXML
