@@ -18980,6 +18980,76 @@ START_TEST(test_iso_file_extent_respects_volume_space)
 }
 END_TEST
 
+START_TEST(test_iso_corpus_detects_embedded_png)
+{
+    static const char *const images[] = {
+        "iso_normal.logo.iso", "iso_no_joliet.logo.iso"
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    char file_path[PATH_MAX];
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "ISO.Member.PNG",
+                         "89504e470d0a1a0a", 0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(images) / sizeof(images[0]); i++) {
+        struct stat st;
+        fmap_t *map;
+        uint8_t *data;
+        size_t data_size;
+        int fd;
+        size_t offset = 0;
+
+        snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/%s",
+                 SRCDIR, images[i]);
+        fd = open(file_path, O_RDONLY | O_BINARY);
+        ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+        ck_assert_int_eq(FSTAT(fd, &st), 0);
+        ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                      "invalid ISO corpus size for %s", file_path);
+        data_size = (size_t)st.st_size;
+        data = malloc(data_size);
+        ck_assert_ptr_nonnull(data);
+        while (offset < data_size) {
+            ssize_t nread = read(fd, data + offset, data_size - offset);
+            ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+            offset += (size_t)nread;
+        }
+        ck_assert_int_eq(close(fd), 0);
+
+        map = cl_fmap_open_memory(data, data_size);
+        ck_assert_ptr_nonnull(map);
+        verdict    = CL_VERDICT_NOTHING_FOUND;
+        last_alert = NULL;
+        scanned    = 0;
+        ck_assert_int_eq(
+            cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                          scan_engine, &options, NULL, NULL, NULL, NULL,
+                          "CL_TYPE_ISO9660", NULL),
+            CL_VIRUS);
+        ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+        ck_assert_str_eq(last_alert, "ISO.Member.PNG.UNOFFICIAL");
+        cl_fmap_close(map);
+        free(data);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_xar_truncated_header_is_fail_visible)
 {
     uint8_t data[28] = {0};
@@ -35564,6 +35634,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_cpio_crc = tcase_create("cpio_crc");
     TCase *tc_cpio_numeric = tcase_create("cpio_numeric");
     TCase *tc_cpio_map = tcase_create("cpio_map");
+    TCase *tc_iso = tcase_create("iso");
     TCase *tc_iso_map = tcase_create("iso_map");
     TCase *tc_udf_map = tcase_create("udf_map");
     TCase *tc_apm_map = tcase_create("apm_map");
@@ -35892,6 +35963,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_iso_map, test_iso_joliet_name_conversion_truncation_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_directory_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_file_extent_respects_volume_space);
+    suite_add_tcase(s, tc_iso);
+    tcase_add_checked_fixture(tc_iso, cl_setup, cl_teardown);
+    tcase_add_test(tc_iso, test_iso_corpus_detects_embedded_png);
     suite_add_tcase(s, tc_udf_map);
     tcase_add_checked_fixture(tc_udf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_udf_map, test_udf_missing_map_is_fail_visible);

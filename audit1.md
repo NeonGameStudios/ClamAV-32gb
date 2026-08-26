@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## ISO9660 corpus qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `iso` case passes 1/1
+across both materialized `iso_normal.logo.iso` and
+`iso_no_joliet.logo.iso` fixtures. The exact nested PNG child signature is
+detected through the ISO extraction path in both standard and no-Joliet
+directory-name forms. The existing `iso_map` boundary case passes 11/11.
+Full ISO9660 corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## OLE2 embedded-member qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `ole2` case passes

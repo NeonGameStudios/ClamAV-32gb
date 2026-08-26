@@ -1,5 +1,14 @@
 # Wishlist
 
+## ISO9660 corpus qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `iso` case passes
+  1/1 across both materialized logo ISO fixtures, including standard and
+  no-Joliet forms with exact nested PNG child detection. The existing
+  `iso_map` case passes 11/11.
+- Keep full ISO9660 corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release qualification open.
+
 ## OLE2 embedded-member qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `ole2` case passes
