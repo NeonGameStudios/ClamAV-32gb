@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## ALZ member CRC validation — 2026-08-26
+
+The ALZ parser read each local-header `file_crc` field but never compared it
+with the bytes produced by stored, deflate, or BZip2 extraction. A corrupted
+confirmed member could therefore reach nested scanning and normalize to a
+clean result. The parser now computes the standard streaming CRC-32 over the
+complete extracted member and marks a mismatch as a malformed, non-cacheable
+parse result before child dispatch. The current-source Rust 1.97.1 release
+build passes, all 36 ALZ Rust unit tests pass with the existing C-engine link
+stubs, and the production-linked GCC `rust_alz` case passes 2/2, including the
+malformed-CRC regression and five materialized archives; `rust_map` passes 1/1.
+Full C/Rust ABI, sanitizer, certified Linux, materialized large-file,
+production-CVD/service, Sonic1, and release gates remain open.
+
 ## LHA/LZH compressed-range admission — 2026-08-26
 
 The cached delharc path could treat a zero-output member whose declared

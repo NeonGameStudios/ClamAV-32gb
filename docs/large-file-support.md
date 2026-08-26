@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ALZ member CRC validation — 2026-08-26
+
+The ALZ parser now computes the standard CRC-32 incrementally over every fully
+extracted stored, deflate, and BZip2 member and compares it with the local
+header before nested scanning. A mismatch is an explicit malformed,
+non-cacheable result, closing the previous path where the parsed checksum was
+ignored. The current-source Rust 1.97.1 release build passes all 36 ALZ unit
+tests with the existing C-engine link stubs; production-linked GCC `rust_alz`
+passes 2/2, including the malformed-CRC regression and five materialized
+archives, and `rust_map` passes 1/1. Full C/Rust ABI, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release qualification remain open.
+
 ## LHA/LZH compressed-range admission — 2026-08-26
 
 LHA/LZH scanning now tracks source bytes consumed through the bounded Rust

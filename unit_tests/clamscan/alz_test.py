@@ -23,6 +23,17 @@ ALZ_COMP_DEFLATE = 2
 ALZ_ENCR_HEADER_LEN = 12
 
 
+def alz_crc32(compression_method, data):
+    if compression_method == ALZ_COMP_NOCOMP:
+        return zlib.crc32(data) & 0xffffffff
+    if compression_method == ALZ_COMP_DEFLATE:
+        try:
+            return zlib.crc32(zlib.decompress(data, -15)) & 0xffffffff
+        except zlib.error:
+            return 0
+    return 0
+
+
 def append_alz_file(
     alz,
     name,
@@ -33,6 +44,7 @@ def append_alz_file(
     file_descriptor=0x10,
 ):
     name = name.encode('utf-8')
+    file_crc = alz_crc32(compression_method, data)
 
     alz.extend(ALZ_LOCAL_FILE_HEADER.to_bytes(4, 'little'))
     alz.extend(len(name).to_bytes(2, 'little'))
@@ -42,7 +54,7 @@ def append_alz_file(
     alz.append(0)  # unknown
     alz.append(compression_method)
     alz.append(0)  # unknown
-    alz.extend((0).to_bytes(4, 'little'))  # crc
+    alz.extend(file_crc.to_bytes(4, 'little'))
     alz.append(len(data))
     alz.append(uncompressed_size)
     alz.extend(name)

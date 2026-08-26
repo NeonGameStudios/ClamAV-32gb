@@ -1,5 +1,16 @@
 # Wishlist
 
+## ALZ member CRC validation — 2026-08-26
+
+- ALZ now validates the standard streaming CRC-32 for every complete stored,
+  deflate, and BZip2 member before nested scanning; a mismatch is a visible,
+  non-cacheable malformed result.
+- The current-source Rust 1.97.1 release build passes all 36 ALZ Rust unit
+  tests, the production-linked GCC `rust_alz` case passes 2/2, and `rust_map`
+  passes 1/1. Keep full C/Rust ABI, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## LHA/LZH compressed-range admission — 2026-08-26
 
 - LHA/LZH now tracks bounded source consumption and rejects a parsed member

@@ -107,6 +107,22 @@ fn classify_extraction_read_error(err: io::Error, field: &'static str) -> Error 
     }
 }
 
+fn alz_crc32_update(mut crc: u32, data: &[u8]) -> u32 {
+    for byte in data {
+        crc ^= u32::from(*byte);
+        for _ in 0..8 {
+            let mask = 0u32.wrapping_sub(crc & 1);
+            crc = (crc >> 1) ^ (0xedb8_8320 & mask);
+        }
+    }
+    crc
+}
+
+#[cfg(test)]
+fn alz_crc32(data: &[u8]) -> u32 {
+    !alz_crc32_update(!0u32, data)
+}
+
 struct AlzLocalFileHeaderHead {
     file_name_length: u16,
 
@@ -415,6 +431,7 @@ impl AlzLocalFileHeader {
     ) -> Result<(), Error> {
         sink.begin(Some(&self.file_name))?;
         let mut output_size = 0u64;
+        let mut crc = !0u32;
         let mut buffer = [0u8; 8192];
 
         loop {
@@ -442,6 +459,7 @@ impl AlzLocalFileHeader {
             }
 
             sink.write(&buffer[..len])?;
+            crc = alz_crc32_update(crc, &buffer[..len]);
             output_size = needed;
         }
 
@@ -449,6 +467,18 @@ impl AlzLocalFileHeader {
             debug!(
                 "ALZ file {:?} produced {} bytes, expected {} bytes",
                 self.file_name, output_size, self.uncompressed_size
+            );
+            sink.abort();
+            return Err(Error::Extract);
+        }
+
+        let actual_crc = !crc;
+        if actual_crc != self.file_crc {
+            debug!(
+                "ALZ file {:?} has CRC {:08x}, expected {:08x}",
+                self.file_name,
+                actual_crc,
+                self.file_crc,
             );
             sink.abort();
             return Err(Error::Extract);
@@ -490,6 +520,7 @@ impl AlzLocalFileHeader {
         let mut bounded = reader.take(self.compressed_size);
         sink.begin(Some(&self.file_name))?;
         let mut output_size = 0u64;
+        let mut crc = !0u32;
         let mut buffer = [0u8; 8192];
         loop {
             let len = match bounded.read(&mut buffer) {
@@ -515,6 +546,7 @@ impl AlzLocalFileHeader {
             }
 
             sink.write(&buffer[..len])?;
+            crc = alz_crc32_update(crc, &buffer[..len]);
             output_size = needed;
         }
 
@@ -527,6 +559,16 @@ impl AlzLocalFileHeader {
             debug!(
                 "ALZ file {:?} produced {} bytes, expected {} bytes",
                 self.file_name, output_size, self.uncompressed_size
+            );
+            sink.abort();
+            return Err(Error::Extract);
+        }
+
+        let actual_crc = !crc;
+        if actual_crc != self.file_crc {
+            debug!(
+                "ALZ file {:?} has CRC {:08x}, expected {:08x}",
+                self.file_name, actual_crc, self.file_crc
             );
             sink.abort();
             return Err(Error::Extract);
@@ -1186,6 +1228,24 @@ mod tests {
     ) {
         let name = name.as_bytes();
         let name_len = u16::try_from(name.len()).unwrap();
+        let file_crc = match compression_method {
+            ALZ_COMP_NOCOMP => alz_crc32(data),
+            ALZ_COMP_BZIP2 => {
+                let mut decoder = DecoderReader::new(data);
+                let mut decoded = Vec::new();
+                decoder
+                    .read_to_end(&mut decoded)
+                    .map_or(0, |_| alz_crc32(&decoded))
+            }
+            ALZ_COMP_DEFLATE => {
+                let mut decoder = DeflateDecoder::new(data);
+                let mut decoded = Vec::new();
+                decoder
+                    .read_to_end(&mut decoded)
+                    .map_or(0, |_| alz_crc32(&decoded))
+            }
+            _ => 0,
+        };
 
         alz.extend_from_slice(&ALZ_LOCAL_FILE_HEADER.to_le_bytes());
         alz.extend_from_slice(&name_len.to_le_bytes());
@@ -1195,7 +1255,7 @@ mod tests {
         alz.push(0);
         alz.push(compression_method);
         alz.push(0);
-        alz.extend_from_slice(&0u32.to_le_bytes());
+        alz.extend_from_slice(&file_crc.to_le_bytes());
         alz.push(compressed_size);
         alz.push(uncompressed_size);
         alz.extend_from_slice(name);
@@ -1306,6 +1366,11 @@ mod tests {
             flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
         encoder.write_all(data).unwrap();
         encoder.finish().unwrap()
+    }
+
+    #[test]
+    fn alz_crc32_matches_known_payload() {
+        assert_eq!(alz_crc32(b"test file 0"), 0xfa05_aa4a);
     }
 
     fn bzip2_truncated_after_output() -> Vec<u8> {
@@ -1505,6 +1570,26 @@ mod tests {
             5,
             b"four",
         );
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+
+        let alz = Alz::from_bytes_with_filter(&bytes, |_| {
+            AlzExtractionDecision::Extract(extraction_limits())
+        })
+        .unwrap();
+
+        assert!(alz.has_parse_error());
+        assert!(alz.embedded_files.is_empty());
+    }
+
+    #[test]
+    fn stored_crc_mismatch_is_rejected_before_scan() {
+        const ALZ_COMP_NOCOMP: u8 = 0;
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_file(&mut bytes, "bad.txt", ALZ_COMP_NOCOMP, 3, b"bad");
+        bytes[23..27].copy_from_slice(&0u32.to_le_bytes());
         bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
 
         let alz = Alz::from_bytes_with_filter(&bytes, |_| {

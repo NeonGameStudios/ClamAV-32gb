@@ -21539,6 +21539,49 @@ START_TEST(test_rust_lha_corpus_detects_nested_png)
 }
 END_TEST
 
+START_TEST(test_rust_alz_bad_crc_is_fail_visible)
+{
+    /* A structurally valid stored member with a deliberately wrong CRC. */
+    static const uint8_t archive[43] = {
+        0x41, 0x4c, 0x5a, 0x01, 0x00, 0x00, 0x00, 0x00, 0x42, 0x4c,
+        0x5a, 0x01, 0x07, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x10,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x03, 0x62,
+        0x61, 0x64, 0x2e, 0x74, 0x78, 0x74, 0x62, 0x61, 0x64, 0x43,
+        0x4c, 0x5a, 0x02,
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    verdict = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ALZ", NULL);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_rust_alz_corpus_detects_nested_members)
 {
     static const char *const archives[] = {
@@ -39368,6 +39411,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_rust_lha, test_rust_lha_corpus_detects_nested_png);
     suite_add_tcase(s, tc_rust_alz);
     tcase_add_checked_fixture(tc_rust_alz, cl_setup, cl_teardown);
+    tcase_add_test(tc_rust_alz, test_rust_alz_bad_crc_is_fail_visible);
     tcase_add_test(tc_rust_alz, test_rust_alz_corpus_detects_nested_members);
     suite_add_tcase(s, tc_onenote);
     tcase_add_checked_fixture(tc_onenote, cl_setup, cl_teardown);
