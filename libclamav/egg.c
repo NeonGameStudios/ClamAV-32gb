@@ -1786,9 +1786,14 @@ static cl_error_t egg_parse_archive_headers(egg_handle* handle)
     cli_dbgmsg("egg_parse_archive_headers: egg_header->header_id: %08x\n", le32_to_host(eggHeader->header_id));
     cli_dbgmsg("egg_parse_archive_headers: egg_header->reserved:  %08x\n", le32_to_host(eggHeader->reserved));
 
-    if (EGG_HEADER_VERSION != le16_to_host(eggHeader->version)) {
-        cli_dbgmsg("egg_parse_archive_headers: Unexpected EGG archive version #: %04x.\n",
-                   le16_to_host(eggHeader->version));
+    if (EGG_HEADER_VERSION != le16_to_host(eggHeader->version) ||
+        le32_to_host(eggHeader->header_id) == 0 ||
+        le32_to_host(eggHeader->reserved) != 0) {
+        cli_dbgmsg("egg_parse_archive_headers: Unsupported or malformed EGG archive header fields.\n");
+        if (handle->ctx != NULL)
+            cli_mark_scan_incomplete(handle->ctx, "EGG archive header fields are unsupported or malformed");
+        status = CL_EPARSE;
+        goto done;
     }
 
     handle->offset += sizeof(egg_header);

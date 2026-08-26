@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## EGG archive-header admission — 2026-08-26
+
+The direct EGG archive parser now enforces the supported version, nonzero
+header ID, and zero reserved field, matching embedded EGG-SFX admission.
+Malformed fields return `CL_EPARSE`, mark the context incomplete, and keep the
+fmap non-cacheable. The current-source parser builds warning-clean with GCC
+`-Wall -Wextra -Wformat-security`; production-linked `egg_map`,
+`egg_metadata`, and `egg_sfx` pass 6/6, 1/1, and 1/1. Full EGG corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## DMG warning-clean source qualification — 2026-08-26
 
 The canonical DMG source was rebuilt with GCC `-Wall -Wextra
