@@ -43,6 +43,7 @@ static int tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, in
 static cl_error_t tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, cli_ctx *ctx, fileblob **fbref, off_t fsize);
 static int tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length);
 static size_t tnef_readn(fmap_t *map, void *dst, off_t at, size_t len);
+static cl_error_t tnef_read_checksum(fmap_t *map, off_t *pos, off_t fsize, cli_ctx *ctx);
 
 #define TNEF_SIGNATURE 0x223E9f78
 #define LVL_MESSAGE 0x01
@@ -161,22 +162,19 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
         if (alldone)
             break;
         if (length == 0) {
-            uint16_t checksum;
-            size_t checksum_read = tnef_readn(ctx->fmap, &checksum, pos, sizeof(checksum));
-
-            if (checksum_read != sizeof(checksum)) {
-                cli_mark_scan_incomplete(ctx, "TNEF zero-length attribute checksum could not be read completely");
-                ret     = (checksum_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+            ret = tnef_read_checksum(ctx->fmap, &pos, fsize, ctx);
+            if (ret != CL_SUCCESS) {
                 alldone = 1;
                 break;
             }
-            pos += sizeof(checksum);
             continue;
         }
         if (length < 0) {
             cli_warnmsg("Corrupt TNEF header detected - length %d\n",
                         (int)length);
+            cli_mark_scan_incomplete(ctx, "TNEF attribute length is negative");
             ret = CL_EFORMAT;
+            alldone = 1;
             break;
         }
         switch (part) {
@@ -205,6 +203,10 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                     cli_dbgmsg("TNEF: Error reading TNEF message\n");
                     ret     = CL_EFORMAT;
                     alldone = 1;
+                } else {
+                    ret = tnef_read_checksum(ctx->fmap, &pos, fsize, ctx);
+                    if (ret != CL_SUCCESS)
+                        alldone = 1;
                 }
                 break;
             case LVL_ATTACHMENT:
@@ -213,6 +215,10 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                 if (ret != CL_SUCCESS) {
                     cli_dbgmsg("TNEF: Error reading TNEF attachment\n");
                     alldone = 1;
+                } else {
+                    ret = tnef_read_checksum(ctx->fmap, &pos, fsize, ctx);
+                    if (ret != CL_SUCCESS)
+                        alldone = 1;
                 }
                 if (fb)
                     fileblobSetCTX(fb, ctx);
@@ -374,9 +380,6 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
     }
     (*pos) = offset + length;
 
-    /* Checksum - TODO, verify */
-    (*pos) += 2;
-
     return 0;
 }
 
@@ -500,8 +503,6 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
     }
     (*pos) = offset + (off_t)length; /* shouldn't be needed */
 
-    (*pos) += 2;
-
     return CL_SUCCESS;
 }
 
@@ -569,4 +570,25 @@ tnef_readn(fmap_t *map, void *dst, off_t at, size_t len)
     if (len > map->len - (size_t)at)
         return 0;
     return fmap_readn(map, dst, (size_t)at, len);
+}
+
+static cl_error_t
+tnef_read_checksum(fmap_t *map, off_t *pos, off_t fsize, cli_ctx *ctx)
+{
+    uint16_t checksum;
+    size_t checksum_read;
+
+    if (!CLI_ISCONTAINED_2_0_TO(fsize, *pos, sizeof(checksum))) {
+        cli_mark_scan_incomplete(ctx, "TNEF attribute checksum is outside the input");
+        return CL_EPARSE;
+    }
+
+    checksum_read = tnef_readn(map, &checksum, *pos, sizeof(checksum));
+    if (checksum_read != sizeof(checksum)) {
+        cli_mark_scan_incomplete(ctx, "TNEF attribute checksum could not be read completely");
+        return (checksum_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+    }
+
+    *pos += (off_t)sizeof(checksum);
+    return CL_SUCCESS;
 }

@@ -1,5 +1,18 @@
 # Wishlist
 
+## TNEF nonzero-attribute checksum accounting — 2026-08-26
+
+- Read and range-check the mandatory two-byte checksum after every nonzero
+  TNEF message or attachment attribute; a clipped checksum must be an explicit
+  incomplete parse and an in-range callback failure must remain `CL_EREAD`;
+  negative attribute lengths must be fail-visible and non-cacheable.
+- The three new direct regressions pass in the current-source production-linked
+  GCC TNEF TCase. The full 16-test TNEF run still exposes the previously
+  reproduced mixed-harness timeout SIGSEGV and materialized-corpus matcher
+  miss; retain complete corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and parser-family qualification as release
+  gates.
+
 ## GIF version admission audit — 2026-08-26
 
 - Require the GIF version field to be exactly `87a` or `89a`; unsupported

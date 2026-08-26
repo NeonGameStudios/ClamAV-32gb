@@ -3,6 +3,23 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## TNEF nonzero-attribute checksum accounting — 2026-08-26
+
+TNEF attributes carry a mandatory two-byte checksum after their payload. The
+parser previously advanced over that field without reading it for nonzero
+message and attachment attributes, so a truncated or in-range read-failed
+checksum could be silently skipped. A shared checksum helper now preflights
+the range, preserves `CL_EREAD` for an in-range fmap callback failure, returns
+`CL_EPARSE` for clipped input, marks the layer incomplete, and advances only
+after the checksum bytes are read. Negative attribute lengths now also
+terminate with an incomplete `CL_EFORMAT` result. The three new direct
+regressions pass in the current-source production-linked GCC TNEF TCase. That
+TCase executes 16 tests
+but still reports the previously reproduced mixed-harness timeout SIGSEGV and
+materialized-corpus matcher miss; `tnef_map` remains 1/1. Complete TNEF
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## GIF version admission audit — 2026-08-26
 
 The GIF parser now requires the version field after the `GIF` signature to be
