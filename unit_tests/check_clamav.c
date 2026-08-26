@@ -35613,6 +35613,79 @@ START_TEST(test_hwpole2_corpus_detects_embedded_member)
 }
 END_TEST
 
+START_TEST(test_7z_sfx_corpus_detects_embedded_member)
+{
+    enum { SFX_PREFIX_SIZE = 16 };
+    char file_path[PATH_MAX];
+    struct stat st;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    uint8_t *archive_data;
+    uint8_t *sfx_data;
+    size_t archive_size;
+    size_t offset = 0;
+    int fd;
+    int saved_sdb;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/clam.7z", OBJDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+    ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX - SFX_PREFIX_SIZE,
+                  "invalid 7z SFX corpus size");
+    archive_size = (size_t)st.st_size;
+    archive_data = malloc(archive_size);
+    ck_assert_ptr_nonnull(archive_data);
+    while (offset < archive_size) {
+        ssize_t nread = read(fd, archive_data + offset, archive_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    ck_assert_int_eq(close(fd), 0);
+
+    sfx_data = malloc(SFX_PREFIX_SIZE + archive_size);
+    ck_assert_ptr_nonnull(sfx_data);
+    memset(sfx_data, 'S', SFX_PREFIX_SIZE);
+    memcpy(sfx_data + SFX_PREFIX_SIZE, archive_data, archive_size);
+    free(archive_data);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "7z.SFX.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    saved_sdb = scan_engine->sdb;
+    scan_engine->sdb = 1;
+    map = cl_fmap_open_memory(sfx_data, SFX_PREFIX_SIZE + archive_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ck_assert_int_eq(
+        cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                      scan_engine, &options, NULL, NULL, NULL, NULL,
+                      "CL_TYPE_TEXT_ASCII", NULL),
+        CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_str_eq(last_alert, "7z.SFX.Member.MZ.UNOFFICIAL");
+
+    scan_engine->sdb = saved_sdb;
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(sfx_data);
+}
+END_TEST
+
 START_TEST(test_msxml_corpus_detects_embedded_marker)
 {
     static const uint8_t data[] = "<document><bindata>\nVURG\n</bindata></document>";
@@ -38561,6 +38634,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_7z = tcase_create("7z");
     TCase *tc_7z_map = tcase_create("7z_map");
     TCase *tc_7z_sfx = tcase_create("7z_sfx");
+    TCase *tc_7z_sfx_corpus = tcase_create("7z_sfx_corpus");
     TCase *tc_sis_map = tcase_create("sis_map");
     TCase *tc_ishield_map = tcase_create("ishield_map");
     TCase *tc_hwpml_map = tcase_create("hwpml_map");
@@ -39061,6 +39135,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z_map, test_7z_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_7z_sfx);
     tcase_add_test(tc_7z_sfx, test_7z_sfx_header_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_7z_sfx_corpus);
+    tcase_add_checked_fixture(tc_7z_sfx_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_7z_sfx_corpus, test_7z_sfx_corpus_detects_embedded_member);
     suite_add_tcase(s, tc_sis_map);
     tcase_add_checked_fixture(tc_sis_map, cl_setup, cl_teardown);
     tcase_add_test(tc_sis_map, test_sis_missing_map_is_fail_visible);

@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## 7-Zip SFX nested corpus qualification — 2026-08-26
+
+The isolated current-source production-linked GCC `7z_sfx_corpus` case passes
+1/1 over a real materialized `clam.7z` archive prefixed by a non-archive SFX
+stub. Public raw-scan recognition admits the 7-Zip SFX candidate, validates
+the start header, dispatches bounded nested `CL_TYPE_7Z` extraction, and
+reaches the exact `7z.SFX.Member.MZ.UNOFFICIAL` matcher. The existing
+confirmed SFX start-header read-failure case also passes 1/1. Full 7-Zip SFX
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## HWPOLE2 embedded-OLE2 corpus qualification — 2026-08-26
 
 The isolated current-source production-linked GCC `hwpole2_corpus` case passes

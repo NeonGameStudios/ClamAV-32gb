@@ -6,6 +6,19 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## 7-Zip SFX nested corpus qualification — 2026-08-26
+
+The isolated authoritative current-source production-linked GCC
+`7z_sfx_corpus` case passes 1/1 over a real materialized `clam.7z` archive
+prefixed by a non-archive SFX stub. Public raw-scan recognition admits the
+7-Zip SFX candidate, validates the start header, dispatches bounded nested
+`CL_TYPE_7Z` extraction, and reaches the exact
+`7z.SFX.Member.MZ.UNOFFICIAL` matcher. The existing confirmed SFX start-header
+read-failure case also passes 1/1. This is bounded 7-Zip SFX admission and
+nested-dispatch evidence, not complete SFX qualification; sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release evidence remain open.
+
 ## HWPOLE2 embedded-OLE2 corpus qualification — 2026-08-26
 
 The isolated authoritative current-source production-linked GCC

@@ -1,5 +1,15 @@
 # Wishlist
 
+## 7-Zip SFX nested corpus qualification — 2026-08-26
+
+- The isolated current-source production-linked GCC `7z_sfx_corpus` case
+  passes 1/1 over a real materialized `clam.7z` archive behind a non-archive
+  stub; public raw-scan SFX recognition and start-header admission reach an
+  exact nested child marker, while the confirmed SFX read-failure case passes
+  1/1.
+- Keep full 7-Zip SFX corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release gates open.
+
 ## HWPOLE2 embedded-OLE2 corpus qualification — 2026-08-26
 
 - The isolated current-source production-linked GCC `hwpole2_corpus` case
