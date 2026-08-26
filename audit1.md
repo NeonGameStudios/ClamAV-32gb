@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## JPEG Photoshop-thumbnail corpus qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `jpeg_map` case
+passes 12/12, and the isolated `jpeg_corpus` case passes 1/1. The corpus is a
+valid APP13 Photoshop resource containing a bounded thumbnail payload; the
+outer JPEG does not begin with `MZP`, and the exact
+`JPEG.Member.MZ.UNOFFICIAL` alert is reached through the 8BIM thumbnail nested
+scan. This is bounded JPEG resource-extraction evidence, not complete
+JPEG/image corpus qualification; sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.
+
 ## GIF bounded overlay corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `gif` case passes

@@ -35765,6 +35765,82 @@ START_TEST(test_gif_corpus_detects_embedded_mz)
 }
 END_TEST
 
+START_TEST(test_jpeg_corpus_detects_embedded_mz)
+{
+    static const uint8_t child[64] = {'M', 'Z', 'P'};
+    uint8_t data[2 + 2 + 2 + sizeof("Photoshop 3.0") + 4 + 2 + 1 + 1 + 4 + 28 + sizeof(child)];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    size_t offset = 0;
+    uint32_t thumbnail_size = 28U + (uint32_t)sizeof(child);
+    int ret;
+
+    memset(data, 0, sizeof(data));
+    data[offset++] = 0xff;
+    data[offset++] = 0xd8;
+    data[offset++] = 0xff;
+    data[offset++] = 0xed;
+    data[offset++] = (uint8_t)((sizeof(data) - 4U) >> 8);
+    data[offset++] = (uint8_t)(sizeof(data) - 4U);
+    memcpy(data + offset, "Photoshop 3.0", sizeof("Photoshop 3.0"));
+    offset += sizeof("Photoshop 3.0");
+    memcpy(data + offset, "8BIM", 4);
+    offset += 4;
+    data[offset++] = 0x04;
+    data[offset++] = 0x09;
+    data[offset++] = 0x00;
+    data[offset++] = 0x00;
+    data[offset++] = (uint8_t)(thumbnail_size >> 24);
+    data[offset++] = (uint8_t)(thumbnail_size >> 16);
+    data[offset++] = (uint8_t)(thumbnail_size >> 8);
+    data[offset++] = (uint8_t)thumbnail_size;
+    offset += 28;
+    memcpy(data + offset, child, sizeof(child));
+    offset += sizeof(child);
+    ck_assert_int_eq(offset, sizeof(data));
+
+    memset(&options, 0, sizeof(options));
+    options.general   = CL_SCAN_GENERAL_HEURISTICS;
+    options.heuristic = CL_SCAN_HEURISTIC_BROKEN_MEDIA;
+    options.parse     = CL_SCAN_PARSE_IMAGE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "JPEG.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(data, "MZP", 3) != 0,
+                  "JPEG root unexpectedly satisfies child signature");
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_JPEG", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "JPEG thumbnail did not reach the child matcher: %s",
+                  cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "JPEG.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_tiff_truncated_structures_are_fail_visible)
 {
     static const uint8_t truncated_first_ifd_offset[] = {
@@ -37196,6 +37272,7 @@ static Suite *test_cl_suite(void)
 #endif
     TCase *tc_tiff_map = tcase_create("tiff_map");
     TCase *tc_jpeg_map = tcase_create("jpeg_map");
+    TCase *tc_jpeg_corpus = tcase_create("jpeg_corpus");
     TCase *tc_pdf      = tcase_create("pdf");
     TCase *tc_pdf_corpus = tcase_create("pdf_corpus");
     TCase *tc_pdf_map  = tcase_create("pdf_map");
@@ -37444,6 +37521,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_tiff_map);
     tcase_add_test(tc_tiff_map, test_tiff_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_jpeg_map);
+    suite_add_tcase(s, tc_jpeg_corpus);
+    tcase_add_checked_fixture(tc_jpeg_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_jpeg_corpus, test_jpeg_corpus_detects_embedded_mz);
     tcase_add_test(tc_jpeg_map, test_jpeg_missing_map_is_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_truncated_structures_are_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_time_limit_is_fail_visible);

@@ -1,5 +1,15 @@
 # Wishlist
 
+## JPEG Photoshop-thumbnail corpus qualification — 2026-08-26
+
+- The current-source production-linked GCC `jpeg_map` case passes 12/12, and
+  the isolated `jpeg_corpus` case passes 1/1 over a valid APP13 Photoshop
+  resource with a bounded thumbnail payload; exact offset-0 `MZP` matching is
+  reached through the 8BIM thumbnail nested scan.
+- Keep complete JPEG/image corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release gates
+  open.
+
 ## GIF bounded overlay corpus qualification — 2026-08-25
 
 - The current-source production-linked GCC `gif` case passes 5/5, and the
