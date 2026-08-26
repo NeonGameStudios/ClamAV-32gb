@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## Generic graphics BMP corpus qualification — 2026-08-26
+
+The isolated current-source production-linked GCC `graphics_corpus` case
+passes 1/1 over a structurally complete one-pixel, 24-bit BMP. The image root
+does not begin with MZP, and the exact
+`Graphics.Bmp.Pixel.MZ.UNOFFICIAL` alert is reached at the declared pixel
+offset through `CL_TYPE_GRAPHICS`. This proves bounded BMP admission and raw
+matching handoff only: the bounded parser still does not decode pixels and
+marks the image layer explicitly incomplete. Full graphics corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release evidence remain open.
+
 ## ELF executable corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC elf case passes 4/4,

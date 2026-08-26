@@ -1,5 +1,14 @@
 # Wishlist
 
+## Generic graphics BMP corpus qualification — 2026-08-26
+
+- The isolated current-source production-linked GCC `graphics_corpus` case
+  passes 1/1 over a structurally complete one-pixel, 24-bit BMP whose exact
+  pixel-offset child marker is detected through `CL_TYPE_GRAPHICS`.
+- Keep pixel decoding, complete graphics corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+  gates open.
+
 ## ELF executable corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC elf case passes 4/4, elf_map

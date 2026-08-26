@@ -17352,6 +17352,70 @@ START_TEST(test_graphics_bmp_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_graphics_bmp_corpus_detects_pixel_marker)
+{
+    enum { BMP_SIZE = 58, PIXEL_OFFSET = 54 };
+    uint8_t data[BMP_SIZE] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    int ret;
+
+    /* A complete one-pixel, 24-bit BMP has a bounded raw pixel row. The
+     * bounded parser admits its structure but does not decode pixels; raw
+     * matching must still inspect the image layer and report the exact
+     * marker at the declared pixel offset. */
+    data[0]  = 'B';
+    data[1]  = 'M';
+    data[2]  = BMP_SIZE;
+    data[10] = PIXEL_OFFSET;
+    data[14] = 40;
+    data[18] = 1;
+    data[22] = 1;
+    data[26] = 1;
+    data[28] = 24;
+    data[34] = 4;
+    memcpy(data + PIXEL_OFFSET, "MZP", 3);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_IMAGE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Graphics.Bmp.Pixel.MZ", "4d5a50", 0, 0, 0,
+                         "54", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    ck_assert_msg(memcmp(data, "MZP", 3) != 0,
+                  "BMP root unexpectedly satisfies pixel child signature");
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_GRAPHICS", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "BMP pixel layer was not scanned: %s", cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Graphics.Bmp.Pixel.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_bmp_missing_uncompressed_pixel_range_is_malformed)
 {
     uint8_t data[54] = {0};
@@ -37895,6 +37959,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_tnef = tcase_create("tnef");
     TCase *tc_tnef_map = tcase_create("tnef_map");
     TCase *tc_graphics_map = tcase_create("graphics_map");
+    TCase *tc_graphics_corpus = tcase_create("graphics_corpus");
     TCase *tc_graphics_api = tcase_create("graphics_api");
     TCase *tc_descriptor_map = tcase_create("descriptor_map");
     TCase *tc_pe32plus = tcase_create("pe32plus_common");
@@ -38095,6 +38160,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_graphics_map);
     tcase_add_test(tc_graphics_map, test_bmp_jp2_missing_maps_are_fail_visible);
     tcase_add_test(tc_graphics_map, test_media_parsers_reject_null_contexts);
+    suite_add_tcase(s, tc_graphics_corpus);
+    tcase_add_checked_fixture(tc_graphics_corpus, cl_setup, cl_teardown);
+    tcase_add_test(tc_graphics_corpus, test_graphics_bmp_corpus_detects_pixel_marker);
     suite_add_tcase(s, tc_graphics_api);
     tcase_add_checked_fixture(tc_graphics_api, cl_setup, cl_teardown);
     tcase_add_test(tc_graphics_api, test_graphics_public_api_read_failure_is_fail_visible);
