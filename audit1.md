@@ -1,5 +1,15 @@
 # Independent read-only audit of audit.md
 
+## SIS compressed-member current-source qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `sis_member` case
+passes 1/1 after replacing mixed-harness temporary signature loading with a
+direct compiled matcher. The synthetic legacy SIS package decompresses its
+member and reaches the exact `SIS.Member.Exact.UNOFFICIAL` child alert; the
+materialized `sis` case passes 1/1 and `sis_map` passes 1/1. Full SIS corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## OneNote and OOXML current-source boundary rerun — 2026-08-26
 
 The authoritative current-source production-linked GCC harness passes

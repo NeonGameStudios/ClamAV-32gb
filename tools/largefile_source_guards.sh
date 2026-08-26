@@ -3125,6 +3125,8 @@ contains unit_tests/check_clamav.c 'test_ai_model_parser_is_explicitly_unsupport
 contains unit_tests/check_clamav.c 'test_rar_without_backend_is_explicitly_unsupported'
 contains unit_tests/check_clamav.c 'test_sis_truncated_compressed_member_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_sis_compressed_member_streams_to_nested_scan'
+contains unit_tests/check_clamav.c 'SIS.Member.Exact'
+contains unit_tests/check_clamav.c '5349534441544121'
 contains unit_tests/check_clamav.c 'SIS.Member.Exact.UNOFFICIAL'
 contains unit_tests/check_clamav.c 'test_sis_member_limit_is_fail_visible'
 contains libclamav/sis.c 'SIS member offset points inside the package header'

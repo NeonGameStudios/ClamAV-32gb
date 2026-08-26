@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## SIS compressed-member current-source qualification — 2026-08-26
+
+The authoritative current-source production-linked GCC `sis_member` case
+passes 1/1 after direct compiled matcher setup for a zlib-compressed legacy
+member and exact nested child matching. The materialized `sis` case passes
+1/1 and `sis_map` passes 1/1. Full SIS corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## OneNote and OOXML current-source boundary rerun — 2026-08-26
 
 The authoritative current-source production-linked GCC harness passes
