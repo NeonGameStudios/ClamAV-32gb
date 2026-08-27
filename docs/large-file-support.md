@@ -8350,3 +8350,12 @@ detection, clean-volume completion, and the ICB mismatch regression. Complete
 UDF corpus, sanitizer, certified Linux x86-64, materialized large file,
 production-CVD/service, Sonic1, and parser-family qualification remain
 release gates.
+
+## ISO9660 descriptor-sequence runtime evidence — 2026-08-27
+
+The current-source production-linked GCC `iso_map` case passes 12/12,
+including the late-terminator regression, and the `iso` case passes 1/1 across
+both materialized logo fixtures with exact nested PNG detection. Full ISO9660
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain release
+gates.

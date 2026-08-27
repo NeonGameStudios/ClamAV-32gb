@@ -198,12 +198,12 @@ bound from the declared volume, walks descriptors until the first valid
 Out-of-range and callback failures remain fail-visible.
 
 The new late-terminator ISO regression is registered and compiles with current
-production GCC declarations. Execution in a current-source production-linked
-harness remains pending because the reused container overlay is exhausted and
-its available static link is stale. Existing ISO map and materialized corpus
-evidence remains unchanged; full ISO corpus, sanitizer, certified Linux
-x86-64, materialized large-file, production-CVD/service, Sonic1, and
-parser-family qualification remain release gates.
+production GCC declarations. The current-source production-linked GCC
+`iso_map` case now passes 12/12, including the late-terminator regression, and
+the `iso` case passes 1/1 across both materialized logo fixtures. Full ISO
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain release
+gates.
 
 ## DMG warning-clean source qualification — 2026-08-26
 
@@ -1341,7 +1341,8 @@ The authoritative current-source production-linked GCC `iso` case passes 1/1
 across both materialized `iso_normal.logo.iso` and
 `iso_no_joliet.logo.iso` fixtures. The exact nested PNG child signature is
 detected through the ISO extraction path in both standard and no-Joliet
-directory-name forms. The existing `iso_map` boundary case passes 11/11.
+directory-name forms. The current-source production-linked `iso_map` boundary
+case passes 12/12, including the late-terminator regression.
 Full ISO9660 corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and release qualification remain
 open.
