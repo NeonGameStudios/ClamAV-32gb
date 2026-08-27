@@ -1,5 +1,26 @@
 # Independent read-only audit of audit.md
 
+## MIME direct-context and first-line admission audit — 2026-08-27
+
+The public `cli_mbox()` entry checked its directory, context, and fmap, but the
+MIME body and classification paths later dereferenced both `ctx->engine` and
+`ctx->options` unconditionally. A direct caller with a valid recognized map
+could therefore reach a data-dependent null dereference. The entry now returns
+`CL_ENULLARG` for a null context or missing engine/options before reading the
+message; missing fmap remains the existing sticky, non-cacheable `CL_EPARSE`.
+
+The same warning-enabled review found that `parseEmailFile()` copied a
+maximum-length first line with `strncpy(..., size - 1)` but did not write the
+last NUL byte. It now measures within the destination bound, copies exactly
+that prefix, and terminates it explicitly before `cli_chomp()` or header
+parsing. The current MIME source compiles warning-clean with the production
+GCC flags. A coherent current-source production-linked harness passes
+`mail_map` 2/2, `mail` 10/10, `mail_api` 2/2, `mail_partial` 1/1, and `mhtml`
+4/4; this removes the prior mixed-generation timeout-test crash caveat.
+Complete MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain release gates.
+
 ## JPEG SOS and entropy completion audit — 2026-08-27
 
 The JPEG parser previously returned clean immediately after admitting a

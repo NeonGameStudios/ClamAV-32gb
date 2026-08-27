@@ -353,11 +353,19 @@ int cli_mbox(const char *dir, cli_ctx *ctx)
     }
     if (ctx == NULL) {
         cli_dbgmsg("cli_mbox called with NULL context\n");
-        return CL_EARG;
+        return CL_ENULLARG;
     }
     if (ctx->fmap == NULL) {
         cli_mark_scan_incomplete(ctx, "MIME message input map is unavailable");
         return CL_EPARSE;
+    }
+    if (ctx->engine == NULL) {
+        cli_dbgmsg("cli_mbox called with context missing engine\n");
+        return CL_ENULLARG;
+    }
+    if (ctx->options == NULL) {
+        cli_dbgmsg("cli_mbox called with context missing scan options\n");
+        return CL_ENULLARG;
     }
     return cli_parse_mbox(dir, ctx);
 }
@@ -1034,6 +1042,7 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
     int err                 = 1;
     size_t totalHeaderBytes = 0;
     size_t totalHeaderCnt   = 0;
+    size_t first_line_len;
 
     size_t lineFoldCnt = 0;
 
@@ -1053,7 +1062,11 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
     CLI_CALLOC_OR_GOTO_DONE(head, 1, sizeof(ReadStruct));
     curr = head;
 
-    strncpy(buffer, firstLine, sizeof(buffer) - 1);
+    first_line_len = 0;
+    while (first_line_len < sizeof(buffer) - 1U && firstLine[first_line_len] != '\0')
+        first_line_len++;
+    memcpy(buffer, firstLine, first_line_len);
+    buffer[first_line_len] = '\0';
     do {
         const char *line;
 

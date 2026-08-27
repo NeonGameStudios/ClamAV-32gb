@@ -1,5 +1,18 @@
 # Wishlist
 
+## MIME direct-context and first-line admission audit — 2026-08-27
+
+- Keep `cli_mbox()` fail-visible at its direct boundary: null context or a
+  valid fmap without the required engine/options returns `CL_ENULLARG` before
+  parser traversal, while missing fmap remains incomplete `CL_EPARSE`.
+- Keep the initial MIME line bounded and explicitly NUL-terminated before
+  chomp/header handling. The MIME source is warning-clean under the production
+  GCC flags, and the coherent production-linked `mail_map`, `mail`,
+  `mail_api`, `mail_partial`, and `mhtml` cases pass 2/2, 10/10, 2/2, 1/1,
+  and 4/4. Complete MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.
+
 ## JPEG SOS and entropy completion audit — 2026-08-27
 
 - Keep JPEG clean completion conditional on a valid SOS and an observed EOI.

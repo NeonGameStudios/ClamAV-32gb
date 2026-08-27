@@ -3,6 +3,24 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MIME direct-context and first-line admission — 2026-08-27
+
+`cli_mbox()` now rejects a null context or a recognized fmap without the
+engine and scan-options objects required by later MIME classification and
+message/partial handling. These caller errors return `CL_ENULLARG` before any
+message read; missing fmap retains its explicit incomplete `CL_EPARSE` result.
+The initial line handoff to `parseEmailFile()` also uses a bounded length,
+exact copy, and explicit terminator, removing a maximum-length `strncpy()` path
+that could leave the destination's final byte uninitialized before chomp and
+header parsing.
+
+The current MIME source compiles warning-clean with the production GCC flags.
+The coherent current-source production-linked harness passes `mail_map` 2/2,
+`mail` 10/10, `mail_api` 2/2, `mail_partial` 1/1, and `mhtml` 4/4, replacing
+the prior mixed old/current timeout crash caveat. Complete MIME/mbox/MHTML
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## JPEG SOS and entropy completion — 2026-08-27
 
 JPEG parsing now continues beyond every valid SOS until a real marker is
