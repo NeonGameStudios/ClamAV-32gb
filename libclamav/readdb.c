@@ -6178,6 +6178,7 @@ static int countentries(const char *dbname, unsigned int *sigs)
     char buffer[CLI_DEFAULT_LSIG_BUFSIZE + 1];
     FILE *fs;
     unsigned int entry = 0;
+    int status = CL_SUCCESS;
 
     fs = fopen(dbname, "r");
     if (!fs) {
@@ -6189,7 +6190,18 @@ static int countentries(const char *dbname, unsigned int *sigs)
             continue;
         entry++;
     }
-    fclose(fs);
+    if (ferror(fs)) {
+        cli_errmsg("countentries: Can't read file %s\n", dbname);
+        status = CL_EREAD;
+    }
+    if (fclose(fs) != 0) {
+        cli_errmsg("countentries: Can't close file %s\n", dbname);
+        if (status == CL_SUCCESS)
+            status = CL_EREAD;
+    }
+    if (status != CL_SUCCESS)
+        return status;
+
     *sigs += entry;
     return CL_SUCCESS;
 }
@@ -6268,13 +6280,17 @@ cl_error_t cl_countsigs(const char *path, unsigned int countoptions, unsigned in
                     fname[sizeof(fname) - 1] = 0;
                     ret                      = countsigs(fname, countoptions, sigs);
                     if (ret != CL_SUCCESS) {
-                        closedir(dd);
+                        if (closedir(dd) != 0)
+                            cli_errmsg("cl_countsigs: Can't close directory %s after an error\n", path);
                         return ret;
                     }
                 }
             }
         }
-        closedir(dd);
+        if (closedir(dd) != 0) {
+            cli_errmsg("cl_countsigs: Can't close directory %s\n", path);
+            return CL_EREAD;
+        }
     } else {
         cli_errmsg("cl_countsigs: Unsupported file type\n");
         return CL_EARG;

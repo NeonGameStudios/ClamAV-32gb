@@ -13899,8 +13899,9 @@ native-width-integer	libclamav/readdb.c	5996	    size_t tasks_to_do    = 0;
 native-width-integer	libclamav/readdb.c	5997	    size_t tasks_complete = 0;
 native-width-integer	libclamav/readdb.c	6176	static int countentries(const char *dbname, unsigned int *sigs)
 native-width-integer	libclamav/readdb.c	6180	    unsigned int entry = 0;
-native-width-integer	libclamav/readdb.c	6197	static int countsigs(const char *dbname, unsigned int options, unsigned int *sigs)
-native-width-integer	libclamav/readdb.c	6240	cl_error_t cl_countsigs(const char *path, unsigned int countoptions, unsigned int *sigs)
+native-width-integer	libclamav/readdb.c	6181	    int status = CL_SUCCESS;
+native-width-integer	libclamav/readdb.c	6209	static int countsigs(const char *dbname, unsigned int options, unsigned int *sigs)
+native-width-integer	libclamav/readdb.c	6252	cl_error_t cl_countsigs(const char *path, unsigned int countoptions, unsigned int *sigs)
 native-width-integer	libclamav/readdb.c	655	                                           const char *offset, const uint32_t *lsigid, unsigned int options)
 native-width-integer	libclamav/readdb.c	708	                                         const char *offset, const uint32_t *lsigid, unsigned int options)
 native-width-integer	libclamav/readdb.c	715	    size_t range, i, j, hexlen, nest;
@@ -31500,8 +31501,8 @@ offset-size-arithmetic	libclamav/readdb.c	5511	                dbstat->statdname
 offset-size-arithmetic	libclamav/readdb.c	5544	    if ((dd = opendir(dbstat->dir)) == NULL) {
 offset-size-arithmetic	libclamav/readdb.c	5554	                fname = malloc(strlen(dbstat->dir) + strlen(dent->d_name) + 32);
 offset-size-arithmetic	libclamav/readdb.c	6081	            cli_dbgmsg("Matcher[%u]: %s: AC sigs: %u (reloff: %u, absoff: %u) BM sigs: %u (reloff: %u, absoff: %u) PCREs: %u (reloff: %u, absoff: %u) maxpatlen %u %s\n", i, cli_mtargets[i].name, root->ac_patterns, root->ac_reloff_num, root->ac_absoff_num, root->bm_patterns, root->bm_reloff_num, root->bm_absoff_num, root->pcre_metas, root->pcre_reloff_num, root->pcre_absoff_num, root->maxpatlen, root->ac_only ? "(ac_only mode)" : "");
-offset-size-arithmetic	libclamav/readdb.c	6267	                    snprintf(fname, sizeof(fname), "%s" PATHSEP "%s", path, dent->d_name);
-offset-size-arithmetic	libclamav/readdb.c	6268	                    fname[sizeof(fname) - 1] = 0;
+offset-size-arithmetic	libclamav/readdb.c	6279	                    snprintf(fname, sizeof(fname), "%s" PATHSEP "%s", path, dent->d_name);
+offset-size-arithmetic	libclamav/readdb.c	6280	                    fname[sizeof(fname) - 1] = 0;
 offset-size-arithmetic	libclamav/readdb.c	655	                                           const char *offset, const uint32_t *lsigid, unsigned int options)
 offset-size-arithmetic	libclamav/readdb.c	708	                                         const char *offset, const uint32_t *lsigid, unsigned int options)
 offset-size-arithmetic	libclamav/readdb.c	732	            hexcpy = calloc(hexlen + 2 * range, sizeof(char));

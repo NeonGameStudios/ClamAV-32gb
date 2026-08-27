@@ -12144,3 +12144,13 @@ regressions. Current-source unit syntax passes with only the existing
 unrelated integer-conversion warning; current-object execution, production
 CVD/service parity, sanitizer, materialized large-file, Sonic1, and release
 qualification remain open.
+
+## Signature-counting stream cleanup audit — 2026-08-27
+
+The public `cl_countsigs()` path and its line-based database counter ignored
+stream read errors and close failures. They now preserve the first operational
+failure as `CL_EREAD`, close directory handles on both success and error paths,
+and avoid adding a partial count after a failed file read or close. The
+production GCC source guard covers the new checks; injected close-failure
+execution, production-CVD/service parity, sanitizer, materialized large-file,
+Sonic1, and release qualification remain open.

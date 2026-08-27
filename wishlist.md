@@ -6017,3 +6017,10 @@ parser-family qualification remain open.
 - Keep focused missing-engine execution, ingress parity, production CVD,
   service, sanitizer, materialized large-file, Sonic1, and release evidence
   open.
+
+## Signature-counting stream cleanup audit — 2026-08-27
+
+- Preserve `cl_countsigs()` file and directory read/close failures as
+  `CL_EREAD`, and never add a partial count after a failed stream.
+- Keep injected close-failure execution, production CVD/service parity,
+  sanitizer, materialized large-file, Sonic1, and release evidence open.
