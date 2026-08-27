@@ -5954,3 +5954,12 @@ parser-family qualification remain open.
   complete GZip corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and parser-family qualification
   open.
+
+## Production CVD/CLD/CUD archive-ingress audit — 2026-08-27
+
+- Keep CVD/CLD/CUD archive read, seek, member-consumption, end-block, and
+  stream-close failures fail-visible through the database-load return status.
+- The current source passes the production warning-enabled GCC syntax check and
+  registers isolated load/unpack coverage. Keep current-object execution,
+  production CVDs, service parity, sanitizer, materialized large-file, Sonic1,
+  and release qualification open.

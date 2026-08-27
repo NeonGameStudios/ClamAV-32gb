@@ -41757,6 +41757,7 @@ static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
     TCase *tc_cl       = tcase_create("cl_api");
+    TCase *tc_cvd      = tcase_create("cvd_api");
     TCase *tc_cryptff  = tcase_create("cryptff");
     TCase *tc_cryptff_api = tcase_create("cryptff_api");
     TCase *tc_elf_map  = tcase_create("elf_map");
@@ -41924,6 +41925,10 @@ static Suite *test_cl_suite(void)
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
+    suite_add_tcase(s, tc_cvd);
+    tcase_add_checked_fixture(tc_cvd, cl_setup, cl_teardown);
+    tcase_add_test(tc_cvd, test_cl_load);
+    tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_cryptff);
     tcase_add_checked_fixture(tc_cryptff, cl_setup, cl_teardown);

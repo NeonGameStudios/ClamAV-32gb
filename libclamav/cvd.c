@@ -35,6 +35,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <limits.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -51,18 +52,27 @@
 #include "cvd.h"
 #include "readdb.h"
 #include "default.h"
+#include "scanners.h"
 
 #define TAR_BLOCKSIZE 512
 
-static void cli_tgzload_cleanup(int comp, struct cli_dbio *dbio, int fdd)
+static cl_error_t cli_tgzload_cleanup(int comp, struct cli_dbio *dbio, int fdd)
 {
+    cl_error_t status = CL_SUCCESS;
+
     UNUSEDPARAM(fdd);
     cli_dbgmsg("in cli_tgzload_cleanup()\n");
     if (comp) {
-        gzclose(dbio->gzs);
+        if (dbio->gzs != NULL && gzclose(dbio->gzs) != Z_OK) {
+            cli_errmsg("cli_tgzload_cleanup: gzclose() failed\n");
+            status = CL_EREAD;
+        }
         dbio->gzs = NULL;
     } else {
-        fclose(dbio->fs);
+        if (dbio->fs != NULL && fclose(dbio->fs) != 0) {
+            cli_errmsg("cli_tgzload_cleanup: fclose() failed\n");
+            status = CL_EREAD;
+        }
         dbio->fs = NULL;
     }
     if (dbio->buf != NULL) {
@@ -74,13 +84,75 @@ static void cli_tgzload_cleanup(int comp, struct cli_dbio *dbio, int fdd)
         cl_hash_destroy(dbio->hashctx);
         dbio->hashctx = NULL;
     }
+
+    return status;
+}
+
+static cl_error_t cli_tgzload_fail(int comp, struct cli_dbio *dbio, int fdd,
+                                   cl_error_t status)
+{
+    return cli_merge_cleanup_status(status, cli_tgzload_cleanup(comp, dbio, fdd));
+}
+
+static cl_error_t cli_tgzload_tell(int comp, struct cli_dbio *dbio, off_t *off)
+{
+    if (comp) {
+        z_off_t current = gzseek(dbio->gzs, 0, SEEK_CUR);
+
+        if (current < 0)
+            return CL_ESEEK;
+        *off = (off_t)current;
+    } else {
+#ifdef HAVE_FSEEKO
+        *off = ftello(dbio->fs);
+        if (*off < 0)
+            return CL_ESEEK;
+#else
+        long current = ftell(dbio->fs);
+
+        if (current < 0)
+            return CL_ESEEK;
+        *off = (off_t)current;
+#endif
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_tgzload_skip(int comp, struct cli_dbio *dbio, off_t off,
+                                   unsigned int size, unsigned int pad)
+{
+    off_t current;
+    off_t distance;
+
+    if (cli_tgzload_tell(comp, dbio, &current) != CL_SUCCESS)
+        return CL_ESEEK;
+
+    distance = (current == off) ? (off_t)size + (off_t)pad : (off_t)pad;
+    if (!distance)
+        return CL_SUCCESS;
+
+    if (comp) {
+        if (gzseek(dbio->gzs, (z_off_t)distance, SEEK_CUR) < 0)
+            return CL_ESEEK;
+    } else {
+#ifdef HAVE_FSEEKO
+        if (fseeko(dbio->fs, distance, SEEK_CUR) != 0)
+            return CL_ESEEK;
+#else
+        if (distance > LONG_MAX || fseek(dbio->fs, (long)distance, SEEK_CUR) != 0)
+            return CL_ESEEK;
+#endif
+    }
+
+    return CL_SUCCESS;
 }
 
 static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, struct cli_dbinfo *dbinfo, void *sign_verifier)
 {
     char osize[13], name[101];
     char block[TAR_BLOCKSIZE];
-    int nread, fdd, ret;
+    int nread, fdd, ret, zerr;
     unsigned int type, size, pad, compr = 1;
     off_t off;
     struct cli_dbinfo *db;
@@ -153,8 +225,7 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
     dbio->buf     = malloc(dbio->bufsize);
     if (!dbio->buf) {
         cli_errmsg("cli_tgzload: Can't allocate memory for dbio->buf\n");
-        cli_tgzload_cleanup(compr, dbio, fdd);
-        return CL_EMALFDB;
+        return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
     }
     dbio->bufpt  = NULL;
     dbio->usebuf = 1;
@@ -167,25 +238,46 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
         else
             nread = fread(block, 1, TAR_BLOCKSIZE, dbio->fs);
 
-        if (!nread)
-            break;
+        if (!nread) {
+            if (compr) {
+                (void)gzerror(dbio->gzs, &zerr);
+                if (zerr != Z_OK && zerr != Z_STREAM_END)
+                    return cli_tgzload_fail(compr, dbio, fdd, CL_EREAD);
+            } else if (ferror(dbio->fs)) {
+                return cli_tgzload_fail(compr, dbio, fdd, CL_EREAD);
+            }
+            cli_errmsg("cli_tgzload: Missing end-of-archive block\n");
+            return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
+        }
 
         if (nread != TAR_BLOCKSIZE) {
             cli_errmsg("cli_tgzload: Incomplete block read\n");
-            cli_tgzload_cleanup(compr, dbio, fdd);
-            return CL_EMALFDB;
+            if (nread < 0 || (!compr && ferror(dbio->fs)))
+                return cli_tgzload_fail(compr, dbio, fdd, CL_EREAD);
+            if (compr) {
+                (void)gzerror(dbio->gzs, &zerr);
+                if (zerr != Z_OK && zerr != Z_STREAM_END)
+                    return cli_tgzload_fail(compr, dbio, fdd, CL_EREAD);
+            }
+            return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
         }
 
-        if (block[0] == '\0') /* We're done */
+        if (block[0] == '\0') { /* We're done */
+            int i;
+
+            for (i = 1; i < TAR_BLOCKSIZE; i++) {
+                if (block[i] != '\0')
+                    return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
+            }
             break;
+        }
 
         strncpy(name, block, 100);
         name[100] = '\0';
 
         if (strchr(name, '/')) {
             cli_errmsg("cli_tgzload: Slash separators are not allowed in CVD\n");
-            cli_tgzload_cleanup(compr, dbio, fdd);
-            return CL_EMALFDB;
+            return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
         }
 
         type = block[156];
@@ -196,12 +288,10 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
                 break;
             case '5':
                 cli_errmsg("cli_tgzload: Directories are not supported in CVD\n");
-                cli_tgzload_cleanup(compr, dbio, fdd);
-                return CL_EMALFDB;
+                return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
             default:
                 cli_errmsg("cli_tgzload: Unknown type flag '%c'\n", type);
-                cli_tgzload_cleanup(compr, dbio, fdd);
-                return CL_EMALFDB;
+                return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
         }
 
         strncpy(osize, block + 124, 12);
@@ -209,8 +299,7 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
 
         if ((sscanf(osize, "%o", &size)) == 0) {
             cli_errmsg("cli_tgzload: Invalid size in header\n");
-            cli_tgzload_cleanup(compr, dbio, fdd);
-            return CL_EMALFDB;
+            return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
         }
         dbio->size     = size;
         dbio->readsize = dbio->size < dbio->bufsize ? dbio->size : dbio->bufsize - 1;
@@ -219,73 +308,60 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
         if (!(dbio->hashctx)) {
             dbio->hashctx = cl_hash_init("sha2-256");
             if (!(dbio->hashctx)) {
-                cli_tgzload_cleanup(compr, dbio, fdd);
-                return CL_EMALFDB;
+                return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
             }
         }
         dbio->bread = 0;
 
         /* cli_dbgmsg("cli_tgzload: Loading %s, size: %u\n", name, size); */
-        if (compr)
-            off = (off_t)gzseek(dbio->gzs, 0, SEEK_CUR);
-        else
-            off = ftell(dbio->fs);
+        ret = cli_tgzload_tell(compr, dbio, &off);
+        if (ret != CL_SUCCESS)
+            return cli_tgzload_fail(compr, dbio, fdd, ret);
 
         if ((!dbinfo && cli_strbcasestr(name, ".info")) || (dbinfo && CLI_DBEXT(name))) {
             ret = cli_load(name, engine, signo, options, dbio, sign_verifier);
             if (ret) {
                 cli_errmsg("cli_tgzload: Can't load %s\n", name);
-                cli_tgzload_cleanup(compr, dbio, fdd);
-                return CL_EMALFDB;
+                return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
             }
             if (!dbinfo) {
-                cli_tgzload_cleanup(compr, dbio, fdd);
-                return CL_SUCCESS;
+                if (dbio->size != 0) {
+                    cli_errmsg("cli_tgzload: File %s was not completely loaded\n", name);
+                    return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
+                }
+                return cli_tgzload_cleanup(compr, dbio, fdd);
             } else {
                 db = dbinfo;
                 while (db && strcmp(db->name, name))
                     db = db->next;
                 if (!db) {
                     cli_errmsg("cli_tgzload: File %s not found in .info\n", name);
-                    cli_tgzload_cleanup(compr, dbio, fdd);
-                    return CL_EMALFDB;
+                    return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
+                }
+                if (db->size != dbio->bread) {
+                    cli_errmsg("cli_tgzload: File %s not correctly loaded\n", name);
+                    return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
                 }
                 if (dbio->bread) {
-                    if (db->size != dbio->bread) {
-                        cli_errmsg("cli_tgzload: File %s not correctly loaded\n", name);
-                        cli_tgzload_cleanup(compr, dbio, fdd);
-                        return CL_EMALFDB;
-                    }
                     cl_finish_hash(dbio->hashctx, hash);
                     dbio->hashctx = cl_hash_init("sha2-256");
                     if (!(dbio->hashctx)) {
-                        cli_tgzload_cleanup(compr, dbio, fdd);
-                        return CL_EMALFDB;
+                        return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
                     }
                     if (memcmp(db->hash, hash, 32)) {
                         cli_errmsg("cli_tgzload: Invalid checksum for file %s\n", name);
-                        cli_tgzload_cleanup(compr, dbio, fdd);
-                        return CL_EMALFDB;
+                        return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
                     }
                 }
             }
         }
         pad = size % TAR_BLOCKSIZE ? (TAR_BLOCKSIZE - (size % TAR_BLOCKSIZE)) : 0;
-        if (compr) {
-            if (off == gzseek(dbio->gzs, 0, SEEK_CUR))
-                gzseek(dbio->gzs, size + pad, SEEK_CUR);
-            else if (pad)
-                gzseek(dbio->gzs, pad, SEEK_CUR);
-        } else {
-            if (off == ftell(dbio->fs))
-                fseek(dbio->fs, size + pad, SEEK_CUR);
-            else if (pad)
-                fseek(dbio->fs, pad, SEEK_CUR);
-        }
+        ret = cli_tgzload_skip(compr, dbio, off, size, pad);
+        if (ret != CL_SUCCESS)
+            return cli_tgzload_fail(compr, dbio, fdd, ret);
     }
 
-    cli_tgzload_cleanup(compr, dbio, fdd);
-    return CL_SUCCESS;
+    return cli_tgzload_cleanup(compr, dbio, fdd);
 }
 
 struct cl_cvd *cl_cvdparse(const char *head)

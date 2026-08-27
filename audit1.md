@@ -12063,3 +12063,16 @@ scan incomplete and merges `CL_EWRITE`, preserving detections and earlier
 parser/resource results. Focused injected write and close regressions cover the
 report status, completion, non-cacheability, and sticky reason; full service,
 sanitizer, production-CVD, Sonic1, and release qualification remain open.
+
+## Production CVD/CLD/CUD archive-ingress audit — 2026-08-27
+
+The CVD/CLD/CUD TAR loader previously discarded `gzclose()`/`fclose()` status,
+ignored failed archive seeks, accepted a truncated archive after its last
+complete member, and could accept a database member that was not fully read.
+The loader now preserves read and seek failures, requires a complete zeroed
+end-of-archive block, verifies each database member was consumed completely,
+and merges close failures into the returned database-load status. The current
+source passes the production warning-enabled GCC syntax check and an isolated
+load/unpack TCase is registered; current-object execution, production CVDs,
+service parity, sanitizer, materialized large-file, Sonic1, and release
+qualification remain open.

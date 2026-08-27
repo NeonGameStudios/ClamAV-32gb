@@ -5338,6 +5338,16 @@ contains unit_tests/check_clamav.c 'test_gpt_primary_table_read_failure_is_not_h
 contains libclamav/others_common.c 'nmemb > CLI_MAX_ALLOCATION / size'
 contains libclamav/others_common.c 'total_size = nmemb * size;'
 not_contains libclamav/others_common.c '(nmemb * size > CLI_MAX_ALLOCATION)'
+contains libclamav/cvd.c 'static cl_error_t cli_tgzload_cleanup'
+contains libclamav/cvd.c 'return cli_merge_cleanup_status(status, cli_tgzload_cleanup(comp, dbio, fdd));'
+contains libclamav/cvd.c 'Missing end-of-archive block'
+contains libclamav/cvd.c 'cli_tgzload: File %s was not completely loaded'
+contains libclamav/cvd.c 'ret = cli_tgzload_skip(compr, dbio, off, size, pad);'
+not_contains libclamav/cvd.c 'cli_tgzload_cleanup(compr, dbio, fdd);\n    return CL_SUCCESS;'
+contains unit_tests/check_clamav.c 'TCase *tc_cvd      = tcase_create("cvd_api");'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_cvd, test_cl_load);'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);'
+contains docs/largefile-capabilities.tsv 'production-cvd-ingress'
 
 if ! awk '
     /^[[:space:]]*#[[:space:]]*(if|ifdef|ifndef)([[:space:]]|$)/ { depth++; next }
