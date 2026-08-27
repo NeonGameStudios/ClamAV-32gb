@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## MSXML parser engine admission — 2026-08-27
+
+The legacy MSXML direct parser validated context and fmap but its Base64 and
+callback materialization paths later used `ctx->engine->keeptmp` during
+cleanup. A valid fmap with no engine could therefore reach an unchecked
+engine dereference. The entry now returns `CL_ENULLARG` before XML reader
+creation for that caller error, with a dedicated one-byte fmap regression.
+The current-source production-linked GCC `msxml_map` case passes 2/2,
+`msxml` passes 5/5, and `msxml_corpus` passes 1/1 across the XML Word/Excel
+dispatch paths. Complete XML corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## HWPML parser engine admission — 2026-08-27
 
 The HWPML direct parser validated context and fmap but its Base64 attachment

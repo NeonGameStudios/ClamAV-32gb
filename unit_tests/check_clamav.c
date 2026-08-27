@@ -7943,6 +7943,23 @@ START_TEST(test_msxml_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msxml_missing_engine_is_fail_visible)
+{
+    uint8_t data = 0;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(&data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scanmsxml(&ctx), CL_ENULLARG);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 struct msxml_read_failure_state {
     const uint8_t *data;
     size_t length;
@@ -41541,6 +41558,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_rust_onenote, test_rust_onenote_truncated_prefix_is_parse_error);
     suite_add_tcase(s, tc_msxml_map);
     tcase_add_test(tc_msxml_map, test_msxml_missing_map_is_fail_visible);
+    tcase_add_test(tc_msxml_map, test_msxml_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_msxml_corpus);
     tcase_add_checked_fixture(tc_msxml_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_msxml_corpus, test_msxml_corpus_detects_embedded_marker);
