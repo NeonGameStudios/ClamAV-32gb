@@ -1,5 +1,15 @@
 # Wishlist
 
+## TAR direct-entry fmap classification — 2026-08-27
+
+- Keep `cli_untar()` fail-visible for unavailable input: only a null context
+  returns `CL_ENULLARG`; a recognized context without an fmap returns
+  `CL_EPARSE`, marks the layer incomplete, and disables caching.
+- The current-source production-linked GCC `tar_map` case passes 1/1 and the
+  existing `tar_member` case passes 5/5. The broader `tar` case retains the
+  known mixed old/current `cli_ctx` timeout SIGSEGV; keep full TAR corpus,
+  sanitizer, production-CVD/service, Sonic1, and release qualification open.
+
 ## AutoIt header-admission context/map classification — 2026-08-26
 
 - Keep `cli_autoit_header_check()` fail-visible for unavailable input: only a

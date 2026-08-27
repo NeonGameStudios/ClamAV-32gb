@@ -18767,6 +18767,19 @@ START_TEST(test_tar_time_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tar_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    ck_assert_int_eq(cli_untar(NULL, 1, NULL), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_untar(NULL, 1, &ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "TAR input map is unavailable");
+}
+END_TEST
+
 static const void *tar_initial_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)map;
@@ -40688,6 +40701,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_sis_structure = tcase_create("sis_structure");
     TCase *tc_sis_member = tcase_create("sis_member");
     TCase *tc_tar = tcase_create("tar");
+    TCase *tc_tar_map = tcase_create("tar_map");
     TCase *tc_tar_corpus = tcase_create("tar_corpus");
     TCase *tc_tar_member = tcase_create("tar_member");
     TCase *tc_cpio = tcase_create("cpio");
@@ -41070,9 +41084,13 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tar, test_tar_truncated_header_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_end_marker_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_time_limit_is_fail_visible);
+    tcase_add_test(tc_tar, test_tar_missing_map_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_initial_header_read_failure_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_invalid_magic_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_temporary_limit_is_fail_visible);
+    suite_add_tcase(s, tc_tar_map);
+    tcase_add_checked_fixture(tc_tar_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_tar_map, test_tar_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_tar_corpus);
     tcase_add_checked_fixture(tc_tar_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_tar_corpus, test_tar_corpus_detects_embedded_mz);
@@ -41663,6 +41681,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_tar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_end_marker_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_time_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_tar_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_initial_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_invalid_magic_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_temporary_limit_is_fail_visible);
