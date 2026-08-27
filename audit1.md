@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## OLE2 extraction engine admission — 2026-08-27
+
+The exported `cli_ole2_extract()` entry validated context and fmap but then
+read `ctx->engine->maxscansize`. A valid fmap with no engine could therefore
+reach an unchecked engine dereference. The entry now returns `CL_ENULLARG`
+before OLE2 header inspection for that caller error, with a direct one-byte
+fmap regression. The current-source production-linked GCC `ole2_map` case
+passes 3/3, and `ole2_xlm` passes 2/2. A broader mixed relink did not
+reproduce the previously recorded `ole2` corpus result: its PPT child case
+failed to detect and its timeout case hit the known mixed old/current
+`cli_ctx` ABI crash, so that corpus result remains open pending a clean full
+C-ABI rebuild. Complete OLE/VBA/XLM corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
 ## HFS+ parser engine admission — 2026-08-27
 
 The HFS+ direct parser validated context and fmap but later used

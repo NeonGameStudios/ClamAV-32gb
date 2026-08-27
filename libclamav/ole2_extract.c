@@ -3308,6 +3308,8 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
         cli_mark_scan_incomplete(ctx, "OLE2 input map is unavailable");
         return CL_EPARSE;
     }
+    if (!ctx->engine)
+        return CL_ENULLARG;
 
     memset(&hdr, 0, sizeof(hdr));
 

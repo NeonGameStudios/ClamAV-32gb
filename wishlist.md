@@ -1,5 +1,18 @@
 # Wishlist
 
+## OLE2 extraction engine admission — 2026-08-27
+
+- Keep exported `cli_ole2_extract()` fail-visible when a recognized fmap is
+  supplied without the engine required by scan-size admission; return
+  `CL_ENULLARG` before OLE2 header inspection.
+- The current-source production-linked GCC `ole2_map` case passes 3/3 and
+  `ole2_xlm` passes 2/2. A broader mixed relink failed one PPT child detection
+  and crashed in the timeout case through the known mixed old/current
+  `cli_ctx` ABI, so retain the full OLE2 corpus gate until a clean full C-ABI
+  rebuild. Keep complete OLE/VBA/XLM corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification open.
+
 ## HFS+ parser engine admission — 2026-08-27
 
 - Keep `cli_scanhfsplus()` fail-visible when a recognized fmap is supplied
