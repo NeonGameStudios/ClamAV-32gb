@@ -12039,3 +12039,18 @@ and preserves the shared fail-visible status contract. Current scanner syntax,
 source guards, focused EGG cases, complete corpus, sanitizer, certified Linux
 x86-64, materialized large-file, production-CVD/service, Sonic1, and
 parser-family qualification remain open.
+
+## GZip legacy-fallback cleanup audit — 2026-08-27
+
+The legacy GZip fallback previously discarded a duplicated-source descriptor
+close failure after `gzdopen()` rejection and ignored `gzclose()` when
+temporary-output creation failed. Both exits now mark the layer incomplete and
+merge cleanup failure without hiding the original decoder-open or temporary-
+creation result. The current scanner passes the canonical GCC syntax check,
+source guards pass, and the current-source production-linked `bz_map` case
+passes 4/4. The six-check `bz_core` re-run passes 4/6 because its two
+materialized corpus detections return `CL_EPARSE`; the same two failures
+reproduce under the pre-change scanner link, so they are not accepted as fresh
+GZip corpus evidence. Complete GZip corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.

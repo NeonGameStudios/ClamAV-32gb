@@ -1867,16 +1867,24 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
     }
 
     if (!(gz = gzdopen(sourcefd, "rb"))) {
-        close(sourcefd);
         cli_mark_scan_incomplete(ctx, "GZip legacy decoder could not be opened");
-        return CL_EOPEN;
+        ret = CL_EOPEN;
+        if (close(sourcefd) != 0) {
+            cli_mark_scan_incomplete(ctx, "GZip legacy source descriptor could not be closed");
+            ret = cli_merge_cleanup_status(ret, CL_EWRITE);
+        }
+        return ret;
     }
 
     fd = -1;
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
         cli_dbgmsg("GZip: Can't generate temporary file.\n");
         cli_mark_scan_incomplete(ctx, "GZip legacy temporary output could not be created");
-        gzclose(gz);
+        gzclose_ret = gzclose(gz);
+        if (gzclose_ret != Z_OK) {
+            cli_mark_scan_incomplete(ctx, "GZip legacy decoder did not close cleanly");
+            ret = cli_merge_cleanup_status(ret, CL_EUNPACK);
+        }
         return ret;
     }
 

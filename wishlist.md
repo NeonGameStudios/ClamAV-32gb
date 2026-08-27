@@ -5933,3 +5933,16 @@ parser-family qualification remain open.
 - Add source guards for the archive-comment status paths. Keep complete EGG
   corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.
+
+## GZip legacy-fallback cleanup audit — 2026-08-27
+
+- Preserve legacy GZip duplicated-source close and decoder-close failures on
+  fallback open/temporary-creation exits as fail-visible cleanup results while
+  retaining the original decoder-open or temporary-file status.
+- The current-source GCC syntax check and source guards pass, and `bz_map`
+  passes 4/4. The reused six-check `bz_core` harness passes 4/6 because its
+  two materialized corpus detections return `CL_EPARSE` under both current and
+  pre-change scanner links; do not treat that as fresh corpus evidence. Keep
+  complete GZip corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  open.
