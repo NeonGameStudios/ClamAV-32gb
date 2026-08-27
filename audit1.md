@@ -1378,6 +1378,23 @@ boundaries. Complete CAB/CHM corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open.
 
+## CPIO member-name termination audit — 2026-08-26
+
+The four CPIO handlers previously trusted the declared name size and forced
+the last copied byte to NUL. A malformed member whose name field was not
+NUL-terminated could therefore be walked and, if followed by a trailer, leave
+the archive clean and cacheable. Each format now performs a checked read of
+the declared final name byte before cursor advancement; truncated terminators
+are `CL_EPARSE`, in-range callback failures are `CL_EREAD`, and non-NUL bytes
+are incomplete/non-cacheable parse errors.
+
+The new current-source public-API regression covers old-binary, ODC, NEWC, and
+CRC archives and verifies clean verdict reset plus non-cacheability. The
+current CPIO object remains warning-clean under the production GCC flags; the
+full CPIO corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification gates remain
+open.
+
 ## ELF focused-coordinate qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `elf` case passes 4/4

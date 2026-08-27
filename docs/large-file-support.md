@@ -8217,3 +8217,18 @@ end-relative marker in the extracted child. An injected first-window backing
 failure returns `CL_EREAD` without an alert and remains non-cacheable. Complete
 CPIO corpus, large materialized CRC members, sanitizer, certified Linux x86-64,
 and Sonic1 qualification remain open.
+
+## CPIO member-name termination audit — 2026-08-26
+
+The old-binary, ODC, NEWC, and CRC CPIO handlers now read and validate the
+final byte of every declared member name before advancing to padding or
+payload. A missing NUL terminator is a malformed confirmed member and returns
+`CL_EPARSE` with an incomplete, non-cacheable result; a fully in-range fmap
+callback failure returns `CL_EREAD`, while an unavailable terminator is treated
+as truncation.
+
+The current-source public-API regression covers all four format forms and
+verifies the clean verdict reset and non-cacheability. The CPIO object builds
+warning-clean with the production GCC flags. Full CPIO corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.

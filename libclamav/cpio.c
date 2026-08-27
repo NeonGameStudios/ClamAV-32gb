@@ -120,6 +120,32 @@ static int cpio_advance(size_t *position, size_t amount)
     return 0;
 }
 
+static cl_error_t cpio_validate_name_terminator(cli_ctx *ctx, size_t offset, size_t length)
+{
+    unsigned char terminator;
+    size_t nread;
+
+    if (ctx == NULL || ctx->fmap == NULL || length == 0)
+        return CL_ENULLARG;
+
+    if (cpio_advance(&offset, length - 1) < 0) {
+        cli_mark_scan_incomplete(ctx, "CPIO member name exceeds the coordinate range");
+        return CL_EPARSE;
+    }
+
+    nread = cpio_readn(ctx->fmap, &terminator, offset, 1);
+    if (nread != 1) {
+        cli_mark_scan_incomplete(ctx, "CPIO member name terminator could not be read");
+        return (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+    }
+    if (terminator != '\0') {
+        cli_mark_scan_incomplete(ctx, "CPIO member name was not NUL terminated");
+        return CL_EPARSE;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t cpio_checktimelimit(cli_ctx *ctx)
 {
     cl_error_t status = cli_checktimelimit(ctx);
@@ -316,6 +342,9 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
             status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
             goto done;
         }
+        status = cpio_validate_name_terminator(ctx, pos, hdr_namesize);
+        if (status != CL_SUCCESS)
+            goto done;
         if (cpio_advance(&pos, namesize) < 0) {
             cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
             status = CL_EPARSE;
@@ -461,6 +490,9 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
             status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
             goto done;
         }
+        status = cpio_validate_name_terminator(ctx, pos, hdr_namesize);
+        if (status != CL_SUCCESS)
+            goto done;
         if (cpio_advance(&pos, namesize) < 0) {
             cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
             status = CL_EPARSE;
@@ -594,6 +626,9 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
             status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
             goto done;
         }
+        status = cpio_validate_name_terminator(ctx, pos, hdr_namesize);
+        if (status != CL_SUCCESS)
+            goto done;
         if (cpio_advance(&pos, namesize) < 0) {
             cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
             status = CL_EPARSE;

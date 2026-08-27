@@ -4917,3 +4917,14 @@ and Sonic1 qualification as release gates.
   corpus, full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service parity, and Sonic1
   qualification.
+
+## CPIO member-name termination audit — 2026-08-26
+
+- Validate the final declared name byte in old-binary, ODC, NEWC, and CRC CPIO
+  members before advancing to padding or payload. A missing terminator is an
+  incomplete `CL_EPARSE`; an in-range callback failure remains `CL_EREAD`.
+- The current-source public-API regression covers all four forms and verifies
+  a clean verdict reset and non-cacheability. Keep complete CPIO corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification as release
+  gates.

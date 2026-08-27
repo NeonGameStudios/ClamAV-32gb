@@ -19106,7 +19106,8 @@ END_TEST
 
 static void cpio_test_assert_parse_incomplete(const uint8_t *archive, size_t archive_size,
                                                const struct cl_engine *scan_engine,
-                                               struct cl_scan_options *options)
+                                               struct cl_scan_options *options,
+                                               const char *type)
 {
     const char *last_alert = "stale";
     cl_verdict_t verdict   = CL_VERDICT_STRONG_INDICATOR;
@@ -19118,7 +19119,7 @@ static void cpio_test_assert_parse_incomplete(const uint8_t *archive, size_t arc
     ck_assert_ptr_nonnull(map);
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, options, NULL, NULL, NULL, NULL,
-                        "CL_TYPE_CPIO_CRC", NULL);
+                        type, NULL);
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert_ptr_null(last_alert);
@@ -19151,12 +19152,14 @@ START_TEST(test_cpio_crc_checksum_mismatch_is_fail_visible)
     ck_assert_ptr_nonnull(scan_engine);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
 
-    cpio_test_assert_parse_incomplete(archive, archive_size, scan_engine, &options);
+    cpio_test_assert_parse_incomplete(archive, archive_size, scan_engine, &options,
+                                      "CL_TYPE_CPIO_CRC");
     memcpy(malformed, archive, sizeof(archive));
     malformed[102] = 'g';
-    cpio_test_assert_parse_incomplete(malformed, archive_size, scan_engine, &options);
+    cpio_test_assert_parse_incomplete(malformed, archive_size, scan_engine, &options,
+                                      "CL_TYPE_CPIO_CRC");
     cpio_test_assert_parse_incomplete(archive, 120U + sizeof(payload) - 2U,
-                                      scan_engine, &options);
+                                      scan_engine, &options, "CL_TYPE_CPIO_CRC");
     cl_engine_free(scan_engine);
 }
 END_TEST
@@ -19579,6 +19582,86 @@ static void cpio_test_make_old_zero_name_archive(uint8_t *archive)
     memcpy(archive + 52, "TRAILER!!!", 10);
     archive[62] = '\0';
 }
+
+static void cpio_test_make_unterminated_old_archive(uint8_t *archive)
+{
+    memset(archive, 0, 30);
+    cpio_test_write_u16le(archive, 070707);
+    cpio_test_write_u16le(archive + 20, 4);
+    memcpy(archive + 26, "badX", 4);
+}
+
+static void cpio_test_make_unterminated_odc_archive(uint8_t *archive)
+{
+    memset(archive, '0', 80);
+    memcpy(archive, "070707", 6);
+    memcpy(archive + 59, "000004", 6);
+    memcpy(archive + 76, "badX", 4);
+}
+
+static void cpio_test_make_unterminated_newc_archive(uint8_t *archive, const char *magic)
+{
+    memset(archive, '0', 114);
+    memcpy(archive, magic, 6);
+    cpio_test_write_hex8(archive + 94, 4);
+    memcpy(archive + 110, "badX", 4);
+}
+
+static void cpio_test_assert_unterminated_name(const uint8_t *archive, size_t archive_size,
+                                               const char *type,
+                                               const struct cl_engine *scan_engine,
+                                               struct cl_scan_options *options)
+{
+    const char *last_alert = "stale";
+    cl_verdict_t verdict   = CL_VERDICT_STRONG_INDICATOR;
+    uint64_t scanned       = UINT64_MAX;
+    fmap_t *map;
+    cl_error_t ret;
+
+    map = cl_fmap_open_memory(archive, archive_size);
+    ck_assert_ptr_nonnull(map);
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, options, NULL, NULL, NULL, NULL,
+                        type, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+
+START_TEST(test_cpio_member_names_require_nul_terminator)
+{
+    uint8_t old[30];
+    uint8_t odc[80];
+    uint8_t newc[114];
+    uint8_t crc[114];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    cpio_test_make_unterminated_old_archive(old);
+    cpio_test_assert_unterminated_name(old, sizeof(old), "CL_TYPE_CPIO_OLD",
+                                        scan_engine, &options);
+    cpio_test_make_unterminated_odc_archive(odc);
+    cpio_test_assert_unterminated_name(odc, sizeof(odc), "CL_TYPE_CPIO_ODC",
+                                       scan_engine, &options);
+    cpio_test_make_unterminated_newc_archive(newc, "070701");
+    cpio_test_assert_unterminated_name(newc, sizeof(newc), "CL_TYPE_CPIO_NEWC",
+                                       scan_engine, &options);
+    cpio_test_make_unterminated_newc_archive(crc, "070702");
+    cpio_test_assert_unterminated_name(crc, sizeof(crc), "CL_TYPE_CPIO_CRC",
+                                       scan_engine, &options);
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
 
 START_TEST(test_cpio_zero_name_size_is_fail_visible)
 {
@@ -40643,6 +40726,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_cpio_numeric);
     tcase_add_checked_fixture(tc_cpio_numeric, cl_setup, cl_teardown);
     tcase_add_test(tc_cpio_numeric, test_cpio_zero_name_size_is_fail_visible);
+    tcase_add_test(tc_cpio_numeric, test_cpio_member_names_require_nul_terminator);
     tcase_add_test(tc_cpio_numeric, test_cpio_fixed_numeric_fields_reject_prefixes);
     suite_add_tcase(s, tc_cpio_map);
     tcase_add_checked_fixture(tc_cpio_map, cl_setup, cl_teardown);
