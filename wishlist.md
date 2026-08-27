@@ -194,12 +194,12 @@ parser-family qualification open.
   large-file, production-CVD/service, Sonic1, and parser-family qualification
   open.
 
-## OLE2 extraction engine admission — 2026-08-27
+## OLE2 extraction engine and options admission — 2026-08-27
 
 - Keep exported `cli_ole2_extract()` fail-visible when a recognized fmap is
-  supplied without the engine required by scan-size admission; return
-  `CL_ENULLARG` before OLE2 header inspection.
-- The current-source production-linked GCC `ole2_map` case passes 3/3 and
+  supplied without the engine or scan options required by OLE2 admission and
+  metadata collection; return `CL_ENULLARG` before OLE2 header inspection.
+- The current-source production-linked GCC `ole2_map` case passes 4/4 and
   `ole2_xlm` passes 2/2. A broader mixed relink failed one PPT child detection
   and crashed in the timeout case through the known mixed old/current
   `cli_ctx` ABI, so retain the full OLE2 corpus gate until a clean full C-ABI

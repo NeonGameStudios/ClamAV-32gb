@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OLE2 extraction engine and options admission — 2026-08-27
+
+`cli_ole2_extract()` now rejects a valid input map without its required engine
+or scan-options object with `CL_ENULLARG`, before scan-size admission,
+metadata collection, or OLE2 traversal. The current-source production-linked
+GCC `ole2_map` regression passes 4/4 and `ole2_xlm` passes 2/2. Full OLE/VBA/
+XLM corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## HWP3 direct-entry options admission — 2026-08-27
 
 `cli_scanhwp3()` uses `ctx->options` through `SCAN_COLLECT_METADATA`. Its

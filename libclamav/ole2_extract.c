@@ -3310,6 +3310,8 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     memset(&hdr, 0, sizeof(hdr));
 
