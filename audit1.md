@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## UDF parser engine admission — 2026-08-27
+
+The UDF direct parser entry validated context and fmap but its extracted-file
+helper later used `ctx->engine->keeptmp` during cleanup. A valid fmap with no
+engine could therefore reach an unchecked engine dereference. The entry now
+returns `CL_ENULLARG` before descriptor traversal or extraction for that
+caller error. The current-source production-linked GCC `udf_map` case now
+passes 10/10; the isolated `udf_corpus` case remains 1/1. Complete UDF corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## SIS parser engine admission — 2026-08-27
 
 The SIS direct parser entry validated context and fmap but later used

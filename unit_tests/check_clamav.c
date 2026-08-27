@@ -40762,6 +40762,23 @@ START_TEST(test_sis_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_udf_missing_engine_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanudf(&ctx, 32768), CL_ENULLARG);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -41281,6 +41298,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_udf_map);
     tcase_add_checked_fixture(tc_udf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_udf_map, test_udf_missing_map_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_missing_engine_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_truncated_descriptor_area_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_time_limit_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_descriptor_read_failure_is_fail_visible);

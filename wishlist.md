@@ -1,5 +1,15 @@
 # Wishlist
 
+## UDF parser engine admission — 2026-08-27
+
+- Keep `cli_scanudf()` fail-visible when a recognized fmap is supplied without
+  the engine required by extracted-file temporary cleanup; return
+  `CL_ENULLARG` before descriptor traversal or extraction.
+- The current-source production-linked GCC `udf_map` case passes 10/10 and
+  the isolated `udf_corpus` case passes 1/1. Keep complete UDF corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## SIS parser engine admission — 2026-08-27
 
 - Keep `cli_scansis()` fail-visible when a recognized fmap is supplied without
