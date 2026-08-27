@@ -5357,6 +5357,11 @@ contains libclamav/crypto.c 'X509_free(x509);'
 contains libclamav/crypto.c 'EVP_PKEY_free(pkey);'
 contains libclamav/crypto.c 'X509_CRL_free(x);'
 contains docs/largefile-capabilities.tsv 'crypto-keyfile-close'
+contains libclamav/readdb.c 'cli_load(): Failed to close file %s'
+contains libclamav/others.c 'cli_hashstream: Failed to read input for %s'
+contains libclamav/others.c 'cli_hashfile(): Failed to close file %s'
+contains docs/largefile-capabilities.tsv 'signature-database-close'
+contains docs/largefile-capabilities.tsv 'hash-stream-read-close'
 
 if ! awk '
     /^[[:space:]]*#[[:space:]]*(if|ifdef|ifndef)([[:space:]]|$)/ { depth++; next }

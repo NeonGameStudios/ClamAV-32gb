@@ -4914,8 +4914,11 @@ cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int
             cli_dbgmsg("%s loaded\n", filename);
     }
 
-    if (fs)
-        fclose(fs);
+    if (fs && fclose(fs) != 0) {
+        cli_errmsg("cli_load(): Failed to close file %s\n", filename);
+        if (ret == CL_SUCCESS)
+            ret = CL_EREAD;
+    }
 
     if (CL_SUCCESS == ret) {
         if (engine->cb_sigload_progress) {

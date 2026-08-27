@@ -41,6 +41,16 @@
   evidence, production-CVD/service parity, Sonic1, and final parser-family
   qualification open.
 
+## Signature database and hash-stream I/O audit — 2026-08-27
+
+- Keep line-based signature loading and shared hash generation fail-visible on
+  input-read and source-close failures; never publish a digest from incomplete
+  input and release a digest whose source close failed.
+- The current sources pass the production warning-enabled GCC syntax checks.
+  Keep injected read/close-failure execution, production CVD/service,
+  sanitizer, certified Linux x86-64, materialized large-file, Sonic1, and
+  release qualification open.
+
 ## GIF LZW admission and image completion audit — 2026-08-27
 
 - Keep the image LZW minimum-code-size byte on the fixed-range reader: values

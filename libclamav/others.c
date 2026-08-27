@@ -1741,6 +1741,10 @@ char *cli_hashstream(FILE *fs, uint8_t *hash, cli_hash_type_t type)
             goto done;
         }
     }
+    if (ferror(fs)) {
+        cli_errmsg("cli_hashstream: Failed to read input for %s\n", hash_alg);
+        goto done;
+    }
     cl_finish_hash(ctx, digest);
     ctx = NULL;
 
@@ -1779,7 +1783,11 @@ char *cli_hashfile(const char *filename, uint8_t *hash, cli_hash_type_t type)
 
     hashstr = cli_hashstream(fs, hash, type);
 
-    fclose(fs);
+    if (fclose(fs) != 0) {
+        cli_errmsg("cli_hashfile(): Failed to close file %s\n", filename);
+        free(hashstr);
+        return NULL;
+    }
     return hashstr;
 }
 

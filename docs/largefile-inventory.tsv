@@ -3742,18 +3742,18 @@ fixed-width-integer	libclamav/others.c	1612	cl_error_t cli_scan_reserve_contiguo
 fixed-width-integer	libclamav/others.c	1631	void cli_scan_release_contiguous(cli_ctx *ctx, uint64_t bytes)
 fixed-width-integer	libclamav/others.c	1642	cl_error_t cli_scan_reserve_temporary(cli_ctx *ctx, uint64_t bytes)
 fixed-width-integer	libclamav/others.c	1660	void cli_scan_release_temporary(cli_ctx *ctx, uint64_t bytes)
-fixed-width-integer	libclamav/others.c	1937	    uint64_t match_offset = 0;
-fixed-width-integer	libclamav/others.c	2000	            (void)cli_jsonuint64(indicator_obj, "ObjectID", (uint64_t)ctx->recursion_stack[ctx->recursion_level].object_id);
-fixed-width-integer	libclamav/others.c	2138	void cli_set_match_offset(cli_ctx *ctx, uint64_t offset)
-fixed-width-integer	libclamav/others.c	2164	cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t type, bool is_new_buffer, uint32_t attributes)
-fixed-width-integer	libclamav/others.c	2170	    uint32_t old_recursion_level    = 0;
-fixed-width-integer	libclamav/others.c	2369	            status = cli_jsonuint64(ctx->this_layer_metadata_json, "Offset", (uint64_t)(new_layer->fmap->real_len - new_layer->fmap->len));
-fixed-width-integer	libclamav/others.c	2390	        status = cli_jsonuint64(ctx->this_layer_metadata_json, "FileSize", (uint64_t)new_layer->fmap->len);
-fixed-width-integer	libclamav/others.c	2395	        status = cli_jsonuint64(ctx->this_layer_metadata_json, "ObjectID", (uint64_t)new_layer->object_id);
-fixed-width-integer	libclamav/others.c	2779	    } else if (ctx->recursion_level < (uint32_t)index_ignoring_normalized_layers) {
-fixed-width-integer	libclamav/others.c	2798	    } else if (ctx->recursion_level < (uint32_t)index_ignoring_normalized_layers) {
+fixed-width-integer	libclamav/others.c	1945	    uint64_t match_offset = 0;
+fixed-width-integer	libclamav/others.c	2008	            (void)cli_jsonuint64(indicator_obj, "ObjectID", (uint64_t)ctx->recursion_stack[ctx->recursion_level].object_id);
+fixed-width-integer	libclamav/others.c	2146	void cli_set_match_offset(cli_ctx *ctx, uint64_t offset)
+fixed-width-integer	libclamav/others.c	2172	cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t type, bool is_new_buffer, uint32_t attributes)
+fixed-width-integer	libclamav/others.c	2178	    uint32_t old_recursion_level    = 0;
+fixed-width-integer	libclamav/others.c	2377	            status = cli_jsonuint64(ctx->this_layer_metadata_json, "Offset", (uint64_t)(new_layer->fmap->real_len - new_layer->fmap->len));
+fixed-width-integer	libclamav/others.c	2398	        status = cli_jsonuint64(ctx->this_layer_metadata_json, "FileSize", (uint64_t)new_layer->fmap->len);
+fixed-width-integer	libclamav/others.c	2403	        status = cli_jsonuint64(ctx->this_layer_metadata_json, "ObjectID", (uint64_t)new_layer->object_id);
+fixed-width-integer	libclamav/others.c	2787	    } else if (ctx->recursion_level < (uint32_t)index_ignoring_normalized_layers) {
+fixed-width-integer	libclamav/others.c	2806	    } else if (ctx->recursion_level < (uint32_t)index_ignoring_normalized_layers) {
 fixed-width-integer	libclamav/others.c	335	    if ((NULL == (cli_unrar_open = (cl_unrar_error_t(*)(const char *, void **, char **, uint32_t *, uint8_t))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_open"))) ||
-fixed-width-integer	libclamav/others.c	3483	cl_error_t cli_trust_layers(cli_ctx *ctx, uint32_t start_layer, uint32_t end_layer, const char *source)
+fixed-width-integer	libclamav/others.c	3491	cl_error_t cli_trust_layers(cli_ctx *ctx, uint32_t start_layer, uint32_t end_layer, const char *source)
 fixed-width-integer	libclamav/others.c	675	static cl_error_t cli_validate_maxfilesize(uint64_t requested, uint64_t *validated)
 fixed-width-integer	libclamav/others.c	694	static cl_error_t cli_validate_pcre_maxfilesize(uint64_t requested, uint64_t *validated)
 fixed-width-integer	libclamav/others.c	699	    if (requested == 0 || requested > (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE) {
@@ -12508,46 +12508,46 @@ native-width-integer	libclamav/others.c	169	    size_t i;
 native-width-integer	libclamav/others.c	1714	    size_t i, bytes;
 native-width-integer	libclamav/others.c	1716	    size_t hash_len;
 native-width-integer	libclamav/others.c	185	        size_t token_index;
-native-width-integer	libclamav/others.c	1854	                int json_ret = 0;
-native-width-integer	libclamav/others.c	1857	                size_t num_alerts = json_object_array_length(alerts);
 native-width-integer	libclamav/others.c	186	        size_t tokens_count;
-native-width-integer	libclamav/others.c	1881	                int json_ret = 0;
-native-width-integer	libclamav/others.c	1884	                size_t num_indicators = json_object_array_length(indicators);
-native-width-integer	libclamav/others.c	2497	    size_t num_indicators = json_object_array_length(child_array);
-native-width-integer	libclamav/others.c	2498	    size_t i;
-native-width-integer	libclamav/others.c	2526	                /* Depth is a new int object with incremented value */
-native-width-integer	libclamav/others.c	2735	 * @return int  -1 if layer doesn't exist, else the index of the desired layer in the recursion_stack
-native-width-integer	libclamav/others.c	2737	static int recursion_stack_get(cli_ctx *ctx, int index)
-native-width-integer	libclamav/others.c	2739	    int desired_layer;
-native-width-integer	libclamav/others.c	2740	    int current_layer = (int)ctx->recursion_level;
-native-width-integer	libclamav/others.c	2768	cli_file_t cli_recursion_stack_get_type(cli_ctx *ctx, int index)
-native-width-integer	libclamav/others.c	2770	    int index_ignoring_normalized_layers;
-native-width-integer	libclamav/others.c	2787	size_t cli_recursion_stack_get_size(cli_ctx *ctx, int index)
-native-width-integer	libclamav/others.c	2789	    int index_ignoring_normalized_layers;
-native-width-integer	libclamav/others.c	2810	int cli_rmdirs(const char *dirname)
-native-width-integer	libclamav/others.c	2812	    int rc;
-native-width-integer	libclamav/others.c	2884	int cli_rmdirs(const char *dirname)
-native-width-integer	libclamav/others.c	2886	    int rc = 0;
-native-width-integer	libclamav/others.c	2929	                            cli_errmsg("cli_rmdirs: Unable to allocate memory for path %llu\n", (long long unsigned)(strlen(dirname) + strlen(dent->d_name) + 2));
-native-width-integer	libclamav/others.c	2991	static unsigned long nearest_power(unsigned long num)
-native-width-integer	libclamav/others.c	2993	    unsigned long n = BITSET_DEFAULT_SIZE;
-native-width-integer	libclamav/others.c	3010	        cli_errmsg("cli_bitset_init: Unable to allocate memory for bs %llu\n", (long long unsigned)sizeof(bitset_t));
-native-width-integer	libclamav/others.c	3034	static bitset_t *bitset_realloc(bitset_t *bs, unsigned long min_size)
-native-width-integer	libclamav/others.c	3036	    unsigned long new_length;
-native-width-integer	libclamav/others.c	3050	int cli_bitset_set(bitset_t *bs, unsigned long bit_offset)
-native-width-integer	libclamav/others.c	3052	    unsigned long char_offset;
-native-width-integer	libclamav/others.c	3067	int cli_bitset_test(bitset_t *bs, unsigned long bit_offset)
-native-width-integer	libclamav/others.c	3069	    unsigned long char_offset;
-native-width-integer	libclamav/others.c	3354	    int json_ret;
-native-width-integer	libclamav/others.c	3366	        size_t num_indicators = json_object_array_length(indicators);
-native-width-integer	libclamav/others.c	3367	        size_t i;
-native-width-integer	libclamav/others.c	3389	            size_t i;
-native-width-integer	libclamav/others.c	3390	            size_t num_objects = json_object_array_length(contained_objects);
-native-width-integer	libclamav/others.c	3405	            size_t i;
-native-width-integer	libclamav/others.c	3406	            size_t num_objects = json_object_array_length(embedded_objects);
-native-width-integer	libclamav/others.c	3433	    size_t reason_len = 0;
-native-width-integer	libclamav/others.c	3486	    size_t i;
-native-width-integer	libclamav/others.c	3489	    size_t reason_len = 0;
+native-width-integer	libclamav/others.c	1862	                int json_ret = 0;
+native-width-integer	libclamav/others.c	1865	                size_t num_alerts = json_object_array_length(alerts);
+native-width-integer	libclamav/others.c	1889	                int json_ret = 0;
+native-width-integer	libclamav/others.c	1892	                size_t num_indicators = json_object_array_length(indicators);
+native-width-integer	libclamav/others.c	2505	    size_t num_indicators = json_object_array_length(child_array);
+native-width-integer	libclamav/others.c	2506	    size_t i;
+native-width-integer	libclamav/others.c	2534	                /* Depth is a new int object with incremented value */
+native-width-integer	libclamav/others.c	2743	 * @return int  -1 if layer doesn't exist, else the index of the desired layer in the recursion_stack
+native-width-integer	libclamav/others.c	2745	static int recursion_stack_get(cli_ctx *ctx, int index)
+native-width-integer	libclamav/others.c	2747	    int desired_layer;
+native-width-integer	libclamav/others.c	2748	    int current_layer = (int)ctx->recursion_level;
+native-width-integer	libclamav/others.c	2776	cli_file_t cli_recursion_stack_get_type(cli_ctx *ctx, int index)
+native-width-integer	libclamav/others.c	2778	    int index_ignoring_normalized_layers;
+native-width-integer	libclamav/others.c	2795	size_t cli_recursion_stack_get_size(cli_ctx *ctx, int index)
+native-width-integer	libclamav/others.c	2797	    int index_ignoring_normalized_layers;
+native-width-integer	libclamav/others.c	2818	int cli_rmdirs(const char *dirname)
+native-width-integer	libclamav/others.c	2820	    int rc;
+native-width-integer	libclamav/others.c	2892	int cli_rmdirs(const char *dirname)
+native-width-integer	libclamav/others.c	2894	    int rc = 0;
+native-width-integer	libclamav/others.c	2937	                            cli_errmsg("cli_rmdirs: Unable to allocate memory for path %llu\n", (long long unsigned)(strlen(dirname) + strlen(dent->d_name) + 2));
+native-width-integer	libclamav/others.c	2999	static unsigned long nearest_power(unsigned long num)
+native-width-integer	libclamav/others.c	3001	    unsigned long n = BITSET_DEFAULT_SIZE;
+native-width-integer	libclamav/others.c	3018	        cli_errmsg("cli_bitset_init: Unable to allocate memory for bs %llu\n", (long long unsigned)sizeof(bitset_t));
+native-width-integer	libclamav/others.c	3042	static bitset_t *bitset_realloc(bitset_t *bs, unsigned long min_size)
+native-width-integer	libclamav/others.c	3044	    unsigned long new_length;
+native-width-integer	libclamav/others.c	3058	int cli_bitset_set(bitset_t *bs, unsigned long bit_offset)
+native-width-integer	libclamav/others.c	3060	    unsigned long char_offset;
+native-width-integer	libclamav/others.c	3075	int cli_bitset_test(bitset_t *bs, unsigned long bit_offset)
+native-width-integer	libclamav/others.c	3077	    unsigned long char_offset;
+native-width-integer	libclamav/others.c	3362	    int json_ret;
+native-width-integer	libclamav/others.c	3374	        size_t num_indicators = json_object_array_length(indicators);
+native-width-integer	libclamav/others.c	3375	        size_t i;
+native-width-integer	libclamav/others.c	3397	            size_t i;
+native-width-integer	libclamav/others.c	3398	            size_t num_objects = json_object_array_length(contained_objects);
+native-width-integer	libclamav/others.c	3413	            size_t i;
+native-width-integer	libclamav/others.c	3414	            size_t num_objects = json_object_array_length(embedded_objects);
+native-width-integer	libclamav/others.c	3441	    size_t reason_len = 0;
+native-width-integer	libclamav/others.c	3494	    size_t i;
+native-width-integer	libclamav/others.c	3497	    size_t reason_len = 0;
 native-width-integer	libclamav/others.c	363	unsigned int cl_retflevel(void)
 native-width-integer	libclamav/others.c	452	cl_error_t cl_init(unsigned int initoptions)
 native-width-integer	libclamav/others.c	456	    unsigned int pid = (unsigned int)getpid();
@@ -13872,35 +13872,35 @@ native-width-integer	libclamav/readdb.c	4599	    int ret = CL_SUCCESS, pwstype;
 native-width-integer	libclamav/readdb.c	4644	            size_t attlen = strlen(tokens[1]) + 10;
 native-width-integer	libclamav/readdb.c	4754	static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, unsigned int *signo, unsigned int options, void *sign_verifier);
 native-width-integer	libclamav/readdb.c	4756	cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, void *sign_verifier)
-native-width-integer	libclamav/readdb.c	4932	    unsigned int load_priority;
-native-width-integer	libclamav/readdb.c	4967	 * @return size_t
-native-width-integer	libclamav/readdb.c	4969	static size_t count_line_based_signatures(const char *filepath)
-native-width-integer	libclamav/readdb.c	4972	    int current_character = 0;
-native-width-integer	libclamav/readdb.c	4973	    size_t sig_count      = 0;
-native-width-integer	libclamav/readdb.c	5017	 * @return size_t   The number of signatures.
-native-width-integer	libclamav/readdb.c	5019	static size_t count_signatures(const char *filepath, struct cl_engine *engine, unsigned int options)
-native-width-integer	libclamav/readdb.c	5021	    size_t num_signatures            = 0;
-native-width-integer	libclamav/readdb.c	5081	static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, unsigned int *signo, unsigned int options, void *sign_verifier)
-native-width-integer	libclamav/readdb.c	5088	    int ends_with_sep = 0;
-native-width-integer	libclamav/readdb.c	5089	    size_t dirname_len;
-native-width-integer	libclamav/readdb.c	5114	        unsigned int load_priority;
-native-width-integer	libclamav/readdb.c	5300	cl_error_t cl_load(const char *path, struct cl_engine *engine, unsigned int *signo, unsigned int dboptions)
-native-width-integer	libclamav/readdb.c	5427	    int have_ddir       = 0;
-native-width-integer	libclamav/readdb.c	5528	int cl_statchkdir(const struct cl_stat *dbstat)
-native-width-integer	libclamav/readdb.c	5533	    unsigned int i, found;
-native-width-integer	libclamav/readdb.c	5613	        int i;
-native-width-integer	libclamav/readdb.c	5646	    unsigned int i, j;
-native-width-integer	libclamav/readdb.c	5649	    size_t tasks_to_do    = 0;
-native-width-integer	libclamav/readdb.c	5650	    size_t tasks_complete = 0;
+native-width-integer	libclamav/readdb.c	4935	    unsigned int load_priority;
+native-width-integer	libclamav/readdb.c	4970	 * @return size_t
+native-width-integer	libclamav/readdb.c	4972	static size_t count_line_based_signatures(const char *filepath)
+native-width-integer	libclamav/readdb.c	4975	    int current_character = 0;
+native-width-integer	libclamav/readdb.c	4976	    size_t sig_count      = 0;
+native-width-integer	libclamav/readdb.c	5020	 * @return size_t   The number of signatures.
+native-width-integer	libclamav/readdb.c	5022	static size_t count_signatures(const char *filepath, struct cl_engine *engine, unsigned int options)
+native-width-integer	libclamav/readdb.c	5024	    size_t num_signatures            = 0;
+native-width-integer	libclamav/readdb.c	5084	static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, unsigned int *signo, unsigned int options, void *sign_verifier)
+native-width-integer	libclamav/readdb.c	5091	    int ends_with_sep = 0;
+native-width-integer	libclamav/readdb.c	5092	    size_t dirname_len;
+native-width-integer	libclamav/readdb.c	5117	        unsigned int load_priority;
+native-width-integer	libclamav/readdb.c	5303	cl_error_t cl_load(const char *path, struct cl_engine *engine, unsigned int *signo, unsigned int dboptions)
+native-width-integer	libclamav/readdb.c	5430	    int have_ddir       = 0;
+native-width-integer	libclamav/readdb.c	5531	int cl_statchkdir(const struct cl_stat *dbstat)
+native-width-integer	libclamav/readdb.c	5536	    unsigned int i, found;
+native-width-integer	libclamav/readdb.c	5616	        int i;
+native-width-integer	libclamav/readdb.c	5649	    unsigned int i, j;
+native-width-integer	libclamav/readdb.c	5652	    size_t tasks_to_do    = 0;
+native-width-integer	libclamav/readdb.c	5653	    size_t tasks_complete = 0;
 native-width-integer	libclamav/readdb.c	571	        int subtokens_count;
 native-width-integer	libclamav/readdb.c	593	            size_t j;
-native-width-integer	libclamav/readdb.c	5989	    unsigned int i;
-native-width-integer	libclamav/readdb.c	5993	    size_t tasks_to_do    = 0;
-native-width-integer	libclamav/readdb.c	5994	    size_t tasks_complete = 0;
-native-width-integer	libclamav/readdb.c	6173	static int countentries(const char *dbname, unsigned int *sigs)
-native-width-integer	libclamav/readdb.c	6177	    unsigned int entry = 0;
-native-width-integer	libclamav/readdb.c	6194	static int countsigs(const char *dbname, unsigned int options, unsigned int *sigs)
-native-width-integer	libclamav/readdb.c	6237	cl_error_t cl_countsigs(const char *path, unsigned int countoptions, unsigned int *sigs)
+native-width-integer	libclamav/readdb.c	5992	    unsigned int i;
+native-width-integer	libclamav/readdb.c	5996	    size_t tasks_to_do    = 0;
+native-width-integer	libclamav/readdb.c	5997	    size_t tasks_complete = 0;
+native-width-integer	libclamav/readdb.c	6176	static int countentries(const char *dbname, unsigned int *sigs)
+native-width-integer	libclamav/readdb.c	6180	    unsigned int entry = 0;
+native-width-integer	libclamav/readdb.c	6197	static int countsigs(const char *dbname, unsigned int options, unsigned int *sigs)
+native-width-integer	libclamav/readdb.c	6240	cl_error_t cl_countsigs(const char *path, unsigned int countoptions, unsigned int *sigs)
 native-width-integer	libclamav/readdb.c	655	                                           const char *offset, const uint32_t *lsigid, unsigned int options)
 native-width-integer	libclamav/readdb.c	708	                                         const char *offset, const uint32_t *lsigid, unsigned int options)
 native-width-integer	libclamav/readdb.c	715	    size_t range, i, j, hexlen, nest;
@@ -22437,17 +22437,17 @@ format-width	libclamav/others.c	1250	        cli_errmsg("cl_engine_settings_copy
 format-width	libclamav/others.c	1527	        cli_dbgmsg("%s: files limit reached (max: %u)\n", who, ctx->engine->maxfiles);
 format-width	libclamav/others.c	1725	        cli_errmsg("cli_hashstream: Unsupported hash type %d\n", type);
 format-width	libclamav/others.c	202	                         "%s%s(%s%s.%d)",
-format-width	libclamav/others.c	2199	        cli_dbgmsg("cli_recursion_stack_push: Archive recursion limit exceeded (%u, max: %u)\n", ctx->recursion_level, ctx->engine->max_recursion_level);
+format-width	libclamav/others.c	2207	        cli_dbgmsg("cli_recursion_stack_push: Archive recursion limit exceeded (%u, max: %u)\n", ctx->recursion_level, ctx->engine->max_recursion_level);
 format-width	libclamav/others.c	228	                 "%s%s(%s%s.%d)",
-format-width	libclamav/others.c	2504	            cli_errmsg("cli_recursion_stack_pop: Failed to get indicator at index %zu\n", i);
-format-width	libclamav/others.c	2852	            cli_errmsg("cli_rmdirs: Unable to allocate memory for path %u\n", strlen(dirname) + strlen(dent->d_name) + 2);
-format-width	libclamav/others.c	2929	                            cli_errmsg("cli_rmdirs: Unable to allocate memory for path %llu\n", (long long unsigned)(strlen(dirname) + strlen(dent->d_name) + 2));
-format-width	libclamav/others.c	3010	        cli_errmsg("cli_bitset_init: Unable to allocate memory for bs %llu\n", (long long unsigned)sizeof(bitset_t));
-format-width	libclamav/others.c	3016	        cli_errmsg("cli_bitset_init: Unable to allocate memory for bs->bitset %u\n", BITSET_DEFAULT_SIZE);
-format-width	libclamav/others.c	3099	            cli_errmsg("cl_engine_set_scan_callback: Invalid scan callback location %d\n", location);
-format-width	libclamav/others.c	3250	            cli_warnmsg("dispatch_scan_callback: preserving callback return code %d\n", status);
-format-width	libclamav/others.c	3462	        snprintf(reason, reason_len, "Object %zu trusted by %s",
-format-width	libclamav/others.c	3520	            snprintf(reason, reason_len, "Object %zu trusted by %s",
+format-width	libclamav/others.c	2512	            cli_errmsg("cli_recursion_stack_pop: Failed to get indicator at index %zu\n", i);
+format-width	libclamav/others.c	2860	            cli_errmsg("cli_rmdirs: Unable to allocate memory for path %u\n", strlen(dirname) + strlen(dent->d_name) + 2);
+format-width	libclamav/others.c	2937	                            cli_errmsg("cli_rmdirs: Unable to allocate memory for path %llu\n", (long long unsigned)(strlen(dirname) + strlen(dent->d_name) + 2));
+format-width	libclamav/others.c	3018	        cli_errmsg("cli_bitset_init: Unable to allocate memory for bs %llu\n", (long long unsigned)sizeof(bitset_t));
+format-width	libclamav/others.c	3024	        cli_errmsg("cli_bitset_init: Unable to allocate memory for bs->bitset %u\n", BITSET_DEFAULT_SIZE);
+format-width	libclamav/others.c	3107	            cli_errmsg("cl_engine_set_scan_callback: Invalid scan callback location %d\n", location);
+format-width	libclamav/others.c	3258	            cli_warnmsg("dispatch_scan_callback: preserving callback return code %d\n", status);
+format-width	libclamav/others.c	3470	        snprintf(reason, reason_len, "Object %zu trusted by %s",
+format-width	libclamav/others.c	3528	            snprintf(reason, reason_len, "Object %zu trusted by %s",
 format-width	libclamav/others.c	772	        cli_errmsg("%s: value must be between 0 and %u\n", name, (unsigned)UINT8_MAX);
 format-width	libclamav/others.c	811	                cli_warnmsg("MaxRecursion: the value of 0 is not allowed, using default: %u\n", CLI_DEFAULT_MAXRECLEVEL);
 format-width	libclamav/others_common.c	1453	        cli_errmsg("cli_get_filepath_from_filedesc: Failed to allocate %u bytes to store filename\n", dwRet + 1);
@@ -22812,12 +22812,12 @@ format-width	libclamav/readdb.c	469	            cli_errmsg("Invalid logical subs
 format-width	libclamav/readdb.c	4732	            cli_dbgmsg("cli_loadpwdb: Unsupported PWStorageType %u\n", pwstype);
 format-width	libclamav/readdb.c	4741	        cli_errmsg("Problem processing %s password database at line %u\n", internal ? "built-in" : "external", line);
 format-width	libclamav/readdb.c	4750	    cli_dbgmsg("Loaded %u (%u skipped) password entries\n", pwcnt, skip);
-format-width	libclamav/readdb.c	5413	        cli_yaramsg("\tTotal Rules: %u\n", yara_total);
-format-width	libclamav/readdb.c	5414	        cli_yaramsg("\tRules Loaded: %u\n", yara_loaded);
-format-width	libclamav/readdb.c	5415	        cli_yaramsg("\tComplex Conditions: %u\n", yara_complex);
-format-width	libclamav/readdb.c	5416	        cli_yaramsg("\tMalformed/Unsupported Rules: %u\n", yara_malform);
-format-width	libclamav/readdb.c	5417	        cli_yaramsg("\tEmpty Rules: %u\n", yara_empty);
-format-width	libclamav/readdb.c	6078	            cli_dbgmsg("Matcher[%u]: %s: AC sigs: %u (reloff: %u, absoff: %u) BM sigs: %u (reloff: %u, absoff: %u) PCREs: %u (reloff: %u, absoff: %u) maxpatlen %u %s\n", i, cli_mtargets[i].name, root->ac_patterns, root->ac_reloff_num, root->ac_absoff_num, root->bm_patterns, root->bm_reloff_num, root->bm_absoff_num, root->pcre_metas, root->pcre_reloff_num, root->pcre_absoff_num, root->maxpatlen, root->ac_only ? "(ac_only mode)" : "");
+format-width	libclamav/readdb.c	5416	        cli_yaramsg("\tTotal Rules: %u\n", yara_total);
+format-width	libclamav/readdb.c	5417	        cli_yaramsg("\tRules Loaded: %u\n", yara_loaded);
+format-width	libclamav/readdb.c	5418	        cli_yaramsg("\tComplex Conditions: %u\n", yara_complex);
+format-width	libclamav/readdb.c	5419	        cli_yaramsg("\tMalformed/Unsupported Rules: %u\n", yara_malform);
+format-width	libclamav/readdb.c	5420	        cli_yaramsg("\tEmpty Rules: %u\n", yara_empty);
+format-width	libclamav/readdb.c	6081	            cli_dbgmsg("Matcher[%u]: %s: AC sigs: %u (reloff: %u, absoff: %u) BM sigs: %u (reloff: %u, absoff: %u) PCREs: %u (reloff: %u, absoff: %u) maxpatlen %u %s\n", i, cli_mtargets[i].name, root->ac_patterns, root->ac_reloff_num, root->ac_absoff_num, root->bm_patterns, root->bm_reloff_num, root->bm_absoff_num, root->pcre_metas, root->pcre_reloff_num, root->pcre_absoff_num, root->maxpatlen, root->ac_only ? "(ac_only mode)" : "");
 format-width	libclamav/readdb.c	727	        if (sscanf(wild, "%c%zu%c", &l, &range, &r) == 3 && l == '{' && r == '}' && range > 0 && range < 128) {
 format-width	libclamav/readdb.c	918	                cli_errmsg("cli_add_content_match_pattern: Can't extract part %zu of partial signature.\n", i);
 format-width	libclamav/rebuildpe.c	211	            cli_dbgmsg("More sections than expect (%d). The section number in the rebuilt pe section name was truncated.\n", i);
@@ -29771,41 +29771,41 @@ offset-size-arithmetic	libclamav/others.c	1569	        (ctx->scansize > ctx->eng
 offset-size-arithmetic	libclamav/others.c	1570	        ctx->scansize = ctx->engine->maxscansize;
 offset-size-arithmetic	libclamav/others.c	1620	                   ctx->engine->maxcontiguoussize, ctx->contiguous_bytes, bytes);
 offset-size-arithmetic	libclamav/others.c	1649	                   ctx->engine->maxtemporarysize, ctx->temporary_bytes, bytes);
-offset-size-arithmetic	libclamav/others.c	1747	    if (!(hashstr = (char *)calloc(hash_len * 2 + 1, sizeof(char)))) {
-offset-size-arithmetic	libclamav/others.c	1770	char *cli_hashfile(const char *filename, uint8_t *hash, cli_hash_type_t type)
-offset-size-arithmetic	libclamav/others.c	1930	static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType type)
-offset-size-arithmetic	libclamav/others.c	1941	        has_match_offset = cli_scan_report_take_match_offset(ctx->report, &match_offset);
+offset-size-arithmetic	libclamav/others.c	1751	    if (!(hashstr = (char *)calloc(hash_len * 2 + 1, sizeof(char)))) {
+offset-size-arithmetic	libclamav/others.c	1774	char *cli_hashfile(const char *filename, uint8_t *hash, cli_hash_type_t type)
+offset-size-arithmetic	libclamav/others.c	1938	static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType type)
+offset-size-arithmetic	libclamav/others.c	1949	        has_match_offset = cli_scan_report_take_match_offset(ctx->report, &match_offset);
 offset-size-arithmetic	libclamav/others.c	199	            for (i = 0; i < sizeof(suffixes) / sizeof(suffixes[0]); i++) {
-offset-size-arithmetic	libclamav/others.c	2112	cl_error_t cli_append_potentially_unwanted(cli_ctx *ctx, const char *virname)
-offset-size-arithmetic	libclamav/others.c	2121	cl_error_t cli_append_virus(cli_ctx *ctx, const char *virname)
-offset-size-arithmetic	libclamav/others.c	2138	void cli_set_match_offset(cli_ctx *ctx, uint64_t offset)
-offset-size-arithmetic	libclamav/others.c	2141	        cli_scan_report_note_match_offset(ctx->report, offset);
-offset-size-arithmetic	libclamav/others.c	2198	    if (ctx->recursion_level == ctx->recursion_stack_size - 1) {
-offset-size-arithmetic	libclamav/others.c	2215	    new_layer->size            = map->len;
+offset-size-arithmetic	libclamav/others.c	2120	cl_error_t cli_append_potentially_unwanted(cli_ctx *ctx, const char *virname)
+offset-size-arithmetic	libclamav/others.c	2129	cl_error_t cli_append_virus(cli_ctx *ctx, const char *virname)
+offset-size-arithmetic	libclamav/others.c	2146	void cli_set_match_offset(cli_ctx *ctx, uint64_t offset)
+offset-size-arithmetic	libclamav/others.c	2149	        cli_scan_report_note_match_offset(ctx->report, offset);
+offset-size-arithmetic	libclamav/others.c	2206	    if (ctx->recursion_level == ctx->recursion_stack_size - 1) {
+offset-size-arithmetic	libclamav/others.c	2223	    new_layer->size            = map->len;
 offset-size-arithmetic	libclamav/others.c	225	    for (i = 0; i < sizeof(suffixes) / sizeof(suffixes[0]); i++) {
-offset-size-arithmetic	libclamav/others.c	2261	            (CL_SUCCESS == cli_basename(ctx->fmap->name, strlen(ctx->fmap->name), &fmap_basename, true /* posix_support_backslash_pathsep */))) {
-offset-size-arithmetic	libclamav/others.c	2368	             * Offset is calculated from fmap->real_len - fmap->len */
-offset-size-arithmetic	libclamav/others.c	2369	            status = cli_jsonuint64(ctx->this_layer_metadata_json, "Offset", (uint64_t)(new_layer->fmap->real_len - new_layer->fmap->len));
-offset-size-arithmetic	libclamav/others.c	2637	    /* save off the fmap to return it to the caller, in case they need it */
-offset-size-arithmetic	libclamav/others.c	2787	size_t cli_recursion_stack_get_size(cli_ctx *ctx, int index)
-offset-size-arithmetic	libclamav/others.c	2850	        path = malloc(strlen(dirname) + strlen(dent->d_name) + 2);
-offset-size-arithmetic	libclamav/others.c	2852	            cli_errmsg("cli_rmdirs: Unable to allocate memory for path %u\n", strlen(dirname) + strlen(dent->d_name) + 2);
-offset-size-arithmetic	libclamav/others.c	2927	                        path = malloc(strlen(dirname) + strlen(dent->d_name) + 2);
-offset-size-arithmetic	libclamav/others.c	2929	                            cli_errmsg("cli_rmdirs: Unable to allocate memory for path %llu\n", (long long unsigned)(strlen(dirname) + strlen(dent->d_name) + 2));
-offset-size-arithmetic	libclamav/others.c	3045	    memset(bs->bitset + bs->length, 0, new_length - bs->length);
+offset-size-arithmetic	libclamav/others.c	2269	            (CL_SUCCESS == cli_basename(ctx->fmap->name, strlen(ctx->fmap->name), &fmap_basename, true /* posix_support_backslash_pathsep */))) {
+offset-size-arithmetic	libclamav/others.c	2376	             * Offset is calculated from fmap->real_len - fmap->len */
+offset-size-arithmetic	libclamav/others.c	2377	            status = cli_jsonuint64(ctx->this_layer_metadata_json, "Offset", (uint64_t)(new_layer->fmap->real_len - new_layer->fmap->len));
+offset-size-arithmetic	libclamav/others.c	2645	    /* save off the fmap to return it to the caller, in case they need it */
+offset-size-arithmetic	libclamav/others.c	2795	size_t cli_recursion_stack_get_size(cli_ctx *ctx, int index)
+offset-size-arithmetic	libclamav/others.c	2858	        path = malloc(strlen(dirname) + strlen(dent->d_name) + 2);
+offset-size-arithmetic	libclamav/others.c	2860	            cli_errmsg("cli_rmdirs: Unable to allocate memory for path %u\n", strlen(dirname) + strlen(dent->d_name) + 2);
+offset-size-arithmetic	libclamav/others.c	2935	                        path = malloc(strlen(dirname) + strlen(dent->d_name) + 2);
+offset-size-arithmetic	libclamav/others.c	2937	                            cli_errmsg("cli_rmdirs: Unable to allocate memory for path %llu\n", (long long unsigned)(strlen(dirname) + strlen(dent->d_name) + 2));
 offset-size-arithmetic	libclamav/others.c	305	#endif // !_WIN32
-offset-size-arithmetic	libclamav/others.c	3054	    char_offset = bit_offset / BITS_PER_CHAR;
-offset-size-arithmetic	libclamav/others.c	3057	    if (char_offset >= bs->length) {
-offset-size-arithmetic	libclamav/others.c	3058	        bs = bitset_realloc(bs, char_offset + 1);
-offset-size-arithmetic	libclamav/others.c	3063	    bs->bitset[char_offset] |= ((unsigned char)1 << bit_offset);
-offset-size-arithmetic	libclamav/others.c	3071	    char_offset = bit_offset / BITS_PER_CHAR;
-offset-size-arithmetic	libclamav/others.c	3074	    if (char_offset >= bs->length) {
-offset-size-arithmetic	libclamav/others.c	3077	    return (bs->bitset[char_offset] & ((unsigned char)1 << bit_offset));
-offset-size-arithmetic	libclamav/others.c	3117	            return "post-scan application callback";
-offset-size-arithmetic	libclamav/others.c	3274	void cl_engine_set_clcb_post_scan(struct cl_engine *engine, clcb_post_scan callback)
-offset-size-arithmetic	libclamav/others.c	3454	        reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
-offset-size-arithmetic	libclamav/others.c	3483	cl_error_t cli_trust_layers(cli_ctx *ctx, uint32_t start_layer, uint32_t end_layer, const char *source)
-offset-size-arithmetic	libclamav/others.c	3512	            reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
+offset-size-arithmetic	libclamav/others.c	3053	    memset(bs->bitset + bs->length, 0, new_length - bs->length);
+offset-size-arithmetic	libclamav/others.c	3062	    char_offset = bit_offset / BITS_PER_CHAR;
+offset-size-arithmetic	libclamav/others.c	3065	    if (char_offset >= bs->length) {
+offset-size-arithmetic	libclamav/others.c	3066	        bs = bitset_realloc(bs, char_offset + 1);
+offset-size-arithmetic	libclamav/others.c	3071	    bs->bitset[char_offset] |= ((unsigned char)1 << bit_offset);
+offset-size-arithmetic	libclamav/others.c	3079	    char_offset = bit_offset / BITS_PER_CHAR;
+offset-size-arithmetic	libclamav/others.c	3082	    if (char_offset >= bs->length) {
+offset-size-arithmetic	libclamav/others.c	3085	    return (bs->bitset[char_offset] & ((unsigned char)1 << bit_offset));
+offset-size-arithmetic	libclamav/others.c	3125	            return "post-scan application callback";
+offset-size-arithmetic	libclamav/others.c	3282	void cl_engine_set_clcb_post_scan(struct cl_engine *engine, clcb_post_scan callback)
+offset-size-arithmetic	libclamav/others.c	3462	        reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
+offset-size-arithmetic	libclamav/others.c	3491	cl_error_t cli_trust_layers(cli_ctx *ctx, uint32_t start_layer, uint32_t end_layer, const char *source)
+offset-size-arithmetic	libclamav/others.c	3520	            reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
 offset-size-arithmetic	libclamav/others.c	503	    /* Engine Max sizes */
 offset-size-arithmetic	libclamav/others.c	537	    new->root = MPOOL_CALLOC(new->mempool, CLI_MTARGETS, sizeof(struct cli_matcher *));
 offset-size-arithmetic	libclamav/others.c	549	    new->pwdbs = MPOOL_CALLOC(new->mempool, CLI_PWDB_COUNT, sizeof(struct cli_pwdb *));
@@ -31485,23 +31485,23 @@ offset-size-arithmetic	libclamav/readdb.c	4756	cl_error_t cli_load(const char *f
 offset-size-arithmetic	libclamav/readdb.c	4783	    if ((dbname = strrchr(filename, *PATHSEP)))
 offset-size-arithmetic	libclamav/readdb.c	486	        patt->length[0]     = root->ac_mindepth;
 offset-size-arithmetic	libclamav/readdb.c	489	        patt->pattern = MPOOL_CALLOC(root->mempool, patt->length[0], sizeof(*patt->pattern));
-offset-size-arithmetic	libclamav/readdb.c	4969	static size_t count_line_based_signatures(const char *filepath)
-offset-size-arithmetic	libclamav/readdb.c	5019	static size_t count_signatures(const char *filepath, struct cl_engine *engine, unsigned int options)
+offset-size-arithmetic	libclamav/readdb.c	4972	static size_t count_line_based_signatures(const char *filepath)
+offset-size-arithmetic	libclamav/readdb.c	5022	static size_t count_signatures(const char *filepath, struct cl_engine *engine, unsigned int options)
 offset-size-arithmetic	libclamav/readdb.c	506	                tdb->macro_ptids = MPOOL_CALLOC(root->mempool, num_subsigs, sizeof(*tdb->macro_ptids));
-offset-size-arithmetic	libclamav/readdb.c	5106	        if (strcmp(dirname + dirname_len - strlen(PATHSEP), PATHSEP) == 0) {
-offset-size-arithmetic	libclamav/readdb.c	5126	        dbfile = (char *)malloc(strlen(dent->d_name) + dirname_len + 2);
-offset-size-arithmetic	libclamav/readdb.c	5208	            cli_dbgmsg("Skipping unofficial database %s\n", dent->d_name);
-offset-size-arithmetic	libclamav/readdb.c	5227	        entry = malloc(sizeof(*entry));
-offset-size-arithmetic	libclamav/readdb.c	5442	        path[sizeof(path) - 1] = '\0';
-offset-size-arithmetic	libclamav/readdb.c	5446	    DATABASE_DIRECTORY[sizeof(DATABASE_DIRECTORY) - 1] = '\0';
-offset-size-arithmetic	libclamav/readdb.c	5490	                dbstat->statdname = (char **)cli_safer_realloc_or_free(dbstat->statdname, dbstat->entries * sizeof(char *));
-offset-size-arithmetic	libclamav/readdb.c	5499	                fname = malloc(strlen(dirname) + strlen(dent->d_name) + 32);
-offset-size-arithmetic	libclamav/readdb.c	5508	                dbstat->statdname[dbstat->entries - 1] = (char *)malloc(strlen(dent->d_name) + 1);
-offset-size-arithmetic	libclamav/readdb.c	5541	    if ((dd = opendir(dbstat->dir)) == NULL) {
-offset-size-arithmetic	libclamav/readdb.c	5551	                fname = malloc(strlen(dbstat->dir) + strlen(dent->d_name) + 32);
-offset-size-arithmetic	libclamav/readdb.c	6078	            cli_dbgmsg("Matcher[%u]: %s: AC sigs: %u (reloff: %u, absoff: %u) BM sigs: %u (reloff: %u, absoff: %u) PCREs: %u (reloff: %u, absoff: %u) maxpatlen %u %s\n", i, cli_mtargets[i].name, root->ac_patterns, root->ac_reloff_num, root->ac_absoff_num, root->bm_patterns, root->bm_reloff_num, root->bm_absoff_num, root->pcre_metas, root->pcre_reloff_num, root->pcre_absoff_num, root->maxpatlen, root->ac_only ? "(ac_only mode)" : "");
-offset-size-arithmetic	libclamav/readdb.c	6264	                    snprintf(fname, sizeof(fname), "%s" PATHSEP "%s", path, dent->d_name);
-offset-size-arithmetic	libclamav/readdb.c	6265	                    fname[sizeof(fname) - 1] = 0;
+offset-size-arithmetic	libclamav/readdb.c	5109	        if (strcmp(dirname + dirname_len - strlen(PATHSEP), PATHSEP) == 0) {
+offset-size-arithmetic	libclamav/readdb.c	5129	        dbfile = (char *)malloc(strlen(dent->d_name) + dirname_len + 2);
+offset-size-arithmetic	libclamav/readdb.c	5211	            cli_dbgmsg("Skipping unofficial database %s\n", dent->d_name);
+offset-size-arithmetic	libclamav/readdb.c	5230	        entry = malloc(sizeof(*entry));
+offset-size-arithmetic	libclamav/readdb.c	5445	        path[sizeof(path) - 1] = '\0';
+offset-size-arithmetic	libclamav/readdb.c	5449	    DATABASE_DIRECTORY[sizeof(DATABASE_DIRECTORY) - 1] = '\0';
+offset-size-arithmetic	libclamav/readdb.c	5493	                dbstat->statdname = (char **)cli_safer_realloc_or_free(dbstat->statdname, dbstat->entries * sizeof(char *));
+offset-size-arithmetic	libclamav/readdb.c	5502	                fname = malloc(strlen(dirname) + strlen(dent->d_name) + 32);
+offset-size-arithmetic	libclamav/readdb.c	5511	                dbstat->statdname[dbstat->entries - 1] = (char *)malloc(strlen(dent->d_name) + 1);
+offset-size-arithmetic	libclamav/readdb.c	5544	    if ((dd = opendir(dbstat->dir)) == NULL) {
+offset-size-arithmetic	libclamav/readdb.c	5554	                fname = malloc(strlen(dbstat->dir) + strlen(dent->d_name) + 32);
+offset-size-arithmetic	libclamav/readdb.c	6081	            cli_dbgmsg("Matcher[%u]: %s: AC sigs: %u (reloff: %u, absoff: %u) BM sigs: %u (reloff: %u, absoff: %u) PCREs: %u (reloff: %u, absoff: %u) maxpatlen %u %s\n", i, cli_mtargets[i].name, root->ac_patterns, root->ac_reloff_num, root->ac_absoff_num, root->bm_patterns, root->bm_reloff_num, root->bm_absoff_num, root->pcre_metas, root->pcre_reloff_num, root->pcre_absoff_num, root->maxpatlen, root->ac_only ? "(ac_only mode)" : "");
+offset-size-arithmetic	libclamav/readdb.c	6267	                    snprintf(fname, sizeof(fname), "%s" PATHSEP "%s", path, dent->d_name);
+offset-size-arithmetic	libclamav/readdb.c	6268	                    fname[sizeof(fname) - 1] = 0;
 offset-size-arithmetic	libclamav/readdb.c	655	                                           const char *offset, const uint32_t *lsigid, unsigned int options)
 offset-size-arithmetic	libclamav/readdb.c	708	                                         const char *offset, const uint32_t *lsigid, unsigned int options)
 offset-size-arithmetic	libclamav/readdb.c	732	            hexcpy = calloc(hexlen + 2 * range, sizeof(char));
@@ -38072,7 +38072,7 @@ large-file-option	libclamav/others.c	1501	     * limit. If one object exceeds bo
 large-file-option	libclamav/others.c	1503	     * container whose individually allowed members exhaust MaxScanSize. */
 large-file-option	libclamav/others.c	1508	        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFileSize", CL_EMAXSIZE);
 large-file-option	libclamav/others.c	1520	        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanSize", CL_EMAXSIZE);
-large-file-option	libclamav/others.c	2182	     * logical object. It must not consume MaxScanSize or MaxFiles again (the
+large-file-option	libclamav/others.c	2190	     * logical object. It must not consume MaxScanSize or MaxFiles again (the
 large-file-option	libclamav/others.c	686	        cli_errmsg("MaxFileSize: values above 32 GiB are not supported\n");
 large-file-option	libclamav/others.c	790	        case CL_ENGINE_MAX_SCANSIZE:
 large-file-option	libclamav/others.c	792	                cli_errmsg("MaxScanSize: values must be between 0 and 64 GiB\n");

@@ -93,6 +93,17 @@ syntax check; injected close-failure execution, production CVD/service,
 sanitizer, certified Linux x86-64, materialized large-file, Sonic1, and
 release qualification remain open.
 
+## Signature database and hash-stream I/O audit — 2026-08-27
+
+Line-based signature loading now converts a successful parse plus backing-file
+close failure into `CL_EREAD`. The shared hashing helpers now reject a digest
+after `fread()` reports an input error and reject `cli_hashfile()` success when
+its source `fclose()` fails, releasing the digest. The current database-loader
+and hashing sources pass the production warning-enabled GCC syntax checks;
+injected read/close-failure execution, production CVD/service, sanitizer,
+certified Linux x86-64, materialized large-file, Sonic1, and release
+qualification remain open.
+
 ## MIME direct-context and first-line admission audit — 2026-08-27
 
 The public `cli_mbox()` entry checked its directory, context, and fmap, but the
