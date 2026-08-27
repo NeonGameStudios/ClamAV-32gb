@@ -5690,3 +5690,15 @@ and Sonic1 qualification as release gates.
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification remain
   open.
+
+## SWF and CAB/CHM cleanup-status precedence audit — 2026-08-27
+
+- Preserve `CL_EWRITE` for SWF temporary-output close failures and
+  `CL_EUNLINK` for removal failures through the shared cleanup helper.
+- Make CAB/CHM temporary-file removal fail-visible through the shared MSPACK
+  helper, upgrading `CL_BREAK` while retaining detections and earlier
+  parser/resource errors. Current source guards and GCC syntax evidence cover
+  the change; complete SWF/CAB/CHM corpora, current-object execution,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain
+  open.

@@ -174,13 +174,11 @@ static cl_error_t swf_cleanup_temp(cli_ctx *ctx, int fd, char *tmpname, cl_error
 {
     if (close(fd) == -1) {
         cli_mark_scan_incomplete(ctx, "SWF temporary output could not be closed");
-        if ((status == CL_SUCCESS) || (status == CL_BREAK))
-            status = CL_EUNLINK;
+        status = cli_merge_cleanup_status(status, CL_EWRITE);
     }
     if (!ctx->engine->keeptmp && cli_unlink(tmpname)) {
         cli_mark_scan_incomplete(ctx, "SWF temporary output could not be removed");
-        if ((status == CL_SUCCESS) || (status == CL_BREAK))
-            status = CL_EUNLINK;
+        status = cli_merge_cleanup_status(status, CL_EUNLINK);
     }
     if (temporary_reserved)
         cli_scan_release_temporary(ctx, temporary_reserved);

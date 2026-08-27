@@ -11732,3 +11732,18 @@ ZIP-SFX, and ZIP-map production-linked cases remain prior-object evidence for
 this cleanup-only change; complete archive corpus, current-object execution,
 sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## SWF and CAB/CHM cleanup-status precedence audit — 2026-08-27
+
+SWF temporary output cleanup incorrectly classified a close failure as
+`CL_EUNLINK`; CAB/CHM temporary-file cleanup also upgraded only clean or
+abort statuses. SWF now distinguishes `CL_EWRITE` from `CL_EUNLINK`, while
+the shared MSPACK cleanup helper preserves `CL_EUNLINK`, upgrades
+`CL_BREAK`, and retains detections or earlier parser/resource errors.
+
+The current SWF, CAB, and CHM sources pass the established GCC syntax checks
+and source guards cover the changed helpers. Existing focused production-
+linked evidence remains prior-object evidence for this cleanup-only change;
+complete SWF/CAB/CHM corpora, current-object execution, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.

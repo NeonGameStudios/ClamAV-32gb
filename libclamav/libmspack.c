@@ -468,8 +468,7 @@ static void mspack_cleanup_temp(cli_ctx *ctx, char **tmp_fname, bool *tempfile_e
         if (!ctx->engine->keeptmp && (tempfile_exists == NULL || *tempfile_exists) &&
             cli_unlink(*tmp_fname)) {
             cli_mark_scan_incomplete(ctx, unlink_reason);
-            if (*status == CL_SUCCESS || *status == CL_BREAK)
-                *status = CL_EUNLINK;
+            *status = cli_merge_cleanup_status(*status, CL_EUNLINK);
         }
         free(*tmp_fname);
         *tmp_fname = NULL;
