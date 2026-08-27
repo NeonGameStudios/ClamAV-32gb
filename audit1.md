@@ -12006,3 +12006,15 @@ syntax and source guards cover the paths; optional-backend execution,
 complete RAR corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and parser-family qualification
 remain open.
+
+## TNEF debug-dump cleanup and read-status audit — 2026-08-27
+
+The optional TNEF unknown-level debug dump previously ignored temporary-file
+allocation/open failures, treated an in-range `fmap` callback failure as end
+of input, and discarded `close()` failure. The path now returns explicit
+`CL_EMEM`, `CL_ECREAT`, `CL_EREAD`, or `CL_EWRITE` statuses, marks the scan
+incomplete, and merges close failure without hiding an earlier timeout, read,
+or write result. Focused regressions cover debug-dump input-read and output-
+open failures; current TNEF syntax, source guards, complete corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.

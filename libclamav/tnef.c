@@ -35,6 +35,7 @@
 
 #include "clamav.h"
 #include "others.h"
+#include "scanners.h"
 
 #include "mbox.h"
 #include "tnef.h"
@@ -255,7 +256,13 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                                 break;
                             }
                             count = fmap_readn(ctx->fmap, buffer, pos, sizeof(buffer));
-                            if (count == (size_t)-1 || count == 0)
+                            if (count == (size_t)-1) {
+                                cli_mark_scan_incomplete(ctx, "TNEF debug-dump input could not be read completely");
+                                dump_ret = CL_EREAD;
+                                alldone = 1;
+                                break;
+                            }
+                            if (count == 0)
                                 break;
                             pos += count;
                             if (tnef_checktimelimit(ctx, "TNEF debug-dump output reached the configured time limit") != CL_SUCCESS) {
@@ -270,7 +277,15 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                                 break;
                             }
                         }
-                        close(fout);
+                        if (close(fout) != 0) {
+                            cli_mark_scan_incomplete(ctx, "TNEF debug-dump output could not be closed");
+                            dump_ret = cli_merge_cleanup_status(dump_ret, CL_EWRITE);
+                        }
+                    } else {
+                        cli_mark_scan_incomplete(ctx, filename == NULL
+                                                           ? "TNEF debug-dump output filename could not be allocated"
+                                                           : "TNEF debug-dump output could not be opened");
+                        dump_ret = filename == NULL ? CL_EMEM : CL_ECREAT;
                     }
                     free(filename);
                 }

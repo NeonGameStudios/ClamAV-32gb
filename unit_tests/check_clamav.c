@@ -26724,6 +26724,16 @@ static const void *tnef_nonzero_checksum_read_failure(fmap_t *map, size_t at, si
     return (const uint8_t *)map->data + at;
 }
 
+static const void *tnef_debug_dump_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 0U && len > sizeof(uint32_t))
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static const void *tiff_truncated_ifd_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -27630,6 +27640,79 @@ START_TEST(test_tnef_negative_attribute_length_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "TNEF attribute length is negative");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_tnef_debug_dump_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x03,                   /* unknown attribute level */
+        0x34, 0x12, 0x01, 0x00, /* arbitrary type/tag */
+        0x01, 0x00, 0x00, 0x00, /* one-byte payload length */
+        0xaa
+    };
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    int old_debug;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+    map                   = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    map->need = tnef_debug_dump_read_failure;
+    ctx.fmap  = map;
+
+    old_debug = cli_set_debug_flag(1);
+    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_EREAD);
+    (void)cli_set_debug_flag(old_debug);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "TNEF debug-dump input could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_tnef_debug_dump_open_failure_is_fail_visible)
+{
+    static const uint8_t input[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x03,                   /* unknown attribute level */
+        0x34, 0x12, 0x01, 0x00, /* arbitrary type/tag */
+        0x01, 0x00, 0x00, 0x00, /* one-byte payload length */
+        0xaa
+    };
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    char bad_dir[PATH_MAX];
+    int old_debug;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    snprintf(bad_dir, sizeof(bad_dir), "%s/tnef-debug-dump-missing", tmpdir);
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = bad_dir;
+    map                   = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    old_debug = cli_set_debug_flag(1);
+    ck_assert_int_eq(cli_tnef(bad_dir, &ctx), CL_ECREAT);
+    (void)cli_set_debug_flag(old_debug);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "TNEF debug-dump output could not be opened");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -41605,6 +41688,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_elf = tcase_create("elf");
     TCase *tc_tnef = tcase_create("tnef");
     TCase *tc_tnef_map = tcase_create("tnef_map");
+    TCase *tc_tnef_debug = tcase_create("tnef_debug");
     TCase *tc_graphics_map = tcase_create("graphics_map");
     TCase *tc_graphics_corpus = tcase_create("graphics_corpus");
     TCase *tc_graphics_api = tcase_create("graphics_api");
@@ -41800,6 +41884,10 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_tnef_map);
     tcase_add_test(tc_tnef_map, test_tnef_null_context_is_fail_visible);
     tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_tnef_debug);
+    tcase_add_checked_fixture(tc_tnef_debug, cl_setup, cl_teardown);
+    tcase_add_test(tc_tnef_debug, test_tnef_debug_dump_read_failure_is_fail_visible);
+    tcase_add_test(tc_tnef_debug, test_tnef_debug_dump_open_failure_is_fail_visible);
     suite_add_tcase(s, tc_tnef);
     tcase_add_checked_fixture(tc_tnef, cl_setup, cl_teardown);
     tcase_add_test(tc_tnef, test_tnef_exact_eof_ends_attribute_list);
