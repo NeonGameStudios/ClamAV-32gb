@@ -1,5 +1,14 @@
 # Wishlist
 
+## HWP3 null-context classification — 2026-08-27
+
+- Keep `cli_scanhwp3(NULL)` on the standard `CL_ENULLARG` caller-error
+  boundary; a recognized context without an fmap remains `CL_EPARSE` with
+  sticky incomplete state.
+- The isolated current-source `hwp3_map` regression covers the null-context
+  result. Keep HWP3 corpus, sanitizer, production-CVD/service, Sonic1, and
+  release qualification open.
+
 ## TAR direct-entry fmap classification — 2026-08-27
 
 - Keep `cli_untar()` fail-visible for unavailable input: only a null context

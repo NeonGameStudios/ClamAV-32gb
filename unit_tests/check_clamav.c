@@ -23002,6 +23002,12 @@ START_TEST(test_hwp3_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwp3_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_scanhwp3(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_hwpole2_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -40674,6 +40680,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_pdf_corpus = tcase_create("pdf_corpus");
     TCase *tc_pdf_map  = tcase_create("pdf_map");
     TCase *tc_hwp3     = tcase_create("hwp3");
+    TCase *tc_hwp3_map = tcase_create("hwp3_map");
     TCase *tc_hwp3_api = tcase_create("hwp3_api");
     TCase *tc_hwp3_corpus = tcase_create("hwp3_corpus");
     TCase *tc_hwpole2_corpus = tcase_create("hwpole2_corpus");
@@ -40989,6 +40996,9 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_pdf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_pdf_map, test_pdf_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_hwp3);
+    suite_add_tcase(s, tc_hwp3_map);
+    tcase_add_checked_fixture(tc_hwp3_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_hwp3_map, test_hwp3_null_context_is_fail_visible);
     suite_add_tcase(s, tc_hwp3_api);
     tcase_add_checked_fixture(tc_hwp3_api, cl_setup, cl_teardown);
     tcase_add_test(tc_hwp3_api, test_hwp3_public_api_read_failure_is_fail_visible);

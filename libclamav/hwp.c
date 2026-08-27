@@ -2089,7 +2089,7 @@ cl_error_t cli_scanhwp3(cli_ctx *ctx)
 
     if (ctx == NULL) {
         cli_dbgmsg("HWP3: passed context was NULL\n");
-        return CL_EARG;
+        return CL_ENULLARG;
     }
     map = ctx->fmap;
     if (map == NULL) {

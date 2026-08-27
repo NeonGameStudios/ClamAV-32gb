@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## HWP3 null-context classification — 2026-08-27
+
+The HWP3 direct parser entry returned legacy `CL_EARG` for a null context,
+while the other confirmed parser entries use `CL_ENULLARG` for this caller
+error and reserve `CL_EPARSE` for a recognized layer with unavailable input.
+`cli_scanhwp3(NULL)` now returns `CL_ENULLARG`; the existing missing-map path
+continues to return `CL_EPARSE` with sticky incomplete state. The new isolated
+`hwp3_map` regression covers the null-context result, with source guards
+updated. HWP3 corpus, sanitizer, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## TAR direct-entry fmap classification — 2026-08-27
 
 The exported `cli_untar()` entry now distinguishes a null parser context
