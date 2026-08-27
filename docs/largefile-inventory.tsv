@@ -5329,31 +5329,31 @@ fixed-width-integer	libclamav/untar.c	98	    uint64_t parsed            = 0;
 fixed-width-integer	libclamav/unzip.c	100	    uint16_t flags;
 fixed-width-integer	libclamav/unzip.c	106	    uint64_t compressed_size;
 fixed-width-integer	libclamav/unzip.c	107	    uint64_t uncompressed_size;
-fixed-width-integer	libclamav/unzip.c	1091	            strm.avail_in  = (uint32_t)csize;
-fixed-width-integer	libclamav/unzip.c	1212	static inline void zupdatekey(uint32_t key[3], unsigned char input)
-fixed-width-integer	libclamav/unzip.c	1227	static inline void zinitkey(uint32_t key[3], struct cli_pwdb *password)
-fixed-width-integer	libclamav/unzip.c	1242	static inline unsigned char zdecryptbyte(uint32_t key[3])
-fixed-width-integer	libclamav/unzip.c	1247	    uint32_t temp = (key[2] & 0xffffU) | 2U;
-fixed-width-integer	libclamav/unzip.c	1254	    uint64_t csize,
-fixed-width-integer	libclamav/unzip.c	1255	    uint64_t usize,
-fixed-width-integer	libclamav/unzip.c	1256	    uint16_t method,
-fixed-width-integer	libclamav/unzip.c	1257	    uint16_t flags,
-fixed-width-integer	libclamav/unzip.c	1258	    uint32_t expected_crc32,
-fixed-width-integer	libclamav/unzip.c	1276	    uint64_t csize,
-fixed-width-integer	libclamav/unzip.c	1277	    uint64_t usize,
-fixed-width-integer	libclamav/unzip.c	1278	    uint32_t expected_crc32,
-fixed-width-integer	libclamav/unzip.c	1289	    uint16_t version;
-fixed-width-integer	libclamav/unzip.c	1290	    uint16_t flags;
-fixed-width-integer	libclamav/unzip.c	1291	    uint16_t method;
-fixed-width-integer	libclamav/unzip.c	1292	    uint32_t mtime;
-fixed-width-integer	libclamav/unzip.c	1293	    uint32_t member_crc32;
-fixed-width-integer	libclamav/unzip.c	1323	        uint32_t key[3];
-fixed-width-integer	libclamav/unzip.c	1353	            uint16_t check = (uint16_t)encryption_header[SIZEOF_ENCRYPTION_HEADER - 2] |
-fixed-width-integer	libclamav/unzip.c	1354	                             (uint16_t)((uint16_t)encryption_header[SIZEOF_ENCRYPTION_HEADER - 1] << 8);
-fixed-width-integer	libclamav/unzip.c	1355	            uint16_t want    = (uint16_t)((flags & F_USEDD) ? mtime : (member_crc32 >> 16));
-fixed-width-integer	libclamav/unzip.c	1364	            uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/unzip.c	1366	            uint64_t total          = 0;
-fixed-width-integer	libclamav/unzip.c	1431	                        if ((uint64_t)buffered > UINT64_MAX - total) {
+fixed-width-integer	libclamav/unzip.c	1089	            strm.avail_in  = (uint32_t)csize;
+fixed-width-integer	libclamav/unzip.c	1214	static inline void zupdatekey(uint32_t key[3], unsigned char input)
+fixed-width-integer	libclamav/unzip.c	1229	static inline void zinitkey(uint32_t key[3], struct cli_pwdb *password)
+fixed-width-integer	libclamav/unzip.c	1244	static inline unsigned char zdecryptbyte(uint32_t key[3])
+fixed-width-integer	libclamav/unzip.c	1249	    uint32_t temp = (key[2] & 0xffffU) | 2U;
+fixed-width-integer	libclamav/unzip.c	1256	    uint64_t csize,
+fixed-width-integer	libclamav/unzip.c	1257	    uint64_t usize,
+fixed-width-integer	libclamav/unzip.c	1258	    uint16_t method,
+fixed-width-integer	libclamav/unzip.c	1259	    uint16_t flags,
+fixed-width-integer	libclamav/unzip.c	1260	    uint32_t expected_crc32,
+fixed-width-integer	libclamav/unzip.c	1278	    uint64_t csize,
+fixed-width-integer	libclamav/unzip.c	1279	    uint64_t usize,
+fixed-width-integer	libclamav/unzip.c	1280	    uint32_t expected_crc32,
+fixed-width-integer	libclamav/unzip.c	1291	    uint16_t version;
+fixed-width-integer	libclamav/unzip.c	1292	    uint16_t flags;
+fixed-width-integer	libclamav/unzip.c	1293	    uint16_t method;
+fixed-width-integer	libclamav/unzip.c	1294	    uint32_t mtime;
+fixed-width-integer	libclamav/unzip.c	1295	    uint32_t member_crc32;
+fixed-width-integer	libclamav/unzip.c	1325	        uint32_t key[3];
+fixed-width-integer	libclamav/unzip.c	1355	            uint16_t check = (uint16_t)encryption_header[SIZEOF_ENCRYPTION_HEADER - 2] |
+fixed-width-integer	libclamav/unzip.c	1356	                             (uint16_t)((uint16_t)encryption_header[SIZEOF_ENCRYPTION_HEADER - 1] << 8);
+fixed-width-integer	libclamav/unzip.c	1357	            uint16_t want    = (uint16_t)((flags & F_USEDD) ? mtime : (member_crc32 >> 16));
+fixed-width-integer	libclamav/unzip.c	1366	            uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/unzip.c	1368	            uint64_t total          = 0;
+fixed-width-integer	libclamav/unzip.c	1433	                        if ((uint64_t)buffered > UINT64_MAX - total) {
 fixed-width-integer	libclamav/unzip.c	1529	    uint64_t csize,
 fixed-width-integer	libclamav/unzip.c	1530	    uint64_t usize,
 fixed-width-integer	libclamav/unzip.c	1531	    uint16_t method,
@@ -5412,7 +5412,7 @@ fixed-width-integer	libclamav/unzip.c	331	static cl_error_t zip_check_output_lim
 fixed-width-integer	libclamav/unzip.c	351	static cl_error_t zip_write_output(int out_file, const void *buffer, size_t length, uint64_t *written, cli_ctx *ctx)
 fixed-width-integer	libclamav/unzip.c	358	    if ((uint64_t)length > UINT64_MAX - *written) {
 fixed-width-integer	libclamav/unzip.c	363	    ret = zip_check_output_limit(ctx, *written + (uint64_t)length);
-fixed-width-integer	libclamav/unzip.c	3662	    uint32_t toval    = 0;
+fixed-width-integer	libclamav/unzip.c	3661	    uint32_t toval    = 0;
 fixed-width-integer	libclamav/unzip.c	376	    *written += (uint64_t)length;
 fixed-width-integer	libclamav/unzip.c	381	                                  uint32_t attributes, zip_cb zcb)
 fixed-width-integer	libclamav/unzip.c	422	    uint64_t csize,
@@ -5430,13 +5430,13 @@ fixed-width-integer	libclamav/unzip.c	718	                output_crc32   = (uint
 fixed-width-integer	libclamav/unzip.c	769	            uint32_t input_before;
 fixed-width-integer	libclamav/unzip.c	770	            uint32_t output_before;
 fixed-width-integer	libclamav/unzip.c	801	                output_crc32   = (uint32_t)crc32(output_crc32, obuf, (uInt)produced);
-fixed-width-integer	libclamav/unzip.c	890	    uint64_t csize,
-fixed-width-integer	libclamav/unzip.c	891	    uint64_t usize,
-fixed-width-integer	libclamav/unzip.c	892	    uint16_t method,
-fixed-width-integer	libclamav/unzip.c	893	    uint16_t flags,
-fixed-width-integer	libclamav/unzip.c	905	    uint64_t written            = 0;
-fixed-width-integer	libclamav/unzip.c	906	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/unzip.c	907	    uint64_t temporary_size     = 0;
+fixed-width-integer	libclamav/unzip.c	888	    uint64_t csize,
+fixed-width-integer	libclamav/unzip.c	889	    uint64_t usize,
+fixed-width-integer	libclamav/unzip.c	890	    uint16_t method,
+fixed-width-integer	libclamav/unzip.c	891	    uint16_t flags,
+fixed-width-integer	libclamav/unzip.c	903	    uint64_t written            = 0;
+fixed-width-integer	libclamav/unzip.c	904	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/unzip.c	905	    uint64_t temporary_size     = 0;
 fixed-width-integer	libclamav/unzip.c	95	    uint32_t local_header_size;
 fixed-width-integer	libclamav/unzip.c	96	    uint64_t compressed_size;
 fixed-width-integer	libclamav/unzip.c	97	    uint64_t uncompressed_size;
@@ -15088,29 +15088,29 @@ native-width-integer	libclamav/untar.c	621	            size_t nbytes, nwritten;
 native-width-integer	libclamav/untar.c	99	    size_t i;
 native-width-integer	libclamav/untar.h	32	cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx);
 native-width-integer	libclamav/unzip.c	101	    int encrypted;
-native-width-integer	libclamav/unzip.c	1020	            *avail_in  = (unsigned int)csize;
-native-width-integer	libclamav/unzip.c	1027	                size_t produced;
-native-width-integer	libclamav/unzip.c	1059	            strm.avail_in  = (unsigned int)csize;
-native-width-integer	libclamav/unzip.c	1067	                    size_t produced = sizeof(obuf) - strm.avail_out;
+native-width-integer	libclamav/unzip.c	1018	            *avail_in  = (unsigned int)csize;
+native-width-integer	libclamav/unzip.c	1025	                size_t produced;
+native-width-integer	libclamav/unzip.c	1057	            strm.avail_in  = (unsigned int)csize;
+native-width-integer	libclamav/unzip.c	1065	                    size_t produced = sizeof(obuf) - strm.avail_out;
 native-width-integer	libclamav/unzip.c	108	    size_t local_header_offset;
-native-width-integer	libclamav/unzip.c	1103	                    size_t produced = sizeof(obuf) - strm.avail_out;
+native-width-integer	libclamav/unzip.c	1101	                    size_t produced = sizeof(obuf) - strm.avail_out;
 native-width-integer	libclamav/unzip.c	112	static cl_error_t zip_masked_sfx_central_check(cli_ctx *ctx, size_t offset, size_t *size);
 native-width-integer	libclamav/unzip.c	118	static const void *zip_need_off_status(fmap_t *map, size_t offset, size_t length, int lock, cl_error_t *status)
-native-width-integer	libclamav/unzip.c	1229	    int i;
-native-width-integer	libclamav/unzip.c	1245	     * signed-int promotion for the multiplication.  The maximum product is
-native-width-integer	libclamav/unzip.c	1253	    size_t data_offset,
-native-width-integer	libclamav/unzip.c	1259	    size_t *num_files_unzipped,
-native-width-integer	libclamav/unzip.c	1275	    size_t data_offset,
-native-width-integer	libclamav/unzip.c	1280	    size_t *num_files_unzipped,
-native-width-integer	libclamav/unzip.c	1321	        unsigned int length = 0;
-native-width-integer	libclamav/unzip.c	1324	        unsigned int i;
-native-width-integer	libclamav/unzip.c	1365	            size_t buffered         = 0;
-native-width-integer	libclamav/unzip.c	1367	            unsigned int input_pos  = SIZEOF_ENCRYPTION_HEADER;
-native-width-integer	libclamav/unzip.c	1369	            int out_file            = -1;
+native-width-integer	libclamav/unzip.c	1231	    int i;
+native-width-integer	libclamav/unzip.c	1247	     * signed-int promotion for the multiplication.  The maximum product is
+native-width-integer	libclamav/unzip.c	1255	    size_t data_offset,
+native-width-integer	libclamav/unzip.c	1261	    size_t *num_files_unzipped,
+native-width-integer	libclamav/unzip.c	1277	    size_t data_offset,
+native-width-integer	libclamav/unzip.c	1282	    size_t *num_files_unzipped,
+native-width-integer	libclamav/unzip.c	1323	        unsigned int length = 0;
+native-width-integer	libclamav/unzip.c	1326	        unsigned int i;
+native-width-integer	libclamav/unzip.c	1367	            size_t buffered         = 0;
+native-width-integer	libclamav/unzip.c	1369	            unsigned int input_pos  = SIZEOF_ENCRYPTION_HEADER;
+native-width-integer	libclamav/unzip.c	1371	            int out_file            = -1;
 native-width-integer	libclamav/unzip.c	140	static bool zip_record_end_checked(const struct zip_record *record, size_t *end)
 native-width-integer	libclamav/unzip.c	142	    size_t member_size;
 native-width-integer	libclamav/unzip.c	146	    if ((size_t)record->compressed_size > SIZE_MAX - (size_t)record->local_header_size)
-native-width-integer	libclamav/unzip.c	1477	                decrypted_map = fmap_new(out_file, 0, (size_t)total, NULL, tempfile);
+native-width-integer	libclamav/unzip.c	1479	                decrypted_map = fmap_new(out_file, 0, (size_t)total, NULL, tempfile);
 native-width-integer	libclamav/unzip.c	148	    member_size = (size_t)record->local_header_size + (size_t)record->compressed_size;
 native-width-integer	libclamav/unzip.c	1528	    size_t data_offset,
 native-width-integer	libclamav/unzip.c	1534	    size_t *num_files_unzipped,
@@ -15216,17 +15216,17 @@ native-width-integer	libclamav/unzip.c	3277	    size_t records_count            
 native-width-integer	libclamav/unzip.c	3278	    size_t i;
 native-width-integer	libclamav/unzip.c	3427	        size_t data_offset;
 native-width-integer	libclamav/unzip.c	351	static cl_error_t zip_write_output(int out_file, const void *buffer, size_t length, uint64_t *written, cli_ctx *ctx)
-native-width-integer	libclamav/unzip.c	3597	cl_error_t unzip_single_internal(cli_ctx *ctx, size_t local_header_offset, zip_cb zcb)
-native-width-integer	libclamav/unzip.c	3601	    size_t num_files_unzipped = 0;
-native-width-integer	libclamav/unzip.c	3633	cl_error_t cli_unzip_single(cli_ctx *ctx, size_t local_header_offset)
-native-width-integer	libclamav/unzip.c	3638	cl_error_t unzip_search_add(struct zip_requests *requests, const char *name, size_t nlen)
-native-width-integer	libclamav/unzip.c	3647	    cli_dbgmsg("unzip_search_add: adding %s (len %llu)\n", name, (long long unsigned)nlen);
-native-width-integer	libclamav/unzip.c	3660	    size_t file_count = 0;
-native-width-integer	libclamav/unzip.c	3661	    size_t coff       = 0;
-native-width-integer	libclamav/unzip.c	3664	    size_t file_record_size = 0;
-native-width-integer	libclamav/unzip.c	3690	        size_t central_file_header_offset = coff;
-native-width-integer	libclamav/unzip.c	3740	            if (ctx && cli_json_timeout_cycle_check(ctx, (int *)(&toval)) != CL_SUCCESS) {
-native-width-integer	libclamav/unzip.c	3767	cl_error_t unzip_search_single(cli_ctx *ctx, const char *name, size_t nlen, size_t *loff)
+native-width-integer	libclamav/unzip.c	3596	cl_error_t unzip_single_internal(cli_ctx *ctx, size_t local_header_offset, zip_cb zcb)
+native-width-integer	libclamav/unzip.c	3600	    size_t num_files_unzipped = 0;
+native-width-integer	libclamav/unzip.c	3632	cl_error_t cli_unzip_single(cli_ctx *ctx, size_t local_header_offset)
+native-width-integer	libclamav/unzip.c	3637	cl_error_t unzip_search_add(struct zip_requests *requests, const char *name, size_t nlen)
+native-width-integer	libclamav/unzip.c	3646	    cli_dbgmsg("unzip_search_add: adding %s (len %llu)\n", name, (long long unsigned)nlen);
+native-width-integer	libclamav/unzip.c	3659	    size_t file_count = 0;
+native-width-integer	libclamav/unzip.c	3660	    size_t coff       = 0;
+native-width-integer	libclamav/unzip.c	3663	    size_t file_record_size = 0;
+native-width-integer	libclamav/unzip.c	3689	        size_t central_file_header_offset = coff;
+native-width-integer	libclamav/unzip.c	3739	            if (ctx && cli_json_timeout_cycle_check(ctx, (int *)(&toval)) != CL_SUCCESS) {
+native-width-integer	libclamav/unzip.c	3766	cl_error_t unzip_search_single(cli_ctx *ctx, const char *name, size_t nlen, size_t *loff)
 native-width-integer	libclamav/unzip.c	380	static cl_error_t zip_scan_output(int fd, const char *filepath, cli_ctx *ctx, const char *name,
 native-width-integer	libclamav/unzip.c	421	    size_t data_offset,
 native-width-integer	libclamav/unzip.c	427	    size_t *num_files_unzipped,
@@ -15249,17 +15249,17 @@ native-width-integer	libclamav/unzip.c	692	                unsigned int length;
 native-width-integer	libclamav/unzip.c	754	        int xret;
 native-width-integer	libclamav/unzip.c	771	            size_t produced;
 native-width-integer	libclamav/unzip.c	779	                unsigned int length;
-native-width-integer	libclamav/unzip.c	894	    size_t *num_files_unzipped,
-native-width-integer	libclamav/unzip.c	903	    int out_file, ret = CL_EUNPACK;
-native-width-integer	libclamav/unzip.c	904	    int res          = 1;
+native-width-integer	libclamav/unzip.c	892	    size_t *num_files_unzipped,
+native-width-integer	libclamav/unzip.c	901	    int out_file, ret = CL_EUNPACK;
+native-width-integer	libclamav/unzip.c	902	    int res          = 1;
 native-width-integer	libclamav/unzip.c	94	    size_t local_header_offset;
-native-width-integer	libclamav/unzip.c	973	            ret = zip_write_output(out_file, src, (size_t)csize, &written, ctx);
-native-width-integer	libclamav/unzip.c	984	            typedef int (*unz_init_)(void *, int);
-native-width-integer	libclamav/unzip.c	985	            typedef int (*unz_unz_)(void *, int);
-native-width-integer	libclamav/unzip.c	986	            typedef int (*unz_end_)(void *);
-native-width-integer	libclamav/unzip.c	990	            int wbits;
-native-width-integer	libclamav/unzip.c	993	            unsigned int *avail_in;
-native-width-integer	libclamav/unzip.c	994	            unsigned int *avail_out;
+native-width-integer	libclamav/unzip.c	971	            ret = zip_write_output(out_file, src, (size_t)csize, &written, ctx);
+native-width-integer	libclamav/unzip.c	982	            typedef int (*unz_init_)(void *, int);
+native-width-integer	libclamav/unzip.c	983	            typedef int (*unz_unz_)(void *, int);
+native-width-integer	libclamav/unzip.c	984	            typedef int (*unz_end_)(void *);
+native-width-integer	libclamav/unzip.c	988	            int wbits;
+native-width-integer	libclamav/unzip.c	991	            unsigned int *avail_in;
+native-width-integer	libclamav/unzip.c	992	            unsigned int *avail_out;
 native-width-integer	libclamav/unzip.h	109	static inline cl_error_t zip_input_refill(struct zip_input *input, const uint8_t **data, unsigned int *length)
 native-width-integer	libclamav/unzip.h	111	    size_t want;
 native-width-integer	libclamav/unzip.h	112	    size_t got;
@@ -20501,10 +20501,10 @@ boundary-constant	libclamav/untar.c	507	            if (!tar_size_field(osize, &
 boundary-constant	libclamav/untar.c	542	                if (size_value > SIZE_MAX) {
 boundary-constant	libclamav/untar.c	569	                if (padding && size > SIZE_MAX - padding) {
 boundary-constant	libclamav/untar.c	578	                if (nskip > SIZE_MAX - pos) {
-boundary-constant	libclamav/unzip.c	1246	     * larger than INT_MAX and was undefined under UBSan on LP64 targets. */
+boundary-constant	libclamav/unzip.c	1248	     * larger than INT_MAX and was undefined under UBSan on LP64 targets. */
 boundary-constant	libclamav/unzip.c	144	    if (!record || !end || record->compressed_size > SIZE_MAX)
 boundary-constant	libclamav/unzip.c	146	    if ((size_t)record->compressed_size > SIZE_MAX - (size_t)record->local_header_size)
-boundary-constant	libclamav/unzip.c	1470	                if (total > SIZE_MAX) {
+boundary-constant	libclamav/unzip.c	1472	                if (total > SIZE_MAX) {
 boundary-constant	libclamav/unzip.c	149	    if (record->local_header_offset > SIZE_MAX - member_size)
 boundary-constant	libclamav/unzip.c	1676	            if (local_csize == UINT32_MAX || local_usize == UINT32_MAX) {
 boundary-constant	libclamav/unzip.c	1719	        if (csize == UINT32_MAX || usize == UINT32_MAX) {
@@ -23038,11 +23038,11 @@ format-width	libclamav/untar.c	430	            cli_dbgmsg("cli_untar: Candidate 
 format-width	libclamav/untar.c	443	                cli_dbgmsg("cli_untar: Checksum %d is valid.\n", checksum);
 format-width	libclamav/untar.c	549	                cli_dbgmsg("cli_untar: size = %zu\n", size);
 format-width	libclamav/untar.c	638	                cli_errmsg("cli_untar: only wrote %zu bytes to file %s (out of disc space?): %s\n",
-format-width	libclamav/unzip.c	1034	                        cli_warnmsg("cli_unzip: failed to write or account for %zu inflated bytes\n", produced);
-format-width	libclamav/unzip.c	1071	                        cli_warnmsg("cli_unzip: failed to write or account for %zu bunzipped bytes\n", produced);
-format-width	libclamav/unzip.c	1107	                        cli_warnmsg("cli_unzip: failed to write or account for %zu exploded bytes\n", produced);
-format-width	libclamav/unzip.c	1147	            cli_dbgmsg("cli_unzip: unsupported method (%d)\n", method);
-format-width	libclamav/unzip.c	1150	            cli_dbgmsg("cli_unzip: unknown method (%d)\n", method);
+format-width	libclamav/unzip.c	1032	                        cli_warnmsg("cli_unzip: failed to write or account for %zu inflated bytes\n", produced);
+format-width	libclamav/unzip.c	1069	                        cli_warnmsg("cli_unzip: failed to write or account for %zu bunzipped bytes\n", produced);
+format-width	libclamav/unzip.c	1105	                        cli_warnmsg("cli_unzip: failed to write or account for %zu exploded bytes\n", produced);
+format-width	libclamav/unzip.c	1145	            cli_dbgmsg("cli_unzip: unsupported method (%d)\n", method);
+format-width	libclamav/unzip.c	1148	            cli_dbgmsg("cli_unzip: unknown method (%d)\n", method);
 format-width	libclamav/unzip.c	1549	    cli_dbgmsg("cli_unzip: unsupported method (%u)\n", method);
 format-width	libclamav/unzip.c	1642	    cli_dbgmsg("cli_unzip: name_size %u\n", name_size);
 format-width	libclamav/unzip.c	1759	    cli_dbgmsg("cli_unzip: local header - ZMDNAME:%d:%s:" STDu64 ":" STDu64 ":%x:%u:%zu:%u\n",
@@ -23064,8 +23064,8 @@ format-width	libclamav/unzip.c	2882	                        cli_dbgmsg("    prev
 format-width	libclamav/unzip.c	2883	                        cli_dbgmsg("    current file start: %zu\n", curr_record->local_header_offset);
 format-width	libclamav/unzip.c	2900	                cli_dbgmsg("cli_unzip: Time limit reached (max: %u)\n", ctx->engine->maxscantime);
 format-width	libclamav/unzip.c	3543	            cli_dbgmsg("cli_unzip: Time limit reached (max: %u)\n", ctx->engine->maxscantime);
-format-width	libclamav/unzip.c	3647	    cli_dbgmsg("unzip_search_add: adding %s (len %llu)\n", name, (long long unsigned)nlen);
-format-width	libclamav/unzip.c	3729	                cli_dbgmsg("cli_unzip: Files limit reached (max: %u)\n", ctx->engine->maxfiles);
+format-width	libclamav/unzip.c	3646	    cli_dbgmsg("unzip_search_add: adding %s (len %llu)\n", name, (long long unsigned)nlen);
+format-width	libclamav/unzip.c	3728	                cli_dbgmsg("cli_unzip: Files limit reached (max: %u)\n", ctx->engine->maxfiles);
 format-width	libclamav/unzip.c	588	            cli_dbgmsg("cli_unzip: bounded inflate initialization failed for method %u\n", method);
 format-width	libclamav/unzip.c	638	                    cli_dbgmsg("cli_unzip: method %u stream ended before the declared compressed size\n", method);
 format-width	libclamav/unzip.c	641	                    cli_dbgmsg("cli_unzip: method %u member produced " STDu64 " bytes, expected " STDu64 "\n", method, written, usize);
@@ -32773,25 +32773,25 @@ offset-size-arithmetic	libclamav/untar.c	605	            fullname[sizeof(fullnam
 offset-size-arithmetic	libclamav/untar.c	648	                size -= nbytes;
 offset-size-arithmetic	libclamav/untar.c	95	tar_size_field(const char *field, uint64_t *value)
 offset-size-arithmetic	libclamav/untar.h	32	cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx);
-offset-size-arithmetic	libclamav/unzip.c	1030	                produced = sizeof(obuf) - *avail_out;
-offset-size-arithmetic	libclamav/unzip.c	1067	                    size_t produced = sizeof(obuf) - strm.avail_out;
-offset-size-arithmetic	libclamav/unzip.c	1103	                    size_t produced = sizeof(obuf) - strm.avail_out;
+offset-size-arithmetic	libclamav/unzip.c	1028	                produced = sizeof(obuf) - *avail_out;
+offset-size-arithmetic	libclamav/unzip.c	1065	                    size_t produced = sizeof(obuf) - strm.avail_out;
+offset-size-arithmetic	libclamav/unzip.c	1101	                    size_t produced = sizeof(obuf) - strm.avail_out;
 offset-size-arithmetic	libclamav/unzip.c	112	static cl_error_t zip_masked_sfx_central_check(cli_ctx *ctx, size_t offset, size_t *size);
-offset-size-arithmetic	libclamav/unzip.c	1163	        if (lseek(out_file, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/unzip.c	1161	        if (lseek(out_file, 0, SEEK_SET) == -1) {
 offset-size-arithmetic	libclamav/unzip.c	118	static const void *zip_need_off_status(fmap_t *map, size_t offset, size_t length, int lock, cl_error_t *status)
 offset-size-arithmetic	libclamav/unzip.c	125	    if (!map || offset > map->len || length > map->len - offset) {
-offset-size-arithmetic	libclamav/unzip.c	1259	    size_t *num_files_unzipped,
-offset-size-arithmetic	libclamav/unzip.c	1280	    size_t *num_files_unzipped,
-offset-size-arithmetic	libclamav/unzip.c	1373	            ret = cli_scan_reserve_temporary(ctx, csize - SIZEOF_ENCRYPTION_HEADER);
-offset-size-arithmetic	libclamav/unzip.c	1378	            temporary_reserved = csize - SIZEOF_ENCRYPTION_HEADER;
-offset-size-arithmetic	libclamav/unzip.c	1387	                snprintf(name, sizeof(name), "%s" PATHSEP "zip.decrypt.%03zu", tmpd, *num_files_unzipped);
-offset-size-arithmetic	libclamav/unzip.c	1388	                name[sizeof(name) - 1] = '\0';
+offset-size-arithmetic	libclamav/unzip.c	1261	    size_t *num_files_unzipped,
+offset-size-arithmetic	libclamav/unzip.c	1282	    size_t *num_files_unzipped,
+offset-size-arithmetic	libclamav/unzip.c	1375	            ret = cli_scan_reserve_temporary(ctx, csize - SIZEOF_ENCRYPTION_HEADER);
+offset-size-arithmetic	libclamav/unzip.c	1380	            temporary_reserved = csize - SIZEOF_ENCRYPTION_HEADER;
+offset-size-arithmetic	libclamav/unzip.c	1389	                snprintf(name, sizeof(name), "%s" PATHSEP "zip.decrypt.%03zu", tmpd, *num_files_unzipped);
+offset-size-arithmetic	libclamav/unzip.c	1390	                name[sizeof(name) - 1] = '\0';
 offset-size-arithmetic	libclamav/unzip.c	140	static bool zip_record_end_checked(const struct zip_record *record, size_t *end)
-offset-size-arithmetic	libclamav/unzip.c	1418	                    uint8_t plain = data[input_pos++] ^ zdecryptbyte(key);
+offset-size-arithmetic	libclamav/unzip.c	1420	                    uint8_t plain = data[input_pos++] ^ zdecryptbyte(key);
 offset-size-arithmetic	libclamav/unzip.c	144	    if (!record || !end || record->compressed_size > SIZE_MAX)
 offset-size-arithmetic	libclamav/unzip.c	146	    if ((size_t)record->compressed_size > SIZE_MAX - (size_t)record->local_header_size)
-offset-size-arithmetic	libclamav/unzip.c	1463	            if (CL_SUCCESS == ret && total != csize - SIZEOF_ENCRYPTION_HEADER) {
-offset-size-arithmetic	libclamav/unzip.c	1465	                           total, csize - SIZEOF_ENCRYPTION_HEADER);
+offset-size-arithmetic	libclamav/unzip.c	1465	            if (CL_SUCCESS == ret && total != csize - SIZEOF_ENCRYPTION_HEADER) {
+offset-size-arithmetic	libclamav/unzip.c	1467	                           total, csize - SIZEOF_ENCRYPTION_HEADER);
 offset-size-arithmetic	libclamav/unzip.c	148	    member_size = (size_t)record->local_header_size + (size_t)record->compressed_size;
 offset-size-arithmetic	libclamav/unzip.c	149	    if (record->local_header_offset > SIZE_MAX - member_size)
 offset-size-arithmetic	libclamav/unzip.c	152	    *end = record->local_header_offset + member_size;
@@ -32958,14 +32958,14 @@ offset-size-arithmetic	libclamav/unzip.c	3448	        if (zip_catalogue[i].local
 offset-size-arithmetic	libclamav/unzip.c	3453	        data_offset = zip_catalogue[i].local_header_offset + zip_catalogue[i].local_header_size;
 offset-size-arithmetic	libclamav/unzip.c	351	static cl_error_t zip_write_output(int out_file, const void *buffer, size_t length, uint64_t *written, cli_ctx *ctx)
 offset-size-arithmetic	libclamav/unzip.c	358	    if ((uint64_t)length > UINT64_MAX - *written) {
-offset-size-arithmetic	libclamav/unzip.c	3610	    if (local_header_offset > ctx->fmap->len ||
-offset-size-arithmetic	libclamav/unzip.c	3611	        SIZEOF_LOCAL_HEADER > ctx->fmap->len - local_header_offset) {
-offset-size-arithmetic	libclamav/unzip.c	3628	        NULL); /* file_record_size */
-offset-size-arithmetic	libclamav/unzip.c	3650	    requests->namelens[requests->namecnt] = nlen;
-offset-size-arithmetic	libclamav/unzip.c	3746	            if (central_file_header_offset > ctx->fmap->len ||
-offset-size-arithmetic	libclamav/unzip.c	3747	                file_record_size > ctx->fmap->len - central_file_header_offset) {
-offset-size-arithmetic	libclamav/unzip.c	3752	            central_file_header_offset += file_record_size;
-offset-size-arithmetic	libclamav/unzip.c	3767	cl_error_t unzip_search_single(cli_ctx *ctx, const char *name, size_t nlen, size_t *loff)
+offset-size-arithmetic	libclamav/unzip.c	3609	    if (local_header_offset > ctx->fmap->len ||
+offset-size-arithmetic	libclamav/unzip.c	3610	        SIZEOF_LOCAL_HEADER > ctx->fmap->len - local_header_offset) {
+offset-size-arithmetic	libclamav/unzip.c	3627	        NULL); /* file_record_size */
+offset-size-arithmetic	libclamav/unzip.c	3649	    requests->namelens[requests->namecnt] = nlen;
+offset-size-arithmetic	libclamav/unzip.c	3745	            if (central_file_header_offset > ctx->fmap->len ||
+offset-size-arithmetic	libclamav/unzip.c	3746	                file_record_size > ctx->fmap->len - central_file_header_offset) {
+offset-size-arithmetic	libclamav/unzip.c	3751	            central_file_header_offset += file_record_size;
+offset-size-arithmetic	libclamav/unzip.c	3766	cl_error_t unzip_search_single(cli_ctx *ctx, const char *name, size_t nlen, size_t *loff)
 offset-size-arithmetic	libclamav/unzip.c	427	    size_t *num_files_unzipped,
 offset-size-arithmetic	libclamav/unzip.c	463	     * authoritative because malicious archives may lie about usize. */
 offset-size-arithmetic	libclamav/unzip.c	551	        typedef int (*unz_end_)(void *);
@@ -32973,8 +32973,8 @@ offset-size-arithmetic	libclamav/unzip.c	625	            produced     = sizeof(o
 offset-size-arithmetic	libclamav/unzip.c	712	            produced     = sizeof(obuf) - strm.avail_out;
 offset-size-arithmetic	libclamav/unzip.c	795	            produced      = sizeof(obuf) - strm.avail_out;
 offset-size-arithmetic	libclamav/unzip.c	848	        if (lseek(out_file, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/unzip.c	894	    size_t *num_files_unzipped,
-offset-size-arithmetic	libclamav/unzip.c	986	            typedef int (*unz_end_)(void *);
+offset-size-arithmetic	libclamav/unzip.c	892	    size_t *num_files_unzipped,
+offset-size-arithmetic	libclamav/unzip.c	984	            typedef int (*unz_end_)(void *);
 offset-size-arithmetic	libclamav/unzip.h	102	    memset(input, 0, sizeof(*input));
 offset-size-arithmetic	libclamav/unzip.h	123	    want = sizeof(input->buffer);
 offset-size-arithmetic	libclamav/unzip.h	125	        want = (size_t)input->remaining;

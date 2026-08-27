@@ -11714,3 +11714,21 @@ their existing focused production-linked cases remain prior-object evidence
 for this cleanup-only change. Current-object execution, complete ISO/UDF
 corpora, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## ZIP cleanup-status precedence audit — 2026-08-27
+
+ZIP stored/legacy/encrypted member staging and archive temporary-directory
+cleanup used local checks that omitted `CL_BREAK`; one legacy rewind failure
+also closed the descriptor without cleaning the temporary path. All member
+close/unlink and archive-directory cleanup now use the shared cleanup-status
+precedence helper, preserving `CL_EWRITE` versus `CL_EUNLINK`, upgrading
+clean, verified, and `CL_BREAK`, and retaining detections or earlier
+parser/resource errors. The legacy rewind failure now follows the same
+cleanup path and cannot leak its temporary file.
+
+The current ZIP source passes the established warning-enabled GCC syntax
+check and source guards cover the cleanup calls. Existing current-source ZIP,
+ZIP-SFX, and ZIP-map production-linked cases remain prior-object evidence for
+this cleanup-only change; complete archive corpus, current-object execution,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.

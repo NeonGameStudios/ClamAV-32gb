@@ -857,13 +857,11 @@ static cl_error_t unz_stream(
 
     if (close(out_file) == -1) {
         cli_mark_scan_incomplete(ctx, "ZIP member temporary output could not be closed");
-        if (CL_SUCCESS == ret || CL_VERIFIED == ret)
-            ret = CL_EWRITE;
+        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
     }
     if (!ctx->engine->keeptmp && cli_unlink(tempfile)) {
         cli_mark_scan_incomplete(ctx, "ZIP member temporary output could not be removed");
-        if (CL_SUCCESS == ret || CL_VERIFIED == ret)
-            ret = CL_EUNLINK;
+        ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
     }
     if (temporary_reserved)
         cli_scan_release_temporary(ctx, temporary_reserved);
@@ -1163,22 +1161,28 @@ static cl_error_t unz_legacy(
         if (lseek(out_file, 0, SEEK_SET) == -1) {
             cli_dbgmsg("cli_unzip: call to lseek() failed\n");
             cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be rewound");
+            ret = CL_ESEEK;
+            if (close(out_file) == -1) {
+                cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be closed");
+                ret = cli_merge_cleanup_status(ret, CL_EWRITE);
+            }
+            if (!ctx->engine->keeptmp && cli_unlink(tempfile)) {
+                cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be removed");
+                ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
+            }
             free(tempfile);
-            close(out_file);
             if (temporary_reserved)
                 cli_scan_release_temporary(ctx, temporary_reserved);
-            return CL_ESEEK;
+            return ret;
         }
         ret = zip_scan_output(out_file, tempfile, ctx, original_filename, decrypted, zcb);
         if (close(out_file) == -1) {
             cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be closed");
-            if (CL_SUCCESS == ret || CL_VERIFIED == ret)
-                ret = CL_EWRITE;
+            ret = cli_merge_cleanup_status(ret, CL_EWRITE);
         }
         if (!ctx->engine->keeptmp && cli_unlink(tempfile)) {
             cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be removed");
-            if (CL_SUCCESS == ret || CL_VERIFIED == ret)
-                ret = CL_EUNLINK;
+            ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
         }
         free(tempfile);
         if (temporary_reserved)
@@ -1191,13 +1195,11 @@ static cl_error_t unz_legacy(
 
     if (close(out_file) == -1) {
         cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be closed");
-        if (CL_SUCCESS == ret || CL_VERIFIED == ret)
-            ret = CL_EWRITE;
+        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
     }
     if (!ctx->engine->keeptmp && cli_unlink(tempfile)) {
         cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be removed");
-        if (CL_SUCCESS == ret || CL_VERIFIED == ret)
-            ret = CL_EUNLINK;
+        ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
     }
     free(tempfile);
     if (temporary_reserved)
@@ -1493,13 +1495,11 @@ static cl_error_t zdecrypt_from_fmap(
                 fmap_free(decrypted_map);
             if (close(out_file) == -1) {
                 cli_mark_scan_incomplete(ctx, "ZIP encrypted member temporary output could not be closed");
-                if (CL_SUCCESS == ret || CL_VERIFIED == ret)
-                    ret = CL_EWRITE;
+                ret = cli_merge_cleanup_status(ret, CL_EWRITE);
             }
             if (!ctx->engine->keeptmp && cli_unlink(tempfile)) {
                 cli_mark_scan_incomplete(ctx, "ZIP encrypted member temporary output could not be removed");
-                if (CL_SUCCESS == ret || CL_VERIFIED == ret)
-                    ret = CL_EUNLINK;
+                ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
             }
             if (allocated_tempfile)
                 free(tempfile);
@@ -3585,8 +3585,7 @@ done:
     if (NULL != tmpd) {
         if (!ctx->engine->keeptmp && cli_rmdirs(tmpd) != 0) {
             cli_mark_scan_incomplete(ctx, "ZIP temporary directory could not be removed");
-            if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_VERIFIED || status == CL_BREAK)
-                status = CL_EUNLINK;
+            status = cli_merge_cleanup_status(status, CL_EUNLINK);
         }
         free(tmpd);
     }

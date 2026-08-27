@@ -5677,3 +5677,16 @@ and Sonic1 qualification as release gates.
   current-object execution, complete corpora, sanitizer, certified Linux
   x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification remain open.
+
+## ZIP cleanup-status precedence audit — 2026-08-27
+
+- Make ZIP stored/legacy/encrypted member staging and temporary-directory
+  cleanup fail-visible through the shared helper: preserve `CL_EWRITE`
+  versus `CL_EUNLINK`, upgrade clean/verified/`CL_BREAK`, and retain
+  detections or earlier parser/resource errors.
+- Route legacy rewind failures through descriptor close and temporary-path
+  cleanup so the error cannot leak a temporary file. Current source guards
+  cover the helper calls; complete archive corpus, current-object execution,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain
+  open.
