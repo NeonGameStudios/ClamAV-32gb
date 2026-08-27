@@ -5547,3 +5547,17 @@ and Sonic1 qualification as release gates.
   errors; keep the direct status-precedence regression and complete 7-Zip/
   7-Zip-SFX, sanitizer, certified Linux x86-64, materialized-large-file,
   production-CVD/service, Sonic1, and parser-family qualification gates open.
+
+## ALZ/Rust temporary-spool cleanup audit — 2026-08-27
+
+- Keep shared Rust temporary spools explicitly and idempotently finalized at
+  successful ALZ, OneNote, LHA/LZH, and reader-helper nested-scan boundaries;
+  close, unlink, and reservation failures must upgrade clean, verified, and
+  `CL_BREAK` statuses while preserving detections and earlier parser errors,
+  and must mark the containing parser incomplete/non-cacheable.
+- The direct cleanup-precedence regression and source guards are present. Fresh
+  Rust execution is open because the host lacks OpenSSL/pkg-config metadata and
+  the reusable Linux container has an older Cargo plus an incomplete offline
+  git-dependency cache. Keep current-C ABI, sanitizer, certified Linux x86-64,
+  materialized large-file/resource, production-CVD/service, Sonic1, and final
+  parser-family qualification open.

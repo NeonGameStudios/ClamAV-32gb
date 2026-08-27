@@ -46,7 +46,8 @@ use crate::{
         cl_error_t_CL_ETIMEOUT, cl_error_t_CL_ERESOURCE,
         cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EUNPACK, cl_error_t_CL_EUNLINK,
         cl_error_t_CL_EWRITE,
-        cl_error_t_CL_BREAK, cl_error_t_CL_ENULLARG, cl_error_t_CL_SUCCESS, cl_error_t_CL_VIRUS,
+        cl_error_t_CL_BREAK, cl_error_t_CL_ENULLARG, cl_error_t_CL_SUCCESS, cl_error_t_CL_VERIFIED,
+        cl_error_t_CL_VIRUS,
         cli_ctx, cli_magic_scan_buff,
     },
     util::{
@@ -97,6 +98,19 @@ fn lha_error_status(err: &LhaError<io::Error>, fallback: cl_error_t) -> cl_error
 
 fn spool_write_is_interrupted(err: &io::Error) -> bool {
     err.raw_os_error() == Some(libc::EINTR)
+}
+
+fn merge_cleanup_status(status: cl_error_t, cleanup_status: cl_error_t) -> cl_error_t {
+    if cleanup_status == cl_error_t_CL_SUCCESS {
+        return status;
+    }
+    if status == cl_error_t_CL_SUCCESS
+        || status == cl_error_t_CL_VERIFIED
+        || status == cl_error_t_CL_BREAK
+    {
+        return cleanup_status;
+    }
+    status
 }
 
 fn onenote_error_status(err: &onenote::Error) -> cl_error_t {
@@ -151,15 +165,15 @@ pub(crate) unsafe fn scan_reader_via_temp_spool<R: Read>(
         }
     }
 
-    if spool.written == 0 {
-        return cl_error_t_CL_SUCCESS;
-    }
-
-    let status = spool.scan(None);
+    let status = if spool.written == 0 {
+        cl_error_t_CL_SUCCESS
+    } else {
+        spool.scan(None)
+    };
     if status != cl_error_t_CL_SUCCESS {
         debug!("{parser} temporary-spool child scan returned error: {status}");
     }
-    status
+    spool.finish_cleanup(status, parser)
 }
 
 fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
@@ -264,6 +278,7 @@ struct TempSpool {
     path: CString,
     reserved: u64,
     written: u64,
+    cleaned: bool,
 }
 
 impl TempSpool {
@@ -309,6 +324,7 @@ impl TempSpool {
             path,
             reserved: expected_size,
             written: 0,
+            cleaned: false,
         })
     }
 
@@ -426,33 +442,65 @@ impl TempSpool {
             self.reserved = 0;
         }
     }
+
+    unsafe fn cleanup(&mut self) -> cl_error_t {
+        if self.cleaned {
+            return cl_error_t_CL_SUCCESS;
+        }
+
+        let mut status = cl_error_t_CL_SUCCESS;
+
+        if self.fd >= 0 {
+            if libc::close(self.fd) != 0 {
+                status = cl_error_t_CL_EWRITE;
+            }
+            self.fd = -1;
+        }
+
+        let keep_tmp = !(*self.ctx).engine.is_null()
+            && (*(*self.ctx).engine).keeptmp != 0;
+        if !keep_tmp
+            && sys::cli_unlink(self.path.as_ptr()) != cl_error_t_CL_SUCCESS
+            && status == cl_error_t_CL_SUCCESS
+        {
+            status = cl_error_t_CL_EUNLINK;
+        }
+
+        self.release_reservation();
+        self.cleaned = true;
+        status
+    }
+
+    unsafe fn finish_cleanup(&mut self, status: cl_error_t, parser: &str) -> cl_error_t {
+        let cleanup_status = self.cleanup();
+        if cleanup_status == cl_error_t_CL_SUCCESS {
+            return status;
+        }
+
+        let cleanup_status = parser_failure(
+            self.ctx,
+            parser,
+            cleanup_status,
+            "temporary spool cleanup failed",
+        );
+        merge_cleanup_status(status, cleanup_status)
+    }
 }
 
 impl Drop for TempSpool {
     fn drop(&mut self) {
         unsafe {
-            if self.fd >= 0 {
-                if libc::close(self.fd) != 0 {
-                    self.mark_cleanup_failure(
-                        cl_error_t_CL_EWRITE,
-                        "temporary spool could not be closed",
-                    );
-                }
-                self.fd = -1;
-            }
-
-            let keep_tmp = !(*self.ctx).engine.is_null()
-                && (*(*self.ctx).engine).keeptmp != 0;
-            if !keep_tmp
-                && sys::cli_unlink(self.path.as_ptr()) != cl_error_t_CL_SUCCESS
-            {
+            let status = self.cleanup();
+            if status != cl_error_t_CL_SUCCESS {
                 self.mark_cleanup_failure(
-                    cl_error_t_CL_EUNLINK,
-                    "temporary spool could not be removed",
+                    status,
+                    if status == cl_error_t_CL_EWRITE {
+                        "temporary spool could not be closed"
+                    } else {
+                        "temporary spool could not be removed"
+                    },
                 );
             }
-
-            self.release_reservation();
         }
     }
 }
@@ -519,11 +567,12 @@ impl ExtractSink for AlzScanSink {
         };
         let name = self.name.take();
         self.last_size = spool.written;
-        if spool.written == 0 {
-            return Ok(());
-        }
-
-        let ret = unsafe { spool.scan(name.as_deref()) };
+        let ret = if spool.written == 0 {
+            cl_error_t_CL_SUCCESS
+        } else {
+            spool.scan(name.as_deref())
+        };
+        let ret = unsafe { spool.finish_cleanup(ret, "ALZ") };
         if ret != cl_error_t_CL_SUCCESS {
             self.scan_result = ret;
             return Err(AlzError::Stop);
@@ -609,11 +658,12 @@ impl onenote::LegacyAttachmentSink for OneNoteScanSink {
                 "attachment spool was not started",
             ));
         };
-        if spool.written == 0 {
-            return Ok(());
-        }
-
-        let ret = unsafe { spool.scan(None) };
+        let ret = if spool.written == 0 {
+            cl_error_t_CL_SUCCESS
+        } else {
+            spool.scan(None)
+        };
+        let ret = unsafe { spool.finish_cleanup(ret, "OneNote") };
         if ret != cl_error_t_CL_SUCCESS {
             self.scan_result = ret;
             return Err(onenote::Error::Sink(
@@ -795,14 +845,17 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         );
     }
 
-    let root_spool = match spool_fmap(ctx, &fmap) {
+    let mut root_spool = match spool_fmap(ctx, &fmap) {
         Ok(spool) => spool,
         Err(status) => return parser_failure(ctx, "OneNote", status, "root temporary spool could not be populated"),
     };
 
     let mapped = match MappedInput::new(root_spool.fd, fmap.len()) {
         Ok(mapped) => mapped,
-        Err(status) => return parser_failure(ctx, "OneNote", status, "root temporary spool mapping failed"),
+        Err(status) => {
+            let status = parser_failure(ctx, "OneNote", status, "root temporary spool mapping failed");
+            return root_spool.finish_cleanup(status, "OneNote");
+        }
     };
     let mut scan_result = cl_error_t_CL_SUCCESS;
 
@@ -848,6 +901,7 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         }
 
         let ret = attachment_spool.scan(name);
+        let ret = attachment_spool.finish_cleanup(ret, "OneNote");
         if ret != cl_error_t_CL_SUCCESS {
             scan_result = ret;
             return false;
@@ -856,14 +910,16 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         true
     });
 
-    if scan_result != cl_error_t_CL_SUCCESS {
-        return scan_result;
-    }
-
-    match parse_result {
-        Ok(()) => cl_error_t_CL_SUCCESS,
-        Err(err) => parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err),
-    }
+    let parse_status = if scan_result != cl_error_t_CL_SUCCESS {
+        scan_result
+    } else {
+        match parse_result {
+            Ok(()) => cl_error_t_CL_SUCCESS,
+            Err(err) => parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err),
+        }
+    };
+    drop(mapped);
+    root_spool.finish_cleanup(parse_status, "OneNote")
 }
 
 /// Scan the contents of a LHA or LZH archive
@@ -1135,6 +1191,7 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
             debug!("Read {bytes_read} bytes from file {filename} in the LHA archive.");
 
             let ret = spool.scan(Some(&filename));
+            let ret = spool.finish_cleanup(ret, "LHA/LZH");
             if ret != cl_error_t_CL_SUCCESS {
                 debug!("spooled LHA member scan returned error: {}", ret);
                 return ret;
@@ -1472,9 +1529,42 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
 mod tests {
     use super::*;
     use crate::sys::{
-        cl_error_t_CL_EPARSE, cl_error_t_CL_EREAD, cl_error_t_CL_ETIMEOUT,
-        cl_error_t_CL_ENULLARG,
+        cl_error_t_CL_BREAK, cl_error_t_CL_EPARSE, cl_error_t_CL_EREAD,
+        cl_error_t_CL_ETIMEOUT, cl_error_t_CL_ENULLARG, cl_error_t_CL_EUNLINK,
+        cl_error_t_CL_EWRITE, cl_error_t_CL_VERIFIED,
     };
+
+    #[test]
+    fn rust_spool_cleanup_status_is_fail_visible() {
+        assert_eq!(
+            merge_cleanup_status(cl_error_t_CL_SUCCESS, cl_error_t_CL_EWRITE),
+            cl_error_t_CL_EWRITE
+        );
+        assert_eq!(
+            merge_cleanup_status(cl_error_t_CL_VERIFIED, cl_error_t_CL_EUNLINK),
+            cl_error_t_CL_EUNLINK
+        );
+        assert_eq!(
+            merge_cleanup_status(cl_error_t_CL_BREAK, cl_error_t_CL_EWRITE),
+            cl_error_t_CL_EWRITE
+        );
+        assert_eq!(
+            merge_cleanup_status(cl_error_t_CL_VIRUS, cl_error_t_CL_EWRITE),
+            cl_error_t_CL_VIRUS
+        );
+        assert_eq!(
+            merge_cleanup_status(cl_error_t_CL_EPARSE, cl_error_t_CL_EUNLINK),
+            cl_error_t_CL_EPARSE
+        );
+        assert_eq!(
+            merge_cleanup_status(cl_error_t_CL_EWRITE, cl_error_t_CL_EUNLINK),
+            cl_error_t_CL_EWRITE
+        );
+        assert_eq!(
+            merge_cleanup_status(cl_error_t_CL_BREAK, cl_error_t_CL_SUCCESS),
+            cl_error_t_CL_BREAK
+        );
+    }
 
     #[test]
     fn alz_metadata_scan_success_continues() {

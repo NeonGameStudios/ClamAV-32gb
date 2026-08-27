@@ -34069,25 +34069,25 @@ offset-size-arithmetic	libclamav_rust/src/onenote.rs	645	        fixture.truncat
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	672	        fixture.truncate(fixture.len() - 1);
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	698	        fixture.extend(std::iter::repeat(0u8).take(1024 * 1024 + 5));
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	98	// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/8806fd18-6735-4874-b111-227b83eaac26
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1208	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1220	            engine.maxscansize.saturating_sub((*ctx).scansize)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1276	fn alz_metadata_size(size: u64) -> Option<usize> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1588	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	165	fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	177	fn lha_member_range_end(start: u64, length: u64, map_len: u64) -> Option<u64> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	178	    start.checked_add(length).filter(|end| *end <= map_len)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	187	    position: Rc<Cell<u64>>,
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	191	    fn new(fmap: &'a FMap, ctx: *mut cli_ctx, position: Rc<Cell<u64>>) -> Self {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	270	    const WRITE_CHUNK: usize = 64 * 1024;
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	272	    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	358	            let write_len = (bytes.len() - offset).min(Self::WRITE_CHUNK);
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	534	    fn last_size(&self) -> u64 {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	640	    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	715	fn onenote_modern_parser_admitted(input_len: usize) -> bool {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	758	                    "OneNote input size is not representable in the 64-bit accounting domain",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	823	                    "attachment size does not fit the 64-bit accounting domain",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	87	const LHA_HEADER_ALLOCATION_LIMIT: usize = 1024 * 1024 * 1024;
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	998	            // size-limit hint: propagate detections, cancellation, and
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1054	            // size-limit hint: propagate detections, cancellation, and
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1265	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1277	            engine.maxscansize.saturating_sub((*ctx).scansize)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1333	fn alz_metadata_size(size: u64) -> Option<usize> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1678	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	179	fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	191	fn lha_member_range_end(start: u64, length: u64, map_len: u64) -> Option<u64> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	192	    start.checked_add(length).filter(|end| *end <= map_len)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	201	    position: Rc<Cell<u64>>,
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	205	    fn new(fmap: &'a FMap, ctx: *mut cli_ctx, position: Rc<Cell<u64>>) -> Self {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	285	    const WRITE_CHUNK: usize = 64 * 1024;
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	287	    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	374	            let write_len = (bytes.len() - offset).min(Self::WRITE_CHUNK);
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	583	    fn last_size(&self) -> u64 {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	690	    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	765	fn onenote_modern_parser_admitted(input_len: usize) -> bool {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	808	                    "OneNote input size is not representable in the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	876	                    "attachment size does not fit the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	88	const LHA_HEADER_ALLOCATION_LIMIT: usize = 1024 * 1024 * 1024;
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1067	    #[doc = " @brief Increment the count for a subsignature of a logical signature.\n\n This is and alternative to lsig_increment_subsig_match() for use in subsigs that don't have a specific offset,\n like byte-compare subsigs and fuzzy-hash subsigs."]
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1104	    pub sizehashes64: [*mut cli_sz_hash64; 3usize],
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1177	    pub filesize_range: *mut u64,

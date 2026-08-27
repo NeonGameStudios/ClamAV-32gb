@@ -11529,3 +11529,29 @@ current matcher replacement. Both legacy exact-child assertions returned
 layer, in both baseline and replacement links; this fail-closed result is
 recorded as an open corpus-oracle gap rather than claimed as a passing nested
 detection.
+
+## ALZ/Rust temporary-spool cleanup audit — 2026-08-27
+
+The shared Rust temporary spool previously performed close, unlink, and
+reservation cleanup only from `Drop`. A successful nested scan could therefore
+return before a cleanup failure was represented by the parser's return status;
+the error was visible only through outer sticky-state normalization. The same
+spool is used by ALZ, OneNote, and LHA/LZH.
+
+`TempSpool::cleanup()` now performs idempotent close/unlink/accounting cleanup,
+and `finish_cleanup()` is called at successful nested-scan boundaries for the
+reader helper, ALZ members, OneNote legacy and modern attachments/root input,
+and LHA members. Cleanup errors upgrade clean, verified, and `CL_BREAK`
+statuses while preserving detections and earlier parser errors; cleanup
+failures mark the containing parser incomplete and non-cacheable. `Drop`
+retains the same fail-visible behavior for abort and early-error paths without
+double-cleaning explicitly finalized spools. A direct Rust precedence
+regression and source guards cover the helper and call sites.
+
+The host has Rust 1.97.1 but lacks the required OpenSSL/pkg-config metadata;
+the reusable Linux container has Cargo 1.65 and cannot consume this fork's
+lockfile/dependency set offline. Therefore fresh Rust execution of this change
+is an explicit open gate. Existing ALZ production-linked and cached unit
+evidence remains unchanged. Full current-C ABI, sanitizer, certified Linux
+x86-64, materialized large-file/resource, production-CVD/service, Sonic1, and
+final parser-family qualification remain open.
