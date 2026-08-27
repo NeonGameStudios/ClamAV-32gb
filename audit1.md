@@ -10849,3 +10849,23 @@ unresolved against current internal dependencies, and out of overlay space.
 Instruction-stream bounds, full YARA evaluation, production signatures,
 sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## HFS+ declared-volume boundary audit — 2026-08-27
+
+The HFS+ parser already bounded individual tree headers, catalog nodes, and
+fork extents by `totalBlocks`, but it did not validate the declared volume
+extent against the containing fmap. A truncated image could therefore retain
+all metadata and payload blocks visited by the walker while its declared
+volume continued past EOF, allowing a clean-looking result.
+
+`hfsplus_volumeheader()` now checks the 64-bit product of `totalBlocks` and
+`blockSize`, requires the header to fit within the declared volume, and rejects
+any declared volume beyond the input map with `CL_EFORMAT`, sticky incomplete
+state, and disabled caching before tree admission. The new synthetic
+regression keeps the catalog inside the mapped bytes while truncating only the
+declared volume tail; it is registered and current-source GCC
+compile-checked. A temporary current-source production-linked GCC harness
+passes the same boundary with `CL_EFORMAT`, sticky incomplete state, and a
+non-cacheable fmap. Complete HFS+ corpus, sanitizer, certified Linux x86-64,
+materialized-large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.

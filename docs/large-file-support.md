@@ -8227,6 +8227,21 @@ specific incomplete result without becoming cacheable. Compiled HFS+ corpus,
 sanitizer/fault injection beyond writes, materialized multi-gigabyte output,
 certified Linux x86-64, and Sonic1 qualification remain release gates.
 
+## HFS+ declared-volume boundary — 2026-08-27
+
+HFS+ volume admission now checks the declared `totalBlocks * blockSize`
+extent against the containing fmap before reading any file-tree header. The
+minimum range containing the volume header is required as well, so a truncated
+partition cannot be accepted merely because the metadata and payload blocks
+visited by the walker happen to remain mapped. A declared-volume-over-EOF
+regression retains `CL_EFORMAT`, sticky incomplete state, and non-cacheability.
+
+The parser and regression compile with the production GCC configuration. A
+temporary current-source production-linked GCC harness passes the boundary
+with `CL_EFORMAT`, sticky incomplete state, and a non-cacheable fmap. Complete
+HFS+ corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 evidence remain open.
+
 ## TAR binary size-field preservation — 2026-08-24
 
 GNU base-256 TAR sizes are fixed-width binary fields and normally contain NUL

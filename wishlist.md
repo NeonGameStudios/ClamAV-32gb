@@ -5029,3 +5029,16 @@ and Sonic1 qualification as release gates.
   result. Keep full ISO corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and parser-family qualification
   open.
+
+## HFS+ declared-volume boundary audit — 2026-08-27
+
+- Validate the HFS+ `totalBlocks * blockSize` volume extent before tree or
+  fork admission, including the minimum range containing the volume header,
+  so a mapped prefix cannot be reported clean when the declared volume is
+  truncated at EOF. The exact tail-truncation regression is registered and
+  current-source GCC compile-checked. A temporary current-source
+  production-linked GCC harness passes the same boundary with sticky
+  incomplete/non-cacheable state; retain complete corpus, sanitizer, certified
+  Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification as release
+  gates.

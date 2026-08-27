@@ -220,6 +220,7 @@ static cl_error_t hfsplus_volumeheader(cli_ctx *ctx, hfsPlusVolumeHeader **heade
 {
     hfsPlusVolumeHeader *volHeader;
     const uint8_t *mPtr;
+    uint64_t volumeSize;
 
     if (!header) {
         return CL_ENULLARG;
@@ -283,6 +284,17 @@ static cl_error_t hfsplus_volumeheader(cli_ctx *ctx, hfsPlusVolumeHeader **heade
         cli_dbgmsg("hfsplus_volumeheader: Invalid blocksize\n");
         cli_mark_scan_incomplete(ctx, "HFS+ volume header has an invalid block size");
         return CL_EPARSE;
+    }
+
+    /* The volume header describes the complete mapped HFS+ partition.  Do
+     * this check before admitting any tree or fork extent so a truncated
+     * image cannot look clean merely because the metadata it happens to
+     * reference is still present before EOF. */
+    volumeSize = (uint64_t)volHeader->totalBlocks * volHeader->blockSize;
+    if (volHeader->totalBlocks == 0 || volumeSize < 1536 || volumeSize > ctx->fmap->len) {
+        cli_dbgmsg("hfsplus_volumeheader: declared volume exceeds the input map\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ declared volume exceeds the input map");
+        return CL_EFORMAT;
     }
 
     forkdata_to_host(&(volHeader->allocationFile));
