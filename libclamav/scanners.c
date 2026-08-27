@@ -649,8 +649,10 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                 deadline_status = cli_rar_checktimelimit(ctx, "RAR member extraction reached the configured time limit");
                 if (deadline_status != CL_SUCCESS) {
                     status = deadline_status;
-                    if (!ctx->engine->keeptmp)
-                        (void)cli_unlink(extract_fullpath);
+                    if (!ctx->engine->keeptmp && cli_unlink(extract_fullpath)) {
+                        cli_mark_scan_incomplete(ctx, "RAR extracted member could not be removed");
+                        status = cli_merge_cleanup_status(status, CL_EUNLINK);
+                    }
                     cli_scan_release_temporary(ctx, temporary_reserved);
                     temporary_reserved = 0;
                 } else if (unrar_ret != UNRAR_OK) {
@@ -662,8 +664,10 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                     status = cli_rar_error_to_scan_result(unrar_ret);
                     if (status == CL_SUCCESS || status == CL_BREAK)
                         status = CL_EUNPACK;
-                    if (!ctx->engine->keeptmp)
-                        (void)cli_unlink(extract_fullpath);
+                    if (!ctx->engine->keeptmp && cli_unlink(extract_fullpath)) {
+                        cli_mark_scan_incomplete(ctx, "RAR extracted member could not be removed");
+                        status = cli_merge_cleanup_status(status, CL_EUNLINK);
+                    }
                     cli_scan_release_temporary(ctx, temporary_reserved);
                     temporary_reserved = 0;
                 } else {
@@ -716,8 +720,10 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                     }
 
                     if (CL_SUCCESS != status) {
-                        if (!ctx->engine->keeptmp && extracted_file_exists)
-                            (void)cli_unlink(extract_fullpath);
+                        if (!ctx->engine->keeptmp && extracted_file_exists && cli_unlink(extract_fullpath)) {
+                            cli_mark_scan_incomplete(ctx, "RAR extracted member could not be removed");
+                            status = cli_merge_cleanup_status(status, CL_EUNLINK);
+                        }
                         goto done;
                     }
 

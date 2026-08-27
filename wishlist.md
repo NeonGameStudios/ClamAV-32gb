@@ -5914,3 +5914,13 @@ parser-family qualification remain open.
 - Add focused debug-dump read/open regressions and source guards. Keep complete
   TNEF corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.
+
+## RAR extracted-member failure cleanup audit — 2026-08-27
+
+- Preserve RAR extracted-member temporary-file removal failures on deadline,
+  decoder-error, and failed nested-scan exits as `CL_EUNLINK`/incomplete while
+  retaining earlier timeout, unpack, parser, resource, or detection results.
+- Add a source guard against ignored extracted-member unlink calls. Keep
+  optional-backend execution, complete RAR corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification open.

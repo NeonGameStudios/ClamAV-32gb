@@ -12018,3 +12018,13 @@ or write result. Focused regressions cover debug-dump input-read and output-
 open failures; current TNEF syntax, source guards, complete corpus,
 sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## RAR extracted-member failure cleanup audit — 2026-08-27
+
+RAR extraction previously ignored removal failures on deadline, decoder-error,
+and failed nested-scan exits. Those paths now mark the scan incomplete and
+merge `CL_EUNLINK` without hiding an earlier timeout, unpack, parser, resource,
+or detection result. The current source guard rejects ignored extracted-member
+unlink calls; optional-backend execution, complete RAR corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
