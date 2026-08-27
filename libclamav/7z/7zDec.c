@@ -640,13 +640,24 @@ static SRes CheckSupportedFolder(const CSzFolder *f)
   return SZ_ERROR_UNSUPPORTED;
 }
 
-static UInt64 GetSum(const UInt64 *values, UInt32 index)
+static SRes SzPackStreamPosition(const UInt64 *packSizes, UInt32 packIndex,
+    UInt64 startPos, UInt64 *position)
 {
-  UInt64 sum = 0;
+  UInt64 offset = 0;
   UInt32 i;
-  for (i = 0; i < index; i++)
-    sum += values[i];
-  return sum;
+
+  if (packSizes == 0 || position == 0)
+    return SZ_ERROR_PARAM;
+  for (i = 0; i < packIndex; i++)
+  {
+    if ((UInt64)-1 - offset < packSizes[i])
+      return SZ_ERROR_DATA;
+    offset += packSizes[i];
+  }
+  if ((UInt64)-1 - startPos < offset)
+    return SZ_ERROR_DATA;
+  *position = startPos + offset;
+  return SZ_OK;
 }
 
 #define CASE_BRA_CONV(isa) case k_ ## isa: isa ## _Convert(outBuffer, outSize, 0, 0); break;
@@ -670,7 +681,7 @@ static SRes SzFolder_Decode2(const CSzFolder *folder, const UInt64 *packSizes,
     if (IS_MAIN_METHOD((UInt32)coder->MethodID))
     {
       UInt32 si = 0;
-      UInt64 offset;
+      UInt64 packPosition;
       UInt64 inSize;
       Byte *outBufCur = outBuffer;
       SizeT outSizeCur = outSize;
@@ -703,9 +714,9 @@ static SRes SzFolder_Decode2(const CSzFolder *folder, const UInt64 *packSizes,
       }
       if (!packSizes)
         return SZ_ERROR_FAIL;
-      offset = GetSum(packSizes, si);
       inSize = packSizes[si];
-      RINOK(LookInStream_SeekTo(inStream, startPos + offset));
+      RINOK(SzPackStreamPosition(packSizes, si, startPos, &packPosition));
+      RINOK(LookInStream_SeekTo(inStream, packPosition));
 
       if (coder->MethodID == k_Copy)
       {
@@ -732,12 +743,13 @@ static SRes SzFolder_Decode2(const CSzFolder *folder, const UInt64 *packSizes,
     }
     else if (coder->MethodID == k_BCJ2)
     {
-      UInt64 offset = GetSum(packSizes, 1);
+      UInt64 packPosition;
       UInt64 s3Size = packSizes[1];
       SRes res;
       if (ci != 3)
         return SZ_ERROR_UNSUPPORTED;
-      RINOK(LookInStream_SeekTo(inStream, startPos + offset));
+      RINOK(SzPackStreamPosition(packSizes, 1, startPos, &packPosition));
+      RINOK(LookInStream_SeekTo(inStream, packPosition));
       tempSizes[2] = (SizeT)s3Size;
       if (tempSizes[2] != s3Size)
         return SZ_ERROR_MEM;
@@ -836,26 +848,6 @@ static size_t SzProgressOutStream_Write(void *pp, const void *data,
   if (p->status != SZ_OK)
     return 0;
   return written;
-}
-
-static SRes SzPackStreamPosition(const UInt64 *packSizes, UInt32 packIndex,
-    UInt64 startPos, UInt64 *position)
-{
-  UInt64 offset = 0;
-  UInt32 i;
-
-  if (packSizes == 0 || position == 0)
-    return SZ_ERROR_PARAM;
-  for (i = 0; i < packIndex; i++)
-  {
-    if ((UInt64)-1 - offset < packSizes[i])
-      return SZ_ERROR_DATA;
-    offset += packSizes[i];
-  }
-  if ((UInt64)-1 - startPos < offset)
-    return SZ_ERROR_DATA;
-  *position = startPos + offset;
-  return SZ_OK;
 }
 
 #define SZ_BRANCH_BUFFER_SIZE (1 << 18)

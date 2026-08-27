@@ -24057,6 +24057,70 @@ START_TEST(test_7z_bcj2_pack_position_overflow_is_rejected)
 }
 END_TEST
 
+START_TEST(test_7z_seek_position_overflow_is_fail_visible)
+{
+    static const uint8_t packed[] = {0};
+    CSzCoderInfo coder;
+    CSzFolder folder;
+    UInt32 pack_streams[] = {0};
+    UInt64 unpack_sizes[] = {1};
+    UInt64 pack_sizes[] = {1};
+    bcj2_test_seek_input source;
+    CLookToRead look;
+    uint8_t output[1] = {0};
+    ISzAlloc alloc = {SzAlloc, SzFree};
+
+    memset(&coder, 0, sizeof(coder));
+    coder.NumInStreams  = 1;
+    coder.NumOutStreams = 1;
+    coder.MethodID      = 0;
+    memset(&folder, 0, sizeof(folder));
+    folder.Coders           = &coder;
+    folder.PackStreams      = pack_streams;
+    folder.UnpackSizes      = unpack_sizes;
+    folder.NumCoders        = 1;
+    folder.NumPackStreams   = 1;
+    folder.NumUnpackStreams = 1;
+
+    bcj2_test_seek_init(&source, packed, sizeof(packed));
+    LookToRead_CreateVTable(&look, False);
+    look.realStream = &source.s;
+    LookToRead_Init(&look);
+
+    ck_assert_int_eq(SzFolder_Decode(&folder, pack_sizes, &look.s,
+                                     UINT64_MAX, output, sizeof(output), &alloc),
+                     SZ_ERROR_DATA);
+    ck_assert_int_eq(source.s.curpos, 0);
+}
+END_TEST
+
+START_TEST(test_7z_legacy_pack_position_overflow_is_fail_visible)
+{
+    static const uint8_t packed[] = {0};
+    CSzCoderInfo coders[4];
+    CSzBindPair bind_pairs[3];
+    UInt32 pack_streams[4];
+    UInt64 unpack_sizes[4] = {0, 0, 0, 0};
+    UInt64 pack_sizes[4] = {UINT64_MAX, 1, 0, 0};
+    CSzFolder folder;
+    bcj2_test_seek_input source;
+    CLookToRead look;
+    uint8_t output[1] = {0};
+    ISzAlloc alloc = {SzAlloc, SzFree};
+
+    bcj2_test_init_folder(&folder, coders, bind_pairs, pack_streams, unpack_sizes);
+    bcj2_test_seek_init(&source, packed, sizeof(packed));
+    LookToRead_CreateVTable(&look, False);
+    look.realStream = &source.s;
+    LookToRead_Init(&look);
+
+    ck_assert_int_eq(SzFolder_Decode(&folder, pack_sizes, &look.s, 0,
+                                     output, sizeof(output), &alloc),
+                     SZ_ERROR_DATA);
+    ck_assert_int_eq(source.s.curpos, 0);
+}
+END_TEST
+
 START_TEST(test_7z_truncated_header_is_fail_visible)
 {
     static const uint8_t data[] = {0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c};
@@ -40723,6 +40787,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_substream_size_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_input_time_limit_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_seek_position_overflow_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_legacy_pack_position_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_7z_map);
     tcase_add_checked_fixture(tc_7z_map, cl_setup, cl_teardown);

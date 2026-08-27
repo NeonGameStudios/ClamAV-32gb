@@ -56,6 +56,16 @@ GCC harness passes the overflow boundary, and the unit-test helper covers both
 overflow and declared-size overrun. Full 7-Zip corpus, sanitizer,
 production-CVD/service, Sonic1, and release qualification remain required.
 
+## 7-Zip signed-seek boundary — 2026-08-26
+
+The bundled 7-Zip `LookInStream_SeekTo()` helper now rejects archive
+coordinates above signed `Int64` capacity as `SZ_ERROR_DATA` instead of
+wrapping them before the seek callback. The legacy `SzFolder_Decode()` path is
+covered by a focused current-source GCC regression that passes 1/1 and leaves
+the source position unchanged. Full 7-Zip corpus, sanitizer, certified Linux
+x86-64, materialized large-folder, production-CVD/service, Sonic1, and release
+qualification remain required.
+
 ## Logical-expression parse-status propagation — 2026-08-26
 
 The logical matcher now rejects an out-of-range subsignature ID before it can

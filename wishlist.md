@@ -47,6 +47,14 @@
   7-Zip corpus, sanitizer, production-CVD/service, Sonic1, and release
   qualification open.
 
+## 7-Zip signed-seek boundary — 2026-08-26
+
+- Reject 7-Zip `UInt64` seek coordinates above signed `Int64` capacity before
+  the SDK callback can wrap them to a different location.
+- The legacy `SzFolder_Decode()` regression passes 1/1 with the input position
+  unchanged. Keep full 7-Zip corpus, sanitizer, production-CVD/service,
+  Sonic1, and release qualification open.
+
 ## Logical-expression parse-status propagation — 2026-08-26
 
 - Reject out-of-range logical subsignature IDs before indexing the fixed

@@ -46,6 +46,18 @@ output size. A crafted current-source GCC harness passes the `UInt64`
 overflow boundary; full 7-Zip corpus, sanitizer, production-CVD, service,
 Sonic1, and release qualification remain open.
 
+## 7-Zip signed-seek boundary — 2026-08-26
+
+The bundled 7-Zip `LookInStream_SeekTo()` helper accepted a `UInt64` archive
+coordinate and cast it directly to the SDK's signed `Int64` seek position. On
+the certified 64-bit profile, a coordinate above `INT64_MAX` could therefore
+wrap to a different location before the fmap seek callback saw it. The helper
+now rejects that boundary as `SZ_ERROR_DATA`, and the legacy `SzFolder_Decode()`
+pack-position arithmetic is covered by a focused current-source GCC harness
+that passes 1/1 with the source position unchanged. Full 7-Zip corpus,
+sanitizer, production-CVD,
+service, Sonic1, and release qualification remain open.
+
 ## Logical-expression parse-status propagation — 2026-08-26
 
 The logical matcher previously collapsed a malformed expression into an

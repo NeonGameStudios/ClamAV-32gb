@@ -33,7 +33,14 @@ SRes SeqInStream_ReadByte(ISeqInStream *stream, Byte *buf)
 
 SRes LookInStream_SeekTo(ILookInStream *stream, UInt64 offset)
 {
-  Int64 t = offset;
+  Int64 t;
+
+  /* The SDK seek callback uses a signed Int64 position. Do not let a
+     representable UInt64 archive coordinate wrap into a different location
+     before the callback sees it. */
+  if (offset > ((UInt64)-1 >> 1))
+    return SZ_ERROR_DATA;
+  t = (Int64)offset;
   return stream->Seek(stream, &t, SZ_SEEK_SET);
 }
 
