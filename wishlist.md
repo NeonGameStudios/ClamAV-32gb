@@ -5004,3 +5004,16 @@ and Sonic1 qualification as release gates.
 - Keep full logical-expression and production-signature corpus, sanitizer,
   certified Linux x86-64, materialized large-file, production-CVD/service,
   Sonic1, and parser-family qualification open.
+
+## Bytecode type-layout admission audit — 2026-08-27
+
+- Resolve parsed type layouts after the complete type table is available with
+  an explicit bounded traversal; reject recursive by-value arrays/structures,
+  empty or oversized layouts, invalid children/alignment, and constant
+  component products above the individual allocation ceiling.
+- The current-source bytecode and unit-test translation units compile with
+  production GCC warning flags. Recursive and UINT_MAX-array loader
+  regressions are registered but await a fresh production-linked TCase;
+  retain full bytecode fixture/interpreter/JIT corpus, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification as release gates.
