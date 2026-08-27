@@ -32,5 +32,6 @@ int cli_7unz(cli_ctx *, size_t);
 cl_error_t cli_7z_header_check(cli_ctx *, size_t);
 bool cli_7z_output_range_allowed(uint64_t, uint64_t, uint64_t);
 bool cli_7z_output_matches_declared(int, uint64_t, uint64_t);
+cl_error_t cli_7z_merge_cleanup_status(cl_error_t, cl_error_t);
 
 #endif

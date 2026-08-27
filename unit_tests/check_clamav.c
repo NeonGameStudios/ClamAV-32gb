@@ -24996,6 +24996,18 @@ START_TEST(test_7z_corpus_detects_embedded_mz)
 }
 END_TEST
 
+START_TEST(test_7z_cleanup_status_is_fail_visible)
+{
+    ck_assert_int_eq(cli_7z_merge_cleanup_status(CL_SUCCESS, CL_EWRITE), CL_EWRITE);
+    ck_assert_int_eq(cli_7z_merge_cleanup_status(CL_VERIFIED, CL_EUNLINK), CL_EUNLINK);
+    ck_assert_int_eq(cli_7z_merge_cleanup_status(CL_BREAK, CL_EWRITE), CL_EWRITE);
+    ck_assert_int_eq(cli_7z_merge_cleanup_status(CL_VIRUS, CL_EWRITE), CL_VIRUS);
+    ck_assert_int_eq(cli_7z_merge_cleanup_status(CL_EPARSE, CL_EUNLINK), CL_EPARSE);
+    ck_assert_int_eq(cli_7z_merge_cleanup_status(CL_EWRITE, CL_EUNLINK), CL_EWRITE);
+    ck_assert_int_eq(cli_7z_merge_cleanup_status(CL_BREAK, CL_SUCCESS), CL_BREAK);
+}
+END_TEST
+
 START_TEST(test_egg_sfx_header_admission)
 {
     static const uint8_t valid_header[] = {
@@ -41675,6 +41687,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_binary_data = tcase_create("binary_data");
     TCase *tc_7z = tcase_create("7z");
     TCase *tc_7z_map = tcase_create("7z_map");
+    TCase *tc_7z_cleanup = tcase_create("7z_cleanup");
     TCase *tc_7z_sfx = tcase_create("7z_sfx");
     TCase *tc_7z_sfx_corpus = tcase_create("7z_sfx_corpus");
     TCase *tc_sis_map = tcase_create("sis_map");
@@ -42263,6 +42276,8 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_7z_map, cl_setup, cl_teardown);
     tcase_add_test(tc_7z_map, test_7z_null_context_is_fail_visible);
     tcase_add_test(tc_7z_map, test_7z_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_7z_cleanup);
+    tcase_add_test(tc_7z_cleanup, test_7z_cleanup_status_is_fail_visible);
     suite_add_tcase(s, tc_7z_sfx);
     tcase_add_test(tc_7z_sfx, test_7z_sfx_header_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_7z_sfx_corpus);

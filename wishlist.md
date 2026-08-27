@@ -5539,3 +5539,11 @@ and Sonic1 qualification as release gates.
   mixed-generation timeout/corpus failures, so complete SZDD corpus, full-C
   execution, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## 7-Zip cleanup-status precedence audit — 2026-08-27
+
+- Upgrade `CL_BREAK` as well as clean/trusted statuses when temporary 7-Zip
+  output close or unlink fails, while preserving detections and earlier parser
+  errors; keep the direct status-precedence regression and complete 7-Zip/
+  7-Zip-SFX, sanitizer, certified Linux x86-64, materialized-large-file,
+  production-CVD/service, Sonic1, and parser-family qualification gates open.

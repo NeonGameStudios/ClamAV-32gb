@@ -11510,3 +11510,22 @@ fail-closed `CL_EUNPACK` before encrypted stream materialization; it is not
 counted as short-write injection evidence. Complete OLE/VBA/XLM corpus and
 fault matrix, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## 7-Zip cleanup-status precedence audit — 2026-08-27
+
+The 7-Zip temporary-output cleanup path marked close and unlink failures as
+incomplete, but only replaced clean or trusted statuses. An application abort
+(`CL_BREAK`) could therefore survive a cleanup failure and hide the stronger
+I/O result. `cli_7z_merge_cleanup_status()` now upgrades clean, trusted, and
+abort statuses to `CL_EWRITE` or `CL_EUNLINK`, while preserving detections and
+earlier parser/resource errors. The direct status-precedence regression is
+registered and source-guarded; complete 7-Zip/7-Zip-SFX corpus, sanitizer,
+certified Linux x86-64, materialized-large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain release gates.
+
+The reused `clam.7z` and prefixed SFX corpus cases were also re-run with the
+current matcher replacement. Both legacy exact-child assertions returned
+`CL_EPARSE` after the extracted PE reached a confirmed malformed InstallShield
+layer, in both baseline and replacement links; this fail-closed result is
+recorded as an open corpus-oracle gap rather than claimed as a passing nested
+detection.

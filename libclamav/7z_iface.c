@@ -448,18 +448,25 @@ bool cli_7z_output_matches_declared(int fd, uint64_t declared_size, uint64_t pro
     return true;
 }
 
+cl_error_t cli_7z_merge_cleanup_status(cl_error_t status, cl_error_t cleanup_status)
+{
+    if (cleanup_status == CL_SUCCESS)
+        return status;
+    if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+        return cleanup_status;
+    return status;
+}
+
 static void cli_7z_cleanup_temp(cli_ctx *ctx, int fd, const char *tmp_name, cl_error_t *status,
                                 uint64_t temporary_reserved)
 {
     if (close(fd) == -1) {
         cli_mark_scan_incomplete(ctx, "7-Zip temporary output could not be closed");
-        if (CL_SUCCESS == *status || CL_VERIFIED == *status)
-            *status = CL_EWRITE;
+        *status = cli_7z_merge_cleanup_status(*status, CL_EWRITE);
     }
     if (!ctx->engine->keeptmp && cli_unlink(tmp_name)) {
         cli_mark_scan_incomplete(ctx, "7-Zip temporary output could not be removed");
-        if (CL_SUCCESS == *status || CL_VERIFIED == *status)
-            *status = CL_EUNLINK;
+        *status = cli_7z_merge_cleanup_status(*status, CL_EUNLINK);
     }
     cli_scan_release_temporary(ctx, temporary_reserved);
 }
