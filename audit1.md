@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## Direct parser context evidence — 2026-08-27
+
+The current direct parser entries for DMG, XDP, HWPML, and HFS+ all classify
+null contexts as `CL_ENULLARG`, but their focused map cases previously
+covered only missing fmap/engine or structural paths. Dedicated null-context
+regressions are now registered for all four entries. Current-source
+production-linked GCC map cases pass DMG 9/9, XDP 3/3, HWPML 3/3, and HFS+
+13/13, including the expanded null-context checks. Complete parser corpora,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## RTF direct-entry context evidence — 2026-08-27
 
 The RTF direct parser already returned `CL_ENULLARG` for a null context and
@@ -63,7 +74,7 @@ The DMG direct parser validated context and fmap but later used
 cleanup. A valid fmap with no engine could therefore reach an unchecked
 engine dereference. The entry now returns `CL_ENULLARG` before trailer
 inspection for that caller error, with a dedicated one-byte fmap regression.
-The current-source production-linked GCC `dmg_map` case passes 8/8 and `dmg`
+The current-source production-linked GCC `dmg_map` case passes 9/9 and `dmg`
 passes 6/6. Complete DMG corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and parser-family
 qualification remain open.
@@ -74,7 +85,7 @@ The shared streaming MSXML helper accepted a valid context and fmap without
 an engine even though Base64/materialization callbacks use engine-owned
 temporary policy. It now returns `CL_ENULLARG` before time-limit or parser
 work, covering XDP and DMG callers; XDP has a dedicated no-engine regression.
-The rebuilt current-source production-linked GCC `xdp_map` case passes 2/2,
+The rebuilt current-source production-linked GCC `xdp_map` case passes 3/3,
 `xdp` passes 3/3, and `xdp_corpus` passes 1/1. The existing MSXML cases remain
 `msxml_map` 2/2, `msxml` 5/5, and `msxml_corpus` 1/1. Complete XDP/DMG/XML
 corpus, sanitizer, certified Linux x86-64, materialized large-file,
@@ -112,7 +123,7 @@ cleanup could later dereference `ctx->engine->keeptmp`. A valid fmap with no
 engine could therefore reach an unchecked engine dereference. The entry now
 returns `CL_ENULLARG` before XML traversal for that caller error, with a
 dedicated one-byte fmap regression. The current-source production-linked GCC
-`hwpml_map` case passes 2/2, the parser boundary case passes 2/2, and
+`hwpml_map` case passes 3/3, the parser boundary case passes 2/2, and
 `hwpml_corpus` passes 1/1. Complete HWPML/XML corpus, sanitizer, certified
 Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
 parser-family qualification remain open.
@@ -139,7 +150,7 @@ The HFS+ direct parser validated context and fmap but later used
 engine could therefore reach an unchecked engine dereference. The entry now
 returns `CL_ENULLARG` before HFS+ traversal for that caller error, with a
 dedicated one-byte fmap regression. The current-source production-linked GCC
-`hfs_map` case passes 12/12, and `hfs_inline` passes 1/1. The existing
+`hfs_map` case passes 13/13, and `hfs_inline` passes 1/1. The existing
 catalog-boundary fixture now asserts the earlier declared-volume admission
 result, which is authoritative after volume completeness was added. The
 `hfs_fork` callback/materialization case remains a mixed-harness rebuild gate

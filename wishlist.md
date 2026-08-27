@@ -1,5 +1,14 @@
 # Wishlist
 
+## Direct parser context evidence — 2026-08-27
+
+- Add and register null-context regressions for the DMG, XDP, HWPML, and HFS+
+  direct entries, alongside their existing map/engine checks. Current-source
+  production-linked GCC map cases pass DMG 9/9, XDP 3/3, HWPML 3/3, and HFS+
+  13/13, including the expanded null-context checks. Complete parser corpora,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## RTF direct-entry context evidence — 2026-08-27
 
 - Add and register a direct null-context regression alongside the existing
@@ -49,7 +58,7 @@
 - Keep `cli_scandmg()` fail-visible when a recognized fmap is supplied
   without the engine required by retained XML staging and cleanup; return
   `CL_ENULLARG` before trailer inspection.
-- The current-source production-linked GCC `dmg_map` case passes 8/8 and
+- The current-source production-linked GCC `dmg_map` case passes 9/9 and
   `dmg` passes 6/6. Keep complete DMG corpus, sanitizer, certified Linux
   x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification open.
@@ -59,7 +68,7 @@
 - Keep the shared streaming MSXML helper fail-visible when a recognized fmap
   is supplied without an engine required by Base64/materialization callbacks;
   return `CL_ENULLARG` before parser work.
-- The rebuilt current-source production-linked GCC `xdp_map` case passes 2/2,
+- The rebuilt current-source production-linked GCC `xdp_map` case passes 3/3,
   `xdp` passes 3/3, and `xdp_corpus` passes 1/1. Existing MSXML evidence
   remains `msxml_map` 2/2, `msxml` 5/5, and `msxml_corpus` 1/1. Keep complete
   XDP/DMG/XML corpus, sanitizer, certified Linux x86-64, materialized
@@ -92,7 +101,7 @@
 - Keep `cli_scanhwpml()` fail-visible when a recognized fmap is supplied
   without the engine required by decoded-attachment cleanup; return
   `CL_ENULLARG` before XML traversal or cleanup.
-- The current-source production-linked GCC `hwpml_map` case passes 2/2, the
+- The current-source production-linked GCC `hwpml_map` case passes 3/3, the
   parser boundary case passes 2/2, and `hwpml_corpus` passes 1/1. Keep
   complete HWPML/XML corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and parser-family qualification
@@ -116,7 +125,7 @@
 - Keep `cli_scanhfsplus()` fail-visible when a recognized fmap is supplied
   without the engine required by temporary-file cleanup; return `CL_ENULLARG`
   before HFS+ traversal or cleanup.
-- The current-source production-linked GCC `hfs_map` case passes 12/12 and
+- The current-source production-linked GCC `hfs_map` case passes 13/13 and
   `hfs_inline` passes 1/1. The catalog-boundary fixture records the earlier
   declared-volume admission result, while the `hfs_fork` callback/materialization
   case remains a mixed-harness rebuild gate after a pre-oracle crash. Keep

@@ -21766,6 +21766,12 @@ START_TEST(test_dmg_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_dmg_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_scandmg(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_dmg_missing_engine_is_fail_visible)
 {
     uint8_t data = 0;
@@ -21791,6 +21797,12 @@ START_TEST(test_xdp_missing_map_is_fail_visible)
     ck_assert_int_eq(cli_scanxdp(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "XDP input map is unavailable");
+}
+END_TEST
+
+START_TEST(test_xdp_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_scanxdp(NULL), CL_ENULLARG);
 }
 END_TEST
 
@@ -21868,6 +21880,12 @@ START_TEST(test_hwpml_missing_map_is_fail_visible)
     ck_assert_int_eq(cli_scanhwpml(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "HWPML input map is unavailable");
+}
+END_TEST
+
+START_TEST(test_hwpml_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_scanhwpml(NULL), CL_ENULLARG);
 }
 END_TEST
 
@@ -37625,6 +37643,12 @@ START_TEST(test_hfsplus_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hfsplus_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_scanhfsplus(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_hfsplus_missing_engine_is_fail_visible)
 {
     uint8_t data = 0;
@@ -41363,6 +41387,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hfs_inline, test_hfsplus_inline_compression_streams_large_output);
     suite_add_tcase(s, tc_hfs_map);
     tcase_add_checked_fixture(tc_hfs_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_hfs_map, test_hfsplus_null_context_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_missing_map_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_missing_engine_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_declared_volume_boundary_is_fail_visible);
@@ -41549,6 +41574,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_macho_timeout);
     tcase_add_test(tc_macho_timeout, test_macho_time_limit_is_fail_visible);
     tcase_add_test(tc_macho_timeout, test_macho_unibin_time_limit_is_fail_visible);
+    tcase_add_test(tc_dmg_map, test_dmg_null_context_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_missing_map_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_missing_engine_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_strict_base64_and_terminal_end_validation);
@@ -41559,6 +41585,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_dmg_map, test_dmg_invalid_trailer_is_fail_visible);
     suite_add_tcase(s, tc_xdp_map);
     tcase_add_checked_fixture(tc_xdp_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_xdp_map, test_xdp_null_context_is_fail_visible);
     tcase_add_test(tc_xdp_map, test_xdp_missing_map_is_fail_visible);
     tcase_add_test(tc_xdp_map, test_xdp_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_xdp_corpus);
@@ -41608,6 +41635,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ishield_map, test_ishield_missing_map_confirmed_entries_are_fail_visible);
     suite_add_tcase(s, tc_hwpml_map);
     tcase_add_checked_fixture(tc_hwpml_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_hwpml_map, test_hwpml_null_context_is_fail_visible);
     tcase_add_test(tc_hwpml_map, test_hwpml_missing_map_is_fail_visible);
     tcase_add_test(tc_hwpml_map, test_hwpml_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_hwpole2_corpus);
