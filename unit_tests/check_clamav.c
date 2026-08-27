@@ -26981,6 +26981,12 @@ START_TEST(test_rtf_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_rtf_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_scanrtf(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_riff_header_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {
@@ -42075,6 +42081,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_riff_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_null_context_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_missing_map_is_fail_visible);
+    tcase_add_test(tc_rtf_map, test_rtf_null_context_is_fail_visible);
     tcase_add_test(tc_riff_map, test_riff_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_structured_map);
     tcase_add_checked_fixture(tc_structured_map, cl_setup, cl_teardown);

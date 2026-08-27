@@ -1,5 +1,14 @@
 # Wishlist
 
+## RTF direct-entry context evidence — 2026-08-27
+
+- Add and register a direct null-context regression alongside the existing
+  RTF missing-map check. After rebuilding `rtf.c` from the authoritative source
+  to remove a stale-object mismatch, the current-source production-linked GCC
+  `rtf_map` case passes 10/10 and the parser case passes 1/1; complete RTF
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## PDF direct-entry context evidence — 2026-08-27
 
 - Add and register a direct null-context regression alongside the existing

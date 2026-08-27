@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## RTF direct-entry context evidence — 2026-08-27
+
+The RTF direct parser already returned `CL_ENULLARG` for a null context and
+an incomplete `CL_EPARSE` result for a recognized context without an input
+fmap. The focused `rtf_map` TCase only protected the missing-map path. A
+dedicated null-context regression is now registered beside it. After
+rebuilding `rtf.c` from the authoritative source to remove a stale-object
+mismatch, the current-source production-linked GCC `rtf_map` case passes
+10/10 and the parser case passes 1/1; complete RTF corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
+
 ## PDF direct-entry context evidence — 2026-08-27
 
 The public PDF parser already returned `CL_ENULLARG` for a null context, but
