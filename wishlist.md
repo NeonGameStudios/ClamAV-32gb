@@ -5612,8 +5612,8 @@ and Sonic1 qualification as release gates.
   checks with no diagnostics, and source guards cover the cleanup call sites.
   Existing focused production-linked results remain prior-object evidence;
   current-object execution, complete corpora, sanitizer, certified Linux
-  x86-64, materialized large-file, production-CVD/service, Sonic1, and
-  parser-family qualification remain open.
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
 
 ## XLM/OLE2 cleanup-status precedence audit — 2026-08-27
 
@@ -5812,5 +5812,15 @@ and Sonic1 qualification as release gates.
   helper; record PowerPoint temporary-output unlink failures as incomplete.
 - Current GCC syntax and source guards cover the handoffs; current-object
   execution, complete OLE2/VBA/PowerPoint corpora, sanitizer, certified Linux
-  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
+## MSXML temporary-output cleanup-status audit — 2026-08-27
+
+- Preserve `CL_EWRITE` for MSXML callback/Base64/streaming output close
+  failures and `CL_EUNLINK` for removals through the shared precedence helper;
+  retain earlier XML, callback, timeout, resource, or detection results.
+- Current GCC syntax and source guards cover the changed paths; current-object
+  execution, complete MSXML/OOXML/XDP/HWPML corpora, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification remain open.
