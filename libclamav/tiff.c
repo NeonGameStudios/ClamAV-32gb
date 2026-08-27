@@ -249,6 +249,11 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
         status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.InvalidIFDOffset");
         goto done;
     }
+    if (offset > map->len) {
+        cli_warnmsg("cli_parsetiff: first IFD offset exceeds the input map\n");
+        status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.IFDOffsetOutOfBounds");
+        goto done;
+    }
 
     /* each IFD represents a subfile, though only the first one normally matters */
     do {

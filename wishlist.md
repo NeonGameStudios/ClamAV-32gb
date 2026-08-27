@@ -4964,3 +4964,15 @@ and Sonic1 qualification as release gates.
   Keep full MSXML/XDP/HWPML corpus, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, and Sonic1 qualification
   as release gates.
+
+## TIFF first-IFD offset arithmetic audit — 2026-08-27
+
+- Reject a first IFD offset beyond the containing map before subtracting it
+  from `map->len`; the direct TIFF test verifies `CL_EPARSE`, sticky
+  incompleteness, the specific reason, and non-cacheability.
+- The existing focused production-linked TIFF case remains 8/8; the new ninth
+  direct regression is registered and compile-checked but still needs runtime
+  execution in a current-source production-linked harness. Keep full
+  TIFF/image corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  open.

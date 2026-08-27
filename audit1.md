@@ -10745,3 +10745,18 @@ reader and streaming parser. Production GCC syntax checks pass for the edited
 parser and full test translation unit. Full MSXML/XDP/HWPML corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain release gates.
+
+## TIFF first-IFD offset arithmetic audit — 2026-08-27
+
+The TIFF walker now rejects a first IFD offset beyond the containing map before
+using `map->len - offset` in the directory-entry bound calculation. This keeps
+the range proof ordered and prevents an out-of-range offset from being turned
+into a wrapped available-length quantity. A focused public parser regression
+verifies `CL_EPARSE`, sticky incompleteness, the specific reason, and
+non-cacheability. The existing production-linked TIFF case remains 8/8; the
+new ninth regression is registered and compile-checked but remains pending
+runtime execution in a current-source production-linked harness.
+
+Full TIFF/image corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain release gates.

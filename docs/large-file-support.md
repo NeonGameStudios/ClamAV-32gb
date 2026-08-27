@@ -8255,6 +8255,15 @@ non-cacheable. Complete CAB/SFX corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, Sonic1, and
 parser-family qualification remain release gates.
 
+## TIFF first-IFD range ordering
+
+TIFF now validates that the first IFD offset is within the containing map
+before subtracting it from `map->len` for directory-entry bounds. An
+out-of-range offset returns `CL_EPARSE`, marks the layer incomplete, and
+prevents caching. Full TIFF/image corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, and Sonic1 qualification
+remain release gates.
+
 ## MSXML bounded callback metadata
 
 Legacy and streaming MSXML callback paths use a fixed `MAX_ATTRIBS`
