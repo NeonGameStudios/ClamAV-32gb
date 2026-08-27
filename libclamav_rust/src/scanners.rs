@@ -30,9 +30,9 @@ use std::{
     rc::Rc,
 };
 
-use delharc::LhaDecodeReader;
+use delharc::{LhaDecodeReader, LhaError};
 use libc::c_void;
-use log::{debug, error, warn};
+use log::{debug, error};
 
 use crate::{
     alz::{Alz, AlzExtractionDecision, AlzExtractionLimits, Error as AlzError, ExtractSink},
@@ -74,10 +74,6 @@ unsafe fn parser_failure(
     status
 }
 
-unsafe fn parser_input_failure(ctx: *mut cli_ctx, parser: &str, err: impl std::fmt::Display) -> cl_error_t {
-    parser_failure(ctx, parser, cl_error_t_CL_EPARSE, err)
-}
-
 fn rust_reader_status(err: &io::Error, fallback: cl_error_t) -> cl_error_t {
     if err.kind() == io::ErrorKind::TimedOut {
         cl_error_t_CL_ETIMEOUT
@@ -85,6 +81,17 @@ fn rust_reader_status(err: &io::Error, fallback: cl_error_t) -> cl_error_t {
         cl_error_t_CL_EREAD
     } else {
         fallback
+    }
+}
+
+const LHA_HEADER_ALLOCATION_LIMIT: usize = 1024 * 1024 * 1024;
+
+fn lha_error_status(err: &LhaError<io::Error>, fallback: cl_error_t) -> cl_error_t {
+    match err {
+        LhaError::Io(io_err) => rust_reader_status(io_err, fallback),
+        LhaError::ResourceLimit(_) => cl_error_t_CL_ERESOURCE,
+        LhaError::MemoryAllocation(_) => cl_error_t_CL_EMEM,
+        _ => fallback,
     }
 }
 
@@ -167,11 +174,8 @@ fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool 
     chunk_len <= remaining
 }
 
-fn lha_member_range_fits(start: u64, length: u64, map_len: u64) -> bool {
-    match start.checked_add(length) {
-        Some(end) => end <= map_len,
-        None => false,
-    }
+fn lha_member_range_end(start: u64, length: u64, map_len: u64) -> Option<u64> {
+    start.checked_add(length).filter(|end| *end <= map_len)
 }
 
 /// Track the source position while delharc owns the bounded fmap reader.
@@ -900,14 +904,13 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
     debug!("Attempting to parse the LHA/LZH file data using the delharc crate.");
 
     let source_position = Rc::new(Cell::new(0u64));
-    let mut decoder = match LhaDecodeReader::new(LhaPositionReader::new(
-        &fmap,
-        ctx,
-        source_position.clone(),
-    )) {
+    let mut decoder = match LhaDecodeReader::new_with_allocation_limit(
+        LhaPositionReader::new(&fmap, ctx, source_position.clone()),
+        LHA_HEADER_ALLOCATION_LIMIT,
+    ) {
         Ok(result) => result,
         Err(err) => {
-            let io_err: io::Error = err.into();
+            let lha_err: LhaError<io::Error> = err.into();
             let status = check_scan_time_limit(ctx);
             return parser_failure(
                 ctx,
@@ -915,9 +918,9 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                 if status != cl_error_t_CL_SUCCESS {
                     status
                 } else {
-                    rust_reader_status(&io_err, cl_error_t_CL_EFORMAT)
+                    lha_error_status(&lha_err, cl_error_t_CL_EFORMAT)
                 },
-                io_err,
+                lha_err,
             );
         }
     };
@@ -937,22 +940,33 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
         // Get the file header.
         let header = decoder.header();
 
-        if !lha_member_range_fits(
+        let member_data_end = match lha_member_range_end(
             member_data_start,
             header.compressed_size,
             fmap.len() as u64,
         ) {
-            return parser_failure(
-                ctx,
-                "LHA/LZH",
-                cl_error_t_CL_EPARSE,
-                "member compressed range exceeds the input map",
-            );
-        }
+            Some(end) => end,
+            None => {
+                return parser_failure(
+                    ctx,
+                    "LHA/LZH",
+                    cl_error_t_CL_EPARSE,
+                    "member compressed range exceeds the input map",
+                );
+            }
+        };
 
         let filepath = header.parse_pathname();
         let filename = filepath.to_string_lossy();
         if header.is_directory() {
+            if header.compressed_size != 0 || header.original_size != 0 {
+                return parser_failure(
+                    ctx,
+                    "LHA/LZH",
+                    cl_error_t_CL_EPARSE,
+                    "directory member declares file data",
+                );
+            }
             debug!("Skipping directory {filename}");
         } else {
             debug!("Found file in LHA archive: {filename}");
@@ -1021,7 +1035,7 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                 return parser_failure(
                     ctx,
                     "LHA/LZH",
-                    cl_error_t_CL_EFORMAT,
+                    cl_error_t_CL_EUNPACK,
                     "member compression method is unsupported",
                 );
             }
@@ -1118,16 +1132,12 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                 }
             }
 
-            if bytes_read > 0 {
-                debug!("Read {bytes_read} bytes from file {filename} in the LHA archive.");
+            debug!("Read {bytes_read} bytes from file {filename} in the LHA archive.");
 
-                let ret = spool.scan(Some(&filename));
-                if ret != cl_error_t_CL_SUCCESS {
-                    debug!("spooled LHA member scan returned error: {}", ret);
-                    return ret;
-                }
-            } else {
-                debug!("Read zero-byte file.");
+            let ret = spool.scan(Some(&filename));
+            if ret != cl_error_t_CL_SUCCESS {
+                debug!("spooled LHA member scan returned error: {}", ret);
+                return ret;
             }
 
             index += 1;
@@ -1140,11 +1150,30 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                 member_data_start = source_position.get();
             }
             Ok(false) => {
+                let expected_position = match member_data_end.checked_add(1) {
+                    Some(position) => position,
+                    None => {
+                        return parser_failure(
+                            ctx,
+                            "LHA/LZH",
+                            cl_error_t_CL_ERESOURCE,
+                            "archive terminator position overflowed",
+                        );
+                    }
+                };
+                if source_position.get() != expected_position {
+                    return parser_failure(
+                        ctx,
+                        "LHA/LZH",
+                        cl_error_t_CL_EPARSE,
+                        "archive ended without the required zero terminator",
+                    );
+                }
                 debug!("No more files in the archive.");
                 break;
             }
             Err(err) => {
-                let io_err: io::Error = err.into();
+                let lha_err: LhaError<io::Error> = err.into();
                 let status = check_scan_time_limit(ctx);
                 return parser_failure(
                     ctx,
@@ -1152,9 +1181,9 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                     if status != cl_error_t_CL_SUCCESS {
                         status
                     } else {
-                        rust_reader_status(&io_err, cl_error_t_CL_EFORMAT)
+                        lha_error_status(&lha_err, cl_error_t_CL_EFORMAT)
                     },
-                    io_err,
+                    lha_err,
                 );
             }
         }

@@ -1,5 +1,24 @@
 # Wishlist
 
+## LHA/LZH completion and header-allocation audit — 2026-08-27
+
+- Keep every parsed header under the cumulative 1 GiB fallible allocation
+  admission in the provenance-pinned local `delharc` 0.6.1 fork; configured
+  cap failures remain `CL_ERESOURCE`, allocator failures remain `CL_EMEM`, and
+  the same limit must apply to every subsequent member header.
+- Keep physical EOF distinct from the required zero archive terminator. Reject
+  any `-lhd-` directory with nonzero compressed or original size, report
+  unsupported methods as incomplete `CL_EUNPACK`, and send zero-byte regular
+  members through the ordinary nested scanner so root/child `MaxFiles`
+  accounting remains inclusive.
+- The offline vendored decoder suite passes 13/13 plus doctests, the production
+  Rust archive rebuilds with the existing Rust 1.97.1 environment, and the
+  current-source production-linked GCC `rust_lha` case passes 9/9 including
+  all 13 nested-PNG corpus archives. Keep complete LHA variant corpus,
+  sanitizers, certified Linux x86-64, materialized large-file/resource
+  evidence, production-CVD/service parity, Sonic1, and final parser-family
+  qualification open.
+
 ## GIF LZW admission and image completion audit — 2026-08-27
 
 - Keep the image LZW minimum-code-size byte on the fixed-range reader: values

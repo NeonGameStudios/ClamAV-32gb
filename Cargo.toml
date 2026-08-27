@@ -4,5 +4,9 @@ members = [
     "libclamav_rust",
 ]
 
+exclude = [
+    "libclamav_rust/delharc",
+]
+
 [profile.dev.package."*"]
 opt-level = 2

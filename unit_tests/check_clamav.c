@@ -22114,6 +22114,171 @@ START_TEST(test_rust_lha_public_api_read_failure_is_fail_visible)
 }
 END_TEST
 
+static void build_lha_level0_header(uint8_t header[60], const char method[5],
+                                    uint32_t compressed_size, uint32_t original_size)
+{
+    static const uint8_t base_header[60] = {
+        0x3a, 0x00, 0x2d, 0x6c, 0x68, 0x64, 0x2d, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x7b, 0x62, 0x58, 0x10,
+        0x00, 0x18, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x5f,
+        0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x73, 0xff, 0x69,
+        0x6d, 0x61, 0x67, 0x65, 0x73, 0xff, 0x00, 0x00, 0x55, 0x00,
+        0xeb, 0x8a, 0xe3, 0x65, 0xff, 0x41, 0xe9, 0x03, 0xea, 0x03,
+    };
+    uint8_t checksum = 0;
+    size_t i;
+
+    memcpy(header, base_header, sizeof(base_header));
+    memcpy(header + 2, method, 5);
+    for (i = 0; i < 4; i++) {
+        header[7 + i]  = (uint8_t)(compressed_size >> (8U * i));
+        header[11 + i] = (uint8_t)(original_size >> (8U * i));
+    }
+    for (i = 2; i < sizeof(base_header); i++)
+        checksum = (uint8_t)(checksum + header[i]);
+    header[1] = checksum;
+}
+
+static cl_error_t scan_lha_public_archive(uint8_t *archive, size_t archive_size,
+                                          uint32_t maxfiles, bool *dont_cache)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine   = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->maxfiles = maxfiles;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, archive_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_LHA_LZH", NULL);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    *dont_cache = map->dont_cache_flag;
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    return ret;
+}
+
+START_TEST(test_rust_lha_requires_zero_terminator)
+{
+    uint8_t archive[61];
+    bool dont_cache;
+
+    build_lha_level0_header(archive, "-lhd-", 0, 0);
+    ck_assert_int_eq(scan_lha_public_archive(archive, 60, 0, &dont_cache), CL_EPARSE);
+    ck_assert(dont_cache);
+
+    archive[60] = 0;
+    ck_assert_int_eq(scan_lha_public_archive(archive, sizeof(archive), 0, &dont_cache), CL_SUCCESS);
+    ck_assert(!dont_cache);
+}
+END_TEST
+
+START_TEST(test_rust_lha_nonempty_directory_is_fail_visible)
+{
+    uint8_t archive[62];
+    bool dont_cache;
+
+    build_lha_level0_header(archive, "-lhd-", 1, 1);
+    archive[60] = 0x41;
+    archive[61] = 0;
+
+    ck_assert_int_eq(scan_lha_public_archive(archive, sizeof(archive), 0, &dont_cache), CL_EPARSE);
+    ck_assert(dont_cache);
+}
+END_TEST
+
+START_TEST(test_rust_lha_unsupported_method_is_explicit)
+{
+    uint8_t archive[61];
+    bool dont_cache;
+
+    build_lha_level0_header(archive, "-pm1-", 0, 0);
+    archive[60] = 0;
+
+    ck_assert_int_eq(scan_lha_public_archive(archive, sizeof(archive), 0, &dont_cache), CL_EUNPACK);
+    ck_assert(dont_cache);
+}
+END_TEST
+
+START_TEST(test_rust_lha_empty_member_counts_toward_maxfiles)
+{
+    uint8_t archive[61];
+    bool dont_cache;
+
+    build_lha_level0_header(archive, "-lh0-", 0, 0);
+    archive[60] = 0;
+
+    ck_assert_int_eq(scan_lha_public_archive(archive, sizeof(archive), 1, &dont_cache), CL_EMAXFILES);
+    ck_assert(dont_cache);
+    ck_assert_int_eq(scan_lha_public_archive(archive, sizeof(archive), 2, &dont_cache), CL_SUCCESS);
+    ck_assert(!dont_cache);
+}
+END_TEST
+
+START_TEST(test_rust_lha_level3_header_allocation_is_bounded)
+{
+    uint8_t archive[32] = {0};
+    const uint32_t first_header_len = (uint32_t)CLI_MAX_ALLOCATION + 1U;
+    const uint32_t long_header_len  = first_header_len + (uint32_t)sizeof(archive);
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t i;
+
+    archive[0] = 4;
+    memcpy(archive + 2, "-lh0-", 5);
+    archive[20] = 3;
+    for (i = 0; i < 4; i++) {
+        archive[24 + i] = (uint8_t)(long_header_len >> (8U * i));
+        archive[28 + i] = (uint8_t)(first_header_len >> (8U * i));
+    }
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse            = CL_SCAN_PARSE_ARCHIVE;
+    map                      = fmap_open_memory(archive, sizeof(archive), NULL);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_LHA_LZH;
+    layer.size               = sizeof(archive);
+    layer.fmap               = map;
+
+    ck_assert_int_eq(scan_lha_lzh(&ctx), CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Rust parser resource admission failed");
+    ck_assert(map->dont_cache_flag);
+
+    fmap_free(map);
+}
+END_TEST
+
 START_TEST(test_rust_lha_truncated_zero_output_member_is_fail_visible)
 {
     /* A valid level-0 directory header followed by no member data. The
@@ -41879,6 +42044,11 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_rust_lha, cl_setup, cl_teardown);
     tcase_add_test(tc_rust_lha, test_rust_lha_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_public_api_read_failure_is_fail_visible);
+    tcase_add_test(tc_rust_lha, test_rust_lha_requires_zero_terminator);
+    tcase_add_test(tc_rust_lha, test_rust_lha_nonempty_directory_is_fail_visible);
+    tcase_add_test(tc_rust_lha, test_rust_lha_unsupported_method_is_explicit);
+    tcase_add_test(tc_rust_lha, test_rust_lha_empty_member_counts_toward_maxfiles);
+    tcase_add_test(tc_rust_lha, test_rust_lha_level3_header_allocation_is_bounded);
     tcase_add_test(tc_rust_lha, test_rust_lha_truncated_zero_output_member_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_corpus_detects_nested_png);
     suite_add_tcase(s, tc_rust_alz);

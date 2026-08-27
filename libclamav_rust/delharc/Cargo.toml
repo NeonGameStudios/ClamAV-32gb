@@ -1,0 +1,28 @@
+[package]
+name = "delharc"
+version = "0.6.1"
+authors = ["Rafal Michalski <royaltm75@gmail.com>"]
+edition = "2021"
+description = "A library for parsing and extracting files from LHA/LZH archives."
+categories = ["compression"]
+keywords = ["LHA", "LZH", "UNLHA"]
+homepage = "https://github.com/royaltm/rust-delharc"
+repository = "https://github.com/royaltm/rust-delharc"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+exclude = [".github", ".gitignore", "tests/*", "examples/*"]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+default = ["std", "lh1", "lz"]
+std = ["chrono/std", "chrono/clock"]
+lh1 = []
+lhx = []
+lz = []
+
+[dependencies]
+chrono = { version = "0.4", default-features = false }
+bitflags = "2.5"
+memchr = { version = "2", default-features = false }

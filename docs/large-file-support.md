@@ -3,6 +3,32 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## LHA/LZH completion and header allocation — 2026-08-27
+
+LHA/LZH header parsing now uses a provenance-pinned local fork of `delharc`
+0.6.1 with a caller-configured cumulative allocation bound. Filename,
+extended-area, and chained extra-header storage uses fallible reserve before
+reading attacker-declared bytes. ClamAV applies the 1 GiB individual-allocation
+ceiling to the first and every later member header; configured admission and
+allocator failures preserve `CL_ERESOURCE` and `CL_EMEM`, respectively.
+
+Archive completion is also explicit. A physical EOF no longer substitutes for
+the required zero end marker. `-lhd-` directories are accepted only when both
+compressed and original sizes are zero, unsupported methods return incomplete
+`CL_EUNPACK`, and empty regular files enter the same nested scanner as nonempty
+members so root plus child `MaxFiles` accounting is inclusive.
+
+The vendored decoder passes 13/13 offline unit tests and its doctests, and the
+production Rust static library rebuilds offline with Rust 1.97.1 in the
+established container. The authoritative-source production-linked GCC
+`rust_lha` case passes 9/9, including the >1 GiB synthetic level-3 declaration
+without performing that allocation, terminator/cacheability controls,
+directory and unsupported-method status checks, empty-child limits, read and
+range failures, and exact nested PNG detection from all 13 materialized LHA
+corpus archives. Complete LHA variant corpus, sanitizers, certified Linux
+x86-64, materialized large-file/resource measurements, production-CVD/service
+parity, Sonic1, and final parser-family qualification remain release gates.
+
 ## GIF LZW admission and image completion — 2026-08-27
 
 GIF image traversal now reads the required LZW minimum-code-size byte through

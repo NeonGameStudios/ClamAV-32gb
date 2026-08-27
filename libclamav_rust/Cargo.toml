@@ -25,7 +25,10 @@ onenote_parser = { git = "https://github.com/Cisco-Talos/onenote.rs.git", branch
 hex-literal = "0.4"
 bzip2-rs = "0.1"
 byteorder = "1.5"
-delharc = "0.6"
+# Pinned local fork of 0.6.1 with caller-configurable cumulative header
+# allocation admission. Keep this path dependency synchronized with the
+# provenance documented in libclamav_rust/delharc/README.md.
+delharc = { path = "delharc" }
 clam-sigutil = { git = "https://github.com/Cisco-Talos/clamav-signature-util", tag = "1.2.4" }
 tar = "0.4.43"
 md5 = "0.7.0"

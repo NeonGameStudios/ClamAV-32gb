@@ -1,5 +1,35 @@
 # Independent read-only audit of audit.md
 
+## LHA/LZH completion and header-allocation audit — 2026-08-27
+
+The enabled LHA path had five independent completion gaps. The decoder treated
+physical EOF as the same result as the required zero end marker; data-bearing
+`-lhd-` directory records were skipped; unsupported member methods returned a
+generic format error; zero-byte regular members bypassed the nested scan and
+therefore `MaxFiles`; and `delharc` could reserve attacker-declared level-3
+header storage before any ClamAV allocation ceiling was consulted.
+
+ClamAV now uses a provenance-pinned local fork of `delharc` 0.6.1. Header
+filename, extended-area, and extra-header allocations use fallible reserve and
+a cumulative 1 GiB admission bound that is retained across every member; cap
+and allocator failures remain distinct `CL_ERESOURCE` and `CL_EMEM` results.
+The scanner requires the consumed source position to include a real zero end
+marker, rejects a directory unless both declared sizes are zero, returns
+`CL_EUNPACK` for unsupported methods, and invokes the ordinary nested scan even
+for an empty file.
+
+The vendored decoder passes 13/13 unit tests and its doctests offline, including
+pre-read and cumulative allocation-limit regressions. The release Rust static
+library builds offline with Rust 1.97.1 in the established container. A fresh
+authoritative-source GCC object and production-linked `rust_lha` case pass 9/9:
+valid-versus-missing terminator, nonempty directory, unsupported method,
+inclusive empty-child `MaxFiles`, >1 GiB level-3 header admission, direct and
+public read failures, truncated member range, and exact nested PNG detection
+across all 13 materialized corpus archives. Complete LHA variant corpus,
+sanitizers, certified Linux x86-64, materialized large-file/resource evidence,
+production-CVD/service parity, Sonic1, and final parser-family qualification
+remain open, so `CL_TYPE_LHA_LZH` stays pending.
+
 ## GIF LZW admission and image completion audit — 2026-08-27
 
 The GIF image path previously advanced over the required LZW minimum-code-size
