@@ -5652,3 +5652,15 @@ and Sonic1 qualification as release gates.
   helper calls. Current-object execution, complete corpora, sanitizer,
   certified Linux x86-64, materialized large-file, production-CVD/service,
   Sonic1, and parser-family qualification remain open.
+
+## ISO9660 and UDF cleanup-status precedence audit — 2026-08-27
+
+- Make ISO9660 and UDF temporary-output close/unlink cleanup fail-visible
+  through the shared helper: preserve `CL_EWRITE` versus `CL_EUNLINK`,
+  upgrade clean/verified/`CL_BREAK`, and retain detections or earlier
+  parser/resource errors as authoritative.
+- The current source guards cover both parser call sites. Existing focused
+  ISO9660 and UDF production-linked evidence remains prior-object evidence;
+  current-object execution, complete corpora, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification remain open.

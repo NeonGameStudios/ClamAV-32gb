@@ -172,13 +172,11 @@ static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsign
 cleanup:
     if (close(fd) == -1) {
         cli_mark_scan_incomplete(iso->ctx, "ISO temporary output could not be closed");
-        if (CL_SUCCESS == ret || CL_VERIFIED == ret)
-            ret = CL_EWRITE;
+        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
     }
     if (!iso->ctx->engine->keeptmp && cli_unlink(tmpf)) {
         cli_mark_scan_incomplete(iso->ctx, "ISO temporary output could not be removed");
-        if (CL_SUCCESS == ret || CL_VERIFIED == ret)
-            ret = CL_EUNLINK;
+        ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
     }
 
     free(tmpf);

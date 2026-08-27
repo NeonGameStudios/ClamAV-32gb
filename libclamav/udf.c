@@ -159,8 +159,7 @@ done:
     if (-1 != fd) {
         if (close(fd) != 0) {
             cli_mark_scan_incomplete(ctx, "UDF temporary output could not be closed");
-            if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-                status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
         fd = -1;
     }
@@ -168,9 +167,7 @@ done:
         if (NULL != tmpf) {
             if (cli_unlink(tmpf)) {
                 cli_mark_scan_incomplete(ctx, "UDF temporary output could not be removed");
-                if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK) {
-                    status = CL_EUNLINK;
-                }
+                status = cli_merge_cleanup_status(status, CL_EUNLINK);
             }
         }
     }

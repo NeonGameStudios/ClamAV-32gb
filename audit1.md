@@ -11680,3 +11680,18 @@ script public-API results remain prior-object evidence; current-object
 execution, complete corpora, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and parser-family qualification
 remain open.
+
+## ISO9660 and UDF cleanup-status precedence audit — 2026-08-27
+
+ISO9660 and UDF temporary-output cleanup marked close and unlink failures
+incomplete, but each parser used local precedence checks that did not include
+`CL_BREAK`. Both paths now use the shared cleanup-status precedence helper:
+close failures remain `CL_EWRITE`, unlink failures remain `CL_EUNLINK`, clean,
+verified, and `CL_BREAK` statuses are upgraded, and detections or earlier
+parser/resource errors remain authoritative.
+
+The current ISO9660 and UDF sources pass the established source-guard suite;
+their existing focused production-linked cases remain prior-object evidence
+for this cleanup-only change. Current-object execution, complete ISO/UDF
+corpora, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
