@@ -11629,3 +11629,20 @@ cleanup call sites. The existing focused TAR and HWP production-linked results
 remain prior-object evidence; current-object full execution, complete HWP/TAR
 corpora, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## XLM/OLE2 cleanup-status precedence audit — 2026-08-27
+
+XLM cleanup handled the macro input descriptor, temporary output stream, and
+temporary-file removal as cleanup-only details and upgraded only clean or
+trusted results. A `CL_BREAK` result could therefore survive a required close
+or unlink failure. The input close now preserves `CL_EREAD`, output close
+preserves `CL_EWRITE`, and removal preserves `CL_EUNLINK`; the shared helper
+upgrades clean/verified/`CL_BREAK` while preserving detections and earlier
+parser/resource errors, with each failure marking the OLE2 layer incomplete.
+
+The current XLM source passes the established GCC syntax check with its
+pre-existing signedness warnings. Source guards require all three cleanup
+status classes and call sites. Existing OLE2/XLM production-linked results
+remain prior-object evidence; current-object execution, complete OLE/VBA/XLM
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.

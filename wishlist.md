@@ -5614,3 +5614,16 @@ and Sonic1 qualification as release gates.
   current-object execution, complete corpora, sanitizer, certified Linux
   x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification remain open.
+
+## XLM/OLE2 cleanup-status precedence audit — 2026-08-27
+
+- Make XLM macro input, temporary-output, and temporary-file cleanup
+  fail-visible through the shared helper: preserve `CL_EREAD`, `CL_EWRITE`,
+  and `CL_EUNLINK`, upgrade clean/verified/`CL_BREAK`, and keep detections or
+  earlier parser/resource errors authoritative.
+- The current XLM source passes the established GCC syntax check with its
+  pre-existing signedness warnings, and source guards cover all three cleanup
+  status classes and call sites. Current-object execution, complete
+  OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.

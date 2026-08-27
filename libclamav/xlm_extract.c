@@ -5151,24 +5151,24 @@ done:
     CLI_FREE_AND_SET_NULL(drawinggroup);
 
     if (in_fd != -1) {
-        if (close(in_fd) != 0 && (status == CL_SUCCESS || status == CL_VERIFIED)) {
+        if (close(in_fd) != 0) {
             cli_mark_scan_incomplete(ctx, "XLM macro input could not be closed");
-            status = CL_EREAD;
+            status = cli_merge_cleanup_status(status, CL_EREAD);
         }
         in_fd = -1;
     }
 
     if (NULL != out_file) {
-        if (fclose(out_file) != 0 && (status == CL_SUCCESS || status == CL_VERIFIED)) {
+        if (fclose(out_file) != 0) {
             cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be closed");
-            status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
         out_file = NULL;
         out_fd   = -1;
     } else if (-1 != out_fd) {
-        if (close(out_fd) != 0 && (status == CL_SUCCESS || status == CL_VERIFIED)) {
+        if (close(out_fd) != 0) {
             cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be closed");
-            status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
         out_fd = -1;
     }
@@ -5181,8 +5181,7 @@ done:
     if (tempfile && !ctx->engine->keeptmp) {
         if (remove(tempfile) != 0) {
             cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be removed");
-            if (status == CL_SUCCESS || status == CL_VERIFIED)
-                status = CL_EUNLINK;
+            status = cli_merge_cleanup_status(status, CL_EUNLINK);
         }
     }
     CLI_FREE_AND_SET_NULL(tempfile);
