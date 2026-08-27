@@ -23106,7 +23106,7 @@ format-width	libclamav/xar.c	1358	                        cli_dbgmsg("cli_scanxa
 format-width	libclamav/xar.c	1371	                                   "avail_in %llu, avail_out %llu.\n",
 format-width	libclamav/xar.c	1406	                        cli_dbgmsg("cli_scanxar: cli_writen error writing lzma temp file for %llu bytes.\n",
 format-width	libclamav/xar.c	1456	                            cli_dbgmsg("cli_scanxar: cli_writen error %zu bytes @ %zu.\n", writelen, at + copied);
-format-width	libclamav/xar.c	1548	        cli_dbgmsg("cli_scanxar: %u checksum errors and %u extraction errors.\n",
+format-width	libclamav/xar.c	1546	        cli_dbgmsg("cli_scanxar: %u checksum errors and %u extraction errors.\n",
 format-width	libclamav/xar.c	724	                cli_dbgmsg("cli_scanxar: streaming subdocument failed with status %d.\n", rc);
 format-width	libclamav/xar.c	938	    /* cli_dbgmsg("hdr.size %i\n", hdr.size); */
 format-width	libclamav/xar.c	939	    /* cli_dbgmsg("hdr.version %i\n", hdr.version); */

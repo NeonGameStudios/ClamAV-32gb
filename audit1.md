@@ -11796,3 +11796,19 @@ OLE2/XLM production-linked evidence remains prior-object evidence for this
 cleanup-only change; current-object execution, complete OLE/VBA/XLM corpus,
 sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## XAR cleanup-status handoff audit — 2026-08-27
+
+XAR member and TOC cleanup returned explicit close/unlink errors, but the
+callers applied them only to clean or verified results. A `CL_BREAK` result
+could therefore be converted to clean after cleanup failure. Both teardown
+handoffs now use the shared cleanup-status precedence helper, retaining
+`CL_EWRITE`/`CL_EUNLINK`, upgrading `CL_BREAK`, and preserving detections or
+earlier parser/resource errors.
+
+The current XAR source passes the established GCC syntax check and source
+guards cover the cleanup handoff. Existing focused XAR production-linked
+evidence remains prior-object evidence for this cleanup-only change;
+current-object execution, complete corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.

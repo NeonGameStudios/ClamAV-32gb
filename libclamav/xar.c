@@ -1520,8 +1520,7 @@ int cli_scanxar(cli_ctx *ctx)
 
 exit_tmpfile:
     cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname, &member_reserved);
-    if ((CL_SUCCESS == rc || CL_VERIFIED == rc) && CL_SUCCESS != cleanup_rc)
-        rc = cleanup_rc;
+    rc = cli_merge_cleanup_status(rc, cleanup_rc);
     if (a_hash_ctx != NULL)
         xar_hash_final(a_hash_ctx, a_hash_result, a_hash);
     if (e_hash_ctx != NULL)
@@ -1537,8 +1536,7 @@ exit_reader:
 
 exit_toc:
     cleanup_rc = xar_cleanup_temp_file(ctx, toc_fd, tocname, &toc_reserved);
-    if ((CL_SUCCESS == rc || CL_VERIFIED == rc) && CL_SUCCESS != cleanup_rc)
-        rc = cleanup_rc;
+    rc = cli_merge_cleanup_status(rc, cleanup_rc);
     if (rc != CL_SUCCESS && rc != CL_VIRUS && rc != CL_BREAK && !ctx->scan_incomplete)
         cli_mark_scan_incomplete(ctx, "XAR inspection ended before completion");
     if (rc == CL_BREAK)

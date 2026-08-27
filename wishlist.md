@@ -5735,3 +5735,13 @@ and Sonic1 qualification as release gates.
   object execution, complete OLE/VBA/XLM corpus, sanitizer, certified Linux
   x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification remain open.
+
+## XAR cleanup-status handoff audit — 2026-08-27
+
+- Apply returned XAR member/TOC close and unlink cleanup statuses through the
+  shared helper for every prior result, including `CL_BREAK`; preserve
+  `CL_EWRITE`/`CL_EUNLINK` and detections or earlier parser errors.
+- Current source guards and GCC syntax evidence cover the handoff. Complete
+  XAR corpus, current-object execution, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.
