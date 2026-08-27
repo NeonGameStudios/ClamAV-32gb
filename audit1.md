@@ -104,6 +104,17 @@ injected read/close-failure execution, production CVD/service, sanitizer,
 certified Linux x86-64, materialized large-file, Sonic1, and release
 qualification remain open.
 
+## Recognized ignored-type fail-closed audit — 2026-08-27
+
+The `CL_TYPE_IGNORED` dispatch branch intentionally has no parser and bypasses
+the raw matcher. It previously did not set the shared incomplete state, so a
+caller that explicitly supplied a recognized ignored type could receive a
+clean-looking result. The branch now records an unsupported parser boundary,
+returns `CL_EPARSE`, marks the layer non-cacheable, and has a focused
+`cli_magic_scan()` regression. Full ingress parity, production-CVD/service,
+sanitizer, materialized large-file, Sonic1, and release qualification remain
+open.
+
 ## MIME direct-context and first-line admission audit — 2026-08-27
 
 The public `cli_mbox()` entry checked its directory, context, and fmap, but the

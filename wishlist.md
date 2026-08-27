@@ -6002,6 +6002,14 @@ parser-family qualification remain open.
   service parity, sanitizer, materialized large-file, Sonic1, and release
   qualification open.
 
+## Recognized ignored-type fail-closed audit — 2026-08-27
+
+- Keep recognized `CL_TYPE_IGNORED` inputs explicit: no parser/raw pass is
+  available, so return `CL_EPARSE`, mark incomplete, and prevent clean caching.
+- Retain focused execution coverage and keep full ingress parity, production
+  CVD/service, sanitizer, materialized large-file, Sonic1, and release evidence
+  open.
+
 ## Descriptor child-scan engine boundary audit — 2026-08-27
 
 - Reject a descriptor child scan before dereferencing a missing engine; mark

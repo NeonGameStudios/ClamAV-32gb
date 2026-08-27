@@ -16940,6 +16940,42 @@ START_TEST(test_cli_magic_scan_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ignored_file_type_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.dboptions = CL_DB_COMPILED;
+    options.parse     = ~0U;
+    map               = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+    layer.type               = CL_TYPE_IGNORED;
+
+    ret = cli_magic_scan(&ctx, CL_TYPE_IGNORED);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "recognized ignored file type parser is unsupported");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_binhex_truncated_data_fork_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -42855,6 +42891,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_binhex_header_lengths_are_not_read_before_header_completion);
     tcase_add_test(tc_cl, test_binhex_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_map_is_fail_visible);
+    tcase_add_test(tc_cl, test_ignored_file_type_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_short_resource_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_output_temporary_limit_is_fail_visible);
