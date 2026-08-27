@@ -3987,6 +3987,18 @@ deadline, close, and nested-scan checks remain in force; compiled allocation
 fault injection, sanitizer, and full HTML/MHTML corpus qualification remain
 release gates.
 
+## UnRAR metadata-width and filename termination audit — 2026-08-27
+
+The UnRAR bridge now reconstructs packed and unpacked member sizes with
+`uint64_t` arithmetic instead of a signed high-word shift, and explicitly
+terminates the bounded metadata filename before scanner path handling. This
+prevents undefined behavior for high 32-bit size words and out-of-bounds
+`strlen()` on a maximum-length archive name. The bridge compiles under
+warning-enabled GCC C++ flags and source guards cover both fixes. Full enabled-
+UnRAR extraction corpus, backend fault injection, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and parser-
+family qualification remain release gates.
+
 ## TNEF zero-length attribute checksum accounting — 2026-08-23
 
 TNEF zero-length attributes now consume their mandatory two-byte checksum

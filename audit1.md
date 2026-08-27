@@ -10886,3 +10886,21 @@ The current-source production-linked GCC `udf_map` case passes 9/9 and the
 completion, and the new ICB mismatch regression. Complete UDF corpus,
 sanitizer, certified Linux x86-64, materialized large file, production-CVD/
 service, Sonic1, and parser-family qualification remain release gates.
+
+## UnRAR metadata-width and filename termination audit — 2026-08-27
+
+The UnRAR bridge reconstructed 64-bit member sizes by left-shifting a signed
+`int64_t` high word. High words with the sign bit set therefore reached
+undefined signed-shift behavior before being assigned to the unsigned metadata
+fields. It also copied the filename with a bound equal to the destination's
+usable prefix without explicitly terminating it; a maximum-length header name
+could make the scanner's subsequent `strlen()` and basename handling read past
+the metadata object.
+
+The bridge now combines both size halves in `uint64_t` arithmetic and copies at
+most `sizeof(filename) - 1` bytes before explicitly writing the terminating
+NUL. The current source compiles under warning-enabled GCC C++ flags; source
+guards require both unsigned size reconstructions and the termination write.
+Full enabled-UnRAR extraction corpus, backend fault injection, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain release gates.

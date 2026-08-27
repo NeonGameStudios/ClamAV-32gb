@@ -6049,8 +6049,8 @@ fixed-width-integer	libclamav/yc.h	29	int yc_decrypt(cli_ctx *, char *, unsigned
 fixed-width-integer	libclamav_rust/src/ffi_util.rs	74	/// int64_t result;
 fixed-width-integer	libclammspack/test/md5.h	40	typedef uint32_t md5_uint32;
 fixed-width-integer	libclamunrar_iface/unrar_iface.cpp	203	cl_unrar_error_t unrar_open(const char* filename, void** hArchive, char** comment, uint32_t* comment_size, uint8_t debug_flag)
-fixed-width-integer	libclamunrar_iface/unrar_iface.cpp	361	    file_metadata->unpack_size = headerData.UnpSize + ((int64_t)headerData.UnpSizeHigh << 32);
-fixed-width-integer	libclamunrar_iface/unrar_iface.cpp	362	    file_metadata->pack_size   = headerData.PackSize + ((int64_t)headerData.PackSizeHigh << 32);
+fixed-width-integer	libclamunrar_iface/unrar_iface.cpp	361	    file_metadata->unpack_size = (uint64_t)headerData.UnpSize + ((uint64_t)headerData.UnpSizeHigh << 32);
+fixed-width-integer	libclamunrar_iface/unrar_iface.cpp	362	    file_metadata->pack_size   = (uint64_t)headerData.PackSize + ((uint64_t)headerData.PackSizeHigh << 32);
 fixed-width-integer	libclamunrar_iface/unrar_iface.h	60	    uint64_t pack_size;
 fixed-width-integer	libclamunrar_iface/unrar_iface.h	61	    uint64_t unpack_size;
 fixed-width-integer	libclamunrar_iface/unrar_iface.h	63	    uint32_t crc;
@@ -17617,10 +17617,10 @@ native-width-integer	libclamunrar_iface/unrar_iface.cpp	176	    size_t i = 0;
 native-width-integer	libclamunrar_iface/unrar_iface.cpp	182	static char* unrar_strndup(const char* s, size_t n)
 native-width-integer	libclamunrar_iface/unrar_iface.cpp	185	    size_t len;
 native-width-integer	libclamunrar_iface/unrar_iface.cpp	331	    int read_header_ret = 0;
-native-width-integer	libclamunrar_iface/unrar_iface.cpp	400	    int process_file_ret    = 0;
-native-width-integer	libclamunrar_iface/unrar_iface.cpp	445	    int process_file_ret    = 0;
-native-width-integer	libclamunrar_iface/unrar_iface.cpp	483	int CALLBACK CallbackProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2)
-native-width-integer	libclamunrar_iface/unrar_iface.cpp	485	    int status = 1; /* -1 to cancel, 1 to continue */
+native-width-integer	libclamunrar_iface/unrar_iface.cpp	401	    int process_file_ret    = 0;
+native-width-integer	libclamunrar_iface/unrar_iface.cpp	446	    int process_file_ret    = 0;
+native-width-integer	libclamunrar_iface/unrar_iface.cpp	484	int CALLBACK CallbackProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2)
+native-width-integer	libclamunrar_iface/unrar_iface.cpp	486	    int status = 1; /* -1 to cancel, 1 to continue */
 native-width-integer	libclamunrar_iface/unrar_iface.cpp	80	int CALLBACK CallbackProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2);
 native-width-integer	libclamunrar_iface/unrar_iface.h	64	    unsigned int encrypted;
 native-width-integer	libclamunrar_iface/unrar_iface.h	70	typedef int (*cl_unrar_progress_callback_t)(void *context);
@@ -23197,11 +23197,11 @@ format-width	libclamunrar/timefn.cpp	232	      swprintf(DateStr,MaxSize,L"%u-%02
 format-width	libclamunrar/timefn.cpp	234	      swprintf(DateStr,MaxSize,L"%u-%02u-%02u %02u:%02u",lt.Year,lt.Month,lt.Day,lt.Hour,lt.Minute);
 format-width	libclamunrar_iface/unrar_iface.cpp	168	            unrar_dbgmsg("unrar_retcode: Unexpected error code: %d\n", retcode);
 format-width	libclamunrar_iface/unrar_iface.cpp	270	            unrar_dbgmsg("unrar_open: Unknown archive comment state %u!\n", archiveData->CmtState);
-format-width	libclamunrar_iface/unrar_iface.cpp	370	    unrar_dbgmsg("unrar_peek_file_header:   Directory?:    %u\n", file_metadata->is_dir);
-format-width	libclamunrar_iface/unrar_iface.cpp	371	    unrar_dbgmsg("unrar_peek_file_header:   Target Dir:    %u\n", headerData.DirTarget);
-format-width	libclamunrar_iface/unrar_iface.cpp	372	    unrar_dbgmsg("unrar_peek_file_header:   RAR Version:   %u\n", headerData.UnpVer);
-format-width	libclamunrar_iface/unrar_iface.cpp	381	        unrar_dbgmsg("unrar_peek_file_header:   link type %d, target %ls\n", headerData.RedirType, headerData.RedirName);
-format-width	libclamunrar_iface/unrar_iface.cpp	515	                unrar_dbgmsg("CallbackProc: Extracting %lu bytes of data to a provided buffer.\n", P2);
+format-width	libclamunrar_iface/unrar_iface.cpp	371	    unrar_dbgmsg("unrar_peek_file_header:   Directory?:    %u\n", file_metadata->is_dir);
+format-width	libclamunrar_iface/unrar_iface.cpp	372	    unrar_dbgmsg("unrar_peek_file_header:   Target Dir:    %u\n", headerData.DirTarget);
+format-width	libclamunrar_iface/unrar_iface.cpp	373	    unrar_dbgmsg("unrar_peek_file_header:   RAR Version:   %u\n", headerData.UnpVer);
+format-width	libclamunrar_iface/unrar_iface.cpp	382	        unrar_dbgmsg("unrar_peek_file_header:   link type %d, target %ls\n", headerData.RedirType, headerData.RedirName);
+format-width	libclamunrar_iface/unrar_iface.cpp	516	                unrar_dbgmsg("CallbackProc: Extracting %lu bytes of data to a provided buffer.\n", P2);
 format-width	libfreshclam/dns.c	138	        logg(LOGG_WARNING, "Broken TXT record (txtlen = %d, size = %d)\n", txtlen, size);
 format-width	libfreshclam/libfreshclam.c	1006	                strftime(retry_after_string, 26, "%Y-%m-%d %H:%M:%S", tm_info);
 format-width	libfreshclam/libfreshclam.c	1066	            logg(LOGG_WARNING, "fc_download_url_databases: fc_download_url_database failed: %s (%d)\n", fc_strerror(ret), ret);
@@ -34931,8 +34931,10 @@ offset-size-arithmetic	libclamunrar_iface/unrar_iface.cpp	174	static size_t unra
 offset-size-arithmetic	libclamunrar_iface/unrar_iface.cpp	192	    alloc = (char*)malloc(len + 1);
 offset-size-arithmetic	libclamunrar_iface/unrar_iface.cpp	203	cl_unrar_error_t unrar_open(const char* filename, void** hArchive, char** comment, uint32_t* comment_size, uint8_t debug_flag)
 offset-size-arithmetic	libclamunrar_iface/unrar_iface.cpp	277	        *comment_size = MIN(archiveData->CmtSize, archiveData->CmtBufSize);
-offset-size-arithmetic	libclamunrar_iface/unrar_iface.cpp	361	    file_metadata->unpack_size = headerData.UnpSize + ((int64_t)headerData.UnpSizeHigh << 32);
-offset-size-arithmetic	libclamunrar_iface/unrar_iface.cpp	362	    file_metadata->pack_size   = headerData.PackSize + ((int64_t)headerData.PackSizeHigh << 32);
+offset-size-arithmetic	libclamunrar_iface/unrar_iface.cpp	361	    file_metadata->unpack_size = (uint64_t)headerData.UnpSize + ((uint64_t)headerData.UnpSizeHigh << 32);
+offset-size-arithmetic	libclamunrar_iface/unrar_iface.cpp	362	    file_metadata->pack_size   = (uint64_t)headerData.PackSize + ((uint64_t)headerData.PackSizeHigh << 32);
+offset-size-arithmetic	libclamunrar_iface/unrar_iface.cpp	363	    strncpy(file_metadata->filename, headerData.FileName, sizeof(file_metadata->filename) - 1);
+offset-size-arithmetic	libclamunrar_iface/unrar_iface.cpp	364	    file_metadata->filename[sizeof(file_metadata->filename) - 1] = '\0';
 offset-size-arithmetic	libclamunrar_iface/unrar_iface.h	62	    char filename[1024 + 1];
 offset-size-arithmetic	libclamunrar_iface/unrar_iface.h	72	cl_unrar_error_t unrar_open(const char *filename, void **hArchive, char **comment, uint32_t *comment_size, uint8_t debug_flag);
 offset-size-arithmetic	libfreshclam/dns.c	118	        if (pt > answend - 10) {

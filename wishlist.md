@@ -105,6 +105,15 @@
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.
 
+## UnRAR metadata-width and filename termination audit — 2026-08-27
+
+- Reconstruct UnRAR packed/unpacked sizes with unsigned 64-bit arithmetic and
+  explicitly NUL-terminate the bounded metadata filename before scanner path
+  handling. The bridge passes warning-enabled GCC C++ compilation and source
+  guards; retain enabled-UnRAR extraction corpus, backend fault injection,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification gates.
+
 ## TIFF first-IFD runtime evidence — 2026-08-27
 
 - The current-source production-linked GCC `tiff` case passes 9/9, including

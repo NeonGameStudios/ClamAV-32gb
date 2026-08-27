@@ -358,9 +358,10 @@ cl_unrar_error_t unrar_peek_file_header(void* hArchive, unrar_metadata_t* file_m
         goto done;
     }
 
-    file_metadata->unpack_size = headerData.UnpSize + ((int64_t)headerData.UnpSizeHigh << 32);
-    file_metadata->pack_size   = headerData.PackSize + ((int64_t)headerData.PackSizeHigh << 32);
-    strncpy(file_metadata->filename, headerData.FileName, 1024);
+    file_metadata->unpack_size = (uint64_t)headerData.UnpSize + ((uint64_t)headerData.UnpSizeHigh << 32);
+    file_metadata->pack_size   = (uint64_t)headerData.PackSize + ((uint64_t)headerData.PackSizeHigh << 32);
+    strncpy(file_metadata->filename, headerData.FileName, sizeof(file_metadata->filename) - 1);
+    file_metadata->filename[sizeof(file_metadata->filename) - 1] = '\0';
     file_metadata->crc       = headerData.FileCRC;
     file_metadata->encrypted = (headerData.Flags & RHDF_ENCRYPTED) ? 1 : 0;
     file_metadata->is_dir    = (headerData.Flags & RHDF_DIRECTORY) ? 1 : 0;
