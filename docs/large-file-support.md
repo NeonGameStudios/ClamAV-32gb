@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## XAR parser engine admission — 2026-08-27
+
+`cli_scanxar()` now rejects a valid input map without its required engine with
+`CL_ENULLARG`, before shared limit checks, timing, TOC traversal, or temporary
+output cleanup. The current-source production-linked GCC `xar_map` regression
+passes 2/2; `xar` passes 9/9, `xar_metadata` 1/1, `xar_corpus` 1/1, and
+`xar_subdoc` 1/1. Complete XAR parser-family, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## OLE2 extraction engine and options admission — 2026-08-27
 
 `cli_ole2_extract()` now rejects a valid input map without its required engine

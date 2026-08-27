@@ -41011,6 +41011,7 @@ END_TEST
 
 static const TTest *test_hwp3_missing_options_is_fail_visible;
 static const TTest *test_ole2_missing_options_is_fail_visible;
+static const TTest *test_xar_missing_engine_is_fail_visible;
 
 static Suite *test_cl_suite(void)
 {
@@ -41393,6 +41394,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xar_metadata);
     suite_add_tcase(s, tc_xar_map);
     tcase_add_test(tc_xar_map, test_xar_missing_map_is_fail_visible);
+    tcase_add_test(tc_xar_map, test_xar_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_xar_corpus);
     tcase_add_checked_fixture(tc_xar_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_xar_corpus, test_xar_corpus_detects_embedded_mz);
@@ -43347,6 +43349,23 @@ START_TEST(test_ole2_missing_options_is_fail_visible)
     ctx.fmap   = map;
 
     ck_assert_int_eq(cli_ole2_extract(NULL, &ctx, NULL, NULL, NULL, NULL), CL_ENULLARG);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_xar_missing_engine_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scanxar(&ctx), CL_ENULLARG);
 
     cl_fmap_close(map);
 }

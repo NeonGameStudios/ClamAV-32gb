@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## XAR parser engine admission — 2026-08-27
+
+The XAR direct parser validated context and fmap but did not validate the
+engine required by `cli_checklimits()` and temporary-output cleanup. A valid
+map with no engine could therefore reach an unchecked dereference. The entry
+now returns `CL_ENULLARG` before timing, TOC, or member work, with a dedicated
+one-byte fmap regression. The current-source production-linked GCC `xar_map`
+case passes 2/2; `xar` passes 9/9, `xar_metadata` 1/1, `xar_corpus` 1/1, and
+`xar_subdoc` 1/1. Complete XAR parser-family, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## OneNote public compatibility fallback validation — 2026-08-27
 
 The public `OneNote::from_bytes()` compatibility API returned a lazy iterator

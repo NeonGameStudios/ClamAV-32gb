@@ -1,5 +1,16 @@
 # Wishlist
 
+## XAR parser engine admission — 2026-08-27
+
+- Keep `cli_scanxar()` fail-visible when a recognized fmap is supplied without
+  the engine required by shared limit checks and temporary-output cleanup;
+  return `CL_ENULLARG` before timing, TOC, or member work.
+- The current-source production-linked GCC `xar_map` case passes 2/2; `xar`
+  passes 9/9, `xar_metadata` 1/1, `xar_corpus` 1/1, and `xar_subdoc` 1/1.
+  Keep complete XAR parser-family, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and release
+  qualification open.
+
 ## HWP3 direct-entry options admission — 2026-08-27
 
 - Keep `cli_scanhwp3()` fail-visible when a valid fmap and engine are supplied

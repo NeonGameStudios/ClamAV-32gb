@@ -883,6 +883,8 @@ int cli_scanxar(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "XAR input map is unavailable");
         return CL_EPARSE;
     }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
 
     memset(&strm, 0x00, sizeof(z_stream));
 
