@@ -40,6 +40,7 @@ struct mspack_system_ex {
     cli_ctx *ctx;
     bool time_limit_exceeded;
     bool read_failure;
+    bool close_failure;
     const char *time_limit_reason;
 };
 
@@ -183,9 +184,10 @@ static void mspack_fmap_close(struct mspack_file *file)
     if (!mspack_handle)
         return;
 
-    if (mspack_handle->type == FILETYPE_FILENAME)
-        if (mspack_handle->f)
-            fclose(mspack_handle->f);
+    if (mspack_handle->type == FILETYPE_FILENAME && mspack_handle->f) {
+        if (fclose(mspack_handle->f) != 0 && mspack_handle->system_ex != NULL)
+            mspack_handle->system_ex->close_failure = true;
+    }
 
     memset(mspack_handle, 0, (sizeof(*mspack_handle)));
     free(mspack_handle);
@@ -736,12 +738,17 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
             ret = CL_ETIMEOUT;
             goto done;
         }
-        if (ops_ex.read_failure) {
-            cli_mark_scan_incomplete(ctx, "CAB member input could not be read completely");
-            ret = CL_EREAD;
-            goto done;
-        }
-        if (ret) {
+    if (ops_ex.read_failure) {
+        cli_mark_scan_incomplete(ctx, "CAB member input could not be read completely");
+        ret = CL_EREAD;
+        goto done;
+    }
+    if (ops_ex.close_failure) {
+        cli_mark_scan_incomplete(ctx, "CAB member output could not be closed");
+        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
+        goto done;
+    }
+    if (ret) {
             /* Salvage mode may leave a truncated member on disk. Never let
              * that partial object replace an extraction failure: content
              * beyond the truncation point would otherwise be reported clean. */
@@ -933,6 +940,11 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         if (ops_ex.read_failure) {
             cli_mark_scan_incomplete(ctx, "CHM member input could not be read completely");
             ret = CL_EREAD;
+            goto done;
+        }
+        if (ops_ex.close_failure) {
+            cli_mark_scan_incomplete(ctx, "CHM member output could not be closed");
+            ret = cli_merge_cleanup_status(ret, CL_EWRITE);
             goto done;
         }
         if (ret) {

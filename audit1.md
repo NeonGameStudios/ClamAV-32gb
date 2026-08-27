@@ -140,6 +140,18 @@ case passes 2/2; `xar` passes 9/9, `xar_metadata` 1/1, `xar_corpus` 1/1, and
 x86-64, materialized large-file, production-CVD/service, Sonic1, and release
 qualification remain open.
 
+## MSPack CAB/CHM output-close audit — 2026-08-27
+
+The MSPack callback closed extracted CAB/CHM output files without reporting
+`fclose()` failure to the scanner, so an output flush failure could be lost
+after an otherwise successful extraction. The callback now records close
+failure in its decoder state, and both scanners mark the layer incomplete and
+return `CL_EWRITE` while preserving earlier timeout, read, parser, or detection
+results. The current source passes the production warning-enabled GCC syntax
+check and source guards; current-object close-failure execution, complete
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## OneNote public compatibility fallback validation — 2026-08-27
 
 The public `OneNote::from_bytes()` compatibility API returned a lazy iterator

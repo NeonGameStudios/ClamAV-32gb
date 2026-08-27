@@ -5348,6 +5348,11 @@ contains unit_tests/check_clamav.c 'TCase *tc_cvd      = tcase_create("cvd_api")
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_cvd, test_cl_load);'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);'
 contains docs/largefile-capabilities.tsv 'production-cvd-ingress'
+contains libclamav/libmspack.c 'bool close_failure;'
+contains libclamav/libmspack.c 'mspack_handle->system_ex->close_failure = true;'
+contains libclamav/libmspack.c 'CAB member output could not be closed'
+contains libclamav/libmspack.c 'CHM member output could not be closed'
+contains docs/largefile-capabilities.tsv 'mspack-output-close'
 
 if ! awk '
     /^[[:space:]]*#[[:space:]]*(if|ifdef|ifndef)([[:space:]]|$)/ { depth++; next }

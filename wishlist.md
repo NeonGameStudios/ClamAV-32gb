@@ -2425,6 +2425,16 @@ large-file, and Sonic1 qualification open.
 - The PDF ARC4 helper now carries native `size_t` lengths, removing the final
   encrypted-stream truncation cast; the deliberate 1 GiB PDF decoder boundary
   and parser-family qualification remain open.
+
+## MSPack CAB/CHM output-close audit — 2026-08-27
+
+- Preserve CAB/CHM extracted-output `fclose()` failures as `CL_EWRITE` and
+  incomplete results through the decoder callback state, without hiding an
+  earlier timeout, read, parser, or detection result.
+- The current source passes the production warning-enabled GCC syntax check and
+  source guards. Keep close-failure execution, complete corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and release qualification open.
 - PDF packed object references now reject object-number and generation-width
   overflow instead of aliasing another object; full malformed-reference corpus
   and parser-family qualification remain open.
