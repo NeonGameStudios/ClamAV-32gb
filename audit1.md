@@ -8871,6 +8871,19 @@ direct production-linked regression asserts the metadata reason and
 non-cacheable state. Broader compiled XAR corpus, sanitizer, and Sonic1
 qualification remain release gates.
 
+## XAR checksum-context allocation — 2026-08-26
+
+The XAR TOC parser treated a failed `cl_hash_init()` for an explicitly
+requested SHA-1 or MD5 checksum as though the checksum were absent. That
+could allow a member to continue through extraction without validating a
+checksum that the TOC required. The parser now distinguishes requested
+checksum algorithms from the intentionally unsupported/absent cases and
+returns `CL_EMEM` with sticky incomplete state when the corresponding hash
+context cannot be allocated. This is source-level fail-closed evidence; the
+existing current-source XAR, metadata, subdocument, and corpus executions
+remain valid, while allocator-fault, sanitizer, production-CVD/service,
+materialized large-file, and Sonic1 qualification remain release gates.
+
 ## RIFF missing-map admission — 2026-08-25
 
 The confirmed RIFF exploit parser previously returned `CL_ENULLARG` when a

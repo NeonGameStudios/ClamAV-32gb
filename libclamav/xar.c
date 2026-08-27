@@ -789,6 +789,11 @@ static void *xar_hash_init(int hash, void **sc, void **mc)
     }
 }
 
+static bool xar_hash_is_requested(int hash)
+{
+    return hash == XAR_CKSUM_SHA1 || hash == XAR_CKSUM_MD5;
+}
+
 static void xar_hash_update(void *hash_ctx, void *data, unsigned long size, int hash)
 {
     if (!hash_ctx || !data || !size)
@@ -1128,6 +1133,14 @@ int cli_scanxar(cli_ctx *ctx)
 
         a_hash_ctx = xar_hash_init(a_hash, &a_sc, &a_mc);
         e_hash_ctx = xar_hash_init(e_hash, &e_sc, &e_mc);
+        if ((xar_hash_is_requested(a_hash) && a_hash_ctx == NULL) ||
+            (xar_hash_is_requested(e_hash) && e_hash_ctx == NULL)) {
+            cli_mark_scan_incomplete(ctx, a_hash_ctx == NULL && xar_hash_is_requested(a_hash)
+                                              ? "XAR archived checksum context could not be allocated"
+                                              : "XAR extracted checksum context could not be allocated");
+            rc = CL_EMEM;
+            goto exit_tmpfile;
+        }
 
         switch (encoding) {
             case CL_TYPE_GZ: {
