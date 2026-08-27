@@ -252,15 +252,13 @@ static cl_error_t cli_untar_finish_member(cli_ctx *ctx, int *fd, const char *ful
 
     if (close(*fd) == -1) {
         cli_mark_scan_incomplete(ctx, "TAR temporary output could not be closed");
-        if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-            ret = CL_EWRITE;
+        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
     }
     *fd = -1;
 
     if (!ctx->engine->keeptmp && cli_unlink(fullname)) {
         cli_mark_scan_incomplete(ctx, "TAR temporary output could not be removed");
-        if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-            ret = CL_EUNLINK;
+        ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
     }
 
     if (temporary_reserved)

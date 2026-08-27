@@ -5601,3 +5601,16 @@ and Sonic1 qualification as release gates.
   execution, corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and parser-family qualification
   remain open.
+
+## HWP and TAR cleanup-status precedence audit — 2026-08-27
+
+- Make HWP decompressed output, HWPML decoded output, and TAR member staging
+  cleanup fail-visible through the shared helper: preserve `CL_EWRITE` versus
+  `CL_EUNLINK`, upgrade clean/verified/`CL_BREAK`, and keep detections or
+  earlier parser/resource errors authoritative.
+- Current HWP and TAR sources pass the established warning-enabled GCC syntax
+  checks with no diagnostics, and source guards cover the cleanup call sites.
+  Existing focused production-linked results remain prior-object evidence;
+  current-object execution, complete corpora, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification remain open.

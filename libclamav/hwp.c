@@ -222,14 +222,12 @@ dc_end:
     }
     if (close(ofd) != 0) {
         cli_mark_scan_incomplete(ctx, "HWP decompressed temporary output could not be closed");
-        if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-            ret = CL_EWRITE;
+        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
     }
     if (!ctx->engine->keeptmp) {
         if (cli_unlink(tmpname)) {
             cli_mark_scan_incomplete(ctx, "HWP decompressed temporary output could not be removed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-                ret = CL_EUNLINK;
+            ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
         }
     }
     free(tmpname);
@@ -2477,13 +2475,11 @@ hwpml_end:
     if (df >= 0) {
         if (close(df) != 0) {
             cli_mark_scan_incomplete(ctx, "HWPML decoded temporary output could not be closed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-                ret = CL_EWRITE;
+            ret = cli_merge_cleanup_status(ret, CL_EWRITE);
         }
         if (!(ctx->engine->keeptmp) && cli_unlink(tempfile)) {
             cli_mark_scan_incomplete(ctx, "HWPML decoded temporary output could not be removed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-                ret = CL_EUNLINK;
+            ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
         }
         free(tempfile);
     }

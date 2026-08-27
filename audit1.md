@@ -11613,3 +11613,19 @@ regression covers the parser contract. Full current-object production-linked
 InstallShield execution, corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and parser-family
 qualification remain open.
+
+## HWP and TAR cleanup-status precedence audit — 2026-08-27
+
+The HWP decompressed-output, HWPML decoded-output, and TAR member staging
+paths marked close and unlink failures incomplete, but upgraded only clean or
+trusted results. They now use the shared cleanup-status precedence helper:
+close failures remain `CL_EWRITE`, unlink failures remain `CL_EUNLINK`,
+clean/verified/`CL_BREAK` results are upgraded, and detections or earlier
+parser/resource errors are preserved.
+
+The current HWP and TAR sources both pass the established warning-enabled GCC
+syntax checks with no diagnostics. Source guards require the HWP and TAR
+cleanup call sites. The existing focused TAR and HWP production-linked results
+remain prior-object evidence; current-object full execution, complete HWP/TAR
+corpora, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
