@@ -40954,6 +40954,12 @@ START_TEST(test_iso_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_iso_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_scaniso(NULL, 32768), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_sis_missing_engine_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -41507,6 +41513,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_iso_map, test_iso_joliet_name_conversion_truncation_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_directory_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_file_extent_respects_volume_space);
+    tcase_add_test(tc_iso_map, test_iso_null_context_is_fail_visible);
     suite_add_tcase(s, tc_iso);
     tcase_add_checked_fixture(tc_iso, cl_setup, cl_teardown);
     tcase_add_test(tc_iso, test_iso_corpus_detects_embedded_png);

@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## ISO direct parser context evidence — 2026-08-27
+
+The ISO direct entry already classified missing maps and missing engines, but
+the focused `iso_map` case lacked a null-context assertion. A dedicated
+`cli_scaniso(NULL, …)` regression is now registered. The current-source
+production-linked GCC `iso_map` case passes 14/14, and the existing `iso`
+corpus case passes 1/1 across the materialized logo fixtures with exact nested
+PNG matching. Complete ISO corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## InstallShield direct parser context evidence — 2026-08-27
 
 The confirmed InstallShield MSI and legacy direct entries already returned
@@ -256,7 +267,7 @@ after validating only context and fmap. A valid fmap with no engine could
 therefore dereference unavailable state during a file extraction. The entry
 now returns `CL_ENULLARG` before descriptor traversal or extraction. The
 current-source production-linked GCC `iso_map` case includes the new
-missing-engine regression and passes 13/13; the existing materialized `iso`
+missing-engine and null-context regressions and passes 14/14; the existing materialized `iso`
 case remains 1/1. Full ISO corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and parser-family
 qualification remain open.

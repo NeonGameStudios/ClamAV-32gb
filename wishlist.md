@@ -1,5 +1,15 @@
 # Wishlist
 
+## ISO direct parser context evidence — 2026-08-27
+
+- Add and register a direct null-context regression alongside the existing ISO
+  missing-map, missing-engine, read-failure, and extent-boundary checks. The
+  current-source production-linked GCC `iso_map` case passes 14/14, and the
+  existing `iso` corpus case passes 1/1 across the materialized logo fixtures
+  with exact nested PNG matching. Keep complete ISO corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification open.
+
 ## InstallShield direct parser context evidence — 2026-08-27
 
 - Add and register null-context regressions for both confirmed InstallShield
@@ -215,7 +225,7 @@ parser-family qualification open.
 - Keep `cli_scaniso()` fail-visible when a recognized fmap is supplied without
   the engine required by temporary cleanup and nested dispatch; return
   `CL_ENULLARG` before descriptor traversal or extraction.
-- The current-source production-linked GCC `iso_map` case passes 13/13 and
+- The current-source production-linked GCC `iso_map` case passes 14/14 and
   the materialized `iso` case passes 1/1. Keep full ISO corpus, sanitizer,
   certified Linux x86-64, materialized large-file, production-CVD/service,
   Sonic1, and parser-family qualification open.
