@@ -251,7 +251,15 @@ parser-family qualification open.
   `xdp` passes 3/3, and `xdp_corpus` passes 1/1. Existing MSXML evidence
   remains `msxml_map` 2/2, `msxml` 5/5, and `msxml_corpus` 1/1. Keep complete
   XDP/DMG/XML corpus, sanitizer, certified Linux x86-64, materialized
-  large-file, production-CVD/service, Sonic1, and parser-family qualification
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+open.
+
+## Scan-level metadata JSON cleanup-status audit — 2026-08-27
+
+- Preserve requested `keeptmp` metadata JSON write and close failures as
+  `CL_EWRITE`/incomplete without hiding detections or earlier errors.
+- Add focused injected write/close report regressions and source guards. Keep
+  full service, sanitizer, production-CVD, Sonic1, and release qualification
   open.
 
 ## HWP3 parser engine admission — 2026-08-27

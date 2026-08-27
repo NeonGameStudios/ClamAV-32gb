@@ -12054,3 +12054,12 @@ reproduce under the pre-change scanner link, so they are not accepted as fresh
 GZip corpus evidence. Complete GZip corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and parser-family
 qualification remain open.
+
+## Scan-level metadata JSON cleanup-status audit — 2026-08-27
+
+When `keeptmp` metadata output was requested, scan-level JSON write and close
+failures were logged but did not affect the scan status. The path now marks the
+scan incomplete and merges `CL_EWRITE`, preserving detections and earlier
+parser/resource results. Focused injected write and close regressions cover the
+report status, completion, non-cacheability, and sticky reason; full service,
+sanitizer, production-CVD, Sonic1, and release qualification remain open.

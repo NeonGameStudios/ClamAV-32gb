@@ -8703,15 +8703,22 @@ static cl_error_t scan_common(
 
             if ((ret = cli_newfilepathfd(ctx.this_layer_tmpdir, "metadata.json", &tmpname, &fd)) != CL_SUCCESS) {
                 cli_dbgmsg("scan_common: Can't create json properties file, ret = %i.\n", ret);
+                cli_mark_scan_incomplete(&ctx, "scan-level metadata JSON could not be created");
+                status = cli_merge_cleanup_status(status, ret);
             } else {
-                if ((size_t)-1 == cli_writen(fd, jstring, strlen(jstring))) {
+                if (cli_writen(fd, jstring, strlen(jstring)) != strlen(jstring)) {
                     cli_dbgmsg("scan_common: cli_writen error writing json properties file.\n");
+                    cli_mark_scan_incomplete(&ctx, "scan-level metadata JSON could not be written completely");
+                    status = cli_merge_cleanup_status(status, CL_EWRITE);
                 } else {
                     cli_dbgmsg("json written to: %s\n", tmpname);
                 }
             }
             if (fd != -1) {
-                close(fd);
+                if (close(fd) != 0) {
+                    cli_mark_scan_incomplete(&ctx, "scan-level metadata JSON could not be closed");
+                    status = cli_merge_cleanup_status(status, CL_EWRITE);
+                }
             }
             if (NULL != tmpname) {
                 free(tmpname);

@@ -1424,6 +1424,82 @@ START_TEST(test_mbox_large_body_streams_without_alert)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_metadata_json_output_failures_are_fail_visible)
+{
+    static const uint8_t input[] = "metadata JSON output status regression";
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_scan_report_t *report;
+    cl_scan_completion_t completion;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    const char *reason;
+    uint64_t scanned;
+    uint32_t saved_engine_options;
+    uint32_t saved_keeptmp;
+    cl_error_t report_status;
+    cl_error_t ret;
+
+    saved_engine_options = g_engine->engine_options;
+    saved_keeptmp       = g_engine->keeptmp;
+    g_engine->engine_options |= ENGINE_OPTIONS_TMPDIR_RECURSION;
+    g_engine->keeptmp = 1;
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    report     = NULL;
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    clamav_test_fail_write = 1;
+    ret = cl_scanmap_ex2(map, "metadata-write", &verdict, &last_alert, &scanned,
+                         g_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL,
+                         &report);
+    clamav_test_fail_write = 0;
+    ck_assert_int_eq(ret, CL_EWRITE);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_EWRITE);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_ne(completion, CL_SCAN_COMPLETION_COMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "scan-level metadata JSON could not be written completely");
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    report     = NULL;
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    clamav_test_fail_close = 1;
+    ret = cl_scanmap_ex2(map, "metadata-close", &verdict, &last_alert, &scanned,
+                         g_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL,
+                         &report);
+    clamav_test_fail_close = 0;
+    ck_assert_int_eq(ret, CL_EWRITE);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_EWRITE);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_ne(completion, CL_SCAN_COMPLETION_COMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "scan-level metadata JSON could not be closed");
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+
+    g_engine->engine_options = saved_engine_options;
+    g_engine->keeptmp        = saved_keeptmp;
+}
+END_TEST
+#endif
+
 START_TEST(test_scan_report_complete_and_json)
 {
     static const char payload[] = "structured scan report fixture\n";
@@ -41705,6 +41781,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_largefile;
 #endif
     TCase *tc_cl_scan  = tcase_create("cl_scan_api");
+    TCase *tc_metadata_json = tcase_create("metadata_json");
     TCase *tc_dmg      = tcase_create("dmg");
     TCase *tc_gif      = tcase_create("gif");
     TCase *tc_gif_corpus = tcase_create("gif_corpus");
@@ -43292,6 +43369,12 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_authenticode_post_container_parse_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_fmap_hash_read_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_pe_overlay_range_preserves_native_size);
+
+    suite_add_tcase(s, tc_metadata_json);
+    tcase_add_checked_fixture(tc_metadata_json, mhtml_engine_setup, mhtml_engine_teardown);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_metadata_json, test_metadata_json_output_failures_are_fail_visible);
+#endif
 
     user_timeout = getenv("T");
     if (user_timeout) {
