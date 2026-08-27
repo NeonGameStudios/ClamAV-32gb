@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## InstallShield direct parser context evidence — 2026-08-27
+
+The confirmed InstallShield MSI and legacy direct entries already returned
+`CL_ENULLARG` for null contexts, but `ishield_map` previously covered only
+confirmed-entry missing-map admission. A dedicated regression now checks both
+null-context entry points. The current-source production-linked GCC
+`ishield_map` case passes 2/2; the existing `ishield_sfx` case passes 1/1
+with exact nested child matching. Complete InstallShield MSI/legacy/CAB
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## HWPOLE2 direct parser context evidence — 2026-08-27
 
 The HWPOLE2 direct entry already returned `CL_ENULLARG` for a null context,
@@ -1078,7 +1089,7 @@ large-file, production-CVD/service, Sonic1, and release evidence remain open.
 
 ## InstallShield current-source admission qualification — 2026-08-26
 
-The current-source production-linked GCC harness passes `ishield_map` 1/1
+The current-source production-linked GCC harness passes `ishield_map` 2/2
 for confirmed-entry missing-map admission and `ishield_sfx` 1/1 for a valid
 PE-backed SFX with exact nested-child matching. This is focused InstallShield
 admission evidence; complete MSI/legacy/CAB corpus, sanitizer, certified Linux

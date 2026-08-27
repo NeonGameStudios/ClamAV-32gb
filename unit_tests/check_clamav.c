@@ -21884,6 +21884,13 @@ START_TEST(test_ishield_missing_map_confirmed_entries_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ishield_null_context_confirmed_entries_are_fail_visible)
+{
+    ck_assert_int_eq(cli_scanishield_msi(NULL, 0), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanishield(NULL, 0, 0), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_hwpml_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -41666,6 +41673,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_sis_map, test_sis_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_ishield_map);
     tcase_add_checked_fixture(tc_ishield_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_ishield_map, test_ishield_null_context_confirmed_entries_are_fail_visible);
     tcase_add_test(tc_ishield_map, test_ishield_missing_map_confirmed_entries_are_fail_visible);
     suite_add_tcase(s, tc_hwpml_map);
     tcase_add_checked_fixture(tc_hwpml_map, cl_setup, cl_teardown);

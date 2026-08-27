@@ -1327,6 +1327,7 @@ contains libclamav/ishield.c 'before is_extract_cab() starts recursive fmap work
 not_contains libclamav/ishield.c 'fmap_need_off(map, c->hdr, c->hdrsz)'
 contains unit_tests/check_clamav.c 'test_ishield_msi_partial_limit_and_decode_failures_are_visible'
 contains unit_tests/check_clamav.c 'test_ishield_missing_map_confirmed_entries_are_fail_visible'
+contains unit_tests/check_clamav.c 'test_ishield_null_context_confirmed_entries_are_fail_visible'
 contains unit_tests/check_clamav.c 'InstallShield MSI control metadata is unsupported by the bounded parser'
 contains unit_tests/check_clamav.c 'test_ishield_truncated_metadata_is_fail_visible'
 contains libclamav/ishield.c 'InstallShield header metadata is incomplete'

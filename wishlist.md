@@ -1,5 +1,15 @@
 # Wishlist
 
+## InstallShield direct parser context evidence — 2026-08-27
+
+- Add and register null-context regressions for both confirmed InstallShield
+  direct entry points alongside the existing missing-map check. The
+  current-source production-linked GCC `ishield_map` case passes 2/2; the
+  existing `ishield_sfx` case passes 1/1 with exact nested child matching.
+  Keep complete InstallShield MSI/legacy/CAB corpus, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification open.
+
 ## HWPOLE2 direct parser context evidence — 2026-08-27
 
 - Add and register a direct null-context regression alongside the existing
@@ -892,7 +902,7 @@ parser-family qualification open.
 
 ## InstallShield current-source admission qualification — 2026-08-26
 
-- The current-source production-linked GCC harness passes `ishield_map` 1/1
+- The current-source production-linked GCC harness passes `ishield_map` 2/2
   for confirmed-entry missing-map admission and `ishield_sfx` 1/1 for a valid
   PE-backed SFX whose child reaches an exact matcher.
 - Keep complete MSI/legacy/CAB corpus, sanitizer, certified Linux x86-64,
