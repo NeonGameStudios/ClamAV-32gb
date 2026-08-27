@@ -186,6 +186,25 @@ warning-clean with GCC `-Wall -Wextra -Wformat-security`; production-linked
 corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
 
+## ISO9660 descriptor-sequence coverage audit — 2026-08-27
+
+The ISO9660 parser previously inspected only descriptor sectors 16 through 31.
+That fixed stop could classify a valid volume with a longer descriptor sequence
+as incomplete even when its terminator and root directory were fully present.
+The parser now snapshots the primary descriptor before releasing its fmap
+window, validates the primary type/identifier, derives a checked descriptor
+bound from the declared volume, walks descriptors until the first valid
+`0xff/CD001` terminator, and checks the shared deadline on each iteration.
+Out-of-range and callback failures remain fail-visible.
+
+The new late-terminator ISO regression is registered and compiles with current
+production GCC declarations. Execution in a current-source production-linked
+harness remains pending because the reused container overlay is exhausted and
+its available static link is stale. Existing ISO map and materialized corpus
+evidence remains unchanged; full ISO corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain release gates.
+
 ## DMG warning-clean source qualification — 2026-08-26
 
 The canonical DMG source was rebuilt with the established GCC

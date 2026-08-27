@@ -19886,6 +19886,75 @@ START_TEST(test_iso_missing_volume_descriptor_terminator_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_iso_descriptor_terminator_after_sector_31_is_supported)
+{
+    enum {
+        ISO_OFFSET  = 32768,
+        ROOT_BLOCK  = 40,
+        ROOT_OFFSET = ROOT_BLOCK * 2048,
+        ISO_LENGTH  = ROOT_OFFSET + 2048
+    };
+    uint8_t data[ISO_LENGTH] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    size_t descriptor_index;
+
+    /* A valid ISO9660 descriptor sequence may contain more than the 16
+     * descriptors that used to be inspected before the terminator. Keep the
+     * primary/root descriptors valid while placing the terminator at sector
+     * 32, after the old hard stop at sector 31. */
+    data[ISO_OFFSET] = 1;
+    memcpy(data + ISO_OFFSET + 1, "CD001", 5);
+    data[ISO_OFFSET + 80] = ISO_LENGTH / 2048;
+    data[ISO_OFFSET + 84] = 0;
+    data[ISO_OFFSET + 85] = 0;
+    data[ISO_OFFSET + 86] = 0;
+    data[ISO_OFFSET + 87] = ISO_LENGTH / 2048;
+    data[ISO_OFFSET + 128] = 0x00;
+    data[ISO_OFFSET + 129] = 0x08; /* 2048-byte logical blocks */
+    data[ISO_OFFSET + 156] = 34;
+    data[ISO_OFFSET + 158] = ROOT_BLOCK;
+    data[ISO_OFFSET + 166] = 0x00;
+    data[ISO_OFFSET + 167] = 0x08;
+
+    for (descriptor_index = 17; descriptor_index < 32; descriptor_index++) {
+        size_t descriptor_offset = ISO_OFFSET + (descriptor_index - 16) * 2048;
+        data[descriptor_offset] = 0;
+        memcpy(data + descriptor_offset + 1, "CD001", 5);
+    }
+    data[ISO_OFFSET + (32 - 16) * 2048] = 0xff;
+    memcpy(data + ISO_OFFSET + (32 - 16) * 2048 + 1, "CD001", 5);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_ISO9660", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 struct iso_volume_read_failure_state {
     const uint8_t *data;
     size_t length;
@@ -40925,6 +40994,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_iso_map, test_iso_missing_map_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_truncated_directory_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_missing_volume_descriptor_terminator_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_descriptor_terminator_after_sector_31_is_supported);
     tcase_add_test(tc_iso_map, test_iso_time_limit_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_volume_read_failure_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_public_api_read_failure_is_fail_visible);

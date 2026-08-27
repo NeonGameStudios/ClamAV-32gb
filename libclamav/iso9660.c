@@ -376,7 +376,6 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     uint8_t primary_descriptor[2448 + 6];
     uint8_t joliet_descriptor[2048];
     iso9660_t iso;
-    int i;
     cl_error_t status   = CL_SUCCESS;
     cl_error_t ret      = CL_SUCCESS;
     uint32_t nextJoliet = 0;
@@ -384,6 +383,8 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     uint32_t volume_space_size;
     uint32_t volume_space_size_be;
     uint64_t volume_bytes;
+    uint64_t descriptor_count;
+    uint64_t descriptor_index;
 
     if (ctx == NULL)
         return CL_ENULLARG;
@@ -410,6 +411,11 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
         return CL_EREAD;
     }
 
+    if (primary_map[0] != 1 || memcmp(primary_map + 1, "CD001", 5)) {
+        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+        return iso_incomplete(ctx, "ISO primary volume descriptor was malformed");
+    }
+
     next = (uint8_t *)cli_memstr((char *)primary_map + 2049, sizeof(primary_descriptor) - 2049, "CD001", 5);
     if (!next) {
         /* Find next volume descriptor */
@@ -434,13 +440,51 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     iso.base_offset = offset - iso.sectsz * 16;
     iso.joliet      = 0;
 
+    /* The directory walk allocates and reads other fmap pages. Snapshot the
+     * primary descriptor before releasing its locked window so the complete
+     * descriptor sequence can be walked without retaining the initial map. */
+    memcpy(primary_descriptor, primary_map, sizeof(primary_descriptor));
+    fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+    privol = primary_descriptor;
+
+    volume_space_size    = (uint32_t)cli_readint32(privol + 80);
+    volume_space_size_be = cbswap32((uint32_t)cli_readint32(privol + 84));
+    volume_bytes         = (uint64_t)volume_space_size * iso.blocksz;
+    if (volume_space_size == 0 || volume_space_size != volume_space_size_be ||
+        volume_bytes < (uint64_t)iso.sectsz * 16U ||
+        (uint64_t)iso.base_offset > UINT64_MAX - volume_bytes) {
+        status = iso_incomplete(ctx, "ISO volume space size was invalid");
+        goto done;
+    }
+    iso.volume_end = (uint64_t)iso.base_offset + volume_bytes;
+    if (iso.volume_end > (uint64_t)ctx->fmap->len) {
+        status = iso_incomplete(ctx, "ISO declared volume exceeds the input map");
+        goto done;
+    }
+
+    /* ISO9660 does not cap the descriptor sequence at sector 31. Walk every
+     * complete descriptor before the declared volume end, while retaining a
+     * checked bound so a malformed volume cannot wrap its coordinate. */
+    descriptor_count = volume_bytes / iso.sectsz;
+
     bool descriptor_terminated = false;
-    for (i = 16; i < 32; i++) { /* scan for a joliet secondary volume descriptor */
-        uint64_t descriptor_offset64 = (uint64_t)iso.base_offset + (uint64_t)i * iso.sectsz;
+    for (descriptor_index = 16; descriptor_index < descriptor_count; descriptor_index++) {
+        uint64_t descriptor_offset64;
         size_t descriptor_offset;
 
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "ISO volume descriptor traversal reached the configured time limit");
+            goto done;
+        }
+
+        if (descriptor_index > (UINT64_MAX - (uint64_t)iso.base_offset) / iso.sectsz) {
+            status = iso_incomplete(ctx, "ISO volume descriptor coordinate overflowed");
+            goto done;
+        }
+        descriptor_offset64 = (uint64_t)iso.base_offset + descriptor_index * iso.sectsz;
+
         if (descriptor_offset64 > SIZE_MAX) {
-            fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
             status = iso_incomplete(ctx, "ISO volume descriptor coordinate exceeded the input map");
             goto done;
         }
@@ -448,18 +492,15 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
         next             = fmap_need_off_once(ctx->fmap, descriptor_offset, 2048);
         if (!next) {
             if (descriptor_offset <= ctx->fmap->len && 2048 <= ctx->fmap->len - descriptor_offset) {
-                fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
                 cli_mark_scan_incomplete(ctx, "ISO secondary volume descriptor could not be read completely");
                 status = CL_EREAD;
                 goto done;
             }
-            fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
             status = iso_incomplete(ctx, "ISO volume descriptor sequence was truncated");
             goto done;
         }
         if (*next == 0xff) {
             if (memcmp(next + 1, "CD001", 5)) {
-                fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
                 status = iso_incomplete(ctx, "ISO volume descriptor terminator was malformed");
                 goto done;
             }
@@ -467,7 +508,6 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
             break;
         }
         if (memcmp(next + 1, "CD001", 5)) {
-            fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
             status = iso_incomplete(ctx, "ISO volume descriptor sequence was truncated");
             goto done;
         }
@@ -494,34 +534,11 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     }
 
     if (!descriptor_terminated) {
-        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
         status = iso_incomplete(ctx, "ISO volume descriptor sequence was truncated");
         goto done;
     }
 
     /* TODO rr, el torito, udf ? */
-
-    /* The directory walk allocates and reads other fmap pages. Snapshot both
-     * descriptors before releasing the primary locked window so later debug
-     * and root-directory reads never use an unlocked mapped pointer. */
-    memcpy(primary_descriptor, primary_map, sizeof(primary_descriptor));
-    fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
-    privol = primary_descriptor;
-
-    volume_space_size    = (uint32_t)cli_readint32(privol + 80);
-    volume_space_size_be = cbswap32((uint32_t)cli_readint32(privol + 84));
-    volume_bytes         = (uint64_t)volume_space_size * iso.blocksz;
-    if (volume_space_size == 0 || volume_space_size != volume_space_size_be ||
-        volume_bytes < (uint64_t)iso.sectsz * 16U ||
-        (uint64_t)iso.base_offset > UINT64_MAX - volume_bytes) {
-        status = iso_incomplete(ctx, "ISO volume space size was invalid");
-        goto done;
-    }
-    iso.volume_end = (uint64_t)iso.base_offset + volume_bytes;
-    if (iso.volume_end > (uint64_t)ctx->fmap->len) {
-        status = iso_incomplete(ctx, "ISO declared volume exceeds the input map");
-        goto done;
-    }
 
     if (!iso.joliet) {
         next = NULL;
