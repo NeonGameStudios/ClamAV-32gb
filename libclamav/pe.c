@@ -134,6 +134,27 @@ static uint64_t cli_pe_align_up_u64(uint64_t value, uint32_t alignment)
     return remainder ? value + alignment - remainder : value;
 }
 
+static cl_error_t cli_pe_cleanup_temp(cli_ctx *ctx, int *fd, char **tempfile,
+                                      cl_error_t status)
+{
+    if (fd != NULL && *fd >= 0) {
+        if (close(*fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "PE unpacked output temporary file could not be closed");
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
+        }
+        *fd = -1;
+    }
+
+    if (tempfile != NULL && *tempfile != NULL && !ctx->engine->keeptmp) {
+        if (cli_unlink(*tempfile) != 0) {
+            cli_mark_scan_incomplete(ctx, "PE unpacked output temporary file could not be removed");
+            status = cli_merge_cleanup_status(status, CL_EUNLINK);
+        }
+    }
+
+    return status;
+}
+
 // TODO Replace all of these with static inline functions
 #define CLI_UNPSIZELIMITS(NAME, CHK)                                                             \
     do {                                                                                         \
@@ -186,28 +207,20 @@ static uint64_t cli_pe_align_up_u64(uint64_t value, uint32_t alignment)
         }                                                                                              \
     } while (0)
 
-#define CLI_TMPUNLK()               \
-    if (!ctx->engine->keeptmp) {    \
-        if (cli_unlink(tempfile)) { \
-            cli_mark_scan_incomplete(ctx, "PE unpacked output temporary file could not be removed"); \
-            CLI_UNP_RELEASE();       \
-            free(tempfile);         \
-            return CL_EUNLINK;      \
-        }                           \
-    }
-
 #define FSGCASE(NAME, FREESEC)                            \
     case 0: /* Unpacked and NOT rebuilt */                \
         cli_dbgmsg(NAME ": Successfully decompressed\n"); \
         CLI_UNP_RELEASE();                                  \
-        close(ndesc);                                     \
-        if (cli_unlink(tempfile)) {                       \
-            cli_exe_info_destroy(peinfo);                 \
+        ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret); \
+        if (tempfile != NULL) {                           \
             free(tempfile);                               \
-            FREESEC;                                      \
-            return CL_EUNLINK;                            \
+            tempfile = NULL;                              \
         }                                                 \
-        free(tempfile);                                   \
+        if (ret != CL_SUCCESS) {                          \
+            cli_exe_info_destroy(peinfo);                 \
+            FREESEC;                                      \
+            return ret;                                   \
+        }                                                 \
         FREESEC;                                          \
         found       = 0;                                  \
         upx_success = 1;                                  \
@@ -217,16 +230,14 @@ static uint64_t cli_pe_align_up_u64(uint64_t value, uint32_t alignment)
     case 2:                                                \
         CLI_UNP_RELEASE();                                 \
         free(spinned);                                     \
-        close(ndesc);                                      \
-        if (cli_unlink(tempfile)) {                        \
-            cli_exe_info_destroy(peinfo);                  \
+        ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, CL_EMAXSIZE); \
+        if (tempfile != NULL) {                            \
             free(tempfile);                                \
-            return CL_EUNLINK;                             \
+            tempfile = NULL;                               \
         }                                                  \
         cli_dbgmsg("cli_scanpe: PESpin: Size exceeded\n"); \
-        free(tempfile);                                    \
         cli_exe_info_destroy(peinfo);                      \
-        return CL_EMAXSIZE;
+        return ret;
 
 #define CLI_UNPRESULTS_(NAME, FSGSTUFF, EXPR, GOOD, FREEME)                                                     \
     switch (EXPR) {                                                                                             \
@@ -237,19 +248,19 @@ static uint64_t cli_pe_align_up_u64(uint64_t value, uint32_t alignment)
             if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {                                                       \
                 cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be rewound");   \
                 CLI_UNP_RELEASE();                                                                              \
-                close(ndesc);                                                                                   \
-                CLI_TMPUNLK();                                                                                  \
+                ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, CL_ESEEK);                                    \
                 free(tempfile);                                                                                 \
-                return CL_ESEEK;                                                                                \
+                tempfile = NULL;                                                                                \
+                return ret;                                                                                     \
             }                                                                                                   \
             cli_dbgmsg("***** Scanning rebuilt PE file *****\n");                                               \
             ret = cli_checktimelimit(ctx);                                                                        \
             if (ret != CL_SUCCESS) {                                                                              \
                 cli_mark_scan_incomplete(ctx, NAME ": unpacked output nested-scan handoff reached the configured time limit"); \
                 CLI_UNP_RELEASE();                                                                                \
-                close(ndesc);                                                                                     \
-                CLI_TMPUNLK();                                                                                    \
+                ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret);                                            \
                 free(tempfile);                                                                                   \
+                tempfile = NULL;                                                                                  \
                 return ret;                                                                                        \
             }                                                                                                     \
             if (temporary_reserved) \
@@ -258,15 +269,15 @@ static uint64_t cli_pe_align_up_u64(uint64_t value, uint32_t alignment)
                 ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE); \
             CLI_UNP_RELEASE();                                                                                     \
             if (CL_SUCCESS != ret) { \
-                close(ndesc);                                                                                   \
-                CLI_TMPUNLK();                                                                                  \
+                ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret);                                          \
                 free(tempfile);                                                                                 \
+                tempfile = NULL;                                                                                \
                 return ret;                                                                                     \
             }                                                                                                   \
-            close(ndesc);                                                                                       \
-            CLI_TMPUNLK();                                                                                      \
+            ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret);                                              \
             free(tempfile);                                                                                     \
-            return CL_CLEAN;                                                                                    \
+            tempfile = NULL;                                                                                    \
+            return ret;                                                                                         \
                                                                                                                 \
             FSGSTUFF;                                                                                           \
                                                                                                                 \
@@ -274,15 +285,17 @@ static uint64_t cli_pe_align_up_u64(uint64_t value, uint32_t alignment)
             cli_dbgmsg(NAME ": Unpacking failed\n");                                                            \
             cli_mark_scan_incomplete(ctx, NAME ": recognized unpacker did not complete");                       \
             CLI_UNP_RELEASE(); \
-            close(ndesc);                                                                                       \
-            if (cli_unlink(tempfile)) {                                                                         \
-                cli_exe_info_destroy(peinfo);                                                                   \
+            ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret);                                             \
+            if (tempfile != NULL) {                                                                             \
                 free(tempfile);                                                                                 \
+                tempfile = NULL;                                                                                \
+            }                                                                                                   \
+            if (ret != CL_SUCCESS) {                                                                             \
+                cli_exe_info_destroy(peinfo);                                                                   \
                 cli_multifree FREEME;                                                                           \
-                return CL_EUNLINK;                                                                              \
+                return ret;                                                                                     \
             }                                                                                                   \
             cli_multifree FREEME;                                                                               \
-            free(tempfile);                                                                                     \
     }
 
 // The GOOD parameter indicates what a successful unpacking should return.
@@ -4489,11 +4502,10 @@ int cli_scanpe(cli_ctx *ctx)
         if (ret != CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "PE UPX/FSG output reached the configured time limit");
             free(dest);
-            close(ndesc);
-            if (!ctx->engine->keeptmp && cli_unlink(tempfile))
-                cli_mark_scan_incomplete(ctx, "PE unpacked output temporary file could not be removed");
             CLI_UNP_RELEASE();
+            ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret);
             free(tempfile);
+            tempfile = NULL;
             return ret;
         }
 
@@ -4501,22 +4513,21 @@ int cli_scanpe(cli_ctx *ctx)
             cli_dbgmsg("cli_scanpe: UPX/FSG: Can't write %d bytes\n", dsize);
             cli_mark_scan_incomplete(ctx, "PE UPX/FSG unpacked output could not be written completely");
             free(dest);
-            close(ndesc);
-            if (!ctx->engine->keeptmp && cli_unlink(tempfile))
-                cli_mark_scan_incomplete(ctx, "PE unpacked output temporary file could not be removed");
             CLI_UNP_RELEASE();
+            ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, CL_EWRITE);
             free(tempfile);
-            return CL_EWRITE;
+            tempfile = NULL;
+            return ret;
         }
 
         free(dest);
         if (lseek(ndesc, 0, SEEK_SET) == -1) {
             cli_dbgmsg("cli_scanpe: UPX/FSG: lseek() failed\n");
-            close(ndesc);
-            CLI_TMPUNLK();
+            ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, CL_ESEEK);
             free(tempfile);
+            tempfile = NULL;
             CLI_UNP_RELEASE();
-            return CL_ESEEK;
+            return ret;
         }
 
         if (ctx->engine->keeptmp)
@@ -4529,15 +4540,14 @@ int cli_scanpe(cli_ctx *ctx)
             ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
         CLI_UNP_RELEASE();
         if (CL_SUCCESS != ret) {
-            close(ndesc);
-            CLI_TMPUNLK();
+            ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret);
             free(tempfile);
             return ret;
         }
 
-        close(ndesc);
-        CLI_TMPUNLK();
+        ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret);
         free(tempfile);
+        tempfile = NULL;
         return ret;
     }
 

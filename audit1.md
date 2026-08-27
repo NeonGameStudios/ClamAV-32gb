@@ -11847,3 +11847,21 @@ Existing focused production-linked evidence remains prior-object evidence for
 this cleanup-only change; current-object execution, complete EGG/OLE2/VBA
 corpora, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## PE unpacker cleanup-status audit — 2026-08-27
+
+PE unpacker macros and the direct UPX/FSG path closed temporary descriptors
+without checking the result, and their unlink-only cleanup could replace or
+hide a preceding `CL_BREAK`, detection, or parser error. A shared PE cleanup
+helper now records descriptor-close failures as `CL_EWRITE`, removal failures
+as `CL_EUNLINK`, upgrades clean/verified/abort results, and preserves earlier
+errors and detections across MEW, Upack, FSG, Petite, PEspin, yC, WWPack,
+NsPack, Aspack, and direct UPX/FSG teardown paths.
+
+The current PE source passes the established GCC syntax check against
+canonical headers and source guards cover the helper and status mappings.
+Existing focused production-linked PE evidence remains prior-object evidence
+for this cleanup-only change; current-object execution, complete PE unpacker
+and heuristic corpora, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain open.

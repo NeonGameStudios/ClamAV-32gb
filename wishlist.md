@@ -5770,3 +5770,15 @@ and Sonic1 qualification as release gates.
   current-object execution, complete EGG/OLE2/VBA corpora, sanitizer,
   certified Linux x86-64, materialized large-file, production-CVD/service,
   Sonic1, and parser-family qualification remain open.
+
+## PE unpacker cleanup-status audit — 2026-08-27
+
+- Route PE unpacker macro and direct UPX/FSG temporary descriptor/path cleanup
+  through a shared helper. Preserve `CL_EWRITE` for close and `CL_EUNLINK`
+  for removal, upgrade clean/verified/`CL_BREAK`, and retain detections or
+  earlier parser/resource errors across all enabled unpacker paths.
+- Current PE source passes the canonical-header GCC syntax check and source
+  guards cover the helper; current-object execution, complete unpacker and
+  heuristic corpora, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  remain open.
