@@ -1,5 +1,29 @@
 # Independent read-only audit of audit.md
 
+## JPEG SOS and entropy completion audit — 2026-08-27
+
+The JPEG parser previously returned clean immediately after admitting a
+start-of-scan segment. A structurally recognized JPEG could therefore end in
+its entropy-coded data, omit EOI, or hide a malformed scan header without a
+fail-visible result. The parser now validates the SOS component count and
+declared header length, then traverses entropy data in fixed 8 KiB reads while
+handling stuffed `FF 00`, fill, TEM, restart, and additional SOS markers. Each
+read window checks the shared deadline, and clean completion now requires at
+least one valid scan followed by an observed EOI. Entropy truncation,
+metadata-only EOF, EOI before any scan, and invalid SOS headers are sticky,
+non-cacheable parse failures; an injected fully in-range entropy read failure
+preserves `CL_EREAD`.
+
+The current-source JPEG object compiles warning-clean with the production GCC
+flags. The production-linked `jpeg_map` case passes 13/13, including an EOI
+split across entropy-read windows, the 8 KiB maximum-read assertion, an
+in-loop timeout, valid single- and multi-scan controls, and the malformed and
+read-failure matrix. `jpeg_corpus` passes 1/1 with a structurally complete
+outer JPEG and exact nested `JPEG.Member.MZ.UNOFFICIAL` detection. Complete
+JPEG/image corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain release
+gates.
+
 ## XAR parser engine admission — 2026-08-27
 
 The XAR direct parser validated context and fmap but did not validate the

@@ -1,5 +1,18 @@
 # Wishlist
 
+## JPEG SOS and entropy completion audit — 2026-08-27
+
+- Keep JPEG clean completion conditional on a valid SOS and an observed EOI.
+  Entropy traversal uses fixed 8 KiB reads, preserves state across read-window
+  boundaries, handles stuffed, fill, TEM, restart, and multi-scan markers, and
+  checks the shared deadline between windows.
+- Keep malformed SOS, entropy truncation, metadata-only EOF, and EOI-before-
+  scan fail-visible and non-cacheable; preserve `CL_EREAD` for a fully in-range
+  entropy callback failure. The current-source production-linked `jpeg_map`
+  case passes 13/13 and `jpeg_corpus` passes 1/1. Complete JPEG/image corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## XAR parser engine admission — 2026-08-27
 
 - Keep `cli_scanxar()` fail-visible when a recognized fmap is supplied without

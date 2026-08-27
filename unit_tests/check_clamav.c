@@ -39220,7 +39220,8 @@ END_TEST
 START_TEST(test_jpeg_corpus_detects_embedded_mz)
 {
     static const uint8_t child[64] = {'M', 'Z', 'P'};
-    uint8_t data[2 + 2 + 2 + sizeof("Photoshop 3.0") + 4 + 2 + 1 + 1 + 4 + 28 + sizeof(child)];
+    enum { JPEG_COMPLETE_SCAN_SIZE = 13 };
+    uint8_t data[2 + 2 + 2 + sizeof("Photoshop 3.0") + 4 + 2 + 1 + 1 + 4 + 28 + sizeof(child) + JPEG_COMPLETE_SCAN_SIZE];
     struct cl_scan_options options;
     struct cl_engine *scan_engine;
     cl_verdict_t verdict;
@@ -39228,6 +39229,7 @@ START_TEST(test_jpeg_corpus_detects_embedded_mz)
     uint64_t scanned;
     fmap_t *map;
     size_t offset = 0;
+    size_t app_segment_length = sizeof(data) - JPEG_COMPLETE_SCAN_SIZE - 4U;
     uint32_t thumbnail_size = 28U + (uint32_t)sizeof(child);
     int ret;
 
@@ -39236,8 +39238,8 @@ START_TEST(test_jpeg_corpus_detects_embedded_mz)
     data[offset++] = 0xd8;
     data[offset++] = 0xff;
     data[offset++] = 0xed;
-    data[offset++] = (uint8_t)((sizeof(data) - 4U) >> 8);
-    data[offset++] = (uint8_t)(sizeof(data) - 4U);
+    data[offset++] = (uint8_t)(app_segment_length >> 8);
+    data[offset++] = (uint8_t)app_segment_length;
     memcpy(data + offset, "Photoshop 3.0", sizeof("Photoshop 3.0"));
     offset += sizeof("Photoshop 3.0");
     memcpy(data + offset, "8BIM", 4);
@@ -39253,6 +39255,19 @@ START_TEST(test_jpeg_corpus_detects_embedded_mz)
     offset += 28;
     memcpy(data + offset, child, sizeof(child));
     offset += sizeof(child);
+    data[offset++] = 0xff;
+    data[offset++] = 0xda;
+    data[offset++] = 0x00;
+    data[offset++] = 0x08;
+    data[offset++] = 0x01;
+    data[offset++] = 0x01;
+    data[offset++] = 0x00;
+    data[offset++] = 0x00;
+    data[offset++] = 0x3f;
+    data[offset++] = 0x00;
+    data[offset++] = 0x11;
+    data[offset++] = 0xff;
+    data[offset++] = 0xd9;
     ck_assert_int_eq(offset, sizeof(data));
 
     memset(&options, 0, sizeof(options));
@@ -40057,7 +40072,8 @@ START_TEST(test_jpeg_photoshop_resources_stay_within_segment)
         '3',  '.',  '0',  '\0',
         '8',  'B',  'I',  'M', 0x00, 0x01, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x02, 0xaa, 0xbb,
-        0xff, 0xda, 0x00, 0x02, 0x00, 0x00, 0x00,
+        0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00,
+        0x11, 0xff, 0xd9,
     };
     cli_ctx ctx;
     fmap_t *map;
@@ -40078,12 +40094,14 @@ START_TEST(test_jpeg_photoshop_resources_stay_within_segment)
 }
 END_TEST
 
-START_TEST(test_jpeg_photoshop_exact_eof_is_complete)
+START_TEST(test_jpeg_photoshop_exact_segment_end_is_complete)
 {
     static const uint8_t data[] = {
         0xff, 0xd8, 0xff, 0xed, 0x00, 0x10,
         'P',  'h',  'o',  't',  'o',  's',  'h',  'o',  'p',  ' ',
         '3',  '.',  '0',  '\0',
+        0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00,
+        0x11, 0xff, 0xd9,
     };
     cli_ctx ctx;
     fmap_t *map;
@@ -41013,6 +41031,7 @@ static const TTest *test_hwp3_missing_options_is_fail_visible;
 static const TTest *test_ole2_missing_options_is_fail_visible;
 static const TTest *test_xar_missing_engine_is_fail_visible;
 static const TTest *test_rtf_missing_engine_is_fail_visible;
+static const TTest *test_jpeg_entropy_completion_and_failures;
 
 static Suite *test_cl_suite(void)
 {
@@ -41368,7 +41387,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_header_read_failure_is_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_marker_read_failure_is_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_resources_stay_within_segment);
-    tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_exact_eof_is_complete);
+    tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_exact_segment_end_is_complete);
+    tcase_add_test(tc_jpeg_map, test_jpeg_entropy_completion_and_failures);
     suite_add_tcase(s, tc_pdf);
     tcase_add_checked_fixture(tc_pdf, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_pdf_corpus);
@@ -43386,6 +43406,173 @@ START_TEST(test_rtf_missing_engine_is_fail_visible)
 
     ck_assert_int_eq(cli_scanrtf(&ctx), CL_ENULLARG);
 
+    cl_fmap_close(map);
+}
+END_TEST
+
+static size_t jpeg_entropy_failure_offset = SIZE_MAX;
+static size_t jpeg_entropy_largest_read;
+static cli_ctx *jpeg_entropy_expire_ctx;
+static bool jpeg_entropy_expire_after_read;
+
+static const void *jpeg_entropy_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    UNUSEDPARAM(lock);
+
+    if (len > jpeg_entropy_largest_read)
+        jpeg_entropy_largest_read = len;
+    if (jpeg_entropy_expire_after_read && at == 12U && len == 8192U &&
+        jpeg_entropy_expire_ctx != NULL) {
+        jpeg_entropy_expire_ctx->time_limit.tv_sec  = 1;
+        jpeg_entropy_expire_ctx->time_limit.tv_usec = 0;
+        jpeg_entropy_expire_after_read              = false;
+    }
+    if (at == jpeg_entropy_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_jpeg_entropy_completion_and_failures)
+{
+    static const uint8_t complete[] = {
+        0xff, 0xd8,
+        0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00,
+        0x11, 0xff, 0x00, 0x22, 0xff, 0xd0, 0x33, 0xff, 0xd9};
+    static const uint8_t multiscan[] = {
+        0xff, 0xd8,
+        0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00,
+        0x11,
+        0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00,
+        0x22, 0xff, 0xd9};
+    static const uint8_t truncated[] = {
+        0xff, 0xd8,
+        0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00,
+        0x11, 0xff, 0x00};
+    static const uint8_t invalid_scan_header[] = {
+        0xff, 0xd8, 0xff, 0xda, 0x00, 0x02, 0xff, 0xd9};
+    static const uint8_t read_failure[] = {
+        0xff, 0xd8,
+        0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00,
+        0x11, 0xff, 0xd9};
+    static const uint8_t no_images[] = {
+        0xff, 0xd8, 0xff, 0xd9};
+    static const uint8_t ended_before_eoi[] = {
+        0xff, 0xd8, 0xff, 0xe0, 0x00, 0x02};
+    uint8_t chunk_boundary[12U + 8192U + 1U];
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(chunk_boundary, 0x11, sizeof(chunk_boundary));
+    memcpy(chunk_boundary, complete, 12U);
+    chunk_boundary[sizeof(chunk_boundary) - 2U] = 0xff;
+    chunk_boundary[sizeof(chunk_boundary) - 1U] = 0xd9;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(complete, sizeof(complete));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(chunk_boundary, sizeof(chunk_boundary));
+    ck_assert_ptr_nonnull(map);
+    jpeg_entropy_largest_read = 0;
+    map->need                 = jpeg_entropy_read_failure;
+    ctx.fmap                  = map;
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_msg(jpeg_entropy_largest_read <= 8192U,
+                  "JPEG entropy traversal requested %zu bytes in one fmap read",
+                  jpeg_entropy_largest_read);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(chunk_boundary, sizeof(chunk_boundary));
+    ck_assert_ptr_nonnull(map);
+    jpeg_entropy_expire_ctx        = &ctx;
+    jpeg_entropy_expire_after_read = true;
+    map->need                      = jpeg_entropy_read_failure;
+    ctx.fmap                       = map;
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Heuristics.Limits.Exceeded.MaxScanTime");
+    ck_assert(map->dont_cache_flag);
+    jpeg_entropy_expire_ctx        = NULL;
+    jpeg_entropy_expire_after_read = false;
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(multiscan, sizeof(multiscan));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(truncated, sizeof(truncated));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Heuristics.Broken.Media.JPEG.EntropyDataEndedBeforeEOI");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(invalid_scan_header, sizeof(invalid_scan_header));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Heuristics.Broken.Media.JPEG.InvalidScanHeader");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(read_failure, sizeof(read_failure));
+    ck_assert_ptr_nonnull(map);
+    jpeg_entropy_failure_offset = 12U;
+    map->need                   = jpeg_entropy_read_failure;
+    ctx.fmap                    = map;
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "JPEG entropy-coded data could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    jpeg_entropy_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(no_images, sizeof(no_images));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Heuristics.Broken.Media.JPEG.NoImages");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(ended_before_eoi, sizeof(ended_before_eoi));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Heuristics.Broken.Media.JPEG.EndedBeforeEOI");
+    ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
 }
 END_TEST

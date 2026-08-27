@@ -3,6 +3,27 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## JPEG SOS and entropy completion — 2026-08-27
+
+JPEG parsing now continues beyond every valid SOS until a real marker is
+observed in the entropy-coded stream. The walker uses fixed 8 KiB fmap reads,
+retains marker-prefix state across read windows, handles byte stuffing, fill,
+TEM, restart, and multiple scans, and rechecks the shared deadline for each
+window. SOS component counts must agree with the segment length. A clean
+result requires at least one valid scan and an observed EOI; malformed SOS,
+entropy truncation, metadata-only EOF, and EOI-before-scan instead produce a
+sticky incomplete, non-cacheable result, while an injected in-range entropy
+read failure remains `CL_EREAD`.
+
+The JPEG source compiles warning-clean with the production GCC flags. The
+current-source production-linked `jpeg_map` case passes 13/13, including an
+EOI split across 8 KiB windows, bounded-read and in-loop timeout assertions,
+valid single- and multi-scan controls, and the failure matrix. `jpeg_corpus`
+passes 1/1 with a structurally complete outer JPEG and exact nested
+`JPEG.Member.MZ.UNOFFICIAL` detection. Complete JPEG/image corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
+
 ## RTF parser engine admission — 2026-08-27
 
 `cli_scanrtf()` now rejects a valid input map without its required engine with

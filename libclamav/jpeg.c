@@ -229,12 +229,11 @@ typedef enum {
      */
     JPEG_MARKER_SEGMENT_EOI_END_OF_IMAGE = 0xD9,
 
-    /* Entropy-encoded (aka compressed) data markers.
-     *
-     * These aren't referenced since we don't parse the image data.
-     */
+    /* Entropy-encoded (aka compressed) data markers consumed while
+     * traversing scan data. */
     JPEG_MARKER_NOT_A_MARKER_0x00 = 0x00,
     JPEG_MARKER_NOT_A_MARKER_0xFF = 0xFF,
+    JPEG_MARKER_ENTROPY_TEM       = 0x01,
 
     /* Reset entropy-markers are inserted every r macroblocks, where r is the restart interval set by a DRI marker.
      * Not used if there was no DRI segment-marker.
@@ -253,6 +252,8 @@ typedef enum {
 // clang-format on
 
 static cl_error_t jpeg_parse_error(cli_ctx *ctx, const char *reason);
+
+#define JPEG_ENTROPY_READ_SIZE (8U * 1024U)
 
 static size_t jpeg_readn(fmap_t *map, void *dst, size_t at, size_t len)
 {
@@ -297,6 +298,66 @@ static cl_error_t jpeg_checktimelimit(cli_ctx *ctx, const char *reason)
         cli_mark_scan_incomplete(ctx, reason);
 
     return status;
+}
+
+static cl_error_t jpeg_find_next_entropy_marker(cli_ctx *ctx, size_t *offset)
+{
+    uint8_t buffer[JPEG_ENTROPY_READ_SIZE];
+    size_t cursor;
+    size_t marker_start = 0;
+    bool saw_marker_prefix = false;
+
+    if (ctx == NULL || ctx->fmap == NULL || offset == NULL)
+        return CL_ENULLARG;
+
+    cursor = *offset;
+    while (cursor < ctx->fmap->len) {
+        cl_error_t status;
+        size_t chunk = MIN(sizeof(buffer), ctx->fmap->len - cursor);
+        size_t bytes_read;
+        size_t i;
+
+        status = jpeg_checktimelimit(ctx, "JPEG entropy traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            return status;
+
+        bytes_read = jpeg_readn(ctx->fmap, buffer, cursor, chunk);
+        if (bytes_read != chunk) {
+            cli_mark_scan_incomplete(ctx, "JPEG entropy-coded data could not be read completely");
+            return CL_EREAD;
+        }
+
+        for (i = 0; i < chunk; i++) {
+            uint8_t byte = buffer[i];
+
+            if (!saw_marker_prefix) {
+                if (byte == JPEG_MARKER_NOT_A_MARKER_0xFF) {
+                    marker_start      = cursor + i;
+                    saw_marker_prefix = true;
+                }
+                continue;
+            }
+
+            if (byte == JPEG_MARKER_NOT_A_MARKER_0x00) {
+                saw_marker_prefix = false;
+                continue;
+            }
+            if (byte == JPEG_MARKER_NOT_A_MARKER_0xFF)
+                continue;
+            if ((byte >= JPEG_MARKER_ENTROPY_RST0_RESET && byte <= JPEG_MARKER_ENTROPY_RST7_RESET) ||
+                byte == JPEG_MARKER_ENTROPY_TEM) {
+                saw_marker_prefix = false;
+                continue;
+            }
+
+            *offset = marker_start;
+            return CL_SUCCESS;
+        }
+
+        cursor += chunk;
+    }
+
+    return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.EntropyDataEndedBeforeEOI");
 }
 
 static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off, size_t segment_end)
@@ -419,6 +480,7 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
     uint64_t segment = 0;
     bool found_comment = false;
     bool found_app     = false;
+    bool found_scan    = false;
 
     uint64_t num_JFIF  = 0;
     uint64_t num_Exif  = 0;
@@ -476,6 +538,10 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
         status = jpeg_checktimelimit(ctx, "JPEG segment traversal reached the configured time limit");
         if (status != CL_SUCCESS)
             goto done;
+        if (offset == map->len) {
+            status = jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.EndedBeforeEOI");
+            goto done;
+        }
         segment++;
         prev_marker = JPEG_MARKER_NOT_A_MARKER_0x00;
         for (i = 0; offset < map->len && i < 16; i++) {
@@ -527,6 +593,13 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                     }
                 }
             }
+        }
+
+        if (JPEG_MARKER_SEGMENT_EOI_END_OF_IMAGE == marker) {
+            cli_dbgmsg(" End of Image (EOI) segment marker\n");
+            if (!found_scan)
+                status = jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.NoImages");
+            goto done;
         }
 
         {
@@ -768,8 +841,6 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                         }
                         if (status != CL_SUCCESS)
                             goto done;
-                        if (offset == map->len)
-                            goto done;
                     } else {
                         cli_dbgmsg(" Unfamiliar use of application marker: 0x%02x\n", marker);
                     }
@@ -850,25 +921,36 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                 goto done;
 
             case JPEG_MARKER_SEGMENT_SOS_START_OF_SCAN: /* SOS */
+                {
+                    uint8_t components;
+                    size_t scan_header_offset = offset - len + sizeof(len_u16);
+                    size_t expected_length;
+
+                    probe_status = jpeg_read_segment_probe(ctx, scan_header_offset, offset,
+                                                            &components, sizeof(components),
+                                                            "Heuristics.Broken.Media.JPEG.ScanHeaderRead");
+                    if (probe_status != CL_SUCCESS) {
+                        status = (probe_status == CL_BREAK)
+                                     ? jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.InvalidScanHeader")
+                                     : probe_status;
+                        goto done;
+                    }
+                    expected_length = 6U + 2U * (size_t)components;
+                    if (components == 0 || (size_t)len != expected_length) {
+                        status = jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.InvalidScanHeader");
+                        goto done;
+                    }
+                }
                 cli_dbgmsg(" Start of Scan (SOS) segment marker\n");
                 if (!found_app) {
                     cli_dbgmsg(" Found the Start-of-Scan segment without identifying the JPEG application type.\n");
                 }
-                /* What follows would be scan data (compressed image data),
-                 * parsing is not presently required for validation purposes
-                 * so we'll just call it quits. */
-                goto done;
-
-            case JPEG_MARKER_SEGMENT_EOI_END_OF_IMAGE: /* EOI (End of Image) */
-                cli_dbgmsg(" End of Image (EOI) segment marker\n");
-                /*
-                 * We shouldn't reach this marker because we exit out when we hit the Start of Scan marker.
-                 */
-                if (SCAN_HEURISTIC_BROKEN_MEDIA) {
-                    cli_warnmsg("JPEG: No image in jpeg\n");
-                    status = cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Media.JPEG.NoImages");
-                }
-                goto done;
+                found_scan = true;
+                status     = jpeg_find_next_entropy_marker(ctx, &offset);
+                if (status != CL_SUCCESS)
+                    goto done;
+                prev_segment = marker;
+                continue;
 
             case JPEG_MARKER_SEGMENT_COM_COMMENT: /* COM (comment) */
                 cli_dbgmsg(" Comment (COM) segment marker\n");
