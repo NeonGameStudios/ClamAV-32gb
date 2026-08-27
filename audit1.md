@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## CPIO parser engine admission — 2026-08-27
+
+The shared CPIO context validator checked only the parser context and input
+fmap, although all three direct CPIO variants later use engine-owned cleanup
+and scan-limit state. A valid fmap with no engine could therefore reach an
+unchecked `ctx->engine` dereference. The validator now returns `CL_ENULLARG`
+before any CPIO traversal for that caller error. The current-source
+production-linked GCC `cpio_map` case includes the new all-variant admission
+regression and passes 5/5; the existing `cpio_crc` and `cpio_numeric` focused
+cases pass 4/4 and 3/3. Full old/ODC/NEWC/CRC corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+release qualification remain open.
+
 ## Partition parser engine admission — 2026-08-27
 
 The APM, GPT, and MBR direct parser entries used `ctx->engine->maxpartitions`

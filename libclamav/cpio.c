@@ -164,6 +164,8 @@ static cl_error_t cpio_validate_context(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "CPIO input map is unavailable");
         return CL_EPARSE;
     }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
     return CL_SUCCESS;
 }
 

@@ -40703,6 +40703,31 @@ START_TEST(test_partition_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_cpio_missing_engine_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scancpio_old(&ctx), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scancpio_odc(&ctx), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scancpio_newc(&ctx, 0), CL_ENULLARG);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -41200,6 +41225,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cpio_map, test_cpio_member_name_read_failure_is_fail_visible);
     tcase_add_test(tc_cpio_map, test_cpio_impossible_next_header_is_parse_error);
     tcase_add_test(tc_cpio_map, test_cpio_initial_read_failure_is_read_error);
+    tcase_add_test(tc_cpio_map, test_cpio_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_iso_map);
     tcase_add_checked_fixture(tc_iso_map, cl_setup, cl_teardown);
     tcase_add_test(tc_iso_map, test_iso_missing_map_is_fail_visible);

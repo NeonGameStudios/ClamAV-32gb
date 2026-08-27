@@ -1,5 +1,15 @@
 # Wishlist
 
+## CPIO parser engine admission — 2026-08-27
+
+- Keep the shared CPIO context validator fail-visible when a recognized fmap
+  is supplied without the engine required by cleanup and scan-limit state;
+  return `CL_ENULLARG` before any old, ODC, NEWC, or CRC traversal.
+- The current-source production-linked GCC `cpio_map` case passes 5/5, while
+  the focused `cpio_crc` and `cpio_numeric` cases pass 4/4 and 3/3. Keep the
+  complete CPIO corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release qualification open.
+
 ## Partition parser engine admission — 2026-08-27
 
 - Keep APM, GPT, and MBR direct parser entries fail-visible when a recognized
