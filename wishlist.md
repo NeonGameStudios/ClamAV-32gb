@@ -5017,3 +5017,15 @@ and Sonic1 qualification as release gates.
   retain full bytecode fixture/interpreter/JIT corpus, sanitizer, certified
   Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification as release gates.
+
+## ISO9660 descriptor-sequence coverage audit — 2026-08-27
+
+- Validate the primary descriptor before ISO admission and walk every complete
+  descriptor through the declared volume boundary instead of stopping at
+  sector 31. Require the valid `0xff/CD001` terminator and retain checked
+  coordinate arithmetic plus per-descriptor deadline checks.
+- The late-terminator regression is registered and current-source GCC
+  compile-checked, but still needs a current-source production-linked runtime
+  result. Keep full ISO corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  open.
