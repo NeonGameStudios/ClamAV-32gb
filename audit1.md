@@ -83,6 +83,16 @@ complete image before its bounded overlay and exact child match. Complete GIF
 corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
 
+## Crypto key/certificate file-close audit — 2026-08-27
+
+The PEM certificate, private-key, and CRL loaders accepted successfully parsed
+objects after `fclose()` reported an error. They now reject that result and
+free the parsed object, so signature verification and key/CRL loading remain
+fail-visible. The current source passes the production warning-enabled GCC
+syntax check; injected close-failure execution, production CVD/service,
+sanitizer, certified Linux x86-64, materialized large-file, Sonic1, and
+release qualification remain open.
+
 ## MIME direct-context and first-line admission audit — 2026-08-27
 
 The public `cli_mbox()` entry checked its directory, context, and fmap, but the

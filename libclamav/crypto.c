@@ -1285,7 +1285,10 @@ int cl_verify_signature_hash_x509_keyfile(char *x509path, const char *alg, unsig
         return -1;
     }
 
-    fclose(fp);
+    if (fclose(fp) != 0) {
+        X509_free(x509);
+        return -1;
+    }
 
     res = cl_verify_signature_hash_x509(x509, alg, sig, siglen, digest);
 
@@ -1311,7 +1314,10 @@ int cl_verify_signature_fd_x509_keyfile(char *x509path, const char *alg, unsigne
         return -1;
     }
 
-    fclose(fp);
+    if (fclose(fp) != 0) {
+        X509_free(x509);
+        return -1;
+    }
 
     res = cl_verify_signature_fd_x509(x509, alg, sig, siglen, fd);
 
@@ -1337,7 +1343,10 @@ int cl_verify_signature_x509_keyfile(char *x509path, const char *alg, unsigned c
         return -1;
     }
 
-    fclose(fp);
+    if (fclose(fp) != 0) {
+        X509_free(x509);
+        return -1;
+    }
 
     res = cl_verify_signature_x509(x509, alg, sig, siglen, data, datalen, decode);
 
@@ -1411,7 +1420,10 @@ unsigned char *cl_sign_data_keyfile(char *keypath, const char *alg, unsigned cha
         return NULL;
     }
 
-    fclose(fp);
+    if (fclose(fp) != 0) {
+        EVP_PKEY_free(pkey);
+        return NULL;
+    }
 
     res = cl_sign_data(pkey, alg, hash, olen, encode);
 
@@ -1512,7 +1524,10 @@ EVP_PKEY *cl_get_pkey_file(char *keypath)
         return NULL;
     }
 
-    fclose(fp);
+    if (fclose(fp) != 0) {
+        EVP_PKEY_free(pkey);
+        return NULL;
+    }
 
     return pkey;
 }
@@ -1825,7 +1840,11 @@ X509_CRL *cl_load_crl(const char *file)
 
     x = PEM_read_X509_CRL(fp, NULL, NULL, NULL);
 
-    fclose(fp);
+    if (fclose(fp) != 0) {
+        if (x != NULL)
+            X509_CRL_free(x);
+        return NULL;
+    }
 
     if ((x)) {
         const ASN1_TIME *tme;

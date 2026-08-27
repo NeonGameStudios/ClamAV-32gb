@@ -5353,6 +5353,10 @@ contains libclamav/libmspack.c 'mspack_handle->system_ex->close_failure = true;'
 contains libclamav/libmspack.c 'CAB member output could not be closed'
 contains libclamav/libmspack.c 'CHM member output could not be closed'
 contains docs/largefile-capabilities.tsv 'mspack-output-close'
+contains libclamav/crypto.c 'X509_free(x509);'
+contains libclamav/crypto.c 'EVP_PKEY_free(pkey);'
+contains libclamav/crypto.c 'X509_CRL_free(x);'
+contains docs/largefile-capabilities.tsv 'crypto-keyfile-close'
 
 if ! awk '
     /^[[:space:]]*#[[:space:]]*(if|ifdef|ifndef)([[:space:]]|$)/ { depth++; next }

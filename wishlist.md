@@ -508,6 +508,15 @@ open.
   unchanged. Keep full 7-Zip corpus, sanitizer, production-CVD/service,
   Sonic1, and release qualification open.
 
+## Crypto key/certificate file-close audit — 2026-08-27
+
+- Treat successful PEM parsing followed by `fclose()` failure as a failed
+  verification/key/CRL load and release the parsed object.
+- The current source passes the production warning-enabled GCC syntax check.
+  Keep injected close-failure execution, production CVD/service, sanitizer,
+  certified Linux x86-64, materialized large-file, Sonic1, and release
+  qualification open.
+
 ## Logical-expression parse-status propagation — 2026-08-26
 
 - Reject out-of-range logical subsignature IDs before indexing the fixed

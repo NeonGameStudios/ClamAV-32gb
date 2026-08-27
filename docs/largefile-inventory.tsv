@@ -9914,37 +9914,37 @@ native-width-integer	libclamav/crypto.c	1193	    size_t mdsz;
 native-width-integer	libclamav/crypto.c	1198	        size_t newsiglen;
 native-width-integer	libclamav/crypto.c	1271	int cl_verify_signature_hash_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
 native-width-integer	libclamav/crypto.c	1275	    int res;
-native-width-integer	libclamav/crypto.c	1297	int cl_verify_signature_fd_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, int fd)
-native-width-integer	libclamav/crypto.c	1301	    int res;
-native-width-integer	libclamav/crypto.c	1323	int cl_verify_signature_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
-native-width-integer	libclamav/crypto.c	1327	    int res;
-native-width-integer	libclamav/crypto.c	1349	int cl_verify_signature_hash_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
-native-width-integer	libclamav/crypto.c	1352	    int res;
-native-width-integer	libclamav/crypto.c	1365	int cl_verify_signature_fd_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, int fd)
-native-width-integer	libclamav/crypto.c	1368	    int res;
+native-width-integer	libclamav/crypto.c	1300	int cl_verify_signature_fd_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, int fd)
+native-width-integer	libclamav/crypto.c	1304	    int res;
+native-width-integer	libclamav/crypto.c	1329	int cl_verify_signature_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
+native-width-integer	libclamav/crypto.c	1333	    int res;
+native-width-integer	libclamav/crypto.c	1358	int cl_verify_signature_hash_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
+native-width-integer	libclamav/crypto.c	1361	    int res;
 native-width-integer	libclamav/crypto.c	137	int cl_initialize_crypto(void)
-native-width-integer	libclamav/crypto.c	1381	int cl_verify_signature_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
-native-width-integer	libclamav/crypto.c	1384	    int res;
-native-width-integer	libclamav/crypto.c	1397	unsigned char *cl_sign_data_keyfile(char *keypath, const char *alg, unsigned char *hash, unsigned int *olen, int encode)
-native-width-integer	libclamav/crypto.c	1423	unsigned char *cl_sign_data(EVP_PKEY *pkey, const char *alg, unsigned char *hash, unsigned int *olen, int encode)
-native-width-integer	libclamav/crypto.c	1427	    unsigned int siglen;
-native-width-integer	libclamav/crypto.c	1472	        siglen = (unsigned int)strlen((const char *)newsig);
-native-width-integer	libclamav/crypto.c	1480	unsigned char *cl_sign_file_fd(int fd, EVP_PKEY *pkey, const char *alg, unsigned int *olen, int encode)
-native-width-integer	libclamav/crypto.c	1483	    unsigned int hashlen;
-native-width-integer	libclamav/crypto.c	1496	unsigned char *cl_sign_file_fp(FILE *fp, EVP_PKEY *pkey, const char *alg, unsigned int *olen, int encode)
-native-width-integer	libclamav/crypto.c	1520	X509 *cl_get_x509_from_mem(void *data, unsigned int len)
-native-width-integer	libclamav/crypto.c	1535	int cl_validate_certificate_chain_ts_dir(char *tsdir, char *certpath)
-native-width-integer	libclamav/crypto.c	1538	    size_t nauths      = 0;
-native-width-integer	libclamav/crypto.c	1539	    int res;
-native-width-integer	libclamav/crypto.c	1610	int cl_validate_certificate_chain(char **authorities, char *crlpath, char *certpath)
-native-width-integer	libclamav/crypto.c	1618	    unsigned long i;
-native-width-integer	libclamav/crypto.c	1619	    int res;
+native-width-integer	libclamav/crypto.c	1374	int cl_verify_signature_fd_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, int fd)
+native-width-integer	libclamav/crypto.c	1377	    int res;
+native-width-integer	libclamav/crypto.c	1390	int cl_verify_signature_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
+native-width-integer	libclamav/crypto.c	1393	    int res;
+native-width-integer	libclamav/crypto.c	1406	unsigned char *cl_sign_data_keyfile(char *keypath, const char *alg, unsigned char *hash, unsigned int *olen, int encode)
+native-width-integer	libclamav/crypto.c	1435	unsigned char *cl_sign_data(EVP_PKEY *pkey, const char *alg, unsigned char *hash, unsigned int *olen, int encode)
+native-width-integer	libclamav/crypto.c	1439	    unsigned int siglen;
+native-width-integer	libclamav/crypto.c	1484	        siglen = (unsigned int)strlen((const char *)newsig);
+native-width-integer	libclamav/crypto.c	1492	unsigned char *cl_sign_file_fd(int fd, EVP_PKEY *pkey, const char *alg, unsigned int *olen, int encode)
+native-width-integer	libclamav/crypto.c	1495	    unsigned int hashlen;
+native-width-integer	libclamav/crypto.c	1508	unsigned char *cl_sign_file_fp(FILE *fp, EVP_PKEY *pkey, const char *alg, unsigned int *olen, int encode)
+native-width-integer	libclamav/crypto.c	1535	X509 *cl_get_x509_from_mem(void *data, unsigned int len)
+native-width-integer	libclamav/crypto.c	1550	int cl_validate_certificate_chain_ts_dir(char *tsdir, char *certpath)
+native-width-integer	libclamav/crypto.c	1553	    size_t nauths      = 0;
+native-width-integer	libclamav/crypto.c	1554	    int res;
+native-width-integer	libclamav/crypto.c	1625	int cl_validate_certificate_chain(char **authorities, char *crlpath, char *certpath)
+native-width-integer	libclamav/crypto.c	1633	    unsigned long i;
+native-width-integer	libclamav/crypto.c	1634	    int res;
 native-width-integer	libclamav/crypto.c	178	 * @param[inout] hash_len   A pointer that stores how long the generated hash is.
 native-width-integer	libclamav/crypto.c	189	    size_t data_len,
-native-width-integer	libclamav/crypto.c	1901	int cl_update_hash(void *ctx, const void *data, size_t sz)
 native-width-integer	libclamav/crypto.c	191	    size_t *hash_len,
-native-width-integer	libclamav/crypto.c	1924	int cl_finish_hash(void *ctx, void *buf)
-native-width-integer	libclamav/crypto.c	1926	    int res = 0;
+native-width-integer	libclamav/crypto.c	1920	int cl_update_hash(void *ctx, const void *data, size_t sz)
+native-width-integer	libclamav/crypto.c	1943	int cl_finish_hash(void *ctx, void *buf)
+native-width-integer	libclamav/crypto.c	1945	    int res = 0;
 native-width-integer	libclamav/crypto.c	205	    size_t required_hash_len;
 native-width-integer	libclamav/crypto.c	207	    unsigned int hash_len_final;
 native-width-integer	libclamav/crypto.c	209	    size_t cur;
@@ -21803,8 +21803,8 @@ format-width	libclamav/cpio.c	609	        cli_dbgmsg("CPIO: -- File %u --\n", ++
 format-width	libclamav/cpio.c	678	        cli_dbgmsg("CPIO: Filesize: %zu\n", filesize);
 format-width	libclamav/crtmgr.c	467	        cli_errmsg("crtmgr_rsa_verify: Unsupported hashtype: %d\n", hashtype);
 format-width	libclamav/crtmgr.c	634	        cli_dbgmsg("crtmgr_verify_pkcs7: unsupported sig len: %u\n", signature_len);
-format-width	libclamav/crypto.c	1774	        fmt = "%y%m%d%H%M%S";
-format-width	libclamav/crypto.c	1783	        fmt = "%Y%m%d%H%M%S";
+format-width	libclamav/crypto.c	1789	        fmt = "%y%m%d%H%M%S";
+format-width	libclamav/crypto.c	1798	        fmt = "%Y%m%d%H%M%S";
 format-width	libclamav/crypto.c	255	            cli_errmsg("cl_hash_data_ex: Provided hash buffer for '%s' is too small. Provided bytes: %zu, Required bytes: %zu\n", alg, *hash_len, required_hash_len);
 format-width	libclamav/crypto.c	522	            cli_errmsg("cl_hash_data_ex: Provided hash buffer is too small. Provided bytes: %zu, Required bytes: %zu\n", *hash_len, required_hash_len);
 format-width	libclamav/crypto.c	628	        cli_errmsg("cl_hash_data_ex: Failed to stat file descriptor %d: %s\n", fd, cl_strerror(CL_ESTAT));
@@ -26040,13 +26040,13 @@ offset-size-arithmetic	libclamav/crypto.c	1101	unsigned char *cl_sha1(const void
 offset-size-arithmetic	libclamav/crypto.c	1106	int cl_verify_signature_hash(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
 offset-size-arithmetic	libclamav/crypto.c	1189	int cl_verify_signature(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
 offset-size-arithmetic	libclamav/crypto.c	1271	int cl_verify_signature_hash_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
-offset-size-arithmetic	libclamav/crypto.c	1323	int cl_verify_signature_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
-offset-size-arithmetic	libclamav/crypto.c	1349	int cl_verify_signature_hash_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
-offset-size-arithmetic	libclamav/crypto.c	1381	int cl_verify_signature_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
-offset-size-arithmetic	libclamav/crypto.c	1472	        siglen = (unsigned int)strlen((const char *)newsig);
-offset-size-arithmetic	libclamav/crypto.c	1554	        t = (char **)realloc(authorities, sizeof(char **) * (nauths + 1));
-offset-size-arithmetic	libclamav/crypto.c	1567	        authorities[nauths] = (char *)malloc(strlen(tsdir) + strlen(dirent->d_name) + 2);
-offset-size-arithmetic	libclamav/crypto.c	1586	    t = (char **)realloc(authorities, sizeof(char **) * (nauths + 1));
+offset-size-arithmetic	libclamav/crypto.c	1329	int cl_verify_signature_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
+offset-size-arithmetic	libclamav/crypto.c	1358	int cl_verify_signature_hash_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
+offset-size-arithmetic	libclamav/crypto.c	1390	int cl_verify_signature_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
+offset-size-arithmetic	libclamav/crypto.c	1484	        siglen = (unsigned int)strlen((const char *)newsig);
+offset-size-arithmetic	libclamav/crypto.c	1569	        t = (char **)realloc(authorities, sizeof(char **) * (nauths + 1));
+offset-size-arithmetic	libclamav/crypto.c	1582	        authorities[nauths] = (char *)malloc(strlen(tsdir) + strlen(dirent->d_name) + 2);
+offset-size-arithmetic	libclamav/crypto.c	1601	    t = (char **)realloc(authorities, sizeof(char **) * (nauths + 1));
 offset-size-arithmetic	libclamav/crypto.c	175	 * @param data_len          The length of the to-be-hashed data.
 offset-size-arithmetic	libclamav/crypto.c	191	    size_t *hash_len,
 offset-size-arithmetic	libclamav/crypto.c	286	            data_len - cur);
