@@ -1,5 +1,13 @@
 # Wishlist
 
+## TNEF direct-entry context evidence — 2026-08-27
+
+- Add and register a direct null-context regression alongside the existing
+  missing-map test; the current-source production-linked GCC `tnef_map` case
+  passes 2/2. Full TNEF corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  remain open.
+
 ## DMG parser engine admission — 2026-08-27
 
 - Keep `cli_scandmg()` fail-visible when a recognized fmap is supplied

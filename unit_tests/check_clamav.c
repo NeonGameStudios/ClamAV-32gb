@@ -27410,6 +27410,12 @@ START_TEST(test_tnef_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tnef_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_tnef(tmpdir, NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_tnef_initial_read_failure_is_fail_visible)
 {
     static const uint8_t input[sizeof(uint32_t) + sizeof(uint16_t)] = {0};
@@ -41096,6 +41102,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_elf, test_elf32_table_coordinates_are_native_width);
 #endif
     suite_add_tcase(s, tc_tnef_map);
+    tcase_add_test(tc_tnef_map, test_tnef_null_context_is_fail_visible);
     tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_tnef);
     tcase_add_checked_fixture(tc_tnef, cl_setup, cl_teardown);

@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## TNEF direct-entry context evidence — 2026-08-27
+
+The TNEF direct parser already returned `CL_ENULLARG` for a null context and
+returned an incomplete `CL_EPARSE` result for a recognized context without an
+input fmap. The focused map TCase only covered the latter, leaving the null
+context contract unprotected against regression. A dedicated null-context
+check is now registered beside the missing-map check. The current-source
+production-linked GCC `tnef_map` case passes 2/2; full TNEF corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
+
 ## DMG parser engine admission — 2026-08-27
 
 The DMG direct parser validated context and fmap but later used

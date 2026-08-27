@@ -2778,6 +2778,7 @@ contains unit_tests/check_clamav.c 'two literals: output exceeds the declaration
 contains libclamav/tnef.c 'TNEF attribute header could not be read completely'
 contains libclamav/tnef.c 'TNEF header was truncated'
 contains libclamav/tnef.c 'TNEF input map is unavailable'
+contains unit_tests/check_clamav.c 'test_tnef_null_context_is_fail_visible'
 contains libclamav/tnef.c 'fileblobSetCTX(*fbref, ctx)'
 contains libclamav/tnef.c 'fileblobSetFilename(*fbref, dir, "tnef")'
 contains libclamav/tnef.c 'TNEF attachment title could not be read completely'
