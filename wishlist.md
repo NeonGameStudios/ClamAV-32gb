@@ -5653,6 +5653,19 @@ and Sonic1 qualification as release gates.
   certified Linux x86-64, materialized large-file, production-CVD/service,
   Sonic1, and parser-family qualification remain open.
 
+## DMG cleanup-status precedence audit — 2026-08-27
+
+- Make DMG XML staging, reconstructed-partition output, external metadata
+  sorting, and temporary-directory cleanup fail-visible: preserve
+  `CL_EWRITE` versus `CL_EUNLINK`, upgrade clean/verified/`CL_BREAK`, and
+  retain detections or earlier parser/resource errors.
+- Use a single XML-staging cleanup exit so close failures remain visible on
+  timeout, read, reservation, and write exits. Current source guards and GCC
+  syntax evidence cover the change; current-object execution, complete
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain
+  open.
+
 ## ISO9660 and UDF cleanup-status precedence audit — 2026-08-27
 
 - Make ISO9660 and UDF temporary-output close/unlink cleanup fail-visible

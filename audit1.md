@@ -11681,6 +11681,25 @@ execution, complete corpora, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and parser-family qualification
 remain open.
 
+## DMG cleanup-status precedence audit — 2026-08-27
+
+DMG XML staging, reconstructed-partition output, external metadata-sort
+spools, and the temporary directory had cleanup branches that either ignored
+close failures on error exits or collapsed close and unlink failures into a
+single generic status. Those paths now merge explicit `CL_EWRITE` and
+`CL_EUNLINK` cleanup statuses, upgrade clean, verified, and `CL_BREAK` while
+preserving detections and earlier parser/resource errors, and retain sticky
+incomplete state for every cleanup failure. XML staging now has one cleanup
+exit so timeout, read, reserve, and write failures cannot bypass descriptor
+close reporting.
+
+The current DMG source passes the established warning-enabled GCC syntax
+check and source guards cover the cleanup paths. Existing focused DMG
+production-linked evidence remains prior-object evidence for this change;
+current-object execution, complete DMG corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
 ## ISO9660 and UDF cleanup-status precedence audit — 2026-08-27
 
 ISO9660 and UDF temporary-output cleanup marked close and unlink failures

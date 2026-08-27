@@ -120,8 +120,7 @@ static int dmg_cleanup_temp_dir(cli_ctx *ctx, char **dirname, int status)
 
     if (!ctx->engine->keeptmp && cli_rmdirs(*dirname) != 0) {
         cli_mark_scan_incomplete(ctx, "DMG temporary directory could not be removed");
-        if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-            status = CL_EUNLINK;
+        status = cli_merge_cleanup_status(status, CL_EUNLINK);
     }
 
     free(*dirname);
@@ -917,7 +916,7 @@ int cli_dmg_external_sort_stripes(cli_ctx *ctx, struct dmg_mish_with_stripes *mi
     uint64_t destination_base;
     size_t source_length;
     int ret            = CL_CLEAN;
-    int cleanup_failed = 0;
+    cl_error_t cleanup_status = CL_SUCCESS;
 
     if (!ctx || !ctx->engine || !mish_set || !mish_set->mish || !mish_set->metadata_map ||
         mish_set->metadata_fd < 0 || mish_set->metadata_len < sizeof(struct dmg_mish_block))
@@ -1064,20 +1063,20 @@ done:
         cli_scan_release_contiguous(ctx, contiguous_reserved);
     if (source_map)
         fmap_free(source_map);
-    if (auxiliary_fd >= 0 && close(auxiliary_fd) != 0)
-        cleanup_failed = 1;
+    if (auxiliary_fd >= 0 && close(auxiliary_fd) != 0) {
+        cli_mark_scan_incomplete(ctx, "DMG external metadata sort spool could not be closed");
+        cleanup_status = cli_merge_cleanup_status(cleanup_status, CL_EWRITE);
+    }
     if (auxiliary_name) {
-        if (!ctx->engine->keeptmp && cli_unlink(auxiliary_name) != 0)
-            cleanup_failed = 1;
+        if (!ctx->engine->keeptmp && cli_unlink(auxiliary_name) != 0) {
+            cli_mark_scan_incomplete(ctx, "DMG external metadata sort spool could not be removed");
+            cleanup_status = cli_merge_cleanup_status(cleanup_status, CL_EUNLINK);
+        }
         free(auxiliary_name);
     }
     if (auxiliary_reserved)
         cli_scan_release_temporary(ctx, auxiliary_reserved);
-    if (cleanup_failed) {
-        cli_mark_scan_incomplete(ctx, "DMG external metadata sort spool cleanup failed");
-        if (ret == CL_CLEAN)
-            ret = CL_EUNLINK;
-    }
+    ret = cli_merge_cleanup_status(ret, cleanup_status);
     return ret;
 }
 
@@ -1770,14 +1769,12 @@ static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
 
     if (close(ofd) == -1) {
         cli_mark_scan_incomplete(ctx, "DMG reconstructed partition could not be closed completely");
-        if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
-            ret = CL_EWRITE;
+        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
     }
     cli_scan_release_temporary(ctx, temporary_reserved);
     if (!ctx->engine->keeptmp && cli_unlink(outfile)) {
         cli_mark_scan_incomplete(ctx, "DMG reconstructed partition temporary file could not be removed");
-        if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
-            ret = CL_EUNLINK;
+        ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
     }
 
     return ret;
@@ -1785,11 +1782,12 @@ static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
 
 static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
 {
-    char *xmlfile;
+    char *xmlfile = NULL;
     uint8_t buffer[DMG_STREAM_CHUNK_SIZE];
     uint64_t offset, remaining;
     size_t namelen;
-    int ofd;
+    int ofd = -1;
+    int ret = CL_SUCCESS;
     size_t read_result;
 
     namelen = strlen(dir) + 1 + 7 + 1;
@@ -1806,8 +1804,8 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
         cli_errmsg("cli_scandmg: Can't create temporary file %s: %s\n",
                    xmlfile, cli_strerror(errno, err, sizeof(err)));
         cli_mark_scan_incomplete(ctx, "DMG XML temporary file could not be opened");
-        free(xmlfile);
-        return CL_ETMPFILE;
+        ret = CL_ETMPFILE;
+        goto done;
     }
 
     offset    = hdr->xmlOffset;
@@ -1816,10 +1814,9 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
         size_t wanted = (size_t)MIN(remaining, (uint64_t)sizeof(buffer));
 
         if (cli_checktimelimit(ctx) != CL_SUCCESS) {
-            close(ofd);
-            free(xmlfile);
             cli_mark_scan_incomplete(ctx, "DMG XML staging reached the configured time limit");
-            return CL_ETIMEOUT;
+            ret = CL_ETIMEOUT;
+            goto done;
         }
 
         read_result = offset > (uint64_t)SIZE_MAX
@@ -1827,35 +1824,32 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
                           : fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted);
         if (read_result != wanted) {
             cli_errmsg("cli_scandmg: Failed reading XML at offset " STDu64 "\n", offset);
-            close(ofd);
-            free(xmlfile);
             cli_mark_scan_incomplete(ctx, "DMG XML resource fork could not be read completely");
-            return read_result == (size_t)-1 ? CL_EREAD : CL_EPARSE;
+            ret = read_result == (size_t)-1 ? CL_EREAD : CL_EPARSE;
+            goto done;
         }
         if (cli_scan_reserve_temporary(ctx, (uint64_t)wanted) != CL_SUCCESS) {
-            close(ofd);
-            free(xmlfile);
             cli_mark_scan_incomplete(ctx, "DMG XML retained copy exceeds temporary storage limits");
-            return CL_ERESOURCE;
+            ret = CL_ERESOURCE;
+            goto done;
         }
         if (cli_writen(ofd, buffer, wanted) != wanted) {
             cli_scan_release_temporary(ctx, (uint64_t)wanted);
             cli_errmsg("cli_scandmg: Not all XML bytes were written!\n");
             cli_mark_scan_incomplete(ctx, "DMG XML temporary file could not be written completely");
-            close(ofd);
-            free(xmlfile);
-            return CL_EWRITE;
+            ret = CL_EWRITE;
+            goto done;
         }
         cli_scan_release_temporary(ctx, (uint64_t)wanted);
         offset += wanted;
         remaining -= wanted;
     }
 
-    if (close(ofd) == -1) {
+done:
+    if (ofd >= 0 && close(ofd) == -1) {
         cli_mark_scan_incomplete(ctx, "DMG XML temporary file could not be closed completely");
-        free(xmlfile);
-        return CL_EWRITE;
+        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
     }
     free(xmlfile);
-    return CL_SUCCESS;
+    return ret;
 }
