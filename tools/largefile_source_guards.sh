@@ -2791,6 +2791,8 @@ contains libclamav/ole2_extract.c 'OLE2 embedded document summary information co
 contains libclamav/ole2_extract.c 'OLE2 embedded encrypted summary information could not be inspected completely'
 contains libclamav/ole2_extract.c 'OLE2 embedded encrypted document summary information could not be inspected completely'
 contains libclamav/ole2_extract.c 'ole2_note_cleanup_failure'
+contains libclamav/ole2_extract.c 'cli_merge_cleanup_status(*status, failure)'
+contains libclamav/ole2_extract.c 'ole2_note_cleanup_failure(ctx, &ret, CL_EWRITE'
 contains libclamav/msexpand.c 'MSEXPAND input ended before the declared output was produced'
 contains libclamav/msexpand.c 'MSEXPAND header is truncated'
 contains libclamav/msexpand.c 'MSEXPAND input map is unavailable'

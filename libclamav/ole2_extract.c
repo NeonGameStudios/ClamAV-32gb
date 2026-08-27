@@ -670,10 +670,10 @@ static void ole2_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
 
     cli_mark_scan_incomplete(ctx, reason);
     /* A cleanup failure after a detection must not hide the detection.  A
-     * normal or CL_BREAK completion, however, is no longer a valid clean
-     * result once the extracted stream cannot be closed or removed. */
-    if ((*status == CL_SUCCESS) || (*status == CL_BREAK))
-        *status = failure;
+     * normal, verified, or CL_BREAK completion, however, is no longer a
+     * valid clean result once the extracted stream cannot be closed or
+     * removed. */
+    *status = cli_merge_cleanup_status(*status, failure);
 }
 
 /*
@@ -1468,7 +1468,7 @@ done:
     CLI_FREE_AND_SET_NULL(name);
     if (-1 != ofd) {
         if (close(ofd) == -1)
-            ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "OLE2 VBA temporary output could not be closed");
+            ole2_note_cleanup_failure(ctx, &ret, CL_EWRITE, "OLE2 VBA temporary output could not be closed");
     }
     CLI_FREE_AND_SET_NULL(buff);
     if (NULL != blk_bitset) {
@@ -2122,7 +2122,7 @@ mso_end:
     if (zret != Z_OK)
         ole2_note_cleanup_failure(ctx, &ret, CL_EUNPACK, "MSO zlib stream could not be closed");
     if (close(ofd) == -1)
-        ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "MSO temporary output could not be closed");
+        ole2_note_cleanup_failure(ctx, &ret, CL_EWRITE, "MSO temporary output could not be closed");
     if (!ctx->engine->keeptmp)
         if (cli_unlink(tmpname))
             ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "MSO temporary output could not be removed");
@@ -2339,7 +2339,7 @@ done:
     CLI_FREE_AND_SET_NULL(name);
     if (-1 != ofd) {
         if (close(ofd) == -1)
-            ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "OLE2 temporary output could not be closed");
+            ole2_note_cleanup_failure(ctx, &ret, CL_EWRITE, "OLE2 temporary output could not be closed");
     }
     CLI_FREE_AND_SET_NULL(buff);
     if (NULL != blk_bitset) {
@@ -2650,7 +2650,7 @@ done:
     CLI_FREE_AND_SET_NULL(name);
     if (-1 != ofd) {
         if (close(ofd) == -1)
-            ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "OLE2 encrypted temporary output could not be closed");
+            ole2_note_cleanup_failure(ctx, &ret, CL_EWRITE, "OLE2 encrypted temporary output could not be closed");
     }
     CLI_FREE_AND_SET_NULL(buff);
     if (NULL != blk_bitset) {

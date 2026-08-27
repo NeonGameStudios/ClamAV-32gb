@@ -5724,3 +5724,14 @@ and Sonic1 qualification as release gates.
   object execution, complete corpora, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, Sonic1, and parser-family
   qualification remain open.
+
+## OLE2 cleanup-status precedence audit — 2026-08-27
+
+- Make the OLE2 cleanup notifier preserve `CL_EWRITE` for close and
+  `CL_EUNLINK` for removal, upgrade clean/verified/`CL_BREAK`, and retain
+  detections or earlier parser/resource errors.
+- Keep zlib-finalization failure classified separately as `CL_EUNPACK`.
+  Current source guards and GCC syntax evidence cover the change; current
+  object execution, complete OLE/VBA/XLM corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification remain open.

@@ -11779,3 +11779,20 @@ remains prior-object evidence for this cleanup-only change; current-object
 execution, complete corpora, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and parser-family qualification
 remain open.
+
+## OLE2 cleanup-status precedence audit — 2026-08-27
+
+The OLE2 cleanup notifier upgraded only clean and `CL_BREAK` statuses, and
+several VBA/MSO/embedded/encrypted close sites passed `CL_EUNLINK` for a
+descriptor-close failure. The notifier now delegates precedence to the
+shared helper, so `CL_EWRITE` identifies close failure, `CL_EUNLINK`
+identifies removal failure, `CL_VERIFIED` is handled correctly, and
+detections or earlier parser/resource errors remain authoritative. The
+separate zlib-finalization failure remains `CL_EUNPACK`.
+
+The current OLE2 extraction source passes the established GCC syntax check and
+source guards cover the helper and corrected close status. Existing focused
+OLE2/XLM production-linked evidence remains prior-object evidence for this
+cleanup-only change; current-object execution, complete OLE/VBA/XLM corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
