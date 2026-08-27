@@ -11939,3 +11939,15 @@ detection results. Current GCC syntax and source guards cover the path;
 current-object execution, complete XLM/OLE2 corpora, sanitizer, certified
 Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
 parser-family qualification remain open.
+
+## HTML normalized-view cleanup-status audit — 2026-08-27
+
+The HTML scanner’s normalized-view cleanup helper only replaced clean or
+verified results, leaving `CL_BREAK` unchanged after a required close or
+temporary-directory cleanup failure. It now uses the shared cleanup-status
+precedence helper, preserving detections and earlier parser/resource errors
+while upgrading abort results to the appropriate `CL_EWRITE` or `CL_EUNLINK`.
+The current scanner source passes the GCC syntax check and guards cover the
+handoff; current-object execution, complete HTML/script corpora, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.

@@ -3706,10 +3706,9 @@ static void cli_scanhtml_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
 
     cli_mark_scan_incomplete(ctx, reason);
     /* Preserve a detection or an earlier parser failure, but never allow a
-     * clean/verified result after a required normalized view could not be
-     * closed or the temporary directory could not be removed. */
-    if ((*status == CL_SUCCESS) || (*status == CL_VERIFIED))
-        *status = failure;
+     * clean/verified/abort result after a required normalized view could not
+     * be closed or the temporary directory could not be removed. */
+    *status = cli_merge_cleanup_status(*status, failure);
 }
 
 static cl_error_t cli_scanhtml(cli_ctx *ctx)

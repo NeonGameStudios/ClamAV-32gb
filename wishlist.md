@@ -5845,3 +5845,13 @@ parser-family qualification remain open.
   execution, complete XLM/OLE2 corpora, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, Sonic1, and parser-family
   qualification remain open.
+
+## HTML normalized-view cleanup-status audit — 2026-08-27
+
+- Route normalized-view close and temporary-directory cleanup through the
+  shared precedence helper, preserving detections and earlier errors while
+  upgrading `CL_BREAK` to `CL_EWRITE` or `CL_EUNLINK`.
+- Current GCC syntax and source guards cover the handoff; current-object
+  execution, complete HTML/script corpora, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.

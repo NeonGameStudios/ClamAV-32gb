@@ -1964,6 +1964,7 @@ contains libclamav/scanners.c 'HTML normalization temporary directory could not 
 contains libclamav/scanners.c 'HTML normalized no-comment output could not be closed'
 contains libclamav/scanners.c 'HTML normalized no-tags output could not be closed'
 contains libclamav/scanners.c 'HTML normalized JavaScript output could not be closed'
+contains libclamav/scanners.c 'cli_merge_cleanup_status(*status, failure)'
 contains libclamav/scanners.c 'HTML normalized no-comment output could not be opened'
 contains libclamav/scanners.c 'HTML normalized no-tags output could not be opened'
 contains libclamav/scanners.c 'HTML normalized no-comment output could not be opened'
