@@ -1,5 +1,15 @@
 # Wishlist
 
+## HWP3 direct-entry options admission — 2026-08-27
+
+- Keep `cli_scanhwp3()` fail-visible when a valid fmap and engine are supplied
+  without `ctx->options`; the direct entry now returns `CL_ENULLARG` before
+  `SCAN_COLLECT_METADATA` can dereference the missing options object. The
+  current-source production-linked GCC `hwp3_map` case passes 3/3, while
+  `hwp3_api` remains 1/1 and `hwp3_corpus` remains 1/1. Keep complete HWP3
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## OneNote public compatibility fallback validation — 2026-08-27
 
 - Validate the complete legacy stream before the public `OneNote::from_bytes()`

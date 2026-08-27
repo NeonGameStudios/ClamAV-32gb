@@ -2098,6 +2098,8 @@ cl_error_t cli_scanhwp3(cli_ctx *ctx)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     if (hwp3_checktimelimit(ctx, "HWP3 inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;

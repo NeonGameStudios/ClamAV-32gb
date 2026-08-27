@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HWP3 direct-entry options admission — 2026-08-27
+
+`cli_scanhwp3()` uses `ctx->options` through `SCAN_COLLECT_METADATA`. Its
+direct entry now returns `CL_ENULLARG` when a valid fmap and engine are
+supplied without scan options, before metadata or parser traversal begins.
+The current-source production-linked GCC `hwp3_map` regression passes 3/3 for
+null context, missing engine, and missing options; `hwp3_api` passes 1/1 and
+`hwp3_corpus` passes 1/1. Complete HWP3 corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## Structured-detector engine admission — 2026-08-27
 
 `cli_scan_structured()` already rejected null context and missing input fmap,

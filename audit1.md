@@ -358,6 +358,19 @@ linked GCC `elf_map` regression covers the null, missing-map, and missing-
 engine entry states; full ELF unpacker/corpus, sanitizer, production-CVD/
 service, Sonic1, and release qualification remain open.
 
+## HWP3 direct-entry options admission — 2026-08-27
+
+`cli_scanhwp3()` uses the scan-options bitfield while deciding whether to
+collect metadata, but its direct entry previously accepted a valid fmap and
+engine with `ctx->options == NULL`. That caller state could dereference a
+missing options object before producing a parser result. The entry now returns
+`CL_ENULLARG` for missing options, and the current-source production-linked
+GCC `hwp3_map` case passes 3/3 for null context, missing engine, and missing
+options. The isolated `hwp3_api` case remains 1/1 and `hwp3_corpus` 1/1;
+complete HWP3 corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## HWP3 null-context classification — 2026-08-27
 
 The HWP3 direct parser entry returned legacy `CL_EARG` for a null context,
