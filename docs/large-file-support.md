@@ -948,10 +948,11 @@ Sonic1, and release qualification remain open.
 
 ## TIFF valid-structure corpus qualification — 2026-08-26
 
-The current-source production-linked GCC `tiff` case passes 8/8, `tiff_map`
+The current-source production-linked GCC `tiff` case passes 9/9, `tiff_map`
 passes 1/1, and the isolated `tiff_corpus` case passes 1/1 over valid classic
 TIFF and BigTIFF IFD fixtures. Both roots are structurally complete and do not
-begin with `MZP`. Full TIFF/image corpus remains open; the three `tiff_large`
+begin with `MZP`. The 9/9 result includes the direct out-of-range-first-IFD
+regression. Full TIFF/image corpus remains open; the three `tiff_large`
 callback-map cases are still a mixed-harness gate because
 `cl_fmap_open_handle()` returns a null map before parser entry. Sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
@@ -8310,9 +8311,10 @@ parser-family qualification remain release gates.
 TIFF now validates that the first IFD offset is within the containing map
 before subtracting it from `map->len` for directory-entry bounds. An
 out-of-range offset returns `CL_EPARSE`, marks the layer incomplete, and
-prevents caching. Full TIFF/image corpus, sanitizer, certified Linux x86-64,
-materialized large-file, production-CVD/service, and Sonic1 qualification
-remain release gates.
+prevents caching. The current-source production-linked GCC `tiff` case passes
+9/9, including this regression, and `tiff_map` passes 1/1. Full TIFF/image
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 qualification remain release gates.
 
 ## MSXML bounded callback metadata
 

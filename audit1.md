@@ -1120,7 +1120,7 @@ large-file, production-CVD/service, Sonic1, and release evidence remain open.
 ## TIFF valid-structure corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `tiff` case passes
-8/8, `tiff_map` passes 1/1, and the isolated `tiff_corpus` case passes 1/1
+9/9, `tiff_map` passes 1/1, and the isolated `tiff_corpus` case passes 1/1
 over valid classic TIFF and BigTIFF IFD fixtures. Both roots are structurally
 complete and do not begin with `MZP`; this is bounded structural parser
 evidence, not complete TIFF/image corpus qualification. The three `tiff_large`
@@ -10795,9 +10795,9 @@ using `map->len - offset` in the directory-entry bound calculation. This keeps
 the range proof ordered and prevents an out-of-range offset from being turned
 into a wrapped available-length quantity. A focused public parser regression
 verifies `CL_EPARSE`, sticky incompleteness, the specific reason, and
-non-cacheability. The existing production-linked TIFF case remains 8/8; the
-new ninth regression is registered and compile-checked but remains pending
-runtime execution in a current-source production-linked harness.
+non-cacheability. The current-source production-linked GCC harness now passes
+the complete `tiff` case 9/9, including the ninth out-of-range-IFD regression,
+while `tiff_map` passes 1/1 and `tiff_corpus` passes 1/1.
 
 Full TIFF/image corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and parser-family qualification

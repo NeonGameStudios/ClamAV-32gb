@@ -105,6 +105,14 @@
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.
 
+## TIFF first-IFD runtime evidence — 2026-08-27
+
+- The current-source production-linked GCC `tiff` case passes 9/9, including
+  the direct out-of-range-first-IFD regression; `tiff_map` passes 1/1 and
+  `tiff_corpus` passes 1/1. Keep the complete TIFF/image corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification gates open.
+
 ## RFC 1341 partial-message parameter admission — 2026-08-26
 
 - Require a nonempty `message/partial` identifier and strictly positive
