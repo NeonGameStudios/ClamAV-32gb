@@ -11905,3 +11905,15 @@ GCC syntax evidence covers `vba_extract.c`, and source guards cover the helper
 handoffs; current-object execution, complete OLE2/VBA/PowerPoint corpora,
 sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
 service, Sonic1, and parser-family qualification remain open.
+
+## MSXML temporary-output cleanup-status audit — 2026-08-27
+
+Legacy MSXML callback and Base64 materialization, plus streaming frame
+disposal, previously collapsed descriptor-close and path-removal failures into
+one cleanup flag and reported the wrong status class. These paths now preserve
+`CL_EWRITE` for output close failures and `CL_EUNLINK` for removal failures
+through the shared precedence helper, retaining earlier XML, callback,
+timeout, resource, or detection results. Current GCC syntax and source guards
+cover the changed paths; current-object execution, complete MSXML/OOXML/XDP/
+HWPML corpora, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.

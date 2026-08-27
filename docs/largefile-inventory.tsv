@@ -3476,27 +3476,27 @@ fixed-width-integer	libclamav/msexpand.c	62	    uint16_t magic3;
 fixed-width-integer	libclamav/msexpand.c	63	    uint32_t fsize;
 fixed-width-integer	libclamav/msexpand.c	90	    if ((uint64_t)wbytes > (uint64_t)fsize || (uint64_t)w > (uint64_t)fsize - (uint64_t)wbytes) { \
 fixed-width-integer	libclamav/msexpand.h	29	cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved);
-fixed-width-integer	libclamav/msxml_parser.c	1017	static void msxml_stream_dispose_fd(struct msxml_stream_state *state, int *fd, char **name, uint64_t *reserved)
-fixed-width-integer	libclamav/msxml_parser.c	1371	                                              uint32_t flags, struct msxml_ctx *mxctx)
-fixed-width-integer	libclamav/msxml_parser.c	171	static int msxml_is_int(const char *value, size_t len, int32_t *val)
-fixed-width-integer	libclamav/msxml_parser.c	181	    *val = (int32_t)(val2 & 0x0000ffff);
-fixed-width-integer	libclamav/msxml_parser.c	446	                            uint64_t temporary_reserved = (uint64_t)vlen;
-fixed-width-integer	libclamav/msxml_parser.c	520	                            uint64_t temporary_reserved;
-fixed-width-integer	libclamav/msxml_parser.c	538	                            temporary_reserved = (uint64_t)decodedlen;
+fixed-width-integer	libclamav/msxml_parser.c	1007	             (uint64_t)produced > state->mxctx->decoded_max_size - frame->b64_bytes)) {
+fixed-width-integer	libclamav/msxml_parser.c	1028	static void msxml_stream_dispose_fd(struct msxml_stream_state *state, int *fd, char **name, uint64_t *reserved)
+fixed-width-integer	libclamav/msxml_parser.c	1378	                                              uint32_t flags, struct msxml_ctx *mxctx)
+fixed-width-integer	libclamav/msxml_parser.c	180	static int msxml_is_int(const char *value, size_t len, int32_t *val)
+fixed-width-integer	libclamav/msxml_parser.c	190	    *val = (int32_t)(val2 & 0x0000ffff);
+fixed-width-integer	libclamav/msxml_parser.c	454	                            uint64_t temporary_reserved = (uint64_t)vlen;
+fixed-width-integer	libclamav/msxml_parser.c	529	                            uint64_t temporary_reserved;
+fixed-width-integer	libclamav/msxml_parser.c	547	                            temporary_reserved = (uint64_t)decodedlen;
 fixed-width-integer	libclamav/msxml_parser.c	66	    uint32_t flags;
-fixed-width-integer	libclamav/msxml_parser.c	685	cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx)
-fixed-width-integer	libclamav/msxml_parser.c	811	    uint64_t cb_reserved;
-fixed-width-integer	libclamav/msxml_parser.c	812	    uint64_t cb_bytes;
-fixed-width-integer	libclamav/msxml_parser.c	817	    uint64_t b64_reserved;
-fixed-width-integer	libclamav/msxml_parser.c	818	    uint64_t b64_bytes;
-fixed-width-integer	libclamav/msxml_parser.c	895	                                             uint64_t *reserved, uint64_t *written)
-fixed-width-integer	libclamav/msxml_parser.c	906	        if (cli_scan_reserve_temporary(state->ctx, (uint64_t)chunk) != CL_SUCCESS) {
-fixed-width-integer	libclamav/msxml_parser.c	912	            cli_scan_release_temporary(state->ctx, (uint64_t)chunk);
-fixed-width-integer	libclamav/msxml_parser.c	917	            cli_scan_release_temporary(state->ctx, (uint64_t)chunk);
+fixed-width-integer	libclamav/msxml_parser.c	696	cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx)
+fixed-width-integer	libclamav/msxml_parser.c	822	    uint64_t cb_reserved;
+fixed-width-integer	libclamav/msxml_parser.c	823	    uint64_t cb_bytes;
+fixed-width-integer	libclamav/msxml_parser.c	828	    uint64_t b64_reserved;
+fixed-width-integer	libclamav/msxml_parser.c	829	    uint64_t b64_bytes;
+fixed-width-integer	libclamav/msxml_parser.c	906	                                             uint64_t *reserved, uint64_t *written)
+fixed-width-integer	libclamav/msxml_parser.c	917	        if (cli_scan_reserve_temporary(state->ctx, (uint64_t)chunk) != CL_SUCCESS) {
 fixed-width-integer	libclamav/msxml_parser.c	923	            cli_scan_release_temporary(state->ctx, (uint64_t)chunk);
-fixed-width-integer	libclamav/msxml_parser.c	928	        *reserved += (uint64_t)chunk;
-fixed-width-integer	libclamav/msxml_parser.c	929	        *written += (uint64_t)chunk;
-fixed-width-integer	libclamav/msxml_parser.c	996	             (uint64_t)produced > state->mxctx->decoded_max_size - frame->b64_bytes)) {
+fixed-width-integer	libclamav/msxml_parser.c	928	            cli_scan_release_temporary(state->ctx, (uint64_t)chunk);
+fixed-width-integer	libclamav/msxml_parser.c	934	            cli_scan_release_temporary(state->ctx, (uint64_t)chunk);
+fixed-width-integer	libclamav/msxml_parser.c	939	        *reserved += (uint64_t)chunk;
+fixed-width-integer	libclamav/msxml_parser.c	940	        *written += (uint64_t)chunk;
 fixed-width-integer	libclamav/msxml_parser.h	100	                                              uint32_t flags, struct msxml_ctx *mxctx);
 fixed-width-integer	libclamav/msxml_parser.h	76	    uint32_t type;
 fixed-width-integer	libclamav/msxml_parser.h	87	    uint64_t decoded_max_size;
@@ -12130,75 +12130,72 @@ native-width-integer	libclamav/msxml.h	47	    off_t winpos, mappos;
 native-width-integer	libclamav/msxml.h	48	    size_t winsize;
 native-width-integer	libclamav/msxml.h	49	    int read_failed;
 native-width-integer	libclamav/msxml.h	52	int msxml_read_cb(void *ctx, char *buffer, int buffer_len);
-native-width-integer	libclamav/msxml_parser.c	1017	static void msxml_stream_dispose_fd(struct msxml_stream_state *state, int *fd, char **name, uint64_t *reserved)
-native-width-integer	libclamav/msxml_parser.c	1019	    int cleanup_failed = 0;
-native-width-integer	libclamav/msxml_parser.c	1092	                                        const xmlChar *data, int len)
-native-width-integer	libclamav/msxml_parser.c	1095	    size_t offset = 0;
-native-width-integer	libclamav/msxml_parser.c	1100	    while (offset < (size_t)len) {
-native-width-integer	libclamav/msxml_parser.c	1101	        size_t chunk = MIN(sizeof(value) - 1, (size_t)len - offset);
-native-width-integer	libclamav/msxml_parser.c	1119	                                       int nb_namespaces, const xmlChar **namespaces, int nb_attributes,
-native-width-integer	libclamav/msxml_parser.c	1120	                                       int nb_defaulted, const xmlChar **attributes)
-native-width-integer	libclamav/msxml_parser.c	1125	    int i;
-native-width-integer	libclamav/msxml_parser.c	1163	    keyinfo        = msxml_check_key(&state->ictx, localname, (size_t)xmlStrlen(localname));
-native-width-integer	libclamav/msxml_parser.c	1259	static void msxml_sax_characters(void *arg, const xmlChar *ch, int len)
-native-width-integer	libclamav/msxml_parser.c	1281	        ret = msxml_stream_reserve_write(state, frame->cb_fd, ch, (size_t)len, &frame->cb_reserved, &frame->cb_bytes);
-native-width-integer	libclamav/msxml_parser.c	130	static const struct key_entry *msxml_check_key(struct msxml_ictx *ictx, const xmlChar *key, size_t keylen)
-native-width-integer	libclamav/msxml_parser.c	135	        cli_dbgmsg("msxml_check_key: key name too long\n");
-native-width-integer	libclamav/msxml_parser.c	1365	static void msxml_sax_cdata(void *arg, const xmlChar *value, int len)
-native-width-integer	libclamav/msxml_parser.c	1370	cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const struct key_entry *keys, size_t num_keys,
-native-width-integer	libclamav/msxml_parser.c	1378	    int nread;
-native-width-integer	libclamav/msxml_parser.c	1379	    int parse_ret;
-native-width-integer	libclamav/msxml_parser.c	1474	static int msxml_attribute_limit_exceeded(cli_ctx *ctx, xmlTextReaderPtr reader, int num_attribs)
-native-width-integer	libclamav/msxml_parser.c	150	    int line     = xmlTextReaderLocatorLineNumber(locator);
-native-width-integer	libclamav/msxml_parser.c	171	static int msxml_is_int(const char *value, size_t len, int32_t *val)
-native-width-integer	libclamav/msxml_parser.c	173	    long val2;
-native-width-integer	libclamav/msxml_parser.c	186	static int msxml_parse_value(json_object *wrkptr, const char *arrname, const xmlChar *node_value)
-native-width-integer	libclamav/msxml_parser.c	189	    int val;
-native-width-integer	libclamav/msxml_parser.c	219	static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr reader, int rlvl, void *jptr)
-native-width-integer	libclamav/msxml_parser.c	226	    int state, node_type, endtag = 0, num_attribs = 0;
-native-width-integer	libclamav/msxml_parser.c	312	                        int value = json_object_get_int(counter);
-native-width-integer	libclamav/msxml_parser.c	443	                            int of;
-native-width-integer	libclamav/msxml_parser.c	444	                            int cleanup_failed = 0;
-native-width-integer	libclamav/msxml_parser.c	445	                            size_t vlen = strlen((const char *)node_value);
-native-width-integer	libclamav/msxml_parser.c	516	                            size_t encodedlen;
-native-width-integer	libclamav/msxml_parser.c	517	                            size_t decodedlen;
-native-width-integer	libclamav/msxml_parser.c	518	                            int of;
-native-width-integer	libclamav/msxml_parser.c	519	                            int cleanup_failed = 0;
+native-width-integer	libclamav/msxml_parser.c	1028	static void msxml_stream_dispose_fd(struct msxml_stream_state *state, int *fd, char **name, uint64_t *reserved)
+native-width-integer	libclamav/msxml_parser.c	1099	                                        const xmlChar *data, int len)
+native-width-integer	libclamav/msxml_parser.c	1102	    size_t offset = 0;
+native-width-integer	libclamav/msxml_parser.c	1107	    while (offset < (size_t)len) {
+native-width-integer	libclamav/msxml_parser.c	1108	        size_t chunk = MIN(sizeof(value) - 1, (size_t)len - offset);
+native-width-integer	libclamav/msxml_parser.c	1126	                                       int nb_namespaces, const xmlChar **namespaces, int nb_attributes,
+native-width-integer	libclamav/msxml_parser.c	1127	                                       int nb_defaulted, const xmlChar **attributes)
+native-width-integer	libclamav/msxml_parser.c	1132	    int i;
+native-width-integer	libclamav/msxml_parser.c	1170	    keyinfo        = msxml_check_key(&state->ictx, localname, (size_t)xmlStrlen(localname));
+native-width-integer	libclamav/msxml_parser.c	1266	static void msxml_sax_characters(void *arg, const xmlChar *ch, int len)
+native-width-integer	libclamav/msxml_parser.c	1288	        ret = msxml_stream_reserve_write(state, frame->cb_fd, ch, (size_t)len, &frame->cb_reserved, &frame->cb_bytes);
+native-width-integer	libclamav/msxml_parser.c	1372	static void msxml_sax_cdata(void *arg, const xmlChar *value, int len)
+native-width-integer	libclamav/msxml_parser.c	1377	cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const struct key_entry *keys, size_t num_keys,
+native-width-integer	libclamav/msxml_parser.c	1385	    int nread;
+native-width-integer	libclamav/msxml_parser.c	1386	    int parse_ret;
+native-width-integer	libclamav/msxml_parser.c	139	static const struct key_entry *msxml_check_key(struct msxml_ictx *ictx, const xmlChar *key, size_t keylen)
+native-width-integer	libclamav/msxml_parser.c	144	        cli_dbgmsg("msxml_check_key: key name too long\n");
+native-width-integer	libclamav/msxml_parser.c	1481	static int msxml_attribute_limit_exceeded(cli_ctx *ctx, xmlTextReaderPtr reader, int num_attribs)
+native-width-integer	libclamav/msxml_parser.c	159	    int line     = xmlTextReaderLocatorLineNumber(locator);
+native-width-integer	libclamav/msxml_parser.c	180	static int msxml_is_int(const char *value, size_t len, int32_t *val)
+native-width-integer	libclamav/msxml_parser.c	182	    long val2;
+native-width-integer	libclamav/msxml_parser.c	195	static int msxml_parse_value(json_object *wrkptr, const char *arrname, const xmlChar *node_value)
+native-width-integer	libclamav/msxml_parser.c	198	    int val;
+native-width-integer	libclamav/msxml_parser.c	228	static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr reader, int rlvl, void *jptr)
+native-width-integer	libclamav/msxml_parser.c	235	    int state, node_type, endtag = 0, num_attribs = 0;
+native-width-integer	libclamav/msxml_parser.c	321	                        int value = json_object_get_int(counter);
+native-width-integer	libclamav/msxml_parser.c	452	                            int of;
+native-width-integer	libclamav/msxml_parser.c	453	                            size_t vlen = strlen((const char *)node_value);
+native-width-integer	libclamav/msxml_parser.c	526	                            size_t encodedlen;
+native-width-integer	libclamav/msxml_parser.c	527	                            size_t decodedlen;
+native-width-integer	libclamav/msxml_parser.c	528	                            int of;
 native-width-integer	libclamav/msxml_parser.c	68	    size_t num_keys;
-native-width-integer	libclamav/msxml_parser.c	685	cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx)
-native-width-integer	libclamav/msxml_parser.c	689	    int state;
+native-width-integer	libclamav/msxml_parser.c	696	cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx)
 native-width-integer	libclamav/msxml_parser.c	70	    int toval;
+native-width-integer	libclamav/msxml_parser.c	700	    int state;
 native-width-integer	libclamav/msxml_parser.c	75	static int msxml_attribute_limit_exceeded(cli_ctx *ctx, xmlTextReaderPtr reader, int num_attribs);
 native-width-integer	libclamav/msxml_parser.c	77	static int msxml_base64_is_valid(const unsigned char *data, size_t len)
 native-width-integer	libclamav/msxml_parser.c	79	    size_t compact_len = 0;
 native-width-integer	libclamav/msxml_parser.c	80	    size_t padding     = 0;
-native-width-integer	libclamav/msxml_parser.c	807	    int ignored;
-native-width-integer	libclamav/msxml_parser.c	809	    int cb_fd;
 native-width-integer	libclamav/msxml_parser.c	81	    size_t i;
-native-width-integer	libclamav/msxml_parser.c	813	    int cb_saw_data;
-native-width-integer	libclamav/msxml_parser.c	815	    int b64_fd;
+native-width-integer	libclamav/msxml_parser.c	818	    int ignored;
 native-width-integer	libclamav/msxml_parser.c	82	    int seen_padding = 0;
-native-width-integer	libclamav/msxml_parser.c	820	    size_t b64_used;
-native-width-integer	libclamav/msxml_parser.c	821	    int b64_terminal;
-native-width-integer	libclamav/msxml_parser.c	822	    int b64_saw_data;
-native-width-integer	libclamav/msxml_parser.c	827	    int num_attribs;
-native-width-integer	libclamav/msxml_parser.c	835	    size_t depth;
-native-width-integer	libclamav/msxml_parser.c	836	    size_t skipped_depth;
-native-width-integer	libclamav/msxml_parser.c	838	    int parser_failed;
-native-width-integer	libclamav/msxml_parser.c	874	static int msxml_stream_copy_xml_string(char *dst, size_t dst_size, const xmlChar *begin, const xmlChar *end)
-native-width-integer	libclamav/msxml_parser.c	876	    size_t len;
-native-width-integer	libclamav/msxml_parser.c	882	        len = (size_t)(end - begin);
-native-width-integer	libclamav/msxml_parser.c	884	        len = (size_t)xmlStrlen(begin);
-native-width-integer	libclamav/msxml_parser.c	894	static cl_error_t msxml_stream_reserve_write(struct msxml_stream_state *state, int fd, const void *data, size_t len,
-native-width-integer	libclamav/msxml_parser.c	898	    size_t offset               = 0;
-native-width-integer	libclamav/msxml_parser.c	901	        size_t chunk = MIN((size_t)MSXML_STREAM_IO_SIZE, len - offset);
-native-width-integer	libclamav/msxml_parser.c	936	static int msxml_stream_base64_value(unsigned char value)
-native-width-integer	libclamav/msxml_parser.c	952	                                             const xmlChar *data, int len)
-native-width-integer	libclamav/msxml_parser.c	954	    size_t i;
-native-width-integer	libclamav/msxml_parser.c	956	    for (i = 0; i < (size_t)len; i++) {
-native-width-integer	libclamav/msxml_parser.c	962	        int a, b, c, d;
-native-width-integer	libclamav/msxml_parser.c	963	        size_t produced;
-native-width-integer	libclamav/msxml_parser.c	965	        if (isspace((int)value))
+native-width-integer	libclamav/msxml_parser.c	820	    int cb_fd;
+native-width-integer	libclamav/msxml_parser.c	824	    int cb_saw_data;
+native-width-integer	libclamav/msxml_parser.c	826	    int b64_fd;
+native-width-integer	libclamav/msxml_parser.c	831	    size_t b64_used;
+native-width-integer	libclamav/msxml_parser.c	832	    int b64_terminal;
+native-width-integer	libclamav/msxml_parser.c	833	    int b64_saw_data;
+native-width-integer	libclamav/msxml_parser.c	838	    int num_attribs;
+native-width-integer	libclamav/msxml_parser.c	846	    size_t depth;
+native-width-integer	libclamav/msxml_parser.c	847	    size_t skipped_depth;
+native-width-integer	libclamav/msxml_parser.c	849	    int parser_failed;
+native-width-integer	libclamav/msxml_parser.c	885	static int msxml_stream_copy_xml_string(char *dst, size_t dst_size, const xmlChar *begin, const xmlChar *end)
+native-width-integer	libclamav/msxml_parser.c	887	    size_t len;
+native-width-integer	libclamav/msxml_parser.c	893	        len = (size_t)(end - begin);
+native-width-integer	libclamav/msxml_parser.c	895	        len = (size_t)xmlStrlen(begin);
+native-width-integer	libclamav/msxml_parser.c	905	static cl_error_t msxml_stream_reserve_write(struct msxml_stream_state *state, int fd, const void *data, size_t len,
+native-width-integer	libclamav/msxml_parser.c	909	    size_t offset               = 0;
+native-width-integer	libclamav/msxml_parser.c	912	        size_t chunk = MIN((size_t)MSXML_STREAM_IO_SIZE, len - offset);
+native-width-integer	libclamav/msxml_parser.c	947	static int msxml_stream_base64_value(unsigned char value)
+native-width-integer	libclamav/msxml_parser.c	963	                                             const xmlChar *data, int len)
+native-width-integer	libclamav/msxml_parser.c	965	    size_t i;
+native-width-integer	libclamav/msxml_parser.c	967	    for (i = 0; i < (size_t)len; i++) {
+native-width-integer	libclamav/msxml_parser.c	973	        int a, b, c, d;
+native-width-integer	libclamav/msxml_parser.c	974	        size_t produced;
+native-width-integer	libclamav/msxml_parser.c	976	        if (isspace((int)value))
 native-width-integer	libclamav/msxml_parser.h	79	typedef cl_error_t (*msxml_scan_cb)(int fd, const char *filepath, cli_ctx *ctx, int num_attribs, struct attrib_entry *attribs, void *cbdata);
 native-width-integer	libclamav/msxml_parser.h	80	typedef cl_error_t (*msxml_decoded_cb)(int fd, const char *filepath, cli_ctx *ctx, void *cbdata);
 native-width-integer	libclamav/msxml_parser.h	93	cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx);
@@ -20914,7 +20911,7 @@ quantity-parser	libclamav/matcher-byte-comp.c	294	    byte_length = strtol(buf_s
 quantity-parser	libclamav/matcher-byte-comp.c	390	        comp_val = strtoll(comp_buf, (char **)&comp_end, 0);
 quantity-parser	libclamav/matcher.c	475	    parsed = strtoull(text, &end, 10);
 quantity-parser	libclamav/mbox.c	4450	    parsed = strtoul(start, &end, 10);
-quantity-parser	libclamav/msxml_parser.c	176	    val2 = strtol(value, &endptr, 10);
+quantity-parser	libclamav/msxml_parser.c	185	    val2 = strtol(value, &endptr, 10);
 quantity-parser	libclamav/pdf.c	4604	            strtoul(end, &end, 10);
 quantity-parser	libclamav/pdfdecode.c	2169	    *parsed = strtol(value, &end, 10);
 quantity-parser	libclamav/pdfng.c	219	    /* Ensure strtoul() isn't going to go past our buffer */
@@ -22348,19 +22345,19 @@ format-width	libclamav/msxml.c	152	                cli_msxmlmsg("msxml_read_cb: 
 format-width	libclamav/msxml.c	161	        cli_msxmlmsg("msxml_read_cb: copying from window [%llu(+%llu)] %llu->~%llu\n",
 format-width	libclamav/msxml.c	202	                    cli_errmsg("unknown *state: %d\n", *state);
 format-width	libclamav/msxml.c	207	                    cli_msxmlmsg("msxml_read_cb: detected unterminated character entity @ winoff %d\n",
-format-width	libclamav/msxml_parser.c	158	            cli_dbgmsg("%s:%d: parser warning : %s", (char *)URI, line, msg);
-format-width	libclamav/msxml_parser.c	162	            cli_dbgmsg("%s:%d: parser error : %s", (char *)URI, line, msg);
-format-width	libclamav/msxml_parser.c	165	            cli_dbgmsg("%s:%d: unknown severity : %s", (char *)URI, line, msg);
-format-width	libclamav/msxml_parser.c	233	    cli_msxmlmsg("in msxml_parse_element @ layer %d\n", rlvl);
-format-width	libclamav/msxml_parser.c	262	            cli_msxmlmsg("msxml_parse_element: ELEMENT %s [%d]: %s\n", node_name, node_type, node_value);
+format-width	libclamav/msxml_parser.c	167	            cli_dbgmsg("%s:%d: parser warning : %s", (char *)URI, line, msg);
+format-width	libclamav/msxml_parser.c	171	            cli_dbgmsg("%s:%d: parser error : %s", (char *)URI, line, msg);
+format-width	libclamav/msxml_parser.c	174	            cli_dbgmsg("%s:%d: unknown severity : %s", (char *)URI, line, msg);
+format-width	libclamav/msxml_parser.c	242	    cli_msxmlmsg("in msxml_parse_element @ layer %d\n", rlvl);
+format-width	libclamav/msxml_parser.c	271	            cli_msxmlmsg("msxml_parse_element: ELEMENT %s [%d]: %s\n", node_name, node_type, node_value);
 format-width	libclamav/msxml_parser.c	54	            cli_warnmsg("check_state[msxml]: CL_EPARSE @ ln%d\n", __LINE__); \
 format-width	libclamav/msxml_parser.c	57	            cli_dbgmsg("check_state[msxml]: CL_BREAK @ ln%d\n", __LINE__);   \
-format-width	libclamav/msxml_parser.c	637	                        cli_msxmlmsg("in msxml_parse_element @ layer %d closed\n", rlvl);
-format-width	libclamav/msxml_parser.c	660	                        cli_dbgmsg("msxml_parse_element: unhandled xml secondary node %s [%d]: %s\n", node_name, node_type, node_value);
-format-width	libclamav/msxml_parser.c	669	            cli_msxmlmsg("msxml_parse_element: PROCESSING INSTRUCTION %s [%d]: %s\n", node_name, node_type, node_value);
-format-width	libclamav/msxml_parser.c	672	            cli_msxmlmsg("msxml_parse_element: SIGNIFICANT WHITESPACE %s [%d]: %s\n", node_name, node_type, node_value);
-format-width	libclamav/msxml_parser.c	675	            cli_msxmlmsg("msxml_parse_element: END ELEMENT %s [%d]: %s\n", node_name, node_type, node_value);
-format-width	libclamav/msxml_parser.c	678	            cli_dbgmsg("msxml_parse_element: unhandled xml primary node %s [%d]: %s\n", node_name, node_type, node_value);
+format-width	libclamav/msxml_parser.c	648	                        cli_msxmlmsg("in msxml_parse_element @ layer %d closed\n", rlvl);
+format-width	libclamav/msxml_parser.c	671	                        cli_dbgmsg("msxml_parse_element: unhandled xml secondary node %s [%d]: %s\n", node_name, node_type, node_value);
+format-width	libclamav/msxml_parser.c	680	            cli_msxmlmsg("msxml_parse_element: PROCESSING INSTRUCTION %s [%d]: %s\n", node_name, node_type, node_value);
+format-width	libclamav/msxml_parser.c	683	            cli_msxmlmsg("msxml_parse_element: SIGNIFICANT WHITESPACE %s [%d]: %s\n", node_name, node_type, node_value);
+format-width	libclamav/msxml_parser.c	686	            cli_msxmlmsg("msxml_parse_element: END ELEMENT %s [%d]: %s\n", node_name, node_type, node_value);
+format-width	libclamav/msxml_parser.c	689	            cli_dbgmsg("msxml_parse_element: unhandled xml primary node %s [%d]: %s\n", node_name, node_type, node_value);
 format-width	libclamav/nsis/bzlib.c	568	         VPrintf1 ( "\n    [%d: huff+mtf ", s->currBlockNo );
 format-width	libclamav/nsis/infblock.c	431	      Tracev((stderr, "inflate:       stored length %u\n", s->sub.left));
 format-width	libclamav/nsis/infblock.c	694	        Tracev((stderr, "inflate:       codes end, %lu total out\n",
@@ -29333,35 +29330,35 @@ offset-size-arithmetic	libclamav/msxml.c	88	    new_mappos = cbdata->mappos + cb
 offset-size-arithmetic	libclamav/msxml.c	89	    bytes      = MIN(cbdata->map->len - new_mappos, MSXML_READBUFF);
 offset-size-arithmetic	libclamav/msxml.c	93	        cbdata->mappos  = cbdata->map->len;
 offset-size-arithmetic	libclamav/msxml.h	55	#endif /* __MSXML_H */
+offset-size-arithmetic	libclamav/msxml_parser.c	1007	             (uint64_t)produced > state->mxctx->decoded_max_size - frame->b64_bytes)) {
 offset-size-arithmetic	libclamav/msxml_parser.c	101	        compact_len++;
-offset-size-arithmetic	libclamav/msxml_parser.c	1017	static void msxml_stream_dispose_fd(struct msxml_stream_state *state, int *fd, char **name, uint64_t *reserved)
-offset-size-arithmetic	libclamav/msxml_parser.c	1047	    msxml_stream_dispose_fd(state, &frame->cb_fd, &frame->cb_name, &frame->cb_reserved);
-offset-size-arithmetic	libclamav/msxml_parser.c	1048	    msxml_stream_dispose_fd(state, &frame->b64_fd, &frame->b64_name, &frame->b64_reserved);
+offset-size-arithmetic	libclamav/msxml_parser.c	1028	static void msxml_stream_dispose_fd(struct msxml_stream_state *state, int *fd, char **name, uint64_t *reserved)
 offset-size-arithmetic	libclamav/msxml_parser.c	105	        if (((compact_len + padding) & 3U) != 0)
-offset-size-arithmetic	libclamav/msxml_parser.c	1101	        size_t chunk = MIN(sizeof(value) - 1, (size_t)len - offset);
-offset-size-arithmetic	libclamav/msxml_parser.c	1114	        offset += chunk;
-offset-size-arithmetic	libclamav/msxml_parser.c	1118	static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI,
-offset-size-arithmetic	libclamav/msxml_parser.c	1160	    memset(frame, 0, sizeof(*frame));
-offset-size-arithmetic	libclamav/msxml_parser.c	1220	        const xmlChar *value_end   = attributes[5 * i + 4];
-offset-size-arithmetic	libclamav/msxml_parser.c	1222	        if (msxml_stream_copy_xml_string(frame->attr_keys[i], sizeof(frame->attr_keys[i]), attr_name, NULL) != 0 ||
-offset-size-arithmetic	libclamav/msxml_parser.c	1223	            msxml_stream_copy_xml_string(frame->attr_values[i], sizeof(frame->attr_values[i]), value_begin, value_end) != 0) {
-offset-size-arithmetic	libclamav/msxml_parser.c	1265	    if (!state || !ch || len <= 0 || state->ret != CL_SUCCESS || state->skipped_depth || state->depth == 0)
-offset-size-arithmetic	libclamav/msxml_parser.c	1281	        ret = msxml_stream_reserve_write(state, frame->cb_fd, ch, (size_t)len, &frame->cb_reserved, &frame->cb_bytes);
-offset-size-arithmetic	libclamav/msxml_parser.c	1294	static void msxml_sax_end_element_ns(void *arg, const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI)
-offset-size-arithmetic	libclamav/msxml_parser.c	134	    if (keylen > MSXML_JSON_STRLEN_MAX - 1) {
-offset-size-arithmetic	libclamav/msxml_parser.c	140	        if (keylen == strlen(ictx->keys[i].key) && !strncasecmp((char *)key, ictx->keys[i].key, keylen)) {
-offset-size-arithmetic	libclamav/msxml_parser.c	171	static int msxml_is_int(const char *value, size_t len, int32_t *val)
-offset-size-arithmetic	libclamav/msxml_parser.c	177	    if (endptr != value + len) {
-offset-size-arithmetic	libclamav/msxml_parser.c	373	                /* start reading attributes or read remainder of attributes */
-offset-size-arithmetic	libclamav/msxml_parser.c	445	                            size_t vlen = strlen((const char *)node_value);
-offset-size-arithmetic	libclamav/msxml_parser.c	524	                            encodedlen = strlen((const char *)node_value);
-offset-size-arithmetic	libclamav/msxml_parser.c	685	cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx)
-offset-size-arithmetic	libclamav/msxml_parser.c	874	static int msxml_stream_copy_xml_string(char *dst, size_t dst_size, const xmlChar *begin, const xmlChar *end)
-offset-size-arithmetic	libclamav/msxml_parser.c	882	        len = (size_t)(end - begin);
-offset-size-arithmetic	libclamav/msxml_parser.c	901	        size_t chunk = MIN((size_t)MSXML_STREAM_IO_SIZE, len - offset);
-offset-size-arithmetic	libclamav/msxml_parser.c	930	        offset += chunk;
-offset-size-arithmetic	libclamav/msxml_parser.c	975	        if (frame->b64_used != sizeof(frame->b64_quartet))
-offset-size-arithmetic	libclamav/msxml_parser.c	996	             (uint64_t)produced > state->mxctx->decoded_max_size - frame->b64_bytes)) {
+offset-size-arithmetic	libclamav/msxml_parser.c	1054	    msxml_stream_dispose_fd(state, &frame->cb_fd, &frame->cb_name, &frame->cb_reserved);
+offset-size-arithmetic	libclamav/msxml_parser.c	1055	    msxml_stream_dispose_fd(state, &frame->b64_fd, &frame->b64_name, &frame->b64_reserved);
+offset-size-arithmetic	libclamav/msxml_parser.c	1108	        size_t chunk = MIN(sizeof(value) - 1, (size_t)len - offset);
+offset-size-arithmetic	libclamav/msxml_parser.c	1121	        offset += chunk;
+offset-size-arithmetic	libclamav/msxml_parser.c	1125	static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI,
+offset-size-arithmetic	libclamav/msxml_parser.c	1167	    memset(frame, 0, sizeof(*frame));
+offset-size-arithmetic	libclamav/msxml_parser.c	1227	        const xmlChar *value_end   = attributes[5 * i + 4];
+offset-size-arithmetic	libclamav/msxml_parser.c	1229	        if (msxml_stream_copy_xml_string(frame->attr_keys[i], sizeof(frame->attr_keys[i]), attr_name, NULL) != 0 ||
+offset-size-arithmetic	libclamav/msxml_parser.c	1230	            msxml_stream_copy_xml_string(frame->attr_values[i], sizeof(frame->attr_values[i]), value_begin, value_end) != 0) {
+offset-size-arithmetic	libclamav/msxml_parser.c	1272	    if (!state || !ch || len <= 0 || state->ret != CL_SUCCESS || state->skipped_depth || state->depth == 0)
+offset-size-arithmetic	libclamav/msxml_parser.c	1288	        ret = msxml_stream_reserve_write(state, frame->cb_fd, ch, (size_t)len, &frame->cb_reserved, &frame->cb_bytes);
+offset-size-arithmetic	libclamav/msxml_parser.c	1301	static void msxml_sax_end_element_ns(void *arg, const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI)
+offset-size-arithmetic	libclamav/msxml_parser.c	143	    if (keylen > MSXML_JSON_STRLEN_MAX - 1) {
+offset-size-arithmetic	libclamav/msxml_parser.c	149	        if (keylen == strlen(ictx->keys[i].key) && !strncasecmp((char *)key, ictx->keys[i].key, keylen)) {
+offset-size-arithmetic	libclamav/msxml_parser.c	180	static int msxml_is_int(const char *value, size_t len, int32_t *val)
+offset-size-arithmetic	libclamav/msxml_parser.c	186	    if (endptr != value + len) {
+offset-size-arithmetic	libclamav/msxml_parser.c	382	                /* start reading attributes or read remainder of attributes */
+offset-size-arithmetic	libclamav/msxml_parser.c	453	                            size_t vlen = strlen((const char *)node_value);
+offset-size-arithmetic	libclamav/msxml_parser.c	533	                            encodedlen = strlen((const char *)node_value);
+offset-size-arithmetic	libclamav/msxml_parser.c	696	cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx)
+offset-size-arithmetic	libclamav/msxml_parser.c	885	static int msxml_stream_copy_xml_string(char *dst, size_t dst_size, const xmlChar *begin, const xmlChar *end)
+offset-size-arithmetic	libclamav/msxml_parser.c	893	        len = (size_t)(end - begin);
+offset-size-arithmetic	libclamav/msxml_parser.c	912	        size_t chunk = MIN((size_t)MSXML_STREAM_IO_SIZE, len - offset);
+offset-size-arithmetic	libclamav/msxml_parser.c	941	        offset += chunk;
+offset-size-arithmetic	libclamav/msxml_parser.c	986	        if (frame->b64_used != sizeof(frame->b64_quartet))
 offset-size-arithmetic	libclamav/msxml_parser.h	102	#endif /* __MSXML_PARSER_H */
 offset-size-arithmetic	libclamav/msxml_parser.h	93	cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx);
 offset-size-arithmetic	libclamav/nsis/bzlib.c	1121	/*--- end                                           bzlib.c ---*/
