@@ -5904,3 +5904,13 @@ parser-family qualification remain open.
   execution, complete RAR corpus, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, Sonic1, and parser-family
   qualification remain open.
+
+## TNEF debug-dump cleanup and read-status audit — 2026-08-27
+
+- Preserve TNEF unknown-level debug-dump temporary-file allocation/open,
+  backing-read, and output-close failures as fail-visible incomplete results;
+  retain earlier timeout or write failures through the shared cleanup-status
+  precedence helper.
+- Add focused debug-dump read/open regressions and source guards. Keep complete
+  TNEF corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
