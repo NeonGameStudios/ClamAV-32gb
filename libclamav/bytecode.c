@@ -61,8 +61,8 @@ static void bytecode_note_cleanup_failure(cli_ctx *cctx, cl_error_t *status,
 {
     if (cctx)
         cli_mark_scan_incomplete(cctx, reason);
-    if (status && (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK))
-        *status = failure;
+    if (status)
+        *status = cli_merge_cleanup_status(*status, failure);
 }
 
 /* dummy values */
@@ -3800,8 +3800,7 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
                     if (ftruncate(fd, 0) == -1) {
                         cli_dbgmsg("ftruncate failed on %d\n", fd);
                         cli_mark_scan_incomplete(cctx, "Bytecode unpacked output could not be truncated");
-                        if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
-                            ret = CL_EWRITE;
+                        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
                     }
                 }
 

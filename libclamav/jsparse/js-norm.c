@@ -1091,8 +1091,10 @@ cl_error_t cli_js_output_ctx_with_quota(struct parser_state *state, const char *
         buf_outs("</script>", &buf);
     if (buf.error == CL_SUCCESS && buf.pos > 0)
         (void)buf_flush(&buf, buf.pos);
-    if (close(buf.outfd) != 0 && buf.error == CL_SUCCESS)
-        buf.error = CL_EWRITE;
+    if (close(buf.outfd) != 0) {
+        cli_mark_scan_incomplete(ctx, MODULE "normalized script output could not be closed");
+        buf.error = cli_merge_cleanup_status(buf.error, CL_EWRITE);
+    }
     if (buf.error != CL_SUCCESS)
         cli_dbgmsg(MODULE "I/O error\n");
     if (buf.error != CL_SUCCESS)

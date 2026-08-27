@@ -5782,3 +5782,15 @@ and Sonic1 qualification as release gates.
   heuristic corpora, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and parser-family qualification
   remain open.
+
+## Bytecode and JavaScript output cleanup-status audit — 2026-08-27
+
+- Route bytecode VM/API temporary and unpacked-output teardown, truncation,
+  and JavaScript normalized-output close through the shared cleanup-status
+  precedence helper. Preserve `CL_EWRITE`, upgrade `CL_BREAK`, and retain
+  detections or earlier parser, resource, or timeout errors while marking
+  required cleanup failures incomplete.
+- Current GCC syntax and source guards cover the changed paths;
+  current-object execution, complete bytecode/script corpora, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification remain open.

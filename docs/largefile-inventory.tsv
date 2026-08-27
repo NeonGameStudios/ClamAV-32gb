@@ -710,14 +710,14 @@ fixed-width-integer	libclamav/bytecode.c	362	                                   
 fixed-width-integer	libclamav/bytecode.c	3684	        uint32_t legacy_offsets[64];
 fixed-width-integer	libclamav/bytecode.c	3775	            uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/bytecode.c	383	static bool bytecode_type_index(const struct cli_bc *bc, uint16_t type,
-fixed-width-integer	libclamav/bytecode.c	3865	                                       struct pdf_obj **objs, uint32_t *pdf_flags,
-fixed-width-integer	libclamav/bytecode.c	3880	    uint32_t timeout;
-fixed-width-integer	libclamav/bytecode.c	3893	            uint64_t remaining_ms;
-fixed-width-integer	libclamav/bytecode.c	3900	                uint64_t seconds = (uint64_t)(scan_ctx->time_limit.tv_sec - now.tv_sec);
-fixed-width-integer	libclamav/bytecode.c	3901	                int64_t useconds  = (int64_t)scan_ctx->time_limit.tv_usec - now.tv_usec;
-fixed-width-integer	libclamav/bytecode.c	3907	                remaining_ms = seconds * 1000U + ((uint64_t)useconds + 999U) / 1000U;
-fixed-width-integer	libclamav/bytecode.c	3915	                timeout = (uint32_t)remaining_ms;
-fixed-width-integer	libclamav/bytecode.c	3940	           (uint64_t)stamp,
+fixed-width-integer	libclamav/bytecode.c	3864	                                       struct pdf_obj **objs, uint32_t *pdf_flags,
+fixed-width-integer	libclamav/bytecode.c	3879	    uint32_t timeout;
+fixed-width-integer	libclamav/bytecode.c	3892	            uint64_t remaining_ms;
+fixed-width-integer	libclamav/bytecode.c	3899	                uint64_t seconds = (uint64_t)(scan_ctx->time_limit.tv_sec - now.tv_sec);
+fixed-width-integer	libclamav/bytecode.c	3900	                int64_t useconds  = (int64_t)scan_ctx->time_limit.tv_usec - now.tv_usec;
+fixed-width-integer	libclamav/bytecode.c	3906	                remaining_ms = seconds * 1000U + ((uint64_t)useconds + 999U) / 1000U;
+fixed-width-integer	libclamav/bytecode.c	3914	                timeout = (uint32_t)remaining_ms;
+fixed-width-integer	libclamav/bytecode.c	3939	           (uint64_t)stamp,
 fixed-width-integer	libclamav/bytecode.c	397	static unsigned typesize(const struct cli_bc *bc, uint16_t type)
 fixed-width-integer	libclamav/bytecode.c	417	static unsigned typealign(const struct cli_bc *bc, uint16_t type)
 fixed-width-integer	libclamav/bytecode.c	434	    uint64_t size;
@@ -9505,11 +9505,11 @@ native-width-integer	libclamav/bytecode.c	3512	int cli_bytecode_file_size_compat
 native-width-integer	libclamav/bytecode.c	361	int cli_bytecode_context_getresult_file(struct cli_bc_ctx *ctx, char **tempfilename,
 native-width-integer	libclamav/bytecode.c	364	    int fd;
 native-width-integer	libclamav/bytecode.c	3776	            int fd;
-native-width-integer	libclamav/bytecode.c	3866	                                       size_t pdfsize, off_t pdfstartoff)
-native-width-integer	libclamav/bytecode.c	3925	    int cols;
-native-width-integer	libclamav/bytecode.c	4041	            if (len > (unsigned int)cols) {
-native-width-integer	libclamav/bytecode.c	4244	    size_t j;
-native-width-integer	libclamav/bytecode.c	4369	                if (j == (size_t)(inst->u.ops.numOps - 1)) {
+native-width-integer	libclamav/bytecode.c	3865	                                       size_t pdfsize, off_t pdfstartoff)
+native-width-integer	libclamav/bytecode.c	3924	    int cols;
+native-width-integer	libclamav/bytecode.c	4040	            if (len > (unsigned int)cols) {
+native-width-integer	libclamav/bytecode.c	4243	    size_t j;
+native-width-integer	libclamav/bytecode.c	4368	                if (j == (size_t)(inst->u.ops.numOps - 1)) {
 native-width-integer	libclamav/bytecode.c	57	unsigned int g_sigid;
 native-width-integer	libclamav/bytecode.c	753	                   (unsigned long long)value);
 native-width-integer	libclamav/bytecode.c	767	                   (unsigned long long)value);
@@ -11209,29 +11209,29 @@ native-width-integer	libclamav/jsparse/js-norm.c	107	    unsigned long var_uniq;
 native-width-integer	libclamav/jsparse/js-norm.c	1075	        off_t end = lseek(buf.outfd, 0, SEEK_END);
 native-width-integer	libclamav/jsparse/js-norm.c	1076	        if (end == (off_t)-1) {
 native-width-integer	libclamav/jsparse/js-norm.c	108	    unsigned long syntax_errors;
-native-width-integer	libclamav/jsparse/js-norm.c	1116	    size_t i;
-native-width-integer	libclamav/jsparse/js-norm.c	1138	void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n)
+native-width-integer	libclamav/jsparse/js-norm.c	1118	    size_t i;
 native-width-integer	libclamav/jsparse/js-norm.c	114	    unsigned int rec;
-native-width-integer	libclamav/jsparse/js-norm.c	1142	    int yv;
-native-width-integer	libclamav/jsparse/js-norm.c	1158	        size_t leng;
-native-width-integer	libclamav/jsparse/js-norm.c	1300	                        size_t str_len = strlen(str);
-native-width-integer	libclamav/jsparse/js-norm.c	1305	                        if (str_len > (size_t)-1 - 1 || leng > (size_t)-1 - str_len - 1)
-native-width-integer	libclamav/jsparse/js-norm.c	1692	static inline int parseString(YYSTYPE *lvalp, yyscan_t scanner, const char q,
-native-width-integer	libclamav/jsparse/js-norm.c	1695	    size_t len;
-native-width-integer	libclamav/jsparse/js-norm.c	1699	        const size_t siz = &scanner->in[scanner->insize] - end;
-native-width-integer	libclamav/jsparse/js-norm.c	1734	static inline int parseDQString(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1739	static inline int parseSQString(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1744	static inline int parseNumber(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1747	    int is_float            = 0;
-native-width-integer	libclamav/jsparse/js-norm.c	1786	static inline int parseId(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1830	static int parseOperator(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1832	    size_t len = MIN(5, scanner->insize - scanner->pos);
-native-width-integer	libclamav/jsparse/js-norm.c	1849	static int yylex_init(yyscan_t *scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1855	static int yylex_destroy(yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1862	static void yy_scan_bytes(const char *p, size_t len, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1877	static int yyget_leng(yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1883	static int yylex(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1885	    const size_t len        = scanner->insize;
+native-width-integer	libclamav/jsparse/js-norm.c	1140	void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n)
+native-width-integer	libclamav/jsparse/js-norm.c	1144	    int yv;
+native-width-integer	libclamav/jsparse/js-norm.c	1160	        size_t leng;
+native-width-integer	libclamav/jsparse/js-norm.c	1302	                        size_t str_len = strlen(str);
+native-width-integer	libclamav/jsparse/js-norm.c	1307	                        if (str_len > (size_t)-1 - 1 || leng > (size_t)-1 - str_len - 1)
+native-width-integer	libclamav/jsparse/js-norm.c	1694	static inline int parseString(YYSTYPE *lvalp, yyscan_t scanner, const char q,
+native-width-integer	libclamav/jsparse/js-norm.c	1697	    size_t len;
+native-width-integer	libclamav/jsparse/js-norm.c	1701	        const size_t siz = &scanner->in[scanner->insize] - end;
+native-width-integer	libclamav/jsparse/js-norm.c	1736	static inline int parseDQString(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1741	static inline int parseSQString(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1746	static inline int parseNumber(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1749	    int is_float            = 0;
+native-width-integer	libclamav/jsparse/js-norm.c	1788	static inline int parseId(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1832	static int parseOperator(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1834	    size_t len = MIN(5, scanner->insize - scanner->pos);
+native-width-integer	libclamav/jsparse/js-norm.c	1851	static int yylex_init(yyscan_t *scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1857	static int yylex_destroy(yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1864	static void yy_scan_bytes(const char *p, size_t len, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1879	static int yyget_leng(yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1885	static int yylex(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1887	    const size_t len        = scanner->insize;
 native-width-integer	libclamav/jsparse/js-norm.c	247	static const char *scope_declare(struct scope *s, const char *token, const size_t len, struct parser_state *state)
 native-width-integer	libclamav/jsparse/js-norm.c	255	static const char *scope_use(struct scope *s, const char *token, const size_t len)
 native-width-integer	libclamav/jsparse/js-norm.c	271	static size_t scope_lookup(struct scope *s, const char *token, const size_t len)
@@ -20292,8 +20292,8 @@ boundary-constant	libclamav/bytecode.c	2276	            if (!errno && end != len
 boundary-constant	libclamav/bytecode.c	2877	        if (total_values > UINT_MAX ||
 boundary-constant	libclamav/bytecode.c	3506	    ctx->file_size        = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
 boundary-constant	libclamav/bytecode.c	3514	    return file_size <= UINT32_MAX;
-boundary-constant	libclamav/bytecode.c	3912	            if (remaining_ms > UINT32_MAX)
-boundary-constant	libclamav/bytecode.c	3913	                remaining_ms = UINT32_MAX;
+boundary-constant	libclamav/bytecode.c	3911	            if (remaining_ms > UINT32_MAX)
+boundary-constant	libclamav/bytecode.c	3912	                remaining_ms = UINT32_MAX;
 boundary-constant	libclamav/bytecode.c	751	    if (*ok && value > UINT_MAX) {
 boundary-constant	libclamav/bytecode.c	859	        if (func->numConstants == UINT32_MAX ||
 boundary-constant	libclamav/bytecode.c	921	    if (!*ok || l64 > UINT_MAX) {
@@ -20906,7 +20906,7 @@ quantity-parser	libclamav/dconf.c	350	            if ((unsigned int)atoi(pt) < C
 quantity-parser	libclamav/dlp.c	159	    uint32_t iin = atoi(digits);
 quantity-parser	libclamav/ishield.c	617	        fsize = strtol(strsz, &eostr, 10);
 quantity-parser	libclamav/ishield.c	649	            cabno = strtol(fname + 4, &eostr, 10);
-quantity-parser	libclamav/jsparse/js-norm.c	1778	            TOKEN_SET(lvalp, ival, atoi(scanner->buf.data));
+quantity-parser	libclamav/jsparse/js-norm.c	1780	            TOKEN_SET(lvalp, ival, atoi(scanner->buf.data));
 quantity-parser	libclamav/matcher-byte-comp.c	110	    ref_subsigid = strtol(buf_start, (char **)&buf_end, 10);
 quantity-parser	libclamav/matcher-byte-comp.c	161	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
 quantity-parser	libclamav/matcher-byte-comp.c	181	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
@@ -21617,89 +21617,89 @@ format-width	libclamav/bytecode.c	3768	        cli_dbgmsg("Bytecode %u returned 
 format-width	libclamav/bytecode.c	3781	                    cli_dbgmsg("Bytecode %u unpacked file saved in %s\n",
 format-width	libclamav/bytecode.c	3784	                    cli_dbgmsg("Bytecode %u unpacked file\n", bc->id);
 format-width	libclamav/bytecode.c	3801	                        cli_dbgmsg("ftruncate failed on %d\n", fd);
-format-width	libclamav/bytecode.c	3827	                    cli_dbgmsg("Scanning unpacked file by bytecode %u found a reason to stop: %s\n", bc->id, cl_strerror(ret));
-format-width	libclamav/bytecode.c	3843	        cli_dbgmsg("Bytecode: executed %u bytecodes for this hook\n", executed);
-format-width	libclamav/bytecode.c	3936	    printf("Bytecode format functionality level: %u\n", bc->metadata.formatlevel);
-format-width	libclamav/bytecode.c	3945	    printf("\ttarget exclude: %d\n", bc->metadata.targetExclude);
-format-width	libclamav/bytecode.c	3973	            printf("Unknown (type %u)", bc->kind);
-format-width	libclamav/bytecode.c	3977	    printf("\tbytecode functionality level: %u - %u\n",
-format-width	libclamav/bytecode.c	3983	    printf("\tvirusnames: %u\n", bc->vnames_cnt);
-format-width	libclamav/bytecode.c	4029	    printf("\tnumber of functions: %u\n\tnumber of types: %u\n",
-format-width	libclamav/bytecode.c	4031	    printf("\tnumber of global constants: %u\n", (unsigned)bc->num_globals);
-format-width	libclamav/bytecode.c	4032	    printf("\tnumber of debug nodes: %u\n", bc->dbgnode_cnt);
-format-width	libclamav/bytecode.c	4130	        printf("i%d", tid);
-format-width	libclamav/bytecode.c	4166	            printf("%d x ", ty->numElements);
-format-width	libclamav/bytecode.c	4171	            printf("unhandled type kind %d, cannot parse", ty->kind);
-format-width	libclamav/bytecode.c	4180	    printf("found %d extra types of %d total, starting at tid %d\n",
-format-width	libclamav/bytecode.c	4199	        printf("bytecode diagnostic: funcid [%u] outside bytecode numfuncs [%u]\n",
-format-width	libclamav/bytecode.c	4204	    printf("found a total of %zu globals\n", bc->num_globals);
-format-width	libclamav/bytecode.c	4216	    printf("found %d values with %d arguments and %d locals\n",
-format-width	libclamav/bytecode.c	4230	    printf("found a total of %d constants\n", func->numConstants);
-format-width	libclamav/bytecode.c	4237	    printf("found a total of %u total values\n", total);
-format-width	libclamav/bytecode.c	4249	        printf("opcode %u[%u] of type %u is not implemented yet!",
-format-width	libclamav/bytecode.c	4260	            printf("%d = %d + %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4263	            printf("%d = %d - %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4266	            printf("%d = %d * %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4269	            printf("%d = %d / %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4272	            printf("%d = %d / %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4275	            printf("%d = %d %% %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4278	            printf("%d = %d %% %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4281	            printf("%d = %d << %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4284	            printf("%d = %d >> %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4287	            printf("%d = %d >> %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4290	            printf("%d = %d & %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4293	            printf("%d = %d | %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4296	            printf("%d = %d ^ %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4301	            printf("%d = %d trunc " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
-format-width	libclamav/bytecode.c	4304	            printf("%d = %d sext " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
-format-width	libclamav/bytecode.c	4307	            printf("%d = %d zext " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
-format-width	libclamav/bytecode.c	4312	            printf("br %d ? bb.%d : bb.%d", inst->u.branch.condition,
-format-width	libclamav/bytecode.c	4317	            printf("jmp bb.%d", inst->u.jump);
-format-width	libclamav/bytecode.c	4321	            printf("ret %d", inst->u.unaryop);
-format-width	libclamav/bytecode.c	4331	            printf("%d = (%d == %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4334	            printf("%d = (%d != %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4337	            printf("%d = (%d > %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4340	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4343	            printf("%d = (%d < %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4346	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4349	            printf("%d = (%d > %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4352	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4355	            printf("%d = (%d <= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4358	            printf("%d = (%d < %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4361	            printf("%d = %d ? %d : %d)", inst->dest, inst->u.three[0],
-format-width	libclamav/bytecode.c	4367	            printf("%d = call F.%d (", inst->dest, inst->u.ops.funcid);
-format-width	libclamav/bytecode.c	4370	                    printf("%d", inst->u.ops.ops[j]);
-format-width	libclamav/bytecode.c	4372	                    printf("%d, ", inst->u.ops.ops[j]);
-format-width	libclamav/bytecode.c	4379	                printf("apicall FID %d not yet implemented!\n", inst->u.ops.funcid);
-format-width	libclamav/bytecode.c	4385	                    printf("%d = %s[%d] (%d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	4389	                    printf("%d = %s[%d] (p.%d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	4393	                    printf("%d = %s[%d] (%d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	4397	                    printf("p.%d = %s[%d] (%d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	4401	                    printf("%d = %s[%d] (p.%d, %d, %d, %d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	4406	                    printf("%d = %s[%d] ()", inst->dest, api->name,
-format-width	libclamav/bytecode.c	4410	                    printf("p.%d = %s[%d] (%d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	4414	                    printf("%d = %s[%d] (%d, %d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	4419	                    printf("%d = %s[%d] (p.%d, %d, p.%d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	4424	                    printf("%d = %s[%d] (p.%d, %d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	4429	                    printf("type %u apicalls not yet implemented!\n", api->kind);
-format-width	libclamav/bytecode.c	4436	            printf("cp %d -> %d", inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4439	            printf("%d = gep1 p.%d + (%d * %d)", inst->dest, inst->u.three[1],
-format-width	libclamav/bytecode.c	4443	            printf("%d = gepz p.%d + (%d)", inst->dest,
-format-width	libclamav/bytecode.c	4450	            printf("store %d -> p.%d", inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4453	            printf("load  %d <- p.%d", inst->dest, inst->u.unaryop);
-format-width	libclamav/bytecode.c	4458	            printf("%d = memset (p.%d, %d, %d)", inst->dest, inst->u.three[0],
-format-width	libclamav/bytecode.c	4462	            printf("%d = memcpy (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
-format-width	libclamav/bytecode.c	4466	            printf("%d = memmove (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
-format-width	libclamav/bytecode.c	4470	            printf("%d = memcmp (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
-format-width	libclamav/bytecode.c	4476	            printf("%d = isbigendian()", inst->dest);
-format-width	libclamav/bytecode.c	4482	            printf("%d = bswap16 %d", inst->dest, inst->u.unaryop);
-format-width	libclamav/bytecode.c	4485	            printf("%d = bswap32 %d", inst->dest, inst->u.unaryop);
-format-width	libclamav/bytecode.c	4488	            printf("%d = bswap64 %d", inst->dest, inst->u.unaryop);
-format-width	libclamav/bytecode.c	4491	            printf("%d = ptrdiff32 p.%d p.%d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	4494	            printf("%d = ptrtoint64 p.%d", inst->dest, inst->u.unaryop);
-format-width	libclamav/bytecode.c	4502	            printf("opcode %u[%u] of type %u is not implemented yet!",
-format-width	libclamav/bytecode.c	4514	        printf("bytecode diagnostic: funcid [%u] outside bytecode numfuncs [%u]\n",
-format-width	libclamav/bytecode.c	4521	    printf("FUNCTION ID: F.%d -> NUMINSTS %d\n", funcid, func->numInsts);
+format-width	libclamav/bytecode.c	3826	                    cli_dbgmsg("Scanning unpacked file by bytecode %u found a reason to stop: %s\n", bc->id, cl_strerror(ret));
+format-width	libclamav/bytecode.c	3842	        cli_dbgmsg("Bytecode: executed %u bytecodes for this hook\n", executed);
+format-width	libclamav/bytecode.c	3935	    printf("Bytecode format functionality level: %u\n", bc->metadata.formatlevel);
+format-width	libclamav/bytecode.c	3944	    printf("\ttarget exclude: %d\n", bc->metadata.targetExclude);
+format-width	libclamav/bytecode.c	3972	            printf("Unknown (type %u)", bc->kind);
+format-width	libclamav/bytecode.c	3976	    printf("\tbytecode functionality level: %u - %u\n",
+format-width	libclamav/bytecode.c	3982	    printf("\tvirusnames: %u\n", bc->vnames_cnt);
+format-width	libclamav/bytecode.c	4028	    printf("\tnumber of functions: %u\n\tnumber of types: %u\n",
+format-width	libclamav/bytecode.c	4030	    printf("\tnumber of global constants: %u\n", (unsigned)bc->num_globals);
+format-width	libclamav/bytecode.c	4031	    printf("\tnumber of debug nodes: %u\n", bc->dbgnode_cnt);
+format-width	libclamav/bytecode.c	4129	        printf("i%d", tid);
+format-width	libclamav/bytecode.c	4165	            printf("%d x ", ty->numElements);
+format-width	libclamav/bytecode.c	4170	            printf("unhandled type kind %d, cannot parse", ty->kind);
+format-width	libclamav/bytecode.c	4179	    printf("found %d extra types of %d total, starting at tid %d\n",
+format-width	libclamav/bytecode.c	4198	        printf("bytecode diagnostic: funcid [%u] outside bytecode numfuncs [%u]\n",
+format-width	libclamav/bytecode.c	4203	    printf("found a total of %zu globals\n", bc->num_globals);
+format-width	libclamav/bytecode.c	4215	    printf("found %d values with %d arguments and %d locals\n",
+format-width	libclamav/bytecode.c	4229	    printf("found a total of %d constants\n", func->numConstants);
+format-width	libclamav/bytecode.c	4236	    printf("found a total of %u total values\n", total);
+format-width	libclamav/bytecode.c	4248	        printf("opcode %u[%u] of type %u is not implemented yet!",
+format-width	libclamav/bytecode.c	4259	            printf("%d = %d + %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4262	            printf("%d = %d - %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4265	            printf("%d = %d * %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4268	            printf("%d = %d / %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4271	            printf("%d = %d / %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4274	            printf("%d = %d %% %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4277	            printf("%d = %d %% %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4280	            printf("%d = %d << %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4283	            printf("%d = %d >> %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4286	            printf("%d = %d >> %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4289	            printf("%d = %d & %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4292	            printf("%d = %d | %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4295	            printf("%d = %d ^ %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4300	            printf("%d = %d trunc " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
+format-width	libclamav/bytecode.c	4303	            printf("%d = %d sext " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
+format-width	libclamav/bytecode.c	4306	            printf("%d = %d zext " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
+format-width	libclamav/bytecode.c	4311	            printf("br %d ? bb.%d : bb.%d", inst->u.branch.condition,
+format-width	libclamav/bytecode.c	4316	            printf("jmp bb.%d", inst->u.jump);
+format-width	libclamav/bytecode.c	4320	            printf("ret %d", inst->u.unaryop);
+format-width	libclamav/bytecode.c	4330	            printf("%d = (%d == %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4333	            printf("%d = (%d != %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4336	            printf("%d = (%d > %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4339	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4342	            printf("%d = (%d < %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4345	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4348	            printf("%d = (%d > %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4351	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4354	            printf("%d = (%d <= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4357	            printf("%d = (%d < %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4360	            printf("%d = %d ? %d : %d)", inst->dest, inst->u.three[0],
+format-width	libclamav/bytecode.c	4366	            printf("%d = call F.%d (", inst->dest, inst->u.ops.funcid);
+format-width	libclamav/bytecode.c	4369	                    printf("%d", inst->u.ops.ops[j]);
+format-width	libclamav/bytecode.c	4371	                    printf("%d, ", inst->u.ops.ops[j]);
+format-width	libclamav/bytecode.c	4378	                printf("apicall FID %d not yet implemented!\n", inst->u.ops.funcid);
+format-width	libclamav/bytecode.c	4384	                    printf("%d = %s[%d] (%d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	4388	                    printf("%d = %s[%d] (p.%d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	4392	                    printf("%d = %s[%d] (%d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	4396	                    printf("p.%d = %s[%d] (%d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	4400	                    printf("%d = %s[%d] (p.%d, %d, %d, %d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	4405	                    printf("%d = %s[%d] ()", inst->dest, api->name,
+format-width	libclamav/bytecode.c	4409	                    printf("p.%d = %s[%d] (%d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	4413	                    printf("%d = %s[%d] (%d, %d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	4418	                    printf("%d = %s[%d] (p.%d, %d, p.%d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	4423	                    printf("%d = %s[%d] (p.%d, %d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	4428	                    printf("type %u apicalls not yet implemented!\n", api->kind);
+format-width	libclamav/bytecode.c	4435	            printf("cp %d -> %d", inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4438	            printf("%d = gep1 p.%d + (%d * %d)", inst->dest, inst->u.three[1],
+format-width	libclamav/bytecode.c	4442	            printf("%d = gepz p.%d + (%d)", inst->dest,
+format-width	libclamav/bytecode.c	4449	            printf("store %d -> p.%d", inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4452	            printf("load  %d <- p.%d", inst->dest, inst->u.unaryop);
+format-width	libclamav/bytecode.c	4457	            printf("%d = memset (p.%d, %d, %d)", inst->dest, inst->u.three[0],
+format-width	libclamav/bytecode.c	4461	            printf("%d = memcpy (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
+format-width	libclamav/bytecode.c	4465	            printf("%d = memmove (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
+format-width	libclamav/bytecode.c	4469	            printf("%d = memcmp (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
+format-width	libclamav/bytecode.c	4475	            printf("%d = isbigendian()", inst->dest);
+format-width	libclamav/bytecode.c	4481	            printf("%d = bswap16 %d", inst->dest, inst->u.unaryop);
+format-width	libclamav/bytecode.c	4484	            printf("%d = bswap32 %d", inst->dest, inst->u.unaryop);
+format-width	libclamav/bytecode.c	4487	            printf("%d = bswap64 %d", inst->dest, inst->u.unaryop);
+format-width	libclamav/bytecode.c	4490	            printf("%d = ptrdiff32 p.%d p.%d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	4493	            printf("%d = ptrtoint64 p.%d", inst->dest, inst->u.unaryop);
+format-width	libclamav/bytecode.c	4501	            printf("opcode %u[%u] of type %u is not implemented yet!",
+format-width	libclamav/bytecode.c	4513	        printf("bytecode diagnostic: funcid [%u] outside bytecode numfuncs [%u]\n",
+format-width	libclamav/bytecode.c	4520	    printf("FUNCTION ID: F.%d -> NUMINSTS %d\n", funcid, func->numInsts);
 format-width	libclamav/bytecode.c	491	                        cli_errmsg("bytecode: malformed pointer type %u\n",
 format-width	libclamav/bytecode.c	502	                        cli_errmsg("bytecode: malformed structure type %u\n",
 format-width	libclamav/bytecode.c	508	                            cli_errmsg("bytecode: structure type %u is too large or empty\n",
@@ -25559,11 +25559,11 @@ offset-size-arithmetic	libclamav/bytecode.c	374	    *tempfilename = ctx->tempfil
 offset-size-arithmetic	libclamav/bytecode.c	3752	                ret = cli_append_potentially_unwanted(cctx, ctx->virname);
 offset-size-arithmetic	libclamav/bytecode.c	3754	                ret = cli_append_virus(cctx, ctx->virname);
 offset-size-arithmetic	libclamav/bytecode.c	3787	                if (lseek(fd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/bytecode.c	3888	     * the post-run callers still perform the authoritative deadline check. */
+offset-size-arithmetic	libclamav/bytecode.c	3887	     * the post-run callers still perform the authoritative deadline check. */
 offset-size-arithmetic	libclamav/bytecode.c	397	static unsigned typesize(const struct cli_bc *bc, uint16_t type)
-offset-size-arithmetic	libclamav/bytecode.c	4254	    snprintf(inst_str, sizeof(inst_str), "%-20s[%-3d/%3d/%3d]", bc_opstr[inst->opcode],
-offset-size-arithmetic	libclamav/bytecode.c	4369	                if (j == (size_t)(inst->u.ops.numOps - 1)) {
-offset-size-arithmetic	libclamav/bytecode.c	4476	            printf("%d = isbigendian()", inst->dest);
+offset-size-arithmetic	libclamav/bytecode.c	4253	    snprintf(inst_str, sizeof(inst_str), "%-20s[%-3d/%3d/%3d]", bc_opstr[inst->opcode],
+offset-size-arithmetic	libclamav/bytecode.c	4368	                if (j == (size_t)(inst->u.ops.numOps - 1)) {
+offset-size-arithmetic	libclamav/bytecode.c	4475	            printf("%d = isbigendian()", inst->dest);
 offset-size-arithmetic	libclamav/bytecode.c	452	    if (type_count > CLI_MAX_ALLOCATION / sizeof(*state) ||
 offset-size-arithmetic	libclamav/bytecode.c	453	        type_count > CLI_MAX_ALLOCATION / sizeof(*stack)) {
 offset-size-arithmetic	libclamav/bytecode.c	457	    state = cli_max_calloc(type_count, sizeof(*state));
@@ -27974,61 +27974,61 @@ offset-size-arithmetic	libclamav/jsparse/generated/operators.h	77	  return len +
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	1073	    /* append to file */
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	1076	        if (end == (off_t)-1) {
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	1090	    if (buf.pos < 9 || memcmp(buf.buf + buf.pos - 9, "</script>", 9))
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1127	    memset(state, 0x55, sizeof(*state));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1134	 * the end of a buffer. All tokens except string-literals of course.
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1167	                leng = yyget_leng(state->scanner);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1129	    memset(state, 0x55, sizeof(*state));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1136	 * the end of a buffer. All tokens except string-literals of course.
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1169	                leng = yyget_leng(state->scanner);
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	120	    struct scope *s      = calloc(1, sizeof(*s));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1250	                         * mark function end */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1303	                        leng = yyget_leng(state->scanner);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1305	                        if (str_len > (size_t)-1 - 1 || leng > (size_t)-1 - str_len - 1)
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1308	                            char *joined = cli_max_realloc(str, str_len + leng + 1);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1316	                        str[str_len + leng] = '\0';
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1340	    struct parser_state *state = calloc(1, sizeof(*state));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1697	    const char *start = &scanner->in[scanner->pos], *end = start;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1699	        const size_t siz = &scanner->in[scanner->insize] - end;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1701	        if (end && end > start && end[-1] == '\\') {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1708	        len = end - start;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1710	        len = scanner->insize - scanner->pos;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1711	    cli_textbuffer_append_normalize(&scanner->buf, start, len);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1714	        /* skip over end quote */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1715	        scanner->pos += len + 1;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1727	        scanner->pos += len;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1748	    while (scanner->pos < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1749	        unsigned char c = in[scanner->pos++];
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1761	            if (scanner->pos < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1762	                c = in[scanner->pos++];
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1769	        scanner->pos--;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1791	    while (scanner->pos < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1792	        unsigned char c        = in[scanner->pos++];
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1801	                if (scanner->pos < scanner->insize &&
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1802	                    in[scanner->pos++] == 'u') {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1806	                if (scanner->pos == scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1807	                    scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1814	                scanner->pos--;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1815	                kw = in_word_set(scanner->buf.data, scanner->buf.pos - 1);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1832	    size_t len = MIN(5, scanner->insize - scanner->pos);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1837	            scanner->pos += len;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1840	        len--;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1844	    scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1851	    *scanner = calloc(1, sizeof(**scanner));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1867	    scanner->lastpos    = -1;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1880	    return scanner->yylen ? scanner->yylen : (scanner->buf.pos > 0 ? scanner->buf.pos - 1 : 0);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1885	    const size_t len        = scanner->insize;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1892	    if (scanner->pos == scanner->lastpos) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1895	            scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1900	    scanner->lastpos    = scanner->pos;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1902	    while (scanner->pos < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1906	                cClass = ctype[in[scanner->pos++]];
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1917	                                    scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1921	                                    scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1960	                while (scanner->pos + 1 < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1961	                    if (in[scanner->pos] == '*' && in[scanner->pos + 1] == '/') {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1963	                        scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1966	                    scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1968	                scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1973	                while (scanner->pos < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1976	                    if (in[scanner->pos] == '\n' || in[scanner->pos] == ' ')
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1978	                    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1252	                         * mark function end */
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1305	                        leng = yyget_leng(state->scanner);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1307	                        if (str_len > (size_t)-1 - 1 || leng > (size_t)-1 - str_len - 1)
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1310	                            char *joined = cli_max_realloc(str, str_len + leng + 1);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1318	                        str[str_len + leng] = '\0';
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1342	    struct parser_state *state = calloc(1, sizeof(*state));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1699	    const char *start = &scanner->in[scanner->pos], *end = start;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1701	        const size_t siz = &scanner->in[scanner->insize] - end;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1703	        if (end && end > start && end[-1] == '\\') {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1710	        len = end - start;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1712	        len = scanner->insize - scanner->pos;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1713	    cli_textbuffer_append_normalize(&scanner->buf, start, len);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1716	        /* skip over end quote */
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1717	        scanner->pos += len + 1;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1729	        scanner->pos += len;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1750	    while (scanner->pos < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1751	        unsigned char c = in[scanner->pos++];
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1763	            if (scanner->pos < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1764	                c = in[scanner->pos++];
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1771	        scanner->pos--;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1793	    while (scanner->pos < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1794	        unsigned char c        = in[scanner->pos++];
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1803	                if (scanner->pos < scanner->insize &&
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1804	                    in[scanner->pos++] == 'u') {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1808	                if (scanner->pos == scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1809	                    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1816	                scanner->pos--;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1817	                kw = in_word_set(scanner->buf.data, scanner->buf.pos - 1);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1834	    size_t len = MIN(5, scanner->insize - scanner->pos);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1839	            scanner->pos += len;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1842	        len--;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1846	    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1853	    *scanner = calloc(1, sizeof(**scanner));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1869	    scanner->lastpos    = -1;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1882	    return scanner->yylen ? scanner->yylen : (scanner->buf.pos > 0 ? scanner->buf.pos - 1 : 0);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1887	    const size_t len        = scanner->insize;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1894	    if (scanner->pos == scanner->lastpos) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1897	            scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1902	    scanner->lastpos    = scanner->pos;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1904	    while (scanner->pos < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1908	                cClass = ctype[in[scanner->pos++]];
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1919	                                    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1923	                                    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1962	                while (scanner->pos + 1 < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1963	                    if (in[scanner->pos] == '*' && in[scanner->pos + 1] == '/') {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1965	                        scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1968	                    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1970	                scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1975	                while (scanner->pos < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1978	                    if (in[scanner->pos] == '\n' || in[scanner->pos] == ' ')
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1980	                    scanner->pos++;
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	247	static const char *scope_declare(struct scope *s, const char *token, const size_t len, struct parser_state *state)
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	249	    const struct cli_element *el = cli_hashtab_insert(&s->id_map, token, len, (const cli_element_data)(state->var_uniq++));
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	267	    el = cli_hashtab_insert(&s->id_map, token, len, (const cli_element_data)-1);

@@ -11865,3 +11865,20 @@ for this cleanup-only change; current-object execution, complete PE unpacker
 and heuristic corpora, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and parser-family qualification
 remain open.
+
+## Bytecode and JavaScript output cleanup-status audit — 2026-08-27
+
+The bytecode VM/API cleanup helpers only replaced clean, verified, or abort
+statuses, and JavaScript normalized-output close failures were gated on a
+clean prior result without marking the scan incomplete. Bytecode temporary and
+unpacked output teardown, truncation handling, and JavaScript normalized-output
+close now use the shared cleanup-status precedence helper and mark close
+failures incomplete as `CL_EWRITE`, preserving detections and earlier parser,
+resource, or timeout errors.
+
+The current bytecode, bytecode API, and JavaScript-normalizer sources pass the
+existing GCC syntax checks and source guards cover the changed status paths.
+Existing focused production-linked evidence remains prior-object evidence for
+this cleanup-only change; current-object execution, complete bytecode/script
+corpora, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.

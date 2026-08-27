@@ -91,8 +91,8 @@ static void cli_bcapi_note_cleanup_failure(cli_ctx *cctx, cl_error_t *status,
 {
     if (cctx)
         cli_mark_scan_incomplete(cctx, reason);
-    if (status && (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK))
-        *status = failure;
+    if (status)
+        *status = cli_merge_cleanup_status(*status, failure);
 }
 
 static int cli_bcapi_table_size(unsigned current, size_t element_size,
