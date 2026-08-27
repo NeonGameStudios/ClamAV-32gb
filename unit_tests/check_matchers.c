@@ -1038,6 +1038,150 @@ START_TEST(test_logical_malformed_expression_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_logical_expression_trailing_data_is_fail_visible)
+{
+    static char logic[] = "0x";
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id          = 0;
+    lsig.type        = CLI_LSIG_NORMAL;
+    lsig.u.logic     = logic;
+    lsig.virname     = (char *)"TrailingLogicalExpressionData";
+    lsig.tdb.subsigs = 1;
+    lsigtable[0]     = &lsig;
+    root.ac_lsigs       = 1;
+    root.ac_lsigtable   = lsigtable;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    mdata.lsigcnt[0][0] = 1;
+    ctx.scan_incomplete        = 0;
+    ctx.scan_incomplete_reason = NULL;
+    thefmap.dont_cache_flag    = 0;
+
+    ret = cli_exp_eval(&ctx, &root, &mdata, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(thefmap.dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "logical signature definition is malformed");
+
+    cli_ac_freedata(&mdata);
+}
+END_TEST
+
+START_TEST(test_logical_expression_chained_modifier_is_fail_visible)
+{
+    static char logic[] = "0>1>2";
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id          = 0;
+    lsig.type        = CLI_LSIG_NORMAL;
+    lsig.u.logic     = logic;
+    lsig.virname     = (char *)"ChainedLogicalModifier";
+    lsig.tdb.subsigs = 1;
+    lsigtable[0]     = &lsig;
+    root.ac_lsigs    = 1;
+    root.ac_lsigtable = lsigtable;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    mdata.lsigcnt[0][0] = 1;
+    ctx.scan_incomplete        = 0;
+    ctx.scan_incomplete_reason = NULL;
+    thefmap.dont_cache_flag    = 0;
+
+    ret = cli_exp_eval(&ctx, &root, &mdata, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(thefmap.dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "logical signature definition is malformed");
+
+    cli_ac_freedata(&mdata);
+}
+END_TEST
+
+START_TEST(test_logical_subsignature_bounds_are_fail_visible)
+{
+    static char logic[] = "1";
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id          = 0;
+    lsig.type        = CLI_LSIG_NORMAL;
+    lsig.u.logic     = logic;
+    lsig.virname     = (char *)"OutOfRangeLogicalSubsignature";
+    lsig.tdb.subsigs = 1;
+    lsigtable[0]     = &lsig;
+    root.ac_lsigs    = 1;
+    root.ac_lsigtable = lsigtable;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    mdata.lsigcnt[0][0] = 1;
+    ctx.scan_incomplete        = 0;
+    ctx.scan_incomplete_reason = NULL;
+    thefmap.dont_cache_flag    = 0;
+
+    ret = cli_exp_eval(&ctx, &root, &mdata, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(thefmap.dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "logical signature definition is malformed");
+
+    cli_ac_freedata(&mdata);
+}
+END_TEST
+
+START_TEST(test_logical_oversized_definition_is_fail_visible)
+{
+    static char logic[] = "0";
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id          = 0;
+    lsig.type        = CLI_LSIG_NORMAL;
+    lsig.u.logic     = logic;
+    lsig.virname     = (char *)"OversizedLogicalDefinition";
+    lsig.tdb.subsigs = MAX_LDB_SUBSIGS + 1;
+    lsigtable[0]     = &lsig;
+    root.ac_lsigs    = 1;
+    root.ac_lsigtable = lsigtable;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    mdata.lsigcnt[0][0] = 1;
+    ctx.scan_incomplete        = 0;
+    ctx.scan_incomplete_reason = NULL;
+    thefmap.dont_cache_flag    = 0;
+
+    ret = cli_exp_eval(&ctx, &root, &mdata, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(thefmap.dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "logical signature definition is malformed");
+
+    cli_ac_freedata(&mdata);
+}
+END_TEST
+
 START_TEST(test_logical_failure_does_not_suppress_later_detection)
 {
     static char logic[] = "0";
@@ -2007,6 +2151,10 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_logical_unknown_type_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_malformed_definition_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_malformed_expression_is_fail_visible);
+    tcase_add_test(tc_matchers, test_logical_expression_trailing_data_is_fail_visible);
+    tcase_add_test(tc_matchers, test_logical_expression_chained_modifier_is_fail_visible);
+    tcase_add_test(tc_matchers, test_logical_subsignature_bounds_are_fail_visible);
+    tcase_add_test(tc_matchers, test_logical_oversized_definition_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_failure_does_not_suppress_later_detection);
     tcase_add_test(tc_matchers, test_logical_bytecode_v1_large_file_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);

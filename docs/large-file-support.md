@@ -3,6 +3,26 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Logical matcher definition-boundary validation — 2026-08-27
+
+Logical-expression admission now parses bounded decimal tokens exactly rather
+than accepting a numeric prefix, rejecting trailing data and values that do
+not fit `unsigned int`. Before evaluating a normal logical signature, the
+matcher also validates the declared subsignature count and the maximum ID
+referenced by the expression against both the fixed 64-entry runtime arrays
+and the declaration. Macro matching validates its table, pattern, and
+fixed-size group state before dereference. The new focused regressions cover
+trailing expression data, chained leaf modifiers, a referenced ID outside the
+declared count, and an oversized declaration; all mark the layer incomplete,
+return `CL_EPARSE`, and disable caching. A current-source GCC
+section-garbage-collected parser harness passes valid block-modifier forms and
+rejects suffix, chained-modifier, and overflow cases,
+and the edited sources plus matcher test translation unit compile with the
+production GCC flags. The static production-linked TCase relink could not be
+completed because the stale container build has missing internal dependencies
+and no overlay space; full logical-expression execution, sanitizer,
+production-CVD/service, Sonic1, and release qualification remain required.
+
 ## AutoIt header-admission context/map classification — 2026-08-26
 
 The AutoIt embedded-header helper previously returned `CL_ENULLARG` for both

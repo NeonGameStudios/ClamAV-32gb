@@ -4976,3 +4976,18 @@ and Sonic1 qualification as release gates.
   TIFF/image corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and parser-family qualification
   open.
+
+## Logical matcher definition-boundary audit — 2026-08-27
+
+- Replace prefix-accepting logical-expression number scans with bounded exact
+  decimal parsing, reject chained leaf modifiers and `unsigned int` overflow,
+  and validate referenced subsignature IDs against the declared count before
+  indexing runtime arrays.
+- Validate logical macro table/pattern/group state before dereference. The
+  focused parser harness passes valid block-modifier forms and rejects suffix
+  and overflow cases; the three new public regressions are registered and
+  compile-checked with production GCC but await a current-source
+  production-linked matcher TCase.
+- Keep full logical-expression and production-signature corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification open.

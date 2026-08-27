@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <limits.h>
 #include <sys/stat.h>
 
 #include <assert.h>
@@ -771,13 +772,42 @@ void cli_ac_free(struct cli_matcher *root)
     free_trans_nodes(root);
 }
 
+static int cli_ac_parse_uint(const char *start, const char *end, unsigned int *value, const char **after)
+{
+    uint64_t parsed = 0;
+    const char *cursor;
+
+    if (!start || !end || !value || start == end)
+        return 0;
+
+    for (cursor = start; cursor < end; cursor++) {
+        unsigned int digit;
+
+        if (*cursor < '0' || *cursor > '9')
+            break;
+        digit = (unsigned int)(*cursor - '0');
+        if (parsed > (UINT_MAX - digit) / 10U)
+            return 0;
+        parsed = parsed * 10U + digit;
+    }
+
+    if (cursor == start)
+        return 0;
+
+    *value = (unsigned int)parsed;
+    if (after)
+        *after = cursor;
+    return 1;
+}
+
 /*
  * In parse_only mode this function returns -1 on error or the max subsig id
  */
 int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigned int *cnt, uint64_t *ids, unsigned int parse_only)
 {
-    unsigned int i, len = end - expr, pth = 0, opoff = 0, op1off = 0, val;
-    unsigned int blkend = 0, id, modval1, modval2 = 0, lcnt = 0, rcnt = 0, tcnt, modoff = 0;
+    size_t i, len = end - expr, pth = 0, opoff = 0, op1off = 0, val;
+    size_t blkend = 0, modoff = 0;
+    unsigned int id, modval1, modval2 = 0, lcnt = 0, rcnt = 0, tcnt;
     uint64_t lids = 0, rids = 0, tids;
     int ret, lval, rval;
     char op = 0, op1 = 0, mod = 0, blkmod = 0;
@@ -821,21 +851,22 @@ int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigne
 
         if (op1 && !pth) {
             blkend = i;
-            if (expr[i + 1] == '>' || expr[i + 1] == '<' || expr[i + 1] == '=') {
+            if (i + 1 < len && (expr[i + 1] == '>' || expr[i + 1] == '<' || expr[i + 1] == '=')) {
                 blkmod = expr[i + 1];
 
-                ret = sscanf(&expr[i + 2], "%u,%u", &modval1, &modval2);
-                if (ret != 2)
-                    ret = sscanf(&expr[i + 2], "%u", &modval1);
-
-                if (!ret || ret == EOF) {
+                if (!cli_ac_parse_uint(&expr[i + 2], end, &modval1, &pt)) {
                     cli_errmsg("chklexpr: Syntax error: Missing number after '%c'\n", expr[i + 1]);
                     return -1;
                 }
 
-                for (i += 2; i + 1 < len && (isdigit(expr[i + 1]) || expr[i + 1] == ','); i++) {
-                    continue;
+                if (pt < end && *pt == ',') {
+                    if (!cli_ac_parse_uint(pt + 1, end, &modval2, &pt)) {
+                        cli_errmsg("chklexpr: Syntax error: Missing number after ','\n");
+                        return -1;
+                    }
                 }
+
+                i = (size_t)(pt - expr) - 1;
             }
 
             if (&expr[i + 1] == rend)
@@ -854,8 +885,8 @@ int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigne
         if (expr[0] == '(')
             return cli_ac_chklsig(++expr, --end, lsigcnt, cnt, ids, parse_only);
 
-        ret = sscanf(expr, "%u", &id);
-        if (!ret || ret == EOF) {
+        if (!cli_ac_parse_uint(expr, end, &id, &pt) ||
+            (pt != end && (!mod || pt != expr + modoff))) {
             cli_errmsg("cli_ac_chklsig: Can't parse %s\n", expr);
             return -1;
         }
@@ -872,8 +903,7 @@ int cli_ac_chklsig(const char *expr, const char *end, uint32_t *lsigcnt, unsigne
 
         if (mod) {
             pt  = expr + modoff + 1;
-            ret = sscanf(pt, "%u", &modval1);
-            if (!ret || ret == EOF) {
+            if (!cli_ac_parse_uint(pt, end, &modval1, &pt) || pt != end) {
                 cli_errmsg("chklexpr: Syntax error: Missing number after '%c'\n", mod);
                 return -1;
             }
@@ -1684,10 +1714,50 @@ void lsig_increment_subsig_match(struct cli_ac_data *mdata, uint32_t lsig_id, ui
     mdata->lsigcnt[lsig_id][subsig_id]++;
 }
 
+static cl_error_t cli_ac_lsig_context_error(cli_ctx *ctx, const char *reason)
+{
+    if (ctx) {
+        cli_mark_scan_incomplete(ctx, reason);
+        if (ctx->fmap)
+            ctx->fmap->dont_cache_flag = 1;
+    }
+    return CL_EPARSE;
+}
+
+static cl_error_t cli_ac_validate_lsig_context(const struct cli_matcher *root,
+                                               const struct cli_ac_data *mdata,
+                                               uint32_t lsig_id, uint32_t subsig_id,
+                                               cli_ctx *ctx)
+{
+    const struct cli_ac_lsig *ac_lsig;
+
+    if (!root || !root->ac_lsigtable || lsig_id >= root->ac_lsigs ||
+        !mdata || mdata->lsigs <= lsig_id || !mdata->lsigcnt ||
+        !mdata->lsigsuboff_last || !mdata->lsigsuboff_first ||
+        !mdata->lsig_matches || !mdata->lsigcnt[lsig_id] ||
+        !mdata->lsigsuboff_last[lsig_id] || !mdata->lsigsuboff_first[lsig_id]) {
+        return cli_ac_lsig_context_error(ctx, "logical signature matcher context is malformed");
+    }
+
+    ac_lsig = root->ac_lsigtable[lsig_id];
+    if (!ac_lsig || ac_lsig->tdb.subsigs == 0 ||
+        ac_lsig->tdb.subsigs > MAX_LDB_SUBSIGS || subsig_id >= ac_lsig->tdb.subsigs) {
+        return cli_ac_lsig_context_error(ctx, "logical signature definition is malformed");
+    }
+
+    return CL_SUCCESS;
+}
+
 cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id, uint64_t realoff, int partial, cli_ctx *ctx)
 {
-    const struct cli_ac_lsig *ac_lsig = root->ac_lsigtable[lsig_id];
-    const struct cli_lsig_tdb *tdb    = &ac_lsig->tdb;
+    const struct cli_ac_lsig *ac_lsig;
+    const struct cli_lsig_tdb *tdb;
+
+    if (cli_ac_validate_lsig_context(root, mdata, lsig_id, subsig_id, ctx) != CL_SUCCESS)
+        return CL_EPARSE;
+
+    ac_lsig = root->ac_lsigtable[lsig_id];
+    tdb     = &ac_lsig->tdb;
 
     if (realoff != CLI_OFF_NONE64) {
         if (mdata->lsigsuboff_first[lsig_id][subsig_id] == CLI_OFF_NONE64) {
@@ -1786,10 +1856,17 @@ cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *
          */
         id = tdb->macro_ptids[subsig_id];
 
+        if (subsig_id + 1 >= tdb->subsigs || !root->ac_pattable || id >= root->ac_patterns ||
+            !root->ac_pattable[id])
+            return cli_ac_lsig_context_error(ctx, "logical signature macro definition is malformed");
+
         macropt        = root->ac_pattable[id];
         smin           = macropt->ch_mindist[0];
         smax           = macropt->ch_maxdist[0];
         macro_group_id = macropt->sigid;
+
+        if (macro_group_id >= sizeof(mdata->macro_lastmatch) / sizeof(mdata->macro_lastmatch[0]))
+            return cli_ac_lsig_context_error(ctx, "logical signature macro group is malformed");
 
         /* start of last macro match */
         last_macro_match = mdata->macro_lastmatch[macro_group_id];
@@ -1821,9 +1898,14 @@ cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *
 
 cl_error_t cli_ac_chkmacro(struct cli_matcher *root, struct cli_ac_data *data, unsigned lsig_id, cli_ctx *ctx)
 {
-    const struct cli_lsig_tdb *tdb = &root->ac_lsigtable[lsig_id]->tdb;
+    const struct cli_lsig_tdb *tdb;
     unsigned i;
     cl_error_t rc;
+
+    if (cli_ac_validate_lsig_context(root, data, lsig_id, 0, ctx) != CL_SUCCESS)
+        return CL_EPARSE;
+
+    tdb = &root->ac_lsigtable[lsig_id]->tdb;
 
     /* Loop through all subsigs, and if they are tied to macros check that the
      * macro matched at a correct distance */

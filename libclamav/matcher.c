@@ -49,6 +49,7 @@
 #include "str.h"
 #include "default.h"
 #include "macho.h"
+#include "readdb.h"
 #include "fmap.h"
 #include "pe_icons.h"
 #include "regex/regex.h"
@@ -1144,6 +1145,24 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
 
     exp     = ac_lsig->u.logic;
     exp_end = exp + strlen(exp);
+
+    /* The runtime match arrays have one fixed slot for each of the 64
+     * supported logical subsignatures. Signature loading normally enforces
+     * this, but keep a malformed or externally constructed matcher from
+     * indexing beyond those arrays. Validate the expression against the
+     * declared count before evaluating it with the match counters. */
+    if (ac_lsig->tdb.subsigs == 0 || ac_lsig->tdb.subsigs > MAX_LDB_SUBSIGS) {
+        cli_mark_scan_incomplete(ctx, "logical signature definition is malformed");
+        ctx->fmap->dont_cache_flag = 1;
+        return CL_EPARSE;
+    }
+
+    expression_status = cli_ac_chklsig(exp, exp_end, NULL, NULL, NULL, 1);
+    if (expression_status < 0 || (uint32_t)expression_status >= ac_lsig->tdb.subsigs) {
+        cli_mark_scan_incomplete(ctx, "logical signature definition is malformed");
+        ctx->fmap->dont_cache_flag = 1;
+        return CL_EPARSE;
+    }
 
     status = cli_ac_chkmacro(root, acdata, lsid, ctx);
     if (status != CL_SUCCESS)

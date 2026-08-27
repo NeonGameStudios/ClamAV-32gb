@@ -10760,3 +10760,31 @@ runtime execution in a current-source production-linked harness.
 Full TIFF/image corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and parser-family qualification
 remain release gates.
+
+## Logical matcher definition-boundary audit — 2026-08-27
+
+The logical matcher had two concrete fail-closed gaps. Its `sscanf("%u")`
+parsing accepted a numeric prefix and silently ignored trailing expression
+data, and an externally constructed definition could declare more logical
+subsignatures than the fixed 64-entry runtime arrays. The bounded parser now
+requires an exact decimal token and rejects `unsigned int` overflow. Logical
+evaluation preflights the declared count and referenced maximum ID, while
+macro evaluation validates the table, pattern, pattern ID, and fixed macro
+group before dereference. The focused regressions
+`test_logical_expression_trailing_data_is_fail_visible`,
+`test_logical_expression_chained_modifier_is_fail_visible`,
+`test_logical_subsignature_bounds_are_fail_visible`, and
+`test_logical_oversized_definition_is_fail_visible` assert `CL_EPARSE`, sticky
+incompleteness, and non-cacheability. A current-source GCC
+section-garbage-collected parser harness passes valid block-modifier forms and
+rejects trailing suffixes and decimal overflow; the edited matcher sources
+and full matcher test translation unit pass the production GCC compile.
+
+The existing container's static production-linked matcher relink was
+attempted with its generated dependency set but remains unavailable because
+the stale build has unresolved internal dependencies and the container
+overlay is exhausted. The new unit tests are therefore registered and
+compile-checked, not counted as runtime TCase evidence. Full logical
+expression evaluation, production signatures, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and parser
+family qualification remain open.
