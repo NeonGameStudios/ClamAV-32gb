@@ -2672,6 +2672,7 @@ contains libclamav/ole2_extract.c 'OLE2 embedded stream temporary admission reac
 contains libclamav/ole2_extract.c 'OLE2 embedded stream output reached the configured time limit'
 contains libclamav/ole2_extract.c 'OLE2 encrypted stream temporary admission reached the configured time limit'
 contains libclamav/ole2_extract.c 'OLE2 encrypted stream output reached the configured time limit'
+contains libclamav/ole2_extract.c 'OLE2 encrypted stream extraction did not complete'
 contains libclamav/ole2_extract.c 'cli_magic_scan_desc_type_reserved(ofd, tempfile, ctx, CL_TYPE_ANY, NULL'
 contains libclamav/ole2_extract.c 'cli_magic_scan_desc_type_reserved(ofd, tmpname, ctx, CL_TYPE_ANY, NULL'
 not_contains libclamav/ole2_extract.c 'ret = cli_magic_scan_desc(ofd, tempfile, ctx'

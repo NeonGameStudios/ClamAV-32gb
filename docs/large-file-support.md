@@ -8359,3 +8359,20 @@ both materialized logo fixtures with exact nested PNG detection. Full ISO9660
 corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain release
 gates.
+
+## Encrypted OLE2 stream cleanup fail-visible audit — 2026-08-27
+
+The encrypted OLE2 OTF handler now marks unclassified traversal, seek, and
+materialization failures at its cleanup label. This closes early exits that
+returned an error before the nested-scan status check could mark the layer
+incomplete; already-specific reasons remain first, and a failed encrypted
+stream cannot be cached as clean.
+
+The touched source compiles with the production GCC flags, and the fresh
+current-source production-linked `ole2_xlm` and `ole2_map` cases pass 2/2 each.
+The existing encrypted `password.fat.xls` fixture uses a non-default password
+and reaches the existing fail-closed `CL_EUNPACK` path before stream
+materialization, so it is not short-write injection evidence. Complete
+OLE/VBA/XLM corpus and fault matrix, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain release gates.

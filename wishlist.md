@@ -5072,3 +5072,16 @@ and Sonic1 qualification as release gates.
   completion, and the ICB mismatch regression. Keep complete UDF corpus,
   sanitizer, certified Linux x86-64, materialized large file,
   production-CVD/service, Sonic1, and parser-family qualification open.
+
+## Encrypted OLE2 stream cleanup fail-visible audit — 2026-08-27
+
+- Mark any unclassified encrypted OTF traversal, seek, or materialization
+  error at cleanup so a required encrypted stream cannot return an error while
+  leaving its fmap cacheable; preserve the first specific incomplete reason.
+- The touched source compiles with production GCC flags and the isolated
+  current-source `ole2_xlm` and `ole2_map` cases pass 2/2 each. The available
+  encrypted fixture uses a non-default password and stops at the existing
+  `CL_EUNPACK` fail-closed path before materialization, so short-write fault
+  injection remains an explicit test gap. Keep complete OLE/VBA/XLM corpus and
+  fault matrix, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.

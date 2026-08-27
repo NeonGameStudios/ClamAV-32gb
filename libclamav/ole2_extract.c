@@ -2640,6 +2640,12 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
     ret = ret == CL_VIRUS ? CL_VIRUS : CL_SUCCESS;
 
 done:
+    /* Every failure in the encrypted-stream handler must remain fail-visible.
+     * Several traversal and materialization branches reach cleanup directly,
+     * before the nested-scan status check above. */
+    if (!ctx->scan_incomplete && ret != CL_SUCCESS && ret != CL_VIRUS && ret != CL_BREAK)
+        cli_mark_scan_incomplete(ctx, "OLE2 encrypted stream extraction did not complete");
+
     cli_scan_release_temporary(ctx, temporary_reserved);
     CLI_FREE_AND_SET_NULL(name);
     if (-1 != ofd) {

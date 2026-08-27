@@ -10905,3 +10905,21 @@ guards require both unsigned size reconstructions and the termination write.
 Full enabled-UnRAR extraction corpus, backend fault injection, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain release gates.
+
+## Encrypted OLE2 stream cleanup fail-visible audit — 2026-08-27
+
+The encrypted OLE2 OTF handler had direct traversal, seek, and materialization
+failure exits that jumped to cleanup before the nested-scan status check. Those
+paths could return an error without setting the sticky incomplete state, leaving
+the containing fmap cacheable. The handler cleanup label now marks any
+non-success/non-virus failure that has not already been classified, preserving
+the first specific diagnostic while making the result non-cacheable.
+
+The touched source compiles with the production warning-enabled GCC flags. A
+fresh current-source production-linked harness passes the isolated `ole2_xlm`
+and `ole2_map` cases 2/2 each. The existing encrypted `password.fat.xls`
+fixture uses a non-default password and therefore returns the already
+fail-closed `CL_EUNPACK` before encrypted stream materialization; it is not
+counted as short-write injection evidence. Complete OLE/VBA/XLM corpus and
+fault matrix, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
