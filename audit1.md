@@ -11663,3 +11663,20 @@ removal of the old status-only pattern. Existing HFS+ focused production
 evidence remains prior-object evidence; current-object execution, complete
 HFS+ corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## RAR and script-normalization cleanup audit — 2026-08-27
+
+The optional RAR extractor and script normalizer still had cleanup branches
+that upgraded only clean/trusted results. Their descriptor close and temporary
+file removal paths now use the shared cleanup-status precedence helper, so
+`CL_EREAD`, `CL_EWRITE`, and `CL_EUNLINK` remain distinguishable, `CL_BREAK`
+is upgraded on required cleanup failure, detections and earlier parser errors
+are preserved, and every cleanup failure remains incomplete/non-cacheable.
+
+The current scanner source passes the established GCC syntax check with the
+known mixed-generation warnings already present in the shared source. Source
+guards cover the RAR and script helper calls. Existing RAR-unavailable and
+script public-API results remain prior-object evidence; current-object
+execution, complete corpora, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain open.

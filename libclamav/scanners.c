@@ -699,8 +699,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                     if (close(extracted_fd) != 0) {
                         extracted_fd = -1;
                         cli_mark_scan_incomplete(ctx, "RAR extracted member descriptor could not be closed");
-                        if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-                            status = CL_EREAD;
+                        status = cli_merge_cleanup_status(status, CL_EREAD);
                     } else {
                         extracted_fd = -1;
                     }
@@ -716,8 +715,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                         if (cli_unlink(extract_fullpath)) {
                             cli_dbgmsg("RAR: Failed to unlink the extracted file: %s\n", extract_fullpath);
                             cli_mark_scan_incomplete(ctx, "RAR extracted member could not be removed");
-                            if (status == CL_SUCCESS || status == CL_VERIFIED)
-                                status = CL_EUNLINK;
+                            status = cli_merge_cleanup_status(status, CL_EUNLINK);
                         }
                     }
                 }
@@ -751,9 +749,9 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
 
 done:
     if (extracted_fd != -1) {
-        if (close(extracted_fd) != 0 && (status == CL_SUCCESS || status == CL_VERIFIED)) {
+        if (close(extracted_fd) != 0) {
             cli_mark_scan_incomplete(ctx, "RAR extracted member descriptor could not be closed");
-            status = CL_EREAD;
+            status = cli_merge_cleanup_status(status, CL_EREAD);
         }
         extracted_fd = -1;
     }
@@ -785,8 +783,7 @@ done:
         if (!ctx->engine->keeptmp && access(extract_fullpath, F_OK) == 0 &&
             cli_unlink(extract_fullpath)) {
             cli_mark_scan_incomplete(ctx, "RAR extracted member could not be removed");
-            if (status == CL_SUCCESS || status == CL_VERIFIED)
-                status = CL_EUNLINK;
+            status = cli_merge_cleanup_status(status, CL_EUNLINK);
         }
         free(extract_fullpath);
         extract_fullpath = NULL;
@@ -4293,8 +4290,7 @@ done:
     if (ofd != -1) {
         if (close(ofd) != 0) {
             cli_mark_scan_incomplete(ctx, "Script normalized output could not be closed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-                ret = CL_EWRITE;
+            ret = cli_merge_cleanup_status(ret, CL_EWRITE);
         }
         ofd = -1;
     }
@@ -4303,8 +4299,7 @@ done:
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tmpname) != 0) {
                 cli_mark_scan_incomplete(ctx, "Script normalized output could not be removed");
-                if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-                    ret = CL_EUNLINK;
+                ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
             }
         }
         free(tmpname);

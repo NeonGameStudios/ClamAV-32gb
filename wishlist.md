@@ -204,7 +204,7 @@ parser-family qualification open.
   `pdf_map` case passes 2/2 for both entry-state/error paths and the existing
   `pdf` parser case passes 14/14; complete PDF corpus,
   sanitizer, certified Linux x86-64, materialized large-file,
-  production-CVD/service, Sonic1, and parser-family qualification remain
+ production-CVD/service, Sonic1, and parser-family qualification remain
   open.
 
 ## TIFF direct-entry context evidence — 2026-08-27
@@ -5640,3 +5640,15 @@ and Sonic1 qualification as release gates.
   HFS+ corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification remain
   open.
+
+## RAR and script-normalization cleanup audit — 2026-08-27
+
+- Make optional RAR descriptor/file cleanup and script normalized-output
+  cleanup fail-visible through the shared helper: preserve `CL_EREAD`,
+  `CL_EWRITE`, and `CL_EUNLINK`, upgrade `CL_BREAK`, retain detections or
+  earlier parser/resource errors, and keep cleanup failures non-cacheable.
+- The current scanner source passes the established GCC syntax check with
+  known mixed-generation warnings, and source guards cover the RAR/script
+  helper calls. Current-object execution, complete corpora, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification remain open.
