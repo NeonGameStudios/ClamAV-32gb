@@ -166,8 +166,7 @@ done:
     if (fd >= 0) {
         if (close(fd) != 0) {
             cli_mark_scan_incomplete(ctx, "reserved temporary directory file could not be closed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
-                ret = CL_EREAD;
+            ret = cli_merge_cleanup_status(ret, CL_EREAD);
         }
     }
 
@@ -262,8 +261,7 @@ done:
     if (NULL != dd) {
         if (closedir(dd) != 0) {
             cli_mark_scan_incomplete(ctx, "temporary scan directory could not be closed");
-            if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-                status = CL_EREAD;
+            status = cli_merge_cleanup_status(status, CL_EREAD);
         }
     }
     if (NULL != fname) {
@@ -1529,8 +1527,7 @@ static void cli_arj_close_output(cli_ctx *ctx, int *fd, cl_error_t *status)
 
     if (close(*fd) != 0) {
         cli_mark_scan_incomplete(ctx, "ARJ temporary output could not be closed");
-        if (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK)
-            *status = CL_EWRITE;
+        *status = cli_merge_cleanup_status(*status, CL_EWRITE);
     }
     *fd = -1;
 }
@@ -1542,8 +1539,7 @@ static cl_error_t cli_arj_cleanup_dir(cli_ctx *ctx, char **dir, cl_error_t statu
 
     if (!ctx->engine->keeptmp && cli_rmdirs(*dir) != 0) {
         cli_mark_scan_incomplete(ctx, "ARJ temporary directory could not be removed");
-        if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-            status = CL_EUNLINK;
+        status = cli_merge_cleanup_status(status, CL_EUNLINK);
     }
 
     free(*dir);

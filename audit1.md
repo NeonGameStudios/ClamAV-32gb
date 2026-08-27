@@ -11747,3 +11747,20 @@ linked evidence remains prior-object evidence for this cleanup-only change;
 complete SWF/CAB/CHM corpora, current-object execution, sanitizer, certified
 Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
 parser-family qualification remain open.
+
+## ARJ, NSIS, and shared scanner cleanup audit — 2026-08-27
+
+ARJ output and directory teardown, NSIS output/member/directory teardown, and
+the shared reserved-file and directory scanners used local status checks that
+omitted `CL_BREAK`; NSIS also reported a close failure as `CL_EUNLINK`. These
+paths now use the shared cleanup-status precedence helper, preserving
+`CL_EWRITE`, `CL_EREAD`, and `CL_EUNLINK` according to the failed operation,
+upgrading clean, verified, and `CL_BREAK`, and retaining detections or earlier
+parser/resource errors.
+
+The current ARJ/NSIS/shared-scanner sources pass the established GCC syntax
+checks and source guards cover the changed cleanup paths. Existing focused
+production-linked evidence remains prior-object evidence for this cleanup-only
+change; complete ARJ/NSIS corpora, current-object execution, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.

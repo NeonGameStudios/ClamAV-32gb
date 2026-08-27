@@ -5702,3 +5702,14 @@ and Sonic1 qualification as release gates.
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification remain
   open.
+
+## ARJ, NSIS, and shared scanner cleanup audit — 2026-08-27
+
+- Make ARJ output/directory, NSIS output/member/directory, and shared
+  reserved-file/directory cleanup use the common precedence helper. Preserve
+  `CL_EWRITE`, `CL_EREAD`, and `CL_EUNLINK` by operation, upgrade
+  clean/verified/`CL_BREAK`, and retain detections or earlier parser errors.
+- Current GCC syntax and source guards cover the paths; complete ARJ/NSIS
+  corpora, current-object execution, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.

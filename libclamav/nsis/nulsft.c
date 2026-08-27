@@ -158,8 +158,7 @@ static void nsis_note_close_failure(struct nsis_st *n, cli_ctx *ctx, cl_error_t 
         return;
 
     cli_mark_scan_incomplete(ctx, "NSIS temporary output could not be closed");
-    if (*ret == CL_SUCCESS || *ret == CL_CLEAN || *ret == CL_BREAK)
-        *ret = CL_EUNLINK;
+    *ret = cli_merge_cleanup_status(*ret, CL_EWRITE);
 }
 
 static void nsis_release_reservations(struct nsis_st *n, cli_ctx *ctx)
@@ -900,8 +899,7 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
             if (!ctx->engine->keeptmp) {
                 if (cli_unlink(nsist.ofn)) {
                     cli_mark_scan_incomplete(ctx, "NSIS extracted member could not be removed");
-                    if (ret == CL_SUCCESS || ret == CL_CLEAN || ret == CL_BREAK)
-                        ret = CL_EUNLINK;
+                    ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
                 }
             }
         }
@@ -918,8 +916,7 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
     if (!ctx->engine->keeptmp) {
         if (cli_rmdirs(nsist.dir) != 0) {
             cli_mark_scan_incomplete(ctx, "NSIS temporary directory could not be removed");
-            if (ret == CL_SUCCESS || ret == CL_CLEAN || ret == CL_BREAK)
-                ret = CL_EUNLINK;
+            ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
         }
     }
 
