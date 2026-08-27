@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## GPT direct parser context evidence — 2026-08-27
+
+The GPT direct entry already returned `CL_ENULLARG` for a null context, but
+the dedicated `gpt` TCase previously covered only recognized-layer read and
+validation boundaries. A dedicated null-context regression is now registered
+beside those checks. The current-source production-linked GCC `gpt` case
+passes 5/5, `partition_map` remains 4/4, and the isolated `gpt_corpus` case
+passes 1/1 over the CRC-validated synthetic image with exact nested child
+matching. Complete GPT/partition-image corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and parser-
+family qualification remain open.
+
 ## GIF direct parser context evidence — 2026-08-27
 
 The GIF direct entry already returned `CL_ENULLARG` for a null context, but
@@ -1399,7 +1411,7 @@ remain open.
 
 ## GPT partition-image corpus qualification — 2026-08-26
 
-The authoritative current-source production-linked GCC gpt case passes 4/4,
+The authoritative current-source production-linked GCC gpt case passes 5/5,
 and the isolated gpt_corpus case passes 1/1. The corpus is a valid
 six-sector GPT image with a protective MBR, CRC-validated primary and backup
 headers, one usable partition, and a bounded child payload; the GPT root does

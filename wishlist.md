@@ -1,5 +1,15 @@
 # Wishlist
 
+## GPT direct parser context evidence — 2026-08-27
+
+- Add and register a direct null-context regression alongside the existing GPT
+  read and validation boundaries. The current-source production-linked GCC
+  `gpt` case passes 5/5, `partition_map` remains 4/4, and the isolated
+  `gpt_corpus` case passes 1/1 over the CRC-validated synthetic image with
+  exact nested child matching. Keep complete GPT/partition-image corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## GIF direct parser context evidence — 2026-08-27
 
 - Add and register a direct null-context regression alongside the existing
@@ -1149,7 +1159,7 @@ parser-family qualification open.
 
 ## GPT partition-image corpus qualification — 2026-08-26
 
-- The current-source production-linked GCC gpt case passes 4/4, and the
+- The current-source production-linked GCC gpt case passes 5/5, and the
   isolated gpt_corpus case passes 1/1 over a valid six-sector GPT image with
   CRC-validated primary and backup headers, one usable partition, and an
   exact child matcher reached through partition traversal.

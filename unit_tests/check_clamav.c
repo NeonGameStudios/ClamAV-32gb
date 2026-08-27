@@ -21755,6 +21755,12 @@ START_TEST(test_gpt_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gpt_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_scangpt(NULL, 512), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_dmg_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -41539,6 +41545,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_partition_map, test_partition_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_gpt);
     tcase_add_checked_fixture(tc_gpt, cl_setup, cl_teardown);
+    tcase_add_test(tc_gpt, test_gpt_null_context_is_fail_visible);
     tcase_add_test(tc_gpt, test_gpt_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_gpt, test_gpt_sector_size_probe_read_failure_is_fail_visible);
     tcase_add_test(tc_gpt, test_gpt_primary_table_read_failure_is_not_hidden_by_secondary);
