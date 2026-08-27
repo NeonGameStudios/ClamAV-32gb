@@ -1,5 +1,15 @@
 # Wishlist
 
+## HWPOLE2 direct parser context evidence — 2026-08-27
+
+- Add and register a direct null-context regression alongside the existing
+  HWPOLE2 missing-map and public-API prefix-read checks. The current-source
+  production-linked GCC `hwpole2_map` case passes 3/3, and the isolated
+  `hwpole2_corpus` case passes 1/1 over the materialized `clam.ppt` payload
+  wrapper with exact nested child matching. Keep complete HWPOLE2 corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## GPT direct parser context evidence — 2026-08-27
 
 - Add and register a direct null-context regression alongside the existing GPT

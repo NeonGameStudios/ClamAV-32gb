@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## HWPOLE2 direct parser context evidence — 2026-08-27
+
+The HWPOLE2 direct entry already returned `CL_ENULLARG` for a null context,
+but its focused map case covered only missing-map admission and a public-API
+prefix read failure. A dedicated null-context regression is now registered
+beside those checks. The current-source production-linked GCC `hwpole2_map`
+case passes 3/3, and the isolated `hwpole2_corpus` case passes 1/1 over the
+materialized `clam.ppt` payload wrapper with exact nested child matching.
+Complete HWPOLE2 corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain open.
+
 ## GPT direct parser context evidence — 2026-08-27
 
 The GPT direct entry already returned `CL_ENULLARG` for a null context, but
