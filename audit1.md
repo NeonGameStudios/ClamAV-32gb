@@ -10788,3 +10788,22 @@ compile-checked, not counted as runtime TCase evidence. Full logical
 expression evaluation, production signatures, sanitizer, certified Linux
 x86-64, materialized large-file, production-CVD/service, Sonic1, and parser
 family qualification remain open.
+
+## Bundled YARA arithmetic-domain audit — 2026-08-27
+
+The bundled YARA VM previously sent division, modulo, and shift operands
+directly to C operators. A malformed or directly constructed rule could
+therefore reach divide-by-zero, signed `INT64_MIN / -1`, or an out-of-range
+shift count. The VM now returns `CL_EPARSE` before those operations. Public
+matcher regressions cover divide-by-zero and a 64-bit left-shift boundary; a
+current-source GCC section-garbage-collected VM harness passes divide/modulo
+zero, signed-overflow, invalid left/right shift, and valid-arithmetic control
+cases. The edited VM and matcher test translation unit pass production GCC
+compilation.
+
+The public regressions remain compile-checked rather than counted as a
+production-linked TCase because the reused container's build is stale,
+unresolved against current internal dependencies, and out of overlay space.
+Instruction-stream bounds, full YARA evaluation, production signatures,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.

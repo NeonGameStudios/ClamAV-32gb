@@ -447,13 +447,23 @@ int yr_execute_code(
       case OP_DIV:
         pop(r2);
         pop(r1);
-        push(operation(/, r1, r2));
+        if (IS_UNDEFINED(r1) || IS_UNDEFINED(r2))
+          push(UNDEFINED);
+        else if (r2 == 0 || (r1 == INT64_MIN && r2 == -1))
+          return CL_EPARSE;
+        else
+          push(r1 / r2);
         break;
 
       case OP_MOD:
         pop(r2);
         pop(r1);
-        push(operation(%, r1, r2));
+        if (IS_UNDEFINED(r1) || IS_UNDEFINED(r2))
+          push(UNDEFINED);
+        else if (r2 == 0 || (r1 == INT64_MIN && r2 == -1))
+          return CL_EPARSE;
+        else
+          push(r1 % r2);
         break;
 
       case OP_NEG:
@@ -464,13 +474,23 @@ int yr_execute_code(
       case OP_SHR:
         pop(r2);
         pop(r1);
-        push(operation(>>, r1, r2));
+        if (IS_UNDEFINED(r1) || IS_UNDEFINED(r2))
+          push(UNDEFINED);
+        else if (r2 < 0 || r2 >= (int64_t)(sizeof(r1) * 8))
+          return CL_EPARSE;
+        else
+          push(r1 >> r2);
         break;
 
       case OP_SHL:
         pop(r2);
         pop(r1);
-        push(operation(<<, r1, r2));
+        if (IS_UNDEFINED(r1) || IS_UNDEFINED(r2))
+          push(UNDEFINED);
+        else if (r2 < 0 || r2 >= (int64_t)(sizeof(r1) * 8))
+          return CL_EPARSE;
+        else
+          push((int64_t)((uint64_t)r1 << r2));
         break;
 
       case OP_XOR:

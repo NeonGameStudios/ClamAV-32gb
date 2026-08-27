@@ -3,6 +3,21 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Bundled YARA arithmetic-domain validation — 2026-08-27
+
+The bundled YARA VM now rejects division and modulo by zero, the signed
+`INT64_MIN / -1` overflow case, and shift counts outside the native 64-bit
+operand width before executing C arithmetic. These malformed arithmetic
+domains return `CL_EPARSE`; through the matcher they remain incomplete and
+non-cacheable. Public matcher regressions cover divide-by-zero and an invalid
+left-shift count, while a current-source GCC section-garbage-collected VM
+harness covers both divide/modulo zero and signed-overflow cases, invalid
+left/right shift counts, and valid arithmetic controls. The edited VM and
+matcher test translation unit compile with the production GCC flags. Full
+production-linked matcher execution, instruction-stream validation, complete
+YARA evaluation, sanitizer, production-CVD/service, Sonic1, and release
+qualification remain required.
+
 ## Logical matcher definition-boundary validation — 2026-08-27
 
 Logical-expression admission now parses bounded decimal tokens exactly rather

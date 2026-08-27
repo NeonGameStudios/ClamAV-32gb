@@ -130,6 +130,19 @@
   certified Linux x86-64, materialized large-file, production-CVD/service,
   Sonic1, and parser-family qualification open.
 
+## Bundled YARA arithmetic-domain audit — 2026-08-27
+
+- Reject divide/modulo by zero, signed `INT64_MIN / -1`, and shift counts
+  outside the 64-bit VM operand width with `CL_EPARSE`; preserve the existing
+  incomplete and non-cacheable matcher status.
+- The focused current-source VM harness passes invalid arithmetic and valid
+  controls. Public divide-by-zero and invalid-shift regressions are registered
+  and compile-checked with production GCC; execute them in a current-source
+  production-linked matcher TCase.
+- Add instruction-stream bounds validation, then complete YARA corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification.
+
 ## ELF program-table admission without an entry point — 2026-08-26
 
 - Traverse and validate every declared ELF32/ELF64 program table even when
@@ -4985,7 +4998,7 @@ and Sonic1 qualification as release gates.
   indexing runtime arrays.
 - Validate logical macro table/pattern/group state before dereference. The
   focused parser harness passes valid block-modifier forms and rejects suffix
-  and overflow cases; the three new public regressions are registered and
+  and overflow cases; the four new public regressions are registered and
   compile-checked with production GCC but await a current-source
   production-linked matcher TCase.
 - Keep full logical-expression and production-signature corpus, sanitizer,
