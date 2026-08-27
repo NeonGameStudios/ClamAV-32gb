@@ -4785,6 +4785,7 @@ contains libclamav/ishield.c 'InstallShield MSI member temporary output could no
 contains libclamav/ishield.c 'InstallShield MSI member output reached the configured time limit'
 contains libclamav/ishield.c 'InstallShield MSI member temporary output could not be closed'
 contains libclamav/ishield.c 'InstallShield MSI member temporary output could not be removed'
+contains libclamav/ishield.c 'InstallShield MSI decompressor could not be initialized'
 contains libclamav/ishield.c 'InstallShield MSI member name could not be allocated'
 contains libclamav/ishield.c 'cli_magic_scan_desc_type_reserved(ofd, tempfile, ctx, CL_TYPE_ANY, filename'
 contains libclamav/ishield.c 'InstallShield embedded file exceeds temporary storage limits'

@@ -11983,3 +11983,14 @@ earlier parser/resource or detection results. Current PDF GCC syntax and
 source guards cover the paths; current-object execution, complete PDF/object-
 stream corpora, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## InstallShield partial-output cleanup audit — 2026-08-27
+
+InstallShield’s decompressor-initialization failure path marked the parser
+incomplete but ignored close and unlink failures for its partial MSI member.
+It now records both cleanup failures as incomplete while retaining the
+original decompressor failure. The current InstallShield source passes the
+canonical-header GCC syntax check and guards cover the path; current-object
+execution, complete InstallShield corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.

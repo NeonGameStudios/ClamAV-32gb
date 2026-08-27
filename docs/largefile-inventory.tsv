@@ -2670,28 +2670,28 @@ fixed-width-integer	libclamav/hwp.h	48	    uint32_t version;
 fixed-width-integer	libclamav/hwp.h	49	    uint32_t flags;
 fixed-width-integer	libclamav/hwp.h	69	cl_error_t cli_hwpml_decode_base64_fd(cli_ctx *ctx, int input_fd, int output_fd, uint64_t *decoded_size);
 fixed-width-integer	libclamav/ishield.c	100	    uint32_t str_shortname_off;
-fixed-width-integer	libclamav/ishield.c	1000	                                if (c->cabs[j].off < 0 || file_stream_off > UINT64_MAX - (uint64_t)c->cabs[j].off) {
-fixed-width-integer	libclamav/ishield.c	1004	                                    member_off = file_stream_off + (uint64_t)c->cabs[j].off;
+fixed-width-integer	libclamav/ishield.c	1001	                                if (c->cabs[j].off < 0 || file_stream_off > UINT64_MAX - (uint64_t)c->cabs[j].off) {
+fixed-width-integer	libclamav/ishield.c	1005	                                    member_off = file_stream_off + (uint64_t)c->cabs[j].off;
 fixed-width-integer	libclamav/ishield.c	101	    uint32_t unk_str6_off;
 fixed-width-integer	libclamav/ishield.c	102	    uint32_t unk_str7_off;
 fixed-width-integer	libclamav/ishield.c	103	    uint32_t unk_str8_off;
 fixed-width-integer	libclamav/ishield.c	106	    uint32_t unk_str9_off;
-fixed-width-integer	libclamav/ishield.c	1075	static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint64_t csize)
+fixed-width-integer	libclamav/ishield.c	1076	static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint64_t csize)
 fixed-width-integer	libclamav/ishield.c	108	    uint16_t unk_flags2;
-fixed-width-integer	libclamav/ishield.c	1083	    uint64_t outsz             = 0;
-fixed-width-integer	libclamav/ishield.c	1084	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/ishield.c	1084	    uint64_t outsz             = 0;
+fixed-width-integer	libclamav/ishield.c	1085	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/ishield.c	109	    uint32_t unk3[5];
 fixed-width-integer	libclamav/ishield.c	110	    uint32_t unk_str10_off;
 fixed-width-integer	libclamav/ishield.c	111	    uint32_t unk4[4];
 fixed-width-integer	libclamav/ishield.c	112	    uint16_t unk5;
 fixed-width-integer	libclamav/ishield.c	113	    uint16_t sub_comp_cnt;
-fixed-width-integer	libclamav/ishield.c	1130	        uint16_t chunksz;
+fixed-width-integer	libclamav/ishield.c	1131	        uint16_t chunksz;
 fixed-width-integer	libclamav/ishield.c	114	    uint32_t sub_comp_offs_array;
 fixed-width-integer	libclamav/ishield.c	115	    uint32_t next_comp_off;
 fixed-width-integer	libclamav/ishield.c	116	    uint32_t unk_str11_off;
 fixed-width-integer	libclamav/ishield.c	117	    uint32_t unk_str12_off;
 fixed-width-integer	libclamav/ishield.c	118	    uint32_t unk_str13_off;
-fixed-width-integer	libclamav/ishield.c	1184	                uint64_t writelen = umpd;
+fixed-width-integer	libclamav/ishield.c	1185	                uint64_t writelen = umpd;
 fixed-width-integer	libclamav/ishield.c	119	    uint32_t unk_str14_off;
 fixed-width-integer	libclamav/ishield.c	120	    uint32_t str_next1_off;
 fixed-width-integer	libclamav/ishield.c	121	    uint32_t str_next2_off;
@@ -2742,29 +2742,29 @@ fixed-width-integer	libclamav/ishield.c	242	    if (off < 0 || (uint64_t)off > m
 fixed-width-integer	libclamav/ishield.c	271	        uint64_t csize                = 0;
 fixed-width-integer	libclamav/ishield.c	272	        uint64_t outsize              = 0;
 fixed-width-integer	libclamav/ishield.c	273	        uint64_t temporary_reserved   = 0;
-fixed-width-integer	libclamav/ishield.c	412	                    if (UINT64_MAX - temporary_reserved < (uint64_t)produced ||
-fixed-width-integer	libclamav/ishield.c	413	                        cli_scan_reserve_temporary(ctx, (uint64_t)produced) != CL_SUCCESS) {
-fixed-width-integer	libclamav/ishield.c	418	                    temporary_reserved += (uint64_t)produced;
-fixed-width-integer	libclamav/ishield.c	421	                        cli_scan_release_temporary(ctx, (uint64_t)produced);
-fixed-width-integer	libclamav/ishield.c	422	                        temporary_reserved -= (uint64_t)produced;
-fixed-width-integer	libclamav/ishield.c	511	static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint64_t csize);
-fixed-width-integer	libclamav/ishield.c	523	        (uint64_t)offset >= (uint64_t)input_end)
-fixed-width-integer	libclamav/ishield.c	569	    if (off < 0 || (uint64_t)off > map->len || sz > map->len - (size_t)off) {
+fixed-width-integer	libclamav/ishield.c	413	                    if (UINT64_MAX - temporary_reserved < (uint64_t)produced ||
+fixed-width-integer	libclamav/ishield.c	414	                        cli_scan_reserve_temporary(ctx, (uint64_t)produced) != CL_SUCCESS) {
+fixed-width-integer	libclamav/ishield.c	419	                    temporary_reserved += (uint64_t)produced;
+fixed-width-integer	libclamav/ishield.c	422	                        cli_scan_release_temporary(ctx, (uint64_t)produced);
+fixed-width-integer	libclamav/ishield.c	423	                        temporary_reserved -= (uint64_t)produced;
+fixed-width-integer	libclamav/ishield.c	512	static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint64_t csize);
+fixed-width-integer	libclamav/ishield.c	524	        (uint64_t)offset >= (uint64_t)input_end)
+fixed-width-integer	libclamav/ishield.c	570	    if (off < 0 || (uint64_t)off > map->len || sz > map->len - (size_t)off) {
 fixed-width-integer	libclamav/ishield.c	69	    uint32_t magic;
 fixed-width-integer	libclamav/ishield.c	70	    uint32_t unk1; /* version ??? */
-fixed-width-integer	libclamav/ishield.c	705	    uint64_t temporary_reserved;
+fixed-width-integer	libclamav/ishield.c	706	    uint64_t temporary_reserved;
 fixed-width-integer	libclamav/ishield.c	71	    uint32_t unk2; /* ??? */
-fixed-width-integer	libclamav/ishield.c	713	    if (off < 0 || (uint64_t)off > map->len || fsize > map->len - (size_t)off) {
+fixed-width-integer	libclamav/ishield.c	714	    if (off < 0 || (uint64_t)off > map->len || fsize > map->len - (size_t)off) {
 fixed-width-integer	libclamav/ishield.c	72	    uint32_t data_off;
 fixed-width-integer	libclamav/ishield.c	73	    uint32_t data_sz; /* ??? */
-fixed-width-integer	libclamav/ishield.c	731	    temporary_reserved = (uint64_t)fsize;
+fixed-width-integer	libclamav/ishield.c	732	    temporary_reserved = (uint64_t)fsize;
 fixed-width-integer	libclamav/ishield.c	78	    uint32_t unk1;     /* 6 */
 fixed-width-integer	libclamav/ishield.c	79	    uint32_t unk2;
 fixed-width-integer	libclamav/ishield.c	80	    uint64_t csize;
-fixed-width-integer	libclamav/ishield.c	806	    uint32_t h1_data_off, objs_files_cnt, objs_dirs_off;
+fixed-width-integer	libclamav/ishield.c	807	    uint32_t h1_data_off, objs_files_cnt, objs_dirs_off;
 fixed-width-integer	libclamav/ishield.c	81	    uint32_t unk3;
 fixed-width-integer	libclamav/ishield.c	82	    uint32_t unk4; /* 1 */
-fixed-width-integer	libclamav/ishield.c	823	    if (c->hdr < 0 || (uint64_t)c->hdr > map->len || c->hdrsz > map->len - (size_t)c->hdr) {
+fixed-width-integer	libclamav/ishield.c	824	    if (c->hdr < 0 || (uint64_t)c->hdr > map->len || c->hdrsz > map->len - (size_t)c->hdr) {
 fixed-width-integer	libclamav/ishield.c	83	    uint32_t unk5;
 fixed-width-integer	libclamav/ishield.c	84	    uint32_t unk6;
 fixed-width-integer	libclamav/ishield.c	85	    uint32_t unk7;
@@ -2772,24 +2772,24 @@ fixed-width-integer	libclamav/ishield.c	86	    uint32_t unk8;
 fixed-width-integer	libclamav/ishield.c	87	    uint32_t unk9;
 fixed-width-integer	libclamav/ishield.c	88	    uint32_t unk10;
 fixed-width-integer	libclamav/ishield.c	89	    uint32_t unk11;
-fixed-width-integer	libclamav/ishield.c	890	    /* 	uint32_t x = *(uint32_t *)(&hdr[off]); */
-fixed-width-integer	libclamav/ishield.c	898	    /* dir = &hdr[*(uint32_t *)(&hdr[h1_data_off + objs_dirs_off + 4 * file->dir_id]) + h1_data_off + objs_dirs_off] */
-fixed-width-integer	libclamav/ishield.c	902	        uint64_t file_table_off = (uint64_t)h1_data_off + objs_dirs_off + le32_to_host(objs->dir_sz2);
-fixed-width-integer	libclamav/ishield.c	903	        uint64_t file_table_len = (uint64_t)objs_files_cnt * sizeof(struct IS_FILEITEM);
-fixed-width-integer	libclamav/ishield.c	919	            uint64_t dir_rel, file_rel;
-fixed-width-integer	libclamav/ishield.c	920	            uint64_t file_stream_off, file_size, file_csize;
-fixed-width-integer	libclamav/ishield.c	921	            uint16_t cabno, file_flags;
-fixed-width-integer	libclamav/ishield.c	929	            dir_rel  = (uint64_t)h1_data_off + objs_dirs_off + 4ULL * le32_to_host(file_snapshot.dir_id); /* rel off of dir entry from array of rel ptrs */
+fixed-width-integer	libclamav/ishield.c	891	    /* 	uint32_t x = *(uint32_t *)(&hdr[off]); */
+fixed-width-integer	libclamav/ishield.c	899	    /* dir = &hdr[*(uint32_t *)(&hdr[h1_data_off + objs_dirs_off + 4 * file->dir_id]) + h1_data_off + objs_dirs_off] */
+fixed-width-integer	libclamav/ishield.c	903	        uint64_t file_table_off = (uint64_t)h1_data_off + objs_dirs_off + le32_to_host(objs->dir_sz2);
+fixed-width-integer	libclamav/ishield.c	904	        uint64_t file_table_len = (uint64_t)objs_files_cnt * sizeof(struct IS_FILEITEM);
+fixed-width-integer	libclamav/ishield.c	920	            uint64_t dir_rel, file_rel;
+fixed-width-integer	libclamav/ishield.c	921	            uint64_t file_stream_off, file_size, file_csize;
+fixed-width-integer	libclamav/ishield.c	922	            uint16_t cabno, file_flags;
 fixed-width-integer	libclamav/ishield.c	93	    uint32_t str_name_off;
-fixed-width-integer	libclamav/ishield.c	930	            file_rel = (uint64_t)objs_dirs_off + h1_data_off + le32_to_host(file_snapshot.str_name_off);  /* rel off of fname */
-fixed-width-integer	libclamav/ishield.c	936	                uint64_t resolved_dir_rel = (uint64_t)cli_readint32(&hdr[(size_t)dir_rel]) + h1_data_off + objs_dirs_off;
+fixed-width-integer	libclamav/ishield.c	930	            dir_rel  = (uint64_t)h1_data_off + objs_dirs_off + 4ULL * le32_to_host(file_snapshot.dir_id); /* rel off of dir entry from array of rel ptrs */
+fixed-width-integer	libclamav/ishield.c	931	            file_rel = (uint64_t)objs_dirs_off + h1_data_off + le32_to_host(file_snapshot.str_name_off);  /* rel off of fname */
+fixed-width-integer	libclamav/ishield.c	937	                uint64_t resolved_dir_rel = (uint64_t)cli_readint32(&hdr[(size_t)dir_rel]) + h1_data_off + objs_dirs_off;
 fixed-width-integer	libclamav/ishield.c	94	    uint32_t unk_str1_off;
 fixed-width-integer	libclamav/ishield.c	95	    uint32_t unk_str2_off;
 fixed-width-integer	libclamav/ishield.c	96	    uint16_t unk_flags;
 fixed-width-integer	libclamav/ishield.c	97	    uint32_t unk_str3_off;
 fixed-width-integer	libclamav/ishield.c	98	    uint32_t unk_str4_off;
 fixed-width-integer	libclamav/ishield.c	99	    uint16_t ordinal_id;
-fixed-width-integer	libclamav/ishield.c	998	                                uint64_t member_off;
+fixed-width-integer	libclamav/ishield.c	999	                                uint64_t member_off;
 fixed-width-integer	libclamav/iso9660.c	105	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/iso9660.c	112	    if (cli_scan_reserve_temporary(iso->ctx, (uint64_t)len) != CL_SUCCESS) {
 fixed-width-integer	libclamav/iso9660.c	117	    temporary_reserved = (uint64_t)len;
@@ -11043,11 +11043,11 @@ native-width-integer	libclamav/is_tar.c	71	static int from_oct(int digs, char *w
 native-width-integer	libclamav/is_tar.c	73	    int value;
 native-width-integer	libclamav/is_tar.h	52	 * @return int      0 if the checksum is bad (i.e., probably not a tar archive),
 native-width-integer	libclamav/is_tar.h	56	int is_tar(const unsigned char *buf, unsigned int nbytes);
-native-width-integer	libclamav/ishield.c	1062	    int i;
-native-width-integer	libclamav/ishield.c	1081	    int ofd;
-native-width-integer	libclamav/ishield.c	1178	            int zret;
-native-width-integer	libclamav/ishield.c	1183	                unsigned int umpd = IS_CABBUFSZ - z.avail_out;
-native-width-integer	libclamav/ishield.c	1254	        cli_dbgmsg("is_extract_cab: extracted %llu bytes to %s, expected %llu.\n", (long long)outsz, tempfile, (long long)size);
+native-width-integer	libclamav/ishield.c	1063	    int i;
+native-width-integer	libclamav/ishield.c	1082	    int ofd;
+native-width-integer	libclamav/ishield.c	1179	            int zret;
+native-width-integer	libclamav/ishield.c	1184	                unsigned int umpd = IS_CABBUFSZ - z.avail_out;
+native-width-integer	libclamav/ishield.c	1255	        cli_dbgmsg("is_extract_cab: extracted %llu bytes to %s, expected %llu.\n", (long long)outsz, tempfile, (long long)size);
 native-width-integer	libclamav/ishield.c	187	static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize);
 native-width-integer	libclamav/ishield.c	190	cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset)
 native-width-integer	libclamav/ishield.c	194	    size_t remaining;
@@ -11059,51 +11059,51 @@ native-width-integer	libclamav/ishield.c	269	        unsigned int i, lameidx = 0
 native-width-integer	libclamav/ishield.c	270	        int ofd;
 native-width-integer	libclamav/ishield.c	283	        if (off > map->len || sizeof(fb) > map->len - (size_t)off) {
 native-width-integer	libclamav/ishield.c	327	        cli_dbgmsg("ishield-msi: File %s (csize: %llx, unk1:%x unk2:%x unk3:%x unk4:%x unk5:%x unk6:%x unk7:%x unk8:%x unk9:%x unk10:%x unk11:%x)\n", key, (long long)csize, fb.unk1, fb.unk2, fb.unk3, fb.unk4, fb.unk5, fb.unk6, fb.unk7, fb.unk8, fb.unk9, fb.unk10, fb.unk11);
-native-width-integer	libclamav/ishield.c	382	                int inf;
-native-width-integer	libclamav/ishield.c	383	                size_t produced;
-native-width-integer	libclamav/ishield.c	500	        unsigned int cabno;
-native-width-integer	libclamav/ishield.c	501	        off_t off;
-native-width-integer	libclamav/ishield.c	502	        size_t sz;
-native-width-integer	libclamav/ishield.c	504	    off_t hdr;
-native-width-integer	libclamav/ishield.c	505	    size_t hdrsz;
-native-width-integer	libclamav/ishield.c	506	    unsigned int cabcnt;
-native-width-integer	libclamav/ishield.c	513	static const char *ishield_need_str(cli_ctx *ctx, off_t offset, size_t input_end, cl_error_t *status)
-native-width-integer	libclamav/ishield.c	515	    size_t at;
-native-width-integer	libclamav/ishield.c	516	    size_t available;
-native-width-integer	libclamav/ishield.c	526	    at        = (size_t)offset;
-native-width-integer	libclamav/ishield.c	529	        ctx->fmap, at, MIN((size_t)2048, available), status);
-native-width-integer	libclamav/ishield.c	546	cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
-native-width-integer	libclamav/ishield.c	551	    long fsize;
-native-width-integer	libclamav/ishield.c	552	    off_t coff           = off;
-native-width-integer	libclamav/ishield.c	556	    size_t input_end;
-native-width-integer	libclamav/ishield.c	569	    if (off < 0 || (uint64_t)off > map->len || sz > map->len - (size_t)off) {
-native-width-integer	libclamav/ishield.c	573	    input_end = (size_t)off + sz;
-native-width-integer	libclamav/ishield.c	576	        if (coff >= 0 && (size_t)coff == input_end)
-native-width-integer	libclamav/ishield.c	620	            (unsigned long)fsize >= sz ||
-native-width-integer	libclamav/ishield.c	621	            (size_t)(data - fname) > sz - fsize) {
-native-width-integer	libclamav/ishield.c	627	        cli_dbgmsg("ishield: @%lx found file %s (%s) - version %s - size %lu\n", (unsigned long int)coff, fname, path, version, (unsigned long int)fsize);
-native-width-integer	libclamav/ishield.c	638	            long cabno;
-native-width-integer	libclamav/ishield.c	651	                unsigned int i;
-native-width-integer	libclamav/ishield.c	679	            unsigned int i;
-native-width-integer	libclamav/ishield.c	699	static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
-native-width-integer	libclamav/ishield.c	703	    int ofd;
-native-width-integer	libclamav/ishield.c	713	    if (off < 0 || (uint64_t)off > map->len || fsize > map->len - (size_t)off) {
-native-width-integer	libclamav/ishield.c	752	        size_t rd = MIN(fsize, map->pgsz);
-native-width-integer	libclamav/ishield.c	807	    size_t off;
-native-width-integer	libclamav/ishield.c	808	    unsigned int i, scanned = 0;
-native-width-integer	libclamav/ishield.c	809	    int ret = CL_SUCCESS;
-native-width-integer	libclamav/ishield.c	823	    if (c->hdr < 0 || (uint64_t)c->hdr > map->len || c->hdrsz > map->len - (size_t)c->hdr) {
-native-width-integer	libclamav/ishield.c	834	    if (!(h1 = fmap_need_off(map, (size_t)c->hdr, sizeof(*h1)))) {
-native-width-integer	libclamav/ishield.c	910	        off = (size_t)file_table_off;
-native-width-integer	libclamav/ishield.c	935	                fmap_need_ptr_once(map, &hdr[(size_t)dir_rel], 4)) {
-native-width-integer	libclamav/ishield.c	936	                uint64_t resolved_dir_rel = (uint64_t)cli_readint32(&hdr[(size_t)dir_rel]) + h1_data_off + objs_dirs_off;
-native-width-integer	libclamav/ishield.c	939	                    fmap_need_str(map, &hdr[(size_t)resolved_dir_rel], MIN((size_t)4096, c->hdrsz - (size_t)resolved_dir_rel))) {
-native-width-integer	libclamav/ishield.c	941	                    dir_name = &hdr[(size_t)dir_rel];
-native-width-integer	libclamav/ishield.c	945	                fmap_need_str(map, &hdr[(size_t)file_rel], MIN((size_t)4096, c->hdrsz - (size_t)file_rel)))
-native-width-integer	libclamav/ishield.c	946	                file_name = &hdr[(size_t)file_rel];
-native-width-integer	libclamav/ishield.c	961	                               (long long)file_size, (long long)file_csize, hash);
-native-width-integer	libclamav/ishield.c	968	                               (long long)file_size, (long long)file_csize, hash, (long long)file_stream_off,
-native-width-integer	libclamav/ishield.c	984	                            unsigned int j;
+native-width-integer	libclamav/ishield.c	383	                int inf;
+native-width-integer	libclamav/ishield.c	384	                size_t produced;
+native-width-integer	libclamav/ishield.c	501	        unsigned int cabno;
+native-width-integer	libclamav/ishield.c	502	        off_t off;
+native-width-integer	libclamav/ishield.c	503	        size_t sz;
+native-width-integer	libclamav/ishield.c	505	    off_t hdr;
+native-width-integer	libclamav/ishield.c	506	    size_t hdrsz;
+native-width-integer	libclamav/ishield.c	507	    unsigned int cabcnt;
+native-width-integer	libclamav/ishield.c	514	static const char *ishield_need_str(cli_ctx *ctx, off_t offset, size_t input_end, cl_error_t *status)
+native-width-integer	libclamav/ishield.c	516	    size_t at;
+native-width-integer	libclamav/ishield.c	517	    size_t available;
+native-width-integer	libclamav/ishield.c	527	    at        = (size_t)offset;
+native-width-integer	libclamav/ishield.c	530	        ctx->fmap, at, MIN((size_t)2048, available), status);
+native-width-integer	libclamav/ishield.c	547	cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
+native-width-integer	libclamav/ishield.c	552	    long fsize;
+native-width-integer	libclamav/ishield.c	553	    off_t coff           = off;
+native-width-integer	libclamav/ishield.c	557	    size_t input_end;
+native-width-integer	libclamav/ishield.c	570	    if (off < 0 || (uint64_t)off > map->len || sz > map->len - (size_t)off) {
+native-width-integer	libclamav/ishield.c	574	    input_end = (size_t)off + sz;
+native-width-integer	libclamav/ishield.c	577	        if (coff >= 0 && (size_t)coff == input_end)
+native-width-integer	libclamav/ishield.c	621	            (unsigned long)fsize >= sz ||
+native-width-integer	libclamav/ishield.c	622	            (size_t)(data - fname) > sz - fsize) {
+native-width-integer	libclamav/ishield.c	628	        cli_dbgmsg("ishield: @%lx found file %s (%s) - version %s - size %lu\n", (unsigned long int)coff, fname, path, version, (unsigned long int)fsize);
+native-width-integer	libclamav/ishield.c	639	            long cabno;
+native-width-integer	libclamav/ishield.c	652	                unsigned int i;
+native-width-integer	libclamav/ishield.c	680	            unsigned int i;
+native-width-integer	libclamav/ishield.c	700	static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
+native-width-integer	libclamav/ishield.c	704	    int ofd;
+native-width-integer	libclamav/ishield.c	714	    if (off < 0 || (uint64_t)off > map->len || fsize > map->len - (size_t)off) {
+native-width-integer	libclamav/ishield.c	753	        size_t rd = MIN(fsize, map->pgsz);
+native-width-integer	libclamav/ishield.c	808	    size_t off;
+native-width-integer	libclamav/ishield.c	809	    unsigned int i, scanned = 0;
+native-width-integer	libclamav/ishield.c	810	    int ret = CL_SUCCESS;
+native-width-integer	libclamav/ishield.c	824	    if (c->hdr < 0 || (uint64_t)c->hdr > map->len || c->hdrsz > map->len - (size_t)c->hdr) {
+native-width-integer	libclamav/ishield.c	835	    if (!(h1 = fmap_need_off(map, (size_t)c->hdr, sizeof(*h1)))) {
+native-width-integer	libclamav/ishield.c	911	        off = (size_t)file_table_off;
+native-width-integer	libclamav/ishield.c	936	                fmap_need_ptr_once(map, &hdr[(size_t)dir_rel], 4)) {
+native-width-integer	libclamav/ishield.c	937	                uint64_t resolved_dir_rel = (uint64_t)cli_readint32(&hdr[(size_t)dir_rel]) + h1_data_off + objs_dirs_off;
+native-width-integer	libclamav/ishield.c	940	                    fmap_need_str(map, &hdr[(size_t)resolved_dir_rel], MIN((size_t)4096, c->hdrsz - (size_t)resolved_dir_rel))) {
+native-width-integer	libclamav/ishield.c	942	                    dir_name = &hdr[(size_t)dir_rel];
+native-width-integer	libclamav/ishield.c	946	                fmap_need_str(map, &hdr[(size_t)file_rel], MIN((size_t)4096, c->hdrsz - (size_t)file_rel)))
+native-width-integer	libclamav/ishield.c	947	                file_name = &hdr[(size_t)file_rel];
+native-width-integer	libclamav/ishield.c	962	                               (long long)file_size, (long long)file_csize, hash);
+native-width-integer	libclamav/ishield.c	969	                               (long long)file_size, (long long)file_csize, hash, (long long)file_stream_off,
+native-width-integer	libclamav/ishield.c	985	                            unsigned int j;
 native-width-integer	libclamav/ishield.h	27	cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset);
 native-width-integer	libclamav/ishield.h	28	cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off);
 native-width-integer	libclamav/ishield.h	29	cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz);
@@ -20902,8 +20902,8 @@ quantity-parser	libclamav/cvd.c	364	        cvd->stime = atoi(pt);
 quantity-parser	libclamav/dconf.c	337	        if ((unsigned int)atoi(pt) > CL_FLEVEL_DCONF) {
 quantity-parser	libclamav/dconf.c	350	            if ((unsigned int)atoi(pt) < CL_FLEVEL_DCONF) {
 quantity-parser	libclamav/dlp.c	159	    uint32_t iin = atoi(digits);
-quantity-parser	libclamav/ishield.c	617	        fsize = strtol(strsz, &eostr, 10);
-quantity-parser	libclamav/ishield.c	649	            cabno = strtol(fname + 4, &eostr, 10);
+quantity-parser	libclamav/ishield.c	618	        fsize = strtol(strsz, &eostr, 10);
+quantity-parser	libclamav/ishield.c	650	            cabno = strtol(fname + 4, &eostr, 10);
 quantity-parser	libclamav/jsparse/js-norm.c	1780	            TOKEN_SET(lvalp, ival, atoi(scanner->buf.data));
 quantity-parser	libclamav/matcher-byte-comp.c	110	    ref_subsigid = strtol(buf_start, (char **)&buf_end, 10);
 quantity-parser	libclamav/matcher-byte-comp.c	161	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
@@ -22113,20 +22113,20 @@ format-width	libclamav/inflate64.c	649	            Tracevv((stderr, "inflate:   
 format-width	libclamav/inflate64.c	668	            Tracevv((stderr, "inflate:         length %u\n", state->length));
 format-width	libclamav/inflate64.c	692	            Tracevv((stderr, "inflate:        val %u\n", state->offset));
 format-width	libclamav/inflate64.c	713	            Tracevv((stderr, "inflate:         distance %u\n", state->offset));
-format-width	libclamav/ishield.c	1010	                                        cli_dbgmsg("is_parse_hdr: File limit reached (max: %u)\n", ctx->engine->maxfiles);
-format-width	libclamav/ishield.c	1022	                                cli_dbgmsg("is_parse_hdr: data%u.cab not available\n", cabno);
-format-width	libclamav/ishield.c	1035	                    cli_dbgmsg("is_parse_hdr: skipped unknown file entry %u\n", i);
-format-width	libclamav/ishield.c	1239	            cli_dbgmsg("is_extract_cab: file decompression failed with %d\n", zret);
-format-width	libclamav/ishield.c	1254	        cli_dbgmsg("is_extract_cab: extracted %llu bytes to %s, expected %llu.\n", (long long)outsz, tempfile, (long long)size);
+format-width	libclamav/ishield.c	1011	                                        cli_dbgmsg("is_parse_hdr: File limit reached (max: %u)\n", ctx->engine->maxfiles);
+format-width	libclamav/ishield.c	1023	                                cli_dbgmsg("is_parse_hdr: data%u.cab not available\n", cabno);
+format-width	libclamav/ishield.c	1036	                    cli_dbgmsg("is_parse_hdr: skipped unknown file entry %u\n", i);
+format-width	libclamav/ishield.c	1240	            cli_dbgmsg("is_extract_cab: file decompression failed with %d\n", zret);
+format-width	libclamav/ishield.c	1255	        cli_dbgmsg("is_extract_cab: extracted %llu bytes to %s, expected %llu.\n", (long long)outsz, tempfile, (long long)size);
 format-width	libclamav/ishield.c	278	            cli_dbgmsg("ishield-msi: File limit reached (max: %u)\n", ctx->engine->maxfiles);
-format-width	libclamav/ishield.c	627	        cli_dbgmsg("ishield: @%lx found file %s (%s) - version %s - size %lu\n", (unsigned long int)coff, fname, path, version, (unsigned long int)fsize);
-format-width	libclamav/ishield.c	660	                    cli_dbgmsg("ishield: added data%lu.cab to array\n", cabno);
-format-width	libclamav/ishield.c	667	                cli_warnmsg("ishield: got multiple data%lu.cab files\n", cabno);
-format-width	libclamav/ishield.c	685	                cli_dbgmsg("ishield: scanning data%u.cab\n", c.cabs[i].cabno);
-format-width	libclamav/ishield.c	882	    /*     cli_errmsg("DIRECTORIES (%u)", le32_to_host(objs->dirs_cnt)); */
-format-width	libclamav/ishield.c	887	    /*     printf("INSTTYPES (unk1: %d)\n-----------\n", typehdr->unk1); */
-format-width	libclamav/ishield.c	958	                    cli_dbgmsg("is_parse_hdr: skipped external file:%s\\%s (size: %llu csize: %llu md5:%s)\n",
-format-width	libclamav/ishield.c	965	                    cli_dbgmsg("is_parse_hdr: file %s\\%s (size: %llu csize: %llu md5:%s offset:%llx (data%u.cab) 13:%x 14:%x 15:%x)\n",
+format-width	libclamav/ishield.c	628	        cli_dbgmsg("ishield: @%lx found file %s (%s) - version %s - size %lu\n", (unsigned long int)coff, fname, path, version, (unsigned long int)fsize);
+format-width	libclamav/ishield.c	661	                    cli_dbgmsg("ishield: added data%lu.cab to array\n", cabno);
+format-width	libclamav/ishield.c	668	                cli_warnmsg("ishield: got multiple data%lu.cab files\n", cabno);
+format-width	libclamav/ishield.c	686	                cli_dbgmsg("ishield: scanning data%u.cab\n", c.cabs[i].cabno);
+format-width	libclamav/ishield.c	883	    /*     cli_errmsg("DIRECTORIES (%u)", le32_to_host(objs->dirs_cnt)); */
+format-width	libclamav/ishield.c	888	    /*     printf("INSTTYPES (unk1: %d)\n-----------\n", typehdr->unk1); */
+format-width	libclamav/ishield.c	959	                    cli_dbgmsg("is_parse_hdr: skipped external file:%s\\%s (size: %llu csize: %llu md5:%s)\n",
+format-width	libclamav/ishield.c	966	                    cli_dbgmsg("is_parse_hdr: file %s\\%s (size: %llu csize: %llu md5:%s offset:%llx (data%u.cab) 13:%x 14:%x 15:%x)\n",
 format-width	libclamav/iso9660.c	293	                cli_dbgmsg("iso_parse_dir: Directory entry overflow, breaking out %u %u\n", entrysz, dirsz);
 format-width	libclamav/iso9660.c	331	            cli_dbgmsg("iso_parse_dir: %s '%s': off %x - size %x - flags %x - unit size %x - gap size %x - volume %u\n", (dir[25] & 2) ? "Directory" : "File", iso->buf, fileoff, filesz, dir[25], dir[26], dir[27], cli_readint32(&dir[28]) & 0xffff);
 format-width	libclamav/iso9660.c	560	            cli_dbgmsg("cli_scaniso: Raw sector size: %u\n", iso.sectsz);
@@ -27732,20 +27732,20 @@ offset-size-arithmetic	libclamav/inflate64_priv.h	191	    unsigned short lens[32
 offset-size-arithmetic	libclamav/inflate64_priv.h	89	    unsigned short val;         /* offset in table or code value */
 offset-size-arithmetic	libclamav/is_tar.c	53	    for (i = sizeof(header->header.chksum); --i >= 0;)
 offset-size-arithmetic	libclamav/is_tar.c	55	    sum += ' ' * sizeof header->header.chksum;
-offset-size-arithmetic	libclamav/ishield.c	1000	                                if (c->cabs[j].off < 0 || file_stream_off > UINT64_MAX - (uint64_t)c->cabs[j].off) {
-offset-size-arithmetic	libclamav/ishield.c	1004	                                    member_off = file_stream_off + (uint64_t)c->cabs[j].off;
-offset-size-arithmetic	libclamav/ishield.c	1008	                                    CLI_ISCONTAINED(c->cabs[j].off, c->cabs[j].sz, member_off, file_csize)) {
-offset-size-arithmetic	libclamav/ishield.c	1009	                                    if (ctx->engine->maxfiles && scanned >= ctx->engine->maxfiles) {
-offset-size-arithmetic	libclamav/ishield.c	1014	                                    scanned++;
-offset-size-arithmetic	libclamav/ishield.c	1039	                fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
-offset-size-arithmetic	libclamav/ishield.c	1041	                fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
-offset-size-arithmetic	libclamav/ishield.c	1053	        off += sizeof(*file);
-offset-size-arithmetic	libclamav/ishield.c	1142	        csize -= 2;
-offset-size-arithmetic	libclamav/ishield.c	1149	        off += 2;
-offset-size-arithmetic	libclamav/ishield.c	1161	        csize -= chunksz;
-offset-size-arithmetic	libclamav/ishield.c	1168	        off += chunksz;
-offset-size-arithmetic	libclamav/ishield.c	1202	                if (outsz > size || writelen > size - outsz) {
-offset-size-arithmetic	libclamav/ishield.c	1261	        if (lseek(ofd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/ishield.c	1001	                                if (c->cabs[j].off < 0 || file_stream_off > UINT64_MAX - (uint64_t)c->cabs[j].off) {
+offset-size-arithmetic	libclamav/ishield.c	1005	                                    member_off = file_stream_off + (uint64_t)c->cabs[j].off;
+offset-size-arithmetic	libclamav/ishield.c	1009	                                    CLI_ISCONTAINED(c->cabs[j].off, c->cabs[j].sz, member_off, file_csize)) {
+offset-size-arithmetic	libclamav/ishield.c	1010	                                    if (ctx->engine->maxfiles && scanned >= ctx->engine->maxfiles) {
+offset-size-arithmetic	libclamav/ishield.c	1015	                                    scanned++;
+offset-size-arithmetic	libclamav/ishield.c	1040	                fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
+offset-size-arithmetic	libclamav/ishield.c	1042	                fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
+offset-size-arithmetic	libclamav/ishield.c	1054	        off += sizeof(*file);
+offset-size-arithmetic	libclamav/ishield.c	1143	        csize -= 2;
+offset-size-arithmetic	libclamav/ishield.c	1150	        off += 2;
+offset-size-arithmetic	libclamav/ishield.c	1162	        csize -= chunksz;
+offset-size-arithmetic	libclamav/ishield.c	1169	        off += chunksz;
+offset-size-arithmetic	libclamav/ishield.c	1203	                if (outsz > size || writelen > size - outsz) {
+offset-size-arithmetic	libclamav/ishield.c	1262	        if (lseek(ofd, 0, SEEK_SET) == -1) {
 offset-size-arithmetic	libclamav/ishield.c	198	    if (offset < 0 || (uint64_t)offset > ctx->fmap->len)
 offset-size-arithmetic	libclamav/ishield.c	201	    remaining = ctx->fmap->len - (size_t)offset;
 offset-size-arithmetic	libclamav/ishield.c	202	    if (remaining < sizeof(magic) - 1)
@@ -27761,74 +27761,74 @@ offset-size-arithmetic	libclamav/ishield.c	294	        off += sizeof(fb);
 offset-size-arithmetic	libclamav/ishield.c	295	        fb.fname[sizeof(fb.fname) - 1] = '\0';
 offset-size-arithmetic	libclamav/ishield.c	314	        keylen = strlen((const char *)key);
 offset-size-arithmetic	libclamav/ishield.c	320	        filename = cli_safer_strdup((const char *)key);
-offset-size-arithmetic	libclamav/ishield.c	372	            off += z.avail_in;
-offset-size-arithmetic	libclamav/ishield.c	379	            csize -= z.avail_in;
-offset-size-arithmetic	libclamav/ishield.c	393	                produced = sizeof(obuf) - z.avail_out;
-offset-size-arithmetic	libclamav/ishield.c	394	                if (outsize > UINT64_MAX - produced) {
-offset-size-arithmetic	libclamav/ishield.c	399	                ret = cli_checklimits("InstallShield MSI", ctx, outsize + produced, 0, 0);
-offset-size-arithmetic	libclamav/ishield.c	432	                outsize += produced;
-offset-size-arithmetic	libclamav/ishield.c	462	            if (lseek(ofd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/ishield.c	493	        scanned++;
-offset-size-arithmetic	libclamav/ishield.c	513	static const char *ishield_need_str(cli_ctx *ctx, off_t offset, size_t input_end, cl_error_t *status)
-offset-size-arithmetic	libclamav/ishield.c	527	    available = input_end - at;
-offset-size-arithmetic	libclamav/ishield.c	569	    if (off < 0 || (uint64_t)off > map->len || sz > map->len - (size_t)off) {
-offset-size-arithmetic	libclamav/ishield.c	573	    input_end = (size_t)off + sz;
-offset-size-arithmetic	libclamav/ishield.c	586	        coff += strlen(fname) + 1;
-offset-size-arithmetic	libclamav/ishield.c	595	        coff += strlen(path) + 1;
-offset-size-arithmetic	libclamav/ishield.c	604	        coff += strlen(version) + 1;
-offset-size-arithmetic	libclamav/ishield.c	613	        coff += strlen(strsz) + 1;
-offset-size-arithmetic	libclamav/ishield.c	615	        data = &strsz[strlen(strsz) + 1];
-offset-size-arithmetic	libclamav/ishield.c	621	            (size_t)(data - fname) > sz - fsize) {
-offset-size-arithmetic	libclamav/ishield.c	628	        ret = cli_matchmeta(ctx, fname, fsize, fsize, 0, fc++, 0);
-offset-size-arithmetic	libclamav/ishield.c	644	                    coff += fsize;
-offset-size-arithmetic	libclamav/ishield.c	656	                    if (!(c.cabs = cli_max_realloc_or_free(c.cabs, sizeof(struct CABARRAY) * c.cabcnt))) {
-offset-size-arithmetic	libclamav/ishield.c	664	                    coff += fsize;
-offset-size-arithmetic	libclamav/ishield.c	672	        coff += fsize;
-offset-size-arithmetic	libclamav/ishield.c	698	/* Utility func to scan a fd @ a given offset and size */
-offset-size-arithmetic	libclamav/ishield.c	713	    if (off < 0 || (uint64_t)off > map->len || fsize > map->len - (size_t)off) {
-offset-size-arithmetic	libclamav/ishield.c	752	        size_t rd = MIN(fsize, map->pgsz);
-offset-size-arithmetic	libclamav/ishield.c	772	        fsize -= rd;
-offset-size-arithmetic	libclamav/ishield.c	773	        off += rd;
-offset-size-arithmetic	libclamav/ishield.c	778	        if (lseek(ofd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/ishield.c	823	    if (c->hdr < 0 || (uint64_t)c->hdr > map->len || c->hdrsz > map->len - (size_t)c->hdr) {
-offset-size-arithmetic	libclamav/ishield.c	827	    if (c->hdrsz < sizeof(*h1)) {
-offset-size-arithmetic	libclamav/ishield.c	834	    if (!(h1 = fmap_need_off(map, (size_t)c->hdr, sizeof(*h1)))) {
-offset-size-arithmetic	libclamav/ishield.c	843	        fmap_unneed_ptr(map, h1, sizeof(*h1));
-offset-size-arithmetic	libclamav/ishield.c	848	    h1_data_off = le32_to_host(h1->data_off);
-offset-size-arithmetic	libclamav/ishield.c	849	    if (h1_data_off > c->hdrsz || sizeof(*objs) > c->hdrsz - h1_data_off) {
-offset-size-arithmetic	libclamav/ishield.c	850	        fmap_unneed_ptr(map, h1, sizeof(*h1));
-offset-size-arithmetic	libclamav/ishield.c	854	    objs = (struct IS_OBJECTS *)fmap_need_ptr(map, hdr + h1_data_off, sizeof(*objs));
-offset-size-arithmetic	libclamav/ishield.c	857	        fmap_unneed_ptr(map, h1, sizeof(*h1));
-offset-size-arithmetic	libclamav/ishield.c	863	               h1->magic, h1->unk1, h1->unk2, h1_data_off, h1->data_sz);
-offset-size-arithmetic	libclamav/ishield.c	865	    fmap_unneed_ptr(map, h1, sizeof(*h1));
-offset-size-arithmetic	libclamav/ishield.c	868	    /*     off = le32_to_host(objs->comps_off) + h1_data_off; */
-offset-size-arithmetic	libclamav/ishield.c	871	    /* 	if(!CLI_ISCONTAINED(hdr, c->hdrsz, ((char *)cmp), sizeof(*cmp))) { */
-offset-size-arithmetic	libclamav/ishield.c	876	    /* 	cli_errmsg("%06u\t%s\n", i, &hdr[le32_to_host(cmp->str_name_off) + h1_data_off]); */
-offset-size-arithmetic	libclamav/ishield.c	877	    /* 	spam_strarray(hdr, h1_data_off + cmp->sub_comp_offs_array, h1_data_off, cmp->sub_comp_cnt); */
-offset-size-arithmetic	libclamav/ishield.c	879	    /* 	off = le32_to_host(cmp->next_comp_off) + h1_data_off; */
-offset-size-arithmetic	libclamav/ishield.c	883	    objs_dirs_off = le32_to_host(objs->dirs_off);
-offset-size-arithmetic	libclamav/ishield.c	884	    /*     spam_strarray(hdr, h1_data_off + objs_dirs_off, h1_data_off + objs_dirs_off, objs->dirs_cnt); */
-offset-size-arithmetic	libclamav/ishield.c	886	    /*     typehdr = (struct INSTTYPEHDR *)&hdr[h1_data_off + le32_to_host(objs->insttype_off)]; */
-offset-size-arithmetic	libclamav/ishield.c	888	    /*     off = typehdr->off + h1_data_off; */
-offset-size-arithmetic	libclamav/ishield.c	892	    /* 	printf("%06u\t%s\t aka %s\taka %s\n", i, &hdr[item->str_name1_off + h1_data_off], &hdr[item->str_name2_off + h1_data_off], &hdr[item->str_name3_off + h1_data_off]); */
-offset-size-arithmetic	libclamav/ishield.c	894	    /* 	spam_strarray(hdr, h1_data_off + item->off, h1_data_off, item->cnt); */
-offset-size-arithmetic	libclamav/ishield.c	895	    /* 	off+=4; */
-offset-size-arithmetic	libclamav/ishield.c	898	    /* dir = &hdr[*(uint32_t *)(&hdr[h1_data_off + objs_dirs_off + 4 * file->dir_id]) + h1_data_off + objs_dirs_off] */
-offset-size-arithmetic	libclamav/ishield.c	902	        uint64_t file_table_off = (uint64_t)h1_data_off + objs_dirs_off + le32_to_host(objs->dir_sz2);
-offset-size-arithmetic	libclamav/ishield.c	903	        uint64_t file_table_len = (uint64_t)objs_files_cnt * sizeof(struct IS_FILEITEM);
-offset-size-arithmetic	libclamav/ishield.c	905	        if (file_table_off > c->hdrsz || file_table_len > c->hdrsz - file_table_off) {
-offset-size-arithmetic	libclamav/ishield.c	906	            fmap_unneed_ptr(map, objs, sizeof(*objs));
-offset-size-arithmetic	libclamav/ishield.c	912	    fmap_unneed_ptr(map, objs, sizeof(*objs));
-offset-size-arithmetic	libclamav/ishield.c	914	        struct IS_FILEITEM *file = (struct IS_FILEITEM *)fmap_need_off(map, c->hdr + off, sizeof(*file));
-offset-size-arithmetic	libclamav/ishield.c	926	            fmap_unneed_ptr(map, file, sizeof(*file));
-offset-size-arithmetic	libclamav/ishield.c	929	            dir_rel  = (uint64_t)h1_data_off + objs_dirs_off + 4ULL * le32_to_host(file_snapshot.dir_id); /* rel off of dir entry from array of rel ptrs */
-offset-size-arithmetic	libclamav/ishield.c	930	            file_rel = (uint64_t)objs_dirs_off + h1_data_off + le32_to_host(file_snapshot.str_name_off);  /* rel off of fname */
-offset-size-arithmetic	libclamav/ishield.c	936	                uint64_t resolved_dir_rel = (uint64_t)cli_readint32(&hdr[(size_t)dir_rel]) + h1_data_off + objs_dirs_off;
-offset-size-arithmetic	libclamav/ishield.c	939	                    fmap_need_str(map, &hdr[(size_t)resolved_dir_rel], MIN((size_t)4096, c->hdrsz - (size_t)resolved_dir_rel))) {
-offset-size-arithmetic	libclamav/ishield.c	945	                fmap_need_str(map, &hdr[(size_t)file_rel], MIN((size_t)4096, c->hdrsz - (size_t)file_rel)))
-offset-size-arithmetic	libclamav/ishield.c	971	                     * before is_extract_cab() starts recursive fmap work. */
-offset-size-arithmetic	libclamav/ishield.c	973	                        fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
-offset-size-arithmetic	libclamav/ishield.c	977	                        fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
+offset-size-arithmetic	libclamav/ishield.c	373	            off += z.avail_in;
+offset-size-arithmetic	libclamav/ishield.c	380	            csize -= z.avail_in;
+offset-size-arithmetic	libclamav/ishield.c	394	                produced = sizeof(obuf) - z.avail_out;
+offset-size-arithmetic	libclamav/ishield.c	395	                if (outsize > UINT64_MAX - produced) {
+offset-size-arithmetic	libclamav/ishield.c	400	                ret = cli_checklimits("InstallShield MSI", ctx, outsize + produced, 0, 0);
+offset-size-arithmetic	libclamav/ishield.c	433	                outsize += produced;
+offset-size-arithmetic	libclamav/ishield.c	463	            if (lseek(ofd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/ishield.c	494	        scanned++;
+offset-size-arithmetic	libclamav/ishield.c	514	static const char *ishield_need_str(cli_ctx *ctx, off_t offset, size_t input_end, cl_error_t *status)
+offset-size-arithmetic	libclamav/ishield.c	528	    available = input_end - at;
+offset-size-arithmetic	libclamav/ishield.c	570	    if (off < 0 || (uint64_t)off > map->len || sz > map->len - (size_t)off) {
+offset-size-arithmetic	libclamav/ishield.c	574	    input_end = (size_t)off + sz;
+offset-size-arithmetic	libclamav/ishield.c	587	        coff += strlen(fname) + 1;
+offset-size-arithmetic	libclamav/ishield.c	596	        coff += strlen(path) + 1;
+offset-size-arithmetic	libclamav/ishield.c	605	        coff += strlen(version) + 1;
+offset-size-arithmetic	libclamav/ishield.c	614	        coff += strlen(strsz) + 1;
+offset-size-arithmetic	libclamav/ishield.c	616	        data = &strsz[strlen(strsz) + 1];
+offset-size-arithmetic	libclamav/ishield.c	622	            (size_t)(data - fname) > sz - fsize) {
+offset-size-arithmetic	libclamav/ishield.c	629	        ret = cli_matchmeta(ctx, fname, fsize, fsize, 0, fc++, 0);
+offset-size-arithmetic	libclamav/ishield.c	645	                    coff += fsize;
+offset-size-arithmetic	libclamav/ishield.c	657	                    if (!(c.cabs = cli_max_realloc_or_free(c.cabs, sizeof(struct CABARRAY) * c.cabcnt))) {
+offset-size-arithmetic	libclamav/ishield.c	665	                    coff += fsize;
+offset-size-arithmetic	libclamav/ishield.c	673	        coff += fsize;
+offset-size-arithmetic	libclamav/ishield.c	699	/* Utility func to scan a fd @ a given offset and size */
+offset-size-arithmetic	libclamav/ishield.c	714	    if (off < 0 || (uint64_t)off > map->len || fsize > map->len - (size_t)off) {
+offset-size-arithmetic	libclamav/ishield.c	753	        size_t rd = MIN(fsize, map->pgsz);
+offset-size-arithmetic	libclamav/ishield.c	773	        fsize -= rd;
+offset-size-arithmetic	libclamav/ishield.c	774	        off += rd;
+offset-size-arithmetic	libclamav/ishield.c	779	        if (lseek(ofd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/ishield.c	824	    if (c->hdr < 0 || (uint64_t)c->hdr > map->len || c->hdrsz > map->len - (size_t)c->hdr) {
+offset-size-arithmetic	libclamav/ishield.c	828	    if (c->hdrsz < sizeof(*h1)) {
+offset-size-arithmetic	libclamav/ishield.c	835	    if (!(h1 = fmap_need_off(map, (size_t)c->hdr, sizeof(*h1)))) {
+offset-size-arithmetic	libclamav/ishield.c	844	        fmap_unneed_ptr(map, h1, sizeof(*h1));
+offset-size-arithmetic	libclamav/ishield.c	849	    h1_data_off = le32_to_host(h1->data_off);
+offset-size-arithmetic	libclamav/ishield.c	850	    if (h1_data_off > c->hdrsz || sizeof(*objs) > c->hdrsz - h1_data_off) {
+offset-size-arithmetic	libclamav/ishield.c	851	        fmap_unneed_ptr(map, h1, sizeof(*h1));
+offset-size-arithmetic	libclamav/ishield.c	855	    objs = (struct IS_OBJECTS *)fmap_need_ptr(map, hdr + h1_data_off, sizeof(*objs));
+offset-size-arithmetic	libclamav/ishield.c	858	        fmap_unneed_ptr(map, h1, sizeof(*h1));
+offset-size-arithmetic	libclamav/ishield.c	864	               h1->magic, h1->unk1, h1->unk2, h1_data_off, h1->data_sz);
+offset-size-arithmetic	libclamav/ishield.c	866	    fmap_unneed_ptr(map, h1, sizeof(*h1));
+offset-size-arithmetic	libclamav/ishield.c	869	    /*     off = le32_to_host(objs->comps_off) + h1_data_off; */
+offset-size-arithmetic	libclamav/ishield.c	872	    /* 	if(!CLI_ISCONTAINED(hdr, c->hdrsz, ((char *)cmp), sizeof(*cmp))) { */
+offset-size-arithmetic	libclamav/ishield.c	877	    /* 	cli_errmsg("%06u\t%s\n", i, &hdr[le32_to_host(cmp->str_name_off) + h1_data_off]); */
+offset-size-arithmetic	libclamav/ishield.c	878	    /* 	spam_strarray(hdr, h1_data_off + cmp->sub_comp_offs_array, h1_data_off, cmp->sub_comp_cnt); */
+offset-size-arithmetic	libclamav/ishield.c	880	    /* 	off = le32_to_host(cmp->next_comp_off) + h1_data_off; */
+offset-size-arithmetic	libclamav/ishield.c	884	    objs_dirs_off = le32_to_host(objs->dirs_off);
+offset-size-arithmetic	libclamav/ishield.c	885	    /*     spam_strarray(hdr, h1_data_off + objs_dirs_off, h1_data_off + objs_dirs_off, objs->dirs_cnt); */
+offset-size-arithmetic	libclamav/ishield.c	887	    /*     typehdr = (struct INSTTYPEHDR *)&hdr[h1_data_off + le32_to_host(objs->insttype_off)]; */
+offset-size-arithmetic	libclamav/ishield.c	889	    /*     off = typehdr->off + h1_data_off; */
+offset-size-arithmetic	libclamav/ishield.c	893	    /* 	printf("%06u\t%s\t aka %s\taka %s\n", i, &hdr[item->str_name1_off + h1_data_off], &hdr[item->str_name2_off + h1_data_off], &hdr[item->str_name3_off + h1_data_off]); */
+offset-size-arithmetic	libclamav/ishield.c	895	    /* 	spam_strarray(hdr, h1_data_off + item->off, h1_data_off, item->cnt); */
+offset-size-arithmetic	libclamav/ishield.c	896	    /* 	off+=4; */
+offset-size-arithmetic	libclamav/ishield.c	899	    /* dir = &hdr[*(uint32_t *)(&hdr[h1_data_off + objs_dirs_off + 4 * file->dir_id]) + h1_data_off + objs_dirs_off] */
+offset-size-arithmetic	libclamav/ishield.c	903	        uint64_t file_table_off = (uint64_t)h1_data_off + objs_dirs_off + le32_to_host(objs->dir_sz2);
+offset-size-arithmetic	libclamav/ishield.c	904	        uint64_t file_table_len = (uint64_t)objs_files_cnt * sizeof(struct IS_FILEITEM);
+offset-size-arithmetic	libclamav/ishield.c	906	        if (file_table_off > c->hdrsz || file_table_len > c->hdrsz - file_table_off) {
+offset-size-arithmetic	libclamav/ishield.c	907	            fmap_unneed_ptr(map, objs, sizeof(*objs));
+offset-size-arithmetic	libclamav/ishield.c	913	    fmap_unneed_ptr(map, objs, sizeof(*objs));
+offset-size-arithmetic	libclamav/ishield.c	915	        struct IS_FILEITEM *file = (struct IS_FILEITEM *)fmap_need_off(map, c->hdr + off, sizeof(*file));
+offset-size-arithmetic	libclamav/ishield.c	927	            fmap_unneed_ptr(map, file, sizeof(*file));
+offset-size-arithmetic	libclamav/ishield.c	930	            dir_rel  = (uint64_t)h1_data_off + objs_dirs_off + 4ULL * le32_to_host(file_snapshot.dir_id); /* rel off of dir entry from array of rel ptrs */
+offset-size-arithmetic	libclamav/ishield.c	931	            file_rel = (uint64_t)objs_dirs_off + h1_data_off + le32_to_host(file_snapshot.str_name_off);  /* rel off of fname */
+offset-size-arithmetic	libclamav/ishield.c	937	                uint64_t resolved_dir_rel = (uint64_t)cli_readint32(&hdr[(size_t)dir_rel]) + h1_data_off + objs_dirs_off;
+offset-size-arithmetic	libclamav/ishield.c	940	                    fmap_need_str(map, &hdr[(size_t)resolved_dir_rel], MIN((size_t)4096, c->hdrsz - (size_t)resolved_dir_rel))) {
+offset-size-arithmetic	libclamav/ishield.c	946	                fmap_need_str(map, &hdr[(size_t)file_rel], MIN((size_t)4096, c->hdrsz - (size_t)file_rel)))
+offset-size-arithmetic	libclamav/ishield.c	972	                     * before is_extract_cab() starts recursive fmap work. */
+offset-size-arithmetic	libclamav/ishield.c	974	                        fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
+offset-size-arithmetic	libclamav/ishield.c	978	                        fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
 offset-size-arithmetic	libclamav/iso9660.c	138	        todo = MIN(len, iso->blocksz);
 offset-size-arithmetic	libclamav/iso9660.c	162	        len -= todo;
 offset-size-arithmetic	libclamav/iso9660.c	194	        if (len > (sizeof(iso->buf) - 2)) {

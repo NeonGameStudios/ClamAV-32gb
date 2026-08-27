@@ -350,9 +350,10 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
         memset(&z, 0, sizeof(z));
         if (inflateInit(&z) != Z_OK) {
             cli_mark_scan_incomplete(ctx, "InstallShield MSI decompressor could not be initialized");
-            close(ofd);
-            if (!ctx->engine->keeptmp)
-                (void)cli_unlink(tempfile);
+            if (close(ofd) != 0)
+                cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output could not be closed");
+            if (!ctx->engine->keeptmp && cli_unlink(tempfile) != 0)
+                cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output could not be removed");
             free(tempfile);
             free(filename);
             return CL_EUNPACK;

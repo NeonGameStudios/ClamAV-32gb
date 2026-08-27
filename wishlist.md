@@ -5885,3 +5885,12 @@ parser-family qualification remain open.
   execution, complete PDF/object-stream corpora, sanitizer, certified Linux
   x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification remain open.
+
+## InstallShield partial-output cleanup audit — 2026-08-27
+
+- Record InstallShield decompressor-initialization failure-path close and
+  unlink failures as incomplete while retaining the original failure.
+- Current GCC syntax and source guards cover the path; current-object
+  execution, complete InstallShield corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification remain open.
