@@ -18773,7 +18773,7 @@ START_TEST(test_tar_time_limit_is_fail_visible)
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
-    ret = cli_untar(NULL, 1, &ctx);
+    ret = cli_untar(tmpdir, 1, &ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
@@ -40994,6 +40994,21 @@ START_TEST(test_udf_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tar_null_output_directory_is_fail_visible)
+{
+    static const uint8_t data[512] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_untar(NULL, 1, &ctx), CL_ENULLARG);
+    cl_fmap_close(map);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -41467,6 +41482,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_tar_map);
     tcase_add_checked_fixture(tc_tar_map, cl_setup, cl_teardown);
     tcase_add_test(tc_tar_map, test_tar_missing_map_is_fail_visible);
+    tcase_add_test(tc_tar_map, test_tar_null_output_directory_is_fail_visible);
     suite_add_tcase(s, tc_tar_corpus);
     tcase_add_checked_fixture(tc_tar_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_tar_corpus, test_tar_corpus_detects_embedded_mz);

@@ -336,6 +336,8 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "TAR input map is unavailable");
         return CL_EPARSE;
     }
+    if (dir == NULL)
+        return CL_ENULLARG;
 
     ret = cli_untar_checktimelimit(ctx, "TAR inspection reached the configured time limit");
     if (ret != CL_SUCCESS)

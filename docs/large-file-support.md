@@ -65,13 +65,15 @@ qualification remain open.
 The exported `cli_untar()` entry now distinguishes a null parser context
 (`CL_ENULLARG`) from a recognized context whose input fmap is unavailable.
 The latter returns `CL_EPARSE`, marks the layer incomplete, and disables fmap
-caching with the reason `TAR input map is unavailable`. The current-source
-production-linked GCC harness compiles the modified TAR parser and test
-translation unit, and its isolated `tar_map` case passes 1/1; the existing
-`tar_member` case also passes 5/5. A broader `tar` run still contains the
-known mixed old/current `cli_ctx` timeout SIGSEGV, so it is not counted as
-complete evidence. Full TAR corpus, sanitizer, production-CVD/service,
-Sonic1, and release qualification remain open.
+caching with the reason `TAR input map is unavailable`; a valid map with no
+output directory now returns `CL_ENULLARG` before output-path formatting. The
+current-source production-linked GCC harness compiles the modified TAR parser
+and test translation unit, and its isolated `tar_map` case passes 2/2,
+including that direct-output argument check; the existing `tar_member` case
+also passes 5/5. A broader `tar` run still contains the known mixed
+old/current `cli_ctx` timeout SIGSEGV, so it is not counted as complete
+evidence. Full TAR corpus, sanitizer, production-CVD/service, Sonic1, and
+release qualification remain open.
 
 ## Bundled YARA arithmetic-domain validation — 2026-08-27
 
