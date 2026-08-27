@@ -12176,3 +12176,7 @@ state. Focused matcher API regressions and source guards cover these paths;
 current-object execution, full matcher/signature qualification, sanitizer,
 materialized large-file, production-CVD/service, Sonic1, and release evidence
 remain open.
+
+## Matcher internal API boundary audit — 2026-08-27
+
+The matcher boundary review found that `cli_matchmeta()` and `cli_check_fp()` assumed a valid recursion stack before using the scan context. A malformed or partially initialized internal context could therefore crash while reporting child metadata or checking a false-positive hash. `cli_matchmeta()` now rejects a null or out-of-range context stack with `CL_ENULLARG`, and `cli_check_fp()` validates the engine and stack before walking layers. A missing layer fmap is reported as `CL_EPARSE`, marks the scan incomplete/non-cacheable, and cannot be mistaken for a clean false-positive check. The debug record also renders a missing metadata filename safely. Focused matcher regressions cover null contexts, missing engines/stacks, and missing layer maps. The capability remains pending until the production-linked matcher TCase is executed and the full release qualification evidence is complete.

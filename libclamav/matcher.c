@@ -821,6 +821,13 @@ cl_error_t cli_check_fp(cli_ctx *ctx, const char *vname)
 
     bool need_hash[CLI_HASH_AVAIL_TYPES] = {false};
 
+    if (!ctx || !ctx->engine || !ctx->recursion_stack ||
+        ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        cli_errmsg("cli_check_fp: invalid scan context or recursion stack\n");
+        return CL_ENULLARG;
+    }
+
     stack_index = (int32_t)ctx->recursion_level;
 
     char *source = NULL;
@@ -828,6 +835,13 @@ cl_error_t cli_check_fp(cli_ctx *ctx, const char *vname)
 
     while (stack_index >= 0) {
         map = ctx->recursion_stack[stack_index].fmap;
+
+        if (!map) {
+            cli_errmsg("cli_check_fp: fmap is unavailable for a recursion layer\n");
+            cli_mark_scan_incomplete(ctx, "false-positive hash layer fmap is unavailable");
+            status = CL_EPARSE;
+            goto done;
+        }
 
         need_hash[CLI_HASH_MD5] = cli_hm_have_size(ctx->engine->hm_fp, CLI_HASH_MD5, map->len) ||
                                   cli_hm_have_wild(ctx->engine->hm_fp, CLI_HASH_MD5);
@@ -2036,8 +2050,14 @@ cl_error_t cli_matchmeta(cli_ctx *ctx, const char *fname, size_t fsizec, size_t 
     const struct cli_cdb *cdb;
     cl_error_t ret = CL_SUCCESS;
 
+    if (!ctx || !ctx->recursion_stack || ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        cli_errmsg("cli_matchmeta: invalid scan context or recursion stack\n");
+        return CL_ENULLARG;
+    }
+
     cli_dbgmsg("CDBNAME:%s:%llu:%s:%llu:%llu:%d:%u:%u\n",
-               cli_ftname(cli_recursion_stack_get_type(ctx, -1)), (long long unsigned)fsizec, fname, (long long unsigned)fsizec, (long long unsigned)fsizer,
+               cli_ftname(cli_recursion_stack_get_type(ctx, -1)), (long long unsigned)fsizec, fname ? fname : "n/a", (long long unsigned)fsizec, (long long unsigned)fsizer,
                encrypted, filepos, res1);
 
     if (ctx->engine && ctx->engine->cb_meta) {

@@ -2115,12 +2115,16 @@ START_TEST(test_matcher_entry_points_reject_invalid_contexts)
     static const unsigned char data[] = {'m'};
     cli_ctx missing_engine;
     cli_ctx missing_map;
+    cli_ctx missing_stack;
+    cli_scan_layer_t missing_layer;
 
     ck_assert_int_eq(cli_scan_buff(data, sizeof(data), 0, NULL, CL_TYPE_ANY, NULL), CL_ENULLARG);
     ck_assert_int_eq(cli_scan_fmap(NULL, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL), CL_ENULLARG);
     ck_assert_int_eq(cli_scan_desc(-1, NULL, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL, NULL, NULL, LAYER_ATTRIBUTES_NONE),
                      CL_ENULLARG);
     ck_assert_int_eq(cli_scan_buff(NULL, sizeof(data), 0, &ctx, CL_TYPE_ANY, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_matchmeta(NULL, NULL, 0, 0, 0, 0, 0), CL_ENULLARG);
+    ck_assert_int_eq(cli_check_fp(NULL, NULL), CL_ENULLARG);
 
     missing_engine = ctx;
     missing_engine.engine = NULL;
@@ -2129,6 +2133,22 @@ START_TEST(test_matcher_entry_points_reject_invalid_contexts)
     ck_assert_int_eq(cli_scan_desc(-1, &missing_engine, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL, NULL, NULL,
                                    LAYER_ATTRIBUTES_NONE),
                      CL_ENULLARG);
+    ck_assert_int_eq(cli_check_fp(&missing_engine, NULL), CL_ENULLARG);
+
+    missing_stack = ctx;
+    missing_stack.recursion_stack = NULL;
+    missing_stack.recursion_stack_size = 0;
+    ck_assert_int_eq(cli_matchmeta(&missing_stack, NULL, 0, 0, 0, 0, 0), CL_ENULLARG);
+    ck_assert_int_eq(cli_check_fp(&missing_stack, NULL), CL_ENULLARG);
+
+    missing_layer = ctx.recursion_stack[ctx.recursion_level];
+    missing_layer.fmap = NULL;
+    missing_stack = ctx;
+    missing_stack.recursion_stack = &missing_layer;
+    ck_assert_int_eq(cli_check_fp(&missing_stack, NULL), CL_EPARSE);
+    ck_assert(missing_stack.scan_incomplete);
+    ck_assert_str_eq(missing_stack.scan_incomplete_reason,
+                     "false-positive hash layer fmap is unavailable");
 
     missing_map = ctx;
     missing_map.fmap = NULL;

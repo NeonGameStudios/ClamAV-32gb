@@ -6040,3 +6040,7 @@ parser-family qualification remain open.
 - Retain focused API coverage and source guards; full matcher/signature,
   sanitizer, materialized large-file, production-CVD/service, Sonic1, and
   release qualification remain open.
+
+## Matcher internal API boundary hardening — 2026-08-27
+
+Hardened `cli_matchmeta()` and `cli_check_fp()` against null or malformed recursion-stack state. Invalid contexts now return `CL_ENULLARG`; missing false-positive hash-layer maps return `CL_EPARSE` and set sticky incomplete/non-cacheable state. Added focused regressions and capability/source-guard evidence. Production-linked runtime execution remains pending.
