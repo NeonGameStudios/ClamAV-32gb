@@ -558,9 +558,17 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
 
     if (!strncmp(file_hdr.signature, "CWS", 3)) {
         cli_dbgmsg("SWF: zlib compressed file\n");
+        if (ctx->engine == NULL) {
+            cli_errmsg("SWF compressed input requires a scan engine\n");
+            return CL_ENULLARG;
+        }
         return scancws(ctx, &file_hdr);
     } else if (!strncmp(file_hdr.signature, "ZWS", 3)) {
         cli_dbgmsg("SWF: LZMA compressed file\n");
+        if (ctx->engine == NULL) {
+            cli_errmsg("SWF compressed input requires a scan engine\n");
+            return CL_ENULLARG;
+        }
         return scanzws(ctx, &file_hdr);
     } else if (!strncmp(file_hdr.signature, "FWS", 3)) {
         cli_dbgmsg("SWF: Uncompressed file\n");

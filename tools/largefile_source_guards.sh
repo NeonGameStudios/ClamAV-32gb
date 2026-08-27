@@ -178,6 +178,8 @@ contains libclamav/matcher.c 'ERROR_EXEC_STACK_OVERFLOW is 25, which collides wi
 contains libclamav/matcher.c 'YARA matcher execution failed'
 contains unit_tests/check_matchers.c 'test_yara_execution_error_is_fail_visible'
 contains libclamav/yara_exec.c 'r1 == INT64_MIN && r2 == -1'
+contains libclamav/swf.c 'SWF compressed input requires a scan engine'
+contains unit_tests/check_clamav.c 'test_swf_compressed_requires_engine'
 contains libclamav/yara_exec.c 'r2 >= (int64_t)(sizeof(r1) * 8)'
 contains unit_tests/check_matchers.c 'test_yara_division_by_zero_is_fail_visible'
 contains unit_tests/check_matchers.c 'test_yara_shift_count_is_fail_visible'

@@ -41794,6 +41794,22 @@ static const TTest *test_xar_missing_engine_is_fail_visible;
 static const TTest *test_rtf_missing_engine_is_fail_visible;
 static const TTest *test_jpeg_entropy_completion_and_failures;
 
+START_TEST(test_swf_compressed_requires_engine)
+{
+    static const uint8_t compressed[] = {'C', 'W', 'S', 9U, 8U, 0U, 0U, 0U};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(compressed, sizeof(compressed));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanswf(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    cl_fmap_close(map);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -42720,6 +42736,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_swf_corpus, test_swf_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_swf_map);
     tcase_add_test(tc_swf_map, test_swf_missing_map_is_fail_visible);
+    tcase_add_test(tc_swf_map, test_swf_compressed_requires_engine);
     suite_add_tcase(s, tc_swf_api);
     tcase_add_checked_fixture(tc_swf_api, cl_setup, cl_teardown);
     tcase_add_test(tc_swf_api, test_swf_public_api_read_failure_is_fail_visible);
