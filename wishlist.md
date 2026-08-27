@@ -4902,9 +4902,19 @@ and Sonic1 qualification as release gates.
 - The current-source production-linked `cabsfx` TCase passes 1/1 for a valid
   prefixed CAB SFX whose extracted child reaches an exact offset-0 matcher
   through public map scanning.
-- Add malformed-header and in-range callback-failure cases, then complete CAB
-  and SFX corpus, sanitizer, certified Linux x86-64, materialized large-file,
-  production-CVD/service parity, and Sonic1 evidence before certification.
+- The 2026-08-26 source update adds public malformed-header and in-range
+  callback-failure cases; execute them in a current-source production-linked
+  harness, then complete CAB and SFX corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service parity, and Sonic1 evidence.
+
+## CAB SFX admission failure audit — 2026-08-26
+
+- Public CABSFX regressions now cover the valid prefixed CAB child match,
+  confirmed declared-extent truncation (`CL_EPARSE`), and in-range fixed-header
+  callback failure (`CL_EREAD`), with clean verdict reset and non-cacheability.
+- Complete CAB/SFX corpus, full-C ABI-consistent execution, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service
+  parity, and Sonic1 qualification remain release gates.
 
 ## BZip2/GZip isolated core audit — 2026-08-25
 

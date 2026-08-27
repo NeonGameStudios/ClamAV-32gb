@@ -8232,3 +8232,14 @@ verifies the clean verdict reset and non-cacheability. The CPIO object builds
 warning-clean with the production GCC flags. Full CPIO corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain open.
+
+## CAB SFX admission failure audit — 2026-08-26
+
+CAB SFX public-API coverage now includes the valid prefixed CAB nested-child
+match, a confirmed fixed header whose declared cabinet extent exceeds the
+containing map, and an in-range callback failure while reading the fixed
+header. The malformed case returns `CL_EPARSE`; the callback case preserves
+`CL_EREAD`. Both reset stale clean/detection outputs and mark the fmap
+non-cacheable. Complete CAB/SFX corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, Sonic1, and
+parser-family qualification remain release gates.

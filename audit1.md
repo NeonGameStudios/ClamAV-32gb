@@ -10674,6 +10674,21 @@ sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service parity, and Sonic1 qualification remain open, so
 `CL_TYPE_CABSFX` stays pending.
 
+## CAB SFX admission failure audit — 2026-08-26
+
+The CABSFX dispatch branch now has public-API regressions for both confirmed
+failure classes that can occur before nested CAB scanning. A prefixed CAB whose
+complete fixed header declares an extent beyond the containing map returns
+`CL_EPARSE`, while an in-range callback failure while reading that fixed header
+returns `CL_EREAD`; both reset stale verdict/alert outputs and leave the fmap
+non-cacheable. The existing valid prefixed CAB case still reaches an exact
+offset-0 child matcher.
+
+The three checks are source-guarded and recorded in the capability manifest.
+Complete CAB/SFX corpus, full-C ABI-consistent execution, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service parity, and
+Sonic1 qualification remain open, so `CL_TYPE_CABSFX` stays pending.
+
 ## BZip2/GZip isolated core audit — 2026-08-25
 
 The broader `bz_map` TCase still includes an HTML dispatch oracle that is not
