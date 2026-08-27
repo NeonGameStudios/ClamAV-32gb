@@ -10869,3 +10869,20 @@ passes the same boundary with `CL_EFORMAT`, sticky incomplete state, and a
 non-cacheable fmap. Complete HFS+ corpus, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and parser-family
 qualification remain open.
+
+## UDF file-identifier ICB correlation audit — 2026-08-27
+
+The UDF scanner collected File Identifier Descriptors and File Entries in
+separate lists, then paired them by index without checking the on-disk
+relationship. ECMA-167 defines the FID `icb` as the address of the ICB
+describing the named file, and the File Entry tag location as the logical
+block containing that descriptor; list order is not authoritative. The
+scanner now matches each FID to a File Entry by partition-relative block and
+rejects an unmatched reference with `CL_EPARSE`, sticky incompleteness, and
+non-cacheability.
+
+The current-source production-linked GCC `udf_map` case passes 9/9 and the
+`udf_corpus` case passes 1/1, including exact child detection, clean-volume
+completion, and the new ICB mismatch regression. Complete UDF corpus,
+sanitizer, certified Linux x86-64, materialized large file, production-CVD/
+service, Sonic1, and parser-family qualification remain release gates.

@@ -473,6 +473,20 @@ done:
     return ret;
 }
 
+/* A File Identifier Descriptor names the ICB that describes its file.  For a
+ * direct File Entry, the descriptor tag records the same partition-relative
+ * logical block location.  The scanner collects FIDs and File Entries from
+ * separate bounded runs, so list position is not an authoritative pairing. */
+static bool fileEntryMatchesIdentifier(const FileEntryDescriptor *fed,
+                                       const FileIdentifierDescriptor *fid,
+                                       const PartitionDescriptor *partition)
+{
+    return le32_to_host(fed->tag.tagLocation) ==
+               le32_to_host(fid->icb.extentLocation.blockNumber) &&
+           le16_to_host(partition->partitionNumber) ==
+               le16_to_host(fid->icb.extentLocation.partitionReferenceNumber);
+}
+
 /*
 // Uncomment for debugging.
 static void dumpTag (DescriptorTag *dt)
@@ -1449,12 +1463,31 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 size_t cnt = fileIdentifierList.cnt;
 
                 for (i = 0; i < cnt; i++) {
+                    size_t file_entry_index;
+                    bool matched = false;
+
                     ret = udf_checktimelimit(ctx, "UDF file-entry scan traversal reached the configured time limit");
                     if (ret != CL_SUCCESS)
                         goto done;
 
+                    for (file_entry_index = 0; file_entry_index < fileEntryList.cnt; file_entry_index++) {
+                        if (fileEntryMatchesIdentifier(
+                                (FileEntryDescriptor *)fileEntryList.idxs[file_entry_index],
+                                (FileIdentifierDescriptor *)fileIdentifierList.idxs[i],
+                                &pd_snapshot)) {
+                            matched = true;
+                            break;
+                        }
+                    }
+
+                    if (!matched) {
+                        cli_mark_scan_incomplete(ctx, "UDF file identifier ICB does not match a file entry");
+                        ret = CL_EPARSE;
+                        goto done;
+                    }
+
                     ret = parseFileEntryDescriptor(ctx,
-                                                   (FileEntryDescriptor *)fileEntryList.idxs[i],
+                                                   (FileEntryDescriptor *)fileEntryList.idxs[file_entry_index],
                                                    &pd_snapshot, &lvd_snapshot,
                                                    (FileIdentifierDescriptor *)fileIdentifierList.idxs[i]);
                     if (CL_SUCCESS != ret) {

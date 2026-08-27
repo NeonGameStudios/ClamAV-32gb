@@ -8323,3 +8323,16 @@ instead of silently dropping callback metadata. Malformed streaming attribute
 metadata is fail-visible as well. Full MSXML/XDP/HWPML corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service, and
 Sonic1 qualification remain release gates.
+
+## UDF file-identifier ICB correlation audit — 2026-08-27
+
+UDF File Identifier Descriptors and File Entries are now correlated by the
+partition-relative block address in the FID `icb` and File Entry descriptor
+tag, rather than by the order in which separate bounded descriptor lists were
+collected. An unmatched reference returns `CL_EPARSE`, marks the scan
+incomplete, and disables caching. The current-source production-linked GCC
+`udf_map` case passes 9/9 and `udf_corpus` passes 1/1, including exact child
+detection, clean-volume completion, and the ICB mismatch regression. Complete
+UDF corpus, sanitizer, certified Linux x86-64, materialized large file,
+production-CVD/service, Sonic1, and parser-family qualification remain
+release gates.

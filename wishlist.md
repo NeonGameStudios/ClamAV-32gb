@@ -5042,3 +5042,15 @@ and Sonic1 qualification as release gates.
   Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification as release
   gates.
+
+## UDF file-identifier ICB correlation audit — 2026-08-27
+
+- Pair UDF File Identifier Descriptors with File Entries using the
+  partition-relative ICB/tag locations defined by ECMA-167 rather than list
+  position; reject unmatched references as sticky, non-cacheable
+  `CL_EPARSE`.
+- The current-source production-linked GCC `udf_map` case passes 9/9 and
+  `udf_corpus` passes 1/1, including exact child detection, clean-volume
+  completion, and the ICB mismatch regression. Keep complete UDF corpus,
+  sanitizer, certified Linux x86-64, materialized large file,
+  production-CVD/service, Sonic1, and parser-family qualification open.

@@ -36583,11 +36583,20 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     data[fid_offset]     = UDF_TEST_FILE_IDENTIFIER & 0xff;
     data[fid_offset + 1] = UDF_TEST_FILE_IDENTIFIER >> 8;
     data[fid_offset + offsetof(FileIdentifierDescriptor, fileIdentifierLength)] = 0;
+    test_udf_put_le32(data + fid_offset + offsetof(FileIdentifierDescriptor, icb) +
+                          offsetof(long_ad, extentLocation) + offsetof(lb_addr, blockNumber),
+                      0);
+    test_udf_put_le16(data + fid_offset + offsetof(FileIdentifierDescriptor, icb) +
+                          offsetof(long_ad, extentLocation) + offsetof(lb_addr, partitionReferenceNumber),
+                      0);
     test_udf_put_le16(data + fid_offset + offsetof(FileIdentifierDescriptor, implementationLength), 0);
 
     fed_offset = base + (14 * VOLUME_DESCRIPTOR_SIZE);
     data[fed_offset]     = UDF_TEST_FILE_ENTRY & 0xff;
     data[fed_offset + 1] = UDF_TEST_FILE_ENTRY >> 8;
+    test_udf_put_le32(data + fed_offset + offsetof(FileEntryDescriptor, tag) +
+                          offsetof(DescriptorTag, tagLocation),
+                      0);
     test_udf_put_le16(data + fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, flags), 0);
     test_udf_put_le64(data + fed_offset + offsetof(FileEntryDescriptor, infoLength), UDF_TEST_PAYLOAD_LENGTH);
     test_udf_put_le32(data + fed_offset + offsetof(FileEntryDescriptor, allocationDescLen), sizeof(short_ad));
@@ -36663,6 +36672,31 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     ck_assert_msg(!ctx.scan_incomplete, "valid clean UDF unexpectedly incomplete: %s",
                   ctx.scan_incomplete_reason ? ctx.scan_incomplete_reason : "(no reason)");
     ck_assert(!map->dont_cache_flag);
+
+    /* The FID ICB is the authoritative address of its File Entry. A
+     * list-order-only pairing must not scan a different entry's extents. */
+    test_udf_put_le32(data + fid_offset + offsetof(FileIdentifierDescriptor, icb) +
+                          offsetof(long_ad, extentLocation) + offsetof(lb_addr, blockNumber),
+                      1);
+    memset(&ctx, 0, sizeof(ctx));
+    memset(layers, 0, sizeof(layers));
+    map->dont_cache_flag = false;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_UDF;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF file identifier ICB does not match a file entry");
+    ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
