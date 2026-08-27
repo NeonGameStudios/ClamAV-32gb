@@ -5758,3 +5758,15 @@ and Sonic1 qualification as release gates.
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification remain
   open.
+
+## EGG and OLE2 scanner cleanup-status audit — 2026-08-27
+
+- Route EGG member spool teardown and OLE2 summary, VBA, PowerPoint,
+  embedded-stream, directory, and scan-level temporary cleanup through the
+  shared precedence helper. Preserve `CL_EWRITE` for temporary output close,
+  `CL_EREAD` for input/directory close, and `CL_EUNLINK` for removal; retain
+  detections and earlier parser/resource errors.
+- Canonical-header GCC syntax and source guards cover the scanner changes;
+  current-object execution, complete EGG/OLE2/VBA corpora, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification remain open.

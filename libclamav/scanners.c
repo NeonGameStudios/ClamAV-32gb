@@ -1052,16 +1052,16 @@ static cl_error_t cli_egg_scan_member(void *hArchive, const cl_egg_metadata *met
 
 done:
     if (fd >= 0) {
-        if (close(fd) != 0 && status == CL_SUCCESS) {
+        if (close(fd) != 0) {
             cli_mark_scan_incomplete(ctx, "EGG member temporary spool could not be closed");
-            status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
         fd = -1;
     }
     if (tempfile != NULL) {
-        if (!ctx->engine->keeptmp && cli_unlink(tempfile) != 0 && status == CL_SUCCESS) {
+        if (!ctx->engine->keeptmp && cli_unlink(tempfile) != 0) {
             cli_mark_scan_incomplete(ctx, "EGG member temporary spool could not be removed");
-            status = CL_EUNLINK;
+            status = cli_merge_cleanup_status(status, CL_EUNLINK);
         }
         free(tempfile);
     }
@@ -2523,11 +2523,11 @@ done:
     return ret;
 }
 
-static void cli_ole2_note_vba_cleanup_failure(cli_ctx *ctx, cl_error_t *status, const char *reason)
+static void cli_ole2_note_vba_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
+                                              cl_error_t cleanup_status, const char *reason)
 {
     cli_mark_scan_incomplete(ctx, reason);
-    if ((*status == CL_SUCCESS) || (*status == CL_BREAK))
-        *status = CL_EUNLINK;
+    *status = cli_merge_cleanup_status(*status, cleanup_status);
 }
 
 /**
@@ -2573,9 +2573,10 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
                 cli_dbgmsg("cli_ole2_tempdir_scan_vba_new: Failed to read dir from %s, trying others (error: %s (%d))\n", path, cl_strerror(ret), (int)ret);
 
                 if (tempfile) {
-                    if (!ctx->engine->keeptmp) {
-                        if (remove(tempfile) != 0)
-                            cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be removed");
+                        if (!ctx->engine->keeptmp) {
+                            if (remove(tempfile) != 0)
+                            cli_ole2_note_vba_cleanup_failure(ctx, &ret, CL_EUNLINK,
+                                                               "VBA project temporary output could not be removed");
                     }
                     free(tempfile);
                     tempfile = NULL;
@@ -2587,7 +2588,8 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
                 ret = CL_SUCCESS;
                 if (tempfd != -1) {
                     if (close(tempfd) == -1)
-                        cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be closed");
+                        cli_ole2_note_vba_cleanup_failure(ctx, &ret, CL_EWRITE,
+                                                           "VBA project temporary output could not be closed");
                     tempfd = -1;
                 }
                 if (temporary_reserved) {
@@ -2636,13 +2638,15 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
             }
 
             if (close(tempfd) == -1)
-                cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be closed");
+                cli_ole2_note_vba_cleanup_failure(ctx, &ret, CL_EWRITE,
+                                                   "VBA project temporary output could not be closed");
             tempfd = -1;
 
             if (tempfile) {
                 if (!ctx->engine->keeptmp) {
                     if (remove(tempfile) != 0)
-                        cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be removed");
+                        cli_ole2_note_vba_cleanup_failure(ctx, &ret, CL_EUNLINK,
+                                                           "VBA project temporary output could not be removed");
                 }
                 free(tempfile);
                 tempfile = NULL;
@@ -2664,14 +2668,16 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
 done:
     if (tempfd != -1) {
         if (close(tempfd) == -1)
-            cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be closed");
+            cli_ole2_note_vba_cleanup_failure(ctx, &ret, CL_EWRITE,
+                                               "VBA project temporary output could not be closed");
         tempfd = -1;
     }
 
     if (tempfile) {
         if (!ctx->engine->keeptmp) {
             if (remove(tempfile) != 0)
-                cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be removed");
+                cli_ole2_note_vba_cleanup_failure(ctx, &ret, CL_EUNLINK,
+                                                   "VBA project temporary output could not be removed");
         }
         free(tempfile);
         tempfile = NULL;
@@ -2739,8 +2745,7 @@ static cl_error_t cli_ole2_tempdir_scan_summary(const char *dir, cli_ctx *ctx, s
             }
             if (close(fd) != 0) {
                 cli_mark_scan_incomplete(ctx, "OLE2 summary information could not be closed");
-                if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_BREAK)
-                    status = CL_EREAD;
+                status = cli_merge_cleanup_status(status, CL_EREAD);
             }
         }
         hashcnt--;
@@ -2776,8 +2781,7 @@ static cl_error_t cli_ole2_tempdir_scan_summary(const char *dir, cli_ctx *ctx, s
             }
             if (close(fd) != 0) {
                 cli_mark_scan_incomplete(ctx, "OLE2 document summary information could not be closed");
-                if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_BREAK)
-                    status = CL_EREAD;
+                status = cli_merge_cleanup_status(status, CL_EREAD);
             }
         }
         hashcnt--;
@@ -2847,7 +2851,7 @@ static cl_error_t cli_ole2_tempdir_scan_embedded_ole10(const char *dir, cli_ctx 
         if (close(fd) != 0) {
             fd = -1;
             cli_mark_scan_incomplete(ctx, "OLE2 embedded OLE10 stream could not be closed");
-            status = CL_EREAD;
+            status = cli_merge_cleanup_status(status, CL_EREAD);
             goto done;
         }
         fd = -1;
@@ -2860,8 +2864,7 @@ done:
     if (fd >= 0) {
         if (close(fd) != 0) {
             cli_mark_scan_incomplete(ctx, "OLE2 embedded OLE10 stream could not be closed");
-            if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-                status = CL_EREAD;
+            status = cli_merge_cleanup_status(status, CL_EREAD);
         }
     }
 
@@ -2935,8 +2938,7 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
 
                 if (close(fd) != 0) {
                     cli_mark_scan_incomplete(ctx, "VBA project module input could not be closed");
-                    if (deferred_failure == CL_SUCCESS)
-                        deferred_failure = CL_EREAD;
+                    deferred_failure = cli_merge_cleanup_status(deferred_failure, CL_EREAD);
                 }
                 fd = -1;
 
@@ -2960,8 +2962,7 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
 
                         if (close(proj_contents_fd) != 0) {
                             cli_mark_scan_incomplete(ctx, "VBA project temporary output could not be closed");
-                            if (deferred_failure == CL_SUCCESS)
-                                deferred_failure = CL_EREAD;
+                            deferred_failure = cli_merge_cleanup_status(deferred_failure, CL_EWRITE);
                         }
                         proj_contents_fd = -1;
 
@@ -3031,8 +3032,7 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
             if (!ctx->engine->keeptmp) {
                 if (cli_rmdirs(fullname) != 0) {
                     cli_mark_scan_incomplete(ctx, "PowerPoint temporary directory could not be removed");
-                    if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-                        status = CL_EUNLINK;
+                    status = cli_merge_cleanup_status(status, CL_EUNLINK);
                 }
             }
             cli_scan_release_temporary(ctx, ppt_temporary_reserved);
@@ -3047,8 +3047,7 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
 
         if (close(fd) != 0) {
             cli_mark_scan_incomplete(ctx, "PowerPoint VBA input could not be closed");
-            if (deferred_failure == CL_SUCCESS)
-                deferred_failure = CL_EREAD;
+            deferred_failure = cli_merge_cleanup_status(deferred_failure, CL_EREAD);
         }
         fd = -1;
 
@@ -3090,8 +3089,7 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
                 deferred_failure = CL_EPARSE;
             if (close(fd) != 0) {
                 cli_mark_scan_incomplete(ctx, "Word macro input could not be closed");
-                if (deferred_failure == CL_SUCCESS)
-                    deferred_failure = CL_EREAD;
+                deferred_failure = cli_merge_cleanup_status(deferred_failure, CL_EREAD);
             }
             fd = -1;
             hashcnt--;
@@ -3122,8 +3120,7 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
 
         if (close(fd) != 0) {
             cli_mark_scan_incomplete(ctx, "Word macro input could not be closed");
-            if (deferred_failure == CL_SUCCESS)
-                deferred_failure = CL_EREAD;
+            deferred_failure = cli_merge_cleanup_status(deferred_failure, CL_EREAD);
         }
         fd = -1;
 
@@ -3163,8 +3160,7 @@ done:
     if (proj_contents_fd >= 0) {
         if (close(proj_contents_fd) != 0) {
             cli_mark_scan_incomplete(ctx, "VBA project temporary output could not be closed");
-            if (deferred_failure == CL_SUCCESS)
-                deferred_failure = CL_EREAD;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
     }
     if (NULL != proj_contents_fname) {
@@ -3183,8 +3179,7 @@ done:
         if (!ctx->engine->keeptmp) {
             if (cli_rmdirs(fullname) != 0) {
                 cli_mark_scan_incomplete(ctx, "PowerPoint temporary directory could not be removed");
-                if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-                    status = CL_EUNLINK;
+                status = cli_merge_cleanup_status(status, CL_EUNLINK);
             }
         }
 
@@ -3197,8 +3192,7 @@ done:
     if (fd >= 0) {
         if (close(fd) != 0) {
             cli_mark_scan_incomplete(ctx, "VBA input descriptor could not be closed");
-            if (status == CL_SUCCESS)
-                status = CL_EREAD;
+            status = cli_merge_cleanup_status(status, CL_EREAD);
         }
     }
 
@@ -4463,8 +4457,7 @@ done:
     if (-1 != fd) {
         if (close(fd) != 0) {
             cli_mark_scan_incomplete(ctx, "UTF-16 HTML temporary file could not be closed");
-            if (status == CL_SUCCESS)
-                status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
     }
 
@@ -4472,8 +4465,7 @@ done:
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tempname) != 0) {
                 cli_mark_scan_incomplete(ctx, "UTF-16 HTML temporary file could not be removed");
-                if (status == CL_SUCCESS)
-                    status = CL_EUNLINK;
+                status = cli_merge_cleanup_status(status, CL_EUNLINK);
             }
         } else {
             cli_dbgmsg("cli_scanhtml_utf16: Decoded HTML data saved in %s\n", tempname);
@@ -4620,8 +4612,7 @@ done:
     if (NULL != dd) {
         if (closedir(dd) != 0) {
             cli_mark_scan_incomplete(ctx, "OLE2 temporary directory could not be closed");
-            if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-                status = CL_EREAD;
+            status = cli_merge_cleanup_status(status, CL_EREAD);
         }
     }
     if (NULL != subdirectory) {
@@ -4638,8 +4629,7 @@ static cl_error_t cli_cleanup_scan_tempdir(cli_ctx *ctx, char *dir, cl_error_t s
 
     if (cli_rmdirs(dir) != 0) {
         cli_mark_scan_incomplete(ctx, reason);
-        if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_VERIFIED || status == CL_BREAK)
-            status = CL_EUNLINK;
+        status = cli_merge_cleanup_status(status, CL_EUNLINK);
     }
 
     return status;
@@ -8833,8 +8823,7 @@ done:
 
         if (!ctx.engine->keeptmp && cli_rmdirs(ctx.this_layer_tmpdir) != 0) {
             cli_mark_scan_incomplete(&ctx, "scan-level temporary directory could not be removed");
-            if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_VERIFIED || status == CL_BREAK)
-                status = CL_EUNLINK;
+            status = cli_merge_cleanup_status(status, CL_EUNLINK);
         }
     }
 
@@ -9359,8 +9348,7 @@ done:
     if (fd >= 0) {
         if (close(fd) != 0) {
             cli_mark_scan_incomplete(ctx, "temporary scan directory file could not be closed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
-                ret = CL_EREAD;
+            ret = cli_merge_cleanup_status(ret, CL_EREAD);
         }
     }
 
@@ -9529,8 +9517,7 @@ static cl_error_t scanfile_ex2_with_temporary_bytes(
             (NULL != report_out) ? *report_out : NULL,
             CL_EREAD,
             "input descriptor could not be closed");
-        if ((ret == CL_SUCCESS) || (ret == CL_VERIFIED))
-            ret = CL_EREAD;
+        ret = cli_merge_cleanup_status(ret, CL_EREAD);
     }
 
     return ret;

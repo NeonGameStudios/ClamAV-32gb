@@ -11829,3 +11829,21 @@ focused production-linked evidence remains prior-object evidence for this
 cleanup-only change; current-object execution, complete RTF/SIS/AutoIt
 corpora, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## EGG and OLE2 scanner cleanup-status audit — 2026-08-27
+
+EGG member spool teardown and the OLE2 scanner’s summary, VBA, PowerPoint,
+embedded-stream, directory, and scan-level temporary cleanup paths used
+local status checks that could hide failures after `CL_BREAK`; several close
+paths also used a read error for output descriptors. These paths now use the
+shared cleanup-status precedence helper, preserving `CL_EWRITE` for temporary
+output close failures, `CL_EREAD` for input/directory close failures, and
+`CL_EUNLINK` for removal failures while retaining detections and earlier
+parser/resource errors.
+
+The current scanner source passes the established canonical-header GCC syntax
+check and source guards cover the changed EGG/OLE2/HTML teardown paths.
+Existing focused production-linked evidence remains prior-object evidence for
+this cleanup-only change; current-object execution, complete EGG/OLE2/VBA
+corpora, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
