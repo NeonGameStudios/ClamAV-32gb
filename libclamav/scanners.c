@@ -8048,7 +8048,9 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
     bool temporary_reserved = false;
     uint64_t child_size     = 0;
 
-    if (!ctx) {
+    if (!ctx || !ctx->engine) {
+        if (ctx && !ctx->engine)
+            cli_mark_scan_incomplete(ctx, "child descriptor scan engine is unavailable");
         return CL_ENULLARG;
     }
 

@@ -12110,6 +12110,17 @@ load/unpack TCase is registered; current-object execution, production CVDs,
 service parity, sanitizer, materialized large-file, Sonic1, and release
 qualification remain open.
 
+## Descriptor child-scan engine boundary audit — 2026-08-27
+
+The descriptor child-scan helper validated only its context pointer and then
+used `ctx->engine` for diagnostics, so a partially initialized but otherwise
+valid context could crash before returning an API error. The entry now rejects
+missing engine state with `CL_ENULLARG`, marks an available parent map
+incomplete/non-cacheable, and has a focused regression in the descriptor-map
+TCase. Current-source syntax and guards remain required alongside current
+object execution, full ingress parity, production-CVD/service, sanitizer,
+materialized large-file, Sonic1, and release qualification.
+
 ## Production CVD public API boundary audit — 2026-08-27
 
 The public CVD helpers had two fail-open edges: `cl_cvdparse()` could

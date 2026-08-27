@@ -6001,3 +6001,11 @@ parser-family qualification remain open.
   source guards are registered. Keep current-object execution, production CVD,
   service parity, sanitizer, materialized large-file, Sonic1, and release
   qualification open.
+
+## Descriptor child-scan engine boundary audit — 2026-08-27
+
+- Reject a descriptor child scan before dereferencing a missing engine; mark
+  the available parent map incomplete and non-cacheable.
+- Keep focused missing-engine execution, ingress parity, production CVD,
+  service, sanitizer, materialized large-file, Sonic1, and release evidence
+  open.
