@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## ISO9660 parser engine admission — 2026-08-27
+
+The ISO9660 direct parser entry reached engine-owned temporary-file cleanup
+after validating only context and fmap. A valid fmap with no engine could
+therefore dereference unavailable state during a file extraction. The entry
+now returns `CL_ENULLARG` before descriptor traversal or extraction. The
+current-source production-linked GCC `iso_map` case includes the new
+missing-engine regression and passes 13/13; the existing materialized `iso`
+case remains 1/1. Full ISO corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## CPIO parser engine admission — 2026-08-27
 
 The shared CPIO context validator checked only the parser context and input

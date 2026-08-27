@@ -1,5 +1,15 @@
 # Wishlist
 
+## ISO9660 parser engine admission — 2026-08-27
+
+- Keep `cli_scaniso()` fail-visible when a recognized fmap is supplied without
+  the engine required by temporary cleanup and nested dispatch; return
+  `CL_ENULLARG` before descriptor traversal or extraction.
+- The current-source production-linked GCC `iso_map` case passes 13/13 and
+  the materialized `iso` case passes 1/1. Keep full ISO corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification open.
+
 ## CPIO parser engine admission — 2026-08-27
 
 - Keep the shared CPIO context validator fail-visible when a recognized fmap
