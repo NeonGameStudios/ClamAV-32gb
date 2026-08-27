@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## HWPML parser engine admission — 2026-08-27
+
+The HWPML direct parser validated context and fmap but its Base64 attachment
+cleanup could later dereference `ctx->engine->keeptmp`. A valid fmap with no
+engine could therefore reach an unchecked engine dereference. The entry now
+returns `CL_ENULLARG` before XML traversal for that caller error, with a
+dedicated one-byte fmap regression. The current-source production-linked GCC
+`hwpml_map` case passes 2/2, the parser boundary case passes 2/2, and
+`hwpml_corpus` passes 1/1. Complete HWPML/XML corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
 ## OLE2 extraction engine admission — 2026-08-27
 
 The exported `cli_ole2_extract()` entry validated context and fmap but then

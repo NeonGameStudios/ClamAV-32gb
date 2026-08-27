@@ -1,5 +1,16 @@
 # Wishlist
 
+## HWPML parser engine admission — 2026-08-27
+
+- Keep `cli_scanhwpml()` fail-visible when a recognized fmap is supplied
+  without the engine required by decoded-attachment cleanup; return
+  `CL_ENULLARG` before XML traversal or cleanup.
+- The current-source production-linked GCC `hwpml_map` case passes 2/2, the
+  parser boundary case passes 2/2, and `hwpml_corpus` passes 1/1. Keep
+  complete HWPML/XML corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  open.
+
 ## OLE2 extraction engine admission — 2026-08-27
 
 - Keep exported `cli_ole2_extract()` fail-visible when a recognized fmap is
