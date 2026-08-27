@@ -93,6 +93,21 @@ static int pdfng_checktimelimit_at(struct pdf_struct *pdf, const char *reason, s
     return pdfng_checktimelimit(pdf, reason);
 }
 
+static void pdfng_cleanup_referenced_object(struct pdf_struct *pdf, int *fd, char **path)
+{
+    if (fd && *fd >= 0) {
+        if (close(*fd) != 0 && pdf && pdf->ctx)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF referenced-object temporary input could not be closed");
+        *fd = -1;
+    }
+    if (path && *path) {
+        if (cli_unlink(*path) != 0 && pdf && pdf->ctx)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF referenced-object temporary input could not be removed");
+        free(*path);
+        *path = NULL;
+    }
+}
+
 static char *pdf_convert_utf(struct pdf_struct *pdf, char *begin, size_t sz)
 {
     char *res = NULL;
@@ -146,20 +161,23 @@ static char *pdf_convert_utf(struct pdf_struct *pdf, char *begin, size_t sz)
         iconv(cd, (char **)(&p1), &inlen, &p2, &outlen);
 
         if (pdfng_checktimelimit(pdf, "PDF UTF string conversion reached the configured time limit")) {
-            iconv_close(cd);
+            if (iconv_close(cd) != 0 && pdf && pdf->ctx)
+                cli_mark_scan_incomplete(pdf->ctx, "PDF UTF conversion state could not be closed");
             break;
         }
 
         if (outlen == sz) {
             /* Decoding unsuccessful right from the start */
-            iconv_close(cd);
+            if (iconv_close(cd) != 0 && pdf && pdf->ctx)
+                cli_mark_scan_incomplete(pdf->ctx, "PDF UTF conversion state could not be closed");
             continue;
         }
 
         outbuf[sz - outlen] = '\0';
 
         res = strdup(outbuf);
-        iconv_close(cd);
+        if (iconv_close(cd) != 0 && pdf && pdf->ctx)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF UTF conversion state could not be closed");
         break;
     }
 #else
@@ -664,17 +682,12 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
 
         fd = open(newobj->path, O_RDONLY | O_BINARY);
         if (fd == -1) {
-            cli_unlink(newobj->path);
-            free(newobj->path);
-            newobj->path = NULL;
+            pdfng_cleanup_referenced_object(pdf, &fd, &newobj->path);
             return NULL;
         }
 
         if (FSTAT(fd, &sb)) {
-            close(fd);
-            cli_unlink(newobj->path);
-            free(newobj->path);
-            newobj->path = NULL;
+            pdfng_cleanup_referenced_object(pdf, &fd, &newobj->path);
             return NULL;
         }
 
@@ -682,43 +695,28 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
             if ((uint64_t)sb.st_size >= (uint64_t)CLI_MAX_ALLOCATION) {
                 if (pdf->ctx)
                     cli_mark_scan_incomplete(pdf->ctx, "PDF referenced object exceeds the contiguous parser allocation ceiling");
-                close(fd);
-                cli_unlink(newobj->path);
-                free(newobj->path);
-                newobj->path = NULL;
+                pdfng_cleanup_referenced_object(pdf, &fd, &newobj->path);
                 return NULL;
             }
 
             begin = cli_max_calloc(1, (size_t)sb.st_size + 1);
             if (!(begin)) {
-                close(fd);
-                cli_unlink(newobj->path);
-                free(newobj->path);
-                newobj->path = NULL;
+                pdfng_cleanup_referenced_object(pdf, &fd, &newobj->path);
                 return NULL;
             }
 
             if (pdfng_checktimelimit(pdf, "PDF referenced-object reload reached the configured time limit")) {
-                close(fd);
-                cli_unlink(newobj->path);
-                free(newobj->path);
-                newobj->path = NULL;
+                pdfng_cleanup_referenced_object(pdf, &fd, &newobj->path);
                 free(begin);
                 return NULL;
             }
             if (read(fd, begin, sb.st_size) != sb.st_size) {
-                close(fd);
-                cli_unlink(newobj->path);
-                free(newobj->path);
-                newobj->path = NULL;
+                pdfng_cleanup_referenced_object(pdf, &fd, &newobj->path);
                 free(begin);
                 return NULL;
             }
             if (pdfng_checktimelimit(pdf, "PDF referenced-object reload reached the configured time limit")) {
-                close(fd);
-                cli_unlink(newobj->path);
-                free(newobj->path);
-                newobj->path = NULL;
+                pdfng_cleanup_referenced_object(pdf, &fd, &newobj->path);
                 free(begin);
                 return NULL;
             }
@@ -728,10 +726,7 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
             while ((size_t)(p3 - begin) < objsize2) {
                 if (pdfng_checktimelimit_at(pdf, "PDF referenced-object whitespace scan reached the configured time limit",
                                             (size_t)(p3 - begin))) {
-                    close(fd);
-                    cli_unlink(newobj->path);
-                    free(newobj->path);
-                    newobj->path = NULL;
+                    pdfng_cleanup_referenced_object(pdf, &fd, &newobj->path);
                     free(begin);
                     return NULL;
                 }
@@ -753,10 +748,7 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
                     if (!res) {
                         res = cli_max_calloc(1, objsize2 + 1);
                         if (!(res)) {
-                            close(fd);
-                            cli_unlink(newobj->path);
-                            free(newobj->path);
-                            newobj->path = NULL;
+                            pdfng_cleanup_referenced_object(pdf, &fd, &newobj->path);
                             free(begin);
                             return NULL;
                         }
@@ -777,10 +769,7 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
             free(begin);
         }
 
-        close(fd);
-        cli_unlink(newobj->path);
-        free(newobj->path);
-        newobj->path = NULL;
+        pdfng_cleanup_referenced_object(pdf, &fd, &newobj->path);
 
         if (endchar)
             *endchar = p2;

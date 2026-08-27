@@ -11917,3 +11917,14 @@ timeout, resource, or detection results. Current GCC syntax and source guards
 cover the changed paths; current-object execution, complete MSXML/OOXML/XDP/
 HWPML corpora, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## PDF referenced-object cleanup audit — 2026-08-27
+
+PDFNG referenced-object reload had repeated failure exits that closed and
+removed its temporary object without checking either operation. The reload
+path now centralizes descriptor and path cleanup, marks close and removal
+failures incomplete, and checks iconv-state closure in UTF conversion. Current
+GCC syntax and source guards cover these paths; current-object execution,
+complete PDF/filter corpora, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain open.

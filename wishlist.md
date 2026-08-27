@@ -5822,5 +5822,15 @@ parser-family qualification remain open.
   retain earlier XML, callback, timeout, resource, or detection results.
 - Current GCC syntax and source guards cover the changed paths; current-object
   execution, complete MSXML/OOXML/XDP/HWPML corpora, sanitizer, certified
-  Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
-  parser-family qualification remain open.
+ Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+ parser-family qualification remain open.
+
+## PDF referenced-object cleanup audit — 2026-08-27
+
+- Centralize PDFNG referenced-object temporary descriptor/path cleanup and
+  check iconv-state closure, marking failures incomplete without hiding prior
+  parser, timeout, resource, or detection results.
+- Current GCC syntax and source guards cover the paths; current-object
+  execution, complete PDF/filter corpora, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.
