@@ -1,5 +1,15 @@
 # Wishlist
 
+## ELF unpack-entry preflight — 2026-08-27
+
+- Keep the exported `cli_unpackelf()` helper fail-visible for null context,
+  missing fmap, and missing engine: use `CL_ENULLARG` for caller arguments,
+  and `CL_EPARSE` plus sticky incomplete state for a recognized layer without
+  input.
+- The current-source production-linked GCC `elf_map` regression covers all
+  three states. Keep full ELF unpacker/corpus, sanitizer, production-CVD/
+  service, Sonic1, and release qualification open.
+
 ## HWP3 null-context classification — 2026-08-27
 
 - Keep `cli_scanhwp3(NULL)` on the standard `CL_ENULLARG` caller-error

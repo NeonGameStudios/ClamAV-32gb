@@ -1079,6 +1079,15 @@ cl_error_t cli_unpackelf(cli_ctx *ctx)
     uint64_t temporary_reserved = 0;
     struct cli_bc_ctx *bc_ctx;
 
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "ELF input map is unavailable");
+        return CL_EPARSE;
+    }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
+
     /* Bytecode BC_ELF_UNPACKER hook */
     bc_ctx = cli_bytecode_context_alloc();
     if (!bc_ctx) {

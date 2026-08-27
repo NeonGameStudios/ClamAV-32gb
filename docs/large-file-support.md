@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ELF unpack-entry preflight — 2026-08-27
+
+`cli_unpackelf()` is an exported parser helper used by the ELF dispatch
+branch, but previously assumed a non-null context, fmap, and engine before
+running the bytecode hook. It now returns `CL_ENULLARG` for null context or
+engine, and returns `CL_EPARSE` with sticky `ELF input map is unavailable`
+for a recognized context without an fmap. The current-source production-
+linked GCC `elf_map` regression covers the null, missing-map, and missing-
+engine entry states; full ELF unpacker/corpus, sanitizer, production-CVD/
+service, Sonic1, and release qualification remain open.
+
 ## HWP3 null-context classification — 2026-08-27
 
 The HWP3 direct parser entry returned legacy `CL_EARG` for a null context,

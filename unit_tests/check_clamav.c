@@ -34936,13 +34936,28 @@ END_TEST
 START_TEST(test_elf_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
+    fmap_t *map;
+    static const uint8_t data[] = {0};
 
     ck_assert_int_eq(cli_scanelf(NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_unpackelf(NULL), CL_ENULLARG);
 
     memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cli_scanelf(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF input map is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_unpackelf(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF input map is unavailable");
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_unpackelf(&ctx), CL_ENULLARG);
+    cl_fmap_close(map);
 }
 END_TEST
 
