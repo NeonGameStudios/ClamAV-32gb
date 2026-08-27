@@ -5992,3 +5992,12 @@ parser-family qualification remain open.
   registers isolated load/unpack coverage. Keep current-object execution,
   production CVDs, service parity, sanitizer, materialized large-file, Sonic1,
   and release qualification open.
+
+## Production CVD public API boundary audit — 2026-08-27
+
+- Reject null CVD parse/free/header arguments and require a complete 512-byte
+  header before exposing public metadata.
+- Preserve CVD header read and close failures; focused null-boundary tests and
+  source guards are registered. Keep current-object execution, production CVD,
+  service parity, sanitizer, materialized large-file, Sonic1, and release
+  qualification open.

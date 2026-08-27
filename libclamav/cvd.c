@@ -369,7 +369,7 @@ struct cl_cvd *cl_cvdparse(const char *head)
     struct cl_cvd *cvd;
     char *pt;
 
-    if (strncmp(head, "ClamAV-VDB:", 11)) {
+    if (head == NULL || strncmp(head, "ClamAV-VDB:", 11)) {
         cli_errmsg("cli_cvdparse: Not a CVD file\n");
         return NULL;
     }
@@ -454,18 +454,25 @@ struct cl_cvd *cl_cvdhead(const char *file)
     int i;
     unsigned int bread;
 
+    if (file == NULL)
+        return NULL;
+
     if ((fs = fopen(file, "rb")) == NULL) {
         cli_errmsg("cl_cvdhead: Can't open file %s\n", file);
         return NULL;
     }
 
-    if (!(bread = fread(head, 1, 512, fs))) {
-        cli_errmsg("cl_cvdhead: Can't read CVD header in %s\n", file);
-        fclose(fs);
+    bread = fread(head, 1, 512, fs);
+    if (bread != 512 || ferror(fs)) {
+        cli_errmsg("cl_cvdhead: Can't read complete CVD header in %s\n", file);
+        (void)fclose(fs);
         return NULL;
     }
 
-    fclose(fs);
+    if (fclose(fs) != 0) {
+        cli_errmsg("cl_cvdhead: Can't close CVD header in %s\n", file);
+        return NULL;
+    }
 
     head[bread] = 0;
     if ((pt = strpbrk(head, "\n\r")))
@@ -480,6 +487,9 @@ struct cl_cvd *cl_cvdhead(const char *file)
 
 void cl_cvdfree(struct cl_cvd *cvd)
 {
+    if (cvd == NULL)
+        return;
+
     free(cvd->time);
     free(cvd->md5);
     free(cvd->dsig);

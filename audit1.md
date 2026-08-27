@@ -12109,3 +12109,16 @@ source passes the production warning-enabled GCC syntax check and an isolated
 load/unpack TCase is registered; current-object execution, production CVDs,
 service parity, sanitizer, materialized large-file, Sonic1, and release
 qualification remain open.
+
+## Production CVD public API boundary audit — 2026-08-27
+
+The public CVD helpers had two fail-open edges: `cl_cvdparse()` could
+dereference a null header, and `cl_cvdhead()` could return metadata after a
+short header read. `cl_cvdfree()` also assumed a non-null object, and header
+close failure was discarded. The helpers now reject null arguments, require
+all 512 header bytes plus a clean stream state, and preserve header close
+failure as a null result. The CVD API TCase registers focused null-argument
+regressions. Current-source unit syntax passes with only the existing
+unrelated integer-conversion warning; current-object execution, production
+CVD/service parity, sanitizer, materialized large-file, Sonic1, and release
+qualification remain open.

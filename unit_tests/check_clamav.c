@@ -369,24 +369,7 @@ END_TEST
 /* extern void cl_cvdfree(struct cl_cvd *cvd); */
 START_TEST(test_cl_cvdfree)
 {
-    // struct cl_cvd *cvd1, *cvd2;
-
-    // cvd1 = malloc(sizeof(struct cl_cvd));
-    // ck_assert_msg(cvd1, "cvd malloc");
-    // cl_cvdfree(cvd1);
-
-    // cvd2 = malloc(sizeof(struct cl_cvd));
-    // cvd2->time = malloc(1);
-    // cvd2->md5 = malloc(1);
-    // cvd2->dsig= malloc(1);
-    // cvd2->builder = malloc(1);
-    // ck_assert_msg(cvd2, "cvd malloc");
-    // ck_assert_msg(cvd2->time, "cvd malloc");
-    // ck_assert_msg(cvd2->md5, "cvd malloc");
-    // ck_assert_msg(cvd2->dsig, "cvd malloc");
-    // ck_assert_msg(cvd2->builder, "cvd malloc");
-    // cl_cvdfree(cvd2);
-    // cl_cvdfree(NULL);
+    cl_cvdfree(NULL);
 }
 END_TEST
 
@@ -422,7 +405,7 @@ END_TEST
 /* extern struct cl_cvd *cl_cvdhead(const char *file); */
 START_TEST(test_cl_cvdhead)
 {
-    // ck_assert_msg(NULL == cl_cvdhead(NULL), "cl_cvdhead(null)");
+    ck_assert_ptr_null(cl_cvdhead(NULL));
     // ck_assert_msg(NULL == cl_cvdhead("input" PATHSEP "cl_cvdhead" PATHSEP "1.txt"), "cl_cvdhead(515 byte file, all nulls)");
     /* the data read from the file is passed to cl_cvdparse, test cases for that are separate */
 }
@@ -431,6 +414,7 @@ END_TEST
 /* extern struct cl_cvd *cl_cvdparse(const char *head); */
 START_TEST(test_cl_cvdparse)
 {
+    ck_assert_ptr_null(cl_cvdparse(NULL));
 }
 END_TEST
 
@@ -41927,6 +41911,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_cl);
     suite_add_tcase(s, tc_cvd);
     tcase_add_checked_fixture(tc_cvd, cl_setup, cl_teardown);
+    tcase_add_test(tc_cvd, test_cl_cvdfree);
+    tcase_add_test(tc_cvd, test_cl_cvdhead);
+    tcase_add_test(tc_cvd, test_cl_cvdparse);
     tcase_add_test(tc_cvd, test_cl_load);
     tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
