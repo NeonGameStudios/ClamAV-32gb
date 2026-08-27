@@ -4153,6 +4153,8 @@ contains libclamav/autoit.c 'AutoIt EA06 script output reached the configured ti
 contains libclamav/autoit.c 'AutoIt expanded member output reached the configured time limit'
 contains libclamav/autoit.c 'AutoIt inspection reached the configured time limit'
 contains libclamav/autoit.c 'AutoIt input map is unavailable'
+contains unit_tests/check_clamav.c 'test_autoit_header_missing_context_or_map_is_fail_visible'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_autoit_map, test_autoit_header_missing_context_or_map_is_fail_visible)'
 contains libclamav/autoit.c 'AutoIt member traversal reached the configured time limit'
 contains libclamav/autoit.c 'AutoIt EA06 decompression reached the configured time limit'
 contains libclamav/autoit.c 'AutoIt EA06 script traversal reached the configured time limit'

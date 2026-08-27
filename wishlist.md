@@ -1,5 +1,15 @@
 # Wishlist
 
+## AutoIt header-admission context/map classification — 2026-08-26
+
+- Keep `cli_autoit_header_check()` fail-visible for unavailable input: only a
+  null context returns `CL_ENULLARG`; a recognized context without an fmap
+  returns `CL_EPARSE` and marks the layer incomplete; the shared incomplete
+  marker keeps any available fmap non-cacheable.
+- The current-source GCC helper harness passes both classifications, with the
+  direct regression registered in `autoit_map`. Keep full AutoIt corpus,
+  sanitizer, production-CVD/service, Sonic1, and release qualification open.
+
 ## ARJ-SFX weak-candidate rejection — 2026-08-26
 
 - Keep a structurally disproven ARJ-SFX magic candidate out of layer

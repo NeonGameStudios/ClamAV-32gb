@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## AutoIt header-admission context/map classification — 2026-08-26
+
+The AutoIt embedded-header helper previously returned `CL_ENULLARG` for both
+a null parser context and a recognized context whose input fmap was
+unavailable. It now returns `CL_ENULLARG` only for the null context; a
+recognized layer with no fmap returns `CL_EPARSE`, marks the layer incomplete,
+and records `AutoIt input map is unavailable`. A current-source GCC helper
+harness, linked against the existing production shared library with a
+test-only incomplete-state callback, passes both outcomes, and the direct
+regression is registered in `autoit_map`. Full AutoIt corpus, sanitizer,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## ARJ metadata-offset range hardening — 2026-08-26
 
 ARJ header parsing advanced its fmap offset directly over variable first-header

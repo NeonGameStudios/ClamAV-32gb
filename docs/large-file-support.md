@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## AutoIt header-admission context/map classification — 2026-08-26
+
+The AutoIt embedded-header helper previously returned `CL_ENULLARG` for both
+a null parser context and a recognized context whose input fmap was
+unavailable. It now returns `CL_ENULLARG` only for the null context; a
+recognized layer with no fmap returns `CL_EPARSE`, marks the layer incomplete,
+and records `AutoIt input map is unavailable`. A current-source GCC helper
+harness, linked against the existing production shared library with a
+test-only incomplete-state callback, passes both outcomes. The direct
+regression is registered in `autoit_map`; full AutoIt corpus, sanitizer,
+production-CVD/service, Sonic1, and release qualification remain required.
+
 ## ARJ-SFX weak-candidate rejection — 2026-08-26
 
 The ARJ-SFX admission path now has a current-source production-linked GCC

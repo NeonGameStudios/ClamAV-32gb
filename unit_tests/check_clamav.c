@@ -25328,6 +25328,19 @@ START_TEST(test_egg_codepage_filename_is_streamed_and_scanned)
 }
 END_TEST
 
+START_TEST(test_autoit_header_missing_context_or_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    ck_assert_int_eq(cli_autoit_header_check(NULL, 0), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_autoit_header_check(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "AutoIt input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_autoit_ea06_missing_member_is_fail_visible)
 {
     uint8_t data[25];
@@ -40767,6 +40780,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_autoit_map);
     tcase_add_checked_fixture(tc_autoit_map, cl_setup, cl_teardown);
     tcase_add_test(tc_autoit_map, test_autoit_missing_map_is_fail_visible);
+    tcase_add_test(tc_autoit_map, test_autoit_header_missing_context_or_map_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_ea06_missing_member_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_time_limit_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_version_read_failure_is_fail_visible);
