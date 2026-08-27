@@ -1,5 +1,14 @@
 # Wishlist
 
+## GIF direct parser context evidence — 2026-08-27
+
+- Add and register a direct null-context regression alongside the existing
+  GIF validation and missing-map checks. The current-source production-linked
+  GCC `gif` case passes 8/8, `gif_api` passes 1/1, and the rebuilt
+  `gif_corpus` overlay case passes 1/1 with exact child matching. Keep complete
+  GIF corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## 7-Zip direct parser context evidence — 2026-08-27
 
 - Add and register a null-context regression alongside the existing confirmed
@@ -538,7 +547,7 @@ parser-family qualification open.
   versions must return explicit incomplete/non-cacheable parse results before
   screen and block parsing.
 - The exact invalid-version regression is registered alongside the existing
-  warning-clean GIF build and production-linked `gif` 7/7, `gif_api` 1/1, and
+  warning-clean GIF build and production-linked `gif` 8/8, `gif_api` 1/1, and
   rebuilt `gif_corpus` 1/1 evidence with the exact child marker. Keep complete
   GIF corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.

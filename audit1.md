@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## GIF direct parser context evidence — 2026-08-27
+
+The GIF direct entry already returned `CL_ENULLARG` for a null context, but
+the dedicated `gif` TCase previously covered only recognized-layer parsing
+and the missing-map boundary. A dedicated null-context regression is now
+registered beside those checks. The current-source production-linked GCC
+`gif` case passes 8/8, `gif_api` passes 1/1, and the rebuilt `gif_corpus`
+overlay case passes 1/1 with exact child matching. Complete GIF corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## 7-Zip direct parser context evidence — 2026-08-27
 
 The confirmed 7-Zip direct entry already returned `CL_ENULLARG` for a null
@@ -666,7 +677,7 @@ version could therefore continue into screen and block parsing and potentially
 reach a clean result. The parser now requires `87a` or `89a`; other versions
 return `CL_EPARSE`, set sticky incomplete state, and disable caching. The new
 direct regression asserts the exact reason and non-cacheability. The
-current-source production-linked `gif` case passes 7/7, `gif_api` passes 1/1,
+current-source production-linked `gif` case passes 8/8, `gif_api` passes 1/1,
 and the rebuilt `gif_corpus` overlay case passes 1/1 with the exact child
 marker. Complete GIF corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, and Sonic1 qualification remain open.

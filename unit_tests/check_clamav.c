@@ -38655,6 +38655,12 @@ START_TEST(test_gif_png_missing_maps_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gif_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_parsegif(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_media_parsers_reject_null_contexts)
 {
     ck_assert_int_eq(cli_parsegif(NULL), CL_ENULLARG);
@@ -42391,6 +42397,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif, test_gif_graphic_control_fields_are_validated);
     tcase_add_test(tc_gif, test_gif_truncated_screen_descriptor_is_parse_error);
     tcase_add_test(tc_gif, test_gif_block_timeout_is_fail_visible);
+    tcase_add_test(tc_gif, test_gif_null_context_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_png_missing_maps_are_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunks_are_fail_visible);
     tcase_add_test(tc_png, test_png_invalid_structure_is_fail_visible);
