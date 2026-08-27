@@ -5794,3 +5794,23 @@ and Sonic1 qualification as release gates.
   current-object execution, complete bytecode/script corpora, sanitizer,
   certified Linux x86-64, materialized large-file, production-CVD/service,
   Sonic1, and parser-family qualification remain open.
+
+## OLE10 extraction cleanup-status precedence audit — 2026-08-27
+
+- Route OLE10 temporary-output close and unlink failures through the shared
+  cleanup-status precedence helper, preserving `CL_EWRITE` and `CL_EUNLINK`
+  without hiding earlier parser, resource, timeout, or detection results.
+- Source guards cover both handoffs; current-object execution, complete
+  OLE2/VBA/PowerPoint corpora, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.
+
+## VBA project and PowerPoint cleanup-status audit — 2026-08-27
+
+- Preserve cleanup failures for file-backed VBA directory backing, module
+  inputs, mapped metadata, and project outputs through the shared status
+  helper; record PowerPoint temporary-output unlink failures as incomplete.
+- Current GCC syntax and source guards cover the handoffs; current-object
+  execution, complete OLE2/VBA/PowerPoint corpora, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification remain open.

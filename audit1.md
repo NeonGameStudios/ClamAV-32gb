@@ -11882,3 +11882,26 @@ Existing focused production-linked evidence remains prior-object evidence for
 this cleanup-only change; current-object execution, complete bytecode/script
 corpora, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## OLE10 extraction cleanup-status precedence audit — 2026-08-27
+
+The OLE10 temporary-output helper in the VBA extraction layer still replaced
+only clean, verified, or abort results when close or unlink failed. It now uses
+the shared cleanup-status precedence helper, preserving `CL_EWRITE` and
+`CL_EUNLINK` as fail-visible results without hiding an earlier parser,
+resource, timeout, or detection result. The current source guard covers both
+status handoffs; current-object execution, complete OLE2/VBA/PowerPoint
+corpora, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## VBA project and PowerPoint cleanup-status audit — 2026-08-27
+
+The file-backed VBA project path now preserves cleanup failures from directory
+backing, module-input, mapped-metadata, and project-output teardown through
+the shared status helper, retaining earlier parser or resource failures. The
+PowerPoint LZW extraction path now records temporary-output unlink failures as
+incomplete, while its existing close handling remains fail-visible. Current
+GCC syntax evidence covers `vba_extract.c`, and source guards cover the helper
+handoffs; current-object execution, complete OLE2/VBA/PowerPoint corpora,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, Sonic1, and parser-family qualification remain open.

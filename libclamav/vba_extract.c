@@ -102,6 +102,16 @@ vba_checktimelimit(cli_ctx *ctx, const char *reason)
     return ret;
 }
 
+static void
+vba_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, cl_error_t cleanup_status,
+                         const char *reason)
+{
+    if (ctx)
+        cli_mark_scan_incomplete(ctx, reason);
+    if (status)
+        *status = cli_merge_cleanup_status(*status, cleanup_status);
+}
+
 static uint16_t
 vba_endian_convert_16(uint16_t value, int big_endian)
 {
@@ -933,13 +943,13 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
         if (close(datafd) != 0) {
             datafd = -1;
-            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be closed");
-            ret = CL_EREAD;
-            goto done;
+            vba_note_cleanup_failure(ctx, &deferred_failure, CL_EREAD,
+                                     "VBA project directory backing could not be closed");
         }
         datafd = -1;
         if (!ctx->engine->keeptmp && cli_unlink(datafile) != 0) {
-            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be removed");
+            vba_note_cleanup_failure(ctx, &deferred_failure, CL_EUNLINK,
+                                     "VBA project directory backing could not be removed");
         } else if (!ctx->engine->keeptmp) {
             free(datafile);
             datafile = NULL;
@@ -1771,8 +1781,10 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                     if (module_output_offset == (off_t)-1) {
                         cli_mark_scan_incomplete(ctx, "VBA module output position could not be recorded");
-                        close(module_fd);
                         ret = CL_ESEEK;
+                        if (close(module_fd) != 0)
+                            vba_note_cleanup_failure(ctx, &ret, CL_EREAD,
+                                                     "VBA module temporary input could not be closed");
                         goto done;
                     }
 
@@ -1789,7 +1801,9 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                             if (deferred_failure == CL_SUCCESS)
                                 deferred_failure = module_status;
                             if (close(module_fd) != 0)
-                                cli_mark_scan_incomplete(ctx, "VBA module temporary input could not be closed");
+                                vba_note_cleanup_failure(ctx, &module_status, CL_EREAD,
+                                                         "VBA module temporary input could not be closed");
+                            deferred_failure = cli_merge_cleanup_status(deferred_failure, module_status);
                             module_stream_found = 1;
 
                             if (rollback_status != CL_SUCCESS) {
@@ -1801,10 +1815,10 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                         }
 
                         if (close(module_fd) != 0) {
-                            cli_mark_scan_incomplete(ctx, "VBA module temporary input could not be closed");
-                            if (deferred_failure == CL_SUCCESS)
-                                deferred_failure = CL_EREAD;
+                            vba_note_cleanup_failure(ctx, &module_status, CL_EREAD,
+                                                     "VBA module temporary input could not be closed");
                         }
+                        deferred_failure = cli_merge_cleanup_status(deferred_failure, module_status);
 
                         module_stream_found = 1;
                         module_status       = vba_invoke_module_callback(ctx, *tempfd,
@@ -1830,14 +1844,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                         if (deferred_failure == CL_SUCCESS)
                             deferred_failure = CL_EPARSE;
                         if (close(module_fd) != 0)
-                            cli_mark_scan_incomplete(ctx, "VBA module temporary input could not be closed");
+                            vba_note_cleanup_failure(ctx, &deferred_failure, CL_EREAD,
+                                                     "VBA module temporary input could not be closed");
                         continue;
                     }
 
                     if (close(module_fd) != 0) {
-                        cli_mark_scan_incomplete(ctx, "VBA module temporary input could not be closed");
-                        if (deferred_failure == CL_SUCCESS)
-                            deferred_failure = CL_EREAD;
+                        vba_note_cleanup_failure(ctx, &deferred_failure, CL_EREAD,
+                                                 "VBA module temporary input could not be closed");
                     }
                     module_stream_found = 1;
 
@@ -1897,17 +1911,15 @@ done:
 
     if (fd >= 0) {
         if (close(fd) != 0) {
-            cli_mark_scan_incomplete(ctx, "VBA project directory input could not be closed");
-            if (ret == CL_SUCCESS || ret == CL_CLEAN || ret == CL_BREAK)
-                ret = CL_EREAD;
+            vba_note_cleanup_failure(ctx, &ret, CL_EREAD,
+                                     "VBA project directory input could not be closed");
         }
     }
     if (data_is_mapped && data != NULL) {
 #if VBA_HAVE_FILE_BACKED_DIRECTORY
         if (munmap(data, data_len) != 0) {
-            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be unmapped");
-            if (ret == CL_SUCCESS || ret == CL_CLEAN || ret == CL_BREAK)
-                ret = CL_ERESOURCE;
+            vba_note_cleanup_failure(ctx, &ret, CL_ERESOURCE,
+                                     "VBA project directory backing could not be unmapped");
         }
 #endif
         data = NULL;
@@ -1917,12 +1929,14 @@ done:
     }
     if (datafd >= 0) {
         if (close(datafd) != 0)
-            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be closed");
+            vba_note_cleanup_failure(ctx, &ret, CL_EREAD,
+                                     "VBA project directory backing could not be closed");
         datafd = -1;
     }
     if (datafile != NULL) {
         if (!ctx->engine->keeptmp && cli_unlink(datafile) != 0)
-            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be removed");
+            vba_note_cleanup_failure(ctx, &ret, CL_EUNLINK,
+                                     "VBA project directory backing could not be removed");
         free(datafile);
         datafile = NULL;
     }
@@ -1932,7 +1946,9 @@ done:
         free((void *)stream_name);
     }
     if (ret != CL_SUCCESS && *tempfd >= 0) {
-        close(*tempfd);
+        if (close(*tempfd) != 0)
+            vba_note_cleanup_failure(ctx, &ret, CL_EWRITE,
+                                     "VBA project temporary output could not be closed");
         *tempfd = -1;
     }
     if (module_data) {
@@ -2358,16 +2374,14 @@ ole10_cleanup_output(cli_ctx *ctx, int *ofd, const char *fullname, cl_error_t *s
     if (ofd != NULL && *ofd >= 0) {
         if (close(*ofd) != 0) {
             cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be closed");
-            if (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK)
-                *status = CL_EWRITE;
+            *status = cli_merge_cleanup_status(*status, CL_EWRITE);
         }
         *ofd = -1;
     }
 
     if (ctx && !ctx->engine->keeptmp && fullname && cli_unlink(fullname)) {
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be removed");
-        if (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK)
-            *status = CL_EUNLINK;
+        *status = cli_merge_cleanup_status(*status, CL_EUNLINK);
     }
 }
 
@@ -2597,6 +2611,13 @@ ppt_close_output(cli_ctx *ctx, int ofd)
     return TRUE;
 }
 
+static void
+ppt_remove_output(cli_ctx *ctx, const char *fullname)
+{
+    if (cli_unlink(fullname) != 0)
+        cli_mark_scan_incomplete(ctx, "PowerPoint temporary output could not be removed");
+}
+
 static int
 ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temporary_reserved)
 {
@@ -2629,7 +2650,7 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
 
     if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
         ppt_close_output(ctx, ofd);
-        cli_unlink(fullname);
+        ppt_remove_output(ctx, fullname);
         cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream could not be read completely");
         return FALSE;
     }
@@ -2637,7 +2658,7 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
 
     if (inflateInit(&stream) != Z_OK) {
         ppt_close_output(ctx, ofd);
-        cli_unlink(fullname);
+        ppt_remove_output(ctx, fullname);
         cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream could not be initialized");
         cli_warnmsg("ppt_unlzw: inflateInit failed\n");
         return FALSE;
@@ -2648,7 +2669,7 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
             if (!ppt_write_output(ctx, temporary_reserved, ofd, outbuff, PPT_LZW_BUFFSIZE)) {
                 ppt_close_output(ctx, ofd);
                 inflateEnd(&stream);
-                cli_unlink(fullname);
+                ppt_remove_output(ctx, fullname);
                 return FALSE;
             }
             stream.next_out  = outbuff;
@@ -2660,7 +2681,7 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
             if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
                 ppt_close_output(ctx, ofd);
                 inflateEnd(&stream);
-                cli_unlink(fullname);
+                ppt_remove_output(ctx, fullname);
                 cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream could not be read completely");
                 return FALSE;
             }
@@ -2672,7 +2693,7 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
     if (zret != Z_STREAM_END) {
         ppt_close_output(ctx, ofd);
         inflateEnd(&stream);
-        cli_unlink(fullname);
+        ppt_remove_output(ctx, fullname);
         cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream was not fully decoded");
         return FALSE;
     }
@@ -2681,16 +2702,16 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
                           PPT_LZW_BUFFSIZE - stream.avail_out)) {
         ppt_close_output(ctx, ofd);
         inflateEnd(&stream);
-        cli_unlink(fullname);
+        ppt_remove_output(ctx, fullname);
         return FALSE;
     }
     if (!ppt_close_output(ctx, ofd)) {
-        cli_unlink(fullname);
+        ppt_remove_output(ctx, fullname);
         inflateEnd(&stream);
         return FALSE;
     }
     if (inflateEnd(&stream) != Z_OK) {
-        cli_unlink(fullname);
+        ppt_remove_output(ctx, fullname);
         cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream was not fully decoded");
         return FALSE;
     }
