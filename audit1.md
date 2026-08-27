@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## OneNote public compatibility fallback validation — 2026-08-27
+
+The public `OneNote::from_bytes()` compatibility API returned a lazy iterator
+after modern-parser rejection based only on the OneNote magic. That allowed a
+magic-only input, or a truncated legacy attachment stream, to appear to callers
+as an empty successful iteration because `next_file()` cannot report a parse
+error. The fallback now requires a legacy file-data-store marker and validates
+the complete legacy byte stream with `scan_legacy_bytes()` before returning the
+iterator. New Rust regressions cover both malformed states, and the current
+source Rust OneNote unit filter passes 10/10. The current-source
+production-linked GCC `rust_onenote` boundary still passes 2/2 and `rust_map`
+passes 1/1. Full OneNote corpus, current full-C ABI, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## ISO direct parser context evidence — 2026-08-27
 
 The ISO direct entry already classified missing maps and missing engines, but

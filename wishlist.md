@@ -1,5 +1,15 @@
 # Wishlist
 
+## OneNote public compatibility fallback validation — 2026-08-27
+
+- Validate the complete legacy stream before the public `OneNote::from_bytes()`
+  compatibility iterator is returned after modern-parser rejection. Magic-only
+  and truncated legacy inputs now return `Error::Parse`; the current-source
+  Rust OneNote unit filter passes 10/10, while production-linked `rust_onenote`
+  passes 2/2 and `rust_map` passes 1/1. Keep full OneNote corpus, current
+  full-C ABI, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release qualification open.
+
 ## ISO direct parser context evidence — 2026-08-27
 
 - Add and register a direct null-context regression alongside the existing ISO

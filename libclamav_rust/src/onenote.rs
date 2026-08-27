@@ -433,6 +433,14 @@ impl<'a> OneNote<'a> {
                 return Err(Error::Format);
             }
 
+            /* The iterator API cannot report a malformed record from
+             * next_file(), so validate the complete legacy stream before
+             * returning an apparently empty compatibility iterator. */
+            if find_bytes(data, FILE_DATA_STORE_OBJECT).is_none() {
+                return Err(Error::Parse);
+            }
+            scan_legacy_bytes(data, &mut |_name, _data| true)?;
+
             Ok(OneNote {
                 embedded_files,
                 remaining: Some(data),
@@ -646,6 +654,25 @@ mod tests {
     fn scan_bytes_rejects_modern_parse_failure_without_legacy_record() {
         assert!(matches!(
             OneNote::scan_bytes(ONE_MAGIC, Path::new("malformed.one"), |_name, _data| true),
+            Err(Error::Parse)
+        ));
+    }
+
+    #[test]
+    fn from_bytes_rejects_modern_parse_failure_without_legacy_record() {
+        assert!(matches!(
+            OneNote::from_bytes(ONE_MAGIC, Path::new("malformed.one")),
+            Err(Error::Parse)
+        ));
+    }
+
+    #[test]
+    fn from_bytes_rejects_truncated_legacy_attachment() {
+        let mut fixture = legacy_fixture(b"attachment");
+        fixture.truncate(fixture.len() - 1);
+
+        assert!(matches!(
+            OneNote::from_bytes(&fixture, Path::new("truncated.one")),
             Err(Error::Parse)
         ));
     }
