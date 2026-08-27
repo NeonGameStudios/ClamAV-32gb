@@ -1,5 +1,17 @@
 # Wishlist
 
+## GIF LZW admission and image completion audit — 2026-08-27
+
+- Keep the image LZW minimum-code-size byte on the fixed-range reader: values
+  outside 2–8 must be incomplete/non-cacheable, truncation must remain a parse
+  result, and fully in-range callback failures must preserve `CL_EREAD`.
+- The warning-clean current GIF source and coherent production-linked harness
+  pass `gif` 9/9, `gif_api` 1/1, and `gif_corpus` 1/1 across a complete valid
+  one-pixel image, invalid low/high code sizes, injected read failure, exact
+  missing-trailer behavior, and exact nested overlay matching. Keep complete
+  GIF corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## MIME direct-context and first-line admission audit — 2026-08-27
 
 - Keep `cli_mbox()` fail-visible at its direct boundary: null context or a

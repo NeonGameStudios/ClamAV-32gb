@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## GIF LZW admission and image completion audit — 2026-08-27
+
+The GIF image path previously advanced over the required LZW minimum-code-size
+byte without reading it. A fully in-range fmap callback failure at that byte,
+or a malformed value outside the GIF-defined 2–8 range, could therefore reach
+the following sub-blocks and trailer as a clean parse. The parser now performs
+a fixed-range read, preserves `CL_EREAD` for an in-range callback failure,
+classifies truncation as an incomplete parse, and rejects invalid values before
+trusting the image-data boundary.
+
+The current GIF source compiles warning-clean with the production GCC flags. A
+coherent current-source production-linked harness passes `gif` 9/9,
+`gif_api` 1/1, and `gif_corpus` 1/1. The focused case proves a complete valid
+one-pixel image, invalid low/high code sizes, an injected minimum-code-size read
+failure, and exact missing-trailer classification; the corpus now uses that
+complete image before its bounded overlay and exact child match. Complete GIF
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## MIME direct-context and first-line admission audit — 2026-08-27
 
 The public `cli_mbox()` entry checked its directory, context, and fmap, but the

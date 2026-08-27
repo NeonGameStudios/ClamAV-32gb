@@ -26575,6 +26575,18 @@ static const void *gif_truncated_screen_read_failure(fmap_t *map, size_t at, siz
     return (const uint8_t *)map->data + at;
 }
 
+static size_t gif_targeted_read_failure_offset = SIZE_MAX;
+
+static const void *gif_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == gif_targeted_read_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static const void *png_truncated_chunk_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -38616,6 +38628,71 @@ START_TEST(test_gif_graphic_control_fields_are_validated)
 }
 END_TEST
 
+START_TEST(test_gif_image_data_completion_is_validated)
+{
+    static const uint8_t valid_image[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+        0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+        0x02, 0x02, 0x44, 0x01, 0x00,
+        0x3b,
+    };
+    static const uint8_t invalid_code_sizes[] = {1, 9};
+    uint8_t input[sizeof(valid_image)];
+    cli_ctx ctx;
+    fmap_t *map;
+    const size_t lzw_offset = sizeof(valid_image) - 6U;
+    size_t i;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(valid_image, sizeof(valid_image));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_parsegif(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    for (i = 0; i < sizeof(invalid_code_sizes); i++) {
+        memcpy(input, valid_image, sizeof(input));
+        input[lzw_offset] = invalid_code_sizes[i];
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(input, sizeof(input));
+        ck_assert_ptr_nonnull(map);
+        ctx.fmap = map;
+        ck_assert_int_eq(cli_parsegif(&ctx), CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Broken.Media.GIF.InvalidLzwMinimumCodeSize");
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+    }
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(valid_image, sizeof(valid_image));
+    ck_assert_ptr_nonnull(map);
+    gif_targeted_read_failure_offset = lzw_offset;
+    map->need                        = gif_targeted_read_failure;
+    ctx.fmap                         = map;
+    ck_assert_int_eq(cli_parsegif(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Broken.Media.GIF.TruncatedLzwMinimumCodeSize");
+    ck_assert(map->dont_cache_flag);
+    gif_targeted_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(valid_image, sizeof(valid_image) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_parsegif(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Broken.Media.GIF.MissingTrailer");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_gif_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {'G', 'I', 'F'};
@@ -39142,7 +39219,10 @@ START_TEST(test_gif_corpus_detects_embedded_mz)
 {
     static const uint8_t gif[] = {
         'G', 'I', 'F', '8', '9', 'a',
-        0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+        0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+        0x02, 0x02, 0x44, 0x01, 0x00,
         0x3b,
     };
     static const uint8_t child[64] = {'M', 'Z', 'P'};
@@ -42517,6 +42597,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif, test_gif_header_read_failures_are_fail_visible);
     tcase_add_test(tc_gif, test_gif_invalid_version_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_graphic_control_fields_are_validated);
+    tcase_add_test(tc_gif, test_gif_image_data_completion_is_validated);
     tcase_add_test(tc_gif, test_gif_truncated_screen_descriptor_is_parse_error);
     tcase_add_test(tc_gif, test_gif_block_timeout_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_null_context_is_fail_visible);

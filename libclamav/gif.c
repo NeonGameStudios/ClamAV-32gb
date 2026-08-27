@@ -448,6 +448,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
             case GIF_LABEL_GRAPHIC_IMAGE_DESCRIPTOR: {
                 struct gif_image_descriptor image_desc;
                 size_t local_color_table_size = 0;
+                uint8_t lzw_minimum_code_size = 0;
 
                 cli_dbgmsg("GIF: Found an image descriptor.\n");
                 {
@@ -483,13 +484,22 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                 /*
                  * Parse the image data.
                  */
-                if (offset >= map->len) {
-                    cli_errmsg("GIF: EOF before the LZW minimum code size, file truncated?\n");
-                    status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.TruncatedImageData");
+                {
+                    size_t bytes_read = gif_readn(map, &lzw_minimum_code_size, offset, sizeof(lzw_minimum_code_size));
+                    if (bytes_read != sizeof(lzw_minimum_code_size)) {
+                        cli_errmsg("GIF: Can't read the LZW minimum code size, file truncated?\n");
+                        status      = gif_read_status(ctx, bytes_read, sizeof(lzw_minimum_code_size), "Heuristics.Broken.Media.GIF.TruncatedLzwMinimumCodeSize");
+                        parse_error = true;
+                        goto scan_overlay;
+                    }
+                }
+                if (lzw_minimum_code_size < 2 || lzw_minimum_code_size > 8) {
+                    cli_errmsg("GIF: Invalid LZW minimum code size: %u\n", (unsigned int)lzw_minimum_code_size);
+                    status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.InvalidLzwMinimumCodeSize");
                     parse_error = true;
                     goto scan_overlay;
                 }
-                offset++; /* Skip over the LZW Minimum Code Size uint8_t */
+                offset += sizeof(lzw_minimum_code_size);
 
                 while (1) {
                     status = cli_checktimelimit(ctx);

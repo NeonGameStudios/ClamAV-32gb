@@ -3,6 +3,22 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## GIF LZW admission and image completion — 2026-08-27
+
+GIF image traversal now reads the required LZW minimum-code-size byte through
+the fixed-range fmap boundary instead of advancing over it without inspection.
+Values outside 2–8 are explicit incomplete/non-cacheable parse failures;
+truncation remains a parse result, while a fully in-range callback failure
+preserves `CL_EREAD` and non-cacheability before any data sub-block is trusted.
+
+The current GIF source compiles warning-clean with the production GCC flags.
+The coherent current-source production-linked harness passes `gif` 9/9,
+`gif_api` 1/1, and `gif_corpus` 1/1. It covers a complete valid one-pixel image,
+both invalid code-size bounds, injected read failure, exact missing-trailer
+behavior, and exact nested matching after the complete image trailer. Complete
+GIF corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## MIME direct-context and first-line admission — 2026-08-27
 
 `cli_mbox()` now rejects a null context or a recognized fmap without the
