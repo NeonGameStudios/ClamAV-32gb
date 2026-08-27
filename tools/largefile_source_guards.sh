@@ -2326,6 +2326,7 @@ contains libclamav/pdfdecode.c 'No later line means there is no fallback stream 
 contains libclamav/pdfdecode.c 'cl_error_t resync_status'
 contains unit_tests/check_clamav.c 'test_pdf_extract_decoder_error_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_pdf_parser_read_failure_is_fail_visible'
+contains unit_tests/check_clamav.c 'test_pdf_null_context_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_pdf_public_api_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_pdf_corpus_detects_embedded_mz'
 contains unit_tests/check_clamav.c 'tcase_create("pdf_corpus")'

@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## PDF direct-entry context evidence — 2026-08-27
+
+The public PDF parser already returned `CL_ENULLARG` for a null context, but
+the focused `pdf_map` TCase only protected its callback-read regression. A
+dedicated null-context check is now registered beside that public API test.
+The current-source production-linked GCC `pdf_map` case passes 2/2 for both
+entry-state/error paths, and the existing `pdf` parser case passes 14/14;
+complete PDF corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
 ## TIFF direct-entry context evidence — 2026-08-27
 
 The TIFF direct parser already returned `CL_ENULLARG` for a null context and

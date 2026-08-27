@@ -26707,6 +26707,12 @@ START_TEST(test_pdf_public_api_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_pdf(tmpdir, NULL, 0), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_pdf_corpus_detects_embedded_mz)
 {
     static const char *const documents[] = {"clam.pdf"};
@@ -41277,6 +41283,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf_corpus, test_pdf_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_pdf_map);
     tcase_add_checked_fixture(tc_pdf_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_pdf_map, test_pdf_null_context_is_fail_visible);
     tcase_add_test(tc_pdf_map, test_pdf_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_hwp3);
     suite_add_tcase(s, tc_hwp3_map);

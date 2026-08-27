@@ -1,5 +1,15 @@
 # Wishlist
 
+## PDF direct-entry context evidence — 2026-08-27
+
+- Add and register a direct null-context regression alongside the existing
+  public PDF map/read-failure test. The current-source production-linked GCC
+  `pdf_map` case passes 2/2 for both entry-state/error paths and the existing
+  `pdf` parser case passes 14/14; complete PDF corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain
+  open.
+
 ## TIFF direct-entry context evidence — 2026-08-27
 
 - Add and register a direct null-context regression alongside the existing
