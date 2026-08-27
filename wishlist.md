@@ -63,8 +63,8 @@
   GCC flags, and the coherent production-linked `mail_map`, `mail`,
   `mail_api`, `mail_partial`, and `mhtml` cases pass 2/2, 10/10, 2/2, 1/1,
   and 4/4. Complete MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
-  materialized large-file, production-CVD/service, Sonic1, and parser-family
-  qualification remain open.
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
 
 ## JPEG SOS and entropy completion audit — 2026-08-27
 
@@ -5832,5 +5832,16 @@ parser-family qualification remain open.
   parser, timeout, resource, or detection results.
 - Current GCC syntax and source guards cover the paths; current-object
   execution, complete PDF/filter corpora, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.
+
+## XLM extracted-image cleanup-status audit — 2026-08-27
+
+- Route XLM drawing-group image temporary-output close and unlink failures
+  through the shared cleanup-status precedence helper, preserving
+  `CL_EWRITE`/`CL_EUNLINK` and earlier parser, resource, timeout, or detection
+  results.
+- Current GCC syntax and source guards cover the path; current-object
+  execution, complete XLM/OLE2 corpora, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, Sonic1, and parser-family
   qualification remain open.

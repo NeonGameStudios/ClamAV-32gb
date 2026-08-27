@@ -11928,3 +11928,14 @@ GCC syntax and source guards cover these paths; current-object execution,
 complete PDF/filter corpora, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and parser-family qualification
 remain open.
+
+## XLM extracted-image cleanup-status audit — 2026-08-27
+
+The XLM drawing-group image path still replaced only clean, verified, or abort
+results when its temporary output close or unlink failed. It now uses the
+shared cleanup-status precedence helper, preserving `CL_EWRITE` and
+`CL_EUNLINK` while retaining earlier image-parser, resource, timeout, or
+detection results. Current GCC syntax and source guards cover the path;
+current-object execution, complete XLM/OLE2 corpora, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.

@@ -4070,6 +4070,8 @@ contains libclamav/xlm_extract.c 'XLM extracted image temporary output could not
 contains libclamav/xlm_extract.c 'XLM extracted image could not be written completely'
 contains libclamav/xlm_extract.c 'XLM extracted image temporary output could not be closed'
 contains libclamav/xlm_extract.c 'XLM extracted image temporary output could not be removed'
+contains libclamav/xlm_extract.c 'cli_merge_cleanup_status(status, CL_EWRITE)'
+contains libclamav/xlm_extract.c 'cli_merge_cleanup_status(status, CL_EUNLINK)'
 contains libclamav/xlm_extract.c 'cli_scan_release_temporary(ctx, temporary_reserved)'
 contains libclamav/xlm_extract.c 'cli_magic_scan_desc_type_reserved(extracted_image_tempfd'
 not_contains libclamav/xlm_extract.c 'cli_magic_scan_buff(start_of_image'

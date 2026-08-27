@@ -4467,15 +4467,13 @@ done:
     if (-1 != extracted_image_tempfd) {
         if (close(extracted_image_tempfd) != 0) {
             cli_mark_scan_incomplete(ctx, "XLM extracted image temporary output could not be closed");
-            if (CL_SUCCESS == status || CL_VERIFIED == status || CL_BREAK == status)
-                status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
     }
     if (NULL != extracted_image_filepath) {
         if (!ctx->engine->keeptmp && cli_unlink(extracted_image_filepath) != CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "XLM extracted image temporary output could not be removed");
-            if (CL_SUCCESS == status || CL_VERIFIED == status || CL_BREAK == status)
-                status = CL_EUNLINK;
+            status = cli_merge_cleanup_status(status, CL_EUNLINK);
         }
         free(extracted_image_filepath);
     }

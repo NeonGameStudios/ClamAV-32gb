@@ -5925,13 +5925,13 @@ fixed-width-integer	libclamav/xlm_extract.c	4259	                uint16_t name =
 fixed-width-integer	libclamav/xlm_extract.c	4303	    uint64_t temporary_reserved    = 0;
 fixed-width-integer	libclamav/xlm_extract.c	4424	        if (cli_scan_reserve_temporary(ctx, (uint64_t)size_of_image) != CL_SUCCESS) {
 fixed-width-integer	libclamav/xlm_extract.c	4429	        temporary_reserved = (uint64_t)size_of_image;
-fixed-width-integer	libclamav/xlm_extract.c	4746	cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char *hash, uint32_t which)
-fixed-width-integer	libclamav/xlm_extract.c	4759	        uint16_t opcode;
-fixed-width-integer	libclamav/xlm_extract.c	4760	        uint16_t length;
-fixed-width-integer	libclamav/xlm_extract.c	4845	                    uint16_t row;
-fixed-width-integer	libclamav/xlm_extract.c	4846	                    uint16_t column;
-fixed-width-integer	libclamav/xlm_extract.c	4847	                    uint16_t length;
-fixed-width-integer	libclamav/xlm_extract.c	5011	                    uint16_t string_length = data[0] | (data[1] << 8);
+fixed-width-integer	libclamav/xlm_extract.c	4744	cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char *hash, uint32_t which)
+fixed-width-integer	libclamav/xlm_extract.c	4757	        uint16_t opcode;
+fixed-width-integer	libclamav/xlm_extract.c	4758	        uint16_t length;
+fixed-width-integer	libclamav/xlm_extract.c	4843	                    uint16_t row;
+fixed-width-integer	libclamav/xlm_extract.c	4844	                    uint16_t column;
+fixed-width-integer	libclamav/xlm_extract.c	4845	                    uint16_t length;
+fixed-width-integer	libclamav/xlm_extract.c	5009	                    uint16_t string_length = data[0] | (data[1] << 8);
 fixed-width-integer	libclamav/xlm_extract.h	47	cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char *hash, uint32_t which);
 fixed-width-integer	libclamav/yara_arena.c	185	    assert(base_offset + offset <= page->used - sizeof(int64_t));
 fixed-width-integer	libclamav/yara_arena.c	51	  uint32_t  size;
@@ -15626,31 +15626,31 @@ native-width-integer	libclamav/xlm_extract.c	4296	cl_error_t process_blip_record
 native-width-integer	libclamav/xlm_extract.c	4302	    int extracted_image_tempfd     = -1;
 native-width-integer	libclamav/xlm_extract.c	4305	    size_t blip_bytes_before_image      = 0; /* the number of bytes between the record header and the image */
 native-width-integer	libclamav/xlm_extract.c	4307	    size_t size_of_image                = 0;
-native-width-integer	libclamav/xlm_extract.c	4496	cl_error_t process_blip_store_container(const unsigned char *blip_store_container, size_t blip_store_container_len, cli_ctx *ctx)
-native-width-integer	libclamav/xlm_extract.c	4502	    size_t remaining           = blip_store_container_len;
-native-width-integer	libclamav/xlm_extract.c	4538	                    size_t embeddedBlip_size;
-native-width-integer	libclamav/xlm_extract.c	4547	                               (size_t)FBSE_record_data->cbName);
-native-width-integer	libclamav/xlm_extract.c	4557	                                                           (size_t)FBSE_record_data->cbName);
-native-width-integer	libclamav/xlm_extract.c	4562	                                        (size_t)FBSE_record_data->cbName;
-native-width-integer	libclamav/xlm_extract.c	4612	cl_error_t cli_extract_images_from_drawing_group(const unsigned char *drawinggroup, size_t drawinggroup_len, cli_ctx *ctx)
-native-width-integer	libclamav/xlm_extract.c	4618	    size_t remaining           = drawinggroup_len;
-native-width-integer	libclamav/xlm_extract.c	4676	            size_t blip_store_container_len                    = remaining - sizeof(struct OfficeArtRecordHeader_PackedLittleEndian);
-native-width-integer	libclamav/xlm_extract.c	4712	                                           size_t *drawinggroup_len,
-native-width-integer	libclamav/xlm_extract.c	4714	                                           size_t data_len,
-native-width-integer	libclamav/xlm_extract.c	4717	    size_t new_len;
-native-width-integer	libclamav/xlm_extract.c	4751	    int in_fd = -1, out_fd = -1;
-native-width-integer	libclamav/xlm_extract.c	4757	    size_t size_read;
-native-width-integer	libclamav/xlm_extract.c	4765	    size_t drawinggroup_len     = 0;
-native-width-integer	libclamav/xlm_extract.c	4901	                        int name_len  = data[3] | (data[4] << 8);
-native-width-integer	libclamav/xlm_extract.c	4902	                        size_t offset = data[14] != 0 ? 14 : 15;
-native-width-integer	libclamav/xlm_extract.c	4903	                        name_len      = min(name_len, (int)(biff_header.length - offset));
-native-width-integer	libclamav/xlm_extract.c	4929	                                                      (size_t)biff_header.length, ctx);
-native-width-integer	libclamav/xlm_extract.c	4937	                                                      (size_t)biff_header.length, ctx);
-native-width-integer	libclamav/xlm_extract.c	4949	                                                      (size_t)biff_header.length, ctx);
-native-width-integer	libclamav/xlm_extract.c	5036	                        size_t text_length = biff_header.length - 3;
-native-width-integer	libclamav/xlm_extract.c	5039	                        if (CL_SUCCESS != (status = xlm_output_printf(&output, " - \"%.*s\"", (int)text_length, &data[3]))) {
-native-width-integer	libclamav/xlm_extract.c	5045	                        size_t utf8_size = 0;
-native-width-integer	libclamav/xlm_extract.c	5098	        if (size_read == (size_t)-1) {
+native-width-integer	libclamav/xlm_extract.c	4494	cl_error_t process_blip_store_container(const unsigned char *blip_store_container, size_t blip_store_container_len, cli_ctx *ctx)
+native-width-integer	libclamav/xlm_extract.c	4500	    size_t remaining           = blip_store_container_len;
+native-width-integer	libclamav/xlm_extract.c	4536	                    size_t embeddedBlip_size;
+native-width-integer	libclamav/xlm_extract.c	4545	                               (size_t)FBSE_record_data->cbName);
+native-width-integer	libclamav/xlm_extract.c	4555	                                                           (size_t)FBSE_record_data->cbName);
+native-width-integer	libclamav/xlm_extract.c	4560	                                        (size_t)FBSE_record_data->cbName;
+native-width-integer	libclamav/xlm_extract.c	4610	cl_error_t cli_extract_images_from_drawing_group(const unsigned char *drawinggroup, size_t drawinggroup_len, cli_ctx *ctx)
+native-width-integer	libclamav/xlm_extract.c	4616	    size_t remaining           = drawinggroup_len;
+native-width-integer	libclamav/xlm_extract.c	4674	            size_t blip_store_container_len                    = remaining - sizeof(struct OfficeArtRecordHeader_PackedLittleEndian);
+native-width-integer	libclamav/xlm_extract.c	4710	                                           size_t *drawinggroup_len,
+native-width-integer	libclamav/xlm_extract.c	4712	                                           size_t data_len,
+native-width-integer	libclamav/xlm_extract.c	4715	    size_t new_len;
+native-width-integer	libclamav/xlm_extract.c	4749	    int in_fd = -1, out_fd = -1;
+native-width-integer	libclamav/xlm_extract.c	4755	    size_t size_read;
+native-width-integer	libclamav/xlm_extract.c	4763	    size_t drawinggroup_len     = 0;
+native-width-integer	libclamav/xlm_extract.c	4899	                        int name_len  = data[3] | (data[4] << 8);
+native-width-integer	libclamav/xlm_extract.c	4900	                        size_t offset = data[14] != 0 ? 14 : 15;
+native-width-integer	libclamav/xlm_extract.c	4901	                        name_len      = min(name_len, (int)(biff_header.length - offset));
+native-width-integer	libclamav/xlm_extract.c	4927	                                                      (size_t)biff_header.length, ctx);
+native-width-integer	libclamav/xlm_extract.c	4935	                                                      (size_t)biff_header.length, ctx);
+native-width-integer	libclamav/xlm_extract.c	4947	                                                      (size_t)biff_header.length, ctx);
+native-width-integer	libclamav/xlm_extract.c	5034	                        size_t text_length = biff_header.length - 3;
+native-width-integer	libclamav/xlm_extract.c	5037	                        if (CL_SUCCESS != (status = xlm_output_printf(&output, " - \"%.*s\"", (int)text_length, &data[3]))) {
+native-width-integer	libclamav/xlm_extract.c	5043	                        size_t utf8_size = 0;
+native-width-integer	libclamav/xlm_extract.c	5096	        if (size_read == (size_t)-1) {
 native-width-integer	libclamav/xz_iface.c	30	void *__xz_wrap_alloc(void *unused, size_t size);
 native-width-integer	libclamav/xz_iface.c	33	void *__xz_wrap_alloc(void *unused, size_t size)
 native-width-integer	libclamav/xz_iface.c	51	int cli_XzInit(struct CLI_XZ *XZ)
@@ -23124,21 +23124,21 @@ format-width	libclamav/xlm_extract.c	4241	                                      
 format-width	libclamav/xlm_extract.c	4261	                if (CL_SUCCESS != (status = xlm_output_printf(output, " NAMEIDX %u", (unsigned)name))) {
 format-width	libclamav/xlm_extract.c	4311	        cli_dbgmsg("process_blip_store_container: Invalid recVer for Blip record header: %u\n", rh->recVer);
 format-width	libclamav/xlm_extract.c	4415	        cli_dbgmsg("Scanning extracted image of size %zu\n", size_of_image);
-format-width	libclamav/xlm_extract.c	4513	            cli_dbgmsg("process_blip_store_container: Invalid recVer for Blip record header: %u\n", rh.recVer);
-format-width	libclamav/xlm_extract.c	4566	                        cli_dbgmsg("process_blip_store_container:   %d > %zu!\n", le32_to_host(FBSE_record_data->size), embeddedBlip_size);
-format-width	libclamav/xlm_extract.c	4642	        cli_dbgmsg("cli_extract_images_from_drawing_group:   %u > %zu\n", rh.recLen, drawinggroup_len);
-format-width	libclamav/xlm_extract.c	4648	    cli_dbgmsg("cli_extract_images_from_drawing_group: Found drawing group of size %u bytes\n", rh.recLen);
-format-width	libclamav/xlm_extract.c	4679	            cli_dbgmsg("cli_extract_images_from_drawing_group:   size: %u bytes, contains: %u file block records\n",
-format-width	libclamav/xlm_extract.c	4684	                cli_dbgmsg("cli_extract_images_from_drawing_group:   %d > %zu!\n", rh.recLen, blip_store_container_len);
-format-width	libclamav/xlm_extract.c	4771	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s_%u", dir, hash, which);
-format-width	libclamav/xlm_extract.c	4857	                                           " - R%dC%d len=%d ",
-format-width	libclamav/xlm_extract.c	4899	                        status = xlm_output_printf(&output, " - built-in-name %u %s", (unsigned)code, name);
-format-width	libclamav/xlm_extract.c	4914	                    cli_dbgmsg("[cli_extract_xlm_macros_and_images] Skipping broken NAME record (length %u)\n", biff_header.length);
-format-width	libclamav/xlm_extract.c	4932	                    // cli_dbgmsg("Collected %zu drawing group bytes\n", drawinggroup_len);
-format-width	libclamav/xlm_extract.c	4940	                    // cli_dbgmsg("Collected %d drawing group bytes\n", biff_header.length);
-format-width	libclamav/xlm_extract.c	4952	                    // cli_dbgmsg("Collected %d image bytes\n", biff_header.length);
-format-width	libclamav/xlm_extract.c	5000	                    cli_dbgmsg("[cli_extract_xlm_macros_and_images] Skipping broken BOUNDSHEET record (length %u)\n", biff_header.length);
-format-width	libclamav/xlm_extract.c	5073	                    cli_dbgmsg("[cli_extract_xlm_macros_and_images] Skipping broken STRING record (length %u)\n", biff_header.length);
+format-width	libclamav/xlm_extract.c	4511	            cli_dbgmsg("process_blip_store_container: Invalid recVer for Blip record header: %u\n", rh.recVer);
+format-width	libclamav/xlm_extract.c	4564	                        cli_dbgmsg("process_blip_store_container:   %d > %zu!\n", le32_to_host(FBSE_record_data->size), embeddedBlip_size);
+format-width	libclamav/xlm_extract.c	4640	        cli_dbgmsg("cli_extract_images_from_drawing_group:   %u > %zu\n", rh.recLen, drawinggroup_len);
+format-width	libclamav/xlm_extract.c	4646	    cli_dbgmsg("cli_extract_images_from_drawing_group: Found drawing group of size %u bytes\n", rh.recLen);
+format-width	libclamav/xlm_extract.c	4677	            cli_dbgmsg("cli_extract_images_from_drawing_group:   size: %u bytes, contains: %u file block records\n",
+format-width	libclamav/xlm_extract.c	4682	                cli_dbgmsg("cli_extract_images_from_drawing_group:   %d > %zu!\n", rh.recLen, blip_store_container_len);
+format-width	libclamav/xlm_extract.c	4769	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s_%u", dir, hash, which);
+format-width	libclamav/xlm_extract.c	4855	                                           " - R%dC%d len=%d ",
+format-width	libclamav/xlm_extract.c	4897	                        status = xlm_output_printf(&output, " - built-in-name %u %s", (unsigned)code, name);
+format-width	libclamav/xlm_extract.c	4912	                    cli_dbgmsg("[cli_extract_xlm_macros_and_images] Skipping broken NAME record (length %u)\n", biff_header.length);
+format-width	libclamav/xlm_extract.c	4930	                    // cli_dbgmsg("Collected %zu drawing group bytes\n", drawinggroup_len);
+format-width	libclamav/xlm_extract.c	4938	                    // cli_dbgmsg("Collected %d drawing group bytes\n", biff_header.length);
+format-width	libclamav/xlm_extract.c	4950	                    // cli_dbgmsg("Collected %d image bytes\n", biff_header.length);
+format-width	libclamav/xlm_extract.c	4998	                    cli_dbgmsg("[cli_extract_xlm_macros_and_images] Skipping broken BOUNDSHEET record (length %u)\n", biff_header.length);
+format-width	libclamav/xlm_extract.c	5071	                    cli_dbgmsg("[cli_extract_xlm_macros_and_images] Skipping broken STRING record (length %u)\n", biff_header.length);
 format-width	libclamav/yara_exec.c	209	  cli_dbgmsg("yara_exec: beginning execution for lsig %u (%s)\n", aclsig->id, aclsig->virname);
 format-width	libclamav/yara_exec.c	222	    cli_dbgmsg("yara_exec: executing %d\n", *ip);
 format-width	libclamav/yara_exec.c	997	        cli_dbgmsg("yara_exec: unknown YARA opcode %u\n", (unsigned int)*ip);
@@ -33531,53 +33531,53 @@ offset-size-arithmetic	libclamav/xlm_extract.c	4413	        size_of_image  = MIN
 offset-size-arithmetic	libclamav/xlm_extract.c	4457	    if (remaining < sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh->recLen) {
 offset-size-arithmetic	libclamav/xlm_extract.c	4460	        remaining -= sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh->recLen;
 offset-size-arithmetic	libclamav/xlm_extract.c	4461	        index += sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh->recLen;
-offset-size-arithmetic	libclamav/xlm_extract.c	4496	cl_error_t process_blip_store_container(const unsigned char *blip_store_container, size_t blip_store_container_len, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/xlm_extract.c	4528	            if (sizeof(struct OfficeArtFBSE_PackedLittleEndian) > remaining - sizeof(struct OfficeArtRecordHeader_PackedLittleEndian)) {
-offset-size-arithmetic	libclamav/xlm_extract.c	4533	                if (FBSE_record_data->cbName > remaining - sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) - sizeof(struct OfficeArtFBSE_PackedLittleEndian)) {
-offset-size-arithmetic	libclamav/xlm_extract.c	4545	                                        sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) +
-offset-size-arithmetic	libclamav/xlm_extract.c	4547	                               (size_t)FBSE_record_data->cbName);
-offset-size-arithmetic	libclamav/xlm_extract.c	4555	                                                           sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) +
-offset-size-arithmetic	libclamav/xlm_extract.c	4556	                                                           sizeof(struct OfficeArtFBSE_PackedLittleEndian) +
-offset-size-arithmetic	libclamav/xlm_extract.c	4557	                                                           (size_t)FBSE_record_data->cbName);
-offset-size-arithmetic	libclamav/xlm_extract.c	4559	                    embeddedBlip_size = remaining -
-offset-size-arithmetic	libclamav/xlm_extract.c	4560	                                        sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) -
-offset-size-arithmetic	libclamav/xlm_extract.c	4561	                                        sizeof(struct OfficeArtFBSE_PackedLittleEndian) -
-offset-size-arithmetic	libclamav/xlm_extract.c	4562	                                        (size_t)FBSE_record_data->cbName;
-offset-size-arithmetic	libclamav/xlm_extract.c	4568	                        /* limit embeddedBlip_size to the size of what's actually left */
-offset-size-arithmetic	libclamav/xlm_extract.c	4569	                        embeddedBlip_size = le32_to_host(FBSE_record_data->size);
-offset-size-arithmetic	libclamav/xlm_extract.c	4597	        if (remaining < sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen) {
-offset-size-arithmetic	libclamav/xlm_extract.c	4600	            remaining -= sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen;
-offset-size-arithmetic	libclamav/xlm_extract.c	4601	            index += sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen;
-offset-size-arithmetic	libclamav/xlm_extract.c	4612	cl_error_t cli_extract_images_from_drawing_group(const unsigned char *drawinggroup, size_t drawinggroup_len, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/xlm_extract.c	4634	        /* Invalid record values for drawing group record header */
-offset-size-arithmetic	libclamav/xlm_extract.c	4640	        /* Record header claims to be longer than our drawing group buffer */
-offset-size-arithmetic	libclamav/xlm_extract.c	4675	            const unsigned char *start_of_blip_store_container = index + sizeof(struct OfficeArtRecordHeader_PackedLittleEndian);
-offset-size-arithmetic	libclamav/xlm_extract.c	4676	            size_t blip_store_container_len                    = remaining - sizeof(struct OfficeArtRecordHeader_PackedLittleEndian);
-offset-size-arithmetic	libclamav/xlm_extract.c	4686	                /* limit rgfb enumeration to the size of the blip store */
-offset-size-arithmetic	libclamav/xlm_extract.c	4696	        if (remaining < sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen) {
-offset-size-arithmetic	libclamav/xlm_extract.c	4699	            remaining -= sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen;
-offset-size-arithmetic	libclamav/xlm_extract.c	4700	            index += sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen;
-offset-size-arithmetic	libclamav/xlm_extract.c	4711	static cl_error_t xlm_append_drawing_group(unsigned char **drawinggroup,
-offset-size-arithmetic	libclamav/xlm_extract.c	4712	                                           size_t *drawinggroup_len,
-offset-size-arithmetic	libclamav/xlm_extract.c	4723	    if (*drawinggroup_len > CLI_MAX_ALLOCATION || data_len > CLI_MAX_ALLOCATION - *drawinggroup_len) {
-offset-size-arithmetic	libclamav/xlm_extract.c	4724	        cli_mark_scan_incomplete(ctx, "XLM drawing-group data exceeds the contiguous parser allocation ceiling");
-offset-size-arithmetic	libclamav/xlm_extract.c	4728	    new_len = *drawinggroup_len + data_len;
-offset-size-arithmetic	libclamav/xlm_extract.c	4735	        cli_mark_scan_incomplete(ctx, "XLM drawing-group data could not be allocated");
-offset-size-arithmetic	libclamav/xlm_extract.c	4772	    fullname[sizeof(fullname) - 1] = '\0';
-offset-size-arithmetic	libclamav/xlm_extract.c	4806	    if (CL_SUCCESS != (status = xlm_output_write(&output, FILE_HEADER, sizeof(FILE_HEADER) - 1))) {
-offset-size-arithmetic	libclamav/xlm_extract.c	4817	        if (biff_header.opcode < sizeof(OPCODE_NAMES) / sizeof(OPCODE_NAMES[0])) {
-offset-size-arithmetic	libclamav/xlm_extract.c	4853	                    formula_header.length = data[20] | (data[21] << 8);
-offset-size-arithmetic	libclamav/xlm_extract.c	4865	                    ret = parse_formula(&output, &data[22], biff_header.length - 21);
-offset-size-arithmetic	libclamav/xlm_extract.c	4901	                        int name_len  = data[3] | (data[4] << 8);
-offset-size-arithmetic	libclamav/xlm_extract.c	4903	                        name_len      = min(name_len, (int)(biff_header.length - offset));
-offset-size-arithmetic	libclamav/xlm_extract.c	4927	                    /* Found beginning of a drawing group */
-offset-size-arithmetic	libclamav/xlm_extract.c	4935	                    /* already found the beginning of a drawing group, extract the remaining chunks */
-offset-size-arithmetic	libclamav/xlm_extract.c	5011	                    uint16_t string_length = data[0] | (data[1] << 8);
-offset-size-arithmetic	libclamav/xlm_extract.c	5036	                        size_t text_length = biff_header.length - 3;
-offset-size-arithmetic	libclamav/xlm_extract.c	5052	                        if (string_length > biff_header.length - 3) {
-offset-size-arithmetic	libclamav/xlm_extract.c	5053	                            string_length = biff_header.length - 3;
-offset-size-arithmetic	libclamav/xlm_extract.c	5098	        if (size_read == (size_t)-1) {
-offset-size-arithmetic	libclamav/xlm_extract.c	5142	            cli_mark_scan_incomplete(ctx, "XLM drawing-group image extraction did not complete");
+offset-size-arithmetic	libclamav/xlm_extract.c	4494	cl_error_t process_blip_store_container(const unsigned char *blip_store_container, size_t blip_store_container_len, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/xlm_extract.c	4526	            if (sizeof(struct OfficeArtFBSE_PackedLittleEndian) > remaining - sizeof(struct OfficeArtRecordHeader_PackedLittleEndian)) {
+offset-size-arithmetic	libclamav/xlm_extract.c	4531	                if (FBSE_record_data->cbName > remaining - sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) - sizeof(struct OfficeArtFBSE_PackedLittleEndian)) {
+offset-size-arithmetic	libclamav/xlm_extract.c	4543	                                        sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) +
+offset-size-arithmetic	libclamav/xlm_extract.c	4545	                               (size_t)FBSE_record_data->cbName);
+offset-size-arithmetic	libclamav/xlm_extract.c	4553	                                                           sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) +
+offset-size-arithmetic	libclamav/xlm_extract.c	4554	                                                           sizeof(struct OfficeArtFBSE_PackedLittleEndian) +
+offset-size-arithmetic	libclamav/xlm_extract.c	4555	                                                           (size_t)FBSE_record_data->cbName);
+offset-size-arithmetic	libclamav/xlm_extract.c	4557	                    embeddedBlip_size = remaining -
+offset-size-arithmetic	libclamav/xlm_extract.c	4558	                                        sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) -
+offset-size-arithmetic	libclamav/xlm_extract.c	4559	                                        sizeof(struct OfficeArtFBSE_PackedLittleEndian) -
+offset-size-arithmetic	libclamav/xlm_extract.c	4560	                                        (size_t)FBSE_record_data->cbName;
+offset-size-arithmetic	libclamav/xlm_extract.c	4566	                        /* limit embeddedBlip_size to the size of what's actually left */
+offset-size-arithmetic	libclamav/xlm_extract.c	4567	                        embeddedBlip_size = le32_to_host(FBSE_record_data->size);
+offset-size-arithmetic	libclamav/xlm_extract.c	4595	        if (remaining < sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen) {
+offset-size-arithmetic	libclamav/xlm_extract.c	4598	            remaining -= sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen;
+offset-size-arithmetic	libclamav/xlm_extract.c	4599	            index += sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen;
+offset-size-arithmetic	libclamav/xlm_extract.c	4610	cl_error_t cli_extract_images_from_drawing_group(const unsigned char *drawinggroup, size_t drawinggroup_len, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/xlm_extract.c	4632	        /* Invalid record values for drawing group record header */
+offset-size-arithmetic	libclamav/xlm_extract.c	4638	        /* Record header claims to be longer than our drawing group buffer */
+offset-size-arithmetic	libclamav/xlm_extract.c	4673	            const unsigned char *start_of_blip_store_container = index + sizeof(struct OfficeArtRecordHeader_PackedLittleEndian);
+offset-size-arithmetic	libclamav/xlm_extract.c	4674	            size_t blip_store_container_len                    = remaining - sizeof(struct OfficeArtRecordHeader_PackedLittleEndian);
+offset-size-arithmetic	libclamav/xlm_extract.c	4684	                /* limit rgfb enumeration to the size of the blip store */
+offset-size-arithmetic	libclamav/xlm_extract.c	4694	        if (remaining < sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen) {
+offset-size-arithmetic	libclamav/xlm_extract.c	4697	            remaining -= sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen;
+offset-size-arithmetic	libclamav/xlm_extract.c	4698	            index += sizeof(struct OfficeArtRecordHeader_PackedLittleEndian) + rh.recLen;
+offset-size-arithmetic	libclamav/xlm_extract.c	4709	static cl_error_t xlm_append_drawing_group(unsigned char **drawinggroup,
+offset-size-arithmetic	libclamav/xlm_extract.c	4710	                                           size_t *drawinggroup_len,
+offset-size-arithmetic	libclamav/xlm_extract.c	4721	    if (*drawinggroup_len > CLI_MAX_ALLOCATION || data_len > CLI_MAX_ALLOCATION - *drawinggroup_len) {
+offset-size-arithmetic	libclamav/xlm_extract.c	4722	        cli_mark_scan_incomplete(ctx, "XLM drawing-group data exceeds the contiguous parser allocation ceiling");
+offset-size-arithmetic	libclamav/xlm_extract.c	4726	    new_len = *drawinggroup_len + data_len;
+offset-size-arithmetic	libclamav/xlm_extract.c	4733	        cli_mark_scan_incomplete(ctx, "XLM drawing-group data could not be allocated");
+offset-size-arithmetic	libclamav/xlm_extract.c	4770	    fullname[sizeof(fullname) - 1] = '\0';
+offset-size-arithmetic	libclamav/xlm_extract.c	4804	    if (CL_SUCCESS != (status = xlm_output_write(&output, FILE_HEADER, sizeof(FILE_HEADER) - 1))) {
+offset-size-arithmetic	libclamav/xlm_extract.c	4815	        if (biff_header.opcode < sizeof(OPCODE_NAMES) / sizeof(OPCODE_NAMES[0])) {
+offset-size-arithmetic	libclamav/xlm_extract.c	4851	                    formula_header.length = data[20] | (data[21] << 8);
+offset-size-arithmetic	libclamav/xlm_extract.c	4863	                    ret = parse_formula(&output, &data[22], biff_header.length - 21);
+offset-size-arithmetic	libclamav/xlm_extract.c	4899	                        int name_len  = data[3] | (data[4] << 8);
+offset-size-arithmetic	libclamav/xlm_extract.c	4901	                        name_len      = min(name_len, (int)(biff_header.length - offset));
+offset-size-arithmetic	libclamav/xlm_extract.c	4925	                    /* Found beginning of a drawing group */
+offset-size-arithmetic	libclamav/xlm_extract.c	4933	                    /* already found the beginning of a drawing group, extract the remaining chunks */
+offset-size-arithmetic	libclamav/xlm_extract.c	5009	                    uint16_t string_length = data[0] | (data[1] << 8);
+offset-size-arithmetic	libclamav/xlm_extract.c	5034	                        size_t text_length = biff_header.length - 3;
+offset-size-arithmetic	libclamav/xlm_extract.c	5050	                        if (string_length > biff_header.length - 3) {
+offset-size-arithmetic	libclamav/xlm_extract.c	5051	                            string_length = biff_header.length - 3;
+offset-size-arithmetic	libclamav/xlm_extract.c	5096	        if (size_read == (size_t)-1) {
+offset-size-arithmetic	libclamav/xlm_extract.c	5140	            cli_mark_scan_incomplete(ctx, "XLM drawing-group image extraction did not complete");
 offset-size-arithmetic	libclamav/xz_iface.h	49	#endif /* __XZ_IFACE_H */
 offset-size-arithmetic	libclamav/yara_arena.c	1064	  while (reloc_offset != -1)
 offset-size-arithmetic	libclamav/yara_arena.c	1072	      *reloc_address += (size_t) page->address;
