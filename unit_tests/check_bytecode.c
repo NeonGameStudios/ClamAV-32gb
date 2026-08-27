@@ -33,6 +33,9 @@
 #include <check.h>
 #include <fcntl.h>
 #include <errno.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 // libclamav
 #include "clamav.h"
@@ -49,6 +52,12 @@
 
 #ifdef CL_THREAD_SAFE
 #include <pthread.h>
+#endif
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+extern int clamav_test_fail_write;
+extern int clamav_test_short_write;
+extern size_t clamav_test_short_write_count;
 #endif
 
 static void runtest(const char *file, uint64_t expected, int fail, int nojit,
@@ -946,7 +955,7 @@ START_TEST(test_bytecode_output_uses_64bit_accounting_and_temporary_quota)
     ck_assert_uint_eq(bcctx->written, sizeof(payload));
     ck_assert_uint_eq(bcctx->temporary_reserved, sizeof(payload));
     ck_assert_uint_eq(cctx.temporary_bytes, sizeof(payload));
-    ck_assert_int_eq(cli_bcapi_extract_new(bcctx, 0), -1);
+    ck_assert_int_eq(cli_bcapi_extract_new(bcctx, 0), CL_EWRITE);
     replacement_fd = open("/dev/null", O_WRONLY | O_BINARY);
     ck_assert_int_gt(replacement_fd, -1);
     bcctx->outfd = replacement_fd;
@@ -979,6 +988,56 @@ START_TEST(test_bytecode_output_uses_64bit_accounting_and_temporary_quota)
     cl_engine_free(engine);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_bytecode_output_short_write_preserves_materialized_budget)
+{
+    struct cl_engine *engine;
+    struct cli_bc_ctx *bcctx;
+    cli_ctx cctx;
+    uint8_t payload[5] = {0, 1, 2, 3, 4};
+    uint8_t materialized[2];
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 8), CL_SUCCESS);
+
+    memset(&cctx, 0, sizeof(cctx));
+    cctx.engine = engine;
+    bcctx       = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+
+    clamav_test_short_write       = 1;
+    clamav_test_short_write_count = 2;
+    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
+    clamav_test_short_write       = 0;
+    clamav_test_short_write_count = 0;
+
+    ck_assert(cctx.scan_incomplete);
+    ck_assert_uint_eq(bcctx->written, 2);
+    ck_assert_uint_eq(bcctx->temporary_reserved, 2);
+    ck_assert_uint_eq(cctx.temporary_bytes, 2);
+    ck_assert_int_eq(lseek(bcctx->outfd, 0, SEEK_SET), 0);
+    ck_assert_int_eq(read(bcctx->outfd, materialized, sizeof(materialized)), sizeof(materialized));
+    ck_assert_int_eq(memcmp(materialized, payload, sizeof(materialized)), 0);
+
+    cli_bytecode_context_destroy(bcctx);
+    ck_assert_uint_eq(cctx.temporary_bytes, 0);
+    cl_engine_free(engine);
+}
+END_TEST
+
+START_TEST(test_bytecode_output_write_failure_propagates_from_runner)
+{
+    clamav_test_fail_write = 1;
+    cl_init(CL_INIT_DEFAULT);
+    runtest("input" PATHSEP "bytecode_sigs" PATHSEP "api_extract_7.cbc", 0, CL_EWRITE, 0,
+            "input" PATHSEP "bytecode_scanfiles" PATHSEP "apitestfile", NULL, NULL, NULL, 0);
+    clamav_test_fail_write = 0;
+}
+END_TEST
+#endif
 
 START_TEST(test_bytecode_jsnorm_limit_failure_releases_input)
 {
@@ -1802,6 +1861,10 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_v1_read_rejects_invalid_offsets);
     tcase_add_test(tc_cli_read, test_bytecode_v1_coordinate_narrowing_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cli_read, test_bytecode_output_short_write_preserves_materialized_budget);
+    tcase_add_test(tc_cli_read, test_bytecode_output_write_failure_propagates_from_runner);
+#endif
     tcase_add_test(tc_cli_read, test_bytecode_jsnorm_limit_failure_releases_input);
     tcase_add_test(tc_cli_valid_loader, test_bytecode_loader_accepts_valid_fixture);
     tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_truncated_records);

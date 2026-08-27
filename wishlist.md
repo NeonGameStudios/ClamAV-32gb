@@ -1,5 +1,27 @@
 # Wishlist
 
+## Bytecode output ownership and status propagation audit — 2026-08-27
+
+- Keep partial bytecode writes fail-visible while retaining only the
+  physically materialized prefix in `written` and `temporary_reserved`; the
+  unmaterialized suffix must be released immediately and all remaining
+  reservation must be released by context cleanup.
+- Keep `cli_bcapi_extract_new()` on its existing `int32_t` callback ABI while
+  returning exact ClamAV status codes, and preserve those output failures
+  through both interpreter/JIT runner paths. Truncation failures must upgrade
+  `CL_VERIFIED` and `CL_BREAK` as well as clean status.
+- Keep `cli_bytecode_runhook()` as the sole owner of bytecode output handoff,
+  rewind, nested scan, reservation release, and cleanup; Mach-O must not
+  reclaim a result a second time.
+- The current-source production-linked bytecode regressions pass for
+  materialized short-write accounting and runner-level write-failure
+  propagation. Rebuilt Mach-O cases pass `macho_fat` 2/2,
+  `macho_sections` 1/1, `macho_corpus` 2/2, `macho_unsupported` 2/2,
+  `macho_map` 1/1, and `macho_boundary` 1/1. Keep complete bytecode
+  fixture/interpreter/JIT and output-fault coverage, sanitizer, certified
+  Linux x86-64, materialized large-file/resource, production-CVD/service,
+  Sonic1, and final parser-family qualification open.
+
 ## LHA/LZH completion and header-allocation audit — 2026-08-27
 
 - Keep every parsed header under the cumulative 1 GiB fallible allocation

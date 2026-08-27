@@ -339,6 +339,8 @@ uint32_t cli_bcapi_disasm_x86(struct cli_bc_ctx *ctx, struct DISASM_RESULT *res,
 int32_t cli_bcapi_write(struct cli_bc_ctx *ctx, uint8_t *data, int32_t len)
 {
     char err[128];
+    size_t materialized;
+    size_t unmaterialized;
     size_t res;
     uint64_t write_len;
 
@@ -408,12 +410,27 @@ int32_t cli_bcapi_write(struct cli_bc_ctx *ctx, uint8_t *data, int32_t len)
         else
             cli_warnmsg("Bytecode API: short write: %zu of " STDu64 " bytes\n", res, write_len);
         cli_event_error_str(EV, "cli_bcapi_write: write failed");
+
+        /* cli_writen() returns the prefix which reached the file for a
+         * short write. Keep that prefix charged to the shared temporary
+         * budget until the context owns and cleans up the output. Releasing
+         * the full request here would make materialized bytes invisible to
+         * resource accounting while the temporary file still contains them. */
+        materialized = res == (size_t)-1 || res > (size_t)len ? 0 : res;
+        unmaterialized = (size_t)write_len - materialized;
         if (cctx) {
-            if (ctx->temporary_reserved >= write_len) {
-                cli_scan_release_temporary(cctx, write_len);
-                ctx->temporary_reserved -= write_len;
+            if (unmaterialized) {
+                if (ctx->temporary_reserved < unmaterialized) {
+                    cli_bcapi_mark_map_read_error(ctx, "Bytecode temporary output accounting underflowed");
+                } else {
+                    cli_scan_release_temporary(cctx, unmaterialized);
+                    ctx->temporary_reserved -= unmaterialized;
+                }
             }
             cli_mark_scan_incomplete(cctx, "Bytecode temporary output could not be written completely");
+        }
+        if (materialized) {
+            ctx->written += (uint64_t)materialized;
         }
         ctx->output_failed = 1;
         return -1;
@@ -761,21 +778,29 @@ int32_t cli_bcapi_fill_buffer(struct cli_bc_ctx *ctx, uint8_t *buf,
 int32_t cli_bcapi_extract_new(struct cli_bc_ctx *ctx, int32_t id)
 {
     cli_ctx *cctx;
-    cl_error_t res = (cl_error_t)-1;
+    cl_error_t res;
+    cl_error_t limit_ret;
     bool discard_output;
 
     cctx = (cli_ctx *)ctx->ctx;
     if (ctx->output_failed) {
         cli_bcapi_mark_map_read_error(ctx, "Bytecode extracted output was incomplete");
-        return -1;
+        return CL_EWRITE;
     }
 
     cli_event_count(EV, BCEV_EXTRACTED);
     cli_dbgmsg("previous tempfile had " STDu64 " bytes\n", ctx->written);
     if (!ctx->written)
         return 0;
-    if (ctx->ctx && cli_updatelimits(ctx->ctx, ctx->written))
-        return -1;
+    if (ctx->ctx) {
+        limit_ret = cli_updatelimits(ctx->ctx, ctx->written);
+        if (limit_ret != CL_SUCCESS)
+            return (int32_t)limit_ret;
+        res = CL_SUCCESS;
+    } else {
+        cli_bcapi_mark_map_read_error(ctx, "Bytecode extracted output has no scan context");
+        return CL_ENULLARG;
+    }
     ctx->written = 0;
     if (lseek(ctx->outfd, 0, SEEK_SET) == -1) {
         cli_dbgmsg("bytecode: call to lseek() has failed\n");

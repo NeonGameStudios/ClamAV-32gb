@@ -972,10 +972,7 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
 cl_error_t cli_unpackmacho(cli_ctx *ctx)
 {
     cl_error_t ret = CL_SUCCESS;
-    char *tempfile = NULL;
-    int ndesc      = -1;
-    uint64_t temporary_reserved = 0;
-    struct cli_bc_ctx *bc_ctx;
+    struct cli_bc_ctx *bc_ctx = NULL;
 
     if (ctx == NULL)
         return CL_ENULLARG;
@@ -991,8 +988,7 @@ cl_error_t cli_unpackmacho(cli_ctx *ctx)
     if (!bc_ctx) {
         cli_errmsg("cli_unpackmacho: can't allocate memory for bc_ctx\n");
         cli_mark_scan_incomplete(ctx, "Mach-O bytecode unpacker context could not be allocated");
-        ret = CL_EMEM;
-        goto done;
+        return CL_EMEM;
     }
 
     cli_bytecode_context_setctx(bc_ctx, ctx);
@@ -1000,51 +996,6 @@ cl_error_t cli_unpackmacho(cli_ctx *ctx)
     cli_dbgmsg("Running bytecode hook\n");
     ret = cli_bytecode_runhook(ctx, ctx->engine, bc_ctx, BC_MACHO_UNPACKER, ctx->fmap);
     cli_dbgmsg("Finished running bytecode hook\n");
-    if (CL_SUCCESS == ret) {
-        // check for unpacked/rebuilt executable
-        ndesc = cli_bytecode_context_getresult_file(bc_ctx, &tempfile, &temporary_reserved);
-        if (ndesc != -1 && tempfile) {
-            cli_dbgmsg("cli_unpackmacho: Unpacked and rebuilt Mach-O executable saved in %s\n", tempfile);
-
-            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {
-                cli_mark_scan_incomplete(ctx, "Mach-O unpacked output could not be rewound");
-                ret = CL_ESEEK;
-            } else {
-                cli_dbgmsg("***** Scanning rebuilt Mach-O file *****\n");
-                if (temporary_reserved)
-                    ret = cli_magic_scan_desc_type_reserved(ndesc, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
-                else
-                    ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
-            }
-        }
-    }
-
-done:
-    // cli_bytecode_context_getresult_file() gives up ownership of temp file, so we must clean it up.
-    if (-1 != ndesc) {
-        if (close(ndesc) != 0) {
-            cli_mark_scan_incomplete(ctx, "Mach-O unpacked output could not be closed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
-                ret = CL_EWRITE;
-        }
-    }
-    if (NULL != tempfile) {
-        if (!ctx->engine->keeptmp) {
-            if (cli_unlink(tempfile) != 0) {
-                cli_mark_scan_incomplete(ctx, "Mach-O unpacked output could not be removed");
-                if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
-                    ret = CL_EUNLINK;
-            }
-        }
-        free(tempfile);
-    }
-
-    if (temporary_reserved)
-        cli_scan_release_temporary(ctx, temporary_reserved);
-
-    if (NULL != bc_ctx) {
-        cli_bytecode_context_destroy(bc_ctx);
-    }
-
+    cli_bytecode_context_destroy(bc_ctx);
     return ret;
 }

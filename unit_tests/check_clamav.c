@@ -105,6 +105,8 @@
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 extern int clamav_test_fail_write;
 extern int clamav_test_fail_close;
+extern int clamav_test_short_write;
+extern size_t clamav_test_short_write_count;
 #endif
 
 #ifdef CLAMAV_TEST_MALLOC_WRAP

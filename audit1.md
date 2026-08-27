@@ -1,5 +1,39 @@
 # Independent read-only audit of audit.md
 
+## Bytecode output ownership and status propagation audit — 2026-08-27
+
+The bytecode output bridge had two production-relevant accounting gaps. A
+short write released the full requested temporary reservation even when a
+prefix had reached the file, and `cli_bytecode_run()` discarded the return
+value from the final `extract_new()` call. The Mach-O unpacker also retained a
+second output owner after the shared bytecode hook runner had already taken
+ownership of the result.
+
+`cli_bcapi_write()` now retains the physically materialized prefix in both
+`ctx->written` and the shared temporary budget, releasing only the
+unmaterialized suffix until context cleanup. `cli_bcapi_extract_new()` keeps
+the bytecode callback's `int32_t` ABI while returning exact ClamAV status
+codes for output, limit, seek, scan, and cleanup failures. The runner merges
+those statuses across interpreter/JIT execution, and the hook cleanup path
+also upgrades `CL_VERIFIED` and `CL_BREAK` when truncation fails. `cli_unpackmacho()`
+now delegates rewind, nested scanning, reservation release, and cleanup to
+that shared runner, leaving one output owner.
+
+The edited bytecode API, bytecode runner, Mach-O source, and regression
+translation units compile with the established warning-enabled GCC commands.
+The isolated production-linked bytecode map-read run records the new
+materialized-short-write and runner-propagation cases as passed. Rebuilt
+Mach-O production-linked cases pass `macho_fat` 2/2, `macho_sections` 1/1,
+`macho_corpus` 2/2, `macho_unsupported` 2/2, `macho_map` 1/1, and
+`macho_boundary` 1/1. Source guards, the 190-entry capability manifest, and
+regenerated inventory pass. Three older bytecode map-read cases still hit the
+known mixed old/current `cli_ctx` ABI crash in the reused harness; they are
+not attributed to this change.
+
+Complete bytecode fixture/interpreter/JIT, output fault matrix, sanitizer,
+certified Linux x86-64, materialized large-file/resource, production-CVD/
+service, Sonic1, and parser-family qualification remain open.
+
 ## LHA/LZH completion and header-allocation audit — 2026-08-27
 
 The enabled LHA path had five independent completion gaps. The decoder treated

@@ -2454,6 +2454,7 @@ static int register_events(cli_events_t *ev)
 cl_error_t cli_bytecode_run(const struct cli_all_bc *bcs, const struct cli_bc *bc, struct cli_bc_ctx *ctx)
 {
     cl_error_t ret = CL_SUCCESS;
+    cl_error_t output_ret = CL_SUCCESS;
     struct cli_bc_inst inst;
     struct cli_bc_func func;
     cli_events_t *jit_ev = NULL, *interp_ev = NULL;
@@ -2531,8 +2532,11 @@ cl_error_t cli_bytecode_run(const struct cli_all_bc *bcs, const struct cli_bc *b
         cli_event_string(interp_ev, BCEV_VIRUSNAME, ctx->virname);
 
         /* need to be called here to catch any extracted but not yet scanned files */
-        if (ctx->outfd != -1 && (ret != CL_VIRUS))
-            cli_bcapi_extract_new(ctx, -1);
+        if (ctx->outfd != -1 && (ret != CL_VIRUS)) {
+            output_ret = (cl_error_t)cli_bcapi_extract_new(ctx, -1);
+            if (output_ret == (cl_error_t)-1)
+                output_ret = CL_EWRITE;
+        }
     }
     if (bc->state == bc_jit || test_mode) {
         if (test_mode) {
@@ -2550,9 +2554,17 @@ cl_error_t cli_bytecode_run(const struct cli_all_bc *bcs, const struct cli_bc *b
         cli_event_string(jit_ev, BCEV_VIRUSNAME, ctx->virname);
 
         /* need to be called here to catch any extracted but not yet scanned files */
-        if (ctx->outfd != -1 && (ret != CL_VIRUS))
-            cli_bcapi_extract_new(ctx, -1);
+        if (ctx->outfd != -1 && (ret != CL_VIRUS)) {
+            cl_error_t extract_ret = (cl_error_t)cli_bcapi_extract_new(ctx, -1);
+            if (extract_ret == (cl_error_t)-1)
+                extract_ret = CL_EWRITE;
+            if (output_ret == CL_SUCCESS)
+                output_ret = extract_ret;
+        }
     }
+    if (output_ret != CL_SUCCESS &&
+        (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK))
+        ret = output_ret;
     cli_event_time_stop(g_sigevents, bc->sigtime_id);
     if (ctx->virname)
         cli_event_count(g_sigevents, bc->sigmatch_id);
@@ -3788,7 +3800,7 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
                     if (ftruncate(fd, 0) == -1) {
                         cli_dbgmsg("ftruncate failed on %d\n", fd);
                         cli_mark_scan_incomplete(cctx, "Bytecode unpacked output could not be truncated");
-                        if (ret == CL_SUCCESS)
+                        if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
                             ret = CL_EWRITE;
                     }
                 }

@@ -217,11 +217,18 @@ static int jsnorm_test_fail_write;
 static int jsnorm_test_fail_close;
 int clamav_test_fail_write;
 int clamav_test_fail_close;
+int clamav_test_short_write;
+size_t clamav_test_short_write_count;
 
 size_t __wrap_cli_writen(int fd, const void *buff, size_t count)
 {
     if (jsnorm_test_fail_write || clamav_test_fail_write)
         return 0;
+    if (clamav_test_short_write) {
+        size_t short_count = clamav_test_short_write_count < count ? clamav_test_short_write_count : count;
+        size_t written = __real_cli_writen(fd, buff, short_count);
+        return written == short_count ? short_count : written;
+    }
     return __real_cli_writen(fd, buff, count);
 }
 
