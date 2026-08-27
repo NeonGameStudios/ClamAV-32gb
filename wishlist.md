@@ -5894,3 +5894,13 @@ parser-family qualification remain open.
   execution, complete InstallShield corpus, sanitizer, certified Linux
   x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification remain open.
+
+## RAR archive-comment output cleanup audit — 2026-08-27
+
+- Preserve RAR `keeptmp` archive-comment output-open, output-close, and
+  temporary-directory removal failures as fail-visible incomplete results,
+  while retaining earlier timeout, parser/resource, or detection results.
+- Current RAR GCC syntax and source guards cover the paths; optional-backend
+  execution, complete RAR corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.

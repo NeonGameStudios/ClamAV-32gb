@@ -11994,3 +11994,15 @@ canonical-header GCC syntax check and guards cover the path; current-object
 execution, complete InstallShield corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and parser-family
 qualification remain open.
+
+## RAR archive-comment output cleanup audit — 2026-08-27
+
+RAR `keeptmp` comment staging previously allowed output-open and output-close
+failures to disappear from the returned status, and ignored the final comment
+temporary-directory removal result. These failures now mark the scan
+incomplete and merge `CL_ECREAT`, `CL_EWRITE`, or `CL_EUNLINK` without hiding
+an earlier timeout, parser/resource, or detection result. Current RAR GCC
+syntax and source guards cover the paths; optional-backend execution,
+complete RAR corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain open.

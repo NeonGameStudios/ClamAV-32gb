@@ -452,15 +452,28 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
             comment_fd = open(comment_fullpath, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
             if (comment_fd < 0) {
                 cli_dbgmsg("RAR: ERROR: Failed to open output file\n");
+                cli_mark_scan_incomplete(ctx, "RAR archive comment output could not be opened");
+                status = CL_ECREAT;
+                goto done;
             } else {
                 cli_dbgmsg("RAR: Writing the archive comment to temp file: %s\n", comment_fullpath);
                 status = cli_rar_write_comment(ctx, comment_fd, comment, comment_size);
                 if (status != CL_SUCCESS) {
                     cli_dbgmsg("RAR: ERROR: Failed to write to output file\n");
-                    close(comment_fd);
+                    if (close(comment_fd) != 0) {
+                        cli_mark_scan_incomplete(ctx, "RAR archive comment output could not be closed");
+                        status = cli_merge_cleanup_status(status, CL_EWRITE);
+                    }
+                    comment_fd = -1;
                     goto done;
                 }
-                close(comment_fd);
+                if (close(comment_fd) != 0) {
+                    cli_mark_scan_incomplete(ctx, "RAR archive comment output could not be closed");
+                    status = cli_merge_cleanup_status(status, CL_EWRITE);
+                    comment_fd = -1;
+                    goto done;
+                }
+                comment_fd = -1;
             }
         }
 
@@ -760,8 +773,9 @@ done:
     }
 
     if (NULL != comment_fullpath) {
-        if (!ctx->engine->keeptmp) {
-            cli_rmdirs(comment_fullpath);
+        if (!ctx->engine->keeptmp && cli_rmdirs(comment_fullpath) != 0) {
+            cli_mark_scan_incomplete(ctx, "RAR archive comment temporary directory could not be removed");
+            status = cli_merge_cleanup_status(status, CL_EUNLINK);
         }
         free(comment_fullpath);
         comment_fullpath = NULL;
