@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## UDF direct-entry context evidence — 2026-08-27
+
+The UDF direct parser already returned `CL_ENULLARG` for a null context and
+reserved incomplete `CL_EPARSE` for a recognized context without an input
+fmap. Its focused map TCase did not protect the null-context boundary. A
+dedicated null-context regression is now registered beside the missing-map
+and missing-engine checks. The current-source production-linked GCC
+`udf_map` case passes 11/11 across the expanded entry-state set and existing
+boundary checks; complete UDF corpus,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## TNEF direct-entry context evidence — 2026-08-27
 
 The TNEF direct parser already returned `CL_ENULLARG` for a null context and

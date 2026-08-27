@@ -1482,6 +1482,7 @@ contains libclamav/udf.c 'UDF allocation-descriptor traversal reached the config
 contains libclamav/udf.c 'UDF file-entry scan traversal reached the configured time limit'
 contains libclamav/udf.c 'UDF generic volume descriptor area could not be read completely'
 contains libclamav/udf.c 'UDF input map is unavailable'
+contains unit_tests/check_clamav.c 'test_udf_null_context_is_fail_visible'
 contains libclamav/udf.c 'if (ctx->engine == NULL)'
 contains libclamav/udf.c 'if (0 == strncmp("BEA01", gvsd->standardIdentifier, 5))'
 contains libclamav/udf.c 'UDF generic volume descriptor identifier is unsupported'

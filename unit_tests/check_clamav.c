@@ -36296,6 +36296,12 @@ START_TEST(test_udf_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_udf_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_scanudf(NULL, UDF_EMPTY_LEN), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_udf_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -41424,6 +41430,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_iso, test_iso_corpus_detects_embedded_png);
     suite_add_tcase(s, tc_udf_map);
     tcase_add_checked_fixture(tc_udf_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_udf_map, test_udf_null_context_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_missing_map_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_missing_engine_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_truncated_descriptor_area_is_fail_visible);

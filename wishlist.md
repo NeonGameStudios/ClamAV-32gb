@@ -1,5 +1,14 @@
 # Wishlist
 
+## UDF direct-entry context evidence — 2026-08-27
+
+- Add and register a direct null-context regression alongside the existing
+  UDF map admission checks. The current-source production-linked GCC
+  `udf_map` case passes 11/11 across the expanded entry-state set and existing
+  boundary checks; complete UDF corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## TNEF direct-entry context evidence — 2026-08-27
 
 - Add and register a direct null-context regression alongside the existing
