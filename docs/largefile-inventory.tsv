@@ -12643,8 +12643,6 @@ native-width-integer	libclamav/packlibs.h	33	int cli_unfsg_ctx(const char *, cha
 native-width-integer	libclamav/packlibs.h	35	int unmew(const char *, char *, int, int, const char **, char **);
 native-width-integer	libclamav/packlibs.h	36	int unmew_ctx(const char *, char *, int, int, const char **, char **, struct cli_ctx_tag *);
 native-width-integer	libclamav/partition_intersection.c	41	cl_error_t partition_intersection_list_check(partition_intersection_list_t* list, unsigned* pitxn, off_t start, size_t size)
-native-width-integer	libclamav/partition_intersection.c	53	            if (check_node->Start + check_node->Size > (unsigned long)start) {
-native-width-integer	libclamav/partition_intersection.c	58	            if (start + size > (unsigned long)(check_node->Start)) {
 native-width-integer	libclamav/partition_intersection.h	33	    off_t Start;
 native-width-integer	libclamav/partition_intersection.h	34	    size_t Size;
 native-width-integer	libclamav/partition_intersection.h	40	    size_t Size; /* for debug */
@@ -29806,8 +29804,9 @@ offset-size-arithmetic	libclamav/packlibs.c	39	        if (*scur < buffer || *sc
 offset-size-arithmetic	libclamav/packlibs.c	67	int cli_unfsg_ctx(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst, cli_ctx *ctx)
 offset-size-arithmetic	libclamav/packlibs.c	76	    if (ssize <= 0 || dsize <= 0) return -1;
 offset-size-arithmetic	libclamav/partition_intersection.c	52	        if (start > check_node->Start) {
+offset-size-arithmetic	libclamav/partition_intersection.c	53	            if ((uintmax_t)check_node->Size > (uintmax_t)(start - check_node->Start)) {
 offset-size-arithmetic	libclamav/partition_intersection.c	57	        } else if (start < check_node->Start) {
-offset-size-arithmetic	libclamav/partition_intersection.c	58	            if (start + size > (unsigned long)(check_node->Start)) {
+offset-size-arithmetic	libclamav/partition_intersection.c	58	            if ((uintmax_t)size > (uintmax_t)(check_node->Start - start)) {
 offset-size-arithmetic	libclamav/pdf.c	100	    overlap = needle_len - 1;
 offset-size-arithmetic	libclamav/pdf.c	1003	                pdf->offset = obj_end - pdf->map;
 offset-size-arithmetic	libclamav/pdf.c	1010	            cli_dbgmsg("pdf_findobj: %%%%EOF detected before end of file, at offset: %zu\n", (size_t)(objid_search_index - pdf->map));

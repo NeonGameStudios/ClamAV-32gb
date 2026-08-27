@@ -48,6 +48,22 @@ linked only with the existing cached decoder artifacts, passes both cases;
 full Rust/C ABI, production-CVD, sanitizer, service, Sonic1, and release
 qualification remain open.
 
+## Partition-intersection coordinate audit — 2026-08-26
+
+The shared partition-intersection helper previously formed interval ends by
+adding attacker-controlled starts and sizes. On a large valid coordinate, an
+end outside the native integer range could wrap and make an actually
+overlapping partition appear disjoint. The helper now compares the distance
+between ordered starts against the opposing interval size, avoiding end-point
+addition. A focused GCC object harness passes both directions: a huge
+interval containing a later one and a huge interval beginning before a later
+one are each reported as `CL_VIRUS`.
+
+This closes the shared arithmetic defect for APM, GPT, and MBR intersection
+walks. Full partition-image corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open for all three parser rows.
+
 ## ALZ deflate trailing-stream validation — 2026-08-26
 
 ALZ deflate extraction previously accepted a valid raw-deflate prefix when the

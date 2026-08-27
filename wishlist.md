@@ -1860,6 +1860,17 @@ large-file, and Sonic1 qualification open.
   per-command boundaries across segment, section, and thread-state payloads;
   add compiled malformed-command corpus, sanitizer, and parser-family
   qualification.
+
+## Partition-intersection coordinate audit — 2026-08-26
+
+- The shared APM/GPT/MBR intersection helper no longer adds attacker-
+  controlled starts and sizes to test overlap. It compares ordered start
+  distances instead, preventing wrapped interval ends from hiding a real
+  overlap. A focused GCC object harness passes both large-coordinate
+  directions and reports `CL_VIRUS`.
+- Keep all three partition parser rows pending until complete partition-image
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and release evidence are complete.
 - TIFF direct parser missing-map admission now returns `CL_EPARSE` with a
   sticky incomplete result; add compiled TIFF corpus, sanitizer, and
   parser-family qualification.

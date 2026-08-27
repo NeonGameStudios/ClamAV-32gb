@@ -7585,6 +7585,17 @@ detection, a surrogate pair split at the 4 KiB boundary, and malformed
 UTF-16/UTF-8 fail-visible oracles. Full text corpora, ASan/UBSan, Linux x86-64,
 and Sonic1 qualification remain open.
 
+## Partition-intersection coordinate audit — 2026-08-26
+
+The shared APM, GPT, and MBR partition-intersection helper now compares the
+distance between ordered starts with the opposing interval size rather than
+adding a start and size. This prevents large-coordinate interval-end wrap
+from hiding a real overlap. A focused GCC object harness covers both ordered
+directions and confirms `CL_VIRUS` for each true overlap. Complete
+partition-image corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.
+
 ## AutoIt EA06 bounded decompiled-output spool — 2026-08-23
 
 EA06 script decompilation no longer grows a contiguous output allocation. The

@@ -50,12 +50,12 @@ cl_error_t partition_intersection_list_check(partition_intersection_list_t* list
         (*pitxn)--;
 
         if (start > check_node->Start) {
-            if (check_node->Start + check_node->Size > (unsigned long)start) {
+            if ((uintmax_t)check_node->Size > (uintmax_t)(start - check_node->Start)) {
                 ret = CL_VIRUS;
                 break;
             }
         } else if (start < check_node->Start) {
-            if (start + size > (unsigned long)(check_node->Start)) {
+            if ((uintmax_t)size > (uintmax_t)(check_node->Start - start)) {
                 ret = CL_VIRUS;
                 break;
             }
