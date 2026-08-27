@@ -4953,3 +4953,14 @@ and Sonic1 qualification as release gates.
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification as release
   gates.
+
+## MSXML bounded attribute representation audit — 2026-08-27
+
+- Legacy and streaming MSXML now fail closed when a callback element declares
+  more than the fixed `MAX_ATTRIBS` metadata representation; silently omitted
+  attributes can no longer drive a partial nested scan.
+- The dual-path focused regression covers the legacy reader and streaming SAX
+  parser and verifies `CL_EPARSE`, sticky incompleteness, and non-cacheability.
+  Keep full MSXML/XDP/HWPML corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification
+  as release gates.

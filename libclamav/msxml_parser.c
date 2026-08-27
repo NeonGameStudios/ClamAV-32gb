@@ -72,6 +72,8 @@ struct msxml_ictx {
 
 struct key_entry blank_key = {NULL, NULL, 0};
 
+static int msxml_attribute_limit_exceeded(cli_ctx *ctx, xmlTextReaderPtr reader, int num_attribs);
+
 static int msxml_base64_is_valid(const unsigned char *data, size_t len)
 {
     size_t compact_len = 0;
@@ -377,6 +379,9 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                         attribs[num_attribs].value = (const char *)xmlTextReaderConstValue(reader);
                         num_attribs++;
                     }
+
+                    if (msxml_attribute_limit_exceeded(ctx, reader, num_attribs))
+                        return CL_EPARSE;
                 } else if (state == -1) {
                     return CL_EPARSE;
                 }
@@ -1200,8 +1205,14 @@ static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, cons
         }
     }
 
-    if (nb_attributes > MAX_ATTRIBS)
-        nb_attributes = MAX_ATTRIBS;
+    if (nb_attributes < 0 || (nb_attributes > 0 && !attributes)) {
+        msxml_stream_fail(state, CL_EPARSE, "MSXML attribute metadata was malformed");
+        return;
+    }
+    if (nb_attributes > MAX_ATTRIBS) {
+        msxml_stream_fail(state, CL_EPARSE, "MSXML element exceeded the bounded attribute limit");
+        return;
+    }
 
     for (i = 0; i < nb_attributes; i++) {
         const xmlChar *attr_name   = attributes[5 * i];
@@ -1456,4 +1467,17 @@ cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const s
     if (state.ret == CL_BREAK)
         state.ret = CL_SUCCESS;
     return state.ret;
+}
+
+static int msxml_attribute_limit_exceeded(cli_ctx *ctx, xmlTextReaderPtr reader, int num_attribs)
+{
+    /* A callback receives the complete attribute set as its metadata contract.
+     * Do not silently truncate a valid element when the fixed callback
+     * representation is full. The reader is still positioned on the last
+     * retained attribute, so one additional advance detects an omission. */
+    if (num_attribs == MAX_ATTRIBS && xmlTextReaderMoveToNextAttribute(reader) == 1) {
+        cli_mark_scan_incomplete(ctx, "MSXML callback element exceeded the bounded attribute limit");
+        return 1;
+    }
+    return 0;
 }

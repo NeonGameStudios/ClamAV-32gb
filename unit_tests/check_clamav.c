@@ -40349,6 +40349,68 @@ START_TEST(test_arj_encrypted_member_range_is_fail_visible)
 }
 END_TEST
 
+static cl_error_t msxml_attribute_limit_scan_cb(int fd, const char *filepath, cli_ctx *ctx, int num_attribs,
+                                                struct attrib_entry *attribs, void *cbdata)
+{
+    UNUSEDPARAM(fd);
+    UNUSEDPARAM(filepath);
+    UNUSEDPARAM(ctx);
+    UNUSEDPARAM(num_attribs);
+    UNUSEDPARAM(attribs);
+    UNUSEDPARAM(cbdata);
+    return CL_SUCCESS;
+}
+
+START_TEST(test_msxml_attribute_limit_is_fail_visible)
+{
+    static const uint8_t document[] =
+        "<chunk a00=\"x\" a01=\"x\" a02=\"x\" a03=\"x\" a04=\"x\" a05=\"x\" a06=\"x\" a07=\"x\" "
+        "a08=\"x\" a09=\"x\" a10=\"x\" a11=\"x\" a12=\"x\" a13=\"x\" a14=\"x\" a15=\"x\" "
+        "a16=\"x\" a17=\"x\" a18=\"x\" a19=\"x\" a20=\"x\">QUJD</chunk>";
+    static const struct key_entry keys[] = {{"chunk", "Chunk", MSXML_SCAN_B64 | MSXML_SCAN_CB}};
+    struct cl_engine engine;
+    struct msxml_ctx mxctx;
+    cli_ctx ctx;
+    fmap_t *map;
+    xmlTextReaderPtr reader;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&mxctx, 0, sizeof(mxctx));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-attributes.xml", NULL, 0);
+    ck_assert_ptr_nonnull(reader);
+    ctx.engine             = &engine;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+    mxctx.scan_cb          = msxml_attribute_limit_scan_cb;
+
+    ret = cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]), MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML callback element exceeded the bounded attribute limit");
+
+    xmlFreeTextReader(reader);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ret = cli_msxml_parse_document_streaming(&ctx, map, keys, sizeof(keys) / sizeof(keys[0]),
+                                             MSXML_FLAG_FAIL_INCOMPLETE, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML element exceeded the bounded attribute limit");
+    cl_fmap_close(map);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -41017,6 +41079,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_msxml, test_msxml_truncated_document_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_read_failure_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_base64_decode_failure_is_fail_visible);
+    tcase_add_test(tc_msxml, test_msxml_attribute_limit_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_stream_time_limit_is_fail_visible);
     suite_add_tcase(s, tc_rust_map);
     tcase_add_checked_fixture(tc_rust_map, cl_setup, cl_teardown);

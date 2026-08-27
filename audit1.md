@@ -10729,3 +10729,19 @@ the production GCC flags. Existing current-source `elf_map` 8/8 and
 a full overflow-injection harness, complete ELF corpus, sanitizer, certified
 Linux x86-64, materialized large-file, production-CVD/service parity, and
 Sonic1 qualification remain open.
+
+## MSXML bounded attribute representation audit — 2026-08-27
+
+The legacy MSXML callback path and the streaming SAX path both expose a fixed
+`MAX_ATTRIBS` metadata representation. Previously, each path silently
+discarded attributes beyond that bound, allowing a structurally valid element
+to reach a callback without its complete driving metadata. Both paths now
+return `CL_EPARSE`, mark the layer incomplete, and prevent caching when the
+representation would be exceeded; malformed SAX attribute metadata is also
+fail-visible.
+
+The new dual-path regression covers a 21-attribute element through the legacy
+reader and streaming parser. Production GCC syntax checks pass for the edited
+parser and full test translation unit. Full MSXML/XDP/HWPML corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain release gates.

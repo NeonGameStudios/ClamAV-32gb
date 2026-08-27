@@ -8254,3 +8254,13 @@ header. The malformed case returns `CL_EPARSE`; the callback case preserves
 non-cacheable. Complete CAB/SFX corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, Sonic1, and
 parser-family qualification remain release gates.
+
+## MSXML bounded callback metadata
+
+Legacy and streaming MSXML callback paths use a fixed `MAX_ATTRIBS`
+representation. Elements that declare more attributes than that representation
+can hold now return `CL_EPARSE`, mark the layer incomplete, and prevent caching
+instead of silently dropping callback metadata. Malformed streaming attribute
+metadata is fail-visible as well. Full MSXML/XDP/HWPML corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service, and
+Sonic1 qualification remain release gates.
