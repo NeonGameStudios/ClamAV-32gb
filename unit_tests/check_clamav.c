@@ -33846,6 +33846,49 @@ START_TEST(test_cabsfx_admission_reaches_nested_matcher)
 }
 END_TEST
 
+START_TEST(test_arjsfx_weak_candidate_is_rejected_without_incomplete_state)
+{
+    uint8_t data[12];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* Preserve the ARJ-SFX magic and discriminator while making the main
+     * header structurally impossible, so admission must reject the weak
+     * candidate without tainting the completed root scan. */
+    arj_test_build_sfx_prefix(data, sizeof(data));
+    data[3] = 0;
+    data[4] = 0;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_arjsfx_malformed_confirmed_header_is_fail_visible)
 {
     uint8_t data[12];
@@ -40781,6 +40824,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cabsfx, test_cabsfx_admission_reaches_nested_matcher);
     suite_add_tcase(s, tc_arjsfx);
     tcase_add_checked_fixture(tc_arjsfx, cl_setup, cl_teardown);
+    tcase_add_test(tc_arjsfx, test_arjsfx_weak_candidate_is_rejected_without_incomplete_state);
     tcase_add_test(tc_arjsfx, test_arjsfx_malformed_confirmed_header_is_fail_visible);
     tcase_add_test(tc_arjsfx, test_arjsfx_header_read_failure_is_fail_visible);
     tcase_add_test(tc_arjsfx, test_arjsfx_admission_reaches_nested_matcher);

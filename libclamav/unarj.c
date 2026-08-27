@@ -110,6 +110,42 @@ static bool arj_advance_offset(arj_metadata_t *metadata, size_t amount)
     return true;
 }
 
+cl_error_t cli_unarj_sfx_header_check(cli_ctx *ctx, size_t offset)
+{
+    uint16_t header_size;
+    uint8_t first_header_size;
+    cl_error_t ret;
+
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "ARJ input map is unavailable");
+        return CL_EPARSE;
+    }
+
+    /* The ARJ-SFX filetype signature contains fields from the main header,
+     * but not its declared size or first-header length.  Reject impossible
+     * values as a weak candidate before the full parser can confirm a layer.
+     * Keep a valid-sized but truncated header on the confirmed error path. */
+    if (!arj_range_within_map(ctx->fmap, offset, 5U))
+        return CL_EFORMAT;
+
+    ret = arj_read_fixed_range(ctx->fmap, &header_size, offset + 2U, sizeof(header_size));
+    if (ret != CL_SUCCESS)
+        return ret;
+    header_size = le16_to_host(header_size);
+    if (header_size < FIRST_HDR_SIZE || header_size > HEADERSIZE_MAX)
+        return CL_EFORMAT;
+
+    ret = arj_read_fixed_range(ctx->fmap, &first_header_size, offset + 4U, sizeof(first_header_size));
+    if (ret != CL_SUCCESS)
+        return ret;
+    if (first_header_size < FIRST_HDR_SIZE)
+        return CL_EFORMAT;
+
+    return CL_SUCCESS;
+}
+
 static const void *unarj_need_off_once_len(fmap_t *map, size_t offset, size_t length, size_t *length_out,
                                            cl_error_t *read_status)
 {

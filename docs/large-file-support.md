@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ARJ-SFX weak-candidate rejection — 2026-08-26
+
+The ARJ-SFX admission path now has a current-source production-linked GCC
+regression for matching magic/discriminator bytes whose main header size is
+zero. The structurally disproven candidate is rejected before embedded layer
+creation, leaving the root scan `CL_SUCCESS`, clean, cacheable, and without an
+incomplete state. The `arjsfx` TCase covers 4/4 across weak rejection, valid
+nested admission, confirmed truncation, and an in-range callback failure. Full
+ARJ-SFX corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain required.
+
 ## ARJ metadata-offset range hardening — 2026-08-26
 
 ARJ parsing now range-checks fmap offset advances over variable first-header

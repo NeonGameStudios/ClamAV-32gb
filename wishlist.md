@@ -1,5 +1,15 @@
 # Wishlist
 
+## ARJ-SFX weak-candidate rejection — 2026-08-26
+
+- Keep a structurally disproven ARJ-SFX magic candidate out of layer
+  admission: a zero main-header size must leave the root scan `CL_SUCCESS`,
+  clean, cacheable, and non-incomplete.
+- The current-source production-linked `arjsfx` evidence is now 4/4 across
+  weak rejection, valid nested admission, confirmed truncation, and an
+  in-range callback failure. Keep full ARJ-SFX corpus, sanitizer,
+  production-CVD/service, Sonic1, and release qualification open.
+
 ## ARJ metadata-offset range hardening — 2026-08-26
 
 - Range-check variable first-header, CRC, and extended-header offset advances;

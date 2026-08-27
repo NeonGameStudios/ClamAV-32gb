@@ -51,6 +51,7 @@ typedef struct arj_metadata_tag {
  * @return cl_error_t     CL_SUCCESS on success, or an error code on failure.
  */
 cl_error_t cli_unarj_header_check(cli_ctx *ctx, size_t offset, size_t *size);
+cl_error_t cli_unarj_sfx_header_check(cli_ctx *ctx, size_t offset);
 
 cl_error_t cli_unarj_open(fmap_t *map, const char *dirname, arj_metadata_t *metadata);
 cl_error_t cli_unarj_prepare_file(arj_metadata_t *metadata);

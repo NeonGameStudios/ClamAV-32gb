@@ -9852,6 +9852,18 @@ are not attributed to this SFX regression. Full ARJ-SFX corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service, and
 Sonic1 qualification remain open.
 
+## ARJ-SFX weak-candidate rejection — 2026-08-26
+
+The ARJ-SFX admission path now has a current-source production-linked GCC
+regression for a matching magic/discriminator whose main header size is zero.
+The header checker returns the weak-candidate format result, the embedded
+branch rejects it without creating a confirmed layer, and the root scan stays
+`CL_SUCCESS`, clean, cacheable, and free of an incomplete state. The `arjsfx`
+TCase therefore covers 4/4 across weak rejection, valid nested admission,
+confirmed truncation, and an in-range callback failure. Full ARJ-SFX corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-
+CVD/service, Sonic1, and release qualification remain open.
+
 ## BinHex header-length preflight — 2026-08-25
 
 BinHex decoded-header processing previously read the data and resource fork

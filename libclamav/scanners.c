@@ -5804,6 +5804,18 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Header validity check to prevent false positives from being scanned.
                                 size_t arj_size = 0;
 
+                                ret = cli_unarj_sfx_header_check(ctx, fpt->offset);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("ARJ SFX candidate rejected before confirmation\n");
+                                    break;
+                                }
+                                if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "ARJ SFX header is malformed or could not be read completely");
+                                    nret = cli_merge_scan_status(nret, ret);
+                                    cli_dbgmsg("ARJ SFX pre-admission check failed: %s (%d)\n", cl_strerror(ret), ret);
+                                    break;
+                                }
+
                                 ret = cli_unarj_header_check(ctx, fpt->offset, &arj_size);
                                 if (ret == CL_EFORMAT) {
                                     cli_dbgmsg("ARJ SFX candidate rejected before layer admission\n");
