@@ -1,5 +1,16 @@
 # Wishlist
 
+## CABSFX admission-failure execution — 2026-08-27
+
+- Keep the three public CABSFX admission cases fail-visible: valid prefixed
+  CAB nested dispatch, confirmed declared-extent truncation as `CL_EPARSE`,
+  and an in-range fixed-header callback failure as `CL_EREAD`, with stale
+  verdict/alerts reset and fmap caching disabled on confirmed failures.
+- The current-source production-linked GCC `cabsfx` TCase passes 3/3. Keep
+  complete CAB/SFX corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  open.
+
 ## Mach-O unpack-entry preflight — 2026-08-27
 
 - Keep exported `cli_unpackmacho()` fail-visible for null context, missing

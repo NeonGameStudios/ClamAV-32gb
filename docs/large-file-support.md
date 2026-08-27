@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## CABSFX admission-failure execution — 2026-08-27
+
+The current-source production-linked GCC `cabsfx` TCase now passes 3/3. It
+covers a valid prefixed CAB whose extracted child reaches an exact matcher,
+a confirmed fixed header whose declared CAB extent exceeds the containing map
+(`CL_EPARSE`), and an in-range fixed-header callback failure (`CL_EREAD`).
+The two confirmed failure cases reset stale verdict/alert state and leave the
+fmap non-cacheable. Complete CAB/SFX corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and parser-
+family qualification remain open.
+
 ## Mach-O unpack-entry preflight — 2026-08-27
 
 `cli_unpackmacho()` is an exported helper used by the Mach-O dispatch branch,
