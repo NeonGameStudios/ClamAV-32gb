@@ -107,12 +107,14 @@ parser-family qualification open.
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification remain open.
 
-## RTF direct-entry context evidence — 2026-08-27
+## RTF direct-entry context and engine evidence — 2026-08-27
 
-- Add and register a direct null-context regression alongside the existing
-  RTF missing-map check. After rebuilding `rtf.c` from the authoritative source
-  to remove a stale-object mismatch, the current-source production-linked GCC
-  `rtf_map` case passes 10/10 and the parser case passes 1/1; complete RTF
+- Keep the RTF direct entry fail-visible for null context, missing fmap, and a
+  valid fmap without the engine required by temporary cleanup. Dedicated
+  null-context and missing-engine regressions are registered alongside the
+  existing missing-map check. After rebuilding `rtf.c` from the authoritative
+  source, the current-source production-linked GCC `rtf_map` case passes 11/11
+  and the parser case passes 1/1; complete RTF
   corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification remain open.
 

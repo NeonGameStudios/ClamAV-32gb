@@ -117,15 +117,17 @@ production-linked GCC map cases pass DMG 9/9, XDP 3/3, HWPML 3/3, and HFS+
 sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
 
-## RTF direct-entry context evidence — 2026-08-27
+## RTF direct-entry context and engine evidence — 2026-08-27
 
 The RTF direct parser already returned `CL_ENULLARG` for a null context and
 an incomplete `CL_EPARSE` result for a recognized context without an input
-fmap. The focused `rtf_map` TCase only protected the missing-map path. A
-dedicated null-context regression is now registered beside it. After
+fmap, but it could enter engine-dependent temporary cleanup with a valid fmap
+and no engine. The entry now returns `CL_ENULLARG` for that caller error, with
+dedicated null-context and missing-engine regressions registered beside the
+missing-map path. After
 rebuilding `rtf.c` from the authoritative source to remove a stale-object
 mismatch, the current-source production-linked GCC `rtf_map` case passes
-10/10 and the parser case passes 1/1; complete RTF corpus, sanitizer,
+11/11 and the parser case passes 1/1; complete RTF corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain open.
 

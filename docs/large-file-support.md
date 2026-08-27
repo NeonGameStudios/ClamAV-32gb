@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## RTF parser engine admission — 2026-08-27
+
+`cli_scanrtf()` now rejects a valid input map without its required engine with
+`CL_ENULLARG`, before temporary-directory setup or engine-dependent cleanup.
+The current-source production-linked GCC `rtf_map` regression passes 11/11
+and the materialized `rtf` corpus case passes 1/1. Complete RTF parser-family,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## XAR parser engine admission — 2026-08-27
 
 `cli_scanxar()` now rejects a valid input map without its required engine with
