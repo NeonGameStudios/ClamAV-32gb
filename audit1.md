@@ -11812,3 +11812,20 @@ evidence remains prior-object evidence for this cleanup-only change;
 current-object execution, complete corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and parser-family
 qualification remain open.
+
+## RTF, SIS, and AutoIt cleanup-status precedence audit — 2026-08-27
+
+RTF, SIS, and AutoIt had local cleanup helpers that treated descriptor-close
+failures as unlink failures or only replaced clean/verified/abort statuses.
+Their descriptor close, member/path removal, temporary-directory cleanup, and
+deferred RTF callback teardown now use the shared cleanup-status precedence
+helper. Close failures remain `CL_EWRITE`, removal failures remain
+`CL_EUNLINK`, `CL_BREAK` is upgraded, and detections or earlier parser and
+resource errors remain authoritative.
+
+The current AutoIt, RTF, and SIS sources pass GCC syntax checks in the
+established container, and source guards cover the shared handoffs. Existing
+focused production-linked evidence remains prior-object evidence for this
+cleanup-only change; current-object execution, complete RTF/SIS/AutoIt
+corpora, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.

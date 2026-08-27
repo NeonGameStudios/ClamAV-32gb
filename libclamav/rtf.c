@@ -246,14 +246,14 @@ static int rtf_object_begin(struct rtf_state* state, cli_ctx* ctx, const char* t
     return 0;
 }
 
-static void rtf_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed, const char *reason)
+static void rtf_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed,
+                                     cl_error_t cleanup_status, const char *reason)
 {
     if (!failed)
         return;
 
     cli_mark_scan_incomplete(ctx, reason);
-    if (*status == CL_SUCCESS || *status == CL_CLEAN || *status == CL_BREAK)
-        *status = CL_EUNLINK;
+    *status = cli_merge_cleanup_status(*status, cleanup_status);
 }
 
 static cl_error_t rtf_checktimelimit(cli_ctx *ctx, const char *reason)
@@ -295,14 +295,14 @@ static cl_error_t decode_and_scan(struct rtf_object_data* data, cli_ctx* ctx)
             ret = cli_magic_scan_desc_type_reserved(data->fd, data->name, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
         }
 
-        rtf_note_cleanup_failure(ctx, &ret, close(data->fd) != 0,
+        rtf_note_cleanup_failure(ctx, &ret, close(data->fd) != 0, CL_EWRITE,
                                  "RTF embedded object temporary output could not be closed");
         data->fd = -1;
     }
 
     if (data->name) {
         if (!ctx->engine->keeptmp)
-            rtf_note_cleanup_failure(ctx, &ret, cli_unlink(data->name) != 0,
+            rtf_note_cleanup_failure(ctx, &ret, cli_unlink(data->name) != 0, CL_EUNLINK,
                                      "RTF embedded object temporary output could not be removed");
         free(data->name);
         data->name = NULL;
@@ -543,7 +543,7 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
 static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
 {
     struct rtf_object_data* data = state->cb_data;
-    int rc                       = 0;
+    cl_error_t rc                = CL_SUCCESS;
     if (!data)
         return 0;
 
@@ -553,15 +553,16 @@ static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
      * to clean. */
     if (data->internal_state != WAIT_MAGIC || data->has_partial) {
         cli_mark_scan_incomplete(ctx, "RTF embedded object ended before its payload was complete");
+        rc = CL_EPARSE;
         if (data->fd >= 0) {
-            if (close(data->fd) != 0)
-                cli_mark_scan_incomplete(ctx, "RTF embedded object temporary output could not be closed");
+            rtf_note_cleanup_failure(ctx, &rc, close(data->fd) != 0, CL_EWRITE,
+                                     "RTF embedded object temporary output could not be closed");
             data->fd = -1;
         }
         if (data->name) {
             if (!ctx->engine->keeptmp)
-                if (cli_unlink(data->name) != 0)
-                    cli_mark_scan_incomplete(ctx, "RTF embedded object temporary output could not be removed");
+                rtf_note_cleanup_failure(ctx, &rc, cli_unlink(data->name) != 0, CL_EUNLINK,
+                                         "RTF embedded object temporary output could not be removed");
             free(data->name);
             data->name = NULL;
         }
@@ -569,7 +570,6 @@ static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
             cli_scan_release_temporary(ctx, data->temporary_reserved);
             data->temporary_reserved = 0;
         }
-        rc = CL_EPARSE;
     } else if (data->fd >= 0) {
         rc = decode_and_scan(data, ctx);
     }
@@ -598,24 +598,24 @@ static void rtf_action(struct rtf_state* state, long action)
     };
 }
 
-static void cleanup_stack(struct stack* stack, struct rtf_state* state, cli_ctx* ctx)
+static cl_error_t cleanup_stack(struct stack* stack, struct rtf_state* state, cli_ctx* ctx)
 {
+    cl_error_t status = CL_SUCCESS;
+
     if (!stack || !stack->states)
-        return;
+        return status;
     while (stack && stack->stack_cnt /* && state->default_elements*/) {
         pop_state(stack, state);
         if (state->cb_data && state->cb_end)
-            state->cb_end(state, ctx);
+            status = cli_merge_cleanup_status(status, state->cb_end(state, ctx));
     }
+    return status;
 }
 
 static void rtf_cleanup_tmpdir(cli_ctx *ctx, const char *tempname, cl_error_t *status)
 {
-    if (cli_rmdirs(tempname) != 0) {
-        cli_mark_scan_incomplete(ctx, "RTF temporary directory could not be removed");
-        if (*status == CL_SUCCESS || *status == CL_CLEAN || *status == CL_BREAK)
-            *status = CL_EUNLINK;
-    }
+    rtf_note_cleanup_failure(ctx, status, cli_rmdirs(tempname) != 0, CL_EUNLINK,
+                             "RTF temporary directory could not be removed");
 }
 
 #define SCAN_CLEANUP                                                                  \
@@ -630,7 +630,7 @@ static void rtf_cleanup_tmpdir(cli_ctx *ctx, const char *tempname, cl_error_t *s
             ret = CL_EPARSE;                                                          \
     }                                                                                 \
     tableDestroy(actiontable);                                                        \
-    cleanup_stack(&stack, &state, ctx);                                               \
+    ret = cli_merge_cleanup_status(ret, cleanup_stack(&stack, &state, ctx));         \
     if (!ctx->engine->keeptmp)                                                        \
         rtf_cleanup_tmpdir(ctx, tempname, &ret);                                      \
     else                                                                              \
@@ -706,8 +706,8 @@ int cli_scanrtf(cli_ctx* ctx)
     if (ret != CL_SUCCESS) {
         cli_dbgmsg("RTF: Unable to load rtf action table\n");
         free(stack.states);
-        if (!ctx->engine->keeptmp && cli_rmdirs(tempname) != 0)
-            cli_mark_scan_incomplete(ctx, "RTF temporary directory could not be removed");
+        rtf_note_cleanup_failure(ctx, &ret, !ctx->engine->keeptmp && cli_rmdirs(tempname) != 0,
+                                 CL_EUNLINK, "RTF temporary directory could not be removed");
         free(tempname);
         if (actiontable)
             tableDestroy(actiontable);

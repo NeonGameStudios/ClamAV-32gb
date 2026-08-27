@@ -860,14 +860,14 @@ static bool autoit_require_range(cli_ctx *ctx, fmap_t *map, const uint8_t *curso
     return false;
 }
 
-static void autoit_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed, const char *reason)
+static void autoit_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed,
+                                        cl_error_t cleanup_status, const char *reason)
 {
     if (!failed)
         return;
 
     cli_mark_scan_incomplete(ctx, reason);
-    if (*status == CL_SUCCESS || *status == CL_CLEAN || *status == CL_BREAK)
-        *status = CL_EUNLINK;
+    *status = cli_merge_cleanup_status(*status, cleanup_status);
 }
 
 static cl_error_t autoit_release_temp_member(cli_ctx *ctx, int *tempfd, char **tempfile,
@@ -875,12 +875,14 @@ static cl_error_t autoit_release_temp_member(cli_ctx *ctx, int *tempfd, char **t
 {
     if (*tempfd >= 0) {
         autoit_note_cleanup_failure(ctx, &status, close(*tempfd) != 0,
+                                    CL_EWRITE,
                                     "AutoIt EA06 member temporary output could not be closed");
         *tempfd = -1;
     }
     if (*tempfile != NULL) {
         if (!ctx->engine->keeptmp)
             autoit_note_cleanup_failure(ctx, &status, cli_unlink(*tempfile) != 0,
+                                        CL_EUNLINK,
                                         "AutoIt EA06 member temporary output could not be removed");
         free(*tempfile);
         *tempfile = NULL;
@@ -1520,16 +1522,14 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base)
             goto done;
         }
 
-        if (close(tempfd) == -1) {
-            cli_mark_scan_incomplete(ctx, "AutoIt EA05 member temporary output could not be closed");
-            status = CL_EWRITE;
-        }
+        autoit_note_cleanup_failure(ctx, &status, close(tempfd) == -1,
+                                    CL_EWRITE,
+                                    "AutoIt EA05 member temporary output could not be closed");
         tempfd = -1;
-        if (!ctx->engine->keeptmp && cli_unlink(tempfile)) {
-            cli_mark_scan_incomplete(ctx, "AutoIt EA05 member temporary output could not be removed");
-            if (status == CL_SUCCESS)
-                status = CL_EUNLINK;
-        }
+        if (!ctx->engine->keeptmp)
+            autoit_note_cleanup_failure(ctx, &status, cli_unlink(tempfile) != 0,
+                                        CL_EUNLINK,
+                                        "AutoIt EA05 member temporary output could not be removed");
         free(tempfile);
         tempfile = NULL;
         cli_scan_release_temporary(ctx, temporary_reserved);
@@ -1551,9 +1551,11 @@ done:
     }
     if (tempfd >= 0) {
         autoit_note_cleanup_failure(ctx, &status, close(tempfd) != 0,
+                                    CL_EWRITE,
                                     "AutoIt EA05 member temporary output could not be closed");
         if (!ctx->engine->keeptmp)
             autoit_note_cleanup_failure(ctx, &status, cli_unlink(tempfile) != 0,
+                                        CL_EUNLINK,
                                         "AutoIt EA05 member temporary output could not be removed");
     }
     free(tempfile);
@@ -2616,11 +2618,9 @@ cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset)
             status = CL_EFORMAT;
     }
 
-    if (!ctx->engine->keeptmp && cli_rmdirs(tmpd) != 0) {
-        cli_mark_scan_incomplete(ctx, "AutoIt temporary directory could not be removed");
-        if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_BREAK)
-            status = CL_EUNLINK;
-    }
+    autoit_note_cleanup_failure(ctx, &status, !ctx->engine->keeptmp && cli_rmdirs(tmpd) != 0,
+                                CL_EUNLINK,
+                                "AutoIt temporary directory could not be removed");
 
     free(tmpd);
     return status;

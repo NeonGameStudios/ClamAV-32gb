@@ -5745,3 +5745,16 @@ and Sonic1 qualification as release gates.
   XAR corpus, current-object execution, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, Sonic1, and parser-family
   qualification remain open.
+
+## RTF, SIS, and AutoIt cleanup-status precedence audit — 2026-08-27
+
+- Route RTF, SIS, and AutoIt descriptor close, member/path removal,
+  temporary-directory cleanup, and deferred RTF callback teardown through the
+  shared cleanup-status precedence helper. Preserve `CL_EWRITE` versus
+  `CL_EUNLINK`, upgrade `CL_BREAK`, and retain detections or earlier parser or
+  resource errors.
+- Current AutoIt, RTF, and SIS sources pass GCC syntax checks and source
+  guards cover the handoffs; current-object execution, complete corpora,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain
+  open.
