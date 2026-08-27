@@ -11555,3 +11555,23 @@ is an explicit open gate. Existing ALZ production-linked and cached unit
 evidence remains unchanged. Full current-C ABI, sanitizer, certified Linux
 x86-64, materialized large-file/resource, production-CVD/service, Sonic1, and
 final parser-family qualification remain open.
+
+## BinHex cleanup-status precedence audit — 2026-08-27
+
+BinHex used one cleanup helper for both `close()` and unlink failures, so a
+close error was reported as `CL_EUNLINK`; it also allowed cleanup to replace
+only clean or application-abort statuses. The parser now merges an explicit
+cleanup status: close failures use `CL_EWRITE`, unlink failures use
+`CL_EUNLINK`, clean/verified/`CL_BREAK` statuses are upgraded, and detections
+or earlier parser/resource errors remain authoritative. Every cleanup failure
+still marks the layer incomplete and non-cacheable.
+
+The current BinHex source compiles with the established warning-enabled GCC
+flags, and the source guards require the new helper, status classes, and
+existing close-failure regression. The established production-linked
+`binhex_map` case remains 11/11 against its prior coherent harness. A fresh
+full relink with the current object was not accepted as evidence because the
+reused harness requires additional mixed-generation override objects; the
+small direct relink was kept only as a diagnostic and did not execute. Full
+current-C ABI, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.

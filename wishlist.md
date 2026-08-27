@@ -5561,3 +5561,16 @@ and Sonic1 qualification as release gates.
   git-dependency cache. Keep current-C ABI, sanitizer, certified Linux x86-64,
   materialized large-file/resource, production-CVD/service, Sonic1, and final
   parser-family qualification open.
+
+## BinHex cleanup-status precedence audit — 2026-08-27
+
+- Preserve distinct `CL_EWRITE` close and `CL_EUNLINK` unlink failures for
+  BinHex temporary forks; upgrade clean, verified, and `CL_BREAK` statuses
+  while preserving detections and earlier parser/resource errors, and keep
+  every cleanup failure incomplete/non-cacheable.
+- The current BinHex object passes the production warning-enabled GCC syntax
+  check and source guards cover the new status helper plus existing cleanup
+  regression. The prior coherent production-linked `binhex_map` case remains
+  11/11; a fresh current-object full relink and execution are open. Keep full
+  BinHex corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.

@@ -58,15 +58,26 @@ static cl_error_t binhex_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+static cl_error_t binhex_merge_cleanup_status(cl_error_t status,
+                                               cl_error_t cleanup_status)
+{
+    if (cleanup_status == CL_SUCCESS)
+        return status;
+    if ((status == CL_SUCCESS) || (status == CL_VERIFIED) ||
+        (status == CL_BREAK))
+        return cleanup_status;
+    return status;
+}
+
 static void binhex_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
+                                        cl_error_t cleanup_status,
                                         const char *reason)
 {
     if ((NULL == ctx) || (NULL == status))
         return;
 
     cli_mark_scan_incomplete(ctx, reason);
-    if ((*status == CL_SUCCESS) || (*status == CL_BREAK))
-        *status = CL_EUNLINK;
+    *status = binhex_merge_cleanup_status(*status, cleanup_status);
 }
 
 static uint32_t binhex_read_be32(const uint8_t *value)
@@ -119,9 +130,11 @@ int cli_binhex(cli_ctx *ctx)
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &rname, &resfd)) != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "BinHex resource temporary output could not be created");
         if (close(datafd) == -1)
-            binhex_note_cleanup_failure(ctx, &ret, "BinHex data temporary output could not be closed");
+            binhex_note_cleanup_failure(ctx, &ret, CL_EWRITE,
+                                         "BinHex data temporary output could not be closed");
         if (cli_unlink(dname))
-            binhex_note_cleanup_failure(ctx, &ret, "BinHex data temporary output could not be removed");
+            binhex_note_cleanup_failure(ctx, &ret, CL_EUNLINK,
+                                         "BinHex data temporary output could not be removed");
         free(dname);
         return ret;
     }
@@ -374,14 +387,18 @@ int cli_binhex(cli_ctx *ctx)
     }
 
     if (close(datafd) == -1)
-        binhex_note_cleanup_failure(ctx, &ret, "BinHex data temporary output could not be closed");
+        binhex_note_cleanup_failure(ctx, &ret, CL_EWRITE,
+                                     "BinHex data temporary output could not be closed");
     if (close(resfd) == -1)
-        binhex_note_cleanup_failure(ctx, &ret, "BinHex resource temporary output could not be closed");
+        binhex_note_cleanup_failure(ctx, &ret, CL_EWRITE,
+                                     "BinHex resource temporary output could not be closed");
     if (!ctx->engine->keeptmp) {
         if (cli_unlink(dname))
-            binhex_note_cleanup_failure(ctx, &ret, "BinHex data temporary output could not be removed");
+            binhex_note_cleanup_failure(ctx, &ret, CL_EUNLINK,
+                                         "BinHex data temporary output could not be removed");
         if (cli_unlink(rname))
-            binhex_note_cleanup_failure(ctx, &ret, "BinHex resource temporary output could not be removed");
+            binhex_note_cleanup_failure(ctx, &ret, CL_EUNLINK,
+                                         "BinHex resource temporary output could not be removed");
     }
     if (data_reserved)
         cli_scan_release_temporary(ctx, data_reserved);
