@@ -4248,6 +4248,17 @@ The compatibility limitation is recorded as
 `egg-compat-member-over-1g`; it does not constrain the scanner-facing
 streaming path.
 
+## ELF64 table-cursor overflow handling — 2026-08-26
+
+ELF64 program- and section-header traversal now checks each native-width
+cursor advance before using it for a subsequent metadata read. Complete-range
+preflight already rejects an entry that cannot fit, and this explicit invariant
+ensures a future read path cannot wrap to an unrelated low file offset. The
+existing ELF short-range versus in-range callback classification and
+native-coordinate metadata behavior are preserved. Full overflow-injection,
+ELF corpus, sanitizer, materialized large-file, production-CVD/service, and
+Sonic1 qualification remain release gates.
+
 ## clamd startup capability manifest — 2026-08-19
 
 After engine initialization, clamd emits one machine-readable

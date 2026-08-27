@@ -463,7 +463,6 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
             }
             if (read_status != CL_SUCCESS)
                 err = 1;
-            phoff += sizeof(struct elf_program_hdr64);
 
             if (err) {
                 cli_dbgmsg("ELF: Can't read segment #%d\n", i);
@@ -473,6 +472,13 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
                 free(program_hdr);
                 return cli_elf_broken_result(ctx, CL_BREAK);
             }
+
+            if (i + 1 < phnum && phoff > UINT64_MAX - sizeof(struct elf_program_hdr64)) {
+                cli_dbgmsg("ELF: Program header table coordinate overflow\n");
+                free(program_hdr);
+                return cli_elf_broken_result(ctx, CL_EFORMAT);
+            }
+            phoff += sizeof(struct elf_program_hdr64);
 
             if (ctx) {
                 cli_dbgmsg("ELF: Segment #%d\n", i);
@@ -737,6 +743,11 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
             return cli_elf_broken_result(ctx, CL_BREAK);
         }
 
+        if (i + 1 < shnum && shoff > UINT64_MAX - sizeof(struct elf_section_hdr64)) {
+            cli_dbgmsg("ELF: Section header table coordinate overflow\n");
+            free(section_hdr);
+            return cli_elf_broken_result(ctx, CL_EFORMAT);
+        }
         shoff += sizeof(struct elf_section_hdr64);
 
         if (elfinfo) {

@@ -10702,3 +10702,17 @@ Complete BZ/GZip concatenated-member, legacy-fallback, and temporary-quota
 corpus, full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open.
+
+## ELF64 table-cursor overflow audit — 2026-08-26
+
+The ELF64 program-header and section-header walkers now encode a checked
+native-width cursor advance. Their existing complete-range preflight already
+rejects a current entry that cannot fit, but the explicit invariant keeps a
+future read path from ever wrapping to a low offset; the checked advance
+returns `CL_EFORMAT` before another read. Existing truncation and in-range
+callback paths remain unchanged. The edited parser compiles warning-clean with
+the production GCC flags. Existing current-source `elf_map` 8/8 and
+`elf_corpus` 1/1 evidence remains valid for the surrounding boundaries, while
+a full overflow-injection harness, complete ELF corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service parity, and
+Sonic1 qualification remain open.

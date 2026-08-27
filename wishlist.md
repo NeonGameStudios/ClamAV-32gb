@@ -4928,6 +4928,18 @@ and Sonic1 qualification as release gates.
   materialized large-file, production-CVD/service parity, and Sonic1
   qualification.
 
+## ELF64 table-cursor overflow audit — 2026-08-26
+
+- Keep explicit checked advances for ELF64 program- and section-header table
+  cursors. Complete-range preflight already rejects an entry that cannot fit;
+  the additional invariant prevents a future read path from wrapping to an
+  unrelated low-offset structure. The parser compiles warning-clean under the
+  production GCC flags; existing `elf_map` 8/8 and `elf_corpus` 1/1 evidence
+  remains valid.
+- Add a direct overflow-injection regression, then complete ELF corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 qualification.
+
 ## CPIO member-name termination audit — 2026-08-26
 
 - Validate the final declared name byte in old-binary, ODC, NEWC, and CRC CPIO
