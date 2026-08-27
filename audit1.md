@@ -890,9 +890,10 @@ Java-bytecode-like inputs outside the explicit classifier range and malformed
 or future FAT headers. The bounded parser now records an explicit incomplete,
 non-cacheable result with `CL_EPARSE`. The current-source `macho.c` compiles
 warning-clean with GCC `-Wall -Wextra -Wformat-security`, and the isolated
-current-source production-linked `macho_unsupported` TCase passes 1/1 for the
-count-39 regression; `macho_map` and `macho_corpus` each pass 1/1 as adjacent
-regressions. Full Java/FAT corpus, sanitizer, certified Linux x86-64,
+current-source production-linked `macho_unsupported` TCase passes 2/2 for the
+count-39 and count-0 regressions; `macho_map` passes 1/1 and the corrected
+`macho_corpus` passes 2/2 as adjacent regressions. Full Java/FAT corpus,
+sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and parser-family
 qualification remain open.
 
@@ -903,9 +904,10 @@ malformed and cannot represent a child to inspect. The parser now returns
 `CL_EPARSE`, records `Mach-O universal-binary architecture table is invalid`,
 and disables caching instead of returning a clean result. The current-source
 production-linked GCC `macho_unsupported` TCase passes 2/2 for the count-39
-unsupported case and the new count-0 malformed case; `macho_map` and
-`macho_corpus` remain 1/1. The broader direct `macho`/`macho_timeout` matrix
-still has the known mixed old/current `cli_ctx` ABI errors, so full Mach-O
+unsupported case and the new count-0 malformed case; `macho_map` passes 1/1 and
+the corrected `macho_corpus` passes 2/2. The broader direct
+`macho`/`macho_timeout` matrix still has the known mixed old/current `cli_ctx`
+ABI errors, so full Mach-O
 qualification, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and release evidence remain open.
 
@@ -1594,17 +1596,29 @@ partition-handoff evidence, not complete partition-image qualification;
 sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and release evidence remain open.
 
-## Mach-O universal-binary corpus qualification — 2026-08-26
+## Mach-O universal-binary dispatch and member admission — 2026-08-27
 
-The authoritative current-source production-linked GCC macho case passes
-11/11, macho_timeout passes 2/2, and the isolated macho_corpus case passes
-1/1. The corpus is a valid one-architecture FAT binary containing a complete
-thin Mach-O member and a bounded child payload; the universal root does not
-begin with MZP, and the exact Macho.Member.MZ.UNOFFICIAL alert is reached
-through universal-member traversal. This is bounded universal-binary and
-nested-dispatch evidence, not complete Mach-O corpus qualification; sanitizer,
-certified Linux x86-64, materialized large-file, production-CVD/service,
-Sonic1, and release evidence remain open.
+The previous corpus claim was not authoritative. Its FAT fields used the local
+little-endian helper, the public scan forced `CL_TYPE_MACHO_UNIBIN`, and the
+purported thin member declared zero load commands. A virus result could thereby
+mask the raw matcher's attempt to parse the FAT wrapper as a thin Mach-O image.
+The corrected corpus uses canonical big-endian FAT fields, automatic type
+detection, and a complete thin member with one bounded load command. The raw
+matcher now treats the FAT wrapper as valid wrapper metadata with no entry point
+or sections; recursively scanned thin members retain normal thin metadata.
+
+The universal parser now checks the full architecture-table extent before
+reading records, requires every nonempty member to start after that complete
+table, and validates its checked end against the map. Current-source
+production-linked GCC evidence passes `macho_fat` 2/2, `macho_corpus` 2/2,
+`macho_unsupported` 2/2, `macho_map` 1/1, and `macho_boundary` 1/1. The corpus
+separately proves a clean/cacheable auto-classified result and the exact
+`Macho.Member.MZ.UNOFFICIAL` member-relative match. With the pre-fix matcher
+object, the same harness fails the clean regression with `CL_EPARSE` (1/2), so
+the test is sensitive to the original dispatch defect. This is bounded FAT
+dispatch/range evidence, not complete Mach-O qualification; sanitizer,
+certified Linux x86-64, materialized large-file/resource,
+production-CVD/service, Sonic1, and release evidence remain open.
 
 ## XZ decompressed-output corpus qualification — 2026-08-26
 

@@ -712,7 +712,8 @@ parser-family qualification open.
   explicit incomplete/non-cacheable `CL_EPARSE` result for Java-bytecode-like
   values outside the classifier range and malformed or future FAT headers.
 - The current-source production-linked GCC `macho_unsupported` TCase passes
-  1/1, with `macho_map` and `macho_corpus` each passing 1/1. Keep full
+  2/2, with `macho_map` passing 1/1 and the corrected `macho_corpus` passing
+  2/2. Keep full
   Java/FAT corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.
 
@@ -723,9 +724,10 @@ parser-family qualification open.
   architecture table is invalid`; a zero-entry FAT header has no child to
   inspect.
 - The current-source production-linked GCC `macho_unsupported` TCase passes
-  2/2 for count-39 and count-0, while `macho_map` and `macho_corpus` remain
-  1/1. The broader direct `macho`/`macho_timeout` matrix retains known mixed
-  old/current `cli_ctx` ABI errors. Keep full Mach-O qualification, sanitizer,
+  2/2 for count-39 and count-0, while `macho_map` passes 1/1 and the corrected
+  `macho_corpus` passes 2/2. The broader direct `macho`/`macho_timeout` matrix
+  retains known mixed old/current `cli_ctx` ABI errors. Keep full Mach-O
+  qualification, sanitizer,
   certified Linux x86-64, materialized large-file, production-CVD/service,
   Sonic1, and release gates open.
 
@@ -1289,14 +1291,19 @@ parser-family qualification open.
   materialized large-file, production-CVD/service, Sonic1, and release gates
   open.
 
-## Mach-O universal-binary corpus qualification — 2026-08-26
+## Mach-O universal-binary dispatch and member admission — 2026-08-27
 
-- The current-source production-linked GCC macho case passes 11/11,
-  macho_timeout passes 2/2, and the isolated macho_corpus case passes 1/1
-  over a valid one-architecture FAT binary whose bounded thin Mach-O member
-  reaches an exact child matcher through universal-member traversal.
-- Keep full Mach-O corpus, sanitizer, certified Linux x86-64, materialized
-  large-file, production-CVD/service, Sonic1, and release gates open.
+- Preserve file-type-aware raw metadata dispatch: FAT wrappers expose valid
+  empty wrapper metadata, and recursive thin members use thin Mach-O metadata.
+- Preserve full-table preflight, table-overlap rejection, nonzero member sizes,
+  and checked member ends. The corrected canonical-endian, auto-classified
+  corpus passes `macho_fat` 2/2 and `macho_corpus` 2/2, including a clean,
+  cacheable scan and an exact member-relative child match; adjacent
+  `macho_unsupported`, `macho_map`, and `macho_boundary` cases pass 2/2, 1/1,
+  and 1/1.
+- Keep full Mach-O/Java-FAT corpus, sanitizer, certified Linux x86-64,
+  materialized large-file/resource, production-CVD/service, Sonic1, and release
+  gates open.
 
 ## XZ decompressed-output corpus qualification — 2026-08-26
 

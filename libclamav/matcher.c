@@ -745,6 +745,16 @@ void cli_targetinfo(struct cli_target_info *info, cli_target_t target, cli_ctx *
             einfo = cli_elfheader;
             break;
         case TARGET_MACHO:
+            /* A universal-binary wrapper has no thin-image entry point or
+             * section table of its own.  Its members are scanned as separate
+             * thin Mach-O layers and provide their own executable metadata.
+             * Treat the wrapper's empty executable metadata as valid instead
+             * of feeding the FAT header to the thin-image parser. */
+            if (ctx->recursion_stack &&
+                cli_recursion_stack_get_type(ctx, -1) == CL_TYPE_MACHO_UNIBIN) {
+                info->status = 1;
+                return;
+            }
             einfo = cli_machoheader;
             break;
         default:

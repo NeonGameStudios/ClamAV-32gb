@@ -842,7 +842,7 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
     cl_error_t ret = CL_SUCCESS;
     cl_error_t read_status;
     fmap_t *map;
-    uint64_t at;
+    uint64_t at, table_end;
 
     if (ctx == NULL) {
         cli_dbgmsg("Mach-O universal-binary: passed context was NULL\n");
@@ -893,6 +893,14 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "Mach-O universal-binary architecture table is invalid");
         return CL_EPARSE;
     }
+    if ((uint64_t)map->len < sizeof(fat_header) ||
+        (uint64_t)fat_header.nfats >
+            ((uint64_t)map->len - sizeof(fat_header)) / sizeof(fat_arch)) {
+        cli_dbgmsg("cli_scanmacho_unibin: Architecture table extends past the input\n");
+        RETURN_BROKEN;
+    }
+    table_end = sizeof(fat_header) +
+                (uint64_t)fat_header.nfats * sizeof(fat_arch);
     cli_dbgmsg("UNIBIN: Number of architectures: %u\n", (unsigned int)fat_header.nfats);
     for (i = 0; i < fat_header.nfats; i++) {
         uint64_t member_end;
@@ -919,11 +927,16 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
         cli_dbgmsg("UNIBIN: File offset: %u\n", fat_arch.offset);
         cli_dbgmsg("UNIBIN: File size: %u\n", fat_arch.size);
 
-        /* The offset must be greater than the location of the header or we risk
-           re-scanning the same data over and over again. The scan recursion max
-           will save us, but it will still cause other problems and waste CPU. */
-        if (fat_arch.offset < at) {
+        /* Every member must begin after the complete architecture table.  A
+         * comparison with the moving read cursor admits an early member that
+         * overlaps a later architecture record. */
+        if ((uint64_t)fat_arch.offset < table_end) {
             cli_dbgmsg("Invalid fat offset: %d\n", fat_arch.offset);
+            RETURN_BROKEN;
+        }
+
+        if (fat_arch.size == 0) {
+            cli_dbgmsg("cli_scanmacho_unibin: Architecture member is empty\n");
             RETURN_BROKEN;
         }
 

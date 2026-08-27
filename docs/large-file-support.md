@@ -544,8 +544,9 @@ Java-bytecode-like inputs outside the explicit classifier range and malformed
 or future FAT headers. The bounded parser now records an explicit incomplete,
 non-cacheable `CL_EPARSE` result. The current-source `macho.c` build is
 warning-clean under GCC `-Wall -Wextra -Wformat-security`; the isolated
-current-source production-linked `macho_unsupported` TCase passes 1/1, while
-`macho_map` and `macho_corpus` each pass 1/1. Full Java/FAT corpus, sanitizer,
+current-source production-linked `macho_unsupported` TCase passes 2/2, while
+`macho_map` passes 1/1 and the corrected `macho_corpus` passes 2/2. Full
+Java/FAT corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain open.
 
@@ -556,9 +557,10 @@ malformed and cannot represent a child to inspect. The parser now returns
 `CL_EPARSE`, records `Mach-O universal-binary architecture table is invalid`,
 and disables caching instead of returning a clean result. The current-source
 production-linked GCC `macho_unsupported` TCase passes 2/2 for the count-39
-unsupported case and the new count-0 malformed case; `macho_map` and
-`macho_corpus` remain 1/1. The broader direct `macho`/`macho_timeout` matrix
-still has the known mixed old/current `cli_ctx` ABI errors. Full Mach-O
+unsupported case and the new count-0 malformed case; `macho_map` passes 1/1 and
+the corrected `macho_corpus` passes 2/2. The broader direct
+`macho`/`macho_timeout` matrix still has the known mixed old/current `cli_ctx`
+ABI errors. Full Mach-O
 qualification, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and release qualification remain open.
 
@@ -1095,16 +1097,29 @@ traversal. Full GPT/partition-image corpus, sanitizer, certified Linux
 x86-64, materialized large-file, production-CVD/service, Sonic1, and release
 qualification remain open.
 
-## Mach-O universal-binary corpus qualification — 2026-08-26
+## Mach-O universal-binary dispatch and member admission — 2026-08-27
 
-The current-source production-linked GCC macho case passes 11/11,
-macho_timeout passes 2/2, and the isolated macho_corpus case passes 1/1.
-It uses a valid one-architecture FAT binary with a complete thin Mach-O member
-and bounded child payload; the universal root does not begin with MZP, and the
-exact Macho.Member.MZ.UNOFFICIAL alert is reached through universal-member
-traversal. Full Mach-O corpus, sanitizer, certified Linux x86-64, materialized
-large-file, production-CVD/service, Sonic1, and release qualification remain
-open.
+The earlier corpus was not authoritative: it serialized the FAT wrapper in the
+test helper's little-endian order, forced `CL_TYPE_MACHO_UNIBIN`, and declared a
+thin member with zero load commands. Those choices bypassed automatic FAT
+classification and allowed a virus result to conceal the raw matcher's failed
+thin-header metadata probe. The replacement corpus writes canonical big-endian
+FAT fields, contains a complete thin member with one bounded load command, and
+uses no type hint. Raw matcher metadata is now file-type aware: a FAT wrapper
+has valid empty wrapper metadata, while recursive thin members still use the
+thin Mach-O metadata parser.
+
+The parser preflights the complete architecture table before traversal, rejects
+members that overlap any architecture record, rejects zero-sized members, and
+checks every member end against the map. Current-source production-linked GCC
+cases pass `macho_fat` 2/2, `macho_corpus` 2/2, `macho_unsupported` 2/2,
+`macho_map` 1/1, and `macho_boundary` 1/1. The corpus proves both a clean,
+cacheable auto-classified scan and the exact `Macho.Member.MZ.UNOFFICIAL`
+member-relative match. A same-harness negative control using the pre-fix matcher
+fails the clean regression with `CL_EPARSE` (1/2), confirming that the test
+exposes the original metadata-dispatch defect. Full Mach-O/Java-FAT corpus,
+sanitizer, certified Linux x86-64, materialized large-file/resource,
+production-CVD/service, Sonic1, and release qualification remain open.
 
 ## XZ decompressed-output corpus qualification — 2026-08-26
 
