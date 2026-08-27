@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## SIS parser engine admission — 2026-08-27
+
+The SIS direct parser entry validated context and fmap but later used
+engine-owned temporary-directory policy during setup and cleanup. A valid fmap
+with no engine could therefore reach an unchecked `ctx->engine` dereference.
+The entry now returns `CL_ENULLARG` before SIS traversal for that caller
+error. The current-source production-linked GCC `sis_map` case includes the
+new regression and passes 2/2; the established `sis_structure` and `sis_member`
+cases remain 1/1 each. Full SIS corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## ISO9660 parser engine admission — 2026-08-27
 
 The ISO9660 direct parser entry reached engine-owned temporary-file cleanup

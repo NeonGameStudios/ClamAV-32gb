@@ -1,5 +1,15 @@
 # Wishlist
 
+## SIS parser engine admission — 2026-08-27
+
+- Keep `cli_scansis()` fail-visible when a recognized fmap is supplied without
+  the engine required by temporary-directory policy; return `CL_ENULLARG`
+  before SIS traversal or cleanup.
+- The current-source production-linked GCC `sis_map` case passes 2/2, and the
+  established `sis_structure` and `sis_member` cases pass 1/1 each. Keep the
+  full SIS corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## ISO9660 parser engine admission — 2026-08-27
 
 - Keep `cli_scaniso()` fail-visible when a recognized fmap is supplied without

@@ -313,6 +313,8 @@ cl_error_t cli_scansis(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "SIS input map is unavailable");
         return CL_EPARSE;
     }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
 
     status = sis_checktimelimit(ctx, "SIS inspection reached the configured time limit");
     if (status != CL_SUCCESS)
