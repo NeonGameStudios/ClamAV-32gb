@@ -231,16 +231,14 @@ static cl_error_t pdf_cleanup_temp_output(cli_ctx *ctx, int *fd, const char *fil
     if (fd != NULL && *fd >= 0) {
         if (close(*fd) != 0) {
             cli_mark_scan_incomplete(ctx, close_reason);
-            if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-                status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
         *fd = -1;
     }
 
     if (remove_file && filename != NULL && cli_unlink(filename) != 0) {
         cli_mark_scan_incomplete(ctx, remove_reason);
-        if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-            status = CL_EUNLINK;
+        status = cli_merge_cleanup_status(status, CL_EUNLINK);
     }
 
     if (temporary_reserved)

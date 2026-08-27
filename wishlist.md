@@ -5713,3 +5713,14 @@ and Sonic1 qualification as release gates.
   corpora, current-object execution, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, Sonic1, and parser-family
   qualification remain open.
+
+## PDF and ELF cleanup-status precedence audit — 2026-08-27
+
+- Route PDF generated/staged output and ELF bytecode-unpacked output cleanup
+  through the shared helper, preserving `CL_EWRITE` versus `CL_EUNLINK`,
+  upgrading clean/verified/`CL_BREAK`, and retaining detections or earlier
+  parser/resource errors.
+- Current source guards and GCC syntax evidence cover both helpers; current
+  object execution, complete corpora, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.

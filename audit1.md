@@ -11764,3 +11764,18 @@ production-linked evidence remains prior-object evidence for this cleanup-only
 change; complete ARJ/NSIS corpora, current-object execution, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain open.
+
+## PDF and ELF cleanup-status precedence audit — 2026-08-27
+
+PDF generated/staged output and ELF bytecode-unpacked output already marked
+close and unlink failures incomplete, but used local precedence checks. Both
+paths now use the shared cleanup-status precedence helper, preserving
+`CL_EWRITE` versus `CL_EUNLINK`, upgrading clean, verified, and `CL_BREAK`,
+and retaining detections or earlier parser/resource errors.
+
+The current PDF and ELF sources pass the established GCC syntax checks and
+source guards cover the cleanup helpers. Existing focused PDF/ELF evidence
+remains prior-object evidence for this cleanup-only change; current-object
+execution, complete corpora, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain open.

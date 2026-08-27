@@ -1126,16 +1126,14 @@ done:
     if (-1 != ndesc) {
         if (close(ndesc) != 0) {
             cli_mark_scan_incomplete(ctx, "ELF unpacked output could not be closed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
-                ret = CL_EWRITE;
+            ret = cli_merge_cleanup_status(ret, CL_EWRITE);
         }
     }
     if (NULL != tempfile) {
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tempfile) != 0) {
                 cli_mark_scan_incomplete(ctx, "ELF unpacked output could not be removed");
-                if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
-                    ret = CL_EUNLINK;
+                ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
             }
         }
         free(tempfile);
