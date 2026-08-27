@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## HFS+ parser engine admission — 2026-08-27
+
+The HFS+ direct parser validated context and fmap but later used
+`ctx->engine->keeptmp` during temporary-file cleanup. A valid fmap with no
+engine could therefore reach an unchecked engine dereference. The entry now
+returns `CL_ENULLARG` before HFS+ traversal for that caller error, with a
+dedicated one-byte fmap regression. The current-source production-linked GCC
+`hfs_map` case passes 12/12, and `hfs_inline` passes 1/1. The existing
+catalog-boundary fixture now asserts the earlier declared-volume admission
+result, which is authoritative after volume completeness was added. The
+`hfs_fork` callback/materialization case remains a mixed-harness rebuild gate
+after a pre-oracle crash. Complete HFS+ corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.
+
 ## UDF parser engine admission — 2026-08-27
 
 The UDF direct parser entry validated context and fmap but its extracted-file

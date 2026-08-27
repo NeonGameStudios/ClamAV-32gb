@@ -1934,6 +1934,8 @@ cl_error_t cli_scanhfsplus(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "HFS+ input map is unavailable");
         return CL_EPARSE;
     }
+    if (!ctx->engine)
+        return CL_ENULLARG;
 
     status = cli_checktimelimit(ctx);
     if (status != CL_SUCCESS) {

@@ -37499,6 +37499,23 @@ START_TEST(test_hfsplus_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hfsplus_missing_engine_is_fail_visible)
+{
+    uint8_t data = 0;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(&data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scanhfsplus(&ctx), CL_ENULLARG);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hfsplus_declared_volume_boundary_is_fail_visible)
 {
     uint8_t data[1024 + (32 * 512)];
@@ -37861,9 +37878,8 @@ START_TEST(test_hfsplus_catalog_node_read_failure_is_fail_visible)
 
     cl_fmap_close(map);
 
-    /* The catalog header is complete, but the first catalog leaf node is
-     * short by one byte. This must remain a format/range failure rather than
-     * being reported as an fmap callback failure. */
+    /* The map is truncated before the declared volume ends. Volume admission
+     * must fail before catalog traversal can inspect the short leaf node. */
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, (8U * 512U) + 4096U + 512U - 1U);
     ck_assert_ptr_nonnull(map);
@@ -37873,7 +37889,7 @@ START_TEST(test_hfsplus_catalog_node_read_failure_is_fail_visible)
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ file-tree node is outside the input map");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ declared volume exceeds the input map");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -41212,6 +41228,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hfs_map);
     tcase_add_checked_fixture(tc_hfs_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hfs_map, test_hfsplus_missing_map_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_missing_engine_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_declared_volume_boundary_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_declared_attributes_failure_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_temporary_directory_failure_is_fail_visible);

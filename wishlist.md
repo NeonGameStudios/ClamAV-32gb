@@ -1,5 +1,18 @@
 # Wishlist
 
+## HFS+ parser engine admission — 2026-08-27
+
+- Keep `cli_scanhfsplus()` fail-visible when a recognized fmap is supplied
+  without the engine required by temporary-file cleanup; return `CL_ENULLARG`
+  before HFS+ traversal or cleanup.
+- The current-source production-linked GCC `hfs_map` case passes 12/12 and
+  `hfs_inline` passes 1/1. The catalog-boundary fixture records the earlier
+  declared-volume admission result, while the `hfs_fork` callback/materialization
+  case remains a mixed-harness rebuild gate after a pre-oracle crash. Keep
+  complete HFS+ corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  open.
+
 ## UDF parser engine admission — 2026-08-27
 
 - Keep `cli_scanudf()` fail-visible when a recognized fmap is supplied without
