@@ -433,6 +433,16 @@ impl AlzLocalFileHeader {
         sink: &mut impl ExtractSink,
         max_extracted_size: u64,
     ) -> Result<(), Error> {
+        self.extract_file_deflate_reader_until_eof(decompressor, sink, max_extracted_size)?;
+        sink.finish()
+    }
+
+    fn extract_file_deflate_reader_until_eof<R: Read>(
+        &mut self,
+        decompressor: &mut R,
+        sink: &mut impl ExtractSink,
+        max_extracted_size: u64,
+    ) -> Result<(), Error> {
         sink.begin(Some(&self.file_name))?;
         let mut output_size = 0u64;
         let mut crc = !0u32;
@@ -488,7 +498,7 @@ impl AlzLocalFileHeader {
             return Err(Error::Extract);
         }
 
-        sink.finish()
+        Ok(())
     }
 
     /*
@@ -505,7 +515,18 @@ impl AlzLocalFileHeader {
             .map_err(|err| classify_extraction_read_error(err, "compressed data seek"))?;
         let mut bounded = reader.take(self.compressed_size);
         let mut decompressor = DeflateDecoder::new(&mut bounded);
-        self.extract_file_deflate_reader(&mut decompressor, sink, max_extracted_size)
+        self.extract_file_deflate_reader_until_eof(&mut decompressor, sink, max_extracted_size)?;
+        if decompressor.total_in() != self.compressed_size {
+            debug!(
+                "ALZ file {:?} left {} declared deflate bytes unconsumed",
+                self.file_name,
+                self.compressed_size.saturating_sub(decompressor.total_in()),
+            );
+            sink.abort();
+            return Err(Error::Extract);
+        }
+
+        sink.finish()
     }
 
     fn extract_file_nocomp<R: Read + Seek>(
@@ -1629,6 +1650,38 @@ mod tests {
             ALZ_COMP_DEFLATE,
             u8::try_from(compressed.len()).unwrap(),
             u8::try_from(payload.len() - 1).unwrap(),
+            &compressed,
+        );
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+
+        let alz = Alz::from_bytes_with_filter(&bytes, |_| {
+            AlzExtractionDecision::Extract(extraction_limits())
+        })
+        .unwrap();
+
+        assert!(alz.has_parse_error());
+        assert!(alz.embedded_files.is_empty());
+    }
+
+    #[test]
+    fn deflate_trailing_compressed_bytes_are_rejected_before_scan() {
+        const ALZ_COMP_DEFLATE: u8 = 2;
+        let payload = b"deflate payload";
+        let mut compressed = raw_deflate(payload);
+        compressed.push(0);
+        assert!(compressed.len() <= u8::MAX.into());
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_entry_with_sizes(
+            &mut bytes,
+            "trailing-deflate.bin",
+            AlzFileAttribute::File as u8,
+            0x10,
+            ALZ_COMP_DEFLATE,
+            u8::try_from(compressed.len()).unwrap(),
+            u8::try_from(payload.len()).unwrap(),
             &compressed,
         );
         bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());

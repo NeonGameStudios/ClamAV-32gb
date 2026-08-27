@@ -36,6 +36,18 @@ linked only with the existing cached decoder artifacts, passes both cases;
 full Rust/C ABI, production-CVD, sanitizer, service, Sonic1, and release
 qualification remain open.
 
+## ALZ deflate trailing-stream validation — 2026-08-26
+
+ALZ deflate extraction previously accepted a valid raw-deflate prefix when the
+declared compressed member also contained trailing bytes: output and CRC
+matched, but the decoder's consumed-byte count was not checked before the
+member was finalized. Extraction now requires `DeflateDecoder::total_in()` to
+equal the declared compressed size and aborts the sink before nested dispatch
+when it does not. A disposable offline ALZ-only Rust 1.97.1 harness passes all
+38 ALZ tests, including the new malformed-stream regression. Full Rust/C ABI,
+production-CVD, sanitizer, service, Sonic1, and release qualification remain
+open.
+
 ## 7-Zip substream-size arithmetic — 2026-08-26
 
 7-Zip substream metadata previously accumulated declared sizes without

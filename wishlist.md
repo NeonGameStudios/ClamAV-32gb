@@ -38,6 +38,15 @@
   Keep full Rust/C ABI, production-CVD, sanitizer, service, Sonic1, and
   release qualification open.
 
+## ALZ deflate trailing-stream validation — 2026-08-26
+
+- Require deflate decoding to consume the entire declared compressed member
+  before finalizing the extraction sink; reject trailing compressed bytes as a
+  malformed, non-dispatched member.
+- The disposable offline ALZ-only Rust 1.97.1 harness passes all 38 ALZ tests,
+  including the new trailing-stream regression. Keep full Rust/C ABI,
+  production-CVD, sanitizer, service, Sonic1, and release qualification open.
+
 ## 7-Zip substream-size arithmetic — 2026-08-26
 
 - Reject a substream-size sum that overflows `UInt64` or exceeds the folder's

@@ -46,6 +46,17 @@ boundaries against the existing cached decoder artifacts. Full Rust/C ABI,
 production-CVD, sanitizer, service, Sonic1, and release qualification remain
 required.
 
+## ALZ deflate trailing-stream validation — 2026-08-26
+
+ALZ deflate extraction now requires `DeflateDecoder::total_in()` to consume
+the complete declared compressed member before the extraction sink is
+finalized. A valid deflate prefix followed by bytes inside the declared
+compressed range is therefore an incomplete malformed member and is never
+dispatched to nested scanning. A disposable offline ALZ-only Rust 1.97.1
+harness passes all 38 ALZ tests, including the trailing-stream regression.
+Full Rust/C ABI, production-CVD, sanitizer, service, Sonic1, and release
+qualification remain required.
+
 ## 7-Zip substream-size arithmetic — 2026-08-26
 
 7-Zip substream metadata now checks native-width accumulation and rejects a
