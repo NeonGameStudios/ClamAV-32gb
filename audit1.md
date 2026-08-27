@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## HWP3 parser engine admission — 2026-08-27
+
+The HWP3 direct parser validated context and fmap but paragraph traversal
+later read `ctx->engine->maxrechwp3`. A valid fmap with no engine could
+therefore reach an unchecked engine dereference. The entry now returns
+`CL_ENULLARG` before HWP3 traversal for that caller error, with a dedicated
+one-byte fmap regression. The current-source production-linked GCC
+`hwp3_map` case passes 2/2, `hwp3_api` passes 1/1, and `hwp3_corpus` passes
+1/1. Complete HWP3 corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, Sonic1, and parser-family qualification
+remain open.
+
 ## MSXML parser engine admission — 2026-08-27
 
 The legacy MSXML direct parser validated context and fmap but its Base64 and

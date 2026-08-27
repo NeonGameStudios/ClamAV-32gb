@@ -1,5 +1,15 @@
 # Wishlist
 
+## HWP3 parser engine admission — 2026-08-27
+
+- Keep `cli_scanhwp3()` fail-visible when a recognized fmap is supplied
+  without the engine required by paragraph recursion limits; return
+  `CL_ENULLARG` before HWP3 traversal.
+- The current-source production-linked GCC `hwp3_map` case passes 2/2,
+  `hwp3_api` passes 1/1, and `hwp3_corpus` passes 1/1. Keep complete HWP3
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## MSXML parser engine admission — 2026-08-27
 
 - Keep `cli_scanmsxml()` fail-visible when a recognized fmap is supplied
