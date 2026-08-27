@@ -5865,3 +5865,13 @@ parser-family qualification remain open.
   complete archive/fmap corpora, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, Sonic1, and parser-family
   qualification remain open.
+
+## PDF filter-stage cleanup-status audit — 2026-08-27
+
+- Route PDF filter-stage close, unlink, and temporary-accounting cleanup
+  failures through the shared precedence helper, preserving `CL_EWRITE`,
+  `CL_EUNLINK`, and `CL_ERESOURCE` without hiding earlier results.
+- Current PDF decoder GCC syntax and source guards cover the paths;
+  current-object execution, complete PDF/filter corpora, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification remain open.

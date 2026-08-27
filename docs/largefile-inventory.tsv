@@ -3994,61 +3994,61 @@ fixed-width-integer	libclamav/pdf.h	66	    uint32_t flags;
 fixed-width-integer	libclamav/pdf.h	67	    uint32_t statsflags;
 fixed-width-integer	libclamav/pdf.h	68	    uint32_t numfilters;
 fixed-width-integer	libclamav/pdf.h	69	    uint32_t filterlist[PDF_FILTERLIST_MAX];
-fixed-width-integer	libclamav/pdfdecode.c	103	    uint64_t reserved;
-fixed-width-integer	libclamav/pdfdecode.c	1185	    uint32_t i;
-fixed-width-integer	libclamav/pdfdecode.c	1401	    uint64_t sum = 0;
-fixed-width-integer	libclamav/pdfdecode.c	1435	            sum = (sum * 85) + ((uint32_t)byte - '!');
-fixed-width-integer	libclamav/pdfdecode.c	1517	    uint32_t length  = token->length;
-fixed-width-integer	libclamav/pdfdecode.c	1518	    uint32_t offset  = 0;
-fixed-width-integer	libclamav/pdfdecode.c	1659	                                             uint64_t reservation_start)
-fixed-width-integer	libclamav/pdfdecode.c	1669	        uint64_t reservation_current = *pdf->temporary_reserved;
-fixed-width-integer	libclamav/pdfdecode.c	1700	    status = cli_checklimits("pdf", pdf->ctx, (uint64_t)decoded, 0, 0);
-fixed-width-integer	libclamav/pdfdecode.c	1763	    uint64_t reservation_start = 0;
-fixed-width-integer	libclamav/pdfdecode.c	1869	        uint32_t round_keys[RKLENGTH(256)];
-fixed-width-integer	libclamav/pdfdecode.c	2034	    const char *stream, size_t streamlen, uint32_t first_filter,
-fixed-width-integer	libclamav/pdfdecode.c	2042	    uint64_t reservation_start = 0;
-fixed-width-integer	libclamav/pdfdecode.c	2098	        input_stage.reserved = (uint64_t)input_stage.length;
-fixed-width-integer	libclamav/pdfdecode.c	2106	            (uint64_t)input_stat.st_size != (uint64_t)input_stage.length) {
-fixed-width-integer	libclamav/pdfdecode.c	2278	            status = cli_checklimits("pdf", pdf->ctx, (uint64_t)required, 0, 0);
-fixed-width-integer	libclamav/pdfdecode.c	2339	    uint64_t reservation_start = 0;
-fixed-width-integer	libclamav/pdfdecode.c	2474	    uint64_t reservation_start = 0;
-fixed-width-integer	libclamav/pdfdecode.c	2601	    uint64_t reservation_start = 0;
-fixed-width-integer	libclamav/pdfdecode.c	2725	    uint64_t reservation_start = 0;
-fixed-width-integer	libclamav/pdfdecode.c	2726	    uint64_t sum               = 0;
-fixed-width-integer	libclamav/pdfdecode.c	2801	            sum = (sum * 85U) + ((uint32_t)byte - '!');
-fixed-width-integer	libclamav/pdfdecode.c	3073	    uint64_t reservation_start = 0;
-fixed-width-integer	libclamav/pdfdecode.c	3207	    uint32_t length  = token->length;
-fixed-width-integer	libclamav/pdfdecode.c	3558	    uint32_t length  = token->length;
-fixed-width-integer	libclamav/pdfdecode.c	369	        if (UINT64_MAX - *pdf->temporary_reserved < (uint64_t)length) {
-fixed-width-integer	libclamav/pdfdecode.c	374	        status = cli_scan_reserve_temporary(pdf->ctx, (uint64_t)length);
-fixed-width-integer	libclamav/pdfdecode.c	379	        *pdf->temporary_reserved += (uint64_t)length;
-fixed-width-integer	libclamav/pdfdecode.c	385	            cli_scan_release_temporary(pdf->ctx, (uint64_t)length);
-fixed-width-integer	libclamav/pdfdecode.c	386	            *pdf->temporary_reserved -= (uint64_t)length;
-fixed-width-integer	libclamav/pdfdecode.c	393	            cli_scan_release_temporary(pdf->ctx, (uint64_t)length);
-fixed-width-integer	libclamav/pdfdecode.c	394	            *pdf->temporary_reserved -= (uint64_t)length;
-fixed-width-integer	libclamav/pdfdecode.c	409	    status = cli_checklimits("pdf", pdf->ctx, (uint64_t)streamlen, 0, 0);
-fixed-width-integer	libclamav/pdfdecode.c	436	                                             uint64_t reservation_start);
-fixed-width-integer	libclamav/pdfdecode.c	466	    const char *stream, size_t streamlen, uint32_t first_filter,
-fixed-width-integer	libclamav/pdfdecode.c	526	static bool pdf_stream_filter_is_supported(uint32_t filter)
-fixed-width-integer	libclamav/pdfdecode.c	535	    uint32_t i;
-fixed-width-integer	libclamav/pdfdecode.c	550	    uint32_t crypt_filters = 0;
-fixed-width-integer	libclamav/pdfdecode.c	551	    uint32_t i;
-fixed-width-integer	libclamav/pdfdecode.c	567	                                                 uint32_t first_filter)
-fixed-width-integer	libclamav/pdfdecode.c	569	    uint32_t i;
-fixed-width-integer	libclamav/pdfdecode.c	586	    uint32_t i;
-fixed-width-integer	libclamav/pdfdecode.c	624	    const struct pdf_decode_params *params, uint32_t filter_index)
-fixed-width-integer	libclamav/pdfdecode.c	627	    uint32_t i;
-fixed-width-integer	libclamav/pdfdecode.c	642	    const struct pdf_decode_params *params, uint32_t filter_index,
-fixed-width-integer	libclamav/pdfdecode.c	643	    uint32_t filter, struct pdf_stream_reader *reader, int fout,
-fixed-width-integer	libclamav/pdfdecode.c	683	    uint32_t first_filter, struct pdf_stream_reader *reader,
-fixed-width-integer	libclamav/pdfdecode.c	685	    off_t output_start, uint64_t reservation_start)
-fixed-width-integer	libclamav/pdfdecode.c	689	    uint32_t i;
-fixed-width-integer	libclamav/pdfdecode.c	741	            output_stage.reserved = (uint64_t)decoded;
-fixed-width-integer	libclamav/pdfdecode.c	744	            (uint64_t)output_stat.st_size != (uint64_t)decoded) {
-fixed-width-integer	libclamav/pdfdecode.c	77	    uint32_t flags;   /* tracking flags */
-fixed-width-integer	libclamav/pdfdecode.c	78	    uint32_t success; /* successfully decoded filters */
-fixed-width-integer	libclamav/pdfdecode.c	792	    uint64_t reservation_start = 0;
-fixed-width-integer	libclamav/pdfdecode.c	899	        uint32_t first_filter = document_method ? 0U : 1U;
+fixed-width-integer	libclamav/pdfdecode.c	104	    uint64_t reserved;
+fixed-width-integer	libclamav/pdfdecode.c	1180	    uint32_t i;
+fixed-width-integer	libclamav/pdfdecode.c	1396	    uint64_t sum = 0;
+fixed-width-integer	libclamav/pdfdecode.c	1430	            sum = (sum * 85) + ((uint32_t)byte - '!');
+fixed-width-integer	libclamav/pdfdecode.c	1512	    uint32_t length  = token->length;
+fixed-width-integer	libclamav/pdfdecode.c	1513	    uint32_t offset  = 0;
+fixed-width-integer	libclamav/pdfdecode.c	1654	                                             uint64_t reservation_start)
+fixed-width-integer	libclamav/pdfdecode.c	1664	        uint64_t reservation_current = *pdf->temporary_reserved;
+fixed-width-integer	libclamav/pdfdecode.c	1695	    status = cli_checklimits("pdf", pdf->ctx, (uint64_t)decoded, 0, 0);
+fixed-width-integer	libclamav/pdfdecode.c	1758	    uint64_t reservation_start = 0;
+fixed-width-integer	libclamav/pdfdecode.c	1864	        uint32_t round_keys[RKLENGTH(256)];
+fixed-width-integer	libclamav/pdfdecode.c	2029	    const char *stream, size_t streamlen, uint32_t first_filter,
+fixed-width-integer	libclamav/pdfdecode.c	2037	    uint64_t reservation_start = 0;
+fixed-width-integer	libclamav/pdfdecode.c	2093	        input_stage.reserved = (uint64_t)input_stage.length;
+fixed-width-integer	libclamav/pdfdecode.c	2101	            (uint64_t)input_stat.st_size != (uint64_t)input_stage.length) {
+fixed-width-integer	libclamav/pdfdecode.c	2273	            status = cli_checklimits("pdf", pdf->ctx, (uint64_t)required, 0, 0);
+fixed-width-integer	libclamav/pdfdecode.c	2334	    uint64_t reservation_start = 0;
+fixed-width-integer	libclamav/pdfdecode.c	2469	    uint64_t reservation_start = 0;
+fixed-width-integer	libclamav/pdfdecode.c	2596	    uint64_t reservation_start = 0;
+fixed-width-integer	libclamav/pdfdecode.c	2720	    uint64_t reservation_start = 0;
+fixed-width-integer	libclamav/pdfdecode.c	2721	    uint64_t sum               = 0;
+fixed-width-integer	libclamav/pdfdecode.c	2796	            sum = (sum * 85U) + ((uint32_t)byte - '!');
+fixed-width-integer	libclamav/pdfdecode.c	3068	    uint64_t reservation_start = 0;
+fixed-width-integer	libclamav/pdfdecode.c	3202	    uint32_t length  = token->length;
+fixed-width-integer	libclamav/pdfdecode.c	3553	    uint32_t length  = token->length;
+fixed-width-integer	libclamav/pdfdecode.c	370	        if (UINT64_MAX - *pdf->temporary_reserved < (uint64_t)length) {
+fixed-width-integer	libclamav/pdfdecode.c	375	        status = cli_scan_reserve_temporary(pdf->ctx, (uint64_t)length);
+fixed-width-integer	libclamav/pdfdecode.c	380	        *pdf->temporary_reserved += (uint64_t)length;
+fixed-width-integer	libclamav/pdfdecode.c	386	            cli_scan_release_temporary(pdf->ctx, (uint64_t)length);
+fixed-width-integer	libclamav/pdfdecode.c	387	            *pdf->temporary_reserved -= (uint64_t)length;
+fixed-width-integer	libclamav/pdfdecode.c	394	            cli_scan_release_temporary(pdf->ctx, (uint64_t)length);
+fixed-width-integer	libclamav/pdfdecode.c	395	            *pdf->temporary_reserved -= (uint64_t)length;
+fixed-width-integer	libclamav/pdfdecode.c	410	    status = cli_checklimits("pdf", pdf->ctx, (uint64_t)streamlen, 0, 0);
+fixed-width-integer	libclamav/pdfdecode.c	437	                                             uint64_t reservation_start);
+fixed-width-integer	libclamav/pdfdecode.c	467	    const char *stream, size_t streamlen, uint32_t first_filter,
+fixed-width-integer	libclamav/pdfdecode.c	521	static bool pdf_stream_filter_is_supported(uint32_t filter)
+fixed-width-integer	libclamav/pdfdecode.c	530	    uint32_t i;
+fixed-width-integer	libclamav/pdfdecode.c	545	    uint32_t crypt_filters = 0;
+fixed-width-integer	libclamav/pdfdecode.c	546	    uint32_t i;
+fixed-width-integer	libclamav/pdfdecode.c	562	                                                 uint32_t first_filter)
+fixed-width-integer	libclamav/pdfdecode.c	564	    uint32_t i;
+fixed-width-integer	libclamav/pdfdecode.c	581	    uint32_t i;
+fixed-width-integer	libclamav/pdfdecode.c	619	    const struct pdf_decode_params *params, uint32_t filter_index)
+fixed-width-integer	libclamav/pdfdecode.c	622	    uint32_t i;
+fixed-width-integer	libclamav/pdfdecode.c	637	    const struct pdf_decode_params *params, uint32_t filter_index,
+fixed-width-integer	libclamav/pdfdecode.c	638	    uint32_t filter, struct pdf_stream_reader *reader, int fout,
+fixed-width-integer	libclamav/pdfdecode.c	678	    uint32_t first_filter, struct pdf_stream_reader *reader,
+fixed-width-integer	libclamav/pdfdecode.c	680	    off_t output_start, uint64_t reservation_start)
+fixed-width-integer	libclamav/pdfdecode.c	684	    uint32_t i;
+fixed-width-integer	libclamav/pdfdecode.c	736	            output_stage.reserved = (uint64_t)decoded;
+fixed-width-integer	libclamav/pdfdecode.c	739	            (uint64_t)output_stat.st_size != (uint64_t)decoded) {
+fixed-width-integer	libclamav/pdfdecode.c	78	    uint32_t flags;   /* tracking flags */
+fixed-width-integer	libclamav/pdfdecode.c	787	    uint64_t reservation_start = 0;
+fixed-width-integer	libclamav/pdfdecode.c	79	    uint32_t success; /* successfully decoded filters */
+fixed-width-integer	libclamav/pdfdecode.c	894	        uint32_t first_filter = document_method ? 0U : 1U;
 fixed-width-integer	libclamav/pdfng.c	204	int is_object_reference(struct pdf_struct *pdf, char *begin, char **endchar, uint32_t *id)
 fixed-width-integer	libclamav/pdfng.c	210	    uint32_t t = 0;
 fixed-width-integer	libclamav/pdfng.c	316	        t = (uint32_t)(object_number << 8) | (uint32_t)n;
@@ -12976,207 +12976,207 @@ native-width-integer	libclamav/pdf.h	63	    size_t start;
 native-width-integer	libclamav/pdf.h	64	    size_t size;
 native-width-integer	libclamav/pdf.h	71	    size_t stream_size;           // size of stream contained in object.
 native-width-integer	libclamav/pdf.h	88	    size_t datasz;
-native-width-integer	libclamav/pdfdecode.c	100	    int fd;
-native-width-integer	libclamav/pdfdecode.c	102	    size_t length;
-native-width-integer	libclamav/pdfdecode.c	1039	            size_t raw_bytes           = 0;
-native-width-integer	libclamav/pdfdecode.c	106	static cl_error_t pdf_decoder_output_width_check(cli_ctx *ctx, size_t current, size_t additional)
-native-width-integer	libclamav/pdfdecode.c	108	    if (additional > (size_t)UINT32_MAX || current > (size_t)UINT32_MAX - additional) {
-native-width-integer	libclamav/pdfdecode.c	1097	    cli_dbgmsg("pdf_decodestream: detected %lu applied filters\n", (long unsigned)(obj->numfilters));
-native-width-integer	libclamav/pdfdecode.c	1153	size_t pdf_decodestream(
-native-width-integer	libclamav/pdfdecode.c	1155	    const char *stream, size_t streamlen, int xref, int fout,
-native-width-integer	libclamav/pdfdecode.c	116	static cl_error_t pdf_decoder_capacity_check(cli_ctx *ctx, size_t capacity)
-native-width-integer	libclamav/pdfdecode.c	1177	static size_t pdf_decodestream_internal(
-native-width-integer	libclamav/pdfdecode.c	1180	    struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm)
-native-width-integer	libclamav/pdfdecode.c	1183	    size_t bytes_scanned = 0;
-native-width-integer	libclamav/pdfdecode.c	1353	        unsigned int objs_found = pdf->nobjs;
-native-width-integer	libclamav/pdfdecode.c	1360	        objstm->streambuf_len = (size_t)token->length;
-native-width-integer	libclamav/pdfdecode.c	139	                                          const uint8_t *memory, size_t length)
-native-width-integer	libclamav/pdfdecode.c	1395	    size_t declen = 0;
-native-width-integer	libclamav/pdfdecode.c	1396	    size_t decoded_size;
-native-width-integer	libclamav/pdfdecode.c	1399	    size_t remaining   = token->length;
-native-width-integer	libclamav/pdfdecode.c	1400	    int quintet = 0, rc = CL_SUCCESS;
-native-width-integer	libclamav/pdfdecode.c	1429	        int byte = (remaining--) ? (int)*ptr++ : EOF;
-native-width-integer	libclamav/pdfdecode.c	1462	                int i;
-native-width-integer	libclamav/pdfdecode.c	148	                                              struct pdf_struct *pdf, int fd,
-native-width-integer	libclamav/pdfdecode.c	149	                                              size_t length, const char *path)
-native-width-integer	libclamav/pdfdecode.c	1514	    size_t declen = 0, capacity = 0;
-native-width-integer	libclamav/pdfdecode.c	1519	    int rc           = CL_SUCCESS;
-native-width-integer	libclamav/pdfdecode.c	1537	        size_t output_length;
-native-width-integer	libclamav/pdfdecode.c	1543	                           (long unsigned)(offset + srclen + 1), (long unsigned)(length - offset));
-native-width-integer	libclamav/pdfdecode.c	1547	            output_length = (size_t)srclen + 1;
-native-width-integer	libclamav/pdfdecode.c	1574	                           (long unsigned)(offset + srclen + 1), (long unsigned)(length - offset));
-native-width-integer	libclamav/pdfdecode.c	1578	            output_length = (size_t)(257 - srclen);
-native-width-integer	libclamav/pdfdecode.c	1640	static uint8_t *decode_nextlinestart(struct pdf_struct *pdf, uint8_t *content, size_t length)
-native-width-integer	libclamav/pdfdecode.c	1643	    size_t r;
-native-width-integer	libclamav/pdfdecode.c	1644	    int toggle = 0;
-native-width-integer	libclamav/pdfdecode.c	1658	static cl_error_t pdf_rollback_stream_output(struct pdf_struct *pdf, int fout, off_t output_start,
-native-width-integer	libclamav/pdfdecode.c	1689	static cl_error_t pdf_stream_output_flush(struct pdf_struct *pdf, int fout, uint8_t *output_buffer,
-native-width-integer	libclamav/pdfdecode.c	1690	                                          size_t *output_buffered, size_t decoded,
-native-width-integer	libclamav/pdfdecode.c	171	static size_t pdf_stream_reader_consumed(const struct pdf_stream_reader *reader)
-native-width-integer	libclamav/pdfdecode.c	1712	static cl_error_t pdf_stream_output_append(struct pdf_struct *pdf, int fout, uint8_t *output_buffer,
-native-width-integer	libclamav/pdfdecode.c	1713	                                           size_t *output_buffered, size_t *decoded,
-native-width-integer	libclamav/pdfdecode.c	1714	                                           const uint8_t *data, size_t length,
-native-width-integer	libclamav/pdfdecode.c	1717	    size_t offset = 0;
-native-width-integer	libclamav/pdfdecode.c	1728	        size_t available;
-native-width-integer	libclamav/pdfdecode.c	1729	        size_t chunk;
-native-width-integer	libclamav/pdfdecode.c	173	    size_t buffered = reader->buffer_length - reader->buffer_offset;
-native-width-integer	libclamav/pdfdecode.c	1755	    enum enc_method enc_method, struct pdf_stream_reader *reader, int fout,
-native-width-integer	libclamav/pdfdecode.c	1756	    size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	1760	    size_t output_buffered = 0;
-native-width-integer	libclamav/pdfdecode.c	1761	    size_t decoded         = 0;
-native-width-integer	libclamav/pdfdecode.c	1762	    size_t next_deadline   = 0;
-native-width-integer	libclamav/pdfdecode.c	1764	    off_t output_start;
-native-width-integer	libclamav/pdfdecode.c	179	                                          size_t offset)
-native-width-integer	libclamav/pdfdecode.c	1804	            size_t key_length;
-native-width-integer	libclamav/pdfdecode.c	1837	            size_t input_length;
-native-width-integer	libclamav/pdfdecode.c	1868	        size_t key_length;
-native-width-integer	libclamav/pdfdecode.c	1874	        size_t ciphertext_length;
-native-width-integer	libclamav/pdfdecode.c	1875	        size_t block_count;
-native-width-integer	libclamav/pdfdecode.c	1876	        size_t block;
-native-width-integer	libclamav/pdfdecode.c	1877	        int rounds;
-native-width-integer	libclamav/pdfdecode.c	1912	                                      (int)(key_length * 8U));
-native-width-integer	libclamav/pdfdecode.c	192	    size_t length;
-native-width-integer	libclamav/pdfdecode.c	1973	            size_t i;
-native-width-integer	libclamav/pdfdecode.c	2034	    const char *stream, size_t streamlen, uint32_t first_filter,
-native-width-integer	libclamav/pdfdecode.c	2035	    bool document_method, int fout, size_t *bytes_scanned,
-native-width-integer	libclamav/pdfdecode.c	204	    length = MIN((size_t)PDF_INPUT_WINDOW_SIZE,
-native-width-integer	libclamav/pdfdecode.c	2043	    off_t output_start;
-native-width-integer	libclamav/pdfdecode.c	2137	static int pdf_asciihex_nibble(uint8_t byte)
-native-width-integer	libclamav/pdfdecode.c	2155	                                          long *parsed)
-native-width-integer	libclamav/pdfdecode.c	2188	        long predictor;
-native-width-integer	libclamav/pdfdecode.c	2211	                                             int fout, size_t *decoded_length,
-native-width-integer	libclamav/pdfdecode.c	2212	                                             int *inflate_status)
-native-width-integer	libclamav/pdfdecode.c	2216	    size_t decoded  = 0;
-native-width-integer	libclamav/pdfdecode.c	2218	    int zstat = Z_OK;
-native-width-integer	libclamav/pdfdecode.c	2243	        size_t produced;
-native-width-integer	libclamav/pdfdecode.c	2251	            size_t input_length;
-native-width-integer	libclamav/pdfdecode.c	2266	        produced         = INFLATE_CHUNK_SIZE - (size_t)stream.avail_out;
-native-width-integer	libclamav/pdfdecode.c	2269	            size_t required;
-native-width-integer	libclamav/pdfdecode.c	228	                                               size_t *length)
-native-width-integer	libclamav/pdfdecode.c	2334	                                                int fout, size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	2336	    size_t decoded       = 0;
-native-width-integer	libclamav/pdfdecode.c	2337	    size_t payload_start = 0;
-native-width-integer	libclamav/pdfdecode.c	2338	    off_t output_start;
-native-width-integer	libclamav/pdfdecode.c	2341	    int zstat  = Z_OK;
-native-width-integer	libclamav/pdfdecode.c	2386	        size_t resynchronized;
-native-width-integer	libclamav/pdfdecode.c	2448	                                         size_t streamlen, int fout,
-native-width-integer	libclamav/pdfdecode.c	2449	                                         size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	2464	                                             int fout,
-native-width-integer	libclamav/pdfdecode.c	2465	                                             size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	2470	    size_t decoded               = 0;
-native-width-integer	libclamav/pdfdecode.c	2471	    size_t output_buffered       = 0;
-native-width-integer	libclamav/pdfdecode.c	2472	    size_t next_deadline_offset  = 0;
-native-width-integer	libclamav/pdfdecode.c	2473	    off_t output_start;
-native-width-integer	libclamav/pdfdecode.c	2497	        size_t output_length;
-native-width-integer	libclamav/pdfdecode.c	2515	            output_length = (size_t)control + 1U;
-native-width-integer	libclamav/pdfdecode.c	2528	            output_length = (size_t)(257U - control);
-native-width-integer	libclamav/pdfdecode.c	2579	                                      size_t streamlen, int fout,
-native-width-integer	libclamav/pdfdecode.c	2580	                                      size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	2594	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	2597	    size_t decoded              = 0;
-native-width-integer	libclamav/pdfdecode.c	2598	    size_t output_buffered      = 0;
-native-width-integer	libclamav/pdfdecode.c	2599	    size_t next_deadline_offset = 0;
-native-width-integer	libclamav/pdfdecode.c	2600	    off_t output_start;
-native-width-integer	libclamav/pdfdecode.c	2603	    int high_nibble             = -1;
-native-width-integer	libclamav/pdfdecode.c	2625	        int nibble;
-native-width-integer	libclamav/pdfdecode.c	268	                                               uint8_t *output, size_t length,
-native-width-integer	libclamav/pdfdecode.c	2702	                                            size_t streamlen, int fout,
-native-width-integer	libclamav/pdfdecode.c	2703	                                            size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	271	    size_t offset;
-native-width-integer	libclamav/pdfdecode.c	2718	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	2721	    size_t decoded              = 0;
-native-width-integer	libclamav/pdfdecode.c	2722	    size_t output_buffered      = 0;
-native-width-integer	libclamav/pdfdecode.c	2723	    size_t next_deadline_offset = 0;
-native-width-integer	libclamav/pdfdecode.c	2724	    off_t output_start;
-native-width-integer	libclamav/pdfdecode.c	2728	    unsigned int quintet       = 0;
-native-width-integer	libclamav/pdfdecode.c	2767	            unsigned int i;
-native-width-integer	libclamav/pdfdecode.c	2882	                                           size_t streamlen, int fout,
-native-width-integer	libclamav/pdfdecode.c	2883	                                           size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	2897	                                     int *early_change)
-native-width-integer	libclamav/pdfdecode.c	2914	        long parsed;
-native-width-integer	libclamav/pdfdecode.c	2931	        *early_change = (int)parsed;
-native-width-integer	libclamav/pdfdecode.c	2939	                                         int early_change, int fout,
-native-width-integer	libclamav/pdfdecode.c	294	    struct pdf_stream_reader *reader, size_t *next_deadline_offset,
-native-width-integer	libclamav/pdfdecode.c	2940	                                         size_t *decoded_length,
-native-width-integer	libclamav/pdfdecode.c	2941	                                         int *decode_status)
-native-width-integer	libclamav/pdfdecode.c	2945	    size_t decoded         = 0;
-native-width-integer	libclamav/pdfdecode.c	2946	    size_t output_buffered = 0;
-native-width-integer	libclamav/pdfdecode.c	2948	    int lzwstat            = LZW_OK;
-native-width-integer	libclamav/pdfdecode.c	297	    size_t consumed;
-native-width-integer	libclamav/pdfdecode.c	2977	        unsigned int input_before;
-native-width-integer	libclamav/pdfdecode.c	2978	        unsigned int output_before;
-native-width-integer	libclamav/pdfdecode.c	2979	        size_t produced;
-native-width-integer	libclamav/pdfdecode.c	2987	            size_t input_length;
-native-width-integer	libclamav/pdfdecode.c	2994	                stream.avail_in = (unsigned int)input_length;
-native-width-integer	libclamav/pdfdecode.c	3011	        produced      = (size_t)(output_before - stream.avail_out);
-native-width-integer	libclamav/pdfdecode.c	3067	                                              int fout,
-native-width-integer	libclamav/pdfdecode.c	3068	                                              size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	3070	    size_t decoded       = 0;
-native-width-integer	libclamav/pdfdecode.c	3071	    size_t payload_start = 0;
-native-width-integer	libclamav/pdfdecode.c	3072	    off_t output_start;
-native-width-integer	libclamav/pdfdecode.c	3075	    int early_change = 1;
-native-width-integer	libclamav/pdfdecode.c	3076	    int lzwstat      = LZW_OK;
-native-width-integer	libclamav/pdfdecode.c	3129	        size_t resynchronized;
-native-width-integer	libclamav/pdfdecode.c	318	                                                   size_t search_start,
-native-width-integer	libclamav/pdfdecode.c	3187	                                       size_t streamlen, int fout,
-native-width-integer	libclamav/pdfdecode.c	3188	                                       size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	319	                                                   size_t *line_start)
-native-width-integer	libclamav/pdfdecode.c	3204	    size_t declen = 0, capacity = 0;
-native-width-integer	libclamav/pdfdecode.c	3209	    int zstat, rc = CL_SUCCESS;
-native-width-integer	libclamav/pdfdecode.c	333	        size_t consumed = pdf_stream_reader_consumed(reader);
-native-width-integer	libclamav/pdfdecode.c	3372	    if (declen > (size_t)UINT32_MAX) {
-native-width-integer	libclamav/pdfdecode.c	3398	                   (size_t)length - stream.avail_in, token->length);
-native-width-integer	libclamav/pdfdecode.c	3410	    size_t length          = token->length;
-native-width-integer	libclamav/pdfdecode.c	3411	    size_t i, j;
-native-width-integer	libclamav/pdfdecode.c	3518	static cl_error_t filter_decrypt(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int mode)
-native-width-integer	libclamav/pdfdecode.c	3521	    size_t length = (size_t)token->length;
-native-width-integer	libclamav/pdfdecode.c	3555	    size_t declen = 0, capacity = 0;
-native-width-integer	libclamav/pdfdecode.c	3561	    int echg = 1, lzwstat, rc = CL_SUCCESS;
-native-width-integer	libclamav/pdfdecode.c	357	static cl_error_t pdf_write_output(struct pdf_struct *pdf, int fout, const void *data, size_t length)
-native-width-integer	libclamav/pdfdecode.c	403	static cl_error_t pdf_write_raw_stream(struct pdf_struct *pdf, const char *stream, size_t streamlen, int fout,
-native-width-integer	libclamav/pdfdecode.c	404	                                       size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	406	    size_t offset = 0;
-native-width-integer	libclamav/pdfdecode.c	416	        size_t chunk = MIN((size_t)PDF_INPUT_WINDOW_SIZE, streamlen - offset);
-native-width-integer	libclamav/pdfdecode.c	433	static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, const struct pdf_decode_params *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
-native-width-integer	libclamav/pdfdecode.c	434	static cl_error_t pdf_rollback_stream_output(struct pdf_struct *pdf, int fout,
-native-width-integer	libclamav/pdfdecode.c	435	                                             off_t output_start,
-native-width-integer	libclamav/pdfdecode.c	438	                                         const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	439	static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream, size_t streamlen,
-native-width-integer	libclamav/pdfdecode.c	440	                                      int fout, size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	442	                                            size_t streamlen, int fout, size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	444	                                           size_t streamlen, int fout, size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	446	                                       const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	449	                                                int fout, size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	451	                                             int fout, size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	453	                                                   struct pdf_stream_reader *reader, int fout,
-native-width-integer	libclamav/pdfdecode.c	454	                                                   size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	456	                                                  struct pdf_stream_reader *reader, int fout,
-native-width-integer	libclamav/pdfdecode.c	457	                                                  size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	460	                                              int fout, size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	463	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned);
-native-width-integer	libclamav/pdfdecode.c	466	    const char *stream, size_t streamlen, uint32_t first_filter,
-native-width-integer	libclamav/pdfdecode.c	467	    bool document_method, int fout, size_t *bytes_scanned,
-native-width-integer	libclamav/pdfdecode.c	643	    uint32_t filter, struct pdf_stream_reader *reader, int fout,
-native-width-integer	libclamav/pdfdecode.c	644	    size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	684	    struct pdf_filter_stage *input_stage, int fout, size_t *bytes_scanned,
-native-width-integer	libclamav/pdfdecode.c	685	    off_t output_start, uint64_t reservation_start)
-native-width-integer	libclamav/pdfdecode.c	702	        size_t decoded = 0;
-native-width-integer	libclamav/pdfdecode.c	704	        int output_fd      = fout;
-native-width-integer	libclamav/pdfdecode.c	788	    const char *stream, size_t streamlen, int fout, size_t *bytes_scanned)
-native-width-integer	libclamav/pdfdecode.c	79	    size_t length;    /* length of current content; TODO: transition to size_t */
-native-width-integer	libclamav/pdfdecode.c	793	    off_t output_start;
-native-width-integer	libclamav/pdfdecode.c	823	static cl_error_t filter_decrypt(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int mode);
-native-width-integer	libclamav/pdfdecode.c	841	 * @return size_t   The number of bytes written to 'fout' to be scanned.
-native-width-integer	libclamav/pdfdecode.c	843	size_t pdf_decodestream_with_params_array(
-native-width-integer	libclamav/pdfdecode.c	845	    struct pdf_array *params_array, const char *stream, size_t streamlen,
-native-width-integer	libclamav/pdfdecode.c	846	    int xref, int fout, cl_error_t *status, struct objstm_struct *objstm)
-native-width-integer	libclamav/pdfdecode.c	849	    size_t bytes_scanned    = 0;
-native-width-integer	libclamav/pdfdecode.c	908	            size_t raw_bytes           = 0;
-native-width-integer	libclamav/pdfdecode.c	92	    size_t length;
-native-width-integer	libclamav/pdfdecode.c	93	    size_t source_offset;
-native-width-integer	libclamav/pdfdecode.c	941	            size_t raw_bytes           = 0;
-native-width-integer	libclamav/pdfdecode.c	95	    size_t buffer_length;
-native-width-integer	libclamav/pdfdecode.c	96	    size_t buffer_offset;
+native-width-integer	libclamav/pdfdecode.c	101	    int fd;
+native-width-integer	libclamav/pdfdecode.c	103	    size_t length;
+native-width-integer	libclamav/pdfdecode.c	1034	            size_t raw_bytes           = 0;
+native-width-integer	libclamav/pdfdecode.c	107	static cl_error_t pdf_decoder_output_width_check(cli_ctx *ctx, size_t current, size_t additional)
+native-width-integer	libclamav/pdfdecode.c	109	    if (additional > (size_t)UINT32_MAX || current > (size_t)UINT32_MAX - additional) {
+native-width-integer	libclamav/pdfdecode.c	1092	    cli_dbgmsg("pdf_decodestream: detected %lu applied filters\n", (long unsigned)(obj->numfilters));
+native-width-integer	libclamav/pdfdecode.c	1148	size_t pdf_decodestream(
+native-width-integer	libclamav/pdfdecode.c	1150	    const char *stream, size_t streamlen, int xref, int fout,
+native-width-integer	libclamav/pdfdecode.c	117	static cl_error_t pdf_decoder_capacity_check(cli_ctx *ctx, size_t capacity)
+native-width-integer	libclamav/pdfdecode.c	1172	static size_t pdf_decodestream_internal(
+native-width-integer	libclamav/pdfdecode.c	1175	    struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm)
+native-width-integer	libclamav/pdfdecode.c	1178	    size_t bytes_scanned = 0;
+native-width-integer	libclamav/pdfdecode.c	1348	        unsigned int objs_found = pdf->nobjs;
+native-width-integer	libclamav/pdfdecode.c	1355	        objstm->streambuf_len = (size_t)token->length;
+native-width-integer	libclamav/pdfdecode.c	1390	    size_t declen = 0;
+native-width-integer	libclamav/pdfdecode.c	1391	    size_t decoded_size;
+native-width-integer	libclamav/pdfdecode.c	1394	    size_t remaining   = token->length;
+native-width-integer	libclamav/pdfdecode.c	1395	    int quintet = 0, rc = CL_SUCCESS;
+native-width-integer	libclamav/pdfdecode.c	140	                                          const uint8_t *memory, size_t length)
+native-width-integer	libclamav/pdfdecode.c	1424	        int byte = (remaining--) ? (int)*ptr++ : EOF;
+native-width-integer	libclamav/pdfdecode.c	1457	                int i;
+native-width-integer	libclamav/pdfdecode.c	149	                                              struct pdf_struct *pdf, int fd,
+native-width-integer	libclamav/pdfdecode.c	150	                                              size_t length, const char *path)
+native-width-integer	libclamav/pdfdecode.c	1509	    size_t declen = 0, capacity = 0;
+native-width-integer	libclamav/pdfdecode.c	1514	    int rc           = CL_SUCCESS;
+native-width-integer	libclamav/pdfdecode.c	1532	        size_t output_length;
+native-width-integer	libclamav/pdfdecode.c	1538	                           (long unsigned)(offset + srclen + 1), (long unsigned)(length - offset));
+native-width-integer	libclamav/pdfdecode.c	1542	            output_length = (size_t)srclen + 1;
+native-width-integer	libclamav/pdfdecode.c	1569	                           (long unsigned)(offset + srclen + 1), (long unsigned)(length - offset));
+native-width-integer	libclamav/pdfdecode.c	1573	            output_length = (size_t)(257 - srclen);
+native-width-integer	libclamav/pdfdecode.c	1635	static uint8_t *decode_nextlinestart(struct pdf_struct *pdf, uint8_t *content, size_t length)
+native-width-integer	libclamav/pdfdecode.c	1638	    size_t r;
+native-width-integer	libclamav/pdfdecode.c	1639	    int toggle = 0;
+native-width-integer	libclamav/pdfdecode.c	1653	static cl_error_t pdf_rollback_stream_output(struct pdf_struct *pdf, int fout, off_t output_start,
+native-width-integer	libclamav/pdfdecode.c	1684	static cl_error_t pdf_stream_output_flush(struct pdf_struct *pdf, int fout, uint8_t *output_buffer,
+native-width-integer	libclamav/pdfdecode.c	1685	                                          size_t *output_buffered, size_t decoded,
+native-width-integer	libclamav/pdfdecode.c	1707	static cl_error_t pdf_stream_output_append(struct pdf_struct *pdf, int fout, uint8_t *output_buffer,
+native-width-integer	libclamav/pdfdecode.c	1708	                                           size_t *output_buffered, size_t *decoded,
+native-width-integer	libclamav/pdfdecode.c	1709	                                           const uint8_t *data, size_t length,
+native-width-integer	libclamav/pdfdecode.c	1712	    size_t offset = 0;
+native-width-integer	libclamav/pdfdecode.c	172	static size_t pdf_stream_reader_consumed(const struct pdf_stream_reader *reader)
+native-width-integer	libclamav/pdfdecode.c	1723	        size_t available;
+native-width-integer	libclamav/pdfdecode.c	1724	        size_t chunk;
+native-width-integer	libclamav/pdfdecode.c	174	    size_t buffered = reader->buffer_length - reader->buffer_offset;
+native-width-integer	libclamav/pdfdecode.c	1750	    enum enc_method enc_method, struct pdf_stream_reader *reader, int fout,
+native-width-integer	libclamav/pdfdecode.c	1751	    size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	1755	    size_t output_buffered = 0;
+native-width-integer	libclamav/pdfdecode.c	1756	    size_t decoded         = 0;
+native-width-integer	libclamav/pdfdecode.c	1757	    size_t next_deadline   = 0;
+native-width-integer	libclamav/pdfdecode.c	1759	    off_t output_start;
+native-width-integer	libclamav/pdfdecode.c	1799	            size_t key_length;
+native-width-integer	libclamav/pdfdecode.c	180	                                          size_t offset)
+native-width-integer	libclamav/pdfdecode.c	1832	            size_t input_length;
+native-width-integer	libclamav/pdfdecode.c	1863	        size_t key_length;
+native-width-integer	libclamav/pdfdecode.c	1869	        size_t ciphertext_length;
+native-width-integer	libclamav/pdfdecode.c	1870	        size_t block_count;
+native-width-integer	libclamav/pdfdecode.c	1871	        size_t block;
+native-width-integer	libclamav/pdfdecode.c	1872	        int rounds;
+native-width-integer	libclamav/pdfdecode.c	1907	                                      (int)(key_length * 8U));
+native-width-integer	libclamav/pdfdecode.c	193	    size_t length;
+native-width-integer	libclamav/pdfdecode.c	1968	            size_t i;
+native-width-integer	libclamav/pdfdecode.c	2029	    const char *stream, size_t streamlen, uint32_t first_filter,
+native-width-integer	libclamav/pdfdecode.c	2030	    bool document_method, int fout, size_t *bytes_scanned,
+native-width-integer	libclamav/pdfdecode.c	2038	    off_t output_start;
+native-width-integer	libclamav/pdfdecode.c	205	    length = MIN((size_t)PDF_INPUT_WINDOW_SIZE,
+native-width-integer	libclamav/pdfdecode.c	2132	static int pdf_asciihex_nibble(uint8_t byte)
+native-width-integer	libclamav/pdfdecode.c	2150	                                          long *parsed)
+native-width-integer	libclamav/pdfdecode.c	2183	        long predictor;
+native-width-integer	libclamav/pdfdecode.c	2206	                                             int fout, size_t *decoded_length,
+native-width-integer	libclamav/pdfdecode.c	2207	                                             int *inflate_status)
+native-width-integer	libclamav/pdfdecode.c	2211	    size_t decoded  = 0;
+native-width-integer	libclamav/pdfdecode.c	2213	    int zstat = Z_OK;
+native-width-integer	libclamav/pdfdecode.c	2238	        size_t produced;
+native-width-integer	libclamav/pdfdecode.c	2246	            size_t input_length;
+native-width-integer	libclamav/pdfdecode.c	2261	        produced         = INFLATE_CHUNK_SIZE - (size_t)stream.avail_out;
+native-width-integer	libclamav/pdfdecode.c	2264	            size_t required;
+native-width-integer	libclamav/pdfdecode.c	229	                                               size_t *length)
+native-width-integer	libclamav/pdfdecode.c	2329	                                                int fout, size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	2331	    size_t decoded       = 0;
+native-width-integer	libclamav/pdfdecode.c	2332	    size_t payload_start = 0;
+native-width-integer	libclamav/pdfdecode.c	2333	    off_t output_start;
+native-width-integer	libclamav/pdfdecode.c	2336	    int zstat  = Z_OK;
+native-width-integer	libclamav/pdfdecode.c	2381	        size_t resynchronized;
+native-width-integer	libclamav/pdfdecode.c	2443	                                         size_t streamlen, int fout,
+native-width-integer	libclamav/pdfdecode.c	2444	                                         size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	2459	                                             int fout,
+native-width-integer	libclamav/pdfdecode.c	2460	                                             size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	2465	    size_t decoded               = 0;
+native-width-integer	libclamav/pdfdecode.c	2466	    size_t output_buffered       = 0;
+native-width-integer	libclamav/pdfdecode.c	2467	    size_t next_deadline_offset  = 0;
+native-width-integer	libclamav/pdfdecode.c	2468	    off_t output_start;
+native-width-integer	libclamav/pdfdecode.c	2492	        size_t output_length;
+native-width-integer	libclamav/pdfdecode.c	2510	            output_length = (size_t)control + 1U;
+native-width-integer	libclamav/pdfdecode.c	2523	            output_length = (size_t)(257U - control);
+native-width-integer	libclamav/pdfdecode.c	2574	                                      size_t streamlen, int fout,
+native-width-integer	libclamav/pdfdecode.c	2575	                                      size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	2589	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	2592	    size_t decoded              = 0;
+native-width-integer	libclamav/pdfdecode.c	2593	    size_t output_buffered      = 0;
+native-width-integer	libclamav/pdfdecode.c	2594	    size_t next_deadline_offset = 0;
+native-width-integer	libclamav/pdfdecode.c	2595	    off_t output_start;
+native-width-integer	libclamav/pdfdecode.c	2598	    int high_nibble             = -1;
+native-width-integer	libclamav/pdfdecode.c	2620	        int nibble;
+native-width-integer	libclamav/pdfdecode.c	269	                                               uint8_t *output, size_t length,
+native-width-integer	libclamav/pdfdecode.c	2697	                                            size_t streamlen, int fout,
+native-width-integer	libclamav/pdfdecode.c	2698	                                            size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	2713	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	2716	    size_t decoded              = 0;
+native-width-integer	libclamav/pdfdecode.c	2717	    size_t output_buffered      = 0;
+native-width-integer	libclamav/pdfdecode.c	2718	    size_t next_deadline_offset = 0;
+native-width-integer	libclamav/pdfdecode.c	2719	    off_t output_start;
+native-width-integer	libclamav/pdfdecode.c	272	    size_t offset;
+native-width-integer	libclamav/pdfdecode.c	2723	    unsigned int quintet       = 0;
+native-width-integer	libclamav/pdfdecode.c	2762	            unsigned int i;
+native-width-integer	libclamav/pdfdecode.c	2877	                                           size_t streamlen, int fout,
+native-width-integer	libclamav/pdfdecode.c	2878	                                           size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	2892	                                     int *early_change)
+native-width-integer	libclamav/pdfdecode.c	2909	        long parsed;
+native-width-integer	libclamav/pdfdecode.c	2926	        *early_change = (int)parsed;
+native-width-integer	libclamav/pdfdecode.c	2934	                                         int early_change, int fout,
+native-width-integer	libclamav/pdfdecode.c	2935	                                         size_t *decoded_length,
+native-width-integer	libclamav/pdfdecode.c	2936	                                         int *decode_status)
+native-width-integer	libclamav/pdfdecode.c	2940	    size_t decoded         = 0;
+native-width-integer	libclamav/pdfdecode.c	2941	    size_t output_buffered = 0;
+native-width-integer	libclamav/pdfdecode.c	2943	    int lzwstat            = LZW_OK;
+native-width-integer	libclamav/pdfdecode.c	295	    struct pdf_stream_reader *reader, size_t *next_deadline_offset,
+native-width-integer	libclamav/pdfdecode.c	2972	        unsigned int input_before;
+native-width-integer	libclamav/pdfdecode.c	2973	        unsigned int output_before;
+native-width-integer	libclamav/pdfdecode.c	2974	        size_t produced;
+native-width-integer	libclamav/pdfdecode.c	298	    size_t consumed;
+native-width-integer	libclamav/pdfdecode.c	2982	            size_t input_length;
+native-width-integer	libclamav/pdfdecode.c	2989	                stream.avail_in = (unsigned int)input_length;
+native-width-integer	libclamav/pdfdecode.c	3006	        produced      = (size_t)(output_before - stream.avail_out);
+native-width-integer	libclamav/pdfdecode.c	3062	                                              int fout,
+native-width-integer	libclamav/pdfdecode.c	3063	                                              size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	3065	    size_t decoded       = 0;
+native-width-integer	libclamav/pdfdecode.c	3066	    size_t payload_start = 0;
+native-width-integer	libclamav/pdfdecode.c	3067	    off_t output_start;
+native-width-integer	libclamav/pdfdecode.c	3070	    int early_change = 1;
+native-width-integer	libclamav/pdfdecode.c	3071	    int lzwstat      = LZW_OK;
+native-width-integer	libclamav/pdfdecode.c	3124	        size_t resynchronized;
+native-width-integer	libclamav/pdfdecode.c	3182	                                       size_t streamlen, int fout,
+native-width-integer	libclamav/pdfdecode.c	3183	                                       size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	319	                                                   size_t search_start,
+native-width-integer	libclamav/pdfdecode.c	3199	    size_t declen = 0, capacity = 0;
+native-width-integer	libclamav/pdfdecode.c	320	                                                   size_t *line_start)
+native-width-integer	libclamav/pdfdecode.c	3204	    int zstat, rc = CL_SUCCESS;
+native-width-integer	libclamav/pdfdecode.c	334	        size_t consumed = pdf_stream_reader_consumed(reader);
+native-width-integer	libclamav/pdfdecode.c	3367	    if (declen > (size_t)UINT32_MAX) {
+native-width-integer	libclamav/pdfdecode.c	3393	                   (size_t)length - stream.avail_in, token->length);
+native-width-integer	libclamav/pdfdecode.c	3405	    size_t length          = token->length;
+native-width-integer	libclamav/pdfdecode.c	3406	    size_t i, j;
+native-width-integer	libclamav/pdfdecode.c	3513	static cl_error_t filter_decrypt(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int mode)
+native-width-integer	libclamav/pdfdecode.c	3516	    size_t length = (size_t)token->length;
+native-width-integer	libclamav/pdfdecode.c	3550	    size_t declen = 0, capacity = 0;
+native-width-integer	libclamav/pdfdecode.c	3556	    int echg = 1, lzwstat, rc = CL_SUCCESS;
+native-width-integer	libclamav/pdfdecode.c	358	static cl_error_t pdf_write_output(struct pdf_struct *pdf, int fout, const void *data, size_t length)
+native-width-integer	libclamav/pdfdecode.c	404	static cl_error_t pdf_write_raw_stream(struct pdf_struct *pdf, const char *stream, size_t streamlen, int fout,
+native-width-integer	libclamav/pdfdecode.c	405	                                       size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	407	    size_t offset = 0;
+native-width-integer	libclamav/pdfdecode.c	417	        size_t chunk = MIN((size_t)PDF_INPUT_WINDOW_SIZE, streamlen - offset);
+native-width-integer	libclamav/pdfdecode.c	434	static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, const struct pdf_decode_params *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
+native-width-integer	libclamav/pdfdecode.c	435	static cl_error_t pdf_rollback_stream_output(struct pdf_struct *pdf, int fout,
+native-width-integer	libclamav/pdfdecode.c	436	                                             off_t output_start,
+native-width-integer	libclamav/pdfdecode.c	439	                                         const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	440	static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream, size_t streamlen,
+native-width-integer	libclamav/pdfdecode.c	441	                                      int fout, size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	443	                                            size_t streamlen, int fout, size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	445	                                           size_t streamlen, int fout, size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	447	                                       const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	450	                                                int fout, size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	452	                                             int fout, size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	454	                                                   struct pdf_stream_reader *reader, int fout,
+native-width-integer	libclamav/pdfdecode.c	455	                                                   size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	457	                                                  struct pdf_stream_reader *reader, int fout,
+native-width-integer	libclamav/pdfdecode.c	458	                                                  size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	461	                                              int fout, size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	464	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned);
+native-width-integer	libclamav/pdfdecode.c	467	    const char *stream, size_t streamlen, uint32_t first_filter,
+native-width-integer	libclamav/pdfdecode.c	468	    bool document_method, int fout, size_t *bytes_scanned,
+native-width-integer	libclamav/pdfdecode.c	638	    uint32_t filter, struct pdf_stream_reader *reader, int fout,
+native-width-integer	libclamav/pdfdecode.c	639	    size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	679	    struct pdf_filter_stage *input_stage, int fout, size_t *bytes_scanned,
+native-width-integer	libclamav/pdfdecode.c	680	    off_t output_start, uint64_t reservation_start)
+native-width-integer	libclamav/pdfdecode.c	697	        size_t decoded = 0;
+native-width-integer	libclamav/pdfdecode.c	699	        int output_fd      = fout;
+native-width-integer	libclamav/pdfdecode.c	783	    const char *stream, size_t streamlen, int fout, size_t *bytes_scanned)
+native-width-integer	libclamav/pdfdecode.c	788	    off_t output_start;
+native-width-integer	libclamav/pdfdecode.c	80	    size_t length;    /* length of current content; TODO: transition to size_t */
+native-width-integer	libclamav/pdfdecode.c	818	static cl_error_t filter_decrypt(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int mode);
+native-width-integer	libclamav/pdfdecode.c	836	 * @return size_t   The number of bytes written to 'fout' to be scanned.
+native-width-integer	libclamav/pdfdecode.c	838	size_t pdf_decodestream_with_params_array(
+native-width-integer	libclamav/pdfdecode.c	840	    struct pdf_array *params_array, const char *stream, size_t streamlen,
+native-width-integer	libclamav/pdfdecode.c	841	    int xref, int fout, cl_error_t *status, struct objstm_struct *objstm)
+native-width-integer	libclamav/pdfdecode.c	844	    size_t bytes_scanned    = 0;
+native-width-integer	libclamav/pdfdecode.c	903	            size_t raw_bytes           = 0;
+native-width-integer	libclamav/pdfdecode.c	93	    size_t length;
+native-width-integer	libclamav/pdfdecode.c	936	            size_t raw_bytes           = 0;
+native-width-integer	libclamav/pdfdecode.c	94	    size_t source_offset;
+native-width-integer	libclamav/pdfdecode.c	96	    size_t buffer_length;
+native-width-integer	libclamav/pdfdecode.c	97	    size_t buffer_offset;
 native-width-integer	libclamav/pdfdecode.h	54	 * @return size_t   The number of bytes written to fout to be scanned.
 native-width-integer	libclamav/pdfdecode.h	56	size_t pdf_decodestream(
 native-width-integer	libclamav/pdfdecode.h	58	    const char *stream, size_t streamlen, int xref, int fout, cl_error_t *status,
@@ -20404,20 +20404,20 @@ boundary-constant	libclamav/pdf.c	1191	    if (len > SIZE_MAX - *sum) {
 boundary-constant	libclamav/pdf.c	1717	    if ((size_t)pdf->keylen > SIZE_MAX - 9U) {
 boundary-constant	libclamav/pdf.c	2270	                if (new_count > SIZE_MAX / sizeof(*pdf->objstms) ||
 boundary-constant	libclamav/pdf.c	272	    if (end > SIZE_MAX - (page_size - 1U)) {
-boundary-constant	libclamav/pdfdecode.c	1061	    if (streamlen > UINT32_MAX) {
-boundary-constant	libclamav/pdfdecode.c	108	    if (additional > (size_t)UINT32_MAX || current > (size_t)UINT32_MAX - additional) {
-boundary-constant	libclamav/pdfdecode.c	118	    if (capacity > SIZE_MAX - INFLATE_CHUNK_SIZE || capacity > CLI_MAX_ALLOCATION - INFLATE_CHUNK_SIZE) {
-boundary-constant	libclamav/pdfdecode.c	1404	    if (remaining > (SIZE_MAX - 1) / 4) {
-boundary-constant	libclamav/pdfdecode.c	1722	    if (*decoded > SIZE_MAX - length || *decoded > UINT64_MAX - length) {
-boundary-constant	libclamav/pdfdecode.c	2271	            if (decoded > SIZE_MAX - produced || decoded > UINT64_MAX - produced) {
-boundary-constant	libclamav/pdfdecode.c	2785	            if (sum > UINT32_MAX) {
-boundary-constant	libclamav/pdfdecode.c	2806	                if (sum > UINT32_MAX) {
-boundary-constant	libclamav/pdfdecode.c	3013	        if (decoded > SIZE_MAX - produced || decoded > UINT64_MAX - produced) {
-boundary-constant	libclamav/pdfdecode.c	309	    if (consumed > SIZE_MAX - PDF_INPUT_WINDOW_SIZE) {
-boundary-constant	libclamav/pdfdecode.c	310	        *next_deadline_offset = SIZE_MAX;
-boundary-constant	libclamav/pdfdecode.c	3372	    if (declen > (size_t)UINT32_MAX) {
-boundary-constant	libclamav/pdfdecode.c	3665	            if (declen > SIZE_MAX - INFLATE_CHUNK_SIZE) {
-boundary-constant	libclamav/pdfdecode.c	3692	    if (declen > (UINT32_MAX - (INFLATE_CHUNK_SIZE - stream.avail_out))) {
+boundary-constant	libclamav/pdfdecode.c	1056	    if (streamlen > UINT32_MAX) {
+boundary-constant	libclamav/pdfdecode.c	109	    if (additional > (size_t)UINT32_MAX || current > (size_t)UINT32_MAX - additional) {
+boundary-constant	libclamav/pdfdecode.c	119	    if (capacity > SIZE_MAX - INFLATE_CHUNK_SIZE || capacity > CLI_MAX_ALLOCATION - INFLATE_CHUNK_SIZE) {
+boundary-constant	libclamav/pdfdecode.c	1399	    if (remaining > (SIZE_MAX - 1) / 4) {
+boundary-constant	libclamav/pdfdecode.c	1717	    if (*decoded > SIZE_MAX - length || *decoded > UINT64_MAX - length) {
+boundary-constant	libclamav/pdfdecode.c	2266	            if (decoded > SIZE_MAX - produced || decoded > UINT64_MAX - produced) {
+boundary-constant	libclamav/pdfdecode.c	2780	            if (sum > UINT32_MAX) {
+boundary-constant	libclamav/pdfdecode.c	2801	                if (sum > UINT32_MAX) {
+boundary-constant	libclamav/pdfdecode.c	3008	        if (decoded > SIZE_MAX - produced || decoded > UINT64_MAX - produced) {
+boundary-constant	libclamav/pdfdecode.c	310	    if (consumed > SIZE_MAX - PDF_INPUT_WINDOW_SIZE) {
+boundary-constant	libclamav/pdfdecode.c	311	        *next_deadline_offset = SIZE_MAX;
+boundary-constant	libclamav/pdfdecode.c	3367	    if (declen > (size_t)UINT32_MAX) {
+boundary-constant	libclamav/pdfdecode.c	3660	            if (declen > SIZE_MAX - INFLATE_CHUNK_SIZE) {
+boundary-constant	libclamav/pdfdecode.c	3687	    if (declen > (UINT32_MAX - (INFLATE_CHUNK_SIZE - stream.avail_out))) {
 boundary-constant	libclamav/pdfng.c	252	    if (n == ULONG_MAX && errno)
 boundary-constant	libclamav/pdfng.c	289	    if (n == ULONG_MAX && errno)
 boundary-constant	libclamav/pe.c	2580	            if (thuoff > UINT32_MAX - sizeof(struct pe_image_thunk32)) {
@@ -20914,7 +20914,7 @@ quantity-parser	libclamav/matcher.c	475	    parsed = strtoull(text, &end, 10);
 quantity-parser	libclamav/mbox.c	4450	    parsed = strtoul(start, &end, 10);
 quantity-parser	libclamav/msxml_parser.c	185	    val2 = strtol(value, &endptr, 10);
 quantity-parser	libclamav/pdf.c	4604	            strtoul(end, &end, 10);
-quantity-parser	libclamav/pdfdecode.c	2169	    *parsed = strtol(value, &end, 10);
+quantity-parser	libclamav/pdfdecode.c	2164	    *parsed = strtol(value, &end, 10);
 quantity-parser	libclamav/pdfng.c	237	    /* Ensure strtoul() isn't going to go past our buffer */
 quantity-parser	libclamav/pdfng.c	251	    n = strtoul(p1, &p2, 10);
 quantity-parser	libclamav/pdfng.c	274	    /* Ensure strtoul() is going to go past our buffer */
@@ -22556,48 +22556,48 @@ format-width	libclamav/pdf.c	800	            cli_dbgmsg("pdf_findobj_in_objstm: 
 format-width	libclamav/pdf.c	965	        cli_dbgmsg("pdf_findobj: Failed to parse object genid (# objects found: %u)\n", pdf->nobjs);
 format-width	libclamav/pdf.c	971	        cli_dbgmsg("pdf_findobj: Encountered invalid negative obj genid (%ld).\n", temp_long);
 format-width	libclamav/pdf.c	999	                cli_dbgmsg("pdf_findobj: Failed to parse object objid (# objects found: %u)\n", pdf->nobjs);
-format-width	libclamav/pdfdecode.c	1097	    cli_dbgmsg("pdf_decodestream: detected %lu applied filters\n", (long unsigned)(obj->numfilters));
-format-width	libclamav/pdfdecode.c	1233	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => ASCII85DECODE\n", obj->filterlist[i]);
-format-width	libclamav/pdfdecode.c	1238	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => RLDECODE\n", obj->filterlist[i]);
-format-width	libclamav/pdfdecode.c	1243	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => FLATEDECODE\n", obj->filterlist[i]);
-format-width	libclamav/pdfdecode.c	1248	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => ASCIIHEXDECODE\n", obj->filterlist[i]);
-format-width	libclamav/pdfdecode.c	1253	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => CRYPT\n", obj->filterlist[i]);
-format-width	libclamav/pdfdecode.c	1258	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => LZWDECODE\n", obj->filterlist[i]);
-format-width	libclamav/pdfdecode.c	1274	                cli_dbgmsg("pdf_decodestream_internal: unimplemented filter type [%u] => %s\n", obj->filterlist[i], filter);
-format-width	libclamav/pdfdecode.c	1282	                cli_dbgmsg("pdf_decodestream_internal: unknown filter type [%u]\n", obj->filterlist[i]);
-format-width	libclamav/pdfdecode.c	1290	            cli_dbgmsg("pdf_decodestream_internal: empty content, breaking after %u (of %u) filters\n", i, obj->numfilters);
-format-width	libclamav/pdfdecode.c	1320	            cli_dbgmsg("pdf_decodestream_internal: stopping after %d (of %u) filters (reason: %s)\n", i, obj->numfilters, reason);
-format-width	libclamav/pdfdecode.c	1379	            cli_dbgmsg("pdf_decodestream_internal: pdf_find_and_parse_objs_in_objstm found %u new objects.\n", pdf->nobjs - objs_found);
-format-width	libclamav/pdfdecode.c	1460	            cli_dbgmsg("cli_pdf: last quintet contains %d bytes\n", quintet);
-format-width	libclamav/pdfdecode.c	1483	            cli_dbgmsg("cli_pdf: invalid character 0x%x @ %zu\n",
-format-width	libclamav/pdfdecode.c	1494	        cli_dbgmsg("cli_pdf: deflated %zu bytes from %zu total bytes\n",
-format-width	libclamav/pdfdecode.c	1503	        cli_dbgmsg("cli_pdf: error occurred parsing byte %zu of %zu\n",
-format-width	libclamav/pdfdecode.c	1542	                cli_dbgmsg("cli_pdf: required source length (%lu) exceeds remaining length (%lu)\n",
-format-width	libclamav/pdfdecode.c	1573	                cli_dbgmsg("cli_pdf: required source length (%lu) exceeds remaining length (%lu)\n",
-format-width	libclamav/pdfdecode.c	1585	                    cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
-format-width	libclamav/pdfdecode.c	1604	            cli_dbgmsg("cli_pdf: end-of-stream marker @ offset " STDu32 " (%zu bytes remaining)\n",
-format-width	libclamav/pdfdecode.c	1627	        cli_dbgmsg("cli_pdf: decoded %zu bytes from %zu total bytes\n",
-format-width	libclamav/pdfdecode.c	1633	        cli_dbgmsg("cli_pdf: error occurred parsing byte %u of %zu\n",
-format-width	libclamav/pdfdecode.c	2200	        cli_dbgmsg("cli_pdf: Predictor: %ld\n", predictor);
-format-width	libclamav/pdfdecode.c	2414	        cli_dbgmsg("cli_pdf: streamed Flate decoded %zu bytes from %zu input bytes\n",
-format-width	libclamav/pdfdecode.c	2557	        cli_dbgmsg("cli_pdf: streamed RunLength decoded %zu bytes from %zu input bytes\n",
-format-width	libclamav/pdfdecode.c	2677	        cli_dbgmsg("cli_pdf: streamed ASCIIHex decoded %zu bytes from %zu input bytes\n",
-format-width	libclamav/pdfdecode.c	2857	        cli_dbgmsg("cli_pdf: streamed ASCII85 decoded %zu bytes from %zu input bytes\n",
-format-width	libclamav/pdfdecode.c	2926	        cli_dbgmsg("cli_pdf: EarlyChange: %ld\n", parsed);
-format-width	libclamav/pdfdecode.c	3155	        cli_dbgmsg("cli_pdf: streamed LZW decoded %zu bytes from %zu input bytes\n",
-format-width	libclamav/pdfdecode.c	3304	                cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %u\n", capacity + INFLATE_CHUNK_SIZE);
-format-width	libclamav/pdfdecode.c	3331	            cli_dbgmsg("cli_pdf: inflated %zu bytes from %zu total bytes (%u bytes remaining)\n",
-format-width	libclamav/pdfdecode.c	3349	                cli_dbgmsg("cli_pdf: after writing %zu bytes, got error \"%s\" inflating PDF stream in %u %u obj\n",
-format-width	libclamav/pdfdecode.c	3352	                cli_dbgmsg("cli_pdf: after writing %zu bytes, got error %d inflating PDF stream in %u %u obj\n",
-format-width	libclamav/pdfdecode.c	3397	        cli_dbgmsg("cli_pdf: error occurred parsing byte %zu of %zu\n",
-format-width	libclamav/pdfdecode.c	3446	        cli_dbgmsg("cli_pdf: deflated %zu bytes from %zu total bytes\n",
-format-width	libclamav/pdfdecode.c	3455	        cli_dbgmsg("cli_pdf: error occurred parsing byte %zu of %zu\n",
-format-width	libclamav/pdfdecode.c	3542	    cli_dbgmsg("cli_pdf: decrypted %zu bytes from %zu total bytes\n",
-format-width	libclamav/pdfdecode.c	3671	                cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
-format-width	libclamav/pdfdecode.c	3704	            cli_dbgmsg("cli_pdf: inflated %zu bytes from %zu total bytes (%u bytes remaining)\n",
-format-width	libclamav/pdfdecode.c	3723	                cli_dbgmsg("cli_pdf: after writing %zu bytes, got error \"%s\" inflating PDF stream in %u %u obj\n",
-format-width	libclamav/pdfdecode.c	3726	                cli_dbgmsg("cli_pdf: after writing %zu bytes, got error %d inflating PDF stream in %u %u obj\n",
-format-width	libclamav/pdfdecode.c	868	        cli_dbgmsg("pdf_decodestream: no filters or stream on obj %u %u\n", obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdfdecode.c	1092	    cli_dbgmsg("pdf_decodestream: detected %lu applied filters\n", (long unsigned)(obj->numfilters));
+format-width	libclamav/pdfdecode.c	1228	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => ASCII85DECODE\n", obj->filterlist[i]);
+format-width	libclamav/pdfdecode.c	1233	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => RLDECODE\n", obj->filterlist[i]);
+format-width	libclamav/pdfdecode.c	1238	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => FLATEDECODE\n", obj->filterlist[i]);
+format-width	libclamav/pdfdecode.c	1243	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => ASCIIHEXDECODE\n", obj->filterlist[i]);
+format-width	libclamav/pdfdecode.c	1248	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => CRYPT\n", obj->filterlist[i]);
+format-width	libclamav/pdfdecode.c	1253	                cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => LZWDECODE\n", obj->filterlist[i]);
+format-width	libclamav/pdfdecode.c	1269	                cli_dbgmsg("pdf_decodestream_internal: unimplemented filter type [%u] => %s\n", obj->filterlist[i], filter);
+format-width	libclamav/pdfdecode.c	1277	                cli_dbgmsg("pdf_decodestream_internal: unknown filter type [%u]\n", obj->filterlist[i]);
+format-width	libclamav/pdfdecode.c	1285	            cli_dbgmsg("pdf_decodestream_internal: empty content, breaking after %u (of %u) filters\n", i, obj->numfilters);
+format-width	libclamav/pdfdecode.c	1315	            cli_dbgmsg("pdf_decodestream_internal: stopping after %d (of %u) filters (reason: %s)\n", i, obj->numfilters, reason);
+format-width	libclamav/pdfdecode.c	1374	            cli_dbgmsg("pdf_decodestream_internal: pdf_find_and_parse_objs_in_objstm found %u new objects.\n", pdf->nobjs - objs_found);
+format-width	libclamav/pdfdecode.c	1455	            cli_dbgmsg("cli_pdf: last quintet contains %d bytes\n", quintet);
+format-width	libclamav/pdfdecode.c	1478	            cli_dbgmsg("cli_pdf: invalid character 0x%x @ %zu\n",
+format-width	libclamav/pdfdecode.c	1489	        cli_dbgmsg("cli_pdf: deflated %zu bytes from %zu total bytes\n",
+format-width	libclamav/pdfdecode.c	1498	        cli_dbgmsg("cli_pdf: error occurred parsing byte %zu of %zu\n",
+format-width	libclamav/pdfdecode.c	1537	                cli_dbgmsg("cli_pdf: required source length (%lu) exceeds remaining length (%lu)\n",
+format-width	libclamav/pdfdecode.c	1568	                cli_dbgmsg("cli_pdf: required source length (%lu) exceeds remaining length (%lu)\n",
+format-width	libclamav/pdfdecode.c	1580	                    cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
+format-width	libclamav/pdfdecode.c	1599	            cli_dbgmsg("cli_pdf: end-of-stream marker @ offset " STDu32 " (%zu bytes remaining)\n",
+format-width	libclamav/pdfdecode.c	1622	        cli_dbgmsg("cli_pdf: decoded %zu bytes from %zu total bytes\n",
+format-width	libclamav/pdfdecode.c	1628	        cli_dbgmsg("cli_pdf: error occurred parsing byte %u of %zu\n",
+format-width	libclamav/pdfdecode.c	2195	        cli_dbgmsg("cli_pdf: Predictor: %ld\n", predictor);
+format-width	libclamav/pdfdecode.c	2409	        cli_dbgmsg("cli_pdf: streamed Flate decoded %zu bytes from %zu input bytes\n",
+format-width	libclamav/pdfdecode.c	2552	        cli_dbgmsg("cli_pdf: streamed RunLength decoded %zu bytes from %zu input bytes\n",
+format-width	libclamav/pdfdecode.c	2672	        cli_dbgmsg("cli_pdf: streamed ASCIIHex decoded %zu bytes from %zu input bytes\n",
+format-width	libclamav/pdfdecode.c	2852	        cli_dbgmsg("cli_pdf: streamed ASCII85 decoded %zu bytes from %zu input bytes\n",
+format-width	libclamav/pdfdecode.c	2921	        cli_dbgmsg("cli_pdf: EarlyChange: %ld\n", parsed);
+format-width	libclamav/pdfdecode.c	3150	        cli_dbgmsg("cli_pdf: streamed LZW decoded %zu bytes from %zu input bytes\n",
+format-width	libclamav/pdfdecode.c	3299	                cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %u\n", capacity + INFLATE_CHUNK_SIZE);
+format-width	libclamav/pdfdecode.c	3326	            cli_dbgmsg("cli_pdf: inflated %zu bytes from %zu total bytes (%u bytes remaining)\n",
+format-width	libclamav/pdfdecode.c	3344	                cli_dbgmsg("cli_pdf: after writing %zu bytes, got error \"%s\" inflating PDF stream in %u %u obj\n",
+format-width	libclamav/pdfdecode.c	3347	                cli_dbgmsg("cli_pdf: after writing %zu bytes, got error %d inflating PDF stream in %u %u obj\n",
+format-width	libclamav/pdfdecode.c	3392	        cli_dbgmsg("cli_pdf: error occurred parsing byte %zu of %zu\n",
+format-width	libclamav/pdfdecode.c	3441	        cli_dbgmsg("cli_pdf: deflated %zu bytes from %zu total bytes\n",
+format-width	libclamav/pdfdecode.c	3450	        cli_dbgmsg("cli_pdf: error occurred parsing byte %zu of %zu\n",
+format-width	libclamav/pdfdecode.c	3537	    cli_dbgmsg("cli_pdf: decrypted %zu bytes from %zu total bytes\n",
+format-width	libclamav/pdfdecode.c	3666	                cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
+format-width	libclamav/pdfdecode.c	3699	            cli_dbgmsg("cli_pdf: inflated %zu bytes from %zu total bytes (%u bytes remaining)\n",
+format-width	libclamav/pdfdecode.c	3718	                cli_dbgmsg("cli_pdf: after writing %zu bytes, got error \"%s\" inflating PDF stream in %u %u obj\n",
+format-width	libclamav/pdfdecode.c	3721	                cli_dbgmsg("cli_pdf: after writing %zu bytes, got error %d inflating PDF stream in %u %u obj\n",
+format-width	libclamav/pdfdecode.c	863	        cli_dbgmsg("pdf_decodestream: no filters or stream on obj %u %u\n", obj->id >> 8, obj->id & 0xff);
 format-width	libclamav/pdfng.c	1723	            cli_errmsg("array[%lu][%lu]: %s\n", depth, i, (char *)(node->data));
 format-width	libclamav/pdfng.c	1735	            cli_errmsg("dict[%lu][%s]: %s\n", depth, node->key, (char *)(node->value));
 format-width	libclamav/pdfng.c	1737	            cli_errmsg("dict[%lu][%s]: Array =>\n", depth, node->key);
@@ -30414,175 +30414,175 @@ offset-size-arithmetic	libclamav/pdf.h	231	int is_object_reference(struct pdf_st
 offset-size-arithmetic	libclamav/pdf.h	27	/* Non-mmap fallback bound for builds that cannot expose a file-backed virtual
 offset-size-arithmetic	libclamav/pdf.h	30	#define PDF_DEEP_PARSE_MAX_SIZE ((size_t)64 * 1024 * 1024)
 offset-size-arithmetic	libclamav/pdf.h	60	    /* Object positions are file/map coordinates, not format-defined fields.
-offset-size-arithmetic	libclamav/pdfdecode.c	108	    if (additional > (size_t)UINT32_MAX || current > (size_t)UINT32_MAX - additional) {
-offset-size-arithmetic	libclamav/pdfdecode.c	1346	                bytes_scanned = token->length;
-offset-size-arithmetic	libclamav/pdfdecode.c	1360	        objstm->streambuf_len = (size_t)token->length;
-offset-size-arithmetic	libclamav/pdfdecode.c	1399	    size_t remaining   = token->length;
-offset-size-arithmetic	libclamav/pdfdecode.c	1409	    /* 5:4 decoding ratio, with 1:4 expansion sequences => (4*length)+1 */
-offset-size-arithmetic	libclamav/pdfdecode.c	141	    memset(reader, 0, sizeof(*reader));
-offset-size-arithmetic	libclamav/pdfdecode.c	1410	    decoded_size = (4 * remaining) + 1;
-offset-size-arithmetic	libclamav/pdfdecode.c	1442	                declen += 4;
-offset-size-arithmetic	libclamav/pdfdecode.c	1458	            declen += 4;
-offset-size-arithmetic	libclamav/pdfdecode.c	1478	                declen += quintet - 1;
-offset-size-arithmetic	libclamav/pdfdecode.c	1484	                       byte & 0xFF, token->length - remaining);
-offset-size-arithmetic	libclamav/pdfdecode.c	149	                                              size_t length, const char *path)
-offset-size-arithmetic	libclamav/pdfdecode.c	1495	                   declen, token->length);
-offset-size-arithmetic	libclamav/pdfdecode.c	1504	                   token->length - remaining, token->length);
-offset-size-arithmetic	libclamav/pdfdecode.c	151	    memset(reader, 0, sizeof(*reader));
-offset-size-arithmetic	libclamav/pdfdecode.c	1517	    uint32_t length  = token->length;
-offset-size-arithmetic	libclamav/pdfdecode.c	1536	        uint8_t srclen = content[offset++];
-offset-size-arithmetic	libclamav/pdfdecode.c	154	    reader->map    = fmap_new(fd, 0, length, "pdf-filter-stage", path);
-offset-size-arithmetic	libclamav/pdfdecode.c	1540	            /* direct copy of (srclen + 1) bytes */
-offset-size-arithmetic	libclamav/pdfdecode.c	1541	            if (offset + srclen + 1 > length) {
-offset-size-arithmetic	libclamav/pdfdecode.c	1543	                           (long unsigned)(offset + srclen + 1), (long unsigned)(length - offset));
-offset-size-arithmetic	libclamav/pdfdecode.c	1547	            output_length = (size_t)srclen + 1;
-offset-size-arithmetic	libclamav/pdfdecode.c	1550	            if (declen + output_length > capacity) {
-offset-size-arithmetic	libclamav/pdfdecode.c	1567	            memcpy(decoded + declen, content + offset, output_length);
-offset-size-arithmetic	libclamav/pdfdecode.c	1568	            offset += srclen + 1;
-offset-size-arithmetic	libclamav/pdfdecode.c	1569	            declen += output_length;
-offset-size-arithmetic	libclamav/pdfdecode.c	1571	            /* copy the next byte (257 - srclen) times */
-offset-size-arithmetic	libclamav/pdfdecode.c	1572	            if (offset + 1 > length) {
-offset-size-arithmetic	libclamav/pdfdecode.c	1574	                           (long unsigned)(offset + srclen + 1), (long unsigned)(length - offset));
-offset-size-arithmetic	libclamav/pdfdecode.c	1578	            output_length = (size_t)(257 - srclen);
-offset-size-arithmetic	libclamav/pdfdecode.c	1581	            if (declen + output_length > capacity) {
-offset-size-arithmetic	libclamav/pdfdecode.c	1585	                    cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
-offset-size-arithmetic	libclamav/pdfdecode.c	1600	            offset++;
-offset-size-arithmetic	libclamav/pdfdecode.c	1601	            declen += output_length;
-offset-size-arithmetic	libclamav/pdfdecode.c	1602	        } else { /* srclen == 128 */
-offset-size-arithmetic	libclamav/pdfdecode.c	1603	            /* end of data */
-offset-size-arithmetic	libclamav/pdfdecode.c	1604	            cli_dbgmsg("cli_pdf: end-of-stream marker @ offset " STDu32 " (%zu bytes remaining)\n",
-offset-size-arithmetic	libclamav/pdfdecode.c	1605	                       offset, token->length - offset);
-offset-size-arithmetic	libclamav/pdfdecode.c	1615	            /* Shrink output buffer to final the decoded data length to minimize RAM usage */
-offset-size-arithmetic	libclamav/pdfdecode.c	1628	                   declen, token->length);
-offset-size-arithmetic	libclamav/pdfdecode.c	1634	                   offset, token->length);
-offset-size-arithmetic	libclamav/pdfdecode.c	1640	static uint8_t *decode_nextlinestart(struct pdf_struct *pdf, uint8_t *content, size_t length)
-offset-size-arithmetic	libclamav/pdfdecode.c	168	    memset(reader, 0, sizeof(*reader));
-offset-size-arithmetic	libclamav/pdfdecode.c	1690	                                          size_t *output_buffered, size_t decoded,
-offset-size-arithmetic	libclamav/pdfdecode.c	171	static size_t pdf_stream_reader_consumed(const struct pdf_stream_reader *reader)
-offset-size-arithmetic	libclamav/pdfdecode.c	1712	static cl_error_t pdf_stream_output_append(struct pdf_struct *pdf, int fout, uint8_t *output_buffer,
-offset-size-arithmetic	libclamav/pdfdecode.c	1713	                                           size_t *output_buffered, size_t *decoded,
-offset-size-arithmetic	libclamav/pdfdecode.c	1722	    if (*decoded > SIZE_MAX - length || *decoded > UINT64_MAX - length) {
-offset-size-arithmetic	libclamav/pdfdecode.c	173	    size_t buffered = reader->buffer_length - reader->buffer_offset;
-offset-size-arithmetic	libclamav/pdfdecode.c	1740	        chunk     = MIN(available, length - offset);
-offset-size-arithmetic	libclamav/pdfdecode.c	1744	        offset += chunk;
-offset-size-arithmetic	libclamav/pdfdecode.c	175	    return reader->source_offset - buffered;
-offset-size-arithmetic	libclamav/pdfdecode.c	1756	    size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	1780	        reservation_start = *pdf->temporary_reserved;
-offset-size-arithmetic	libclamav/pdfdecode.c	181	    if (reader == NULL || offset > reader->length)
-offset-size-arithmetic	libclamav/pdfdecode.c	1880	        if (reader->length < 32U || (reader->length - 16U) % 16U != 0) {
-offset-size-arithmetic	libclamav/pdfdecode.c	1902	            key_length = pdf->keylen;
-offset-size-arithmetic	libclamav/pdfdecode.c	1912	                                      (int)(key_length * 8U));
-offset-size-arithmetic	libclamav/pdfdecode.c	1932	        ciphertext_length = reader->length - sizeof(iv);
-offset-size-arithmetic	libclamav/pdfdecode.c	1933	        block_count        = ciphertext_length / sizeof(ciphertext);
-offset-size-arithmetic	libclamav/pdfdecode.c	197	    if (reader->source_offset >= reader->length) {
-offset-size-arithmetic	libclamav/pdfdecode.c	1972	            uint8_t padding = pending[sizeof(pending) - 1U];
-offset-size-arithmetic	libclamav/pdfdecode.c	1982	            for (i = sizeof(pending) - padding; i < sizeof(pending); i++) {
-offset-size-arithmetic	libclamav/pdfdecode.c	1993	                pending, sizeof(pending) - padding,
-offset-size-arithmetic	libclamav/pdfdecode.c	2035	    bool document_method, int fout, size_t *bytes_scanned,
-offset-size-arithmetic	libclamav/pdfdecode.c	205	                 reader->length - reader->source_offset);
-offset-size-arithmetic	libclamav/pdfdecode.c	207	        data = fmap_need_off_once(reader->map, reader->source_offset, length);
-offset-size-arithmetic	libclamav/pdfdecode.c	2079	        reservation_start = *pdf->temporary_reserved;
-offset-size-arithmetic	libclamav/pdfdecode.c	2170	    while (*end != '\0' && isspace((unsigned char)*end))
-offset-size-arithmetic	libclamav/pdfdecode.c	2171	        end++;
-offset-size-arithmetic	libclamav/pdfdecode.c	2172	    if (end == value || *end != '\0' || errno == ERANGE) {
-offset-size-arithmetic	libclamav/pdfdecode.c	219	    reader->source_offset += length;
-offset-size-arithmetic	libclamav/pdfdecode.c	2211	                                             int fout, size_t *decoded_length,
-offset-size-arithmetic	libclamav/pdfdecode.c	228	                                               size_t *length)
-offset-size-arithmetic	libclamav/pdfdecode.c	2302	            if (stream.avail_in == 0 && reader->source_offset == reader->length &&
-offset-size-arithmetic	libclamav/pdfdecode.c	2311	            reader->source_offset < reader->length)
-offset-size-arithmetic	libclamav/pdfdecode.c	2334	                                                int fout, size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	234	    if (reader->buffer_offset == reader->buffer_length) {
-offset-size-arithmetic	libclamav/pdfdecode.c	2359	        reservation_start = *pdf->temporary_reserved;
-offset-size-arithmetic	libclamav/pdfdecode.c	2372	        if (payload_start == reader->length) {
-offset-size-arithmetic	libclamav/pdfdecode.c	240	    *length = reader->buffer_length - reader->buffer_offset;
-offset-size-arithmetic	libclamav/pdfdecode.c	241	    reader->buffer_offset = reader->buffer_length;
-offset-size-arithmetic	libclamav/pdfdecode.c	2449	                                         size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	2465	                                             size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	2487	        reservation_start = *pdf->temporary_reserved;
-offset-size-arithmetic	libclamav/pdfdecode.c	2515	            output_length = (size_t)control + 1U;
-offset-size-arithmetic	libclamav/pdfdecode.c	252	    if (reader->buffer_offset == reader->buffer_length) {
-offset-size-arithmetic	libclamav/pdfdecode.c	2528	            output_length = (size_t)(257U - control);
-offset-size-arithmetic	libclamav/pdfdecode.c	2540	             * an end marker and ignores bytes after an observed marker. */
-offset-size-arithmetic	libclamav/pdfdecode.c	2580	                                      size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	2594	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	2615	        reservation_start = *pdf->temporary_reserved;
-offset-size-arithmetic	libclamav/pdfdecode.c	262	    *byte = reader->buffer[reader->buffer_offset++];
-offset-size-arithmetic	libclamav/pdfdecode.c	2703	                                            size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	2718	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	2741	        reservation_start = *pdf->temporary_reserved;
-offset-size-arithmetic	libclamav/pdfdecode.c	277	    for (offset = 0; offset < length; offset++) {
-offset-size-arithmetic	libclamav/pdfdecode.c	2845	            /* A stream-length-terminated ASCII85 stream may omit ~> when it
-offset-size-arithmetic	libclamav/pdfdecode.c	2883	                                           size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	294	    struct pdf_stream_reader *reader, size_t *next_deadline_offset,
-offset-size-arithmetic	libclamav/pdfdecode.c	2940	                                         size_t *decoded_length,
-offset-size-arithmetic	libclamav/pdfdecode.c	3011	        produced      = (size_t)(output_before - stream.avail_out);
-offset-size-arithmetic	libclamav/pdfdecode.c	3035	                 reader->source_offset < reader->length))
-offset-size-arithmetic	libclamav/pdfdecode.c	3038	                reader->source_offset == reader->length) {
-offset-size-arithmetic	libclamav/pdfdecode.c	3068	                                              size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	3101	        reservation_start = *pdf->temporary_reserved;
-offset-size-arithmetic	libclamav/pdfdecode.c	3114	        if (payload_start == reader->length) {
-offset-size-arithmetic	libclamav/pdfdecode.c	312	        *next_deadline_offset = consumed + PDF_INPUT_WINDOW_SIZE;
-offset-size-arithmetic	libclamav/pdfdecode.c	3188	                                       size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	319	                                                   size_t *line_start)
-offset-size-arithmetic	libclamav/pdfdecode.c	3207	    uint32_t length  = token->length;
-offset-size-arithmetic	libclamav/pdfdecode.c	3217	        length--;
-offset-size-arithmetic	libclamav/pdfdecode.c	324	    if (reader == NULL || line_start == NULL || search_start > reader->length)
-offset-size-arithmetic	libclamav/pdfdecode.c	3272	            length -= q - content;
-offset-size-arithmetic	libclamav/pdfdecode.c	3299	        /* extend output capacity if needed,*/
-offset-size-arithmetic	libclamav/pdfdecode.c	3304	                cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %u\n", capacity + INFLATE_CHUNK_SIZE);
-offset-size-arithmetic	libclamav/pdfdecode.c	3317	            declen += INFLATE_CHUNK_SIZE;
-offset-size-arithmetic	libclamav/pdfdecode.c	3325	    /* add stream end fragment to decoded length */
-offset-size-arithmetic	libclamav/pdfdecode.c	3326	    declen += (INFLATE_CHUNK_SIZE - stream.avail_out);
-offset-size-arithmetic	libclamav/pdfdecode.c	3332	                       declen, token->length, stream.avail_in);
-offset-size-arithmetic	libclamav/pdfdecode.c	3350	                           declen, stream.msg, obj->id >> 8, obj->id & 0xff);
-offset-size-arithmetic	libclamav/pdfdecode.c	3353	                           declen, zstat, obj->id >> 8, obj->id & 0xff);
-offset-size-arithmetic	libclamav/pdfdecode.c	3382	            /* Shrink output buffer to final the decoded data length to minimize RAM usage */
-offset-size-arithmetic	libclamav/pdfdecode.c	3398	                   (size_t)length - stream.avail_in, token->length);
-offset-size-arithmetic	libclamav/pdfdecode.c	3410	    size_t length          = token->length;
-offset-size-arithmetic	libclamav/pdfdecode.c	3414	    if (!(decoded = (uint8_t *)cli_max_calloc(length / 2 + 1, sizeof(uint8_t)))) {
-offset-size-arithmetic	libclamav/pdfdecode.c	3432	            if (length - i < 4)
-offset-size-arithmetic	libclamav/pdfdecode.c	345	            *line_start = reader->length;
-offset-size-arithmetic	libclamav/pdfdecode.c	351	            *line_start = pdf_stream_reader_consumed(reader) - 1U;
-offset-size-arithmetic	libclamav/pdfdecode.c	3521	    size_t length = (size_t)token->length;
-offset-size-arithmetic	libclamav/pdfdecode.c	3543	               length, token->length);
-offset-size-arithmetic	libclamav/pdfdecode.c	3558	    uint32_t length  = token->length;
-offset-size-arithmetic	libclamav/pdfdecode.c	3576	        length--;
-offset-size-arithmetic	libclamav/pdfdecode.c	3633	            length -= q - content;
-offset-size-arithmetic	libclamav/pdfdecode.c	3661	        /* extend output capacity if needed,*/
-offset-size-arithmetic	libclamav/pdfdecode.c	3665	            if (declen > SIZE_MAX - INFLATE_CHUNK_SIZE) {
-offset-size-arithmetic	libclamav/pdfdecode.c	3671	                cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
-offset-size-arithmetic	libclamav/pdfdecode.c	3684	            declen += INFLATE_CHUNK_SIZE;
-offset-size-arithmetic	libclamav/pdfdecode.c	3692	    if (declen > (UINT32_MAX - (INFLATE_CHUNK_SIZE - stream.avail_out))) {
-offset-size-arithmetic	libclamav/pdfdecode.c	3698	    /* add stream end fragment to decoded length */
-offset-size-arithmetic	libclamav/pdfdecode.c	3699	    declen += (INFLATE_CHUNK_SIZE - stream.avail_out);
-offset-size-arithmetic	libclamav/pdfdecode.c	3705	                       declen, token->length, stream.avail_in);
-offset-size-arithmetic	libclamav/pdfdecode.c	3724	                           declen, stream.msg, obj->id >> 8, obj->id & 0xff);
-offset-size-arithmetic	libclamav/pdfdecode.c	3727	                           declen, lzwstat, obj->id >> 8, obj->id & 0xff);
-offset-size-arithmetic	libclamav/pdfdecode.c	3754	            /* Shrink output buffer to final the decoded data length to minimize RAM usage */
-offset-size-arithmetic	libclamav/pdfdecode.c	403	static cl_error_t pdf_write_raw_stream(struct pdf_struct *pdf, const char *stream, size_t streamlen, int fout,
-offset-size-arithmetic	libclamav/pdfdecode.c	404	                                       size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	416	        size_t chunk = MIN((size_t)PDF_INPUT_WINDOW_SIZE, streamlen - offset);
-offset-size-arithmetic	libclamav/pdfdecode.c	425	        offset += chunk;
-offset-size-arithmetic	libclamav/pdfdecode.c	433	static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, const struct pdf_decode_params *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
-offset-size-arithmetic	libclamav/pdfdecode.c	438	                                         const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	440	                                      int fout, size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	442	                                            size_t streamlen, int fout, size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	444	                                           size_t streamlen, int fout, size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	446	                                       const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	449	                                                int fout, size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	451	                                             int fout, size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	454	                                                   size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	457	                                                  size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	460	                                              int fout, size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	463	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned);
-offset-size-arithmetic	libclamav/pdfdecode.c	467	    bool document_method, int fout, size_t *bytes_scanned,
-offset-size-arithmetic	libclamav/pdfdecode.c	475	    memset(stage, 0, sizeof(*stage));
-offset-size-arithmetic	libclamav/pdfdecode.c	644	    size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	684	    struct pdf_filter_stage *input_stage, int fout, size_t *bytes_scanned,
-offset-size-arithmetic	libclamav/pdfdecode.c	693	        bytes_scanned == NULL || first_filter >= obj->numfilters ||
-offset-size-arithmetic	libclamav/pdfdecode.c	788	    const char *stream, size_t streamlen, int fout, size_t *bytes_scanned)
-offset-size-arithmetic	libclamav/pdfdecode.c	79	    size_t length;    /* length of current content; TODO: transition to size_t */
-offset-size-arithmetic	libclamav/pdfdecode.c	809	        reservation_start = *pdf->temporary_reserved;
+offset-size-arithmetic	libclamav/pdfdecode.c	109	    if (additional > (size_t)UINT32_MAX || current > (size_t)UINT32_MAX - additional) {
+offset-size-arithmetic	libclamav/pdfdecode.c	1341	                bytes_scanned = token->length;
+offset-size-arithmetic	libclamav/pdfdecode.c	1355	        objstm->streambuf_len = (size_t)token->length;
+offset-size-arithmetic	libclamav/pdfdecode.c	1394	    size_t remaining   = token->length;
+offset-size-arithmetic	libclamav/pdfdecode.c	1404	    /* 5:4 decoding ratio, with 1:4 expansion sequences => (4*length)+1 */
+offset-size-arithmetic	libclamav/pdfdecode.c	1405	    decoded_size = (4 * remaining) + 1;
+offset-size-arithmetic	libclamav/pdfdecode.c	142	    memset(reader, 0, sizeof(*reader));
+offset-size-arithmetic	libclamav/pdfdecode.c	1437	                declen += 4;
+offset-size-arithmetic	libclamav/pdfdecode.c	1453	            declen += 4;
+offset-size-arithmetic	libclamav/pdfdecode.c	1473	                declen += quintet - 1;
+offset-size-arithmetic	libclamav/pdfdecode.c	1479	                       byte & 0xFF, token->length - remaining);
+offset-size-arithmetic	libclamav/pdfdecode.c	1490	                   declen, token->length);
+offset-size-arithmetic	libclamav/pdfdecode.c	1499	                   token->length - remaining, token->length);
+offset-size-arithmetic	libclamav/pdfdecode.c	150	                                              size_t length, const char *path)
+offset-size-arithmetic	libclamav/pdfdecode.c	1512	    uint32_t length  = token->length;
+offset-size-arithmetic	libclamav/pdfdecode.c	152	    memset(reader, 0, sizeof(*reader));
+offset-size-arithmetic	libclamav/pdfdecode.c	1531	        uint8_t srclen = content[offset++];
+offset-size-arithmetic	libclamav/pdfdecode.c	1535	            /* direct copy of (srclen + 1) bytes */
+offset-size-arithmetic	libclamav/pdfdecode.c	1536	            if (offset + srclen + 1 > length) {
+offset-size-arithmetic	libclamav/pdfdecode.c	1538	                           (long unsigned)(offset + srclen + 1), (long unsigned)(length - offset));
+offset-size-arithmetic	libclamav/pdfdecode.c	1542	            output_length = (size_t)srclen + 1;
+offset-size-arithmetic	libclamav/pdfdecode.c	1545	            if (declen + output_length > capacity) {
+offset-size-arithmetic	libclamav/pdfdecode.c	155	    reader->map    = fmap_new(fd, 0, length, "pdf-filter-stage", path);
+offset-size-arithmetic	libclamav/pdfdecode.c	1562	            memcpy(decoded + declen, content + offset, output_length);
+offset-size-arithmetic	libclamav/pdfdecode.c	1563	            offset += srclen + 1;
+offset-size-arithmetic	libclamav/pdfdecode.c	1564	            declen += output_length;
+offset-size-arithmetic	libclamav/pdfdecode.c	1566	            /* copy the next byte (257 - srclen) times */
+offset-size-arithmetic	libclamav/pdfdecode.c	1567	            if (offset + 1 > length) {
+offset-size-arithmetic	libclamav/pdfdecode.c	1569	                           (long unsigned)(offset + srclen + 1), (long unsigned)(length - offset));
+offset-size-arithmetic	libclamav/pdfdecode.c	1573	            output_length = (size_t)(257 - srclen);
+offset-size-arithmetic	libclamav/pdfdecode.c	1576	            if (declen + output_length > capacity) {
+offset-size-arithmetic	libclamav/pdfdecode.c	1580	                    cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
+offset-size-arithmetic	libclamav/pdfdecode.c	1595	            offset++;
+offset-size-arithmetic	libclamav/pdfdecode.c	1596	            declen += output_length;
+offset-size-arithmetic	libclamav/pdfdecode.c	1597	        } else { /* srclen == 128 */
+offset-size-arithmetic	libclamav/pdfdecode.c	1598	            /* end of data */
+offset-size-arithmetic	libclamav/pdfdecode.c	1599	            cli_dbgmsg("cli_pdf: end-of-stream marker @ offset " STDu32 " (%zu bytes remaining)\n",
+offset-size-arithmetic	libclamav/pdfdecode.c	1600	                       offset, token->length - offset);
+offset-size-arithmetic	libclamav/pdfdecode.c	1610	            /* Shrink output buffer to final the decoded data length to minimize RAM usage */
+offset-size-arithmetic	libclamav/pdfdecode.c	1623	                   declen, token->length);
+offset-size-arithmetic	libclamav/pdfdecode.c	1629	                   offset, token->length);
+offset-size-arithmetic	libclamav/pdfdecode.c	1635	static uint8_t *decode_nextlinestart(struct pdf_struct *pdf, uint8_t *content, size_t length)
+offset-size-arithmetic	libclamav/pdfdecode.c	1685	                                          size_t *output_buffered, size_t decoded,
+offset-size-arithmetic	libclamav/pdfdecode.c	169	    memset(reader, 0, sizeof(*reader));
+offset-size-arithmetic	libclamav/pdfdecode.c	1707	static cl_error_t pdf_stream_output_append(struct pdf_struct *pdf, int fout, uint8_t *output_buffer,
+offset-size-arithmetic	libclamav/pdfdecode.c	1708	                                           size_t *output_buffered, size_t *decoded,
+offset-size-arithmetic	libclamav/pdfdecode.c	1717	    if (*decoded > SIZE_MAX - length || *decoded > UINT64_MAX - length) {
+offset-size-arithmetic	libclamav/pdfdecode.c	172	static size_t pdf_stream_reader_consumed(const struct pdf_stream_reader *reader)
+offset-size-arithmetic	libclamav/pdfdecode.c	1735	        chunk     = MIN(available, length - offset);
+offset-size-arithmetic	libclamav/pdfdecode.c	1739	        offset += chunk;
+offset-size-arithmetic	libclamav/pdfdecode.c	174	    size_t buffered = reader->buffer_length - reader->buffer_offset;
+offset-size-arithmetic	libclamav/pdfdecode.c	1751	    size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	176	    return reader->source_offset - buffered;
+offset-size-arithmetic	libclamav/pdfdecode.c	1775	        reservation_start = *pdf->temporary_reserved;
+offset-size-arithmetic	libclamav/pdfdecode.c	182	    if (reader == NULL || offset > reader->length)
+offset-size-arithmetic	libclamav/pdfdecode.c	1875	        if (reader->length < 32U || (reader->length - 16U) % 16U != 0) {
+offset-size-arithmetic	libclamav/pdfdecode.c	1897	            key_length = pdf->keylen;
+offset-size-arithmetic	libclamav/pdfdecode.c	1907	                                      (int)(key_length * 8U));
+offset-size-arithmetic	libclamav/pdfdecode.c	1927	        ciphertext_length = reader->length - sizeof(iv);
+offset-size-arithmetic	libclamav/pdfdecode.c	1928	        block_count        = ciphertext_length / sizeof(ciphertext);
+offset-size-arithmetic	libclamav/pdfdecode.c	1967	            uint8_t padding = pending[sizeof(pending) - 1U];
+offset-size-arithmetic	libclamav/pdfdecode.c	1977	            for (i = sizeof(pending) - padding; i < sizeof(pending); i++) {
+offset-size-arithmetic	libclamav/pdfdecode.c	198	    if (reader->source_offset >= reader->length) {
+offset-size-arithmetic	libclamav/pdfdecode.c	1988	                pending, sizeof(pending) - padding,
+offset-size-arithmetic	libclamav/pdfdecode.c	2030	    bool document_method, int fout, size_t *bytes_scanned,
+offset-size-arithmetic	libclamav/pdfdecode.c	206	                 reader->length - reader->source_offset);
+offset-size-arithmetic	libclamav/pdfdecode.c	2074	        reservation_start = *pdf->temporary_reserved;
+offset-size-arithmetic	libclamav/pdfdecode.c	208	        data = fmap_need_off_once(reader->map, reader->source_offset, length);
+offset-size-arithmetic	libclamav/pdfdecode.c	2165	    while (*end != '\0' && isspace((unsigned char)*end))
+offset-size-arithmetic	libclamav/pdfdecode.c	2166	        end++;
+offset-size-arithmetic	libclamav/pdfdecode.c	2167	    if (end == value || *end != '\0' || errno == ERANGE) {
+offset-size-arithmetic	libclamav/pdfdecode.c	220	    reader->source_offset += length;
+offset-size-arithmetic	libclamav/pdfdecode.c	2206	                                             int fout, size_t *decoded_length,
+offset-size-arithmetic	libclamav/pdfdecode.c	229	                                               size_t *length)
+offset-size-arithmetic	libclamav/pdfdecode.c	2297	            if (stream.avail_in == 0 && reader->source_offset == reader->length &&
+offset-size-arithmetic	libclamav/pdfdecode.c	2306	            reader->source_offset < reader->length)
+offset-size-arithmetic	libclamav/pdfdecode.c	2329	                                                int fout, size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	235	    if (reader->buffer_offset == reader->buffer_length) {
+offset-size-arithmetic	libclamav/pdfdecode.c	2354	        reservation_start = *pdf->temporary_reserved;
+offset-size-arithmetic	libclamav/pdfdecode.c	2367	        if (payload_start == reader->length) {
+offset-size-arithmetic	libclamav/pdfdecode.c	241	    *length = reader->buffer_length - reader->buffer_offset;
+offset-size-arithmetic	libclamav/pdfdecode.c	242	    reader->buffer_offset = reader->buffer_length;
+offset-size-arithmetic	libclamav/pdfdecode.c	2444	                                         size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	2460	                                             size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	2482	        reservation_start = *pdf->temporary_reserved;
+offset-size-arithmetic	libclamav/pdfdecode.c	2510	            output_length = (size_t)control + 1U;
+offset-size-arithmetic	libclamav/pdfdecode.c	2523	            output_length = (size_t)(257U - control);
+offset-size-arithmetic	libclamav/pdfdecode.c	253	    if (reader->buffer_offset == reader->buffer_length) {
+offset-size-arithmetic	libclamav/pdfdecode.c	2535	             * an end marker and ignores bytes after an observed marker. */
+offset-size-arithmetic	libclamav/pdfdecode.c	2575	                                      size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	2589	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	2610	        reservation_start = *pdf->temporary_reserved;
+offset-size-arithmetic	libclamav/pdfdecode.c	263	    *byte = reader->buffer[reader->buffer_offset++];
+offset-size-arithmetic	libclamav/pdfdecode.c	2698	                                            size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	2713	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	2736	        reservation_start = *pdf->temporary_reserved;
+offset-size-arithmetic	libclamav/pdfdecode.c	278	    for (offset = 0; offset < length; offset++) {
+offset-size-arithmetic	libclamav/pdfdecode.c	2840	            /* A stream-length-terminated ASCII85 stream may omit ~> when it
+offset-size-arithmetic	libclamav/pdfdecode.c	2878	                                           size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	2935	                                         size_t *decoded_length,
+offset-size-arithmetic	libclamav/pdfdecode.c	295	    struct pdf_stream_reader *reader, size_t *next_deadline_offset,
+offset-size-arithmetic	libclamav/pdfdecode.c	3006	        produced      = (size_t)(output_before - stream.avail_out);
+offset-size-arithmetic	libclamav/pdfdecode.c	3030	                 reader->source_offset < reader->length))
+offset-size-arithmetic	libclamav/pdfdecode.c	3033	                reader->source_offset == reader->length) {
+offset-size-arithmetic	libclamav/pdfdecode.c	3063	                                              size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	3096	        reservation_start = *pdf->temporary_reserved;
+offset-size-arithmetic	libclamav/pdfdecode.c	3109	        if (payload_start == reader->length) {
+offset-size-arithmetic	libclamav/pdfdecode.c	313	        *next_deadline_offset = consumed + PDF_INPUT_WINDOW_SIZE;
+offset-size-arithmetic	libclamav/pdfdecode.c	3183	                                       size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	320	                                                   size_t *line_start)
+offset-size-arithmetic	libclamav/pdfdecode.c	3202	    uint32_t length  = token->length;
+offset-size-arithmetic	libclamav/pdfdecode.c	3212	        length--;
+offset-size-arithmetic	libclamav/pdfdecode.c	325	    if (reader == NULL || line_start == NULL || search_start > reader->length)
+offset-size-arithmetic	libclamav/pdfdecode.c	3267	            length -= q - content;
+offset-size-arithmetic	libclamav/pdfdecode.c	3294	        /* extend output capacity if needed,*/
+offset-size-arithmetic	libclamav/pdfdecode.c	3299	                cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %u\n", capacity + INFLATE_CHUNK_SIZE);
+offset-size-arithmetic	libclamav/pdfdecode.c	3312	            declen += INFLATE_CHUNK_SIZE;
+offset-size-arithmetic	libclamav/pdfdecode.c	3320	    /* add stream end fragment to decoded length */
+offset-size-arithmetic	libclamav/pdfdecode.c	3321	    declen += (INFLATE_CHUNK_SIZE - stream.avail_out);
+offset-size-arithmetic	libclamav/pdfdecode.c	3327	                       declen, token->length, stream.avail_in);
+offset-size-arithmetic	libclamav/pdfdecode.c	3345	                           declen, stream.msg, obj->id >> 8, obj->id & 0xff);
+offset-size-arithmetic	libclamav/pdfdecode.c	3348	                           declen, zstat, obj->id >> 8, obj->id & 0xff);
+offset-size-arithmetic	libclamav/pdfdecode.c	3377	            /* Shrink output buffer to final the decoded data length to minimize RAM usage */
+offset-size-arithmetic	libclamav/pdfdecode.c	3393	                   (size_t)length - stream.avail_in, token->length);
+offset-size-arithmetic	libclamav/pdfdecode.c	3405	    size_t length          = token->length;
+offset-size-arithmetic	libclamav/pdfdecode.c	3409	    if (!(decoded = (uint8_t *)cli_max_calloc(length / 2 + 1, sizeof(uint8_t)))) {
+offset-size-arithmetic	libclamav/pdfdecode.c	3427	            if (length - i < 4)
+offset-size-arithmetic	libclamav/pdfdecode.c	346	            *line_start = reader->length;
+offset-size-arithmetic	libclamav/pdfdecode.c	3516	    size_t length = (size_t)token->length;
+offset-size-arithmetic	libclamav/pdfdecode.c	352	            *line_start = pdf_stream_reader_consumed(reader) - 1U;
+offset-size-arithmetic	libclamav/pdfdecode.c	3538	               length, token->length);
+offset-size-arithmetic	libclamav/pdfdecode.c	3553	    uint32_t length  = token->length;
+offset-size-arithmetic	libclamav/pdfdecode.c	3571	        length--;
+offset-size-arithmetic	libclamav/pdfdecode.c	3628	            length -= q - content;
+offset-size-arithmetic	libclamav/pdfdecode.c	3656	        /* extend output capacity if needed,*/
+offset-size-arithmetic	libclamav/pdfdecode.c	3660	            if (declen > SIZE_MAX - INFLATE_CHUNK_SIZE) {
+offset-size-arithmetic	libclamav/pdfdecode.c	3666	                cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
+offset-size-arithmetic	libclamav/pdfdecode.c	3679	            declen += INFLATE_CHUNK_SIZE;
+offset-size-arithmetic	libclamav/pdfdecode.c	3687	    if (declen > (UINT32_MAX - (INFLATE_CHUNK_SIZE - stream.avail_out))) {
+offset-size-arithmetic	libclamav/pdfdecode.c	3693	    /* add stream end fragment to decoded length */
+offset-size-arithmetic	libclamav/pdfdecode.c	3694	    declen += (INFLATE_CHUNK_SIZE - stream.avail_out);
+offset-size-arithmetic	libclamav/pdfdecode.c	3700	                       declen, token->length, stream.avail_in);
+offset-size-arithmetic	libclamav/pdfdecode.c	3719	                           declen, stream.msg, obj->id >> 8, obj->id & 0xff);
+offset-size-arithmetic	libclamav/pdfdecode.c	3722	                           declen, lzwstat, obj->id >> 8, obj->id & 0xff);
+offset-size-arithmetic	libclamav/pdfdecode.c	3749	            /* Shrink output buffer to final the decoded data length to minimize RAM usage */
+offset-size-arithmetic	libclamav/pdfdecode.c	404	static cl_error_t pdf_write_raw_stream(struct pdf_struct *pdf, const char *stream, size_t streamlen, int fout,
+offset-size-arithmetic	libclamav/pdfdecode.c	405	                                       size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	417	        size_t chunk = MIN((size_t)PDF_INPUT_WINDOW_SIZE, streamlen - offset);
+offset-size-arithmetic	libclamav/pdfdecode.c	426	        offset += chunk;
+offset-size-arithmetic	libclamav/pdfdecode.c	434	static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, const struct pdf_decode_params *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
+offset-size-arithmetic	libclamav/pdfdecode.c	439	                                         const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	441	                                      int fout, size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	443	                                            size_t streamlen, int fout, size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	445	                                           size_t streamlen, int fout, size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	447	                                       const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	450	                                                int fout, size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	452	                                             int fout, size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	455	                                                   size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	458	                                                  size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	461	                                              int fout, size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	464	    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned);
+offset-size-arithmetic	libclamav/pdfdecode.c	468	    bool document_method, int fout, size_t *bytes_scanned,
+offset-size-arithmetic	libclamav/pdfdecode.c	476	    memset(stage, 0, sizeof(*stage));
+offset-size-arithmetic	libclamav/pdfdecode.c	639	    size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	679	    struct pdf_filter_stage *input_stage, int fout, size_t *bytes_scanned,
+offset-size-arithmetic	libclamav/pdfdecode.c	688	        bytes_scanned == NULL || first_filter >= obj->numfilters ||
+offset-size-arithmetic	libclamav/pdfdecode.c	783	    const char *stream, size_t streamlen, int fout, size_t *bytes_scanned)
+offset-size-arithmetic	libclamav/pdfdecode.c	80	    size_t length;    /* length of current content; TODO: transition to size_t */
+offset-size-arithmetic	libclamav/pdfdecode.c	804	        reservation_start = *pdf->temporary_reserved;
 offset-size-arithmetic	libclamav/pdfdecode.h	58	    const char *stream, size_t streamlen, int xref, int fout, cl_error_t *status,
 offset-size-arithmetic	libclamav/pdfdecode.h	70	#endif /* __PDFDECODE_H__ */
 offset-size-arithmetic	libclamav/pdfng.c	1001	                                    (size_t)(begin - objstart))) {

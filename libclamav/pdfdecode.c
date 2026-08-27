@@ -60,6 +60,7 @@
 
 #include "clamav.h"
 #include "others.h"
+#include "scanners.h"
 #include "pdf.h"
 #include "pdfdecode.h"
 #include "str.h"
@@ -486,9 +487,7 @@ static cl_error_t pdf_filter_stage_cleanup(struct pdf_struct *pdf,
     if (stage->fd >= 0 && close(stage->fd) != 0) {
         cli_mark_scan_incomplete(pdf->ctx,
                                  "PDF filter-stage file could not be closed");
-        if (status == CL_SUCCESS || status == CL_VERIFIED ||
-            status == CL_BREAK)
-            status = CL_EWRITE;
+        status = cli_merge_cleanup_status(status, CL_EWRITE);
     }
     stage->fd = -1;
 
@@ -497,9 +496,7 @@ static cl_error_t pdf_filter_stage_cleanup(struct pdf_struct *pdf,
         cli_unlink(stage->path) != 0) {
         cli_mark_scan_incomplete(pdf->ctx,
                                  "PDF filter-stage file could not be removed");
-        if (status == CL_SUCCESS || status == CL_VERIFIED ||
-            status == CL_BREAK)
-            status = CL_EUNLINK;
+        status = cli_merge_cleanup_status(status, CL_EUNLINK);
     }
     free(stage->path);
     stage->path = NULL;
@@ -510,9 +507,7 @@ static cl_error_t pdf_filter_stage_cleanup(struct pdf_struct *pdf,
             cli_mark_scan_incomplete(
                 pdf->ctx,
                 "PDF filter-stage temporary accounting underflowed during cleanup");
-            if (status == CL_SUCCESS || status == CL_VERIFIED ||
-                status == CL_BREAK)
-                status = CL_ERESOURCE;
+            status = cli_merge_cleanup_status(status, CL_ERESOURCE);
         } else {
             cli_scan_release_temporary(pdf->ctx, stage->reserved);
             *pdf->temporary_reserved -= stage->reserved;

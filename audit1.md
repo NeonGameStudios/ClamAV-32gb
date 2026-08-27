@@ -11962,3 +11962,14 @@ detection result. Current fmap/XAR GCC syntax and source guards pass; current-
 object execution, complete archive/fmap corpora, sanitizer, certified Linux
 x86-64, materialized large-file, production-CVD/service, Sonic1, and
 parser-family qualification remain open.
+
+## PDF filter-stage cleanup-status audit — 2026-08-27
+
+The PDF filter-stage cleanup helper replaced close, unlink, and temporary
+accounting failures only for clean, verified, or abort results. It now uses
+the shared precedence helper for `CL_EWRITE`, `CL_EUNLINK`, and
+`CL_ERESOURCE`, preserving detections and earlier parser/resource failures.
+The current PDF decoder passes the canonical-header GCC syntax check and
+source guards cover the status paths; current-object execution, complete
+PDF/filter corpora, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
