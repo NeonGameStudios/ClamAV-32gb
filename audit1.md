@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## DMG parser engine admission — 2026-08-27
+
+The DMG direct parser validated context and fmap but later used
+`ctx->engine->keeptmp` for retained XML staging and temporary-directory
+cleanup. A valid fmap with no engine could therefore reach an unchecked
+engine dereference. The entry now returns `CL_ENULLARG` before trailer
+inspection for that caller error, with a dedicated one-byte fmap regression.
+The current-source production-linked GCC `dmg_map` case passes 8/8 and `dmg`
+passes 6/6. Complete DMG corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## MSXML streaming helper and XDP engine admission — 2026-08-27
 
 The shared streaming MSXML helper accepted a valid context and fmap without

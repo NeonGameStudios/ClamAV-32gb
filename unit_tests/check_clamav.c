@@ -21766,6 +21766,23 @@ START_TEST(test_dmg_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_dmg_missing_engine_is_fail_visible)
+{
+    uint8_t data = 0;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(&data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scandmg(&ctx), CL_ENULLARG);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_xdp_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -41499,6 +41516,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_macho_timeout, test_macho_time_limit_is_fail_visible);
     tcase_add_test(tc_macho_timeout, test_macho_unibin_time_limit_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_missing_map_is_fail_visible);
+    tcase_add_test(tc_dmg_map, test_dmg_missing_engine_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg_map, test_dmg_in_memory_stripes_keep_host_order);
     tcase_add_test(tc_dmg_map, test_dmg_external_sort_is_bounded_and_complete);

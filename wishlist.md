@@ -1,5 +1,15 @@
 # Wishlist
 
+## DMG parser engine admission — 2026-08-27
+
+- Keep `cli_scandmg()` fail-visible when a recognized fmap is supplied
+  without the engine required by retained XML staging and cleanup; return
+  `CL_ENULLARG` before trailer inspection.
+- The current-source production-linked GCC `dmg_map` case passes 8/8 and
+  `dmg` passes 6/6. Keep complete DMG corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification open.
+
 ## MSXML streaming helper and XDP engine admission — 2026-08-27
 
 - Keep the shared streaming MSXML helper fail-visible when a recognized fmap

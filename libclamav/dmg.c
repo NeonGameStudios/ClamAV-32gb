@@ -209,6 +209,8 @@ int cli_scandmg(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "DMG input map is unavailable");
         return CL_EPARSE;
     }
+    if (!ctx->engine)
+        return CL_ENULLARG;
 
     maplen = ctx->fmap->len;
     if (maplen <= 512) {
