@@ -1349,6 +1349,8 @@ contains libclamav/ishield.c 'InstallShield MSI header could not be read complet
 contains libclamav/ishield.c 'InstallShield MSI control header could not be read completely'
 contains unit_tests/check_clamav.c 'ishield_msi_admission_read_failure'
 contains libclamav/ishield.c 'InstallShield CAB output size disagrees with member metadata'
+contains libclamav/ishield.c 'ret = cli_merge_cleanup_status(ret, CL_EWRITE);'
+contains libclamav/ishield.c 'ret = cli_merge_cleanup_status(ret, CL_EUNLINK);'
 contains libclamav/ishield.c 'InstallShield metadata ended before a complete file record'
 contains libclamav/ishield.c 'InstallShield file record ended before its path'
 contains libclamav/ishield.c 'Only pin the structure currently being read.'

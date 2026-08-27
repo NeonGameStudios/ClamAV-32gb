@@ -5588,3 +5588,16 @@ and Sonic1 qualification as release gates.
   compressed-parser corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and parser-family qualification
   open.
+
+## InstallShield cleanup-status precedence audit — 2026-08-27
+
+- Make MSI, legacy embedded-file, and CAB temporary-output close/unlink
+  failures fail-visible through the shared cleanup-status helper: preserve
+  `CL_EWRITE` versus `CL_EUNLINK`, upgrade clean/verified/`CL_BREAK`, and keep
+  detections or earlier parser/resource errors authoritative.
+- The current InstallShield source passes the established GCC syntax check and
+  source guards cover all six cleanup call sites. The common direct precedence
+  regression covers the status contract; current-object production-linked
+  execution, corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  remain open.

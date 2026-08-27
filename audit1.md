@@ -11595,3 +11595,21 @@ inputs, so no fresh execution is claimed. BZip2/GZip/XZ existing production
 evidence remains unchanged. Complete compressed-parser corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain open.
+
+## InstallShield cleanup-status precedence audit — 2026-08-27
+
+The InstallShield MSI, legacy embedded-file, and CAB extraction paths marked
+temporary-output close and unlink failures incomplete, but upgraded only clean
+or trusted results. A `CL_BREAK` result could therefore survive cleanup failure
+and remain insufficiently fail-visible. All three paths now use the shared
+cleanup-status precedence helper: close failures are `CL_EWRITE`, unlink
+failures are `CL_EUNLINK`, clean/verified/`CL_BREAK` results are upgraded, and
+detections or earlier parser/resource errors remain authoritative.
+
+The current InstallShield source passes the established warning-enabled GCC
+syntax check, with only its pre-existing signedness warning. Source guards now
+require all six cleanup call sites and the common direct status-precedence
+regression covers the parser contract. Full current-object production-linked
+InstallShield execution, corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.

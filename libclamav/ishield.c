@@ -469,15 +469,13 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
         }
         if (close(ofd) != 0) {
             cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output could not be closed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-                ret = CL_EWRITE;
+            ret = cli_merge_cleanup_status(ret, CL_EWRITE);
         }
 
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tempfile)) {
                 cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output could not be removed");
-                if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-                    ret = CL_EUNLINK;
+                ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
             }
         }
         free(tempfile);
@@ -787,15 +785,13 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
 
     if (close(ofd) != 0) {
         cli_mark_scan_incomplete(ctx, "InstallShield embedded file temporary output could not be closed");
-        if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-            ret = CL_EWRITE;
+        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
     }
 
     if (!ctx->engine->keeptmp) {
         if (cli_unlink(fname)) {
             cli_mark_scan_incomplete(ctx, "InstallShield embedded file temporary output could not be removed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-                ret = CL_EUNLINK;
+            ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
         }
     }
 
@@ -1272,14 +1268,12 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
 
     if (close(ofd) != 0) {
         cli_mark_scan_incomplete(ctx, "InstallShield CAB temporary output could not be closed");
-        if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-            ret = CL_EWRITE;
+        ret = cli_merge_cleanup_status(ret, CL_EWRITE);
     }
     if (!ctx->engine->keeptmp) {
         if (cli_unlink(tempfile)) {
             cli_mark_scan_incomplete(ctx, "InstallShield CAB temporary output could not be removed");
-            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
-                ret = CL_EUNLINK;
+            ret = cli_merge_cleanup_status(ret, CL_EUNLINK);
         }
     }
     free(tempfile);
