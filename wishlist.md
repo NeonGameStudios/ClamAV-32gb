@@ -7,6 +7,15 @@
   case passes 2/2; the existing `7z` case passes 8/8, `7z_sfx` 1/1, and
   `7z_sfx_corpus` 1/1. Keep full BCJ2/archive corpus, sanitizer, certified
   Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification open.
+
+## APM direct parser context evidence — 2026-08-27
+
+- Add and register a null-context regression alongside the existing confirmed
+  APM missing-map and partition-read checks. The current-source production-
+  linked GCC `apm_map` case passes 3/3; the existing `apm` case passes 5/5 and
+  `apm_corpus` 1/1. Keep full partition-image corpus, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification open.
 
 ## Direct parser context evidence — 2026-08-27
@@ -188,7 +197,7 @@
   fmap is supplied without the required engine: return `CL_ENULLARG` before
   `maxpartitions` or nested-dispatch state is accessed.
 - The current-source production-linked GCC `partition_map` case passes 4/4;
-  `apm_map`, `apm`, `apm_corpus`, `gpt`, and `mbr` pass 2/2, 5/5, 1/1, 4/4,
+  `apm_map`, `apm`, `apm_corpus`, `gpt`, and `mbr` pass 3/3, 5/5, 1/1, 4/4,
   and 5/5. Keep full partition-image corpus, sanitizer, certified Linux
   x86-64, materialized large-file, production-CVD/service, Sonic1, and
   release qualification open.
@@ -1122,7 +1131,7 @@
 ## APM partition corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC apm case passes 5/5, apm_map
-  passes 2/2, and the isolated apm_corpus case passes 1/1 over a valid
+  passes 3/3, and the isolated apm_corpus case passes 1/1 over a valid
   four-block Apple Partition Map whose payload partition reaches an exact
   child matcher through partition traversal.
 - Keep full APM partition corpus, sanitizer, certified Linux x86-64,

@@ -21927,6 +21927,12 @@ START_TEST(test_apm_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_apm_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_scanapm(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_apm_partition_limit_is_fail_visible)
 {
     uint8_t data[1024] = {0};
@@ -41500,6 +41506,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_uuencode_corpus, test_uuencode_corpus_detects_embedded_marker);
     suite_add_tcase(s, tc_apm_map);
     tcase_add_checked_fixture(tc_apm_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_apm_map, test_apm_null_context_is_fail_visible);
     tcase_add_test(tc_apm_map, test_apm_missing_map_is_fail_visible);
     tcase_add_test(tc_apm_map, test_apm_partition_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_apm);

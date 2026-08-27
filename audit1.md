@@ -11,6 +11,17 @@ and `7z_sfx_corpus` 1/1. Full BCJ2/archive corpus, sanitizer, certified Linux
 x86-64, materialized large-file, production-CVD/service, Sonic1, and parser-
 family qualification remain open.
 
+## APM direct parser context evidence — 2026-08-27
+
+The APM direct entry already returned `CL_ENULLARG` for a null context, but
+the focused `apm_map` TCase only covered recognized input with a missing fmap
+and an in-range partition-entry read failure. A dedicated null-context
+regression is now registered. The current-source production-linked GCC
+`apm_map` case passes 3/3; the existing `apm` case passes 5/5 and
+`apm_corpus` 1/1. Full partition-image corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and parser-
+family qualification remain open.
+
 ## Direct parser context evidence — 2026-08-27
 
 The current direct parser entries for DMG, XDP, HWPML, and HFS+ all classify
@@ -225,7 +236,7 @@ fmap but no engine could therefore dereference unavailable state. All three
 entries now return `CL_ENULLARG` before timing, partition traversal, or nested
 dispatch. The current-source production-linked GCC `partition_map` case
 passes 4/4, and the focused `apm_map`, `apm`, `apm_corpus`, `gpt`, and `mbr`
-cases pass 2/2, 5/5, 1/1, 4/4, and 5/5 respectively. Full partition-image
+cases pass 3/3, 5/5, 1/1, 4/4, and 5/5 respectively. Full partition-image
 corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and release qualification remain open.
 
@@ -1366,7 +1377,7 @@ large-file, production-CVD/service, Sonic1, and release evidence remain open.
 ## APM partition corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC apm case passes 5/5,
-apm_map passes 2/2, and the isolated apm_corpus case passes 1/1. The corpus
+apm_map passes 3/3, and the isolated apm_corpus case passes 1/1. The corpus
 is a valid four-block Apple Partition Map with a driver map, partition-map
 entry, and one payload partition; the APM root does not begin with MZP, and
 the exact Apm.Partition.MZ.UNOFFICIAL alert is reached through partition
