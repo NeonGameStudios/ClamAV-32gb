@@ -1,5 +1,13 @@
 # Wishlist
 
+## TIFF direct-entry context evidence — 2026-08-27
+
+- Add and register a direct null-context regression alongside the existing
+  TIFF missing-map check. The current-source production-linked GCC `tiff_map`
+  case passes 2/2 for both entry states; complete TIFF corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  Sonic1, and parser-family qualification remain open.
+
 ## UDF direct-entry context evidence — 2026-08-27
 
 - Add and register a direct null-context regression alongside the existing

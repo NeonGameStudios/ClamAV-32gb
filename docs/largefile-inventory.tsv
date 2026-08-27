@@ -6634,23 +6634,23 @@ fixed-width-integer	unit_tests/check_clamav.c	39038	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	39109	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	39155	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	39158	    uint32_t thumbnail_size = 28U + (uint32_t)sizeof(child);
-fixed-width-integer	unit_tests/check_clamav.c	39579	    if (offset < 0 || (uint64_t)offset >= state->length)
-fixed-width-integer	unit_tests/check_clamav.c	39810	    uint64_t scanned;
-fixed-width-integer	unit_tests/check_clamav.c	40038	    if (offset < 0 || (uint64_t)offset >= state->length)
-fixed-width-integer	unit_tests/check_clamav.c	40115	    uint64_t scanned;
-fixed-width-integer	unit_tests/check_clamav.c	40192	static void pe_icon_test_write_u16(uint8_t *dst, uint16_t value)
-fixed-width-integer	unit_tests/check_clamav.c	40198	static void pe_icon_test_write_u32(uint8_t *dst, uint32_t value)
-fixed-width-integer	unit_tests/check_clamav.c	40654	    uint64_t scanned = 0;
+fixed-width-integer	unit_tests/check_clamav.c	39585	    if (offset < 0 || (uint64_t)offset >= state->length)
+fixed-width-integer	unit_tests/check_clamav.c	39816	    uint64_t scanned;
+fixed-width-integer	unit_tests/check_clamav.c	40044	    if (offset < 0 || (uint64_t)offset >= state->length)
+fixed-width-integer	unit_tests/check_clamav.c	40121	    uint64_t scanned;
+fixed-width-integer	unit_tests/check_clamav.c	40198	static void pe_icon_test_write_u16(uint8_t *dst, uint16_t value)
+fixed-width-integer	unit_tests/check_clamav.c	40204	static void pe_icon_test_write_u32(uint8_t *dst, uint32_t value)
+fixed-width-integer	unit_tests/check_clamav.c	40660	    uint64_t scanned = 0;
 fixed-width-integer	unit_tests/check_clamav.c	4200	    uint32_t old_stats_flags = g_engine->dconf->stats;
 fixed-width-integer	unit_tests/check_clamav.c	4201	    uint32_t old_maxsamples;
 fixed-width-integer	unit_tests/check_clamav.c	4202	    uint32_t old_maxmem;
 fixed-width-integer	unit_tests/check_clamav.c	4219	    ck_assert_msg((uint64_t)large_size == intel->samples->size, "large stats sample size was truncated");
 fixed-width-integer	unit_tests/check_clamav.c	4223	    snprintf(expected, sizeof(expected), "\"size\": " STDu64, (uint64_t)large_size);
-fixed-width-integer	unit_tests/check_clamav.c	42490	static int32_t le_expected[4] = {0x01234567, 0x67012345, 0x45670123, 0x23456701};
-fixed-width-integer	unit_tests/check_clamav.c	42524	    int16_t value;
-fixed-width-integer	unit_tests/check_clamav.c	42542	    int32_t value = le_expected[_i & 3];
+fixed-width-integer	unit_tests/check_clamav.c	42497	static int32_t le_expected[4] = {0x01234567, 0x67012345, 0x45670123, 0x23456701};
+fixed-width-integer	unit_tests/check_clamav.c	42531	    int16_t value;
+fixed-width-integer	unit_tests/check_clamav.c	42549	    int32_t value = le_expected[_i & 3];
 fixed-width-integer	unit_tests/check_clamav.c	4267	        (uint64_t)(offset - state->source_offset) >= state->length)
-fixed-width-integer	unit_tests/check_clamav.c	43072	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
+fixed-width-integer	unit_tests/check_clamav.c	43079	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
 fixed-width-integer	unit_tests/check_clamav.c	4329	    if (offset < 0 || (uint64_t)offset >= state->length)
 fixed-width-integer	unit_tests/check_clamav.c	4346	static uint64_t synthetic_count_paged(const cl_fmap_t *map)
 fixed-width-integer	unit_tests/check_clamav.c	4348	    uint64_t count = 0;
@@ -19222,97 +19222,97 @@ native-width-integer	unit_tests/check_clamav.c	39157	    size_t offset = 0;
 native-width-integer	unit_tests/check_clamav.c	39159	    int ret;
 native-width-integer	unit_tests/check_clamav.c	39269	    const size_t lengths[] = {
 native-width-integer	unit_tests/check_clamav.c	39279	    size_t i;
-native-width-integer	unit_tests/check_clamav.c	39399	    const size_t lengths[] = {sizeof(little_endian), sizeof(big_endian)};
-native-width-integer	unit_tests/check_clamav.c	39402	    size_t i;
+native-width-integer	unit_tests/check_clamav.c	39405	    const size_t lengths[] = {sizeof(little_endian), sizeof(big_endian)};
+native-width-integer	unit_tests/check_clamav.c	39408	    size_t i;
 native-width-integer	unit_tests/check_clamav.c	3945	    int fd                 = -1;
-native-width-integer	unit_tests/check_clamav.c	39465	    const size_t lengths[] = {
-native-width-integer	unit_tests/check_clamav.c	39476	    size_t i;
-native-width-integer	unit_tests/check_clamav.c	39505	    static const size_t offsets[] = {4U, 8U, 16U, 24U, 44U};
-native-width-integer	unit_tests/check_clamav.c	39515	    size_t i;
-native-width-integer	unit_tests/check_clamav.c	39568	    size_t length;
-native-width-integer	unit_tests/check_clamav.c	39569	    size_t max_offset;
-native-width-integer	unit_tests/check_clamav.c	39571	    size_t prefix_length;
-native-width-integer	unit_tests/check_clamav.c	39574	static off_t tiff_large_cursor_pread_cb(void *handle, void *buf, size_t count, off_t offset)
-native-width-integer	unit_tests/check_clamav.c	39577	    size_t copy_length;
-native-width-integer	unit_tests/check_clamav.c	39582	    if ((size_t)offset > state->max_offset)
-native-width-integer	unit_tests/check_clamav.c	39583	        state->max_offset = (size_t)offset;
-native-width-integer	unit_tests/check_clamav.c	39585	    if (count > state->length - (size_t)offset)
-native-width-integer	unit_tests/check_clamav.c	39586	        count = state->length - (size_t)offset;
-native-width-integer	unit_tests/check_clamav.c	39589	    if ((size_t)offset < state->prefix_length) {
-native-width-integer	unit_tests/check_clamav.c	39590	        copy_length = MIN(count, state->prefix_length - (size_t)offset);
-native-width-integer	unit_tests/check_clamav.c	39591	        memcpy(buf, state->prefix + (size_t)offset, copy_length);
-native-width-integer	unit_tests/check_clamav.c	39594	    return (off_t)count;
-native-width-integer	unit_tests/check_clamav.c	39608	    state.length        = (size_t)UINT32_MAX + 8U;
-native-width-integer	unit_tests/check_clamav.c	39618	    ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
-native-width-integer	unit_tests/check_clamav.c	39637	    state.length        = (size_t)UINT32_MAX + 64U;
-native-width-integer	unit_tests/check_clamav.c	39647	    ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
-native-width-integer	unit_tests/check_clamav.c	39672	    state.length        = (size_t)UINT32_MAX + 64U;
-native-width-integer	unit_tests/check_clamav.c	39682	    ck_assert_msg(state.max_offset < (size_t)UINT32_MAX,
-native-width-integer	unit_tests/check_clamav.c	39714	    const size_t lengths[] = {
-native-width-integer	unit_tests/check_clamav.c	39722	    size_t i;
+native-width-integer	unit_tests/check_clamav.c	39471	    const size_t lengths[] = {
+native-width-integer	unit_tests/check_clamav.c	39482	    size_t i;
+native-width-integer	unit_tests/check_clamav.c	39511	    static const size_t offsets[] = {4U, 8U, 16U, 24U, 44U};
+native-width-integer	unit_tests/check_clamav.c	39521	    size_t i;
+native-width-integer	unit_tests/check_clamav.c	39574	    size_t length;
+native-width-integer	unit_tests/check_clamav.c	39575	    size_t max_offset;
+native-width-integer	unit_tests/check_clamav.c	39577	    size_t prefix_length;
+native-width-integer	unit_tests/check_clamav.c	39580	static off_t tiff_large_cursor_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+native-width-integer	unit_tests/check_clamav.c	39583	    size_t copy_length;
+native-width-integer	unit_tests/check_clamav.c	39588	    if ((size_t)offset > state->max_offset)
+native-width-integer	unit_tests/check_clamav.c	39589	        state->max_offset = (size_t)offset;
+native-width-integer	unit_tests/check_clamav.c	39591	    if (count > state->length - (size_t)offset)
+native-width-integer	unit_tests/check_clamav.c	39592	        count = state->length - (size_t)offset;
+native-width-integer	unit_tests/check_clamav.c	39595	    if ((size_t)offset < state->prefix_length) {
+native-width-integer	unit_tests/check_clamav.c	39596	        copy_length = MIN(count, state->prefix_length - (size_t)offset);
+native-width-integer	unit_tests/check_clamav.c	39597	        memcpy(buf, state->prefix + (size_t)offset, copy_length);
+native-width-integer	unit_tests/check_clamav.c	39600	    return (off_t)count;
+native-width-integer	unit_tests/check_clamav.c	39614	    state.length        = (size_t)UINT32_MAX + 8U;
+native-width-integer	unit_tests/check_clamav.c	39624	    ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
+native-width-integer	unit_tests/check_clamav.c	39643	    state.length        = (size_t)UINT32_MAX + 64U;
+native-width-integer	unit_tests/check_clamav.c	39653	    ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
+native-width-integer	unit_tests/check_clamav.c	39678	    state.length        = (size_t)UINT32_MAX + 64U;
+native-width-integer	unit_tests/check_clamav.c	39688	    ck_assert_msg(state.max_offset < (size_t)UINT32_MAX,
+native-width-integer	unit_tests/check_clamav.c	39720	    const size_t lengths[] = {
+native-width-integer	unit_tests/check_clamav.c	39728	    size_t i;
 native-width-integer	unit_tests/check_clamav.c	3996	    int fd = -1;
-native-width-integer	unit_tests/check_clamav.c	40026	    size_t length;
-native-width-integer	unit_tests/check_clamav.c	40027	    off_t fail_at;
-native-width-integer	unit_tests/check_clamav.c	40030	static off_t textnorm_pread_cb(void *handle, void *buf, size_t count, off_t offset)
-native-width-integer	unit_tests/check_clamav.c	40040	    if (count > state->length - (size_t)offset)
-native-width-integer	unit_tests/check_clamav.c	40041	        count = state->length - (size_t)offset;
-native-width-integer	unit_tests/check_clamav.c	40043	    return (off_t)count;
-native-width-integer	unit_tests/check_clamav.c	40052	    size_t written;
-native-width-integer	unit_tests/check_clamav.c	40118	    int ret;
-native-width-integer	unit_tests/check_clamav.c	40206	static const void *pe_icon_resource_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+native-width-integer	unit_tests/check_clamav.c	40032	    size_t length;
+native-width-integer	unit_tests/check_clamav.c	40033	    off_t fail_at;
+native-width-integer	unit_tests/check_clamav.c	40036	static off_t textnorm_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+native-width-integer	unit_tests/check_clamav.c	40046	    if (count > state->length - (size_t)offset)
+native-width-integer	unit_tests/check_clamav.c	40047	        count = state->length - (size_t)offset;
+native-width-integer	unit_tests/check_clamav.c	40049	    return (off_t)count;
+native-width-integer	unit_tests/check_clamav.c	40058	    size_t written;
+native-width-integer	unit_tests/check_clamav.c	40124	    int ret;
 native-width-integer	unit_tests/check_clamav.c	4021	static const int expected_testfiles = 53;
-native-width-integer	unit_tests/check_clamav.c	40215	static size_t pe_icon_read_failure_offset = SIZE_MAX;
-native-width-integer	unit_tests/check_clamav.c	40217	static const void *pe_icon_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_clamav.c	40227	static void pe_icon_test_build_resource_tree(uint8_t *data, size_t data_size)
+native-width-integer	unit_tests/check_clamav.c	40212	static const void *pe_icon_resource_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+native-width-integer	unit_tests/check_clamav.c	40221	static size_t pe_icon_read_failure_offset = SIZE_MAX;
+native-width-integer	unit_tests/check_clamav.c	40223	static const void *pe_icon_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+native-width-integer	unit_tests/check_clamav.c	40233	static void pe_icon_test_build_resource_tree(uint8_t *data, size_t data_size)
 native-width-integer	unit_tests/check_clamav.c	4040	    int expect = expected_testfiles;
-native-width-integer	unit_tests/check_clamav.c	40653	    unsigned int sigs = 0;
-native-width-integer	unit_tests/check_clamav.c	40656	    int signature_fd = -1;
-native-width-integer	unit_tests/check_clamav.c	40664	                     (ssize_t)(sizeof(signature) - 1));
-native-width-integer	unit_tests/check_clamav.c	40726	static cl_error_t msxml_attribute_limit_scan_cb(int fd, const char *filepath, cli_ctx *ctx, int num_attribs,
-native-width-integer	unit_tests/check_clamav.c	40757	    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-attributes.xml", NULL, 0);
+native-width-integer	unit_tests/check_clamav.c	40659	    unsigned int sigs = 0;
+native-width-integer	unit_tests/check_clamav.c	40662	    int signature_fd = -1;
+native-width-integer	unit_tests/check_clamav.c	40670	                     (ssize_t)(sizeof(signature) - 1));
+native-width-integer	unit_tests/check_clamav.c	40732	static cl_error_t msxml_attribute_limit_scan_cb(int fd, const char *filepath, cli_ctx *ctx, int num_attribs,
 native-width-integer	unit_tests/check_clamav.c	4076	static int inited = 0;
+native-width-integer	unit_tests/check_clamav.c	40763	    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-attributes.xml", NULL, 0);
 native-width-integer	unit_tests/check_clamav.c	4080	    unsigned int sigs = 0;
-native-width-integer	unit_tests/check_clamav.c	41074	    int expect         = expected_testfiles;
+native-width-integer	unit_tests/check_clamav.c	41080	    int expect         = expected_testfiles;
 native-width-integer	unit_tests/check_clamav.c	414	/* extern unsigned int cl_retflevel(void); */
 native-width-integer	unit_tests/check_clamav.c	4159	    size_t large_size = (size_t)UINT32_MAX + 1;
 native-width-integer	unit_tests/check_clamav.c	4203	    size_t large_size = (size_t)UINT32_MAX + 123;
 native-width-integer	unit_tests/check_clamav.c	4234	static int get_test_file(int i, char *file, unsigned fsize, unsigned long *size)
 native-width-integer	unit_tests/check_clamav.c	4236	    int fd;
-native-width-integer	unit_tests/check_clamav.c	42480	        int timeout = atoi(user_timeout);
-native-width-integer	unit_tests/check_clamav.c	42498	    size_t i;
+native-width-integer	unit_tests/check_clamav.c	42487	        int timeout = atoi(user_timeout);
 native-width-integer	unit_tests/check_clamav.c	4250	static off_t pread_cb(void *handle, void *buf, size_t count, off_t offset)
+native-width-integer	unit_tests/check_clamav.c	42505	    size_t i;
 native-width-integer	unit_tests/check_clamav.c	4252	    return pread(*((int *)handle), buf, count, offset);
-native-width-integer	unit_tests/check_clamav.c	42523	    size_t j;
-native-width-integer	unit_tests/check_clamav.c	42541	    size_t j;
-native-width-integer	unit_tests/check_clamav.c	42558	    size_t j;
+native-width-integer	unit_tests/check_clamav.c	42530	    size_t j;
+native-width-integer	unit_tests/check_clamav.c	42548	    size_t j;
+native-width-integer	unit_tests/check_clamav.c	42565	    size_t j;
 native-width-integer	unit_tests/check_clamav.c	4257	    size_t length;
-native-width-integer	unit_tests/check_clamav.c	42579	    int result;
 native-width-integer	unit_tests/check_clamav.c	4258	    off_t source_offset;
-native-width-integer	unit_tests/check_clamav.c	42602	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
+native-width-integer	unit_tests/check_clamav.c	42586	    int result;
+native-width-integer	unit_tests/check_clamav.c	42609	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
 native-width-integer	unit_tests/check_clamav.c	4261	static off_t offset_pread_cb(void *handle, void *buf, size_t count, off_t offset)
-native-width-integer	unit_tests/check_clamav.c	42639	    int i;
 native-width-integer	unit_tests/check_clamav.c	4264	    size_t relative;
+native-width-integer	unit_tests/check_clamav.c	42646	    int i;
 native-width-integer	unit_tests/check_clamav.c	4270	    relative = (size_t)(offset - state->source_offset);
 native-width-integer	unit_tests/check_clamav.c	4274	    return (off_t)count;
 native-width-integer	unit_tests/check_clamav.c	4286	    state.source_offset = (off_t)4096;
 native-width-integer	unit_tests/check_clamav.c	4288	    map = cl_fmap_open_handle(&state, (size_t)state.source_offset, state.length,
-native-width-integer	unit_tests/check_clamav.c	42923	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	42941	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	42959	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	42977	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	43023	int open_testfile(const char *name, int flags)
-native-width-integer	unit_tests/check_clamav.c	43025	    int fd;
-native-width-integer	unit_tests/check_clamav.c	43038	void diff_file_mem(int fd, const char *ref, size_t len)
+native-width-integer	unit_tests/check_clamav.c	42930	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	42948	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	42966	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	42984	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	43030	int open_testfile(const char *name, int flags)
+native-width-integer	unit_tests/check_clamav.c	43032	    int fd;
 native-width-integer	unit_tests/check_clamav.c	4304	    size_t length;
-native-width-integer	unit_tests/check_clamav.c	43041	    size_t p, reflen = len;
+native-width-integer	unit_tests/check_clamav.c	43045	void diff_file_mem(int fd, const char *ref, size_t len)
+native-width-integer	unit_tests/check_clamav.c	43048	    size_t p, reflen = len;
 native-width-integer	unit_tests/check_clamav.c	4305	    off_t fail_at;
 native-width-integer	unit_tests/check_clamav.c	4306	    unsigned int reads;
-native-width-integer	unit_tests/check_clamav.c	43064	void diff_files(int fd, int ref_fd)
-native-width-integer	unit_tests/check_clamav.c	43067	    ssize_t nread;
-native-width-integer	unit_tests/check_clamav.c	43068	    off_t siz = lseek(ref_fd, 0, SEEK_END);
+native-width-integer	unit_tests/check_clamav.c	43071	void diff_files(int fd, int ref_fd)
+native-width-integer	unit_tests/check_clamav.c	43074	    ssize_t nread;
+native-width-integer	unit_tests/check_clamav.c	43075	    off_t siz = lseek(ref_fd, 0, SEEK_END);
 native-width-integer	unit_tests/check_clamav.c	4309	static unsigned char synthetic_byte_at(size_t offset)
-native-width-integer	unit_tests/check_clamav.c	43134	int main(int argc, char **argv)
-native-width-integer	unit_tests/check_clamav.c	43136	    int nf;
+native-width-integer	unit_tests/check_clamav.c	43141	int main(int argc, char **argv)
+native-width-integer	unit_tests/check_clamav.c	43143	    int nf;
 native-width-integer	unit_tests/check_clamav.c	4316	static off_t synthetic_pread_cb(void *handle, void *buf, size_t count, off_t offset)
 native-width-integer	unit_tests/check_clamav.c	4320	    size_t original_count;
 native-width-integer	unit_tests/check_clamav.c	4321	    size_t position;
@@ -20686,48 +20686,48 @@ boundary-constant	unit_tests/check_clamav.c	37215	    ck_assert_msg(st.st_size >
 boundary-constant	unit_tests/check_clamav.c	37290	    ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX - SFX_PREFIX_SIZE,
 boundary-constant	unit_tests/check_clamav.c	37390	        ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
 boundary-constant	unit_tests/check_clamav.c	38989	    ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
-boundary-constant	unit_tests/check_clamav.c	39532	    tiff_targeted_read_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	39566	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	39608	    state.length        = (size_t)UINT32_MAX + 8U;
-boundary-constant	unit_tests/check_clamav.c	39618	    ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
-boundary-constant	unit_tests/check_clamav.c	39637	    state.length        = (size_t)UINT32_MAX + 64U;
-boundary-constant	unit_tests/check_clamav.c	39647	    ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
-boundary-constant	unit_tests/check_clamav.c	39672	    state.length        = (size_t)UINT32_MAX + 64U;
-boundary-constant	unit_tests/check_clamav.c	39682	    ck_assert_msg(state.max_offset < (size_t)UINT32_MAX,
-boundary-constant	unit_tests/check_clamav.c	39885	    jpeg_segment_probe_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	39912	    jpeg_exploit_probe_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	39941	    jpeg_photoshop_targeted_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	39968	    jpeg_photoshop_targeted_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	39997	    jpeg_photoshop_boundary_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	40215	static size_t pe_icon_read_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	40298	    pe_icon_read_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	40455	    pe_icon_read_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	40511	    pe_icon_test_write_u32(data + 0x100, UINT32_MAX);
-boundary-constant	unit_tests/check_clamav.c	40595	    pe_icon_read_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	40935	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	40947	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	41105	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	41181	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	41219	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	41242	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	41471	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	41490	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	41520	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	39538	    tiff_targeted_read_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	39572	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	39614	    state.length        = (size_t)UINT32_MAX + 8U;
+boundary-constant	unit_tests/check_clamav.c	39624	    ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
+boundary-constant	unit_tests/check_clamav.c	39643	    state.length        = (size_t)UINT32_MAX + 64U;
+boundary-constant	unit_tests/check_clamav.c	39653	    ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
+boundary-constant	unit_tests/check_clamav.c	39678	    state.length        = (size_t)UINT32_MAX + 64U;
+boundary-constant	unit_tests/check_clamav.c	39688	    ck_assert_msg(state.max_offset < (size_t)UINT32_MAX,
+boundary-constant	unit_tests/check_clamav.c	39891	    jpeg_segment_probe_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	39918	    jpeg_exploit_probe_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	39947	    jpeg_photoshop_targeted_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	39974	    jpeg_photoshop_targeted_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	40003	    jpeg_photoshop_boundary_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	40221	static size_t pe_icon_read_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	40304	    pe_icon_read_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	40461	    pe_icon_read_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	40517	    pe_icon_test_write_u32(data + 0x100, UINT32_MAX);
+boundary-constant	unit_tests/check_clamav.c	40601	    pe_icon_read_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	40941	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	40953	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	41111	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	41187	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	41225	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	41248	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	41478	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	41497	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	41527	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	4159	    size_t large_size = (size_t)UINT32_MAX + 1;
-boundary-constant	unit_tests/check_clamav.c	41725	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	41734	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	41732	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	41741	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	4203	    size_t large_size = (size_t)UINT32_MAX + 123;
-boundary-constant	unit_tests/check_clamav.c	42123	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	42127	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	4213	    intel->maxsamples = UINT32_MAX;
+boundary-constant	unit_tests/check_clamav.c	42130	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	42134	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	4214	    intel->maxmem     = UINT32_MAX;
-boundary-constant	unit_tests/check_clamav.c	42149	#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	42216	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	42253	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	42257	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	42307	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	42319	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	42348	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	42156	#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	42223	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	42260	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	42264	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	42314	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	42326	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	42355	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	4605	    state.fail_at     = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	4629	    state.fail_at     = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	4633	    map.len           = (size_t)UINT32_MAX + 4096;
@@ -20909,7 +20909,7 @@ quantity-parser	sigtool/sigtool.c	3470	        mprintf(LOGG_INFO, "%s\n", (atoi(
 quantity-parser	sigtool/sigtool.c	3500	            sz    = (int)strtol(tokens[8], NULL, 16);
 quantity-parser	sigtool/sigtool.c	3614	            ftmsigtype = strtol(tokens[0], &end, 10);
 quantity-parser	sigtool/sigtool.c	3635	        switch (atoi(tokens[1])) {
-quantity-parser	unit_tests/check_clamav.c	42480	        int timeout = atoi(user_timeout);
+quantity-parser	unit_tests/check_clamav.c	42487	        int timeout = atoi(user_timeout);
 quantity-parser	unit_tests/check_clamd.c	102	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 quantity-parser	unit_tests/check_clamd.c	945	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 narrowing-cast	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
@@ -23409,14 +23409,14 @@ format-width	unit_tests/check_clamav.c	37256	                  "HWPOLE2 embedded
 format-width	unit_tests/check_clamav.c	37525	                      "MSXML decoded member was not scanned as %s: %s (%d)",
 format-width	unit_tests/check_clamav.c	4060	    ck_assert_msg(testfiles_n == expect, "testfiles: %d != %d", testfiles_n, expect);
 format-width	unit_tests/check_clamav.c	4239	    ck_assert_msg(i < testfiles_n, "%i < %i %s", i, testfiles_n, file);
-format-width	unit_tests/check_clamav.c	42482	        printf("Using test case timeout of %d seconds set by user\n", timeout);
-format-width	unit_tests/check_clamav.c	43044	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
-format-width	unit_tests/check_clamav.c	43046	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
-format-width	unit_tests/check_clamav.c	43057	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
-format-width	unit_tests/check_clamav.c	43060	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
-format-width	unit_tests/check_clamav.c	43076	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
-format-width	unit_tests/check_clamav.c	43120	                        "\tVersion from header: %u.%u.%u\n"
-format-width	unit_tests/check_clamav.c	43121	                        "\tVersion from library: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	42489	        printf("Using test case timeout of %d seconds set by user\n", timeout);
+format-width	unit_tests/check_clamav.c	43051	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
+format-width	unit_tests/check_clamav.c	43053	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
+format-width	unit_tests/check_clamav.c	43064	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
+format-width	unit_tests/check_clamav.c	43067	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
+format-width	unit_tests/check_clamav.c	43083	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
+format-width	unit_tests/check_clamav.c	43127	                        "\tVersion from header: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	43128	                        "\tVersion from library: %u.%u.%u\n"
 format-width	unit_tests/check_clamav.c	4401	                      "fmap aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
 format-width	unit_tests/check_clamav.c	4403	                      "fmap aging released %llu pages", (unsigned long long)map->aging_released_last);
 format-width	unit_tests/check_clamav.c	4420	                          "wrapped aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
@@ -36858,36 +36858,36 @@ offset-size-arithmetic	unit_tests/check_clamav.c	39179	    data[offset++] = (uin
 offset-size-arithmetic	unit_tests/check_clamav.c	39180	    offset += 28;
 offset-size-arithmetic	unit_tests/check_clamav.c	39182	    offset += sizeof(child);
 offset-size-arithmetic	unit_tests/check_clamav.c	39281	    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
-offset-size-arithmetic	unit_tests/check_clamav.c	39404	    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
-offset-size-arithmetic	unit_tests/check_clamav.c	39478	    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
-offset-size-arithmetic	unit_tests/check_clamav.c	39517	    for (i = 0; i < sizeof(offsets) / sizeof(offsets[0]); i++) {
-offset-size-arithmetic	unit_tests/check_clamav.c	39574	static off_t tiff_large_cursor_pread_cb(void *handle, void *buf, size_t count, off_t offset)
-offset-size-arithmetic	unit_tests/check_clamav.c	39579	    if (offset < 0 || (uint64_t)offset >= state->length)
-offset-size-arithmetic	unit_tests/check_clamav.c	39582	    if ((size_t)offset > state->max_offset)
-offset-size-arithmetic	unit_tests/check_clamav.c	39585	    if (count > state->length - (size_t)offset)
-offset-size-arithmetic	unit_tests/check_clamav.c	39586	        count = state->length - (size_t)offset;
-offset-size-arithmetic	unit_tests/check_clamav.c	39589	    if ((size_t)offset < state->prefix_length) {
-offset-size-arithmetic	unit_tests/check_clamav.c	39590	        copy_length = MIN(count, state->prefix_length - (size_t)offset);
-offset-size-arithmetic	unit_tests/check_clamav.c	39608	    state.length        = (size_t)UINT32_MAX + 8U;
-offset-size-arithmetic	unit_tests/check_clamav.c	39637	    state.length        = (size_t)UINT32_MAX + 64U;
-offset-size-arithmetic	unit_tests/check_clamav.c	39672	    state.length        = (size_t)UINT32_MAX + 64U;
-offset-size-arithmetic	unit_tests/check_clamav.c	39724	    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
-offset-size-arithmetic	unit_tests/check_clamav.c	40030	static off_t textnorm_pread_cb(void *handle, void *buf, size_t count, off_t offset)
-offset-size-arithmetic	unit_tests/check_clamav.c	40034	    if (offset >= state->fail_at) {
-offset-size-arithmetic	unit_tests/check_clamav.c	40038	    if (offset < 0 || (uint64_t)offset >= state->length)
-offset-size-arithmetic	unit_tests/check_clamav.c	40040	    if (count > state->length - (size_t)offset)
-offset-size-arithmetic	unit_tests/check_clamav.c	40041	        count = state->length - (size_t)offset;
-offset-size-arithmetic	unit_tests/check_clamav.c	40066	    written = text_normalize_map(&state, map, pread_state.length + 1U);
-offset-size-arithmetic	unit_tests/check_clamav.c	40222	    if (len == 0 || at > map->len || len > map->len - at)
-offset-size-arithmetic	unit_tests/check_clamav.c	40480	     * declared size wraps a 32-bit file offset in the old implementation. */
+offset-size-arithmetic	unit_tests/check_clamav.c	39410	    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+offset-size-arithmetic	unit_tests/check_clamav.c	39484	    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+offset-size-arithmetic	unit_tests/check_clamav.c	39523	    for (i = 0; i < sizeof(offsets) / sizeof(offsets[0]); i++) {
+offset-size-arithmetic	unit_tests/check_clamav.c	39580	static off_t tiff_large_cursor_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+offset-size-arithmetic	unit_tests/check_clamav.c	39585	    if (offset < 0 || (uint64_t)offset >= state->length)
+offset-size-arithmetic	unit_tests/check_clamav.c	39588	    if ((size_t)offset > state->max_offset)
+offset-size-arithmetic	unit_tests/check_clamav.c	39591	    if (count > state->length - (size_t)offset)
+offset-size-arithmetic	unit_tests/check_clamav.c	39592	        count = state->length - (size_t)offset;
+offset-size-arithmetic	unit_tests/check_clamav.c	39595	    if ((size_t)offset < state->prefix_length) {
+offset-size-arithmetic	unit_tests/check_clamav.c	39596	        copy_length = MIN(count, state->prefix_length - (size_t)offset);
+offset-size-arithmetic	unit_tests/check_clamav.c	39614	    state.length        = (size_t)UINT32_MAX + 8U;
+offset-size-arithmetic	unit_tests/check_clamav.c	39643	    state.length        = (size_t)UINT32_MAX + 64U;
+offset-size-arithmetic	unit_tests/check_clamav.c	39678	    state.length        = (size_t)UINT32_MAX + 64U;
+offset-size-arithmetic	unit_tests/check_clamav.c	39730	    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+offset-size-arithmetic	unit_tests/check_clamav.c	40036	static off_t textnorm_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+offset-size-arithmetic	unit_tests/check_clamav.c	40040	    if (offset >= state->fail_at) {
+offset-size-arithmetic	unit_tests/check_clamav.c	40044	    if (offset < 0 || (uint64_t)offset >= state->length)
+offset-size-arithmetic	unit_tests/check_clamav.c	40046	    if (count > state->length - (size_t)offset)
+offset-size-arithmetic	unit_tests/check_clamav.c	40047	        count = state->length - (size_t)offset;
+offset-size-arithmetic	unit_tests/check_clamav.c	40072	    written = text_normalize_map(&state, map, pread_state.length + 1U);
+offset-size-arithmetic	unit_tests/check_clamav.c	40228	    if (len == 0 || at > map->len || len > map->len - at)
+offset-size-arithmetic	unit_tests/check_clamav.c	40486	     * declared size wraps a 32-bit file offset in the old implementation. */
 offset-size-arithmetic	unit_tests/check_clamav.c	4052	        testfiles = cli_safer_realloc(testfiles, i * sizeof(*testfiles));
-offset-size-arithmetic	unit_tests/check_clamav.c	40663	    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1),
-offset-size-arithmetic	unit_tests/check_clamav.c	40664	                     (ssize_t)(sizeof(signature) - 1));
-offset-size-arithmetic	unit_tests/check_clamav.c	40755	    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
-offset-size-arithmetic	unit_tests/check_clamav.c	40757	    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-attributes.xml", NULL, 0);
-offset-size-arithmetic	unit_tests/check_clamav.c	40764	    ret = cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]), MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
-offset-size-arithmetic	unit_tests/check_clamav.c	40774	    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
-offset-size-arithmetic	unit_tests/check_clamav.c	40778	    ret = cli_msxml_parse_document_streaming(&ctx, map, keys, sizeof(keys) / sizeof(keys[0]),
+offset-size-arithmetic	unit_tests/check_clamav.c	40669	    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1),
+offset-size-arithmetic	unit_tests/check_clamav.c	40670	                     (ssize_t)(sizeof(signature) - 1));
+offset-size-arithmetic	unit_tests/check_clamav.c	40761	    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+offset-size-arithmetic	unit_tests/check_clamav.c	40763	    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-attributes.xml", NULL, 0);
+offset-size-arithmetic	unit_tests/check_clamav.c	40770	    ret = cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]), MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
+offset-size-arithmetic	unit_tests/check_clamav.c	40780	    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+offset-size-arithmetic	unit_tests/check_clamav.c	40784	    ret = cli_msxml_parse_document_streaming(&ctx, map, keys, sizeof(keys) / sizeof(keys[0]),
 offset-size-arithmetic	unit_tests/check_clamav.c	4094	    /* Keep the scan-API fixture independent of any process-level dynamic
 offset-size-arithmetic	unit_tests/check_clamav.c	4159	    size_t large_size = (size_t)UINT32_MAX + 1;
 offset-size-arithmetic	unit_tests/check_clamav.c	4188	    ck_assert_msg(CL_VIRUS == clean_cache_check(&ctx), "large clean-cache size aliased its truncated 32-bit value");
@@ -36895,35 +36895,35 @@ offset-size-arithmetic	unit_tests/check_clamav.c	4203	    size_t large_size = (s
 offset-size-arithmetic	unit_tests/check_clamav.c	4219	    ck_assert_msg((uint64_t)large_size == intel->samples->size, "large stats sample size was truncated");
 offset-size-arithmetic	unit_tests/check_clamav.c	4234	static int get_test_file(int i, char *file, unsigned fsize, unsigned long *size)
 offset-size-arithmetic	unit_tests/check_clamav.c	4250	static off_t pread_cb(void *handle, void *buf, size_t count, off_t offset)
-offset-size-arithmetic	unit_tests/check_clamav.c	42500	    data  = malloc(sizeof(le_data) * DATA_REP);
-offset-size-arithmetic	unit_tests/check_clamav.c	42501	    data2 = malloc(sizeof(le_data) * DATA_REP);
-offset-size-arithmetic	unit_tests/check_clamav.c	42525	    /* read 2 bytes apart, start is not always aligned*/
-offset-size-arithmetic	unit_tests/check_clamav.c	42526	    for (j = _i; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
-offset-size-arithmetic	unit_tests/check_clamav.c	42531	    for (j = 0; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
-offset-size-arithmetic	unit_tests/check_clamav.c	42543	    /* read 4 bytes apart, start is not always aligned*/
-offset-size-arithmetic	unit_tests/check_clamav.c	42544	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	42549	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	42559	    /* write 4 bytes apart, start is not always aligned*/
-offset-size-arithmetic	unit_tests/check_clamav.c	42560	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	42563	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	42567	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	42570	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	42602	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
+offset-size-arithmetic	unit_tests/check_clamav.c	42507	    data  = malloc(sizeof(le_data) * DATA_REP);
+offset-size-arithmetic	unit_tests/check_clamav.c	42508	    data2 = malloc(sizeof(le_data) * DATA_REP);
+offset-size-arithmetic	unit_tests/check_clamav.c	42532	    /* read 2 bytes apart, start is not always aligned*/
+offset-size-arithmetic	unit_tests/check_clamav.c	42533	    for (j = _i; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
+offset-size-arithmetic	unit_tests/check_clamav.c	42538	    for (j = 0; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
+offset-size-arithmetic	unit_tests/check_clamav.c	42550	    /* read 4 bytes apart, start is not always aligned*/
+offset-size-arithmetic	unit_tests/check_clamav.c	42551	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	42556	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	42566	    /* write 4 bytes apart, start is not always aligned*/
+offset-size-arithmetic	unit_tests/check_clamav.c	42567	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	42570	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	42574	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	42577	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	42609	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
 offset-size-arithmetic	unit_tests/check_clamav.c	4261	static off_t offset_pread_cb(void *handle, void *buf, size_t count, off_t offset)
 offset-size-arithmetic	unit_tests/check_clamav.c	4263	    struct offset_pread_state *state = handle;
-offset-size-arithmetic	unit_tests/check_clamav.c	42644	    ck_assert_msg(!memcmp(h_sha2_256, res256[0], sizeof(h_sha2_256)), "sha2-256 test vector #1 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	42647	    ck_assert_msg(!memcmp(h_sha2_256, res256[1], sizeof(h_sha2_256)), "sha2-256 test vector #2 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	42655	    ck_assert_msg(!memcmp(h_sha2_256, res256[2], sizeof(h_sha2_256)), "sha2-256 test vector #3 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	42651	    ck_assert_msg(!memcmp(h_sha2_256, res256[0], sizeof(h_sha2_256)), "sha2-256 test vector #1 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	42654	    ck_assert_msg(!memcmp(h_sha2_256, res256[1], sizeof(h_sha2_256)), "sha2-256 test vector #2 failed");
 offset-size-arithmetic	unit_tests/check_clamav.c	4266	    if (offset < state->source_offset ||
+offset-size-arithmetic	unit_tests/check_clamav.c	42662	    ck_assert_msg(!memcmp(h_sha2_256, res256[2], sizeof(h_sha2_256)), "sha2-256 test vector #3 failed");
 offset-size-arithmetic	unit_tests/check_clamav.c	4267	        (uint64_t)(offset - state->source_offset) >= state->length)
 offset-size-arithmetic	unit_tests/check_clamav.c	4270	    relative = (size_t)(offset - state->source_offset);
 offset-size-arithmetic	unit_tests/check_clamav.c	4271	    if (count > state->length - relative)
 offset-size-arithmetic	unit_tests/check_clamav.c	4272	        count = state->length - relative;
-offset-size-arithmetic	unit_tests/check_clamav.c	42799	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
-offset-size-arithmetic	unit_tests/check_clamav.c	42806	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
+offset-size-arithmetic	unit_tests/check_clamav.c	42806	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
+offset-size-arithmetic	unit_tests/check_clamav.c	42813	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
 offset-size-arithmetic	unit_tests/check_clamav.c	4285	    state.length        = sizeof(data) - 1U;
-offset-size-arithmetic	unit_tests/check_clamav.c	43028	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
-offset-size-arithmetic	unit_tests/check_clamav.c	43054	        len--;
+offset-size-arithmetic	unit_tests/check_clamav.c	43035	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
+offset-size-arithmetic	unit_tests/check_clamav.c	43061	        len--;
 offset-size-arithmetic	unit_tests/check_clamav.c	4311	    unsigned char value = (unsigned char)(((offset / 4096) + 1) & 0xff);
 offset-size-arithmetic	unit_tests/check_clamav.c	4316	static off_t synthetic_pread_cb(void *handle, void *buf, size_t count, off_t offset)
 offset-size-arithmetic	unit_tests/check_clamav.c	4325	    if (state->fail_at >= 0 && offset >= state->fail_at) {

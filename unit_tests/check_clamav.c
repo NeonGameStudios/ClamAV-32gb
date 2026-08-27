@@ -39304,6 +39304,12 @@ START_TEST(test_tiff_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tiff_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_parsetiff(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_tiff_initial_read_failure_is_fail_visible)
 {
     static const uint8_t data[] = {'I', 'I', 0x2a, 0x00};
@@ -41246,6 +41252,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_tiff_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_tiff_corpus, test_tiff_corpus_valid_structures_complete);
     suite_add_tcase(s, tc_tiff_map);
+    tcase_add_test(tc_tiff_map, test_tiff_null_context_is_fail_visible);
     tcase_add_test(tc_tiff_map, test_tiff_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_jpeg_map);
     suite_add_tcase(s, tc_jpeg_corpus);

@@ -1,5 +1,15 @@
 # Independent read-only audit of audit.md
 
+## TIFF direct-entry context evidence — 2026-08-27
+
+The TIFF direct parser already returned `CL_ENULLARG` for a null context and
+an incomplete `CL_EPARSE` result for a recognized context without an input
+fmap. Its focused map TCase only covered the missing-map path. A dedicated
+null-context regression is now registered beside it. The current-source
+production-linked GCC `tiff_map` case passes 2/2 for both entry states; complete
+TIFF corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## UDF direct-entry context evidence — 2026-08-27
 
 The UDF direct parser already returned `CL_ENULLARG` for a null context and
