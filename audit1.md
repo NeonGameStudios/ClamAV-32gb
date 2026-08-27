@@ -12165,3 +12165,14 @@ and source guards cover the three invalid-input cases; current-object
 execution, full HTML corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and release
 qualification remain open.
+
+## Matcher public-entry boundary audit — 2026-08-27
+
+The lower-level matcher entry points could dereference a null context before
+their existing engine checks, and `cli_scan_fmap()` could run without a current
+fmap. They now reject null contexts, missing engines, and non-empty null
+buffers explicitly; a missing fmap returns `CL_EPARSE` with sticky incomplete
+state. Focused matcher API regressions and source guards cover these paths;
+current-object execution, full matcher/signature qualification, sanitizer,
+materialized large-file, production-CVD/service, Sonic1, and release evidence
+remain open.

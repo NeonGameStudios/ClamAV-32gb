@@ -6032,3 +6032,11 @@ parser-family qualification remain open.
 - Add focused API coverage and source guards. Keep current-object execution,
   complete HTML corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release qualification open.
+
+## Matcher public-entry boundary audit — 2026-08-27
+
+- Keep lower-level matcher APIs fail-visible for null contexts, missing
+  engines, non-empty null buffers, and missing current maps.
+- Retain focused API coverage and source guards; full matcher/signature,
+  sanitizer, materialized large-file, production-CVD/service, Sonic1, and
+  release qualification remain open.

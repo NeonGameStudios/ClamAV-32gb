@@ -2110,6 +2110,34 @@ START_TEST(test_scan_fmap_without_generic_root_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_matcher_entry_points_reject_invalid_contexts)
+{
+    static const unsigned char data[] = {'m'};
+    cli_ctx missing_engine;
+    cli_ctx missing_map;
+
+    ck_assert_int_eq(cli_scan_buff(data, sizeof(data), 0, NULL, CL_TYPE_ANY, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scan_fmap(NULL, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scan_desc(-1, NULL, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL, NULL, NULL, LAYER_ATTRIBUTES_NONE),
+                     CL_ENULLARG);
+    ck_assert_int_eq(cli_scan_buff(NULL, sizeof(data), 0, &ctx, CL_TYPE_ANY, NULL), CL_ENULLARG);
+
+    missing_engine = ctx;
+    missing_engine.engine = NULL;
+    ck_assert_int_eq(cli_scan_buff(data, sizeof(data), 0, &missing_engine, CL_TYPE_ANY, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scan_fmap(&missing_engine, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scan_desc(-1, &missing_engine, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL, NULL, NULL,
+                                   LAYER_ATTRIBUTES_NONE),
+                     CL_ENULLARG);
+
+    missing_map = ctx;
+    missing_map.fmap = NULL;
+    ck_assert_int_eq(cli_scan_fmap(&missing_map, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL), CL_EPARSE);
+    ck_assert(missing_map.scan_incomplete);
+    ck_assert_str_eq(missing_map.scan_incomplete_reason, "matcher fmap is unavailable");
+}
+END_TEST
+
 START_TEST(test_pcre_matcher_limit_is_preserved_by_fmap)
 {
     static char pcre_signature[] = PCRE_BYPASS "/00/";
@@ -2272,6 +2300,7 @@ Suite *test_matchers_suite(void)
 #endif
     tcase_add_test(tc_matchers, test_pcre_full_map_read_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_scan_fmap_without_generic_root_is_fail_visible);
+    tcase_add_test(tc_matchers, test_matcher_entry_points_reject_invalid_contexts);
     tcase_add_test(tc_matchers, test_pcre_matcher_limit_is_preserved_by_fmap);
     tcase_add_test(tc_matchers, test_pcre_subject_limit_is_fail_visible);
     return s;

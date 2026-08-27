@@ -340,7 +340,18 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
     bool target_match_ready = false;
     bool generic_match_ready = false;
     const char *virname            = NULL;
-    const struct cl_engine *engine = ctx->engine;
+    const struct cl_engine *engine;
+
+    if (!ctx) {
+        cli_errmsg("cli_scan_buff: context == NULL\n");
+        return CL_ENULLARG;
+    }
+    if (length != 0 && !buffer) {
+        cli_errmsg("cli_scan_buff: buffer == NULL for non-empty input\n");
+        return CL_ENULLARG;
+    }
+
+    engine = ctx->engine;
 
     if (!engine) {
         cli_errmsg("cli_scan_buff: engine == NULL\n");
@@ -1053,6 +1064,15 @@ cl_error_t cli_scan_desc(int desc, cli_ctx *ctx, cli_file_t ftype, bool filetype
     int empty;
     fmap_t *new_map = NULL;
 
+    if (!ctx) {
+        cli_errmsg("cli_scan_desc: context == NULL\n");
+        return CL_ENULLARG;
+    }
+    if (!ctx->engine) {
+        cli_errmsg("cli_scan_desc: engine == NULL\n");
+        return CL_ENULLARG;
+    }
+
     new_map = fmap_check_empty(desc, 0, 0, &empty, name, path);
     if (NULL == new_map) {
         if (!empty) {
@@ -1536,9 +1556,18 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
     struct cli_matcher *hdb, *fp;
     bool scan_viruses;
 
+    if (!ctx) {
+        cli_errmsg("cli_scan_fmap: context == NULL\n");
+        return CL_ENULLARG;
+    }
     if (!ctx->engine) {
         cli_errmsg("cli_scan_fmap: engine == NULL\n");
         ret = CL_ENULLARG;
+        goto done;
+    }
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "matcher fmap is unavailable");
+        ret = CL_EPARSE;
         goto done;
     }
 
