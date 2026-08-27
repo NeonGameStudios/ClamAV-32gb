@@ -5875,3 +5875,13 @@ parser-family qualification remain open.
   current-object execution, complete PDF/filter corpora, sanitizer, certified
   Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification remain open.
+
+## PDF object-stream cleanup-status audit — 2026-08-27
+
+- Route PDF object-stream unmap, temporary-accounting, and ownership failures
+  through the shared precedence helper, preserving `CL_ERESOURCE`/`CL_EPARSE`
+  without hiding earlier parser/resource or detection results.
+- Current PDF GCC syntax and source guards cover the paths; current-object
+  execution, complete PDF/object-stream corpora, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification remain open.

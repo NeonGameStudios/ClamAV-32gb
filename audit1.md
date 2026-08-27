@@ -11973,3 +11973,13 @@ The current PDF decoder passes the canonical-header GCC syntax check and
 source guards cover the status paths; current-object execution, complete
 PDF/filter corpora, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## PDF object-stream cleanup-status audit — 2026-08-27
+
+PDF object-stream unmap, temporary-accounting, and ownership-failure paths
+still used local clean/verified/abort status checks. They now use the shared
+precedence helper, preserving `CL_ERESOURCE` or `CL_EPARSE` while retaining
+earlier parser/resource or detection results. Current PDF GCC syntax and
+source guards cover the paths; current-object execution, complete PDF/object-
+stream corpora, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.

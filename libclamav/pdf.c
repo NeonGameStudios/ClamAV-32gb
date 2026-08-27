@@ -375,9 +375,7 @@ cl_error_t pdf_objstm_cleanup(struct pdf_struct *pdf,
                         pdf->ctx,
                         "PDF object-stream backing could not be unmapped");
                 }
-                if (status == CL_SUCCESS || status == CL_VERIFIED ||
-                    status == CL_BREAK)
-                    status = CL_ERESOURCE;
+                status = cli_merge_cleanup_status(status, CL_ERESOURCE);
             }
 #else
             if (pdf != NULL && pdf->ctx != NULL) {
@@ -385,9 +383,7 @@ cl_error_t pdf_objstm_cleanup(struct pdf_struct *pdf,
                     pdf->ctx,
                     "PDF object-stream mapping state was not supported");
             }
-            if (status == CL_SUCCESS || status == CL_VERIFIED ||
-                status == CL_BREAK)
-                status = CL_ERESOURCE;
+            status = cli_merge_cleanup_status(status, CL_ERESOURCE);
 #endif
         } else {
             free(objstm->streambuf);
@@ -397,9 +393,7 @@ cl_error_t pdf_objstm_cleanup(struct pdf_struct *pdf,
 
     if (objstm->temporary_reserved != 0) {
         if (pdf == NULL || pdf->ctx == NULL) {
-            if (status == CL_SUCCESS || status == CL_VERIFIED ||
-                status == CL_BREAK)
-                status = CL_ERESOURCE;
+            status = cli_merge_cleanup_status(status, CL_ERESOURCE);
         } else {
             cli_scan_release_temporary(pdf->ctx,
                                        objstm->temporary_reserved);
@@ -423,9 +417,7 @@ static cl_error_t pdf_objstm_discard_last(struct pdf_struct *pdf,
                 pdf->ctx,
                 "PDF object-stream ownership was inconsistent");
         }
-        if (status == CL_SUCCESS || status == CL_VERIFIED ||
-            status == CL_BREAK)
-            status = CL_EPARSE;
+        status = cli_merge_cleanup_status(status, CL_EPARSE);
         return status;
     }
 
