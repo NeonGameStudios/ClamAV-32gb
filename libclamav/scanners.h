@@ -54,6 +54,14 @@ cl_error_t cli_magic_scan_desc_type_reserved(int desc, const char *filepath, cli
                                              const char *name, uint32_t attributes);
 
 /**
+ * @brief Merge a temporary-output cleanup status with the nested scan status.
+ *
+ * Cleanup failures replace clean, verified, and application-abort statuses,
+ * but never hide a detection or an earlier parser/resource failure.
+ */
+cl_error_t cli_merge_cleanup_status(cl_error_t status, cl_error_t cleanup_status);
+
+/**
  * @brief Scan a descriptor while accounting for caller-owned staged bytes.
  *
  * The reservation remains charged to the scan's temporary-space budget for

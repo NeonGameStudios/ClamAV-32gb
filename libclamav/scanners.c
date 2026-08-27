@@ -128,6 +128,15 @@
 #include <fcntl.h>
 #include <string.h>
 
+cl_error_t cli_merge_cleanup_status(cl_error_t status, cl_error_t cleanup_status)
+{
+    if (cleanup_status == CL_SUCCESS)
+        return status;
+    if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+        return cleanup_status;
+    return status;
+}
+
 static cl_error_t cli_cleanup_compressed_temp(cli_ctx *ctx, int *fd, char *tempfile,
                                               cl_error_t status, uint64_t temporary_reserved,
                                               const char *close_reason,
@@ -1737,16 +1746,14 @@ static cl_error_t cli_cleanup_compressed_temp(cli_ctx *ctx, int *fd, char *tempf
     if (fd && *fd >= 0) {
         if (close(*fd) != 0) {
             cli_mark_scan_incomplete(ctx, close_reason);
-            if (status == CL_SUCCESS || status == CL_VERIFIED)
-                status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
         *fd = -1;
     }
 
     if (tempfile && !ctx->engine->keeptmp && cli_unlink(tempfile) != 0) {
         cli_mark_scan_incomplete(ctx, remove_reason);
-        if (status == CL_SUCCESS || status == CL_VERIFIED)
-            status = CL_EUNLINK;
+        status = cli_merge_cleanup_status(status, CL_EUNLINK);
     }
 
     if (temporary_reserved)

@@ -5574,3 +5574,17 @@ and Sonic1 qualification as release gates.
   11/11; a fresh current-object full relink and execution are open. Keep full
   BinHex corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.
+
+## Shared compressed-output cleanup audit — 2026-08-27
+
+- Keep `cli_cleanup_compressed_temp()` fail-visible across GZip, BZip2, XZ,
+  SZDD, RAR, and compressed metadata paths: distinguish close/unlink failures,
+  upgrade clean, verified, and `CL_BREAK`, and preserve detections and earlier
+  parser/resource errors.
+- The helper declaration, direct precedence regression, and source guards are
+  present; current scanner syntax checking passes with only pre-existing
+  scanner warnings. Fresh full Check execution remains open because the
+  reusable harness has mixed-generation test/object gaps. Keep complete
+  compressed-parser corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  open.

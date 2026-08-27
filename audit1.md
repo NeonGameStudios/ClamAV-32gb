@@ -11575,3 +11575,23 @@ reused harness requires additional mixed-generation override objects; the
 small direct relink was kept only as a diagnostic and did not execute. Full
 current-C ABI, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## Shared compressed-output cleanup audit — 2026-08-27
+
+The common `cli_cleanup_compressed_temp()` helper used by GZip, BZip2, XZ,
+SZDD, RAR, and compressed metadata paths upgraded clean and verified results
+when close or unlink failed, but allowed `CL_BREAK` to survive a cleanup
+failure. The helper now centralizes the same precedence contract used by
+BinHex, Rust spools, and 7-Zip: `CL_EWRITE` identifies close failure,
+`CL_EUNLINK` identifies unlink failure, clean/verified/abort statuses are
+upgraded, and detections or earlier parser/resource errors remain unchanged.
+
+The helper is declared in the internal scanner header, has a registered direct
+status-precedence regression, and is covered by source guards. The current
+shared scanner source passes the established GCC syntax check with the
+project's pre-existing scanner warnings; the full Check translation unit also
+contains unrelated mixed-generation undeclared tests in the reused build
+inputs, so no fresh execution is claimed. BZip2/GZip/XZ existing production
+evidence remains unchanged. Complete compressed-parser corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
