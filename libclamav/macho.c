@@ -537,6 +537,12 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 free(sections64);
                 RETURN_MACHO_BROKEN;
             }
+            if (sect > UINT16_MAX || nsects > UINT16_MAX - sect) {
+                cli_dbgmsg("cli_scanmacho: Cumulative section count exceeds metadata ABI\n");
+                free(sections);
+                free(sections64);
+                RETURN_MACHO_BROKEN;
+            }
             sections = (struct cli_exe_section *)cli_max_realloc_or_free(sections, (sect + nsects) * sizeof(struct cli_exe_section));
             if (!sections) {
                 cli_errmsg("cli_scanmacho: Can't allocate memory for 'sections'\n");

@@ -1620,6 +1620,21 @@ dispatch/range evidence, not complete Mach-O qualification; sanitizer,
 certified Linux x86-64, materialized large-file/resource,
 production-CVD/service, Sonic1, and release evidence remain open.
 
+## Mach-O cumulative section-count width — 2026-08-27
+
+The thin parser bounded each segment to 255 sections but accumulated all
+segments in an `unsigned int` before narrowing the final value into
+`cli_exe_info.nsections`, a `uint16_t`. A structurally complete Mach-O with
+65,536 sections consequently returned `CL_SUCCESS` with a zero section count.
+The parser now accepts exactly `UINT16_MAX` sections and rejects the first
+unrepresentable cumulative count before reallocating or assigning metadata,
+marking the scan incomplete and non-cacheable. The isolated current-source
+production-linked GCC `macho_sections` regression passes 1/1 over the
+65,535/65,536 boundary. A same-harness pre-fix-object negative control fails
+0/1 because the overflowing case returns success. Sanitizer, complete Mach-O
+corpus, certified Linux x86-64, materialized large-file/resource,
+production-CVD/service, Sonic1, and release evidence remain open.
+
 ## XZ decompressed-output corpus qualification — 2026-08-26
 
 The authoritative current-source production-linked GCC `xz` case passes 2/2,

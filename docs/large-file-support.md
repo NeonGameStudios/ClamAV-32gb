@@ -1121,6 +1121,20 @@ exposes the original metadata-dispatch defect. Full Mach-O/Java-FAT corpus,
 sanitizer, certified Linux x86-64, materialized large-file/resource,
 production-CVD/service, Sonic1, and release qualification remain open.
 
+## Mach-O cumulative section-count width — 2026-08-27
+
+Each segment admits at most 255 sections, but the parser accumulated those
+counts in an `unsigned int` and finally assigned the total to the 16-bit
+`cli_exe_info.nsections` ABI. A complete file with 65,536 sections therefore
+returned success with zero metadata sections. Admission now permits exactly
+65,535 sections and rejects the next section before allocation or narrowing,
+with sticky incomplete/non-cacheable state. The isolated current-source
+production-linked GCC `macho_sections` case passes 1/1 across both sides of the
+boundary; the same test with the pre-fix Mach-O object fails 0/1 because the
+overflowing file returns `CL_SUCCESS`. Sanitizer, complete Mach-O corpus,
+certified Linux x86-64, materialized large-file/resource,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## XZ decompressed-output corpus qualification — 2026-08-26
 
 The current-source production-linked GCC `xz` case passes 2/2, `xz_trailing`

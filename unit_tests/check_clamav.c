@@ -36488,6 +36488,99 @@ START_TEST(test_macho_native_metadata_preserves_64bit_sections)
 }
 END_TEST
 
+START_TEST(test_macho_cumulative_section_count_respects_metadata_width)
+{
+    enum {
+        MACHO_HEADER_SIZE           = 28,
+        LOAD_COMMAND_SIZE           = 8,
+        SEGMENT_SIZE                = 48,
+        SECTION_SIZE                = 68,
+        SECTIONS_PER_FULL_SEGMENT   = 255,
+        FULL_SEGMENT_COUNT          = UINT16_MAX / SECTIONS_PER_FULL_SEGMENT,
+        FULL_SEGMENT_COMMAND_SIZE   = LOAD_COMMAND_SIZE + SEGMENT_SIZE +
+                                      SECTIONS_PER_FULL_SEGMENT * SECTION_SIZE,
+        FINAL_SEGMENT_COMMAND_SIZE  = LOAD_COMMAND_SIZE + SEGMENT_SIZE + SECTION_SIZE,
+        ACCEPTED_COMMAND_TABLE_SIZE = FULL_SEGMENT_COUNT * FULL_SEGMENT_COMMAND_SIZE,
+        ARCHIVE_SIZE                = MACHO_HEADER_SIZE + ACCEPTED_COMMAND_TABLE_SIZE +
+                                      FINAL_SEGMENT_COMMAND_SIZE
+    };
+    uint8_t *data;
+    struct cli_exe_info info;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    size_t command_offset;
+    unsigned int i;
+
+    ck_assert_uint_eq(FULL_SEGMENT_COUNT * SECTIONS_PER_FULL_SEGMENT,
+                      UINT16_MAX);
+    data = calloc(1, ARCHIVE_SIZE);
+    ck_assert_ptr_nonnull(data);
+
+    macho_test_write_u32(data + 0, 0xfeedfaceU);
+    macho_test_write_u32(data + 4, 7U);  /* CPU_TYPE_I386. */
+    macho_test_write_u32(data + 8, 3U);  /* CPU_SUBTYPE_I386_ALL. */
+    macho_test_write_u32(data + 12, 2U); /* MH_EXECUTE. */
+
+    for (i = 0; i < FULL_SEGMENT_COUNT; i++) {
+        command_offset = MACHO_HEADER_SIZE + (size_t)i * FULL_SEGMENT_COMMAND_SIZE;
+        macho_test_write_u32(data + command_offset, 0x1U); /* LC_SEGMENT. */
+        macho_test_write_u32(data + command_offset + 4, FULL_SEGMENT_COMMAND_SIZE);
+        macho_test_write_u32(data + command_offset + LOAD_COMMAND_SIZE + 40,
+                             SECTIONS_PER_FULL_SEGMENT);
+    }
+    command_offset = MACHO_HEADER_SIZE + ACCEPTED_COMMAND_TABLE_SIZE;
+    macho_test_write_u32(data + command_offset, 0x1U);
+    macho_test_write_u32(data + command_offset + 4, FINAL_SEGMENT_COMMAND_SIZE);
+    macho_test_write_u32(data + command_offset + LOAD_COMMAND_SIZE + 40, 1U);
+
+    /* Exactly UINT16_MAX sections fit the executable metadata ABI. */
+    macho_test_write_u32(data + 16, FULL_SEGMENT_COUNT);
+    macho_test_write_u32(data + 20, ACCEPTED_COMMAND_TABLE_SIZE);
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    cli_exe_info_init(&info, 0);
+    map = cl_fmap_open_memory(data, ARCHIVE_SIZE);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_machoheader(&ctx, &info);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_uint_eq(info.nsections, UINT16_MAX);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cli_exe_info_destroy(&info);
+    cl_fmap_close(map);
+
+    /* One additional declared section must fail before uint16_t narrowing. */
+    macho_test_write_u32(data + 16, FULL_SEGMENT_COUNT + 1U);
+    macho_test_write_u32(data + 20,
+                         ACCEPTED_COMMAND_TABLE_SIZE + FINAL_SEGMENT_COMMAND_SIZE);
+    memset(&ctx, 0, sizeof(ctx));
+    cli_exe_info_init(&info, 0);
+    map = cl_fmap_open_memory(data, ARCHIVE_SIZE);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_machoheader(&ctx, &info);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_uint_eq(info.nsections, 0);
+    ck_assert_ptr_null(info.sections);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Mach-O metadata parsing ended before inspection completed");
+    ck_assert(map->dont_cache_flag);
+
+    cli_exe_info_destroy(&info);
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
+
 #if SIZE_MAX > UINT32_MAX
 struct macho_unibin_range_state {
     size_t length;
@@ -41633,6 +41726,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_bz_core = tcase_create("bz_core");
     TCase *tc_macho = tcase_create("macho");
     TCase *tc_macho_fat = tcase_create("macho_fat");
+    TCase *tc_macho_sections = tcase_create("macho_sections");
     TCase *tc_macho_corpus = tcase_create("macho_corpus");
     TCase *tc_macho_timeout = tcase_create("macho_timeout");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
@@ -42110,6 +42204,8 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_macho_fat);
     tcase_add_test(tc_macho_fat, test_macho_unibin_member_must_follow_complete_table);
     tcase_add_test(tc_macho_fat, test_macho_unibin_empty_member_is_fail_visible);
+    suite_add_tcase(s, tc_macho_sections);
+    tcase_add_test(tc_macho_sections, test_macho_cumulative_section_count_respects_metadata_width);
     suite_add_tcase(s, tc_macho_corpus);
     tcase_add_checked_fixture(tc_macho_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_macho_corpus, test_macho_unibin_auto_classified_clean_is_cacheable);

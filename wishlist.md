@@ -1305,6 +1305,16 @@ parser-family qualification open.
   materialized large-file/resource, production-CVD/service, Sonic1, and release
   gates open.
 
+## Mach-O cumulative section-count width — 2026-08-27
+
+- Keep the cumulative section count representable by the 16-bit executable
+  metadata ABI: exactly 65,535 is admitted and 65,536 is fail-visible before
+  allocation or assignment.
+- The current-source production-linked `macho_sections` boundary case passes
+  1/1, while the pre-fix-object negative control fails 0/1 by returning clean.
+- Keep sanitizer, complete Mach-O corpus, certified Linux x86-64, materialized
+  large-file/resource, production-CVD/service, Sonic1, and release gates open.
+
 ## XZ decompressed-output corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC `xz` case passes 2/2,
