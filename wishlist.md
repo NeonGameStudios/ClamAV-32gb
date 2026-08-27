@@ -1,5 +1,16 @@
 # Wishlist
 
+## Structured-detector engine admission — 2026-08-27
+
+- Keep `cli_scan_structured()` fail-visible for null context, missing fmap,
+  and missing engine: caller argument failures return `CL_ENULLARG`, while a
+  recognized layer without input returns `CL_EPARSE` with sticky incomplete
+  state; preserve the shared canonical timeout reason.
+- The current-source production-linked GCC `structured_map` TCase passes 4/4
+  across those entry states, in-range and clipped read failures, and timeout.
+  Keep full structured-detector corpus/raw-dispatch, sanitizer, production-
+  CVD/service, Sonic1, and release qualification open.
+
 ## CABSFX admission-failure execution — 2026-08-27
 
 - Keep the three public CABSFX admission cases fail-visible: valid prefixed

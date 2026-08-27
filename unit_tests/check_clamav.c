@@ -27024,7 +27024,7 @@ START_TEST(test_structured_detector_read_failure_is_fail_visible)
     ctx.engine           = &engine;
     ctx.options          = &options;
 
-    map = cl_fmap_open_memory(input, sizeof(input) - 1);
+    map = cl_fmap_open_memory(input, sizeof(input));
     ck_assert_ptr_nonnull(map);
     map->need = embedded_header_read_failure;
     ctx.fmap   = map;
@@ -27042,12 +27042,23 @@ END_TEST
 START_TEST(test_structured_detector_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
+    static const uint8_t input[] = {0};
+    fmap_t *map;
+
+    ck_assert_int_eq(cli_scan_structured(NULL), CL_ENULLARG);
 
     memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cli_scan_structured(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "Structured data detector input map is unavailable");
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scan_structured(&ctx), CL_ENULLARG);
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -27109,7 +27120,7 @@ START_TEST(test_structured_detector_time_limit_is_fail_visible)
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "Structured data detector reached the configured time limit");
+                     "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -40724,6 +40735,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_riff = tcase_create("riff");
     TCase *tc_riff_corpus = tcase_create("riff_corpus");
     TCase *tc_riff_map = tcase_create("riff_map");
+    TCase *tc_structured_map = tcase_create("structured_map");
     TCase *tc_rtf     = tcase_create("rtf");
     TCase *tc_rtf_map = tcase_create("rtf_map");
     TCase *tc_uuencode_map = tcase_create("uuencode_map");
@@ -41805,6 +41817,14 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_riff_null_context_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_missing_map_is_fail_visible);
     tcase_add_test(tc_riff_map, test_riff_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_structured_map);
+    tcase_add_checked_fixture(tc_structured_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_structured_map, test_structured_detector_read_failure_is_fail_visible);
+    tcase_add_test(tc_structured_map, test_structured_detector_missing_map_is_fail_visible);
+    tcase_add_test(tc_structured_map, test_structured_detector_clipped_read_failure_is_truncation);
+#ifndef _WIN32
+    tcase_add_test(tc_structured_map, test_structured_detector_time_limit_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_riff_chunk_read_failure_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_riff_time_limit_is_fail_visible);

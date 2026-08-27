@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Structured-detector engine admission — 2026-08-27
+
+`cli_scan_structured()` already rejected null context and missing input fmap,
+but a direct caller with a valid fmap and no engine reached engine-dependent
+threshold selection and could dereference unavailable state. The entry now
+returns `CL_ENULLARG` for that caller error before timing or detector work.
+The current-source production-linked GCC `structured_map` TCase passes 4/4
+for null context, missing fmap, missing engine, an in-range callback failure,
+and a clipped-range parse failure; the timeout case preserves the shared
+canonical `Heuristics.Limits.Exceeded.MaxScanTime` reason. Full structured
+detector corpus, raw-dispatch, sanitizer, production-CVD/service, Sonic1,
+and release qualification remain open.
+
 ## CABSFX admission-failure execution — 2026-08-27
 
 The current-source production-linked GCC `cabsfx` TCase now passes 3/3. It
