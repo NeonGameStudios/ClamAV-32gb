@@ -1,5 +1,17 @@
 # Wishlist
 
+## MSXML streaming helper and XDP engine admission — 2026-08-27
+
+- Keep the shared streaming MSXML helper fail-visible when a recognized fmap
+  is supplied without an engine required by Base64/materialization callbacks;
+  return `CL_ENULLARG` before parser work.
+- The rebuilt current-source production-linked GCC `xdp_map` case passes 2/2,
+  `xdp` passes 3/3, and `xdp_corpus` passes 1/1. Existing MSXML evidence
+  remains `msxml_map` 2/2, `msxml` 5/5, and `msxml_corpus` 1/1. Keep complete
+  XDP/DMG/XML corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and parser-family qualification
+  open.
+
 ## HWP3 parser engine admission — 2026-08-27
 
 - Keep `cli_scanhwp3()` fail-visible when a recognized fmap is supplied

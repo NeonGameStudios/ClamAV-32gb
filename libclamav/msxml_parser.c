@@ -1380,6 +1380,8 @@ cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const s
 
     if (!ctx || !map || !keys)
         return CL_ENULLARG;
+    if (!ctx->engine)
+        return CL_ENULLARG;
 
     if (cli_checktimelimit(ctx) != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "MSXML streaming inspection reached the configured time limit");

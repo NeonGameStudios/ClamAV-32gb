@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## MSXML streaming helper and XDP engine admission — 2026-08-27
+
+The shared streaming MSXML helper accepted a valid context and fmap without
+an engine even though Base64/materialization callbacks use engine-owned
+temporary policy. It now returns `CL_ENULLARG` before time-limit or parser
+work, covering XDP and DMG callers; XDP has a dedicated no-engine regression.
+The rebuilt current-source production-linked GCC `xdp_map` case passes 2/2,
+`xdp` passes 3/3, and `xdp_corpus` passes 1/1. The existing MSXML cases remain
+`msxml_map` 2/2, `msxml` 5/5, and `msxml_corpus` 1/1. Complete XDP/DMG/XML
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
+
 ## HWP3 parser engine admission — 2026-08-27
 
 The HWP3 direct parser validated context and fmap but paragraph traversal

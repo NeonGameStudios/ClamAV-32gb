@@ -21777,6 +21777,23 @@ START_TEST(test_xdp_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_xdp_missing_engine_is_fail_visible)
+{
+    uint8_t data = 0;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(&data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scanxdp(&ctx), CL_ENULLARG);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_autoit_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -41491,6 +41508,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xdp_map);
     tcase_add_checked_fixture(tc_xdp_map, cl_setup, cl_teardown);
     tcase_add_test(tc_xdp_map, test_xdp_missing_map_is_fail_visible);
+    tcase_add_test(tc_xdp_map, test_xdp_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_xdp_corpus);
     tcase_add_checked_fixture(tc_xdp_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_xdp_corpus, test_xdp_corpus_detects_embedded_marker);
