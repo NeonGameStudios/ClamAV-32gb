@@ -21845,6 +21845,12 @@ START_TEST(test_7z_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_7z_null_context_is_fail_visible)
+{
+    ck_assert_int_eq(cli_7unz(NULL, 0), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_sis_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -41620,6 +41626,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_7z_map);
     tcase_add_checked_fixture(tc_7z_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_7z_map, test_7z_null_context_is_fail_visible);
     tcase_add_test(tc_7z_map, test_7z_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_7z_sfx);
     tcase_add_test(tc_7z_sfx, test_7z_sfx_header_read_failure_is_fail_visible);

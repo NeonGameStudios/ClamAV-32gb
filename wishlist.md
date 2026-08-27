@@ -1,5 +1,14 @@
 # Wishlist
 
+## 7-Zip direct parser context evidence — 2026-08-27
+
+- Add and register a null-context regression alongside the existing confirmed
+  7-Zip missing-map check. The current-source production-linked GCC `7z_map`
+  case passes 2/2; the existing `7z` case passes 8/8, `7z_sfx` 1/1, and
+  `7z_sfx_corpus` 1/1. Keep full BCJ2/archive corpus, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  parser-family qualification open.
+
 ## Direct parser context evidence — 2026-08-27
 
 - Add and register null-context regressions for the DMG, XDP, HWPML, and HFS+
@@ -961,8 +970,8 @@
 
 - The current-source production-linked GCC harness, relinked with current
   scanner, PE, `others`, `fmap`, and 7-Zip objects, passes all eight `7z`
-  checks, including materialized `clam.7z` nested detection. `7z_map` and
-  `7z_sfx` each pass 1/1, and `7z_sfx_corpus` passes 1/1. This replaces the
+  checks, including materialized `clam.7z` nested detection. `7z_map` passes
+  2/2, `7z_sfx` passes 1/1, and `7z_sfx_corpus` passes 1/1. This replaces the
   earlier mixed static/shared-ABI corpus result.
 - Keep full 7-Zip/SFX corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release gates open.

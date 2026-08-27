@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip direct parser context evidence — 2026-08-27
+
+The confirmed 7-Zip direct entry already returned `CL_ENULLARG` for a null
+context and an incomplete `CL_EPARSE` result for a recognized layer without an
+input fmap, but its focused map TCase only protected the latter. A dedicated
+null-context regression is now registered. The current-source production-linked
+GCC `7z_map` case passes 2/2; the existing `7z` case passes 8/8, `7z_sfx` 1/1,
+and `7z_sfx_corpus` 1/1. Full BCJ2/archive corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and parser-
+family qualification remain open.
+
 ## Direct parser context evidence — 2026-08-27
 
 The current direct parser entries for DMG, XDP, HWPML, and HFS+ all classify
@@ -1173,7 +1184,7 @@ evidence remain open.
 The current-source production-linked GCC harness, relinked with current
 scanner, PE, `others`, `fmap`, and 7-Zip objects, passes all eight `7z` checks,
 including the materialized `clam.7z` member, and reaches its exact nested
-child alert. `7z_map` and `7z_sfx` each pass 1/1, and the materialized
+child alert. `7z_map` passes 2/2, `7z_sfx` passes 1/1, and the materialized
 `7z_sfx_corpus` case passes 1/1. This replaces the earlier mixed
 static/shared-ABI corpus result; sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and release evidence

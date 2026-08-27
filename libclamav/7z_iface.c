@@ -748,7 +748,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                         }
                     }
                 } else {
-                    cli_dbgmsg("cli_7unz: refusing whole-folder fallback for " STDu64 " bytes\n", folderSize);
+                    cli_dbgmsg("cli_7unz: refusing whole-folder fallback for " STDu64 " bytes\n", (uint64_t)folderSize);
                 }
             }
             if (res == SZ_ERROR_ENCRYPTED) {
