@@ -5924,3 +5924,12 @@ parser-family qualification remain open.
   optional-backend execution, complete RAR corpus, sanitizer, certified Linux
   x86-64, materialized large-file, production-CVD/service, Sonic1, and
   parser-family qualification open.
+
+## EGG archive-comment output cleanup audit — 2026-08-27
+
+- Preserve EGG `keeptmp` archive-comment temporary filename allocation, open,
+  write, and close failures as explicit incomplete results, including close
+  checks after both write failure and successful output.
+- Add source guards for the archive-comment status paths. Keep complete EGG
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.

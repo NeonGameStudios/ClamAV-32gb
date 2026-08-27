@@ -12028,3 +12028,14 @@ or detection result. The current source guard rejects ignored extracted-member
 unlink calls; optional-backend execution, complete RAR corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain open.
+
+## EGG archive-comment output cleanup audit — 2026-08-27
+
+The EGG `keeptmp` archive-comment path previously allowed temporary filename,
+open, write, and close failures to disappear or return without marking the
+layer incomplete. It now records explicit `CL_EMEM`, `CL_ECREAT`, or
+`CL_EWRITE` results, checks close after both write-failure and success paths,
+and preserves the shared fail-visible status contract. Current scanner syntax,
+source guards, focused EGG cases, complete corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.

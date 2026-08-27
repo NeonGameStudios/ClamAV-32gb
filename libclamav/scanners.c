@@ -1318,6 +1318,7 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
                 snprintf(prefix, sizeof(prefix), "comments_%u", i);
 
                 if (!(comment_fullpath = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, prefix))) {
+                    cli_mark_scan_incomplete(ctx, "EGG archive comment output could not be allocated");
                     status = CL_EMEM;
                     goto done;
                 }
@@ -1325,6 +1326,7 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
                 comment_fd = open(comment_fullpath, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
                 if (comment_fd < 0) {
                     cli_dbgmsg("EGG: ERROR: Failed to open output file\n");
+                    cli_mark_scan_incomplete(ctx, "EGG archive comment output could not be opened");
                     status = CL_ECREAT;
                     goto done;
                 } else {
@@ -1332,11 +1334,19 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
                     size_t comment_length = strlen(comments[i]);
                     if (cli_writen(comment_fd, comments[i], comment_length) != comment_length) {
                         cli_dbgmsg("EGG: ERROR: Failed to write to output file\n");
-                        close(comment_fd);
+                        cli_mark_scan_incomplete(ctx, "EGG archive comment output could not be written completely");
                         status = CL_EWRITE;
+                        if (close(comment_fd) != 0) {
+                            cli_mark_scan_incomplete(ctx, "EGG archive comment output could not be closed");
+                            status = cli_merge_cleanup_status(status, CL_EWRITE);
+                        }
                         goto done;
                     }
-                    close(comment_fd);
+                    if (close(comment_fd) != 0) {
+                        cli_mark_scan_incomplete(ctx, "EGG archive comment output could not be closed");
+                        status = cli_merge_cleanup_status(CL_SUCCESS, CL_EWRITE);
+                        goto done;
+                    }
                 }
                 free(comment_fullpath);
                 comment_fullpath = NULL;
