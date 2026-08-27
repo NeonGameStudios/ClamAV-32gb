@@ -6024,3 +6024,11 @@ parser-family qualification remain open.
   `CL_EREAD`, and never add a partial count after a failed stream.
 - Keep injected close-failure execution, production CVD/service parity,
   sanitizer, materialized large-file, Sonic1, and release evidence open.
+## HTML normalizer public-input boundary audit — 2026-08-27
+
+- Reject a null map and invalid non-empty memory-normalizer inputs before
+  dereference or pointer arithmetic; mark a supplied context incomplete so
+  invalid public inputs cannot appear clean.
+- Add focused API coverage and source guards. Keep current-object execution,
+  complete HTML corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, Sonic1, and release qualification open.

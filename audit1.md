@@ -12154,3 +12154,14 @@ and avoid adding a partial count after a failed file read or close. The
 production GCC source guard covers the new checks; injected close-failure
 execution, production-CVD/service parity, sanitizer, materialized large-file,
 Sonic1, and release qualification remain open.
+## HTML normalizer public-input boundary audit — 2026-08-27
+
+The public HTML map normalizer dereferenced a null `fmap_t` before entering
+its shared validation path, and the memory wrapper accepted a negative input
+length or a missing buffer for a non-empty input. These entry points now
+return failure, mark a supplied scan context incomplete, and preserve the
+existing zero-length memory behavior. The focused HTML-normalizer regression
+and source guards cover the three invalid-input cases; current-object
+execution, full HTML corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.

@@ -2390,6 +2390,17 @@ bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in
 {
     m_area_t m_area;
 
+    if (in_size < 0) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "HTML normalization input buffer size is invalid");
+        return false;
+    }
+    if (in_size > 0 && in_buff == NULL) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "HTML normalization input buffer is unavailable");
+        return false;
+    }
+
     m_area.buffer     = in_buff;
     m_area.length     = in_size;
     m_area.offset     = 0;
@@ -2431,13 +2442,19 @@ bool html_normalise_map_form_data_with_quota_status(cli_ctx *ctx, fmap_t *map, c
     bool retval = false;
     m_area_t m_area;
 
+    if (read_error)
+        *read_error = false;
+    if (map == NULL) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "HTML normalization input map is unavailable");
+        return false;
+    }
+
     m_area.buffer     = NULL;
     m_area.length     = map->len;
     m_area.offset     = 0;
     m_area.map        = map;
     m_area.read_error = false;
-    if (read_error)
-        *read_error = false;
     retval = cli_html_normalise(ctx, -1, &m_area, dirname, hrefs, dconf, form_data, temporary_reserved);
     if (read_error)
         *read_error = m_area.read_error;

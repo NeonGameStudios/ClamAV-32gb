@@ -205,6 +205,28 @@ START_TEST(test_htmlnorm_mapped_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_htmlnorm_invalid_input_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert(!html_normalise_map(&ctx, NULL, NULL, NULL, NULL));
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HTML normalization input map is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert(!html_normalise_mem_form_data(&ctx, NULL, 1, NULL, NULL, NULL, NULL));
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HTML normalization input buffer is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert(!html_normalise_mem_form_data(&ctx, NULL, -1, NULL, NULL, NULL, NULL));
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HTML normalization input buffer size is invalid");
+}
+END_TEST
+
 START_TEST(test_htmlnorm_temporary_limit_is_fail_visible)
 {
     static const unsigned char input[] = "<html><body>temporary quota</body></html>";
@@ -368,6 +390,7 @@ Suite *test_htmlnorm_suite(void)
 
     tcase_add_unchecked_fixture(tc_htmlnorm_api,
                                 htmlnorm_setup, htmlnorm_teardown);
+    tcase_add_test(tc_htmlnorm_api, test_htmlnorm_invalid_input_is_fail_visible);
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_mapped_read_failure_is_fail_visible);
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_temporary_limit_is_fail_visible);
 #ifndef _WIN32

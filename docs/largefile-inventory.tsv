@@ -2588,20 +2588,20 @@ fixed-width-integer	libclamav/htmlnorm.c	103	    uint64_t *temporary_reserved;
 fixed-width-integer	libclamav/htmlnorm.c	107	    uint64_t length;
 fixed-width-integer	libclamav/htmlnorm.c	118	static const int64_t base64_chars[256] = {
 fixed-width-integer	libclamav/htmlnorm.c	1859	                        int64_t increment = 0;
-fixed-width-integer	libclamav/htmlnorm.c	2413	                                   const struct cli_dconf *dconf, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/htmlnorm.c	2420	                                             form_data_t *form_data, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/htmlnorm.c	2428	                                                    form_data_t *form_data, uint64_t *temporary_reserved,
-fixed-width-integer	libclamav/htmlnorm.c	2448	                              uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/htmlnorm.c	2457	    if (ctx == NULL || temporary_reserved == NULL || UINT64_MAX - *temporary_reserved < (uint64_t)len) {
-fixed-width-integer	libclamav/htmlnorm.c	2465	    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS) {
-fixed-width-integer	libclamav/htmlnorm.c	2470	    *temporary_reserved += (uint64_t)len;
-fixed-width-integer	libclamav/htmlnorm.c	2472	        cli_scan_release_temporary(ctx, (uint64_t)len);
-fixed-width-integer	libclamav/htmlnorm.c	2473	        *temporary_reserved -= (uint64_t)len;
-fixed-width-integer	libclamav/htmlnorm.c	2477	        cli_scan_release_temporary(ctx, (uint64_t)len);
-fixed-width-integer	libclamav/htmlnorm.c	2478	        *temporary_reserved -= (uint64_t)len;
-fixed-width-integer	libclamav/htmlnorm.c	2487	                                    uint64_t *temporary_reserved, bool *read_error)
-fixed-width-integer	libclamav/htmlnorm.c	2620	bool html_screnc_decode_ctx(cli_ctx *ctx, fmap_t *map, const char *dirname, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/htmlnorm.c	2626	                                   uint64_t *temporary_reserved, bool *read_error)
+fixed-width-integer	libclamav/htmlnorm.c	2424	                                   const struct cli_dconf *dconf, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/htmlnorm.c	2431	                                             form_data_t *form_data, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/htmlnorm.c	2439	                                                    form_data_t *form_data, uint64_t *temporary_reserved,
+fixed-width-integer	libclamav/htmlnorm.c	2465	                              uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/htmlnorm.c	2474	    if (ctx == NULL || temporary_reserved == NULL || UINT64_MAX - *temporary_reserved < (uint64_t)len) {
+fixed-width-integer	libclamav/htmlnorm.c	2482	    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS) {
+fixed-width-integer	libclamav/htmlnorm.c	2487	    *temporary_reserved += (uint64_t)len;
+fixed-width-integer	libclamav/htmlnorm.c	2489	        cli_scan_release_temporary(ctx, (uint64_t)len);
+fixed-width-integer	libclamav/htmlnorm.c	2490	        *temporary_reserved -= (uint64_t)len;
+fixed-width-integer	libclamav/htmlnorm.c	2494	        cli_scan_release_temporary(ctx, (uint64_t)len);
+fixed-width-integer	libclamav/htmlnorm.c	2495	        *temporary_reserved -= (uint64_t)len;
+fixed-width-integer	libclamav/htmlnorm.c	2504	                                    uint64_t *temporary_reserved, bool *read_error)
+fixed-width-integer	libclamav/htmlnorm.c	2637	bool html_screnc_decode_ctx(cli_ctx *ctx, fmap_t *map, const char *dirname, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/htmlnorm.c	2643	                                   uint64_t *temporary_reserved, bool *read_error)
 fixed-width-integer	libclamav/htmlnorm.c	352	    if (fbuff->ctx == NULL || UINT64_MAX - *fbuff->temporary_reserved < (uint64_t)length) {
 fixed-width-integer	libclamav/htmlnorm.c	359	    status = cli_scan_reserve_temporary(fbuff->ctx, (uint64_t)length);
 fixed-width-integer	libclamav/htmlnorm.c	364	    *fbuff->temporary_reserved += (uint64_t)length;
@@ -6852,10 +6852,10 @@ fixed-width-integer	unit_tests/check_clamfi_quota.c	19	    uint64_t effective = 
 fixed-width-integer	unit_tests/check_clamfi_quota.c	20	    uint64_t next      = 0;
 fixed-width-integer	unit_tests/check_clamfi_quota.c	21	    uint64_t four_gib  = (uint64_t)4 * 1024 * 1024 * 1024;
 fixed-width-integer	unit_tests/check_clamfi_quota.c	22	    uint64_t thirty_two_gib = CLI_MAX_LARGE_FILESIZE;
-fixed-width-integer	unit_tests/check_htmlnorm.c	214	    uint64_t temporary_reserved = 0;
-fixed-width-integer	unit_tests/check_htmlnorm.c	276	    uint64_t temporary_reserved = 0;
-fixed-width-integer	unit_tests/check_htmlnorm.c	303	    uint64_t temporary_reserved = 0;
-fixed-width-integer	unit_tests/check_htmlnorm.c	338	    uint64_t temporary_reserved = 0;
+fixed-width-integer	unit_tests/check_htmlnorm.c	236	    uint64_t temporary_reserved = 0;
+fixed-width-integer	unit_tests/check_htmlnorm.c	298	    uint64_t temporary_reserved = 0;
+fixed-width-integer	unit_tests/check_htmlnorm.c	325	    uint64_t temporary_reserved = 0;
+fixed-width-integer	unit_tests/check_htmlnorm.c	360	    uint64_t temporary_reserved = 0;
 fixed-width-integer	unit_tests/check_jsnorm.c	120	    struct scope *sc = (struct scope *)(uint64_t)0xdeadbeef;
 fixed-width-integer	unit_tests/check_matchers.c	1290	    uint32_t expected;
 fixed-width-integer	unit_tests/check_matchers.c	1296	    ck_assert_int_eq(read_uint32_t(map, 0), (int64_t)expected);
@@ -10903,9 +10903,9 @@ native-width-integer	libclamav/htmlnorm.c	2217	            size_t chunk_size = p
 native-width-integer	libclamav/htmlnorm.c	2279	        size_t i;
 native-width-integer	libclamav/htmlnorm.c	2384	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf)
 native-width-integer	libclamav/htmlnorm.c	2389	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data)
-native-width-integer	libclamav/htmlnorm.c	2447	static bool html_screnc_write(cli_ctx *ctx, int fd, const void *data, size_t len,
-native-width-integer	libclamav/htmlnorm.c	2489	    int count;
-native-width-integer	libclamav/htmlnorm.c	2493	    int ofd;
+native-width-integer	libclamav/htmlnorm.c	2464	static bool html_screnc_write(cli_ctx *ctx, int fd, const void *data, size_t len,
+native-width-integer	libclamav/htmlnorm.c	2506	    int count;
+native-width-integer	libclamav/htmlnorm.c	2510	    int ofd;
 native-width-integer	libclamav/htmlnorm.c	315	                fseek(stream, -(long)(chunk_len - count), SEEK_CUR);
 native-width-integer	libclamav/htmlnorm.c	346	static bool html_output_reserve(file_buff_t *fbuff, size_t length)
 native-width-integer	libclamav/htmlnorm.c	373	static void html_output_release(file_buff_t *fbuff, size_t length)
@@ -20008,9 +20008,9 @@ native-width-integer	unit_tests/check_disasm.c	51	    int ref;
 native-width-integer	unit_tests/check_fpu_endian.c	34	int main(int argc, char **argv)
 native-width-integer	unit_tests/check_htmlnorm.c	112	    int fd, reffd;
 native-width-integer	unit_tests/check_htmlnorm.c	148	    int fd;
-native-width-integer	unit_tests/check_htmlnorm.c	272	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
-native-width-integer	unit_tests/check_htmlnorm.c	299	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
-native-width-integer	unit_tests/check_htmlnorm.c	334	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
+native-width-integer	unit_tests/check_htmlnorm.c	294	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
+native-width-integer	unit_tests/check_htmlnorm.c	321	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
+native-width-integer	unit_tests/check_htmlnorm.c	356	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
 native-width-integer	unit_tests/check_htmlnorm.c	50	static off_t htmlnorm_failing_pread(void *handle, void *buf, size_t count, off_t offset)
 native-width-integer	unit_tests/check_jsnorm.c	134	    int val = 0x1234567;
 native-width-integer	unit_tests/check_jsnorm.c	186	    size_t p;
@@ -21994,7 +21994,7 @@ format-width	libclamav/hfsplus.c	816	                cli_dbgmsg("hfsplus_check_a
 format-width	libclamav/hfsplus.c	823	                cli_dbgmsg("hfsplus_check_attribute: Not enough data for an attribute key at location %x for %u!\n",
 format-width	libclamav/hfsplus.c	841	                cli_dbgmsg("hfsplus_check_attribute: key too long for location %x for %u!\n",
 format-width	libclamav/hfsplus.c	850	                cli_dbgmsg("hfsplus_check_attribute: Attribute name is longer than expected: %u\n", attrKey.nameLength);
-format-width	libclamav/htmlnorm.c	2587	        cli_dbgmsg("html_screnc_decode: missing %u bytes\n", screnc_state.length);
+format-width	libclamav/htmlnorm.c	2604	        cli_dbgmsg("html_screnc_decode: missing %u bytes\n", screnc_state.length);
 format-width	libclamav/htmlnorm.c	753	                cli_dbgmsg("screnc_decode: checksum mismatch: %u != %" PRIu64 "\n", s->sum, expected);
 format-width	libclamav/hwp.c	1009	            hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected special character %u @ offset %zu\n", level, p, content, offset);
 format-width	libclamav/hwp.c	1022	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected special character as [reserved]\n", level, p);
@@ -27286,22 +27286,22 @@ offset-size-arithmetic	libclamav/htmlnorm.c	235	            chunk_len = ptr - st
 offset-size-arithmetic	libclamav/htmlnorm.c	2384	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf)
 offset-size-arithmetic	libclamav/htmlnorm.c	2389	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data)
 offset-size-arithmetic	libclamav/htmlnorm.c	243	                ptr = (unsigned char *)fmap_need_ptr_once(m_area->map, ptr, end - ptr);
-offset-size-arithmetic	libclamav/htmlnorm.c	2435	    m_area.length     = map->len;
-offset-size-arithmetic	libclamav/htmlnorm.c	2507	    m_area.length = map->len;
+offset-size-arithmetic	libclamav/htmlnorm.c	2454	    m_area.length     = map->len;
 offset-size-arithmetic	libclamav/htmlnorm.c	252	            while ((ptr < end) && (chunk_len < max_len - 1)) {
-offset-size-arithmetic	libclamav/htmlnorm.c	2542	    /* Calculate the length of the encoded string */
-offset-size-arithmetic	libclamav/htmlnorm.c	2563	    screnc_state.length = base64_chars[tmpstr[0]] < 0 ? 0 : base64_chars[tmpstr[0]] << 2;
-offset-size-arithmetic	libclamav/htmlnorm.c	2564	    screnc_state.length += base64_chars[tmpstr[1]] >> 4;
-offset-size-arithmetic	libclamav/htmlnorm.c	2565	    screnc_state.length += (base64_chars[tmpstr[1]] & 0x0f) << 12;
-offset-size-arithmetic	libclamav/htmlnorm.c	2566	    screnc_state.length += ((base64_chars[tmpstr[2]] >> 2) < 0 ? 0 : (base64_chars[tmpstr[2]] >> 2)) << 8;
-offset-size-arithmetic	libclamav/htmlnorm.c	2567	    screnc_state.length += (base64_chars[tmpstr[2]] & 0x03) << 22;
-offset-size-arithmetic	libclamav/htmlnorm.c	2568	    screnc_state.length += base64_chars[tmpstr[3]] < 0 ? 0 : base64_chars[tmpstr[3]] << 16;
-offset-size-arithmetic	libclamav/htmlnorm.c	2569	    screnc_state.length += (base64_chars[tmpstr[4]] < 0 ? 0 : base64_chars[tmpstr[4]] << 2) << 24;
+offset-size-arithmetic	libclamav/htmlnorm.c	2524	    m_area.length = map->len;
+offset-size-arithmetic	libclamav/htmlnorm.c	2559	    /* Calculate the length of the encoded string */
 offset-size-arithmetic	libclamav/htmlnorm.c	257	                    chunk[chunk_len++] = c;
-offset-size-arithmetic	libclamav/htmlnorm.c	2570	    screnc_state.length += ((base64_chars[tmpstr[5]] >> 4) < 0 ? 0 : (base64_chars[tmpstr[5]] >> 4)) << 24;
-offset-size-arithmetic	libclamav/htmlnorm.c	2578	        if (!html_screnc_write(ctx, ofd, ptr, strlen((const char *)ptr), temporary_reserved))
-offset-size-arithmetic	libclamav/htmlnorm.c	2592	    if (!html_screnc_write(ctx, ofd, "</script>", strlen("</script>"), temporary_reserved))
+offset-size-arithmetic	libclamav/htmlnorm.c	2580	    screnc_state.length = base64_chars[tmpstr[0]] < 0 ? 0 : base64_chars[tmpstr[0]] << 2;
+offset-size-arithmetic	libclamav/htmlnorm.c	2581	    screnc_state.length += base64_chars[tmpstr[1]] >> 4;
+offset-size-arithmetic	libclamav/htmlnorm.c	2582	    screnc_state.length += (base64_chars[tmpstr[1]] & 0x0f) << 12;
+offset-size-arithmetic	libclamav/htmlnorm.c	2583	    screnc_state.length += ((base64_chars[tmpstr[2]] >> 2) < 0 ? 0 : (base64_chars[tmpstr[2]] >> 2)) << 8;
+offset-size-arithmetic	libclamav/htmlnorm.c	2584	    screnc_state.length += (base64_chars[tmpstr[2]] & 0x03) << 22;
+offset-size-arithmetic	libclamav/htmlnorm.c	2585	    screnc_state.length += base64_chars[tmpstr[3]] < 0 ? 0 : base64_chars[tmpstr[3]] << 16;
+offset-size-arithmetic	libclamav/htmlnorm.c	2586	    screnc_state.length += (base64_chars[tmpstr[4]] < 0 ? 0 : base64_chars[tmpstr[4]] << 2) << 24;
+offset-size-arithmetic	libclamav/htmlnorm.c	2587	    screnc_state.length += ((base64_chars[tmpstr[5]] >> 4) < 0 ? 0 : (base64_chars[tmpstr[5]] >> 4)) << 24;
+offset-size-arithmetic	libclamav/htmlnorm.c	2595	        if (!html_screnc_write(ctx, ofd, ptr, strlen((const char *)ptr), temporary_reserved))
 offset-size-arithmetic	libclamav/htmlnorm.c	260	            m_area->offset += ptr - start;
+offset-size-arithmetic	libclamav/htmlnorm.c	2609	    if (!html_screnc_write(ctx, ofd, "</script>", strlen("</script>"), temporary_reserved))
 offset-size-arithmetic	libclamav/htmlnorm.c	263	        if (ptr && ptr < end && !isspace(*ptr)) {
 offset-size-arithmetic	libclamav/htmlnorm.c	264	            /* we hit max_len, rewind to a space */
 offset-size-arithmetic	libclamav/htmlnorm.c	268	                m_area->offset -= chunk_len - count;
@@ -37700,9 +37700,9 @@ offset-size-arithmetic	unit_tests/check_clamfi_quota.c	28	    CHECK(!clamfi_norm
 offset-size-arithmetic	unit_tests/check_disasm.c	112	        /* addrsize, m00/rm110 - mov [eax-5355], ebp */
 offset-size-arithmetic	unit_tests/check_disasm.c	228	    d = malloc(size * 2);
 offset-size-arithmetic	unit_tests/check_disasm.c	229	    ck_assert_msg(d != NULL, "disasm malloc(%zd) failed", size * 2);
-offset-size-arithmetic	unit_tests/check_htmlnorm.c	222	    map = cl_fmap_open_memory(input, sizeof(input) - 1);
-offset-size-arithmetic	unit_tests/check_htmlnorm.c	251	    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
-offset-size-arithmetic	unit_tests/check_htmlnorm.c	367	    tcase_add_loop_test(tc_htmlnorm_api, test_htmlnorm_api, 0, sizeof(tests) / sizeof(tests[0]));
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	244	    map = cl_fmap_open_memory(input, sizeof(input) - 1);
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	273	    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	389	    tcase_add_loop_test(tc_htmlnorm_api, test_htmlnorm_api, 0, sizeof(tests) / sizeof(tests[0]));
 offset-size-arithmetic	unit_tests/check_htmlnorm.c	50	static off_t htmlnorm_failing_pread(void *handle, void *buf, size_t count, off_t offset)
 offset-size-arithmetic	unit_tests/check_jsnorm.c	213	extern size_t __real_cli_writen(int fd, const void *buff, size_t count);
 offset-size-arithmetic	unit_tests/check_jsnorm.c	223	size_t __wrap_cli_writen(int fd, const void *buff, size_t count)
