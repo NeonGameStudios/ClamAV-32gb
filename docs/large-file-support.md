@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Mach-O unpack-entry preflight — 2026-08-27
+
+`cli_unpackmacho()` is an exported helper used by the Mach-O dispatch branch,
+but previously assumed a valid context, input fmap, and engine before running
+the bytecode hook. It now returns `CL_ENULLARG` for null context or engine,
+and returns `CL_EPARSE` with sticky `Mach-O input map is unavailable` for a
+recognized context without an fmap. The current-source production-linked GCC
+`macho_map` regression covers all three unpack-entry states alongside the
+existing thin/universal parser boundaries; Mach-O corpus, sanitizer,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## ELF unpack-entry preflight — 2026-08-27
 
 `cli_unpackelf()` is an exported parser helper used by the ELF dispatch

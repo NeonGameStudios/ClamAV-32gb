@@ -35528,9 +35528,15 @@ START_TEST(test_macho_missing_maps_are_fail_visible)
 {
     cli_ctx ctx;
 
+    ck_assert_int_eq(cli_unpackmacho(NULL), CL_ENULLARG);
     ck_assert_int_eq(cli_scanmacho(NULL, NULL), CL_ENULLARG);
     ck_assert_int_eq(cli_machoheader(NULL, NULL), CL_ENULLARG);
     ck_assert_int_eq(cli_scanmacho_unibin(NULL), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_unpackmacho(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O input map is unavailable");
 
     memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cli_scanmacho(&ctx, NULL), CL_EPARSE);
@@ -35542,6 +35548,17 @@ START_TEST(test_macho_missing_maps_are_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "Mach-O universal-binary input map is unavailable");
+
+    {
+        static const uint8_t data[] = {0};
+        fmap_t *map = cl_fmap_open_memory(data, sizeof(data));
+
+        ck_assert_ptr_nonnull(map);
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.fmap = map;
+        ck_assert_int_eq(cli_unpackmacho(&ctx), CL_ENULLARG);
+        cl_fmap_close(map);
+    }
 }
 END_TEST
 

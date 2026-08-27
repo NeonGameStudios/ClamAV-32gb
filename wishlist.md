@@ -1,5 +1,15 @@
 # Wishlist
 
+## Mach-O unpack-entry preflight — 2026-08-27
+
+- Keep exported `cli_unpackmacho()` fail-visible for null context, missing
+  fmap, and missing engine: use `CL_ENULLARG` for caller arguments and
+  `CL_EPARSE` plus sticky incomplete state for a recognized layer without
+  input.
+- The current-source production-linked GCC `macho_map` regression covers all
+  three unpack-entry states. Keep Mach-O corpus, sanitizer, production-CVD/
+  service, Sonic1, and release qualification open.
+
 ## ELF unpack-entry preflight — 2026-08-27
 
 - Keep the exported `cli_unpackelf()` helper fail-visible for null context,
