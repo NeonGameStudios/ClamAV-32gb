@@ -668,8 +668,7 @@ done:
     if (ofd >= 0) {
         if (close(ofd) != 0) {
             cli_mark_scan_incomplete(ctx, "HFS+ temporary output could not be closed");
-            if (status == CL_SUCCESS || status == CL_VERIFIED)
-                status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
     }
     if ((NULL == filename) ||     // output param not provided, which means we should clean up the temp file,
@@ -679,8 +678,7 @@ done:
             if (!ctx->engine->keeptmp) {
                 if (cli_unlink(tmpname)) {
                     cli_mark_scan_incomplete(ctx, "HFS+ temporary output could not be removed");
-                    if (status == CL_SUCCESS || status == CL_VERIFIED)
-                        status = CL_EUNLINK;
+                    status = cli_merge_cleanup_status(status, CL_EUNLINK);
                 }
             }
             free(tmpname);
@@ -1747,8 +1745,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                             if (ifd >= 0) {
                                 if (close(ifd) != 0) {
                                     cli_mark_scan_incomplete(ctx, "HFS+ resource temporary input could not be closed");
-                                    if (status == CL_SUCCESS || status == CL_VERIFIED)
-                                        status = CL_EWRITE;
+                                    status = cli_merge_cleanup_status(status, CL_EWRITE);
                                     goto done;
                                 }
                                 ifd = -1;
@@ -1756,7 +1753,8 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                             if (!ctx->engine->keeptmp) {
                                 if (cli_unlink(resourceFile)) {
-                                    status = CL_EUNLINK;
+                                    cli_mark_scan_incomplete(ctx, "HFS+ resource temporary output could not be removed");
+                                    status = cli_merge_cleanup_status(status, CL_EUNLINK);
                                     goto done;
                                 }
                             }
@@ -1791,7 +1789,8 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                         if (!ctx->engine->keeptmp) {
                             if (cli_unlink(tmpname)) {
-                                status = CL_EUNLINK;
+                                cli_mark_scan_incomplete(ctx, "HFS+ compressed temporary output could not be removed");
+                                status = cli_merge_cleanup_status(status, CL_EUNLINK);
                                 goto done;
                             }
                         }
@@ -1803,8 +1802,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                     if (ofd >= 0) {
                         if (close(ofd) != 0) {
                             cli_mark_scan_incomplete(ctx, "HFS+ compressed temporary output could not be closed");
-                            if (status == CL_SUCCESS || status == CL_VERIFIED)
-                                status = CL_EWRITE;
+                            status = cli_merge_cleanup_status(status, CL_EWRITE);
                             goto done;
                         }
                         ofd = -1;
@@ -1863,23 +1861,20 @@ done:
     if (-1 != ifd) {
         if (close(ifd) != 0) {
             cli_mark_scan_incomplete(ctx, "HFS+ resource temporary input could not be closed");
-            if (status == CL_SUCCESS || status == CL_VERIFIED)
-                status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
     }
     if (-1 != ofd) {
         if (close(ofd) != 0) {
             cli_mark_scan_incomplete(ctx, "HFS+ compressed temporary output could not be closed");
-            if (status == CL_SUCCESS || status == CL_VERIFIED)
-                status = CL_EWRITE;
+            status = cli_merge_cleanup_status(status, CL_EWRITE);
         }
     }
     if (NULL != resourceFile) {
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(resourceFile)) {
                 cli_mark_scan_incomplete(ctx, "HFS+ resource temporary output could not be removed");
-                if (status == CL_SUCCESS || status == CL_VERIFIED)
-                    status = CL_EUNLINK;
+                status = cli_merge_cleanup_status(status, CL_EUNLINK);
             }
         }
         free(resourceFile);
@@ -1893,7 +1888,7 @@ done:
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tmpname)) {
                 cli_mark_scan_incomplete(ctx, "HFS+ compressed temporary output could not be removed");
-                status = CL_EUNLINK;
+                status = cli_merge_cleanup_status(status, CL_EUNLINK);
             }
         }
         free(tmpname);
@@ -2028,8 +2023,7 @@ done:
         if (!ctx->engine->keeptmp) {
             if (cli_rmdirs(targetdir) != 0) {
                 cli_mark_scan_incomplete(ctx, "HFS+ temporary directory could not be removed");
-                if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
-                    status = CL_EUNLINK;
+                status = cli_merge_cleanup_status(status, CL_EUNLINK);
             }
         }
         free(targetdir);

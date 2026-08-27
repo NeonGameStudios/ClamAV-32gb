@@ -5627,3 +5627,16 @@ and Sonic1 qualification as release gates.
   OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and parser-family
   qualification remain open.
+
+## HFS+ cleanup-status precedence audit — 2026-08-27
+
+- Make HFS+ fork, compressed-resource, and temporary-directory cleanup
+  fail-visible through the shared helper: preserve `CL_EWRITE` versus
+  `CL_EUNLINK`, upgrade clean/verified/`CL_BREAK`, retain detections or earlier
+  parser/resource errors, and mark every cleanup failure incomplete.
+- The current HFS+ source passes the established warning-enabled GCC syntax
+  check with no diagnostics, and source guards require the shared helper plus
+  removal of the old status-only pattern. Current-object execution, complete
+  HFS+ corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain
+  open.

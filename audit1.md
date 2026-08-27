@@ -11646,3 +11646,20 @@ status classes and call sites. Existing OLE2/XLM production-linked results
 remain prior-object evidence; current-object execution, complete OLE/VBA/XLM
 corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## HFS+ cleanup-status precedence audit — 2026-08-27
+
+HFS+ fork, compressed-resource, and temporary-directory cleanup had several
+branches that upgraded only clean or trusted results; two unlink exits also
+set `CL_EUNLINK` without recording an incomplete reason. All HFS+ temporary
+output close/unlink and directory-removal paths now use the shared cleanup
+status merger, preserve `CL_EWRITE` versus `CL_EUNLINK`, upgrade
+clean/verified/`CL_BREAK`, preserve detections and earlier parser/resource
+errors, and mark cleanup failures incomplete before returning.
+
+The current HFS+ source passes the established warning-enabled GCC syntax
+check with no diagnostics, and source guards require the shared helper plus
+removal of the old status-only pattern. Existing HFS+ focused production
+evidence remains prior-object evidence; current-object execution, complete
+HFS+ corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.

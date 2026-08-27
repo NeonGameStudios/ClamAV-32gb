@@ -2419,26 +2419,26 @@ fixed-width-integer	libclamav/hashtab.h	48	 *    Th ekey is a uint32_t number
 fixed-width-integer	libclamav/hashtab.h	487	 * @brief Convert the hashset to an array of uint32_t's
 fixed-width-integer	libclamav/hashtab.h	498	ssize_t cli_hashset_toarray(const struct cli_hashset *hs, uint32_t **array);
 fixed-width-integer	libclamav/hashtab.h	522	bool cli_hashset_contains_maybe_noalloc(const struct cli_hashset *hs, const uint32_t key);
-fixed-width-integer	libclamav/hfsplus.c	1004	            uint64_t fileOffset64 = (uint64_t)realFileBlock * volHeader->blockSize;
-fixed-width-integer	libclamav/hfsplus.c	1022	            readSize = (uint32_t)endSize;
+fixed-width-integer	libclamav/hfsplus.c	1002	            uint64_t fileOffset64 = (uint64_t)realFileBlock * volHeader->blockSize;
+fixed-width-integer	libclamav/hfsplus.c	1020	            readSize = (uint32_t)endSize;
 fixed-width-integer	libclamav/hfsplus.c	105	        if (total > expected_size || (uint64_t)produced > expected_size - total) {
-fixed-width-integer	libclamav/hfsplus.c	1068	    uint32_t dataLength;
-fixed-width-integer	libclamav/hfsplus.c	1186	static cl_error_t hfsplus_read_block_table(cli_ctx *ctx, int fd, uint32_t *numBlocks, hfsPlusResourceBlockTable **table)
-fixed-width-integer	libclamav/hfsplus.c	1189	    uint32_t i;
-fixed-width-integer	libclamav/hfsplus.c	1254	    uint32_t thisNode, nodeLimit, nodesScanned = 0;
-fixed-width-integer	libclamav/hfsplus.c	1255	    uint16_t nodeSize, recordNum, topOfOffsets;
-fixed-width-integer	libclamav/hfsplus.c	1256	    uint16_t recordStart, nextDist, nextStart;
-fixed-width-integer	libclamav/hfsplus.c	1265	    uint64_t resource_reserved      = 0;
-fixed-width-integer	libclamav/hfsplus.c	1266	    uint64_t output_reserved        = 0;
-fixed-width-integer	libclamav/hfsplus.c	1337	            uint16_t keylen;
-fixed-width-integer	libclamav/hfsplus.c	1338	            int16_t rectype;
-fixed-width-integer	libclamav/hfsplus.c	1366	                uint16_t name_length = (nodeBuf[recordStart + 2 + 4] << 8) | nodeBuf[recordStart + 2 + 4 + 1];
-fixed-width-integer	libclamav/hfsplus.c	1489	                            uint64_t written = 0;
-fixed-width-integer	libclamav/hfsplus.c	1536	                            uint64_t written = 0;
-fixed-width-integer	libclamav/hfsplus.c	1572	                                    uint32_t numBlocks;
-fixed-width-integer	libclamav/hfsplus.c	1606	                                            cli_dbgmsg("Handling block %u of %" PRIu32 " at offset %" PRIi64 " (size %u)\n", curBlock, numBlocks, (int64_t)blockOffset, table[curBlock].length);
-fixed-width-integer	libclamav/hfsplus.c	1674	                                                        if ((uint64_t)produced > header.fileSize - written ||
-fixed-width-integer	libclamav/hfsplus.c	1700	                                                    if ((uint64_t)produced > header.fileSize - written ||
+fixed-width-integer	libclamav/hfsplus.c	1066	    uint32_t dataLength;
+fixed-width-integer	libclamav/hfsplus.c	1184	static cl_error_t hfsplus_read_block_table(cli_ctx *ctx, int fd, uint32_t *numBlocks, hfsPlusResourceBlockTable **table)
+fixed-width-integer	libclamav/hfsplus.c	1187	    uint32_t i;
+fixed-width-integer	libclamav/hfsplus.c	1252	    uint32_t thisNode, nodeLimit, nodesScanned = 0;
+fixed-width-integer	libclamav/hfsplus.c	1253	    uint16_t nodeSize, recordNum, topOfOffsets;
+fixed-width-integer	libclamav/hfsplus.c	1254	    uint16_t recordStart, nextDist, nextStart;
+fixed-width-integer	libclamav/hfsplus.c	1263	    uint64_t resource_reserved      = 0;
+fixed-width-integer	libclamav/hfsplus.c	1264	    uint64_t output_reserved        = 0;
+fixed-width-integer	libclamav/hfsplus.c	1335	            uint16_t keylen;
+fixed-width-integer	libclamav/hfsplus.c	1336	            int16_t rectype;
+fixed-width-integer	libclamav/hfsplus.c	1364	                uint16_t name_length = (nodeBuf[recordStart + 2 + 4] << 8) | nodeBuf[recordStart + 2 + 4 + 1];
+fixed-width-integer	libclamav/hfsplus.c	1487	                            uint64_t written = 0;
+fixed-width-integer	libclamav/hfsplus.c	1534	                            uint64_t written = 0;
+fixed-width-integer	libclamav/hfsplus.c	1570	                                    uint32_t numBlocks;
+fixed-width-integer	libclamav/hfsplus.c	1604	                                            cli_dbgmsg("Handling block %u of %" PRIu32 " at offset %" PRIi64 " (size %u)\n", curBlock, numBlocks, (int64_t)blockOffset, table[curBlock].length);
+fixed-width-integer	libclamav/hfsplus.c	1672	                                                        if ((uint64_t)produced > header.fileSize - written ||
+fixed-width-integer	libclamav/hfsplus.c	1698	                                                    if ((uint64_t)produced > header.fileSize - written ||
 fixed-width-integer	libclamav/hfsplus.c	223	    uint64_t volumeSize;
 fixed-width-integer	libclamav/hfsplus.c	293	    volumeSize = (uint64_t)volHeader->totalBlocks * volHeader->blockSize;
 fixed-width-integer	libclamav/hfsplus.c	323	    uint64_t offset64;
@@ -2457,25 +2457,25 @@ fixed-width-integer	libclamav/hfsplus.c	585	            uint64_t blockOffset = (
 fixed-width-integer	libclamav/hfsplus.c	64	                                      size_t input_size, uint64_t expected_size,
 fixed-width-integer	libclamav/hfsplus.c	65	                                      int output_fd, uint64_t *written)
 fixed-width-integer	libclamav/hfsplus.c	69	    uint64_t total = 0;
-fixed-width-integer	libclamav/hfsplus.c	700	    uint64_t requiredSize;
-fixed-width-integer	libclamav/hfsplus.c	708	    if (catFork->logicalSize > (uint64_t)catFork->totalBlocks * volHeader->blockSize) {
-fixed-width-integer	libclamav/hfsplus.c	713	    requiredSize = (uint64_t)catHeader->totalNodes * catHeader->nodeSize;
-fixed-width-integer	libclamav/hfsplus.c	724	static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *attrHeader, uint32_t expectedCnid, const uint8_t name[], uint32_t nameLen, int *found, uint8_t record[], size_t *recordSize)
-fixed-width-integer	libclamav/hfsplus.c	727	    uint16_t nodeSize, recordNum, topOfOffsets;
-fixed-width-integer	libclamav/hfsplus.c	728	    uint16_t recordStart, nextDist, nextStart;
-fixed-width-integer	libclamav/hfsplus.c	730	    uint32_t thisNode, nodeLimit, nodesScanned = 0;
-fixed-width-integer	libclamav/hfsplus.c	808	            uint16_t keylen;
-fixed-width-integer	libclamav/hfsplus.c	913	                                     hfsHeaderRecord *extHeader, hfsPlusForkData *catFork, uint32_t node, uint8_t *buff,
-fixed-width-integer	libclamav/hfsplus.c	917	    uint64_t catalogOffset;
-fixed-width-integer	libclamav/hfsplus.c	918	    uint64_t startBlock, startOffset;
-fixed-width-integer	libclamav/hfsplus.c	919	    uint64_t endBlock, endSize;
-fixed-width-integer	libclamav/hfsplus.c	920	    uint64_t curBlock;
-fixed-width-integer	libclamav/hfsplus.c	921	    uint32_t extentNum = 0;
-fixed-width-integer	libclamav/hfsplus.c	922	    uint64_t realFileBlock;
-fixed-width-integer	libclamav/hfsplus.c	923	    uint32_t readSize;
-fixed-width-integer	libclamav/hfsplus.c	925	    uint64_t searchBlock;
-fixed-width-integer	libclamav/hfsplus.c	926	    uint32_t buffOffset = 0;
-fixed-width-integer	libclamav/hfsplus.c	939	    catalogOffset = (uint64_t)node * catHeader->nodeSize;
+fixed-width-integer	libclamav/hfsplus.c	698	    uint64_t requiredSize;
+fixed-width-integer	libclamav/hfsplus.c	706	    if (catFork->logicalSize > (uint64_t)catFork->totalBlocks * volHeader->blockSize) {
+fixed-width-integer	libclamav/hfsplus.c	711	    requiredSize = (uint64_t)catHeader->totalNodes * catHeader->nodeSize;
+fixed-width-integer	libclamav/hfsplus.c	722	static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *attrHeader, uint32_t expectedCnid, const uint8_t name[], uint32_t nameLen, int *found, uint8_t record[], size_t *recordSize)
+fixed-width-integer	libclamav/hfsplus.c	725	    uint16_t nodeSize, recordNum, topOfOffsets;
+fixed-width-integer	libclamav/hfsplus.c	726	    uint16_t recordStart, nextDist, nextStart;
+fixed-width-integer	libclamav/hfsplus.c	728	    uint32_t thisNode, nodeLimit, nodesScanned = 0;
+fixed-width-integer	libclamav/hfsplus.c	806	            uint16_t keylen;
+fixed-width-integer	libclamav/hfsplus.c	911	                                     hfsHeaderRecord *extHeader, hfsPlusForkData *catFork, uint32_t node, uint8_t *buff,
+fixed-width-integer	libclamav/hfsplus.c	915	    uint64_t catalogOffset;
+fixed-width-integer	libclamav/hfsplus.c	916	    uint64_t startBlock, startOffset;
+fixed-width-integer	libclamav/hfsplus.c	917	    uint64_t endBlock, endSize;
+fixed-width-integer	libclamav/hfsplus.c	918	    uint64_t curBlock;
+fixed-width-integer	libclamav/hfsplus.c	919	    uint32_t extentNum = 0;
+fixed-width-integer	libclamav/hfsplus.c	920	    uint64_t realFileBlock;
+fixed-width-integer	libclamav/hfsplus.c	921	    uint32_t readSize;
+fixed-width-integer	libclamav/hfsplus.c	923	    uint64_t searchBlock;
+fixed-width-integer	libclamav/hfsplus.c	924	    uint32_t buffOffset = 0;
+fixed-width-integer	libclamav/hfsplus.c	937	    catalogOffset = (uint64_t)node * catHeader->nodeSize;
 fixed-width-integer	libclamav/hfsplus.h	100	    uint32_t journalInfoBlock;
 fixed-width-integer	libclamav/hfsplus.h	102	    uint32_t createDate;
 fixed-width-integer	libclamav/hfsplus.h	103	    uint32_t modifyDate;
@@ -10804,36 +10804,36 @@ native-width-integer	libclamav/hashtab.h	88	    size_t len;
 native-width-integer	libclamav/hashtab.h	93	    size_t capacity;
 native-width-integer	libclamav/hashtab.h	94	    size_t used;
 native-width-integer	libclamav/hashtab.h	95	    size_t maxfill; /* 80% */
-native-width-integer	libclamav/hfsplus.c	1010	            fileOffset = (size_t)fileOffset64;
-native-width-integer	libclamav/hfsplus.c	1020	            fileOffset += (size_t)startOffset;
-native-width-integer	libclamav/hfsplus.c	1038	            size_t bytesRead = fmap_readn(ctx->fmap, buff + buffOffset, fileOffset, readSize);
-native-width-integer	libclamav/hfsplus.c	1040	            if (bytesRead == (size_t)-1) {
-native-width-integer	libclamav/hfsplus.c	1057	static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
-native-width-integer	libclamav/hfsplus.c	1064	    int i;
-native-width-integer	libclamav/hfsplus.c	1065	    int cmpfInstanceIdx = -1;
-native-width-integer	libclamav/hfsplus.c	1066	    int curInstanceIdx  = 0;
-native-width-integer	libclamav/hfsplus.c	1067	    size_t dataOffset;
-native-width-integer	libclamav/hfsplus.c	1186	static cl_error_t hfsplus_read_block_table(cli_ctx *ctx, int fd, uint32_t *numBlocks, hfsPlusResourceBlockTable **table)
-native-width-integer	libclamav/hfsplus.c	1190	    size_t table_size;
-native-width-integer	libclamav/hfsplus.c	1213	    table_size = (size_t)*numBlocks * sizeof(hfsPlusResourceBlockTable);
-native-width-integer	libclamav/hfsplus.c	1261	    int ifd                         = -1;
-native-width-integer	libclamav/hfsplus.c	1262	    int ofd                         = -1;
-native-width-integer	libclamav/hfsplus.c	1264	    size_t name_utf8_size           = 0;
-native-width-integer	libclamav/hfsplus.c	1358	                cli_dbgmsg("hfsplus_walk_catalog: key too long for location %x for %u!\n",
-native-width-integer	libclamav/hfsplus.c	1405	                int compressed = 0;
-native-width-integer	libclamav/hfsplus.c	1407	                size_t attributeSize = sizeof(attribute);
-native-width-integer	libclamav/hfsplus.c	1510	                                written = cli_writen(ofd, &attribute[sizeof(header) + 1], (size_t)header.fileSize);
-native-width-integer	libclamav/hfsplus.c	1568	                                size_t resourceLen;
-native-width-integer	libclamav/hfsplus.c	1573	                                    off_t dataOffset = lseek(ifd, 0, SEEK_CUR);
-native-width-integer	libclamav/hfsplus.c	1596	                                            int z_ret;
-native-width-integer	libclamav/hfsplus.c	1597	                                            off_t blockOffset = dataOffset + (off_t)table[curBlock].offset;
-native-width-integer	libclamav/hfsplus.c	1598	                                            size_t curOffset;
-native-width-integer	libclamav/hfsplus.c	1599	                                            size_t readLen;
-native-width-integer	libclamav/hfsplus.c	1601	                                            int streamBeginning  = 1;
-native-width-integer	libclamav/hfsplus.c	1602	                                            int streamCompressed = 0;
-native-width-integer	libclamav/hfsplus.c	1668	                                                        size_t produced = sizeof(uncompressed_block) - stream.avail_out;
-native-width-integer	libclamav/hfsplus.c	1694	                                                    size_t produced = readLen - (streamBeginning ? 1 : 0);
-native-width-integer	libclamav/hfsplus.c	1928	    int hasAttributesFileHeader = 0;
+native-width-integer	libclamav/hfsplus.c	1008	            fileOffset = (size_t)fileOffset64;
+native-width-integer	libclamav/hfsplus.c	1018	            fileOffset += (size_t)startOffset;
+native-width-integer	libclamav/hfsplus.c	1036	            size_t bytesRead = fmap_readn(ctx->fmap, buff + buffOffset, fileOffset, readSize);
+native-width-integer	libclamav/hfsplus.c	1038	            if (bytesRead == (size_t)-1) {
+native-width-integer	libclamav/hfsplus.c	1055	static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
+native-width-integer	libclamav/hfsplus.c	1062	    int i;
+native-width-integer	libclamav/hfsplus.c	1063	    int cmpfInstanceIdx = -1;
+native-width-integer	libclamav/hfsplus.c	1064	    int curInstanceIdx  = 0;
+native-width-integer	libclamav/hfsplus.c	1065	    size_t dataOffset;
+native-width-integer	libclamav/hfsplus.c	1184	static cl_error_t hfsplus_read_block_table(cli_ctx *ctx, int fd, uint32_t *numBlocks, hfsPlusResourceBlockTable **table)
+native-width-integer	libclamav/hfsplus.c	1188	    size_t table_size;
+native-width-integer	libclamav/hfsplus.c	1211	    table_size = (size_t)*numBlocks * sizeof(hfsPlusResourceBlockTable);
+native-width-integer	libclamav/hfsplus.c	1259	    int ifd                         = -1;
+native-width-integer	libclamav/hfsplus.c	1260	    int ofd                         = -1;
+native-width-integer	libclamav/hfsplus.c	1262	    size_t name_utf8_size           = 0;
+native-width-integer	libclamav/hfsplus.c	1356	                cli_dbgmsg("hfsplus_walk_catalog: key too long for location %x for %u!\n",
+native-width-integer	libclamav/hfsplus.c	1403	                int compressed = 0;
+native-width-integer	libclamav/hfsplus.c	1405	                size_t attributeSize = sizeof(attribute);
+native-width-integer	libclamav/hfsplus.c	1508	                                written = cli_writen(ofd, &attribute[sizeof(header) + 1], (size_t)header.fileSize);
+native-width-integer	libclamav/hfsplus.c	1566	                                size_t resourceLen;
+native-width-integer	libclamav/hfsplus.c	1571	                                    off_t dataOffset = lseek(ifd, 0, SEEK_CUR);
+native-width-integer	libclamav/hfsplus.c	1594	                                            int z_ret;
+native-width-integer	libclamav/hfsplus.c	1595	                                            off_t blockOffset = dataOffset + (off_t)table[curBlock].offset;
+native-width-integer	libclamav/hfsplus.c	1596	                                            size_t curOffset;
+native-width-integer	libclamav/hfsplus.c	1597	                                            size_t readLen;
+native-width-integer	libclamav/hfsplus.c	1599	                                            int streamBeginning  = 1;
+native-width-integer	libclamav/hfsplus.c	1600	                                            int streamCompressed = 0;
+native-width-integer	libclamav/hfsplus.c	1666	                                                        size_t produced = sizeof(uncompressed_block) - stream.avail_out;
+native-width-integer	libclamav/hfsplus.c	1692	                                                    size_t produced = readLen - (streamBeginning ? 1 : 0);
+native-width-integer	libclamav/hfsplus.c	1923	    int hasAttributesFileHeader = 0;
 native-width-integer	libclamav/hfsplus.c	193	    int i;
 native-width-integer	libclamav/hfsplus.c	207	    int i;
 native-width-integer	libclamav/hfsplus.c	319	                                     hfsHeaderRecord *headerRec, int headerType, const char *name)
@@ -10849,19 +10849,19 @@ native-width-integer	libclamav/hfsplus.c	596	            mPtr = fmap_need_off_on
 native-width-integer	libclamav/hfsplus.c	64	                                      size_t input_size, uint64_t expected_size,
 native-width-integer	libclamav/hfsplus.c	65	                                      int output_fd, uint64_t *written)
 native-width-integer	libclamav/hfsplus.c	72	    int z_ret;
-native-width-integer	libclamav/hfsplus.c	724	static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *attrHeader, uint32_t expectedCnid, const uint8_t name[], uint32_t nameLen, int *found, uint8_t record[], size_t *recordSize)
-native-width-integer	libclamav/hfsplus.c	811	            size_t attrRecordOffset;
-native-width-integer	libclamav/hfsplus.c	843	                cli_dbgmsg("hfsplus_check_attribute: key too long for location %x for %u!\n",
-native-width-integer	libclamav/hfsplus.c	850	            if ((size_t)recordStart + sizeof(hfsPlusAttributeKey) +
-native-width-integer	libclamav/hfsplus.c	851	                    (size_t)attrKey.nameLength * 2U >= (size_t)topOfOffsets) {
-native-width-integer	libclamav/hfsplus.c	859	                attrRecordOffset = (size_t)recordStart + sizeof(hfsPlusAttributeKey) + (size_t)attrKey.nameLength * 2U;
-native-width-integer	libclamav/hfsplus.c	860	                if (attrRecordOffset > (size_t)topOfOffsets ||
-native-width-integer	libclamav/hfsplus.c	861	                    sizeof(attrRec) > (size_t)topOfOffsets - attrRecordOffset) {
-native-width-integer	libclamav/hfsplus.c	882	                if ((size_t)attrRec.attributeSize > (size_t)topOfOffsets - attrRecordOffset - sizeof(attrRec)) {
+native-width-integer	libclamav/hfsplus.c	722	static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *attrHeader, uint32_t expectedCnid, const uint8_t name[], uint32_t nameLen, int *found, uint8_t record[], size_t *recordSize)
+native-width-integer	libclamav/hfsplus.c	809	            size_t attrRecordOffset;
+native-width-integer	libclamav/hfsplus.c	841	                cli_dbgmsg("hfsplus_check_attribute: key too long for location %x for %u!\n",
+native-width-integer	libclamav/hfsplus.c	848	            if ((size_t)recordStart + sizeof(hfsPlusAttributeKey) +
+native-width-integer	libclamav/hfsplus.c	849	                    (size_t)attrKey.nameLength * 2U >= (size_t)topOfOffsets) {
+native-width-integer	libclamav/hfsplus.c	857	                attrRecordOffset = (size_t)recordStart + sizeof(hfsPlusAttributeKey) + (size_t)attrKey.nameLength * 2U;
+native-width-integer	libclamav/hfsplus.c	858	                if (attrRecordOffset > (size_t)topOfOffsets ||
+native-width-integer	libclamav/hfsplus.c	859	                    sizeof(attrRec) > (size_t)topOfOffsets - attrRecordOffset) {
+native-width-integer	libclamav/hfsplus.c	880	                if ((size_t)attrRec.attributeSize > (size_t)topOfOffsets - attrRecordOffset - sizeof(attrRec)) {
 native-width-integer	libclamav/hfsplus.c	91	        size_t produced;
-native-width-integer	libclamav/hfsplus.c	914	                                     size_t buffSize)
-native-width-integer	libclamav/hfsplus.c	924	    size_t fileOffset = 0;
-native-width-integer	libclamav/hfsplus.c	966	            /* Beware too long extent */
+native-width-integer	libclamav/hfsplus.c	912	                                     size_t buffSize)
+native-width-integer	libclamav/hfsplus.c	922	    size_t fileOffset = 0;
+native-width-integer	libclamav/hfsplus.c	964	            /* Beware too long extent */
 native-width-integer	libclamav/hfsplus.h	361	                                      size_t input_size, uint64_t expected_size,
 native-width-integer	libclamav/hfsplus.h	362	                                      int output_fd, uint64_t *written);
 native-width-integer	libclamav/hostid_internal.c	114	    size_t ndevices        = 0, i, j;
@@ -20346,9 +20346,9 @@ boundary-constant	libclamav/gpt.c	408	    if (hdr.tableStartLBA > SIZE_MAX / sec
 boundary-constant	libclamav/gpt.c	542	        hdr.tableStartLBA > SIZE_MAX / sectorsize ||
 boundary-constant	libclamav/gpt.c	543	        hdr.tableNumEntries > SIZE_MAX / hdr.tableEntrySize) {
 boundary-constant	libclamav/gpt.c	775	        hdr.tableStartLBA > SIZE_MAX / sectorsize) {
-boundary-constant	libclamav/hfsplus.c	1005	            if (fileOffset64 > SIZE_MAX) {
-boundary-constant	libclamav/hfsplus.c	1015	            if (startOffset > SIZE_MAX - fileOffset) {
-boundary-constant	libclamav/hfsplus.c	1458	                    if (header.fileSize > SIZE_MAX) {
+boundary-constant	libclamav/hfsplus.c	1003	            if (fileOffset64 > SIZE_MAX) {
+boundary-constant	libclamav/hfsplus.c	1013	            if (startOffset > SIZE_MAX - fileOffset) {
+boundary-constant	libclamav/hfsplus.c	1456	                    if (header.fileSize > SIZE_MAX) {
 boundary-constant	libclamav/hfsplus.c	364	    if (offset64 > SIZE_MAX) {
 boundary-constant	libclamav/hfsplus.c	490	    if (targetSize > ULONG_MAX) {
 boundary-constant	libclamav/hfsplus.c	502	    if (targetSize > SIZE_MAX || cli_scan_reserve_temporary(ctx, targetSize) != CL_SUCCESS) {
@@ -21949,35 +21949,35 @@ format-width	libclamav/hashtab.c	659	        cli_dbgmsg(MODULE_NAME "Invalid loa
 format-width	libclamav/hashtab.c	685	        cli_dbgmsg(MODULE_NAME "Invalid load factor: %u, using default of 80%%\n", load_factor);
 format-width	libclamav/hashtab.c	710	    cli_dbgmsg(MODULE_NAME "Freeing hashset, elements: %u, capacity: %u\n", hs->count, hs->capacity);
 format-width	libclamav/hashtab.c	768	    cli_dbgmsg(MODULE_NAME "Growing hashset, used: %u, capacity: %u\n", hs->count, hs->capacity);
-format-width	libclamav/hfsplus.c	1347	                cli_dbgmsg("hfsplus_walk_catalog: bad record location %x for %u!\n", nextStart, recordNum);
-format-width	libclamav/hfsplus.c	1358	                cli_dbgmsg("hfsplus_walk_catalog: key too long for location %x for %u!\n",
-format-width	libclamav/hfsplus.c	1382	            cli_dbgmsg("hfsplus_walk_catalog: record %u nextStart %x keylen %u type %d\n",
-format-width	libclamav/hfsplus.c	1486	                    cli_dbgmsg("Found compressed file type %u size %" PRIu64 "\n", header.compressionType, header.fileSize);
-format-width	libclamav/hfsplus.c	1606	                                            cli_dbgmsg("Handling block %u of %" PRIu32 " at offset %" PRIi64 " (size %u)\n", curBlock, numBlocks, (int64_t)blockOffset, table[curBlock].length);
-format-width	libclamav/hfsplus.c	1642	                                                            cli_dbgmsg("hfsplus_walk_catalog: inflateInit2 failed (%d)\n", z_ret);
-format-width	libclamav/hfsplus.c	1660	                                                            cli_dbgmsg("hfsplus_walk_catalog: Failed to extract (%d)\n", z_ret);
+format-width	libclamav/hfsplus.c	1345	                cli_dbgmsg("hfsplus_walk_catalog: bad record location %x for %u!\n", nextStart, recordNum);
+format-width	libclamav/hfsplus.c	1356	                cli_dbgmsg("hfsplus_walk_catalog: key too long for location %x for %u!\n",
+format-width	libclamav/hfsplus.c	1380	            cli_dbgmsg("hfsplus_walk_catalog: record %u nextStart %x keylen %u type %d\n",
+format-width	libclamav/hfsplus.c	1484	                    cli_dbgmsg("Found compressed file type %u size %" PRIu64 "\n", header.compressionType, header.fileSize);
+format-width	libclamav/hfsplus.c	1604	                                            cli_dbgmsg("Handling block %u of %" PRIu32 " at offset %" PRIi64 " (size %u)\n", curBlock, numBlocks, (int64_t)blockOffset, table[curBlock].length);
+format-width	libclamav/hfsplus.c	1640	                                                            cli_dbgmsg("hfsplus_walk_catalog: inflateInit2 failed (%d)\n", z_ret);
+format-width	libclamav/hfsplus.c	1658	                                                            cli_dbgmsg("hfsplus_walk_catalog: Failed to extract (%d)\n", z_ret);
 format-width	libclamav/hfsplus.c	167	    cli_dbgmsg("%s Header: depth %hu root %u leafRecords %u firstLeaf %u lastLeaf %u nodeSize %hu\n",
 format-width	libclamav/hfsplus.c	170	    cli_dbgmsg("%s Header: maxKeyLength %hu totalNodes %u freeNodes %u btreeType %hhu attributes %x\n",
-format-width	libclamav/hfsplus.c	1723	                                                    cli_dbgmsg("hfsplus_walk_catalog: inflateEnd failed (%d)\n", z_ret);
-format-width	libclamav/hfsplus.c	1774	                            cli_dbgmsg("hfsplus_walk_catalog: Unknown compression type %u\n", header.compressionType);
-format-width	libclamav/hfsplus.c	1825	                        cli_dbgmsg("hfsplus_walk_catalog: data fork retcode %d\n", status);
-format-width	libclamav/hfsplus.c	1833	                        cli_dbgmsg("hfsplus_walk_catalog: resource fork retcode %d", status);
+format-width	libclamav/hfsplus.c	1721	                                                    cli_dbgmsg("hfsplus_walk_catalog: inflateEnd failed (%d)\n", z_ret);
+format-width	libclamav/hfsplus.c	1772	                            cli_dbgmsg("hfsplus_walk_catalog: Unknown compression type %u\n", header.compressionType);
+format-width	libclamav/hfsplus.c	1823	                        cli_dbgmsg("hfsplus_walk_catalog: data fork retcode %d\n", status);
+format-width	libclamav/hfsplus.c	1831	                        cli_dbgmsg("hfsplus_walk_catalog: resource fork retcode %d", status);
 format-width	libclamav/hfsplus.c	186	    cli_dbgmsg("%s Desc: fLink %u bLink %u kind %d height %u numRecords %u\n",
-format-width	libclamav/hfsplus.c	1954	cli_dbgmsg("sizeof(hfsUniStr255) is %lu\n", sizeof(hfsUniStr255));
-format-width	libclamav/hfsplus.c	1955	cli_dbgmsg("sizeof(hfsPlusBSDInfo) is %lu\n", sizeof(hfsPlusBSDInfo));
-format-width	libclamav/hfsplus.c	1956	cli_dbgmsg("sizeof(hfsPlusExtentDescriptor) is %lu\n", sizeof(hfsPlusExtentDescriptor));
-format-width	libclamav/hfsplus.c	1957	cli_dbgmsg("sizeof(hfsPlusExtentRecord) is %lu\n", sizeof(hfsPlusExtentRecord));
-format-width	libclamav/hfsplus.c	1958	cli_dbgmsg("sizeof(hfsPlusForkData) is %lu\n", sizeof(hfsPlusForkData));
-format-width	libclamav/hfsplus.c	1959	cli_dbgmsg("sizeof(hfsPlusVolumeHeader) is %lu\n", sizeof(hfsPlusVolumeHeader));
-format-width	libclamav/hfsplus.c	1960	cli_dbgmsg("sizeof(hfsNodeDescriptor) is %lu\n", sizeof(hfsNodeDescriptor));
-format-width	libclamav/hfsplus.c	2012	        cli_dbgmsg("cli_scanhfsplus: validation returned %d : %s\n", status, cl_strerror(status));
+format-width	libclamav/hfsplus.c	1949	cli_dbgmsg("sizeof(hfsUniStr255) is %lu\n", sizeof(hfsUniStr255));
+format-width	libclamav/hfsplus.c	1950	cli_dbgmsg("sizeof(hfsPlusBSDInfo) is %lu\n", sizeof(hfsPlusBSDInfo));
+format-width	libclamav/hfsplus.c	1951	cli_dbgmsg("sizeof(hfsPlusExtentDescriptor) is %lu\n", sizeof(hfsPlusExtentDescriptor));
+format-width	libclamav/hfsplus.c	1952	cli_dbgmsg("sizeof(hfsPlusExtentRecord) is %lu\n", sizeof(hfsPlusExtentRecord));
+format-width	libclamav/hfsplus.c	1953	cli_dbgmsg("sizeof(hfsPlusForkData) is %lu\n", sizeof(hfsPlusForkData));
+format-width	libclamav/hfsplus.c	1954	cli_dbgmsg("sizeof(hfsPlusVolumeHeader) is %lu\n", sizeof(hfsPlusVolumeHeader));
+format-width	libclamav/hfsplus.c	1955	cli_dbgmsg("sizeof(hfsNodeDescriptor) is %lu\n", sizeof(hfsNodeDescriptor));
+format-width	libclamav/hfsplus.c	2007	        cli_dbgmsg("cli_scanhfsplus: validation returned %d : %s\n", status, cl_strerror(status));
 format-width	libclamav/hfsplus.c	213	        cli_dbgmsg("%s extent[%d] startBlock " STDu32 " blockCount " STDu32 "\n", pfx, i,
 format-width	libclamav/hfsplus.c	352	            cli_errmsg("hfsplus_readheader: %s: invalid headerType %d\n", name, headerType);
 format-width	libclamav/hfsplus.c	540	            cli_dbgmsg("hfsplus_scanfile: extent %u\n", ext);
-format-width	libclamav/hfsplus.c	818	                cli_dbgmsg("hfsplus_check_attribute: bad record location %x for %u!\n", nextStart, recordNum);
-format-width	libclamav/hfsplus.c	825	                cli_dbgmsg("hfsplus_check_attribute: Not enough data for an attribute key at location %x for %u!\n",
-format-width	libclamav/hfsplus.c	843	                cli_dbgmsg("hfsplus_check_attribute: key too long for location %x for %u!\n",
-format-width	libclamav/hfsplus.c	852	                cli_dbgmsg("hfsplus_check_attribute: Attribute name is longer than expected: %u\n", attrKey.nameLength);
+format-width	libclamav/hfsplus.c	816	                cli_dbgmsg("hfsplus_check_attribute: bad record location %x for %u!\n", nextStart, recordNum);
+format-width	libclamav/hfsplus.c	823	                cli_dbgmsg("hfsplus_check_attribute: Not enough data for an attribute key at location %x for %u!\n",
+format-width	libclamav/hfsplus.c	841	                cli_dbgmsg("hfsplus_check_attribute: key too long for location %x for %u!\n",
+format-width	libclamav/hfsplus.c	850	                cli_dbgmsg("hfsplus_check_attribute: Attribute name is longer than expected: %u\n", attrKey.nameLength);
 format-width	libclamav/htmlnorm.c	2587	        cli_dbgmsg("html_screnc_decode: missing %u bytes\n", screnc_state.length);
 format-width	libclamav/htmlnorm.c	753	                cli_dbgmsg("screnc_decode: checksum mismatch: %u != %" PRIu64 "\n", s->sum, expected);
 format-width	libclamav/hwp.c	1009	            hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected special character %u @ offset %zu\n", level, p, content, offset);
@@ -27084,54 +27084,54 @@ offset-size-arithmetic	libclamav/hashtab.h	49	 *    The value (data) is a buffer
 offset-size-arithmetic	libclamav/hashtab.h	496	 * @return ssize_t     The length of the array if success, or else -1 if failed.
 offset-size-arithmetic	libclamav/hashtab.h	498	ssize_t cli_hashset_toarray(const struct cli_hashset *hs, uint32_t **array);
 offset-size-arithmetic	libclamav/hashtab.h	55	/* define this for debugging/profiling purposes only, NOT in production/release code */
-offset-size-arithmetic	libclamav/hfsplus.c	1015	            if (startOffset > SIZE_MAX - fileOffset) {
+offset-size-arithmetic	libclamav/hfsplus.c	1013	            if (startOffset > SIZE_MAX - fileOffset) {
+offset-size-arithmetic	libclamav/hfsplus.c	1029	        if (fileOffset > ctx->fmap->len || readSize > ctx->fmap->len - fileOffset) {
 offset-size-arithmetic	libclamav/hfsplus.c	103	        produced         = sizeof(output) - stream.avail_out;
-offset-size-arithmetic	libclamav/hfsplus.c	1031	        if (fileOffset > ctx->fmap->len || readSize > ctx->fmap->len - fileOffset) {
-offset-size-arithmetic	libclamav/hfsplus.c	1038	            size_t bytesRead = fmap_readn(ctx->fmap, buff + buffOffset, fileOffset, readSize);
-offset-size-arithmetic	libclamav/hfsplus.c	1040	            if (bytesRead == (size_t)-1) {
+offset-size-arithmetic	libclamav/hfsplus.c	1036	            size_t bytesRead = fmap_readn(ctx->fmap, buff + buffOffset, fileOffset, readSize);
+offset-size-arithmetic	libclamav/hfsplus.c	1038	            if (bytesRead == (size_t)-1) {
 offset-size-arithmetic	libclamav/hfsplus.c	105	        if (total > expected_size || (uint64_t)produced > expected_size - total) {
-offset-size-arithmetic	libclamav/hfsplus.c	1057	static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
-offset-size-arithmetic	libclamav/hfsplus.c	1140	    if (lseek(fd, cmpfInstanceIdx * sizeof(hfsPlusReferenceEntry), SEEK_CUR) < 0) {
-offset-size-arithmetic	libclamav/hfsplus.c	1156	    if (lseek(fd, resourceHeader.dataOffset + dataOffset, SEEK_SET) < 0) {
-offset-size-arithmetic	libclamav/hfsplus.c	1199	    if (cli_readn(fd, numBlocks, sizeof(*numBlocks)) != sizeof(*numBlocks)) {
-offset-size-arithmetic	libclamav/hfsplus.c	1213	    table_size = (size_t)*numBlocks * sizeof(hfsPlusResourceBlockTable);
-offset-size-arithmetic	libclamav/hfsplus.c	1235	        (*table)[i].offset = le32_to_host((*table)[i].offset);
-offset-size-arithmetic	libclamav/hfsplus.c	1236	        (*table)[i].length = le32_to_host((*table)[i].length);
-offset-size-arithmetic	libclamav/hfsplus.c	1333	        recordStart = 14; /* 1st record can be after end of node descriptor */
-offset-size-arithmetic	libclamav/hfsplus.c	1334	        /* offsets take 1 u16 per at the end of the node, along with an empty space offset */
-offset-size-arithmetic	libclamav/hfsplus.c	1353	            /* Get record key length */
-offset-size-arithmetic	libclamav/hfsplus.c	1354	            keylen = nodeBuf[recordStart] * 0x100 + nodeBuf[recordStart + 1];
-offset-size-arithmetic	libclamav/hfsplus.c	1355	            keylen += keylen % 2; /* pad 1 byte if required to make 2-byte align */
-offset-size-arithmetic	libclamav/hfsplus.c	1356	            /* Validate keylen */
-offset-size-arithmetic	libclamav/hfsplus.c	1357	            if (recordStart + keylen + 4 >= topOfOffsets) {
-offset-size-arithmetic	libclamav/hfsplus.c	1364	            /* Collect filename  */
-offset-size-arithmetic	libclamav/hfsplus.c	1366	                uint16_t name_length = (nodeBuf[recordStart + 2 + 4] << 8) | nodeBuf[recordStart + 2 + 4 + 1];
-offset-size-arithmetic	libclamav/hfsplus.c	1368	                if ((name_length > 0) && (name_length * 2 <= keylen - 2 - 4)) {
-offset-size-arithmetic	libclamav/hfsplus.c	1370	                     * The name is contained in nodeBuf[recordStart + 2 + 4 + 2 : recordStart + 2 + 4 + 2 + name_length * 2] encoded as UTF-16BE.
-offset-size-arithmetic	libclamav/hfsplus.c	1372	                    if (CL_SUCCESS != cli_codepage_to_utf8((char *)index, name_length * 2, CODEPAGE_UTF16_BE, &name_utf8, &name_utf8_size)) {
-offset-size-arithmetic	libclamav/hfsplus.c	1379	            /* Copy type (after key, which is after keylength field) */
-offset-size-arithmetic	libclamav/hfsplus.c	1380	            memcpy(&rectype, &(nodeBuf[recordStart + keylen + 2]), 2);
-offset-size-arithmetic	libclamav/hfsplus.c	1393	            if (recordStart + keylen + 2 + sizeof(hfsPlusCatalogFile) >= topOfOffsets) {
-offset-size-arithmetic	libclamav/hfsplus.c	1399	            memcpy(&fileRec, &(nodeBuf[recordStart + keylen + 2]), sizeof(hfsPlusCatalogFile));
-offset-size-arithmetic	libclamav/hfsplus.c	1420	                        cli_dbgmsg("hfsplus_walk_catalog: Failed to inspect compressed-file attributes\n");
-offset-size-arithmetic	libclamav/hfsplus.c	1421	                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-file attributes could not be inspected");
-offset-size-arithmetic	libclamav/hfsplus.c	1436	                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-file header is incomplete");
-offset-size-arithmetic	libclamav/hfsplus.c	1453	                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-file header has invalid magic");
+offset-size-arithmetic	libclamav/hfsplus.c	1055	static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
+offset-size-arithmetic	libclamav/hfsplus.c	1138	    if (lseek(fd, cmpfInstanceIdx * sizeof(hfsPlusReferenceEntry), SEEK_CUR) < 0) {
+offset-size-arithmetic	libclamav/hfsplus.c	1154	    if (lseek(fd, resourceHeader.dataOffset + dataOffset, SEEK_SET) < 0) {
+offset-size-arithmetic	libclamav/hfsplus.c	1197	    if (cli_readn(fd, numBlocks, sizeof(*numBlocks)) != sizeof(*numBlocks)) {
+offset-size-arithmetic	libclamav/hfsplus.c	1211	    table_size = (size_t)*numBlocks * sizeof(hfsPlusResourceBlockTable);
+offset-size-arithmetic	libclamav/hfsplus.c	1233	        (*table)[i].offset = le32_to_host((*table)[i].offset);
+offset-size-arithmetic	libclamav/hfsplus.c	1234	        (*table)[i].length = le32_to_host((*table)[i].length);
+offset-size-arithmetic	libclamav/hfsplus.c	1331	        recordStart = 14; /* 1st record can be after end of node descriptor */
+offset-size-arithmetic	libclamav/hfsplus.c	1332	        /* offsets take 1 u16 per at the end of the node, along with an empty space offset */
+offset-size-arithmetic	libclamav/hfsplus.c	1351	            /* Get record key length */
+offset-size-arithmetic	libclamav/hfsplus.c	1352	            keylen = nodeBuf[recordStart] * 0x100 + nodeBuf[recordStart + 1];
+offset-size-arithmetic	libclamav/hfsplus.c	1353	            keylen += keylen % 2; /* pad 1 byte if required to make 2-byte align */
+offset-size-arithmetic	libclamav/hfsplus.c	1354	            /* Validate keylen */
+offset-size-arithmetic	libclamav/hfsplus.c	1355	            if (recordStart + keylen + 4 >= topOfOffsets) {
+offset-size-arithmetic	libclamav/hfsplus.c	1362	            /* Collect filename  */
+offset-size-arithmetic	libclamav/hfsplus.c	1364	                uint16_t name_length = (nodeBuf[recordStart + 2 + 4] << 8) | nodeBuf[recordStart + 2 + 4 + 1];
+offset-size-arithmetic	libclamav/hfsplus.c	1366	                if ((name_length > 0) && (name_length * 2 <= keylen - 2 - 4)) {
+offset-size-arithmetic	libclamav/hfsplus.c	1368	                     * The name is contained in nodeBuf[recordStart + 2 + 4 + 2 : recordStart + 2 + 4 + 2 + name_length * 2] encoded as UTF-16BE.
+offset-size-arithmetic	libclamav/hfsplus.c	1370	                    if (CL_SUCCESS != cli_codepage_to_utf8((char *)index, name_length * 2, CODEPAGE_UTF16_BE, &name_utf8, &name_utf8_size)) {
+offset-size-arithmetic	libclamav/hfsplus.c	1377	            /* Copy type (after key, which is after keylength field) */
+offset-size-arithmetic	libclamav/hfsplus.c	1378	            memcpy(&rectype, &(nodeBuf[recordStart + keylen + 2]), 2);
+offset-size-arithmetic	libclamav/hfsplus.c	1391	            if (recordStart + keylen + 2 + sizeof(hfsPlusCatalogFile) >= topOfOffsets) {
+offset-size-arithmetic	libclamav/hfsplus.c	1397	            memcpy(&fileRec, &(nodeBuf[recordStart + keylen + 2]), sizeof(hfsPlusCatalogFile));
+offset-size-arithmetic	libclamav/hfsplus.c	1418	                        cli_dbgmsg("hfsplus_walk_catalog: Failed to inspect compressed-file attributes\n");
+offset-size-arithmetic	libclamav/hfsplus.c	1419	                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-file attributes could not be inspected");
+offset-size-arithmetic	libclamav/hfsplus.c	1434	                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-file header is incomplete");
+offset-size-arithmetic	libclamav/hfsplus.c	1451	                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-file header has invalid magic");
+offset-size-arithmetic	libclamav/hfsplus.c	1488	                            if (attributeSize < sizeof(header) + 1) {
 offset-size-arithmetic	libclamav/hfsplus.c	149	/* Header Record : fix endianness for useful fields */
-offset-size-arithmetic	libclamav/hfsplus.c	1490	                            if (attributeSize < sizeof(header) + 1) {
-offset-size-arithmetic	libclamav/hfsplus.c	1497	                            if ((attribute[sizeof(header)] & 0x0f) == 0x0f) { // Data is stored uncompressed
-offset-size-arithmetic	libclamav/hfsplus.c	1498	                                if (attributeSize - sizeof(header) - 1 != header.fileSize) {
-offset-size-arithmetic	libclamav/hfsplus.c	1510	                                written = cli_writen(ofd, &attribute[sizeof(header) + 1], (size_t)header.fileSize);
-offset-size-arithmetic	libclamav/hfsplus.c	1592	                                                cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource traversal reached the configured time limit");
-offset-size-arithmetic	libclamav/hfsplus.c	1597	                                            off_t blockOffset = dataOffset + (off_t)table[curBlock].offset;
-offset-size-arithmetic	libclamav/hfsplus.c	1616	                                                readLen = table[curBlock].length - curOffset;
-offset-size-arithmetic	libclamav/hfsplus.c	1668	                                                        size_t produced = sizeof(uncompressed_block) - stream.avail_out;
-offset-size-arithmetic	libclamav/hfsplus.c	1671	                                                            cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource output reached the configured time limit");
-offset-size-arithmetic	libclamav/hfsplus.c	1694	                                                    size_t produced = readLen - (streamBeginning ? 1 : 0);
-offset-size-arithmetic	libclamav/hfsplus.c	1697	                                                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource output reached the configured time limit");
+offset-size-arithmetic	libclamav/hfsplus.c	1495	                            if ((attribute[sizeof(header)] & 0x0f) == 0x0f) { // Data is stored uncompressed
+offset-size-arithmetic	libclamav/hfsplus.c	1496	                                if (attributeSize - sizeof(header) - 1 != header.fileSize) {
+offset-size-arithmetic	libclamav/hfsplus.c	1508	                                written = cli_writen(ofd, &attribute[sizeof(header) + 1], (size_t)header.fileSize);
+offset-size-arithmetic	libclamav/hfsplus.c	1590	                                                cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource traversal reached the configured time limit");
+offset-size-arithmetic	libclamav/hfsplus.c	1595	                                            off_t blockOffset = dataOffset + (off_t)table[curBlock].offset;
+offset-size-arithmetic	libclamav/hfsplus.c	1614	                                                readLen = table[curBlock].length - curOffset;
+offset-size-arithmetic	libclamav/hfsplus.c	1666	                                                        size_t produced = sizeof(uncompressed_block) - stream.avail_out;
+offset-size-arithmetic	libclamav/hfsplus.c	1669	                                                            cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource output reached the configured time limit");
+offset-size-arithmetic	libclamav/hfsplus.c	1692	                                                    size_t produced = readLen - (streamBeginning ? 1 : 0);
+offset-size-arithmetic	libclamav/hfsplus.c	1695	                                                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource output reached the configured time limit");
 offset-size-arithmetic	libclamav/hfsplus.c	175	/* Node Descriptor : fix endianness for useful fields */
 offset-size-arithmetic	libclamav/hfsplus.c	190	/* ForkData : fix endianness */
-offset-size-arithmetic	libclamav/hfsplus.c	1976	     * can carry decmpfs metadata required to inspect compressed files. */
+offset-size-arithmetic	libclamav/hfsplus.c	1971	     * can carry decmpfs metadata required to inspect compressed files. */
 offset-size-arithmetic	libclamav/hfsplus.c	199	        fork->extents[i].startBlock = be32_to_host(fork->extents[i].startBlock);
 offset-size-arithmetic	libclamav/hfsplus.c	214	                   fork->extents[i].startBlock, fork->extents[i].blockCount);
 offset-size-arithmetic	libclamav/hfsplus.c	229	    /* Start with volume header, 512 bytes at offset 1024 */
@@ -27147,31 +27147,31 @@ offset-size-arithmetic	libclamav/hfsplus.c	573	        endBlock = currExt->start
 offset-size-arithmetic	libclamav/hfsplus.c	583	            size_t to_write = (targetSize < (uint64_t)volHeader->blockSize) ? (size_t)targetSize : (size_t)volHeader->blockSize;
 offset-size-arithmetic	libclamav/hfsplus.c	588	                volHeader->blockSize > ctx->fmap->len - (size_t)blockOffset) {
 offset-size-arithmetic	libclamav/hfsplus.c	596	            mPtr = fmap_need_off_once(ctx->fmap, (size_t)blockOffset, volHeader->blockSize);
-offset-size-arithmetic	libclamav/hfsplus.c	675	    if ((NULL == filename) ||     // output param not provided, which means we should clean up the temp file,
-offset-size-arithmetic	libclamav/hfsplus.c	724	static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *attrHeader, uint32_t expectedCnid, const uint8_t name[], uint32_t nameLen, int *found, uint8_t record[], size_t *recordSize)
-offset-size-arithmetic	libclamav/hfsplus.c	804	        recordStart = 14; /* 1st record can be after end of node descriptor */
-offset-size-arithmetic	libclamav/hfsplus.c	805	        /* offsets take 1 u16 per at the end of the node, along with an empty space offset */
+offset-size-arithmetic	libclamav/hfsplus.c	674	    if ((NULL == filename) ||     // output param not provided, which means we should clean up the temp file,
+offset-size-arithmetic	libclamav/hfsplus.c	722	static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *attrHeader, uint32_t expectedCnid, const uint8_t name[], uint32_t nameLen, int *found, uint8_t record[], size_t *recordSize)
+offset-size-arithmetic	libclamav/hfsplus.c	802	        recordStart = 14; /* 1st record can be after end of node descriptor */
+offset-size-arithmetic	libclamav/hfsplus.c	803	        /* offsets take 1 u16 per at the end of the node, along with an empty space offset */
 offset-size-arithmetic	libclamav/hfsplus.c	82	    z_ret           = inflateInit2(&stream, 15 /* maximum windowBits size */);
-offset-size-arithmetic	libclamav/hfsplus.c	838	            /* Get record key length */
-offset-size-arithmetic	libclamav/hfsplus.c	839	            keylen = nodeBuf[recordStart] * 0x100 + nodeBuf[recordStart + 1];
-offset-size-arithmetic	libclamav/hfsplus.c	840	            keylen += keylen % 2; /* pad 1 byte if required to make 2-byte align */
-offset-size-arithmetic	libclamav/hfsplus.c	841	            /* Validate keylen */
-offset-size-arithmetic	libclamav/hfsplus.c	850	            if ((size_t)recordStart + sizeof(hfsPlusAttributeKey) +
-offset-size-arithmetic	libclamav/hfsplus.c	851	                    (size_t)attrKey.nameLength * 2U >= (size_t)topOfOffsets) {
-offset-size-arithmetic	libclamav/hfsplus.c	859	                attrRecordOffset = (size_t)recordStart + sizeof(hfsPlusAttributeKey) + (size_t)attrKey.nameLength * 2U;
-offset-size-arithmetic	libclamav/hfsplus.c	861	                    sizeof(attrRec) > (size_t)topOfOffsets - attrRecordOffset) {
-offset-size-arithmetic	libclamav/hfsplus.c	877	                    cli_mark_scan_incomplete(ctx, "HFS+ compressed-file attribute is larger than its buffer");
-offset-size-arithmetic	libclamav/hfsplus.c	882	                if ((size_t)attrRec.attributeSize > (size_t)topOfOffsets - attrRecordOffset - sizeof(attrRec)) {
-offset-size-arithmetic	libclamav/hfsplus.c	938	    /* First, calculate the node's offset within the catalog */
-offset-size-arithmetic	libclamav/hfsplus.c	941	    startBlock  = catalogOffset / volHeader->blockSize;
-offset-size-arithmetic	libclamav/hfsplus.c	942	    startOffset = catalogOffset % volHeader->blockSize;
-offset-size-arithmetic	libclamav/hfsplus.c	943	    endBlock    = (catalogOffset + catHeader->nodeSize - 1) / volHeader->blockSize;
-offset-size-arithmetic	libclamav/hfsplus.c	944	    endSize     = ((catalogOffset + catHeader->nodeSize - 1) % volHeader->blockSize) + 1;
-offset-size-arithmetic	libclamav/hfsplus.c	946	    if (startBlock >= catFork->totalBlocks || endBlock >= catFork->totalBlocks) {
-offset-size-arithmetic	libclamav/hfsplus.c	961	            if ((currExt->startBlock == 0) || (currExt->blockCount == 0)) {
-offset-size-arithmetic	libclamav/hfsplus.c	967	            if ((currExt->startBlock & 0x10000000) && (currExt->blockCount & 0x10000000)) {
-offset-size-arithmetic	libclamav/hfsplus.c	972	            if (currExt->startBlock >= volHeader->totalBlocks ||
-offset-size-arithmetic	libclamav/hfsplus.c	981	                realFileBlock = currExt->startBlock + searchBlock;
+offset-size-arithmetic	libclamav/hfsplus.c	836	            /* Get record key length */
+offset-size-arithmetic	libclamav/hfsplus.c	837	            keylen = nodeBuf[recordStart] * 0x100 + nodeBuf[recordStart + 1];
+offset-size-arithmetic	libclamav/hfsplus.c	838	            keylen += keylen % 2; /* pad 1 byte if required to make 2-byte align */
+offset-size-arithmetic	libclamav/hfsplus.c	839	            /* Validate keylen */
+offset-size-arithmetic	libclamav/hfsplus.c	848	            if ((size_t)recordStart + sizeof(hfsPlusAttributeKey) +
+offset-size-arithmetic	libclamav/hfsplus.c	849	                    (size_t)attrKey.nameLength * 2U >= (size_t)topOfOffsets) {
+offset-size-arithmetic	libclamav/hfsplus.c	857	                attrRecordOffset = (size_t)recordStart + sizeof(hfsPlusAttributeKey) + (size_t)attrKey.nameLength * 2U;
+offset-size-arithmetic	libclamav/hfsplus.c	859	                    sizeof(attrRec) > (size_t)topOfOffsets - attrRecordOffset) {
+offset-size-arithmetic	libclamav/hfsplus.c	875	                    cli_mark_scan_incomplete(ctx, "HFS+ compressed-file attribute is larger than its buffer");
+offset-size-arithmetic	libclamav/hfsplus.c	880	                if ((size_t)attrRec.attributeSize > (size_t)topOfOffsets - attrRecordOffset - sizeof(attrRec)) {
+offset-size-arithmetic	libclamav/hfsplus.c	936	    /* First, calculate the node's offset within the catalog */
+offset-size-arithmetic	libclamav/hfsplus.c	939	    startBlock  = catalogOffset / volHeader->blockSize;
+offset-size-arithmetic	libclamav/hfsplus.c	940	    startOffset = catalogOffset % volHeader->blockSize;
+offset-size-arithmetic	libclamav/hfsplus.c	941	    endBlock    = (catalogOffset + catHeader->nodeSize - 1) / volHeader->blockSize;
+offset-size-arithmetic	libclamav/hfsplus.c	942	    endSize     = ((catalogOffset + catHeader->nodeSize - 1) % volHeader->blockSize) + 1;
+offset-size-arithmetic	libclamav/hfsplus.c	944	    if (startBlock >= catFork->totalBlocks || endBlock >= catFork->totalBlocks) {
+offset-size-arithmetic	libclamav/hfsplus.c	959	            if ((currExt->startBlock == 0) || (currExt->blockCount == 0)) {
+offset-size-arithmetic	libclamav/hfsplus.c	965	            if ((currExt->startBlock & 0x10000000) && (currExt->blockCount & 0x10000000)) {
+offset-size-arithmetic	libclamav/hfsplus.c	970	            if (currExt->startBlock >= volHeader->totalBlocks ||
+offset-size-arithmetic	libclamav/hfsplus.c	979	                realFileBlock = currExt->startBlock + searchBlock;
 offset-size-arithmetic	libclamav/hfsplus.h	219	    uint16_t finderInfo[8]; /* ExtendedFolderInfo */
 offset-size-arithmetic	libclamav/hfsplus.h	233	    uint16_t finderInfo[8]; /* ExtendedFileInfo */
 offset-size-arithmetic	libclamav/hostid_internal.c	169	                    snprintf(devices[i].mac + strlen(devices[i].mac), sizeof(devices[i].mac) - strlen(devices[i].mac) - 1, "%02x:", mac[j]);
