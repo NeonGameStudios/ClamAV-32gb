@@ -2673,6 +2673,8 @@ contains libclamav/ole2_extract.c 'OLE2 embedded stream output reached the confi
 contains libclamav/ole2_extract.c 'OLE2 encrypted stream temporary admission reached the configured time limit'
 contains libclamav/ole2_extract.c 'OLE2 encrypted stream output reached the configured time limit'
 contains libclamav/ole2_extract.c 'OLE2 encrypted stream extraction did not complete'
+contains libclamav/msexpand.c 'MSEXPAND header has invalid magic'
+contains unit_tests/check_clamav.c 'test_msexpand_invalid_magic_is_fail_visible'
 contains libclamav/ole2_extract.c 'cli_magic_scan_desc_type_reserved(ofd, tempfile, ctx, CL_TYPE_ANY, NULL'
 contains libclamav/ole2_extract.c 'cli_magic_scan_desc_type_reserved(ofd, tmpname, ctx, CL_TYPE_ANY, NULL'
 not_contains libclamav/ole2_extract.c 'ret = cli_magic_scan_desc(ofd, tempfile, ctx'

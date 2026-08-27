@@ -16383,6 +16383,30 @@ START_TEST(test_msexpand_null_context_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msexpand_invalid_magic_is_fail_visible)
+{
+    static const uint8_t data[14] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint64_t temporary_reserved = 0;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_msexpand(&ctx, -1, &temporary_reserved), CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSEXPAND header has invalid magic");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_msexpand_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[14] = {
@@ -41351,6 +41375,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_msexpand, cl_setup, cl_teardown);
     tcase_add_test(tc_msexpand, test_msexpand_header_range_classes_are_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_null_context_is_fail_visible);
+    tcase_add_test(tc_msexpand, test_msexpand_invalid_magic_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_missing_map_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_truncated_output_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_time_limit_is_fail_visible);
@@ -41588,6 +41613,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_legacy_parser_limit_returns_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_header_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_null_context_is_fail_visible);
+    tcase_add_test(tc_cl, test_msexpand_invalid_magic_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_truncated_output_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_time_limit_is_fail_visible);

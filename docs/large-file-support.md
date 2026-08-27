@@ -8360,6 +8360,22 @@ corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain release
 gates.
 
+## MSEXPAND invalid-magic classification audit — 2026-08-27
+
+The direct `cli_msexpand()` entry now marks invalid fixed magic as an
+incomplete, non-cacheable `CL_EFORMAT` result. This closes the explicit
+`CL_TYPE_MSSZDD` dispatch case where a caller could reach the decoder after
+parser confirmation but receive an unclassified malformed-header failure.
+
+The touched source and full unit translation unit compile with the existing
+production GCC flags. The fresh current-source harness includes the new
+invalid-magic regression, and the isolated `msexpand_map` TCase passes 2/2.
+The broader `msexpand` run retains the known mixed-generation timeout/corpus
+failures and is not complete parser-family evidence. Complete SZDD corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain release gates.
+
 ## Encrypted OLE2 stream cleanup fail-visible audit — 2026-08-27
 
 The encrypted OLE2 OTF handler now marks unclassified traversal, seek, and

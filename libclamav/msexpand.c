@@ -153,6 +153,7 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
 
     if (EC32(hdr->magic1) != MAGIC1 || EC32(hdr->magic2) != MAGIC2 || EC16(hdr->magic3) != MAGIC3) {
         cli_dbgmsg("MSEXPAND: Not supported file format\n");
+        cli_mark_scan_incomplete(ctx, "MSEXPAND header has invalid magic");
         return CL_EFORMAT;
     }
 

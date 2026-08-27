@@ -186,6 +186,24 @@ warning-clean with GCC `-Wall -Wextra -Wformat-security`; production-linked
 corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
 
+## MSEXPAND invalid-magic classification audit — 2026-08-27
+
+The direct `cli_msexpand()` entry previously returned `CL_EFORMAT` for a
+non-SZDD fixed header without marking the layer incomplete. Explicit
+`CL_TYPE_MSSZDD` dispatch can reach this entry, so the error was not
+cache-safe for a caller that had already confirmed the parser family. Invalid
+magic now records a sticky incomplete reason before returning `CL_EFORMAT`.
+
+The touched MSEXPAND source and full unit translation unit compile with the
+existing production GCC flags. The fresh current-source harness includes the
+new invalid-magic regression; the isolated `msexpand_map` TCase passes 2/2.
+The broader `msexpand` TCase reaches 7 checks but retains the previously
+known mixed-generation timeout/corpus failures in this reused binary, so it is
+not counted as a complete parser-family result. Complete SZDD corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## ISO9660 descriptor-sequence coverage audit — 2026-08-27
 
 The ISO9660 parser previously inspected only descriptor sectors 16 through 31.

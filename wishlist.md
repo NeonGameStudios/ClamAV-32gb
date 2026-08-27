@@ -5085,3 +5085,14 @@ and Sonic1 qualification as release gates.
   injection remains an explicit test gap. Keep complete OLE/VBA/XLM corpus and
   fault matrix, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.
+
+## MSEXPAND invalid-magic classification audit — 2026-08-27
+
+- Mark invalid SZDD fixed magic as an incomplete, non-cacheable `CL_EFORMAT`
+  result at the direct decoder boundary; explicit `CL_TYPE_MSSZDD` dispatch
+  must not publish an unclassified malformed-header failure.
+- The new regression is included in the current-source GCC harness and
+  `msexpand_map` passes 2/2. The broader reused harness still has known
+  mixed-generation timeout/corpus failures, so complete SZDD corpus, full-C
+  execution, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification remain open.
