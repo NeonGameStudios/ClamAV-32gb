@@ -218,6 +218,8 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
         status = CL_EPARSE;
         goto done;
     }
+    if (!ctx->engine)
+        return CL_ENULLARG;
 
     status = cli_checktimelimit(ctx);
     if (status != CL_SUCCESS)

@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## Partition parser engine admission — 2026-08-27
+
+The APM, GPT, and MBR direct parser entries used `ctx->engine->maxpartitions`
+after checking only the context and input fmap. A direct caller with a valid
+fmap but no engine could therefore dereference unavailable state. All three
+entries now return `CL_ENULLARG` before timing, partition traversal, or nested
+dispatch. The current-source production-linked GCC `partition_map` case
+passes 4/4, and the focused `apm_map`, `apm`, `apm_corpus`, `gpt`, and `mbr`
+cases pass 2/2, 5/5, 1/1, 4/4, and 5/5 respectively. Full partition-image
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release qualification remain open.
+
 ## Structured-detector engine admission — 2026-08-27
 
 `cli_scan_structured()` already rejected null context and missing input fmap,

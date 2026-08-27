@@ -97,6 +97,8 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
         status = CL_EPARSE;
         goto done;
     }
+    if (!ctx->engine)
+        return CL_ENULLARG;
 
     status = cli_checktimelimit(ctx);
     if (status != CL_SUCCESS)

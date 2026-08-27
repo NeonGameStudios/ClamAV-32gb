@@ -1,5 +1,16 @@
 # Wishlist
 
+## Partition parser engine admission — 2026-08-27
+
+- Keep APM, GPT, and MBR direct parser entries fail-visible when a recognized
+  fmap is supplied without the required engine: return `CL_ENULLARG` before
+  `maxpartitions` or nested-dispatch state is accessed.
+- The current-source production-linked GCC `partition_map` case passes 4/4;
+  `apm_map`, `apm`, `apm_corpus`, `gpt`, and `mbr` pass 2/2, 5/5, 1/1, 4/4,
+  and 5/5. Keep full partition-image corpus, sanitizer, certified Linux
+  x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  release qualification open.
+
 ## Structured-detector engine admission — 2026-08-27
 
 - Keep `cli_scan_structured()` fail-visible for null context, missing fmap,

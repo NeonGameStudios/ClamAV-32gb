@@ -40678,6 +40678,31 @@ START_TEST(test_tiff_ifd_offset_out_of_bounds_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_partition_missing_engine_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanapm(&ctx), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanmbr(&ctx, 512), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scangpt(&ctx, 512), CL_ENULLARG);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -41234,6 +41259,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_partition_map, test_mbr_partition_coordinate_overflow_is_fail_visible);
 #endif
     tcase_add_test(tc_partition_map, test_gpt_missing_map_is_fail_visible);
+    tcase_add_test(tc_partition_map, test_partition_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_gpt);
     tcase_add_checked_fixture(tc_gpt, cl_setup, cl_teardown);
     tcase_add_test(tc_gpt, test_gpt_partition_read_failure_is_fail_visible);
