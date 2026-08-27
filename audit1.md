@@ -11951,3 +11951,14 @@ The current scanner source passes the GCC syntax check and guards cover the
 handoff; current-object execution, complete HTML/script corpora, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain open.
+
+## XAR and fmap cleanup-status precedence audit — 2026-08-27
+
+XAR subdocument cleanup still ignored a failed close/removal when the nested
+operation returned `CL_BREAK`, and generic fmap dump cleanup did the same.
+Both paths now retain the shared precedence contract: cleanup failures replace
+clean, verified, or abort results but never hide an earlier parser/resource or
+detection result. Current fmap/XAR GCC syntax and source guards pass; current-
+object execution, complete archive/fmap corpora, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain open.

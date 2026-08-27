@@ -1321,6 +1321,8 @@ static cl_error_t fmap_dump_cleanup(int *tmpfd, char **tmpname, cl_error_t statu
         *tmpname = NULL;
     }
 
+    if (cleanup_status == CL_SUCCESS)
+        return status;
     if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
         return cleanup_status;
     return status;

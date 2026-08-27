@@ -5855,3 +5855,13 @@ parser-family qualification remain open.
   execution, complete HTML/script corpora, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, Sonic1, and parser-family
   qualification remain open.
+
+## XAR and fmap cleanup-status precedence audit — 2026-08-27
+
+- Preserve XAR subdocument and fmap dump cleanup failures after `CL_BREAK`
+  using the shared precedence contract without hiding prior parser/resource or
+  detection results.
+- Current fmap/XAR GCC syntax and source guards pass; current-object execution,
+  complete archive/fmap corpora, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, Sonic1, and parser-family
+  qualification remain open.

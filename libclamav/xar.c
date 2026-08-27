@@ -743,8 +743,7 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
             cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname, &subdoc_reserved);
             fd          = -1;
             tmpname     = NULL;
-            if (CL_SUCCESS == rc && CL_SUCCESS != cleanup_rc)
-                rc = cleanup_rc;
+            rc = cli_merge_cleanup_status(rc, cleanup_rc);
 
             if (rc != CL_SUCCESS)
                 return rc;
