@@ -380,51 +380,237 @@ int cli_bytecode_context_getresult_file(struct cli_bc_ctx *ctx, char **tempfilen
     return fd;
 }
 
+static bool bytecode_type_index(const struct cli_bc *bc, uint16_t type,
+                                unsigned *index)
+{
+    unsigned normalized = (unsigned)(type & 0x7fff);
+
+    if (!bc || !bc->types || normalized <= 64 ||
+        bc->num_types <= NUM_STATIC_TYPES ||
+        normalized - 65 >= bc->num_types - 1)
+        return false;
+    if (index)
+        *index = normalized - 65;
+    return true;
+}
+
 static unsigned typesize(const struct cli_bc *bc, uint16_t type)
 {
-    struct cli_bc_type *ty;
-    unsigned j;
+    unsigned index;
+    unsigned normalized = (unsigned)(type & 0x7fff);
 
-    type &= 0x7fff;
-    if (!type)
+    if (!normalized)
         return 0;
-    if (type <= 8)
+    if (normalized <= 8)
         return 1;
-    if (type <= 16)
+    if (normalized <= 16)
         return 2;
-    if (type <= 32)
+    if (normalized <= 32)
         return 4;
-    if (type <= 64)
+    if (normalized <= 64)
         return 8;
-    ty = &bc->types[type - 65];
-    if (ty->size)
-        return ty->size;
-    switch (ty->kind) {
-        case 2:
-        case 3:
-            for (j = 0; j < ty->numElements; j++)
-                ty->size += typesize(bc, ty->containedTypes[j]);
-            break;
-        case 4:
-            ty->size = ty->numElements * typesize(bc, ty->containedTypes[0]);
-            break;
-        default:
-            break;
-    }
-    if (!ty->size && ty->kind != DFunctionType) {
-        cli_warnmsg("type %d size is 0\n", type - 65);
-    }
-    return ty->size;
+    if (!bytecode_type_index(bc, type, &index))
+        return 0;
+    return bc->types[index].size;
 }
 
 static unsigned typealign(const struct cli_bc *bc, uint16_t type)
 {
-    type &= 0x7fff;
-    if (type <= 64) {
+    unsigned index;
+    unsigned normalized = (unsigned)(type & 0x7fff);
+
+    if (normalized <= 64) {
         unsigned size = typesize(bc, type);
         return size ? size : 1;
     }
-    return bc->types[type - 65].align;
+    if (!bytecode_type_index(bc, type, &index))
+        return 0;
+    return bc->types[index].align;
+}
+
+struct bytecode_type_layout_frame {
+    unsigned index;
+    unsigned next;
+    uint64_t size;
+};
+
+/* Resolve all by-value type dependencies without using the C call stack.
+ * Pointers and function signatures do not require their contained types to be
+ * laid out, so recursive pointer graphs remain valid while recursive
+ * structures and arrays are rejected. */
+static cl_error_t validate_type_layouts(struct cli_bc *bc)
+{
+    unsigned i, type_count, top;
+    uint8_t *state;
+    struct bytecode_type_layout_frame *stack;
+
+    if (bc->num_types <= NUM_STATIC_TYPES)
+        return CL_EMALFDB;
+    type_count = bc->num_types - NUM_STATIC_TYPES - 1;
+    if (!type_count)
+        return CL_SUCCESS;
+    if (type_count > CLI_MAX_ALLOCATION / sizeof(*state) ||
+        type_count > CLI_MAX_ALLOCATION / sizeof(*stack)) {
+        cli_errmsg("bytecode: type layout table is too large\n");
+        return CL_EMEM;
+    }
+    state = cli_max_calloc(type_count, sizeof(*state));
+    stack = cli_max_malloc(type_count * sizeof(*stack));
+    if (!state || !stack) {
+        free(state);
+        free(stack);
+        cli_errmsg("bytecode: unable to allocate type layout state\n");
+        return CL_EMEM;
+    }
+
+    for (i = NUM_STATIC_TYPES; i < bc->num_types - 1; i++) {
+        if (state[i - NUM_STATIC_TYPES] == 2)
+            continue;
+        top = 0;
+        stack[top].index = i;
+        stack[top].next  = 0;
+        stack[top].size  = 0;
+        state[i - NUM_STATIC_TYPES] = 1;
+        top++;
+
+        while (top) {
+            struct bytecode_type_layout_frame *frame = &stack[top - 1];
+            struct cli_bc_type *ty                    = &bc->types[frame->index];
+            uint16_t child;
+            unsigned child_index;
+            unsigned child_size;
+
+            switch (ty->kind) {
+                case DFunctionType:
+                    ty->size = ty->align = sizeof(void *);
+                    state[frame->index - NUM_STATIC_TYPES] = 2;
+                    top--;
+                    continue;
+                case DPointerType:
+                    if (!ty->containedTypes || ty->numElements != 1) {
+                        cli_errmsg("bytecode: malformed pointer type %u\n",
+                                   frame->index + 65);
+                        goto malformed;
+                    }
+                    ty->size = ty->align = 8;
+                    state[frame->index - NUM_STATIC_TYPES] = 2;
+                    top--;
+                    continue;
+                case DStructType:
+                case DPackedStructType:
+                    if (ty->numElements && !ty->containedTypes) {
+                        cli_errmsg("bytecode: malformed structure type %u\n",
+                                   frame->index + 65);
+                        goto malformed;
+                    }
+                    if (frame->next == ty->numElements) {
+                        if (!frame->size || frame->size > CLI_MAX_ALLOCATION) {
+                            cli_errmsg("bytecode: structure type %u is too large or empty\n",
+                                       frame->index + 65);
+                            goto malformed;
+                        }
+                        ty->size  = (uint32_t)frame->size;
+                        ty->align = 8;
+                        state[frame->index - NUM_STATIC_TYPES] = 2;
+                        top--;
+                        continue;
+                    }
+                    child = ty->containedTypes[frame->next++];
+                    if (bytecode_type_index(bc, child, &child_index) &&
+                        child_index >= NUM_STATIC_TYPES) {
+                        if (state[child_index - NUM_STATIC_TYPES] == 1) {
+                            cli_errmsg("bytecode: recursive by-value type %u\n",
+                                       child);
+                            goto malformed;
+                        }
+                        if (state[child_index - NUM_STATIC_TYPES] == 0) {
+                            if (top >= type_count) {
+                                cli_errmsg("bytecode: type layout traversal is too deep\n");
+                                goto malformed;
+                            }
+                            stack[top].index = child_index;
+                            stack[top].next  = 0;
+                            stack[top].size  = 0;
+                            state[child_index - NUM_STATIC_TYPES] = 1;
+                            top++;
+                            continue;
+                        }
+                    }
+                    child_size = typesize(bc, child);
+                    if (!child_size || frame->size > CLI_MAX_ALLOCATION - child_size) {
+                        cli_errmsg("bytecode: structure type %u exceeds the allocation limit\n",
+                                   frame->index + 65);
+                        goto malformed;
+                    }
+                    frame->size += child_size;
+                    continue;
+                case DArrayType:
+                    if (!ty->containedTypes || ty->numElements == 0) {
+                        cli_errmsg("bytecode: malformed or empty array type %u\n",
+                                   frame->index + 65);
+                        goto malformed;
+                    }
+                    if (frame->next == 0) {
+                        frame->next = 1;
+                        child = ty->containedTypes[0];
+                        if (bytecode_type_index(bc, child, &child_index) &&
+                            child_index >= NUM_STATIC_TYPES) {
+                            if (state[child_index - NUM_STATIC_TYPES] == 1) {
+                                cli_errmsg("bytecode: recursive by-value array type %u\n",
+                                           child);
+                                goto malformed;
+                            }
+                            if (state[child_index - NUM_STATIC_TYPES] == 0) {
+                                if (top >= type_count) {
+                                    cli_errmsg("bytecode: type layout traversal is too deep\n");
+                                    goto malformed;
+                                }
+                                stack[top].index = child_index;
+                                stack[top].next  = 0;
+                                stack[top].size  = 0;
+                                state[child_index - NUM_STATIC_TYPES] = 1;
+                                top++;
+                                continue;
+                            }
+                        }
+                        child_size = typesize(bc, child);
+                        if (!child_size ||
+                            (uint64_t)ty->numElements >
+                                CLI_MAX_ALLOCATION / child_size) {
+                            cli_errmsg("bytecode: array type %u exceeds the allocation limit\n",
+                                       frame->index + 65);
+                            goto malformed;
+                        }
+                        ty->size  = (uint32_t)((uint64_t)ty->numElements * child_size);
+                        ty->align = typealign(bc, child);
+                        if (!ty->align) {
+                            cli_errmsg("bytecode: array type %u has invalid alignment\n",
+                                       frame->index + 65);
+                            goto malformed;
+                        }
+                    }
+                    if (!ty->size) {
+                        cli_errmsg("bytecode: array type %u has zero size\n",
+                                   frame->index + 65);
+                        goto malformed;
+                    }
+                    state[frame->index - NUM_STATIC_TYPES] = 2;
+                    top--;
+                    continue;
+                default:
+                    cli_errmsg("bytecode: invalid type kind %u\n", ty->kind);
+                    goto malformed;
+            }
+        }
+    }
+    free(state);
+    free(stack);
+    return CL_SUCCESS;
+
+malformed:
+    free(state);
+    free(stack);
+    return CL_EMALFDB;
 }
 
 cl_error_t cli_bytecode_context_setfuncid(struct cli_bc_ctx *ctx, const struct cli_bc *bc, unsigned funcid)
@@ -1049,8 +1235,10 @@ static cl_error_t parseTypes(struct cli_bc *bc, unsigned char *buffer)
                     /* for interpreter, pointers 64-bit there */
                     ty->size = ty->align = 8;
                 } else {
-                    ty->size  = ty->numElements * typesize(bc, ty->containedTypes[0]);
-                    ty->align = typealign(bc, ty->containedTypes[0]);
+                    /* Array layouts are resolved after every type has been
+                     * parsed, so forward references cannot observe an
+                     * uninitialized type entry. */
+                    ty->size = ty->align = 0;
                 }
                 break;
             default:
@@ -1058,14 +1246,7 @@ static cl_error_t parseTypes(struct cli_bc *bc, unsigned char *buffer)
                 return CL_EMALFDB;
         }
     }
-    for (i = (BC_START_TID - 65); i < bc->num_types - 1; i++) {
-        struct cli_bc_type *ty = &bc->types[i];
-        if (ty->kind == DArrayType) {
-            ty->size  = ty->numElements * typesize(bc, ty->containedTypes[0]);
-            ty->align = typealign(bc, ty->containedTypes[0]);
-        }
-    }
-    return CL_SUCCESS;
+    return validate_type_layouts(bc);
 }
 
 /* checks whether the type described by tid is the same as the one described by
@@ -1182,42 +1363,183 @@ static cl_error_t parseApis(struct cli_bc *bc, unsigned char *buffer)
     return CL_SUCCESS;
 }
 
-static uint16_t type_components(struct cli_bc *bc, uint16_t id, bool *ok)
+struct bytecode_component_frame {
+    uint16_t id;
+    unsigned next;
+    uint64_t total;
+};
+
+static unsigned type_components(struct cli_bc *bc, uint16_t id, bool *ok)
 {
-    unsigned i, sum = 0;
-    const struct cli_bc_type *ty;
+    unsigned frame_count, top;
+    unsigned result = 0;
+    bool have_result = false;
+    struct bytecode_component_frame *stack;
+
     if (!*ok)
         return 0;
-    if (id <= 64)
-        return 1;
-    if (bc->num_types <= NUM_STATIC_TYPES ||
-        (unsigned)id - 65 >= bc->num_types - 1) {
-        cli_errmsg("bytecode: type id out of range for constant: %u\n", id);
+    if (bc->num_types <= NUM_STATIC_TYPES) {
+        cli_errmsg("bytecode: invalid type table for constant\n");
         *ok = false;
         return 0;
     }
-    ty = &bc->types[id - 65];
-    /* TODO: protect against recursive types */
-    switch (ty->kind) {
-        case DFunctionType:
-            cli_errmsg("bytecode: function type not accepted for constant: %u\n", id);
-            /* don't accept functions as constant initializers */
-            *ok = false;
-            return 0;
-        case DPointerType:
-            return 2;
-        case DStructType:
-        case DPackedStructType:
-            for (i = 0; i < ty->numElements; i++) {
-                sum += type_components(bc, ty->containedTypes[i], ok);
-            }
-            return sum;
-        case DArrayType:
-            return type_components(bc, ty->containedTypes[0], ok) * ty->numElements;
-        default:
-            *ok = false;
-            return 0;
+    frame_count = bc->num_types - NUM_STATIC_TYPES;
+    if (frame_count > (unsigned)UINT16_MAX)
+        frame_count = UINT16_MAX;
+    if (frame_count > CLI_MAX_ALLOCATION / sizeof(*stack)) {
+        cli_errmsg("bytecode: type component traversal is too large\n");
+        *ok = false;
+        return 0;
     }
+    stack = cli_max_malloc(frame_count * sizeof(*stack));
+    if (!stack) {
+        cli_errmsg("bytecode: unable to allocate type component traversal\n");
+        *ok = false;
+        return 0;
+    }
+    top = 0;
+    stack[top].id    = id & 0x7fff;
+    stack[top].next  = 0;
+    stack[top].total = 0;
+    top++;
+
+    while (top && *ok) {
+        struct bytecode_component_frame *frame = &stack[top - 1];
+        unsigned index;
+        unsigned child_count;
+        const struct cli_bc_type *ty;
+        uint16_t child;
+
+        if ((frame->id & 0x7fff) <= 64) {
+            result      = 1;
+            have_result = true;
+        } else if (!bytecode_type_index(bc, frame->id, &index)) {
+            cli_errmsg("bytecode: type id out of range for constant: %u\n",
+                       frame->id);
+            *ok = false;
+            break;
+        } else {
+            ty = &bc->types[index];
+            switch (ty->kind) {
+                case DFunctionType:
+                    cli_errmsg("bytecode: function type not accepted for constant: %u\n",
+                               frame->id);
+                    *ok = false;
+                    break;
+                case DPointerType:
+                    result      = 2;
+                    have_result = true;
+                    break;
+                case DStructType:
+                case DPackedStructType:
+                    child_count = ty->numElements;
+                    if (child_count && !ty->containedTypes) {
+                        cli_errmsg("bytecode: structure constant type is malformed: %u\n",
+                                   frame->id);
+                        *ok = false;
+                        break;
+                    }
+                    if (frame->next == child_count) {
+                        if (!frame->total ||
+                            frame->total > CLI_MAX_ALLOCATION / sizeof(*bc->globals[0])) {
+                            cli_errmsg("bytecode: structure constant is too large or empty\n");
+                            *ok = false;
+                            break;
+                        }
+                        result      = (unsigned)frame->total;
+                        have_result = true;
+                        break;
+                    }
+                    child = ty->containedTypes[frame->next++];
+                    if (child >= BC_START_TID) {
+                        unsigned j;
+                        for (j = 0; j < top; j++) {
+                            if (stack[j].id == (child & 0x7fff)) {
+                                cli_errmsg("bytecode: recursive constant type %u\n", child);
+                                *ok = false;
+                                break;
+                            }
+                        }
+                        if (!*ok)
+                            break;
+                    }
+                    if (top >= frame_count) {
+                        cli_errmsg("bytecode: constant type traversal is too deep\n");
+                        *ok = false;
+                        break;
+                    }
+                    stack[top].id    = child & 0x7fff;
+                    stack[top].next  = 0;
+                    stack[top].total = 0;
+                    top++;
+                    continue;
+                case DArrayType:
+                    if (!ty->containedTypes || !ty->numElements) {
+                        cli_errmsg("bytecode: array constant type is malformed: %u\n",
+                                   frame->id);
+                        *ok = false;
+                        break;
+                    }
+                    if (frame->next == 0) {
+                        frame->next = 1;
+                        child       = ty->containedTypes[0];
+                        if (child >= BC_START_TID) {
+                            unsigned j;
+                            for (j = 0; j < top; j++) {
+                                if (stack[j].id == (child & 0x7fff)) {
+                                    cli_errmsg("bytecode: recursive array constant type %u\n",
+                                               child);
+                                    *ok = false;
+                                    break;
+                                }
+                            }
+                            if (!*ok)
+                                break;
+                        }
+                        if (top >= frame_count) {
+                            cli_errmsg("bytecode: constant type traversal is too deep\n");
+                            *ok = false;
+                            break;
+                        }
+                        stack[top].id    = child & 0x7fff;
+                        stack[top].next  = 0;
+                        stack[top].total = 0;
+                        top++;
+                        continue;
+                    }
+                    if (!frame->total ||
+                        (uint64_t)frame->total >
+                            CLI_MAX_ALLOCATION / sizeof(*bc->globals[0]) / ty->numElements) {
+                        cli_errmsg("bytecode: array constant is too large or empty\n");
+                        *ok = false;
+                        break;
+                    }
+                    result      = (unsigned)(frame->total * ty->numElements);
+                    have_result = true;
+                    break;
+                default:
+                    cli_errmsg("bytecode: invalid constant type kind %u\n", ty->kind);
+                    *ok = false;
+                    break;
+            }
+        }
+
+        if (have_result) {
+            top--;
+            if (top) {
+                if (stack[top - 1].total >
+                    CLI_MAX_ALLOCATION / sizeof(*bc->globals[0]) - result) {
+                    cli_errmsg("bytecode: constant component count is too large\n");
+                    *ok = false;
+                } else {
+                    stack[top - 1].total += result;
+                }
+                have_result = false;
+            }
+        }
+    }
+    free(stack);
+    return *ok && !top ? result : 0;
 }
 
 static void readConstant(struct cli_bc *bc, unsigned i, unsigned comp,

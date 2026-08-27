@@ -693,6 +693,66 @@ done:
     return rc;
 }
 
+static cl_error_t bytecode_load_mutated_type_fixture(int mutation)
+{
+    const char *fixture = "input" PATHSEP "bytecode_sigs" PATHSEP
+                          "Clamav-Unit-Test-Signature.cbc";
+    char line[8192];
+    struct cli_bc bc;
+    FILE *input;
+    FILE *mutated;
+    int fd;
+    int found = 0;
+    cl_error_t rc = CL_EOPEN;
+
+    fd = open_testfile(fixture, O_RDONLY);
+    if (fd < 0)
+        return CL_EOPEN;
+    input = fdopen(fd, "r");
+    if (input == NULL) {
+        close(fd);
+        return CL_EOPEN;
+    }
+    mutated = tmpfile();
+    if (mutated == NULL) {
+        fclose(input);
+        return CL_ETMPFILE;
+    }
+    while (fgets(line, sizeof(line), input) != NULL) {
+        if (line[0] == 'T') {
+            /* The fixture's first dynamic type is [1 x i64].  Turn it into
+             * { self } or retain the array shape with UINT_MAX elements. */
+            if (mutation == 1) {
+                if (fwrite(line, 1, 3, mutated) != 3 ||
+                    fputs("caabed", mutated) == EOF ||
+                    fputs(line + 8, mutated) == EOF)
+                    goto done;
+            } else if (mutation == 2) {
+                if (fwrite(line, 1, 4, mutated) != 4 ||
+                    fputs("hooooooooah", mutated) == EOF ||
+                    fputs(line + 8, mutated) == EOF)
+                    goto done;
+            } else if (fputs(line, mutated) == EOF) {
+                goto done;
+            }
+            found = 1;
+        } else if (fputs(line, mutated) == EOF) {
+            goto done;
+        }
+    }
+    if (!found || ferror(input) || fflush(mutated) != 0 ||
+        fseek(mutated, 0, SEEK_SET) != 0)
+        goto done;
+    memset(&bc, 0, sizeof(bc));
+    rc = cli_bytecode_load(&bc, mutated, NULL, 1, 0);
+    cli_bytecode_destroy(&bc);
+
+done:
+    fclose(mutated);
+    fclose(input);
+    return rc;
+}
+
 START_TEST(test_bytecode_map_read_failure_is_fail_visible)
 {
     struct bytecode_failing_pread_state pread_state;
@@ -1172,6 +1232,13 @@ START_TEST(test_bytecode_loader_rejects_truncated_records)
         cli_bytecode_destroy(&bc);
         fclose(truncated);
     }
+}
+END_TEST
+
+START_TEST(test_bytecode_loader_rejects_recursive_or_oversized_types)
+{
+    ck_assert_int_eq(bytecode_load_mutated_type_fixture(1), CL_EMALFDB);
+    ck_assert_int_eq(bytecode_load_mutated_type_fixture(2), CL_EMALFDB);
 }
 END_TEST
 
@@ -1738,6 +1805,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_jsnorm_limit_failure_releases_input);
     tcase_add_test(tc_cli_valid_loader, test_bytecode_loader_accepts_valid_fixture);
     tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_truncated_records);
+    tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_recursive_or_oversized_types);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
 #endif

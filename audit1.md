@@ -197,6 +197,29 @@ read failure, invalid trailer, and missing-map admission. Full DMG corpus,
 sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
 
+## Bytecode type-layout admission audit — 2026-08-27
+
+The bytecode loader previously computed parsed array and structure sizes with
+recursive unchecked arithmetic. A self-referential by-value type could recurse
+until stack exhaustion, while an oversized array or structure could wrap its
+32-bit layout size before global/interpreter allocation. Constant component
+counting repeated the recursive traversal and could likewise overflow.
+
+Type layout is now resolved after the complete type table is parsed using an
+explicit bounded traversal. Pointers and function signatures remain
+non-recursive layout edges; recursive by-value arrays/structures, empty or
+oversized layouts, invalid alignments, and out-of-range children are rejected
+as malformed bytecode. Constant component traversal is also iterative and
+checks the individual allocation ceiling before its result is used.
+
+The current-source bytecode object and full bytecode unit-test translation
+unit pass production GCC warning-enabled syntax checks. The recursive and
+UINT_MAX-array loader regressions are registered but require a fresh
+production-linked TCase runtime; the reused Docker build has no overlay space
+for that relink. Full bytecode fixture/interpreter/JIT corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
+
 ## CPIO zero-name member admission — 2026-08-26
 
 The old binary, ODC, newc, and CRC CPIO handlers previously accepted a member
