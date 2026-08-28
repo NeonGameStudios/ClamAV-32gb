@@ -334,6 +334,17 @@ struct hfsPlusReferenceEntry {
 } __attribute__((__packed__));
 typedef struct hfsPlusReferenceEntry hfsPlusReferenceEntry;
 
+static inline cl_error_t cli_hfsplus_resource_reference_offset(uint64_t instance_index, uint64_t *offset)
+{
+    if (offset == NULL)
+        return CL_ENULLARG;
+    if (instance_index > UINT64_MAX / sizeof(hfsPlusReferenceEntry))
+        return CL_EFORMAT;
+
+    *offset = instance_index * sizeof(hfsPlusReferenceEntry);
+    return CL_SUCCESS;
+}
+
 struct hfsPlusResourceBlockTable {
     uint32_t offset;
     uint32_t length;

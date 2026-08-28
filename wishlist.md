@@ -1,5 +1,18 @@
 # Wishlist
 
+## HFS+ compressed-resource index width — 2026-08-28
+
+- Keep compressed-resource instance accumulation and packed reference-entry
+  multiplication in checked 64-bit arithmetic. Convert both the reference
+  seek offset and the resource data offset to native `off_t` only after
+  round-trip validation, and preserve a sticky incomplete, non-cacheable
+  result for overflow or unrepresentable offsets.
+- The current HFS+ source passes warning-enabled GCC syntax checking, and an
+  isolated current-header oracle covers null, ordinary, and overflowing
+  reference indices. Keep production-linked HFS+ corpus, sanitizer,
+  production-CVD/service, materialized large-file, Sonic1, and final HFS+
+  qualification open.
+
 ## UnRAR declared-output bound — 2026-08-28
 
 - Keep optional UnRAR extraction bounded by the member's declared unpacked

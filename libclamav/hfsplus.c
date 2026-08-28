@@ -1060,8 +1060,8 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
     hfsPlusResourceType resourceType;
     hfsPlusReferenceEntry entry;
     int i;
-    int cmpfInstanceIdx = -1;
-    int curInstanceIdx  = 0;
+    uint64_t cmpfInstanceIdx = UINT64_MAX;
+    uint64_t curInstanceIdx  = 0;
     size_t dataOffset;
     uint32_t dataLength;
 
@@ -1114,7 +1114,7 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
         resourceType.referenceListOffset = be16_to_host(resourceType.referenceListOffset);
 
         if (memcmp(resourceType.type, "cmpf", 4) == 0) {
-            if (cmpfInstanceIdx != -1) {
+            if (cmpfInstanceIdx != UINT64_MAX) {
                 cli_dbgmsg("hfsplus_seek_to_cmpf_resource: There are several cmpf resource types in the file\n");
                 cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type table is ambiguous");
                 status = CL_EFORMAT;
@@ -1125,21 +1125,45 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
             cli_dbgmsg("Found compressed resource type!\n");
         }
 
-        curInstanceIdx += resourceType.instanceCount + 1;
+        if (curInstanceIdx > UINT64_MAX - ((uint64_t)resourceType.instanceCount + 1U)) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource instance index overflowed\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ resource instance index overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        curInstanceIdx += (uint64_t)resourceType.instanceCount + 1U;
     }
 
-    if (cmpfInstanceIdx < 0) {
+    if (cmpfInstanceIdx == UINT64_MAX) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Didn't find cmpf resource type\n");
         cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type is missing");
         status = CL_EFORMAT;
         goto done;
     }
 
-    if (lseek(fd, cmpfInstanceIdx * sizeof(hfsPlusReferenceEntry), SEEK_CUR) < 0) {
-        cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to instance index\n");
-        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource index could not be located completely");
-        status = CL_ESEEK;
-        goto done;
+    {
+        uint64_t reference_offset64 = 0;
+        off_t reference_offset;
+
+        if (cli_hfsplus_resource_reference_offset(cmpfInstanceIdx, &reference_offset64) != CL_SUCCESS) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource reference index overflowed\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ resource reference index overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        reference_offset     = (off_t)reference_offset64;
+        if (reference_offset < 0 || (uint64_t)reference_offset != reference_offset64) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource reference index is not representable\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ resource reference index is not representable");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if (lseek(fd, reference_offset, SEEK_CUR) < 0) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to instance index\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource index could not be located completely");
+            status = CL_ESEEK;
+            goto done;
+        }
     }
 
     if (cli_readn(fd, &entry, sizeof(entry)) != sizeof(entry)) {
@@ -1151,11 +1175,30 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
 
     dataOffset = (entry.resourceDataOffset[0] << 16) | (entry.resourceDataOffset[1] << 8) | entry.resourceDataOffset[2];
 
-    if (lseek(fd, resourceHeader.dataOffset + dataOffset, SEEK_SET) < 0) {
-        cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to data offset\n");
-        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource data could not be located completely");
-        status = CL_ESEEK;
-        goto done;
+    {
+        uint64_t data_offset64;
+        off_t data_offset;
+
+        if ((uint64_t)dataOffset > UINT64_MAX - (uint64_t)resourceHeader.dataOffset) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource data offset overflowed\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource data offset overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        data_offset64 = (uint64_t)resourceHeader.dataOffset + (uint64_t)dataOffset;
+        data_offset    = (off_t)data_offset64;
+        if (data_offset < 0 || (uint64_t)data_offset != data_offset64) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource data offset is not representable\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource data offset is not representable");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if (lseek(fd, data_offset, SEEK_SET) < 0) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to data offset\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource data could not be located completely");
+            status = CL_ESEEK;
+            goto done;
+        }
     }
 
     if (cli_readn(fd, &dataLength, sizeof(dataLength)) != sizeof(dataLength)) {

@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## HFS+ compressed-resource index width — 2026-08-28
+
+The HFS+ compressed-resource map accumulated resource instance counts in a
+signed `int` and multiplied the selected index directly by the packed
+reference-entry size before seeking. A hostile resource-type table could wrap
+the cumulative index or produce an offset that was not representable by the
+native `off_t`; the resource data-base offset was also added without an
+explicit width check. The current source now accumulates in `uint64_t`, checks
+the increment, factors reference-index multiplication through
+`cli_hfsplus_resource_reference_offset()`, and checks both reference and data
+offset conversions before `lseek()`. Each failure records a sticky incomplete
+reason and a non-cacheable format result. The focused header oracle exercises
+null, ordinary, and overflowing reference indices and passes in the existing
+Docker GCC environment; the HFS+ source passes warning-enabled GCC syntax
+checking. Full production-linked HFS+ corpus, sanitizer, resource-measurement,
+production-CVD/service, materialized large-file, Sonic1, and final HFS+
+qualification remain open.
+
 ## UnRAR declared-output bound — 2026-08-28
 
 The optional UnRAR path reserved each member's declared unpacked size but

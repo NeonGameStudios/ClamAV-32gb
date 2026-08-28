@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HFS+ compressed-resource index width — 2026-08-28
+
+HFS+ compressed-resource discovery now accumulates resource instance counts in
+checked `uint64_t` arithmetic instead of signed `int`, and the packed
+reference-entry multiplication is checked before conversion to native
+`off_t`. The resource header data offset and reference seek offset both use
+round-trip representability checks before `lseek()`. Overflow and conversion
+failures mark the layer incomplete and non-cacheable. The focused null,
+ordinary, and overflowing-index header oracle passes in the existing Docker
+GCC environment, and the HFS+ source passes warning-enabled GCC syntax
+checking. Full production-linked HFS+ corpus, sanitizer, resource-measurement,
+production-CVD/service, materialized large-file, Sonic1, and final HFS+
+qualification remain required.
+
 ## UnRAR declared-output bound — 2026-08-28
 
 The optional UnRAR extraction path now passes each member's declared 64-bit
