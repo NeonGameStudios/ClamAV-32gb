@@ -6061,3 +6061,11 @@ Added explicit engine admission for CWS/ZWS decompression before temporary-outpu
   missing engine, and `test_bytecode_context_cleanup_without_engine_is_safe`
   covers a real temporary file. Retain full bytecode execution, sanitizer,
   production-CVD/service, materialized large-file, Sonic1, and release gates.
+
+## PDF parser engine admission — 2026-08-27
+
+- Keep direct PDF parser calls fail-visible when a recognized map has no
+  owning engine; reject before limit accounting or temporary-output setup.
+- test_pdf_missing_engine_is_fail_visible covers the boundary. Retain
+  complete PDF corpus, sanitizer, production-CVD/service, materialized
+  large-file, Sonic1, and release qualification gates.

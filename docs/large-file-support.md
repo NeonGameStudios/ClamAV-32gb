@@ -8625,3 +8625,13 @@ a real temporary file and no engine, and the current bytecode and unit
 translation units pass the established Docker GCC syntax checks. Full bytecode
 execution, sanitizer, production-CVD/service, materialized large-file, Sonic1,
 and release qualification remain open.
+
+## PDF parser engine admission — 2026-08-27
+
+The direct PDF parser entry now rejects a valid input map without an attached
+engine before entering limit, temporary-output, or parser state that assumes
+engine ownership. `test_pdf_missing_engine_is_fail_visible` covers the
+recognized-map boundary and preserves the existing null-context result. The
+current PDF and unit translation units pass the established Docker GCC syntax
+checks; complete PDF corpus, sanitizer, production-CVD/service, materialized
+large-file, Sonic1, and release qualification remain open.

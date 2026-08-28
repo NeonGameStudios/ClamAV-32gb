@@ -12199,3 +12199,13 @@ now treat a missing engine as the default remove-temporary policy, and
 temporary file with no engine. The capability remains pending until full
 bytecode execution, sanitizer, production-CVD/service, materialized large-file,
 Sonic1, and release qualification evidence are complete.
+
+## PDF parser engine admission audit — 2026-08-27
+
+The direct PDF parser entry validated its context and fmap but did not validate
+the owning engine before entering code that uses engine limits and
+temporary-output policy. The parser now returns CL_ENULLARG for a recognized
+map without an engine, and test_pdf_missing_engine_is_fail_visible covers the
+boundary without marking the input as a malformed PDF. Complete PDF corpus,
+sanitizer, production-CVD/service, materialized large-file, Sonic1, and
+release qualification evidence remain required.
