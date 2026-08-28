@@ -18980,6 +18980,27 @@ START_TEST(test_tar_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tar_missing_engine_is_fail_visible)
+{
+    uint8_t data[3 * 512] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    tar_test_make_posix_header(data, "payload", 3, '0');
+    memcpy(data + 512, "MZP", 3);
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_untar(tmpdir, 1, &ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static const void *tar_initial_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)map;
@@ -42786,6 +42807,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tar, test_tar_end_marker_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_time_limit_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_missing_map_is_fail_visible);
+    tcase_add_test(tc_tar, test_tar_missing_engine_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_initial_header_read_failure_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_invalid_magic_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_temporary_limit_is_fail_visible);
