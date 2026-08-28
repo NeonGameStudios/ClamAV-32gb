@@ -5670,6 +5670,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                         cli_dbgmsg("MBR signature found at " STDu64 "\n", (uint64_t)fpt->offset);
                                         nret = cli_merge_scan_status(nret, cli_scanmbr(ctx, 0));
                                     }
+                                } else if (iret != CL_EFORMAT && iret != CL_SUCCESS && iret != CL_TYPE_GPT) {
+                                    /* A malformed MBR candidate is only a
+                                     * rejected weak match.  Operational
+                                     * failures, however, mean that the
+                                     * candidate could not be confirmed and
+                                     * must remain visible to the containing
+                                     * scan instead of falling through as a
+                                     * clean raw-only result. */
+                                    cli_mark_scan_incomplete(ctx,
+                                                             "MBR/GPT type confirmation could not complete");
+                                    nret = cli_merge_scan_status(nret, iret);
                                 }
                             }
                         }

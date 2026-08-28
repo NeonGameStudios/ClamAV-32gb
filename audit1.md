@@ -12408,3 +12408,18 @@ entries and verifies that this invalid API boundary does not falsely set
 sticky incomplete or cache-taint state. Complete Rust parser corpus,
 sanitizer, production-CVD/service, materialized large-file, Sonic1, and
 release qualification evidence remain required.
+## MBR/GPT type-confirmation audit — 2026-08-27
+
+The embedded file-type recognition path called `cli_mbr_check2()` to distinguish
+an MBR from a protective GPT, but discarded every result other than a confirmed
+GPT or a clean MBR. An in-range fmap read failure while confirming the
+partition table could therefore fall through to the parent raw scan without a
+fail-visible incomplete result. `scanraw()` now preserves non-`CL_EFORMAT`
+confirmation failures and marks the containing layer incomplete; malformed
+weak candidates remain rejected without tainting the parent. The new
+`test_mbr_type_confirmation_read_failure_is_fail_visible` regression exercises
+the public scan-map path with a conditional partition-table read failure and
+requires `CL_EREAD`, cleared output state, and cache taint. Current-source GCC
+syntax and source-guard evidence remain required alongside the complete
+partition corpus, sanitizer, production-CVD/service, materialized large-file,
+Linux x86-64, and Sonic1 qualification gates.

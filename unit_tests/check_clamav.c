@@ -21631,6 +21631,51 @@ START_TEST(test_mbr_partition_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbr_type_confirmation_read_failure_is_fail_visible)
+{
+    uint8_t data[1024] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    /* The MBR type signature is available at the end of sector zero, but
+     * confirmation still needs the partition table beginning at offset 446.
+     * Fail that second read to exercise scanraw()'s MBR/GPT confirmation
+     * boundary rather than the direct cli_scanmbr() entry point. */
+    data[510] = 0x55;
+    data[511] = 0xaa;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need   = partition_boot_record_read_failure;
+    verdict     = CL_VERDICT_STRONG_INDICATOR;
+    last_alert  = "stale";
+    scanned     = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_TEXT_ASCII", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_gpt_partition_read_failure_is_fail_visible)
 {
     uint8_t data[6 * 512] = {0};
@@ -43021,6 +43066,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_mbr);
     tcase_add_checked_fixture(tc_mbr, cl_setup, cl_teardown);
     tcase_add_test(tc_mbr, test_mbr_partition_read_failure_is_fail_visible);
+    tcase_add_test(tc_mbr, test_mbr_type_confirmation_read_failure_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_partition_limit_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_missing_map_entry_points_are_fail_visible);
 #if SIZE_MAX > UINT32_MAX

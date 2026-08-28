@@ -6221,3 +6221,13 @@ qualification gates.
 - Retain complete Rust parser corpus, sanitizer, production-CVD/service,
   materialized large-file, certified Linux x86-64, Sonic1, and release
   qualification gates.
+## MBR/GPT type-confirmation admission — 2026-08-27
+
+- Preserve non-format failures from `cli_mbr_check2()` during embedded MBR/GPT
+  type confirmation; an in-range partition-table read failure must remain
+  `CL_EREAD` and mark the containing layer incomplete instead of becoming a
+  clean raw-only result.
+- Keep malformed weak MBR candidates rejectable without tainting the parent.
+- Retain the public `mbr` type-confirmation regression and complete partition
+  corpus, sanitizer, production-CVD/service, materialized large-file,
+  certified Linux x86-64, Sonic1, and release qualification gates.
