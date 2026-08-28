@@ -1989,8 +1989,15 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
     }
 
     /* Fonts - 7 entries of 2 + (n x 40) bytes where n is the first 2 bytes of the entry */
-    if (SCAN_COLLECT_METADATA)
+    if (SCAN_COLLECT_METADATA) {
         fonts = cli_jsonarray(ctx->this_layer_metadata_json, "FontCounts");
+        if (!fonts) {
+            cli_mark_scan_incomplete(ctx, "HWP3 font-count metadata could not be allocated");
+            if (dmap)
+                fmap_free(dmap);
+            return CL_EMEM;
+        }
+    }
 
     for (i = 0; i < 7; i++) {
         uint16_t nfonts;
@@ -2014,8 +2021,15 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
         }
         nfonts = le16_to_host(nfonts);
 
-        if (SCAN_COLLECT_METADATA)
-            cli_jsonint(fonts, NULL, nfonts);
+        if (SCAN_COLLECT_METADATA) {
+            ret = cli_jsonint(fonts, NULL, nfonts);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "HWP3 font-count metadata could not be recorded");
+                if (dmap)
+                    fmap_free(dmap);
+                return ret;
+            }
+        }
 
         hwp3_debug("HWP3.x: Font Entry %d with %u entries @ offset %zu\n", i + 1, nfonts, offset);
         new_offset = offset + (2 + nfonts * 40);
@@ -2042,8 +2056,15 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
     }
     nstyles = le16_to_host(nstyles);
 
-    if (SCAN_COLLECT_METADATA)
-        cli_jsonint(ctx->this_layer_metadata_json, "StyleCount", nstyles);
+    if (SCAN_COLLECT_METADATA) {
+        ret = cli_jsonint(ctx->this_layer_metadata_json, "StyleCount", nstyles);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HWP3 style-count metadata could not be recorded");
+            if (dmap)
+                fmap_free(dmap);
+            return ret;
+        }
+    }
 
     hwp3_debug("HWP3.x: %u Styles @ offset %zu\n", nstyles, offset);
     new_offset = offset + (2 + nstyles * 238);
@@ -2066,8 +2087,15 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
         return ret;
     }
 
-    if (SCAN_COLLECT_METADATA)
-        cli_jsonint(ctx->this_layer_metadata_json, "ParagraphCount", p);
+    if (SCAN_COLLECT_METADATA) {
+        ret = cli_jsonint(ctx->this_layer_metadata_json, "ParagraphCount", p);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HWP3 paragraph-count metadata could not be recorded");
+            if (dmap)
+                fmap_free(dmap);
+            return ret;
+        }
+    }
 
     last = 0;
     /* 'additional information block #1's - attachments and media */

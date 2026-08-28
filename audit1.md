@@ -558,6 +558,24 @@ complete HWP3 corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and release qualification remain
 open.
 
+## HWP3 metadata failure visibility — 2026-08-28
+
+The HWP3 metadata path previously ignored failure from the `FontCounts` JSON
+array allocation and from the per-font, style-count, and paragraph-count
+metadata writes. Those failures could allow a metadata-requested scan to
+continue without a fail-visible result. `hwp3_cb()` now returns the JSON
+failure status, marks the current layer incomplete, and disables caching for
+each of these required metadata operations; the allocation path reports
+`HWP3 font-count metadata could not be allocated` and returns `CL_EMEM`.
+The current-source HWP object and unit-test object compile with the
+production GCC configuration, and the reduced production-linked
+`hwp_fontmeta_isolated` fixture passes 1/1 for the injected `FontCounts`
+allocation failure, including `CL_EMEM`, the exact sticky reason, and
+non-cacheability. This is focused HWP3 metadata evidence, not complete parser
+qualification; full-C ABI-consistent corpus, sanitizer, certified Linux
+x86-64, materialized large-file, production-CVD/service, Sonic1, and release
+qualification remain open.
+
 ## HWP3 null-context classification — 2026-08-27
 
 The HWP3 direct parser entry returned legacy `CL_EARG` for a null context,

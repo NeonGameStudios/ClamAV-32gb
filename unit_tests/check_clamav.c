@@ -116,6 +116,18 @@ static bool pdf_test_fail_output_window_allocation;
 static unsigned int pdf_test_output_window_allocation_failures;
 #endif
 
+#ifdef CLAMAV_TEST_JSON_WRAP
+extern json_object *__real_cli_jsonarray(json_object *obj, const char *key);
+static int hwp3_test_fail_font_counts;
+
+json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
+{
+    if (hwp3_test_fail_font_counts && key && strcmp(key, "FontCounts") == 0)
+        return NULL;
+    return __real_cli_jsonarray(obj, key);
+}
+#endif
+
 static int fpu_words = FPU_ENDIAN_INITME;
 #define NO_FPU_ENDIAN (fpu_words == FPU_ENDIAN_UNKNOWN)
 #define EA06_SCAN strstr(file, "clam.ea06.exe")
@@ -23660,6 +23672,46 @@ START_TEST(test_hwp3_public_api_read_failure_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_hwp3_font_metadata_allocation_failure_is_fail_visible)
+{
+    uint8_t data[30 + 128 + 1008 + (7 * 2) + 2 + 43 + 8] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    json_object *metadata;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxrechwp3 = 100;
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    ctx.engine = &engine;
+    ctx.options = &options;
+    ctx.fmap = map;
+    ctx.this_layer_metadata_json = metadata;
+    hwp3_test_fail_font_counts = 1;
+
+    ret = cli_scanhwp3(&ctx);
+
+    hwp3_test_fail_font_counts = 0;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWP3 font-count metadata could not be allocated");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(metadata);
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_hwp3_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -43783,6 +43835,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_information_block_length_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_document_info_is_parse_error);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_hwp3, test_hwp3_font_metadata_allocation_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_onenote_dispatch_honors_document_dconf);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_raw_deflate_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_raw_deflate_read_failure_is_fail_visible);

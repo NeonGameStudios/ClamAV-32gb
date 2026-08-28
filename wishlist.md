@@ -110,6 +110,20 @@ qualification remain open.
   corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification open.
 
+## HWP3 metadata failure visibility — 2026-08-28
+
+- Keep `cli_scanhwp3()` fail-visible when metadata collection is requested and
+  the `FontCounts` array or its per-font, style-count, or paragraph-count
+  records cannot be allocated or written. `hwp3_cb()` now returns the failure
+  status, marks the layer incomplete, and disables caching; the allocation
+  boundary records `HWP3 font-count metadata could not be allocated` and
+  returns `CL_EMEM`.
+- The current-source production-linked GCC `hwp_fontmeta_isolated` fixture
+  passes 1/1 for injected `FontCounts` allocation failure, including the
+  exact sticky reason and non-cacheability. Keep full-C ABI-consistent HWP3
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification open.
+
 ## OneNote public compatibility fallback validation — 2026-08-27
 
 - Validate the complete legacy stream before the public `OneNote::from_bytes()`
