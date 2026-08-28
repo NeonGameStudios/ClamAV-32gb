@@ -1063,12 +1063,16 @@ static SRes SzReadHeader2(
   {
     UInt64 type;
     UInt64 size;
+    size_t propertySize;
+    size_t propertyRemaining;
     RINOK(SzReadID(sd, &type));
     if (type == k7zIdEnd)
       break;
     RINOK(SzReadNumber(sd, &size));
     if (size > sd->Size)
       return SZ_ERROR_ARCHIVE;
+    propertySize      = (size_t)size;
+    propertyRemaining = sd->Size;
     if ((UInt64)(int)type != type)
     {
       RINOK(SzSkeepDataSize(sd, size));
@@ -1151,6 +1155,8 @@ static SRes SzReadHeader2(
         RINOK(SzSkeepDataSize(sd, size));
       }
     }
+    if (propertyRemaining - sd->Size != propertySize)
+      return SZ_ERROR_ARCHIVE;
   }
 
   {

@@ -143,6 +143,7 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_msxml, test_msxml_read_fai
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_xz, test_xz_truncated_stream_is_fail_visible)'
 contains libclamav/7z/7zIn.c 'RINOK(SzSkeepData(sd));'
 contains unit_tests/check_clamav.c 'test_7z_archive_property_truncation_is_fail_visible'
+contains unit_tests/check_clamav.c 'test_7z_files_info_property_boundary_is_fail_visible'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_candidate_is_not_confirmed)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_zip_map, test_zip_missing_map_is_fail_visible)'
 contains libclamav/rtf.c 'description_remaining = data->desc_len - data->bread'

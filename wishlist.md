@@ -1,5 +1,16 @@
 # Wishlist
 
+## 7-Zip FilesInfo property-boundary admission — 2026-08-28
+
+- Keep every known `FilesInfo` property within its declared payload and
+  reject both short and oversized `EmptyStream`, `EmptyFile`, name,
+  attribute, and timestamp records before subsequent header IDs are parsed.
+- Retain `test_7z_files_info_property_boundary_is_fail_visible`, the 3/3
+  current-source production-linked 7z TCase, and source guards. Complete
+  7-Zip corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized large-file, Sonic1, and final parser-family qualification
+  remain required.
+
 ## 7-Zip archive-property skip propagation — 2026-08-28
 
 - Keep every declared archive-property skip fail-visible; a truncated

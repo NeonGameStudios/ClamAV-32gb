@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip FilesInfo property-boundary admission — 2026-08-28
+
+Known `FilesInfo` properties now have to consume exactly their declared
+payload size. A short `EmptyStream` declaration can no longer consume the
+following header ID as vector data, and trailing bytes from an oversized
+known property cannot be reinterpreted as more property IDs. The registered
+`test_7z_files_info_property_boundary_is_fail_visible` regression joins the
+archive-property and truncated-header cases in a 3/3 current-source
+production-linked 7z TCase, requiring `CL_EPARSE`, sticky incomplete state,
+and a non-cacheable fmap. Complete 7-Zip corpus, sanitizer,
+production-CVD/service, materialized large-file, certified Linux x86-64,
+Sonic1, and final release qualification remain required.
+
 ## 7-Zip archive-property skip propagation — 2026-08-28
 
 `SzReadArchiveProperties()` now propagates the result of every declared

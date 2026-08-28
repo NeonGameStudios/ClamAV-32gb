@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## 7-Zip FilesInfo property-boundary admission — 2026-08-28
+
+Known 7-Zip `FilesInfo` properties now consume exactly their declared
+payloads. Short properties cannot read the following header ID as data, and
+trailing bytes cannot be reinterpreted as additional properties. The
+current-source production-linked 7z TCase passes 3/3 for the FilesInfo
+boundary, archive-property truncation, and truncated-header regressions,
+requiring `CL_EPARSE`, sticky incomplete state, and a non-cacheable fmap.
+Complete 7-Zip corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized large-file, Sonic1, and final
+parser-family qualification remain required.
+
 ## 7-Zip archive-property skip propagation — 2026-08-28
 
 7-Zip archive-property skips now propagate declared-length failures instead

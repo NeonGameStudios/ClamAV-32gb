@@ -26010,6 +26010,49 @@ START_TEST(test_7z_archive_property_truncation_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_7z_files_info_property_boundary_is_fail_visible)
+{
+    uint8_t data[39] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memcpy(data, "7z\xbc\xaf'\x1c", 6);
+    data[6] = 0;
+    data[7] = 4;
+    zip_stream_write_u64(data + 12, 0U);
+    zip_stream_write_u64(data + 20, 7U);
+    data[32] = 0x01; /* Header */
+    data[33] = 0x05; /* FilesInfo */
+    data[34] = 0x01; /* One file. */
+    data[35] = 0x0e; /* EmptyStream */
+    data[36] = 0x02; /* Two bytes declared, one is consumed. */
+    data[37] = 0x80; /* The file has no stream. */
+    data[38] = 0x00; /* Misleading End consumed by the old parser. */
+    zip_stream_write_u32(data + 28, (uint32_t)crc32(0L, data + 32, 7U));
+
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ctx.engine  = scan_engine;
+    ctx.options = &options;
+    map         = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_7unz(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_7z_read_failure_is_fail_visible)
 {
     uint8_t data[34] = {0};
@@ -44893,6 +44936,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_7z, cl_setup, cl_teardown);
     tcase_add_test(tc_7z, test_7z_truncated_header_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_archive_property_truncation_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_files_info_property_boundary_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_read_failure_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_truncated_member_is_parse_error);
     tcase_add_test(tc_7z, test_7z_output_size_mismatch_is_fail_visible);
