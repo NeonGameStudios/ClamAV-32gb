@@ -623,6 +623,8 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
         cli_mark_scan_incomplete(ctx, "MSPack CAB input map is unavailable");
         return CL_EPARSE;
     }
+    if (NULL == ctx->engine)
+        return CL_ENULLARG;
 
     mspack_fmap.fmap = ctx->fmap;
 
@@ -831,6 +833,8 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "MSPack CHM input map is unavailable");
         return CL_EPARSE;
     }
+    if (NULL == ctx->engine)
+        return CL_ENULLARG;
     mspack_fmap.fmap = ctx->fmap;
 
     memset(&ops_ex, 0, sizeof(struct mspack_system_ex));

@@ -6076,4 +6076,12 @@ large-file, Sonic1, and release qualification gates.
   has no owning engine; reject before deadline or heuristic state access.
 - test_executable_parsers_require_engine covers ELF, Mach-O, and universal
   Mach-O. Retain complete executable corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification gates.
+
+## PE, AutoIt, and MSPack engine admission — 2026-08-27
+
+- Keep direct PE, AutoIt, CAB, and CHM parser entries fail-visible when a
+  recognized map has no owning engine; reject before decoder or temporary
+  state access.
+- Retain complete PE/AutoIt/CAB/CHM corpus, sanitizer, production-CVD/service,
   materialized large-file, Sonic1, and release qualification gates.

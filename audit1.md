@@ -12218,3 +12218,13 @@ entry now returns CL_ENULLARG for a recognized map without engine state, and
 test_executable_parsers_require_engine covers all three paths. Complete
 executable corpus, sanitizer, production-CVD/service, materialized large-file,
 Sonic1, and release qualification evidence remain required.
+
+## PE, AutoIt, and MSPack engine admission audit — 2026-08-27
+
+The direct PE, AutoIt, CAB, and CHM entries validated their maps but could
+reach engine-dependent JSON, deadline, decoder-limit, or temporary-output
+paths without an owning engine. They now return CL_ENULLARG for recognized
+maps without engine state, with focused regressions for PE, AutoIt, and both
+MSPack formats. Complete parser corpora, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification evidence remain
+required.

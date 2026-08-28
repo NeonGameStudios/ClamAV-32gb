@@ -8644,3 +8644,14 @@ access. test_executable_parsers_require_engine covers all three boundaries.
 The current ELF, Mach-O, and unit translation units pass the established Docker
 GCC syntax checks; complete executable corpus, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification remain open.
+
+## PE, AutoIt, and MSPack engine admission — 2026-08-27
+
+The direct PE, AutoIt, CAB, and CHM parser entries now reject recognized maps
+without an attached engine before JSON, deadline, decoder-limit, or
+temporary-output state access. The focused regressions
+test_pe_requires_engine, test_autoit_requires_engine, and
+test_mspack_parsers_require_engine cover these boundaries. The current parser
+and unit translation units pass the established Docker GCC syntax checks;
+complete PE/AutoIt/CAB/CHM corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification remain open.

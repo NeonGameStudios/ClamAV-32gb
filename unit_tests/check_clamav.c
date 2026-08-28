@@ -41861,6 +41861,56 @@ START_TEST(test_executable_parsers_require_engine)
 }
 END_TEST
 
+START_TEST(test_pe_requires_engine)
+{
+    static const uint8_t input[] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanpe(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_autoit_requires_engine)
+{
+    static const uint8_t input[] = {0x35};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanautoit(&ctx, 0), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_mspack_parsers_require_engine)
+{
+    static const uint8_t input[] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanmscab(&ctx, 0), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert_int_eq(cli_scanmschm(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    cl_fmap_close(map);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -42057,6 +42107,9 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_elf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_map, test_elf_missing_map_is_fail_visible);
     tcase_add_test(tc_elf_map, test_executable_parsers_require_engine);
+    tcase_add_test(tc_pe_map, test_pe_requires_engine);
+    tcase_add_test(tc_autoit_map, test_autoit_requires_engine);
+    tcase_add_test(tc_mspack_map, test_mspack_parsers_require_engine);
     tcase_add_test(tc_elf_map, test_elf_unknown_data_encoding_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_truncated_header_is_fail_visible);
