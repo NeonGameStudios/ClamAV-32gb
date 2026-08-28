@@ -12448,3 +12448,16 @@ state without marking the map incomplete or non-cacheable. Current-source GCC
 syntax, source-guard, and focused production-linked evidence remain required
 alongside complete MIME corpus, sanitizer, production-CVD/service,
 materialized large-file, Linux x86-64, and Sonic1 qualification.
+
+## Structured detector scan-options admission audit — 2026-08-27
+
+The direct `cli_scan_structured()` entry rejected a null context, missing fmap,
+and missing engine, but then used `ctx->options->heuristic` after deadline
+admission. A recognized map with an engine and no scan options could therefore
+crash before returning a detector result. The entry now returns `CL_ENULLARG`
+before deadline or detector work, and `test_structured_detector_requires_scan_options`
+covers the boundary without marking the map incomplete or non-cacheable.
+Current-source GCC syntax, source-guard, and focused production-linked evidence
+remain required alongside complete structured-detector corpus, sanitizer,
+production-CVD/service, materialized large-file, Linux x86-64, and Sonic1
+qualification.

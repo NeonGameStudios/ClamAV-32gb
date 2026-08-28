@@ -6241,6 +6241,15 @@ qualification gates.
   sanitizer, production-CVD/service, materialized large-file, certified Linux
   x86-64, Sonic1, and release qualification gates.
 
+## Structured detector scan-options admission — 2026-08-27
+
+- Keep `cli_scan_structured()` fail-visible when a recognized fmap has an
+  owning engine but no scan options; return `CL_ENULLARG` before deadline or
+  detector work.
+- Retain the direct structured-detector regression and complete detector
+  corpus, sanitizer, production-CVD/service, materialized large-file,
+  certified Linux x86-64, Sonic1, and release qualification gates.
+
 ## PDF direct scan-state admission — 2026-08-27
 
 - Keep `cli_pdf()` fail-visible when a recognized fmap is supplied without the
