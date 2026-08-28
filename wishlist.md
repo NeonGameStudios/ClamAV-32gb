@@ -1,5 +1,20 @@
 # Wishlist
 
+## SIS 9.x fixed-field boundary and header origin — 2026-08-28
+
+- Keep SIS 9.x traversal rooted after the four-UID header and require every
+  fixed-width nested field payload before reading its metadata; short
+  `ARRAY`, `FILEDATA`, and `COMPRESSED` fields must become incomplete
+  `CL_EPARSE` results without crossing field boundaries or underflowing the
+  remaining-size counter.
+- Retain `test_sis9x_short_nested_field_is_fail_visible` and its source guards.
+  The current SIS and unit sources compile with production GCC; a
+  current-source GCC direct-parser runner and an ASan/UBSan direct-parser
+  runner both pass with sticky incomplete state and disabled caching. Keep
+  production-linked Check execution, full SIS corpus, certified Linux,
+  production-CVD/service, materialized large-file, Sonic1, and final
+  parser-family/release evidence open.
+
 ## Shared containment macro coordinate wrap — 2026-08-28
 
 - Keep all shared `CLI_ISCONTAINED*` macros on subtraction-based end-range

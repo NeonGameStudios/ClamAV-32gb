@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## SIS 9.x fixed-field boundary and header origin — 2026-08-28
+
+SIS 9.x traversal now starts after the 16-byte UID header and verifies that
+each nested `ARRAY`, `FILEDATA`, and `COMPRESSED` field contains its fixed
+metadata before reading it. A short compressed field can no longer consume
+the next field or underflow its remaining-size counter. The registered
+short-nested-field regression, current-source GCC direct-parser runner, and
+ASan/UBSan direct-parser runner all preserve `CL_EPARSE`, sticky incomplete
+state, and disabled caching. Production-linked Check execution, full SIS
+corpus, certified Linux, production-CVD/service, materialized large-file,
+Sonic1, and final parser-family qualification remain required.
+
 ## Shared containment macro coordinate wrap — 2026-08-28
 
 The shared `CLI_ISCONTAINED*` macros now validate subrange starts and compare

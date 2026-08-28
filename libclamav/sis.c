@@ -1040,6 +1040,17 @@ struct SISTREAM {
     cl_error_t failure;
 };
 
+static inline int sis9x_field_has_bytes(struct SISTREAM *s, uint32_t length)
+{
+    if (s->fsize[s->level] < length) {
+        s->incomplete = 1;
+        if (s->failure == CL_CLEAN)
+            s->failure = CL_EPARSE;
+        return 0;
+    }
+    return 1;
+}
+
 static cl_error_t sis9x_checktimelimit(cli_ctx *ctx, struct SISTREAM *s)
 {
     cl_error_t status = sis_checktimelimit(ctx, "SIS 9.x field traversal reached the configured time limit");
@@ -1151,7 +1162,7 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
     unsigned int i;
 
     s->map        = ctx->fmap;
-    s->pos        = 0;
+    s->pos        = SIZEOF_HEADER_UUIDS;
     s->smax       = 0;
     s->sleft      = 0;
     s->level      = 0;
@@ -1196,7 +1207,7 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
             uint32_t atype;
             if (sis9x_checktimelimit(ctx, s) != CL_SUCCESS)
                 break;
-            if (getfield(s, &field) || field != T_ARRAY || getd(s, &atype) || atype != T_DATAUNIT || s->fsize[s->level] < 4) break;
+            if (getfield(s, &field) || field != T_ARRAY || !sis9x_field_has_bytes(s, 4) || getd(s, &atype) || atype != T_DATAUNIT) break;
             s->fsize[s->level] -= 4;
 
             s->level++;
@@ -1213,7 +1224,7 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
                 while (1) { /* DATA::ARRAY::DATAUNIT[x]::ARRAY */
                     if (sis9x_checktimelimit(ctx, s) != CL_SUCCESS)
                         break;
-                    if (getfield(s, &field) || field != T_ARRAY || getd(s, &atype) || atype != T_FILEDATA || s->fsize[s->level] < 4) break;
+                    if (getfield(s, &field) || field != T_ARRAY || !sis9x_field_has_bytes(s, 4) || getd(s, &atype) || atype != T_FILEDATA) break;
                     s->fsize[s->level] -= 4;
 
                     s->level++;
@@ -1238,7 +1249,7 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
                         while (1) { /* DATA::ARRAY::DATAUNIT[x]::ARRAY::FILEDATA[x]::COMPRESSED */
                             if (sis9x_checktimelimit(ctx, s) != CL_SUCCESS)
                                 break;
-                            if (getfield(s, &field) || field != T_COMPRESSED || getd(s, &field) || getd(s, &usize) || getd(s, &usizeh) || usizeh) break;
+                            if (getfield(s, &field) || field != T_COMPRESSED || !sis9x_field_has_bytes(s, 12) || getd(s, &field) || getd(s, &usize) || getd(s, &usizeh) || usizeh) break;
                             s->fsize[s->level] -= 12;
                             cli_dbgmsg("SIS: File is%s compressed - size %x -> %x\n", (field) ? "" : " not", s->fsize[s->level], usize);
                             snprintf(tempf, 1024, "%s" PATHSEP "sis9x%02d", tmpd, i++);

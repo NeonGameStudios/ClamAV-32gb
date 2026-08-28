@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## SIS 9.x fixed-field boundary and header origin — 2026-08-28
+
+The SIS 9.x stream parser initialized its cursor at offset zero even though
+the first 16 bytes are the four SIS UIDs consumed by `cli_scansis()`. It also
+read the fixed metadata in nested `ARRAY`, `FILEDATA`, and `COMPRESSED` fields
+before checking that the enclosing declared field contained those bytes; the
+compressed path could then subtract 12 from a shorter `uint32_t` field and
+underflow its remaining-size counter. The parser now starts at
+`SIZEOF_HEADER_UUIDS` and requires 4 or 12 bytes before each fixed metadata
+read, marking malformed content incomplete with `CL_EPARSE` before consuming
+the next field. The registered `test_sis9x_short_nested_field_is_fail_visible`
+regression and a current-source GCC direct-parser runner both return `CL_EPARSE`
+with sticky incomplete/non-cacheable state; the current SIS and unit sources
+compile with production GCC, and an ASan/UBSan direct-parser runner passes the
+same case without a finding. Full production-linked Check execution, SIS
+corpus, certified Linux, production-CVD/service, materialized large-file,
+Sonic1, and final release qualification remain required.
+
 ## Shared containment macro coordinate wrap — 2026-08-28
 
 The shared `CLI_ISCONTAINED`, `CLI_ISCONTAINED_0_TO`, `CLI_ISCONTAINED_2`,
