@@ -1415,6 +1415,11 @@ int cli_scanxar(cli_ctx *ctx)
                     }
                 }
 
+                if (stream_complete && (lz.avail_in != 0 || at < data_end)) {
+                    cli_mark_scan_incomplete(ctx, "XAR LZMA stream ended before its declared compressed range");
+                    rc = CL_EFORMAT;
+                }
+
                 cli_LzmaShutdown(&lz);
                 __lzma_wrap_free(NULL, buff);
                 if (rc == CL_SUCCESS && !stream_complete) {

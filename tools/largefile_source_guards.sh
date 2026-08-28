@@ -401,6 +401,8 @@ contains unit_tests/check_clamav.c 'test_file_type_detection_read_failure_is_fai
 contains unit_tests/check_clamav.c 'test_graphics_bmp_truncated_header_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_graphics_bmp_corpus_detects_pixel_marker'
 contains unit_tests/check_clamav.c 'test_xar_corpus_detects_embedded_mz'
+contains libclamav/xar.c 'XAR LZMA stream ended before its declared compressed range'
+contains unit_tests/check_clamav.c 'test_xar_lzma_trailing_data_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_graphics_public_api_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'tcase_create("graphics_api")'
 contains unit_tests/check_clamav.c 'tcase_add_checked_fixture(tc_graphics_api, cl_setup, cl_teardown)'

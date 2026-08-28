@@ -21562,6 +21562,61 @@ START_TEST(test_xar_corpus_detects_embedded_mz)
 }
 END_TEST
 
+START_TEST(test_xar_lzma_trailing_data_is_fail_visible)
+{
+    static const uint8_t toc[] =
+        "<?xml version=\"1.0\"?><xar><toc><file><data>"
+        "<offset>0</offset><length>27</length><size>3</size>"
+        "<encoding style=\"application/x-lzma\"/>"
+        "</data></file></toc></xar>";
+    static const uint8_t lzma_member[] = {
+        0x5d, 0x00, 0x00, 0x80, 0x00, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0x00, 0x26, 0x96, 0x86, 0x30,
+        0x0b, 0x9b, 0xff, 0xff, 0xf7, 0x3c, 0x40, 0x00};
+    static const uint8_t trailing = 0xa5;
+    uint8_t *data;
+    size_t data_length;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    data = realloc(data, data_length + sizeof(lzma_member) + 1U);
+    ck_assert_ptr_nonnull(data);
+    memcpy(data + data_length, lzma_member, sizeof(lzma_member));
+    data[data_length + sizeof(lzma_member)] = trailing;
+    data_length += sizeof(lzma_member) + 1U;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_XAR", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
 static size_t xar_member_failure_offset = SIZE_MAX;
 static size_t xar_member_failure_length = SIZE_MAX;
 
@@ -43772,6 +43827,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xar_corpus);
     tcase_add_checked_fixture(tc_xar_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_xar_corpus, test_xar_corpus_detects_embedded_mz);
+    tcase_add_test(tc_xar_corpus, test_xar_lzma_trailing_data_is_fail_visible);
     suite_add_tcase(s, tc_xar_subdoc);
     tcase_add_checked_fixture(tc_xar_subdoc, cl_setup, cl_teardown);
     tcase_add_test(tc_xar_subdoc, test_xar_subdocument_serializes_inner_close);

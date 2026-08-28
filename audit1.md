@@ -12731,3 +12731,19 @@ those boundaries. Current-source GCC syntax, source-guard, and focused
 production-linked evidence remain required alongside full bytecode, sanitizer,
 production-CVD/service, materialized large-file, Linux x86-64, and Sonic1
 qualification.
+
+## XAR LZMA member extent completion audit — 2026-08-28
+
+The XAR LZMA member path accepted a decoder end marker without requiring the
+decoder to consume the complete compressed extent. A valid LZMA payload
+followed by attacker-controlled trailing bytes could therefore be scanned as
+if the declared member were complete. The path now rejects unconsumed decoder
+input or an incompletely consumed declared range with `CL_EFORMAT`, marks the
+layer incomplete, and prevents a clean/cacheable result. The registered
+`test_xar_lzma_trailing_data_is_fail_visible` regression uses a valid LZMA
+member plus one trailing byte. The current-source GCC `xar.c` object and unit
+source compile with the established production flags, and the focused
+production-linked GCC harness returns `CL_EPARSE`, clears the public verdict,
+and leaves the input non-cacheable. Full XAR corpus, sanitizer, production-CVD/
+service, materialized large-file, Linux x86-64, and Sonic1 qualification
+remain required.

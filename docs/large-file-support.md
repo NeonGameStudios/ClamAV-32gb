@@ -205,6 +205,18 @@ behavior, and exact nested matching after the complete image trailer. Complete
 GIF corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
 
+## XAR LZMA member extent completion — 2026-08-28
+
+XAR LZMA extraction now requires the decoder to consume the complete declared
+compressed extent. A stream-end marker followed by trailing bytes is an
+explicit `CL_EFORMAT` incomplete result and cannot reach nested scanning as a
+complete member. The registered current-source regression and focused
+production-linked GCC harness cover a valid LZMA payload plus one trailing
+byte; the harness returns `CL_EPARSE`, clears the public verdict, and leaves
+the input non-cacheable. Full XAR corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.
+
 ## MIME direct-context and first-line admission — 2026-08-27
 
 `cli_mbox()` now rejects a null context or a recognized fmap without the
