@@ -50,16 +50,30 @@ source_manifest_hash=$(sha256sum "$out/provenance/source-manifest.txt" | awk '{ 
 source_commit=$source_manifest_hash
 write_synthetic_elf()
 {
-    printf '\177ELF\002\001\001' > "$1"
-    dd if=/dev/zero bs=1 count=9 >> "$1" 2>/dev/null
-    printf '\003\000\076\000\001\000\000\000' >> "$1"
-    dd if=/dev/zero bs=1 count=48 >> "$1" 2>/dev/null
+    python3 - "$1" "$2" <<'PY'
+import struct
+import sys
+
+output_path, interpreter_path = sys.argv[1:]
+interpreter = interpreter_path.encode("ascii") + b"\0"
+ident = b"\x7fELF\x02\x01\x01" + b"\0" * 9
+header = ident + struct.pack(
+    "<HHIQQQIHHHHHH", 3, 62, 1, 0, 64, 0, 0, 64, 56, 1, 0, 0, 0
+)
+program = struct.pack(
+    "<IIQQQQQQ", 3, 4, 120, 0, 0, len(interpreter), len(interpreter), 1
+)
+with open(output_path, "wb") as stream:
+    stream.write(header + program + interpreter)
+PY
     chmod 755 "$1"
 }
-write_synthetic_elf "$out/artifacts/clamscan"
-write_synthetic_elf "$out/artifacts/clamscan-sanitizer"
 printf 'synthetic runtime component\n' > "$out/artifacts/runtime-components/libclamav.so"
 printf 'synthetic sanitizer runtime component\n' > "$out/artifacts/runtime-components-sanitizer/libclamav.so"
+printf 'synthetic release ELF interpreter\n' > "$out/artifacts/runtime-interpreter"
+printf 'synthetic sanitizer ELF interpreter\n' > "$out/artifacts/runtime-interpreter-sanitizer"
+write_synthetic_elf "$out/artifacts/clamscan" "$out/artifacts/runtime-interpreter"
+write_synthetic_elf "$out/artifacts/clamscan-sanitizer" "$out/artifacts/runtime-interpreter-sanitizer"
 printf 'synthetic release Rust archive\n' > "$out/artifacts/clamav_rust-release.a"
 printf 'synthetic sanitizer Rust archive\n' > "$out/artifacts/clamav_rust-sanitizer.a"
 printf 'CMAKE_BUILD_TYPE:STRING=Release\nCMAKE_HOME_DIRECTORY:INTERNAL=%s\n' "$root" > "$out/provenance/CMakeCache.txt"
@@ -102,6 +116,12 @@ printf '%s -> artifacts/runtime-components/libclamav.so\n' "$out/artifacts/runti
 printf '%s -> artifacts/runtime-components-sanitizer/libclamav.so\n' "$out/artifacts/runtime-components-sanitizer/libclamav.so" > "$out/provenance/runtime-dependency-artifacts-sanitizer.txt"
 (cd "$out" && sha256sum artifacts/runtime-components/libclamav.so) > "$out/provenance/runtime-dependency-hashes.txt"
 (cd "$out" && sha256sum artifacts/runtime-components-sanitizer/libclamav.so) > "$out/provenance/runtime-dependency-hashes-sanitizer.txt"
+printf '%s\t%s\n' "$out/artifacts/runtime-interpreter" \
+    "$(sha256sum "$out/artifacts/runtime-interpreter" | awk '{ print $1 }')" \
+    > "$out/provenance/runtime-interpreter.txt"
+printf '%s\t%s\n' "$out/artifacts/runtime-interpreter-sanitizer" \
+    "$(sha256sum "$out/artifacts/runtime-interpreter-sanitizer" | awk '{ print $1 }')" \
+    > "$out/provenance/runtime-interpreter-sanitizer.txt"
 printf 'synthetic ldd output\n' > "$out/provenance/ldd-clamscan.txt"
 printf 'synthetic ldd output\n' > "$out/provenance/ldd-clamscan-sanitizer.txt"
 printf 'libclamav.so => %s/artifacts/runtime-components/libclamav.so (0x0)\n' "$out" > "$out/provenance/loaded-dependencies.txt"
@@ -155,12 +175,16 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'sanitizer_build_source_manifest_sha256=%s\n' "$sanitizer_build_manifest_hash"
     printf 'runtime_dependency_hashes=provenance/runtime-dependency-hashes.txt\n'
     printf 'runtime_dependency_artifacts=provenance/runtime-dependency-artifacts.txt\n'
+    printf 'runtime_interpreter=provenance/runtime-interpreter.txt\n'
+    printf 'runtime_interpreter_sha256=%s\n' "$(awk -F '\t' '{ print $2 }' "$out/provenance/runtime-interpreter.txt")"
     printf 'runtime_component_dir=artifacts/runtime-components\n'
     printf 'loaded_dependencies=provenance/loaded-dependencies.txt\n'
     printf 'loader_trace=provenance/loader-clamscan.txt\n'
     printf 'loader_injection=disabled\n'
     printf 'sanitizer_dependency_hashes=provenance/runtime-dependency-hashes-sanitizer.txt\n'
     printf 'sanitizer_dependency_artifacts=provenance/runtime-dependency-artifacts-sanitizer.txt\n'
+    printf 'sanitizer_interpreter=provenance/runtime-interpreter-sanitizer.txt\n'
+    printf 'sanitizer_interpreter_sha256=%s\n' "$(awk -F '\t' '{ print $2 }' "$out/provenance/runtime-interpreter-sanitizer.txt")"
     printf 'sanitizer_component_dir=artifacts/runtime-components-sanitizer\n'
     printf 'sanitizer_loaded_dependencies=provenance/loaded-dependencies-sanitizer.txt\n'
     printf 'sanitizer_loader_trace=provenance/loader-clamscan-sanitizer.txt\n'
@@ -490,6 +514,15 @@ if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
     exit 1
 fi
 mv "$out/build-identity.good" "$out/build-identity.txt"
+
+cp "$out/artifacts/runtime-interpreter" "$out/artifacts/runtime-interpreter.good"
+printf 'tampered ELF interpreter\n' > "$out/artifacts/runtime-interpreter"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted a tampered ELF interpreter' >&2
+    exit 1
+fi
+mv "$out/artifacts/runtime-interpreter.good" "$out/artifacts/runtime-interpreter"
 
 refresh_manifest
 printf 'tampered scanner\n' >> "$out/artifacts/clamscan"

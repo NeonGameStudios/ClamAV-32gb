@@ -144,6 +144,8 @@ cancellation_log=$out/cancellation.log
 manifest=$out/SHA256SUMS
 scanner_copy=$out/artifacts/clamscan
 release_rust_library=$out/artifacts/clamav_rust-release.a
+runtime_interpreter=$out/provenance/runtime-interpreter.txt
+sanitizer_interpreter=$out/provenance/runtime-interpreter-sanitizer.txt
 cmake_cache=$out/provenance/CMakeCache.txt
 compile_commands=$out/provenance/compile_commands.json
 sanitizer_cmake_cache=$out/provenance/CMakeCache-sanitizer.txt
@@ -159,7 +161,7 @@ for required in "$metadata" "$host_preflight" "$results" "$policy_log" \
     "$policy_stdin_log" "$policy_edge_stdin_log" "$cancellation_log" \
     "$manifest" "$scanner_copy" "$release_rust_library" "$cmake_cache" "$compile_commands" "$cargo_lock" \
     "$repository_metadata" "$repository_tree" "$repository_index" \
-    "$source_manifest" "$build_source_manifest"; do
+    "$source_manifest" "$build_source_manifest" "$runtime_interpreter"; do
     if [ ! -s "$required" ]; then
         echo "missing runtime evidence: $required" >&2
         exit 1
@@ -190,6 +192,7 @@ if [ "$require_sanitizer" = yes ]; then
         "$out/provenance/loader-clamscan-sanitizer.txt" \
         "$out/provenance/sanitizer-symbols.txt" \
         "$out/provenance/rust-sanitizer-symbols.txt" \
+        "$sanitizer_interpreter" \
         "$sanitizer_cmake_cache" "$sanitizer_compile_commands" \
         "$sanitizer_build_source_manifest"; do
         if [ ! -s "$required" ]; then
@@ -211,6 +214,119 @@ fi
 if ! command -v file >/dev/null 2>&1; then
     echo 'file is required to verify the scanner artifact type' >&2
     exit 2
+fi
+if ! command -v python3 >/dev/null 2>&1; then
+    echo 'python3 is required to verify the selected ELF interpreter' >&2
+    exit 2
+fi
+
+verify_interpreter_record()
+{
+    interpreter_record_file=$1
+    interpreter_record=$(awk -F '\t' '
+        NF != 2 { bad = 1; next }
+        $1 !~ /^\// || $2 !~ /^[0-9a-fA-F]+$/ || length($2) != 64 { bad = 1; next }
+        { count++; path = $1; hash = $2 }
+        END {
+            if (bad || count != 1)
+                exit 1
+            print path "\t" hash
+        }
+    ' "$interpreter_record_file") || {
+        echo "invalid ELF interpreter record: $interpreter_record_file" >&2
+        exit 1
+    }
+    interpreter_path=$(printf '%s\n' "$interpreter_record" | awk -F '\t' '{ print $1 }')
+    interpreter_hash=$(printf '%s\n' "$interpreter_record" | awk -F '\t' '{ print $2 }')
+    if [ ! -f "$interpreter_path" ]; then
+        echo "recorded ELF interpreter is not a regular file: $interpreter_path" >&2
+        exit 1
+    fi
+    actual_interpreter_hash=$(sha256sum "$interpreter_path" | awk '{ print $1 }')
+    if [ "$actual_interpreter_hash" != "$interpreter_hash" ]; then
+        echo "recorded ELF interpreter hash does not verify: $interpreter_path" >&2
+        exit 1
+    fi
+}
+
+elf_interpreter()
+{
+    # Read the executable's PT_INTERP program header directly so verification
+    # does not depend on a host-specific readelf installation.
+    python3 - "$1" <<'PY'
+import struct
+import sys
+
+try:
+    with open(sys.argv[1], "rb") as stream:
+        header = stream.read(64)
+        if len(header) != 64 or header[:7] != b"\x7fELF\x02\x01\x01":
+            raise ValueError
+        phoff = struct.unpack_from("<Q", header, 32)[0]
+        phentsize = struct.unpack_from("<H", header, 54)[0]
+        phnum = struct.unpack_from("<H", header, 56)[0]
+        if phentsize < 56:
+            raise ValueError
+        for index in range(phnum):
+            stream.seek(phoff + index * phentsize)
+            program = stream.read(phentsize)
+            if len(program) < 56:
+                raise ValueError
+            p_type, _, p_offset, _, _, p_filesz, _, _ = struct.unpack_from(
+                "<IIQQQQQQ", program
+            )
+            if p_type == 3:
+                if p_filesz == 0 or p_filesz > 4096:
+                    raise ValueError
+                stream.seek(0, 2)
+                file_size = stream.tell()
+                if p_offset > file_size or p_filesz > file_size - p_offset:
+                    raise ValueError
+                stream.seek(p_offset)
+                value = stream.read(p_filesz)
+                if len(value) != p_filesz or b"\0" not in value:
+                    raise ValueError
+                print(value.split(b"\0", 1)[0].decode("ascii"))
+                break
+except (OSError, OverflowError, UnicodeError, ValueError, struct.error):
+    raise SystemExit(1)
+else:
+    if "value" not in locals():
+        raise SystemExit(1)
+PY
+}
+
+verify_interpreter_record "$runtime_interpreter"
+release_interpreter_path=$interpreter_path
+release_interpreter_hash=$interpreter_hash
+if [ "$(elf_interpreter "$scanner_copy")" != "$release_interpreter_path" ]; then
+    echo 'release scanner PT_INTERP does not match its interpreter record' >&2
+    exit 1
+fi
+grep -Fx 'runtime_interpreter=provenance/runtime-interpreter.txt' "$metadata" >/dev/null 2>&1 || {
+    echo 'evidence does not identify the selected release ELF interpreter' >&2
+    exit 1
+}
+grep -Fx "runtime_interpreter_sha256=$release_interpreter_hash" "$metadata" >/dev/null 2>&1 || {
+    echo 'release ELF interpreter hash does not match build identity' >&2
+    exit 1
+}
+if [ "$require_sanitizer" = yes ]; then
+    verify_interpreter_record "$sanitizer_interpreter"
+    sanitizer_interpreter_path=$interpreter_path
+    sanitizer_interpreter_hash=$interpreter_hash
+    if [ "$(elf_interpreter "$out/artifacts/clamscan-sanitizer")" != "$sanitizer_interpreter_path" ]; then
+        echo 'sanitizer scanner PT_INTERP does not match its interpreter record' >&2
+        exit 1
+    fi
+    grep -Fx 'sanitizer_interpreter=provenance/runtime-interpreter-sanitizer.txt' "$metadata" >/dev/null 2>&1 || {
+        echo 'evidence does not identify the selected sanitizer ELF interpreter' >&2
+        exit 1
+    }
+    grep -Fx "sanitizer_interpreter_sha256=$sanitizer_interpreter_hash" "$metadata" >/dev/null 2>&1 || {
+        echo 'sanitizer ELF interpreter hash does not match build identity' >&2
+        exit 1
+    }
 fi
 (
     cd "$out"

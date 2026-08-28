@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Runtime gate ELF-interpreter binding — 2026-08-28
+
+The release runtime gate previously extracted every absolute path from `ldd`
+output as a loadable dependency. That included the ELF `PT_INTERP` line
+(for example, `/lib64/ld-linux-x86-64.so.2`), which is selected by the
+executable itself and cannot be redirected through `LD_LIBRARY_PATH`. The
+gate then required `ldd` to resolve a copied artifact for that interpreter,
+making valid Linux x86-64 evidence fail closed for the wrong reason.
+
+The gate now records the absolute interpreter selected from `PT_INTERP` and
+its SHA-256 separately, while restricting copied runtime-dependency manifests
+to the resolved `name => path` shared-library records. The post-run verifier
+checks both release and sanitizer interpreter records and their hashes. The
+synthetic verifier suite passes, including a tampered-interpreter rejection
+regression; no release or sanitizer workload evidence is inferred from that
+control test. Full Linux x86-64, production-CVD/service, materialized,
+sanitizer, Sonic1, and final release evidence remain open.
+
 ## OneNote legacy reader declared-range EOF — 2026-08-28
 
 `scan_legacy_reader()` previously treated a zero-byte read as normal end of

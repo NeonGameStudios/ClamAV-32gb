@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Runtime gate ELF-interpreter binding — 2026-08-28
+
+The release evidence gate now treats the ELF `PT_INTERP` loader as a distinct
+runtime component. Absolute paths are copied into the controlled component
+directory only when they are the resolved side of an `ldd` `name => path`
+record; the selected interpreter is recorded separately with its absolute path
+and SHA-256 because `LD_LIBRARY_PATH` cannot replace an executable’s
+interpreter. The post-run verifier checks both release and sanitizer
+interpreter records and rejects a tampered loader. The synthetic verifier
+control suite passes this positive and negative coverage. Linux x86-64,
+production-CVD/service, materialized, sanitizer, Sonic1, and final release
+qualification remain required.
+
 ## OneNote legacy reader declared-range EOF — 2026-08-28
 
 The streaming legacy OneNote reader now distinguishes physical EOF from the

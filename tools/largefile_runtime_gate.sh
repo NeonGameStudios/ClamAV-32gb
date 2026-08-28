@@ -230,8 +230,9 @@ if [ "$(uname -s)" != Linux ] || [ "$(uname -m)" != x86_64 ]; then
 fi
 
 if ! command -v file >/dev/null 2>&1 || ! command -v sha256sum >/dev/null 2>&1 ||
+    ! command -v python3 >/dev/null 2>&1 ||
     [ ! -x "$root/tools/largefile_source_manifest.sh" ]; then
-    echo "runtime-gate requires file, sha256sum, and the source-manifest control" >&2
+    echo "runtime-gate requires file, sha256sum, python3, and the source-manifest control" >&2
     exit 2
 fi
 
@@ -445,6 +446,88 @@ runtime_clamscan=$artifacts/clamscan
 runtime_sanitizer_clamscan=$artifacts/clamscan-sanitizer
 runtime_component_dir=$artifacts/runtime-components
 mkdir -p "$runtime_component_dir"
+
+elf_interpreter()
+{
+    # Read the executable's PT_INTERP program header directly so the evidence
+    # tool does not depend on a host-specific readelf installation.
+    python3 - "$1" <<'PY'
+import struct
+import sys
+
+try:
+    with open(sys.argv[1], "rb") as stream:
+        header = stream.read(64)
+        if len(header) != 64 or header[:7] != b"\x7fELF\x02\x01\x01":
+            raise ValueError
+        phoff = struct.unpack_from("<Q", header, 32)[0]
+        phentsize = struct.unpack_from("<H", header, 54)[0]
+        phnum = struct.unpack_from("<H", header, 56)[0]
+        if phentsize < 56:
+            raise ValueError
+        for index in range(phnum):
+            stream.seek(phoff + index * phentsize)
+            program = stream.read(phentsize)
+            if len(program) < 56:
+                raise ValueError
+            p_type, _, p_offset, _, _, p_filesz, _, _ = struct.unpack_from(
+                "<IIQQQQQQ", program
+            )
+            if p_type == 3:
+                if p_filesz == 0 or p_filesz > 4096:
+                    raise ValueError
+                stream.seek(0, 2)
+                file_size = stream.tell()
+                if p_offset > file_size or p_filesz > file_size - p_offset:
+                    raise ValueError
+                stream.seek(p_offset)
+                value = stream.read(p_filesz)
+                if len(value) != p_filesz or b"\0" not in value:
+                    raise ValueError
+                print(value.split(b"\0", 1)[0].decode("ascii"))
+                break
+except (OSError, OverflowError, UnicodeError, ValueError, struct.error):
+    raise SystemExit(1)
+else:
+    if "value" not in locals():
+        raise SystemExit(1)
+PY
+}
+
+release_interpreter=$(elf_interpreter "$runtime_clamscan")
+case "$release_interpreter" in
+    /*) ;;
+    *)
+        echo 'release scanner does not identify an absolute ELF interpreter' >&2
+        exit 2
+        ;;
+esac
+if [ ! -f "$release_interpreter" ]; then
+    echo "release ELF interpreter is not a regular file: $release_interpreter" >&2
+    exit 2
+fi
+printf '%s\t%s\n' "$release_interpreter" "$(sha256sum "$release_interpreter" | awk '{ print $1 }')" \
+    > "$provenance/runtime-interpreter.txt"
+release_interpreter_sha256=$(awk -F '\t' '{ print $2 }' "$provenance/runtime-interpreter.txt")
+
+if [ -n "$sanitizer_clamscan" ]; then
+    sanitizer_interpreter=$(elf_interpreter "$runtime_sanitizer_clamscan")
+    case "$sanitizer_interpreter" in
+        /*) ;;
+        *)
+            echo 'sanitizer scanner does not identify an absolute ELF interpreter' >&2
+            exit 2
+            ;;
+    esac
+    if [ ! -f "$sanitizer_interpreter" ]; then
+        echo "sanitizer ELF interpreter is not a regular file: $sanitizer_interpreter" >&2
+        exit 2
+    fi
+    printf '%s\t%s\n' "$sanitizer_interpreter" "$(sha256sum "$sanitizer_interpreter" | awk '{ print $1 }')" \
+        > "$provenance/runtime-interpreter-sanitizer.txt"
+    sanitizer_interpreter_sha256=$(awk -F '\t' '{ print $2 }' "$provenance/runtime-interpreter-sanitizer.txt")
+fi
+
 runtime_library_path="$runtime_component_dir"
 if [ -n "$unrar_component_dir" ]; then
     runtime_library_path="$runtime_library_path:$unrar_component_dir"
@@ -460,7 +543,11 @@ if grep -F 'not found' "$provenance/ldd-clamscan.txt" >/dev/null 2>&1; then
     echo "release scanner has unresolved runtime dependencies" >&2
     exit 2
 fi
-awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^\//) print $i }' \
+# The ELF interpreter is selected by PT_INTERP and is not a shared-library
+# dependency resolved through LD_LIBRARY_PATH. Only capture paths on the
+# resolved side of ldd's "name => path" records here; the selected
+# interpreter is recorded and hashed separately above.
+awk '$0 ~ /=>/ { for (i = 1; i <= NF; i++) if ($i ~ /^\//) print $i }' \
     "$provenance/ldd-clamscan.txt" | LC_ALL=C sort -u > "$provenance/runtime-dependencies.txt"
 : > "$provenance/runtime-dependency-artifacts.txt"
 : > "$provenance/runtime-dependency-hashes.txt"
@@ -509,7 +596,7 @@ if [ -n "$sanitizer_clamscan" ]; then
         echo "sanitizer scanner has unresolved runtime dependencies" >&2
         exit 2
     fi
-    awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^\//) print $i }' \
+    awk '$0 ~ /=>/ { for (i = 1; i <= NF; i++) if ($i ~ /^\//) print $i }' \
         "$provenance/ldd-clamscan-sanitizer.txt" | LC_ALL=C sort -u > "$provenance/runtime-dependencies-sanitizer.txt"
     sanitizer_component_dir=$artifacts/runtime-components-sanitizer
     mkdir -p "$sanitizer_component_dir"
@@ -752,6 +839,8 @@ metadata=$out/build-identity.txt
     fi
     printf 'runtime_dependency_hashes=provenance/runtime-dependency-hashes.txt\n'
     printf 'runtime_dependency_artifacts=provenance/runtime-dependency-artifacts.txt\n'
+    printf 'runtime_interpreter=provenance/runtime-interpreter.txt\n'
+    printf 'runtime_interpreter_sha256=%s\n' "$release_interpreter_sha256"
     printf 'runtime_component_dir=artifacts/runtime-components\n'
     printf 'release_rust_library_path=artifacts/clamav_rust-release.a\n'
     printf 'release_rust_library_sha256=%s\n' "$release_rust_library_sha256"
@@ -773,6 +862,8 @@ metadata=$out/build-identity.txt
         LD_LIBRARY_PATH="$sanitizer_loader_path" "$runtime_sanitizer_clamscan" --version
         printf 'sanitizer_dependency_hashes=provenance/runtime-dependency-hashes-sanitizer.txt\n'
         printf 'sanitizer_dependency_artifacts=provenance/runtime-dependency-artifacts-sanitizer.txt\n'
+        printf 'sanitizer_interpreter=provenance/runtime-interpreter-sanitizer.txt\n'
+        printf 'sanitizer_interpreter_sha256=%s\n' "$sanitizer_interpreter_sha256"
         printf 'sanitizer_component_dir=artifacts/runtime-components-sanitizer\n'
         printf 'sanitizer_loaded_dependencies=provenance/loaded-dependencies-sanitizer.txt\n'
         printf 'sanitizer_loader_trace=provenance/loader-clamscan-sanitizer.txt\n'
