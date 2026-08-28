@@ -12470,9 +12470,12 @@ filesystem, or engine-state dereferences. The public and internal entries now
 return `CL_ENULLARG` before those operations, while the existing header parser
 continues to require a complete 512-byte header and preserve read/close
 failures. `test_cvd_api_rejects_null_arguments` covers the direct boundary
-matrix. Current-source GCC syntax, source-guard, and focused production-linked
-evidence remain required alongside production CVD/service parity, sanitizer,
-materialized large-file, Linux x86-64, and Sonic1 qualification.
+matrix; isolated current-source production-linked GCC evidence passes both
+`cvd_api_nulls` (1/1) and `cvd_header_fixture` (1/1), with the latter parsing
+the repository's `test-5.cvd` fixture. Current-source GCC syntax,
+source-guard, and focused production-linked evidence remain required alongside
+production CVD/service parity, sanitizer, materialized large-file, Linux
+x86-64, and Sonic1 qualification.
 
 ## YARA instruction-stream admission audit — 2026-08-27
 

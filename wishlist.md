@@ -6282,6 +6282,7 @@ qualification gates.
 - Keep CVD verify, unpack, database-load, and age helpers fail-visible for null
   paths, directories, engines, and output pointers; return `CL_ENULLARG`
   before filesystem, string, or engine-state access.
-- Retain the direct CVD null-argument regression and complete production-CVD,
-  service-parity, sanitizer, materialized large-file, certified Linux x86-64,
-  Sonic1, and release qualification gates.
+- Retain the direct CVD null-argument regression and the current-source
+  production-linked `cvd_api_nulls` and `cvd_header_fixture` checks (1/1 each),
+  then complete production-CVD, service-parity, sanitizer, materialized
+  large-file, certified Linux x86-64, Sonic1, and release qualification gates.
