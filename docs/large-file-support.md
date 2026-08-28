@@ -9083,3 +9083,15 @@ regression and a current-source production-linked direct runner require
 `CL_EPARSE`, a sticky incomplete reason, and a non-cacheable input. Full ISO
 corpus, sanitizer, production-CVD/service, materialized large-file, Linux
 x86-64, Sonic1, and parser-family qualification remain release gates.
+
+## VBA compressed back-reference admission
+
+The VBA compressed-stream decoder now rejects a copy token whose distance is
+outside the history already produced in the current stream. This prevents an
+unsigned subtraction from wrapping to an unrelated history byte and treating
+malformed module data as complete. The registered
+`test_vba_inflate_stream_rejects_initial_backreference` regression and a
+current-source production-linked direct runner pass 1/1 with `CL_EFORMAT` and
+zero emitted output. Complete OLE/VBA corpus, sanitizer, production-CVD/
+service, materialized large-file, Linux x86-64, Sonic1, and parser-family
+qualification remain release gates.

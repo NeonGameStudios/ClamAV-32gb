@@ -31211,6 +31211,31 @@ START_TEST(test_vba_inflate_stream_matches_legacy_output)
 }
 END_TEST
 
+START_TEST(test_vba_inflate_stream_rejects_initial_backreference)
+{
+    static const unsigned char compressed[] = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
+    struct vba_bounded_test_output output;
+    uint64_t output_size = UINT64_MAX;
+    char path[PATH_MAX];
+    int fd;
+
+    snprintf(path, sizeof(path), "%s/vba-inflate-invalid-backreference", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, compressed, sizeof(compressed)), sizeof(compressed));
+
+    memset(&output, 0, sizeof(output));
+    ck_assert_int_eq(cli_vba_inflate_stream(fd, 0, vba_bounded_test_write,
+                                            &output, &output_size),
+                     CL_EFORMAT);
+    ck_assert_uint_eq(output_size, 0);
+    ck_assert_uint_eq(output.data_size, 0);
+
+    close(fd);
+    unlink(path);
+}
+END_TEST
+
 START_TEST(test_vba_inflate_stream_propagates_output_failure)
 {
     static const unsigned char compressed[] = {
@@ -45210,6 +45235,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_codepage_utf8_stream_rejects_invalid_sequence);
     tcase_add_test(tc_cl, test_codepage_stream_preserves_iconv_state);
     tcase_add_test(tc_cl, test_vba_inflate_stream_matches_legacy_output);
+    tcase_add_test(tc_cl, test_vba_inflate_stream_rejects_initial_backreference);
     tcase_add_test(tc_cl, test_vba_inflate_stream_propagates_output_failure);
 #if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_vba_project_directory_uses_file_backed_input);

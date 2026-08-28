@@ -6545,3 +6545,21 @@ qualification gates.
 - Retain `test_hfsplus_catalog_key_length_padding_is_fail_visible` and complete
   HFS+ corpus, sanitizer, production-CVD/service, materialized large-file,
   certified Linux x86-64, Sonic1, and release qualification.
+## ISO9660 Joliet identifier parity — 2026-08-28
+
+- Reject confirmed Joliet directory identifiers whose byte length is odd;
+  generic UTF-16 conversion must not silently truncate malformed names.
+- Retain `test_iso_joliet_odd_name_length_is_fail_visible`, the source guards,
+  and the current-source production-linked direct 1/1 regression. Complete
+  ISO corpus, sanitizer, production-CVD/service, materialized large-file,
+  certified Linux x86-64, Sonic1, and parser-family qualification remain
+  required.
+## VBA compressed back-reference admission — 2026-08-28
+
+- Reject VBA copy tokens whose distance is not backed by already produced
+  history; never allow `pos - distance - 1` to wrap into the history window.
+- Retain `test_vba_inflate_stream_rejects_initial_backreference`, the source
+  guards, and the current-source production-linked direct 1/1 regression.
+  Complete OLE/VBA corpus, sanitizer, production-CVD/service, materialized
+  large-file, certified Linux x86-64, Sonic1, and parser-family qualification
+  remain required.

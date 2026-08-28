@@ -2258,6 +2258,9 @@ cl_error_t cli_vba_inflate_stream(int fd, off_t offset, cli_vba_inflate_write_cb
                 if (pos > UINT64_MAX - len)
                     return CL_EFORMAT;
 
+                if ((uint64_t)distance >= pos)
+                    return CL_EFORMAT;
+
                 srcpos = pos - distance - 1;
                 if ((((srcpos + len) % VBA_COMPRESSION_WINDOW) < winpos) &&
                     ((winpos + len) < VBA_COMPRESSION_WINDOW) &&

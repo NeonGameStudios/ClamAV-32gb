@@ -12860,3 +12860,20 @@ and verifies the parse result, sticky incomplete state, exact reason, and
 cache taint. Canonical ISO and unit sources remain GCC-checkable; full ISO
 corpus, sanitizer, production-CVD/service, materialized large-file, certified
 Linux x86-64, Sonic1, and final parser-family qualification remain open.
+## VBA compressed back-reference admission audit — 2026-08-28
+
+The VBA compressed-stream decoder computed `pos - distance - 1` without first
+checking that the stream had produced enough history. A first copy token could
+therefore wrap the unsigned position and read an unrelated byte from the
+4 KiB history window, allowing malformed module data to be emitted as if it
+were valid. The decoder now rejects `distance >= pos` as `CL_EFORMAT` before
+the source coordinate is formed; callers retain their existing incomplete and
+non-cacheable handling.
+
+The registered `test_vba_inflate_stream_rejects_initial_backreference` fixture
+drives a first-token back-reference with no prior history and requires
+`CL_EFORMAT`, zero output, and zero reported output bytes. A current-source
+production-linked GCC direct runner passes 1/1. The canonical VBA source and
+unit source remain GCC-checkable; complete OLE/VBA corpus, sanitizer,
+production-CVD/service, materialized large-file, certified Linux x86-64,
+Sonic1, and final parser-family qualification remain open.
