@@ -12365,3 +12365,5 @@ attachment materialization; `test_tnef_missing_engine_is_fail_visible` covers
 a valid attachment boundary. Complete TNEF corpus, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and release
 qualification evidence remain required.
+## MSEXPAND parser admission audit — 2026-08-27
+`cli_msexpand()` validated its fmap and then entered time/limit helpers that require `ctx->engine`, leaving a valid SZDD input with no engine unsafe. The entry now returns `CL_ENULLARG` before those helpers; `test_msexpand_missing_engine_is_fail_visible` covers the valid-header boundary and verifies no false incomplete/cache state. Complete SZDD corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification evidence remain required.

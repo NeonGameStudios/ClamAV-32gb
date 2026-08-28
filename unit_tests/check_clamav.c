@@ -16581,6 +16581,30 @@ START_TEST(test_msexpand_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msexpand_missing_engine_is_fail_visible)
+{
+    static const uint8_t input[14] = {
+        0x53, 0x5a, 0x44, 0x44,
+        0x88, 0xf0, 0x27, 0x33,
+        0x41, 0x00,
+        0x01, 0x00, 0x00, 0x00};
+    cli_ctx ctx;
+    fmap_t *map;
+    uint64_t temporary_reserved = 0;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_msexpand(&ctx, -1, &temporary_reserved), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_msexpand_truncated_output_is_fail_visible)
 {
     uint8_t data[14] = {
@@ -43109,6 +43133,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_msexpand, test_msexpand_null_context_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_invalid_magic_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_missing_map_is_fail_visible);
+    tcase_add_test(tc_msexpand, test_msexpand_missing_engine_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_truncated_output_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_time_limit_is_fail_visible);
     tcase_add_test(tc_msexpand, test_msexpand_corpus_detects_embedded_mz);

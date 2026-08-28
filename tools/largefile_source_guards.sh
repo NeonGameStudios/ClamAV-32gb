@@ -2930,6 +2930,8 @@ contains unit_tests/check_clamav.c 'test_legacy_parser_limit_returns_are_fail_vi
 contains unit_tests/check_clamav.c 'test_msexpand_truncated_output_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_msexpand_header_range_classes_are_fail_visible'
 contains unit_tests/check_clamav.c 'test_msexpand_missing_map_is_fail_visible'
+contains libclamav/msexpand.c 'if (ctx->engine == NULL)'
+contains unit_tests/check_clamav.c 'test_msexpand_missing_engine_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_msexpand_public_api_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'tcase_create("msexpand_map")'
 contains unit_tests/check_clamav.c 'tcase_add_checked_fixture(tc_msexpand_map, cl_setup, cl_teardown)'

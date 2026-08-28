@@ -137,6 +137,10 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
         cli_mark_scan_incomplete(ctx, "MSEXPAND input map is unavailable");
         return CL_EPARSE;
     }
+    if (ctx->engine == NULL) {
+        cli_dbgmsg("MSEXPAND: owning engine was NULL\n");
+        return CL_ENULLARG;
+    }
 
     status = msexpand_checktimelimit(ctx, "MSEXPAND inspection reached the configured time limit");
     if (status != CL_SUCCESS)
