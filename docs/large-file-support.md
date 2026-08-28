@@ -3,6 +3,21 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UnRAR operational status propagation — 2026-08-28
+
+The optional UnRAR bridge now preserves `ERAR_ECREATE`, `ERAR_ECLOSE`,
+`ERAR_EREAD`, and `ERAR_EWRITE` as distinct interface results. The scanner
+maps them to `CL_ECREAT`, `CL_EWRITE`, `CL_EREAD`, and `CL_EWRITE`, so output
+creation, output close, input read, and output write failures cannot be
+reported as a generic format error or clean result. The close case uses
+`CL_EWRITE` because ClamAV has no public close-specific error and
+`RARProcessFile` is closing extracted output. The gated
+`test_rar_backend_error_mapping_is_fail_visible` regression covers all four
+public mappings when UnRAR is enabled. The local production configuration
+does not contain the optional UnRAR backend; decoder-enabled execution,
+production-CVD/service parity, sanitizer, materialized large-file, Sonic1,
+and final RAR qualification remain required.
+
 ## Conditional parser dispatch status initialization — 2026-08-28
 
 `cli_magic_scan()` now initializes its conditional parser result to

@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## UnRAR operational status propagation — 2026-08-28
+
+The optional UnRAR adapter logged `ERAR_ECREATE`, `ERAR_ECLOSE`,
+`ERAR_EREAD`, and `ERAR_EWRITE` but returned the generic `UNRAR_ERR` for all
+four. The scanner therefore could not preserve an operational failure class
+through the public scan result. The bridge now carries distinct interface
+statuses and maps them to `CL_ECREAT`, `CL_EWRITE`, `CL_EREAD`, and
+`CL_EWRITE`, respectively; close failures use `CL_EWRITE` because the public
+ClamAV error enum has no close-specific value and the UnRAR operation is
+closing extracted output. The gated
+`test_rar_backend_error_mapping_is_fail_visible` regression covers the
+mapping in an UnRAR-enabled build. The local container has no UnRAR backend,
+so optional decoder execution, production-CVD/service parity, sanitizer,
+materialized large-file, Sonic1, and final RAR qualification remain open.
+
 ## Conditional parser dispatch status initialization — 2026-08-28
 
 `cli_magic_scan()` merged the local parser result after both dispatch switch

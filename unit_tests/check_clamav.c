@@ -8889,6 +8889,8 @@ END_TEST
 #if HAVE_UNRAR
 static int test_rar_progress_was_called;
 static int test_rar_handle;
+static int test_rar_force_timeout;
+static cl_unrar_error_t test_rar_extract_result = UNRAR_ERR;
 
 static cl_unrar_error_t test_rar_open(const char *filename, void **hArchive, char **comment,
                                       uint32_t *comment_size, uint8_t debug_flag)
@@ -8918,7 +8920,7 @@ static cl_unrar_error_t test_rar_extract(void *hArchive, const char *destPath, c
     UNUSEDPARAM(hArchive);
     UNUSEDPARAM(destPath);
     UNUSEDPARAM(outputBuffer);
-    if (ctx != NULL) {
+    if (ctx != NULL && test_rar_force_timeout) {
         ctx->time_limit.tv_sec  = 1;
         ctx->time_limit.tv_usec = 0;
     }
@@ -8926,7 +8928,7 @@ static cl_unrar_error_t test_rar_extract(void *hArchive, const char *destPath, c
         test_rar_progress_was_called = 1;
         (void)progress(progress_context);
     }
-    return UNRAR_ERR;
+    return test_rar_extract_result;
 }
 
 static cl_unrar_error_t test_rar_skip(void *hArchive, cl_unrar_progress_callback_t progress,
@@ -9023,6 +9025,8 @@ START_TEST(test_rar_time_limit_callback_is_fail_visible)
     cli_unrar_close          = test_rar_close;
     have_rar                 = 1;
     test_rar_progress_was_called = 0;
+    test_rar_force_timeout   = 1;
+    test_rar_extract_result   = UNRAR_ERR;
 
     verdict    = CL_VERDICT_STRONG_INDICATOR;
     last_alert = "stale";
@@ -9037,12 +9041,92 @@ START_TEST(test_rar_time_limit_callback_is_fail_visible)
     cli_unrar_skip_file_ex     = saved_skip;
     cli_unrar_close            = saved_close;
     have_rar                   = saved_have_rar;
+    test_rar_force_timeout     = 0;
 
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(test_rar_progress_was_called);
     ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_rar_backend_error_mapping_is_fail_visible)
+{
+    static const cl_unrar_error_t backend_errors[] = {
+        UNRAR_ECREATE,
+        UNRAR_ECLOSE,
+        UNRAR_EREAD,
+        UNRAR_EWRITE,
+    };
+    static const cl_error_t expected_results[] = {
+        CL_ECREAT,
+        CL_EWRITE,
+        CL_EREAD,
+        CL_EWRITE,
+    };
+    static const uint8_t data[] = {0};
+    cl_unrar_error_t (*saved_open)(const char *, void **, char **, uint32_t *, uint8_t);
+    cl_unrar_error_t (*saved_peek)(void *, unrar_metadata_t *);
+    cl_unrar_error_t (*saved_extract)(void *, const char *, char *, cl_unrar_progress_callback_t, void *);
+    cl_unrar_error_t (*saved_skip)(void *, cl_unrar_progress_callback_t, void *);
+    void (*saved_close)(void *);
+    int saved_have_rar;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_fmap_t *map;
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    saved_open    = cli_unrar_open;
+    saved_peek    = cli_unrar_peek_file_header;
+    saved_extract = cli_unrar_extract_file_ex;
+    saved_skip    = cli_unrar_skip_file_ex;
+    saved_close   = cli_unrar_close;
+    saved_have_rar = have_rar;
+    cli_unrar_open             = test_rar_open;
+    cli_unrar_peek_file_header = test_rar_peek;
+    cli_unrar_extract_file_ex  = test_rar_extract;
+    cli_unrar_skip_file_ex     = test_rar_skip;
+    cli_unrar_close            = test_rar_close;
+    have_rar                   = 1;
+    test_rar_force_timeout     = 0;
+
+    for (i = 0; i < sizeof(backend_errors) / sizeof(backend_errors[0]); i++) {
+        cl_verdict_t verdict   = CL_VERDICT_STRONG_INDICATOR;
+        const char *last_alert = "stale";
+        uint64_t scanned       = UINT64_MAX;
+        cl_error_t ret;
+
+        test_rar_extract_result = backend_errors[i];
+        map->dont_cache_flag    = false;
+        ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                            "CL_TYPE_RAR", NULL);
+        ck_assert_int_eq(ret, expected_results[i]);
+        ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+        ck_assert(last_alert == NULL);
+        ck_assert(map->dont_cache_flag);
+    }
+
+    cli_unrar_open             = saved_open;
+    cli_unrar_peek_file_header = saved_peek;
+    cli_unrar_extract_file_ex  = saved_extract;
+    cli_unrar_skip_file_ex     = saved_skip;
+    cli_unrar_close            = saved_close;
+    have_rar                   = saved_have_rar;
+    test_rar_extract_result    = UNRAR_ERR;
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
@@ -44064,6 +44148,7 @@ static Suite *test_cl_suite(void)
 #if HAVE_UNRAR
     tcase_add_test(tc_cl, test_rar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_rar_time_limit_callback_is_fail_visible);
+    tcase_add_test(tc_cl, test_rar_backend_error_mapping_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_rar_nested_stage_read_failure_is_publicly_fail_visible);
 #endif
@@ -44073,6 +44158,7 @@ static Suite *test_cl_suite(void)
 #if HAVE_UNRAR
     tcase_add_test(tc_rar, test_rar_truncated_header_is_fail_visible);
     tcase_add_test(tc_rar, test_rar_time_limit_callback_is_fail_visible);
+    tcase_add_test(tc_rar, test_rar_backend_error_mapping_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_rar, test_rar_nested_stage_read_failure_is_publicly_fail_visible);
 #endif

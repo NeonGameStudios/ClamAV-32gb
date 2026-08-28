@@ -99,7 +99,7 @@ struct unrar_callback_data {
  * @brief  Translate an ERAR_<code> to the appropriate UNRAR_<code>
  *
  * @param errorCode ERAR_<code>
- * @return cl_unrar_error_t UNRAR_OK, UNRAR_ENCRYPTED, or UNRAR_ERR.
+ * @return cl_unrar_error_t The normalized UnRAR status.
  */
 static cl_unrar_error_t unrar_retcode(int retcode)
 {
@@ -146,18 +146,22 @@ static cl_unrar_error_t unrar_retcode(int retcode)
         }
         case ERAR_ECREATE: {
             unrar_dbgmsg("unrar_retcode: File create error.\n");
+            status = UNRAR_ECREATE;
             break;
         }
         case ERAR_ECLOSE: {
             unrar_dbgmsg("unrar_retcode: File close error.\n");
+            status = UNRAR_ECLOSE;
             break;
         }
         case ERAR_EREAD: {
             unrar_dbgmsg("unrar_retcode: Read error.\n");
+            status = UNRAR_EREAD;
             break;
         }
         case ERAR_EWRITE: {
             unrar_dbgmsg("unrar_retcode: Write error.\n");
+            status = UNRAR_EWRITE;
             break;
         }
         case ERAR_EREFERENCE: {

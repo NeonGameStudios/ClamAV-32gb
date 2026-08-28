@@ -53,7 +53,11 @@ typedef enum cl_unrar_error_tag {
     UNRAR_ENCRYPTED,
     UNRAR_EMEM,
     UNRAR_ERR,
-    UNRAR_EOPEN
+    UNRAR_EOPEN,
+    UNRAR_ECREATE,
+    UNRAR_ECLOSE,
+    UNRAR_EREAD,
+    UNRAR_EWRITE
 } cl_unrar_error_t;
 
 typedef struct unrar_metadata_tag {

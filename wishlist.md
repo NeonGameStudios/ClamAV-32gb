@@ -1,5 +1,16 @@
 # Wishlist
 
+## UnRAR operational status propagation — 2026-08-28
+
+- Preserve UnRAR create, close, read, and write failures as distinct bridge
+  statuses and map them to fail-visible public ClamAV results instead of
+  flattening them to a generic format error. The gated
+  `test_rar_backend_error_mapping_is_fail_visible` regression covers the
+  mapping when UnRAR is enabled.
+- Keep optional UnRAR extraction, production-CVD/service parity, sanitizer,
+  materialized large-file, Sonic1, and final RAR qualification open until a
+  backend-enabled production build exercises the complete path.
+
 ## Conditional parser dispatch status initialization — 2026-08-28
 
 - Keep `cli_magic_scan()`'s local parser result initialized to `CL_SUCCESS`

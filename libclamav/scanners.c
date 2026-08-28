@@ -313,6 +313,17 @@ static cl_error_t cli_rar_error_to_scan_result(cl_unrar_error_t unrar_ret)
             return CL_EMEM;
         case UNRAR_EOPEN:
             return CL_EOPEN;
+        case UNRAR_ECREATE:
+            return CL_ECREAT;
+        case UNRAR_ECLOSE:
+            /* RARProcessFile closes the extracted output as part of the
+             * operation. There is no public CL_ECLOSE, so preserve this as
+             * an output write failure rather than a generic format error. */
+            return CL_EWRITE;
+        case UNRAR_EREAD:
+            return CL_EREAD;
+        case UNRAR_EWRITE:
+            return CL_EWRITE;
         case UNRAR_ENCRYPTED:
             return CL_EUNPACK;
         case UNRAR_BREAK:
