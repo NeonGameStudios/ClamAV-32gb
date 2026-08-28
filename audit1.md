@@ -1,5 +1,28 @@
 # Independent read-only audit of audit.md
 
+## OneNote legacy reader declared-range EOF — 2026-08-28
+
+`scan_legacy_reader()` previously treated a zero-byte read as normal end of
+input while scanning for `FILE_DATA_STORE_OBJECT`, even when the declared
+`file_len` still contained bytes. A truncated marker-free legacy document
+could therefore return success. The reader now records an underlying EOF and
+checks the actual scan-buffer end with checked addition against the declared
+extent; EOF before that boundary returns `Error::Parse` before attachment
+callbacks or successful completion.
+
+The registered `legacy_reader_rejects_eof_before_declared_file_length`
+regression uses a seekable reader that ends early and passes alongside the
+existing reader streaming, boundary, sink-failure, and source-read-failure
+cases. During current-source verification, two pre-existing Rust test-target
+build defects were also corrected: stale LHA test references to the renamed
+range helper and missing explicit unsafe blocks around temporary-spool scans.
+The isolated current-source Rust OneNote module test compiles with the
+already-installed Rust 1.97.1 toolchain and passes 11/11. The complete crate
+test target remains a separate link gate because the cached mixed C archive
+does not contain all current internal helpers. Full OneNote corpus, current
+full-C ABI, sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, and parser-family qualification remain open.
+
 ## GIF short-signature admission — 2026-08-28
 
 The GIF parser returned clean when a forced `CL_TYPE_GIF` entry supplied a

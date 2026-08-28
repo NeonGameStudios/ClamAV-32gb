@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OneNote legacy reader declared-range EOF — 2026-08-28
+
+The streaming legacy OneNote reader now distinguishes physical EOF from the
+declared input extent. While searching for the file-data-store marker it tracks
+zero-byte reads and checks the actual buffer end with checked addition; an EOF
+before `file_len` returns a parse-incomplete result instead of accepting a
+truncated marker-free document as clean. The
+`legacy_reader_rejects_eof_before_declared_file_length` regression passes in
+the isolated current-source Rust OneNote module suite, which passes 11/11 with
+the existing Rust 1.97.1 environment. Full OneNote corpus, current full-C ABI,
+sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+parser-family qualification remain release gates.
+
 ## GIF short-signature admission — 2026-08-28
 
 A forced GIF parser entry with fewer than the three signature bytes now records

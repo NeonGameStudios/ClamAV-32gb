@@ -1,5 +1,18 @@
 # Wishlist
 
+## OneNote legacy reader declared-range EOF — 2026-08-28
+
+- Keep `scan_legacy_reader()` fail-visible when its underlying reader reaches
+  EOF before the declared `file_len`; a marker-free truncated legacy document
+  must return `Error::Parse` rather than a clean result.
+- Retain `legacy_reader_rejects_eof_before_declared_file_length` with the
+  existing streaming, boundary, sink-failure, and source-read-failure cases.
+  The isolated current-source Rust OneNote module test passes 11/11 with the
+  existing Rust 1.97.1 environment.
+- Keep complete OneNote corpus, current full-C ABI, sanitizer,
+  production-CVD/service, materialized large-file, Sonic1, and parser-family
+  qualification open.
+
 ## GIF short-signature admission — 2026-08-28
 
 - Keep forced GIF entries shorter than the three-byte signature fail-visible:

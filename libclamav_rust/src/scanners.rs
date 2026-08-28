@@ -179,7 +179,7 @@ pub(crate) unsafe fn scan_reader_via_temp_spool<R: Read>(
     let status = if spool.written == 0 {
         cl_error_t_CL_SUCCESS
     } else {
-        spool.scan(None)
+        unsafe { spool.scan(None) }
     };
     if status != cl_error_t_CL_SUCCESS {
         debug!("{parser} temporary-spool child scan returned error: {status}");
@@ -581,7 +581,7 @@ impl ExtractSink for AlzScanSink {
         let ret = if spool.written == 0 {
             cl_error_t_CL_SUCCESS
         } else {
-            spool.scan(name.as_deref())
+            unsafe { spool.scan(name.as_deref()) }
         };
         let ret = unsafe { spool.finish_cleanup(ret, "ALZ") };
         if ret != cl_error_t_CL_SUCCESS {
@@ -672,7 +672,7 @@ impl onenote::LegacyAttachmentSink for OneNoteScanSink {
         let ret = if spool.written == 0 {
             cl_error_t_CL_SUCCESS
         } else {
-            spool.scan(None)
+            unsafe { spool.scan(None) }
         };
         let ret = unsafe { spool.finish_cleanup(ret, "OneNote") };
         if ret != cl_error_t_CL_SUCCESS {
@@ -1724,10 +1724,10 @@ mod tests {
 
     #[test]
     fn lha_member_range_rejects_truncation_and_overflow() {
-        assert!(lha_member_range_fits(0, 0, 0));
-        assert!(lha_member_range_fits(60, 0, 60));
-        assert!(!lha_member_range_fits(60, 1, 60));
-        assert!(!lha_member_range_fits(u64::MAX, 1, u64::MAX));
+        assert!(lha_member_range_end(0, 0, 0).is_some());
+        assert!(lha_member_range_end(60, 0, 60).is_some());
+        assert!(lha_member_range_end(60, 1, 60).is_none());
+        assert!(lha_member_range_end(u64::MAX, 1, u64::MAX).is_none());
     }
 
     #[test]

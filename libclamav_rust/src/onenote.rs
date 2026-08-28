@@ -182,7 +182,7 @@ where
     R: std::io::Read + std::io::Seek,
     S: LegacyAttachmentSink,
 {
-    use std::io::{Read, Seek, SeekFrom};
+    use std::io::SeekFrom;
 
     let mut magic = [0u8; ONE_MAGIC.len()];
     reader
@@ -203,17 +203,29 @@ where
             .seek(SeekFrom::Start(scan_start))
             .map_err(reader_error)?;
         let mut valid = 0usize;
+        let mut reached_eof = false;
         while valid < scan_buffer.len() {
             let read = reader
                 .read(&mut scan_buffer[valid..])
                 .map_err(reader_error)?;
             if read == 0 {
+                reached_eof = true;
                 break;
             }
             valid += read;
         }
         if valid == 0 {
+            if reached_eof && scan_start < file_len {
+                return Err(Error::Parse);
+            }
             break;
+        }
+
+        let buffer_end = scan_start
+            .checked_add(valid as u64)
+            .ok_or(Error::Format)?;
+        if reached_eof && buffer_end < file_len {
+            return Err(Error::Parse);
         }
 
         let Some(relative) = find_bytes(&scan_buffer[..valid], FILE_DATA_STORE_OBJECT) else {
@@ -555,6 +567,11 @@ mod tests {
         fail_at: u64,
     }
 
+    struct EarlyEofReader {
+        inner: Cursor<Vec<u8>>,
+        eof_at: u64,
+    }
+
     impl Read for FailingReader {
         fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
             if self.inner.position() >= self.fail_at {
@@ -565,6 +582,23 @@ mod tests {
     }
 
     impl Seek for FailingReader {
+        fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+            self.inner.seek(from)
+        }
+    }
+
+    impl Read for EarlyEofReader {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            let position = self.inner.position();
+            if position >= self.eof_at {
+                return Ok(0);
+            }
+            let available = (self.eof_at - position).min(buffer.len() as u64) as usize;
+            self.inner.read(&mut buffer[..available])
+        }
+    }
+
+    impl Seek for EarlyEofReader {
         fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
             self.inner.seek(from)
         }
@@ -746,6 +780,25 @@ mod tests {
         assert!(matches!(
             scan_legacy_reader(&mut reader, fixture.len() as u64, &mut sink),
             Err(Error::ReadFailure(_))
+        ));
+        assert!(sink.files.is_empty());
+        assert!(!sink.aborted);
+    }
+
+    #[test]
+    fn legacy_reader_rejects_eof_before_declared_file_length() {
+        let mut fixture = ONE_MAGIC.to_vec();
+        fixture.extend_from_slice(b"legacy tail");
+        let declared_len = fixture.len() as u64;
+        let mut reader = EarlyEofReader {
+            inner: Cursor::new(fixture),
+            eof_at: ONE_MAGIC.len() as u64 + 2,
+        };
+        let mut sink = CollectSink::new();
+
+        assert!(matches!(
+            scan_legacy_reader(&mut reader, declared_len, &mut sink),
+            Err(Error::Parse)
         ));
         assert!(sink.files.is_empty());
         assert!(!sink.aborted);
