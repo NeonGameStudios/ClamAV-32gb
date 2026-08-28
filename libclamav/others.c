@@ -2191,6 +2191,13 @@ cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t typ
     FFIError *mkdir_w32_error = NULL;
 #endif
 
+    if (!ctx || !map || !ctx->engine || !ctx->recursion_stack ||
+        ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        cli_errmsg("cli_recursion_stack_push: invalid scan context or recursion stack\n");
+        return CL_ENULLARG;
+    }
+
     old_recursion_level = ctx->recursion_level;
 
     /* A normalized or handler-retyped layer is another view of the current
@@ -2565,8 +2572,17 @@ cl_fmap_t *cli_recursion_stack_pop(cli_ctx *ctx)
 {
     cl_fmap_t *popped_map = NULL;
 
-    if (0 == ctx->recursion_level) {
-        cli_dbgmsg("cli_recursion_stack_pop: recursion_level == 0, cannot pop off more layers!\n");
+    if (!ctx || !ctx->engine || !ctx->recursion_stack ||
+        ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        if (!ctx || !ctx->recursion_stack || ctx->recursion_stack_size == 0 ||
+            ctx->recursion_level >= ctx->recursion_stack_size) {
+            cli_errmsg("cli_recursion_stack_pop: invalid scan context or recursion stack\n");
+        }
+        if (ctx && ctx->recursion_level == 0) {
+            cli_dbgmsg("cli_recursion_stack_pop: recursion_level == 0, cannot pop off more layers!\n");
+        }
         goto done;
     }
 
@@ -2784,6 +2800,12 @@ cli_file_t cli_recursion_stack_get_type(cli_ctx *ctx, int index)
 {
     int index_ignoring_normalized_layers;
 
+    if (!ctx || !ctx->recursion_stack || ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        cli_errmsg("cli_recursion_stack_get_type: invalid scan context or recursion stack\n");
+        return CL_TYPE_ANY;
+    }
+
     // translate requested index into index of non-normalized layer
     index_ignoring_normalized_layers = recursion_stack_get(ctx, index);
 
@@ -2802,6 +2824,12 @@ cli_file_t cli_recursion_stack_get_type(cli_ctx *ctx, int index)
 size_t cli_recursion_stack_get_size(cli_ctx *ctx, int index)
 {
     int index_ignoring_normalized_layers;
+
+    if (!ctx || !ctx->recursion_stack || ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        cli_errmsg("cli_recursion_stack_get_size: invalid scan context or recursion stack\n");
+        return 0;
+    }
 
     // translate requested index into index of non-normalized layer
     index_ignoring_normalized_layers = recursion_stack_get(ctx, index);

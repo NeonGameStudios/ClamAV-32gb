@@ -6110,3 +6110,12 @@ qualification gates.
   missing; never dereference resource limits from a context without an engine.
 - Retain complete resource-limit corpus, sanitizer, production-CVD/service,
   materialized-large-file, Sonic1, and release qualification gates.
+
+## Recursion stack API admission — 2026-08-27
+
+- Keep recursion-stack push/pop and type/size lookup fail-visible for null or
+  partially initialized contexts. Preserve the existing empty-stack behavior,
+  but never index a missing, zero-sized, or out-of-range stack, and require an
+  owning engine before engine-dependent layer transitions.
+- Retain complete nested-parser corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and release qualification gates.

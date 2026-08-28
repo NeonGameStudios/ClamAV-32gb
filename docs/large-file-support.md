@@ -8691,3 +8691,13 @@ test_pe_metadata_helpers_reject_invalid_contexts regression covers the public
 helper boundary. Current-source GCC syntax evidence is recorded; complete PE
 metadata and certificate corpora, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification remain open.
+
+## Recursion stack API admission — 2026-08-27
+
+Recursion-stack push/pop and type/size lookup now reject null or partially
+initialized contexts before dereferencing stack state. Push also requires a
+child map and owning engine, while all helpers reject zero-sized or
+out-of-range current stack levels. test_recursion_stack_helpers_reject_invalid_contexts
+covers these boundaries. Current-source GCC syntax evidence is recorded;
+complete nested-parser corpus, sanitizer, production-CVD/service, materialized
+large-file, Sonic1, and release qualification remain open.

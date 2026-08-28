@@ -41990,6 +41990,38 @@ START_TEST(test_resource_limit_helpers_reject_missing_engine)
 }
 END_TEST
 
+START_TEST(test_recursion_stack_helpers_reject_invalid_contexts)
+{
+    cli_ctx ctx;
+    cli_scan_layer_t layers[1];
+    fmap_t map;
+    struct cl_engine engine;
+
+    memset(&ctx, 0, sizeof(ctx));
+    memset(layers, 0, sizeof(layers));
+    memset(&map, 0, sizeof(map));
+    memset(&engine, 0, sizeof(engine));
+
+    ck_assert_int_eq(cli_recursion_stack_push(NULL, &map, CL_TYPE_ANY, true, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+    ck_assert_int_eq(cli_recursion_stack_push(&ctx, NULL, CL_TYPE_ANY, true, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+    ck_assert_int_eq(cli_recursion_stack_push(&ctx, &map, CL_TYPE_ANY, true, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+    ck_assert_ptr_null(cli_recursion_stack_pop(NULL));
+    ck_assert_ptr_null(cli_recursion_stack_pop(&ctx));
+    ck_assert_int_eq(cli_recursion_stack_get_type(NULL, -1), CL_TYPE_ANY);
+    ck_assert_uint_eq(cli_recursion_stack_get_size(NULL, -1), 0);
+
+    ctx.engine               = &engine;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 1;
+    ctx.recursion_level      = 1;
+    ck_assert_int_eq(cli_recursion_stack_push(&ctx, &map, CL_TYPE_ANY, true, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+    ck_assert_ptr_null(cli_recursion_stack_pop(&ctx));
+    ck_assert_int_eq(cli_recursion_stack_get_type(&ctx, -1), CL_TYPE_ANY);
+    ck_assert_uint_eq(cli_recursion_stack_get_size(&ctx, -1), 0);
+
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -43052,6 +43084,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scanfile_temporary_reservation_is_reported);
     tcase_add_test(tc_cl, test_scan_temporary_directory_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
+    tcase_add_test(tc_cl, test_recursion_stack_helpers_reject_invalid_contexts);
     tcase_add_test(tc_cl, test_largefile_default_profile_values);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);
     tcase_add_test(tc_cl, test_blob_allocation_boundaries);

@@ -12262,3 +12262,16 @@ CL_ENULLARG for recognized maps without engine state, while structural ZIP and
 four scan entries. Complete archive corpora, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification evidence remain
 required.
+
+## Recursion stack API admission audit — 2026-08-27
+
+The exported recursion-layer helpers assumed a fully initialized scan context:
+push dereferenced its context, child fmap, engine, and stack before validation;
+pop dereferenced the current stack layer and engine even for an empty or
+out-of-range stack; and type/size lookup could index a null or zero-sized
+stack. The helpers now reject null or incomplete contexts, missing engines or
+maps where required, zero-sized stacks, and invalid current levels before
+dereference. test_recursion_stack_helpers_reject_invalid_contexts covers the
+boundary. Complete nested-parser corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification evidence remain
+required.

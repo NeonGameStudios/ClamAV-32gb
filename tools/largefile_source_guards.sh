@@ -5415,6 +5415,11 @@ contains libclamav/readdb.c 'if (ferror(fs))'
 contains libclamav/readdb.c 'countentries: Can'\''t close file'
 contains libclamav/readdb.c 'cl_countsigs: Can'\''t close directory'
 contains docs/largefile-capabilities.tsv 'hash-stream-read-close'
+contains libclamav/others.c 'cli_recursion_stack_push: invalid scan context or recursion stack'
+contains libclamav/others.c 'cli_recursion_stack_pop: invalid scan context or recursion stack'
+contains libclamav/others.c 'cli_recursion_stack_get_type: invalid scan context or recursion stack'
+contains libclamav/others.c 'cli_recursion_stack_get_size: invalid scan context or recursion stack'
+contains unit_tests/check_clamav.c 'test_recursion_stack_helpers_reject_invalid_contexts'
 
 if ! awk '
     /^[[:space:]]*#[[:space:]]*(if|ifdef|ifndef)([[:space:]]|$)/ { depth++; next }
