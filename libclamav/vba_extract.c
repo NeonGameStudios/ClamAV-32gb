@@ -2401,6 +2401,9 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
     if (ctx == NULL)
         return CL_ENULLARG;
 
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
+
     if (fd < 0) {
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object descriptor was invalid");
         return CL_EARG;
@@ -2811,6 +2814,9 @@ cli_ppt_vba_read_ex(int ifd, cli_ctx *ctx, uint64_t *temporary_reserved_out)
         *temporary_reserved_out = 0;
 
     if (ctx == NULL)
+        return NULL;
+
+    if (ctx->engine == NULL)
         return NULL;
 
     /* Create a directory to store the extracted OLE2 objects */

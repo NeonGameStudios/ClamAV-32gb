@@ -12306,6 +12306,9 @@ cli_ole2_get_property_name2 also read the first two bytes before validating
 the name pointer or minimum UTF-16 buffer size.
 cli_vba_readdir_new also entered temporary-directory and engine-dependent
 logic before validating its public scan context and engine ownership.
+cli_scan_ole10 and cli_ppt_vba_read_ex similarly relied on downstream
+temporary-quota behavior to reject a missing engine. These extraction entries
+now reject missing ownership before parsing or temporary-output setup.
 cli_ole2_summary_json used the metadata timeout macro without validating
 ctx->options. The helpers now return NULL or CL_ENULLARG before dereference;
 focused regressions cover the invalid states. Complete OLE/VBA corpus,

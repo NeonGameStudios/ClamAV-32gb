@@ -8691,6 +8691,19 @@ START_TEST(test_ole10_null_context_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole10_missing_engine_is_fail_visible)
+{
+    cli_ctx ctx;
+    int fd;
+
+    memset(&ctx, 0, sizeof(ctx));
+    fd = open("/dev/null", O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(/dev/null) failed: %s", strerror(errno));
+    ck_assert_int_eq(cli_scan_ole10(fd, &ctx), CL_ENULLARG);
+    ck_assert_int_eq(close(fd), 0);
+}
+END_TEST
+
 START_TEST(test_ole10_temporary_limit_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -8764,6 +8777,21 @@ START_TEST(test_ppt_vba_null_context_is_fail_visible)
     ck_assert_ptr_null(cli_ppt_vba_read_ex(fd, NULL, &temporary_reserved));
     ck_assert_uint_eq(temporary_reserved, 0);
     close(fd);
+}
+END_TEST
+
+START_TEST(test_ppt_vba_missing_engine_is_fail_visible)
+{
+    cli_ctx ctx;
+    uint64_t temporary_reserved = UINT64_MAX;
+    int fd;
+
+    memset(&ctx, 0, sizeof(ctx));
+    fd = open("/dev/null", O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(/dev/null) failed: %s", strerror(errno));
+    ck_assert_ptr_null(cli_ppt_vba_read_ex(fd, &ctx, &temporary_reserved));
+    ck_assert_uint_eq(temporary_reserved, 0);
+    ck_assert_int_eq(close(fd), 0);
 }
 END_TEST
 
@@ -43022,8 +43050,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_nulsft_map, test_nsis_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_ole10_entry);
     tcase_add_test(tc_ole10_entry, test_ole10_null_context_is_fail_visible);
+    tcase_add_test(tc_ole10_entry, test_ole10_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_ppt_entry);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
+    tcase_add_test(tc_ppt_entry, test_ppt_vba_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_ooxml_entry);
     tcase_add_test(tc_ooxml_entry, test_ooxml_null_context_is_fail_visible);
     suite_add_tcase(s, tc_swf);

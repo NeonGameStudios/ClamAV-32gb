@@ -8730,12 +8730,15 @@ or scan context before reading the prefix. The OLE property-name helper now
 rejects null names and undersized UTF-16 name buffers before inspecting the
 terminator. The public VBA project-directory entry now rejects a missing scan
 context or owning engine before temporary directory, decompression, and
-cleanup state access. The OLE summary helper also rejects missing scan options
-before metadata timeout state is inspected. The focused
+cleanup state access. The OLE10 and PowerPoint VBA extraction entries now
+reject missing engine ownership before parsing or temporary-output setup. The
+OLE summary helper also rejects missing scan options before metadata timeout
+state is inspected. The focused
 test_ole2_mso_prefix_range_classes_are_fail_visible and
 test_vba_project_directory_requires_context_and_engine and
 test_ole2_property_name_rejects_invalid_arguments regressions, together with
-the HWP5 stream regression, cover these boundaries. Current-source GCC syntax
-evidence is recorded; complete OLE/VBA corpus, sanitizer, production-CVD/
-service, materialized large-file, Sonic1, and release qualification remain
-open.
+test_ole10_missing_engine_is_fail_visible and
+test_ppt_vba_missing_engine_is_fail_visible, cover these boundaries.
+Current-source GCC syntax evidence is recorded; complete OLE/VBA corpus,
+sanitizer, production-CVD/service, materialized large-file, Sonic1, and
+release qualification remain open.

@@ -6146,6 +6146,8 @@ qualification gates.
 - Keep the VBA project-directory entry fail-visible for missing context or
   engine ownership before temporary directory, decompression, or cleanup
   state access.
+- Keep OLE10 and PowerPoint VBA extraction fail-visible when engine ownership
+  is missing before parsing or temporary-output setup.
 - Keep OLE summary metadata fail-visible when scan options are missing before
   metadata timeout checks.
 - Retain complete OLE/VBA corpus, sanitizer, production-CVD/service,
