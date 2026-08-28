@@ -12296,3 +12296,14 @@ rejects missing engine ownership before resource traversal. The focused
 test_pe_icon_entry_rejects_invalid_contexts regression covers these states;
 complete PE icon corpus, sanitizer, production-CVD/service, materialized
 large-file, Sonic1, and release qualification evidence remain required.
+
+## OLE/MSO and VBA helper admission audit — 2026-08-27
+
+cli_ole2_read_mso_prefix passed its fmap, output pointer, and scan context
+directly to the read and incomplete-result paths without validating them.
+cli_vba_readdir_new also entered temporary-directory and engine-dependent
+logic before validating its public scan context and engine ownership. Both
+entries now return CL_ENULLARG before dereference; focused regressions cover
+the invalid states. Complete OLE/VBA corpus, sanitizer, production-CVD/
+service, materialized large-file, Sonic1, and release qualification evidence
+remain required.

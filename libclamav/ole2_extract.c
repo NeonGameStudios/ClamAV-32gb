@@ -1949,6 +1949,9 @@ cl_error_t cli_ole2_read_mso_prefix(fmap_t *input, uint32_t *prefix, cli_ctx *ct
 {
     size_t bytes_read;
 
+    if (input == NULL || prefix == NULL || ctx == NULL)
+        return CL_ENULLARG;
+
     bytes_read = fmap_readn_full(input, prefix, 0, sizeof(*prefix));
     if (bytes_read == sizeof(*prefix))
         return CL_SUCCESS;

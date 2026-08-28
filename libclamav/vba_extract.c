@@ -873,6 +873,9 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
     uint64_t directory_reserved = 0;
     struct vba_project_output project_output;
 
+    if (ctx == NULL || ctx->engine == NULL)
+        return CL_ENULLARG;
+
     if (dir == NULL || hash == NULL || tempfd == NULL || has_macros == NULL || tempfile == NULL || temporary_reserved_out == NULL) {
         return CL_EARG;
     }

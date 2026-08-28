@@ -29382,12 +29382,17 @@ START_TEST(test_ole2_mso_prefix_range_classes_are_fail_visible)
     fmap_t *map;
     uint32_t prefix;
 
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_ole2_read_mso_prefix(NULL, &prefix, &ctx), CL_ENULLARG);
+
     map = cl_fmap_open_memory(truncated_prefix, sizeof(truncated_prefix));
     ck_assert_ptr_nonnull(map);
     memset(&options, 0, sizeof(options));
-    memset(&ctx, 0, sizeof(ctx));
     ctx.options = &options;
     ctx.fmap    = map;
+
+    ck_assert_int_eq(cli_ole2_read_mso_prefix(map, NULL, &ctx), CL_ENULLARG);
+    ck_assert_int_eq(cli_ole2_read_mso_prefix(map, &prefix, NULL), CL_ENULLARG);
 
     ck_assert_int_eq(cli_ole2_read_mso_prefix(map, &prefix, &ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -29407,6 +29412,26 @@ START_TEST(test_ole2_mso_prefix_range_classes_are_fail_visible)
     ck_assert_str_eq(ctx.scan_incomplete_reason, "MSO stream prefix could not be read completely");
     ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_vba_project_directory_requires_context_and_engine)
+{
+    int tempfd = -1;
+    int has_macros = 0;
+    char *tempfile = NULL;
+    uint64_t temporary_reserved = 0;
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_vba_readdir_new(NULL, tmpdir, NULL, "vba-context", 1,
+                                         &tempfd, &has_macros, &tempfile,
+                                         &temporary_reserved),
+                     CL_ENULLARG);
+    ck_assert_int_eq(cli_vba_readdir_new(&ctx, tmpdir, NULL, "vba-context", 1,
+                                         &tempfd, &has_macros, &tempfile,
+                                         &temporary_reserved),
+                     CL_ENULLARG);
 }
 END_TEST
 
@@ -43354,6 +43379,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ole2_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_sector_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_ole2_mso_prefix_range_classes_are_fail_visible);
+    tcase_add_test(tc_cl, test_vba_project_directory_requires_context_and_engine);
     tcase_add_test(tc_cl, test_ole2_invalid_block_geometry_is_fail_visible);
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_ole2_word_encryption_probe_read_failure_is_fail_visible);

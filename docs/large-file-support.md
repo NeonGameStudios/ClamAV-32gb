@@ -8721,3 +8721,15 @@ engine ownership return CL_ENULLARG. test_pe_icon_entry_rejects_invalid_contexts
 covers these boundaries; current-source GCC syntax evidence is recorded,
 while complete PE icon corpus, sanitizer, production-CVD/service, materialized
 large-file, Sonic1, and release qualification remain open.
+
+## OLE/MSO and VBA helper admission — 2026-08-27
+
+The MSO stream-prefix helper now rejects missing input maps, output storage,
+or scan context before reading the prefix. The public VBA project-directory
+entry now rejects a missing scan context or owning engine before temporary
+directory, decompression, and cleanup state access. The focused
+test_ole2_mso_prefix_range_classes_are_fail_visible and
+test_vba_project_directory_requires_context_and_engine regressions cover
+these boundaries. Current-source GCC syntax evidence is recorded; complete
+OLE/VBA corpus, sanitizer, production-CVD/service, materialized large-file,
+Sonic1, and release qualification remain open.
