@@ -1,5 +1,18 @@
 # Wishlist
 
+## OLE2 BIFF terminal-field admission — 2026-08-28
+
+- Keep the WorkBook encryption probe's subtraction-based 16-bit range check;
+  valid FilePass encryption fields ending exactly at the bounded BIFF window
+  must be accepted, while malformed length skips must fail before leaving the
+  window.
+- Retain the terminal-FilePass public regression and source guards. The
+  current OLE2 and unit sources compile with production GCC flags, and the
+  isolated current-source ASan/UBSan reader harness passes the exact-end and
+  malformed-skip checks. Keep full OLE/VBA/XLM corpus, clean full-binary
+  execution, production-CVD/service, materialized large-file, Sonic1, and
+  final release qualification open.
+
 ## UUEncode empty-output admission — 2026-08-28
 
 - Keep the post-`fileblobSetFilename()` incomplete-state check so an empty

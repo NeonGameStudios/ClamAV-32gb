@@ -853,7 +853,7 @@ static cl_error_t test_for_encryption(const property_t *word_block, ole2_header_
 
 static size_t read_uint16(const uint8_t *const ptr, uint32_t ptr_size, uint32_t *idx, uint16_t *dst)
 {
-    if (*idx + sizeof(uint16_t) >= ptr_size) {
+    if (*idx > ptr_size || ptr_size - *idx < sizeof(uint16_t)) {
         return 0;
     }
 
@@ -887,6 +887,11 @@ static bool find_file_pass(const uint8_t *const ptr, uint32_t ptr_size, uint32_t
             return true;
         }
 
+        /* The length belongs to the current bounded BIFF window. Reject a
+         * wrapped or out-of-range skip before the next field read. */
+        if (*idx > ptr_size || size > ptr_size - *idx) {
+            return false;
+        }
         *idx += size;
     }
 

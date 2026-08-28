@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## OLE2 BIFF terminal-field admission — 2026-08-28
+
+The OLE2 WorkBook encryption probe's bounded 16-bit reader previously used
+an inclusive end check, rejecting a valid field when exactly two bytes
+remained in the 512-byte BIFF window. Its FilePass length skip also advanced
+without an explicit in-window check. The reader now uses subtraction-based
+range admission, accepts an exact terminal field, and rejects an out-of-range
+or wrapped skip before the next read. The public regression mutates the
+existing WorkBook fixture to place a valid BIFF8 FilePass encryption type at
+the window's final two bytes and requires `CL_EUNPACK` with sticky incomplete
+and non-cacheable state. The current OLE2 object and unit translation unit
+compile with the production GCC flags; an isolated current-source
+ASan/UBSan harness passes both the exact-end read and malformed-skip cases.
+The full OLE2 unit binary remains a relink gate because the available Docker
+archive is mixed/incomplete; complete OLE/VBA/XLM corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification remain required.
+
 ## UUEncode empty-output admission — 2026-08-28
 
 `uudecodeFile()` now checks the `fileblob` state immediately after assigning

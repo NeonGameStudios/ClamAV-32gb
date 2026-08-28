@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OLE2 BIFF terminal-field admission — 2026-08-28
+
+The OLE2 WorkBook encryption probe now accepts a valid 16-bit FilePass field
+that ends exactly at its bounded 512-byte BIFF window, and rejects malformed
+length skips before they leave that window. The current OLE2 object and unit
+translation unit compile with production GCC flags; an isolated current-source
+ASan/UBSan harness passes the exact-end and malformed-skip cases. The public
+terminal-FilePass regression is retained for the next clean full-binary
+relink. Complete OLE/VBA/XLM corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification remain required.
+
 ## UUEncode empty-output admission — 2026-08-28
 
 UUEncode now fails immediately when `fileblobSetFilename()` leaves the decoded
