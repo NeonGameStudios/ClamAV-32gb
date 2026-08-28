@@ -324,6 +324,8 @@ static cl_error_t cli_rar_error_to_scan_result(cl_unrar_error_t unrar_ret)
             return CL_EREAD;
         case UNRAR_EWRITE:
             return CL_EWRITE;
+        case UNRAR_EOUTPUT:
+            return CL_EUNPACK;
         case UNRAR_ENCRYPTED:
             return CL_EUNPACK;
         case UNRAR_BREAK:
@@ -656,7 +658,8 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                     goto done;
 
                 unrar_ret = cli_unrar_extract_file_ex(hArchive, extract_fullpath, NULL,
-                                                      cli_rar_progress_callback, ctx);
+                                                      cli_rar_progress_callback, ctx,
+                                                      metadata.unpack_size);
                 deadline_status = cli_rar_checktimelimit(ctx, "RAR member extraction reached the configured time limit");
                 if (deadline_status != CL_SUCCESS) {
                     status = deadline_status;

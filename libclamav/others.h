@@ -567,7 +567,8 @@ extern cl_unrar_error_t (*cli_unrar_peek_file_header)(void *hArchive, unrar_meta
 extern cl_unrar_error_t (*cli_unrar_extract_file)(void *hArchive, const char *destPath, char *outputBuffer);
 extern cl_unrar_error_t (*cli_unrar_skip_file)(void *hArchive);
 extern cl_unrar_error_t (*cli_unrar_extract_file_ex)(void *hArchive, const char *destPath, char *outputBuffer,
-                                                     cl_unrar_progress_callback_t progress, void *progress_context);
+                                                     cl_unrar_progress_callback_t progress, void *progress_context,
+                                                     uint64_t output_limit);
 extern cl_unrar_error_t (*cli_unrar_skip_file_ex)(void *hArchive, cl_unrar_progress_callback_t progress,
                                                   void *progress_context);
 extern void (*cli_unrar_close)(void *hArchive);

@@ -3,6 +3,21 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UnRAR declared-output bound — 2026-08-28
+
+The optional UnRAR extraction path now passes each member's declared 64-bit
+unpacked size into the bridge. Its `UCM_PROCESSDATA` callback accounts every
+decoder output chunk and aborts before accepting a chunk that would exceed the
+declaration, preventing direct-to-file extraction from outrunning the shared
+temporary reservation. The bridge returns `UNRAR_EOUTPUT`; the scanner maps it
+to `CL_EUNPACK`, marks the layer incomplete, and leaves the result
+non-cacheable. The registered
+`test_rar_declared_output_limit_is_fail_visible` regression verifies the
+declared limit and public mapping, and current-source GCC/G++ syntax checks
+pass. The reusable container has `ENABLE_UNRAR=OFF`, so backend-enabled
+callback execution, complete RAR corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and final RAR qualification remain required.
+
 ## Legacy Word macro external-name span — 2026-08-28
 
 The legacy Word macro-directory reader now consumes the complete byte span

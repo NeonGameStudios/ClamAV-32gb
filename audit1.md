@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## UnRAR declared-output bound — 2026-08-28
+
+The optional UnRAR path reserved each member's declared unpacked size but
+allowed the decoder to write directly to the temporary output path. A backend
+that emitted more bytes than the header declared could therefore exceed the
+reservation before the later `fstat()` equality check. The callback now counts
+every decoder output chunk and aborts before a chunk that would exceed the
+declared 64-bit member size; the bridge returns a dedicated `UNRAR_EOUTPUT`
+status, which the scanner maps to `CL_EUNPACK` while retaining the incomplete,
+non-cacheable result. The scanner passes the declared member size into the
+bounded extraction call, the fault-injected `test_rar_declared_output_limit_is_fail_visible`
+regression verifies the limit and public result, and the UnRAR bridge, scanner,
+and RAR-enabled unit source pass the existing GCC/G++ checks. The optional
+backend is disabled in the reusable container, so callback execution,
+production-CVD/service parity, sanitizer, materialized large-file, Sonic1, and
+final RAR qualification remain open.
+
 ## Legacy Word macro external-name span — 2026-08-28
 
 The legacy Word macro-directory reader consumed only one `MacroExtNames`

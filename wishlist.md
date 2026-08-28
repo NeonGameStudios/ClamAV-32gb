@@ -1,5 +1,18 @@
 # Wishlist
 
+## UnRAR declared-output bound — 2026-08-28
+
+- Keep optional UnRAR extraction bounded by the member's declared unpacked
+  size. Count decoder callback output before the backend writes it, reject a
+  cumulative overrun with a dedicated bridge status, and preserve an
+  incomplete, non-cacheable public result through scanner cleanup.
+- The scanner now passes the declared 64-bit member size to the bridge;
+  `test_rar_declared_output_limit_is_fail_visible` checks the bound and
+  `CL_EUNPACK` mapping, and the C/GCC and C++/G++ source checks pass. Keep
+  backend-enabled execution, complete RAR corpus, sanitizer,
+  production-CVD/service parity, materialized large-file, Sonic1, and final
+  RAR qualification open.
+
 ## Legacy Word macro external-name span — 2026-08-28
 
 - Keep `MacroExtNames` traversal byte-span based and bounded by the declared

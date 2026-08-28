@@ -57,7 +57,8 @@ typedef enum cl_unrar_error_tag {
     UNRAR_ECREATE,
     UNRAR_ECLOSE,
     UNRAR_EREAD,
-    UNRAR_EWRITE
+    UNRAR_EWRITE,
+    UNRAR_EOUTPUT
 } cl_unrar_error_t;
 
 typedef struct unrar_metadata_tag {
@@ -78,7 +79,8 @@ cl_unrar_error_t unrar_peek_file_header(void *hArchive, unrar_metadata_t *file_m
 cl_unrar_error_t unrar_extract_file(void *hArchive, const char *destPath, char *outputBuffer);
 cl_unrar_error_t unrar_skip_file(void *hArchive);
 cl_unrar_error_t unrar_extract_file_ex(void *hArchive, const char *destPath, char *outputBuffer,
-                                       cl_unrar_progress_callback_t progress, void *progress_context);
+                                       cl_unrar_progress_callback_t progress, void *progress_context,
+                                       uint64_t output_limit);
 cl_unrar_error_t unrar_skip_file_ex(void *hArchive, cl_unrar_progress_callback_t progress,
                                     void *progress_context);
 void unrar_close(void *hArchive);

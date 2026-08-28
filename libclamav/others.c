@@ -90,7 +90,8 @@ cl_unrar_error_t (*cli_unrar_peek_file_header)(void *hArchive, unrar_metadata_t 
 cl_unrar_error_t (*cli_unrar_extract_file)(void *hArchive, const char *destPath, char *outputBuffer);
 cl_unrar_error_t (*cli_unrar_skip_file)(void *hArchive);
 cl_unrar_error_t (*cli_unrar_extract_file_ex)(void *hArchive, const char *destPath, char *outputBuffer,
-                                              cl_unrar_progress_callback_t progress, void *progress_context);
+                                              cl_unrar_progress_callback_t progress, void *progress_context,
+                                              uint64_t output_limit);
 cl_unrar_error_t (*cli_unrar_skip_file_ex)(void *hArchive, cl_unrar_progress_callback_t progress,
                                            void *progress_context);
 void (*cli_unrar_close)(void *hArchive);
@@ -336,7 +337,7 @@ static void rarload(void)
         (NULL == (cli_unrar_peek_file_header = (cl_unrar_error_t(*)(void *, unrar_metadata_t *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_peek_file_header"))) ||
         (NULL == (cli_unrar_extract_file = (cl_unrar_error_t(*)(void *, const char *, char *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_extract_file"))) ||
         (NULL == (cli_unrar_skip_file = (cl_unrar_error_t(*)(void *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_skip_file"))) ||
-        (NULL == (cli_unrar_extract_file_ex = (cl_unrar_error_t(*)(void *, const char *, char *, cl_unrar_progress_callback_t, void *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_extract_file_ex"))) ||
+        (NULL == (cli_unrar_extract_file_ex = (cl_unrar_error_t(*)(void *, const char *, char *, cl_unrar_progress_callback_t, void *, uint64_t))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_extract_file_ex"))) ||
         (NULL == (cli_unrar_skip_file_ex = (cl_unrar_error_t(*)(void *, cl_unrar_progress_callback_t, void *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_skip_file_ex"))) ||
         (NULL == (cli_unrar_close = (void (*)(void *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_close")))) {
 

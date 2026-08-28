@@ -71,7 +71,7 @@ feature	ENABLE_TESTS	pending	CMakeOptions.cmake	qualify unit and integration tes
 feature	ENABLE_LIBCLAMAV_ONLY	pending	CMakeOptions.cmake	qualify library-only resource and capability behavior
 feature	ENABLE_STATIC_LIB	pending	CMakeOptions.cmake	qualify static-link large-file capability and Rust integration
 feature	ENABLE_SHARED_LIB	pending	CMakeOptions.cmake	qualify shared-link large-file capability and ABI exports
-feature	ENABLE_UNRAR	pending	CMakeOptions.cmake	qualify RAR extraction and explicit unavailable-library behavior
+feature	ENABLE_UNRAR	pending	CMakeOptions.cmake	qualify RAR extraction and explicit unavailable-library behavior; current source passes each declared 64-bit member size into the optional UnRAR bridge, whose output callback rejects cumulative decoder chunks beyond that declaration with UNRAR_EOUTPUT mapped to CL_EUNPACK; the current-source RAR-enabled unit regression checks the bound and fail-visible mapping, while backend execution, complete corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and final qualification remain required
 feature	ENABLE_SYSTEMD	pending	CMakeOptions.cmake	qualify daemon service integration and startup admission checks
 feature	ENABLE_WERROR	pending	CMakeOptions.cmake	qualify warning-clean release compilation
 feature	ENABLE_ALL_THE_WARNINGS	pending	CMakeOptions.cmake	qualify maximal warning configuration

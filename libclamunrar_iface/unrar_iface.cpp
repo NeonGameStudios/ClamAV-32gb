@@ -93,6 +93,9 @@ struct unrar_callback_data {
     char* output_buffer;
     cl_unrar_progress_callback_t progress;
     void* progress_context;
+    uint64_t output_bytes;
+    uint64_t output_limit;
+    bool output_limit_exceeded;
 };
 
 /**
@@ -399,7 +402,8 @@ done:
 }
 
 cl_unrar_error_t unrar_extract_file_ex(void* hArchive, const char* destPath, char* outputBuffer,
-                                       cl_unrar_progress_callback_t progress, void* progress_context)
+                                       cl_unrar_progress_callback_t progress, void* progress_context,
+                                       uint64_t output_limit)
 {
     cl_unrar_error_t status = UNRAR_ERR;
     int process_file_ret    = 0;
@@ -413,10 +417,17 @@ cl_unrar_error_t unrar_extract_file_ex(void* hArchive, const char* destPath, cha
     callback_data.output_buffer   = outputBuffer;
     callback_data.progress        = progress;
     callback_data.progress_context = progress_context;
+    callback_data.output_bytes    = 0;
+    callback_data.output_limit    = output_limit;
+    callback_data.output_limit_exceeded = false;
     RARSetCallback(hArchive, CallbackProc, (LPARAM)&callback_data);
 
     process_file_ret = RARProcessFile(hArchive, RAR_EXTRACT, NULL, (char*)destPath);
-    if (ERAR_BAD_DATA == process_file_ret) {
+    if (callback_data.output_limit_exceeded) {
+        unrar_dbgmsg("unrar_extract_file: Decoder output exceeded the declared member size.\n");
+        status = UNRAR_EOUTPUT;
+        goto done;
+    } else if (ERAR_BAD_DATA == process_file_ret) {
         unrar_dbgmsg("unrar_extract_file: Bad data/Invalid CRC; refusing to scan a partial member.\n");
         status = UNRAR_ERR;
         goto done;
@@ -440,7 +451,7 @@ done:
 
 cl_unrar_error_t unrar_extract_file(void* hArchive, const char* destPath, char* outputBuffer)
 {
-    return unrar_extract_file_ex(hArchive, destPath, outputBuffer, NULL, NULL);
+    return unrar_extract_file_ex(hArchive, destPath, outputBuffer, NULL, NULL, UINT64_MAX);
 }
 
 cl_unrar_error_t unrar_skip_file_ex(void* hArchive, cl_unrar_progress_callback_t progress,
@@ -458,6 +469,9 @@ cl_unrar_error_t unrar_skip_file_ex(void* hArchive, cl_unrar_progress_callback_t
     callback_data.output_buffer    = NULL;
     callback_data.progress         = progress;
     callback_data.progress_context = progress_context;
+    callback_data.output_bytes     = 0;
+    callback_data.output_limit     = UINT64_MAX;
+    callback_data.output_limit_exceeded = false;
     RARSetCallback(hArchive, CallbackProc, (LPARAM)&callback_data);
 
     process_file_ret = RARProcessFile(hArchive, RAR_SKIP, NULL, NULL);
@@ -500,6 +514,17 @@ int CALLBACK CallbackProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2)
         }
         case UCM_PROCESSDATA: {
             char* UserBuffer = callback_data ? callback_data->output_buffer : NULL;
+
+            if (callback_data != NULL) {
+                if (P2 < 0 || callback_data->output_bytes > callback_data->output_limit ||
+                    (uint64_t)P2 > callback_data->output_limit - callback_data->output_bytes) {
+                    callback_data->output_limit_exceeded = true;
+                    status = -1;
+                    unrar_dbgmsg("CallbackProc: Decoder output exceeded the declared member size.\n");
+                    break;
+                }
+                callback_data->output_bytes += (uint64_t)P2;
+            }
 
             if (callback_data != NULL && callback_data->progress != NULL &&
                 callback_data->progress(callback_data->progress_context) != 0) {
