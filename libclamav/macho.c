@@ -281,6 +281,8 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
         cli_mark_scan_incomplete(ctx, "Mach-O input map is unavailable");
         return CL_EPARSE;
     }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
     map = ctx->fmap;
 
     read_status = cli_checktimelimit(ctx);
@@ -858,6 +860,8 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "Mach-O universal-binary input map is unavailable");
         return CL_EPARSE;
     }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
     map = ctx->fmap;
 
     read_status = cli_checktimelimit(ctx);

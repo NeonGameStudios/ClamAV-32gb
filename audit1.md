@@ -12209,3 +12209,12 @@ map without an engine, and test_pdf_missing_engine_is_fail_visible covers the
 boundary without marking the input as a malformed PDF. Complete PDF corpus,
 sanitizer, production-CVD/service, materialized large-file, Sonic1, and
 release qualification evidence remain required.
+
+## Native executable parser engine admission audit — 2026-08-27
+
+The direct ELF, Mach-O, and Mach-O universal-binary entries validated their
+maps but could reach deadline or heuristic code without an owning engine. Each
+entry now returns CL_ENULLARG for a recognized map without engine state, and
+test_executable_parsers_require_engine covers all three paths. Complete
+executable corpus, sanitizer, production-CVD/service, materialized large-file,
+Sonic1, and release qualification evidence remain required.

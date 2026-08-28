@@ -41841,6 +41841,26 @@ START_TEST(test_pdf_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_executable_parsers_require_engine)
+{
+    static const uint8_t input[] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanelf(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert_int_eq(cli_scanmacho(&ctx, NULL), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert_int_eq(cli_scanmacho_unibin(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    cl_fmap_close(map);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -42036,6 +42056,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_elf_map);
     tcase_add_checked_fixture(tc_elf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_map, test_elf_missing_map_is_fail_visible);
+    tcase_add_test(tc_elf_map, test_executable_parsers_require_engine);
     tcase_add_test(tc_elf_map, test_elf_unknown_data_encoding_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_truncated_header_is_fail_visible);

@@ -6068,4 +6068,12 @@ Added explicit engine admission for CWS/ZWS decompression before temporary-outpu
   owning engine; reject before limit accounting or temporary-output setup.
 - test_pdf_missing_engine_is_fail_visible covers the boundary. Retain
   complete PDF corpus, sanitizer, production-CVD/service, materialized
-  large-file, Sonic1, and release qualification gates.
+large-file, Sonic1, and release qualification gates.
+
+## Native executable parser engine admission — 2026-08-27
+
+- Keep direct ELF and Mach-O parser entries fail-visible when a recognized map
+  has no owning engine; reject before deadline or heuristic state access.
+- test_executable_parsers_require_engine covers ELF, Mach-O, and universal
+  Mach-O. Retain complete executable corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and release qualification gates.

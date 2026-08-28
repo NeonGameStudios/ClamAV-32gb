@@ -8635,3 +8635,12 @@ recognized-map boundary and preserves the existing null-context result. The
 current PDF and unit translation units pass the established Docker GCC syntax
 checks; complete PDF corpus, sanitizer, production-CVD/service, materialized
 large-file, Sonic1, and release qualification remain open.
+
+## Native executable parser engine admission — 2026-08-27
+
+The direct ELF, Mach-O, and Mach-O universal-binary parser entries now reject
+recognized maps without an attached engine before deadline or heuristic state
+access. test_executable_parsers_require_engine covers all three boundaries.
+The current ELF, Mach-O, and unit translation units pass the established Docker
+GCC syntax checks; complete executable corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification remain open.
