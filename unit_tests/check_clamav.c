@@ -33225,6 +33225,39 @@ START_TEST(test_arj_main_header_strings_stay_within_declared_header)
 }
 END_TEST
 
+START_TEST(test_arj_empty_comment_diagnostic_is_null_safe)
+{
+    uint8_t data[42] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    arj_metadata_t metadata;
+    fmap_t *map;
+
+    /* A minimal main header can have an empty comment with no normalized
+     * comment buffer. Diagnostic logging must not pass that NULL pointer to
+     * a %s conversion. */
+    data[0] = 0x60;
+    data[1] = 0xea;
+    arj_test_write_u16(data + 2, 31);
+    data[4] = 30;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&metadata, 0, sizeof(metadata));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    metadata.ctx = &ctx;
+
+    cl_debug();
+    ck_assert_int_eq(cli_unarj_open(map, NULL, &metadata), CL_SUCCESS);
+    ck_assert_uint_eq(metadata.offset, sizeof(data));
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_arj_truncated_main_header_is_fail_visible)
 {
     uint8_t data[4];
@@ -45251,6 +45284,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_arj_map, test_arj_main_header_read_failure_is_fail_visible);
     tcase_add_test(tc_arj_map, test_arj_main_header_string_read_failure_is_fail_visible);
     tcase_add_test(tc_arj_map, test_arj_main_header_strings_stay_within_declared_header);
+    tcase_add_test(tc_arj_map, test_arj_empty_comment_diagnostic_is_null_safe);
     suite_add_tcase(s, tc_binhex_map);
     tcase_add_checked_fixture(tc_binhex_map, cl_setup, cl_teardown);
     tcase_add_test(tc_binhex_map, test_binhex_missing_map_is_fail_visible);

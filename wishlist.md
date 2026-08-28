@@ -1,5 +1,15 @@
 # Wishlist
 
+## ARJ empty-comment diagnostics — 2026-08-28
+
+- Keep ARJ debug diagnostics safe when a valid minimal header has no normalized
+  comment buffer; retain the empty-comment regression and source guards.
+- The current ARJ source and unit translation unit compile with the production
+  GCC flags, and the disposable current-source production-library runner
+  passes with debug logging enabled. Complete ARJ corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized large-file, Sonic1, and
+  final parser-family qualification remain required.
+
 ## APM fixed-width debug fields — 2026-08-28
 
 - Keep fixed-width APM name/type diagnostics precision-bounded and retain the

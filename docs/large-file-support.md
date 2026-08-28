@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ARJ empty-comment diagnostics — 2026-08-28
+
+ARJ main/file-header diagnostics now convert an absent normalized comment
+buffer to an explicit empty string before `%s` formatting. This removes
+undefined behavior for valid minimal headers with empty comments. The current
+ARJ object and unit translation unit compile with the established production
+GCC flags, and a disposable current-source runner linked against the existing
+production ClamAV shared library passes with debug logging enabled. Complete
+ARJ corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized large-file, Sonic1, and final parser-family qualification remain
+required.
+
 ## APM fixed-width debug fields — 2026-08-28
 
 APM debug diagnostics now format fixed-width 32-byte partition names and types

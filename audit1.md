@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## ARJ empty-comment diagnostics — 2026-08-28
+
+The ARJ main and file header readers can legitimately have no normalized
+comment buffer when the declared header leaves an empty comment field. Their
+debug diagnostics previously passed that NULL pointer directly to `%s`, which
+is undefined behavior even though common libc implementations often print
+`(null)`. Both diagnostics now use an explicit empty-string fallback. The
+current `unarj.c` and updated unit translation unit compile with the established
+production GCC flags, and a disposable current-source runner linked against
+the existing production ClamAV shared library completes a minimal empty-comment
+main header successfully with debug logging enabled. The registered
+`test_arj_empty_comment_diagnostic_is_null_safe` regression and source guards
+preserve the boundary. Complete ARJ corpus, sanitizer, production-CVD/service,
+materialized large-file, certified Linux x86-64, Sonic1, and final release
+qualification remain required.
+
 ## APM fixed-width debug fields — 2026-08-28
 
 APM partition names and types are fixed-width 32-byte fields and are not

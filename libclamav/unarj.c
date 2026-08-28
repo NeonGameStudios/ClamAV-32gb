@@ -1131,8 +1131,8 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
     text_normalize_buffer(&fnstate, (const unsigned char *)filename, filename_len);
     text_normalize_buffer(&comstate, (const unsigned char *)comment, comment_len);
 
-    cli_dbgmsg("Filename: %s\n", fnnorm);
-    cli_dbgmsg("Comment: %s\n", comnorm);
+    cli_dbgmsg("Filename: %s\n", fnnorm ? (char *)fnnorm : "");
+    cli_dbgmsg("Comment: %s\n", comnorm ? (char *)comnorm : "");
 
     if (!arj_advance_offset(metadata, 4U)) {
         ret = CL_EFORMAT;
@@ -1312,8 +1312,8 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
     text_normalize_buffer(&fnstate, (const unsigned char *)filename, filename_len);
     text_normalize_buffer(&comstate, (const unsigned char *)comment, comment_len);
 
-    cli_dbgmsg("Filename: %s\n", fnnorm);
-    cli_dbgmsg("Comment: %s\n", comnorm);
+    cli_dbgmsg("Filename: %s\n", fnnorm ? (char *)fnnorm : "");
+    cli_dbgmsg("Comment: %s\n", comnorm ? (char *)comnorm : "");
     metadata->filename = CLI_STRNDUP(filename, filename_len);
 
     /* Skip CRC */
