@@ -12462,6 +12462,18 @@ remain required alongside complete structured-detector corpus, sanitizer,
 production-CVD/service, materialized large-file, Linux x86-64, and Sonic1
 qualification.
 
+## CVD public API null-state audit — 2026-08-28
+
+The CVD verification, unpack, database-load, and age helpers accepted null
+paths, directories, engines, or output pointers and could reach string,
+filesystem, or engine-state dereferences. The public and internal entries now
+return `CL_ENULLARG` before those operations, while the existing header parser
+continues to require a complete 512-byte header and preserve read/close
+failures. `test_cvd_api_rejects_null_arguments` covers the direct boundary
+matrix. Current-source GCC syntax, source-guard, and focused production-linked
+evidence remain required alongside production CVD/service parity, sanitizer,
+materialized large-file, Linux x86-64, and Sonic1 qualification.
+
 ## YARA instruction-stream admission audit — 2026-08-27
 
 The bundled YARA evaluator validated the logical-signature table entry but did

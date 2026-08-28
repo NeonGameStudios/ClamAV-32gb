@@ -510,6 +510,9 @@ cl_error_t cl_cvdverify_ex(const char *file, const char *certs_directory, uint32
     void *verifier               = NULL;
     FFIError *new_verifier_error = NULL;
 
+    if (file == NULL)
+        return CL_ENULLARG;
+
     if (!(engine = cl_engine_new())) {
         cli_errmsg("cl_cvdverify: Can't create new engine\n");
         ret = CL_EMEM;
@@ -580,6 +583,9 @@ cl_error_t cli_cvdload(
     FFIError *cvd_verify_error = NULL;
     char *signer_name          = NULL;
     bool disable_legacy_dsig   = false;
+
+    if (engine == NULL || filename == NULL)
+        return CL_ENULLARG;
 
     dbio.hashctx = NULL;
 
@@ -750,6 +756,9 @@ cl_error_t cli_cvdverify(
     FFIError *cvd_verify_error = NULL;
     char *signer_name          = NULL;
 
+    if (file == NULL)
+        return CL_ENULLARG;
+
     cvd = cvd_open(file, &cvd_open_error);
     if (!cvd) {
         cli_errmsg("Can't open CVD file %s: %s\n", file, ffierror_fmt(cvd_open_error));
@@ -793,6 +802,9 @@ cl_error_t cli_cvdunpack_and_verify(
     FFIError *cvd_verify_error = NULL;
     FFIError *cvd_unpack_error = NULL;
     char *signer_name          = NULL;
+
+    if (file == NULL || dir == NULL)
+        return CL_ENULLARG;
 
     cvd = cvd_open(file, &cvd_open_error);
     if (!cvd) {
@@ -844,6 +856,9 @@ cl_error_t cl_cvdunpack_ex(const char *file, const char *dir, const char *certs_
     FFIError *cvd_unpack_error   = NULL;
     char *signer_name            = NULL;
     void *verifier               = NULL;
+
+    if (file == NULL || dir == NULL)
+        return CL_ENULLARG;
 
     cvd = cvd_open(file, &cvd_open_error);
     if (!cvd) {
@@ -918,6 +933,9 @@ cl_error_t cl_cvdunpack(const char *file, const char *dir, bool dont_verify)
     FFIError *cvd_unpack_error = NULL;
     char *signer_name          = NULL;
     bool disable_legacy_dsig   = false;
+
+    if (file == NULL || dir == NULL)
+        return CL_ENULLARG;
 
     cvd = cvd_open(file, &cvd_open_error);
     if (!cvd) {
@@ -1009,6 +1027,9 @@ cl_error_t cl_cvdgetage(const char *path, time_t *age_seconds)
     DIR *dd            = NULL;
     bool first_age_set = true;
     cl_error_t status  = CL_SUCCESS;
+
+    if (path == NULL || age_seconds == NULL)
+        return CL_ENULLARG;
 
     if (CLAMSTAT(path, &statbuf) == -1) {
         cli_errmsg("cl_cvdgetage: Can't get status of: %s\n", path);

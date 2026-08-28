@@ -99,6 +99,7 @@
 #include "textnorm.h"
 #include "scan_report.h"
 #include "clamav_rust.h"
+#include "cvd.h"
 
 #include "checks.h"
 
@@ -415,6 +416,24 @@ END_TEST
 START_TEST(test_cl_cvdparse)
 {
     ck_assert_ptr_null(cl_cvdparse(NULL));
+}
+END_TEST
+
+START_TEST(test_cvd_api_rejects_null_arguments)
+{
+    unsigned int sigs = 0;
+
+    ck_assert_int_eq(cli_cvdload(NULL, &sigs, 0, CVD_TYPE_UNKNOWN, "test.cvd", NULL, true), CL_ENULLARG);
+    ck_assert_int_eq(cli_cvdload(NULL, &sigs, 0, CVD_TYPE_UNKNOWN, NULL, NULL, true), CL_ENULLARG);
+    ck_assert_int_eq(cli_cvdverify(NULL, false, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_cvdunpack_and_verify(NULL, NULL, true, false, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_cvdunpack_and_verify("test.cvd", NULL, true, false, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cl_cvdverify_ex(NULL, NULL, 0), CL_ENULLARG);
+    ck_assert_int_eq(cl_cvdunpack_ex(NULL, NULL, NULL, CL_DB_UNSIGNED), CL_ENULLARG);
+    ck_assert_int_eq(cl_cvdunpack_ex("test.cvd", NULL, NULL, CL_DB_UNSIGNED), CL_ENULLARG);
+    ck_assert_int_eq(cl_cvdunpack(NULL, NULL, true), CL_ENULLARG);
+    ck_assert_int_eq(cl_cvdgetage(NULL, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cl_cvdgetage(".", NULL), CL_ENULLARG);
 }
 END_TEST
 
@@ -42684,6 +42703,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cvd, test_cl_cvdfree);
     tcase_add_test(tc_cvd, test_cl_cvdhead);
     tcase_add_test(tc_cvd, test_cl_cvdparse);
+    tcase_add_test(tc_cvd, test_cvd_api_rejects_null_arguments);
     tcase_add_test(tc_cvd, test_cl_load);
     tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);

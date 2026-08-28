@@ -6276,3 +6276,12 @@ qualification gates.
 - Retain the direct YARA admission regression and complete YARA evaluation,
   sanitizer, production-CVD/service, materialized large-file, certified Linux
   x86-64, Sonic1, and release qualification gates.
+
+## CVD public API null-state admission — 2026-08-28
+
+- Keep CVD verify, unpack, database-load, and age helpers fail-visible for null
+  paths, directories, engines, and output pointers; return `CL_ENULLARG`
+  before filesystem, string, or engine-state access.
+- Retain the direct CVD null-argument regression and complete production-CVD,
+  service-parity, sanitizer, materialized large-file, certified Linux x86-64,
+  Sonic1, and release qualification gates.
