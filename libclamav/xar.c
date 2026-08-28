@@ -446,16 +446,28 @@ static int xar_toc_close(void *opaque)
 static int xar_get_numeric_from_xml_element(xmlTextReaderPtr reader, size_t *value)
 {
     const xmlChar *numstr;
+    const char *start;
+    char *endptr;
+    unsigned long long numval;
+
+    if (reader == NULL || value == NULL)
+        return CL_EFORMAT;
 
     if (xmlTextReaderRead(reader) == 1 && xmlTextReaderNodeType(reader) == XML_READER_TYPE_TEXT) {
         numstr = xmlTextReaderConstValue(reader);
         if (numstr) {
-            unsigned long long numval;
-            char *endptr = NULL;
+            start = (const char *)numstr;
+            while (*start == ' ' || *start == '\t' || *start == '\r' || *start == '\n')
+                start++;
+            if (*start == '-') {
+                cli_dbgmsg("cli_scanxar: XML element value invalid\n");
+                return CL_EFORMAT;
+            }
             errno        = 0;
-            numval       = strtoull((const char *)numstr, &endptr, 10);
-            if (numstr[0] == '-' || errno == ERANGE || numval > SIZE_MAX ||
-                ((const xmlChar *)endptr == numstr)) {
+            numval       = strtoull(start, &endptr, 10);
+            while (*endptr == ' ' || *endptr == '\t' || *endptr == '\r' || *endptr == '\n')
+                endptr++;
+            if (errno == ERANGE || numval > SIZE_MAX || endptr == start || *endptr != '\0') {
 
                 cli_dbgmsg("cli_scanxar: XML element value invalid\n");
                 return CL_EFORMAT;

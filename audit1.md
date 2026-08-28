@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## XAR numeric TOC metadata admission — 2026-08-28
+
+XAR TOC offsets, compressed lengths, and extracted sizes were parsed with
+`strtoull()` without checking for non-whitespace trailing bytes. Values such
+as `0junk` could therefore be accepted as valid member coordinates. The XML
+numeric helper now trims only XML whitespace, rejects a negative sign and any
+remaining non-whitespace suffix, and preserves the existing size and overflow
+checks. The registered public-API regression
+`test_xar_numeric_metadata_trailing_bytes_is_fail_visible` requires
+`CL_EPARSE`, a cleared verdict, and a non-cacheable fmap. The current XAR
+source and unit translation unit compile with the production GCC flags; the
+isolated current-source production-linked Check TCase passes 1/1, and a
+current-source GCC ASan/UBSan runner passes the same boundary without a
+sanitizer finding. Full XAR corpus, production-CVD/service, materialized
+large-file, Sonic1, and final parser-family qualification remain required.
+
 ## Byte-compare unaligned binary-field admission — 2026-08-28
 
 The byte-compare matcher previously loaded 2-, 4-, and 8-byte binary fields

@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## XAR numeric TOC metadata admission — 2026-08-28
+
+XAR numeric TOC values now permit only surrounding XML whitespace after
+decimal conversion. Negative values and trailing non-whitespace bytes such as
+`0junk` are rejected before member coordinates or sizes are used. The
+registered `test_xar_numeric_metadata_trailing_bytes_is_fail_visible`
+regression requires `CL_EPARSE`, a cleared public verdict, and a non-cacheable
+fmap. The current XAR source and unit translation unit compile with the
+production GCC flags; an isolated current-source production-linked Check
+TCase passes 1/1, and a current-source GCC ASan/UBSan runner passes without a
+sanitizer finding. Complete XAR corpus, production-CVD/service, materialized
+large-file, Sonic1, and final parser-family qualification remain required.
+
 ## Byte-compare unaligned binary-field admission — 2026-08-28
 
 The byte-compare matcher now copies bounded 2-, 4-, and 8-byte binary fields

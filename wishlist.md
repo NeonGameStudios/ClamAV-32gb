@@ -1,5 +1,17 @@
 # Wishlist
 
+## XAR numeric TOC metadata admission — 2026-08-28
+
+- Keep XAR numeric `<offset>`, `<length>`, and `<size>` values strict after
+  decimal conversion: XML whitespace is permitted, but negative values and
+  trailing non-whitespace bytes must remain malformed and fail-visible.
+- Retain `test_xar_numeric_metadata_trailing_bytes_is_fail_visible` and its
+  source guards. The current source and unit translation unit compile with
+  production GCC flags; the isolated current-source production-linked Check
+  TCase passes 1/1, and the current-source GCC ASan/UBSan runner passes.
+  Complete XAR corpus, production-CVD/service, materialized large-file,
+  Sonic1, and final parser-family qualification remain open.
+
 ## Byte-compare unaligned binary-field admission — 2026-08-28
 
 - Keep 2-, 4-, and 8-byte binary byte-compare fields alignment-safe by copying
