@@ -170,6 +170,8 @@ static cl_error_t cli_elf_fileheader(cli_ctx *ctx, fmap_t *map, union elf_file_h
                                      uint8_t *do_convert, uint8_t *is64)
 {
     uint8_t format64, conv;
+    uint16_t ehsize;
+    size_t minimum_ehsize;
     cl_error_t read_status;
     size_t bytes_read;
 
@@ -275,6 +277,31 @@ static cl_error_t cli_elf_fileheader(cli_ctx *ctx, fmap_t *map, union elf_file_h
         }
         /* Wipe pad for safety */
         memset(file_hdr->hdr32.pad, 0, ELF_HDR_SIZEDIFF);
+    }
+
+    if (format64) {
+        ehsize         = file_hdr->hdr64.e_ehsize;
+        minimum_ehsize = sizeof(struct elf_file_hdr64);
+    } else {
+        ehsize         = file_hdr->hdr32.hdr.e_ehsize;
+        minimum_ehsize = sizeof(struct elf_file_hdr32);
+    }
+
+    /* The ELF ABI permits future header extensions, but the declared header
+     * cannot omit fields understood by this parser or extend beyond the
+     * containing map. Ignore any in-map extension bytes as permitted by the
+     * format and keep all known fields range-safe. */
+    if ((size_t)ehsize < minimum_ehsize) {
+        cli_dbgmsg("ELF: File header size is smaller than the ELF class header\n");
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "ELF file header size is invalid");
+        return CL_EFORMAT;
+    }
+    if ((size_t)ehsize > map->len) {
+        cli_dbgmsg("ELF: File header extends beyond the input map\n");
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "ELF file header extends beyond the input map");
+        return CL_BREAK;
     }
 
     return CL_CLEAN;

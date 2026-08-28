@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ELF header-size admission — 2026-08-28
+
+ELF header admission now validates `e_ehsize` after endian conversion and
+before program- or section-table traversal. A declaration smaller than the
+known ELF32 or ELF64 header, or one extending beyond the containing fmap,
+returns a fail-visible non-clean result, marks the layer incomplete, and
+prevents clean-result caching. In-map future extension bytes remain permitted
+by the ELF ABI. The current-source production-linked GCC fixture passes 6/6
+for undersized declarations, out-of-map extensions, and permitted in-map
+extensions across ELF32 and ELF64; complete ELF corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
+
 ## LHA/LZH completion and header allocation — 2026-08-27
 
 LHA/LZH header parsing now uses a provenance-pinned local fork of `delharc`

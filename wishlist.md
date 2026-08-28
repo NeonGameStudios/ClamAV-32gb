@@ -12,6 +12,20 @@
   sanitizer, production-CVD/service, materialized large-file, Sonic1, and
   final RAR/parser-family qualification open.
 
+## ELF header-size admission — 2026-08-28
+
+- Require `e_ehsize` to cover the known ELF32 or ELF64 file-header fields and
+  remain within the containing map before accepting program- or section-table
+  metadata; permit in-map future extension bytes as the ELF ABI allows. An
+  undersized declaration must return `CL_EFORMAT`, record the sticky
+  incomplete reason `ELF file header size is invalid`, and disable clean-result
+  caching.
+- The current-source production-linked GCC fixture passes 6/6 across both ELF
+  classes, covering undersized declarations, out-of-map extensions, and
+  permitted in-map extensions. Keep complete ELF corpus, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+  final parser-family qualification open.
+
 ## Bytecode output ownership and status propagation audit — 2026-08-27
 
 - Keep partial bytecode writes fail-visible while retaining only the

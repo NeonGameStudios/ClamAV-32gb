@@ -13,6 +13,22 @@ staged-copy fault-injection evidence gap, but optional UnRAR extraction,
 sanitizer, production-CVD/service, materialized large-file, Sonic1, and final
 RAR/parser-family qualification remain open.
 
+## ELF header-size admission — 2026-08-28
+
+`cli_elf_fileheader()` converted and accepted the class-specific header without
+checking `e_ehsize`, allowing a structurally invalid ELF header to proceed into
+program- or section-table traversal. The parser now rejects a declared size
+smaller than the known ELF32 or ELF64 header, or one extending beyond the
+containing map, before any table work; in-map future extension bytes remain
+permitted. Invalid declarations mark the scan incomplete and disable clean-
+result caching, with undersized headers returning `CL_EFORMAT`. The
+current-source production-linked GCC fixture passes 6/6 across ELF32 and ELF64
+undersized declarations, out-of-map extensions, and permitted in-map
+extensions, including the sticky reasons `ELF file header size is invalid` and
+`ELF file header extends beyond the input map`. Full ELF corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and final parser-family qualification remain open.
+
 ## Bytecode output ownership and status propagation audit — 2026-08-27
 
 The bytecode output bridge had two production-relevant accounting gaps. A

@@ -36134,6 +36134,85 @@ START_TEST(test_elf_unknown_data_encoding_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_elf_header_size_is_fail_visible)
+{
+    uint8_t data[sizeof(struct elf_file_hdr64)] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    uint8_t elf_class;
+    uint8_t mode;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+
+    for (mode = 0; mode < 3; mode++) {
+        for (elf_class = 1; elf_class <= 2; elf_class++) {
+            cli_ctx ctx;
+            fmap_t *map;
+            cl_error_t expected;
+            size_t header_size;
+            size_t ehsize_offset;
+            size_t shentsize_offset;
+            size_t map_size;
+
+            memset(data, 0, sizeof(data));
+            data[0] = 0x7f;
+            data[1] = 'E';
+            data[2] = 'L';
+            data[3] = 'F';
+            data[4] = elf_class;
+            data[5] = 1; /* ELFDATA2LSB. */
+            data[6] = 1;
+            if (elf_class == 2) {
+                header_size      = sizeof(struct elf_file_hdr64);
+                ehsize_offset    = offsetof(struct elf_file_hdr64, e_ehsize);
+                shentsize_offset = offsetof(struct elf_file_hdr64, e_shentsize);
+            } else {
+                header_size      = sizeof(struct elf_file_hdr32);
+                ehsize_offset    = offsetof(struct elf_file_hdr32, e_ehsize);
+                shentsize_offset = offsetof(struct elf_file_hdr32, e_shentsize);
+            }
+            zip_stream_write_u16(data + shentsize_offset,
+                                 (uint16_t)(elf_class == 2 ? sizeof(struct elf_section_hdr64) :
+                                                                    sizeof(struct elf_section_hdr32)));
+            if (mode == 0) {
+                zip_stream_write_u16(data + ehsize_offset, 0); /* Smaller than known header. */
+                map_size = header_size;
+                expected = CL_EFORMAT;
+            } else {
+                zip_stream_write_u16(data + ehsize_offset, (uint16_t)(header_size + 1));
+                map_size = mode == 1 ? header_size : header_size + 1;
+                expected = mode == 1 ? CL_EPARSE : CL_CLEAN;
+            }
+
+            memset(&ctx, 0, sizeof(ctx));
+            ctx.engine  = &engine;
+            ctx.options = &options;
+            map         = cl_fmap_open_memory(data, map_size);
+            ck_assert_ptr_nonnull(map);
+            ctx.fmap = map;
+
+            ck_assert_int_eq(cli_scanelf(&ctx), expected);
+            if (mode == 0) {
+                ck_assert(ctx.scan_incomplete);
+                ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF file header size is invalid");
+                ck_assert(map->dont_cache_flag);
+            } else if (mode == 1) {
+                ck_assert(ctx.scan_incomplete);
+                ck_assert_str_eq(ctx.scan_incomplete_reason,
+                                 "ELF file header extends beyond the input map");
+                ck_assert(map->dont_cache_flag);
+            } else {
+                ck_assert(!ctx.scan_incomplete);
+                ck_assert(!map->dont_cache_flag);
+            }
+
+            cl_fmap_close(map);
+        }
+    }
+}
+END_TEST
+
 START_TEST(test_elf_metadata_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -42863,6 +42942,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_autoit_map, test_autoit_requires_engine);
     tcase_add_test(tc_mspack_map, test_mspack_parsers_require_engine);
     tcase_add_test(tc_elf_map, test_elf_unknown_data_encoding_is_fail_visible);
+    tcase_add_test(tc_elf_map, test_elf_header_size_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_truncated_header_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_truncated_program_header_is_parse_error);
