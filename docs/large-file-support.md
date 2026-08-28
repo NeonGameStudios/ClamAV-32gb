@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ALZ empty-member accounting — 2026-08-28
+
+The reusable ALZ `Vec<ExtractedFile>` sink now accounts for a completed member
+before removing its empty stored output. This prevents an empty member from
+making `last_size()` report the preceding nonempty member a second time and
+incorrectly consuming the shared total-size budget. The new three-member
+boundary regression covers nonempty, empty, and nonempty members at the exact
+limit. The existing offline Rust 1.97.1 Docker harness was killed with exit
+137 during dependency compilation before this new test ran, so native Rust
+execution remains open; production-linked C evidence and source guards remain
+available. Complete ALZ corpus, native Rust, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized large-file, Sonic1, and final
+parser-family qualification remain required.
+
 ## 7-Zip FilesInfo property-boundary admission — 2026-08-28
 
 Known 7-Zip `FilesInfo` properties now consume exactly their declared

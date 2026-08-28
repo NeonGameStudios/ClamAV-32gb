@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## ALZ empty-member accounting — 2026-08-28
+
+The reusable `Vec<ExtractedFile>` ALZ sink previously removed a successful
+empty member in `finish()` before `account_extracted()` queried `last_size()`.
+When that empty member followed a nonempty member, the sink exposed the
+previous member's size a second time, so a total-size limit could skip a later
+valid member and report a false limit result. The sink lifecycle now records
+the completed member size first and discards an empty stored output only after
+accounting. The three-member regression
+`successful_empty_member_does_not_double_count_previous_output` covers a
+nonempty, empty, nonempty sequence at the exact total-size boundary. Native
+Rust execution was attempted with the existing offline Rust 1.97.1 Docker
+harness, but the container killed dependency compilation with exit 137 before
+the test binary ran; the production-linked C evidence and source guards remain
+available. Complete ALZ corpus, native Rust, sanitizer, production-CVD/service,
+materialized large-file, certified Linux x86-64, Sonic1, and final release
+qualification remain required.
+
 ## 7-Zip FilesInfo property-boundary admission — 2026-08-28
 
 Known `FilesInfo` properties now have to consume exactly their declared

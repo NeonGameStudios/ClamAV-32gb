@@ -749,6 +749,7 @@ pub trait ExtractSink {
     fn begin(&mut self, name: Option<&str>) -> Result<(), Error>;
     fn write(&mut self, data: &[u8]) -> Result<(), Error>;
     fn finish(&mut self) -> Result<(), Error>;
+    fn discard_empty_member(&mut self) {}
     fn last_size(&self) -> u64 {
         0
     }
@@ -773,10 +774,13 @@ impl ExtractSink for Vec<ExtractedFile> {
     }
 
     fn finish(&mut self) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn discard_empty_member(&mut self) {
         if self.last().map_or(false, |file| file.data.is_empty()) {
             self.pop();
         }
-        Ok(())
     }
 
     fn last_size(&self) -> u64 {
@@ -1005,7 +1009,10 @@ impl<'aa> Alz {
                 .map_err(|err| classify_read_error(err, "compressed data seek"))?;
 
             match extraction_result {
-                Ok(()) => self.account_extracted(sink),
+                Ok(()) => {
+                    self.account_extracted(sink);
+                    sink.discard_empty_member();
+                }
                 Err(Error::ScanLimitExceeded(needed)) => {
                     debug!(
                         "ALZ file {:?} exceeded extraction size limits; partial content was discarded.",
@@ -1911,6 +1918,33 @@ mod tests {
         assert_eq!(alz.embedded_files.len(), 1);
         assert_eq!(alz.embedded_files[0].name.as_deref(), Some("first.txt"));
         assert_eq!(alz.embedded_files[0].data, b"first!");
+    }
+
+    #[test]
+    fn successful_empty_member_does_not_double_count_previous_output() {
+        const ALZ_COMP_NOCOMP: u8 = 0;
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_file(&mut bytes, "first.txt", ALZ_COMP_NOCOMP, 6, b"first!");
+        append_local_file(&mut bytes, "empty.txt", ALZ_COMP_NOCOMP, 0, b"");
+        append_local_file(&mut bytes, "third.txt", ALZ_COMP_NOCOMP, 6, b"third!");
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+
+        let alz = Alz::from_bytes_with_filter(&bytes, |_| {
+            AlzExtractionDecision::Extract(AlzExtractionLimits {
+                max_file_size: u64::MAX,
+                max_total_size: 12,
+                max_files_remaining: usize::MAX,
+            })
+        })
+        .unwrap();
+
+        assert_eq!(alz.total_limit_exceeded_size, None);
+        assert_eq!(alz.embedded_files.len(), 2);
+        assert_eq!(alz.embedded_files[0].name.as_deref(), Some("first.txt"));
+        assert_eq!(alz.embedded_files[1].name.as_deref(), Some("third.txt"));
     }
 
     #[test]

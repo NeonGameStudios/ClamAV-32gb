@@ -34252,12 +34252,12 @@ offset-size-arithmetic	libclamav_rust/delharc/src/statictree/entry.rs	14	    pub
 offset-size-arithmetic	libclamav_rust/delharc/src/statictree/entry.rs	22	    pub fn branch(child_index: usize) -> Result<TreeEntry, &'static str> {
 offset-size-arithmetic	libclamav_rust/delharc/src/stub_io.rs	147	        Ok(orig_len - buf.len())
 offset-size-arithmetic	libclamav_rust/delharc/src/stub_io.rs	52	pub(crate) fn discard_to_end<R: Read, const BUF: usize>(rd: &mut R) -> Result<(), R::Error> {
-offset-size-arithmetic	libclamav_rust/src/alz.rs	1251	                    /*This is the end, nothing really to do here.*/
-offset-size-arithmetic	libclamav_rust/src/alz.rs	1303	            let available = usize::try_from(self.fail_at - position)
-offset-size-arithmetic	libclamav_rust/src/alz.rs	1311	        fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
-offset-size-arithmetic	libclamav_rust/src/alz.rs	1438	        let member_data_start = u64::try_from(bytes.len() - 4).unwrap();
-offset-size-arithmetic	libclamav_rust/src/alz.rs	1465	        append_local_file(&mut bytes, "reader-2.txt", ALZ_COMP_NOCOMP, 5, b"again");
-offset-size-arithmetic	libclamav_rust/src/alz.rs	1501	    fn raw_deflate(data: &[u8]) -> Vec<u8> {
+offset-size-arithmetic	libclamav_rust/src/alz.rs	1258	                    /*This is the end, nothing really to do here.*/
+offset-size-arithmetic	libclamav_rust/src/alz.rs	1310	            let available = usize::try_from(self.fail_at - position)
+offset-size-arithmetic	libclamav_rust/src/alz.rs	1318	        fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
+offset-size-arithmetic	libclamav_rust/src/alz.rs	1445	        let member_data_start = u64::try_from(bytes.len() - 4).unwrap();
+offset-size-arithmetic	libclamav_rust/src/alz.rs	1472	        append_local_file(&mut bytes, "reader-2.txt", ALZ_COMP_NOCOMP, 5, b"again");
+offset-size-arithmetic	libclamav_rust/src/alz.rs	1508	    fn raw_deflate(data: &[u8]) -> Vec<u8> {
 offset-size-arithmetic	libclamav_rust/src/alz.rs	159	            fetched_len += read;
 offset-size-arithmetic	libclamav_rust/src/alz.rs	165	            ready_len += 1;
 offset-size-arithmetic	libclamav_rust/src/alz.rs	169	            self.ready[ready_len..ready_len + fetched_len]
@@ -34266,7 +34266,7 @@ offset-size-arithmetic	libclamav_rust/src/alz.rs	173	            self.ready[read
 offset-size-arithmetic	libclamav_rust/src/alz.rs	174	                .copy_from_slice(&fetched[..fetched_len - 1]);
 offset-size-arithmetic	libclamav_rust/src/alz.rs	175	            ready_len += fetched_len - 1;
 offset-size-arithmetic	libclamav_rust/src/alz.rs	176	            self.pending = Some(fetched[fetched_len - 1]);
-offset-size-arithmetic	libclamav_rust/src/alz.rs	1805	            u8::try_from(payload.len() - 1).unwrap(),
+offset-size-arithmetic	libclamav_rust/src/alz.rs	1812	            u8::try_from(payload.len() - 1).unwrap(),
 offset-size-arithmetic	libclamav_rust/src/alz.rs	203	            let count = self.ready_len.min(buffer.len() - written);
 offset-size-arithmetic	libclamav_rust/src/alz.rs	204	            let end = self.ready_start + count;
 offset-size-arithmetic	libclamav_rust/src/alz.rs	208	            self.ready_len -= count;
@@ -34276,10 +34276,10 @@ offset-size-arithmetic	libclamav_rust/src/alz.rs	323	    const fn has_valid_comp
 offset-size-arithmetic	libclamav_rust/src/alz.rs	328	    const fn has_valid_compressed_data_bounds(&self) -> bool {
 offset-size-arithmetic	libclamav_rust/src/alz.rs	398	    pub fn parse<R: Read + Seek>(&mut self, reader: &mut R, source_len: u64) -> Result<(), Error> {
 offset-size-arithmetic	libclamav_rust/src/alz.rs	419	        let byte_len = self.head.file_descriptor / 0x10;
-offset-size-arithmetic	libclamav_rust/src/alz.rs	752	    fn last_size(&self) -> u64 {
-offset-size-arithmetic	libclamav_rust/src/alz.rs	782	    fn last_size(&self) -> u64 {
-offset-size-arithmetic	libclamav_rust/src/alz.rs	833	    fn last_size(&self) -> u64 {
-offset-size-arithmetic	libclamav_rust/src/alz.rs	899	        let metadata_filepos = *filepos;
+offset-size-arithmetic	libclamav_rust/src/alz.rs	753	    fn last_size(&self) -> u64 {
+offset-size-arithmetic	libclamav_rust/src/alz.rs	786	    fn last_size(&self) -> u64 {
+offset-size-arithmetic	libclamav_rust/src/alz.rs	837	    fn last_size(&self) -> u64 {
+offset-size-arithmetic	libclamav_rust/src/alz.rs	903	        let metadata_filepos = *filepos;
 offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1217	                decompressed_bytes = decompressed_bytes + n_read + 1;
 offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1245	    file.seek(SeekFrom::End(-(SIG_SIZE as i64)))?;
 offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1253	    let offset: usize = SIG_SIZE + 1;

@@ -1,5 +1,16 @@
 # Wishlist
 
+## ALZ empty-member accounting — 2026-08-28
+
+- Keep ALZ extraction accounting ahead of empty-member cleanup so a successful
+  empty member cannot expose the preceding member's size to the total-size
+  limit. Retain the three-member boundary regression and the source guard.
+- The native Rust 1.97.1 Docker harness reached dependency compilation but was
+  killed with exit 137 before test execution; complete ALZ corpus, native
+  Rust, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized large-file, Sonic1, and final parser-family qualification
+  remain required.
+
 ## 7-Zip FilesInfo property-boundary admission — 2026-08-28
 
 - Keep every known `FilesInfo` property within its declared payload and

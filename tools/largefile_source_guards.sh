@@ -881,6 +881,8 @@ contains libclamav_rust/src/scanners.rs 'let io_err: io::Error = err.into();'
 contains libclamav_rust/src/scanners.rs 'reader.deadline_status()'
 contains libclamav_rust/src/scanners.rs 'rust_reader_timeout_status_is_preserved'
 contains libclamav_rust/src/alz.rs 'pub trait ExtractSink'
+contains libclamav_rust/src/alz.rs 'fn discard_empty_member(&mut self)'
+contains libclamav_rust/src/alz.rs 'successful_empty_member_does_not_double_count_previous_output'
 contains libclamav_rust/src/alz.rs 'pub fn from_reader_with_filter_stream'
 contains libclamav_rust/src/alz.rs "ReadFailure(&'static str)"
 contains libclamav_rust/src/alz.rs "Timeout(&'static str)"
