@@ -572,6 +572,15 @@ static cl_error_t hwp3_read_fixed(cli_ctx *ctx, fmap_t *map, void *dst, size_t a
     return nread == (size_t)-1 ? CL_EREAD : CL_EPARSE;
 }
 
+static int hwp3_checked_add(size_t base, size_t extra, size_t *sum)
+{
+    if (sum == NULL || extra > SIZE_MAX - base)
+        return 0;
+
+    *sum = base + extra;
+    return 1;
+}
+
 struct hwp3_docsummary_entry {
     size_t offset;
     const char *name;
@@ -1093,9 +1102,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
                     if (read_status != CL_SUCCESS)
                         return read_status;
 
-                    length     = le32_to_host(length);
-                    new_offset = offset + (8 + length);
-                    if ((new_offset <= offset) || (new_offset > map->len)) {
+                    length = le32_to_host(length);
+                    if (!hwp3_checked_add(offset, 8U, &new_offset) ||
+                        !hwp3_checked_add(new_offset, (size_t)length, &new_offset) ||
+                        (new_offset <= offset) || (new_offset > map->len)) {
                         cli_errmsg("HWP3.x: Paragraph[%u, %d]: length value is too high, invalid. %u\n", level, p, length);
                         return CL_EPARSE;
                     }
@@ -1128,9 +1138,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
                     if (read_status != CL_SUCCESS)
                         return read_status;
 
-                    length     = le32_to_host(length);
-                    new_offset = offset + (8 + length);
-                    if ((new_offset <= offset) || (new_offset > map->len)) {
+                    length = le32_to_host(length);
+                    if (!hwp3_checked_add(offset, 8U, &new_offset) ||
+                        !hwp3_checked_add(new_offset, (size_t)length, &new_offset) ||
+                        (new_offset <= offset) || (new_offset > map->len)) {
                         cli_errmsg("HWP3.x: Paragraph[%u, %d]: length value is too high, invalid. %u\n", level, p, length);
                         return CL_EPARSE;
                     }
@@ -1325,9 +1336,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
 
                     hwp3_debug("HWP3.x: Paragraph[%u, %d]: drawing is %u additional bytes\n", level, p, size);
 
-                    size       = le32_to_host(size);
-                    new_offset = offset + (348 + size);
-                    if ((new_offset <= offset) || (new_offset >= map->len)) {
+                    size = le32_to_host(size);
+                    if (!hwp3_checked_add(offset, 348U, &new_offset) ||
+                        !hwp3_checked_add(new_offset, (size_t)size, &new_offset) ||
+                        (new_offset <= offset) || (new_offset >= map->len)) {
                         cli_errmsg("HWP3.x: Paragraph[%u, %d]: image size value is too high, invalid. %u\n", level, p, size);
                         return CL_EPARSE;
                     }
@@ -1680,9 +1692,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
                     if (read_status != CL_SUCCESS)
                         return read_status;
 
-                    length     = le32_to_host(length);
-                    new_offset = offset + (8 + length);
-                    if ((new_offset <= offset) || (new_offset > map->len)) {
+                    length = le32_to_host(length);
+                    if (!hwp3_checked_add(offset, 8U, &new_offset) ||
+                        !hwp3_checked_add(new_offset, (size_t)length, &new_offset) ||
+                        (new_offset <= offset) || (new_offset > map->len)) {
                         cli_errmsg("HWP3.x: Paragraph[%u, %d]: length value is too high, invalid. %u\n", level, p, length);
                         return CL_EPARSE;
                     }

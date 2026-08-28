@@ -24883,6 +24883,61 @@ START_TEST(test_hwp3_information_block_length_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwp3_variable_length_native_addition_is_fail_visible)
+{
+    enum {
+        HWP3_CONTENT_OFFSET    = 30 + 128 + 1008,
+        HWP3_PARAGRAPH_OFFSET  = HWP3_CONTENT_OFFSET + (7 * 2) + 2,
+        HWP3_CONTENT_START     = HWP3_PARAGRAPH_OFFSET + 230,
+        HWP3_SYNTHETIC_END     = HWP3_CONTENT_START + 406
+    };
+    static const uint8_t special_ids[] = {5, 29, 11};
+    uint8_t data[HWP3_SYNTHETIC_END] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t i;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    engine.maxrechwp3 = 100;
+
+    for (i = 0; i < sizeof(special_ids) / sizeof(special_ids[0]); i++) {
+        memset(data, 0, sizeof(data));
+        data[HWP3_PARAGRAPH_OFFSET + 1] = 1;
+        data[HWP3_CONTENT_START]        = special_ids[i];
+
+        /* Field-code and cross-reference records use an 8-byte prefix. */
+        if (special_ids[i] != 11) {
+            memset(data + HWP3_CONTENT_START + 2, 0xff, sizeof(uint32_t));
+            data[HWP3_CONTENT_START + 7] = 13;
+        } else {
+            /* Drawing records add the 4-byte size after their 8-byte ID. */
+            memset(data + HWP3_CONTENT_START + 8, 0xff, sizeof(uint32_t));
+        }
+
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(data, sizeof(data));
+        ck_assert_ptr_nonnull(map);
+        ctx.engine  = &engine;
+        ctx.options = &options;
+        ctx.fmap    = map;
+
+        /* A UINT32_MAX length/size wrapped the old 32-bit expression. The
+         * bytes at the wrapped position form a synthetic paragraph and
+         * information-block terminator, so the pre-fix parser could report
+         * success for an uninspected record. Checked native-width addition
+         * must reject each record before reaching that synthetic suffix. */
+        ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+    }
+}
+END_TEST
+
 START_TEST(test_hwp3_document_info_read_failure_is_fail_visible)
 {
     uint8_t data[30 + 128 + 1008] = {0};
@@ -45302,6 +45357,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_missing_map_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp5_stream_requires_context_and_engine);
     tcase_add_test(tc_hwp3, test_hwp3_information_block_length_is_fail_visible);
+    tcase_add_test(tc_hwp3, test_hwp3_variable_length_native_addition_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_document_info_is_parse_error);
 #ifdef CLAMAV_TEST_JSON_WRAP

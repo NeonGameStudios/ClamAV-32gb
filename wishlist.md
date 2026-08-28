@@ -1,5 +1,17 @@
 # Wishlist
 
+## HWP3 variable-length native-width admission — 2026-08-28
+
+- Keep reserved, field-code, cross-reference, and drawing special-character
+  lengths checked in native-width arithmetic before paragraph traversal; a
+  wrapped `UINT32_MAX` value must return an incomplete parse before nested
+  bytes are treated as a valid suffix.
+- Retain `test_hwp3_variable_length_native_addition_is_fail_visible`, the
+  3/3 current-source production-linked GCC regression, and source guards.
+  Complete HWP3 corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized large-file, Sonic1, and final
+  parser-family qualification remain required.
+
 ## PDF object-stream pair-coordinate admission — 2026-08-28
 
 - Keep object-stream helpers fail-visible for null PDF/output/stream

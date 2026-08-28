@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## HWP3 variable-length native-width admission — 2026-08-28
+
+The HWP3 paragraph parser added `uint32_t` special-character lengths and
+drawing sizes in expressions such as `8 + length` and `348 + size` before
+assigning them to a native-width offset. Near `UINT32_MAX`, those expressions
+wrapped in their 32-bit type and could redirect traversal to unrelated bytes;
+the bounds comparison then saw the wrapped value as in range. A checked
+native-width addition helper now validates the fixed prefix and variable
+length before every affected reserved, field-code, cross-reference, and
+drawing branch. The current-source production-linked GCC runner passes 3/3
+for synthetic `UINT32_MAX` field-code, cross-reference, and drawing records,
+requiring `CL_EPARSE`, sticky incomplete state, and non-cacheability; the
+registered unit regression and source guards cover the same contract. Complete
+HWP3 corpus, sanitizer, production-CVD/service, materialized large-file,
+certified Linux x86-64, Sonic1, and final parser-family qualification remain
+open.
+
 ## PDF object-stream pair-coordinate admission — 2026-08-28
 
 The object-stream parser formed pointers and subtracted byte ranges from

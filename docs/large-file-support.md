@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HWP3 variable-length native-width admission — 2026-08-28
+
+HWP3 paragraph special-character lengths and drawing sizes are now widened
+before addition to parser offsets. Checked native-width arithmetic covers the
+fixed prefix and `uint32_t` variable length for reserved, field-code,
+cross-reference, and drawing records, so a `UINT32_MAX` declaration cannot
+wrap into a synthetic in-range suffix. The current-source production-linked
+GCC regression passes 3/3 and requires `CL_EPARSE`, sticky incomplete state,
+and a non-cacheable fmap. Complete corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized large-file, Sonic1, and final
+parser-family qualification remain required.
+
 ## PDF object-stream pair-coordinate admission — 2026-08-28
 
 PDF object-stream parsing now validates the PDF, output, and decoded stream
