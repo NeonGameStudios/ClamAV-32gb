@@ -6181,3 +6181,9 @@ qualification gates.
   attachment materialization and matcher-root access.
 - Retain complete UUEncode corpus, sanitizer, production-CVD/service,
   materialized large-file, Sonic1, and release qualification gates.
+## TNEF parser admission — 2026-08-27
+
+- Keep TNEF fail-visible when engine ownership is absent before decoded
+  attachment materialization and matcher-root access.
+- Retain complete TNEF corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and release qualification gates.

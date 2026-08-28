@@ -27944,6 +27944,33 @@ START_TEST(test_tnef_null_context_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tnef_missing_engine_is_fail_visible)
+{
+    static const uint8_t input[] = {
+        0x78, 0x9f, 0x3e, 0x22,
+        0x00, 0x00,
+        0x02,
+        0x0f, 0x80, 0x00, 0x00,
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0x02, 0x03, 0x04, 0x05,
+        0x00, 0x00,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_tnef_initial_read_failure_is_fail_visible)
 {
     static const uint8_t input[sizeof(uint32_t) + sizeof(uint16_t)] = {0};
@@ -42451,6 +42478,7 @@ static Suite *test_cl_suite(void)
 #endif
     suite_add_tcase(s, tc_tnef_map);
     tcase_add_test(tc_tnef_map, test_tnef_null_context_is_fail_visible);
+    tcase_add_test(tc_tnef_map, test_tnef_missing_engine_is_fail_visible);
     tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_tnef_debug);
     tcase_add_checked_fixture(tc_tnef_debug, cl_setup, cl_teardown);

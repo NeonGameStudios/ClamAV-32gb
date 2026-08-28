@@ -8782,3 +8782,10 @@ roots. The focused `test_uuencode_missing_engine_is_fail_visible` regression
 covers a complete decoded-line stream; complete UUEncode corpus, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and release
 qualification remain open.
+## TNEF parser admission — 2026-08-27
+
+The TNEF entry now rejects missing engine ownership before decoded attachment
+materialization can reach `fileblobAddData()` and inspect matcher roots. The
+focused `test_tnef_missing_engine_is_fail_visible` regression covers a valid
+attachment boundary; complete TNEF corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification remain open.

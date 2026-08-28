@@ -12356,3 +12356,12 @@ incomplete, and prevent caching before nested dispatch; the focused media
 overlay regression covers valid GIF and PNG cases. Complete media corpus,
 sanitizer, production-CVD/service, materialized large-file, Sonic1, and release
 qualification evidence remain required.
+## TNEF parser admission audit — 2026-08-27
+
+`cli_tnef()` accepted a context and fmap without requiring an engine, then
+decoded attachment data through `fileblobAddData()`, whose early matcher scan
+dereferences `ctx->engine->root`. The entry now returns `CL_ENULLARG` before
+attachment materialization; `test_tnef_missing_engine_is_fail_visible` covers
+a valid attachment boundary. Complete TNEF corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification evidence remain required.
