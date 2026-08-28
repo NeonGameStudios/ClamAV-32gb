@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## Mydoom detector alignment boundary — 2026-08-28
+
+The Mydoom detector documented a `memcmp()`/`memcpy()` workaround for fmap
+buffers that may not be naturally aligned, but still kept the mapped pointer
+as `const uint32_t *`. Converting an unaligned byte address to that pointer
+type can itself violate the alignment contract before the bytewise operations
+run. The detector now keeps the mapped window as `const uint8_t *` and applies
+the existing word-sized byte offsets only to `memcmp()`, while `memcpy()` still
+copies into the aligned local record. The current `special.c` compiles
+warning-clean with the production GCC flags, and an isolated current-source
+ASan/UBSan runner passes the intentionally unaligned 64-byte fixture. The
+registered regression and source guard preserve this boundary. Full
+Mydoom/raw signature, production-CVD/service, materialized large-file,
+certified Linux x86-64, Sonic1, and final release qualification remain
+required.
+
 ## AutoIt EA06 debug-string termination — 2026-08-28
 
 The EA06 handler decrypts a bounded magic string into its diagnostic buffer,

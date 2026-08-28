@@ -28643,6 +28643,30 @@ START_TEST(test_mydoom_detector_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mydoom_detector_accepts_unaligned_input)
+{
+    uint8_t storage[(8U * 4U * 2U) + 1U];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(storage, 0, sizeof(storage));
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    map = cl_fmap_open_memory(storage + 1U, sizeof(storage) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_check_mydoom_log(&ctx), CL_CLEAN);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mydoom_detector_corpus_reaches_public_dispatch)
 {
     static const uint8_t data[] = {
@@ -45305,6 +45329,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_missing_map_is_fail_visible);
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_null_context_is_fail_visible);
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_read_failure_is_fail_visible);
+    tcase_add_test(tc_mydoom_map, test_mydoom_detector_accepts_unaligned_input);
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_corpus_reaches_public_dispatch);
     suite_add_tcase(s, tc_bz_map);
     tcase_add_checked_fixture(tc_bz_map, cl_setup, cl_teardown);

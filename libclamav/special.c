@@ -49,7 +49,7 @@
 int cli_check_mydoom_log(cli_ctx *ctx)
 {
     uint32_t record[16];
-    const uint32_t *ptr;
+    const uint8_t *ptr;
     uint32_t check, key;
     fmap_t *map;
     unsigned int blocks;
@@ -84,7 +84,8 @@ int cli_check_mydoom_log(cli_ctx *ctx)
     while (blocks) { /* This wasn't probably intended but that's what the current code does anyway */
         const uint32_t marker_ff = 0xffffffff;
 
-        if (!memcmp(&ptr[--blocks], &marker_ff, sizeof(uint32_t)))
+        if (!memcmp(ptr + ((size_t)(--blocks) * sizeof(uint32_t)),
+                    &marker_ff, sizeof(uint32_t)))
             return CL_CLEAN;
     }
 

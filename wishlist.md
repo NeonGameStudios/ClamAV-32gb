@@ -1,5 +1,14 @@
 # Wishlist
 
+## Mydoom detector alignment boundary — 2026-08-28
+
+- Keep the Mydoom detector's mapped input pointer byte-oriented so unaligned
+  fmap bases never pass through a `uint32_t *`; retain the intentionally
+  unaligned regression and source guard.
+- Full Mydoom/raw signature, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized large-file, Sonic1, and final
+  parser-family qualification remain required.
+
 ## AutoIt EA06 debug-string termination — 2026-08-28
 
 - Keep the decrypted EA06 magic diagnostic explicitly NUL-terminated after

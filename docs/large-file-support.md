@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Mydoom detector alignment boundary — 2026-08-28
+
+The Mydoom detector now keeps its fmap window byte-oriented while preserving
+the existing word-sized `memcmp()` offsets and aligned local-record copy. This
+avoids converting a potentially unaligned map base to `const uint32_t *` before
+the detector's unaligned-safe operations. The current source compiles
+warning-clean with the production GCC flags, and an isolated current-source
+ASan/UBSan runner passes the intentionally unaligned 64-byte fixture. The
+regression and source guard cover the boundary. Full Mydoom/raw signature,
+certified Linux x86-64, production-CVD/service, materialized large-file,
+Sonic1, and final parser-family qualification remain required.
+
 ## AutoIt EA06 debug-string termination — 2026-08-28
 
 EA06 magic-string diagnostics now terminate the bounded decrypted/converted
