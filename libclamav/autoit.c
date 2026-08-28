@@ -1728,9 +1728,12 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             return CL_EREAD;
 
         if (s < sizeof(b) / 2) {
+            unsigned int printable_len;
+
             memcpy(b, base, (size_t)s * 2);
             LAME_decrypt(b, s * 2, s + 0xb33f);
-            u2a(b, s * 2);
+            printable_len = u2a(b, s * 2);
+            b[printable_len] = '\0';
             cli_dbgmsg("autoit: magic string '%s'\n", b);
 
             if (s == 19 && !memcmp(">>>AUTOIT SCRIPT<<<", b, 19)) {

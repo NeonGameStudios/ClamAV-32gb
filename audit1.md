@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## AutoIt EA06 debug-string termination — 2026-08-28
+
+The EA06 handler decrypts a bounded magic string into its diagnostic buffer,
+then converts possible UTF-16 content. When the input was classified as
+already single-byte text, `u2a()` returned without appending a terminator, so
+the debug `%s` conversion could read beyond the converted magic string. The
+handler now records the returned printable length and terminates `b` before
+logging or comparing the magic. The current AutoIt object compiles with the
+production GCC warning flags, and the source guard requires the explicit
+post-conversion length/termination path. Full AutoIt corpus, sanitizer,
+production-CVD/service, materialized large-file, certified Linux x86-64,
+Sonic1, and final release qualification remain required.
+
 ## ARJ empty-comment diagnostics — 2026-08-28
 
 The ARJ main and file header readers can legitimately have no normalized

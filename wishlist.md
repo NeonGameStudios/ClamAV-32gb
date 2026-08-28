@@ -1,5 +1,14 @@
 # Wishlist
 
+## AutoIt EA06 debug-string termination — 2026-08-28
+
+- Keep the decrypted EA06 magic diagnostic explicitly NUL-terminated after
+  `u2a()` conversion, including the already-single-byte path; retain the
+  source guard and production GCC compile evidence.
+- Full AutoIt corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized large-file, Sonic1, and final parser-family
+  qualification remain required.
+
 ## ARJ empty-comment diagnostics — 2026-08-28
 
 - Keep ARJ debug diagnostics safe when a valid minimal header has no normalized

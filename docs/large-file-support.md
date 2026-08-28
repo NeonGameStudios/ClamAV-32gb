@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## AutoIt EA06 debug-string termination — 2026-08-28
+
+EA06 magic-string diagnostics now terminate the bounded decrypted/converted
+buffer at the exact length returned by `u2a()`. This closes the diagnostic
+overread when the magic is already single-byte text and `u2a()` leaves the
+input length unchanged. The current AutoIt object passes the production GCC
+warning-enabled compile, with a source guard for the post-conversion
+termination. Full AutoIt corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized large-file, Sonic1, and final
+parser-family qualification remain required.
+
 ## ARJ empty-comment diagnostics — 2026-08-28
 
 ARJ main/file-header diagnostics now convert an absent normalized comment
