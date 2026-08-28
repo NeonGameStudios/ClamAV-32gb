@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## GIF short-signature admission — 2026-08-28
+
+The GIF parser returned clean when a forced `CL_TYPE_GIF` entry supplied a
+map shorter than the three-byte `GIF` signature, leaving a recognized but
+unverified layer cacheable. The short-map branch now records
+`Heuristics.Broken.Media.GIF.TruncatedMagic` and returns `CL_EPARSE` with
+sticky incomplete/non-cacheable state. The registered
+`test_gif_truncated_signature_is_fail_visible` regression, current-source
+production-GCC parser and unit compiles, and current-source GCC ASan/UBSan
+direct-parser runner pass the boundary. Full production-linked Check
+execution, complete GIF/image corpus, certified Linux, materialized
+large-file, production-CVD/service, Sonic1, and final release qualification
+remain required.
+
 ## SIS 9.x fixed-field boundary and header origin — 2026-08-28
 
 The SIS 9.x stream parser initialized its cursor at offset zero even though

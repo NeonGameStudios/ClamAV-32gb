@@ -1,5 +1,17 @@
 # Wishlist
 
+## GIF short-signature admission — 2026-08-28
+
+- Keep forced GIF entries shorter than the three-byte signature fail-visible:
+  record `Heuristics.Broken.Media.GIF.TruncatedMagic`, return `CL_EPARSE`,
+  mark the layer incomplete, and disable caching.
+- Retain `test_gif_truncated_signature_is_fail_visible` and its source guards.
+  The current GIF and unit sources compile with production GCC, and a
+  current-source GCC ASan/UBSan direct-parser runner passes the boundary.
+  Keep production-linked Check execution, complete GIF/image corpus,
+  certified Linux, materialized large-file, production-CVD/service, Sonic1,
+  and final parser-family/release evidence open.
+
 ## SIS 9.x fixed-field boundary and header origin — 2026-08-28
 
 - Keep SIS 9.x traversal rooted after the four-UID header and require every

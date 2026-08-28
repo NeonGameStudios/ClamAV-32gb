@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## GIF short-signature admission — 2026-08-28
+
+A forced GIF parser entry with fewer than the three signature bytes now records
+`Heuristics.Broken.Media.GIF.TruncatedMagic` and returns `CL_EPARSE` with
+sticky incomplete/non-cacheable state instead of returning clean. The
+registered regression, current-source production-GCC compiles, and the
+current-source GCC ASan/UBSan direct-parser runner pass this boundary. Full
+production-linked Check execution, complete GIF/image corpus, certified Linux,
+materialized large-file, production-CVD/service, Sonic1, and final
+parser-family qualification remain required.
+
 ## SIS 9.x fixed-field boundary and header origin — 2026-08-28
 
 SIS 9.x traversal now starts after the 16-byte UID header and verifies that

@@ -229,11 +229,15 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
         goto done;
     }
 
-    /* A map shorter than the signature cannot be a confirmed GIF. Once the
-     * signature-sized range exists, a failed fmap read is an operational
-     * failure and must not become a clean non-GIF result. */
-    if (map->len < strlen("GIF"))
+    /* A recognized GIF entry with fewer than three signature bytes is a
+     * malformed layer, not a clean non-GIF result. Once the signature-sized
+     * range exists, a failed fmap read is an operational failure and must not
+     * become a clean non-GIF result. */
+    if (map->len < strlen("GIF")) {
+        status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.TruncatedMagic");
+        parse_error = true;
         goto done;
+    }
     /* The signature is consumed immediately and is not retained across any
      * later fmap operation, so do not pin its page for the whole parser. */
     if (NULL == (signature = fmap_need_off_once(map, offset, strlen("GIF")))) {
