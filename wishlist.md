@@ -6598,3 +6598,13 @@ qualification gates.
   disposable offline Rust 1.97.1 ALZ harness passes all 40 ALZ tests. Full
   current-C ABI, sanitizer, production-CVD/service, materialized large-file,
   Sonic1, and parser-family qualification remain required.
+
+## LHA/LZH pathname allocation admission — 2026-08-28
+
+- Preflight the combined raw filename and extra-header lengths before
+  `parse_pathname()` so its worst-case percent-encoding allocation cannot
+  exceed the 1-GiB individual allocation boundary; preserve checked addition
+  and multiplication overflow as `CL_ERESOURCE`.
+- Retain `lha_pathname_admission_rejects_expansion_overflow` and complete LHA
+  variant corpus, sanitizer, production-CVD/service, materialized large-file,
+  Sonic1, and parser-family qualification.

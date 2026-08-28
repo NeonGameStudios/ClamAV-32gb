@@ -12930,3 +12930,16 @@ The registered complete-stream and trailing-byte regressions pass in the
 current-source disposable offline Rust 1.97.1 ALZ harness, which now passes
 40 ALZ tests. Full current-C ABI, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and parser-family qualification remain open.
+
+## LHA/LZH pathname allocation admission audit — 2026-08-28
+
+The vendored delharc header parser limits cumulative raw header storage to
+1 GiB, but the scanner subsequently normalizes the pathname. A malformed
+filename or pathname extra header can force `parse_pathname()` to reserve up
+to three times its raw bytes for percent-encoded output. The LHA scanner now
+checked-adds the raw filename and extra-header lengths, checked-multiplies the
+result by three, and returns `CL_ERESOURCE` before pathname normalization when
+the individual allocation boundary would be exceeded. The focused helper
+regression covers the exact boundary and addition overflow. Complete LHA
+variant corpus, sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, and parser-family qualification remain open.

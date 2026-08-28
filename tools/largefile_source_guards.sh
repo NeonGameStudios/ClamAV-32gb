@@ -851,6 +851,8 @@ contains libclamav_rust/src/ctx.rs 'current_fmap_rejects_recursion_level_outside
 contains libclamav_rust/src/scanners.rs 'fn rust_context_error_status'
 contains libclamav_rust/src/scanners.rs 'rust_context_error_status(&e)'
 contains libclamav_rust/src/scanners.rs 'rust_context_error_status_preserves_failure_class'
+contains libclamav_rust/src/scanners.rs 'fn lha_pathname_input_within_allocation_limit'
+contains libclamav_rust/src/scanners.rs 'member pathname exceeds the individual allocation boundary'
 contains libclamav_rust/src/scanners.rs 'unsafe fn spool_fmap'
 contains libclamav_rust/src/scanners.rs 'struct MappedInput'
 contains libclamav_rust/src/scanners.rs 'length > isize::MAX as usize'

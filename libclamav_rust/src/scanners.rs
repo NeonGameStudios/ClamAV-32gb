@@ -87,6 +87,17 @@ fn rust_reader_status(err: &io::Error, fallback: cl_error_t) -> cl_error_t {
 
 const LHA_HEADER_ALLOCATION_LIMIT: usize = 1024 * 1024 * 1024;
 
+fn lha_pathname_input_within_allocation_limit(filename_len: usize, extra_headers_len: usize) -> bool {
+    let input_len = match filename_len.checked_add(extra_headers_len) {
+        Some(value) => value,
+        None => return false,
+    };
+    match input_len.checked_mul(3) {
+        Some(value) => value <= LHA_HEADER_ALLOCATION_LIMIT,
+        None => false,
+    }
+}
+
 fn lha_error_status(err: &LhaError<io::Error>, fallback: cl_error_t) -> cl_error_t {
     match err {
         LhaError::Io(io_err) => rust_reader_status(io_err, fallback),
@@ -1018,6 +1029,18 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
             }
         };
 
+        if !lha_pathname_input_within_allocation_limit(
+            header.filename.len(),
+            header.extra_headers.len(),
+        ) {
+            return parser_failure(
+                ctx,
+                "LHA/LZH",
+                cl_error_t_CL_ERESOURCE,
+                "member pathname exceeds the individual allocation boundary",
+            );
+        }
+
         let filepath = header.parse_pathname();
         let filename = filepath.to_string_lossy();
         if header.is_directory() {
@@ -1705,6 +1728,16 @@ mod tests {
         assert!(lha_member_range_fits(60, 0, 60));
         assert!(!lha_member_range_fits(60, 1, 60));
         assert!(!lha_member_range_fits(u64::MAX, 1, u64::MAX));
+    }
+
+    #[test]
+    fn lha_pathname_admission_rejects_expansion_overflow() {
+        let input_limit = LHA_HEADER_ALLOCATION_LIMIT / 3;
+
+        assert!(lha_pathname_input_within_allocation_limit(input_limit, 0));
+        assert!(!lha_pathname_input_within_allocation_limit(input_limit + 1, 0));
+        assert!(!lha_pathname_input_within_allocation_limit(usize::MAX, 1));
+        assert!(!lha_pathname_input_within_allocation_limit(0, input_limit + 1));
     }
 
     #[test]

@@ -8735,6 +8735,18 @@ non-cacheable. Complete CAB/SFX corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, Sonic1, and
 parser-family qualification remain release gates.
 
+## LHA/LZH pathname allocation admission
+
+The LHA/LZH scanner now checks the combined raw filename and extra-header
+length before calling the vendored pathname normalizer. Because malformed
+bytes may expand to percent-encoded text, the checked admission uses a
+threefold worst-case bound and returns `CL_ERESOURCE` before normalization when
+the 1-GiB individual allocation boundary would be exceeded. The focused
+`lha_pathname_admission_rejects_expansion_overflow` regression covers exact
+boundary and overflow cases. Complete LHA variant corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and parser-family
+qualification remain release gates.
+
 ## TIFF first-IFD range ordering
 
 TIFF now validates that the first IFD offset is within the containing map
