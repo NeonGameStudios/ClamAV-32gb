@@ -8799,3 +8799,6 @@ The exported `cli_untar()` entry now rejects a recognized fmap with no owning en
 
 ## Fileblob materialization admission — 2026-08-27
 The shared `fileblobAddData()` spool boundary now rejects a scan context without owning engine state before early matcher-root access, marks the context incomplete, and returns `-1`. The focused `test_fileblob_add_data_without_engine_is_fail_visible` regression covers a materialized temporary spool; complete mail/fileblob corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification remain open.
+
+## Virus-found callback admission — 2026-08-27
+The shared virus-found callback boundary now rejects a scan context without owning engine state before legacy callback dispatch, returning `CL_ENULLARG`. The focused `test_virus_found_callback_without_engine_is_fail_visible` regression covers the direct helper boundary; complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification remain open.

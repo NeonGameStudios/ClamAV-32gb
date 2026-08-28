@@ -3771,6 +3771,15 @@ START_TEST(test_configured_limit_result_precedence_and_alert_compatibility)
 }
 END_TEST
 
+START_TEST(test_virus_found_callback_without_engine_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_virus_found_cb(&ctx, "Missing.Engine", false), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_callback_abort_is_not_reported_as_timeout)
 {
     cli_scan_layer_t layers[1];
@@ -43408,6 +43417,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
     tcase_add_test(tc_cl, test_legacy_callback_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_scan_callback_errors_are_fail_visible);
+    tcase_add_test(tc_cl, test_virus_found_callback_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
     tcase_add_test(tc_cl, test_parser_error_statuses_are_fail_closed);

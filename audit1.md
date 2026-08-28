@@ -12374,3 +12374,6 @@ qualification evidence remain required.
 
 ## Fileblob materialization admission audit — 2026-08-27
 `fileblobAddData()` accepted a context with no engine and entered its early matcher path, which dereferenced `ctx->engine->root`. The shared boundary now marks the blob/context incomplete and returns `-1` before matcher access; `test_fileblob_add_data_without_engine_is_fail_visible` covers a real temporary spool. Complete mail/fileblob corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification evidence remain required.
+
+## Virus-found callback admission audit — 2026-08-27
+`cli_virus_found_cb()` validated only the context and virus name, then dereferenced `ctx->engine->cb_virus_found`. It now rejects missing engine ownership with `CL_ENULLARG` before dispatch; `test_virus_found_callback_without_engine_is_fail_visible` covers the direct boundary. Complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification evidence remain required.

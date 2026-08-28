@@ -6199,3 +6199,7 @@ qualification gates.
 ## Fileblob materialization admission — 2026-08-27
 - Keep `fileblobAddData()` fail-visible when a materialization context lacks owning engine state; no early matcher-root dereference may occur.
 - Retain complete mail/fileblob corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification gates.
+
+## Virus-found callback admission — 2026-08-27
+- Keep `cli_virus_found_cb()` fail-visible when engine ownership is absent before legacy or modern callback dispatch.
+- Retain complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification gates.

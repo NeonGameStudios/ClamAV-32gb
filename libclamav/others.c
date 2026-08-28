@@ -1830,7 +1830,7 @@ cl_error_t cli_virus_found_cb(cli_ctx *ctx, const char *virname, bool is_potenti
 {
     cl_error_t status = CL_VIRUS;
 
-    if (!ctx || !virname) {
+    if (!ctx || !virname || !ctx->engine) {
         return CL_ENULLARG;
     }
 
