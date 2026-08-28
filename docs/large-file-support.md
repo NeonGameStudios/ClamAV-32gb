@@ -8802,3 +8802,12 @@ The shared `fileblobAddData()` spool boundary now rejects a scan context without
 
 ## Virus-found callback admission — 2026-08-27
 The shared virus-found callback boundary now rejects a scan context without owning engine state before legacy callback dispatch, returning `CL_ENULLARG`. The focused `test_virus_found_callback_without_engine_is_fail_visible` regression covers the direct helper boundary; complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification remain open.
+
+## Virus-indicator append admission — 2026-08-27
+The shared virus-indicator append APIs now reject null contexts, null names, and
+invalid recursion-stack state before string classification, evidence creation,
+or stack indexing. The focused
+`test_virus_indicator_append_boundaries_are_fail_visible` regression covers
+these direct helper boundaries; complete callback/ingress parity, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification remain open.

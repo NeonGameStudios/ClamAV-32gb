@@ -6203,3 +6203,7 @@ qualification gates.
 ## Virus-found callback admission — 2026-08-27
 - Keep `cli_virus_found_cb()` fail-visible when engine ownership is absent before legacy or modern callback dispatch.
 - Retain complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification gates.
+
+## Virus-indicator append admission — 2026-08-27
+- Keep virus-indicator append APIs fail-visible for null contexts, null names, and invalid recursion-stack state before string or stack access.
+- Retain complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification gates.

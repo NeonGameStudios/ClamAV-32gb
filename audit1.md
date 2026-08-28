@@ -12377,3 +12377,13 @@ qualification evidence remain required.
 
 ## Virus-found callback admission audit — 2026-08-27
 `cli_virus_found_cb()` validated only the context and virus name, then dereferenced `ctx->engine->cb_virus_found`. It now rejects missing engine ownership with `CL_ENULLARG` before dispatch; `test_virus_found_callback_without_engine_is_fail_visible` covers the direct boundary. Complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification evidence remain required.
+
+## Virus-indicator append admission audit — 2026-08-27
+`cli_append_virus()` classified the alert with `strncmp()` before validating the
+context or name, while the shared append implementation indexed the current
+recursion layer without validating stack presence, size, or level. Both public
+append wrappers and the shared implementation now return `CL_ENULLARG` before
+those accesses. `test_virus_indicator_append_boundaries_are_fail_visible`
+covers null context/name and invalid-stack cases. Complete callback/ingress
+parity, sanitizer, production-CVD/service, materialized large-file, Sonic1,
+and release qualification evidence remain required.

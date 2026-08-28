@@ -1952,6 +1952,12 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
     uint64_t match_offset = 0;
     char *location = NULL;
 
+    if (!ctx || !virname || !ctx->recursion_stack ||
+        ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        return CL_ENULLARG;
+    }
+
     if (NULL != ctx->report)
         has_match_offset = cli_scan_report_take_match_offset(ctx->report, &match_offset);
     if ((NULL == ctx->recursion_stack) || (ctx->recursion_level != 0))
@@ -2126,6 +2132,10 @@ done:
 
 cl_error_t cli_append_potentially_unwanted(cli_ctx *ctx, const char *virname)
 {
+    if (!ctx || !virname) {
+        return CL_ENULLARG;
+    }
+
     if (SCAN_HEURISTIC_PRECEDENCE) {
         return append_virus(ctx, virname, IndicatorType_Strong);
     } else {
@@ -2136,6 +2146,10 @@ cl_error_t cli_append_potentially_unwanted(cli_ctx *ctx, const char *virname)
 cl_error_t cli_append_virus(cli_ctx *ctx, const char *virname)
 {
     cl_error_t status;
+
+    if (!ctx || !virname) {
+        return CL_ENULLARG;
+    }
 
     if ((strncmp(virname, "PUA.", 4) == 0) ||
         (strncmp(virname, "Heuristics.", 11) == 0) ||

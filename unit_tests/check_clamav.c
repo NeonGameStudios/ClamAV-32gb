@@ -3780,6 +3780,28 @@ START_TEST(test_virus_found_callback_without_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_virus_indicator_append_boundaries_are_fail_visible)
+{
+    cli_ctx ctx;
+    cli_scan_layer_t layers[1];
+
+    memset(&ctx, 0, sizeof(ctx));
+    memset(layers, 0, sizeof(layers));
+
+    ck_assert_int_eq(cli_append_virus(NULL, "Boundary.Test"), CL_ENULLARG);
+    ck_assert_int_eq(cli_append_potentially_unwanted(NULL, "Boundary.Test"), CL_ENULLARG);
+    ck_assert_int_eq(cli_append_virus(&ctx, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_append_potentially_unwanted(&ctx, NULL), CL_ENULLARG);
+
+    ctx.recursion_stack = layers;
+    ck_assert_int_eq(cli_append_virus(&ctx, "Boundary.Test"), CL_ENULLARG);
+
+    ctx.recursion_stack_size = 1;
+    ctx.recursion_level      = 1;
+    ck_assert_int_eq(cli_append_potentially_unwanted(&ctx, "Boundary.Test"), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_callback_abort_is_not_reported_as_timeout)
 {
     cli_scan_layer_t layers[1];
@@ -43418,6 +43440,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_legacy_callback_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_scan_callback_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_virus_found_callback_without_engine_is_fail_visible);
+    tcase_add_test(tc_cl, test_virus_indicator_append_boundaries_are_fail_visible);
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
     tcase_add_test(tc_cl, test_parser_error_statuses_are_fail_closed);
