@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## MSPack CAB/CHM output close failures — 2026-08-28
+
+The MSPack fmap-backed output callback already recorded a failed `fclose()`
+without losing the decoder's result, but the close-status contract lacked
+execution evidence. The registered regression now injects close failure during
+both the CAB and CHM corpus extraction paths and requires `CL_EWRITE`, sticky
+incomplete state, and a non-cacheable fmap. The current-source production-
+linked GCC harness passes both cases, and the unit source passes the existing
+warning-enabled GCC syntax check. Complete MSPack corpus, sanitizer,
+certified Linux x86-64, production CVD/service, materialized large-file,
+Sonic1, and final release qualification remain open.
+
 ## Crypto key-file close failures — 2026-08-28
 
 The PEM private-key and X.509 verification helpers already rejected a

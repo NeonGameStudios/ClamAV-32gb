@@ -1,5 +1,15 @@
 # Wishlist
 
+## MSPack CAB/CHM output close failures — 2026-08-28
+
+- Keep CAB and CHM decoder output `fclose()` failures fail-visible as
+  `CL_EWRITE`, with sticky incomplete state and a non-cacheable input fmap;
+  cleanup must preserve earlier parser, timeout, read, and detection results.
+- The current-source production-linked GCC regression passes both the CAB and
+  CHM corpus close-failure paths. Keep complete MSPack corpus, sanitizer,
+  certified Linux x86-64, production CVD/service, materialized large-file,
+  Sonic1, and final release qualification open.
+
 ## Crypto key-file close failures — 2026-08-28
 
 - Keep successful PEM parsing followed by `fclose()` failure fail-visible and

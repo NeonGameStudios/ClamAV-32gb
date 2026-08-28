@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MSPack CAB/CHM output close failures — 2026-08-28
+
+CAB and CHM decoder output `fclose()` failures now remain fail-visible as
+`CL_EWRITE`; the parser marks the layer incomplete and leaves the input fmap
+non-cacheable while preserving earlier statuses. The registered current-source
+production-linked GCC regression passes both the CAB and CHM corpus paths.
+Complete MSPack corpus, sanitizer, certified Linux x86-64, production
+CVD/service, materialized large-file, Sonic1, and final release qualification
+remain required.
+
 ## Crypto key-file close failures — 2026-08-28
 
 Successful PEM private-key and X.509/CRL parsing now remains fail-visible when
