@@ -4010,6 +4010,8 @@ contains libclamav/blob.c 'requested blob allocation exceeds the individual allo
 contains unit_tests/check_clamav.c 'test_blob_allocation_boundaries'
 contains unit_tests/check_clamav.c 'test_fileblob_time_limit_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_fileblob_cleanup_failures_are_fail_visible'
+contains libclamav/blob.c 'if (!cleanup_ctx || !cleanup_ctx->engine || !cleanup_ctx->engine->keeptmp)'
+contains unit_tests/check_clamav.c 'test_fileblob_cleanup_without_engine_is_fail_visible'
 contains libclamav/bytecode_api.c 'Bytecode temporary output reached the configured time limit'
 contains libclamav/bytecode_api.c 'Bytecode temporary output was already incomplete'
 contains libclamav/bytecode_api.c 'Bytecode temporary output could not be allocated'

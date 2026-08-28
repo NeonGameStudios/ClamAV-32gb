@@ -6045,6 +6045,10 @@ parser-family qualification remain open.
 
 Hardened `cli_matchmeta()` and `cli_check_fp()` against null or malformed recursion-stack state. Invalid contexts now return `CL_ENULLARG`; missing false-positive hash-layer maps return `CL_EPARSE` and set sticky incomplete/non-cacheable state. Added focused regressions and capability/source-guard evidence. Production-linked runtime execution remains pending.
 
+## Fileblob cleanup-context hardening — 2026-08-27
+
+Made destructive fileblob cleanup safe when its attached context has no engine, and added a regression for quota/admission failure followed by cleanup. Production-linked mail/fileblob and full release qualification remain pending.
+
 ## SWF compressed-entry boundary hardening — 2026-08-27
 
 Added explicit engine admission for CWS/ZWS decompression before temporary-output setup, preventing a valid compressed header from reaching cleanup code with a null engine. Added a direct regression; complete SWF/parser-family, sanitizer, Sonic1, and release qualification remain pending.

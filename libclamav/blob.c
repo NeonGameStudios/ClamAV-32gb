@@ -608,7 +608,7 @@ void fileblobDestructiveDestroy(fileblob *fb)
         if (fclose(fb->fp) != 0)
             fileblobNoteCleanupFailure(cleanup_ctx, "fileblob temporary spool could not be closed");
         cli_dbgmsg("fileblobDestructiveDestroy: %s\n", fb->fullname);
-        if (!cleanup_ctx || !cleanup_ctx->engine->keeptmp) {
+        if (!cleanup_ctx || !cleanup_ctx->engine || !cleanup_ctx->engine->keeptmp) {
             if (cli_unlink(fb->fullname))
                 fileblobNoteCleanupFailure(cleanup_ctx, "fileblob temporary spool could not be removed");
         }

@@ -41794,6 +41794,21 @@ static const TTest *test_xar_missing_engine_is_fail_visible;
 static const TTest *test_rtf_missing_engine_is_fail_visible;
 static const TTest *test_jpeg_entropy_completion_and_failures;
 
+START_TEST(test_fileblob_cleanup_without_engine_is_fail_visible)
+{
+    cli_ctx ctx;
+    fileblob *fb;
+
+    memset(&ctx, 0, sizeof(ctx));
+    fb = fileblobCreate();
+    ck_assert_ptr_nonnull(fb);
+    fileblobSetFilename(fb, tmpdir, "missing-engine-cleanup");
+    fileblobSetCTX(fb, &ctx);
+    ck_assert(ctx.scan_incomplete);
+    fileblobDestructiveDestroy(fb);
+}
+END_TEST
+
 START_TEST(test_swf_compressed_requires_engine)
 {
     static const uint8_t compressed[] = {'C', 'W', 'S', 9U, 8U, 0U, 0U, 0U};
@@ -42869,6 +42884,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_blob_allocation_boundaries);
     tcase_add_test(tc_cl, test_fileblob_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_scan_errors_are_fail_visible);
+    tcase_add_test(tc_cl, test_fileblob_cleanup_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);
     tcase_add_test(tc_cl, test_engine_set_num_rejects_narrowing_and_negative_values);
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
