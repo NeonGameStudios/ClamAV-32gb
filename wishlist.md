@@ -1,5 +1,16 @@
 # Wishlist
 
+## Crypto key-file close failures — 2026-08-28
+
+- Keep successful PEM parsing followed by `fclose()` failure fail-visible and
+  release the parsed private key or certificate/CRL object before returning.
+- The current-source production-linked GCC regression injects close failure
+  through both key loading and key-file signing, then verifies successful
+  loading and signing with normal close behavior. Keep full certificate/CRL
+  close-failure coverage, production CVD/service, sanitizer, certified Linux
+  x86-64, materialized large-file, Sonic1, and final release qualification
+  open.
+
 ## Signature counting and hash-stream I/O — 2026-08-28
 
 - Keep line-based signature counting fail-visible: stop on the actual

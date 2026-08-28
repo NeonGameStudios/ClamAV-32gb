@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Crypto key-file close failures — 2026-08-28
+
+The PEM private-key and X.509 verification helpers already rejected a
+successful parse followed by `fclose()` failure and freed the parsed OpenSSL
+object; the CRL loader follows the same contract. A new current-source
+production-linked GCC regression injects close failure through both
+`cl_get_pkey_file()` and `cl_sign_data_keyfile()`, verifies that both return
+failure, then disables injection and verifies that loading and signing still
+succeed. The crypto source and unit source pass warning-enabled GCC syntax
+checks. Full certificate/CRL close-failure coverage, production CVD/service,
+sanitizer, certified Linux x86-64, materialized large-file, Sonic1, and final
+release qualification remain open.
+
 ## Signature counting and hash-stream I/O — 2026-08-28
 
 The line-based signature counter used `while (!feof())` and could continue

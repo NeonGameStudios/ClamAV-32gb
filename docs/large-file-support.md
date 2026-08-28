@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Crypto key-file close failures — 2026-08-28
+
+Successful PEM private-key and X.509/CRL parsing now remains fail-visible when
+the source `fclose()` fails, and parsed objects are released on that path. The
+current-source production-linked GCC regression injects close failure through
+key loading and key-file signing, then verifies normal loading and signing.
+Full certificate/CRL close-failure coverage, production CVD/service,
+sanitizer, certified Linux x86-64, materialized large-file, Sonic1, and final
+release qualification remain required.
+
 ## Signature counting and hash-stream I/O — 2026-08-28
 
 Line-based signature counting now stops on the actual `fgetc()` result and

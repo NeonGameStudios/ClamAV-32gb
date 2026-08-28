@@ -45074,6 +45074,39 @@ START_TEST(test_cli_dsig)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_crypto_keyfile_close_failure_is_fail_visible)
+{
+    char keypath[PATH_MAX];
+    EVP_PKEY *pkey;
+    unsigned char hash[SHA256_HASH_SIZE] = {0};
+    unsigned int signature_length        = 0;
+    unsigned char *signature;
+
+    ck_assert_int_gt(snprintf(keypath, sizeof(keypath), "%s/input/signing/sign/signing-test.key", OBJDIR), 0);
+
+    clamav_test_fail_fclose = 1;
+    pkey                    = cl_get_pkey_file(keypath);
+    clamav_test_fail_fclose = 0;
+    ck_assert_ptr_null(pkey);
+
+    pkey = cl_get_pkey_file(keypath);
+    ck_assert_ptr_nonnull(pkey);
+    EVP_PKEY_free(pkey);
+
+    clamav_test_fail_fclose = 1;
+    signature                = cl_sign_data_keyfile(keypath, "sha256", hash, &signature_length, 0);
+    clamav_test_fail_fclose = 0;
+    ck_assert_ptr_null(signature);
+
+    signature = cl_sign_data_keyfile(keypath, "sha256", hash, &signature_length, 0);
+    ck_assert_ptr_nonnull(signature);
+    ck_assert_int_gt(signature_length, 0);
+    free(signature);
+}
+END_TEST
+#endif
+
 static uint8_t tv1[3] = {
     0x61, 0x62, 0x63};
 
@@ -45470,6 +45503,9 @@ static Suite *test_cli_suite(void)
     suite_add_tcase(s, tc_cli_dsig);
     tcase_add_loop_test(tc_cli_dsig, test_cli_dsig, 0, dsig_tests_cnt);
     tcase_add_test(tc_cli_dsig, test_sha2_256);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cli_dsig, test_crypto_keyfile_close_failure_is_fail_visible);
+#endif
 
     suite_add_tcase(s, tc_cli_assorted);
     tcase_add_test(tc_cli_assorted, test_sanitize_path);
