@@ -6119,3 +6119,11 @@ qualification gates.
   owning engine before engine-dependent layer transitions.
 - Retain complete nested-parser corpus, sanitizer, production-CVD/service,
   materialized large-file, Sonic1, and release qualification gates.
+
+## HWP5 stream admission — 2026-08-27
+
+- Keep cli_scanhwp5_stream fail-visible for null context/header arguments and
+  missing engine ownership before stream flag access or nested scanning.
+- Preserve the engine-free cli_hwp5header metadata helper and retain complete
+  HWP corpus, sanitizer, production-CVD/service, materialized large-file,
+  Sonic1, and release qualification gates.

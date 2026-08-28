@@ -8701,3 +8701,13 @@ out-of-range current stack levels. test_recursion_stack_helpers_reject_invalid_c
 covers these boundaries. Current-source GCC syntax evidence is recorded;
 complete nested-parser corpus, sanitizer, production-CVD/service, materialized
 large-file, Sonic1, and release qualification remain open.
+
+## HWP5 stream admission — 2026-08-27
+
+The HWP5 stream scanner now rejects null context/header arguments and missing
+engine ownership before dereferencing stream flags or entering descriptor and
+decompression paths. The engine-free cli_hwp5header metadata helper remains
+available. test_hwp5_stream_requires_context_and_engine covers the boundary;
+current-source GCC syntax evidence is recorded, while complete HWP corpus,
+sanitizer, production-CVD/service, materialized large-file, Sonic1, and
+release qualification remain open.

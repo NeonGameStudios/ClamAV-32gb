@@ -12221,6 +12221,17 @@ full-scan paths. Complete executable corpus, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification evidence remain
 required.
 
+## HWP5 stream admission audit — 2026-08-27
+
+cli_scanhwp5_stream validated its file descriptor but could dereference a
+missing HWP5 header or enter descriptor/decompression paths without an owning
+scan engine. The stream entry now rejects null context/header arguments and
+missing engine state before reading stream flags. The engine-free
+cli_hwp5header metadata helper remains unchanged. The focused
+test_hwp5_stream_requires_context_and_engine regression covers the boundary;
+complete HWP corpus, sanitizer, production-CVD/service, materialized
+large-file, Sonic1, and release qualification evidence remain required.
+
 ## PE, AutoIt, and MSPack engine admission audit — 2026-08-27
 
 The direct PE, AutoIt, CAB, and CHM entries validated their maps but could

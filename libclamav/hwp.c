@@ -457,6 +457,11 @@ cl_error_t cli_scanhwp5_stream(cli_ctx *ctx, hwp5_header_t *hwp5, char *name, in
 {
     hwp5_debug("HWP5.x: NAME: %s\n", name ? name : "(NULL)");
 
+    if (!ctx || !hwp5 || !ctx->engine) {
+        cli_errmsg("HWP5.x: Invalid scan context or header argument\n");
+        return CL_ENULLARG;
+    }
+
     if (fd < 0) {
         cli_errmsg("HWP5.x: Invalid file descriptor argument\n");
         return CL_ENULLARG;

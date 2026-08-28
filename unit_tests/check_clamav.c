@@ -23399,6 +23399,29 @@ START_TEST(test_hwp3_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwp5_stream_requires_context_and_engine)
+{
+    hwp5_header_t hwp5;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    int fd;
+
+    memset(&hwp5, 0, sizeof(hwp5));
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    fd = open("/dev/null", O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(/dev/null) failed: %s", strerror(errno));
+
+    ck_assert_int_eq(cli_scanhwp5_stream(NULL, &hwp5, NULL, fd, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanhwp5_stream(&ctx, NULL, NULL, fd, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanhwp5_stream(&ctx, &hwp5, NULL, fd, NULL), CL_ENULLARG);
+    ctx.engine = &engine;
+    ck_assert_int_eq(cli_scanhwp5_stream(&ctx, &hwp5, NULL, -1, NULL), CL_ENULLARG);
+
+    ck_assert_int_eq(close(fd), 0);
+}
+END_TEST
+
 START_TEST(test_hwpole2_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -43211,6 +43234,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_information_header_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_time_limit_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_missing_map_is_fail_visible);
+    tcase_add_test(tc_hwp3, test_hwp5_stream_requires_context_and_engine);
     tcase_add_test(tc_hwp3, test_hwp3_information_block_length_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_document_info_is_parse_error);
