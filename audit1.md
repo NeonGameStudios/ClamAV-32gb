@@ -12842,3 +12842,21 @@ requires `CL_EFORMAT`, the sticky catalog-record reason, and a non-cacheable
 map. Canonical HFS+ and unit sources remain GCC-checkable; complete HFS+
 corpus, sanitizer, production-CVD/service, materialized large-file, certified
 Linux x86-64, Sonic1, and release qualification remain open.
+## ISO9660 Joliet identifier parity audit — 2026-08-28
+
+Joliet directory identifiers are UTF-16BE/UCS-2 byte sequences, so an odd
+byte length is malformed. The ISO directory walker previously passed such a
+record to `cli_utf16_to_utf8`, whose generic compatibility behavior silently
+discarded the final byte and allowed the confirmed ISO layer to continue. The
+walker now rejects odd-length Joliet identifiers as `CL_EPARSE`, records
+`ISO Joliet directory entry name had an odd length`, and leaves the input
+non-cacheable before conversion or nested work.
+
+The registered
+`test_iso_joliet_odd_name_length_is_fail_visible` fixture supplies a complete
+primary/Joliet/terminator descriptor sequence and a confirmed odd-length
+identifier. A current-source production-linked GCC direct runner passes 1/1
+and verifies the parse result, sticky incomplete state, exact reason, and
+cache taint. Canonical ISO and unit sources remain GCC-checkable; full ISO
+corpus, sanitizer, production-CVD/service, materialized large-file, certified
+Linux x86-64, Sonic1, and final parser-family qualification remain open.

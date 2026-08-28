@@ -9073,3 +9073,13 @@ warning-enabled GCC syntax checks, including the UnRAR-enabled test gate. The
 reusable production container has `ENABLE_UNRAR=OFF`; backend execution,
 complete RAR corpus, sanitizer, production-CVD/service, materialized large-file,
 Sonic1, and parser-family qualification remain open.
+## ISO9660 Joliet identifier admission
+
+Joliet directory identifiers are UTF-16BE/UCS-2 byte sequences and therefore
+must have an even length. ISO9660 now rejects a confirmed odd-length Joliet
+identifier before the generic UTF-16 converter can silently discard its final
+byte. The registered `test_iso_joliet_odd_name_length_is_fail_visible`
+regression and a current-source production-linked direct runner require
+`CL_EPARSE`, a sticky incomplete reason, and a non-cacheable input. Full ISO
+corpus, sanitizer, production-CVD/service, materialized large-file, Linux
+x86-64, Sonic1, and parser-family qualification remain release gates.

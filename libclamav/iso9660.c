@@ -311,6 +311,11 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
                 ret = iso_incomplete(ctx, "ISO directory entry name was truncated");
                 break;
             }
+            if (iso->joliet && (filesz & 1U)) {
+                cli_dbgmsg("iso_parse_dir: Joliet directory entry name has an odd length\n");
+                ret = iso_incomplete(ctx, "ISO Joliet directory entry name had an odd length");
+                break;
+            }
             iso_string(iso, &dir[33], filesz);
             name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
             sep      = memchr(iso->buf, ';', name_len);
