@@ -8735,6 +8735,17 @@ non-cacheable. Complete CAB/SFX corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, Sonic1, and
 parser-family qualification remain release gates.
 
+## OneNote legacy iterator range admission
+
+The public legacy OneNote iterator methods now convert the declared 32-bit
+payload length to the native size with checked conversion and checked-add the
+fixed file-data header before copying or advancing to the next record. This
+prevents narrow-target arithmetic wraparound from redirecting a compatibility
+slice. The scanner-facing reader path remains the bounded streaming path.
+Complete OneNote corpus, current full-C ABI, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and parser-family qualification remain release
+gates.
+
 ## LHA/LZH pathname allocation admission
 
 The LHA/LZH scanner now checks the combined raw filename and extra-header

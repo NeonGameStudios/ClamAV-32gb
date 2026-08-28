@@ -34336,10 +34336,10 @@ offset-size-arithmetic	libclamav_rust/src/onenote.rs	360	            "Inspecting
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	364	        fn parse_section_buffer(data: &[u8], filename: &Path) -> Result<Vec<ExtractedFile>, Error> {
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	383	                                                    debug!("Found unnamed attached file of size {}-bytes", data.len());
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	386	                                                    debug!("Found attached file '{}' of size {}-bytes", name, data.len());
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	570	        fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	645	        fixture.truncate(fixture.len() - 1);
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	672	        fixture.truncate(fixture.len() - 1);
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	698	        fixture.extend(std::iter::repeat(0u8).take(1024 * 1024 + 5));
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	568	        fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	643	        fixture.truncate(fixture.len() - 1);
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	670	        fixture.truncate(fixture.len() - 1);
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	706	        fixture.extend(std::iter::repeat(0u8).take(1024 * 1024 + 5));
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	98	// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/8806fd18-6735-4874-b111-227b83eaac26
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	1083	            // size-limit hint: propagate detections, cancellation, and
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	1294	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)

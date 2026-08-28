@@ -6608,3 +6608,12 @@ qualification gates.
 - Retain `lha_pathname_admission_rejects_expansion_overflow` and complete LHA
   variant corpus, sanitizer, production-CVD/service, materialized large-file,
   Sonic1, and parser-family qualification.
+
+## OneNote legacy iterator range admission — 2026-08-28
+
+- Keep both public legacy iterator methods on checked native-size conversion
+  and fixed-header-plus-payload arithmetic before copying or advancing to the
+  next record.
+- Retain the source guards and complete OneNote corpus, current full-C ABI,
+  sanitizer, production-CVD/service, materialized large-file, Sonic1, and
+  parser-family qualification.

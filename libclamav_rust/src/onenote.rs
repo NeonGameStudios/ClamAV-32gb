@@ -465,17 +465,17 @@ impl<'a> OneNote<'a> {
             };
 
             let data_length = if let Some(x) = remaining.get(16..20) {
-                u32::from_le_bytes(x.try_into().unwrap()) as u64
+                usize::try_from(u32::from_le_bytes(x.try_into().unwrap())).ok()?
             } else {
                 return None;
             };
 
-            let data: &[u8] = remaining
-                .get(SIZE_OF_FILE_DATA_HEADER..SIZE_OF_FILE_DATA_HEADER + data_length as usize)?;
+            let data_end = SIZE_OF_FILE_DATA_HEADER.checked_add(data_length)?;
+            let data: &[u8] = remaining.get(SIZE_OF_FILE_DATA_HEADER..data_end)?;
 
             file_data = Some(data.to_vec());
 
-            Some(&remaining[SIZE_OF_FILE_DATA_HEADER + (data_length as usize)..remaining.len()])
+            Some(&remaining[data_end..remaining.len()])
         } else {
             None
         };
@@ -501,19 +501,17 @@ impl<'a> OneNote<'a> {
             };
 
             let data_length = if let Some(x) = remaining.get(16..20) {
-                u32::from_le_bytes(x.try_into().unwrap()) as u64
+                usize::try_from(u32::from_le_bytes(x.try_into().unwrap())).ok()?
             } else {
                 return None;
             };
 
-            let data: &[u8] = remaining
-                .get(SIZE_OF_FILE_DATA_HEADER..SIZE_OF_FILE_DATA_HEADER + data_length as usize)?;
+            let data_end = SIZE_OF_FILE_DATA_HEADER.checked_add(data_length)?;
+            let data: &[u8] = remaining.get(SIZE_OF_FILE_DATA_HEADER..data_end)?;
 
             file_data = Some(data.to_vec());
 
-            Some(Vec::from(
-                &remaining[SIZE_OF_FILE_DATA_HEADER + (data_length as usize)..remaining.len()],
-            ))
+            Some(Vec::from(&remaining[data_end..remaining.len()]))
         } else {
             None
         };
@@ -675,6 +673,16 @@ mod tests {
             OneNote::from_bytes(&fixture, Path::new("truncated.one")),
             Err(Error::Parse)
         ));
+    }
+
+    #[test]
+    fn legacy_iterator_checked_payload_range() {
+        let fixture = legacy_fixture(b"attachment");
+        let mut document = OneNote::from_bytes(&fixture, Path::new("legacy.one")).unwrap();
+
+        let file = document.next().unwrap();
+        assert_eq!(file.data, b"attachment");
+        assert!(document.next().is_none());
     }
 
     #[test]

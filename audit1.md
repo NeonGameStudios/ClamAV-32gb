@@ -512,6 +512,18 @@ mismatch, the current-source production-linked GCC `rtf_map` case passes
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain open.
 
+## OneNote legacy iterator range admission audit — 2026-08-28
+
+The public legacy OneNote iterator paths formed payload and next-record slices
+with an unchecked `SIZE_OF_FILE_DATA_HEADER + data_length` expression. Both
+`next_file()` and `next_file_vec()` now convert the declared 32-bit length to
+the native size with checked conversion, checked-add the fixed header, and
+reuse the validated end for copying and advancing. The scanner-facing reader
+path was already bounded and streaming; this closes the remaining public
+compatibility arithmetic boundary. Complete OneNote corpus, current full-C
+ABI, sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+parser-family qualification remain open.
+
 ## PDF direct-entry context evidence — 2026-08-27
 
 The public PDF parser already returned `CL_ENULLARG` for a null context, but
