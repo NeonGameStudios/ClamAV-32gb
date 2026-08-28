@@ -6587,3 +6587,14 @@ qualification gates.
 - Add a decoder-injected unsupported-after-write integration case, then
   complete 7-Zip corpus, sanitizer, production-CVD/service, materialized
   large-file, Sonic1, and parser-family qualification.
+
+## ALZ BZip2 declared-range completion — 2026-08-28
+
+- Keep one byte of the bounded BZip2 member outside `DecoderReader` until it
+  requests more input, so a valid compressed prefix followed by trailing
+  bytes cannot be dispatched as a complete ALZ member while preserving bulk
+  reads for large members.
+- Retain the complete-stream and trailing-byte regressions. The current-source
+  disposable offline Rust 1.97.1 ALZ harness passes all 40 ALZ tests. Full
+  current-C ABI, sanitizer, production-CVD/service, materialized large-file,
+  Sonic1, and parser-family qualification remain required.

@@ -107,6 +107,112 @@ fn classify_extraction_read_error(err: io::Error, field: &'static str) -> Error 
     }
 }
 
+/*
+ * DecoderReader may read up to 1024 bytes ahead of the logical end of a
+ * bzip2 stream and keeps those bytes in its private decoder buffer. Keep one
+ * byte of the bounded ALZ input outside that decoder until the decoder asks
+ * for more input. This preserves bulk reads while making an EOF decision
+ * observable: a decoder that finishes while the lookahead or source remains
+ * has not consumed the complete declared compressed extent.
+ */
+struct Bzip2ExactReader<R> {
+    reader: R,
+    ready: [u8; 8192],
+    ready_start: usize,
+    ready_len: usize,
+    pending: Option<u8>,
+    source_exhausted: bool,
+}
+
+impl<R> Bzip2ExactReader<R> {
+    fn new(reader: R) -> Self {
+        Self {
+            reader,
+            ready: [0; 8192],
+            ready_start: 0,
+            ready_len: 0,
+            pending: None,
+            source_exhausted: false,
+        }
+    }
+
+    fn refill(&mut self) -> io::Result<()>
+    where
+        R: Read,
+    {
+        self.ready_start = 0;
+        self.ready_len = 0;
+
+        if self.source_exhausted && self.pending.is_none() {
+            return Ok(());
+        }
+
+        let pending = self.pending.take();
+        let mut fetched = [0u8; 8192];
+        let mut fetched_len = 0usize;
+        while fetched_len < 2 && !self.source_exhausted {
+            let read = self.reader.read(&mut fetched[fetched_len..])?;
+            if read == 0 {
+                self.source_exhausted = true;
+                break;
+            }
+            fetched_len += read;
+        }
+
+        let mut ready_len = 0usize;
+        if let Some(byte) = pending {
+            self.ready[ready_len] = byte;
+            ready_len += 1;
+        }
+
+        if self.source_exhausted {
+            self.ready[ready_len..ready_len + fetched_len]
+                .copy_from_slice(&fetched[..fetched_len]);
+            ready_len += fetched_len;
+        } else {
+            self.ready[ready_len..ready_len + fetched_len - 1]
+                .copy_from_slice(&fetched[..fetched_len - 1]);
+            ready_len += fetched_len - 1;
+            self.pending = Some(fetched[fetched_len - 1]);
+        }
+
+        self.ready_len = ready_len;
+        Ok(())
+    }
+
+    fn is_fully_consumed(&self) -> bool {
+        self.source_exhausted && self.pending.is_none() && self.ready_len == 0
+    }
+}
+
+impl<R: Read> Read for Bzip2ExactReader<R> {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        if buffer.is_empty() {
+            return Ok(0);
+        }
+
+        let mut written = 0usize;
+        while written < buffer.len() {
+            if self.ready_len == 0 {
+                self.refill()?;
+                if self.ready_len == 0 {
+                    break;
+                }
+            }
+
+            let count = self.ready_len.min(buffer.len() - written);
+            let end = self.ready_start + count;
+            buffer[written..written + count]
+                .copy_from_slice(&self.ready[self.ready_start..end]);
+            self.ready_start = end;
+            self.ready_len -= count;
+            written += count;
+        }
+
+        Ok(written)
+    }
+}
+
 fn alz_crc32_update(mut crc: u32, data: &[u8]) -> u32 {
     for byte in data {
         crc ^= u32::from(*byte);
@@ -424,19 +530,6 @@ impl AlzLocalFileHeader {
         Ok(())
     }
 
-    /*
-     * This has no header/checksum validation.
-     */
-    fn extract_file_deflate_reader<R: Read>(
-        &mut self,
-        decompressor: &mut R,
-        sink: &mut impl ExtractSink,
-        max_extracted_size: u64,
-    ) -> Result<(), Error> {
-        self.extract_file_deflate_reader_until_eof(decompressor, sink, max_extracted_size)?;
-        sink.finish()
-    }
-
     fn extract_file_deflate_reader_until_eof<R: Read>(
         &mut self,
         decompressor: &mut R,
@@ -612,8 +705,21 @@ impl AlzLocalFileHeader {
             .seek(SeekFrom::Start(self.start_of_compressed_data))
             .map_err(|err| classify_extraction_read_error(err, "compressed data seek"))?;
         let mut bounded = reader.take(self.compressed_size);
-        let mut decompressor = DecoderReader::new(&mut bounded);
-        self.extract_file_deflate_reader(&mut decompressor, sink, max_extracted_size)
+        let mut exact_reader = Bzip2ExactReader::new(&mut bounded);
+        let mut decompressor = DecoderReader::new(&mut exact_reader);
+        self.extract_file_deflate_reader_until_eof(&mut decompressor, sink, max_extracted_size)?;
+        drop(decompressor);
+
+        if !exact_reader.is_fully_consumed() {
+            debug!(
+                "ALZ file {:?} left declared bzip2 bytes unconsumed",
+                self.file_name
+            );
+            sink.abort();
+            return Err(Error::Extract);
+        }
+
+        sink.finish()
     }
 
     fn extract_file<R: Read + Seek>(
@@ -1460,6 +1566,53 @@ mod tests {
     }
 
     #[test]
+    fn bzip2_complete_stream_consumes_exact_extent() {
+        let compressed = hex::decode(
+            "425a6839314159265359ba10c2c4000001918040003424c03020002201a1ea10030dd85601c8f177245385090ba10c2c40",
+        )
+        .unwrap();
+        let mut exact_reader = Bzip2ExactReader::new(compressed.as_slice());
+        let mut decompressor = DecoderReader::new(&mut exact_reader);
+        let mut output = Vec::new();
+        decompressor.read_to_end(&mut output).unwrap();
+        drop(decompressor);
+
+        assert_eq!(output, b"bzip payload");
+        assert!(exact_reader.is_fully_consumed());
+    }
+
+    #[test]
+    fn bzip2_trailing_compressed_bytes_are_rejected_before_scan() {
+        const ALZ_COMP_BZIP2: u8 = 1;
+
+        let mut compressed = hex::decode(
+            "425a6839314159265359ba10c2c4000001918040003424c03020002201a1ea10030dd85601c8f177245385090ba10c2c40",
+        )
+        .unwrap();
+        compressed.push(0xde);
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_file(
+            &mut bytes,
+            "trailing.bz2",
+            ALZ_COMP_BZIP2,
+            u8::try_from(compressed.len()).unwrap(),
+            &compressed,
+        );
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+
+        let alz = Alz::from_bytes_with_filter(&bytes, |_| {
+            AlzExtractionDecision::Extract(extraction_limits())
+        })
+        .unwrap();
+
+        assert!(alz.embedded_files.is_empty());
+        assert!(alz.has_parse_error());
+    }
+
+    #[test]
     fn deflate_error_discards_output_produced_before_error() {
         struct ErrorAfterOutput {
             output: Option<Vec<u8>>,
@@ -1495,7 +1648,7 @@ mod tests {
         let mut files = Vec::new();
 
         assert!(matches!(
-            header.extract_file_deflate_reader(&mut reader, &mut files, u64::MAX),
+            header.extract_file_deflate_reader_until_eof(&mut reader, &mut files, u64::MAX),
             Err(Error::Extract)
         ));
 

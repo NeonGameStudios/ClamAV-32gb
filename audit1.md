@@ -12917,3 +12917,16 @@ passes through the public helper and proves that a legacy write starts at an
 empty descriptor. A decoder-injected unsupported-after-write integration case
 is still required, along with complete 7-Zip corpus, sanitizer, production-
 CVD/service, materialized-large-file, Sonic1, and parser-family qualification.
+
+## ALZ BZip2 declared-range completion audit — 2026-08-28
+
+The ALZ BZip2 path used a bounded reader, but `bzip2-rs::DecoderReader` can
+read ahead into a private buffer. Checking the bounded reader after decoder EOF
+therefore could not distinguish a complete member from a valid BZip2 prefix
+followed by trailing bytes. `Bzip2ExactReader` now keeps one byte of the
+bounded extent outside the decoder while retaining bulk reads; decoder EOF is
+accepted only after the lookahead and the bounded source are both exhausted.
+The registered complete-stream and trailing-byte regressions pass in the
+current-source disposable offline Rust 1.97.1 ALZ harness, which now passes
+40 ALZ tests. Full current-C ABI, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and parser-family qualification remain open.

@@ -9122,3 +9122,15 @@ file later handed to nested scanning. Reset failures remain fail-visible as
 write or seek errors. `test_7z_legacy_fallback_discards_stream_prefix` covers
 the reset-and-rewrite contract; a decoder-injected unsupported-after-write
 integration case and the complete 7-Zip release gates remain open.
+
+## ALZ BZip2 declared-range completion
+
+The ALZ BZip2 member path now keeps one byte of the bounded compressed extent
+outside `bzip2-rs::DecoderReader` until the decoder requests more input. This
+retains bulk reads while making decoder EOF observable: a valid BZip2 prefix
+followed by trailing compressed bytes is rejected before nested scanning, and
+a complete stream is accepted only after the bounded extent is exhausted. The
+complete-stream and trailing-byte regressions pass in the current-source
+disposable offline Rust 1.97.1 ALZ harness (40 ALZ tests). Full current-C ABI,
+sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+parser-family qualification remain release gates.
