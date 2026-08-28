@@ -6267,3 +6267,12 @@ qualification gates.
 - Retain the direct bytecode query regression and full bytecode execution,
   sanitizer, production-CVD/service, materialized large-file, certified Linux
   x86-64, Sonic1, and release qualification gates.
+
+## YARA instruction-stream admission — 2026-08-27
+
+- Keep bundled YARA fail-visible when a recognized rule has no instruction
+  stream; return `CL_EPARSE`, mark the current layer incomplete, and disable
+  caching before the first VM opcode fetch.
+- Retain the direct YARA admission regression and complete YARA evaluation,
+  sanitizer, production-CVD/service, materialized large-file, certified Linux
+  x86-64, Sonic1, and release qualification gates.

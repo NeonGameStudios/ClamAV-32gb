@@ -12462,6 +12462,20 @@ remain required alongside complete structured-detector corpus, sanitizer,
 production-CVD/service, materialized large-file, Linux x86-64, and Sonic1
 qualification.
 
+## YARA instruction-stream admission audit — 2026-08-27
+
+The bundled YARA evaluator validated the logical-signature table entry but did
+not validate its instruction-stream pointer before entering the VM loop. A
+malformed or externally constructed YARA rule with no code could therefore
+crash at the first opcode fetch. The YARA entry now returns `CL_EPARSE`, marks
+the current layer incomplete, and disables caching before VM execution when
+the instruction stream is absent. `test_yara_missing_code_is_fail_visible`
+covers this boundary. The isolated current-source production-linked GCC
+`yara_missing_code` case passes 1/1. Current-source GCC syntax and source-guard
+evidence remain required alongside complete YARA evaluation, sanitizer,
+production-CVD/service, materialized large-file, Linux x86-64, and Sonic1
+qualification.
+
 ## Bytecode engine-query admission audit — 2026-08-27
 
 The basic bytecode engine scan-option and database-option query APIs
