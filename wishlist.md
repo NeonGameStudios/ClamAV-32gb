@@ -1,5 +1,16 @@
 # Wishlist
 
+## Runtime gate ELF-interpreter binding — 2026-08-28
+
+- Keep the release gate’s ELF interpreter separate from `ldd`-resolved shared
+  libraries: record the absolute `PT_INTERP` path and SHA-256, and copy/bind
+  only `name => path` runtime-library records through the controlled loader
+  directory.
+- Retain the verifier’s positive interpreter check and tampered-interpreter
+  rejection. The synthetic runtime-evidence control suite passes; this does
+  not replace Linux x86-64, sanitizer, production-CVD/service, materialized,
+  Sonic1, or final release qualification.
+
 ## OneNote legacy reader declared-range EOF — 2026-08-28
 
 - Keep `scan_legacy_reader()` fail-visible when its underlying reader reaches
