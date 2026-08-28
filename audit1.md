@@ -12387,3 +12387,12 @@ those accesses. `test_virus_indicator_append_boundaries_are_fail_visible`
 covers null context/name and invalid-stack cases. Complete callback/ingress
 parity, sanitizer, production-CVD/service, materialized large-file, Sonic1,
 and release qualification evidence remain required.
+
+## XDP parser admission audit — 2026-08-27
+The XDP entry previously obtained its missing-engine result only from the
+downstream streaming-MSXML helper. It now rejects a recognized fmap without an
+owning engine at the XDP boundary, before optional retained-dump or MSXML
+state access. `test_xdp_missing_engine_is_fail_visible` verifies the explicit
+`CL_ENULLARG` result without falsely setting sticky incomplete or cache-taint
+state. Complete XDP corpus, sanitizer, production-CVD, materialized
+large-file, Sonic1, and release qualification evidence remain required.

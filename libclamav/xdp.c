@@ -166,8 +166,10 @@ cl_error_t cli_scanxdp(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "XDP input map is unavailable");
         return CL_EPARSE;
     }
+    if (!ctx->engine)
+        return CL_ENULLARG;
 
-    if (ctx->engine && ctx->engine->keeptmp) {
+    if (ctx->engine->keeptmp) {
         ret = dump_xdp(ctx, ctx->fmap, &dumpname, &dump_reserved);
         if (ret != CL_SUCCESS)
             return ret;

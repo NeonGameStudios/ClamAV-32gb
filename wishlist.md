@@ -6207,3 +6207,7 @@ qualification gates.
 ## Virus-indicator append admission — 2026-08-27
 - Keep virus-indicator append APIs fail-visible for null contexts, null names, and invalid recursion-stack state before string or stack access.
 - Retain complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification gates.
+
+## XDP parser admission — 2026-08-27
+- Keep XDP fail-visible for a recognized input map without an owning engine before retained-dump or streaming-MSXML state access.
+- Retain complete XDP corpus, sanitizer, production-CVD, materialized large-file, Sonic1, and release qualification gates.

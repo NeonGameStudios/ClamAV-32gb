@@ -8811,3 +8811,11 @@ or stack indexing. The focused
 these direct helper boundaries; complete callback/ingress parity, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and release
 qualification remain open.
+
+## XDP parser admission — 2026-08-27
+The XDP parser now rejects a recognized input map without an owning engine at
+its own entry point, before optional retained-dump or streaming-MSXML state is
+accessed. The existing `test_xdp_missing_engine_is_fail_visible` regression
+also verifies that this invalid admission does not falsely mark the layer
+incomplete or non-cacheable; complete XDP corpus, sanitizer, production-CVD,
+materialized large-file, Sonic1, and release qualification remain open.

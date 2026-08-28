@@ -22059,6 +22059,8 @@ START_TEST(test_xdp_missing_engine_is_fail_visible)
     ctx.fmap = map;
 
     ck_assert_int_eq(cli_scanxdp(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
 
     cl_fmap_close(map);
 }

@@ -1716,6 +1716,7 @@ contains unit_tests/check_clamav.c 'test_zip_local_only_masked_header_is_fail_vi
 contains libclamav/scanners.c 'Re-apply the invariant to the final return value.'
 contains libclamav/xdp.c 'cli_msxml_parse_document_streaming'
 contains libclamav/xdp.c 'XDP input map is unavailable'
+contains libclamav/xdp.c 'if (!ctx->engine)'
 contains libclamav/xdp.c 'MSXML_SCAN_B64'
 contains libclamav/xdp.c 'cli_scan_reserve_temporary(ctx, (uint64_t)nread)'
 contains libclamav/xdp.c 'xdp_checktimelimit(ctx, "XDP temporary dump reached the configured time limit")'
