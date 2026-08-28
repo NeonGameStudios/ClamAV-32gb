@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Shared containment macro coordinate wrap — 2026-08-28
+
+The shared `CLI_ISCONTAINED*` macros now validate subrange starts and compare
+their distances against the remaining containing size. They no longer add
+attacker- or file-derived coordinates before validation, preventing wrapped
+near-`SIZE_MAX` ranges from being accepted. The registered
+`test_containment_macros_reject_coordinate_wrap` regression covers both
+zero-length-compatible and nonzero valid near-limit ranges plus wrapped
+rejections; the current unit source compiles with production GCC, and a
+current-source GCC plus ASan/UBSan header harness passes all four assertions
+without a sanitizer finding. Full parser/matcher consumers,
+production-CVD/service, materialized large-file, Sonic1, and final
+parser-family/release qualification remain required.
+
 ## File-type signature range preflight — 2026-08-28
 
 File and partition magic probes now validate the fixed-width offset against the

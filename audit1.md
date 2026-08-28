@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## Shared containment macro coordinate wrap — 2026-08-28
+
+The shared `CLI_ISCONTAINED`, `CLI_ISCONTAINED_0_TO`, `CLI_ISCONTAINED_2`,
+and `CLI_ISCONTAINED_2_0_TO` checks formed end coordinates with unsigned
+addition before deciding whether a subrange was contained. Near `SIZE_MAX`,
+the zero-based variants could accept a range whose end had wrapped to the
+start of the address space; the other variants could also produce wrapped
+boundary decisions. The macros now subtract the already-validated start from
+the available size, preserving zero-length semantics for the `_2` forms. The
+registered `test_containment_macros_reject_coordinate_wrap` regression covers
+both valid near-limit ranges and wrapped ranges. The current unit source
+compiles with production GCC, and a current-source GCC plus ASan/UBSan header
+harness passes all four assertions without a finding. Full consumer/parser,
+production-CVD/service, materialized large-file, Sonic1, and final release
+qualification remain required.
+
 ## File-type signature range preflight — 2026-08-28
 
 The file and partition magic probes compared `offset + length` with the

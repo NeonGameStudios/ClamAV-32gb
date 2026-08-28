@@ -1,5 +1,16 @@
 # Wishlist
 
+## Shared containment macro coordinate wrap — 2026-08-28
+
+- Keep all shared `CLI_ISCONTAINED*` macros on subtraction-based end-range
+  checks so large offsets cannot wrap before containment is decided; preserve
+  the zero-length behavior of the `_2` forms.
+- Retain `test_containment_macros_reject_coordinate_wrap` and its source
+  guards. The current unit source compiles with production GCC, and a
+  current-source GCC plus ASan/UBSan header harness passes the near-limit
+  valid and wrapped cases. Keep full consumer/parser, production-CVD/service,
+  materialized large-file, Sonic1, and final release evidence open.
+
 ## File-type signature range preflight — 2026-08-28
 
 - Keep file and partition magic probes on subtraction-based range checks so a

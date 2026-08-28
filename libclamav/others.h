@@ -98,9 +98,7 @@ extern uint8_t cli_always_gen_section_hash;
     ((size_t)(bb_size) > 0 && (size_t)(sb_size) > 0 &&                       \
      (size_t)(sb_size) <= (size_t)(bb_size) &&                               \
      (size_t)(sb) >= (size_t)(bb) &&                                         \
-     (size_t)(sb) + (size_t)(sb_size) <= (size_t)(bb) + (size_t)(bb_size) && \
-     (size_t)(sb) + (size_t)(sb_size) > (size_t)(bb) &&                      \
-     (size_t)(sb) < (size_t)(bb) + (size_t)(bb_size))
+     (size_t)(sb) - (size_t)(bb) <= (size_t)(bb_size) - (size_t)(sb_size))
 
 /*
  * CLI_ISCONTAINED_0_TO(bb_size, sb, sb_size) checks if sb (small offset) is
@@ -117,8 +115,7 @@ extern uint8_t cli_always_gen_section_hash;
 #define CLI_ISCONTAINED_0_TO(bb_size, sb, sb_size)            \
     ((size_t)(bb_size) > 0 && (size_t)(sb_size) > 0 &&        \
      (size_t)(sb_size) <= (size_t)(bb_size) &&                \
-     (size_t)(sb) + (size_t)(sb_size) <= (size_t)(bb_size) && \
-     (size_t)(sb) < (size_t)(bb_size))
+     (size_t)(sb) <= (size_t)(bb_size) - (size_t)(sb_size))
 
 /*
  * CLI_ISCONTAINED_2(bb, bb_size, sb, sb_size) checks if sb (small buffer) is
@@ -131,9 +128,7 @@ extern uint8_t cli_always_gen_section_hash;
     ((size_t)(bb_size) > 0 &&                                                \
      (size_t)(sb_size) <= (size_t)(bb_size) &&                               \
      (size_t)(sb) >= (size_t)(bb) &&                                         \
-     (size_t)(sb) + (size_t)(sb_size) <= (size_t)(bb) + (size_t)(bb_size) && \
-     (size_t)(sb) + (size_t)(sb_size) >= (size_t)(bb) &&                     \
-     (size_t)(sb) <= (size_t)(bb) + (size_t)(bb_size))
+     (size_t)(sb) - (size_t)(bb) <= (size_t)(bb_size) - (size_t)(sb_size))
 
 /*
  * CLI_ISCONTAINED_2(bb, bb_size, sb, sb_size) checks if sb (small buffer) is
@@ -148,8 +143,7 @@ extern uint8_t cli_always_gen_section_hash;
 #define CLI_ISCONTAINED_2_0_TO(bb_size, sb, sb_size)          \
     ((size_t)(bb_size) > 0 &&                                 \
      (size_t)(sb_size) <= (size_t)(bb_size) &&                \
-     (size_t)(sb) + (size_t)(sb_size) <= (size_t)(bb_size) && \
-     (size_t)(sb) <= (size_t)(bb_size))
+     (size_t)(sb) <= (size_t)(bb_size) - (size_t)(sb_size))
 
 #define CLI_MAX_ALLOCATION (1024 * 1024 * 1024)
 

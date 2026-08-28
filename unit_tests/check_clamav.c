@@ -28751,6 +28751,15 @@ START_TEST(test_filetype_signature_ranges_do_not_wrap)
 }
 END_TEST
 
+START_TEST(test_containment_macros_reject_coordinate_wrap)
+{
+    ck_assert(!CLI_ISCONTAINED_0_TO(SIZE_MAX, SIZE_MAX - 1U, 2U));
+    ck_assert(!CLI_ISCONTAINED_2_0_TO(SIZE_MAX, SIZE_MAX - 1U, 2U));
+    ck_assert(CLI_ISCONTAINED_0_TO(SIZE_MAX, SIZE_MAX - 3U, 2U));
+    ck_assert(CLI_ISCONTAINED_2_0_TO(SIZE_MAX, SIZE_MAX - 3U, 2U));
+}
+END_TEST
+
 START_TEST(test_mydoom_detector_read_failure_is_fail_visible)
 {
     static const uint8_t input[8 * 4 * 2] = {0};
@@ -45863,6 +45872,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_binhex_encoded_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_file_type_detection_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_filetype_signature_ranges_do_not_wrap);
+    tcase_add_test(tc_cl, test_containment_macros_reject_coordinate_wrap);
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_null_context_is_fail_visible);
