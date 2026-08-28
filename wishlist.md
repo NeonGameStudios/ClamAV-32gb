@@ -439,7 +439,9 @@ open.
   context without an fmap returns `CL_EPARSE`, marks the layer incomplete, and
   disables caching.
 - The current-source production-linked GCC `tar_map` case passes 2/2,
-  including the direct output-directory check, and `tar_member` passes 5/5.
+  including the direct output-directory check, and `tar_member` passes 6/6,
+  including an in-range member-data read failure that remains `CL_EREAD` and
+  non-cacheable.
   The broader `tar` case retains the known mixed old/current `cli_ctx` timeout
   SIGSEGV; keep full TAR corpus, sanitizer, production-CVD/service, Sonic1,
   and release qualification open.
