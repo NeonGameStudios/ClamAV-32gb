@@ -37174,6 +37174,87 @@ START_TEST(test_elf_metadata_read_failure_is_fail_visible)
 END_TEST
 
 #if SIZE_MAX > UINT32_MAX
+struct elf64_table_cursor_overflow_state {
+    unsigned header_reads;
+    unsigned unexpected_reads;
+    uint8_t file_header[sizeof(struct elf_file_hdr64)];
+};
+
+static const void *elf64_table_cursor_overflow_need(fmap_t *map, size_t at, size_t len, int lock)
+{
+    struct elf64_table_cursor_overflow_state *state = map->handle;
+
+    UNUSEDPARAM(lock);
+    if (at > sizeof(state->file_header) || len > sizeof(state->file_header) - at) {
+        state->unexpected_reads++;
+        return NULL;
+    }
+
+    state->header_reads++;
+    return state->file_header + at;
+}
+
+static void elf64_table_cursor_overflow_fixture_init(
+    struct elf64_table_cursor_overflow_state *state, int section_table)
+{
+    memset(state, 0, sizeof(*state));
+    state->file_header[0] = 0x7f;
+    state->file_header[1] = 'E';
+    state->file_header[2] = 'L';
+    state->file_header[3] = 'F';
+    state->file_header[4] = 2; /* ELFCLASS64. */
+    state->file_header[5] = 1; /* ELFDATA2LSB. */
+    state->file_header[6] = 1;
+    zip_stream_write_u16(state->file_header + 16, 2);
+    zip_stream_write_u16(state->file_header + 18, 62);
+    zip_stream_write_u32(state->file_header + 20, 1);
+    zip_stream_write_u64(state->file_header + 32,
+                         section_table ? 0 : UINT64_MAX - sizeof(struct elf_program_hdr64) + 1);
+    zip_stream_write_u64(state->file_header + 40,
+                         section_table ? UINT64_MAX - sizeof(struct elf_section_hdr64) + 1 : 0);
+    zip_stream_write_u16(state->file_header + 52, sizeof(struct elf_file_hdr64));
+    zip_stream_write_u16(state->file_header + 54, sizeof(struct elf_program_hdr64));
+    zip_stream_write_u16(state->file_header + 56, section_table ? 0 : 2);
+    zip_stream_write_u16(state->file_header + 58, sizeof(struct elf_section_hdr64));
+    zip_stream_write_u16(state->file_header + 60, section_table ? 2 : 0);
+}
+
+START_TEST(test_elf64_table_cursor_overflow_is_fail_visible)
+{
+    struct elf64_table_cursor_overflow_state state;
+    struct cli_exe_info exeinfo;
+    cli_ctx ctx;
+    fmap_t map;
+    cl_error_t ret;
+    int section_table;
+
+    if (sizeof(off_t) <= 4)
+        return;
+
+    for (section_table = 0; section_table <= 1; section_table++) {
+        elf64_table_cursor_overflow_fixture_init(&state, section_table);
+        memset(&map, 0, sizeof(map));
+        map.handle = &state;
+        map.len = SIZE_MAX;
+        map.real_len = SIZE_MAX;
+        map.need = elf64_table_cursor_overflow_need;
+
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.fmap = &map;
+        cli_exe_info_init(&exeinfo, 0);
+
+        ret = cli_elfheader(&ctx, &exeinfo);
+        ck_assert_int_eq(ret, CL_EFORMAT);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert(map.dont_cache_flag);
+        ck_assert_uint_eq(state.header_reads, 2);
+        ck_assert_uint_eq(state.unexpected_reads, 0);
+
+        cli_exe_info_destroy(&exeinfo);
+    }
+}
+END_TEST
+
 struct elf_large_metadata_state {
     size_t length;
     size_t max_offset;
@@ -43771,6 +43852,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_elf_map, test_elf_program_table_is_required_without_entrypoint);
     tcase_add_test(tc_elf_map, test_elf_scan_program_header_read_failure_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_read_failure_is_fail_visible);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_elf_map, test_elf64_table_cursor_overflow_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_elf_corpus);
     tcase_add_checked_fixture(tc_elf_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_corpus, test_elf_corpus_detects_embedded_mz);

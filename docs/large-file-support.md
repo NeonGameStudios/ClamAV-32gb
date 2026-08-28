@@ -9049,3 +9049,14 @@ production-linked GCC `hwp_fontmeta_isolated` fixture passes 2/2 for injected
 sticky reasons and non-cacheability. Full HWP3 corpus, sanitizer, materialized
 large-file, production-CVD/service, Sonic1, and release qualification remain
 open.
+
+
+## ELF64 direct table-cursor overflow regression — 2026-08-28
+
+The ELF64 table walkers now reject a native-width cursor whose next entry would
+wrap before requesting that entry. The direct production-linked GCC regression
+passes 2/2 for program and section tables, with sticky incomplete/non-cacheable
+results and no wrapped-offset callback. Existing ELF range and callback-failure
+evidence remains valid; complete ELF corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, Sonic1, and parser-family
+qualification remain open.

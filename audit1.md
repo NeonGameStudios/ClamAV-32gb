@@ -12799,3 +12799,16 @@ checking (with the repository's pre-existing ISO test warning), and a focused
 current-source production-linked GCC harness passes with exit 0. Complete TAR
 corpus, sanitizer, production-CVD/service, materialized large-file, Linux
 x86-64, and Sonic1 qualification remain required.
+
+
+## ELF64 direct table-cursor overflow audit — 2026-08-28
+
+The ELF64 program- and section-header walkers now check the next native-width
+coordinate before issuing the current iteration's read. A direct allocation-free
+production-linked GCC regression drives both cursor values to
+`UINT64_MAX - entry_size + 1` and verifies `CL_EFORMAT`, sticky
+incomplete/non-cacheable state, and exactly two header-only callback reads (2/2);
+no wrapped low-offset read is attempted. Existing complete-range preflight and
+in-range callback-error behavior remain covered. Full ELF corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service parity,
+Sonic1, and release qualification remain open.

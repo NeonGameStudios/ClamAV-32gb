@@ -479,6 +479,12 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
                 return read_status;
             }
 
+            if (i + 1 < phnum && phoff > UINT64_MAX - sizeof(struct elf_program_hdr64)) {
+                cli_dbgmsg("ELF: Program header table coordinate overflow\n");
+                free(program_hdr);
+                return cli_elf_broken_result(ctx, CL_EFORMAT);
+            }
+
             err = 0;
             read_status = cli_elf_read_status(ctx,
                                                cli_elf_readn(map, &program_hdr[i], phoff, sizeof(struct elf_program_hdr64)),
@@ -500,11 +506,6 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
                 return cli_elf_broken_result(ctx, CL_BREAK);
             }
 
-            if (i + 1 < phnum && phoff > UINT64_MAX - sizeof(struct elf_program_hdr64)) {
-                cli_dbgmsg("ELF: Program header table coordinate overflow\n");
-                free(program_hdr);
-                return cli_elf_broken_result(ctx, CL_EFORMAT);
-            }
             phoff += sizeof(struct elf_program_hdr64);
 
             if (ctx) {
@@ -753,6 +754,12 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
             return read_status;
         }
 
+        if (i + 1 < shnum && shoff > UINT64_MAX - sizeof(struct elf_section_hdr64)) {
+            cli_dbgmsg("ELF: Section header table coordinate overflow\n");
+            free(section_hdr);
+            return cli_elf_broken_result(ctx, CL_EFORMAT);
+        }
+
         read_status = cli_elf_read_status(ctx,
                                            cli_elf_readn(map, &section_hdr[i], shoff, sizeof(struct elf_section_hdr64)),
                                            sizeof(struct elf_section_hdr64),
@@ -770,11 +777,6 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
             return cli_elf_broken_result(ctx, CL_BREAK);
         }
 
-        if (i + 1 < shnum && shoff > UINT64_MAX - sizeof(struct elf_section_hdr64)) {
-            cli_dbgmsg("ELF: Section header table coordinate overflow\n");
-            free(section_hdr);
-            return cli_elf_broken_result(ctx, CL_EFORMAT);
-        }
         shoff += sizeof(struct elf_section_hdr64);
 
         if (elfinfo) {
