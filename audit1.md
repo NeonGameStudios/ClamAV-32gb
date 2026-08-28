@@ -12518,6 +12518,23 @@ the public verdict and leave the input non-cacheable.
 Full XAR corpus, sanitizer, production-CVD/service, materialized large-file,
 Linux x86-64, and Sonic1 qualification remain required.
 
+## YARA matcher-state admission audit — 2026-08-28
+
+The bundled YARA evaluator validated the rule's instruction stream but could
+still enter the VM with no matcher-state object. That state is required by
+operand and match operations, and a malformed direct evaluation could
+otherwise turn an invalid rule context into an unsafe execution. The YARA
+entry now returns `CL_EPARSE`, marks the current layer incomplete, and disables
+caching before VM execution when matcher state is absent. The registered
+`test_yara_missing_matcher_state_is_fail_visible` regression uses a valid
+`OP_HALT` instruction stream with a null matcher-state object to cover this
+admission boundary. The current-source `matcher.c` and `check_matchers.c`
+translation units compile with the established GCC production flags, and an
+isolated current-source production-linked GCC harness passes 1/1 with
+`CL_EPARSE`, sticky incomplete state, and a non-cacheable fmap. Complete YARA
+evaluation and corpus, sanitizer, production-CVD/service, materialized
+large-file, Linux x86-64, and Sonic1 qualification remain required.
+
 ## Shared resource-limit helper admission audit — 2026-08-27
 
 cli_checklimits dereferenced ctx->engine for every non-null context, and

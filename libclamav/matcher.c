@@ -1420,6 +1420,12 @@ static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
             ctx->fmap->dont_cache_flag = 1;
         return CL_EPARSE;
     }
+    if (!acdata) {
+        cli_mark_scan_incomplete(ctx, "YARA matcher state is unavailable");
+        if (ctx && ctx->fmap)
+            ctx->fmap->dont_cache_flag = 1;
+        return CL_EPARSE;
+    }
 
     memset(&context, 0, sizeof(YR_SCAN_CONTEXT));
     context.fmap      = ctx->fmap;

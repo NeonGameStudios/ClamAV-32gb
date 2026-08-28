@@ -6490,3 +6490,13 @@ qualification gates.
   regression and focused current-source production-linked evidence, plus full
   XAR corpus, sanitizer, production-CVD/service, materialized large-file,
   certified Linux x86-64, Sonic1, and release qualification gates.
+
+## YARA matcher-state admission — 2026-08-28
+
+- Keep bundled YARA fail-visible when a recognized rule has a valid
+  instruction stream but no matcher-state object; return `CL_EPARSE`, mark the
+  current layer incomplete, and disable caching before VM execution.
+- Retain the direct `test_yara_missing_matcher_state_is_fail_visible`
+  regression and current-source production-linked GCC evidence, then complete
+  YARA evaluation and corpus, sanitizer, production-CVD/service, materialized
+  large-file, certified Linux x86-64, Sonic1, and release qualification gates.

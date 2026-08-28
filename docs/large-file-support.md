@@ -152,6 +152,17 @@ non-cacheable input. Full XAR corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and parser-family qualification remain open.
 
+## YARA matcher-state admission — 2026-08-28
+
+The bundled YARA evaluator now rejects a valid instruction stream paired with
+missing matcher state before VM execution. The boundary returns `CL_EPARSE`,
+marks the current layer incomplete, and disables caching; the registered
+`test_yara_missing_matcher_state_is_fail_visible` regression and an isolated
+current-source production-linked GCC harness cover the case. Full YARA
+evaluation and corpus, sanitizer, production-CVD/service, materialized
+large-file, certified Linux x86-64, Sonic1, and release qualification remain
+open.
+
 ## Mach-O load-command alignment admission — 2026-08-28
 
 Mach-O load-command admission now enforces the format alignment required by

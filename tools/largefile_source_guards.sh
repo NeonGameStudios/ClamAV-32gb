@@ -1212,6 +1212,8 @@ contains unit_tests/check_matchers.c 'test_yara_call_operand_count_is_fail_visib
 contains libclamav/yara_exec.c 'unknown YARA opcode'
 contains unit_tests/check_matchers.c 'test_yara_unknown_opcode_is_fail_visible'
 contains unit_tests/check_matchers.c 'test_yara_missing_code_is_fail_visible'
+contains libclamav/matcher.c 'YARA matcher state is unavailable'
+contains unit_tests/check_matchers.c 'test_yara_missing_matcher_state_is_fail_visible'
 contains libclamav/matcher.c 'yara_work_accounted'
 contains libclamav/matcher.c 'cli_scan_account_matcher_work(ctx, (uint64_t)ctx->fmap->len)'
 contains unit_tests/check_matchers.c 'test_yara_evaluation_accounts_matcher_work'
