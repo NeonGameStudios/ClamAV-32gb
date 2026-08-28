@@ -382,6 +382,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                 if (ret != CL_SUCCESS)
                     return ret;
             }
+            cli_mark_scan_incomplete(ctx, "TAR member contents could not be read completely");
             cli_errmsg("cli_untar: block read error\n");
             return CL_EREAD;
         }
