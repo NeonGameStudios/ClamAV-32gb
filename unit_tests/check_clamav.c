@@ -22240,8 +22240,11 @@ START_TEST(test_apm_partition_limit_is_fail_visible)
 }
 END_TEST
 
-START_TEST(test_rust_parser_missing_maps_are_fail_visible)
+START_TEST(test_rust_parser_admission_boundaries_are_fail_visible)
 {
+    static const uint8_t data[1] = {0};
+    cli_scan_layer_t layer;
+    fmap_t *map;
     cli_ctx ctx;
 
     ck_assert_int_eq(scan_onenote(NULL), CL_ENULLARG);
@@ -22265,6 +22268,45 @@ START_TEST(test_rust_parser_missing_maps_are_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "Rust parser reported malformed or incomplete input");
+
+    map = fmap_open_memory(data, sizeof(data), NULL);
+    ck_assert_ptr_nonnull(map);
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap                  = map;
+    ctx.recursion_stack       = &layer;
+    ctx.recursion_stack_size  = 1;
+    layer.fmap                = map;
+    ck_assert_int_eq(scan_onenote(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    fmap_free(map);
+
+    map = fmap_open_memory(data, sizeof(data), NULL);
+    ck_assert_ptr_nonnull(map);
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap                  = map;
+    ctx.recursion_stack       = &layer;
+    ctx.recursion_stack_size  = 1;
+    layer.fmap                = map;
+    ck_assert_int_eq(cli_scanalz(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    fmap_free(map);
+
+    map = fmap_open_memory(data, sizeof(data), NULL);
+    ck_assert_ptr_nonnull(map);
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap                  = map;
+    ctx.recursion_stack       = &layer;
+    ctx.recursion_stack_size  = 1;
+    layer.fmap                = map;
+    ck_assert_int_eq(scan_lha_lzh(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    fmap_free(map);
 }
 END_TEST
 
@@ -43115,7 +43157,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_msxml, test_msxml_stream_time_limit_is_fail_visible);
     suite_add_tcase(s, tc_rust_map);
     tcase_add_checked_fixture(tc_rust_map, cl_setup, cl_teardown);
-    tcase_add_test(tc_rust_map, test_rust_parser_missing_maps_are_fail_visible);
+    tcase_add_test(tc_rust_map, test_rust_parser_admission_boundaries_are_fail_visible);
     suite_add_tcase(s, tc_rust_lha);
     tcase_add_checked_fixture(tc_rust_lha, cl_setup, cl_teardown);
     tcase_add_test(tc_rust_lha, test_rust_lha_initial_read_failure_is_fail_visible);

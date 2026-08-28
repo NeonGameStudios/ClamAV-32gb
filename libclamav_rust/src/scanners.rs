@@ -783,6 +783,9 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
             return parser_failure(ctx, "OneNote", rust_context_error_status(&e), e);
         }
     };
+    if (*ctx).engine.is_null() {
+        return cl_error_t_CL_ENULLARG;
+    }
 
     let mut reader = FMapReader::new_with_context(&fmap, ctx);
     let mut prefix = [0u8; 16];
@@ -955,6 +958,9 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
             return parser_failure(ctx, "LHA/LZH", rust_context_error_status(&e), e);
         }
     };
+    if (*ctx).engine.is_null() {
+        return cl_error_t_CL_ENULLARG;
+    }
 
     // Try to parse the LHA/LZH file data using the delharc crate.
     debug!("Attempting to parse the LHA/LZH file data using the delharc crate.");
@@ -1364,6 +1370,9 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
             return parser_failure(ctx, "ALZ", rust_context_error_status(&e), e);
         }
     };
+    if (*ctx).engine.is_null() {
+        return cl_error_t_CL_ENULLARG;
+    }
 
     let mut alz_metadata_ret = cl_error_t_CL_SUCCESS;
     let mut sink = AlzScanSink::new(ctx);

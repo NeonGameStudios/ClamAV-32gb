@@ -6211,3 +6211,13 @@ qualification gates.
 ## XDP parser admission — 2026-08-27
 - Keep XDP fail-visible for a recognized input map without an owning engine before retained-dump or streaming-MSXML state access.
 - Retain complete XDP corpus, sanitizer, production-CVD, materialized large-file, Sonic1, and release qualification gates.
+
+## Rust archive parser engine admission — 2026-08-27
+
+- Keep ALZ, LHA/LZH, and OneNote Rust parser entries fail-visible when a valid
+  current-layer fmap has no owning engine; reject before parser metadata,
+  temporary-spool, or nested-scan access and preserve the invalid-argument
+  result without false incomplete/cache-taint state.
+- Retain complete Rust parser corpus, sanitizer, production-CVD/service,
+  materialized large-file, certified Linux x86-64, Sonic1, and release
+  qualification gates.

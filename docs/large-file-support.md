@@ -8819,3 +8819,14 @@ accessed. The existing `test_xdp_missing_engine_is_fail_visible` regression
 also verifies that this invalid admission does not falsely mark the layer
 incomplete or non-cacheable; complete XDP corpus, sanitizer, production-CVD,
 materialized large-file, Sonic1, and release qualification remain open.
+
+## Rust archive parser engine admission — 2026-08-27
+
+The ALZ, LHA/LZH, and OneNote Rust parser entries now reject a valid
+current-layer fmap without owning engine state with `CL_ENULLARG` before
+parser metadata, temporary-spool, or nested-scan access. The
+`test_rust_parser_admission_boundaries_are_fail_visible` regression covers all
+three entries and verifies no false sticky incomplete or cache-taint state.
+Current-source Rust-boundary source evidence is recorded; complete Rust parser
+corpus, sanitizer, certified Linux x86-64, production-CVD/service, materialized
+large-file, Sonic1, and release qualification remain open.

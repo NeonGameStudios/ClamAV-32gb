@@ -12396,3 +12396,15 @@ state access. `test_xdp_missing_engine_is_fail_visible` verifies the explicit
 `CL_ENULLARG` result without falsely setting sticky incomplete or cache-taint
 state. Complete XDP corpus, sanitizer, production-CVD, materialized
 large-file, Sonic1, and release qualification evidence remain required.
+
+## Rust archive parser engine admission audit — 2026-08-27
+
+The ALZ, LHA/LZH, and OneNote Rust parser entries validated their current
+layer fmap but could continue into parser metadata, temporary-spool, and
+nested-scan paths without an owning engine. They now return `CL_ENULLARG`
+after valid fmap admission and before those engine-dependent operations.
+`test_rust_parser_admission_boundaries_are_fail_visible` covers all three
+entries and verifies that this invalid API boundary does not falsely set
+sticky incomplete or cache-taint state. Complete Rust parser corpus,
+sanitizer, production-CVD/service, materialized large-file, Sonic1, and
+release qualification evidence remain required.
