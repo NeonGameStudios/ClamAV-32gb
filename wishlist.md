@@ -1,5 +1,16 @@
 # Wishlist
 
+## UUEncode empty-output admission — 2026-08-28
+
+- Keep the post-`fileblobSetFilename()` incomplete-state check so an empty
+  attachment cannot normalize a failed temporary-output admission to clean;
+  retain the invalid-directory regression and source guards.
+- The current source and unit translation unit compile with the production
+  GCC flags, and the focused current-source runner returns the expected
+  fail-visible state. Keep full UUEncode/mail corpus, sanitizer, certified
+  Linux, production-CVD/service, materialized large-file, Sonic1, and release
+  qualification open.
+
 ## Masked ZIP-SFX focused rerun — 2026-08-28
 
 - Retain the current-source production-linked admission checks: confirmed

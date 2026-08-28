@@ -142,6 +142,12 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
 
     fileblobSetCTX(fb, m->ctx);
     fileblobSetFilename(fb, dir, filename);
+    if (fb->isIncomplete) {
+        cli_mark_scan_incomplete(m->ctx, "UUencoded attachment output blob could not be initialized");
+        free(filename);
+        fileblobDestroy(fb);
+        return -1;
+    }
     cli_dbgmsg("uudecode %s\n", filename);
     free(filename);
 

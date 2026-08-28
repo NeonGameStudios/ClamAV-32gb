@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UUEncode empty-output admission — 2026-08-28
+
+UUEncode now fails immediately when `fileblobSetFilename()` leaves the decoded
+attachment output blob incomplete. This prevents an empty attachment that
+reaches its `end` marker without writing data from returning clean after a
+temporary-output admission failure. The current source and unit translation
+unit compile with the production GCC flags, and the focused current-source
+runner returns `-1` with sticky incomplete and non-cacheable state. Full
+UUEncode/mail corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized large-file, Sonic1, and release qualification remain required.
+
 ## Masked ZIP-SFX focused rerun — 2026-08-28
 
 The current masked ZIP-SFX source and unit translation unit compile with the

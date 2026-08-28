@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## UUEncode empty-output admission — 2026-08-28
+
+`uudecodeFile()` now checks the `fileblob` state immediately after assigning
+the decoded attachment filename. Previously, a temporary-output admission
+failure marked the blob incomplete but an attachment containing no data before
+its `end` line could still return the success path. The parser now destroys
+the failed blob and returns a fail-visible result; the new invalid-temporary-
+directory regression passes through the current source with sticky incomplete
+and non-cacheable state. The current `uuencode.c` and unit translation unit
+compile with the production GCC flags; the source's existing signedness
+warning is unrelated. Full UUEncode/mail corpus, sanitizer, certified Linux,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification remain required.
+
 ## Masked ZIP-SFX focused rerun — 2026-08-28
 
 The current masked ZIP-SFX implementation and unit translation unit compile

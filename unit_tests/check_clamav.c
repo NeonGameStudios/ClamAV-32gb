@@ -29483,6 +29483,31 @@ START_TEST(test_uuencode_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_uuencode_empty_attachment_output_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "begin 644 payload\nend\n";
+    static const char missing_dir[] = "/definitely-missing-clamav-tmpdir";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_uuencode(&ctx, missing_dir, map), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "UUencoded attachment output blob could not be initialized");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_uuencode_attachment_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "begin 644 payload\n#0V%T\n";
@@ -44594,6 +44619,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_uuencode_map);
     tcase_add_test(tc_uuencode_map, test_uuencode_missing_context_or_map_is_fail_visible);
     tcase_add_test(tc_uuencode_map, test_uuencode_missing_engine_is_fail_visible);
+    tcase_add_test(tc_uuencode_map, test_uuencode_empty_attachment_output_failure_is_fail_visible);
     suite_add_tcase(s, tc_mail_api);
     tcase_add_checked_fixture(tc_mail_api, cl_setup, cl_teardown);
     tcase_add_test(tc_mail_api, test_mbox_public_api_read_failure_is_fail_visible);
