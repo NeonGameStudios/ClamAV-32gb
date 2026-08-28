@@ -68,6 +68,8 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
         cli_mark_scan_incomplete(ctx, "UUencoded input map is unavailable");
         return CL_EPARSE;
     }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
 
     status = uuencode_checktimelimit(ctx, "UUencoded inspection reached the configured time limit");
     if (status != CL_SUCCESS)

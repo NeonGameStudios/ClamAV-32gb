@@ -6174,3 +6174,10 @@ qualification gates.
   engine ownership is absent, with sticky incomplete/non-cacheable results.
 - Retain complete media corpus, sanitizer, production-CVD/service,
   materialized large-file, Sonic1, and release qualification gates.
+
+## UUEncode parser admission — 2026-08-27
+
+- Keep UUEncode fail-visible when engine ownership is absent before decoded
+  attachment materialization and matcher-root access.
+- Retain complete UUEncode corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and release qualification gates.

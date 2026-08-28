@@ -1021,6 +1021,8 @@ contains libclamav/uuencode.c 'UUencoded attachment could not be materialized co
 contains libclamav/uuencode.c 'UUencoded attachment was not terminated or decoded completely'
 contains unit_tests/check_clamav.c 'test_uuencode_initial_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_uuencode_missing_context_or_map_is_fail_visible'
+contains libclamav/uuencode.c 'if (ctx->engine == NULL)'
+contains unit_tests/check_clamav.c 'test_uuencode_missing_engine_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_uuencode_time_limit_is_fail_visible'
 contains libclamav/mbox.c 'UUDECODE_READ_ERROR'
 contains unit_tests/check_clamav.c 'test_mbox_uuencode_attachment_read_failure_is_fail_visible'

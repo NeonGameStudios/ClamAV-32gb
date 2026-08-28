@@ -28072,6 +28072,24 @@ START_TEST(test_uuencode_missing_context_or_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_uuencode_missing_engine_is_fail_visible)
+{
+    static const uint8_t input[] = "begin 644 payload\n#0V%T\nend\n";
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_uuencode(&ctx, tmpdir, map), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_uuencode_attachment_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "begin 644 payload\n#0V%T\n";
@@ -42458,6 +42476,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tnef, test_tnef_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_uuencode_map);
     tcase_add_test(tc_uuencode_map, test_uuencode_missing_context_or_map_is_fail_visible);
+    tcase_add_test(tc_uuencode_map, test_uuencode_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_mail_api);
     tcase_add_checked_fixture(tc_mail_api, cl_setup, cl_teardown);
     tcase_add_test(tc_mail_api, test_mbox_public_api_read_failure_is_fail_visible);

@@ -8773,3 +8773,12 @@ test_binhex_missing_engine_is_fail_visible regression uses a non-empty stream
 that previously reached engine-dependent cleanup. Current-source GCC syntax
 evidence is recorded; complete BinHex corpus, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification remain open.
+
+## UUEncode parser admission — 2026-08-27
+
+The UUEncode entry now rejects missing engine ownership before decoded
+attachment materialization can reach `fileblobAddData()` and inspect matcher
+roots. The focused `test_uuencode_missing_engine_is_fail_visible` regression
+covers a complete decoded-line stream; complete UUEncode corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification remain open.

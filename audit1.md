@@ -12264,6 +12264,16 @@ previously reached engine-dependent cleanup. Complete BinHex corpus,
 sanitizer, production-CVD/service, materialized large-file, Sonic1, and release
 qualification evidence remain required.
 
+## UUEncode parser admission audit — 2026-08-27
+
+`cli_uuencode()` accepted a context and map without requiring an engine, then
+decoded attachments through `fileblobAddData()`, whose early matcher scan
+dereferences `ctx->engine->root`. The entry now returns `CL_ENULLARG` before
+materialization; `test_uuencode_missing_engine_is_fail_visible` covers a
+decoded-line stream. Complete UUEncode corpus, sanitizer, production-CVD/
+service, materialized large-file, Sonic1, and release qualification evidence
+remain required.
+
 ## Shared resource-limit helper admission audit — 2026-08-27
 
 cli_checklimits dereferenced ctx->engine for every non-null context, and
