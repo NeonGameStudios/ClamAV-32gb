@@ -8667,3 +8667,14 @@ test_7z_scan_entry_requires_engine regressions preserve the structural ZIP and
 GCC syntax evidence is recorded; complete archive corpora, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and release
 qualification remain open.
+
+## PE metadata helper admission — 2026-08-27
+
+The PE header and Authenticode helper entries now validate their context,
+input fmap, engine ownership where required, and nested header offset before
+dereferencing parser state. Missing maps remain explicit incomplete PE input;
+missing helper arguments or engine state return CL_ENULLARG. The focused
+test_pe_metadata_helpers_reject_invalid_contexts regression covers the public
+helper boundary. Current-source GCC syntax evidence is recorded; complete PE
+metadata and certificate corpora, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification remain open.

@@ -5202,8 +5202,23 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         ret = CL_EARG;
         goto done;
     }
+    if (peinfo == NULL) {
+        cli_errmsg("cli_peheader: peinfo can't be NULL\n");
+        ret = CL_ENULLARG;
+        goto done;
+    }
 
     map = ctx->fmap;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "PE input map is unavailable");
+        ret = CL_EPARSE;
+        goto done;
+    }
+    if (peinfo->offset > map->len) {
+        cli_mark_scan_incomplete(ctx, "PE header offset is outside the input map");
+        ret = CL_EPARSE;
+        goto done;
+    }
 
     if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
         pe_json = get_pe_property(ctx);
@@ -6380,7 +6395,7 @@ cl_error_t cli_check_auth_header(cli_ctx *ctx, struct cli_exe_info *peinfo)
     size_t hlen;
     unsigned int i;
     size_t fsize;
-    fmap_t *map   = ctx->fmap;
+    fmap_t *map;
     void *hashctx = NULL;
     struct pe_certificate_hdr cert_hdr;
     struct cli_mapped_region *regions = NULL;
@@ -6393,6 +6408,17 @@ cl_error_t cli_check_auth_header(cli_ctx *ctx, struct cli_exe_info *peinfo)
 
     char *source      = NULL;
     size_t source_len = 0;
+
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "PE input map is unavailable");
+        return CL_EPARSE;
+    }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
+
+    map = ctx->fmap;
 
     // If Authenticode parsing has been disabled via DCONF or an engine
     // option, then don't continue on.

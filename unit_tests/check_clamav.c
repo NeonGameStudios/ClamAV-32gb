@@ -41949,6 +41949,36 @@ START_TEST(test_7z_scan_entry_requires_engine)
 }
 END_TEST
 
+START_TEST(test_pe_metadata_helpers_reject_invalid_contexts)
+{
+    cli_ctx ctx;
+    struct cli_exe_info peinfo;
+    fmap_t *map;
+    static const uint8_t input[] = {0};
+
+    memset(&ctx, 0, sizeof(ctx));
+    cli_exe_info_init(&peinfo, 0);
+    ck_assert_int_eq(cli_peheader(&ctx, &peinfo, CLI_PEHEADER_OPT_NONE), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE input map is unavailable");
+    ck_assert_int_eq(cli_peheader(&ctx, NULL, CLI_PEHEADER_OPT_NONE), CL_ENULLARG);
+    ck_assert_int_eq(cli_check_auth_header(NULL, &peinfo), CL_ENULLARG);
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    peinfo.offset = sizeof(input) + 1U;
+    ck_assert_int_eq(cli_peheader(&ctx, &peinfo, CLI_PEHEADER_OPT_NONE), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE header offset is outside the input map");
+    peinfo.offset = 0;
+    ck_assert_int_eq(cli_check_auth_header(&ctx, &peinfo), CL_ENULLARG);
+    cl_fmap_close(map);
+    cli_exe_info_destroy(&peinfo);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -42236,6 +42266,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_pe_map);
     tcase_add_checked_fixture(tc_pe_map, cl_setup, cl_teardown);
     tcase_add_test(tc_pe_map, test_pe_missing_map_is_fail_visible);
+    tcase_add_test(tc_pe_map, test_pe_metadata_helpers_reject_invalid_contexts);
     tcase_add_test(tc_pe_map, test_pe_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_pe);
     tcase_add_checked_fixture(tc_pe, cl_setup, cl_teardown);

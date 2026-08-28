@@ -12229,6 +12229,17 @@ MSPack formats. Complete parser corpora, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification evidence remain
 required.
 
+## PE metadata helper admission audit — 2026-08-27
+
+cli_peheader dereferenced peinfo and ctx->fmap without validating either, and
+cli_check_auth_header initialized its map and entered engine-dependent logic
+before checking the context. The helpers now return explicit argument or
+incomplete-map results before state access, and cli_peheader rejects offsets
+outside its input map. test_pe_metadata_helpers_reject_invalid_contexts covers
+the boundary. Complete PE metadata/certificate corpora, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification evidence remain required.
+
 ## ZIP and 7-Zip scan-entry engine admission audit — 2026-08-27
 
 The full ZIP catalogue, single-member extraction, ZIP search, and 7-Zip
