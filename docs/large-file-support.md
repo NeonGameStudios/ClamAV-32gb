@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PNG IHDR alignment boundary — 2026-08-28
+
+PNG IHDR dimensions are now copied through `memcpy` before endian conversion,
+so valid PNG input with an odd fmap base does not depend on host pointer
+alignment. The registered unaligned-input regression and an isolated
+current-source production-linked Check TCase pass 1/1; the current-source GCC
+ASan/UBSan runner also passes without a sanitizer finding. Complete PNG/image
+corpus, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain required.
+
 ## XAR numeric TOC metadata admission — 2026-08-28
 
 XAR numeric TOC values now permit only surrounding XML whitespace after

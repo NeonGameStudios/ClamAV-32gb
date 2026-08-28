@@ -122,6 +122,8 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
 
     uint64_t width  = 0;
     uint64_t height = 0;
+    uint32_t width_raw;
+    uint32_t height_raw;
 
     uint32_t sample_depth = 0, bit_depth = 0, interlace_method = 0;
     uint64_t num_palette_entries = 0;
@@ -248,8 +250,13 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
             /*------*
              | IHDR |
              *------*/
-            width  = be32_to_host(*(uint32_t *)ptr);
-            height = be32_to_host(*(uint32_t *)(ptr + 4));
+            /* The fmap base may be unaligned for nested or memory-backed
+             * inputs. Copy the fixed-width fields before endian conversion
+             * instead of forming a potentially misaligned uint32_t pointer. */
+            memcpy(&width_raw, ptr, sizeof(width_raw));
+            memcpy(&height_raw, ptr + 4, sizeof(height_raw));
+            width  = be32_to_host(width_raw);
+            height = be32_to_host(height_raw);
             if (width == 0 || height == 0 || width > (uint64_t)0x7fffffff || height > (uint64_t)0x7fffffff) {
                 cli_dbgmsg("PNG: invalid image dimensions: width = " STDu64 ", height = " STDu64 "\n", width, height);
                 status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.InvalidDimensions");

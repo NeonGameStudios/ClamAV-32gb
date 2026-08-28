@@ -1,5 +1,16 @@
 # Wishlist
 
+## PNG IHDR alignment boundary — 2026-08-28
+
+- Keep PNG IHDR width and height reads alignment-safe by copying the bounded
+  four-byte fields through `memcpy` before big-endian conversion.
+- Retain `test_png_ihdr_unaligned_input_is_defined` and its source guards. The
+  current PNG and unit sources compile with production GCC, the isolated
+  current-source production-linked Check TCase passes 1/1, and the
+  current-source GCC ASan/UBSan runner passes without a sanitizer finding.
+  Keep complete PNG/image corpus, materialized large-file, production-
+  CVD/service, Sonic1, and final parser-family qualification open.
+
 ## XAR numeric TOC metadata admission — 2026-08-28
 
 - Keep XAR numeric `<offset>`, `<length>`, and `<size>` values strict after

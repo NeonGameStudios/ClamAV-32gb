@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## PNG IHDR alignment boundary — 2026-08-28
+
+PNG IHDR dimensions were read through typed `uint32_t *` dereferences after
+borrowing 13 bytes from the fmap. A valid PNG presented through an odd-base
+memory or nested fmap could therefore invoke undefined behavior on hosts that
+require natural alignment. The parser now copies both fixed-width dimension
+fields through `memcpy` before big-endian conversion. The registered
+`test_png_ihdr_unaligned_input_is_defined` regression passes a valid PNG whose
+fmap base is intentionally offset by one byte; the isolated current-source
+production-linked Check TCase passes 1/1, and the current-source GCC
+ASan/UBSan runner returns clean with no sanitizer finding. Full PNG/image
+corpus, materialized large-file, production-CVD/service, Sonic1, and parser-
+family qualification remain required.
+
 ## XAR numeric TOC metadata admission — 2026-08-28
 
 XAR TOC offsets, compressed lengths, and extracted sizes were parsed with
