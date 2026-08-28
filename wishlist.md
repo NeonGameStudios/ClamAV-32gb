@@ -6129,6 +6129,13 @@ qualification gates.
   corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1,
   and release qualification gates.
 
+## BinHex parser admission — 2026-08-27
+
+- Keep BinHex fail-visible when called without an owning engine before
+  temporary-output, cleanup, or nested-scan access.
+- Retain complete BinHex corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and release qualification gates.
+
 ## PE icon helper admission — 2026-08-27
 
 - Keep cli_scanicon fail-visible for null icon-set/context/PE metadata

@@ -16965,6 +16965,25 @@ START_TEST(test_binhex_null_context_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_binhex_missing_engine_is_fail_visible)
+{
+    static const uint8_t data[] = "\r\n:";
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ck_assert_int_eq(cli_binhex(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_cli_magic_scan_missing_map_is_fail_visible)
 {
     struct cl_engine engine;
@@ -43118,6 +43137,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_binhex_map, cl_setup, cl_teardown);
     tcase_add_test(tc_binhex_map, test_binhex_missing_map_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_null_context_is_fail_visible);
+    tcase_add_test(tc_binhex_map, test_binhex_missing_engine_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_truncated_header_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_header_lengths_are_not_read_before_header_completion);
     tcase_add_test(tc_binhex_map, test_binhex_time_limit_is_fail_visible);

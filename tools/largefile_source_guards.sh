@@ -3803,6 +3803,8 @@ contains unit_tests/check_clamav.c 'test_binhex_truncated_header_is_fail_visible
 contains unit_tests/check_clamav.c 'test_binhex_header_lengths_are_not_read_before_header_completion'
 contains unit_tests/check_clamav.c 'test_binhex_time_limit_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_binhex_missing_map_is_fail_visible'
+contains libclamav/binhex.c 'if (ctx->engine == NULL)'
+contains unit_tests/check_clamav.c 'test_binhex_missing_engine_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_cli_magic_scan_missing_map_is_fail_visible'
 contains libclamav/scanners.c 'case CL_TYPE_IGNORED:'
 contains libclamav/scanners.c 'recognized ignored file type parser is unsupported'

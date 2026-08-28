@@ -12254,6 +12254,16 @@ the boundary. Complete PE metadata/certificate corpora, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and release
 qualification evidence remain required.
 
+## BinHex parser admission audit — 2026-08-27
+
+The BinHex entry checked its context and input fmap but not engine ownership,
+even though temporary cleanup and nested descriptor scanning dereference the
+engine. It now rejects a missing engine with CL_ENULLARG before those paths;
+test_binhex_missing_engine_is_fail_visible exercises a non-empty stream that
+previously reached engine-dependent cleanup. Complete BinHex corpus,
+sanitizer, production-CVD/service, materialized large-file, Sonic1, and release
+qualification evidence remain required.
+
 ## Shared resource-limit helper admission audit — 2026-08-27
 
 cli_checklimits dereferenced ctx->engine for every non-null context, and

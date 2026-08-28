@@ -116,6 +116,8 @@ int cli_binhex(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "BinHex input map is unavailable");
         return CL_EPARSE;
     }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
     enc_todo = map->len;
     ret = binhex_checktimelimit(ctx, "BinHex inspection reached the configured time limit");
     if (ret != CL_SUCCESS)

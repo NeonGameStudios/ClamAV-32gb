@@ -8753,3 +8753,12 @@ null key-table, and JSON option-state boundaries. Current-source GCC syntax
 evidence is recorded; complete XML/OOXML/HWPML corpus, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and release
 qualification remain open.
+
+## BinHex parser admission — 2026-08-27
+
+The BinHex parser now rejects a missing owning engine before time-limit,
+temporary-output, cleanup, or nested-scan access. The focused
+test_binhex_missing_engine_is_fail_visible regression uses a non-empty stream
+that previously reached engine-dependent cleanup. Current-source GCC syntax
+evidence is recorded; complete BinHex corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification remain open.
