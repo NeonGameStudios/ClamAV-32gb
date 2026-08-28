@@ -2293,6 +2293,11 @@ cl_error_t cli_vba_inflate_stream(int fd, off_t offset, cli_vba_inflate_write_cb
                     pos++;
                 } else if (read_result == (size_t)-1) {
                     return CL_EREAD;
+                } else {
+                    /* A flag bit announced a literal, but the compressed
+                     * stream ended before that byte. Do not publish the
+                     * preceding prefix as a complete module. */
+                    return CL_EREAD;
                 }
             }
             clean = TRUE;

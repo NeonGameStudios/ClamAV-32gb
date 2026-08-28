@@ -4778,6 +4778,7 @@ contains unit_tests/check_clamav.c 'test_codepage_utf8_stream_preserves_split_se
 contains unit_tests/check_clamav.c 'test_codepage_stream_preserves_iconv_state'
 contains unit_tests/check_clamav.c 'test_vba_inflate_stream_matches_legacy_output'
 contains unit_tests/check_clamav.c 'test_vba_inflate_stream_rejects_initial_backreference'
+contains unit_tests/check_clamav.c 'test_vba_inflate_stream_rejects_truncated_literal'
 contains unit_tests/check_clamav.c 'test_vba_inflate_stream_propagates_output_failure'
 contains libclamav/scanners.c 'VBA project module could not be decompressed completely'
 contains libclamav/scanners.c 'VBA project input could not be inspected'

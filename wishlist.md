@@ -6558,8 +6558,11 @@ qualification gates.
 
 - Reject VBA copy tokens whose distance is not backed by already produced
   history; never allow `pos - distance - 1` to wrap into the history window.
-- Retain `test_vba_inflate_stream_rejects_initial_backreference`, the source
-  guards, and the current-source production-linked direct 1/1 regression.
+- Reject a flag-announced literal that reaches EOF before final emission, so a
+  partial prefix cannot be mistaken for a complete module.
+- Retain `test_vba_inflate_stream_rejects_initial_backreference`,
+  `test_vba_inflate_stream_rejects_truncated_literal`, the source guards, and
+  the current-source production-linked direct 2/2 regression.
   Complete OLE/VBA corpus, sanitizer, production-CVD/service, materialized
   large-file, certified Linux x86-64, Sonic1, and parser-family qualification
   remain required.

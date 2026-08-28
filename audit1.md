@@ -12873,7 +12873,11 @@ non-cacheable handling.
 The registered `test_vba_inflate_stream_rejects_initial_backreference` fixture
 drives a first-token back-reference with no prior history and requires
 `CL_EFORMAT`, zero output, and zero reported output bytes. A current-source
-production-linked GCC direct runner passes 1/1. The canonical VBA source and
-unit source remain GCC-checkable; complete OLE/VBA corpus, sanitizer,
+production-linked GCC direct runner passes 1/1 for that case. The same decoder
+previously returned success after a flag-announced literal reached EOF, which
+could publish a partial prefix as complete. It now returns `CL_EREAD` before
+final emission; `test_vba_inflate_stream_rejects_truncated_literal` and the
+same direct runner pass 1/1 for that case with zero output. The canonical VBA
+source and unit source remain GCC-checkable; complete OLE/VBA corpus, sanitizer,
 production-CVD/service, materialized large-file, certified Linux x86-64,
 Sonic1, and final parser-family qualification remain open.
