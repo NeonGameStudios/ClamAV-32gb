@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Legacy Word macro external-name span — 2026-08-28
+
+The legacy Word macro-directory reader consumed only one `MacroExtNames`
+record because it subtracted the declared byte span from its loop counter after
+each record. It could therefore interpret the next external-name record as a
+directory record and abandon valid macro metadata. The reader now walks the
+declared external-name byte span exactly, bounds every external-, internal-,
+menu-, and 0x03-record read/seek by the declared macro-directory end, and
+rewinds the 0x03 look-ahead only within that range. The new two-record
+regression is registered and current-source GCC syntax-checked; an isolated
+current-source VBA-object harness linked against the existing production
+shared library passes the valid two-record case with the expected macro
+metadata and cacheable completion.
+
+Full production-linked unit execution, malformed Word/OLE corpus, sanitizer
+and allocation-fault coverage, production-CVD/service parity, materialized
+large-file, Sonic1, and final OLE/VBA qualification remain open.
+
 ## OLE2 output-write failure visibility — 2026-08-28
 
 The OLE2 embedded-stream and MSO inflation paths returned `CL_EWRITE` when a

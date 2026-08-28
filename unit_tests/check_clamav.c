@@ -30926,6 +30926,63 @@ START_TEST(test_word_macro_directory_truncation_is_fail_visible)
     unlink(path);
 }
 END_TEST
+
+START_TEST(test_word_macro_extnames_are_fully_skipped)
+{
+    static const uint8_t fib[8] = {0x20, 0x01, 0x00, 0x00, 0x27, 0x00, 0x00, 0x00};
+    static const uint8_t directory[] = {
+        0x00,                         /* start marker */
+        0x10, 0x0a, 0x00,             /* two ANSI external names, including size */
+        0x01, 'A', 0x00, 0x00,
+        0x01, 'B', 0x00, 0x00,
+        0x01, 0x01, 0x00,             /* one macro */
+        0x00, 0x5a,                   /* version and key */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x04, 0x00, 0x00, 0x00,       /* macro length */
+        0x00, 0x00, 0x00, 0x00,       /* macro state */
+        0x00, 0x02, 0x00, 0x00        /* macro offset */
+    };
+    const uint8_t map_data[] = {0};
+    char path[PATH_MAX];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    vba_project_t *project;
+    int fd;
+
+    snprintf(path, sizeof(path), "%s/word-macro-extnames", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_int_eq(ftruncate(fd, 0x120 + sizeof(directory)), 0);
+    ck_assert_int_eq(pwrite(fd, fib, sizeof(fib), 0x118), (ssize_t)sizeof(fib));
+    ck_assert_int_eq(pwrite(fd, directory, sizeof(directory), 0x120), (ssize_t)sizeof(directory));
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(map_data, sizeof(map_data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    project = cli_wm_readdir_ex(fd, &ctx);
+    ck_assert_ptr_nonnull(project);
+    ck_assert_int_eq(project->count, 1);
+    ck_assert_int_eq(project->key[0], 0x5a);
+    ck_assert_uint_eq(project->length[0], 4);
+    ck_assert_uint_eq(project->offset[0], 0x200);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cli_free_vba_project(project);
+    cl_fmap_close(map);
+    close(fd);
+    unlink(path);
+}
+END_TEST
 #endif
 
 static void dmg_test_write_be32(uint8_t *dst, uint32_t value)
@@ -44348,6 +44405,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_vba_inflate_seek_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_word_macro_directory_truncation_is_fail_visible);
+    tcase_add_test(tc_cl, test_word_macro_extnames_are_fully_skipped);
 #endif
     tcase_add_test(tc_cl, test_arc4_apply_uses_native_length);
     tcase_add_test(tc_cl, test_pdf_object_encryption_key_vectors);

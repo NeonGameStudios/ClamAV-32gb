@@ -1,5 +1,17 @@
 # Wishlist
 
+## Legacy Word macro external-name span — 2026-08-28
+
+- Keep `MacroExtNames` traversal byte-span based and bounded by the declared
+  Word macro directory. The legacy reader must consume every valid external
+  name before interpreting the following directory record, and all 0x03,
+  menu, external-name, and internal-name skips must remain inside that range.
+- The two-record current-source regression is GCC syntax-checked and passes in
+  an isolated current VBA-object harness linked with the existing production
+  shared library. Keep full production-linked unit execution, malformed
+  Word/OLE corpus, sanitizer, production-CVD/service, materialized large-file,
+  Sonic1, and final OLE/VBA qualification open.
+
 ## OLE2 output-write failure visibility — 2026-08-28
 
 - Preserve sticky incomplete and non-cacheable state when OLE2 embedded

@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Legacy Word macro external-name span — 2026-08-28
+
+The legacy Word macro-directory reader now consumes the complete byte span
+declared by a `MacroExtNames` record instead of stopping after one external
+name. The 0x03, menu, external-name, and internal-name skip helpers also
+preflight reads and seeks against the declared macro-directory end, so a
+malformed record cannot advance into following stream data. The registered
+two-record regression passes GCC syntax checking, and an isolated current
+VBA-object harness linked with the existing production shared library passes
+the valid metadata case. Full production-linked unit execution, malformed
+Word/OLE corpus, sanitizer, production-CVD/service, materialized large-file,
+Sonic1, and final OLE/VBA qualification remain required.
+
 ## OLE2 output-write failure visibility — 2026-08-28
 
 OLE2 embedded-stream and MSO inflation output writes now mark the layer
