@@ -6514,3 +6514,14 @@ qualification gates.
   evidence, and the focused production-linked harness, then complete TAR
   corpus, sanitizer, production-CVD/service, materialized large-file,
   certified Linux x86-64, Sonic1, and release qualification gates.
+
+
+## ELF64 direct table-cursor overflow regression — 2026-08-28
+
+- Keep the ELF64 program- and section-header cursor checks before the next
+  metadata read so `UINT64_MAX` wraparound cannot redirect inspection to a
+  low offset. The allocation-free production-linked regression passes 2/2 and
+  verifies only the two header reads occur.
+- Complete ELF corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service parity, Sonic1, and release qualification
+  remain required.
