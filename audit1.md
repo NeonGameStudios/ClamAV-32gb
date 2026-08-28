@@ -13372,9 +13372,14 @@ as `CL_EWRITE` or `CL_ESEEK`.
 
 The registered `test_7z_legacy_fallback_discards_stream_prefix` regression
 passes through the public helper and proves that a legacy write starts at an
-empty descriptor. A decoder-injected unsupported-after-write integration case
-is still required, along with complete 7-Zip corpus, sanitizer, production-
-CVD/service, materialized-large-file, Sonic1, and parser-family qualification.
+empty descriptor. On Linux static builds, the new
+`test_7z_legacy_fallback_after_partial_stream` linker-injection regression
+forces the production streaming extractor to write a prefix and return
+`SZ_ERROR_UNSUPPORTED`; the descriptor handed to nested scanning is checked
+for the exact `MZP` child prefix from the real `clam.7z` corpus after the reset
+fallback. Complete 7-Zip corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and parser-family
+qualification remain open.
 
 ## ALZ BZip2 declared-range completion audit — 2026-08-28
 

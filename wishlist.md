@@ -6891,7 +6891,8 @@ qualification gates.
 - Reset the temporary output with truncate-and-rewind before invoking the
   whole-folder fallback after `SZ_ERROR_UNSUPPORTED`; retain
   `test_7z_legacy_fallback_discards_stream_prefix` and source guards.
-- Add a decoder-injected unsupported-after-write integration case, then
+- Retain the Linux-static decoder-injected
+  `test_7z_legacy_fallback_after_partial_stream` integration case, then
   complete 7-Zip corpus, sanitizer, production-CVD/service, materialized
   large-file, Sonic1, and parser-family qualification.
 

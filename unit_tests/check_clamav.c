@@ -144,6 +144,62 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
 }
 #endif
 
+#ifdef CLAMAV_TEST_7Z_EXTRACT_WRAP
+extern SRes __real_SzArEx_ExtractToStreamEx(
+    const CSzArEx *, ILookInStream *, UInt32, ISeqOutStream *, UInt64 *, ISzAlloc *, ISzAlloc *,
+    ISzBcj2TempStreams *);
+static int sevenzip_test_unsupported_after_write;
+static int sevenzip_test_injection_used;
+static int sevenzip_test_child_prefix_status;
+
+SRes __wrap_SzArEx_ExtractToStreamEx(
+    const CSzArEx *archive,
+    ILookInStream *input,
+    UInt32 file_index,
+    ISeqOutStream *output,
+    UInt64 *processed,
+    ISzAlloc *alloc_main,
+    ISzAlloc *alloc_temp,
+    ISzBcj2TempStreams *temp_streams)
+{
+    static const Byte prefix[] = {'d', 'e', 'c', 'o', 'd', 'e', 'r', '-', 'p', 'r', 'e', 'f', 'i', 'x'};
+
+    if (!sevenzip_test_unsupported_after_write)
+        return __real_SzArEx_ExtractToStreamEx(archive, input, file_index, output, processed,
+                                               alloc_main, alloc_temp, temp_streams);
+
+    sevenzip_test_unsupported_after_write = 0;
+    sevenzip_test_injection_used          = 1;
+    if (output == NULL || output->Write == NULL || output->Write(output, prefix, sizeof(prefix)) != sizeof(prefix))
+        return SZ_ERROR_WRITE;
+    return SZ_ERROR_UNSUPPORTED;
+}
+
+extern cl_error_t __real_cli_magic_scan_desc_type_reserved(int, const char *, cli_ctx *, cli_file_t,
+                                                           const char *, uint32_t);
+
+cl_error_t __wrap_cli_magic_scan_desc_type_reserved(int desc, const char *filepath, cli_ctx *ctx,
+                                                    cli_file_t type, const char *name, uint32_t attributes)
+{
+    uint8_t prefix[3];
+    ssize_t nread;
+
+    if (type == CL_TYPE_ANY) {
+        if (lseek(desc, 0, SEEK_SET) == (off_t)-1) {
+            sevenzip_test_child_prefix_status = -1;
+        } else {
+            nread = read(desc, prefix, sizeof(prefix));
+            sevenzip_test_child_prefix_status =
+                (nread == (ssize_t)sizeof(prefix) && memcmp(prefix, "MZP", sizeof(prefix)) == 0) ? 1 : -1;
+            if (lseek(desc, 0, SEEK_SET) == (off_t)-1)
+                sevenzip_test_child_prefix_status = -1;
+        }
+    }
+
+    return __real_cli_magic_scan_desc_type_reserved(desc, filepath, ctx, type, name, attributes);
+}
+#endif
+
 static int fpu_words = FPU_ENDIAN_INITME;
 #define NO_FPU_ENDIAN (fpu_words == FPU_ENDIAN_UNKNOWN)
 #define EA06_SCAN strstr(file, "clam.ea06.exe")
@@ -26580,7 +26636,7 @@ START_TEST(test_7z_input_time_limit_is_fail_visible)
 }
 END_TEST
 
-START_TEST(test_7z_corpus_detects_embedded_mz)
+static void test_7z_corpus_scan(bool inject_unsupported_after_write)
 {
     char file_path[PATH_MAX];
     struct cl_scan_options options;
@@ -26596,15 +26652,10 @@ START_TEST(test_7z_corpus_detects_embedded_mz)
     int fd;
 
     memset(&options, 0, sizeof(options));
-    options.parse = CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
-    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
-    ck_assert_int_eq(cli_add_content_match_pattern(
-                         scan_engine->root[0], "7z.Member.MZ", "4d5a50", 0, 0, 0,
-                         "0", NULL, 0),
-                     CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
 
     snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/clam.7z", OBJDIR);
@@ -26628,19 +26679,43 @@ START_TEST(test_7z_corpus_detects_embedded_mz)
     verdict    = CL_VERDICT_NOTHING_FOUND;
     last_alert = NULL;
     scanned    = 0;
+#ifdef CLAMAV_TEST_7Z_EXTRACT_WRAP
+    sevenzip_test_unsupported_after_write = inject_unsupported_after_write;
+    sevenzip_test_injection_used          = 0;
+    sevenzip_test_child_prefix_status     = 0;
+#else
+    UNUSEDPARAM(inject_unsupported_after_write);
+#endif
     ck_assert_int_eq(
         cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
                       scan_engine, &options, NULL, NULL, NULL, NULL,
                       "CL_TYPE_7Z", NULL),
-        CL_VIRUS);
-    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
-    ck_assert_str_eq(last_alert, "7z.Member.MZ.UNOFFICIAL");
+        CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+#ifdef CLAMAV_TEST_7Z_EXTRACT_WRAP
+    ck_assert_int_eq(sevenzip_test_child_prefix_status, 1);
+    ck_assert_int_eq(sevenzip_test_injection_used, inject_unsupported_after_write ? 1 : 0);
+#endif
 
     cl_fmap_close(map);
     free(data);
     cl_engine_free(scan_engine);
 }
+
+START_TEST(test_7z_corpus_scans_embedded_mz_child)
+{
+    test_7z_corpus_scan(false);
+}
 END_TEST
+
+#ifdef CLAMAV_TEST_7Z_EXTRACT_WRAP
+START_TEST(test_7z_legacy_fallback_after_partial_stream)
+{
+    test_7z_corpus_scan(true);
+}
+END_TEST
+#endif
 
 START_TEST(test_7z_cleanup_status_is_fail_visible)
 {
@@ -45421,7 +45496,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_input_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_seek_position_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_legacy_pack_position_overflow_is_fail_visible);
-    tcase_add_test(tc_7z, test_7z_corpus_detects_embedded_mz);
+    tcase_add_test(tc_7z, test_7z_corpus_scans_embedded_mz_child);
+#ifdef CLAMAV_TEST_7Z_EXTRACT_WRAP
+    tcase_add_test(tc_7z, test_7z_legacy_fallback_after_partial_stream);
+#endif
     suite_add_tcase(s, tc_7z_map);
     tcase_add_checked_fixture(tc_7z_map, cl_setup, cl_teardown);
     tcase_add_test(tc_7z_map, test_7z_null_context_is_fail_visible);

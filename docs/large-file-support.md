@@ -9478,8 +9478,13 @@ running the legacy whole-folder extractor. This prevents a decoder path that
 emitted a prefix before reporting unsupported from leaving mixed bytes in the
 file later handed to nested scanning. Reset failures remain fail-visible as
 write or seek errors. `test_7z_legacy_fallback_discards_stream_prefix` covers
-the reset-and-rewrite contract; a decoder-injected unsupported-after-write
-integration case and the complete 7-Zip release gates remain open.
+the reset-and-rewrite contract. On Linux static builds, the new
+`test_7z_legacy_fallback_after_partial_stream` linker-injection regression
+forces the production streaming extractor to emit a prefix and return
+`SZ_ERROR_UNSUPPORTED`; the descriptor handed to nested scanning is checked for
+the exact `MZP` child prefix from the real `clam.7z` corpus after the reset
+legacy fallback. Complete 7-Zip corpus, sanitizer,
+materialized-large-file, Sonic1, and release gates remain open.
 
 ## ALZ BZip2 declared-range completion
 

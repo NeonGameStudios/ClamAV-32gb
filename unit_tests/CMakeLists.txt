@@ -160,7 +160,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         CLAMAV_TEST_FMAP_NEW_WRAP
         CLAMAV_TEST_MALLOC_WRAP
         CLAMAV_TEST_JSON_WRAP
-        CLAMAV_TEST_JS_IO_WRAP)
+        CLAMAV_TEST_JS_IO_WRAP
+        CLAMAV_TEST_7Z_EXTRACT_WRAP)
     target_link_options(check_clamav PRIVATE
         "-Wl,--wrap=mspack_create_cab_decompressor"
         "-Wl,--wrap=mspack_create_chm_decompressor"
@@ -175,7 +176,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=fgets"
         "-Wl,--wrap=fread"
         "-Wl,--wrap=closedir"
-        "-Wl,--wrap=readdir")
+        "-Wl,--wrap=readdir"
+        "-Wl,--wrap=SzArEx_ExtractToStreamEx"
+        "-Wl,--wrap=cli_magic_scan_desc_type_reserved")
 endif()
 ADD_CUSTOM_COMMAND(TARGET check_clamav POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/input/clamav.hdb ${CMAKE_CURRENT_BINARY_DIR}/input/.)
