@@ -6167,3 +6167,10 @@ qualification gates.
   metadata access.
 - Retain complete XML/OOXML/HWPML corpus, sanitizer, production-CVD/service,
   materialized large-file, Sonic1, and release qualification gates.
+
+## Media nested-handoff admission — 2026-08-27
+
+- Keep GIF/PNG overlay and JPEG Photoshop-thumbnail handoffs fail-visible when
+  engine ownership is absent, with sticky incomplete/non-cacheable results.
+- Retain complete media corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and release qualification gates.

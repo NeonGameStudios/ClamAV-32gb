@@ -564,6 +564,11 @@ scan_overlay:
         // Is there an overlay?
         if (offset < map->len) {
             cli_dbgmsg("GIF: Found extra data after the end of the GIF data stream: %zu bytes, we'll scan it!\n", map->len - offset);
+            if (ctx->engine == NULL) {
+                cli_mark_scan_incomplete(ctx, "GIF overlay scan requires an owning engine");
+                status = CL_ENULLARG;
+                goto done;
+            }
             status = cli_magic_scan_nested_fmap_type(map, offset, map->len - offset, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
             goto done;
         }

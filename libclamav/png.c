@@ -435,6 +435,11 @@ scan_overlay:
         /* Check if there's an overlay, and scan it if one exists. */
         if (map->len > offset) {
             cli_dbgmsg("PNG: Found " STDu64 " additional data after end of PNG! Scanning as a nested file.\n", map->len - offset);
+            if (ctx->engine == NULL) {
+                cli_mark_scan_incomplete(ctx, "PNG overlay scan requires an owning engine");
+                status = CL_ENULLARG;
+                goto done;
+            }
             status = cli_magic_scan_nested_fmap_type(map, (size_t)offset, map->len - offset, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
             goto done;
         }

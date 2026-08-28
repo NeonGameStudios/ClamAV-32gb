@@ -12335,3 +12335,14 @@ focused MSXML base64 regression covers null reader, null key-table, and JSON
 option-state cases. Complete XML/OOXML/HWPML corpus, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and release
 qualification evidence remain required.
+
+## Media nested-handoff admission audit — 2026-08-27
+
+GIF and PNG could finish structural parsing without an engine but handed a
+confirmed trailing overlay to the nested scanner without recording the missing
+engine contract. JPEG’s Photoshop thumbnail path had the same implicit
+dependency. The parser-owned handoffs now return `CL_ENULLARG`, mark the layer
+incomplete, and prevent caching before nested dispatch; the focused media
+overlay regression covers valid GIF and PNG cases. Complete media corpus,
+sanitizer, production-CVD/service, materialized large-file, Sonic1, and release
+qualification evidence remain required.

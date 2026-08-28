@@ -447,6 +447,10 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off, size_t se
         return CL_CLEAN;
 
     /* Scan the thumbnail JPEG */
+    if (ctx->engine == NULL) {
+        cli_mark_scan_incomplete(ctx, "JPEG thumbnail scan requires an owning engine");
+        return CL_ENULLARG;
+    }
     retval = cli_magic_scan_nested_fmap_type(map, offset, resource_end - offset, ctx, CL_TYPE_JPEG,
                                              "photoshop-thumbnail", LAYER_ATTRIBUTES_NONE);
 

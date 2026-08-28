@@ -8754,6 +8754,17 @@ evidence is recorded; complete XML/OOXML/HWPML corpus, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and release
 qualification remain open.
 
+## Media nested-handoff admission — 2026-08-27
+
+GIF and PNG structural parsing may run in an engine-free direct context, but
+confirmed trailing overlays require nested scanning and now reject missing
+engine ownership as `CL_ENULLARG` while marking the layer incomplete and
+non-cacheable. JPEG Photoshop thumbnail handoff has the same explicit guard.
+The focused `test_media_overlays_require_engine` regression covers valid GIF
+and PNG overlay boundaries. Complete media corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification remain open.
+
 ## BinHex parser admission — 2026-08-27
 
 The BinHex parser now rejects a missing owning engine before time-limit,
