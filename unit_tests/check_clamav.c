@@ -25968,6 +25968,48 @@ START_TEST(test_7z_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_7z_archive_property_truncation_is_fail_visible)
+{
+    uint8_t data[38] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memcpy(data, "7z\xbc\xaf'\x1c", 6);
+    data[6] = 0;
+    data[7] = 4;
+    zip_stream_write_u64(data + 12, 0U);
+    zip_stream_write_u64(data + 20, 6U);
+    data[32] = 0x01; /* Header */
+    data[33] = 0x02; /* ArchiveProperties */
+    data[34] = 0x19; /* Dummy property */
+    data[35] = 0x05; /* Five bytes declared, only two remain. */
+    data[36] = 0x00; /* Misleading End for the property loop. */
+    data[37] = 0x00; /* Misleading End for the header loop. */
+    zip_stream_write_u32(data + 28, (uint32_t)crc32(0L, data + 32, 6U));
+
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ctx.engine  = scan_engine;
+    ctx.options = &options;
+    map         = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_7unz(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_7z_read_failure_is_fail_visible)
 {
     uint8_t data[34] = {0};
@@ -44850,6 +44892,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_7z);
     tcase_add_checked_fixture(tc_7z, cl_setup, cl_teardown);
     tcase_add_test(tc_7z, test_7z_truncated_header_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_archive_property_truncation_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_read_failure_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_truncated_member_is_parse_error);
     tcase_add_test(tc_7z, test_7z_output_size_mismatch_is_fail_visible);

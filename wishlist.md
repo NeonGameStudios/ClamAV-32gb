@@ -1,5 +1,16 @@
 # Wishlist
 
+## 7-Zip archive-property skip propagation — 2026-08-28
+
+- Keep every declared archive-property skip fail-visible; a truncated
+  property must return `CL_EPARSE`, mark the layer incomplete, and disable
+  caching before following any subsequent IDs.
+- Retain `test_7z_archive_property_truncation_is_fail_visible`, the 2/2
+  current-source production-linked 7z-property TCase, and source guards.
+  Complete 7-Zip corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized large-file, Sonic1, and final
+  parser-family qualification remain required.
+
 ## Bundled YARA instruction-stream admission — 2026-08-28
 
 - Keep bundled YARA rule code length explicit and bounded to the contiguous

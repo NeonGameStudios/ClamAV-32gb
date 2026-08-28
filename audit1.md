@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip archive-property skip propagation — 2026-08-28
+
+`SzReadArchiveProperties()` now propagates the result of every declared
+property skip. A truncated archive-property payload can no longer leave the
+decoder positioned on misleading `End` IDs and be accepted as an empty
+successful archive. The registered
+`test_7z_archive_property_truncation_is_fail_visible` regression and the
+existing truncated-header regression pass 2/2 in the current-source
+production-linked 7z-property TCase, requiring `CL_EPARSE`, sticky incomplete
+state, and a non-cacheable fmap. Complete 7-Zip corpus, sanitizer,
+production-CVD/service, materialized large-file, certified Linux x86-64,
+Sonic1, and final release qualification remain required.
+
 ## Bundled YARA instruction-stream admission — 2026-08-28
 
 The bundled YARA evaluator previously received only a code pointer, while the

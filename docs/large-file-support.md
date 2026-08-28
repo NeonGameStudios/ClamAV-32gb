@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## 7-Zip archive-property skip propagation — 2026-08-28
+
+7-Zip archive-property skips now propagate declared-length failures instead
+of allowing truncated payloads to be reinterpreted as later `End` IDs. The
+current-source production-linked 7z-property TCase passes 2/2 for the new
+archive-property truncation regression and the existing truncated-header
+regression, requiring `CL_EPARSE`, sticky incomplete state, and a
+non-cacheable fmap. Complete 7-Zip corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized large-file, Sonic1, and final
+parser-family qualification remain required.
+
 ## Bundled YARA instruction-stream admission — 2026-08-28
 
 Bundled YARA rule compilation now records an exact per-rule instruction-stream

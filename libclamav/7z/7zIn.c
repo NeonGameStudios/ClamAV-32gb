@@ -435,7 +435,7 @@ static SRes SzReadArchiveProperties(CSzData *sd)
     RINOK(SzReadID(sd, &type));
     if (type == k7zIdEnd)
       break;
-    SzSkeepData(sd);
+    RINOK(SzSkeepData(sd));
   }
   return SZ_OK;
 }
