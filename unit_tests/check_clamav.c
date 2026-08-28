@@ -8091,6 +8091,20 @@ START_TEST(test_msxml_base64_decode_failure_is_fail_visible)
     ctx.engine = &engine;
     ctx.fmap   = map;
 
+    ck_assert_int_eq(cli_msxml_parse_document(&ctx, NULL, keys, sizeof(keys) / sizeof(keys[0]),
+                                              MSXML_FLAG_FAIL_INCOMPLETE, &mxctx),
+                     CL_ENULLARG);
+    ck_assert_int_eq(cli_msxml_parse_document(&ctx, reader, NULL, 0,
+                                              MSXML_FLAG_FAIL_INCOMPLETE, &mxctx),
+                     CL_ENULLARG);
+    ck_assert_int_eq(cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]),
+                                              MSXML_FLAG_JSON, &mxctx),
+                     CL_ENULLARG);
+    ck_assert_int_eq(cli_msxml_parse_document_streaming(&ctx, map, keys,
+                                                        sizeof(keys) / sizeof(keys[0]),
+                                                        MSXML_FLAG_JSON, &mxctx),
+                     CL_ENULLARG);
+
     ret = cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]), MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);

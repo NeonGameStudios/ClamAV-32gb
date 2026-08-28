@@ -12314,3 +12314,14 @@ ctx->options. The helpers now return NULL or CL_ENULLARG before dereference;
 focused regressions cover the invalid states. Complete OLE/VBA corpus,
 sanitizer, production-CVD/service, materialized large-file, Sonic1, and
 release qualification evidence remain required.
+
+## MSXML reader and streaming admission audit — 2026-08-27
+
+The reader-based MSXML entry accepted a null XML reader or key table before
+passing them to libxml2 and key lookup. Its JSON timeout path, and the
+streaming JSON path, also assumed that ctx->options was present. The entries
+now reject those invalid contracts before parser or metadata access; the
+focused MSXML base64 regression covers null reader, null key-table, and JSON
+option-state cases. Complete XML/OOXML/HWPML corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification evidence remain required.

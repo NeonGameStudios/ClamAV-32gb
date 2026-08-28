@@ -700,9 +700,12 @@ cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const
     int state;
     cl_error_t ret = CL_SUCCESS;
 
-    if (!ctx) {
+    if (!ctx || !reader || !keys) {
         return CL_ENULLARG;
     }
+
+    if ((flags & MSXML_FLAG_JSON) && !ctx->options)
+        return CL_ENULLARG;
 
     if (!mxctx) {
         memset(&reserve, 0, sizeof(reserve));
@@ -1388,6 +1391,8 @@ cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const s
     if (!ctx || !map || !keys)
         return CL_ENULLARG;
     if (!ctx->engine)
+        return CL_ENULLARG;
+    if ((flags & MSXML_FLAG_JSON) && !ctx->options)
         return CL_ENULLARG;
 
     if (cli_checktimelimit(ctx) != CL_SUCCESS) {

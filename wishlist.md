@@ -6152,3 +6152,11 @@ qualification gates.
   metadata timeout checks.
 - Retain complete OLE/VBA corpus, sanitizer, production-CVD/service,
   materialized large-file, Sonic1, and release qualification gates.
+
+## MSXML reader and streaming admission — 2026-08-27
+
+- Keep reader-based MSXML fail-visible for null XML readers and key tables.
+- Require scan options before reader-based or streaming JSON timeout and
+  metadata access.
+- Retain complete XML/OOXML/HWPML corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and release qualification gates.

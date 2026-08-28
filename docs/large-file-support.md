@@ -8742,3 +8742,14 @@ test_ppt_vba_missing_engine_is_fail_visible, cover these boundaries.
 Current-source GCC syntax evidence is recorded; complete OLE/VBA corpus,
 sanitizer, production-CVD/service, materialized large-file, Sonic1, and
 release qualification remain open.
+
+## MSXML reader and streaming admission — 2026-08-27
+
+The reader-based MSXML helper now rejects missing reader and key-table
+arguments before libxml2 or key lookup, and both reader-based and streaming
+JSON modes reject missing scan options before timeout metadata access. The
+existing test_msxml_base64_decode_failure regression now exercises null reader,
+null key-table, and JSON option-state boundaries. Current-source GCC syntax
+evidence is recorded; complete XML/OOXML/HWPML corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification remain open.
