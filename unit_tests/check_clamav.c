@@ -41911,6 +41911,44 @@ START_TEST(test_mspack_parsers_require_engine)
 }
 END_TEST
 
+START_TEST(test_zip_scan_entries_require_engine)
+{
+    static const uint8_t input[] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+    struct zip_requests requests;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&requests, 0, sizeof(requests));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_unzip(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert_int_eq(cli_unzip_single(&ctx, 0), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert_int_eq(unzip_search(&ctx, &requests), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_7z_scan_entry_requires_engine)
+{
+    static const uint8_t input[] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_7unz(&ctx, 0), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    cl_fmap_close(map);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -42626,6 +42664,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_7z_map, cl_setup, cl_teardown);
     tcase_add_test(tc_7z_map, test_7z_null_context_is_fail_visible);
     tcase_add_test(tc_7z_map, test_7z_missing_map_is_fail_visible);
+    tcase_add_test(tc_7z_map, test_7z_scan_entry_requires_engine);
     suite_add_tcase(s, tc_7z_cleanup);
     tcase_add_test(tc_7z_cleanup, test_7z_cleanup_status_is_fail_visible);
     suite_add_tcase(s, tc_compressed_cleanup);
@@ -42716,6 +42755,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_reaches_exact_child_matcher);
     suite_add_tcase(s, tc_zip_map);
     tcase_add_test(tc_zip_map, test_zip_missing_map_is_fail_visible);
+    tcase_add_test(tc_zip_map, test_zip_scan_entries_require_engine);
     suite_add_tcase(s, tc_mspack_map);
     tcase_add_checked_fixture(tc_mspack_map, cl_setup, cl_teardown);
     tcase_add_test(tc_mspack_map, test_mspack_missing_map_is_fail_visible);

@@ -6078,6 +6078,14 @@ large-file, Sonic1, and release qualification gates.
   Mach-O. Retain complete executable corpus, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification gates.
 
+## ZIP and 7-Zip scan-entry engine admission — 2026-08-27
+
+- Keep full ZIP catalogue, single-member, ZIP search, and 7-Zip extraction
+  entries fail-visible when a recognized map has no owning engine.
+- Preserve engine-independent structural ZIP and 7-Zip header probes.
+- Retain complete archive corpora, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and release qualification gates.
+
 ## PE, AutoIt, and MSPack engine admission — 2026-08-27
 
 - Keep direct PE, AutoIt, CAB, and CHM parser entries fail-visible when a

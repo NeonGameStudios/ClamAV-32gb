@@ -12228,3 +12228,14 @@ maps without engine state, with focused regressions for PE, AutoIt, and both
 MSPack formats. Complete parser corpora, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification evidence remain
 required.
+
+## ZIP and 7-Zip scan-entry engine admission audit — 2026-08-27
+
+The full ZIP catalogue, single-member extraction, ZIP search, and 7-Zip
+extraction entries validated maps but could reach deadline, limit,
+temporary-output, or decoder paths without an owning engine. They now return
+CL_ENULLARG for recognized maps without engine state, while structural ZIP and
+7-Zip header probes remain engine-independent. Focused regressions cover the
+four scan entries. Complete archive corpora, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification evidence remain
+required.

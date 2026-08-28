@@ -8655,3 +8655,15 @@ test_mspack_parsers_require_engine cover these boundaries. The current parser
 and unit translation units pass the established Docker GCC syntax checks;
 complete PE/AutoIt/CAB/CHM corpus, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification remain open.
+
+## ZIP and 7-Zip scan-entry engine admission — 2026-08-27
+
+The full ZIP catalogue, single-member extraction, ZIP search, and 7-Zip
+extraction entries now reject a recognized input map without an owning engine
+before deadline, limit, temporary-output, or decoder state access. The focused
+test_zip_scan_entries_require_engine and
+test_7z_scan_entry_requires_engine regressions preserve the structural ZIP and
+7-Zip header probes as engine-independent admission helpers. Current-source
+GCC syntax evidence is recorded; complete archive corpora, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification remain open.

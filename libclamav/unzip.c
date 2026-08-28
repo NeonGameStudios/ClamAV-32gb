@@ -3290,6 +3290,8 @@ cl_error_t cli_unzip(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "ZIP input map is unavailable");
         return CL_EPARSE;
     }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
     fsize = map->len;
     if (fsize < SIZEOF_CENTRAL_HEADER) {
         cli_dbgmsg("cli_unzip: file too short\n");
@@ -3605,6 +3607,8 @@ cl_error_t unzip_single_internal(cli_ctx *ctx, size_t local_header_offset, zip_c
         cli_dbgmsg("cli_unzip_single: Invalid NULL arguments\n");
         return CL_ENULLARG;
     }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
 
     if (local_header_offset > ctx->fmap->len ||
         SIZEOF_LOCAL_HEADER > ctx->fmap->len - local_header_offset) {
@@ -3667,6 +3671,8 @@ cl_error_t unzip_search(cli_ctx *ctx, struct zip_requests *requests)
     if (NULL == ctx || NULL == ctx->fmap) {
         return CL_ENULLARG;
     }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
 
     if (ctx->fmap->len < SIZEOF_CENTRAL_HEADER) {
         cli_dbgmsg("unzip_search: file too short\n");
