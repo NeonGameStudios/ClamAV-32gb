@@ -6468,3 +6468,15 @@ qualification gates.
   production-linked `cvd_api_nulls` and `cvd_header_fixture` checks (1/1 each),
   then complete production-CVD, service-parity, sanitizer, materialized
   large-file, certified Linux x86-64, Sonic1, and release qualification gates.
+
+## XAR LZMA member extent completion — 2026-08-28
+
+- Require a successful XAR LZMA decoder to consume the entire declared member
+  extent; trailing compressed-range bytes must return `CL_EFORMAT` with sticky
+  incomplete, non-cacheable state before nested member scanning.
+- The registered `test_xar_lzma_trailing_data_is_fail_visible` regression and
+  focused current-source production-linked GCC harness cover a valid LZMA
+  member followed by one trailing byte and observe a cleared public verdict
+  with `CL_EPARSE`.
+- Retain full XAR corpus, sanitizer, production-CVD/service, materialized
+  large-file, certified Linux x86-64, Sonic1, and release qualification gates.
