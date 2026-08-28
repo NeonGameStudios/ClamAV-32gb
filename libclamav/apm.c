@@ -216,8 +216,8 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
 
     /* print debugging info on partition tables */
     cli_dbgmsg("APM Partition Table:\n");
-    cli_dbgmsg("Name: %s\n", (char *)aptable.name);
-    cli_dbgmsg("Type: %s\n", (char *)aptable.type);
+    cli_dbgmsg("Name: %.*s\n", (int)sizeof(aptable.name), (char *)aptable.name);
+    cli_dbgmsg("Type: %.*s\n", (int)sizeof(aptable.type), (char *)aptable.type);
     cli_dbgmsg("Signature: %x\n", aptable.signature);
     cli_dbgmsg("Partition Count: %u\n", aptable.numPartitions);
     cli_dbgmsg("Blocks: [%u, +%u), ([%lu, +%lu))\n",
@@ -310,8 +310,8 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
 
         /* print debugging info on partition */
         cli_dbgmsg("APM Partition Entry %u:\n", (unsigned)i);
-        cli_dbgmsg("Name: %s\n", (char *)apentry.name);
-        cli_dbgmsg("Type: %s\n", (char *)apentry.type);
+        cli_dbgmsg("Name: %.*s\n", (int)sizeof(apentry.name), (char *)apentry.name);
+        cli_dbgmsg("Type: %.*s\n", (int)sizeof(apentry.type), (char *)apentry.type);
         cli_dbgmsg("Signature: %x\n", apentry.signature);
         cli_dbgmsg("Partition Count: %u\n", apentry.numPartitions);
         cli_dbgmsg("Blocks: [%u, +%u), ([%zu, +%zu))\n",
@@ -408,12 +408,12 @@ static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_
         ret = partition_intersection_list_check(&prtncheck, &pitxn, apentry.pBlockStart, apentry.pBlockCount);
         if (ret != CL_CLEAN) {
             if (ret == CL_VIRUS) {
-                apm_parsemsg("Name: %s\n", (char *)aptable.name);
-                apm_parsemsg("Type: %s\n", (char *)aptable.type);
+                apm_parsemsg("Name: %.*s\n", (int)sizeof(aptable.name), (char *)aptable.name);
+                apm_parsemsg("Type: %.*s\n", (int)sizeof(aptable.type), (char *)aptable.type);
 
                 cli_dbgmsg("cli_scanapm: detected intersection with partitions "
                            "[%u, %u]\n",
-                           pitxn, i);
+                           pitxn, (unsigned)i);
                 status = cli_append_potentially_unwanted(ctx, "Heuristics.APMPartitionIntersection");
                 if (status != CL_SUCCESS) {
                     goto done;

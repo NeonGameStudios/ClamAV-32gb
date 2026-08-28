@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## APM fixed-width debug fields — 2026-08-28
+
+APM debug diagnostics now format fixed-width 32-byte partition names and types
+with an explicit precision, so malformed non-terminated fields cannot cause a
+diagnostic read beyond the field. The partition-intersection index is also
+formatted after an explicit native-width-to-`unsigned` conversion. The current
+APM object passes the production GCC warning-enabled compile, and a disposable
+ASan/UBSan production-library runner completes the non-terminated-name fixture
+without a finding. Complete APM corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized large-file, Sonic1, and final
+parser-family qualification remain required.
+
 ## ALZ empty-member accounting — 2026-08-28
 
 The reusable ALZ `Vec<ExtractedFile>` sink now accounts for a completed member

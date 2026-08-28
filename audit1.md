@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## APM fixed-width debug fields — 2026-08-28
+
+APM partition names and types are fixed-width 32-byte fields and are not
+guaranteed to be NUL-terminated. The parser's debug logging previously passed
+these arrays to `%s`, allowing a malformed but otherwise admitted table entry
+to read past the field while formatting diagnostics. All APM name/type log
+sites now use a 32-byte precision, and the intersection index is explicitly
+cast to match its `%u` format. The current APM source compiles with the
+production GCC `-Wall -Wextra -Wformat-security` flags without warnings. A
+disposable ASan/UBSan runner linked the current APM object against the existing
+ClamAV shared library and completed the non-terminated-name fixture without a
+finding. The registered
+`test_apm_fixed_width_debug_fields_are_bounded` regression and source guards
+preserve this boundary. Complete APM partition corpus, sanitizer,
+production-CVD/service, materialized large-file, certified Linux x86-64,
+Sonic1, and final release qualification remain required.
+
 ## ALZ empty-member accounting — 2026-08-28
 
 The reusable `Vec<ExtractedFile>` ALZ sink previously removed a successful
