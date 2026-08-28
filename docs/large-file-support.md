@@ -9060,3 +9060,16 @@ results and no wrapped-offset callback. Existing ELF range and callback-failure
 evidence remains valid; complete ELF corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and parser-family
 qualification remain open.
+
+## RAR skipped-member error propagation — 2026-08-28
+
+The UnRAR-backed RAR path preserves decoder-side read, write, allocation, and
+output failures while skipping encrypted, directory, and size-limited members.
+An end-of-archive `CL_BREAK` while consuming a declared member remains a
+parse failure. The gated `test_rar_skip_read_failure_preserves_operational_status`
+regression requires an injected `UNRAR_EREAD` to remain `CL_EREAD`, with cleared
+output and sticky non-cacheability. Canonical scanner and unit sources pass
+warning-enabled GCC syntax checks, including the UnRAR-enabled test gate. The
+reusable production container has `ENABLE_UNRAR=OFF`; backend execution,
+complete RAR corpus, sanitizer, production-CVD/service, materialized large-file,
+Sonic1, and parser-family qualification remain open.

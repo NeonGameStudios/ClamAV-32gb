@@ -393,6 +393,19 @@ static cl_error_t cli_rar_skip_file_with_deadline(void *hArchive, cli_ctx *ctx)
     return cli_rar_error_to_scan_result(unrar_ret);
 }
 
+static cl_error_t cli_rar_skip_failure_to_scan_result(cl_error_t skip_status)
+{
+    /* Decoder-side read, write, allocation, and output failures are
+     * operational failures and must not be relabeled as generic format
+     * errors. CL_BREAK while skipping a declared member means the archive
+     * ended before that member was consumed, so retain the parse disposition
+     * for that one decoder result. */
+    if (skip_status == CL_BREAK)
+        return CL_EFORMAT;
+
+    return skip_status;
+}
+
 static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
 {
     cl_error_t status          = CL_EPARSE;
@@ -538,7 +551,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                     cli_dbgmsg("RAR: Failed to skip file. RAR archive extraction has failed.\n");
                     if (skip_status != CL_ETIMEOUT) {
                         cli_mark_scan_incomplete(ctx, "RAR encrypted member could not be skipped completely");
-                        status = CL_EFORMAT;
+                        status = cli_rar_skip_failure_to_scan_result(skip_status);
                     } else {
                         status = skip_status;
                     }
@@ -587,7 +600,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                     cli_dbgmsg("RAR: Failed to skip directory. RAR archive extraction has failed.\n");
                     if (skip_status != CL_ETIMEOUT) {
                         cli_mark_scan_incomplete(ctx, "RAR directory member could not be skipped completely");
-                        status = CL_EFORMAT;
+                        status = cli_rar_skip_failure_to_scan_result(skip_status);
                     } else {
                         status = skip_status;
                     }
@@ -605,7 +618,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                     cli_dbgmsg("RAR: Failed to skip file. RAR archive extraction has failed.\n");
                     if (skip_status != CL_ETIMEOUT) {
                         cli_mark_scan_incomplete(ctx, "RAR limited member could not be skipped completely");
-                        status = CL_EFORMAT;
+                        status = cli_rar_skip_failure_to_scan_result(skip_status);
                     } else {
                         status = skip_status;
                     }
@@ -621,7 +634,8 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                 if (CL_SUCCESS != skip_status) {
                     /* Failed to skip!  Break extraction loop. */
                     cli_dbgmsg("RAR: Failed to skip file. RAR archive extraction has failed.\n");
-                    status = (skip_status == CL_ETIMEOUT) ? skip_status : CL_EFORMAT;
+                    status = (skip_status == CL_ETIMEOUT) ? skip_status :
+                             cli_rar_skip_failure_to_scan_result(skip_status);
                     break;
                 }
             } else {

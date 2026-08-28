@@ -12812,3 +12812,20 @@ no wrapped low-offset read is attempted. Existing complete-range preflight and
 in-range callback-error behavior remain covered. Full ELF corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service parity,
 Sonic1, and release qualification remain open.
+
+## RAR skipped-member error propagation audit — 2026-08-28
+
+The UnRAR-backed RAR path previously converted every non-timeout failure while
+skipping an encrypted, directory, size-limited, or otherwise non-extracted
+member into `CL_EFORMAT`. That hid operational failures such as decoder read,
+write, allocation, and output errors behind a generic parse result. The skip
+failure mapping now preserves those specific statuses; only `CL_BREAK` while
+consuming a declared member remains a `CL_EFORMAT` parse failure. The gated
+`test_rar_skip_read_failure_preserves_operational_status` regression drives an
+encrypted-member skip to `UNRAR_EREAD` and requires `CL_EREAD`, cleared output,
+sticky incomplete state, and cache taint. Canonical scanner and unit sources
+pass production warning-enabled GCC syntax checks, including a syntax pass with
+the UnRAR test gate enabled. The reusable production container has
+`ENABLE_UNRAR=OFF`, so backend execution remains open along with complete RAR
+corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1,
+and release qualification.

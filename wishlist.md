@@ -6525,3 +6525,14 @@ qualification gates.
 - Complete ELF corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service parity, Sonic1, and release qualification
   remain required.
+
+## RAR skipped-member error propagation — 2026-08-28
+
+- Preserve UnRAR decoder read, write, allocation, and output failures while
+  skipping encrypted, directory, or size-limited members; only an end-of-
+  archive `CL_BREAK` while consuming a declared member should become the
+  existing parse failure.
+- Retain the gated
+  `test_rar_skip_read_failure_preserves_operational_status` regression and
+  complete backend-enabled RAR corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and release qualification.
