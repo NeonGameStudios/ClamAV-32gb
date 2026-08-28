@@ -16,6 +16,19 @@ control suite passes this positive and negative coverage. Linux x86-64,
 production-CVD/service, materialized, sanitizer, Sonic1, and final release
 qualification remain required.
 
+## Service gate ELF-interpreter binding — 2026-08-28
+
+The service qualification gate now applies the same loader boundary to
+`clamscan`, `clamd`, `clamdscan`, and `clamav-milter`. Its runtime dependency
+manifest captures only the resolved side of an `ldd` `name => path` record, and
+a separate before/after manifest records each executable's absolute `PT_INTERP`
+path and SHA-256. The service evidence verifier parses the selected loader
+from every service ELF, checks its hash, and rejects a changed or mismatched
+record. The synthetic service-evidence control suite covers the loader records
+and tamper rejection; authorized production-CVD/service, Linux x86-64,
+materialized, sanitizer, Sonic1, and final release qualification remain
+required.
+
 ## OneNote legacy reader declared-range EOF — 2026-08-28
 
 The streaming legacy OneNote reader now distinguishes physical EOF from the

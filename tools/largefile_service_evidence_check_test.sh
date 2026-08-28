@@ -14,9 +14,28 @@ build=$tmp/build
 mkdir -p "$out/provenance" "$build/clamscan" "$build/clamd" \
     "$build/clamdscan" "$build/clamav-milter" "$out/logs" "$out/reports"
 
+interpreter=$(CDPATH= cd -- "$tmp" && pwd)/ld-linux-synthetic.so
+printf 'synthetic ELF interpreter\n' > "$interpreter"
+
+write_synthetic_elf()
+{
+    python3 - "$1" "$2" <<'PY'
+from pathlib import Path
+import struct
+import sys
+
+binary, interpreter = map(Path, sys.argv[1:])
+payload = interpreter.as_posix().encode("ascii") + b"\0"
+ident = b"\x7fELF\x02\x01\x01" + b"\0" * 9
+header = struct.pack("<HHIQQQIHHHHHH", 3, 62, 1, 0, 64, 0, 0, 64, 56, 1, 0, 0, 0)
+program = struct.pack("<IIQQQQQQ", 3, 4, 120, 0, 0, len(payload), len(payload), 1)
+binary.write_bytes(ident + header + program + payload)
+PY
+}
+
 for relative_binary in \
     clamscan/clamscan clamd/clamd clamdscan/clamdscan clamav-milter/clamav-milter; do
-    printf 'synthetic service binary %s\n' "$relative_binary" > "$build/$relative_binary"
+    write_synthetic_elf "$build/$relative_binary" "$interpreter"
     chmod 755 "$build/$relative_binary"
 done
 printf 'synthetic runtime dependency\n' > "$tmp/libclamav.so"
@@ -40,6 +59,15 @@ for relative_binary in \
         "$(sha256sum "$build/$relative_binary" | awk '{ print $1 }')" >> "$binary_list"
 done
 cp "$binary_list" "$binary_after"
+interpreter_records=$out/provenance/service-interpreter-records-before.txt
+: > "$interpreter_records"
+for relative_binary in \
+    clamscan/clamscan clamd/clamd clamdscan/clamdscan clamav-milter/clamav-milter; do
+    printf '%s\t%s\t%s\n' "$relative_binary" "$interpreter" \
+        "$(sha256sum "$interpreter" | awk '{ print $1 }')" >> "$interpreter_records"
+done
+interpreter_records_after=$out/provenance/service-interpreter-records-after.txt
+cp "$interpreter_records" "$interpreter_records_after"
 dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
 printf '%s\t%s\n' "$tmp/libclamav.so" \
     "$(sha256sum "$tmp/libclamav.so" | awk '{ print $1 }')" > "$dependency_hashes"
@@ -134,6 +162,7 @@ printf 'milter-exact-edge\tmilter\t-\t-\tlogs/milter-exact-edge.log\t-\t0\tno\n'
 cmake_cache_sha256=$(sha256sum "$out/provenance/CMakeCache.txt" | awk '{ print $1 }')
 compile_commands_sha256=$(sha256sum "$out/provenance/compile_commands.json" | awk '{ print $1 }')
 binary_hashes_sha256=$(sha256sum "$binary_list" | awk '{ print $1 }')
+interpreter_hashes_sha256=$(sha256sum "$interpreter_records" | awk '{ print $1 }')
 dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
 {
     printf 'source_commit=%s\n' "$source_commit"
@@ -143,10 +172,14 @@ dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
     printf 'compile_commands_sha256=%s\n' "$compile_commands_sha256"
     printf 'service_binary_hashes=provenance/service-binary-hashes-before.txt\n'
     printf 'service_binary_hashes_sha256=%s\n' "$binary_hashes_sha256"
+    printf 'service_interpreter_records=provenance/service-interpreter-records-before.txt\n'
+    printf 'service_interpreter_records_sha256=%s\n' "$interpreter_hashes_sha256"
     printf 'service_runtime_dependency_hashes=provenance/service-runtime-dependency-hashes.txt\n'
     printf 'service_runtime_dependency_hashes_sha256=%s\n' "$dependency_hashes_sha256"
     printf 'service_runtime_dependency_hashes_after=provenance/service-runtime-dependency-hashes-after.txt\n'
     printf 'service_runtime_dependency_hashes_after_sha256=%s\n' "$(sha256sum "$dependency_hashes_after" | awk '{ print $1 }')"
+    printf 'service_interpreter_records_after=provenance/service-interpreter-records-after.txt\n'
+    printf 'service_interpreter_records_after_sha256=%s\n' "$(sha256sum "$interpreter_records_after" | awk '{ print $1 }')"
     printf 'loader_injection=disabled\n'
     printf 'max_scan_time_ms=14400000\n'
     printf 'service_timeout_s=14400\n'
@@ -154,6 +187,7 @@ dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
 {
     printf 'service_resource_measurement_failed=0\n'
     printf 'service_runtime_dependencies_unchanged=pass\n'
+    printf 'service_interpreters_unchanged=pass\n'
     printf 'service_build_identity=pass\n'
     printf 'service_qualification=pass\n'
 } > "$out/service-summary.txt"
@@ -175,12 +209,58 @@ workload_hash_manifest=$(sha256sum "$workload_results" | awk '{ print $1 }')
 
 sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null
 
+write_checksum_manifest()
+{
+    (
+        cd "$out"
+        find . -type f ! -name SHA256SUMS -print | LC_ALL=C sort |
+            while IFS= read -r evidence_file; do
+                sha256sum "$evidence_file"
+            done
+    ) > "$out/SHA256SUMS"
+}
+
+wrong_interpreter=$(CDPATH= cd -- "$tmp" && pwd)/ld-linux-other-synthetic.so
+printf 'other synthetic ELF interpreter\n' > "$wrong_interpreter"
+cp "$build/clamscan/clamscan" "$tmp/clamscan.good"
+cp "$binary_list" "$tmp/binary-list.good"
+cp "$binary_after" "$tmp/binary-after.good"
+cp "$out/provenance/service-build-identity.txt" "$tmp/service-build-identity.good"
+write_synthetic_elf "$build/clamscan/clamscan" "$wrong_interpreter"
+new_binary_hash=$(sha256sum "$build/clamscan/clamscan" | awk '{ print $1 }')
+tab=$(printf '\t')
+sed "s#^clamscan/clamscan${tab}.*#clamscan/clamscan${tab}$new_binary_hash#" \
+    "$tmp/binary-list.good" > "$binary_list"
+cp "$binary_list" "$binary_after"
+new_binary_hashes_sha256=$(sha256sum "$binary_list" | awk '{ print $1 }')
+sed "s#^service_binary_hashes_sha256=.*#service_binary_hashes_sha256=$new_binary_hashes_sha256#" \
+    "$tmp/service-build-identity.good" > "$out/provenance/service-build-identity.txt"
+write_checksum_manifest
+if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted a service ELF PT_INTERP mismatch' >&2
+    exit 1
+fi
+mv "$tmp/clamscan.good" "$build/clamscan/clamscan"
+mv "$tmp/binary-list.good" "$binary_list"
+mv "$tmp/binary-after.good" "$binary_after"
+mv "$tmp/service-build-identity.good" "$out/provenance/service-build-identity.txt"
+write_checksum_manifest
+
 printf '%s\n' 'tampered dependency manifest' > "$dependency_hashes_after"
 if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
     echo 'service evidence verifier accepted changed runtime dependency evidence' >&2
     exit 1
 fi
 cp "$dependency_hashes" "$dependency_hashes_after"
+
+cp "$interpreter_records" "$out/provenance/service-interpreter-records.good"
+sed 's#\([0-9a-fA-F]\{64\}\)$#0000000000000000000000000000000000000000000000000000000000000000#' \
+    "$out/provenance/service-interpreter-records.good" > "$interpreter_records"
+if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted a tampered ELF interpreter record' >&2
+    exit 1
+fi
+mv "$out/provenance/service-interpreter-records.good" "$interpreter_records"
 
 python3 - "$qualification_oracle" "$tmp/invalid-oracle.tsv" <<'PY'
 from pathlib import Path

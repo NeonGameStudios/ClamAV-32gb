@@ -1,5 +1,15 @@
 # Wishlist
 
+## Service gate ELF-interpreter binding — 2026-08-28
+
+- Keep service ELF interpreter records separate from `ldd`-resolved shared
+  libraries: bind each `clamscan`, `clamd`, `clamdscan`, and `clamav-milter`
+  executable to its absolute `PT_INTERP` path and SHA-256, and retain the
+  before/after immutability check.
+- Retain the synthetic service-evidence tamper regression. This does not
+  replace authorized production-CVD/service, materialized, sanitizer,
+  Linux x86-64, Sonic1, or final release qualification.
+
 ## Runtime gate ELF-interpreter binding — 2026-08-28
 
 - Keep the release gate’s ELF interpreter separate from `ldd`-resolved shared

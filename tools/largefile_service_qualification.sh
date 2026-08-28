@@ -88,8 +88,9 @@ fi
 if ! command -v timeout >/dev/null 2>&1 || ! command -v awk >/dev/null 2>&1 ||
     ! command -v python3 >/dev/null 2>&1 ||
     ! command -v sha256sum >/dev/null 2>&1 || ! command -v du >/dev/null 2>&1 ||
+    ! command -v ldd >/dev/null 2>&1 ||
     [ ! -x /usr/bin/time ]; then
-    echo 'timeout, awk, python3, sha256sum, du, and GNU /usr/bin/time are required' >&2
+    echo 'timeout, awk, python3, sha256sum, du, ldd, and GNU /usr/bin/time are required' >&2
     exit 2
 fi
 
@@ -111,6 +112,8 @@ service_compile_commands=$build_dir/compile_commands.json
 service_source_manifest=$out/provenance/source-manifest.txt
 service_binary_hashes_before=$out/provenance/service-binary-hashes-before.txt
 service_binary_hashes_after=$out/provenance/service-binary-hashes-after.txt
+service_interpreter_records_before=$out/provenance/service-interpreter-records-before.txt
+service_interpreter_records_after=$out/provenance/service-interpreter-records-after.txt
 service_dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
 service_dependency_hashes_after=$out/provenance/service-runtime-dependency-hashes-after.txt
 service_build_identity=$out/provenance/service-build-identity.txt
@@ -159,6 +162,59 @@ cp "$service_cmake_cache" "$out/provenance/CMakeCache.txt"
 cp "$service_compile_commands" "$out/provenance/compile_commands.json"
 
 service_binaries="clamscan/clamscan clamd/clamd clamdscan/clamdscan clamav-milter/clamav-milter"
+service_elf_interpreter()
+{
+    # Parse PT_INTERP directly so this gate does not depend on a host-specific
+    # readelf installation or confuse the executable loader with LD_LIBRARY_PATH
+    # resolved shared libraries.
+    python3 - "$1" <<'PY'
+import struct
+import sys
+
+path = sys.argv[1]
+try:
+    with open(path, "rb") as stream:
+        header = stream.read(64)
+        if len(header) != 64 or header[:7] != b"\x7fELF\x02\x01\x01":
+            raise ValueError("not an ELF64 little-endian x86 executable")
+        e_phoff = struct.unpack_from("<Q", header, 32)[0]
+        e_phentsize = struct.unpack_from("<H", header, 54)[0]
+        e_phnum = struct.unpack_from("<H", header, 56)[0]
+        if e_phentsize < 56:
+            raise ValueError("invalid program-header size")
+        stream.seek(0, 2)
+        file_size = stream.tell()
+        if e_phoff > file_size or e_phnum > (file_size - e_phoff) // e_phentsize:
+            raise ValueError("program-header table is outside the file")
+        for index in range(e_phnum):
+            entry_offset = e_phoff + index * e_phentsize
+            stream.seek(entry_offset)
+            entry = stream.read(56)
+            if len(entry) != 56:
+                raise ValueError("short program header")
+            p_type, _p_flags, p_offset, _p_vaddr, _p_paddr, p_filesz, _p_memsz, _p_align = struct.unpack(
+                "<IIQQQQQQ", entry
+            )
+            if p_type != 3:
+                continue
+            if p_filesz == 0 or p_filesz > 4096 or p_offset > file_size or p_filesz > file_size - p_offset:
+                raise ValueError("invalid PT_INTERP range")
+            stream.seek(p_offset)
+            raw = stream.read(p_filesz)
+            if len(raw) != p_filesz:
+                raise ValueError("short PT_INTERP payload")
+            interpreter = raw.split(b"\0", 1)[0]
+            if not interpreter.startswith(b"/"):
+                raise ValueError("PT_INTERP is not an absolute path")
+            print(interpreter.decode("ascii"))
+            break
+        else:
+            raise ValueError("ELF has no PT_INTERP")
+except (OSError, ValueError, UnicodeDecodeError, struct.error):
+    raise SystemExit(1)
+PY
+}
+
 record_service_binary_hashes()
 {
     destination=$1
@@ -183,6 +239,27 @@ record_service_binary_hashes()
 
 record_service_binary_hashes "$service_binary_hashes_before"
 
+record_service_interpreter_records()
+{
+    destination=$1
+    : > "$destination"
+    for relative_binary in $service_binaries; do
+        service_binary="$build_dir/$relative_binary"
+        interpreter=$(service_elf_interpreter "$service_binary") || {
+            echo "service executable has no valid ELF PT_INTERP: $service_binary" >&2
+            return 1
+        }
+        [ -f "$interpreter" ] || {
+            echo "service ELF interpreter is not a regular file: $interpreter" >&2
+            return 1
+        }
+        printf '%s\t%s\t%s\n' "$relative_binary" "$interpreter" \
+            "$(sha256sum "$interpreter" | awk '{ print $1 }')" >> "$destination"
+    done
+}
+
+record_service_interpreter_records "$service_interpreter_records_before"
+
 record_service_dependency_hashes()
 {
     destination=$1
@@ -197,7 +274,7 @@ record_service_dependency_hashes()
             echo "service executable has unresolved runtime dependencies: $service_binary" >&2
             return 1
         fi
-        awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^\//) print $i }' "$service_ldd" |
+        awk '$0 ~ /=>/ { for (i = 1; i <= NF; i++) if ($i ~ /^\//) print $i }' "$service_ldd" |
             LC_ALL=C sort -u > "$service_dependency_paths"
         while IFS= read -r dependency; do
             [ -n "$dependency" ] || continue
@@ -221,6 +298,8 @@ service_dependency_hashes_sha256=$(sha256sum "$service_dependency_hashes" | awk 
     printf 'compile_commands_sha256=%s\n' "$service_compile_commands_hash"
     printf 'service_binary_hashes=provenance/service-binary-hashes-before.txt\n'
     printf 'service_binary_hashes_sha256=%s\n' "$(sha256sum "$service_binary_hashes_before" | awk '{ print $1 }')"
+    printf 'service_interpreter_records=provenance/service-interpreter-records-before.txt\n'
+    printf 'service_interpreter_records_sha256=%s\n' "$(sha256sum "$service_interpreter_records_before" | awk '{ print $1 }')"
     printf 'service_runtime_dependency_hashes=provenance/service-runtime-dependency-hashes.txt\n'
     printf 'service_runtime_dependency_hashes_sha256=%s\n' "$service_dependency_hashes_sha256"
     printf 'loader_injection=disabled\n'
@@ -1191,6 +1270,11 @@ if ! cmp -s "$service_binary_hashes_before" "$service_binary_hashes_after"; then
     echo 'service executable changed during qualification' >&2
     exit 1
 fi
+record_service_interpreter_records "$service_interpreter_records_after"
+if ! cmp -s "$service_interpreter_records_before" "$service_interpreter_records_after"; then
+    echo 'service ELF interpreter set changed during qualification' >&2
+    exit 1
+fi
 record_service_dependency_hashes "$service_dependency_hashes_after" after
 if ! cmp -s "$service_dependency_hashes" "$service_dependency_hashes_after"; then
     echo 'service runtime dependency set changed during qualification' >&2
@@ -1199,7 +1283,11 @@ fi
 printf 'service_runtime_dependency_hashes_after=provenance/service-runtime-dependency-hashes-after.txt\n' >> "$service_build_identity"
 printf 'service_runtime_dependency_hashes_after_sha256=%s\n' \
     "$(sha256sum "$service_dependency_hashes_after" | awk '{ print $1 }')" >> "$service_build_identity"
+printf 'service_interpreter_records_after=provenance/service-interpreter-records-after.txt\n' >> "$service_build_identity"
+printf 'service_interpreter_records_after_sha256=%s\n' \
+    "$(sha256sum "$service_interpreter_records_after" | awk '{ print $1 }')" >> "$service_build_identity"
 printf 'service_runtime_dependencies_unchanged=pass\n' >> "$out/service-summary.txt"
+printf 'service_interpreters_unchanged=pass\n' >> "$out/service-summary.txt"
 printf 'service_build_identity=pass\n' >> "$out/service-summary.txt"
 printf 'service_qualification=pass\n' >> "$out/service-summary.txt"
 printf 'qualification_oracle=provenance/qualification-oracle.tsv\n' >> "$out/oracle-binding.txt"

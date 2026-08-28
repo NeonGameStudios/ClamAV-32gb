@@ -18,6 +18,23 @@ regression; no release or sanitizer workload evidence is inferred from that
 control test. Full Linux x86-64, production-CVD/service, materialized,
 sanitizer, Sonic1, and final release evidence remain open.
 
+## Service gate ELF-interpreter binding — 2026-08-28
+
+The service qualification gate had the same loader provenance ambiguity as the
+release runtime gate: its `ldd` path extraction treated the executable's
+absolute `PT_INTERP` line as an ordinary runtime dependency, even though that
+loader is selected by the ELF and is not redirected by `LD_LIBRARY_PATH`.
+
+The service gate now records the absolute interpreter path and SHA-256 for
+each of `clamscan`, `clamd`, `clamdscan`, and `clamav-milter` in separate
+before/after manifests. Its dependency manifests capture only absolute paths
+from resolved `name => path` records. The standalone service evidence verifier
+parses each service ELF's `PT_INTERP`, verifies the recorded loader hash and
+path, and rejects mutation or a mismatched loader. The synthetic service
+evidence regression passes, including interpreter-record tampering rejection.
+This closes the evidence-boundary defect only; authorized production-CVD,
+materialized, Sonic1, sanitizer, and final service qualification remain open.
+
 ## OneNote legacy reader declared-range EOF — 2026-08-28
 
 `scan_legacy_reader()` previously treated a zero-byte read as normal end of
