@@ -106,6 +106,12 @@
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 extern int clamav_test_fail_write;
 extern int clamav_test_fail_close;
+extern int clamav_test_fail_fclose;
+extern int clamav_test_fail_ferror;
+extern int clamav_test_fail_fgets;
+extern int clamav_test_fail_fread;
+extern int clamav_test_fail_closedir;
+extern int clamav_test_fail_readdir;
 extern int clamav_test_short_write;
 extern size_t clamav_test_short_write_count;
 #endif
@@ -2813,6 +2819,93 @@ START_TEST(test_cl_strerror)
 {
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_signature_database_and_hash_stream_failures)
+{
+    static const char content[] = "sig-one\nsig-two\n";
+    char file_path[512];
+    char dir_path[512];
+    char dir_file_path[512];
+    uint8_t digest[64];
+    unsigned int sigs;
+    char *hashstr;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "/tmp/clamav-largefile-signatures-%ld.hdb", (long)getpid());
+    snprintf(dir_path, sizeof(dir_path), "/tmp/clamav-largefile-signatures-%ld.d", (long)getpid());
+    snprintf(dir_file_path, sizeof(dir_file_path), "%s/entry.hdb", dir_path);
+    unlink(file_path);
+    unlink(dir_file_path);
+    rmdir(dir_path);
+
+    fd = open(file_path, O_CREAT | O_EXCL | O_WRONLY, 0600);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(write(fd, content, sizeof(content) - 1U), (ssize_t)(sizeof(content) - 1U));
+    ck_assert_int_eq(close(fd), 0);
+
+    sigs = 0;
+    ret  = cl_countsigs(NULL, CL_COUNTSIGS_UNOFFICIAL, &sigs);
+    ck_assert_int_eq(ret, CL_ENULLARG);
+    ck_assert_uint_eq(sigs, 0);
+
+    sigs = 0;
+    clamav_test_fail_fgets = 1;
+    ret = cl_countsigs(file_path, CL_COUNTSIGS_UNOFFICIAL, &sigs);
+    clamav_test_fail_fgets = 0;
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_uint_eq(sigs, 0);
+
+    sigs = 0;
+    clamav_test_fail_fclose = 1;
+    ret = cl_countsigs(file_path, CL_COUNTSIGS_UNOFFICIAL, &sigs);
+    clamav_test_fail_fclose = 0;
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_uint_eq(sigs, 0);
+
+    sigs = 0;
+    ret  = cl_countsigs(file_path, CL_COUNTSIGS_UNOFFICIAL, &sigs);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 2);
+
+    memset(digest, 0, sizeof(digest));
+    clamav_test_fail_fread = 1;
+    hashstr = cli_hashfile(file_path, digest, CLI_HASH_MD5);
+    clamav_test_fail_fread = 0;
+    ck_assert_ptr_null(hashstr);
+
+    clamav_test_fail_fclose = 1;
+    hashstr = cli_hashfile(file_path, digest, CLI_HASH_MD5);
+    clamav_test_fail_fclose = 0;
+    ck_assert_ptr_null(hashstr);
+
+    ck_assert_int_eq(mkdir(dir_path, 0700), 0);
+    fd = open(dir_file_path, O_CREAT | O_EXCL | O_WRONLY, 0600);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(write(fd, content, sizeof(content) - 1U), (ssize_t)(sizeof(content) - 1U));
+    ck_assert_int_eq(close(fd), 0);
+
+    sigs = 0;
+    clamav_test_fail_readdir = 1;
+    ret = cl_countsigs(dir_path, CL_COUNTSIGS_UNOFFICIAL, &sigs);
+    clamav_test_fail_readdir = 0;
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_uint_eq(sigs, 0);
+
+    sigs = 0;
+    clamav_test_fail_closedir = 1;
+    ret = cl_countsigs(dir_path, CL_COUNTSIGS_UNOFFICIAL, &sigs);
+    clamav_test_fail_closedir = 0;
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_uint_eq(sigs, 0);
+
+    unlink(dir_file_path);
+    rmdir(dir_path);
+    unlink(file_path);
+}
+END_TEST
+#endif
 
 struct limit_alert_callback_state {
     unsigned int calls;
@@ -44218,6 +44311,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_statchkdir);
     tcase_add_test(tc_cl, test_cl_settempdir);
     tcase_add_test(tc_cl, test_cl_strerror);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_signature_database_and_hash_stream_failures);
+#endif
     tcase_add_test(tc_cl, test_top_level_maxfilesize_is_fail_visible);
     tcase_add_test(tc_cl, test_maxscansize_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_logical_views_do_not_consume_logical_scan_budget);

@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Signature counting and hash-stream I/O — 2026-08-28
+
+Line-based signature counting now stops on the actual `fgetc()` result and
+checks both input error and source close before publishing a count. Loader
+progress no longer incorporates a partial count after a failed stream.
+`cl_countsigs()` rejects a null path and preserves directory enumeration and
+close failures. The focused production-link fault-injection case covers file
+read/close, directory read/close, and hash-file read/close failures. Full
+current-source execution, CVD/service parity, sanitizer, materialized
+large-file, Sonic1, and final qualification remain required.
+
 ## UDF descriptor-size arithmetic — 2026-08-28
 
 UDF variable descriptor sizes now use a checked native-width addition helper

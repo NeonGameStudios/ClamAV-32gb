@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## Signature counting and hash-stream I/O — 2026-08-28
+
+The line-based signature counter used `while (!feof())` and could continue
+after `fgetc()` returned EOF for an input error. It also ignored read and
+close failures, allowing a partial count to influence loader progress. The
+counter now terminates on the actual `fgetc()` result, checks `ferror()` and
+`fclose()`, and publishes its count only after both succeed. `cl_load()` and
+directory loading propagate the counting error before adding a partial total.
+`cl_countsigs()` now rejects a null path, classifies directory enumeration
+errors, and preserves close failures while retaining an earlier error. The
+current source has production-link fault-injection coverage for signature-file
+read/close, directory read/close, and hash-file read/close failures; source
+syntax, production-linked execution, complete CVD/service parity, sanitizer,
+certified Linux x86-64, materialized large-file, Sonic1, and final release
+qualification remain open.
+
 ## UDF descriptor-size arithmetic — 2026-08-28
 
 UDF file-entry size calculation added the fixed descriptor header, extended

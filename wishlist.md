@@ -1,5 +1,17 @@
 # Wishlist
 
+## Signature counting and hash-stream I/O — 2026-08-28
+
+- Keep line-based signature counting fail-visible: stop on the actual
+  `fgetc()` result, preserve input read and source-close failures, and never
+  publish a partial count to loader progress. Public `cl_countsigs()` must
+  reject a null path and preserve directory enumeration and close failures.
+- The focused production-link fault-injection test covers signature-file
+  reads/closes, directory reads/closes, and hash-file reads/closes. Keep full
+  current-source execution, complete CVD/service parity, sanitizer, certified
+  Linux x86-64, materialized large-file, Sonic1, and final release
+  qualification open.
+
 ## UDF descriptor-size arithmetic — 2026-08-28
 
 - Keep all UDF variable-descriptor size construction checked in native-width

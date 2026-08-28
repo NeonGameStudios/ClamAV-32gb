@@ -33,6 +33,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <errno.h>
+#include <dirent.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -212,11 +213,23 @@ static char *tmpdir = NULL;
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 extern size_t __real_cli_writen(int fd, const void *buff, size_t count);
 extern int __real_close(int fd);
+extern int __real_fclose(FILE *stream);
+extern int __real_ferror(FILE *stream);
+extern char *__real_fgets(char *restrict s, int n, FILE *restrict stream);
+extern size_t __real_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
+extern int __real_closedir(DIR *dirp);
+extern struct dirent *__real_readdir(DIR *dirp);
 
 static int jsnorm_test_fail_write;
 static int jsnorm_test_fail_close;
 int clamav_test_fail_write;
 int clamav_test_fail_close;
+int clamav_test_fail_fclose;
+int clamav_test_fail_ferror;
+int clamav_test_fail_fgets;
+int clamav_test_fail_fread;
+int clamav_test_fail_closedir;
+int clamav_test_fail_readdir;
 int clamav_test_short_write;
 size_t clamav_test_short_write_count;
 
@@ -239,6 +252,54 @@ int __wrap_close(int fd)
     if (jsnorm_test_fail_close || clamav_test_fail_close)
         return -1;
     return ret;
+}
+
+int __wrap_fclose(FILE *stream)
+{
+    int ret = __real_fclose(stream);
+
+    if (clamav_test_fail_fclose)
+        return EOF;
+    return ret;
+}
+
+int __wrap_ferror(FILE *stream)
+{
+    if (clamav_test_fail_ferror || clamav_test_fail_fgets || clamav_test_fail_fread)
+        return 1;
+    return __real_ferror(stream);
+}
+
+char *__wrap_fgets(char *restrict s, int n, FILE *restrict stream)
+{
+    if (clamav_test_fail_fgets)
+        return NULL;
+    return __real_fgets(s, n, stream);
+}
+
+size_t __wrap_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream)
+{
+    if (clamav_test_fail_fread)
+        return 0;
+    return __real_fread(ptr, size, nmemb, stream);
+}
+
+int __wrap_closedir(DIR *dirp)
+{
+    int ret = __real_closedir(dirp);
+
+    if (clamav_test_fail_closedir)
+        return -1;
+    return ret;
+}
+
+struct dirent *__wrap_readdir(DIR *dirp)
+{
+    if (clamav_test_fail_readdir) {
+        errno = EIO;
+        return NULL;
+    }
+    return __real_readdir(dirp);
 }
 #endif
 

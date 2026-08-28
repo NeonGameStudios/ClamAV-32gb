@@ -166,7 +166,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=fmap_new"
         "-Wl,--wrap=malloc"
         "-Wl,--wrap=cli_writen"
-        "-Wl,--wrap=close")
+        "-Wl,--wrap=close"
+        "-Wl,--wrap=fclose"
+        "-Wl,--wrap=ferror"
+        "-Wl,--wrap=fgets"
+        "-Wl,--wrap=fread"
+        "-Wl,--wrap=closedir"
+        "-Wl,--wrap=readdir")
 endif()
 ADD_CUSTOM_COMMAND(TARGET check_clamav POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/input/clamav.hdb ${CMAKE_CURRENT_BINARY_DIR}/input/.)

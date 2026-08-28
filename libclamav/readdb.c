@@ -4969,30 +4969,33 @@ cli_insertdbtoll(struct db_ll_entry **head, struct db_ll_entry *entry)
  * @param filepath
  * @return size_t
  */
-static size_t count_line_based_signatures(const char *filepath)
+static cl_error_t count_line_based_signatures(const char *filepath, size_t *sig_count)
 {
     FILE *fp              = NULL;
     int current_character = 0;
-    size_t sig_count      = 0;
+    size_t count           = 0;
     bool in_sig           = false;
+    cl_error_t status      = CL_SUCCESS;
+
+    if (filepath == NULL || sig_count == NULL)
+        return CL_ENULLARG;
+
+    *sig_count = 0;
 
     fp = fopen(filepath, "r");
     if (fp == NULL) {
-        return 0;
+        return CL_EOPEN;
     }
 
-    sig_count++;
-    while (0 == feof(fp)) {
-        /* Get the next character */
-        current_character = fgetc(fp);
-
+    count++;
+    while ((current_character = fgetc(fp)) != EOF) {
         if (!in_sig) {
             /* Not inside of a signature, yet */
             if (!isspace(current_character) && // Ignore newlines and other forms of white space before a signature
                 ('#' != current_character))    // Ignore lines that begin with a # comment character
             {
                 /* Found first character of a new signatures */
-                sig_count++;
+                count++;
                 in_sig = true;
             }
         } else {
@@ -5003,8 +5006,20 @@ static size_t count_line_based_signatures(const char *filepath)
         }
     }
 
-    fclose(fp);
-    return sig_count;
+    if (ferror(fp)) {
+        cli_errmsg("count_line_based_signatures: Can't read file %s\n", filepath);
+        status = CL_EREAD;
+    }
+    if (fclose(fp) != 0) {
+        cli_errmsg("count_line_based_signatures: Can't close file %s\n", filepath);
+        if (status == CL_SUCCESS)
+            status = CL_EREAD;
+    }
+    if (status != CL_SUCCESS)
+        return status;
+
+    *sig_count = count;
+    return CL_SUCCESS;
 }
 
 /**
@@ -5019,10 +5034,17 @@ static size_t count_line_based_signatures(const char *filepath)
  * @param filepath  Filepath of the database file to count.
  * @return size_t   The number of signatures.
  */
-static size_t count_signatures(const char *filepath, struct cl_engine *engine, unsigned int options)
+static cl_error_t count_signatures(const char *filepath, struct cl_engine *engine, unsigned int options,
+                                   size_t *num_signatures)
 {
-    size_t num_signatures            = 0;
+    cl_error_t status                = CL_SUCCESS;
+    size_t counted                   = 0;
     struct cl_cvd *db_archive_header = NULL;
+
+    if (filepath == NULL || engine == NULL || num_signatures == NULL)
+        return CL_ENULLARG;
+
+    *num_signatures = 0;
 
     if (cli_strbcasestr(filepath, ".cld") ||
         cli_strbcasestr(filepath, ".cvd") ||
@@ -5032,21 +5054,22 @@ static size_t count_signatures(const char *filepath, struct cl_engine *engine, u
             db_archive_header = cl_cvdhead(filepath);
             if (!db_archive_header) {
                 cli_errmsg("cli_loaddbdir: error parsing header of %s\n", filepath);
+                status = CL_ECVD;
                 goto done;
             }
 
-            num_signatures += db_archive_header->sigs;
+            counted += db_archive_header->sigs;
         }
 
     } else if ((CL_BYTECODE_TRUST_ALL == engine->bytecode_security) &&
                cli_strbcasestr(filepath, ".cbc")) {
         /* Counts as 1 signature if loading plain .cbc files. */
-        num_signatures += 1;
+        counted += 1;
 
     } else if ((options & CL_DB_YARA_ONLY) &&
                (cli_strbcasestr(filepath, ".yar") || cli_strbcasestr(filepath, ".yara"))) {
         /* Counts as 1 signature. */
-        num_signatures += 1;
+        counted += 1;
 
     } else if (cli_strbcasestr(filepath, ".db") ||
                cli_strbcasestr(filepath, ".crb") ||
@@ -5070,7 +5093,7 @@ static size_t count_signatures(const char *filepath, struct cl_engine *engine, u
                cli_strbcasestr(filepath, ".ioc") ||
                cli_strbcasestr(filepath, ".pwdb")) {
         /* Should be a line-based signaure file, count it the old fashioned way */
-        num_signatures += count_line_based_signatures(filepath);
+        status = count_line_based_signatures(filepath, &counted);
     }
 
 done:
@@ -5078,7 +5101,9 @@ done:
         cl_cvdfree(db_archive_header);
     }
 
-    return num_signatures;
+    if (status == CL_SUCCESS)
+        *num_signatures = counted;
+    return status;
 }
 
 static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, unsigned int *signo, unsigned int options, void *sign_verifier)
@@ -5095,6 +5120,8 @@ static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, u
     struct db_ll_entry *head = NULL;
     struct db_ll_entry *iter;
     struct db_ll_entry *next;
+    size_t counted;
+    cl_error_t count_status;
 
     cli_dbgmsg("Loading databases from %s\n", dirname);
 
@@ -5112,6 +5139,7 @@ static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, u
         }
     }
 
+    errno = 0;
     while ((dent = readdir(dd))) {
         struct db_ll_entry *entry;
         unsigned int load_priority;
@@ -5149,7 +5177,12 @@ static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, u
             /* load .ign and .ign2 files first */
             load_priority = DB_LOAD_PRIORITY_IGN;
 
-            engine->num_total_signatures += count_line_based_signatures(dbfile);
+            count_status = count_line_based_signatures(dbfile, &counted);
+            if (count_status != CL_SUCCESS) {
+                ret = count_status;
+                goto done;
+            }
+            engine->num_total_signatures += counted;
 
         } else if (!strcmp(dent->d_name, "daily.cld")) {
             /* The daily db must be loaded before main, this way, the
@@ -5194,12 +5227,22 @@ static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, u
         } else if (!strcmp(dent->d_name, "local.gdb")) {
             load_priority = DB_LOAD_PRIORITY_LOCAL_GDB;
 
-            engine->num_total_signatures += count_line_based_signatures(dbfile);
+            count_status = count_line_based_signatures(dbfile, &counted);
+            if (count_status != CL_SUCCESS) {
+                ret = count_status;
+                goto done;
+            }
+            engine->num_total_signatures += counted;
 
         } else if (!strcmp(dent->d_name, "daily.cfg")) {
             load_priority = DB_LOAD_PRIORITY_DAILY_CFG;
 
-            engine->num_total_signatures += count_line_based_signatures(dbfile);
+            count_status = count_line_based_signatures(dbfile, &counted);
+            if (count_status != CL_SUCCESS) {
+                ret = count_status;
+                goto done;
+            }
+            engine->num_total_signatures += counted;
 
         } else if ((options & CL_DB_OFFICIAL_ONLY) &&
                    !strstr(dirname, "clamav-") &&            // Official databases that are temp-files (in the process of updating).
@@ -5219,12 +5262,22 @@ static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, u
              * Therefore, we need to ensure the .crb rules are loaded prior */
             load_priority = DB_LOAD_PRIORITY_CRB;
 
-            engine->num_total_signatures += count_line_based_signatures(dbfile);
+            count_status = count_line_based_signatures(dbfile, &counted);
+            if (count_status != CL_SUCCESS) {
+                ret = count_status;
+                goto done;
+            }
+            engine->num_total_signatures += counted;
 
         } else {
             load_priority = DB_LOAD_PRIORITY_NORMAL;
 
-            engine->num_total_signatures += count_signatures(dbfile, engine, options);
+            count_status = count_signatures(dbfile, engine, options, &counted);
+            if (count_status != CL_SUCCESS) {
+                ret = count_status;
+                goto done;
+            }
+            engine->num_total_signatures += counted;
         }
 
         entry = malloc(sizeof(*entry));
@@ -5238,6 +5291,12 @@ static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, u
         dbfile               = NULL;
         entry->load_priority = load_priority;
         cli_insertdbtoll(&head, entry);
+    }
+
+    if (errno != 0) {
+        cli_errmsg("cli_loaddbdir: Directory enumeration failed for %s\n", dirname);
+        ret = CL_EREAD;
+        goto done;
     }
 
     /* The list entries are stored in priority order, so now just loop through
@@ -5283,7 +5342,10 @@ done:
     }
 
     if (NULL != dd) {
-        closedir(dd);
+        if (closedir(dd) != 0 && ret == CL_SUCCESS) {
+            cli_errmsg("cli_loaddbdir: Can't close directory %s\n", dirname);
+            ret = CL_EREAD;
+        }
     }
 
     if (NULL != daily_cld) {
@@ -5304,6 +5366,7 @@ cl_error_t cl_load(const char *path, struct cl_engine *engine, unsigned int *sig
 {
     STATBUF sb;
     cl_error_t ret;
+    size_t counted;
     void *sign_verifier          = NULL;
     FFIError *new_verifier_error = NULL;
 
@@ -5384,8 +5447,11 @@ cl_error_t cl_load(const char *path, struct cl_engine *engine, unsigned int *sig
     switch (sb.st_mode & S_IFMT) {
         case S_IFREG:
             /* Count # of sigs in the database now */
-            engine->num_total_signatures += count_signatures(path, engine, dboptions);
-            ret = cli_load(path, engine, signo, dboptions, NULL, sign_verifier);
+            ret = count_signatures(path, engine, dboptions, &counted);
+            if (ret == CL_SUCCESS) {
+                engine->num_total_signatures += counted;
+                ret = cli_load(path, engine, signo, dboptions, NULL, sign_verifier);
+            }
             break;
 
         case S_IFDIR:
@@ -6256,8 +6322,9 @@ cl_error_t cl_countsigs(const char *path, unsigned int countoptions, unsigned in
     struct dirent *dent;
     DIR *dd;
     cl_error_t ret;
+    unsigned int original_sigs;
 
-    if (!sigs)
+    if (path == NULL || !sigs)
         return CL_ENULLARG;
 
     if (CLAMSTAT(path, &sb) == -1) {
@@ -6269,10 +6336,12 @@ cl_error_t cl_countsigs(const char *path, unsigned int countoptions, unsigned in
         return countsigs(path, countoptions, sigs);
 
     } else if ((sb.st_mode & S_IFMT) == S_IFDIR) {
+        original_sigs = *sigs;
         if ((dd = opendir(path)) == NULL) {
             cli_errmsg("cl_countsigs: Can't open directory %s\n", path);
             return CL_EOPEN;
         }
+        errno = 0;
         while ((dent = readdir(dd))) {
             if (dent->d_ino) {
                 if (strcmp(dent->d_name, ".") && strcmp(dent->d_name, "..") && CLI_DBEXT(dent->d_name)) {
@@ -6282,14 +6351,26 @@ cl_error_t cl_countsigs(const char *path, unsigned int countoptions, unsigned in
                     if (ret != CL_SUCCESS) {
                         if (closedir(dd) != 0)
                             cli_errmsg("cl_countsigs: Can't close directory %s after an error\n", path);
+                        *sigs = original_sigs;
                         return ret;
                     }
                 }
             }
         }
+        if (errno != 0) {
+            cli_errmsg("cl_countsigs: Can't read directory %s\n", path);
+            ret = CL_EREAD;
+        } else {
+            ret = CL_SUCCESS;
+        }
         if (closedir(dd) != 0) {
             cli_errmsg("cl_countsigs: Can't close directory %s\n", path);
-            return CL_EREAD;
+            if (ret == CL_SUCCESS)
+                ret = CL_EREAD;
+        }
+        if (ret != CL_SUCCESS) {
+            *sigs = original_sigs;
+            return ret;
         }
     } else {
         cli_errmsg("cl_countsigs: Unsupported file type\n");
