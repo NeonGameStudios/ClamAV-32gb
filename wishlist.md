@@ -1,5 +1,20 @@
 # Wishlist
 
+## JPEG entropy harness reconciliation — 2026-08-28
+
+- Keep the current JPEG boundary and entropy implementation unchanged: the
+  direct `jpeg_map` regressions pass 12/12 when isolated, and a standalone
+  current-source GCC ASan/UBSan driver passes the nine single/multi-scan,
+  window-boundary, timeout, truncation, malformed-SOS, callback-failure, and
+  no-image scenarios.
+- Do not use the aggregate mixed-object crash as product evidence. Its
+  sanitizer stack ends in the stale `cli_checktimelimit()` implementation
+  reading an incompatible `cli_ctx`; the ABI-safe direct driver is clean.
+  Preserve the existing coherent public API and nested-thumbnail evidence,
+  and keep complete JPEG/image corpus, certified Linux, materialized
+  large-file, production-CVD/service, Sonic1, and final release qualification
+  open.
+
 ## RTF empty and partial object-data admission — 2026-08-28
 
 - Keep RTF `objdata` close handling fail-visible when no decoded byte has

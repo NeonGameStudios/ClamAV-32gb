@@ -1,5 +1,28 @@
 # Independent read-only audit of audit.md
 
+## JPEG entropy harness reconciliation — 2026-08-28
+
+The current JPEG source was recompiled warning-clean with the established
+production GCC flags. The twelve direct `jpeg_map` regressions pass when run
+as isolated cases, covering admission, truncation, deadline, required and
+metadata read failures, Photoshop boundaries, and entropy completion. A
+standalone current-source GCC ASan/UBSan driver also passes nine entropy
+scenarios: complete single scan, an EOI split across 8-KiB windows, in-loop
+timeout, multi-scan completion, entropy truncation, malformed SOS, an
+in-range entropy callback failure, EOI-before-scan, and metadata-only EOF;
+required failures remain sticky incomplete and non-cacheable.
+
+The aggregate Check runner was not accepted as evidence because its mixed
+current/stale object link crashed in the old `cli_checktimelimit()` path. The
+sanitizer stack identified the incompatible `cli_ctx` dereference in that
+stale object, outside the current JPEG source; the ABI-safe standalone driver
+reproduced the JPEG matrix without a sanitizer finding. Public API and nested
+thumbnail corpus qualification therefore retain the existing coherent
+production-linked evidence and remain release gates rather than being
+reclassified from this mixed-link attempt. Complete JPEG/image corpus,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and final parser-family qualification remain required.
+
 ## RTF empty and partial object-data admission — 2026-08-28
 
 RTF `objdata` callbacks previously allowed two started-but-incomplete cases

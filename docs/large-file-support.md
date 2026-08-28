@@ -3,6 +3,25 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## JPEG entropy harness reconciliation — 2026-08-28
+
+The current JPEG source remains warning-clean under the established
+production GCC flags. Its twelve direct `jpeg_map` regressions pass when
+isolated. An ABI-safe standalone current-source GCC ASan/UBSan driver passes
+nine entropy cases covering complete single- and multi-scan images, an EOI
+split across fixed 8-KiB reads, an in-loop timeout, entropy truncation,
+malformed SOS, an in-range callback failure, EOI-before-scan, and
+metadata-only EOF. Required failures remain sticky incomplete and
+non-cacheable.
+
+An aggregate Check relink mixing the current JPEG object with stale library
+objects crashed in the stale `cli_checktimelimit()` implementation; its
+sanitizer stack showed the incompatible `cli_ctx` read. That run is excluded
+from product evidence. Existing coherent public API and nested Photoshop
+thumbnail evidence remain valid, while complete JPEG/image corpus, certified
+Linux x86-64, materialized large-file, production-CVD/service, Sonic1, and
+parser-family qualification remain required.
+
 ## RTF empty and partial object-data admission — 2026-08-28
 
 RTF `objdata` now fails visibly if its group closes before any decoded byte is
