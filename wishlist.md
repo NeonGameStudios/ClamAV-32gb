@@ -6480,3 +6480,13 @@ qualification gates.
   with `CL_EPARSE`.
 - Retain full XAR corpus, sanitizer, production-CVD/service, materialized
   large-file, certified Linux x86-64, Sonic1, and release qualification gates.
+
+## XAR compressed member output-size agreement — 2026-08-28
+
+- Require gzip and LZMA members to produce exactly the TOC-declared `size`
+  before nested scanning; mismatches must return `CL_EFORMAT` with sticky
+  incomplete, non-cacheable state.
+- Retain the paired gzip/LZMA `test_xar_compressed_output_size_is_fail_visible`
+  regression and focused current-source production-linked evidence, plus full
+  XAR corpus, sanitizer, production-CVD/service, materialized large-file,
+  certified Linux x86-64, Sonic1, and release qualification gates.

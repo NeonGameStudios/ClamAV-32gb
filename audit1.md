@@ -12502,6 +12502,22 @@ decoded-line stream. Complete UUEncode corpus, sanitizer, production-CVD/
 service, materialized large-file, Sonic1, and release qualification evidence
 remain required.
 
+## XAR compressed member output-size agreement audit — 2026-08-28
+
+XAR’s gzip and LZMA paths previously treated the TOC `size` field as a scan
+limit but did not require decompression to produce exactly that many bytes.
+The paths now reject a completed decoder whose output differs from the
+declared member size with `CL_EFORMAT`, sticky incomplete state, and a
+non-cacheable input before nested scanning. The registered
+`test_xar_compressed_output_size_is_fail_visible` regression covers both a
+gzip and an LZMA member that decode to three bytes while declaring two. The
+current-source GCC XAR object and unit source compile with the established
+flags. Focused production-linked GCC harnesses cover both encodings: the gzip
+case returns `CL_EFORMAT`, while the LZMA case returns `CL_EPARSE`; both clear
+the public verdict and leave the input non-cacheable.
+Full XAR corpus, sanitizer, production-CVD/service, materialized large-file,
+Linux x86-64, and Sonic1 qualification remain required.
+
 ## Shared resource-limit helper admission audit — 2026-08-27
 
 cli_checklimits dereferenced ctx->engine for every non-null context, and

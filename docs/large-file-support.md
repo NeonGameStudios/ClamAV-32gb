@@ -139,6 +139,19 @@ malformed-parser branch; complete dispatch-matrix, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and final release
 qualification remain open.
 
+## XAR compressed member output-size agreement — 2026-08-28
+
+XAR gzip and LZMA extraction now require the decoder output length to equal
+the TOC-declared member `size`. A decoder that completes with a different
+length is an explicit `CL_EFORMAT` incomplete result and cannot reach nested
+scanning as a complete member. The paired current-source regression covers
+both encodings with a three-byte payload declaring two bytes; focused
+production-linked GCC harnesses cover both encodings, returning `CL_EFORMAT`
+for gzip and `CL_EPARSE` for LZMA while preserving a cleared verdict with a
+non-cacheable input. Full XAR corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
+
 ## Mach-O load-command alignment admission — 2026-08-28
 
 Mach-O load-command admission now enforces the format alignment required by

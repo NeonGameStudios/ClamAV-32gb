@@ -1255,6 +1255,9 @@ int cli_scanxar(cli_ctx *ctx)
                 if (rc == CL_SUCCESS && !stream_complete) {
                     cli_mark_scan_incomplete(ctx, "XAR gzip member ended before the decoder reached stream end");
                     rc = CL_EFORMAT;
+                } else if (rc == CL_SUCCESS && total_out != (uint64_t)size) {
+                    cli_mark_scan_incomplete(ctx, "XAR gzip output size does not match its declared member size");
+                    rc = CL_EFORMAT;
                 }
                 if (rc != CL_SUCCESS)
                     goto exit_tmpfile;
@@ -1417,6 +1420,9 @@ int cli_scanxar(cli_ctx *ctx)
 
                 if (stream_complete && (lz.avail_in != 0 || at < data_end)) {
                     cli_mark_scan_incomplete(ctx, "XAR LZMA stream ended before its declared compressed range");
+                    rc = CL_EFORMAT;
+                } else if (stream_complete && out_size != (uint64_t)size) {
+                    cli_mark_scan_incomplete(ctx, "XAR LZMA output size does not match its declared member size");
                     rc = CL_EFORMAT;
                 }
 

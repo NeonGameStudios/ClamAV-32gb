@@ -21617,6 +21617,83 @@ START_TEST(test_xar_lzma_trailing_data_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_xar_compressed_output_size_is_fail_visible)
+{
+    static const uint8_t gzip_toc[] =
+        "<?xml version=\"1.0\"?><xar><toc><file><data>"
+        "<offset>0</offset><length>23</length><size>2</size>"
+        "<encoding style=\"application/x-gzip\"/>"
+        "</data></file></toc></xar>";
+    static const uint8_t gzip_member[] = {
+        0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x02, 0x13, 0xf3, 0x8d, 0x0a, 0x00, 0x00, 0xab,
+        0x23, 0x3c, 0xac, 0x03, 0x00, 0x00, 0x00};
+    static const uint8_t lzma_toc[] =
+        "<?xml version=\"1.0\"?><xar><toc><file><data>"
+        "<offset>0</offset><length>26</length><size>2</size>"
+        "<encoding style=\"application/x-lzma\"/>"
+        "</data></file></toc></xar>";
+    static const uint8_t lzma_member[] = {
+        0x5d, 0x00, 0x00, 0x80, 0x00, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0x00, 0x26, 0x96, 0x86, 0x30,
+        0x0b, 0x9b, 0xff, 0xff, 0xf7, 0x3c, 0x40, 0x00};
+    static const struct {
+        const uint8_t *toc;
+        size_t toc_length;
+        const uint8_t *member;
+        size_t member_length;
+    } cases[] = {
+        {gzip_toc, sizeof(gzip_toc) - 1U, gzip_member, sizeof(gzip_member)},
+        {lzma_toc, sizeof(lzma_toc) - 1U, lzma_member, sizeof(lzma_member)}};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        uint8_t *data;
+        size_t data_length;
+        cl_verdict_t verdict;
+        const char *last_alert;
+        uint64_t scanned;
+        fmap_t *map;
+        cl_error_t ret;
+
+        data = xar_test_make_archive_from_toc(cases[i].toc, cases[i].toc_length, &data_length);
+        ck_assert_ptr_nonnull(data);
+        data = realloc(data, data_length + cases[i].member_length);
+        ck_assert_ptr_nonnull(data);
+        memcpy(data + data_length, cases[i].member, cases[i].member_length);
+        data_length += cases[i].member_length;
+
+        map = cl_fmap_open_memory(data, data_length);
+        ck_assert_ptr_nonnull(map);
+        verdict    = CL_VERDICT_STRONG_INDICATOR;
+        last_alert = "stale";
+        scanned    = UINT64_MAX;
+        ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                                   scan_engine, &options, NULL, NULL, NULL, NULL,
+                                   "CL_TYPE_XAR", NULL);
+        ck_assert_msg(ret == CL_EFORMAT || ret == CL_EPARSE,
+                      "XAR compressed-size mismatch returned %s (%d)",
+                      cl_strerror(ret), ret);
+        ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+        ck_assert(last_alert == NULL);
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+        free(data);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 static size_t xar_member_failure_offset = SIZE_MAX;
 static size_t xar_member_failure_length = SIZE_MAX;
 
@@ -43828,6 +43905,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_xar_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_xar_corpus, test_xar_corpus_detects_embedded_mz);
     tcase_add_test(tc_xar_corpus, test_xar_lzma_trailing_data_is_fail_visible);
+    tcase_add_test(tc_xar_corpus, test_xar_compressed_output_size_is_fail_visible);
     suite_add_tcase(s, tc_xar_subdoc);
     tcase_add_checked_fixture(tc_xar_subdoc, cl_setup, cl_teardown);
     tcase_add_test(tc_xar_subdoc, test_xar_subdocument_serializes_inner_close);
