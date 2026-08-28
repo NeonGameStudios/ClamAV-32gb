@@ -28817,6 +28817,34 @@ START_TEST(test_riff_chunk_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_riff_accepts_unaligned_nested_input)
+{
+    static const uint8_t input[] = {
+        'R', 'I', 'F', 'F',
+        0x10, 0x00, 0x00, 0x00,
+        'A', 'C', 'O', 'N',
+        'L', 'I', 'S', 'T',
+        0x04, 0x00, 0x00, 0x00,
+        'I', 'N', 'F', 'O'};
+    uint8_t storage[sizeof(input) + 1U];
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(storage, 0, sizeof(storage));
+    memcpy(storage + 1U, input, sizeof(input));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(storage + 1U, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_check_riff_exploit(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 #ifndef _WIN32
 START_TEST(test_riff_time_limit_is_fail_visible)
 {
@@ -44750,6 +44778,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_riff, test_riff_header_read_failure_is_fail_visible);
     tcase_add_test(tc_riff, test_riff_null_context_is_fail_visible);
     tcase_add_test(tc_riff, test_riff_chunk_read_failure_is_fail_visible);
+    tcase_add_test(tc_riff, test_riff_accepts_unaligned_nested_input);
     tcase_add_test(tc_riff, test_riff_truncated_chunk_is_fail_visible);
     tcase_add_test(tc_riff, test_riff_list_respects_declared_boundary);
 #ifndef _WIN32

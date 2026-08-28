@@ -168,8 +168,8 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
 {
     cl_error_t time_status;
     uint32_t cache_buf;
-    char *buffer;
-    const uint32_t *buf;
+    const char *buffer;
+    const uint8_t *buf;
     uint32_t chunk_size;
     uint64_t next_offset;
     uint64_t list_end;
@@ -199,7 +199,7 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
     }
     cur_offset += 4 * 2;
 
-    buffer = (char *)buf;
+    buffer = (const char *)buf;
     memcpy(&cache_buf, buffer + sizeof(cache_buf),
            sizeof(cache_buf));
     chunk_size = riff_endian_convert_32(cache_buf, big_endian);
@@ -271,7 +271,7 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
 int cli_check_riff_exploit(cli_ctx *ctx)
 {
     cl_error_t time_status;
-    const uint32_t *buf;
+    const uint8_t *buf;
     int big_endian, retval;
     cl_error_t read_status = CL_SUCCESS;
     off_t offset;
@@ -312,13 +312,13 @@ int cli_check_riff_exploit(cli_ctx *ctx)
         return 0;
     }
 
-    if (memcmp(&buf[2], "ACON", 4) != 0) {
+    if (memcmp(buf + (2U * sizeof(uint32_t)), "ACON", 4) != 0) {
         /* Only scan MS animated icon files */
         /* There is a *lot* of broken software out there that produces bad RIFF files */
         return 0;
     }
 
-    memcpy(&riff_size_raw, &buf[1], sizeof(riff_size_raw));
+    memcpy(&riff_size_raw, buf + sizeof(uint32_t), sizeof(riff_size_raw));
     riff_end = 8U + riff_endian_convert_32(riff_size_raw, big_endian);
     if (riff_end < 12U || riff_end > map->len) {
         cli_mark_scan_incomplete(ctx, "RIFF container range was truncated");

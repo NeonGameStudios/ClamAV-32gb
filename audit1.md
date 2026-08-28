@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## RIFF detector alignment boundary — 2026-08-28
+
+The RIFF root probe and nested chunk walker documented bytewise
+`memcmp()`/`memcpy()` handling but stored fmap bytes in `const uint32_t *`
+objects. An unaligned map base could therefore violate alignment requirements
+before the explicitly unaligned-safe operations ran. Both views now remain
+`const uint8_t *`, with explicit byte offsets for the size and ACON fields.
+The current `special.c` compiles warning-clean with the production GCC flags,
+and an isolated current-source ASan/UBSan runner passes the unaligned nested-
+LIST fixture. The registered unit regression and source guards preserve this
+boundary. Full RIFF corpus, production-CVD/service, materialized large-file,
+certified Linux x86-64, Sonic1, and final release qualification remain
+required.
+
 ## Mydoom detector alignment boundary — 2026-08-28
 
 The Mydoom detector documented a `memcmp()`/`memcpy()` workaround for fmap

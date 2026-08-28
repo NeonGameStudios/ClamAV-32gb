@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## RIFF detector alignment boundary — 2026-08-28
+
+The RIFF root probe and nested LIST walker now keep fmap input byte-oriented
+and use explicit byte offsets for the unaligned-safe size and ACON reads. The
+current source compiles warning-clean with the production GCC flags, and an
+isolated current-source ASan/UBSan runner passes the intentionally unaligned
+nested-LIST fixture with no incomplete or non-cacheable result. A registered
+unit regression and source guards preserve the boundary. Full RIFF corpus,
+certified Linux x86-64, production-CVD/service, materialized large-file,
+Sonic1, and final parser-family qualification remain required.
+
 ## Mydoom detector alignment boundary — 2026-08-28
 
 The Mydoom detector now keeps its fmap window byte-oriented while preserving

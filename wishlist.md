@@ -1,5 +1,15 @@
 # Wishlist
 
+## RIFF detector alignment boundary — 2026-08-28
+
+- Keep RIFF root/chunk fmap views byte-oriented with explicit byte offsets for
+  unaligned-safe access; retain the unaligned nested-LIST regression and source
+  guards.
+- The current RIFF source compiles warning-clean with the production GCC
+  flags, and the isolated ASan/UBSan runner passes. Full RIFF corpus,
+  certified Linux x86-64, production-CVD/service, materialized large-file,
+  Sonic1, and final parser-family qualification remain required.
+
 ## Mydoom detector alignment boundary — 2026-08-28
 
 - Keep the Mydoom detector's mapped input pointer byte-oriented so unaligned
