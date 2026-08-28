@@ -8090,6 +8090,83 @@ START_TEST(test_swf_truncated_frame_metadata_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_swf_uncompressed_overlay_detects_embedded_mz)
+{
+    static const uint8_t swf_prefix[] = {
+        'F', 'W', 'S', 9U, 16U, 0U, 0U, 0U,
+        0x08U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
+        0x00U, 0x00U,
+    };
+    static const uint8_t child[64] = {'M', 'Z', 'P'};
+    uint8_t data[sizeof(swf_prefix) + sizeof(child)];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    int ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+    memcpy(data, swf_prefix, sizeof(swf_prefix));
+    memcpy(data + sizeof(swf_prefix), child, sizeof(child));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "SWF.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_SWF", NULL);
+    ck_assert_msg(ret == CL_VIRUS,
+                  "SWF uncompressed overlay did not reach the child matcher: %s",
+                  cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "SWF.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_swf_uncompressed_overlay_requires_engine)
+{
+    static const uint8_t archive[] = {
+        'F', 'W', 'S', 9U, 16U, 0U, 0U, 0U,
+        0x08U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
+        0x00U, 0x00U, 'M', 'Z', 'P',
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scanswf(&ctx), CL_ENULLARG);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "SWF overlay scan requires an owning engine");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_swf_truncated_tag_payload_is_fail_visible)
 {
     static const uint8_t archive[] = {
@@ -8119,6 +8196,44 @@ START_TEST(test_swf_truncated_tag_payload_is_fail_visible)
 
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_swf_fixed_tag_length_is_fail_visible)
+{
+    static const uint8_t archive[] = {
+        'F', 'W', 'S', 9U, 20U, 0U, 0U, 0U,
+        0x08U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
+        0x41U, 0x11U, 0x00U, 0x00U, 0x00U, 0x00U,
+    };
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    uint8_t old_debug;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    old_debug = cli_set_debug_flag(1);
+    ret       = cli_scanswf(&ctx);
+    (void)cli_set_debug_flag(old_debug);
+
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "SWF fixed tag payload was shorter than its contents");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -44861,12 +44976,15 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_swf, test_swf_truncated_uncompressed_header_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_truncated_frame_metadata_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_truncated_tag_payload_is_fail_visible);
+    tcase_add_test(tc_swf, test_swf_fixed_tag_length_is_fail_visible);
     suite_add_tcase(s, tc_swf_corpus);
     tcase_add_checked_fixture(tc_swf_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_swf_corpus, test_swf_corpus_detects_embedded_mz);
+    tcase_add_test(tc_swf_corpus, test_swf_uncompressed_overlay_detects_embedded_mz);
     suite_add_tcase(s, tc_swf_map);
     tcase_add_test(tc_swf_map, test_swf_missing_map_is_fail_visible);
     tcase_add_test(tc_swf_map, test_swf_compressed_requires_engine);
+    tcase_add_test(tc_swf_map, test_swf_uncompressed_overlay_requires_engine);
     suite_add_tcase(s, tc_swf_api);
     tcase_add_checked_fixture(tc_swf_api, cl_setup, cl_teardown);
     tcase_add_test(tc_swf_api, test_swf_public_api_read_failure_is_fail_visible);
@@ -45535,6 +45653,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_truncated_uncompressed_header_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_truncated_frame_metadata_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_truncated_tag_payload_is_fail_visible);
+    tcase_add_test(tc_cl, test_swf_fixed_tag_length_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_truncated_object_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_temporary_limit_is_fail_visible);
 #endif

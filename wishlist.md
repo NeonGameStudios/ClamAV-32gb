@@ -6566,3 +6566,15 @@ qualification gates.
   Complete OLE/VBA corpus, sanitizer, production-CVD/service, materialized
   large-file, certified Linux x86-64, Sonic1, and parser-family qualification
   remain required.
+
+## SWF declared boundary and fixed-tag audit — 2026-08-28
+
+- Bound uncompressed FWS frame/tag reads to the declared file length, reject
+  undersized fixed-size ScriptLimits/FileAttributes payloads, and scan a
+  declared-boundary overlay only with an owning engine.
+- The current-source production-linked GCC direct SWF harness passes 2/2 for
+  fixed-tag rejection and exact overlay matching; coherent unit coverage now
+  includes MZ overlay detection and missing-engine admission.
+- Keep complete SWF corpus, sanitizer, materialized large-file,
+  production-CVD/service, Sonic1, and parser-family qualification as release
+  gates.

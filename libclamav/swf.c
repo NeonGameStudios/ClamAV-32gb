@@ -53,9 +53,14 @@
 #define EC16(v) le16_to_host(v)
 #define EC32(v) le32_to_host(v)
 
-static cl_error_t swf_read_exact(fmap_t *map, void *dst, size_t offset, size_t length)
+static cl_error_t swf_read_exact(fmap_t *map, void *dst, size_t offset, size_t length, size_t end)
 {
-    size_t nread = fmap_readn(map, dst, offset, length);
+    size_t nread;
+
+    if (offset > end || length > end - offset)
+        return CL_EFORMAT;
+
+    nread = fmap_readn(map, dst, offset, length);
 
     if (nread == length)
         return CL_SUCCESS;
@@ -95,9 +100,24 @@ static cl_error_t swf_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+static cl_error_t swf_scan_overlay(cli_ctx *ctx, fmap_t *map, size_t offset)
+{
+    if (map->len <= offset)
+        return CL_SUCCESS;
+
+    cli_dbgmsg("SWF: Found %zu additional bytes after the declared file; scanning as a nested file.\n",
+               map->len - offset);
+    if (ctx->engine == NULL) {
+        cli_mark_scan_incomplete(ctx, "SWF overlay scan requires an owning engine");
+        return CL_ENULLARG;
+    }
+    return cli_magic_scan_nested_fmap_type(map, offset, map->len - offset, ctx, CL_TYPE_ANY, NULL,
+                                           LAYER_ATTRIBUTES_NONE);
+}
+
 #define INITBITS                                                                       \
     {                                                                                  \
-        cl_error_t read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c));    \
+        cl_error_t read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c), parse_end); \
         if (read_status == CL_SUCCESS) {                                               \
             bitpos = 8;                                                                \
             bitbuf = (unsigned int)get_c;                                              \
@@ -116,7 +136,7 @@ static cl_error_t swf_checktimelimit(cli_ctx *ctx, const char *reason)
         while (getbits_n > bitpos) {                                                      \
             getbits_n -= bitpos;                                                          \
             bits |= bitbuf << getbits_n;                                                  \
-            read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c));             \
+            read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c), parse_end); \
             if (read_status == CL_SUCCESS) {                                             \
                 bitbuf = (unsigned int)get_c;                                             \
                 bitpos = 8;                                                               \
@@ -135,7 +155,7 @@ static cl_error_t swf_checktimelimit(cli_ctx *ctx, const char *reason)
 
 #define GETWORD(v)                                                                    \
     {                                                                                 \
-        read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c));              \
+        read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c), parse_end);   \
         if (read_status == CL_SUCCESS) {                                              \
             getword_1 = (unsigned int)get_c;                                          \
             offset += sizeof(get_c);                                                  \
@@ -144,7 +164,7 @@ static cl_error_t swf_checktimelimit(cli_ctx *ctx, const char *reason)
             return swf_read_failure(ctx, read_status, "SWF frame metadata was truncated", \
                                     "SWF frame metadata could not be read completely"); \
         }                                                                             \
-        read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c));              \
+        read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c), parse_end);   \
         if (read_status == CL_SUCCESS) {                                              \
             getword_2 = (unsigned int)get_c;                                          \
             offset += sizeof(get_c);                                                  \
@@ -269,7 +289,7 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     }
 
     /* read 4 bytes (for compressed 32-bit filesize) [not used for LZMA] */
-    ret = swf_read_exact(map, &d_insize, offset, sizeof(d_insize));
+    ret = swf_read_exact(map, &d_insize, offset, sizeof(d_insize), map->len);
     if (ret != CL_SUCCESS) {
         cli_errmsg("scanzws: Error reading SWF file\n");
         ret = swf_read_failure(ctx, ret, "SWF LZMA input-length field was truncated",
@@ -519,6 +539,8 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
     unsigned int val, foo, tag_hdr, tag_type, tag_len;
     unsigned long int bits;
     cl_error_t read_status;
+    size_t parse_end = 0;
+    size_t tag_payload_end;
 
     cli_dbgmsg("in cli_scanswf()\n");
 
@@ -536,7 +558,7 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
     if (read_status != CL_SUCCESS)
         return read_status;
 
-    read_status = swf_read_exact(map, &file_hdr, offset, sizeof(file_hdr));
+    read_status = swf_read_exact(map, &file_hdr, offset, sizeof(file_hdr), map->len);
     if (read_status != CL_SUCCESS) {
         cli_dbgmsg("SWF: Can't read file header\n");
         if (read_status != CL_EREAD) {
@@ -576,6 +598,7 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "SWF uncompressed file was shorter than its declared size");
             return CL_EPARSE;
         }
+        parse_end = (size_t)file_hdr.filesize;
     } else {
         cli_dbgmsg("SWF: Not a SWF file\n");
         return CL_CLEAN;
@@ -603,10 +626,10 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
 
     /* Skip Flash tag walk unless debug mode */
     if (!cli_debug_flag) {
-        return CL_CLEAN;
+        return swf_scan_overlay(ctx, map, parse_end);
     }
 
-    while (offset < map->len) {
+    while (offset < parse_end) {
         read_status = swf_checktimelimit(ctx, "SWF tag traversal reached the configured time limit");
         if (read_status != CL_SUCCESS)
             return read_status;
@@ -619,16 +642,24 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
         if (tag_len == 0x3f)
             GETDWORD(tag_len);
 
-        pt = tagname(tag_type);
-        cli_dbgmsg("SWF: %s\n", pt ? pt : "UNKNOWN TAG");
-        cli_dbgmsg("SWF: Tag length: %u\n", tag_len);
-        if ((size_t)tag_len > map->len - offset) {
+        tag_payload_end = offset;
+        if ((size_t)tag_len > parse_end - offset) {
             cli_warnmsg("SWF: Tag payload is truncated or its length is too large.\n");
             cli_mark_scan_incomplete(ctx, "SWF tag payload was truncated");
             return CL_EPARSE;
         }
+        tag_payload_end += tag_len;
+
+        if ((tag_type == TAG_SCRIPTLIMITS || tag_type == TAG_FILEATTRIBUTES) && tag_len < 4) {
+            cli_mark_scan_incomplete(ctx, "SWF fixed tag payload was shorter than its contents");
+            return CL_EPARSE;
+        }
+
+        pt = tagname(tag_type);
+        cli_dbgmsg("SWF: %s\n", pt ? pt : "UNKNOWN TAG");
+        cli_dbgmsg("SWF: Tag length: %u\n", tag_len);
         if (!pt) {
-            offset += tag_len;
+            offset = tag_payload_end;
             continue;
         }
 
@@ -661,10 +692,13 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
                 break;
 
             default:
-                offset += tag_len;
+                offset = tag_payload_end;
                 continue;
         }
+
+        if (offset < tag_payload_end)
+            offset = tag_payload_end;
     }
 
-    return CL_CLEAN;
+    return swf_scan_overlay(ctx, map, parse_end);
 }

@@ -9096,3 +9096,18 @@ current-source production-linked direct runner pass 2/2 with `CL_EFORMAT`,
 `CL_EREAD`, and zero emitted output. Complete OLE/VBA corpus, sanitizer,
 production-CVD/service, materialized large-file, Linux x86-64, Sonic1, and
 parser-family qualification remain release gates.
+
+## SWF declared boundary and fixed-tag audit — 2026-08-28
+
+The uncompressed FWS parser now uses the file header's declared length as the
+boundary for frame and debug tag reads. ScriptLimits and FileAttributes tags
+must declare all four bytes consumed by their fixed fields; undersized
+declarations are malformed-confirmed and non-cacheable. Bytes after a
+declared FWS file are treated as an overlay and are handed to the nested
+matcher only when the parser has an owning engine.
+
+The current-source production-linked GCC direct SWF harness passes 2/2 for
+undersized fixed-tag rejection and exact nested overlay matching. Registered
+coherent-build tests cover the MZ overlay, missing-engine, and fixed-tag
+boundaries. Complete corpus, sanitizer, materialized large-file, Sonic1, and
+release evidence remain required.

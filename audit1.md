@@ -12881,3 +12881,22 @@ same direct runner pass 1/1 for that case with zero output. The canonical VBA
 source and unit source remain GCC-checkable; complete OLE/VBA corpus, sanitizer,
 production-CVD/service, materialized large-file, certified Linux x86-64,
 Sonic1, and final parser-family qualification remain open.
+
+## SWF declared boundary and fixed-tag audit — 2026-08-28
+
+The SWF audit found two fail-closed gaps in the uncompressed FWS path. Debug
+tag traversal used the containing fmap length instead of the SWF-declared file
+length, and fixed-size ScriptLimits/FileAttributes tags could be declared
+shorter than the fields the parser consumed. The parser now bounds all FWS
+frame/tag reads to the declared length, rejects undersized fixed tags as
+`CL_EPARSE` with sticky incomplete/non-cacheable state, advances known tags to
+their declared payload boundary, and scans bytes after the declared FWS file
+as a nested overlay only when an owning engine is present.
+
+The current-source production-linked GCC direct SWF harness passes 2/2 for the
+undersized fixed-tag regression and an exact nested child marker in a declared
+boundary overlay. The current `check_clamav.c` object also compiles with the
+existing production warning-enabled GCC flags. The registered coherent-build
+tests add exact MZ overlay detection, missing-engine admission, and fixed-tag
+length coverage. Full SWF corpus, sanitizer, materialized-large-file,
+production-CVD/service, Sonic1, and parser-family qualification remain open.
