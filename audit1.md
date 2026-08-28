@@ -12900,3 +12900,20 @@ existing production warning-enabled GCC flags. The registered coherent-build
 tests add exact MZ overlay detection, missing-engine admission, and fixed-tag
 length coverage. Full SWF corpus, sanitizer, materialized-large-file,
 production-CVD/service, Sonic1, and parser-family qualification remain open.
+
+## 7-Zip legacy-fallback output reset audit — 2026-08-28
+
+The 7-Zip streaming extractor has a compatibility fallback for folder graphs
+that return `SZ_ERROR_UNSUPPORTED`. Before this change, the fallback reused the
+same temporary descriptor without resetting its file position or length. If a
+future decoder path reported unsupported after emitting a prefix, the legacy
+whole-folder extraction could append to that prefix and later inspect a mixed
+output file. `cli_7z_reset_output_for_legacy()` now truncates and rewinds the
+temporary file before the fallback begins; reset failures remain fail-visible
+as `CL_EWRITE` or `CL_ESEEK`.
+
+The registered `test_7z_legacy_fallback_discards_stream_prefix` regression
+passes through the public helper and proves that a legacy write starts at an
+empty descriptor. A decoder-injected unsupported-after-write integration case
+is still required, along with complete 7-Zip corpus, sanitizer, production-
+CVD/service, materialized-large-file, Sonic1, and parser-family qualification.

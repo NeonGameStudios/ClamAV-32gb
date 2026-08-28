@@ -9111,3 +9111,14 @@ undersized fixed-tag rejection and exact nested overlay matching. Registered
 coherent-build tests cover the MZ overlay, missing-engine, and fixed-tag
 boundaries. Complete corpus, sanitizer, materialized large-file, Sonic1, and
 release evidence remain required.
+
+## 7-Zip legacy-fallback output reset — 2026-08-28
+
+The compatibility path used when a streaming 7-Zip folder returns
+`SZ_ERROR_UNSUPPORTED` now truncates and rewinds the temporary output before
+running the legacy whole-folder extractor. This prevents a decoder path that
+emitted a prefix before reporting unsupported from leaving mixed bytes in the
+file later handed to nested scanning. Reset failures remain fail-visible as
+write or seek errors. `test_7z_legacy_fallback_discards_stream_prefix` covers
+the reset-and-rewrite contract; a decoder-injected unsupported-after-write
+integration case and the complete 7-Zip release gates remain open.

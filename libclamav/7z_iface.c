@@ -448,6 +448,18 @@ bool cli_7z_output_matches_declared(int fd, uint64_t declared_size, uint64_t pro
     return true;
 }
 
+cl_error_t cli_7z_reset_output_for_legacy(int fd, uint64_t *written)
+{
+    if (fd < 0 || written == NULL)
+        return CL_ENULLARG;
+    if (ftruncate(fd, 0) != 0)
+        return CL_EWRITE;
+    if (lseek(fd, 0, SEEK_SET) == (off_t)-1)
+        return CL_ESEEK;
+    *written = 0;
+    return CL_SUCCESS;
+}
+
 cl_error_t cli_7z_merge_cleanup_status(cl_error_t status, cl_error_t cleanup_status)
 {
     if (cleanup_status == CL_SUCCESS)
@@ -732,6 +744,14 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                     allow_legacy = folderSize <= CLI_MAX_ALLOCATION;
                 }
                 if (allow_legacy) {
+                    cl_error_t reset_status = cli_7z_reset_output_for_legacy(fd, &output.written);
+                    if (reset_status != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "7-Zip legacy fallback output could not be reset");
+                        found = reset_status;
+                        cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
+                        free(tmp_name);
+                        break;
+                    }
                     size_t legacyOffset = 0;
                     size_t legacySize   = 0;
                     res                 = SzArEx_Extract(&db, &lookStream.s, i, &blockIndex,

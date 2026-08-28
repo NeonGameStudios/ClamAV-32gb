@@ -6578,3 +6578,12 @@ qualification gates.
 - Keep complete SWF corpus, sanitizer, materialized large-file,
   production-CVD/service, Sonic1, and parser-family qualification as release
   gates.
+
+## 7-Zip legacy-fallback output reset — 2026-08-28
+
+- Reset the temporary output with truncate-and-rewind before invoking the
+  whole-folder fallback after `SZ_ERROR_UNSUPPORTED`; retain
+  `test_7z_legacy_fallback_discards_stream_prefix` and source guards.
+- Add a decoder-injected unsupported-after-write integration case, then
+  complete 7-Zip corpus, sanitizer, production-CVD/service, materialized
+  large-file, Sonic1, and parser-family qualification.

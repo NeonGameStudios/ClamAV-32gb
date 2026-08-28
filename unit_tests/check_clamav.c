@@ -26061,6 +26061,35 @@ START_TEST(test_7z_output_size_mismatch_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_7z_legacy_fallback_discards_stream_prefix)
+{
+    static const uint8_t stale[] = "stale streaming prefix";
+    static const uint8_t legacy[] = "legacy fallback output";
+    uint8_t observed[sizeof(legacy)] = {0};
+    uint8_t extra = 0;
+    char *path = NULL;
+    int fd = -1;
+    ssize_t read_count;
+    uint64_t written = sizeof(stale) - 1U;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, stale, sizeof(stale) - 1U), (ssize_t)(sizeof(stale) - 1U));
+    ck_assert_int_eq(cli_7z_reset_output_for_legacy(fd, &written), CL_SUCCESS);
+    ck_assert_uint_eq(written, 0);
+    ck_assert_int_eq(write(fd, legacy, sizeof(legacy) - 1U), (ssize_t)(sizeof(legacy) - 1U));
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    read_count = read(fd, observed, sizeof(observed));
+    ck_assert_int_eq(read_count, (ssize_t)(sizeof(legacy) - 1U));
+    ck_assert_mem_eq(observed, legacy, sizeof(legacy) - 1U);
+    ck_assert_int_eq(read(fd, &extra, sizeof(extra)), 0);
+
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+}
+END_TEST
+
 START_TEST(test_7z_output_range_is_bounded)
 {
     ck_assert(cli_7z_output_range_allowed(0, 0, 0));
@@ -44745,6 +44774,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_read_failure_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_truncated_member_is_parse_error);
     tcase_add_test(tc_7z, test_7z_output_size_mismatch_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_legacy_fallback_discards_stream_prefix);
     tcase_add_test(tc_7z, test_7z_output_range_is_bounded);
     tcase_add_test(tc_7z, test_7z_substream_size_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_time_limit_is_fail_visible);
