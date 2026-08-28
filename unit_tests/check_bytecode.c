@@ -1364,6 +1364,25 @@ START_TEST(test_bytecode_engine_scan_options_query)
 }
 END_TEST
 
+START_TEST(test_bytecode_engine_queries_reject_invalid_contexts)
+{
+    struct cli_bc_ctx bcctx;
+    cli_ctx cctx;
+
+    memset(&bcctx, 0, sizeof(bcctx));
+    memset(&cctx, 0, sizeof(cctx));
+
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options(NULL), 0);
+    ck_assert_uint_eq(cli_bcapi_engine_db_options(NULL), 0);
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options(&bcctx), 0);
+    ck_assert_uint_eq(cli_bcapi_engine_db_options(&bcctx), 0);
+
+    bcctx.ctx = &cctx;
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options(&bcctx), 0);
+    ck_assert_uint_eq(cli_bcapi_engine_db_options(&bcctx), 0);
+}
+END_TEST
+
 START_TEST(test_bytecode_pdf_object_access_does_not_retain_fmap_pages)
 {
     struct bytecode_failing_pread_state pread_state;
@@ -1878,6 +1897,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_v2_interfaces_require_format8);
     tcase_add_test(tc_cli_read, test_bytecode_loader_enforces_v2_format_boundary);
     tcase_add_test(tc_cli_read, test_bytecode_engine_scan_options_query);
+    tcase_add_test(tc_cli_read, test_bytecode_engine_queries_reject_invalid_contexts);
     tcase_add_test(tc_cli_read, test_bytecode_pdf_object_access_does_not_retain_fmap_pages);
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);

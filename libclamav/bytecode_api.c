@@ -1975,8 +1975,15 @@ uint32_t cli_bcapi_engine_dconf_level(struct cli_bc_ctx *ctx)
 
 uint32_t cli_bcapi_engine_scan_options(struct cli_bc_ctx *ctx)
 {
-    cli_ctx *cctx    = (cli_ctx *)ctx->ctx;
-    uint32_t options = CL_SCAN_RAW;
+    cli_ctx *cctx;
+    uint32_t options = 0;
+
+    if (ctx == NULL || ctx->ctx == NULL)
+        return 0;
+    cctx = (cli_ctx *)ctx->ctx;
+    if (cctx->options == NULL)
+        return 0;
+    options = CL_SCAN_RAW;
 
     if (cctx->options->general & CL_SCAN_GENERAL_ALLMATCHES)
         options |= CL_SCAN_ALLMATCHES;
@@ -2142,7 +2149,13 @@ done:
 
 uint32_t cli_bcapi_engine_db_options(struct cli_bc_ctx *ctx)
 {
-    cli_ctx *cctx = (cli_ctx *)ctx->ctx;
+    cli_ctx *cctx;
+
+    if (ctx == NULL || ctx->ctx == NULL)
+        return 0;
+    cctx = (cli_ctx *)ctx->ctx;
+    if (cctx->engine == NULL)
+        return 0;
     return cctx->engine->dboptions;
 }
 

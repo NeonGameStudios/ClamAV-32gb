@@ -6258,3 +6258,12 @@ qualification gates.
 - Retain the direct PDF scan-state regression and complete PDF corpus,
   sanitizer, production-CVD/service, materialized large-file, certified
   Linux x86-64, Sonic1, and release qualification gates.
+
+## Bytecode engine-query admission — 2026-08-27
+
+- Keep bytecode engine scan-option and database-option queries fail-visible for
+  null API contexts, missing bytecode owners, missing scan options, and missing
+  engines; return an empty result before dereference.
+- Retain the direct bytecode query regression and full bytecode execution,
+  sanitizer, production-CVD/service, materialized large-file, certified Linux
+  x86-64, Sonic1, and release qualification gates.

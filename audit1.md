@@ -12461,3 +12461,16 @@ Current-source GCC syntax, source-guard, and focused production-linked evidence
 remain required alongside complete structured-detector corpus, sanitizer,
 production-CVD/service, materialized large-file, Linux x86-64, and Sonic1
 qualification.
+
+## Bytecode engine-query admission audit — 2026-08-27
+
+The basic bytecode engine scan-option and database-option query APIs
+dereferenced `ctx->ctx`, `cctx->options`, and `cctx->engine` without validating
+their direct API state. A malformed or partially initialized bytecode context
+could therefore crash while querying engine policy. Both queries now return an
+empty result before dereference when the API owner, scan options, or engine is
+absent, and `test_bytecode_engine_queries_reject_invalid_contexts` covers
+those boundaries. Current-source GCC syntax, source-guard, and focused
+production-linked evidence remain required alongside full bytecode, sanitizer,
+production-CVD/service, materialized large-file, Linux x86-64, and Sonic1
+qualification.

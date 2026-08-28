@@ -4854,6 +4854,8 @@ contains unit_tests/check_bytecode.c 'test_bytecode_output_uses_64bit_accounting
 contains unit_tests/check_bytecode.c 'test_bytecode_output_short_write_preserves_materialized_budget'
 contains unit_tests/check_bytecode.c 'test_bytecode_output_write_failure_propagates_from_runner'
 contains unit_tests/check_bytecode.c 'test_bytecode_context_cleanup_without_engine_is_safe'
+contains libclamav/bytecode_api.c 'if (ctx == NULL || ctx->ctx == NULL)'
+contains unit_tests/check_bytecode.c 'test_bytecode_engine_queries_reject_invalid_contexts'
 contains unit_tests/check_jsnorm.c 'clamav_test_short_write_count'
 contains unit_tests/check_bytecode.c 'test_bytecode_jsnorm_limit_failure_releases_input'
 contains unit_tests/check_bytecode.c 'cli_bcapi_extract_new(bcctx, 0)'
