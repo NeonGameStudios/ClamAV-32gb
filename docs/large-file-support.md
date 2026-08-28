@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OLE2 output-write failure visibility — 2026-08-28
+
+OLE2 embedded-stream and MSO inflation output writes now mark the layer
+incomplete before returning `CL_EWRITE`, so a short or failed temporary write
+cannot leave a cacheable clean result. The wrapped-write regression is
+registered, and current-source GCC compilation/syntax checks pass. Full
+production-linked execution remains open while the reusable container's
+overlay prevents relinking; complete OLE/VBA/XLM corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and final OLE2
+qualification remain required.
+
 ## PE short-entrypoint legacy-path boundary — 2026-08-28
 
 The PE32 parser no longer returns a cacheable clean result when the entry-point

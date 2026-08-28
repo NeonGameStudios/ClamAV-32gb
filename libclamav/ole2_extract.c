@@ -2093,6 +2093,7 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
             }
             if (cli_writen(ofd, outbuf, count) != count) {
                 cli_errmsg("scan_mso_stream: Can't write to file %s\n", tmpname);
+                cli_mark_scan_incomplete(ctx, "MSO stream output could not be written completely");
                 ret = CL_EWRITE;
                 goto mso_end;
             }
@@ -2245,6 +2246,7 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
                 break;
             }
             if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
+                cli_mark_scan_incomplete(ctx, "OLE2 embedded stream output could not be written completely");
                 ret = CL_EWRITE;
                 break;
             }
@@ -2263,6 +2265,7 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
                 goto done;
             }
             if (cli_writen(ofd, buff, MIN(len, (1 << hdr->log2_big_block_size))) != MIN(len, (1 << hdr->log2_big_block_size))) {
+                cli_mark_scan_incomplete(ctx, "OLE2 embedded stream output could not be written completely");
                 ret = CL_EWRITE;
                 goto done;
             }

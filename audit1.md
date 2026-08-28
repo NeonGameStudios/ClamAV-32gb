@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## OLE2 output-write failure visibility — 2026-08-28
+
+The OLE2 embedded-stream and MSO inflation paths returned `CL_EWRITE` when a
+temporary output write was short or failed, but selected branches did not set
+the sticky incomplete state that prevents a clean result from being cached.
+The current source now marks MSO and ordinary embedded-stream output-write
+failures before cleanup. A wrapped-write regression is registered for the
+production test configuration and the current OLE2 and unit sources pass the
+established GCC checks; the full unit binary could not be relinked because
+the reusable container's overlay is exhausted. Production-linked execution,
+complete OLE/VBA/XLM corpus, sanitizer, production-CVD/service, materialized
+large-file, Sonic1, and final OLE2 qualification remain open.
+
 ## PE short-entrypoint legacy-path boundary — 2026-08-28
 
 The PE32 entry-point inspection path had two short-window early returns that

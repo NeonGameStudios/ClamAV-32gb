@@ -1,5 +1,15 @@
 # Wishlist
 
+## OLE2 output-write failure visibility — 2026-08-28
+
+- Preserve sticky incomplete and non-cacheable state when OLE2 embedded
+  streams or MSO inflation cannot write their temporary output completely;
+  return the specific `CL_EWRITE` result through the existing cleanup path.
+- The wrapped-write regression is registered and current-source GCC syntax
+  checks pass. Keep production-linked execution, complete OLE/VBA/XLM corpus,
+  sanitizer, production-CVD/service, materialized large-file, Sonic1, and
+  final OLE2 qualification open until the full unit binary can be relinked.
+
 ## PE short-entrypoint legacy-path boundary — 2026-08-28
 
 - Keep short PE32 entry-point windows out of fixed-offset legacy heuristic and
