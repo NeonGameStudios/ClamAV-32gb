@@ -5366,6 +5366,8 @@ contains libclamav/ole2_extract.c 'encryption stream, which begins several secto
 contains libclamav/ole2_extract.c 'OLE2 encryption metadata could not be read completely'
 contains libclamav/ole2_extract.c 'if (input == NULL || prefix == NULL || ctx == NULL)'
 contains unit_tests/check_clamav.c 'cli_ole2_read_mso_prefix(map, NULL, &ctx)'
+contains libclamav/ole2_extract.c 'if (name == NULL || size < 2 || size > 128)'
+contains unit_tests/check_clamav.c 'test_ole2_property_name_rejects_invalid_arguments'
 not_contains libclamav/ole2_extract.c '&(((const uint8_t *)phdr)[encryption_offset])'
 contains libclamav/udf.c 'if (read_status != NULL)'
 contains libclamav/udf.c 'length > ctx->fmap->len - offset'

@@ -29435,6 +29435,18 @@ START_TEST(test_vba_project_directory_requires_context_and_engine)
 }
 END_TEST
 
+START_TEST(test_ole2_property_name_rejects_invalid_arguments)
+{
+    static const char one_byte_name[] = {'A'};
+    static const char empty_name[] = {0, 0};
+
+    ck_assert_ptr_null(cli_ole2_get_property_name2(NULL, 2));
+    ck_assert_ptr_null(cli_ole2_get_property_name2(one_byte_name, 0));
+    ck_assert_ptr_null(cli_ole2_get_property_name2(one_byte_name, 1));
+    ck_assert_ptr_null(cli_ole2_get_property_name2(empty_name, sizeof(empty_name)));
+}
+END_TEST
+
 START_TEST(test_ole2_invalid_block_geometry_is_fail_visible)
 {
     static const uint8_t magic[] = {0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1};
@@ -43380,6 +43392,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ole2_sector_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_ole2_mso_prefix_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_vba_project_directory_requires_context_and_engine);
+    tcase_add_test(tc_cl, test_ole2_property_name_rejects_invalid_arguments);
     tcase_add_test(tc_cl, test_ole2_invalid_block_geometry_is_fail_visible);
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_ole2_word_encryption_probe_read_failure_is_fail_visible);

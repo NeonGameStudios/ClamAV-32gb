@@ -291,7 +291,11 @@ char *cli_ole2_get_property_name2(const char *name, int size)
     int i, j;
     char *newname = NULL;
 
-    if ((name[0] == 0 && name[1] == 0) || size <= 0 || size > 128) {
+    if (name == NULL || size < 2 || size > 128) {
+        return NULL;
+    }
+
+    if (name[0] == 0 && name[1] == 0) {
         return NULL;
     }
 

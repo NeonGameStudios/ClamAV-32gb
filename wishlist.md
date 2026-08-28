@@ -6135,3 +6135,15 @@ qualification gates.
   resource traversal.
 - Retain complete PE icon corpus, sanitizer, production-CVD/service,
   materialized large-file, Sonic1, and release qualification gates.
+
+## OLE/MSO and VBA helper admission — 2026-08-27
+
+- Keep the MSO prefix helper fail-visible for missing map, output, and scan
+  context arguments before any fmap read or incomplete marking.
+- Keep the OLE property-name helper fail-visible for null names and buffers
+  shorter than the minimum UTF-16 terminator-bearing input.
+- Keep the VBA project-directory entry fail-visible for missing context or
+  engine ownership before temporary directory, decompression, or cleanup
+  state access.
+- Retain complete OLE/VBA corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and release qualification gates.

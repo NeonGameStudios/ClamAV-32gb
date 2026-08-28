@@ -12301,9 +12301,11 @@ large-file, Sonic1, and release qualification evidence remain required.
 
 cli_ole2_read_mso_prefix passed its fmap, output pointer, and scan context
 directly to the read and incomplete-result paths without validating them.
+cli_ole2_get_property_name2 also read the first two bytes before validating
+the name pointer or minimum UTF-16 buffer size.
 cli_vba_readdir_new also entered temporary-directory and engine-dependent
-logic before validating its public scan context and engine ownership. Both
-entries now return CL_ENULLARG before dereference; focused regressions cover
-the invalid states. Complete OLE/VBA corpus, sanitizer, production-CVD/
-service, materialized large-file, Sonic1, and release qualification evidence
-remain required.
+logic before validating its public scan context and engine ownership. The
+helpers now return NULL or CL_ENULLARG before dereference; focused
+regressions cover the invalid states. Complete OLE/VBA corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification evidence remain required.
