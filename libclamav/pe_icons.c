@@ -134,9 +134,24 @@ static int icon_scan_cb(void *ptr, uint32_t type, uint32_t name, uint32_t lang, 
 int cli_scanicon(icon_groupset *set, cli_ctx *ctx, struct cli_exe_info *peinfo)
 {
     struct ICON_ENV icon_env;
-    fmap_t *map        = ctx->fmap;
+    fmap_t *map;
     uint32_t err_total = 0;
     cl_error_t status;
+
+    if (!set || !ctx || !peinfo) {
+        cli_errmsg("cli_scanicon: invalid icon scan argument\n");
+        return CL_ENULLARG;
+    }
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "PE icon input map is unavailable");
+        return CL_EPARSE;
+    }
+    if (!ctx->engine) {
+        cli_errmsg("cli_scanicon: scan engine is unavailable\n");
+        return CL_ENULLARG;
+    }
+
+    map = ctx->fmap;
 
     icon_env.ctx    = ctx;
     icon_env.gcnt   = 0;

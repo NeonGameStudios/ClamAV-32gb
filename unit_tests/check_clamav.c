@@ -41181,6 +41181,34 @@ START_TEST(test_pe_icon_group_header_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pe_icon_entry_rejects_invalid_contexts)
+{
+    struct cl_engine engine;
+    struct cli_exe_info peinfo;
+    icon_groupset iconset;
+    cli_ctx ctx;
+    fmap_t map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&peinfo, 0, sizeof(peinfo));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&map, 0, sizeof(map));
+    cli_icongroupset_init(&iconset);
+
+    ck_assert_int_eq(cli_scanicon(NULL, &ctx, &peinfo), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanicon(&iconset, NULL, &peinfo), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanicon(&iconset, &ctx, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE icon input map is unavailable");
+
+    ctx.fmap = &map;
+    ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_ENULLARG);
+    ctx.engine = &engine;
+    ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_CLEAN);
+}
+END_TEST
+
 START_TEST(test_pe_icon_truncated_resource_is_fail_visible)
 {
     uint8_t data[256];
@@ -43472,6 +43500,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_nspack_loader_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_petite_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_group_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_icon_entry_rejects_invalid_contexts);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_bitmap_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_bitmap_header_range_is_fail_visible);

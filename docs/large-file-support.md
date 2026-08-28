@@ -8711,3 +8711,13 @@ available. test_hwp5_stream_requires_context_and_engine covers the boundary;
 current-source GCC syntax evidence is recorded, while complete HWP corpus,
 sanitizer, production-CVD/service, materialized large-file, Sonic1, and
 release qualification remain open.
+
+## PE icon helper admission — 2026-08-27
+
+The PE icon scanner now validates its icon-set, scan-context, PE metadata,
+input-map, and engine prerequisites before resource traversal. Missing maps
+remain explicit incomplete parse results, while missing helper arguments or
+engine ownership return CL_ENULLARG. test_pe_icon_entry_rejects_invalid_contexts
+covers these boundaries; current-source GCC syntax evidence is recorded,
+while complete PE icon corpus, sanitizer, production-CVD/service, materialized
+large-file, Sonic1, and release qualification remain open.

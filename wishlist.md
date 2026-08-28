@@ -6127,3 +6127,11 @@ qualification gates.
 - Preserve the engine-free cli_hwp5header metadata helper and retain complete
   HWP corpus, sanitizer, production-CVD/service, materialized large-file,
   Sonic1, and release qualification gates.
+
+## PE icon helper admission — 2026-08-27
+
+- Keep cli_scanicon fail-visible for null icon-set/context/PE metadata
+  arguments, missing recognized maps, and missing engine ownership before
+  resource traversal.
+- Retain complete PE icon corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and release qualification gates.

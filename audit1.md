@@ -12286,3 +12286,13 @@ dereference. test_recursion_stack_helpers_reject_invalid_contexts covers the
 boundary. Complete nested-parser corpus, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification evidence remain
 required.
+
+## PE icon helper admission audit — 2026-08-27
+
+cli_scanicon dereferenced its icon set, context, PE metadata, fmap, and engine
+before validating the helper boundary. It now rejects null arguments, reports
+a missing recognized input map as CL_EPARSE with sticky incomplete state, and
+rejects missing engine ownership before resource traversal. The focused
+test_pe_icon_entry_rejects_invalid_contexts regression covers these states;
+complete PE icon corpus, sanitizer, production-CVD/service, materialized
+large-file, Sonic1, and release qualification evidence remain required.
