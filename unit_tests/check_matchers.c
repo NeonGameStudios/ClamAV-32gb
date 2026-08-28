@@ -1346,6 +1346,7 @@ START_TEST(test_yara_map_read_failure_is_fail_visible)
     lsig.id             = 0;
     lsig.type           = CLI_YARA_NORMAL;
     lsig.u.code_start   = code;
+    lsig.code_size      = sizeof(code);
     lsig.virname        = (char *)"YaraMapReadFailure";
     lsigtable[0]        = &lsig;
     root.ac_lsigs       = 1;
@@ -1406,6 +1407,92 @@ START_TEST(test_yara_missing_code_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_yara_truncated_instruction_is_fail_visible)
+{
+#ifdef HAVE_YARA
+    static uint8_t code[] = {OP_PUSH};
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id           = 0;
+    lsig.type         = CLI_YARA_NORMAL;
+    lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
+    lsig.virname      = (char *)"TruncatedYaraInstruction";
+    lsigtable[0]      = &lsig;
+    root.ac_lsigs     = 1;
+    root.ac_lsigtable = lsigtable;
+
+    map = cl_fmap_open_memory((const unsigned char *)"x", 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_exp_eval(&ctx, &root, &yara_mdata, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "YARA matcher instruction stream has a truncated operand");
+
+    cl_fmap_close(map);
+    ctx.fmap = &thefmap;
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
+START_TEST(test_yara_jump_target_is_fail_visible)
+{
+#ifdef HAVE_YARA
+    static uint8_t code[1 + sizeof(uint64_t) + 1];
+    uint64_t target;
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    fmap_t *map;
+    cl_error_t ret;
+
+    code[0] = OP_JNUNDEF;
+    target = PTR_TO_UINT64(code) + sizeof(code);
+    memcpy(code + 1, &target, sizeof(target));
+    code[sizeof(code) - 1] = OP_HALT;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id           = 0;
+    lsig.type         = CLI_YARA_NORMAL;
+    lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
+    lsig.virname      = (char *)"InvalidYaraJumpTarget";
+    lsigtable[0]      = &lsig;
+    root.ac_lsigs     = 1;
+    root.ac_lsigtable = lsigtable;
+
+    map = cl_fmap_open_memory((const unsigned char *)"x", 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_exp_eval(&ctx, &root, &yara_mdata, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "YARA matcher instruction stream has an invalid jump target");
+
+    cl_fmap_close(map);
+    ctx.fmap = &thefmap;
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_yara_missing_matcher_state_is_fail_visible)
 {
 #ifdef HAVE_YARA
@@ -1421,6 +1508,7 @@ START_TEST(test_yara_missing_matcher_state_is_fail_visible)
     lsig.id           = 0;
     lsig.type         = CLI_YARA_NORMAL;
     lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
     lsig.virname      = (char *)"MissingYaraMatcherState";
     lsigtable[0]      = &lsig;
     root.ac_lsigs     = 1;
@@ -1462,6 +1550,7 @@ START_TEST(test_yara_evaluation_accounts_matcher_work)
     lsig.id             = 0;
     lsig.type           = CLI_YARA_NORMAL;
     lsig.u.code_start   = code;
+    lsig.code_size      = sizeof(code);
     lsig.virname        = (char *)"YaraMatcherWorkTest";
     lsigtable[0]        = &lsig;
     root.ac_lsigs       = 1;
@@ -1515,6 +1604,7 @@ START_TEST(test_yara_execution_error_is_fail_visible)
     lsig.id           = 0;
     lsig.type         = CLI_YARA_NORMAL;
     lsig.u.code_start = code;
+    lsig.code_size    = code_length;
     lsig.virname      = (char *)"YaraExecutionFailure";
     lsigtable[0]      = &lsig;
     root.ac_lsigs     = 1;
@@ -1559,6 +1649,7 @@ START_TEST(test_yara_division_by_zero_is_fail_visible)
     lsig.id           = 0;
     lsig.type         = CLI_YARA_NORMAL;
     lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
     lsig.virname     = (char *)"YaraDivisionByZero";
     lsigtable[0]      = &lsig;
     root.ac_lsigs     = 1;
@@ -1604,6 +1695,7 @@ START_TEST(test_yara_shift_count_is_fail_visible)
     lsig.id           = 0;
     lsig.type         = CLI_YARA_NORMAL;
     lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
     lsig.virname     = (char *)"YaraInvalidShiftCount";
     lsigtable[0]      = &lsig;
     root.ac_lsigs     = 1;
@@ -1643,6 +1735,7 @@ START_TEST(test_yara_unknown_opcode_is_fail_visible)
     lsig.id           = 0;
     lsig.type         = CLI_YARA_NORMAL;
     lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
     lsig.virname      = (char *)"YaraUnknownOpcode";
     lsigtable[0]      = &lsig;
     root.ac_lsigs     = 1;
@@ -1680,6 +1773,7 @@ START_TEST(test_yara_stack_underflow_is_fail_visible)
     lsig.id           = 0;
     lsig.type         = CLI_YARA_NORMAL;
     lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
     lsig.virname      = (char *)"YaraStackUnderflow";
     lsigtable[0]      = &lsig;
     root.ac_lsigs     = 1;
@@ -1721,6 +1815,7 @@ START_TEST(test_yara_invalid_memory_index_is_fail_visible)
     lsig.id           = 0;
     lsig.type         = CLI_YARA_NORMAL;
     lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
     lsig.virname      = (char *)"YaraInvalidMemoryIndex";
     lsigtable[0]      = &lsig;
     root.ac_lsigs     = 1;
@@ -1762,6 +1857,7 @@ START_TEST(test_yara_call_operand_count_is_fail_visible)
     lsig.id           = 0;
     lsig.type         = CLI_YARA_NORMAL;
     lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
     lsig.virname      = (char *)"YaraInvalidCallOperands";
     lsigtable[0]      = &lsig;
     root.ac_lsigs     = 1;
@@ -1787,9 +1883,10 @@ END_TEST
 START_TEST(test_yara_execution_honors_scan_time_limit)
 {
 #ifdef HAVE_YARA
-    uint8_t code[27] = {OP_PUSH, 0, 0, 0, 0, 0, 0, 0, 0,
+    uint8_t code[28] = {OP_PUSH, 0, 0, 0, 0, 0, 0, 0, 0,
                         OP_PUSH, 0, 0, 0, 0, 0, 0, 0, 0,
-                        OP_JLE, 0, 0, 0, 0, 0, 0, 0, 0};
+                        OP_JLE, 0, 0, 0, 0, 0, 0, 0, 0,
+                        OP_HALT};
     uint64_t target = PTR_TO_UINT64(code);
     struct cli_ac_lsig lsig;
     struct cli_ac_lsig *lsigtable[1];
@@ -1802,6 +1899,7 @@ START_TEST(test_yara_execution_honors_scan_time_limit)
     lsig.id           = 0;
     lsig.type         = CLI_YARA_NORMAL;
     lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
     lsig.virname      = (char *)"YaraTimeoutTest";
     lsigtable[0]      = &lsig;
     root.ac_lsigs     = 1;
@@ -2392,6 +2490,8 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
     tcase_add_test(tc_matchers, test_yara_map_read_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_missing_code_is_fail_visible);
+    tcase_add_test(tc_matchers, test_yara_truncated_instruction_is_fail_visible);
+    tcase_add_test(tc_matchers, test_yara_jump_target_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_missing_matcher_state_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
     tcase_add_test(tc_matchers, test_yara_execution_error_is_fail_visible);

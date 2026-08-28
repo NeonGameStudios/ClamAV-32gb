@@ -761,15 +761,23 @@ YR_STRING* yr_parser_reduce_string_declaration(
     rule->cl_flags                 = compiler->current_rule_clflags;
     compiler->current_rule_clflags = 0;
     // Write halt instruction at the end of code.
-    yr_arena_write_data(
+    FAIL_ON_COMPILER_ERROR(yr_arena_write_data(
         compiler->code_arena,
         &halt,
         sizeof(int8_t),
-        NULL);
+        NULL));
+    /* The bundled executor treats the rule code as one contiguous stream.
+     * Refuse a rule that spilled into a second arena page instead of handing
+     * the VM a length that would cross a non-contiguous allocation. */
+    if (compiler->code_arena->page_list_head != compiler->code_arena->current_page) {
+        compiler->last_result = ERROR_INVALID_FORMAT;
+        return compiler->last_result;
+    }
     // TBD: seems like we will need the following yr_arena_coalesce, but it is not working.
     // Yara condition code will work OK as long as it is less than 64K.
     // FAIL_ON_COMPILER_ERROR(yr_arena_coalesce(compiler->code_arena));
     rule->code_start = yr_arena_base_address(compiler->code_arena);
+    rule->code_size  = compiler->code_arena->current_page->used;
     yr_arena_append(compiler->the_arena, compiler->code_arena);
     FAIL_ON_COMPILER_ERROR(yr_arena_create(65536, 0, &compiler->code_arena));
     STAILQ_INSERT_TAIL(&compiler->rule_q, rule, link);

@@ -85,6 +85,9 @@ limitations under the License.
 #define OP_MATCHES        54
 #define OP_IMPORT         55
 
+/* The bundled executor receives one contiguous code page per rule. */
+#define YARA_MAX_INSTRUCTION_STREAM_SIZE 65536U
+
 
 int yr_execute_code(
 #if REAL_YARA

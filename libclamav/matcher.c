@@ -1407,6 +1407,169 @@ static cl_error_t yara_normalize_execution_status(int result)
 #endif
 }
 
+#if !REAL_YARA
+static cl_error_t yara_instruction_stream_error(cli_ctx *ctx, const char *reason)
+{
+    cli_mark_scan_incomplete(ctx, reason);
+    if (ctx != NULL && ctx->fmap != NULL)
+        ctx->fmap->dont_cache_flag = 1;
+    return CL_EPARSE;
+}
+
+static size_t yara_instruction_operand_size(uint8_t opcode)
+{
+    switch (opcode) {
+        case OP_PUSH:
+        case OP_CLEAR_M:
+        case OP_ADD_M:
+        case OP_INCR_M:
+        case OP_PUSH_M:
+        case OP_POP_M:
+        case OP_SWAPUNDEF:
+        case OP_JNUNDEF:
+        case OP_JLE:
+        case OP_PUSH_RULE:
+        case OP_MATCH_RULE:
+        case OP_OBJ_LOAD:
+        case OP_CALL:
+            return sizeof(uint64_t);
+        case OP_HALT:
+        case OP_AND:
+        case OP_OR:
+        case OP_XOR:
+        case OP_NOT:
+        case OP_LT:
+        case OP_GT:
+        case OP_LE:
+        case OP_GE:
+        case OP_EQ:
+        case OP_NEQ:
+        case OP_SZ_EQ:
+        case OP_SZ_NEQ:
+        case OP_SZ_TO_BOOL:
+        case OP_ADD:
+        case OP_SUB:
+        case OP_MUL:
+        case OP_DIV:
+        case OP_MOD:
+        case OP_NEG:
+        case OP_SHL:
+        case OP_SHR:
+        case OP_POP:
+        case OP_OF:
+        case OP_STR_COUNT:
+        case OP_STR_FOUND:
+        case OP_STR_FOUND_AT:
+        case OP_STR_FOUND_IN:
+        case OP_STR_OFFSET:
+        case OP_MATCHES:
+        case OP_FILESIZE:
+        case OP_ENTRYPOINT:
+        case OP_INT8:
+        case OP_INT16:
+        case OP_INT32:
+        case OP_UINT8:
+        case OP_UINT16:
+        case OP_UINT32:
+            return 0;
+        default:
+            return SIZE_MAX;
+    }
+}
+
+static cl_error_t yara_validate_instruction_stream(cli_ctx *ctx, const struct cli_ac_lsig *ac_lsig)
+{
+    const uint8_t *code;
+    uintptr_t code_start;
+    uintptr_t code_end;
+    uint8_t *flags;
+    size_t pc = 0;
+    bool saw_halt = false;
+    cl_error_t status = CL_SUCCESS;
+
+    if (ac_lsig == NULL || ac_lsig->u.code_start == NULL || ac_lsig->code_size == 0)
+        return yara_instruction_stream_error(ctx, "YARA matcher instruction stream is unavailable");
+    if (ac_lsig->code_size > YARA_MAX_INSTRUCTION_STREAM_SIZE)
+        return yara_instruction_stream_error(ctx, "YARA matcher instruction stream exceeds the bounded code size");
+
+    code       = ac_lsig->u.code_start;
+    code_start = (uintptr_t)code;
+    if ((uint64_t)ac_lsig->code_size > (uint64_t)(UINTPTR_MAX - code_start))
+        return yara_instruction_stream_error(ctx, "YARA matcher instruction stream range is not representable");
+    code_end = code_start + (uintptr_t)ac_lsig->code_size;
+
+    flags = cli_max_calloc(ac_lsig->code_size, sizeof(*flags));
+    if (flags == NULL) {
+        cli_mark_scan_incomplete(ctx, "YARA matcher instruction stream could not be validated");
+        if (ctx != NULL && ctx->fmap != NULL)
+            ctx->fmap->dont_cache_flag = 1;
+        return CL_EMEM;
+    }
+
+    while (pc < ac_lsig->code_size) {
+        uint8_t opcode;
+        size_t operand_size;
+
+        flags[pc] |= 0x01;
+        opcode       = code[pc++];
+        operand_size = yara_instruction_operand_size(opcode);
+        if (operand_size == SIZE_MAX) {
+            status = yara_instruction_stream_error(ctx, "YARA matcher instruction stream contains an unknown opcode");
+            goto done;
+        }
+        if (operand_size > ac_lsig->code_size - pc) {
+            status = yara_instruction_stream_error(ctx, "YARA matcher instruction stream has a truncated operand");
+            goto done;
+        }
+
+        if (opcode == OP_JNUNDEF || opcode == OP_JLE) {
+            uint64_t target_value;
+            uintptr_t target;
+            size_t target_offset;
+
+            memcpy(&target_value, code + pc, sizeof(target_value));
+            if (target_value > (uint64_t)UINTPTR_MAX) {
+                status = yara_instruction_stream_error(ctx, "YARA matcher instruction stream has an invalid jump target");
+                goto done;
+            }
+            target = (uintptr_t)target_value;
+            if (target < code_start || target >= code_end) {
+                status = yara_instruction_stream_error(ctx, "YARA matcher instruction stream has an invalid jump target");
+                goto done;
+            }
+            target_offset = (size_t)(target - code_start);
+            flags[target_offset] |= 0x02;
+        }
+
+        pc += operand_size;
+        if (opcode == OP_HALT) {
+            if (pc != ac_lsig->code_size) {
+                status = yara_instruction_stream_error(ctx, "YARA matcher instruction stream has data after halt");
+                goto done;
+            }
+            saw_halt = true;
+            break;
+        }
+    }
+
+    if (!saw_halt) {
+        status = yara_instruction_stream_error(ctx, "YARA matcher instruction stream has no halt instruction");
+        goto done;
+    }
+
+    for (pc = 0; pc < ac_lsig->code_size; pc++) {
+        if ((flags[pc] & 0x02) != 0 && (flags[pc] & 0x01) == 0) {
+            status = yara_instruction_stream_error(ctx, "YARA matcher instruction stream jumps into an operand");
+            goto done;
+        }
+    }
+
+done:
+    free(flags);
+    return status;
+}
+#endif
+
 static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_data *acdata, struct cli_target_info *target_info, uint32_t lsid)
 {
     struct cli_ac_lsig *ac_lsig = root->ac_lsigtable[lsid];
@@ -1420,6 +1583,11 @@ static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
             ctx->fmap->dont_cache_flag = 1;
         return CL_EPARSE;
     }
+#if !REAL_YARA
+    rc = yara_validate_instruction_stream(ctx, ac_lsig);
+    if (rc != CL_SUCCESS)
+        return rc;
+#endif
     if (!acdata) {
         cli_mark_scan_incomplete(ctx, "YARA matcher state is unavailable");
         if (ctx && ctx->fmap)

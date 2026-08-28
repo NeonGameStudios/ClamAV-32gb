@@ -1,5 +1,19 @@
 # Wishlist
 
+## Bundled YARA instruction-stream admission — 2026-08-28
+
+- Keep bundled YARA rule code length explicit and bounded to the contiguous
+  64 KiB code-page contract; reject arena spill into a non-contiguous page
+  before the matcher stores the rule.
+- Keep matcher admission fail-visible for unknown opcodes, truncated
+  fixed-width operands, out-of-range or operand-interior jump targets, data
+  after `OP_HALT`, and missing terminal `OP_HALT`; return `CL_EPARSE`, mark
+  the layer incomplete, and disable caching.
+- Retain the truncated-operand and invalid-jump regressions, the current-source
+  GCC compilation, and the 15/15 isolated production-linked YARA TCase. Keep
+  full YARA corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized large-file, Sonic1, and final release qualification open.
+
 ## HWP3 variable-length native-width admission — 2026-08-28
 
 - Keep reserved, field-code, cross-reference, and drawing special-character

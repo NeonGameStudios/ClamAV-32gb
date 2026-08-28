@@ -3,6 +3,21 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Bundled YARA instruction-stream admission — 2026-08-28
+
+Bundled YARA rule compilation now records an exact per-rule instruction-stream
+length and rejects code that spills into a second non-contiguous arena page.
+The matcher enforces the same contiguous 64 KiB ceiling and validates opcode
+boundaries, fixed-width operands, jump targets, and the final `OP_HALT` before
+execution. Missing, unknown, truncated, out-of-range, operand-interior, or
+post-halt structures return `CL_EPARSE`, mark the layer incomplete, and make
+the input non-cacheable. `readdb` carries the compiled length into the matcher
+record. The current-source production-linked GCC TCase passes 15/15 across
+valid execution, read/status propagation, resource/deadline behavior, VM
+faults, and the new admission boundaries. Full YARA corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized large-file,
+Sonic1, and final release qualification remain required.
+
 ## HWP3 variable-length native-width admission — 2026-08-28
 
 HWP3 paragraph special-character lengths and drawing sizes are now widened

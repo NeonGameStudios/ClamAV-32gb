@@ -4310,6 +4310,7 @@ static int load_oneyara(YR_RULE *rule, int chkpua, struct cl_engine *engine, uns
         }
     } else {
         if (NULL != (lsig->u.code_start = rule->code_start)) {
+            lsig->code_size = rule->code_size;
             lsig->type = (rule->cl_flags & RULE_OFFSETS) ? CLI_YARA_OFFSET : CLI_YARA_NORMAL;
             if (RULE_IS_PRIVATE(rule))
                 lsig->flag |= CLI_LSIG_FLAG_PRIVATE;

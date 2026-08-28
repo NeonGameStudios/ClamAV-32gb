@@ -1,5 +1,29 @@
 # Independent read-only audit of audit.md
 
+## Bundled YARA instruction-stream admission — 2026-08-28
+
+The bundled YARA evaluator previously received only a code pointer, while the
+executor performed fixed-width operand reads and followed jump pointers
+without a bounded instruction-stream contract. Bundled rule compilation now
+records the exact code length, rejects a rule whose arena spills into a
+non-contiguous page, and limits each rule to the bundled 64 KiB code-page
+ceiling. The matcher preflights every opcode, fixed-width operand, jump target,
+instruction boundary, and terminal `OP_HALT` before VM execution. Unknown,
+truncated, out-of-range, operand-interior, post-halt, and missing-terminal
+structures return `CL_EPARSE`, mark the layer incomplete, and disable caching;
+the loader propagates the compiled length into the matcher record.
+
+The registered `test_yara_truncated_instruction_is_fail_visible` and
+`test_yara_jump_target_is_fail_visible` regressions cover truncated operands
+and an end-of-stream jump target. The current-source `matcher.c`,
+`yara_parser.c`, `yara_exec.c`, `readdb.c`, and matcher-test translation units
+compile with the established GCC production flags. The isolated current-source
+production-linked YARA TCase passes 15/15, including valid execution, map-read
+`CL_EREAD`, matcher-work limits, VM faults, oversized stream admission, and
+deadline handling. Full YARA corpus, sanitizer, production-CVD/service,
+materialized large-file, certified Linux x86-64, Sonic1, and final release
+qualification remain required.
+
 ## HWP3 variable-length native-width admission — 2026-08-28
 
 The HWP3 paragraph parser added `uint32_t` special-character lengths and

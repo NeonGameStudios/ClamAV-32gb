@@ -131,6 +131,7 @@ struct cli_ac_lsig {
         char *logic;
         uint8_t *code_start;
     } u;
+    size_t code_size;
     char *virname;
     struct cli_lsig_tdb tdb;
 };
