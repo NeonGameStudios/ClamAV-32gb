@@ -12829,3 +12829,16 @@ the UnRAR test gate enabled. The reusable production container has
 `ENABLE_UNRAR=OFF`, so backend execution remains open along with complete RAR
 corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1,
 and release qualification.
+
+## HFS+ key-length padding admission audit — 2026-08-28
+
+HFS+ catalog and attribute-tree records store their key length in a 16-bit
+field and pad odd lengths to a 2-byte boundary. The previous intermediate
+`uint16_t` arithmetic wrapped `0xffff` to zero during padding, allowing the
+node-boundary check to inspect the wrong record location. Both walkers now use
+32-bit intermediate key lengths before validating the containing node. The
+registered `test_hfsplus_catalog_key_length_padding_is_fail_visible` fixture
+requires `CL_EFORMAT`, the sticky catalog-record reason, and a non-cacheable
+map. Canonical HFS+ and unit sources remain GCC-checkable; complete HFS+
+corpus, sanitizer, production-CVD/service, materialized large-file, certified
+Linux x86-64, Sonic1, and release qualification remain open.

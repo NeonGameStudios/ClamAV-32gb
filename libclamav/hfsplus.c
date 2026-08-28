@@ -803,7 +803,7 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
         /* offsets take 1 u16 per at the end of the node, along with an empty space offset */
         topOfOffsets = nodeSize - (nodeDesc.numRecords * 2) - 2;
         for (recordNum = 0; recordNum < nodeDesc.numRecords; recordNum++) {
-            uint16_t keylen;
+            uint32_t keylen;
             hfsPlusAttributeKey attrKey;
             hfsPlusAttributeRecord attrRec;
             size_t attrRecordOffset;
@@ -834,8 +834,9 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
             attrKey.nameLength = be16_to_host(attrKey.nameLength);
 
             /* Get record key length */
-            keylen = nodeBuf[recordStart] * 0x100 + nodeBuf[recordStart + 1];
-            keylen += keylen % 2; /* pad 1 byte if required to make 2-byte align */
+            keylen = (uint32_t)nodeBuf[recordStart] * 0x100U + nodeBuf[recordStart + 1];
+            if (keylen & 1U)
+                keylen++; /* pad 1 byte if required to make 2-byte align */
             /* Validate keylen */
             if (recordStart + attrKey.keyLength + 4 >= topOfOffsets) {
                 cli_dbgmsg("hfsplus_check_attribute: key too long for location %x for %u!\n",
@@ -1375,7 +1376,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
         /* offsets take 1 u16 per at the end of the node, along with an empty space offset */
         topOfOffsets = nodeSize - (nodeDesc.numRecords * 2) - 2;
         for (recordNum = 0; recordNum < nodeDesc.numRecords; recordNum++) {
-            uint16_t keylen;
+            uint32_t keylen;
             int16_t rectype;
             hfsPlusCatalogFile fileRec;
             name_utf8 = NULL;
@@ -1392,8 +1393,9 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
             }
             recordStart = nextStart;
             /* Get record key length */
-            keylen = nodeBuf[recordStart] * 0x100 + nodeBuf[recordStart + 1];
-            keylen += keylen % 2; /* pad 1 byte if required to make 2-byte align */
+            keylen = (uint32_t)nodeBuf[recordStart] * 0x100U + nodeBuf[recordStart + 1];
+            if (keylen & 1U)
+                keylen++; /* pad 1 byte if required to make 2-byte align */
             /* Validate keylen */
             if (recordStart + keylen + 4 >= topOfOffsets) {
                 cli_dbgmsg("hfsplus_walk_catalog: key too long for location %x for %u!\n",

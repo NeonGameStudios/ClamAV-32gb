@@ -6536,3 +6536,12 @@ qualification gates.
   `test_rar_skip_read_failure_preserves_operational_status` regression and
   complete backend-enabled RAR corpus, sanitizer, production-CVD/service,
   materialized large-file, Sonic1, and release qualification.
+
+## HFS+ key-length padding admission — 2026-08-28
+
+- Keep catalog and attribute-tree key-length padding in a widened intermediate
+  type; an odd `UINT16_MAX` key length must fail node-boundary validation
+  instead of wrapping to zero.
+- Retain `test_hfsplus_catalog_key_length_padding_is_fail_visible` and complete
+  HFS+ corpus, sanitizer, production-CVD/service, materialized large-file,
+  certified Linux x86-64, Sonic1, and release qualification.

@@ -1696,6 +1696,8 @@ contains unit_tests/check_clamav.c 'test_hfsplus_catalog_node_read_failure_is_fa
 contains unit_tests/check_clamav.c 'test_hfsplus_fork_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_attribute_tree_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_attribute_name_boundary_is_fail_visible'
+contains libclamav/hfsplus.c 'uint32_t keylen'
+contains unit_tests/check_clamav.c 'test_hfsplus_catalog_key_length_padding_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_catalog_size_accounting_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_truncated_header_is_fail_visible'
 contains libclamav/xlm_extract.c 'XLM STRING record uses unsupported extension data'
