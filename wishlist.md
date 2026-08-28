@@ -6187,3 +6187,6 @@ qualification gates.
   attachment materialization and matcher-root access.
 - Retain complete TNEF corpus, sanitizer, production-CVD/service,
   materialized large-file, Sonic1, and release qualification gates.
+## MSEXPAND parser admission — 2026-08-27
+- Keep MSEXPAND fail-visible when owning engine state is absent before time/limit helper access.
+- Retain complete SZDD corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification gates.
