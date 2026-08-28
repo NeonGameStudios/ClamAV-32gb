@@ -245,7 +245,7 @@ cli_file_t cli_compare_ftm_partition(const unsigned char *buf, size_t buflen, co
     struct cli_ftype *ptype = engine->ptypes;
 
     while (ptype) {
-        if (ptype->offset + ptype->length <= buflen) {
+        if (ptype->offset <= buflen && ptype->length <= buflen - ptype->offset) {
             if (!memcmp(buf + ptype->offset, ptype->magic, ptype->length)) {
                 cli_dbgmsg("Recognized %s partition\n", ptype->tname);
                 return ptype->type;
@@ -263,7 +263,7 @@ cli_file_t cli_compare_ftm_file(const unsigned char *buf, size_t buflen, const s
     struct cli_ftype *ftype = engine->ftypes;
 
     while (ftype) {
-        if (ftype->offset + ftype->length <= buflen) {
+        if (ftype->offset <= buflen && ftype->length <= buflen - ftype->offset) {
             if (!memcmp(buf + ftype->offset, ftype->magic, ftype->length)) {
                 cli_dbgmsg("Recognized %s file\n", ftype->tname);
                 return ftype->type;

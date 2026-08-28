@@ -1,5 +1,16 @@
 # Wishlist
 
+## File-type signature range preflight — 2026-08-28
+
+- Keep file and partition magic probes on subtraction-based range checks so a
+  fixed-width `offset + length` cannot wrap before pointer formation.
+- Retain `test_filetype_signature_ranges_do_not_wrap` and its source guards.
+  The current source and unit translation unit compile with production GCC; a
+  current-source production-linked GCC harness and an ASan/UBSan harness pass
+  the oversized-offset file and partition cases. Keep complete type-database
+  and dispatch, production-CVD/service, materialized large-file, Sonic1, and
+  final parser-family/release evidence open.
+
 ## PNG IHDR alignment boundary — 2026-08-28
 
 - Keep PNG IHDR width and height reads alignment-safe by copying the bounded

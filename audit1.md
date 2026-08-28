@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## File-type signature range preflight — 2026-08-28
+
+The file and partition magic probes compared `offset + length` with the
+available buffer length. Because the database fields are a 32-bit offset and
+16-bit length, that addition could wrap before the comparison and form a
+pointer far beyond the supplied buffer. Both probes now require the offset to
+be within `buflen` and compare the length against the remaining range. The
+registered `test_filetype_signature_ranges_do_not_wrap` regression puts a
+`UINT32_MAX` offset in both tables and requires the normal file-type fallback
+and `CL_TYPE_PART_ANY`. The current source and unit translation unit compile
+with production GCC; a current-source production-linked GCC harness and an
+ASan/UBSan harness both pass without a finding. Complete type-database and
+dispatch, production-CVD/service, materialized large-file, Sonic1, and final
+release qualification remain required.
+
 ## PNG IHDR alignment boundary — 2026-08-28
 
 PNG IHDR dimensions were read through typed `uint32_t *` dereferences after

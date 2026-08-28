@@ -34,6 +34,7 @@
 
 // libclamav
 #include "clamav.h"
+#include "filetypes.h"
 #include "arc4.h"
 #include "rijndael.h"
 #include "blob.h"
@@ -28724,6 +28725,32 @@ START_TEST(test_file_type_detection_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_filetype_signature_ranges_do_not_wrap)
+{
+    static const unsigned char input[] = {0};
+    static unsigned char magic[] = {0};
+    struct cl_engine engine;
+    struct cl_engine empty_engine;
+    struct cli_ftype ftype;
+    cli_file_t expected_file_type;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&empty_engine, 0, sizeof(empty_engine));
+    memset(&ftype, 0, sizeof(ftype));
+    ftype.type   = CL_TYPE_MSEXE;
+    ftype.offset = UINT32_MAX;
+    ftype.magic  = magic;
+    ftype.length = 1;
+    ftype.tname  = (char *)"overflowing filetype";
+    engine.ftypes = &ftype;
+    engine.ptypes = &ftype;
+
+    expected_file_type = cli_compare_ftm_file(input, sizeof(input), &empty_engine);
+    ck_assert_int_eq(cli_compare_ftm_file(input, sizeof(input), &engine), expected_file_type);
+    ck_assert_int_eq(cli_compare_ftm_partition(input, sizeof(input), &engine), CL_TYPE_PART_ANY);
+}
+END_TEST
+
 START_TEST(test_mydoom_detector_read_failure_is_fail_visible)
 {
     static const uint8_t input[8 * 4 * 2] = {0};
@@ -45835,6 +45862,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_autoit_version_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_encoded_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_file_type_detection_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_filetype_signature_ranges_do_not_wrap);
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_null_context_is_fail_visible);

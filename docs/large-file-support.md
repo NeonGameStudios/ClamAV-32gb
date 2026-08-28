@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## File-type signature range preflight — 2026-08-28
+
+File and partition magic probes now validate the fixed-width offset against the
+available buffer before subtracting the remaining range. This prevents the
+`uint32_t` offset plus `uint16_t` length from wrapping before pointer
+formation. The registered `test_filetype_signature_ranges_do_not_wrap`
+regression covers a `UINT32_MAX` offset in both tables; the current source and
+unit translation unit compile with production GCC, and current-source
+production-linked GCC plus ASan/UBSan harnesses pass the expected fallback
+results without a sanitizer finding. Complete type-database/dispatch,
+production-CVD/service, materialized large-file, Sonic1, and final
+parser-family/release qualification remain required.
+
 ## PNG IHDR alignment boundary — 2026-08-28
 
 PNG IHDR dimensions are now copied through `memcpy` before endian conversion,
