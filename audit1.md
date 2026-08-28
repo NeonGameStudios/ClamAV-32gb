@@ -12423,3 +12423,15 @@ requires `CL_EREAD`, cleared output state, and cache taint. Current-source GCC
 syntax and source-guard evidence remain required alongside the complete
 partition corpus, sanitizer, production-CVD/service, materialized large-file,
 Linux x86-64, and Sonic1 qualification gates.
+
+## PDF direct scan-state admission audit — 2026-08-27
+
+The direct `cli_pdf()` parser already rejected null context, input map, and
+engine state, but metadata extraction and end-of-scan heuristic handling later
+dereferenced `ctx->options` and `ctx->dconf`. A partially initialized internal
+scan context could therefore crash after valid PDF admission. `cli_pdf()` now
+requires both scan options and detector configuration before parser work, and
+`test_pdf_requires_scan_state` covers each missing-state case without marking
+the input incomplete. Current-source GCC syntax and source-guard evidence
+remain required alongside complete PDF corpus, sanitizer, production-CVD/
+service, materialized large-file, Linux x86-64, and Sonic1 qualification.

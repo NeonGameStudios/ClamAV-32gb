@@ -4538,6 +4538,8 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
         return CL_ENULLARG;
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options || !ctx->dconf)
+        return CL_ENULLARG;
     if (offset < 0 || (uint64_t)offset > map->len)
         return CL_EFORMAT;
 

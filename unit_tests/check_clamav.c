@@ -42264,6 +42264,41 @@ START_TEST(test_pdf_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_requires_scan_state)
+{
+    static const uint8_t input[] = "%PDF-1.7\n";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = scan_engine;
+    ctx.fmap = map;
+    ctx.options = NULL;
+    ctx.dconf = scan_engine->dconf;
+    ck_assert_int_eq(cli_pdf(tmpdir, &ctx, 0), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+
+    ctx.options = &options;
+    ctx.dconf = NULL;
+    ck_assert_int_eq(cli_pdf(tmpdir, &ctx, 0), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_executable_parsers_require_engine)
 {
     static const uint8_t input[] = {0};
@@ -42841,6 +42876,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_pdf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_pdf_map, test_pdf_null_context_is_fail_visible);
     tcase_add_test(tc_pdf_map, test_pdf_missing_engine_is_fail_visible);
+    tcase_add_test(tc_pdf_map, test_pdf_requires_scan_state);
     tcase_add_test(tc_pdf_map, test_pdf_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_hwp3);
     suite_add_tcase(s, tc_hwp3_map);

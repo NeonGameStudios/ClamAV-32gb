@@ -6231,3 +6231,12 @@ qualification gates.
 - Retain the public `mbr` type-confirmation regression and complete partition
   corpus, sanitizer, production-CVD/service, materialized large-file,
   certified Linux x86-64, Sonic1, and release qualification gates.
+
+## PDF direct scan-state admission — 2026-08-27
+
+- Keep `cli_pdf()` fail-visible when a recognized fmap is supplied without the
+  scan options or detector configuration required by metadata extraction and
+  heuristic finalization; return `CL_ENULLARG` before parser work.
+- Retain the direct PDF scan-state regression and complete PDF corpus,
+  sanitizer, production-CVD/service, materialized large-file, certified
+  Linux x86-64, Sonic1, and release qualification gates.
