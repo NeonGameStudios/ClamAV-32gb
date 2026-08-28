@@ -8613,3 +8613,15 @@ materialization, so it is not short-write injection evidence. Complete
 OLE/VBA/XLM corpus and fault matrix, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and parser-family
 qualification remain release gates.
+
+## Bytecode context cleanup without an engine — 2026-08-27
+
+Bytecode context teardown can run while unwinding a failed or directly
+constructed context before an engine has been attached. Temporary-file and
+normalized-JavaScript-directory cleanup now treats a missing engine as the
+default remove-temporary policy instead of dereferencing `cctx->engine`.
+`test_bytecode_context_cleanup_without_engine_is_safe` destroys a context with
+a real temporary file and no engine, and the current bytecode and unit
+translation units pass the established Docker GCC syntax checks. Full bytecode
+execution, sanitizer, production-CVD/service, materialized large-file, Sonic1,
+and release qualification remain open.

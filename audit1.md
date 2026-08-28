@@ -12188,3 +12188,14 @@ The matcher boundary review found that `cli_matchmeta()` and `cli_check_fp()` as
 ## SWF compressed-entry boundary audit — 2026-08-27
 
 The SWF parser can inspect an uncompressed FWS map without an engine, but CWS and ZWS dispatch materializes a temporary decompressed SWF and its cleanup path requires `ctx->engine`. Before this guard, a valid compressed header paired with a missing engine could reach that path and dereference null state. CWS/ZWS admission now returns `CL_ENULLARG` before decoder setup, and a focused direct regression covers the boundary. The SWF capability remains pending until the production-linked parser TCase, complete corpus, sanitizer, materialized large-file, Sonic1, and release qualification evidence are complete.
+
+## Bytecode context cleanup audit — 2026-08-27
+
+`bytecode_context_reset()` could dereference `cctx->engine` while removing
+temporary output or a normalized JavaScript directory. This is reachable during
+error unwinding before the owning engine is attached. Both cleanup predicates
+now treat a missing engine as the default remove-temporary policy, and
+`test_bytecode_context_cleanup_without_engine_is_safe` exercises a real
+temporary file with no engine. The capability remains pending until full
+bytecode execution, sanitizer, production-CVD/service, materialized large-file,
+Sonic1, and release qualification evidence are complete.

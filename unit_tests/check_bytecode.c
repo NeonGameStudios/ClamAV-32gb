@@ -804,6 +804,29 @@ START_TEST(test_bytecode_map_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_bytecode_context_cleanup_without_engine_is_safe)
+{
+    struct cli_bc_ctx *bcctx;
+    cli_ctx cctx;
+    char tempfile[] = "/tmp/clamav-bytecode-context-XXXXXX";
+    int fd;
+
+    memset(&cctx, 0, sizeof(cctx));
+    fd = mkstemp(tempfile);
+    ck_assert_int_ge(fd, 0);
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx      = &cctx;
+    bcctx->outfd    = fd;
+    bcctx->tempfile = strdup(tempfile);
+    ck_assert_ptr_nonnull(bcctx->tempfile);
+
+    cli_bytecode_context_destroy(bcctx);
+    ck_assert_int_eq(access(tempfile, F_OK), -1);
+}
+END_TEST
+
 START_TEST(test_bytecode_v1_read_rejects_invalid_offsets)
 {
     struct cli_bc_ctx *bcctx;
@@ -1858,6 +1881,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_pdf_object_access_does_not_retain_fmap_pages);
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);
+    tcase_add_test(tc_cli_read, test_bytecode_context_cleanup_without_engine_is_safe);
     tcase_add_test(tc_cli_read, test_bytecode_v1_read_rejects_invalid_offsets);
     tcase_add_test(tc_cli_read, test_bytecode_v1_coordinate_narrowing_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);

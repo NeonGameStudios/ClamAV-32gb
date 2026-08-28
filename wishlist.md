@@ -6052,3 +6052,12 @@ Made destructive fileblob cleanup safe when its attached context has no engine, 
 ## SWF compressed-entry boundary hardening — 2026-08-27
 
 Added explicit engine admission for CWS/ZWS decompression before temporary-output setup, preventing a valid compressed header from reaching cleanup code with a null engine. Added a direct regression; complete SWF/parser-family, sanitizer, Sonic1, and release qualification remain pending.
+
+## Bytecode context cleanup without an engine — 2026-08-27
+
+- Keep bytecode context teardown safe when temporary output or normalized
+  JavaScript state is being released before an owning engine is attached.
+- The cleanup predicates now remove temporary state without dereferencing a
+  missing engine, and `test_bytecode_context_cleanup_without_engine_is_safe`
+  covers a real temporary file. Retain full bytecode execution, sanitizer,
+  production-CVD/service, materialized large-file, Sonic1, and release gates.

@@ -202,7 +202,7 @@ static void bytecode_context_reset(struct cli_bc_ctx *ctx)
             bytecode_note_cleanup_failure(cctx, NULL, CL_EWRITE, "Bytecode temporary output could not be closed");
         ctx->outfd = -1;
 
-        if (ctx->tempfile && (!cctx || !cctx->engine->keeptmp)) {
+        if (ctx->tempfile && (!cctx || !cctx->engine || !cctx->engine->keeptmp)) {
             if (cli_unlink(ctx->tempfile))
                 bytecode_note_cleanup_failure(cctx, NULL, CL_EUNLINK, "Bytecode temporary output could not be removed");
         }
@@ -246,7 +246,7 @@ static void bytecode_context_reset(struct cli_bc_ctx *ctx)
             }
         }
 
-        if (!cctx || !cctx->engine->keeptmp) {
+        if (!cctx || !cctx->engine || !cctx->engine->keeptmp) {
             if (cli_rmdirs(ctx->jsnormdir) != 0)
                 bytecode_note_cleanup_failure(cctx, &ret, CL_EUNLINK,
                                                "Bytecode normalized JavaScript output could not be removed");
