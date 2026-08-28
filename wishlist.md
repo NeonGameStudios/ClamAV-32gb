@@ -1,5 +1,16 @@
 # Wishlist
 
+## RTF empty and partial object-data admission — 2026-08-28
+
+- Keep RTF `objdata` close handling fail-visible when no decoded byte has
+  arrived or when OLE10 magic progress stops before all eight bytes; preserve
+  the exact incomplete reason and non-cacheable state.
+- Retain the empty-object and partial-magic regressions and source guards. The
+  current RTF and unit sources compile with production GCC flags, and the
+  isolated ASan/UBSan runner passes both cases. Keep clean full-binary RTF
+  execution, complete corpus, production-CVD/service, materialized large-file,
+  Sonic1, and final parser-family qualification open.
+
 ## OLE2 BIFF terminal-field admission — 2026-08-28
 
 - Keep the WorkBook encryption probe's subtraction-based 16-bit range check;

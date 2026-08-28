@@ -551,7 +551,7 @@ static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
      * before the enclosing RTF group closed. The old cleanup path treated the
      * partial temporary file as complete and could normalize the parent scan
      * to clean. */
-    if (data->internal_state != WAIT_MAGIC || data->has_partial) {
+    if (data->internal_state != WAIT_MAGIC || data->bread != 0 || data->has_partial) {
         cli_mark_scan_incomplete(ctx, "RTF embedded object ended before its payload was complete");
         rc = CL_EPARSE;
         if (data->fd >= 0) {
@@ -739,11 +739,24 @@ int cli_scanrtf(cli_ctx* ctx)
                             }
                             break;
                         case '}':
-                            if (state.cb_data && state.cb_end)
+                            if (state.cb_data && state.cb_end) {
                                 if ((ret = state.cb_end(&state, ctx))) {
                                     SCAN_CLEANUP;
                                     return ret;
                                 }
+                            } else if (state.cb_begin && state.cb_end) {
+                                /* An objdata action without any decoded
+                                 * bytes is a started but incomplete embedded
+                                 * object, not ordinary RTF text. */
+                                cli_mark_scan_incomplete(ctx, "RTF embedded object ended before its payload was complete");
+                                state.cb_begin   = NULL;
+                                state.cb_process = NULL;
+                                state.cb_end     = NULL;
+                                state.cb_data    = NULL;
+                                ret               = CL_EPARSE;
+                                SCAN_CLEANUP;
+                                return ret;
+                            }
                             if ((ret = pop_state(&stack, &state))) {
                                 cli_dbgmsg("RTF:pop failure!\n");
                                 SCAN_CLEANUP;

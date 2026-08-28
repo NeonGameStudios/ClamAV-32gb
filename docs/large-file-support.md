@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## RTF empty and partial object-data admission — 2026-08-28
+
+RTF `objdata` now fails visibly if its group closes before any decoded byte is
+produced or while OLE10 magic is only partially assembled. The current parser
+and unit translation unit compile with production GCC flags, and an isolated
+current-source ASan/UBSan runner passes both cases with `CL_EPARSE`, sticky
+incomplete state, and disabled caching. The registered regressions remain a
+gate for the next clean full-binary relink. Complete RTF object corpus,
+sanitizer, production-CVD/service, materialized large-file, Sonic1, and release
+qualification remain required.
+
 ## OLE2 BIFF terminal-field admission — 2026-08-28
 
 The OLE2 WorkBook encryption probe now accepts a valid 16-bit FilePass field

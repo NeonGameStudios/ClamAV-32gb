@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## RTF empty and partial object-data admission — 2026-08-28
+
+RTF `objdata` callbacks previously allowed two started-but-incomplete cases
+to normalize to clean: an `objdata` action could close before producing any
+decoded byte, and a callback could end while its OLE10 magic was only partly
+assembled. The close path now rejects an action with no callback state, and
+`rtf_object_end()` also requires the WAIT_MAGIC progress counter to be zero
+before treating the object as complete. The registered empty-object and
+partial-magic regressions require `CL_EPARSE`, the exact sticky incomplete
+reason, and a non-cacheable fmap. The current `rtf.c` and unit translation
+unit compile with the production GCC flags; an isolated current-source
+ASan/UBSan runner passes both cases. Complete RTF object corpus, clean full
+binary, sanitizer, production-CVD/service, materialized large-file, Sonic1,
+and release qualification remain required.
+
 ## OLE2 BIFF terminal-field admission — 2026-08-28
 
 The OLE2 WorkBook encryption probe's bounded 16-bit reader previously used
