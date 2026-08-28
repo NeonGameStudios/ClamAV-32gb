@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Byte-compare unaligned binary-field admission — 2026-08-28
+
+The byte-compare matcher now copies bounded 2-, 4-, and 8-byte binary fields
+through `memcpy` before little- or big-endian conversion. Valid fields at
+arbitrary match offsets therefore do not depend on host pointer alignment.
+
+`test_byte_compare_unaligned_binary_read_is_defined` covers a four-byte
+big-endian field at offset one. The current matcher and unit source compile
+with production GCC, and a current-source GCC ASan/UBSan direct harness
+returns the expected detection without a sanitizer finding. Complete
+byte-compare signature qualification, production CVD/service, materialized
+large-file, Sonic1, and final release evidence remain required.
+
 ## YARA unaligned scalar-read admission — 2026-08-28
 
 Bundled YARA fixed-width fmap reads now copy bounded bytes through `memcpy`

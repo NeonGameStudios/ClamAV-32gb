@@ -1,5 +1,16 @@
 # Wishlist
 
+## Byte-compare unaligned binary-field admission — 2026-08-28
+
+- Keep 2-, 4-, and 8-byte binary byte-compare fields alignment-safe by copying
+  mapped bytes through `memcpy` before endian conversion; retain the direct
+  one-byte path.
+- Retain `test_byte_compare_unaligned_binary_read_is_defined` and its source
+  guard. The current matcher and unit source compile with production GCC, and
+  the direct ASan/UBSan harness passes. Keep complete byte-compare signatures,
+  production CVD/service, materialized large-file, Sonic1, and final release
+  evidence open.
+
 ## YARA unaligned scalar-read admission — 2026-08-28
 
 - Keep bundled YARA fixed-width fmap reads defined for valid unaligned

@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## Byte-compare unaligned binary-field admission — 2026-08-28
+
+The byte-compare matcher previously loaded 2-, 4-, and 8-byte binary fields
+through typed pointers. A valid comparison at an arbitrary match offset could
+therefore trigger undefined behavior on hosts that require natural alignment.
+The matcher now copies each fixed-width field through `memcpy` before applying
+the existing little- or big-endian conversion; one-byte fields remain direct
+byte reads.
+
+The registered `test_byte_compare_unaligned_binary_read_is_defined` regression
+covers a big-endian four-byte field at offset one. The current matcher and
+matcher-test translation unit compile with the production GCC flags, and a
+current-source GCC ASan/UBSan direct harness returns the expected detection
+without a sanitizer finding. Complete byte-compare signature qualification,
+production CVD/service, materialized large-file, Sonic1, and release evidence
+remain required.
+
 ## YARA unaligned scalar-read admission — 2026-08-28
 
 The bundled YARA fmap integer helpers previously converted an arbitrary byte

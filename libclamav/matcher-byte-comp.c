@@ -609,6 +609,9 @@ cl_error_t cli_bcomp_compare_check(const unsigned char *f_buffer, size_t buffer_
     int64_t value             = 0;
     int64_t bin_value         = 0;
     int16_t compare_check     = 0;
+    uint16_t value16          = 0;
+    uint32_t value32          = 0;
+    uint64_t value64          = 0;
     unsigned char *end_buf    = NULL;
     unsigned char *buffer     = NULL; /* Used for BE, non-binary comparisons */
     unsigned char *tmp_buffer = NULL; /* Used for LE, non-binary comparisons */
@@ -757,13 +760,16 @@ cl_error_t cli_bcomp_compare_check(const unsigned char *f_buffer, size_t buffer_
                     bin_value = (int64_t)(*(uint8_t *)f_buffer);
                     break;
                 case 2:
-                    bin_value = (int64_t)le16_to_host(*(uint16_t *)f_buffer);
+                    memcpy(&value16, f_buffer, sizeof(value16));
+                    bin_value = (int64_t)le16_to_host(value16);
                     break;
                 case 4:
-                    bin_value = (int64_t)le32_to_host(*(uint32_t *)f_buffer);
+                    memcpy(&value32, f_buffer, sizeof(value32));
+                    bin_value = (int64_t)le32_to_host(value32);
                     break;
                 case 8:
-                    bin_value = (int64_t)le64_to_host(*(uint64_t *)f_buffer);
+                    memcpy(&value64, f_buffer, sizeof(value64));
+                    bin_value = (int64_t)le64_to_host(value64);
                     break;
 
                 default:
@@ -781,13 +787,16 @@ cl_error_t cli_bcomp_compare_check(const unsigned char *f_buffer, size_t buffer_
                     bin_value = (int64_t)(*(uint8_t *)f_buffer);
                     break;
                 case 2:
-                    bin_value = (int64_t)be16_to_host(*(uint16_t *)f_buffer);
+                    memcpy(&value16, f_buffer, sizeof(value16));
+                    bin_value = (int64_t)be16_to_host(value16);
                     break;
                 case 4:
-                    bin_value = (int64_t)be32_to_host(*(uint32_t *)f_buffer);
+                    memcpy(&value32, f_buffer, sizeof(value32));
+                    bin_value = (int64_t)be32_to_host(value32);
                     break;
                 case 8:
-                    bin_value = (int64_t)be64_to_host(*(uint64_t *)f_buffer);
+                    memcpy(&value64, f_buffer, sizeof(value64));
+                    bin_value = (int64_t)be64_to_host(value64);
                     break;
 
                 default:

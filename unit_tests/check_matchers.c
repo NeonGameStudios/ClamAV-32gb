@@ -36,6 +36,7 @@
 #include "matcher-bm.h"
 #include "matcher-hash.h"
 #include "matcher-pcre.h"
+#include "matcher-byte-comp.h"
 #include "others.h"
 #include "scanners.h"
 #include "default.h"
@@ -2096,6 +2097,27 @@ START_TEST(test_byte_compare_offset_above_uint32)
 }
 END_TEST
 
+START_TEST(test_byte_compare_unaligned_binary_read_is_defined)
+{
+    static const unsigned char bytes[] = {0x00, 0x78, 0x56, 0x34, 0x12};
+    struct cli_bcomp_meta bcomp;
+    struct cli_bcomp_comp comparison;
+    struct cli_bcomp_comp *comparisons[1];
+
+    memset(&bcomp, 0, sizeof(bcomp));
+    memset(&comparison, 0, sizeof(comparison));
+    comparison.comp_symbol = '=';
+    comparison.comp_value  = 0x78563412;
+    comparisons[0]         = &comparison;
+    bcomp.options          = CLI_BCOMP_BIN | CLI_BCOMP_BE;
+    bcomp.byte_len         = 4;
+    bcomp.comps            = comparisons;
+    bcomp.comp_count       = 1;
+
+    ck_assert_int_eq(cli_bcomp_compare_check(bytes, sizeof(bytes), 1, &bcomp), CL_VIRUS);
+}
+END_TEST
+
 START_TEST(test_exact_hash_at_uint32_max)
 {
     uint8_t first[16]  = {0};
@@ -2567,6 +2589,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_yara_execution_honors_scan_time_limit);
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);
     tcase_add_test(tc_matchers, test_byte_compare_offset_above_uint32);
+    tcase_add_test(tc_matchers, test_byte_compare_unaligned_binary_read_is_defined);
 #ifndef _WIN32
     tcase_add_test(tc_matchers, test_scan_fmap_pread_failure_is_incomplete);
 #endif
