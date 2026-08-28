@@ -1,5 +1,17 @@
 # Wishlist
 
+## Conditional parser dispatch status initialization — 2026-08-28
+
+- Keep `cli_magic_scan()`'s local parser result initialized to `CL_SUCCESS`
+  before conditional parser dispatch. Disabled or non-applicable branches
+  must not merge indeterminate status into the scan result.
+- The current-source production-linked `dispatch_status` fixture passes 1/1
+  for disabled archive/document branches; the existing OneNote dispatch
+  regression also covers the enabled malformed-parser branch. Keep the
+  complete dispatch matrix, sanitizer, production-CVD/
+  service, materialized large-file, Sonic1, and final release qualification
+  open.
+
 ## fmap staged-copy read-failure evidence — 2026-08-28
 
 - Keep `fmap_dump_to_file()` fail-visible for a backing-read failure after a

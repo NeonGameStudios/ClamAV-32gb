@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Conditional parser dispatch status initialization — 2026-08-28
+
+`cli_magic_scan()` merged the local parser result after both dispatch switch
+passes, but declared that result without an initializer. Many parser cases
+assign it only when their scan option and dynamic-configuration gates are
+enabled, so a recognized input with a disabled or non-applicable parser could
+merge indeterminate stack state into the final scan result. The result now
+starts at `CL_SUCCESS`; the current-source production-linked `dispatch_status`
+fixture passes 1/1 for disabled archive/document branches, while the existing
+OneNote dispatch regression also covers an enabled malformed parser branch.
+Full dispatch-matrix, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and final release
+qualification remain open.
+
 ## fmap staged-copy read-failure evidence — 2026-08-28
 
 `fmap_dump_to_file()` is used by RAR and other fallback paths that must stage

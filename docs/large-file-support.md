@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Conditional parser dispatch status initialization — 2026-08-28
+
+`cli_magic_scan()` now initializes its conditional parser result to
+`CL_SUCCESS` before the two parser-dispatch switch passes. Recognized inputs
+whose parser is disabled or not applicable therefore cannot merge
+indeterminate state into the final result. The current-source production-
+linked `dispatch_status` fixture passes 1/1 for disabled archive/document
+branches, and the existing OneNote dispatch regression covers an enabled
+malformed-parser branch; complete dispatch-matrix, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and final release
+qualification remain open.
+
 ## Mach-O load-command alignment admission — 2026-08-28
 
 Mach-O load-command admission now enforces the format alignment required by

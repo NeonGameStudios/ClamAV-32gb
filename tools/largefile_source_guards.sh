@@ -2597,6 +2597,7 @@ contains unit_tests/check_clamav.c 'test_hwp3_raw_deflate_read_failure_is_fail_v
 contains unit_tests/check_clamav.c 'test_onenote_dispatch_honors_document_dconf'
 contains unit_tests/check_clamav.c 'dconf->archive &= ~ARCH_CONF_SIS'
 contains unit_tests/check_clamav.c 'dconf->archive |= ARCH_CONF_SIS'
+contains libclamav/scanners.c 'cl_error_t ret    = CL_SUCCESS;'
 contains unit_tests/check_clamav.c 'test_pdf_truncated_flate_after_prefix_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_pdf_truncated_lzw_after_prefix_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_zip_truncated_entry_paths_are_fail_visible'

@@ -6997,7 +6997,7 @@ done:
 cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
 {
     cl_error_t status = CL_SUCCESS;
-    cl_error_t ret;
+    cl_error_t ret    = CL_SUCCESS;
     cl_error_t normalized_status = CL_SUCCESS;
 
     cl_error_t cache_check_result      = CL_VIRUS;
