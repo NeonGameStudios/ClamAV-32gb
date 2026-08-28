@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PE short-entrypoint legacy-path boundary — 2026-08-28
+
+The PE32 parser no longer returns a cacheable clean result when the entry-point
+window is too short for fixed-offset legacy x86 heuristics. It now skips only
+those optional paths, preserves the common state and `BC_PE_UNPACKER` handoff,
+and records an explicit incomplete result that disables clean-result caching.
+The source-compiled deterministic regression and isolated current-object
+smoke harness pass with the expected reason and cache flag. The reusable
+container could not relink the full unit binary because its overlay is
+exhausted; production-linked execution, complete PE/unpacker corpus,
+sanitizer, production-CVD/service, materialized large-file, Sonic1, and final
+PE qualification remain required.
+
 ## UnRAR operational status propagation — 2026-08-28
 
 The optional UnRAR bridge now preserves `ERAR_ECREATE`, `ERAR_ECLOSE`,

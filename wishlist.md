@@ -1,5 +1,18 @@
 # Wishlist
 
+## PE short-entrypoint legacy-path boundary — 2026-08-28
+
+- Keep short PE32 entry-point windows out of fixed-offset legacy heuristic and
+  unpacker paths without returning a cacheable clean result before the common
+  `BC_PE_UNPACKER` handoff. Mark the skipped inspection incomplete and
+  non-cacheable with an explicit reason.
+- The deterministic regression fixture is source-compiled, and the isolated
+  current-object smoke harness reports `CL_SUCCESS`, the expected incomplete
+  reason, and `dont_cache_flag=1`. Production-linked unit execution remains
+  open because the reusable container could not relink the full test binary;
+  keep complete PE/unpacker corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and final PE qualification open.
+
 ## UnRAR operational status propagation — 2026-08-28
 
 - Preserve UnRAR create, close, read, and write failures as distinct bridge

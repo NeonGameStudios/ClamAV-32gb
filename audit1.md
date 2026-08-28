@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## PE short-entrypoint legacy-path boundary — 2026-08-28
+
+The PE32 entry-point inspection path had two short-window early returns that
+reported `CL_CLEAN` before the later `BC_PE_UNPACKER` hook and legacy-path
+status handling. A valid, admitted PE with a short entry-point window could
+therefore skip required optional analysis and remain cacheable as clean. The
+current source now skips only the fixed-offset legacy heuristics, preserves
+the common PE state and hook handoff, and records an explicit incomplete,
+non-cacheable result. The deterministic current-source fixture is exercised
+by `test_pe_short_entrypoint_skips_legacy_path_fail_visible`; the isolated
+current-object smoke harness returns `CL_SUCCESS`, the exact incomplete
+reason, and `dont_cache_flag=1`. The full unit binary was not relinked because
+the reusable container's overlay is exhausted, so production-linked test
+execution, complete PE/unpacker corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and final PE qualification remain open.
+
 ## UnRAR operational status propagation — 2026-08-28
 
 The optional UnRAR adapter logged `ERAR_ECREATE`, `ERAR_ECLOSE`,

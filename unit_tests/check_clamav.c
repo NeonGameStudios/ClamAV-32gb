@@ -32648,6 +32648,105 @@ START_TEST(test_arj_corpus_detects_embedded_mz)
 }
 END_TEST
 
+#define PE32_SHORT_ENTRY_TEST_FILE_SIZE 0x280U
+#define PE32_SHORT_ENTRY_TEST_PE_OFFSET 0x80U
+#define PE32_SHORT_ENTRY_TEST_SECTION_RAW 0x200U
+
+static void pe32plus_test_write_u16(uint8_t *destination, uint16_t value);
+
+static void build_pe32_short_entry_fixture(uint8_t *data, size_t length)
+{
+    const size_t optional_offset = PE32_SHORT_ENTRY_TEST_PE_OFFSET + sizeof(struct pe_image_file_hdr);
+    const size_t directories_offset = optional_offset + sizeof(struct pe_image_optional_hdr32);
+    const size_t section_offset = directories_offset + 16U * sizeof(struct pe_image_data_dir);
+    const uint16_t optional_size = (uint16_t)(sizeof(struct pe_image_optional_hdr32) +
+                                              16U * sizeof(struct pe_image_data_dir));
+
+    ck_assert_msg(length >= PE32_SHORT_ENTRY_TEST_FILE_SIZE, "short-entry PE32 fixture buffer is too short");
+    ck_assert_msg(section_offset + sizeof(struct pe_image_section_hdr) <= PE32_SHORT_ENTRY_TEST_SECTION_RAW,
+                  "short-entry PE32 fixture headers overlap section data");
+
+    memset(data, 0, length);
+    data[0] = 'M';
+    data[1] = 'Z';
+    cli_writeint32(data + 0x3cU, PE32_SHORT_ENTRY_TEST_PE_OFFSET);
+
+    cli_writeint32(data + PE32_SHORT_ENTRY_TEST_PE_OFFSET + offsetof(struct pe_image_file_hdr, Magic), 0x00004550U);
+    pe32plus_test_write_u16(data + PE32_SHORT_ENTRY_TEST_PE_OFFSET + offsetof(struct pe_image_file_hdr, Machine), 0x014cU);
+    pe32plus_test_write_u16(data + PE32_SHORT_ENTRY_TEST_PE_OFFSET + offsetof(struct pe_image_file_hdr, NumberOfSections), 1U);
+    pe32plus_test_write_u16(data + PE32_SHORT_ENTRY_TEST_PE_OFFSET + offsetof(struct pe_image_file_hdr, SizeOfOptionalHeader), optional_size);
+    pe32plus_test_write_u16(data + PE32_SHORT_ENTRY_TEST_PE_OFFSET + offsetof(struct pe_image_file_hdr, Characteristics), 0x0102U);
+
+    pe32plus_test_write_u16(data + optional_offset + offsetof(struct pe_image_optional_hdr32, Magic), 0x010bU);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, SizeOfCode), 0x80U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, SizeOfInitializedData), 0x80U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, AddressOfEntryPoint), 0x1000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, BaseOfCode), 0x1000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, BaseOfData), 0x1000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, ImageBase), 0x00400000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, SectionAlignment), 0x1000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, FileAlignment), 0x200U);
+    pe32plus_test_write_u16(data + optional_offset + offsetof(struct pe_image_optional_hdr32, MajorOperatingSystemVersion), 6U);
+    pe32plus_test_write_u16(data + optional_offset + offsetof(struct pe_image_optional_hdr32, MajorSubsystemVersion), 6U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, SizeOfImage), 0x2000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, SizeOfHeaders), 0x200U);
+    pe32plus_test_write_u16(data + optional_offset + offsetof(struct pe_image_optional_hdr32, Subsystem), 3U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, SizeOfStackReserve), 0x100000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, SizeOfStackCommit), 0x1000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, SizeOfHeapReserve), 0x100000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, SizeOfHeapCommit), 0x1000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr32, NumberOfRvaAndSizes), 16U);
+
+    memcpy(data + section_offset + offsetof(struct pe_image_section_hdr, Name), ".text", sizeof(".text") - 1U);
+    cli_writeint32(data + section_offset + offsetof(struct pe_image_section_hdr, VirtualSize), 0x80U);
+    cli_writeint32(data + section_offset + offsetof(struct pe_image_section_hdr, VirtualAddress), 0x1000U);
+    cli_writeint32(data + section_offset + offsetof(struct pe_image_section_hdr, SizeOfRawData), 0x80U);
+    cli_writeint32(data + section_offset + offsetof(struct pe_image_section_hdr, PointerToRawData), PE32_SHORT_ENTRY_TEST_SECTION_RAW);
+    cli_writeint32(data + section_offset + offsetof(struct pe_image_section_hdr, Characteristics), 0x60000020U);
+}
+
+START_TEST(test_pe_short_entrypoint_skips_legacy_path_fail_visible)
+{
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    uint8_t data[PE32_SHORT_ENTRY_TEST_FILE_SIZE];
+
+    build_pe32_short_entry_fixture(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PE legacy x86 entry-point inspection requires a larger read window");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 #define PE32PLUS_TEST_FILE_SIZE 0x600U
 #define PE32PLUS_TEST_PE_OFFSET 0x80U
 #define PE32PLUS_TEST_SECTION_RAW 0x200U
@@ -43163,6 +43262,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe_map, test_pe_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_pe);
     tcase_add_checked_fixture(tc_pe, cl_setup, cl_teardown);
+    tcase_add_test(tc_pe, test_pe_short_entrypoint_skips_legacy_path_fail_visible);
     tcase_add_test(tc_pe, test_pe_missing_map_is_fail_visible);
     tcase_add_test(tc_pe, test_pe_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_pe_corpus);

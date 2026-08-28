@@ -3877,10 +3877,13 @@ int cli_scanpe(cli_ctx *ctx)
         }
     }
 
-    // TODO Why do we bail here
+    /* The legacy x86 heuristics and unpackers below use fixed offsets into
+     * epbuff. A short entry-point window must skip only that optional path;
+     * returning clean here would also suppress the BC_PE_UNPACKER hook and
+     * turn an incomplete inspection into a cacheable clean result. */
     if (epsize < 168) {
-        cli_exe_info_destroy(peinfo);
-        return CL_CLEAN;
+        cli_mark_scan_incomplete(ctx, "PE legacy x86 entry-point inspection requires a larger read window");
+        goto pe_legacy_unpackers_done;
     }
 
     if (found || upack) {
@@ -4556,8 +4559,8 @@ int cli_scanpe(cli_ctx *ctx)
     /* Petite */
 
     if (epsize < 200) {
-        cli_exe_info_destroy(peinfo);
-        return CL_CLEAN;
+        cli_mark_scan_incomplete(ctx, "PE Petite inspection requires a larger entry-point read window");
+        goto pe_petite_done;
     }
 
     found = 2;
@@ -5056,9 +5059,11 @@ int cli_scanpe(cli_ctx *ctx)
         break;
     }
 
+pe_petite_done:
     /* to be continued ... */
 
     /* !!!!!!!!!!!!!!    PACKERS END HERE    !!!!!!!!!!!!!! */
+pe_legacy_unpackers_done:
     ctx->corrupted_input = corrupted_cur;
 
     /* Bytecode BC_PE_UNPACKER hook */
