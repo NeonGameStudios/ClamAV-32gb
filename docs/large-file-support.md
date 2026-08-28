@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Mach-O load-command alignment admission — 2026-08-28
+
+Mach-O load-command admission now enforces the format alignment required by
+the architecture class: command sizes must be multiples of four for 32-bit
+images and eight for 64-bit images. Misaligned commands fail before
+command-specific parsing, mark the layer incomplete, and prevent clean-result
+caching. The current-source production-linked GCC fixture passes 2/2 for
+malformed 32-bit and 64-bit command sizes; complete Mach-O corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and parser-family qualification remain open.
+
 ## ELF header-size admission — 2026-08-28
 
 ELF header admission now validates `e_ehsize` after endian conversion and

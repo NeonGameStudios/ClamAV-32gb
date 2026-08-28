@@ -461,13 +461,12 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
             RETURN_MACHO_BROKEN;
         }
         command_end = command_start + (uint64_t)command_size;
-        /*
-        if((m64 && EC32(load_cmd.cmdsize, conv) % 8) || (!m64 && EC32(load_cmd.cmdsize, conv) % 4)) {
-            cli_dbgmsg("cli_scanmacho: Invalid command size (%u)\n", EC32(load_cmd.cmdsize, conv));
+        if (command_size % (m64 ? 8U : 4U)) {
+            cli_dbgmsg("cli_scanmacho: Load-command size is not properly aligned (%u)\n", command_size);
             free(sections);
-            RETURN_BROKEN;
+            free(sections64);
+            RETURN_MACHO_BROKEN;
         }
-        */
         load_cmd.cmd = EC32(load_cmd.cmd, conv);
         if ((m64 && load_cmd.cmd == 0x19) || (!m64 && load_cmd.cmd == 0x01)) { /* LC_SEGMENT */
             if (m64) {

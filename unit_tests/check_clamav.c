@@ -37085,6 +37085,49 @@ START_TEST(test_macho_load_command_boundary_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_macho_load_command_alignment_is_fail_visible)
+{
+    uint8_t data[64] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    uint8_t is64;
+
+    for (is64 = 0; is64 <= 1; is64++) {
+        size_t header_size  = is64 ? 32U : 28U;
+        uint32_t command_size = is64 ? 12U : 10U;
+
+        memset(data, 0, sizeof(data));
+        macho_test_write_u32(data + 0, is64 ? 0xfeedfacfU : 0xfeedfaceU);
+        macho_test_write_u32(data + 4, is64 ? 0x01000007U : 7U);
+        macho_test_write_u32(data + 12, 2U); /* MH_EXECUTE. */
+        macho_test_write_u32(data + 16, 1U); /* one load command. */
+        macho_test_write_u32(data + 20, command_size);
+        macho_test_write_u32(data + header_size, 0U); /* Unknown but bounded command. */
+        macho_test_write_u32(data + header_size + 4, command_size);
+
+        memset(&engine, 0, sizeof(engine));
+        memset(&options, 0, sizeof(options));
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(data, header_size + command_size);
+        ck_assert_ptr_nonnull(map);
+        ctx.engine  = &engine;
+        ctx.options = &options;
+        ctx.fmap    = map;
+
+        ret = cli_scanmacho(&ctx, NULL);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         "Mach-O parsing ended before inspection completed");
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+    }
+}
+END_TEST
+
 static void macho_test_write_u32(uint8_t *dst, uint32_t value)
 {
     dst[0] = (uint8_t)value;
@@ -43386,6 +43429,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_dmg_map, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_macho_boundary);
     tcase_add_test(tc_macho_boundary, test_macho_load_command_boundary_is_fail_visible);
+    tcase_add_test(tc_macho_boundary, test_macho_load_command_alignment_is_fail_visible);
     suite_add_tcase(s, tc_macho_map);
     tcase_add_test(tc_macho_map, test_macho_missing_maps_are_fail_visible);
     suite_add_tcase(s, tc_macho_unsupported);

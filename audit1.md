@@ -29,6 +29,19 @@ extensions, including the sticky reasons `ELF file header size is invalid` and
 certified Linux x86-64, materialized large-file, production-CVD/service,
 Sonic1, and final parser-family qualification remain open.
 
+## Mach-O load-command alignment admission — 2026-08-28
+
+The Mach-O parser validated each load-command size against the declared
+command-table boundary, but its format alignment check was disabled. Apple’s
+Mach-O loader format requires command sizes to be multiples of four for
+32-bit architectures and eight for 64-bit architectures. The parser now
+rejects misaligned command sizes before command-specific interpretation,
+returns the existing fail-visible malformed-image result, and prevents clean
+result caching. The current-source production-linked GCC fixture passes 2/2
+for malformed 32-bit and 64-bit command sizes; complete Mach-O corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, Sonic1, and final parser-family qualification remain open.
+
 ## Bytecode output ownership and status propagation audit — 2026-08-27
 
 The bytecode output bridge had two production-relevant accounting gaps. A
