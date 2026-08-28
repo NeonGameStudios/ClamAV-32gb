@@ -127,15 +127,18 @@ static const void *yara_need_value(fmap_t *fmap, size_t offset, size_t length, i
 #define function_read(type) \
     int64_t read_##type(fmap_t * fmap, size_t offset) \
     { \
+      type value;                                                         \
       const void *data = yara_need_value(fmap, offset, sizeof(type), NULL); \
       if (!data)                                                           \
           return UNDEFINED;                                                \
-      return *((type *) data);                                             \
+      memcpy(&value, data, sizeof(value));                                 \
+      return (int64_t)value;                                                \
     }                                                                      \
     static int64_t read_##type##_context(YR_SCAN_CONTEXT * context, size_t offset) \
     {                                                                       \
       int read_error = 0;                                                   \
       const void *data;                                                      \
+      type value;                                                            \
       if (context == NULL)                                                   \
           return YARA_READ_ERROR;                                           \
       data = yara_need_value(context->fmap, offset, sizeof(type), &read_error); \
@@ -143,7 +146,8 @@ static const void *yara_need_value(fmap_t *fmap, size_t offset, size_t length, i
           return YARA_READ_ERROR;                                           \
       if (!data)                                                             \
           return UNDEFINED;                                                  \
-      return *((type *) data);                                               \
+      memcpy(&value, data, sizeof(value));                                   \
+      return (int64_t)value;                                                  \
     };
 #endif
 

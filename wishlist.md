@@ -1,5 +1,17 @@
 # Wishlist
 
+## YARA unaligned scalar-read admission — 2026-08-28
+
+- Keep bundled YARA fixed-width fmap reads defined for valid unaligned
+  offsets: both map and VM-context helpers copy through `memcpy` after their
+  existing bounded-range checks.
+- Retain `test_yara_unaligned_integer_read_is_defined` and
+  `test_yara_unaligned_context_read_is_defined`. The current source and
+  matcher test translation unit compile with production GCC, and standalone
+  current-source ASan/UBSan map and context-reader drivers pass. Keep the full
+  YARA corpus, coherent full-binary relink, production-CVD/service,
+  materialized large-file, Sonic1, and final release qualification open.
+
 ## JPEG entropy harness reconciliation — 2026-08-28
 
 - Keep the current JPEG boundary and entropy implementation unchanged: the

@@ -1309,6 +1309,67 @@ START_TEST(test_yara_uint32_read_accepts_exact_tail)
 }
 END_TEST
 
+START_TEST(test_yara_unaligned_integer_read_is_defined)
+{
+    static const unsigned char bytes[] = {0x00, 0x78, 0x56, 0x34, 0x12};
+    uint32_t expected;
+    fmap_t *map;
+
+    memcpy(&expected, bytes + 1, sizeof(expected));
+    map = cl_fmap_open_memory(bytes, sizeof(bytes));
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(read_uint32_t(map, 1), (int64_t)expected);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_yara_unaligned_context_read_is_defined)
+{
+#ifdef HAVE_YARA
+    static const unsigned char bytes[] = {0x00, 0x78, 0x56, 0x34, 0x12};
+    uint8_t code[1 + sizeof(uint64_t) + 1 + 1 + 1];
+    uint64_t offset = 1;
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(code, 0, sizeof(code));
+    code[0] = OP_PUSH;
+    memcpy(code + 1, &offset, sizeof(offset));
+    code[1 + sizeof(uint64_t)] = OP_UINT32;
+    code[1 + sizeof(uint64_t) + 1] = OP_POP;
+    code[1 + sizeof(uint64_t) + 1 + 1] = OP_HALT;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id             = 0;
+    lsig.type           = CLI_YARA_NORMAL;
+    lsig.u.code_start   = code;
+    lsig.code_size      = sizeof(code);
+    lsig.virname        = (char *)"YaraUnalignedContextRead";
+    lsigtable[0]        = &lsig;
+    root.ac_lsigs       = 1;
+    root.ac_lsigtable   = lsigtable;
+
+    map = cl_fmap_open_memory(bytes, sizeof(bytes));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_exp_eval(&ctx, &root, &yara_mdata, NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ctx.fmap = &thefmap;
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 #ifdef HAVE_YARA
 static const void *yara_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
@@ -2488,6 +2549,8 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_logical_failure_does_not_suppress_later_detection);
     tcase_add_test(tc_matchers, test_logical_bytecode_v1_large_file_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
+    tcase_add_test(tc_matchers, test_yara_unaligned_integer_read_is_defined);
+    tcase_add_test(tc_matchers, test_yara_unaligned_context_read_is_defined);
     tcase_add_test(tc_matchers, test_yara_map_read_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_missing_code_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_truncated_instruction_is_fail_visible);

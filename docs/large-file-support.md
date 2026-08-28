@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## YARA unaligned scalar-read admission — 2026-08-28
+
+Bundled YARA fixed-width fmap reads now copy bounded bytes through `memcpy`
+before integer conversion. This keeps valid fields at unaligned offsets
+defined on every supported host while preserving the distinction between an
+out-of-range undefined value and an in-range callback read failure.
+
+The direct and VM-context regressions are registered in the matcher TCase.
+The current YARA source and matcher test translation unit compile with the
+production GCC flags, and standalone current-source GCC ASan/UBSan drivers
+pass both read paths without a sanitizer finding. Full YARA corpus, coherent
+full-binary relink, production-CVD/service, materialized large-file, Sonic1,
+and final release qualification remain required.
+
 ## JPEG entropy harness reconciliation — 2026-08-28
 
 The current JPEG source remains warning-clean under the established

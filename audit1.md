@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## YARA unaligned scalar-read admission — 2026-08-28
+
+The bundled YARA fmap integer helpers previously converted an arbitrary byte
+pointer directly to a typed pointer before loading it. A valid integer field
+at an unaligned offset therefore depended on the host's alignment behavior and
+triggered undefined behavior under UBSan. The map and VM-context helpers now
+copy the bounded bytes through `memcpy` before conversion, preserving the
+existing out-of-range and in-range read-failure status rules.
+
+The registered `test_yara_unaligned_integer_read_is_defined` and
+`test_yara_unaligned_context_read_is_defined` regressions cover the direct and
+VM-context paths. The current `yara_exec.c` and matcher test translation unit
+compile with the established GCC flags, and standalone current-source
+ASan/UBSan map and context-reader drivers both pass the unaligned 32-bit read
+with no sanitizer finding. The earlier isolated production-linked YARA TCase
+evidence remains valid; full YARA corpus, coherent full-binary relink,
+production-CVD/service, materialized large-file, Sonic1, and release
+qualification remain required.
+
 ## JPEG entropy harness reconciliation — 2026-08-28
 
 The current JPEG source was recompiled warning-clean with the established
