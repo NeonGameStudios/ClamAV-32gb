@@ -28493,12 +28493,14 @@ START_TEST(test_mbox_missing_engine_or_options_is_fail_visible)
 {
     static const uint8_t input[] = "Content-Type: text/plain\n\nbody\n";
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
     ck_assert_int_eq(cli_mbox(tmpdir, NULL), CL_ENULLARG);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(input, sizeof(input) - 1U);
     ck_assert_ptr_nonnull(map);
@@ -28506,6 +28508,11 @@ START_TEST(test_mbox_missing_engine_or_options_is_fail_visible)
 
     ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_ENULLARG);
     ctx.engine = &engine;
+    ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    ctx.options = &options;
     ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_ENULLARG);
     ck_assert(!ctx.scan_incomplete);
     ck_assert(!map->dont_cache_flag);

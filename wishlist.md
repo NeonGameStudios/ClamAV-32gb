@@ -6232,6 +6232,15 @@ qualification gates.
   corpus, sanitizer, production-CVD/service, materialized large-file,
   certified Linux x86-64, Sonic1, and release qualification gates.
 
+## MIME direct detector-configuration admission — 2026-08-27
+
+- Keep `cli_mbox()` fail-visible when a recognized fmap is supplied without
+  detector configuration required by phishing and HTML normalization paths;
+  return `CL_ENULLARG` before MIME parsing.
+- Retain the direct MIME admission regression and complete MIME corpus,
+  sanitizer, production-CVD/service, materialized large-file, certified Linux
+  x86-64, Sonic1, and release qualification gates.
+
 ## PDF direct scan-state admission — 2026-08-27
 
 - Keep `cli_pdf()` fail-visible when a recognized fmap is supplied without the

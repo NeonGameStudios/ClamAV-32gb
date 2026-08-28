@@ -1035,8 +1035,10 @@ contains libclamav/mbox.c 'MIME message input could not be read completely'
 contains libclamav/mbox.c 'MIME message input map is unavailable'
 contains libclamav/mbox.c 'cli_mbox called with context missing engine'
 contains libclamav/mbox.c 'cli_mbox called with context missing scan options'
+contains libclamav/mbox.c 'cli_mbox called with context missing detector configuration'
 contains libclamav/mbox.c 'if (ctx->engine == NULL)'
 contains libclamav/mbox.c 'if (ctx->options == NULL)'
+contains libclamav/mbox.c 'if (ctx->dconf == NULL)'
 contains libclamav/mbox.c "while (first_line_len < sizeof(buffer) - 1U && firstLine[first_line_len] != '\\0')"
 contains libclamav/mbox.c "buffer[first_line_len] = '\\0'"
 contains unit_tests/check_clamav.c 'test_mbox_initial_read_failure_is_fail_visible'

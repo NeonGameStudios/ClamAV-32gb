@@ -367,6 +367,10 @@ int cli_mbox(const char *dir, cli_ctx *ctx)
         cli_dbgmsg("cli_mbox called with context missing scan options\n");
         return CL_ENULLARG;
     }
+    if (ctx->dconf == NULL) {
+        cli_dbgmsg("cli_mbox called with context missing detector configuration\n");
+        return CL_ENULLARG;
+    }
     return cli_parse_mbox(dir, ctx);
 }
 

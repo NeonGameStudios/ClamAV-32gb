@@ -12435,3 +12435,16 @@ requires both scan options and detector configuration before parser work, and
 the input incomplete. Current-source GCC syntax and source-guard evidence
 remain required alongside complete PDF corpus, sanitizer, production-CVD/
 service, materialized large-file, Linux x86-64, and Sonic1 qualification.
+
+## MIME direct detector-configuration admission audit — 2026-08-27
+
+The public `cli_mbox()` entry already rejected missing context, fmap, engine,
+and scan options, but MIME phishing and HTML normalization paths later
+dereferenced `ctx->dconf`. A recognized map with an otherwise populated engine
+and options could therefore reach a null detector-configuration access. The
+entry now returns `CL_ENULLARG` before parsing when `ctx->dconf` is absent, and
+`test_mbox_missing_engine_or_options_is_fail_visible` covers the additional
+state without marking the map incomplete or non-cacheable. Current-source GCC
+syntax, source-guard, and focused production-linked evidence remain required
+alongside complete MIME corpus, sanitizer, production-CVD/service,
+materialized large-file, Linux x86-64, and Sonic1 qualification.
