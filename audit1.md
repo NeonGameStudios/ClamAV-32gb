@@ -12212,12 +12212,14 @@ release qualification evidence remain required.
 
 ## Native executable parser engine admission audit — 2026-08-27
 
-The direct ELF, Mach-O, and Mach-O universal-binary entries validated their
-maps but could reach deadline or heuristic code without an owning engine. Each
-entry now returns CL_ENULLARG for a recognized map without engine state, and
-test_executable_parsers_require_engine covers all three paths. Complete
-executable corpus, sanitizer, production-CVD/service, materialized large-file,
-Sonic1, and release qualification evidence remain required.
+The full ELF, Mach-O, and Mach-O universal-binary entries validated their maps
+but could reach deadline or heuristic code without an owning engine. Full-scan
+entries now return CL_ENULLARG for recognized maps without engine state, while
+cli_machoheader retains engine-free metadata parsing when it receives a
+fileinfo output structure. test_executable_parsers_require_engine covers the
+full-scan paths. Complete executable corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and release qualification evidence remain
+required.
 
 ## PE, AutoIt, and MSPack engine admission audit — 2026-08-27
 

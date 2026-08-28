@@ -6072,11 +6072,13 @@ large-file, Sonic1, and release qualification gates.
 
 ## Native executable parser engine admission — 2026-08-27
 
-- Keep direct ELF and Mach-O parser entries fail-visible when a recognized map
-  has no owning engine; reject before deadline or heuristic state access.
-- test_executable_parsers_require_engine covers ELF, Mach-O, and universal
-  Mach-O. Retain complete executable corpus, sanitizer, production-CVD/service,
-materialized large-file, Sonic1, and release qualification gates.
+- Keep full ELF, Mach-O, and universal Mach-O parser entries fail-visible when
+  a recognized map has no owning engine; reject before deadline or heuristic
+  state access while preserving engine-free cli_machoheader metadata parsing.
+- test_executable_parsers_require_engine covers the full-scan ELF, Mach-O, and
+  universal Mach-O boundaries. Retain complete executable corpus, sanitizer,
+  production-CVD/service, materialized large-file, Sonic1, and release
+  qualification gates.
 
 ## ZIP and 7-Zip scan-entry engine admission — 2026-08-27
 

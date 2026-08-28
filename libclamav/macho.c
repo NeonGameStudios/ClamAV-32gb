@@ -281,7 +281,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
         cli_mark_scan_incomplete(ctx, "Mach-O input map is unavailable");
         return CL_EPARSE;
     }
-    if (ctx->engine == NULL)
+    if (ctx->engine == NULL && fileinfo == NULL)
         return CL_ENULLARG;
     map = ctx->fmap;
 
