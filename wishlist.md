@@ -1,5 +1,16 @@
 # Wishlist
 
+## APM fixed-width debug fields — 2026-08-28
+
+- Keep fixed-width APM name/type diagnostics precision-bounded and retain the
+  explicit native-width intersection-index format. The current APM source
+  compiles with the production GCC warning flags, and the disposable ASan/UBSan
+  fixture passes without a finding.
+- Retain `test_apm_fixed_width_debug_fields_are_bounded` and its source guards;
+  complete APM corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized large-file, Sonic1, and final
+  parser-family qualification remain required.
+
 ## ALZ empty-member accounting — 2026-08-28
 
 - Keep ALZ extraction accounting ahead of empty-member cleanup so a successful
