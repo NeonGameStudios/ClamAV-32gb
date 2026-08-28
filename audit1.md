@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Masked ZIP-SFX focused rerun — 2026-08-28
+
+The current masked ZIP-SFX implementation and unit translation unit compile
+with the established production GCC flags. A narrow current-source runner
+linked against the existing production `libclamav` fmap implementation now
+executes the central-admission path: a confirmed archive returns `CL_SUCCESS`
+with its exact 101-byte extent and central-directory marker; an injected
+in-range central-record read failure returns `CL_EREAD` with sticky incomplete
+and non-cacheable state; and local-only masked magic returns `CL_EFORMAT`
+without tainting the parent. This rerun complements the existing focused
+`zip_sfx`/`zip_map` evidence for exact child matching and layer attributes.
+The full ZIP/SFX corpus, sanitizer, Linux x86-64, materialized large-file,
+production-CVD/service, Sonic1, and release gates remain open.
+
 ## RIFF detector alignment boundary — 2026-08-28
 
 The RIFF root probe and nested chunk walker documented bytewise

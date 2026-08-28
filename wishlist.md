@@ -1,5 +1,15 @@
 # Wishlist
 
+## Masked ZIP-SFX focused rerun — 2026-08-28
+
+- Retain the current-source production-linked admission checks: confirmed
+  masked central extent, injected `CL_EREAD`, and local-only weak-candidate
+  `CL_EFORMAT` behavior all passed with the expected cache/incomplete state.
+- This complements the existing exact-child/layer-attribute `zip_sfx` and
+  missing-map `zip_map` evidence. Keep full ZIP/SFX corpus, sanitizer,
+  certified Linux, production-CVD/service, materialized large-file, Sonic1,
+  and release qualification open.
+
 ## RIFF detector alignment boundary — 2026-08-28
 
 - Keep RIFF root/chunk fmap views byte-oriented with explicit byte offsets for

@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Masked ZIP-SFX focused rerun — 2026-08-28
+
+The current masked ZIP-SFX source and unit translation unit compile with the
+production GCC flags. A narrow current-source runner linked against the
+existing production `libclamav` fmap implementation confirms a 101-byte
+central-directory admission, preserves `CL_EREAD` plus sticky incomplete and
+non-cacheable state for an in-range central-record read failure, and rejects
+local-only masked magic as an unconfirmed `CL_EFORMAT` candidate. This
+complements the existing focused exact-child and layer-attribute evidence.
+Full ZIP/SFX corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized large-file, Sonic1, and release qualification remain required.
+
 ## RIFF detector alignment boundary — 2026-08-28
 
 The RIFF root probe and nested LIST walker now keep fmap input byte-oriented
