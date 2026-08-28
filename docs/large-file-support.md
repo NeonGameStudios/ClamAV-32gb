@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PDF object-stream pair-coordinate admission — 2026-08-28
+
+PDF object-stream parsing now validates the PDF, output, and decoded stream
+arguments before use. It rejects a first-object boundary outside the decoded
+stream and a pair cursor at or beyond the pair table before forming pointers
+or subtracting native-width offsets. The registered regression covers null-PDF
+admission and both pair-coordinate boundary cases; complete corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized large-file,
+Sonic1, and final parser-family qualification remain required.
+
 ## MSPack CAB/CHM output close failures — 2026-08-28
 
 CAB and CHM decoder output `fclose()` failures now remain fail-visible as

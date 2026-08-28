@@ -1,5 +1,15 @@
 # Wishlist
 
+## PDF object-stream pair-coordinate admission — 2026-08-28
+
+- Keep object-stream helpers fail-visible for null PDF/output/stream
+  arguments, and reject pair cursors at or beyond the decoded pair table
+  before forming pointers or subtracting native-width offsets.
+- Retain `test_pdf_object_stream_pair_bounds_are_fail_visible` and the source
+  guards. Complete PDF corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized large-file, Sonic1, and final
+  parser-family qualification remain required.
+
 ## MSPack CAB/CHM output close failures — 2026-08-28
 
 - Keep CAB and CHM decoder output `fclose()` failures fail-visible as

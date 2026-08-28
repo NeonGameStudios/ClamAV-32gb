@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## PDF object-stream pair-coordinate admission — 2026-08-28
+
+The object-stream parser formed pointers and subtracted byte ranges from
+`current_pair` before proving that the pair cursor was inside the pair table.
+It also exposed a null-output and null-stream path in the internal helper, and
+the public helper could dereference a null PDF context. The parser now rejects
+null arguments, missing stream storage, a first-object boundary outside the
+decoded stream, and pair cursors at or beyond the first-object boundary before
+pointer arithmetic. The registered regression covers null-PDF admission and
+both pair-coordinate boundary cases; the source guard and current C syntax
+checks are required evidence. Complete PDF corpus, sanitizer,
+production-CVD/service, materialized large-file, certified Linux x86-64,
+Sonic1, and final parser-family qualification remain open.
+
 ## MSPack CAB/CHM output close failures — 2026-08-28
 
 The MSPack fmap-backed output callback already recorded a failed `fclose()`

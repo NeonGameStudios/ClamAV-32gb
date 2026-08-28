@@ -14628,6 +14628,30 @@ START_TEST(test_pdf_malformed_object_stream_retains_backing)
 }
 END_TEST
 
+START_TEST(test_pdf_object_stream_pair_bounds_are_fail_visible)
+{
+    static char streambuf[] = "21 0 << /Type /Catalog >>";
+    struct pdf_struct pdf;
+    struct objstm_struct objstm;
+
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&objstm, 0, sizeof(objstm));
+    objstm.first          = 5U;
+    objstm.current_pair   = 0U;
+    objstm.n               = 1U;
+    objstm.streambuf       = streambuf;
+    objstm.streambuf_len   = sizeof(streambuf) - 1U;
+
+    ck_assert_int_eq(pdf_find_and_parse_objs_in_objstm(NULL, &objstm), CL_EARG);
+
+    objstm.current_pair = objstm.streambuf_len;
+    ck_assert_int_eq(pdf_find_and_parse_objs_in_objstm(&pdf, &objstm), CL_EFORMAT);
+
+    objstm.current_pair = objstm.first;
+    ck_assert_int_eq(pdf_find_and_parse_objs_in_objstm(&pdf, &objstm), CL_EFORMAT);
+}
+END_TEST
+
 START_TEST(test_pdf_object_stream_quota_failure_has_no_backing)
 {
     static const uint8_t decoded[] = "21 0 << /Type /Catalog >>";
@@ -45445,6 +45469,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_explicit_crypt_ordering_supports_rc4_and_aes);
     tcase_add_test(tc_cl, test_pdf_flate_object_stream_uses_file_backing);
     tcase_add_test(tc_cl, test_pdf_malformed_object_stream_retains_backing);
+    tcase_add_test(tc_cl, test_pdf_object_stream_pair_bounds_are_fail_visible);
     tcase_add_test(tc_cl, test_pdf_object_stream_quota_failure_has_no_backing);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_pdf_encrypted_stream_write_failure_rolls_back);

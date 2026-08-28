@@ -655,7 +655,10 @@ int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, 
     const char *index      = NULL;
     size_t bytes_remaining = 0;
 
-    if (NULL == pdf || NULL == objstm) {
+    if (NULL == pdf || NULL == objstm || NULL == obj_found ||
+        NULL == objstm->streambuf ||
+        objstm->first >= objstm->streambuf_len ||
+        objstm->current_pair >= objstm->first) {
         cli_warnmsg("pdf_findobj_in_objstm: invalid arguments\n");
         return CL_EARG;
     }
@@ -4328,7 +4331,7 @@ cl_error_t pdf_find_and_parse_objs_in_objstm(struct pdf_struct *pdf, struct objs
 
     struct pdf_obj *obj = NULL;
 
-    if ((NULL == objstm) || (NULL == objstm->streambuf)) {
+    if ((NULL == pdf) || (NULL == objstm) || (NULL == objstm->streambuf)) {
         status = CL_EARG;
         goto done;
     }
@@ -4342,6 +4345,11 @@ cl_error_t pdf_find_and_parse_objs_in_objstm(struct pdf_struct *pdf, struct objs
 
     if (objstm->first >= objstm->streambuf_len) {
         cli_dbgmsg("pdf_find_and_parse_objs_in_objstm: Invalid objstm values. Offset of first obj greater than stream length.\n");
+        goto done;
+    }
+
+    if (objstm->current_pair >= objstm->first) {
+        cli_dbgmsg("pdf_find_and_parse_objs_in_objstm: Invalid objstm values. Object pair is not within the pair table.\n");
         goto done;
     }
 
