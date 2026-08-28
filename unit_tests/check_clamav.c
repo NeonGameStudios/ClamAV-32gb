@@ -27767,6 +27767,26 @@ START_TEST(test_structured_detector_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_structured_detector_requires_scan_options)
+{
+    static const uint8_t input[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scan_structured(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_structured_detector_clipped_read_failure_is_truncation)
 {
     static const uint8_t input[] = "structured detector clipped read failure";
@@ -43727,6 +43747,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_structured_map, cl_setup, cl_teardown);
     tcase_add_test(tc_structured_map, test_structured_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_structured_map, test_structured_detector_missing_map_is_fail_visible);
+    tcase_add_test(tc_structured_map, test_structured_detector_requires_scan_options);
     tcase_add_test(tc_structured_map, test_structured_detector_clipped_read_failure_is_truncation);
 #ifndef _WIN32
     tcase_add_test(tc_structured_map, test_structured_detector_time_limit_is_fail_visible);
