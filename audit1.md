@@ -12242,6 +12242,16 @@ the boundary. Complete PE metadata/certificate corpora, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and release
 qualification evidence remain required.
 
+## Shared resource-limit helper admission audit — 2026-08-27
+
+cli_checklimits dereferenced ctx->engine for every non-null context, and
+cli_updatelimits could dereference a null context after the permissive limit
+check. Both helpers now return CL_ENULLARG before accessing resource state when
+their ownership contract is absent. test_resource_limit_helpers_reject_missing_engine
+covers missing engine and null-context cases. Complete resource-limit corpus,
+sanitizer, production-CVD/service, materialized large-file, Sonic1, and release
+qualification evidence remain required.
+
 ## ZIP and 7-Zip scan-entry engine admission audit — 2026-08-27
 
 The full ZIP catalogue, single-member extraction, ZIP search, and 7-Zip

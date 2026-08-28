@@ -6101,5 +6101,12 @@ large-file, Sonic1, and release qualification gates.
 - Keep cli_peheader and cli_check_auth_header fail-visible for null contexts,
   missing maps, missing engine state, and unrepresentable header offsets.
 - Retain complete PE metadata/certificate corpora, sanitizer,
-  production-CVD/service, materialized-large-file, Sonic1, and release
-  qualification gates.
+production-CVD/service, materialized-large-file, Sonic1, and release
+qualification gates.
+
+## Shared resource-limit helper admission — 2026-08-27
+
+- Keep cli_checklimits and cli_updatelimits fail-visible when scan ownership is
+  missing; never dereference resource limits from a context without an engine.
+- Retain complete resource-limit corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and release qualification gates.

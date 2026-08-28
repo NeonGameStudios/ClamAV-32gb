@@ -8659,6 +8659,16 @@ and unit translation units pass the established Docker GCC syntax checks;
 complete PE/AutoIt/CAB/CHM corpus, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and release qualification remain open.
 
+## Shared resource-limit helper admission — 2026-08-27
+
+The shared limit-accounting helpers now reject a non-null scan context without
+an owning engine before reading MaxFileSize, MaxScanSize, or MaxFiles state.
+cli_updatelimits also rejects a null context before updating scan counters.
+test_resource_limit_helpers_reject_missing_engine covers these API boundaries.
+Current-source GCC syntax evidence is recorded; complete resource-limit
+corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1,
+and release qualification remain open.
+
 ## ZIP and 7-Zip scan-entry engine admission — 2026-08-27
 
 The full ZIP catalogue, single-member extraction, ZIP search, and 7-Zip

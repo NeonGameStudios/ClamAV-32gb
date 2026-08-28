@@ -41979,6 +41979,17 @@ START_TEST(test_pe_metadata_helpers_reject_invalid_contexts)
 }
 END_TEST
 
+START_TEST(test_resource_limit_helpers_reject_missing_engine)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_checklimits("missing-engine", &ctx, 1, 0, 0), CL_ENULLARG);
+    ck_assert_int_eq(cli_updatelimits(&ctx, 1), CL_ENULLARG);
+    ck_assert_int_eq(cli_updatelimits(NULL, 1), CL_ENULLARG);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -43525,6 +43536,7 @@ static Suite *test_cl_suite(void)
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_zip_output_write_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_output_close_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_resource_limit_helpers_reject_missing_engine);
     tcase_add_test(tc_cl, test_cryptff_staging_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_cryptff_temporary_quota_is_fail_visible);
 #ifndef _WIN32

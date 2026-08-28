@@ -1485,6 +1485,8 @@ cl_error_t cli_checklimits(const char *who, cli_ctx *ctx, uint64_t need1, uint64
         /* if called without limits, go on, unpack, scan */
         goto done;
     }
+    if (!ctx->engine)
+        return CL_ENULLARG;
 
     needed = (need1 > need2) ? need1 : need2;
     needed = (needed > need3) ? needed : need3;
@@ -1544,7 +1546,12 @@ static cl_error_t cli_scan_resource_failure(cli_ctx *ctx, const char *reason);
 
 cl_error_t cli_updatelimits(cli_ctx *ctx, uint64_t needed)
 {
-    cl_error_t ret = cli_checklimits("cli_updatelimits", ctx, needed, 0, 0);
+    cl_error_t ret;
+
+    if (!ctx || !ctx->engine)
+        return CL_ENULLARG;
+
+    ret = cli_checklimits("cli_updatelimits", ctx, needed, 0, 0);
 
     if (ret != CL_SUCCESS) {
         return ret;
