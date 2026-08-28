@@ -1,5 +1,17 @@
 # Wishlist
 
+## fmap staged-copy read-failure evidence — 2026-08-28
+
+- Keep `fmap_dump_to_file()` fail-visible for a backing-read failure after a
+  partial copy: return `CL_EREAD`, remove the partial temporary file, and
+  leave output ownership unset. This is the staging contract used by RAR and
+  other fallback paths.
+- The injected current-source production-linked GCC `fmap_dump_read_failure`
+  fixture passes 1/1 over a `BUFSIZ+1` map and verifies the error, cleared
+  output name, and invalid output descriptor. Keep optional UnRAR extraction,
+  sanitizer, production-CVD/service, materialized large-file, Sonic1, and
+  final RAR/parser-family qualification open.
+
 ## Bytecode output ownership and status propagation audit — 2026-08-27
 
 - Keep partial bytecode writes fail-visible while retaining only the

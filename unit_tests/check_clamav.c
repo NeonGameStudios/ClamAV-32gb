@@ -11258,6 +11258,40 @@ START_TEST(test_fmap_rejects_wrapped_nested_ranges)
 }
 END_TEST
 
+static size_t fmap_dump_read_failure_at = SIZE_MAX;
+
+static const void *fmap_dump_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == fmap_dump_read_failure_at)
+        return NULL;
+    if (map == NULL || len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_fmap_dump_read_failure_is_fail_visible)
+{
+    uint8_t data[BUFSIZ + 1];
+    fmap_t *map;
+    char *outname = NULL;
+    int outfd      = -1;
+
+    memset(data, 0x5a, sizeof(data));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need                    = fmap_dump_read_failure;
+    fmap_dump_read_failure_at   = BUFSIZ;
+
+    ck_assert_int_eq(fmap_dump_to_file(map, NULL, NULL, &outname, &outfd, 0, map->len), CL_EREAD);
+    ck_assert_ptr_null(outname);
+    ck_assert_int_eq(outfd, -1);
+
+    fmap_dump_read_failure_at = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_fmap_assorted_api)
 {
     cl_fmap_t *mem_based_map     = NULL;
@@ -44274,6 +44308,7 @@ static Suite *test_cl_suite(void)
     tcase_add_loop_test(tc_cl_scan, test_fmap_duplicate_out_of_bounds, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_fmap_assorted_api, 0, expect);
     tcase_add_test(tc_cl_scan, test_fmap_rejects_wrapped_nested_ranges);
+    tcase_add_test(tc_cl_scan, test_fmap_dump_read_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_clean_cache_distinguishes_large_sizes);
     tcase_add_test(tc_cl_scan, test_stats_preserves_large_sample_size);
 #if !defined(_WIN32) && defined(ANONYMOUS_MAP)

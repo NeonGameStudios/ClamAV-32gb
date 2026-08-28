@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## fmap staged-copy read-failure evidence — 2026-08-28
+
+`fmap_dump_to_file()` is used by RAR and other fallback paths that must stage
+an fmap before a decoder can inspect it. The helper now rejects a nonzero
+unread remainder with `CL_EREAD` and removes the partial temporary file rather
+than publishing a truncated copy. The new injected callback regression uses a
+`BUFSIZ+1` map, fails the second window, and passes 1/1 in the current-source
+production-linked GCC fixture; it verifies `CL_EREAD`, a cleared output name,
+and an invalid output descriptor after cleanup. This closes the focused
+staged-copy fault-injection evidence gap, but optional UnRAR extraction,
+sanitizer, production-CVD/service, materialized large-file, Sonic1, and final
+RAR/parser-family qualification remain open.
+
 ## Bytecode output ownership and status propagation audit — 2026-08-27
 
 The bytecode output bridge had two production-relevant accounting gaps. A
