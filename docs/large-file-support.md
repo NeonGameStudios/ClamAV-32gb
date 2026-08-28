@@ -9036,3 +9036,16 @@ coordinate advance is also checked for native-range overflow. The registered
 production-linked GCC harness cover the cleanup boundary; complete TAR corpus,
 sanitizer, production-CVD/service, materialized large-file, certified Linux
 x86-64, Sonic1, and parser-family qualification remain open.
+
+## HWP3 metadata record admission — 2026-08-28
+
+The direct HWP3 parser now checks every metadata `cli_json*` result in its
+header, document-info, summary, information-block, font-count, style-count,
+and paragraph-count paths. A failed record returns its original error, marks
+the layer incomplete, and disables caching; metadata collection can no longer
+silently omit required records and report a clean result. The current-source
+production-linked GCC `hwp_fontmeta_isolated` fixture passes 2/2 for injected
+`FontCounts` allocation and document-info record failures, including exact
+sticky reasons and non-cacheability. Full HWP3 corpus, sanitizer, materialized
+large-file, production-CVD/service, Sonic1, and release qualification remain
+open.

@@ -124,13 +124,22 @@ static unsigned int pdf_test_output_window_allocation_failures;
 
 #ifdef CLAMAV_TEST_JSON_WRAP
 extern json_object *__real_cli_jsonarray(json_object *obj, const char *key);
+extern cl_error_t __real_cli_jsonstr(json_object *obj, const char *key, const char *s);
 static int hwp3_test_fail_font_counts;
+static int hwp3_test_fail_print_name;
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
     if (hwp3_test_fail_font_counts && key && strcmp(key, "FontCounts") == 0)
         return NULL;
     return __real_cli_jsonarray(obj, key);
+}
+
+cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
+{
+    if (hwp3_test_fail_print_name && key && strcmp(key, "PrintName") == 0)
+        return CL_EMEM;
+    return __real_cli_jsonstr(obj, key, s);
 }
 #endif
 
@@ -24162,6 +24171,44 @@ START_TEST(test_hwp3_font_metadata_allocation_failure_is_fail_visible)
     cl_fmap_close(map);
 }
 END_TEST
+
+START_TEST(test_hwp3_document_info_metadata_record_failure_is_fail_visible)
+{
+    uint8_t data[30 + 128 + 1008] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    json_object *metadata;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    ctx.engine = &engine;
+    ctx.options = &options;
+    ctx.fmap = map;
+    ctx.this_layer_metadata_json = metadata;
+    hwp3_test_fail_print_name = 1;
+
+    ret = cli_scanhwp3(&ctx);
+
+    hwp3_test_fail_print_name = 0;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "HWP3 document-info name metadata could not be recorded");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(metadata);
+    cl_fmap_close(map);
+}
+END_TEST
 #endif
 
 START_TEST(test_hwp3_missing_map_is_fail_visible)
@@ -44740,6 +44787,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_truncated_document_info_is_parse_error);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_hwp3, test_hwp3_font_metadata_allocation_failure_is_fail_visible);
+    tcase_add_test(tc_hwp3, test_hwp3_document_info_metadata_record_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_onenote_dispatch_honors_document_dconf);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_raw_deflate_is_fail_visible);

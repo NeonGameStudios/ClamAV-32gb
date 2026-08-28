@@ -622,10 +622,19 @@ static inline cl_error_t hwp3_checktimelimit(cli_ctx *ctx, const char *reason)
     return ret;
 }
 
+static inline cl_error_t hwp3_record_metadata(cli_ctx *ctx, cl_error_t ret, const char *reason)
+{
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct hwp3_docinfo *docinfo)
 {
     const uint8_t *hwp3_ptr;
     cl_error_t iret;
+    cl_error_t metadata_ret;
 
     if (hwp3_checktimelimit(ctx, "HWP3 document-info inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;
@@ -678,16 +687,32 @@ static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct h
         }
 
         if (docinfo->di_writeprot) {
-            cli_jsonstr(flags, NULL, "HWP3_WRITEPROTECTED"); /* HWP3_DISTRIBUTABLE */
+            metadata_ret = hwp3_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP3_WRITEPROTECTED"),
+                "HWP3 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (docinfo->di_externapp) {
-            cli_jsonstr(flags, NULL, "HWP3_EXTERNALAPPLICATION");
+            metadata_ret = hwp3_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP3_EXTERNALAPPLICATION"),
+                "HWP3 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (docinfo->di_passwd) {
-            cli_jsonstr(flags, NULL, "HWP3_PASSWORD");
+            metadata_ret = hwp3_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP3_PASSWORD"),
+                "HWP3 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (docinfo->di_compressed) {
-            cli_jsonstr(flags, NULL, "HWP3_COMPRESSED");
+            metadata_ret = hwp3_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP3_COMPRESSED"),
+                "HWP3 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
 
         /* Printed File Name */
@@ -697,12 +722,21 @@ static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct h
             return CL_EMEM;
         }
 
-        if (iret == CL_VIRUS)
-            cli_jsonbool(header, "PrintName_base64", 1);
+        if (iret == CL_VIRUS) {
+            metadata_ret = hwp3_record_metadata(
+                ctx, cli_jsonbool(header, "PrintName_base64", 1),
+                "HWP3 document-info name metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
+        }
 
         hwp3_debug("HWP3.x: di_pname:   %s\n", str);
-        cli_jsonstr(header, "PrintName", str);
+        metadata_ret = hwp3_record_metadata(
+            ctx, cli_jsonstr(header, "PrintName", str),
+            "HWP3 document-info name metadata could not be recorded");
         free(str);
+        if (metadata_ret != CL_SUCCESS)
+            return metadata_ret;
 
         /* Annotation */
         str = convert_hstr_to_utf8((char *)(hwp3_ptr + DI_ANNOTE), 24, "HWP3.x", &iret);
@@ -711,12 +745,21 @@ static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct h
             return CL_EMEM;
         }
 
-        if (iret == CL_VIRUS)
-            cli_jsonbool(header, "Annotation_base64", 1);
+        if (iret == CL_VIRUS) {
+            metadata_ret = hwp3_record_metadata(
+                ctx, cli_jsonbool(header, "Annotation_base64", 1),
+                "HWP3 document-info annotation metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
+        }
 
         hwp3_debug("HWP3.x: di_annote:  %s\n", str);
-        cli_jsonstr(header, "Annotation", str);
+        metadata_ret = hwp3_record_metadata(
+            ctx, cli_jsonstr(header, "Annotation", str),
+            "HWP3 document-info annotation metadata could not be recorded");
         free(str);
+        if (metadata_ret != CL_SUCCESS)
+            return metadata_ret;
     }
 
     return CL_SUCCESS;
@@ -773,8 +816,14 @@ static inline cl_error_t parsehwp3_docsummary(cli_ctx *ctx, size_t offset)
                 return CL_EMEM;
             }
             snprintf(b64, b64len, "%s_base64", hwp3_docsummary_fields[i].name);
-            cli_jsonbool(summary, b64, 1);
+            ret = hwp3_record_metadata(
+                ctx, cli_jsonbool(summary, b64, 1),
+                "HWP3 document-summary base64 metadata could not be recorded");
             free(b64);
+            if (ret != CL_SUCCESS) {
+                free(str);
+                return ret;
+            }
         }
 
         hwp3_debug("HWP3.x: %s, %s\n", hwp3_docsummary_fields[i].name, str);
@@ -1723,11 +1772,17 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
         }
 
         if (!json_object_object_get_ex(infoblk_1, "Count", &counter)) { /* object not found */
-            cli_jsonint(infoblk_1, "Count", 1);
+            ret = hwp3_record_metadata(
+                ctx, cli_jsonint(infoblk_1, "Count", 1),
+                "HWP3 information-block count metadata could not be recorded");
         } else {
             int value = json_object_get_int(counter);
-            cli_jsonint(infoblk_1, "Count", value + 1);
+            ret = hwp3_record_metadata(
+                ctx, cli_jsonint(infoblk_1, "Count", value + 1),
+                "HWP3 information-block count metadata could not be recorded");
         }
+        if (ret != CL_SUCCESS)
+            return ret;
     }
 
     read_status = hwp3_read_fixed(ctx, map, &infoid, *offset, sizeof(infoid),
@@ -1745,7 +1800,11 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
             return CL_EMEM;
         }
 
-        cli_jsonint(entry, "ID", infoid);
+        ret = hwp3_record_metadata(
+            ctx, cli_jsonint(entry, "ID", infoid),
+            "HWP3 information-block entry metadata could not be recorded");
+        if (ret != CL_SUCCESS)
+            return ret;
     }
 
     hwp3_debug("HWP3.x: Information Block[%llu]: ID:  %u\n", infoloc, infoid);
@@ -1754,8 +1813,13 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
     if (infoid == 5) {
         hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Booking Information\n", infoloc);
 
-        if (SCAN_COLLECT_METADATA)
-            cli_jsonstr(entry, "Type", "Booking Information");
+        if (SCAN_COLLECT_METADATA) {
+            ret = hwp3_record_metadata(
+                ctx, cli_jsonstr(entry, "Type", "Booking Information"),
+                "HWP3 information-block type metadata could not be recorded");
+            if (ret != CL_SUCCESS)
+                return ret;
+        }
 
         return CL_SUCCESS;
     }
@@ -1768,8 +1832,16 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
     infolen = le32_to_host(infolen);
 
     if (SCAN_COLLECT_METADATA) {
-        cli_jsonint64(entry, "Offset", infoloc);
-        cli_jsonint(entry, "Length", infolen);
+        ret = hwp3_record_metadata(
+            ctx, cli_jsonint64(entry, "Offset", infoloc),
+            "HWP3 information-block offset metadata could not be recorded");
+        if (ret != CL_SUCCESS)
+            return ret;
+        ret = hwp3_record_metadata(
+            ctx, cli_jsonint(entry, "Length", infolen),
+            "HWP3 information-block length metadata could not be recorded");
+        if (ret != CL_SUCCESS)
+            return ret;
     }
 
     hwp3_debug("HWP3.x: Information Block[%llu]: LEN: %u\n", infoloc, infolen);
@@ -1789,8 +1861,13 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
             if (infolen == 0) {
                 hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Terminating Entry\n", infoloc);
 
-                if (SCAN_COLLECT_METADATA)
-                    cli_jsonstr(entry, "Type", "Terminating Entry");
+                if (SCAN_COLLECT_METADATA) {
+                    ret = hwp3_record_metadata(
+                        ctx, cli_jsonstr(entry, "Type", "Terminating Entry"),
+                        "HWP3 information-block type metadata could not be recorded");
+                    if (ret != CL_SUCCESS)
+                        return ret;
+                }
 
                 if (last) *last = 1;
                 return CL_SUCCESS;
@@ -1801,8 +1878,13 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
         case 1: /* Image Data */
             hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Image Data\n", infoloc);
 
-            if (SCAN_COLLECT_METADATA)
-                cli_jsonstr(entry, "Type", "Image Data");
+            if (SCAN_COLLECT_METADATA) {
+                ret = hwp3_record_metadata(
+                    ctx, cli_jsonstr(entry, "Type", "Image Data"),
+                    "HWP3 information-block type metadata could not be recorded");
+                if (ret != CL_SUCCESS)
+                    return ret;
+            }
 
             if (infolen < 32) {
                 cli_errmsg("HWP3.x: Image data information block is shorter than its 32-byte header\n");
@@ -1832,8 +1914,13 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
         case 2: /* OLE2 Data */
             hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: OLE2 Data\n", infoloc);
 
-            if (SCAN_COLLECT_METADATA)
-                cli_jsonstr(entry, "Type", "OLE2 Data");
+            if (SCAN_COLLECT_METADATA) {
+                ret = hwp3_record_metadata(
+                    ctx, cli_jsonstr(entry, "Type", "OLE2 Data"),
+                    "HWP3 information-block type metadata could not be recorded");
+                if (ret != CL_SUCCESS)
+                    return ret;
+            }
 
             if (infolen > 0)
                 ret = cli_magic_scan_nested_fmap_type(map, *offset, infolen, ctx,
@@ -1850,8 +1937,16 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
             hwp3_debug("HWP3.x: Information Block[%llu]: COUNT: %d entries\n", infoloc, count);
 
             if (SCAN_COLLECT_METADATA) {
-                cli_jsonstr(entry, "Type", "Hypertext/Hyperlink Information");
-                cli_jsonint(entry, "Count", count);
+                ret = hwp3_record_metadata(
+                    ctx, cli_jsonstr(entry, "Type", "Hypertext/Hyperlink Information"),
+                    "HWP3 information-block type metadata could not be recorded");
+                if (ret != CL_SUCCESS)
+                    return ret;
+                ret = hwp3_record_metadata(
+                    ctx, cli_jsonint(entry, "Count", count),
+                    "HWP3 information-block count metadata could not be recorded");
+                if (ret != CL_SUCCESS)
+                    return ret;
             }
 
             for (i = 0; i < count; i++) {
@@ -1878,8 +1973,13 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
         case 4: /* Presentation Information */
             hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Presentation Information\n", infoloc);
 
-            if (SCAN_COLLECT_METADATA)
-                cli_jsonstr(entry, "Type", "Presentation Information");
+            if (SCAN_COLLECT_METADATA) {
+                ret = hwp3_record_metadata(
+                    ctx, cli_jsonstr(entry, "Type", "Presentation Information"),
+                    "HWP3 information-block type metadata could not be recorded");
+                if (ret != CL_SUCCESS)
+                    return ret;
+            }
 
             /* contains nothing of interest to scan */
             break;
@@ -1887,8 +1987,13 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
             /* should never run this as it is short-circuited above */
             hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Booking Information\n", infoloc);
 
-            if (SCAN_COLLECT_METADATA)
-                cli_jsonstr(entry, "Type", "Booking Information");
+            if (SCAN_COLLECT_METADATA) {
+                ret = hwp3_record_metadata(
+                    ctx, cli_jsonstr(entry, "Type", "Booking Information"),
+                    "HWP3 information-block type metadata could not be recorded");
+                if (ret != CL_SUCCESS)
+                    return ret;
+            }
 
             break;
         case 6: /* Background Image Data */
@@ -1900,8 +2005,16 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
             }
 
             if (SCAN_COLLECT_METADATA) {
-                cli_jsonstr(entry, "Type", "Background Image Data");
-                cli_jsonint(entry, "ImageSize", infolen - 324);
+                ret = hwp3_record_metadata(
+                    ctx, cli_jsonstr(entry, "Type", "Background Image Data"),
+                    "HWP3 information-block type metadata could not be recorded");
+                if (ret != CL_SUCCESS)
+                    return ret;
+                ret = hwp3_record_metadata(
+                    ctx, cli_jsonint(entry, "ImageSize", infolen - 324),
+                    "HWP3 information-block size metadata could not be recorded");
+                if (ret != CL_SUCCESS)
+                    return ret;
             }
 
 #if HWP3_DEBUG /* additional fields can be added */
@@ -1920,16 +2033,26 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
         case 0x100: /* Table Extension */
             hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Table Extension\n", infoloc);
 
-            if (SCAN_COLLECT_METADATA)
-                cli_jsonstr(entry, "Type", "Table Extension");
+            if (SCAN_COLLECT_METADATA) {
+                ret = hwp3_record_metadata(
+                    ctx, cli_jsonstr(entry, "Type", "Table Extension"),
+                    "HWP3 information-block type metadata could not be recorded");
+                if (ret != CL_SUCCESS)
+                    return ret;
+            }
 
             /* contains nothing of interest to scan */
             break;
         case 0x101: /* Press Frame Information Field Name */
             hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Press Frame Information Field Name\n", infoloc);
 
-            if (SCAN_COLLECT_METADATA)
-                cli_jsonstr(entry, "Type", "Press Frame Information Field Name");
+            if (SCAN_COLLECT_METADATA) {
+                ret = hwp3_record_metadata(
+                    ctx, cli_jsonstr(entry, "Type", "Press Frame Information Field Name"),
+                    "HWP3 information-block type metadata could not be recorded");
+                if (ret != CL_SUCCESS)
+                    return ret;
+            }
 
             /* contains nothing of interest to scan */
             break;

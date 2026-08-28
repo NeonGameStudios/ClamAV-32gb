@@ -770,20 +770,22 @@ open.
 ## HWP3 metadata failure visibility — 2026-08-28
 
 The HWP3 metadata path previously ignored failure from the `FontCounts` JSON
-array allocation and from the per-font, style-count, and paragraph-count
+array allocation, record writes, and document-info/header/information-block
 metadata writes. Those failures could allow a metadata-requested scan to
-continue without a fail-visible result. `hwp3_cb()` now returns the JSON
-failure status, marks the current layer incomplete, and disables caching for
-each of these required metadata operations; the allocation path reports
-`HWP3 font-count metadata could not be allocated` and returns `CL_EMEM`.
+continue without a fail-visible result. The direct HWP3 path now checks every
+`cli_json*` result, returns the original error, marks the current layer
+incomplete, and disables caching. The allocation path reports
+`HWP3 font-count metadata could not be allocated`; the injected document-info
+record path reports `HWP3 document-info name metadata could not be recorded`
+and returns `CL_EMEM`.
 The current-source HWP object and unit-test object compile with the
 production GCC configuration, and the reduced production-linked
-`hwp_fontmeta_isolated` fixture passes 1/1 for the injected `FontCounts`
-allocation failure, including `CL_EMEM`, the exact sticky reason, and
-non-cacheability. This is focused HWP3 metadata evidence, not complete parser
-qualification; full-C ABI-consistent corpus, sanitizer, certified Linux
-x86-64, materialized large-file, production-CVD/service, Sonic1, and release
-qualification remain open.
+`hwp_fontmeta_isolated` fixture passes 2/2 for the injected `FontCounts`
+allocation and document-info record failures, including `CL_EMEM`, the exact
+sticky reasons, and non-cacheability. This is focused HWP3 metadata evidence,
+not complete parser qualification; full-C ABI-consistent corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service,
+Sonic1, and release qualification remain open.
 
 ## HWP3 null-context classification — 2026-08-27
 

@@ -159,11 +159,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP
         CLAMAV_TEST_FMAP_NEW_WRAP
         CLAMAV_TEST_MALLOC_WRAP
+        CLAMAV_TEST_JSON_WRAP
         CLAMAV_TEST_JS_IO_WRAP)
     target_link_options(check_clamav PRIVATE
         "-Wl,--wrap=mspack_create_cab_decompressor"
         "-Wl,--wrap=mspack_create_chm_decompressor"
         "-Wl,--wrap=fmap_new"
+        "-Wl,--wrap=cli_jsonarray"
+        "-Wl,--wrap=cli_jsonstr"
         "-Wl,--wrap=malloc"
         "-Wl,--wrap=cli_writen"
         "-Wl,--wrap=close"
