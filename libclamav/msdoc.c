@@ -933,6 +933,10 @@ int cli_ole2_summary_json(cli_ctx *ctx, int fd, int mode, const char *filepath)
         return CL_ENULLARG;
     }
 
+    if (ctx->options == NULL) {
+        return CL_ENULLARG;
+    }
+
     if (fd < 0) {
         cli_dbgmsg("ole2_summary_json: invalid file descriptor\n");
         return CL_ENULLARG; /* placeholder */

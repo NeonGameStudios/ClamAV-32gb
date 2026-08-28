@@ -6124,9 +6124,10 @@ qualification gates.
 
 - Keep cli_scanhwp5_stream fail-visible for null context/header arguments and
   missing engine ownership before stream flag access or nested scanning.
-- Preserve the engine-free cli_hwp5header metadata helper and retain complete
-  HWP corpus, sanitizer, production-CVD/service, materialized large-file,
-  Sonic1, and release qualification gates.
+- Preserve the engine-free cli_hwp5header metadata helper while requiring a
+  scan options object before metadata collection, and retain complete HWP
+  corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1,
+  and release qualification gates.
 
 ## PE icon helper admission — 2026-08-27
 
@@ -6145,5 +6146,7 @@ qualification gates.
 - Keep the VBA project-directory entry fail-visible for missing context or
   engine ownership before temporary directory, decompression, or cleanup
   state access.
+- Keep OLE summary metadata fail-visible when scan options are missing before
+  metadata timeout checks.
 - Retain complete OLE/VBA corpus, sanitizer, production-CVD/service,
   materialized large-file, Sonic1, and release qualification gates.

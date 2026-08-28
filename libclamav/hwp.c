@@ -378,6 +378,9 @@ cl_error_t cli_hwp5header(cli_ctx *ctx, hwp5_header_t *hwp5)
     if (!ctx || !hwp5)
         return CL_ENULLARG;
 
+    if (!ctx->options)
+        return CL_ENULLARG;
+
     if (SCAN_COLLECT_METADATA) {
         json_object *header, *flags;
 

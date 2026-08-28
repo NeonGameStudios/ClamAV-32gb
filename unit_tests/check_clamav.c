@@ -23416,6 +23416,7 @@ START_TEST(test_hwp5_stream_requires_context_and_engine)
     ck_assert_int_eq(cli_scanhwp5_stream(&ctx, NULL, NULL, fd, NULL), CL_ENULLARG);
     ck_assert_int_eq(cli_scanhwp5_stream(&ctx, &hwp5, NULL, fd, NULL), CL_ENULLARG);
     ctx.engine = &engine;
+    ck_assert_int_eq(cli_hwp5header(&ctx, &hwp5), CL_ENULLARG);
     ck_assert_int_eq(cli_scanhwp5_stream(&ctx, &hwp5, NULL, -1, NULL), CL_ENULLARG);
 
     ck_assert_int_eq(close(fd), 0);
@@ -44511,6 +44512,7 @@ START_TEST(test_ole2_missing_options_is_fail_visible)
     ctx.fmap   = map;
 
     ck_assert_int_eq(cli_ole2_extract(NULL, &ctx, NULL, NULL, NULL, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_ole2_summary_json(&ctx, -1, 0, NULL), CL_ENULLARG);
 
     cl_fmap_close(map);
 }
