@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## UDF descriptor-size arithmetic — 2026-08-28
+
+UDF file-entry size calculation added the fixed descriptor header, extended
+attribute length, and allocation-descriptor length directly into `size_t`.
+That could wrap on a narrower native build before the existing 32 KiB
+descriptor-window check, leaving a short copied descriptor to be dereferenced
+as complete. The shared UDF size-add helper now rejects overflow and null
+outputs; file-identifier and file-entry discovery, plus direct file-entry
+parsing, mark a sticky incomplete, non-cacheable `CL_EFORMAT` result when the
+checked calculation fails. The focused descriptor-size oracle covers normal
+size construction, `SIZE_MAX` overflow, and null output, and the current UDF
+source passes warning-enabled GCC syntax checking. Full production-linked UDF
+corpus, sanitizer, resource-measurement, production-CVD/service, materialized
+large-file, Sonic1, and final UDF qualification remain open.
+
 ## HFS+ compressed-resource index width — 2026-08-28
 
 The HFS+ compressed-resource map accumulated resource instance counts in a

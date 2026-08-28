@@ -442,7 +442,11 @@ static cl_error_t parseFileEntryDescriptor(cli_ctx *ctx, FileEntryDescriptor *fe
     // Calculate pointer for the allocation descriptor.
     // The allocation descriptors are the last bytes of the Extended File Entry.
     // See Section 14.17 in https://www.ecma-international.org/wp-content/uploads/ECMA-167_3rd_edition_june_1997.pdf
-    file_entry_descriptor_size = getFileEntryDescriptorSize(fed);
+    if (!getFileEntryDescriptorSize(fed, &file_entry_descriptor_size)) {
+        cli_mark_scan_incomplete(ctx, "UDF file-entry descriptor size overflowed");
+        ret = CL_EFORMAT;
+        goto done;
+    }
     allocation_descriptor_len  = le32_to_host(fed->allocationDescLen);
 
     if (allocation_descriptor_len > file_entry_descriptor_size) {
@@ -1005,7 +1009,11 @@ static cl_error_t findFileIdentifiers(cli_ctx *ctx, const uint8_t *const input, 
 
         /* This is how far into the Volume we already are. */
         bufUsed     = buffer - input;
-        fidDescSize = getFileIdentifierDescriptorSize((FileIdentifierDescriptor *)buffer);
+        if (!getFileIdentifierDescriptorSize((FileIdentifierDescriptor *)buffer, &fidDescSize)) {
+            cli_mark_scan_incomplete(ctx, "UDF file-identifier descriptor size overflowed");
+            ret = CL_EFORMAT;
+            break;
+        }
 
         /* Check that it's safe to save the file identifier pointer for later use */
         if (bufUsed > VOLUME_DESCRIPTOR_SIZE || fidDescSize > VOLUME_DESCRIPTOR_SIZE - bufUsed) {
@@ -1051,7 +1059,11 @@ static cl_error_t findFileEntries(cli_ctx *ctx, const uint8_t *const input, Poin
 
         /* This is how far into the Volume we already are. */
         bufUsed     = buffer - input;
-        fedDescSize = getFileEntryDescriptorSize((FileEntryDescriptor *)buffer);
+        if (!getFileEntryDescriptorSize((FileEntryDescriptor *)buffer, &fedDescSize)) {
+            cli_mark_scan_incomplete(ctx, "UDF file-entry descriptor size overflowed");
+            ret = CL_EFORMAT;
+            break;
+        }
 
         /* Check that it's safe to save the file identifier pointer for later use */
         if (bufUsed > VOLUME_DESCRIPTOR_SIZE || fedDescSize > VOLUME_DESCRIPTOR_SIZE - bufUsed) {

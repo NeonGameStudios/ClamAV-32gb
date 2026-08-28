@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UDF descriptor-size arithmetic — 2026-08-28
+
+UDF variable descriptor sizes now use a checked native-width addition helper
+for the fixed header, extended-attribute, allocation-descriptor, and
+file-identifier components. Discovery and direct file-entry parsing mark the
+layer incomplete and non-cacheable before a wrapped descriptor size can pass
+the bounded descriptor-window check. The focused normal/overflow/null-output
+descriptor-size oracle passes with the existing Docker GCC toolchain, and the
+UDF source passes warning-enabled GCC syntax checking. Full production-linked
+UDF corpus, sanitizer, resource-measurement, production-CVD/service,
+materialized large-file, Sonic1, and final UDF qualification remain required.
+
 ## HFS+ compressed-resource index width — 2026-08-28
 
 HFS+ compressed-resource discovery now accumulates resource instance counts in

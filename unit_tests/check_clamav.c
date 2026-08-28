@@ -38046,6 +38046,21 @@ START_TEST(test_udf_null_context_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_udf_descriptor_size_arithmetic_is_fail_visible)
+{
+    FileEntryDescriptor fed;
+    size_t size = 0;
+
+    memset(&fed, 0, sizeof(fed));
+    cli_writeint32(&fed.extendedAttrLen, 16);
+    cli_writeint32(&fed.allocationDescLen, 32);
+    ck_assert(getFileEntryDescriptorSize(&fed, &size));
+    ck_assert_uint_eq(size, FILE_ENTRY_DESCRIPTOR_SIZE_KNOWN + 16U + 32U);
+    ck_assert(!cli_udf_size_add(SIZE_MAX, 1U, &size));
+    ck_assert(!cli_udf_size_add(0, 1U, NULL));
+}
+END_TEST
+
 START_TEST(test_udf_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -43721,6 +43736,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_udf_map, test_udf_null_context_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_missing_map_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_missing_engine_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_descriptor_size_arithmetic_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_truncated_descriptor_area_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_time_limit_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_descriptor_read_failure_is_fail_visible);

@@ -1,5 +1,17 @@
 # Wishlist
 
+## UDF descriptor-size arithmetic — 2026-08-28
+
+- Keep all UDF variable-descriptor size construction checked in native-width
+  arithmetic. File-identifier and file-entry indexing and direct allocation
+  descriptor parsing must fail visibly before a wrapped size can create or
+  expose an incomplete copied descriptor.
+- The shared size-add helper is used by all three UDF size consumers; the
+  focused current-header oracle passes normal, overflow, and null-output cases,
+  and the UDF source passes warning-enabled GCC syntax checking. Keep
+  production-linked UDF corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and final UDF qualification open.
+
 ## HFS+ compressed-resource index width — 2026-08-28
 
 - Keep compressed-resource instance accumulation and packed reference-entry

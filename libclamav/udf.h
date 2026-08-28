@@ -208,9 +208,27 @@ static uint32_t getFileIdentifierDescriptorPaddingLength(const FileIdentifierDes
     return ret;
 }
 
-static inline size_t getFileIdentifierDescriptorSize(const FileIdentifierDescriptor* fid)
+static inline bool cli_udf_size_add(size_t left, size_t right, size_t *result)
 {
-    return FILE_IDENTIFIER_DESCRIPTOR_SIZE_KNOWN + le16_to_host(fid->implementationLength) + fid->fileIdentifierLength + getFileIdentifierDescriptorPaddingLength(fid);
+    if (result == NULL || left > SIZE_MAX - right)
+        return false;
+
+    *result = left + right;
+    return true;
+}
+
+static inline bool getFileIdentifierDescriptorSize(const FileIdentifierDescriptor *fid, size_t *size)
+{
+    size_t total;
+
+    if (fid == NULL || size == NULL ||
+        !cli_udf_size_add(FILE_IDENTIFIER_DESCRIPTOR_SIZE_KNOWN,
+                          le16_to_host(fid->implementationLength), &total) ||
+        !cli_udf_size_add(total, fid->fileIdentifierLength, &total) ||
+        !cli_udf_size_add(total, getFileIdentifierDescriptorPaddingLength(fid), size))
+        return false;
+
+    return true;
 }
 
 typedef struct __attribute__((packed)) {
@@ -260,9 +278,17 @@ typedef struct __attribute__((packed)) {
 } FileEntryDescriptor;
 
 #define FILE_ENTRY_DESCRIPTOR_SIZE_KNOWN (sizeof(FileEntryDescriptor) - 1)
-static inline size_t getFileEntryDescriptorSize(const FileEntryDescriptor* fed)
+static inline bool getFileEntryDescriptorSize(const FileEntryDescriptor *fed, size_t *size)
 {
-    return FILE_ENTRY_DESCRIPTOR_SIZE_KNOWN + le32_to_host(fed->extendedAttrLen) + le32_to_host(fed->allocationDescLen);
+    size_t total;
+
+    if (fed == NULL || size == NULL ||
+        !cli_udf_size_add(FILE_ENTRY_DESCRIPTOR_SIZE_KNOWN,
+                          le32_to_host(fed->extendedAttrLen), &total) ||
+        !cli_udf_size_add(total, le32_to_host(fed->allocationDescLen), size))
+        return false;
+
+    return true;
 }
 
 typedef struct __attribute__((packed)) {
