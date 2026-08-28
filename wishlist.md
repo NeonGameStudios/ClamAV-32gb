@@ -6195,3 +6195,7 @@ qualification gates.
 ## TAR parser admission — 2026-08-27
 - Keep TAR fail-visible when owning engine state is absent before limit checks or temporary member cleanup.
 - Retain complete TAR corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification gates.
+
+## Fileblob materialization admission — 2026-08-27
+- Keep `fileblobAddData()` fail-visible when a materialization context lacks owning engine state; no early matcher-root dereference may occur.
+- Retain complete mail/fileblob corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification gates.

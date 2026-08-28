@@ -780,6 +780,10 @@ int fileblobAddData(fileblob *fb, const unsigned char *data, size_t len)
 #if defined(MAX_SCAN_SIZE) && (MAX_SCAN_SIZE > 0)
         cli_ctx *ctx = fb->ctx;
 
+        if (ctx && ctx->engine == NULL) {
+            fileblobMarkIncomplete(fb, "fileblob scan context has no owning engine");
+            return -1;
+        }
         if (fb->isIncomplete)
             return -1;
         if (fb->isInfected) /* pretend all was written */

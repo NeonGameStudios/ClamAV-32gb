@@ -8796,3 +8796,6 @@ The MSEXPAND entry now rejects a missing owning engine before time and limit hel
 
 ## TAR parser admission — 2026-08-27
 The exported `cli_untar()` entry now rejects a recognized fmap with no owning engine before time/limit or temporary-output handling. The focused `test_tar_missing_engine_is_fail_visible` regression uses a valid member-bearing archive and confirms `CL_ENULLARG` without falsely marking the layer incomplete or cache-tainted. Complete TAR corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification remain open.
+
+## Fileblob materialization admission — 2026-08-27
+The shared `fileblobAddData()` spool boundary now rejects a scan context without owning engine state before early matcher-root access, marks the context incomplete, and returns `-1`. The focused `test_fileblob_add_data_without_engine_is_fail_visible` regression covers a materialized temporary spool; complete mail/fileblob corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification remain open.

@@ -12371,3 +12371,6 @@ qualification evidence remain required.
 
 ## TAR parser admission audit — 2026-08-27
 `cli_untar()` accepted a valid fmap without an engine even though limit checks and member cleanup later dereferenced `ctx->engine`. The entry now returns `CL_ENULLARG` before those paths; `test_tar_missing_engine_is_fail_visible` covers a valid member-bearing archive and verifies no false incomplete/cache state. Complete TAR corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification evidence remain required.
+
+## Fileblob materialization admission audit — 2026-08-27
+`fileblobAddData()` accepted a context with no engine and entered its early matcher path, which dereferenced `ctx->engine->root`. The shared boundary now marks the blob/context incomplete and returns `-1` before matcher access; `test_fileblob_add_data_without_engine_is_fail_visible` covers a real temporary spool. Complete mail/fileblob corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification evidence remain required.
