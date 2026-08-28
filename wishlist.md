@@ -6500,3 +6500,14 @@ qualification gates.
   regression and current-source production-linked GCC evidence, then complete
   YARA evaluation and corpus, sanitizer, production-CVD/service, materialized
   large-file, certified Linux x86-64, Sonic1, and release qualification gates.
+
+## TAR EOF cleanup and coordinate admission — 2026-08-28
+
+- Keep TAR fail-visible and resource-balanced when a staged member reaches EOF
+  before the required end marker; close/unlink the active temporary output,
+  release its temporary reservation, and check fmap-coordinate advancement
+  before returning the missing-end-marker parse/read result.
+- Retain `test_tar_eof_releases_member_resources`, current-source GCC syntax
+  evidence, and the focused production-linked harness, then complete TAR
+  corpus, sanitizer, production-CVD/service, materialized large-file,
+  certified Linux x86-64, Sonic1, and release qualification gates.

@@ -19349,6 +19349,40 @@ START_TEST(test_tar_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tar_eof_releases_member_resources)
+{
+    uint8_t data[1024] = {0};
+    struct cl_engine *scan_engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    char tempfile[PATH_MAX];
+    cl_error_t ret;
+
+    tar_test_make_posix_header(data, "payload", 3, '0');
+    memcpy(data + 512, "MZP", 3);
+    memset(&ctx, 0, sizeof(ctx));
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = scan_engine;
+    ctx.fmap   = map;
+
+    ret = cli_untar(tmpdir, 1, &ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert_msg(snprintf(tempfile, sizeof(tempfile), "%s" PATHSEP "tar01", tmpdir) < (int)sizeof(tempfile),
+                  "TAR temporary path was truncated");
+    ck_assert_int_eq(access(tempfile, F_OK), -1);
+    ck_assert_int_eq(errno, ENOENT);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 static const void *tar_initial_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)map;
@@ -44010,6 +44044,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tar_member, test_tar_base256_unrepresentable_and_negative_sizes_fail_visible);
     tcase_add_test(tc_tar_member, test_tar_pax_global_local_size_scope_reaches_nested_matchers);
     tcase_add_test(tc_tar_member, test_tar_zero_length_member_does_not_skip_next_header);
+    tcase_add_test(tc_tar_member, test_tar_eof_releases_member_resources);
     tcase_add_test(tc_tar_member, test_tar_member_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_cpio);
     tcase_add_checked_fixture(tc_cpio, cl_setup, cl_teardown);

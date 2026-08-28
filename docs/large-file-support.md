@@ -9026,3 +9026,13 @@ three entries and verifies no false sticky incomplete or cache-taint state.
 Current-source Rust-boundary source evidence is recorded; complete Rust parser
 corpus, sanitizer, certified Linux x86-64, production-CVD/service, materialized
 large-file, Sonic1, and release qualification remain open.
+
+## TAR EOF cleanup and coordinate admission — 2026-08-28
+
+TAR now closes and removes an active staged member, and releases its temporary
+reservation, before returning a missing-end-marker result at EOF. Each fmap
+coordinate advance is also checked for native-range overflow. The registered
+`test_tar_eof_releases_member_resources` regression and focused current-source
+production-linked GCC harness cover the cleanup boundary; complete TAR corpus,
+sanitizer, production-CVD/service, materialized large-file, certified Linux
+x86-64, Sonic1, and parser-family qualification remain open.

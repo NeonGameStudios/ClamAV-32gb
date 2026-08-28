@@ -12780,3 +12780,20 @@ production-linked GCC harness returns `CL_EPARSE`, clears the public verdict,
 and leaves the input non-cacheable. Full XAR corpus, sanitizer, production-CVD/
 service, materialized large-file, Linux x86-64, and Sonic1 qualification
 remain required.
+
+## TAR EOF cleanup and coordinate admission audit — 2026-08-28
+
+When TAR had finished staging a member but reached EOF without the required
+second zero block, the parser returned its missing-end-marker error before
+closing and unlinking the temporary member or releasing its temporary-byte
+reservation. The EOF path now closes and removes any active member before
+returning the fail-visible parse/read result, and input-coordinate advancement
+is checked before adding each fmap read length. The registered
+`test_tar_eof_releases_member_resources` regression verifies `CL_EPARSE`,
+sticky incomplete/non-cacheable state, zero temporary bytes, and no leftover
+`tar01` file. The current-source `untar.c` object compiles with the
+production GCC flags; the full edited `check_clamav.c` passes GCC syntax-only
+checking (with the repository's pre-existing ISO test warning), and a focused
+current-source production-linked GCC harness passes with exit 0. Complete TAR
+corpus, sanitizer, production-CVD/service, materialized large-file, Linux
+x86-64, and Sonic1 qualification remain required.

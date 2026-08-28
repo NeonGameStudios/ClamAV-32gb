@@ -363,6 +363,10 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
         cli_dbgmsg("cli_untar: pos = %lu\n", (unsigned long)pos);
 
         if (!in_block && !nread) {
+            if (fout >= 0) {
+                (void)cli_untar_finish_member(ctx, &fout, fullname, name, false, temporary_reserved);
+                temporary_reserved = 0;
+            }
             if (pos < ctx->fmap->len) {
                 cli_mark_scan_incomplete(ctx, "TAR header could not be read completely");
                 return CL_EREAD;
@@ -385,6 +389,14 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "TAR member contents could not be read completely");
             cli_errmsg("cli_untar: block read error\n");
             return CL_EREAD;
+        }
+        if (nread > SIZE_MAX - pos) {
+            if (fout >= 0) {
+                (void)cli_untar_finish_member(ctx, &fout, fullname, name, false, temporary_reserved);
+                temporary_reserved = 0;
+            }
+            cli_mark_scan_incomplete(ctx, "TAR input offset exceeded the coordinate range");
+            return CL_EPARSE;
         }
         pos += nread;
 
