@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## GIF fixed-extension admission — 2026-08-29
+
+GIF Plain Text and Application extensions have fixed first-block sizes, but
+the parser previously treated those bytes as arbitrary sub-block lengths. A
+malformed confirmed GIF could therefore skip an invalid extension header and
+continue as clean. The parser now validates 12 bytes for Plain Text and 11
+bytes for Application extensions before advancing the cursor. The registered
+`test_gif_fixed_extension_block_sizes_are_validated` regression passes 2/2
+with exact incomplete reasons and non-cacheable maps; the focused current
+source GCC run and GCC ASan/UBSan run both pass 2/2. Complete GIF/image
+corpus, production-linked full-C execution, production CVD/service,
+materialized large-file, certified Linux x86-64, Sonic1, and parser-family/
+release qualification remain open.
+
 ## ELF metadata deadline admission — 2026-08-29
 
 The metadata-only `cli_elfheader()` path could enter required ELF header,

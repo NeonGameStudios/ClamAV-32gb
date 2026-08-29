@@ -42532,6 +42532,48 @@ START_TEST(test_gif_graphic_control_fields_are_validated)
 }
 END_TEST
 
+START_TEST(test_gif_fixed_extension_block_sizes_are_validated)
+{
+    static const uint8_t invalid_plain_text[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0, 0, 0, 0, 0, 0, 0,
+        0x21, 0x01, 0x0b,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0x00, 0x3b,
+    };
+    static const uint8_t invalid_application[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0, 0, 0, 0, 0, 0, 0,
+        0x21, 0xff, 0x0a,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0x00, 0x3b,
+    };
+    const uint8_t *cases[] = {invalid_plain_text, invalid_application};
+    const size_t lengths[] = {sizeof(invalid_plain_text), sizeof(invalid_application)};
+    const char *reasons[] = {
+        "Heuristics.Broken.Media.GIF.InvalidPlainTextExtensionBlockSize",
+        "Heuristics.Broken.Media.GIF.InvalidApplicationExtensionBlockSize",
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t i;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(cases[i], lengths[i]);
+        ck_assert_ptr_nonnull(map);
+        ctx.fmap = map;
+
+        ck_assert_int_eq(cli_parsegif(&ctx), CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, reasons[i]);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+    }
+}
+END_TEST
+
 START_TEST(test_gif_image_data_completion_is_validated)
 {
     static const uint8_t valid_image[] = {
@@ -47070,6 +47112,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif, test_gif_header_read_failures_are_fail_visible);
     tcase_add_test(tc_gif, test_gif_invalid_version_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_graphic_control_fields_are_validated);
+    tcase_add_test(tc_gif, test_gif_fixed_extension_block_sizes_are_validated);
     tcase_add_test(tc_gif, test_gif_image_data_completion_is_validated);
     tcase_add_test(tc_gif, test_gif_truncated_screen_descriptor_is_parse_error);
     tcase_add_test(tc_gif, test_gif_block_timeout_is_fail_visible);

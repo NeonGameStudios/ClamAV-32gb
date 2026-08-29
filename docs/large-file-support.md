@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## GIF fixed-extension admission — 2026-08-29
+
+GIF Plain Text and Application extensions now validate their fixed first-block
+sizes—12 and 11 bytes respectively—before the parser advances over any
+sub-block payload. A malformed confirmed extension therefore returns an
+explicit incomplete parse instead of silently continuing. The registered
+`test_gif_fixed_extension_block_sizes_are_validated` regression passes 2/2;
+focused current-source GCC and GCC ASan/UBSan runs both pass 2/2 with exact
+reasons and non-cacheable maps. Complete GIF/image corpus, production-linked
+full-C execution, production-CVD/service, materialized-large-file, certified
+Linux x86-64, Sonic1, parser-family, and release qualification remain
+required.
+
 ## ELF metadata deadline admission — 2026-08-29
 
 The metadata-only `cli_elfheader()` path now checks the shared deadline before

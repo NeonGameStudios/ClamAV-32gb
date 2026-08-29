@@ -351,6 +351,8 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
         switch (block_label) {
             case GIF_LABEL_EXTENSION_INTRODUCER: {
                 uint8_t extension_label = 0;
+                uint8_t expected_extension_block_size = 0;
+                const char *invalid_extension_block_size_reason = NULL;
                 cli_dbgmsg("GIF: Extension introducer:\n");
 
                 {
@@ -398,12 +400,18 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                     switch (extension_label) {
                         case GIF_LABEL_GRAPHIC_PLAIN_TEXT_EXTENSION:
                             cli_dbgmsg("GIF:   Plain text extension\n");
+                            expected_extension_block_size = 12;
+                            invalid_extension_block_size_reason =
+                                "Heuristics.Broken.Media.GIF.InvalidPlainTextExtensionBlockSize";
                             break;
                         case GIF_LABEL_SPECIAL_COMMENT_EXTENSION:
                             cli_dbgmsg("GIF:   Special comment extension\n");
                             break;
                         case GIF_LABEL_SPECIAL_APP_EXTENSION:
                             cli_dbgmsg("GIF:   Special app extension\n");
+                            expected_extension_block_size = 11;
+                            invalid_extension_block_size_reason =
+                                "Heuristics.Broken.Media.GIF.InvalidApplicationExtensionBlockSize";
                             break;
                         default:
                             cli_dbgmsg("GIF:   Unfamiliar extension, label: 0x%x\n", extension_label);
@@ -430,6 +438,14 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                                 goto scan_overlay;
                             }
                         }
+                        if (invalid_extension_block_size_reason &&
+                            extension_block_size != expected_extension_block_size) {
+                            status = gif_parse_error(ctx, invalid_extension_block_size_reason);
+                            parse_error = true;
+                            goto scan_overlay;
+                        }
+                        expected_extension_block_size = 0;
+                        invalid_extension_block_size_reason = NULL;
                         offset += sizeof(extension_block_size);
                         if (extension_block_size == GIF_BLOCK_TERMINATOR) {
                             cli_dbgmsg("GIF:     No more sub-blocks for this extension.\n");
