@@ -20748,6 +20748,38 @@ START_TEST(test_cpio_impossible_next_header_is_parse_error)
 }
 END_TEST
 
+START_TEST(test_cpio_invalid_next_header_is_fail_visible)
+{
+    uint8_t data[230] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(data + 6, '0', 104);
+    memcpy(data, "070701", 6);
+    memcpy(data + 94, "00000007", 8);
+    memcpy(data + 110, "member", 6);
+    data[116] = '\0';
+    memcpy(data + 120, "invalid", 7);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scancpio_newc(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "CPIO header magic was invalid");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_cpio_initial_read_failure_is_read_error)
 {
     static const uint8_t data[110] = {
@@ -45650,6 +45682,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cpio_map, test_cpio_truncated_header_is_fail_visible);
     tcase_add_test(tc_cpio_map, test_cpio_member_name_read_failure_is_fail_visible);
     tcase_add_test(tc_cpio_map, test_cpio_impossible_next_header_is_parse_error);
+    tcase_add_test(tc_cpio_map, test_cpio_invalid_next_header_is_fail_visible);
     tcase_add_test(tc_cpio_map, test_cpio_initial_read_failure_is_read_error);
     tcase_add_test(tc_cpio_map, test_cpio_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_iso_map);

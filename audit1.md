@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## CPIO invalid-header admission — 2026-08-28
+
+The CPIO old-binary, ODC, and NEWC/CRC walkers returned `CL_EFORMAT` for a
+fully read but invalid subsequent header without setting sticky incomplete
+state. A forced recognized CPIO layer could therefore expose malformed
+archive content as cacheable. Invalid header magic now records
+`CPIO header magic was invalid` before returning. The new
+`test_cpio_invalid_next_header_is_fail_visible` regression and source guards
+cover the NEWC boundary; current-source compilation and focused execution,
+complete CPIO corpus, production-CVD/service, sanitizer, materialized
+large-file, Sonic1, and final parser-family/release qualification remain open.
+
 ## BinHex empty-stream admission — 2026-08-28
 
 `cli_binhex()` previously returned `CL_CLEAN` immediately for a zero-length

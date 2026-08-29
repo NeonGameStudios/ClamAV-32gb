@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## CPIO invalid-header admission — 2026-08-28
+
+CPIO old-binary, ODC, and NEWC/CRC parser walks now mark a recognized layer
+incomplete when a fully read subsequent header has invalid magic, while
+preserving `CL_EFORMAT`. Previously this malformed confirmed content returned
+without sticky cache-taint state. The registered
+`test_cpio_invalid_next_header_is_fail_visible` regression and source guard
+require `CPIO header magic was invalid` and a non-cacheable fmap. Current-source
+compilation and focused execution, complete CPIO corpus,
+production-CVD/service, sanitizer, materialized large-file, Sonic1, and final
+parser-family/release qualification remain required.
+
 ## BinHex empty-stream admission — 2026-08-28
 
 Recognized zero-length BinHex input now returns `CL_EPARSE` with sticky

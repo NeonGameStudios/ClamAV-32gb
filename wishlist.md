@@ -1,5 +1,14 @@
 # Wishlist
 
+## CPIO invalid-header admission — 2026-08-28
+
+- Keep fully read but invalid CPIO header magic fail-visible for every variant:
+  record `CPIO header magic was invalid`, preserve `CL_EFORMAT`, and disable
+  caching on the recognized layer.
+- Retain `test_cpio_invalid_next_header_is_fail_visible` and its source guard.
+  Keep complete CPIO corpus, production-CVD/service, sanitizer, materialized
+  large-file, Sonic1, and final parser-family/release evidence open.
+
 ## BinHex empty-stream admission — 2026-08-28
 
 - Keep a recognized zero-length BinHex fmap fail-visible: return `CL_EPARSE`,

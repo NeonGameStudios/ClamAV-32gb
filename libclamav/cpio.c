@@ -324,6 +324,7 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
             conv = 1;
         } else {
             cli_dbgmsg("cli_scancpio_old: Invalid magic number\n");
+            cli_mark_scan_incomplete(ctx, "CPIO header magic was invalid");
             status = CL_EFORMAT;
             goto done;
         }
@@ -466,6 +467,7 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
 
         if (strncmp(hdr_odc.magic, "070707", 6)) {
             cli_dbgmsg("cli_scancpio_odc: Invalid magic string\n");
+            cli_mark_scan_incomplete(ctx, "CPIO header magic was invalid");
             status = CL_EFORMAT;
             goto done;
         }
@@ -602,6 +604,7 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
 
         if ((!crc && strncmp(hdr_newc.magic, "070701", 6)) || (crc && strncmp(hdr_newc.magic, "070702", 6))) {
             cli_dbgmsg("cli_scancpio_newc: Invalid magic string\n");
+            cli_mark_scan_incomplete(ctx, "CPIO header magic was invalid");
             status = CL_EFORMAT;
             goto done;
         }
