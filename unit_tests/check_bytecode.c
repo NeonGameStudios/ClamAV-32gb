@@ -1324,6 +1324,18 @@ START_TEST(test_bytecode_loader_rejects_recursive_or_oversized_types)
 }
 END_TEST
 
+START_TEST(test_bytecode_table_size_admission_is_fail_visible)
+{
+    ck_assert_int_eq(cli_bytecode_table_size_check(0, sizeof(uint32_t)), CL_SUCCESS);
+    ck_assert_int_eq(cli_bytecode_table_size_check(1, sizeof(uint32_t)), CL_SUCCESS);
+    ck_assert_int_eq(cli_bytecode_table_size_check(CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1,
+                                                   sizeof(uint32_t)),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_bytecode_table_size_check(SIZE_MAX, sizeof(uint32_t)), CL_ERESOURCE);
+    ck_assert_int_eq(cli_bytecode_table_size_check(1, 0), CL_EARG);
+}
+END_TEST
+
 START_TEST(test_bytecode_engine_scan_options_query)
 {
     static const uint8_t general_name[]   = "GeNeRaL AlLmAtCh";
@@ -1913,6 +1925,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_valid_loader, test_bytecode_loader_accepts_valid_fixture);
     tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_truncated_records);
     tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_recursive_or_oversized_types);
+    tcase_add_test(tc_cli_loader, test_bytecode_table_size_admission_is_fail_visible);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
 #endif

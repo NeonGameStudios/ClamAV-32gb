@@ -95,6 +95,7 @@ cl_error_t cli_bytecode_context_setparam_int(struct cli_bc_ctx *ctx, unsigned i,
 cl_error_t cli_bytecode_context_setparam_ptr(struct cli_bc_ctx *ctx, unsigned i, void *data, unsigned datalen);
 cl_error_t cli_bytecode_context_setfile(struct cli_bc_ctx *ctx, fmap_t *map);
 int cli_bytecode_file_size_compatible(uint64_t file_size);
+cl_error_t cli_bytecode_table_size_check(size_t count, size_t element_size);
 int cli_bytecode_api_allowed_for_format(unsigned formatlevel, unsigned api_id);
 int cli_bytecode_global_allowed_for_format(unsigned formatlevel, unsigned global_id);
 cl_error_t cli_bytecode_context_setpe(struct cli_bc_ctx *ctx, const struct cli_pe_hook_data *data, const struct cli_exe_section *sections);

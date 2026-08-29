@@ -972,6 +972,17 @@ static inline char *readString(const unsigned char *p, unsigned *off, unsigned l
     return str;
 }
 
+cl_error_t cli_bytecode_table_size_check(size_t count, size_t element_size)
+{
+    if (element_size == 0)
+        return CL_EARG;
+
+    if (count > SIZE_MAX / element_size || count > CLI_MAX_ALLOCATION / element_size)
+        return CL_ERESOURCE;
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t parseHeader(struct cli_bc *bc, unsigned char *buffer, unsigned *linelength)
 {
     uint64_t magic1;
@@ -1034,6 +1045,11 @@ static cl_error_t parseHeader(struct cli_bc *bc, unsigned char *buffer, unsigned
     if (bc->num_func > UINT16_MAX) {
         cli_errmsg("Bytecode function table exceeds the function-id width\n");
         return CL_EMALFDB;
+    }
+    if (cli_bytecode_table_size_check(bc->num_func, sizeof(*bc->funcs)) != CL_SUCCESS ||
+        cli_bytecode_table_size_check(bc->num_types, sizeof(*bc->types)) != CL_SUCCESS) {
+        cli_errmsg("Bytecode header tables exceed the allocation ceiling\n");
+        return CL_ERESOURCE;
     }
     magic1 = readNumber(buffer, &offset, len, &ok);
     magic2 = readFixedNumber(buffer, &offset, len, &ok, 2);

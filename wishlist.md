@@ -1,5 +1,18 @@
 # Wishlist
 
+## Bytecode header table-size admission — 2026-08-29
+
+- Keep the initial bytecode function and type table products behind
+  `cli_bytecode_table_size_check()`, rejecting native-size multiplication
+  overflow and requests above `CLI_MAX_ALLOCATION` before allocation.
+- Retain `test_bytecode_table_size_admission_is_fail_visible` and the source
+  guards for the exact ceiling, `SIZE_MAX`, zero-count, and zero-width
+  boundaries; the modified source and test translation pass Docker
+  production-GCC syntax checks and the isolated current-source helper harness
+  passes. Full bytecode execution/JIT, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, parser-family,
+  and release qualification remain open.
+
 ## PEspin rebuilt-output size admission — 2026-08-29
 
 - Keep PEspin rebuilt-output accounting in `uint64_t`; never accumulate

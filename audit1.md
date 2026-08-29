@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## Bytecode header table-size admission — 2026-08-29
+
+The bytecode loader formed the initial function and type table allocation
+products directly from attacker-controlled header counts. On a narrower
+`size_t`, either product could wrap before `cli_max_calloc()` applied the
+individual allocation ceiling. The shared
+`cli_bytecode_table_size_check()` helper now rejects zero-width, native-size
+overflow, and over-ceiling table requests before the allocations; the loader
+returns `CL_ERESOURCE` with an explicit diagnostic. The registered
+`test_bytecode_table_size_admission_is_fail_visible` regression covers zero,
+valid, exact-ceiling-plus-one, `SIZE_MAX`, and zero-element-size boundaries.
+The modified bytecode source and test translation pass the Docker production
+GCC syntax checks, and an isolated current-source helper harness passes the
+same admission boundaries. Full bytecode execution/JIT, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
+final parser-family/release qualification remain open.
+
 ## PEspin rebuilt-output size admission — 2026-08-29
 
 The enabled PEspin unpacker accumulated the rebuilt section output in a
