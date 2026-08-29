@@ -3221,58 +3221,58 @@ fixed-width-integer	libclamav/matcher-bm.h	51	    uint64_t *offset, *offtab;
 fixed-width-integer	libclamav/matcher-bm.h	52	    uint32_t cnt, pos;
 fixed-width-integer	libclamav/matcher-bm.h	56	cl_error_t cli_bm_pattern_table_size(uint32_t pattern_count, size_t element_size, size_t *bytes);
 fixed-width-integer	libclamav/matcher-bm.h	60	cl_error_t cli_bm_scanbuff(const unsigned char *buffer, uint32_t length, const char **virname, const struct cli_bm_patt **patt, const struct cli_matcher *root, uint64_t offset, const struct cli_target_info *info, struct cli_bm_off *offdata, cli_ctx *ctx);
-fixed-width-integer	libclamav/matcher-byte-comp.c	1018	                if (((int32_t)norm_len - (int32_t)i) - 2 >= 0) {
-fixed-width-integer	libclamav/matcher-byte-comp.c	1057	    uint32_t i = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	452	cl_error_t cli_bcomp_scanbuf(const unsigned char *buffer, size_t buffer_length, uint64_t buffer_offset, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, cli_ctx *ctx)
-fixed-width-integer	libclamav/matcher-byte-comp.c	458	    uint32_t lsigid, ref_subsigid;
-fixed-width-integer	libclamav/matcher-byte-comp.c	459	    uint64_t offset            = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	460	    uint64_t comparison_offset = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	461	    int64_t relative_offset;
-fixed-width-integer	libclamav/matcher-byte-comp.c	462	    uint64_t distance;
-fixed-width-integer	libclamav/matcher-byte-comp.c	466	    uint32_t evalcnt = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	467	    uint64_t evalids = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	536	            relative_offset = (int64_t)distance;
-fixed-width-integer	libclamav/matcher-byte-comp.c	539	            if (distance > (uint64_t)INT64_MAX) {
-fixed-width-integer	libclamav/matcher-byte-comp.c	543	            relative_offset = -(int64_t)distance;
-fixed-width-integer	libclamav/matcher-byte-comp.c	562	                    distance = (uint64_t)(-(bcomp->offset + 1)) + 1;
-fixed-width-integer	libclamav/matcher-byte-comp.c	567	                    distance = (uint64_t)bcomp->offset;
+fixed-width-integer	libclamav/matcher-byte-comp.c	1035	                if (((int32_t)norm_len - (int32_t)i) - 2 >= 0) {
+fixed-width-integer	libclamav/matcher-byte-comp.c	1074	    uint32_t i = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	469	cl_error_t cli_bcomp_scanbuf(const unsigned char *buffer, size_t buffer_length, uint64_t buffer_offset, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, cli_ctx *ctx)
+fixed-width-integer	libclamav/matcher-byte-comp.c	475	    uint32_t lsigid, ref_subsigid;
+fixed-width-integer	libclamav/matcher-byte-comp.c	476	    uint64_t offset            = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	477	    uint64_t comparison_offset = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	478	    int64_t relative_offset;
+fixed-width-integer	libclamav/matcher-byte-comp.c	479	    uint64_t distance;
+fixed-width-integer	libclamav/matcher-byte-comp.c	483	    uint32_t evalcnt = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	484	    uint64_t evalids = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	553	            relative_offset = (int64_t)distance;
+fixed-width-integer	libclamav/matcher-byte-comp.c	556	            if (distance > (uint64_t)INT64_MAX) {
+fixed-width-integer	libclamav/matcher-byte-comp.c	560	            relative_offset = -(int64_t)distance;
+fixed-width-integer	libclamav/matcher-byte-comp.c	579	                    distance = (uint64_t)(-(bcomp->offset + 1)) + 1;
+fixed-width-integer	libclamav/matcher-byte-comp.c	584	                    distance = (uint64_t)bcomp->offset;
 fixed-width-integer	libclamav/matcher-byte-comp.c	59	cl_error_t cli_bcomp_addpatt(struct cli_matcher *root, const char *virname, const char *hexsig, const uint32_t *lsigid, unsigned int options)
-fixed-width-integer	libclamav/matcher-byte-comp.c	598	cl_error_t cli_bcomp_compare_check(const unsigned char *f_buffer, size_t buffer_length, int64_t offset, struct cli_bcomp_meta *bm)
-fixed-width-integer	libclamav/matcher-byte-comp.c	601	    uint32_t byte_len         = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	602	    uint32_t pad_len          = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	603	    uint32_t norm_len         = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	605	    uint32_t i                = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	607	    uint16_t opt              = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	608	    uint16_t opt_val          = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	609	    int64_t value             = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	610	    int64_t bin_value         = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	611	    int16_t compare_check     = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	612	    uint16_t value16          = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	613	    uint32_t value32          = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	614	    uint64_t value64          = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	615	cl_error_t cli_bcomp_compare_check(const unsigned char *f_buffer, size_t buffer_length, int64_t offset, struct cli_bcomp_meta *bm)
+fixed-width-integer	libclamav/matcher-byte-comp.c	618	    uint32_t byte_len         = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	619	    uint32_t pad_len          = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	620	    uint32_t norm_len         = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	622	    uint32_t i                = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	624	    uint16_t opt              = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	625	    uint16_t opt_val          = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	626	    int64_t value             = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	627	    int64_t bin_value         = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	628	    int16_t compare_check     = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	629	    uint16_t value16          = 0;
 fixed-width-integer	libclamav/matcher-byte-comp.c	63	    uint32_t i            = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	638	    if (offset < 0 || (uint64_t)offset > length || byte_len > length - (size_t)offset) {
-fixed-width-integer	libclamav/matcher-byte-comp.c	640	                   byte_len, (uint64_t)(offset < 0 ? 0 : offset), length);
+fixed-width-integer	libclamav/matcher-byte-comp.c	630	    uint32_t value32          = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	631	    uint64_t value64          = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	655	    if (offset < 0 || (uint64_t)offset > length || byte_len > length - (size_t)offset) {
+fixed-width-integer	libclamav/matcher-byte-comp.c	657	                   byte_len, (uint64_t)(offset < 0 ? 0 : offset), length);
 fixed-width-integer	libclamav/matcher-byte-comp.c	69	    int16_t ref_subsigid = -1;
 fixed-width-integer	libclamav/matcher-byte-comp.c	70	    int64_t offset_param = 0;
 fixed-width-integer	libclamav/matcher-byte-comp.c	71	    int64_t ret          = CL_SUCCESS;
 fixed-width-integer	libclamav/matcher-byte-comp.c	73	    int64_t comp_val     = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	760	                    bin_value = (int64_t)(*(uint8_t *)f_buffer);
-fixed-width-integer	libclamav/matcher-byte-comp.c	764	                    bin_value = (int64_t)le16_to_host(value16);
-fixed-width-integer	libclamav/matcher-byte-comp.c	768	                    bin_value = (int64_t)le32_to_host(value32);
-fixed-width-integer	libclamav/matcher-byte-comp.c	772	                    bin_value = (int64_t)le64_to_host(value64);
-fixed-width-integer	libclamav/matcher-byte-comp.c	787	                    bin_value = (int64_t)(*(uint8_t *)f_buffer);
-fixed-width-integer	libclamav/matcher-byte-comp.c	791	                    bin_value = (int64_t)be16_to_host(value16);
-fixed-width-integer	libclamav/matcher-byte-comp.c	795	                    bin_value = (int64_t)be32_to_host(value32);
-fixed-width-integer	libclamav/matcher-byte-comp.c	799	                    bin_value = (int64_t)be64_to_host(value64);
-fixed-width-integer	libclamav/matcher-byte-comp.c	86	    uint32_t bcomp_count = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	896	uint16_t cli_bcomp_chk_hex(const unsigned char *buffer, uint16_t opt, uint32_t len, uint32_t check_only)
-fixed-width-integer	libclamav/matcher-byte-comp.c	899	    uint16_t check = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	938	unsigned char *cli_bcomp_normalize_buffer(const unsigned char *buffer, uint32_t byte_len, uint32_t *pad_len, uint16_t opt, uint16_t whitespace_only)
-fixed-width-integer	libclamav/matcher-byte-comp.c	940	    uint32_t norm_len         = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	941	    uint32_t pad              = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	942	    uint32_t i                = 0;
-fixed-width-integer	libclamav/matcher-byte-comp.c	943	    uint16_t opt_val          = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	777	                    bin_value = (int64_t)(*(uint8_t *)f_buffer);
+fixed-width-integer	libclamav/matcher-byte-comp.c	781	                    bin_value = (int64_t)le16_to_host(value16);
+fixed-width-integer	libclamav/matcher-byte-comp.c	785	                    bin_value = (int64_t)le32_to_host(value32);
+fixed-width-integer	libclamav/matcher-byte-comp.c	789	                    bin_value = (int64_t)le64_to_host(value64);
+fixed-width-integer	libclamav/matcher-byte-comp.c	804	                    bin_value = (int64_t)(*(uint8_t *)f_buffer);
+fixed-width-integer	libclamav/matcher-byte-comp.c	808	                    bin_value = (int64_t)be16_to_host(value16);
+fixed-width-integer	libclamav/matcher-byte-comp.c	812	                    bin_value = (int64_t)be32_to_host(value32);
+fixed-width-integer	libclamav/matcher-byte-comp.c	816	                    bin_value = (int64_t)be64_to_host(value64);
+fixed-width-integer	libclamav/matcher-byte-comp.c	87	    uint32_t bcomp_count = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	913	uint16_t cli_bcomp_chk_hex(const unsigned char *buffer, uint16_t opt, uint32_t len, uint32_t check_only)
+fixed-width-integer	libclamav/matcher-byte-comp.c	916	    uint16_t check = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	955	unsigned char *cli_bcomp_normalize_buffer(const unsigned char *buffer, uint32_t byte_len, uint32_t *pad_len, uint16_t opt, uint16_t whitespace_only)
+fixed-width-integer	libclamav/matcher-byte-comp.c	957	    uint32_t norm_len         = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	958	    uint32_t pad              = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	959	    uint32_t i                = 0;
+fixed-width-integer	libclamav/matcher-byte-comp.c	960	    uint16_t opt_val          = 0;
 fixed-width-integer	libclamav/matcher-byte-comp.h	48	    uint16_t ref_subsigid; /* identifies the dependent subsig from which we will do comparisons */
 fixed-width-integer	libclamav/matcher-byte-comp.h	49	    uint32_t lsigid[3];
 fixed-width-integer	libclamav/matcher-byte-comp.h	51	    uint16_t options; /* bitmask */
@@ -11817,20 +11817,23 @@ native-width-integer	libclamav/matcher-bm.c	64	cl_error_t cli_bm_pattern_table_s
 native-width-integer	libclamav/matcher-bm.c	73	    *bytes = (size_t)pattern_count * element_size;
 native-width-integer	libclamav/matcher-bm.c	83	    size_t pattern_table_size;
 native-width-integer	libclamav/matcher-bm.h	56	cl_error_t cli_bm_pattern_table_size(uint32_t pattern_count, size_t element_size, size_t *bytes);
-native-width-integer	libclamav/matcher-byte-comp.c	129	            len = (size_t)(buf_end - ++buf_start);
-native-width-integer	libclamav/matcher-byte-comp.c	303	        cli_errmsg("cli_bcomp_addpatt: while parsing (%s#%s#%s), byte length was either too long or not a valid number of bytes\n", tokens[0], tokens[1], tokens[2]);
-native-width-integer	libclamav/matcher-byte-comp.c	311	        cli_errmsg("cli_bcomp_addpatt: while parsing (%s#%s#%s), byte length was too long\n", tokens[0], tokens[1], tokens[2]);
-native-width-integer	libclamav/matcher-byte-comp.c	452	cl_error_t cli_bcomp_scanbuf(const unsigned char *buffer, size_t buffer_length, uint64_t buffer_offset, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, cli_ctx *ctx)
-native-width-integer	libclamav/matcher-byte-comp.c	454	    size_t i;
-native-width-integer	libclamav/matcher-byte-comp.c	455	    int val                = 0;
+native-width-integer	libclamav/matcher-byte-comp.c	130	            len = (size_t)(buf_end - ++buf_start);
+native-width-integer	libclamav/matcher-byte-comp.c	304	        cli_errmsg("cli_bcomp_addpatt: while parsing (%s#%s#%s), byte length was either too long or not a valid number of bytes\n", tokens[0], tokens[1], tokens[2]);
+native-width-integer	libclamav/matcher-byte-comp.c	312	        cli_errmsg("cli_bcomp_addpatt: while parsing (%s#%s#%s), byte length was too long\n", tokens[0], tokens[1], tokens[2]);
+native-width-integer	libclamav/matcher-byte-comp.c	351	    if (cli_readdb_table_size((size_t)bcomp->comp_count, sizeof(*bcomp->comps), &comp_table_size) != CL_SUCCESS) {
+native-width-integer	libclamav/matcher-byte-comp.c	432	        cli_readdb_table_size((size_t)root->bcomp_metas + 1,
+native-width-integer	libclamav/matcher-byte-comp.c	469	cl_error_t cli_bcomp_scanbuf(const unsigned char *buffer, size_t buffer_length, uint64_t buffer_offset, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, cli_ctx *ctx)
+native-width-integer	libclamav/matcher-byte-comp.c	471	    size_t i;
+native-width-integer	libclamav/matcher-byte-comp.c	472	    int val                = 0;
 native-width-integer	libclamav/matcher-byte-comp.c	59	cl_error_t cli_bcomp_addpatt(struct cli_matcher *root, const char *virname, const char *hexsig, const uint32_t *lsigid, unsigned int options)
-native-width-integer	libclamav/matcher-byte-comp.c	598	cl_error_t cli_bcomp_compare_check(const unsigned char *f_buffer, size_t buffer_length, int64_t offset, struct cli_bcomp_meta *bm)
-native-width-integer	libclamav/matcher-byte-comp.c	604	    size_t length             = 0;
+native-width-integer	libclamav/matcher-byte-comp.c	615	cl_error_t cli_bcomp_compare_check(const unsigned char *f_buffer, size_t buffer_length, int64_t offset, struct cli_bcomp_meta *bm)
 native-width-integer	libclamav/matcher-byte-comp.c	62	    size_t len            = 0;
-native-width-integer	libclamav/matcher-byte-comp.c	638	    if (offset < 0 || (uint64_t)offset > length || byte_len > length - (size_t)offset) {
-native-width-integer	libclamav/matcher-byte-comp.c	645	    f_buffer += (size_t)offset;
+native-width-integer	libclamav/matcher-byte-comp.c	621	    size_t length             = 0;
+native-width-integer	libclamav/matcher-byte-comp.c	655	    if (offset < 0 || (uint64_t)offset > length || byte_len > length - (size_t)offset) {
+native-width-integer	libclamav/matcher-byte-comp.c	662	    f_buffer += (size_t)offset;
 native-width-integer	libclamav/matcher-byte-comp.c	68	    size_t toks          = 0;
 native-width-integer	libclamav/matcher-byte-comp.c	72	    size_t byte_length   = 0;
+native-width-integer	libclamav/matcher-byte-comp.c	77	    size_t comp_table_size, bcomp_table_size;
 native-width-integer	libclamav/matcher-byte-comp.h	50	    ssize_t offset;   /* offset from the referenced subsig, handled at match-time */
 native-width-integer	libclamav/matcher-byte-comp.h	52	    size_t byte_len;
 native-width-integer	libclamav/matcher-byte-comp.h	63	cl_error_t cli_bcomp_addpatt(struct cli_matcher *root, const char *virname, const char *hexsig, const uint32_t *lsigid, unsigned int options);
@@ -21003,6 +21006,7 @@ boundary-constant	libclamav/matcher-bm.c	356	                    if (delta > (ui
 boundary-constant	libclamav/matcher-bm.c	494	            if (delta > (uint64_t)(UINT32_MAX - i))
 boundary-constant	libclamav/matcher-bm.c	69	    if ((uint64_t)pattern_count > (uint64_t)SIZE_MAX / (uint64_t)element_size ||
 boundary-constant	libclamav/matcher-bm.c	85	    if (root->bm_patterns == UINT32_MAX)
+boundary-constant	libclamav/matcher-byte-comp.c	431	    if (root->bcomp_metas == UINT32_MAX ||
 boundary-constant	libclamav/matcher-hash.c	107	    if (count > SIZE_MAX / element_size ||
 boundary-constant	libclamav/matcher-hash.c	215	    if (size >= UINT32_MAX) {
 boundary-constant	libclamav/matcher-hash.c	230	            if (count == SIZE_MAX ||
@@ -21628,11 +21632,11 @@ quantity-parser	libclamav/dlp.c	159	    uint32_t iin = atoi(digits);
 quantity-parser	libclamav/ishield.c	618	        fsize = strtol(strsz, &eostr, 10);
 quantity-parser	libclamav/ishield.c	650	            cabno = strtol(fname + 4, &eostr, 10);
 quantity-parser	libclamav/jsparse/js-norm.c	1780	            TOKEN_SET(lvalp, ival, atoi(scanner->buf.data));
-quantity-parser	libclamav/matcher-byte-comp.c	110	    ref_subsigid = strtol(buf_start, (char **)&buf_end, 10);
-quantity-parser	libclamav/matcher-byte-comp.c	161	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
-quantity-parser	libclamav/matcher-byte-comp.c	181	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
-quantity-parser	libclamav/matcher-byte-comp.c	294	    byte_length = strtol(buf_start, (char **)&buf_end, 0);
-quantity-parser	libclamav/matcher-byte-comp.c	390	        comp_val = strtoll(comp_buf, (char **)&comp_end, 0);
+quantity-parser	libclamav/matcher-byte-comp.c	111	    ref_subsigid = strtol(buf_start, (char **)&buf_end, 10);
+quantity-parser	libclamav/matcher-byte-comp.c	162	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
+quantity-parser	libclamav/matcher-byte-comp.c	182	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
+quantity-parser	libclamav/matcher-byte-comp.c	295	    byte_length = strtol(buf_start, (char **)&buf_end, 0);
+quantity-parser	libclamav/matcher-byte-comp.c	399	        comp_val = strtoll(comp_buf, (char **)&comp_end, 0);
 quantity-parser	libclamav/matcher.c	486	    parsed = strtoull(text, &end, 10);
 quantity-parser	libclamav/mbox.c	4464	    parsed = strtoul(start, &end, 10);
 quantity-parser	libclamav/msxml_parser.c	185	    val2 = strtol(value, &endptr, 10);
@@ -22936,15 +22940,15 @@ format-width	libclamav/matcher-ac.c	3175	        cli_errmsg("cli_ac_addsig: Subp
 format-width	libclamav/matcher-ac.c	3304	            cli_errmsg("cli_ac_addsig: Can't find a static subpattern of length %u\n", root->ac_mindepth);
 format-width	libclamav/matcher-ac.c	639	        cli_dbgmsg("Using filter for trie %d\n", root->type);
 format-width	libclamav/matcher-ac.c	895	            cli_errmsg("cli_ac_chklsig: Subsignature id %u exceeds MAX_LDB_SUBSIGS\n", id);
-format-width	libclamav/matcher-byte-comp.c	147	        cli_errmsg("cli_bcomp_addpatt: %zu (or more) params provided, 3 expected\n", toks);
-format-width	libclamav/matcher-byte-comp.c	408	        bcm_dbgmsg("Matcher Byte Compare: (%s%ld#%c%c%s%zu#%c%ld)\n",
-format-width	libclamav/matcher-byte-comp.c	639	        bcm_dbgmsg("cli_bcomp_compare_check: %u bytes requested at offset " STDu64 " would go past file buffer of %zu\n",
-format-width	libclamav/matcher-byte-comp.c	776	                    bcm_dbgmsg("cli_bcomp_compare_check: invalid byte size for binary integer field (%u)\n", byte_len);
-format-width	libclamav/matcher-byte-comp.c	803	                    bcm_dbgmsg("cli_bcomp_compare_check: invalid byte size for binary integer field (%u)\n", byte_len);
-format-width	libclamav/matcher-byte-comp.c	827	                        bcm_dbgmsg("cli_bcomp_compare_check: extracted value (%ld) greater than comparison value (%ld)\n", (opt & CLI_BCOMP_BIN) ? bin_value : value, bm->comps[i]->comp_value);
-format-width	libclamav/matcher-byte-comp.c	841	                        bcm_dbgmsg("cli_bcomp_compare_check: extracted value (%ld) less than comparison value (%ld)\n", (opt & CLI_BCOMP_BIN) ? bin_value : value, bm->comps[i]->comp_value);
-format-width	libclamav/matcher-byte-comp.c	855	                        bcm_dbgmsg("cli_bcomp_compare_check: extracted value (%ld) equal to comparison value (%ld)\n", (opt & CLI_BCOMP_BIN) ? bin_value : value, bm->comps[i]->comp_value);
-format-width	libclamav/matcher-byte-comp.c	870	                bcm_dbgmsg("cli_bcomp_compare_check: extracted value (%ld) was not %c %ld\n", (opt & CLI_BCOMP_BIN) ? bin_value : value, bm->comps[i]->comp_symbol, bm->comps[i]->comp_value);
+format-width	libclamav/matcher-byte-comp.c	148	        cli_errmsg("cli_bcomp_addpatt: %zu (or more) params provided, 3 expected\n", toks);
+format-width	libclamav/matcher-byte-comp.c	417	        bcm_dbgmsg("Matcher Byte Compare: (%s%ld#%c%c%s%zu#%c%ld)\n",
+format-width	libclamav/matcher-byte-comp.c	656	        bcm_dbgmsg("cli_bcomp_compare_check: %u bytes requested at offset " STDu64 " would go past file buffer of %zu\n",
+format-width	libclamav/matcher-byte-comp.c	793	                    bcm_dbgmsg("cli_bcomp_compare_check: invalid byte size for binary integer field (%u)\n", byte_len);
+format-width	libclamav/matcher-byte-comp.c	820	                    bcm_dbgmsg("cli_bcomp_compare_check: invalid byte size for binary integer field (%u)\n", byte_len);
+format-width	libclamav/matcher-byte-comp.c	844	                        bcm_dbgmsg("cli_bcomp_compare_check: extracted value (%ld) greater than comparison value (%ld)\n", (opt & CLI_BCOMP_BIN) ? bin_value : value, bm->comps[i]->comp_value);
+format-width	libclamav/matcher-byte-comp.c	858	                        bcm_dbgmsg("cli_bcomp_compare_check: extracted value (%ld) less than comparison value (%ld)\n", (opt & CLI_BCOMP_BIN) ? bin_value : value, bm->comps[i]->comp_value);
+format-width	libclamav/matcher-byte-comp.c	872	                        bcm_dbgmsg("cli_bcomp_compare_check: extracted value (%ld) equal to comparison value (%ld)\n", (opt & CLI_BCOMP_BIN) ? bin_value : value, bm->comps[i]->comp_value);
+format-width	libclamav/matcher-byte-comp.c	887	                bcm_dbgmsg("cli_bcomp_compare_check: extracted value (%ld) was not %c %ld\n", (opt & CLI_BCOMP_BIN) ? bin_value : value, bm->comps[i]->comp_symbol, bm->comps[i]->comp_value);
 format-width	libclamav/matcher-hash.c	304	            cli_errmsg("hm_addhash_bin: failed to grow hash array to %u entries\n", szh->items);
 format-width	libclamav/matcher-hash.c	313	            cli_errmsg("hm_addhash_bin: failed to grow virusname array to %u entries\n", szh->items);
 format-width	libclamav/matcher-hash.c	79	            cli_dbgmsg("to_openssl_alg: unknown hash type %d\n", type);
@@ -29310,92 +29314,93 @@ offset-size-arithmetic	libclamav/matcher-bm.h	56	cl_error_t cli_bm_pattern_table
 offset-size-arithmetic	libclamav/matcher-bm.h	58	cl_error_t cli_bm_initoff(const struct cli_matcher *root, struct cli_bm_off *data, const struct cli_target_info *info);
 offset-size-arithmetic	libclamav/matcher-bm.h	59	void cli_bm_freeoff(struct cli_bm_off *data);
 offset-size-arithmetic	libclamav/matcher-bm.h	60	cl_error_t cli_bm_scanbuff(const unsigned char *buffer, uint32_t length, const char **virname, const struct cli_bm_patt **patt, const struct cli_matcher *root, uint64_t offset, const struct cli_target_info *info, struct cli_bm_off *offdata, cli_ctx *ctx);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	1001	            if (norm_len == byte_len + 1) {
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	1004	                    memcpy(hex_buffer + 3, buffer + 2, byte_len - 2);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	1018	                if (((int32_t)norm_len - (int32_t)i) - 2 >= 0) {
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	1020	                    if (isxdigit(hex_buffer[norm_len - i - 2]) || toupper(hex_buffer[norm_len - i - 2]) == 'X') {
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	1021	                        tmp_buffer[i] = hex_buffer[norm_len - i - 2];
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	1024	                        memset(tmp_buffer, '0', norm_len + 1);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	1031	                if (isxdigit(hex_buffer[norm_len - i - 1]) || toupper(hex_buffer[norm_len - i - 1]) == 'X') {
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	1032	                    tmp_buffer[i + 1] = hex_buffer[norm_len - i - 1];
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	1035	                    memset(tmp_buffer, '0', norm_len + 1);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	106	    /* first need to grab the subsig reference, we'll use this later to determine our offset */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	110	    ref_subsigid = strtol(buf_start, (char **)&buf_end, 10);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	125	    /* use the passed hexsig buffer to find the start and ending parens and store the param length (minus starting paren) */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	129	            len = (size_t)(buf_end - ++buf_start);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	155	     * offset params. this has the added benefit of letting us parse hex values too */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	161	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	162	                if (buf_end && buf_end + 1 != tokens[1]) {
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	169	                offset_param = (~offset_param) + 1;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	181	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	182	                if (buf_end && buf_end + 1 != tokens[1]) {
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	209	    /* the byte length indicator options are stored in a bitmask--by design each option gets its own nibble */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	226	                /* decimal may not be used with little-endian. big-endian is implied. */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	255	                /* little and big endian options are mutually exclusive parameters */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	256	                /* decimal may not be used with little-endian */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	265	                /* little and big endian options are mutually exclusive parameters */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	274	                /* for exact byte length matches */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	289	        buf_start++;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	292	    /* parse out the byte length parameter */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	294	    byte_length = strtol(buf_start, (char **)&buf_end, 0);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	295	    if ((buf_end && buf_end + 1 != tokens[2]) || (0 == byte_length)) {
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	309	    /* same deal with hex byte lengths */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	326	    /* use different buffer start and end markers so we can keep track of what we need to free later */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	350	    bcomp->comps = (struct cli_bcomp_comp **)MPOOL_CALLOC(root->mempool, bcomp->comp_count, sizeof(struct cli_bcomp_comp *));
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	401	        /* a bit of tricksy pointer stuffs which handles all count cases, taking advantage of where strtoll drops endptr */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	409	                   bcomp->offset == 0 ? "" : (bcomp->offset < 0 ? "<<" : ">>"),
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	425	    newmetatable = (struct cli_bcomp_meta **)MPOOL_REALLOC(root->mempool, root->bcomp_metatable, bcomp_count * sizeof(struct cli_bcomp_meta *));
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	452	cl_error_t cli_bcomp_scanbuf(const unsigned char *buffer, size_t buffer_length, uint64_t buffer_offset, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	486	            val = cli_ac_chklsig(subsigid, subsigid + strlen(subsigid), mdata->lsigcnt[bcomp->lsigid[1]], &evalcnt, &evalids, 0);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	492	            /* grab the needed offset using from the last matched subsig offset matrix, i.e. the match performed above */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	494	                offset = mdata->lsigsuboff_last[lsigid][ref_subsigid];
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	500	            /* mdata isn't populated in sigtool so run the raw matcher stuffs */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	515	        /* no offset available, make a best effort */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	531	            distance = offset - buffer_offset;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	538	            distance = buffer_offset - offset;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1004	        hex_buffer = cli_max_calloc(norm_len + 1, sizeof(char));
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1011	        memset(tmp_buffer, '0', norm_len + 1);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1012	        memset(hex_buffer, '0', norm_len + 1);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1018	            if (norm_len == byte_len + 1) {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1021	                    memcpy(hex_buffer + 3, buffer + 2, byte_len - 2);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1035	                if (((int32_t)norm_len - (int32_t)i) - 2 >= 0) {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1037	                    if (isxdigit(hex_buffer[norm_len - i - 2]) || toupper(hex_buffer[norm_len - i - 2]) == 'X') {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1038	                        tmp_buffer[i] = hex_buffer[norm_len - i - 2];
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1041	                        memset(tmp_buffer, '0', norm_len + 1);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1048	                if (isxdigit(hex_buffer[norm_len - i - 1]) || toupper(hex_buffer[norm_len - i - 1]) == 'X') {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1049	                    tmp_buffer[i + 1] = hex_buffer[norm_len - i - 1];
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	1052	                    memset(tmp_buffer, '0', norm_len + 1);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	107	    /* first need to grab the subsig reference, we'll use this later to determine our offset */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	111	    ref_subsigid = strtol(buf_start, (char **)&buf_end, 10);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	126	    /* use the passed hexsig buffer to find the start and ending parens and store the param length (minus starting paren) */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	130	            len = (size_t)(buf_end - ++buf_start);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	156	     * offset params. this has the added benefit of letting us parse hex values too */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	162	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	163	                if (buf_end && buf_end + 1 != tokens[1]) {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	170	                offset_param = (~offset_param) + 1;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	182	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	183	                if (buf_end && buf_end + 1 != tokens[1]) {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	210	    /* the byte length indicator options are stored in a bitmask--by design each option gets its own nibble */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	227	                /* decimal may not be used with little-endian. big-endian is implied. */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	256	                /* little and big endian options are mutually exclusive parameters */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	257	                /* decimal may not be used with little-endian */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	266	                /* little and big endian options are mutually exclusive parameters */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	275	                /* for exact byte length matches */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	290	        buf_start++;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	293	    /* parse out the byte length parameter */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	295	    byte_length = strtol(buf_start, (char **)&buf_end, 0);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	296	    if ((buf_end && buf_end + 1 != tokens[2]) || (0 == byte_length)) {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	310	    /* same deal with hex byte lengths */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	327	    /* use different buffer start and end markers so we can keep track of what we need to free later */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	351	    if (cli_readdb_table_size((size_t)bcomp->comp_count, sizeof(*bcomp->comps), &comp_table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	410	        /* a bit of tricksy pointer stuffs which handles all count cases, taking advantage of where strtoll drops endptr */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	418	                   bcomp->offset == 0 ? "" : (bcomp->offset < 0 ? "<<" : ">>"),
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	432	        cli_readdb_table_size((size_t)root->bcomp_metas + 1,
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	433	                              sizeof(*newmetatable), &bcomp_table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	469	cl_error_t cli_bcomp_scanbuf(const unsigned char *buffer, size_t buffer_length, uint64_t buffer_offset, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	503	            val = cli_ac_chklsig(subsigid, subsigid + strlen(subsigid), mdata->lsigcnt[bcomp->lsigid[1]], &evalcnt, &evalids, 0);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	509	            /* grab the needed offset using from the last matched subsig offset matrix, i.e. the match performed above */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	511	                offset = mdata->lsigsuboff_last[lsigid][ref_subsigid];
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	517	            /* mdata isn't populated in sigtool so run the raw matcher stuffs */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	532	        /* no offset available, make a best effort */
 offset-size-arithmetic	libclamav/matcher-byte-comp.c	54	 * @param hexsig the raw sub signature buffer itself which we will be checking/parsing
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	543	            relative_offset = -(int64_t)distance;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	551	         * and will append the virus alert if the whole logical signature matches. */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	559	                 * frozen bytecode ABI has historically exposed byte-compare
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	560	                 * subsignatures as having no direct match offset. */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	562	                    distance = (uint64_t)(-(bcomp->offset + 1)) + 1;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	565	                    comparison_offset = offset - distance;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	570	                    comparison_offset = offset + distance;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	573	                if (mdata->lsigsuboff_last[bcomp->lsigid[1]][bcomp->lsigid[2]] != CLI_OFF_NONE64 &&
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	574	                    comparison_offset <= mdata->lsigsuboff_last[bcomp->lsigid[1]][bcomp->lsigid[2]]) {
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	579	                mdata->lsigsuboff_last[bcomp->lsigid[1]][bcomp->lsigid[2]] = comparison_offset;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	598	cl_error_t cli_bcomp_compare_check(const unsigned char *f_buffer, size_t buffer_length, int64_t offset, struct cli_bcomp_meta *bm)
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	625	    byte_len = bm->byte_len;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	631	     * 64-bit hosts while rejecting negative or unrepresentable positions. */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	632	    if ((bm->offset > 0 && offset > INT64_MAX - bm->offset) ||
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	633	        (bm->offset < 0 && offset < INT64_MIN - bm->offset)) {
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	637	    offset += bm->offset;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	638	    if (offset < 0 || (uint64_t)offset > length || byte_len > length - (size_t)offset) {
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	644	    /* jump to byte compare offset, then store off specified bytes into a null terminated buffer */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	660	        /* adjust byte_len accordingly */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	661	        byte_len -= pad_len;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	664	    /* normalize buffer for little endian vals */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	683	    /* grab the first byte to handle byte length options to convert the string appropriately */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	688	                norm_len = (byte_len % 2) == 0 ? byte_len : byte_len + 1;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	693	            value = cli_strntol((char *)tmp_buffer, norm_len, (char **)&end_buf, 16);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	712	            value = cli_strntol((char *)buffer, byte_len, (char **)&end_buf, 16);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	730	            /* it may be possible for the auto option to proc this */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	738	            value = cli_strntol((char *)buffer, byte_len, (char **)&end_buf, 10);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	757	            /* exact byte_length option is implied for binary extraction */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	784	            /* exact byte_length option is implied for binary extraction */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	90	    bcomp = (struct cli_bcomp_meta *)MPOOL_CALLOC(root->mempool, 1, sizeof(*bcomp));
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	924	 * @brief multipurpose buffer normalization support function for byte-compare
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	931	 * @param pad_len if the address passed is non-null function will store the amount of whitespace found in bytes
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	938	unsigned char *cli_bcomp_normalize_buffer(const unsigned char *buffer, uint32_t byte_len, uint32_t *pad_len, uint16_t opt, uint16_t whitespace_only)
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	961	        /* keep in mind byte_len is a stack variable so this won't change byte_len in our calling functioning */
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	962	        byte_len   = byte_len - pad;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	963	        tmp_buffer = cli_max_calloc(byte_len + 1, sizeof(char));
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	968	        memset(tmp_buffer, '0', byte_len + 1);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	980	        norm_len   = (byte_len % 2) == 0 ? byte_len : byte_len + 1;
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	981	        tmp_buffer = cli_max_calloc(norm_len + 1, sizeof(char));
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	987	        hex_buffer = cli_max_calloc(norm_len + 1, sizeof(char));
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	994	        memset(tmp_buffer, '0', norm_len + 1);
-offset-size-arithmetic	libclamav/matcher-byte-comp.c	995	        memset(hex_buffer, '0', norm_len + 1);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	548	            distance = offset - buffer_offset;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	555	            distance = buffer_offset - offset;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	560	            relative_offset = -(int64_t)distance;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	568	         * and will append the virus alert if the whole logical signature matches. */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	576	                 * frozen bytecode ABI has historically exposed byte-compare
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	577	                 * subsignatures as having no direct match offset. */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	579	                    distance = (uint64_t)(-(bcomp->offset + 1)) + 1;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	582	                    comparison_offset = offset - distance;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	587	                    comparison_offset = offset + distance;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	590	                if (mdata->lsigsuboff_last[bcomp->lsigid[1]][bcomp->lsigid[2]] != CLI_OFF_NONE64 &&
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	591	                    comparison_offset <= mdata->lsigsuboff_last[bcomp->lsigid[1]][bcomp->lsigid[2]]) {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	596	                mdata->lsigsuboff_last[bcomp->lsigid[1]][bcomp->lsigid[2]] = comparison_offset;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	615	cl_error_t cli_bcomp_compare_check(const unsigned char *f_buffer, size_t buffer_length, int64_t offset, struct cli_bcomp_meta *bm)
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	642	    byte_len = bm->byte_len;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	648	     * 64-bit hosts while rejecting negative or unrepresentable positions. */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	649	    if ((bm->offset > 0 && offset > INT64_MAX - bm->offset) ||
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	650	        (bm->offset < 0 && offset < INT64_MIN - bm->offset)) {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	654	    offset += bm->offset;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	655	    if (offset < 0 || (uint64_t)offset > length || byte_len > length - (size_t)offset) {
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	661	    /* jump to byte compare offset, then store off specified bytes into a null terminated buffer */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	677	        /* adjust byte_len accordingly */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	678	        byte_len -= pad_len;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	681	    /* normalize buffer for little endian vals */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	700	    /* grab the first byte to handle byte length options to convert the string appropriately */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	705	                norm_len = (byte_len % 2) == 0 ? byte_len : byte_len + 1;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	710	            value = cli_strntol((char *)tmp_buffer, norm_len, (char **)&end_buf, 16);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	729	            value = cli_strntol((char *)buffer, byte_len, (char **)&end_buf, 16);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	747	            /* it may be possible for the auto option to proc this */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	755	            value = cli_strntol((char *)buffer, byte_len, (char **)&end_buf, 10);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	774	            /* exact byte_length option is implied for binary extraction */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	801	            /* exact byte_length option is implied for binary extraction */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	91	    bcomp = (struct cli_bcomp_meta *)MPOOL_CALLOC(root->mempool, 1, sizeof(*bcomp));
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	941	 * @brief multipurpose buffer normalization support function for byte-compare
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	948	 * @param pad_len if the address passed is non-null function will store the amount of whitespace found in bytes
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	955	unsigned char *cli_bcomp_normalize_buffer(const unsigned char *buffer, uint32_t byte_len, uint32_t *pad_len, uint16_t opt, uint16_t whitespace_only)
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	978	        /* keep in mind byte_len is a stack variable so this won't change byte_len in our calling functioning */
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	979	        byte_len   = byte_len - pad;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	980	        tmp_buffer = cli_max_calloc(byte_len + 1, sizeof(char));
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	985	        memset(tmp_buffer, '0', byte_len + 1);
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	997	        norm_len   = (byte_len % 2) == 0 ? byte_len : byte_len + 1;
+offset-size-arithmetic	libclamav/matcher-byte-comp.c	998	        tmp_buffer = cli_max_calloc(norm_len + 1, sizeof(char));
 offset-size-arithmetic	libclamav/matcher-byte-comp.h	48	    uint16_t ref_subsigid; /* identifies the dependent subsig from which we will do comparisons */
 offset-size-arithmetic	libclamav/matcher-byte-comp.h	50	    ssize_t offset;   /* offset from the referenced subsig, handled at match-time */
 offset-size-arithmetic	libclamav/matcher-byte-comp.h	64	cl_error_t cli_bcomp_scanbuf(const unsigned char *buffer, size_t buffer_length, uint64_t buffer_offset, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, cli_ctx *ctx);

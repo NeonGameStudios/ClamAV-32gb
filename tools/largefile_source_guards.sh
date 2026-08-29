@@ -297,6 +297,12 @@ not_contains libclamav/regex_list.c '++matcher->regex_cnt * sizeof(*matcher->all
 contains unit_tests/check_regex.c 'test_regex_table_size_rejects_product_wrap'
 contains docs/largefile-capabilities.tsv 'regex-table-size'
 
+contains libclamav/matcher-byte-comp.c 'cli_readdb_table_size((size_t)bcomp->comp_count'
+contains libclamav/matcher-byte-comp.c 'root->bcomp_metas == UINT32_MAX'
+contains libclamav/matcher-byte-comp.c 'byte compare meta table is too large'
+not_contains libclamav/matcher-byte-comp.c 'bcomp_count * sizeof(struct cli_bcomp_meta *)'
+contains docs/largefile-capabilities.tsv 'byte-compare-table-size'
+
 contains clamav-milter/clamfi.c 'uint64_t totsz;'
 contains clamav-milter/clamfi.c 'unsigned int stream_started;'
 contains clamav-milter/clamfi.c 'unsigned int over_limit;'

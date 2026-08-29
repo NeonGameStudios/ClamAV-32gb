@@ -1,5 +1,15 @@
 # Wishlist
 
+## Byte-compare table admission — 2026-08-29
+
+- Keep per-pattern component-pointer and root byte-compare metadata tables
+  behind `cli_readdb_table_size()` before mempool allocation, and reject
+  saturated metadata counts before increment.
+- Retain the shared readdb table-boundary regression and byte-compare source
+  guards. Full byte-compare signature corpus, sanitizer, production-CVD/
+  service, materialized-large-file, Sonic1, and matcher/release qualification
+  remain open.
+
 ## Regex matcher table admission — 2026-08-29
 
 - Keep phishing/allow-list suffix buckets and compiled-regex pointer tables

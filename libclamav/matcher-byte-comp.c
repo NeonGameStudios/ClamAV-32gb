@@ -74,6 +74,7 @@ cl_error_t cli_bcomp_addpatt(struct cli_matcher *root, const char *virname, cons
     char *comp_buf       = NULL;
     char *comp_start     = NULL;
     char *comp_end       = NULL;
+    size_t comp_table_size, bcomp_table_size;
 
     UNUSEDPARAM(options);
 
@@ -347,7 +348,15 @@ cl_error_t cli_bcomp_addpatt(struct cli_matcher *root, const char *virname, cons
     }
 
     /* allocate comp struct list space with the root structure's mempool instance */
-    bcomp->comps = (struct cli_bcomp_comp **)MPOOL_CALLOC(root->mempool, bcomp->comp_count, sizeof(struct cli_bcomp_comp *));
+    if (cli_readdb_table_size((size_t)bcomp->comp_count, sizeof(*bcomp->comps), &comp_table_size) != CL_SUCCESS) {
+        cli_errmsg("cli_bcomp_addpatt: comparison table is too large\n");
+        free(buf);
+        free((void *)buf_start);
+        cli_bcomp_freemeta(root, bcomp);
+        return CL_EMEM;
+    }
+
+    bcomp->comps = (struct cli_bcomp_comp **)MPOOL_CALLOC(root->mempool, 1, comp_table_size);
     if (!bcomp->comps) {
         cli_errmsg("cli_bcomp_addpatt: unable to allocate memory for comp struct pointers\n");
         free(buf);
@@ -419,10 +428,18 @@ cl_error_t cli_bcomp_addpatt(struct cli_matcher *root, const char *virname, cons
     free((void *)buf_start);
     buf_start = NULL;
     /* add byte compare info to the root after reallocation */
+    if (root->bcomp_metas == UINT32_MAX ||
+        cli_readdb_table_size((size_t)root->bcomp_metas + 1,
+                              sizeof(*newmetatable), &bcomp_table_size) != CL_SUCCESS) {
+        cli_errmsg("cli_bcomp_addpatt: byte compare meta table is too large\n");
+        cli_bcomp_freemeta(root, bcomp);
+        free(buf);
+        return CL_EMEM;
+    }
     bcomp_count = root->bcomp_metas + 1;
 
     /* allocate space for new meta table to store in root structure and increment number of byte compare patterns added */
-    newmetatable = (struct cli_bcomp_meta **)MPOOL_REALLOC(root->mempool, root->bcomp_metatable, bcomp_count * sizeof(struct cli_bcomp_meta *));
+    newmetatable = (struct cli_bcomp_meta **)MPOOL_REALLOC(root->mempool, root->bcomp_metatable, bcomp_table_size);
     if (!newmetatable) {
         cli_errmsg("cli_bcomp_addpatt: Unable to allocate memory for new bcomp meta table\n");
         cli_bcomp_freemeta(root, bcomp);

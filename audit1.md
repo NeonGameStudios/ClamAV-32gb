@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Byte-compare table admission — 2026-08-29
+
+Byte-compare signature loading formed both the per-pattern component-pointer
+product and the root metadata-pointer product directly before mempool
+allocation. Those products now use `cli_readdb_table_size()`, reject a
+saturated root metadata count before count-plus-one arithmetic, and allocate
+the component table from the checked byte size. Existing cleanup remains
+available on admission failure. The current matcher source compiles with
+Docker production GCC; the registered readdb table-boundary regression and
+source guards cover the shared arithmetic contract. Full byte-compare
+signature corpus, sanitizer matrix, service, materialized-large-file, Sonic1,
+and final matcher/release qualification remain open.
+
 ## Regex matcher table admission — 2026-08-29
 
 The phishing/allow-list matcher grew suffix-bucket and compiled-regex pointer
