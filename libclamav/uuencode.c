@@ -68,6 +68,10 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
         cli_mark_scan_incomplete(ctx, "UUencoded input map is unavailable");
         return CL_EPARSE;
     }
+    /* The map is passed explicitly because this helper is also used by the
+     * mail parser. Bind it to the context before any required-path failure so
+     * sticky incomplete reporting marks the map being inspected. */
+    ctx->fmap = map;
     if (ctx->engine == NULL)
         return CL_ENULLARG;
 

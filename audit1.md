@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## UUEncode explicit-map cache binding — 2026-08-28
+
+`cli_uuencode()` accepts its input `fmap_t` explicitly because the helper is
+also used by the mail parser, but incomplete-result reporting marks the map
+referenced by `ctx->fmap`. A caller that supplied a valid map while leaving
+`ctx->fmap` unset could therefore receive `CL_EREAD` and sticky context state
+without disabling caching on the inspected map. The entry point now binds the
+explicit map to the context before engine and traversal processing. The new
+`test_uuencode_explicit_map_is_cache_bound` regression and source guards cover
+the boundary; current-source compile, focused direct execution, complete
+UUEncode/mail corpus, sanitizer, production-CVD/service, materialized
+large-file, Sonic1, and final release qualification remain open.
+
 ## TNEF message-range fail visibility — 2026-08-28
 
 `cli_tnef()` converted any `tnef_message()` failure to `CL_EFORMAT` without

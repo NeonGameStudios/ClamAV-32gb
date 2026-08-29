@@ -1,5 +1,15 @@
 # Wishlist
 
+## UUEncode explicit-map cache binding — 2026-08-28
+
+- Keep `cli_uuencode()` bound to the explicit input fmap before any required
+  path can fail, so incomplete reporting disables caching on the map actually
+  being inspected.
+- Retain `test_uuencode_explicit_map_is_cache_bound` and its source guards.
+  Keep complete UUEncode/mail corpus, sanitizer, production-CVD/service,
+  materialized large-file, Sonic1, and final parser-family/release evidence
+  open.
+
 ## TNEF message-range fail visibility — 2026-08-28
 
 - Keep message-level TNEF range failures sticky and non-cacheable when a

@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UUEncode explicit-map cache binding — 2026-08-28
+
+`cli_uuencode()` now binds its explicitly supplied input fmap to `ctx->fmap`
+before engine and traversal processing. This is required because the helper
+is also called by the mail parser, while sticky incomplete reporting marks the
+context’s active map. The new `test_uuencode_explicit_map_is_cache_bound`
+regression covers an in-range initial line-read failure with an initially
+unset context map; the result remains `CL_EREAD`, incomplete, and
+non-cacheable. Complete UUEncode/mail corpus, sanitizer, production-CVD/
+service, materialized large-file, Sonic1, and final release qualification
+remain required.
+
 ## TNEF message-range fail visibility — 2026-08-28
 
 `cli_tnef()` now marks the recognized layer incomplete when a message-level
