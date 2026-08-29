@@ -29,6 +29,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdint.h>
 
 #ifdef CL_THREAD_SAFE
 #include <pthread.h>
@@ -52,6 +53,19 @@
 #ifndef EILSEQ
 #define EILSEQ 84
 #endif
+
+cl_error_t cli_iconv_cache_table_size(size_t count, size_t element_size, size_t *bytes)
+{
+    if (bytes == NULL || element_size == 0)
+        return CL_EARG;
+
+    if (count > SIZE_MAX / element_size ||
+        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+        return CL_ERESOURCE;
+
+    *bytes = count * element_size;
+    return CL_SUCCESS;
+}
 
 #ifndef HAVE_ICONV
 typedef struct {
@@ -629,7 +643,8 @@ static inline struct iconv_cache* cache_get_tls_instance(void)
 static iconv_t iconv_open_cached(const char* fromcode)
 {
     struct iconv_cache* cache;
-    size_t idx;
+    size_t idx, next_len, table_size;
+    iconv_t* newtab;
     const size_t fromcode_len = strlen((const char*)fromcode);
     struct cli_element* e;
     iconv_t iconv_struct;
@@ -655,21 +670,42 @@ static iconv_t iconv_open_cached(const char* fromcode)
     cli_dbgmsg(MODULE_NAME "iconv not found in cache, for encoding:%s\n", fromcode);
     iconv_struct = iconv_open("UTF-16BE", (const char*)fromcode);
     if (iconv_struct != (iconv_t)-1) {
-        idx = cache->last++;
+        idx = cache->last;
         if (idx >= cache->len) {
-            cache->len += 16;
-            cache->tab = cli_max_realloc_or_free(cache->tab, cache->len * sizeof(cache->tab[0]));
-            if (!cache->tab) {
+            if (cache->len > SIZE_MAX - 16) {
+                cli_dbgmsg(MODULE_NAME "!Iconv cache length overflow\n");
+                errno = ENOMEM;
+                iconv_close(iconv_struct);
+                return (iconv_t)-1;
+            }
+            next_len = cache->len + 16;
+            if (cli_iconv_cache_table_size(next_len, sizeof(cache->tab[0]), &table_size) != CL_SUCCESS) {
+                cli_dbgmsg(MODULE_NAME "!Iconv cache table is too large\n");
+                errno = ENOMEM;
+                iconv_close(iconv_struct);
+                return (iconv_t)-1;
+            }
+            /* Keep the existing descriptors reachable if the growth fails. */
+            newtab = cli_max_realloc(cache->tab, table_size);
+            if (!newtab) {
                 cli_dbgmsg(MODULE_NAME "!Out of mem in iconv-pool\n");
                 errno = ENOMEM;
                 /* Close descriptor before returning -1 */
                 iconv_close(iconv_struct);
                 return (iconv_t)-1;
             }
+            cache->tab = newtab;
+            cache->len = next_len;
         }
 
-        cli_hashtab_insert(&cache->hashtab, fromcode, fromcode_len, (const cli_element_data)idx);
+        if (!cli_hashtab_insert(&cache->hashtab, fromcode, fromcode_len, (const cli_element_data)idx)) {
+            cli_dbgmsg(MODULE_NAME "!Out of mem inserting iconv in cache\n");
+            errno = ENOMEM;
+            iconv_close(iconv_struct);
+            return (iconv_t)-1;
+        }
         cache->tab[idx] = iconv_struct;
+        cache->last++;
         cli_dbgmsg(MODULE_NAME "iconv_open(),for:%s -> %p\n", fromcode, (void*)cache->tab[idx]);
         return cache->tab[idx];
     }

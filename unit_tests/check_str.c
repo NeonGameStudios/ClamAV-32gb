@@ -374,6 +374,25 @@ START_TEST(test_message_table_size_rejects_product_wrap)
 }
 END_TEST
 
+START_TEST(test_iconv_cache_table_size_rejects_product_wrap)
+{
+    size_t bytes;
+
+    ck_assert_int_eq(cli_iconv_cache_table_size(0, sizeof(void *), &bytes), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, 0);
+    ck_assert_int_eq(cli_iconv_cache_table_size(CLI_MAX_ALLOCATION / sizeof(void *),
+                                                sizeof(void *), &bytes),
+                     CL_SUCCESS);
+    ck_assert_uint_eq(bytes, CLI_MAX_ALLOCATION);
+    ck_assert_int_eq(cli_iconv_cache_table_size(CLI_MAX_ALLOCATION / sizeof(void *) + 1,
+                                                sizeof(void *), &bytes),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_iconv_cache_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_iconv_cache_table_size(1, 0, &bytes), CL_EARG);
+    ck_assert_int_eq(cli_iconv_cache_table_size(1, sizeof(void *), NULL), CL_EARG);
+}
+END_TEST
+
 static struct {
     const char *u16;
     const char *u8;
@@ -453,6 +472,7 @@ Suite *test_str_suite(void)
     tcase_add_test(tc_str, test_message_addstr_deduplicated_blank_does_not_charge);
     tcase_add_test(tc_str, test_message_export_rejects_truncated_materialization);
     tcase_add_test(tc_str, test_message_table_size_rejects_product_wrap);
+    tcase_add_test(tc_str, test_iconv_cache_table_size_rejects_product_wrap);
 
     return s;
 }

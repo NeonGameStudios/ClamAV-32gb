@@ -280,6 +280,9 @@ char* cli_utf16toascii(const char* str, unsigned int length);
 
 char* cli_utf16_to_utf8(const char* utf16, size_t length, encoding_t type);
 
+/* Check the iconv cache table before forming its native-size product. */
+cl_error_t cli_iconv_cache_table_size(size_t count, size_t element_size, size_t *bytes);
+
 int cli_isutf8(const char* buf, unsigned int len);
 
 #endif

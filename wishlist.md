@@ -1,5 +1,18 @@
 # Wishlist
 
+## Iconv cache table admission — 2026-08-29
+
+- Keep process/thread-local iconv handle-table growth behind
+  `cli_iconv_cache_table_size()`; reject native-size or 1 GiB individual
+  allocation overflow before updating cache state, and propagate hashtable
+  insertion failure.
+- Retain `test_iconv_cache_table_size_rejects_product_wrap` and its source
+  guards. Current `entconv.c`, `entconv.h`, and `check_str.c` compile with
+  Docker production GCC, and the isolated current-source UBSan oracle prints
+  `iconv_cache_table_size_guard_passed`; full encoding/converter corpus,
+  sanitizer, service, materialized-large-file, Sonic1, and release
+  qualification remain open.
+
 ## Signature-database table admission — 2026-08-29
 
 - Keep icon, logical-signature, bytecode, YARA string, and database-directory

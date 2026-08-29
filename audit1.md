@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Iconv cache table admission — 2026-08-29
+
+The entity/encoding converter grew its process or thread-local iconv handle
+table by adding 16 to a native `size_t` and forming the table byte product
+directly. The new `cli_iconv_cache_table_size()` checks native-size
+multiplication and the individual allocation ceiling before growth, rejects
+length overflow, and commits `len` and `last` only after table and hashtable
+admission succeeds. Cache growth now retains existing handles on allocation
+failure, and an iconv hashtable insertion failure closes the newly opened
+descriptor and remains fail-visible. The registered
+`test_iconv_cache_table_size_rejects_product_wrap` regression covers the exact
+allocation boundary, `SIZE_MAX`, and invalid arguments. Current `entconv.c`,
+`entconv.h`, and `check_str.c` compile with Docker production GCC, and an
+isolated current-source UBSan oracle prints
+`iconv_cache_table_size_guard_passed`. Full encoding/converter corpus,
+sanitizer matrix, service, materialized-large-file, Sonic1, and final release
+qualification remain open.
+
 ## Signature-database table admission — 2026-08-29
 
 The signature-database loader formed native-size products directly for icon
