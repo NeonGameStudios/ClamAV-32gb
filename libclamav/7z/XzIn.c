@@ -91,8 +91,10 @@ static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAlloc *
     UInt64 numBlocks64;
     READ_VARINT_AND_CHECK(buf, pos, size, &numBlocks64);
     numBlocks = (size_t)numBlocks64;
-    if (numBlocks != numBlocks64 || numBlocks * 2 > size)
+    if (numBlocks != numBlocks64 || numBlocks > size / 2)
       return SZ_ERROR_ARCHIVE;
+    if (numBlocks > (size_t)-1 / sizeof(CXzBlockSizes))
+      return SZ_ERROR_MEM;
   }
   
   crcStartPos = pos;
@@ -292,8 +294,13 @@ SRes Xzs_ReadBackward(CXzs *p, ILookInStream *stream, Int64 *startOffset, ICompr
     RINOK(res);
     if (p->num == p->numAllocated)
     {
-      size_t newNum = p->num + p->num / 4 + 1;
-      Byte *data = (Byte *)alloc->Alloc(alloc, newNum * sizeof(CXzStream));
+      size_t growth = p->num / 4 + 1;
+      size_t newNum;
+      Byte *data;
+      if (p->num > (size_t)-1 - growth ||
+          (newNum = p->num + growth) > (size_t)-1 / sizeof(CXzStream))
+        return SZ_ERROR_MEM;
+      data = (Byte *)alloc->Alloc(alloc, newNum * sizeof(CXzStream));
       if (data == 0)
         return SZ_ERROR_MEM;
       p->numAllocated = newNum;

@@ -1,5 +1,16 @@
 # Wishlist
 
+## XZ index-allocation product admission — 2026-08-29
+
+- Keep XZ index and backward stream-table allocations fail-closed: validate
+  block-count and growth arithmetic before multiplying by record sizes, and
+  return `SZ_ERROR_MEM` when the result cannot be represented.
+- Retain the canonical source guards and Docker production-GCC syntax evidence
+  for the modified XZ translation unit. This is static narrower-`size_t`
+  evidence only; complete XZ corpus, sanitizer matrix, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  parser-family, and release qualification remain open.
+
 ## 7-Zip allocation-product admission — 2026-08-29
 
 - Keep every vendored 7-Zip array allocation fail-closed: convert the declared

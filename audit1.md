@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## XZ index-allocation product admission — 2026-08-29
+
+The XZ decoder converted attacker-controlled block counts to `size_t` and
+multiplied them by the block-record size before allocating. Its backward stream
+table also computed a growth product without first proving that the growth
+addition and allocation product were representable. The decoder now rejects
+an index whose block table product cannot fit and returns `SZ_ERROR_MEM` before
+allocation; stream-table growth uses checked addition and product admission as
+well. The canonical source guards pass, and the modified XZ translation unit
+completes the existing Docker GCC syntax check with the production flags
+(`-std=gnu90 -Wall -Wextra -Wformat-security`; the command retains unrelated
+pre-existing XZ warnings). This is static narrower-`size_t` hardening only;
+complete XZ corpus, sanitizer matrix, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser-family/release qualification remain open.
+
 ## 7-Zip allocation-product admission — 2026-08-29
 
 The vendored 7-Zip `MY_ALLOC` macro multiplied a declared element count by
