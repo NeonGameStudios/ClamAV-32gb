@@ -94,6 +94,8 @@ static inline int insert_list(struct cli_matcher *root, struct cli_ac_patt *patt
 {
     struct cli_ac_list *new;
     struct cli_ac_list **newtable;
+    size_t table_size;
+    uint32_t next_count;
 
     new = (struct cli_ac_list *)MPOOL_CALLOC(root->mempool, 1, sizeof(struct cli_ac_list));
     if (!new) {
@@ -103,17 +105,24 @@ static inline int insert_list(struct cli_matcher *root, struct cli_ac_patt *patt
     new->me   = pattern;
     new->node = pt;
 
-    root->ac_lists++;
-    newtable = MPOOL_REALLOC(root->mempool, root->ac_listtable, root->ac_lists * sizeof(struct cli_ac_list *));
+    if (root->ac_lists == UINT32_MAX ||
+        cli_readdb_table_size((size_t)root->ac_lists + 1, sizeof(*newtable), &table_size) != CL_SUCCESS) {
+        cli_errmsg("cli_ac_addpatt: AC list table is too large\n");
+        MPOOL_FREE(root->mempool, new);
+        return CL_EMEM;
+    }
+    next_count = root->ac_lists + 1;
+
+    newtable = MPOOL_REALLOC(root->mempool, root->ac_listtable, table_size);
     if (!newtable) {
-        root->ac_lists--;
         cli_errmsg("cli_ac_addpatt: Can't realloc ac_listtable\n");
         MPOOL_FREE(root->mempool, new);
         return CL_EMEM;
     }
 
+    root->ac_lists                         = next_count;
     root->ac_listtable                     = newtable;
-    root->ac_listtable[root->ac_lists - 1] = new;
+    root->ac_listtable[next_count - 1]     = new;
     return CL_SUCCESS;
 }
 
@@ -319,9 +328,24 @@ static bool store_trans_node(struct cli_matcher *root, struct cli_ac_node **tran
 {
     bool bRet = false;
 
+    if (root->trans_cnt == SIZE_MAX) {
+        cli_errmsg("cli_ac_addpatt: Cleanup storage of trans is too large\n");
+        goto done;
+    }
+
     if (root->trans_cnt + 1 > root->trans_capacity) {
-        size_t newCapacity        = root->trans_capacity + 1024;
-        struct cli_ac_node ***ret = MPOOL_REALLOC(root->mempool, root->trans_array, newCapacity * sizeof(struct cli_ac_node **));
+        size_t newCapacity;
+        size_t table_size;
+        struct cli_ac_node ***ret;
+
+        if (root->trans_capacity > SIZE_MAX - 1024 ||
+            cli_readdb_table_size(root->trans_capacity + 1024,
+                                  sizeof(*root->trans_array), &table_size) != CL_SUCCESS) {
+            cli_errmsg("cli_ac_addpatt: Cleanup storage of trans is too large\n");
+            goto done;
+        }
+        newCapacity = root->trans_capacity + 1024;
+        ret         = MPOOL_REALLOC(root->mempool, root->trans_array, table_size);
         if (NULL == ret) {
             cli_errmsg("cli_ac_addpatt: Can't allocate memory for cleanup storage of trans\n");
             goto done;
@@ -361,6 +385,8 @@ static inline struct cli_ac_node *add_new_node(struct cli_matcher *root, uint16_
 {
     struct cli_ac_node *new;
     struct cli_ac_node **newtable;
+    size_t table_size;
+    uint32_t next_count;
 
     new = (struct cli_ac_node *)MPOOL_CALLOC(root->mempool, 1, sizeof(struct cli_ac_node));
     if (!new) {
@@ -378,24 +404,40 @@ static inline struct cli_ac_node *add_new_node(struct cli_matcher *root, uint16_
 
         if (!store_trans_node(root, new->trans)) {
             /* Error printed in store_trans_node */
+            MPOOL_FREE(root->mempool, new->trans);
             MPOOL_FREE(root->mempool, new);
             return NULL;
         }
     }
 
-    root->ac_nodes++;
-    newtable = MPOOL_REALLOC(root->mempool, root->ac_nodetable, root->ac_nodes * sizeof(struct cli_ac_node *));
-    if (!newtable) {
-        root->ac_nodes--;
-        cli_errmsg("cli_ac_addpatt: Can't realloc ac_nodetable\n");
-        if (new->trans)
+    if (root->ac_nodes == UINT32_MAX ||
+        cli_readdb_table_size((size_t)root->ac_nodes + 1, sizeof(*newtable), &table_size) != CL_SUCCESS) {
+        cli_errmsg("cli_ac_addpatt: AC node table is too large\n");
+        if (new->trans) {
+            if (root->trans_cnt && root->trans_array[root->trans_cnt - 1] == new->trans)
+                root->trans_cnt--;
             MPOOL_FREE(root->mempool, new->trans);
+        }
+        MPOOL_FREE(root->mempool, new);
+        return NULL;
+    }
+    next_count = root->ac_nodes + 1;
+
+    newtable = MPOOL_REALLOC(root->mempool, root->ac_nodetable, table_size);
+    if (!newtable) {
+        cli_errmsg("cli_ac_addpatt: Can't realloc ac_nodetable\n");
+        if (new->trans) {
+            if (root->trans_cnt && root->trans_array[root->trans_cnt - 1] == new->trans)
+                root->trans_cnt--;
+            MPOOL_FREE(root->mempool, new->trans);
+        }
         MPOOL_FREE(root->mempool, new);
         return NULL;
     }
 
+    root->ac_nodes                         = next_count;
     root->ac_nodetable                     = newtable;
-    root->ac_nodetable[root->ac_nodes - 1] = new;
+    root->ac_nodetable[next_count - 1]     = new;
 
     return new;
 }
@@ -419,6 +461,8 @@ static int cli_ac_addpatt_recursive(struct cli_matcher *root, struct cli_ac_patt
         }
         if (!store_trans_node(root, pt->trans)) {
             /* Error printed in store_trans_node */
+            MPOOL_FREE(root->mempool, pt->trans);
+            pt->trans = NULL;
             return CL_EMEM;
         }
     }
@@ -454,6 +498,8 @@ static int cli_ac_addpatt_recursive(struct cli_matcher *root, struct cli_ac_patt
 cl_error_t cli_ac_addpatt(struct cli_matcher *root, struct cli_ac_patt *pattern)
 {
     struct cli_ac_patt **newtable;
+    size_t table_size;
+    uint32_t next_count;
     uint16_t len = MIN(root->ac_maxdepth, pattern->length[0]);
     uint16_t i;
 
@@ -470,16 +516,22 @@ cl_error_t cli_ac_addpatt(struct cli_matcher *root, struct cli_ac_patt *pattern)
     }
 
     /* pattern added to master list */
-    root->ac_patterns++;
-    newtable = MPOOL_REALLOC(root->mempool, root->ac_pattable, root->ac_patterns * sizeof(struct cli_ac_patt *));
+    if (root->ac_patterns == UINT32_MAX ||
+        cli_readdb_table_size((size_t)root->ac_patterns + 1, sizeof(*newtable), &table_size) != CL_SUCCESS) {
+        cli_errmsg("cli_ac_addpatt: AC pattern table is too large\n");
+        return CL_EMEM;
+    }
+    next_count = root->ac_patterns + 1;
+
+    newtable = MPOOL_REALLOC(root->mempool, root->ac_pattable, table_size);
     if (!newtable) {
-        root->ac_patterns--;
         cli_errmsg("cli_ac_addpatt: Can't realloc ac_pattable\n");
         return CL_EMEM;
     }
 
+    root->ac_patterns                        = next_count;
     root->ac_pattable                        = newtable;
-    root->ac_pattable[root->ac_patterns - 1] = pattern;
+    root->ac_pattable[next_count - 1]        = pattern;
 
     pattern->depth = len;
 
@@ -3381,17 +3433,27 @@ cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const ch
     if ((new->offdata[0] != CLI_OFF_ANY64) &&
         (new->offdata[0] != CLI_OFF_ABSOLUTE) &&
         (new->offdata[0] != CLI_OFF_MACRO)) {
+        size_t table_size;
+        uint32_t next_count;
 
-        root->ac_reloff = (struct cli_ac_patt **)MPOOL_REALLOC2(root->mempool, root->ac_reloff, (root->ac_reloff_num + 1) * sizeof(struct cli_ac_patt *));
+        if (root->ac_reloff_num == UINT32_MAX ||
+            cli_readdb_table_size((size_t)root->ac_reloff_num + 1,
+                                  sizeof(*root->ac_reloff), &table_size) != CL_SUCCESS) {
+            cli_errmsg("cli_ac_addsig: AC relative-offset table is too large\n");
+            return CL_EMEM;
+        }
+        next_count = root->ac_reloff_num + 1;
+
+        root->ac_reloff = (struct cli_ac_patt **)MPOOL_REALLOC2(root->mempool, root->ac_reloff, table_size);
         if (!root->ac_reloff) {
             cli_errmsg("cli_ac_addsig: Can't allocate memory for root->ac_reloff\n");
             return CL_EMEM;
         }
 
         root->ac_reloff[root->ac_reloff_num] = new;
-        new->offset_min                      = root->ac_reloff_num * 2;
+        new->offset_min                      = (uint64_t)root->ac_reloff_num * 2;
         new->offset_max                      = new->offset_min + 1;
-        root->ac_reloff_num++;
+        root->ac_reloff_num                  = next_count;
     }
 
     return CL_SUCCESS;

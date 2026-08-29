@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## AC root table admission — 2026-08-29
+
+AC signature loading formed root-owned pointer-table products directly before
+mempool growth for list entries, transition cleanup storage, trie nodes,
+patterns, and relative-offset patterns. Those paths now use the shared
+`cli_readdb_table_size()` admission check, reject saturated `uint32_t` counts
+and capacity growth before incrementing, and preserve count/table state when
+growth fails. Transition-table cleanup now also removes a just-registered
+allocation before freeing it when a later node-table admission fails. The
+current matcher source compiles with Docker production GCC, and source guards
+cover each growth boundary plus the shared table-size regression. Full AC
+production-signature corpus, sanitizer, service, materialized-large-file,
+Sonic1, and final matcher/release qualification remain open.
+
 ## Byte-compare table admission — 2026-08-29
 
 Byte-compare signature loading formed both the per-pattern component-pointer

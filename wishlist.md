@@ -1,5 +1,15 @@
 # Wishlist
 
+## AC root table admission — 2026-08-29
+
+- Keep AC list, transition-cleanup, node, pattern, and relative-offset pointer
+  tables behind `cli_readdb_table_size()` before mempool growth, and reject
+  saturated counters before count-plus-one or capacity arithmetic.
+- Preserve transition-tracker rollback on later node-table failure and retain
+  the source guards plus shared table-boundary regression. Full AC corpus,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  matcher/release qualification remain open.
+
 ## Byte-compare table admission — 2026-08-29
 
 - Keep per-pattern component-pointer and root byte-compare metadata tables

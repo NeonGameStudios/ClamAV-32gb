@@ -871,6 +871,24 @@ START_TEST(test_ac_initdata_rejects_count_product_wrap)
 }
 END_TEST
 
+START_TEST(test_ac_pattern_table_rejects_saturated_count)
+{
+    struct cli_matcher root;
+    struct cli_ac_patt pattern;
+    uint16_t pattern_word = 0;
+
+    memset(&root, 0, sizeof(root));
+    memset(&pattern, 0, sizeof(pattern));
+    root.ac_mindepth = 1;
+    root.ac_maxdepth = 1;
+    root.ac_patterns  = UINT32_MAX;
+    pattern.pattern   = &pattern_word;
+    pattern.length[0] = 1;
+
+    ck_assert_int_eq(cli_ac_addpatt(&root, &pattern), CL_EMEM);
+}
+END_TEST
+
 START_TEST(test_mpool_allocation_size_wrap_is_fail_visible)
 {
 #ifdef USE_MPOOL
@@ -2633,6 +2651,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_readdb_table_size_rejects_product_wrap);
     tcase_add_test(tc_matchers, test_ac_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_ac_initdata_rejects_count_product_wrap);
+    tcase_add_test(tc_matchers, test_ac_pattern_table_rejects_saturated_count);
     tcase_add_test(tc_matchers, test_mpool_allocation_size_wrap_is_fail_visible);
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
