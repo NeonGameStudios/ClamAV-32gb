@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## HTML raw fallback after normalization admission — 2026-08-29
+
+When `MaxHTMLNormalize` rejects a recognized HTML input, the enabled parser
+must not turn the scan into a silent clean result. The current scanner keeps
+the HTML layer sticky-incomplete and non-cacheable, then preserves the raw
+scan so signatures that match the original bytes remain visible. A focused
+current-source production-linked public-API runner passes 1/1: a
+`MaxHTMLNormalize` boundary input returns the exact strong
+`Clamav-Unit-Test-Signature.UNOFFICIAL` alert while retaining the incomplete
+state. The same runner compiled with GCC ASan/UBSan passes 1/1 without a
+sanitizer finding. This is bounded fallback evidence only; malformed-
+normalization cases, a coherent full-C-ABI relink, the complete HTML corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, and final parser-family/release qualification remain open.
+
 ## GZip legacy-fallback fmap boundary — 2026-08-29
 
 The legacy zlib fallback accepted only a descriptor and previously duplicated

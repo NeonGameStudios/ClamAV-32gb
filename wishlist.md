@@ -1,5 +1,19 @@
 # Wishlist
 
+## HTML raw fallback after normalization admission — 2026-08-29
+
+- Keep a recognized HTML input fail-visible when `MaxHTMLNormalize` prevents
+  normalization: preserve sticky incomplete/non-cacheable state and still
+  run the bounded raw scan so exact signatures in the original bytes remain
+  detectable.
+- Retain the current-source production-linked public-API regression, which
+  passes 1/1 for the exact strong `Clamav-Unit-Test-Signature.UNOFFICIAL`
+  alert, and its GCC ASan/UBSan runner, which passes 1/1 without a sanitizer
+  finding. Complete malformed-normalization fallback coverage, coherent
+  full-C-ABI relink, full HTML corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, parser-family,
+  and release qualification remain open.
+
 ## GZip legacy-fallback fmap boundary — 2026-08-29
 
 - Keep the legacy zlib fallback bounded to the visible fmap: stage nested and
