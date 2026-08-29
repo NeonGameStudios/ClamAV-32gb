@@ -1,5 +1,17 @@
 # Wishlist
 
+## Shared Uniq table-size admission — 2026-08-29
+
+- Keep `uniq_init()` behind checked `uint64_t` table-size derivation,
+  native-size validation, and the individual allocation ceiling so a large
+  count cannot create an undersized table with an oversized logical capacity.
+- Retain `test_uniq_init_rejects_table_size_wrap` and its source guards. The
+  current `uniq.c`, `uniq.h`, and `check_uniq.c` pass Docker production-GCC
+  syntax checks, and the isolated current-source production-linked harness
+  prints `uniq_table_size_guard_passed`; full OLE/Uniq corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, parser-family,
+  and release qualification remain open.
+
 ## Shared Base64 length admission — 2026-08-29
 
 - Keep Base64 decode length derivation behind native `int`, input-ceiling,

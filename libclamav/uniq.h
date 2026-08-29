@@ -72,6 +72,8 @@
 #ifndef _UNIQ_H
 #define _UNIQ_H
 
+#include <stddef.h>
+
 #include "clamav.h"
 #include "clamav-types.h"
 
@@ -116,6 +118,16 @@ struct uniq {
  * @return struct uniq* A pointer to the Uniq store object. Will return NULL on failure.
  */
 struct uniq *uniq_init(uint32_t);
+
+/**
+ * @brief Validate and calculate the Uniq MD5 table allocation size.
+ *
+ * @param count         The requested number of table entries.
+ * @param[out] bytes    The checked allocation size in bytes.
+ * @return cl_error_t   CL_SUCCESS if the size is representable and within
+ *                      the individual allocation limit, else an error code.
+ */
+cl_error_t cli_uniq_table_size(uint32_t count, size_t *bytes);
 
 /**
  * @brief Free the Uniq store and associated memory.

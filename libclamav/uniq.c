@@ -34,15 +34,34 @@
 #include "uniq.h"
 #include "others.h"
 
+cl_error_t cli_uniq_table_size(uint32_t count, size_t *bytes)
+{
+    uint64_t required;
+
+    if (bytes == NULL || count == 0)
+        return CL_EARG;
+
+    required = (uint64_t)count * sizeof(struct UNIQMD5);
+    if (required > (uint64_t)CLI_MAX_ALLOCATION ||
+        (sizeof(size_t) < sizeof(required) && required > (uint64_t)SIZE_MAX))
+        return CL_ERESOURCE;
+
+    *bytes = (size_t)required;
+    return CL_SUCCESS;
+}
+
 struct uniq *uniq_init(uint32_t count)
 {
     struct uniq *U;
+    size_t table_size;
 
-    if (!count) return NULL;
+    if (CL_SUCCESS != cli_uniq_table_size(count, &table_size))
+        return NULL;
+
     U = calloc(1, sizeof(*U));
     if (!U) return NULL;
 
-    U->md5s = cli_max_malloc(count * sizeof(*U->md5s));
+    U->md5s = cli_max_malloc(table_size);
     if (!U->md5s) {
         uniq_free(U);
         return NULL;

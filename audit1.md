@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## Shared Uniq table-size admission — 2026-08-29
+
+The OLE/Uniq support path multiplied its caller-provided `uint32_t` entry
+count by `sizeof(struct UNIQMD5)` before the bounded allocator saw the size.
+On a narrower target, that could wrap the allocation while leaving the
+logical table capacity at the original count. `cli_uniq_table_size()` now
+computes the product in `uint64_t`, checks native representability and the
+individual allocation ceiling, and `uniq_init()` allocates only from the
+checked result. The registered
+`test_uniq_init_rejects_table_size_wrap` regression exercises `UINT32_MAX`
+without a large allocation; the current `uniq.c`, `uniq.h`, and
+`check_uniq.c` pass Docker production-GCC syntax checks, and an isolated
+current-source production-linked harness prints
+`uniq_table_size_guard_passed`. Full OLE/Uniq corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser-family/release qualification remain open.
+
 ## Shared Base64 length admission — 2026-08-29
 
 The shared Base64 decoder already routed its decoded allocation through the

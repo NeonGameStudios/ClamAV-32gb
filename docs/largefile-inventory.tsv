@@ -5302,18 +5302,24 @@ fixed-width-integer	libclamav/unarj.h	33	    uint32_t comp_size;
 fixed-width-integer	libclamav/unarj.h	34	    uint32_t orig_size;
 fixed-width-integer	libclamav/unarj.h	35	    uint32_t orig_crc;
 fixed-width-integer	libclamav/unarj.h	36	    uint32_t crc;
-fixed-width-integer	libclamav/uniq.c	135	cl_error_t uniq_get(struct uniq *U, const char *item, uint32_t item_len, char **rhash, uint32_t *count)
-fixed-width-integer	libclamav/uniq.c	140	    uint32_t idx      = 0;
-fixed-width-integer	libclamav/uniq.c	37	struct uniq *uniq_init(uint32_t count)
-fixed-width-integer	libclamav/uniq.c	61	cl_error_t uniq_add(struct uniq *U, const char *item, uint32_t item_len, char **rhash, uint32_t *count)
-fixed-width-integer	libclamav/uniq.h	100	    uint32_t items;            /**< Total # of items added (including duplicates) */
-fixed-width-integer	libclamav/uniq.h	101	    uint32_t cur_unique_items; /**< The # of md5s currently stored in the array. */
-fixed-width-integer	libclamav/uniq.h	102	    uint32_t max_unique_items; /**< The # of md5s that can be stored the array. */
-fixed-width-integer	libclamav/uniq.h	103	    uint32_t idx[256];         /**< Array of indices into the md5s array.
-fixed-width-integer	libclamav/uniq.h	118	struct uniq *uniq_init(uint32_t);
-fixed-width-integer	libclamav/uniq.h	139	cl_error_t uniq_add(struct uniq *U, const char *item, uint32_t, char **rhash, uint32_t *count);
-fixed-width-integer	libclamav/uniq.h	153	cl_error_t uniq_get(struct uniq *U, const char *item, uint32_t, char **rhash, uint32_t *count);
-fixed-width-integer	libclamav/uniq.h	87	    uint32_t count;       /**< Number of times this item has been added. (# duplicates). */
+fixed-width-integer	libclamav/uniq.c	154	cl_error_t uniq_get(struct uniq *U, const char *item, uint32_t item_len, char **rhash, uint32_t *count)
+fixed-width-integer	libclamav/uniq.c	159	    uint32_t idx      = 0;
+fixed-width-integer	libclamav/uniq.c	37	cl_error_t cli_uniq_table_size(uint32_t count, size_t *bytes)
+fixed-width-integer	libclamav/uniq.c	39	    uint64_t required;
+fixed-width-integer	libclamav/uniq.c	44	    required = (uint64_t)count * sizeof(struct UNIQMD5);
+fixed-width-integer	libclamav/uniq.c	45	    if (required > (uint64_t)CLI_MAX_ALLOCATION ||
+fixed-width-integer	libclamav/uniq.c	46	        (sizeof(size_t) < sizeof(required) && required > (uint64_t)SIZE_MAX))
+fixed-width-integer	libclamav/uniq.c	53	struct uniq *uniq_init(uint32_t count)
+fixed-width-integer	libclamav/uniq.c	80	cl_error_t uniq_add(struct uniq *U, const char *item, uint32_t item_len, char **rhash, uint32_t *count)
+fixed-width-integer	libclamav/uniq.h	102	    uint32_t items;            /**< Total # of items added (including duplicates) */
+fixed-width-integer	libclamav/uniq.h	103	    uint32_t cur_unique_items; /**< The # of md5s currently stored in the array. */
+fixed-width-integer	libclamav/uniq.h	104	    uint32_t max_unique_items; /**< The # of md5s that can be stored the array. */
+fixed-width-integer	libclamav/uniq.h	105	    uint32_t idx[256];         /**< Array of indices into the md5s array.
+fixed-width-integer	libclamav/uniq.h	120	struct uniq *uniq_init(uint32_t);
+fixed-width-integer	libclamav/uniq.h	130	cl_error_t cli_uniq_table_size(uint32_t count, size_t *bytes);
+fixed-width-integer	libclamav/uniq.h	151	cl_error_t uniq_add(struct uniq *U, const char *item, uint32_t, char **rhash, uint32_t *count);
+fixed-width-integer	libclamav/uniq.h	165	cl_error_t uniq_get(struct uniq *U, const char *item, uint32_t, char **rhash, uint32_t *count);
+fixed-width-integer	libclamav/uniq.h	89	    uint32_t count;       /**< Number of times this item has been added. (# duplicates). */
 fixed-width-integer	libclamav/unsp.c	122	uint32_t unspack(const char *start_of_stuff, char *dest, cli_ctx *ctx, uint32_t rva, uint32_t base, uint32_t ep, int file)
 fixed-width-integer	libclamav/unsp.c	125	    uint32_t i, firstbyte, tre, allocsz, tablesz, dsize, ssize;
 fixed-width-integer	libclamav/unsp.c	126	    uint16_t *table;
@@ -7099,9 +7105,9 @@ fixed-width-integer	unit_tests/check_matchers.c	867	    uint64_t offsets[64];
 fixed-width-integer	unit_tests/check_matchers.c	868	    uint32_t legacy_offsets[64];
 fixed-width-integer	unit_tests/check_matchers.c	95	    uint32_t dlength;
 fixed-width-integer	unit_tests/check_matchers.c	98	    const uint16_t sigopts;
-fixed-width-integer	unit_tests/check_uniq.c	48	    uint32_t u;
-fixed-width-integer	unit_tests/check_uniq.c	51	        const uint32_t key_len;
-fixed-width-integer	unit_tests/check_uniq.c	85	    uint32_t u;
+fixed-width-integer	unit_tests/check_uniq.c	57	    uint32_t u;
+fixed-width-integer	unit_tests/check_uniq.c	60	        const uint32_t key_len;
+fixed-width-integer	unit_tests/check_uniq.c	94	    uint32_t u;
 fixed-width-integer	win32/compat/resolv.h	109	        var = ((uint16_t)(*(uint8_t *)ptr++)) << 8; \
 fixed-width-integer	win32/compat/resolv.h	115	        var = ((uint32_t)(*(uint8_t *)ptr++)) << 24; \
 fixed-width-integer	win32/compat/resolv.h	116	        var = ((uint32_t)(*(uint8_t *)ptr++)) << 16; \
@@ -15381,7 +15387,12 @@ native-width-integer	libclamav/unarj.h	38	    int ofd;
 native-width-integer	libclamav/unarj.h	41	    size_t offset;
 native-width-integer	libclamav/unarj.h	55	cl_error_t cli_unarj_header_check(cli_ctx *ctx, size_t offset, size_t *size);
 native-width-integer	libclamav/unarj.h	56	cl_error_t cli_unarj_sfx_header_check(cli_ctx *ctx, size_t offset);
-native-width-integer	libclamav/uniq.c	64	    unsigned int i;
+native-width-integer	libclamav/uniq.c	37	cl_error_t cli_uniq_table_size(uint32_t count, size_t *bytes)
+native-width-integer	libclamav/uniq.c	46	        (sizeof(size_t) < sizeof(required) && required > (uint64_t)SIZE_MAX))
+native-width-integer	libclamav/uniq.c	49	    *bytes = (size_t)required;
+native-width-integer	libclamav/uniq.c	56	    size_t table_size;
+native-width-integer	libclamav/uniq.c	83	    unsigned int i;
+native-width-integer	libclamav/uniq.h	130	cl_error_t cli_uniq_table_size(uint32_t count, size_t *bytes);
 native-width-integer	libclamav/unsp.c	122	uint32_t unspack(const char *start_of_stuff, char *dest, cli_ctx *ctx, uint32_t rva, uint32_t base, uint32_t ep, int file)
 native-width-integer	libclamav/unsp.c	395	int getbit_from_table(uint16_t *intable, struct UNSP *read_struct)
 native-width-integer	libclamav/unsp.c	89	nsp1:00435A44                 int     3               ; Trap to Debugger
@@ -20591,8 +20602,9 @@ native-width-integer	unit_tests/check_str.c	216	    ck_assert_ptr_null(cl_base64
 native-width-integer	unit_tests/check_str.c	223	    unsigned int len;
 native-width-integer	unit_tests/check_str.c	305	    const size_t expected_bytes = strlen("body") + 1 + sizeof(text) + sizeof(line_t);
 native-width-integer	unit_tests/check_str.c	324	    size_t materialized_bytes;
-native-width-integer	unit_tests/check_uniq.c	60	    int i;
-native-width-integer	unit_tests/check_uniq.c	87	    int i, j;
+native-width-integer	unit_tests/check_uniq.c	47	    size_t bytes = 0;
+native-width-integer	unit_tests/check_uniq.c	69	    int i;
+native-width-integer	unit_tests/check_uniq.c	96	    int i, j;
 native-width-integer	unit_tests/checks.h	13	int open_testfile(const char *name, int flags);
 native-width-integer	unit_tests/checks.h	14	void diff_files(int fd, int reffd);
 native-width-integer	unit_tests/checks.h	15	void diff_file_mem(int fd, const char *ref, size_t len);
@@ -21024,6 +21036,7 @@ boundary-constant	libclamav/udf.c	364	    if (extent_count > SIZE_MAX / sizeof(*
 boundary-constant	libclamav/udf.c	568	        if (idx > SIZE_MAX - VOLUME_DESCRIPTOR_SIZE)
 boundary-constant	libclamav/udf.h	213	    if (result == NULL || left > SIZE_MAX - right)
 boundary-constant	libclamav/unarj.c	268	    if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX) {
+boundary-constant	libclamav/uniq.c	46	        (sizeof(size_t) < sizeof(required) && required > (uint64_t)SIZE_MAX))
 boundary-constant	libclamav/untar.c	137	    if (!octal(ochecksum, &checksum) || checksum > INT_MAX)
 boundary-constant	libclamav/untar.c	170	        size_t space      = SIZE_MAX;
 boundary-constant	libclamav/untar.c	176	        if (consumed > SIZE_MAX - offset)
@@ -21445,6 +21458,8 @@ boundary-constant	unit_tests/check_matchers.c	880	    ck_assert(!cli_lsig_byteco
 boundary-constant	unit_tests/check_matchers.c	882	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
 boundary-constant	unit_tests/check_str.c	188	    size_t native_wrap_len = (size_t)(UINT_MAX / 2U) + 1U;
 boundary-constant	unit_tests/check_str.c	197	    ck_assert_ptr_null(cli_str2hex(input, UINT_MAX));
+boundary-constant	unit_tests/check_uniq.c	49	    ck_assert_int_eq(cli_uniq_table_size(UINT32_MAX, &bytes), CL_ERESOURCE);
+boundary-constant	unit_tests/check_uniq.c	50	    ck_assert_ptr_null(uniq_init(UINT32_MAX));
 quantity-parser	clamav-milter/clamav-milter.c	245	            gid_t sock_gid = strtol(gname, &end, 10);
 quantity-parser	clamav-milter/clamav-milter.c	284	            sock_mode = strtol(optget(opts, "MilterSocketMode")->strarg, &end, 8);
 quantity-parser	clamav-milter/netcode.c	563	        nmask = atoi(mask);
@@ -24150,9 +24165,9 @@ format-width	unit_tests/check_str.c	85	    char *str = cli_unescape("%u05D0");
 format-width	unit_tests/check_str.c	90	    str = cli_unescape("%u00a2%u007f%u0080%u07ff%u0800%ue000");
 format-width	unit_tests/check_str.c	95	    str = cli_unescape("%%u123%u12%u1%u%u1234");
 format-width	unit_tests/check_str.c	96	    ck_assert_msg(str && !strcmp(str, "%%u123%u12%u1%u\xe1\x88\xb4"),
-format-width	unit_tests/check_uniq.c	103	        ck_assert_msg(u + i == 4, "uniq_get(%s) = %u - expected %u", tests[i], u, 4 - i);
-format-width	unit_tests/check_uniq.c	69	        ck_assert_msg(u == 1 && strcmp(hash, tests[i].expected) == 0, "uniq_add(%s) = %u - expected %s, got %s", tests[i].key, u, tests[i].expected, hash);
-format-width	unit_tests/check_uniq.c	76	        ck_assert_msg(u == 1 && strcmp(hash, tests[i].expected) == 0, "uniq_get(%s) = %u - expected %s, got %s", tests[i].key, u, tests[i].expected, hash);
+format-width	unit_tests/check_uniq.c	112	        ck_assert_msg(u + i == 4, "uniq_get(%s) = %u - expected %u", tests[i], u, 4 - i);
+format-width	unit_tests/check_uniq.c	78	        ck_assert_msg(u == 1 && strcmp(hash, tests[i].expected) == 0, "uniq_add(%s) = %u - expected %s, got %s", tests[i].key, u, tests[i].expected, hash);
+format-width	unit_tests/check_uniq.c	85	        ck_assert_msg(u == 1 && strcmp(hash, tests[i].expected) == 0, "uniq_get(%s) = %u - expected %s, got %s", tests[i].key, u, tests[i].expected, hash);
 format-width	unit_tests/input/pe_allmatch/test-exe-src/extract.h	102	        printf("Extracting file with size %zd\n", size);                                                   \
 format-width	unit_tests/input/pe_allmatch/test-exe-src/test.c	62	    printf("Listing current time\n - %d\n", (int)time(NULL));
 format-width	win32/compat/strptime.c	141	#define HERE_D_FMT "%m/%d/%y"
@@ -33338,10 +33353,11 @@ offset-size-arithmetic	libclamav/unarj.c	929	            if (j < 0 || (uint32_t)
 offset-size-arithmetic	libclamav/unarj.c	941	            if ((i = out_ptr - pos - 1) < 0) {
 offset-size-arithmetic	libclamav/unarj.h	52	 * @param[out] size       Will be set to the size of the file header + file data.
 offset-size-arithmetic	libclamav/unarj.h	55	cl_error_t cli_unarj_header_check(cli_ctx *ctx, size_t offset, size_t *size);
-offset-size-arithmetic	libclamav/uniq.c	135	cl_error_t uniq_get(struct uniq *U, const char *item, uint32_t item_len, char **rhash, uint32_t *count)
-offset-size-arithmetic	libclamav/uniq.c	42	    U = calloc(1, sizeof(*U));
-offset-size-arithmetic	libclamav/uniq.c	45	    U->md5s = cli_max_malloc(count * sizeof(*U->md5s));
-offset-size-arithmetic	libclamav/uniq.c	61	cl_error_t uniq_add(struct uniq *U, const char *item, uint32_t item_len, char **rhash, uint32_t *count)
+offset-size-arithmetic	libclamav/uniq.c	154	cl_error_t uniq_get(struct uniq *U, const char *item, uint32_t item_len, char **rhash, uint32_t *count)
+offset-size-arithmetic	libclamav/uniq.c	37	cl_error_t cli_uniq_table_size(uint32_t count, size_t *bytes)
+offset-size-arithmetic	libclamav/uniq.c	61	    U = calloc(1, sizeof(*U));
+offset-size-arithmetic	libclamav/uniq.c	80	cl_error_t uniq_add(struct uniq *U, const char *item, uint32_t item_len, char **rhash, uint32_t *count)
+offset-size-arithmetic	libclamav/uniq.h	130	cl_error_t cli_uniq_table_size(uint32_t count, size_t *bytes);
 offset-size-arithmetic	libclamav/unsp.c	103	nsp1:00435A5A loc_435A5A:                             ; CODE XREF: start+34A07j
 offset-size-arithmetic	libclamav/unsp.c	104	nsp1:00435A5A                                         ; start+34A38j
 offset-size-arithmetic	libclamav/unsp.c	122	uint32_t unspack(const char *start_of_stuff, char *dest, cli_ctx *ctx, uint32_t rva, uint32_t base, uint32_t ep, int file)

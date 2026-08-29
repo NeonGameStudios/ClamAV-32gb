@@ -42,6 +42,15 @@ START_TEST(test_uniq_initfail)
 }
 END_TEST
 
+START_TEST(test_uniq_init_rejects_table_size_wrap)
+{
+    size_t bytes = 0;
+
+    ck_assert_int_eq(cli_uniq_table_size(UINT32_MAX, &bytes), CL_ERESOURCE);
+    ck_assert_ptr_null(uniq_init(UINT32_MAX));
+}
+END_TEST
+
 START_TEST(test_uniq_known)
 {
     char *hash;
@@ -114,6 +123,7 @@ Suite *test_uniq_suite(void)
     tc_uniq = tcase_create("unique");
     suite_add_tcase(s, tc_uniq);
     tcase_add_test(tc_uniq, test_uniq_initfail);
+    tcase_add_test(tc_uniq, test_uniq_init_rejects_table_size_wrap);
     tcase_add_test(tc_uniq, test_uniq_known);
     tcase_add_test(tc_uniq, test_uniq_colls);
     return s;
