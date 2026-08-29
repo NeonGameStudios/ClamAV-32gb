@@ -526,6 +526,7 @@ contains unit_tests/check_clamav.c 'test_elf64_table_cursor_overflow_is_fail_vis
 contains unit_tests/check_clamav.c 'test_elf_unknown_data_encoding_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_elf_header_size_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_elf_scan_program_header_read_failure_is_fail_visible'
+contains docs/largefile-capabilities.tsv 'an isolated direct current-source cli_scanelf timeout check linked against production shared libraries passes 1/1'
 contains unit_tests/check_clamav.c 'test_elf_truncated_program_header_is_parse_error'
 contains unit_tests/check_clamav.c 'test_elf_program_table_is_required_without_entrypoint'
 contains unit_tests/check_clamav.c 'test_elf32_table_coordinates_are_native_width'
