@@ -27304,6 +27304,7 @@ START_TEST(test_egg_extra_field_range_classes_are_fail_visible)
 
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
+    engine.maxcontiguoussize = CLI_DEFAULT_MAX_CONTIGUOUS_SIZE;
     map = cl_fmap_open_memory(archive, archive_length);
     ck_assert_ptr_nonnull(map);
     egg_read_failure_offset = sizeof(valid_header) + 4U;
@@ -27621,6 +27622,51 @@ START_TEST(test_egg_extra_field_admission_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_egg_metadata_index_respects_contiguous_limit)
+{
+    static const uint8_t archive[] = {
+        0x45, 0x47, 0x47, 0x41, /* EGG_HEADER_MAGIC */
+        0x00, 0x01,             /* EGG_HEADER_VERSION */
+        0x01, 0x00, 0x00, 0x00, /* nonzero header id */
+        0x00, 0x00, 0x00, 0x00, /* reserved */
+        0x22, 0x82, 0xE2, 0x08, /* EOFARC */
+        0x72, 0x36, 0xC6, 0x04, /* COMMENT_HEADER_MAGIC */
+        0x00,                    /* UTF-8, 16-bit size */
+        0x03, 0x00,              /* three-byte comment */
+        'a', 'b', 'c',
+        0x22, 0x82, 0xE2, 0x08  /* EOFARC */
+    };
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxcontiguoussize = 1;
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert_ptr_null(handle);
+    ck_assert_ptr_null(comments);
+    ck_assert_uint_eq(ncomments, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "contiguous matcher subject exceeded the configured resource limit");
+    ck_assert_uint_eq(ctx.contiguous_bytes, 0);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 struct egg_sparse_extra_map {
     uint8_t prefix[64];
     size_t prefix_length;
@@ -27760,6 +27806,7 @@ START_TEST(test_egg_oversized_skippable_extra_fields_are_bounded)
 
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
+    engine.maxcontiguoussize = CLI_DEFAULT_MAX_CONTIGUOUS_SIZE;
     handle = NULL;
     egg_sparse_extra_map_init(&map, &state, payload_size, true);
     zip_stream_write_u32(state.prefix + state.extra_offset, 0x0A8591ACU); /* FILENAME_HEADER_MAGIC */
@@ -45792,6 +45839,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_egg_map, test_egg_archive_header_fields_are_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_extra_field_range_classes_are_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_extra_field_admission_is_fail_visible);
+    tcase_add_test(tc_egg_map, test_egg_metadata_index_respects_contiguous_limit);
     tcase_add_test(tc_egg_map, test_egg_oversized_skippable_extra_fields_are_bounded);
     tcase_add_test(tc_egg_map, test_egg_lzma_stream_extracts_bounded_member);
     suite_add_tcase(s, tc_egg_sfx);

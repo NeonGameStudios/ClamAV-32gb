@@ -9177,6 +9177,18 @@ unit translation unit. Compiled EGG corpus, sanitizer/fault injection,
 additional codepages and split-sequence cases, materialized large metadata,
 certified Linux x86-64, and Sonic1 qualification remain release gates.
 
+## EGG metadata-index resource accounting — 2026-08-29
+
+Scanner-aware EGG filename/comment ranges now charge their persistent native-
+width index growth against the shared contiguous budget. The exact growth is
+rolled back if reallocation fails, and the handle releases all retained index
+bytes on every close path. A focused current-source production-linked GCC
+TCase passes 8/8, including a resource-limit regression that returns
+`CL_ERESOURCE`, marks the layer incomplete and non-cacheable, and confirms
+zero residual contiguous accounting. Complete EGG/split corpus, sanitizer and
+I/O fault injection, production CVD/service parity, materialized large
+metadata, certified Linux x86-64, and Sonic1 evidence remain release gates.
+
 ## Bounded HFS+ inline decmpfs output — 2026-08-24
 
 HFS+ inline zlib-compressed attributes now decode through a fixed 64 KiB

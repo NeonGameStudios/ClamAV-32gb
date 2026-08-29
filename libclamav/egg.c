@@ -374,6 +374,7 @@ typedef struct {
     char** comments;
     uint64_t nMetadataRanges;
     egg_metadata_range* metadataRanges;
+    uint64_t metadataRangesReserved;
 } egg_handle;
 
 static cl_error_t egg_checktimelimit(const egg_handle* handle)
@@ -395,6 +396,10 @@ static cl_error_t egg_add_metadata_range(egg_handle* handle, size_t offset, size
 {
     egg_metadata_range* ranges;
     egg_metadata_range* range;
+    size_t old_size;
+    size_t new_size;
+    uint64_t growth;
+    cl_error_t status;
 
     if (handle == NULL || length == 0 || offset > handle->map->len ||
         length > handle->map->len - offset)
@@ -402,11 +407,25 @@ static cl_error_t egg_add_metadata_range(egg_handle* handle, size_t offset, size
     if (handle->nMetadataRanges >= CLI_MAX_ALLOCATION / sizeof(*handle->metadataRanges))
         return CL_EMAXSIZE;
 
+    old_size = sizeof(*handle->metadataRanges) * (size_t)handle->nMetadataRanges;
+    new_size = sizeof(*handle->metadataRanges) * (size_t)(handle->nMetadataRanges + 1);
+    growth   = (uint64_t)(new_size - old_size);
+
+    if (handle->ctx != NULL) {
+        status = cli_scan_reserve_contiguous(handle->ctx, growth);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+
     ranges = cli_max_realloc(handle->metadataRanges,
-                             sizeof(*handle->metadataRanges) * (size_t)(handle->nMetadataRanges + 1));
-    if (ranges == NULL)
+                             new_size);
+    if (ranges == NULL) {
+        if (handle->ctx != NULL)
+            cli_scan_release_contiguous(handle->ctx, growth);
         return CL_EMEM;
+    }
     handle->metadataRanges = ranges;
+    handle->metadataRangesReserved += growth;
 
     range           = &handle->metadataRanges[handle->nMetadataRanges++];
     range->offset   = offset;
@@ -1739,6 +1758,9 @@ static void egg_free_egg_handle(egg_handle* handle)
     free(handle->metadataRanges);
     handle->metadataRanges  = NULL;
     handle->nMetadataRanges = 0;
+    if (handle->ctx != NULL && handle->metadataRangesReserved != 0)
+        cli_scan_release_contiguous(handle->ctx, handle->metadataRangesReserved);
+    handle->metadataRangesReserved = 0;
     free(handle);
 }
 

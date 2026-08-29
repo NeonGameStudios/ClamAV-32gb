@@ -7124,3 +7124,16 @@ qualification gates.
 - Keep full DMG corpus, sanitizer, production-CVD/service,
   materialized-large-file, certified Linux x86-64, Sonic1, parser-family, and
   release qualification open.
+
+## EGG metadata-index resource accounting — 2026-08-29
+
+- Retain exact shared contiguous reservations for scanner-aware EGG
+  filename/comment range-index growth, rollback on allocation failure, and
+  release on handle cleanup. The new focused current-source
+  production-linked GCC EGG TCase passes 8/8, including a `CL_ERESOURCE`
+  metadata-index regression with sticky incomplete/non-cacheable state and
+  zero residual accounting.
+- Keep complete EGG and split-sequence corpus, additional codepages,
+  sanitizer/I/O-fault, production-CVD/service, materialized-large-metadata,
+  certified Linux x86-64, Sonic1, and parser-family/release qualification
+  open.

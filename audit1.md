@@ -231,6 +231,29 @@ read failures. Full DMG corpus, sanitizer, production-CVD/service,
 materialized-large-file, certified Linux x86-64, Sonic1, and parser-family
 qualification remain open.
 
+## EGG metadata-index resource accounting — 2026-08-29
+
+The scanner-aware EGG range index is persistent parser bookkeeping, so each
+new native-width filename/comment range now reserves its exact index growth
+from the shared contiguous budget. Allocation failure rolls the reservation
+back, and closing either a successfully indexed or partially parsed handle
+releases the exact retained amount. This prevents an archive containing a
+large number of tiny metadata fields from bypassing `MaxContiguousSize` while
+the source payload remains on the fmap. The compatibility `cli_egg_open()`
+path remains unchanged and retains its documented 1 GiB contiguous string
+boundary.
+
+The fresh current-source production-linked GCC EGG TCase passes 8/8: seven
+map checks cover fixed and extra-field range classification, malformed
+admission, metadata-index resource rejection, oversized-field traversal, and
+bounded LZMA extraction, while the codepage-932 metadata check proves the
+converted-name matcher handoff. The new resource regression verifies
+`CL_ERESOURCE`, sticky incomplete/non-cacheable state, and zero residual
+contiguous accounting after cleanup. Complete EGG corpus and split-sequence
+coverage, sanitizer and I/O fault injection, production CVD/service parity,
+materialized large metadata, certified Linux x86-64, and Sonic1 evidence
+remain release gates.
+
 ## Embedded parser qualification recheck — 2026-08-29
 
 The authoritative current-source Docker harness was reused without installing
