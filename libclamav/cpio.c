@@ -378,7 +378,8 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
         }
 
         fmap_name = name;
-        parsed_filesize = (uint32_t)((uint32_t)EC16(hdr_old.filesize[0], conv) << 16 | EC16(hdr_old.filesize[1], conv));
+        parsed_filesize = ((uint32_t)EC16(hdr_old.filesize[0], conv) << 16) |
+                          (uint32_t)EC16(hdr_old.filesize[1], conv);
         filesize        = (size_t)parsed_filesize;
         cli_dbgmsg("CPIO: Filesize: %zu\n", filesize);
         if (!filesize) {

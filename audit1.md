@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Legacy CPIO high-word size arithmetic — 2026-08-29
+
+The old-binary CPIO parser assembled a 32-bit member size by shifting a
+promoted 16-bit value before the result was widened. A valid high-word value
+could therefore invoke signed integer-shift undefined behavior on platforms
+where `int` is 32 bits. The conversion now widens the high word before the
+shift and keeps the low word explicitly unsigned. The registered
+`test_cpio_old_high_word_size_is_fail_visible` regression exercises a declared
+4 GiB member against a short map; the current-source GCC ASan/UBSan direct
+parser runner returns `CL_EPARSE`, records incomplete state, and reports the
+map as non-cacheable without a sanitizer finding. Complete CPIO corpus,
+coherent public TCase, production-CVD/service, materialized-large-file,
+certified Linux x86-64, Sonic1, and final parser-family/release qualification
+remain open.
+
 ## ARJ member CRC verification — 2026-08-29
 
 ARJ file headers declare `orig_crc`, but the parser previously ignored that

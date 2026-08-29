@@ -21029,6 +21029,48 @@ START_TEST(test_cpio_fixed_numeric_fields_reject_prefixes)
 }
 END_TEST
 
+START_TEST(test_cpio_old_high_word_size_is_fail_visible)
+{
+    uint8_t data[27] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    uint64_t scanned       = UINT64_MAX;
+    cl_error_t ret;
+
+    /* The old-binary format stores the 32-bit size as two 16-bit words.
+     * Use both high and low words so the conversion exercises the shift
+     * boundary without providing the declared 4 GiB payload. */
+    cpio_test_write_u16le(data, 070707);
+    cpio_test_write_u16le(data + 20, 1);
+    cpio_test_write_u16le(data + 22, UINT16_MAX);
+    cpio_test_write_u16le(data + 24, UINT16_MAX);
+    data[26] = '\0';
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_CPIO_OLD", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_iso_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -46230,6 +46272,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cpio_numeric, test_cpio_zero_name_size_is_fail_visible);
     tcase_add_test(tc_cpio_numeric, test_cpio_member_names_require_nul_terminator);
     tcase_add_test(tc_cpio_numeric, test_cpio_fixed_numeric_fields_reject_prefixes);
+    tcase_add_test(tc_cpio_numeric, test_cpio_old_high_word_size_is_fail_visible);
     suite_add_tcase(s, tc_cpio_map);
     tcase_add_checked_fixture(tc_cpio_map, cl_setup, cl_teardown);
     tcase_add_test(tc_cpio_map, test_cpio_truncated_header_is_fail_visible);

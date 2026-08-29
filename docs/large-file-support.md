@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Legacy CPIO high-word size arithmetic — 2026-08-29
+
+Legacy binary CPIO now widens the high 16-bit member-size word before shifting
+it into the 32-bit value, avoiding signed integer-shift undefined behavior for
+large declared members. The registered
+`test_cpio_old_high_word_size_is_fail_visible` regression exercises a declared
+4 GiB member against a short input; the current-source GCC ASan/UBSan direct
+parser runner returns `CL_EPARSE` with sticky incomplete state and a
+non-cacheable map. Complete CPIO corpus, coherent public TCase,
+production-CVD/service, materialized-large-file, certified Linux x86-64,
+Sonic1, parser-family, and release qualification remain required.
+
 ## ARJ member CRC verification — 2026-08-29
 
 ARJ extraction now converts each member's declared original CRC-32 and updates
