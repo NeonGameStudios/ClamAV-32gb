@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## HTML normalization pointer-table admission — 2026-08-29
+
+The HTML normalizer formed count-plus-one pointer-table products directly at
+tag-argument and form-data URL growth sites before `cli_max_realloc()`. The
+tag counter is signed, so a negative or saturated value could also make the
+pre-allocation arithmetic invalid. `cli_html_tag_table_size()` now checks
+native-size multiplication and the individual allocation ceiling before any
+of the four tables grow; `html_tag_arg_add()` rejects negative and saturated
+tag counts before count-plus-one arithmetic, and form-data insertion rejects
+an overflowing URL count. The registered
+`test_html_normalization_table_size_rejects_overflow` regression covers zero,
+invalid arguments, the exact allocation boundary, `SIZE_MAX`, negative and
+`INT_MAX` tag counters, and ordinary one-entry operation without a large
+allocation. The current `htmlnorm.c` object and `check_htmlnorm.c` source
+compile with Docker production GCC, and an isolated current-source
+production-linked UBSan harness prints `htmlnorm_table_size_guard_passed`.
+Full HTML normalization and form-data corpus, sanitizer matrix,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser-family/release qualification remain open.
+
 ## Directory-walk entry-table admission — 2026-08-29
 
 The recursive directory walker grew its `dirent_data` array with

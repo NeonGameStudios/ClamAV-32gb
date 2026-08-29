@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <limits.h>
 #ifndef _WIN32
 #include <sys/time.h>
 #endif
@@ -181,6 +182,43 @@ START_TEST(test_htmlnorm_api)
     fmap_free(map);
 
     close(fd);
+}
+END_TEST
+
+START_TEST(test_html_normalization_table_size_rejects_overflow)
+{
+    size_t bytes = 0;
+    tag_arguments_t args;
+    form_data_t form;
+
+    ck_assert_int_eq(cli_html_tag_table_size(0, sizeof(char *), &bytes), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, 0);
+    ck_assert_int_eq(cli_html_tag_table_size(CLI_MAX_ALLOCATION / sizeof(char *) + 1,
+                                             sizeof(char *), &bytes),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_html_tag_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_html_tag_table_size(1, 0, &bytes), CL_EARG);
+    ck_assert_int_eq(cli_html_tag_table_size(1, sizeof(char *), NULL), CL_EARG);
+
+    memset(&args, 0, sizeof(args));
+    args.count = INT_MAX;
+    ck_assert(!html_tag_arg_add(&args, "href", NULL));
+    ck_assert_int_eq(args.count, INT_MAX);
+
+    memset(&args, 0, sizeof(args));
+    args.count = -1;
+    ck_assert(!html_tag_arg_add(&args, "href", NULL));
+    ck_assert_int_eq(args.count, -1);
+
+    memset(&form, 0, sizeof(form));
+    ck_assert(html_insert_form_data("https://example.test/", &form));
+    ck_assert_uint_eq(form.count, 1);
+    html_form_data_tag_free(&form);
+
+    memset(&form, 0, sizeof(form));
+    form.count = SIZE_MAX;
+    ck_assert(!html_insert_form_data("https://example.test/", &form));
+    ck_assert_uint_eq(form.count, SIZE_MAX);
 }
 END_TEST
 
@@ -391,6 +429,7 @@ Suite *test_htmlnorm_suite(void)
     tcase_add_unchecked_fixture(tc_htmlnorm_api,
                                 htmlnorm_setup, htmlnorm_teardown);
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_invalid_input_is_fail_visible);
+    tcase_add_test(tc_htmlnorm_api, test_html_normalization_table_size_rejects_overflow);
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_mapped_read_failure_is_fail_visible);
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_temporary_limit_is_fail_visible);
 #ifndef _WIN32

@@ -1,5 +1,19 @@
 # Wishlist
 
+## HTML normalization pointer-table admission — 2026-08-29
+
+- Keep HTML tag-argument and form-data URL table growth behind
+  `cli_html_tag_table_size()`, rejecting native-width/product overflow and
+  requests above `CLI_MAX_ALLOCATION` before `cli_max_realloc()`; reject
+  negative or saturated signed tag counters before count-plus-one arithmetic.
+- Retain `test_html_normalization_table_size_rejects_overflow` and its source
+  guards. The current `htmlnorm.c` object and `check_htmlnorm.c` source
+  compile with Docker production GCC, and the isolated current-source
+  production-linked UBSan harness prints
+  `htmlnorm_table_size_guard_passed`; full HTML normalization/form-data
+  corpus, sanitizer, production-CVD/service, materialized-large-file,
+  Sonic1, parser-family, and release qualification remain open.
+
 ## Directory-walk entry-table admission — 2026-08-29
 
 - Keep recursive `cli_ftw()` entry growth behind native-size and individual

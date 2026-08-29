@@ -40,6 +40,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "clamav.h"
 #include "fmap.h"
@@ -469,6 +470,20 @@ static bool html_tag_arg_set(tag_arguments_t *tags, const char *tag, const char 
     }
     return true;
 }
+
+cl_error_t cli_html_tag_table_size(size_t count, size_t element_size, size_t *bytes)
+{
+    if (bytes == NULL || element_size == 0)
+        return CL_EARG;
+
+    if (count > SIZE_MAX / element_size ||
+        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+        return CL_ERESOURCE;
+
+    *bytes = count * element_size;
+    return CL_SUCCESS;
+}
+
 bool html_tag_arg_add(tag_arguments_t *tags,
                       const char *tag, char *value)
 {
@@ -476,23 +491,37 @@ bool html_tag_arg_add(tag_arguments_t *tags,
     int tagCnt;
     int valueCnt;
     int contentCnt;
+    size_t next_count;
+    size_t tag_table_size;
+    size_t value_table_size;
+    size_t content_table_size;
     unsigned char **tmp = NULL;
 
     if (!tags || !tag)
+        return false;
+
+    if (tags->count < 0 || tags->count == INT_MAX)
+        return false;
+
+    next_count = (size_t)tags->count + 1U;
+    if (cli_html_tag_table_size(next_count, sizeof(char *), &tag_table_size) != CL_SUCCESS ||
+        cli_html_tag_table_size(next_count, sizeof(char *), &value_table_size) != CL_SUCCESS ||
+        (tags->scanContents &&
+         cli_html_tag_table_size(next_count, sizeof(*tags->contents), &content_table_size) != CL_SUCCESS))
         return false;
 
     tagCnt     = tags->count;
     valueCnt   = tags->count;
     contentCnt = tags->scanContents ? tags->count : 0;
 
-    tmp = (unsigned char **)cli_max_realloc(tags->tag, (tagCnt + 1) * sizeof(char *));
+    tmp = (unsigned char **)cli_max_realloc(tags->tag, tag_table_size);
     if (!tmp) {
         goto done;
     }
     tags->tag = tmp;
     tagCnt++;
 
-    tmp = (unsigned char **)cli_max_realloc(tags->value, (valueCnt + 1) * sizeof(char *));
+    tmp = (unsigned char **)cli_max_realloc(tags->value, value_table_size);
     if (!tmp) {
         goto done;
     }
@@ -501,7 +530,7 @@ bool html_tag_arg_add(tag_arguments_t *tags,
 
     if (tags->scanContents) {
         contentCnt = tags->count;
-        tmp        = (unsigned char **)cli_max_realloc(tags->contents, (contentCnt + 1) * sizeof(*tags->contents));
+        tmp        = (unsigned char **)cli_max_realloc(tags->contents, content_table_size);
         if (!tmp) {
             goto done;
         }
@@ -794,14 +823,22 @@ static cl_error_t js_process(cli_ctx *ctx, struct parser_state *js_state, const 
 bool html_insert_form_data(const char *const value, form_data_t *tags)
 {
     bool bRet  = false;
-    size_t cnt = tags->count + 1;
+    size_t cnt;
+    size_t table_size;
     char **tmp = NULL;
+
+    if (!value || !tags || tags->count == SIZE_MAX)
+        return false;
+
+    cnt = tags->count + 1;
+    if (cli_html_tag_table_size(cnt, sizeof(unsigned char *), &table_size) != CL_SUCCESS)
+        goto done;
 
     /*
      * Do NOT use cli_max_realloc_or_free because all the previously malloc'd tag
      * values will be leaked when tag is free'd in the case where realloc fails.
      */
-    tmp = cli_max_realloc(tags->urls, cnt * sizeof(unsigned char *));
+    tmp = cli_max_realloc(tags->urls, table_size);
     if (!tmp) {
         goto done;
     }

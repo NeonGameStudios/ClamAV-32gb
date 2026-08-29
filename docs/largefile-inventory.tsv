@@ -2624,46 +2624,46 @@ fixed-width-integer	libclamav/hfsplus.h	96	    uint16_t signature; /* H+ for HFS
 fixed-width-integer	libclamav/hfsplus.h	97	    uint16_t version;
 fixed-width-integer	libclamav/hfsplus.h	98	    uint32_t attributes;
 fixed-width-integer	libclamav/hfsplus.h	99	    uint32_t lastMountedVersion;
-fixed-width-integer	libclamav/htmlnorm.c	103	    uint64_t *temporary_reserved;
-fixed-width-integer	libclamav/htmlnorm.c	107	    uint64_t length;
-fixed-width-integer	libclamav/htmlnorm.c	118	static const int64_t base64_chars[256] = {
-fixed-width-integer	libclamav/htmlnorm.c	1859	                        int64_t increment = 0;
-fixed-width-integer	libclamav/htmlnorm.c	2424	                                   const struct cli_dconf *dconf, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/htmlnorm.c	2431	                                             form_data_t *form_data, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/htmlnorm.c	2439	                                                    form_data_t *form_data, uint64_t *temporary_reserved,
-fixed-width-integer	libclamav/htmlnorm.c	2465	                              uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/htmlnorm.c	2474	    if (ctx == NULL || temporary_reserved == NULL || UINT64_MAX - *temporary_reserved < (uint64_t)len) {
-fixed-width-integer	libclamav/htmlnorm.c	2482	    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS) {
-fixed-width-integer	libclamav/htmlnorm.c	2487	    *temporary_reserved += (uint64_t)len;
-fixed-width-integer	libclamav/htmlnorm.c	2489	        cli_scan_release_temporary(ctx, (uint64_t)len);
-fixed-width-integer	libclamav/htmlnorm.c	2490	        *temporary_reserved -= (uint64_t)len;
-fixed-width-integer	libclamav/htmlnorm.c	2494	        cli_scan_release_temporary(ctx, (uint64_t)len);
-fixed-width-integer	libclamav/htmlnorm.c	2495	        *temporary_reserved -= (uint64_t)len;
-fixed-width-integer	libclamav/htmlnorm.c	2504	                                    uint64_t *temporary_reserved, bool *read_error)
-fixed-width-integer	libclamav/htmlnorm.c	2637	bool html_screnc_decode_ctx(cli_ctx *ctx, fmap_t *map, const char *dirname, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/htmlnorm.c	2643	                                   uint64_t *temporary_reserved, bool *read_error)
-fixed-width-integer	libclamav/htmlnorm.c	352	    if (fbuff->ctx == NULL || UINT64_MAX - *fbuff->temporary_reserved < (uint64_t)length) {
-fixed-width-integer	libclamav/htmlnorm.c	359	    status = cli_scan_reserve_temporary(fbuff->ctx, (uint64_t)length);
-fixed-width-integer	libclamav/htmlnorm.c	364	    *fbuff->temporary_reserved += (uint64_t)length;
-fixed-width-integer	libclamav/htmlnorm.c	366	        cli_scan_release_temporary(fbuff->ctx, (uint64_t)length);
-fixed-width-integer	libclamav/htmlnorm.c	367	        *fbuff->temporary_reserved -= (uint64_t)length;
-fixed-width-integer	libclamav/htmlnorm.c	377	    if (*fbuff->temporary_reserved < (uint64_t)length)
-fixed-width-integer	libclamav/htmlnorm.c	380	    cli_scan_release_temporary(fbuff->ctx, (uint64_t)length);
-fixed-width-integer	libclamav/htmlnorm.c	381	    *fbuff->temporary_reserved -= (uint64_t)length;
-fixed-width-integer	libclamav/htmlnorm.c	623	    uint32_t mbchar = 0;
-fixed-width-integer	libclamav/htmlnorm.c	680	    uint32_t length;
-fixed-width-integer	libclamav/htmlnorm.c	681	    uint32_t sum;
-fixed-width-integer	libclamav/htmlnorm.c	742	            uint64_t expected;
-fixed-width-integer	libclamav/htmlnorm.c	773	                             uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/htmlnorm.c	844	                               const struct cli_dconf *dconf, form_data_t *form_data, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/htmlnorm.c	848	    int64_t value = 0, tag_val_length = 0;
-fixed-width-integer	libclamav/htmlnorm.c	879	    uint32_t mbchar  = 0;
-fixed-width-integer	libclamav/htmlnorm.c	880	    uint32_t mbchar2 = 0;
-fixed-width-integer	libclamav/htmlnorm.h	59	                                   const struct cli_dconf *dconf, uint64_t *temporary_reserved);
-fixed-width-integer	libclamav/htmlnorm.h	62	                                             form_data_t *form_data, uint64_t *temporary_reserved);
-fixed-width-integer	libclamav/htmlnorm.h	65	                                                    form_data_t *form_data, uint64_t *temporary_reserved,
-fixed-width-integer	libclamav/htmlnorm.h	70	                            uint64_t *temporary_reserved);
-fixed-width-integer	libclamav/htmlnorm.h	72	                                   uint64_t *temporary_reserved, bool *read_error);
+fixed-width-integer	libclamav/htmlnorm.c	104	    uint64_t *temporary_reserved;
+fixed-width-integer	libclamav/htmlnorm.c	108	    uint64_t length;
+fixed-width-integer	libclamav/htmlnorm.c	119	static const int64_t base64_chars[256] = {
+fixed-width-integer	libclamav/htmlnorm.c	1896	                        int64_t increment = 0;
+fixed-width-integer	libclamav/htmlnorm.c	2461	                                   const struct cli_dconf *dconf, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/htmlnorm.c	2468	                                             form_data_t *form_data, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/htmlnorm.c	2476	                                                    form_data_t *form_data, uint64_t *temporary_reserved,
+fixed-width-integer	libclamav/htmlnorm.c	2502	                              uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/htmlnorm.c	2511	    if (ctx == NULL || temporary_reserved == NULL || UINT64_MAX - *temporary_reserved < (uint64_t)len) {
+fixed-width-integer	libclamav/htmlnorm.c	2519	    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS) {
+fixed-width-integer	libclamav/htmlnorm.c	2524	    *temporary_reserved += (uint64_t)len;
+fixed-width-integer	libclamav/htmlnorm.c	2526	        cli_scan_release_temporary(ctx, (uint64_t)len);
+fixed-width-integer	libclamav/htmlnorm.c	2527	        *temporary_reserved -= (uint64_t)len;
+fixed-width-integer	libclamav/htmlnorm.c	2531	        cli_scan_release_temporary(ctx, (uint64_t)len);
+fixed-width-integer	libclamav/htmlnorm.c	2532	        *temporary_reserved -= (uint64_t)len;
+fixed-width-integer	libclamav/htmlnorm.c	2541	                                    uint64_t *temporary_reserved, bool *read_error)
+fixed-width-integer	libclamav/htmlnorm.c	2674	bool html_screnc_decode_ctx(cli_ctx *ctx, fmap_t *map, const char *dirname, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/htmlnorm.c	2680	                                   uint64_t *temporary_reserved, bool *read_error)
+fixed-width-integer	libclamav/htmlnorm.c	353	    if (fbuff->ctx == NULL || UINT64_MAX - *fbuff->temporary_reserved < (uint64_t)length) {
+fixed-width-integer	libclamav/htmlnorm.c	360	    status = cli_scan_reserve_temporary(fbuff->ctx, (uint64_t)length);
+fixed-width-integer	libclamav/htmlnorm.c	365	    *fbuff->temporary_reserved += (uint64_t)length;
+fixed-width-integer	libclamav/htmlnorm.c	367	        cli_scan_release_temporary(fbuff->ctx, (uint64_t)length);
+fixed-width-integer	libclamav/htmlnorm.c	368	        *fbuff->temporary_reserved -= (uint64_t)length;
+fixed-width-integer	libclamav/htmlnorm.c	378	    if (*fbuff->temporary_reserved < (uint64_t)length)
+fixed-width-integer	libclamav/htmlnorm.c	381	    cli_scan_release_temporary(fbuff->ctx, (uint64_t)length);
+fixed-width-integer	libclamav/htmlnorm.c	382	    *fbuff->temporary_reserved -= (uint64_t)length;
+fixed-width-integer	libclamav/htmlnorm.c	652	    uint32_t mbchar = 0;
+fixed-width-integer	libclamav/htmlnorm.c	709	    uint32_t length;
+fixed-width-integer	libclamav/htmlnorm.c	710	    uint32_t sum;
+fixed-width-integer	libclamav/htmlnorm.c	771	            uint64_t expected;
+fixed-width-integer	libclamav/htmlnorm.c	802	                             uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/htmlnorm.c	881	                               const struct cli_dconf *dconf, form_data_t *form_data, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/htmlnorm.c	885	    int64_t value = 0, tag_val_length = 0;
+fixed-width-integer	libclamav/htmlnorm.c	916	    uint32_t mbchar  = 0;
+fixed-width-integer	libclamav/htmlnorm.c	917	    uint32_t mbchar2 = 0;
+fixed-width-integer	libclamav/htmlnorm.h	70	                                   const struct cli_dconf *dconf, uint64_t *temporary_reserved);
+fixed-width-integer	libclamav/htmlnorm.h	73	                                             form_data_t *form_data, uint64_t *temporary_reserved);
+fixed-width-integer	libclamav/htmlnorm.h	76	                                                    form_data_t *form_data, uint64_t *temporary_reserved,
+fixed-width-integer	libclamav/htmlnorm.h	81	                            uint64_t *temporary_reserved);
+fixed-width-integer	libclamav/htmlnorm.h	83	                                   uint64_t *temporary_reserved, bool *read_error);
 fixed-width-integer	libclamav/hwp.c	1086	                    uint32_t length;
 fixed-width-integer	libclamav/hwp.c	1122	                    uint32_t length;
 fixed-width-integer	libclamav/hwp.c	1154	                    uint32_t length;
@@ -7053,10 +7053,10 @@ fixed-width-integer	unit_tests/check_clamfi_quota.c	19	    uint64_t effective = 
 fixed-width-integer	unit_tests/check_clamfi_quota.c	20	    uint64_t next      = 0;
 fixed-width-integer	unit_tests/check_clamfi_quota.c	21	    uint64_t four_gib  = (uint64_t)4 * 1024 * 1024 * 1024;
 fixed-width-integer	unit_tests/check_clamfi_quota.c	22	    uint64_t thirty_two_gib = CLI_MAX_LARGE_FILESIZE;
-fixed-width-integer	unit_tests/check_htmlnorm.c	236	    uint64_t temporary_reserved = 0;
-fixed-width-integer	unit_tests/check_htmlnorm.c	298	    uint64_t temporary_reserved = 0;
-fixed-width-integer	unit_tests/check_htmlnorm.c	325	    uint64_t temporary_reserved = 0;
-fixed-width-integer	unit_tests/check_htmlnorm.c	360	    uint64_t temporary_reserved = 0;
+fixed-width-integer	unit_tests/check_htmlnorm.c	274	    uint64_t temporary_reserved = 0;
+fixed-width-integer	unit_tests/check_htmlnorm.c	336	    uint64_t temporary_reserved = 0;
+fixed-width-integer	unit_tests/check_htmlnorm.c	363	    uint64_t temporary_reserved = 0;
+fixed-width-integer	unit_tests/check_htmlnorm.c	398	    uint64_t temporary_reserved = 0;
 fixed-width-integer	unit_tests/check_jsnorm.c	121	    struct scope *sc = (struct scope *)(uint64_t)0xdeadbeef;
 fixed-width-integer	unit_tests/check_matchers.c	1342	    uint32_t expected;
 fixed-width-integer	unit_tests/check_matchers.c	1348	    ck_assert_int_eq(read_uint32_t(map, 0), (int64_t)expected);
@@ -11160,58 +11160,67 @@ native-width-integer	libclamav/hostid_internal.c	65	struct device *get_device_en
 native-width-integer	libclamav/hostid_internal.c	67	struct device *get_device_entry(struct device *devices, size_t *ndevices, const char *name)
 native-width-integer	libclamav/hostid_internal.c	70	    size_t i;
 native-width-integer	libclamav/hostid_internal.c	73	        int found = 0;
-native-width-integer	libclamav/htmlnorm.c	101	    int fd;
-native-width-integer	libclamav/htmlnorm.c	113	    size_t pos;
-native-width-integer	libclamav/htmlnorm.c	138	int table_order[] = {
-native-width-integer	libclamav/htmlnorm.c	1424	                            size_t chunk_size;
-native-width-integer	libclamav/htmlnorm.c	144	int decrypt_tables[3][128] = {
-native-width-integer	libclamav/htmlnorm.c	172	static inline unsigned int rewind_tospace(const unsigned char *chunk, unsigned int len)
-native-width-integer	libclamav/htmlnorm.c	174	    unsigned int count = len;
-native-width-integer	libclamav/htmlnorm.c	1779	                        size_t i;
-native-width-integer	libclamav/htmlnorm.c	1815	                        /* entity too long, or not valid, dump it */
+native-width-integer	libclamav/htmlnorm.c	102	    int fd;
+native-width-integer	libclamav/htmlnorm.c	114	    size_t pos;
+native-width-integer	libclamav/htmlnorm.c	139	int table_order[] = {
+native-width-integer	libclamav/htmlnorm.c	145	int decrypt_tables[3][128] = {
+native-width-integer	libclamav/htmlnorm.c	1461	                            size_t chunk_size;
+native-width-integer	libclamav/htmlnorm.c	173	static inline unsigned int rewind_tospace(const unsigned char *chunk, unsigned int len)
+native-width-integer	libclamav/htmlnorm.c	175	    unsigned int count = len;
 native-width-integer	libclamav/htmlnorm.c	1816	                        size_t i;
-native-width-integer	libclamav/htmlnorm.c	186	static unsigned char *cli_readchunk(FILE *stream, m_area_t *m_area, unsigned int max_len)
-native-width-integer	libclamav/htmlnorm.c	189	    unsigned int chunk_len, count;
-native-width-integer	libclamav/htmlnorm.c	2217	            size_t chunk_size = ptr - style_begin;
-native-width-integer	libclamav/htmlnorm.c	2279	        size_t i;
-native-width-integer	libclamav/htmlnorm.c	2384	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf)
-native-width-integer	libclamav/htmlnorm.c	2389	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data)
-native-width-integer	libclamav/htmlnorm.c	2464	static bool html_screnc_write(cli_ctx *ctx, int fd, const void *data, size_t len,
-native-width-integer	libclamav/htmlnorm.c	2506	    int count;
-native-width-integer	libclamav/htmlnorm.c	2510	    int ofd;
-native-width-integer	libclamav/htmlnorm.c	315	                fseek(stream, -(long)(chunk_len - count), SEEK_CUR);
-native-width-integer	libclamav/htmlnorm.c	346	static bool html_output_reserve(file_buff_t *fbuff, size_t length)
-native-width-integer	libclamav/htmlnorm.c	373	static void html_output_release(file_buff_t *fbuff, size_t length)
-native-width-integer	libclamav/htmlnorm.c	387	        size_t length = (size_t)fbuff->length;
-native-width-integer	libclamav/htmlnorm.c	418	static void html_output_str(file_buff_t *fbuff, const unsigned char *str, size_t len)
-native-width-integer	libclamav/htmlnorm.c	446	    int i;
-native-width-integer	libclamav/htmlnorm.c	458	    int i;
-native-width-integer	libclamav/htmlnorm.c	475	    int len, i;
-native-width-integer	libclamav/htmlnorm.c	476	    int tagCnt;
-native-width-integer	libclamav/htmlnorm.c	477	    int valueCnt;
-native-width-integer	libclamav/htmlnorm.c	478	    int contentCnt;
-native-width-integer	libclamav/htmlnorm.c	572	    int i, j, len;
-native-width-integer	libclamav/htmlnorm.c	593	    int i;
-native-width-integer	libclamav/htmlnorm.c	622	    size_t i;
-native-width-integer	libclamav/htmlnorm.c	659	static inline bool html_tag_contents_done(tag_arguments_t *tags, int idx, struct tag_contents *cont)
-native-width-integer	libclamav/htmlnorm.c	740	        size_t remaining;
-native-width-integer	libclamav/htmlnorm.c	797	    size_t cnt = tags->count + 1;
-native-width-integer	libclamav/htmlnorm.c	826	    size_t i;
-native-width-integer	libclamav/htmlnorm.c	843	static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const char *dirname, tag_arguments_t *hrefs,
-native-width-integer	libclamav/htmlnorm.c	846	    int fd_tmp, tag_length = 0, tag_arg_length = 0;
-native-width-integer	libclamav/htmlnorm.c	858	    unsigned long length = 0;
-native-width-integer	libclamav/htmlnorm.c	862	    int in_ahref                       = 0;    /* index of <a> tag, whose contents we are parsing. Indexing starts from 1, 0 means outside of <a>*/
-native-width-integer	libclamav/htmlnorm.c	869	    size_t entity_val_length = 0;
-native-width-integer	libclamav/htmlnorm.c	870	    const int dconf_entconv  = dconf ? dconf->phishing & PHISHING_CONF_ENTCONV : 1;
-native-width-integer	libclamav/htmlnorm.c	871	    const int dconf_js       = dirname && (dconf ? dconf->doc & DOC_CONF_JSNORM : 1); /* TODO */
-native-width-integer	libclamav/htmlnorm.c	876	    size_t style_buff_size           = 0;
+native-width-integer	libclamav/htmlnorm.c	1852	                        /* entity too long, or not valid, dump it */
+native-width-integer	libclamav/htmlnorm.c	1853	                        size_t i;
+native-width-integer	libclamav/htmlnorm.c	187	static unsigned char *cli_readchunk(FILE *stream, m_area_t *m_area, unsigned int max_len)
+native-width-integer	libclamav/htmlnorm.c	190	    unsigned int chunk_len, count;
+native-width-integer	libclamav/htmlnorm.c	2254	            size_t chunk_size = ptr - style_begin;
+native-width-integer	libclamav/htmlnorm.c	2316	        size_t i;
+native-width-integer	libclamav/htmlnorm.c	2421	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf)
+native-width-integer	libclamav/htmlnorm.c	2426	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data)
+native-width-integer	libclamav/htmlnorm.c	2501	static bool html_screnc_write(cli_ctx *ctx, int fd, const void *data, size_t len,
+native-width-integer	libclamav/htmlnorm.c	2543	    int count;
+native-width-integer	libclamav/htmlnorm.c	2547	    int ofd;
+native-width-integer	libclamav/htmlnorm.c	316	                fseek(stream, -(long)(chunk_len - count), SEEK_CUR);
+native-width-integer	libclamav/htmlnorm.c	347	static bool html_output_reserve(file_buff_t *fbuff, size_t length)
+native-width-integer	libclamav/htmlnorm.c	374	static void html_output_release(file_buff_t *fbuff, size_t length)
+native-width-integer	libclamav/htmlnorm.c	388	        size_t length = (size_t)fbuff->length;
+native-width-integer	libclamav/htmlnorm.c	419	static void html_output_str(file_buff_t *fbuff, const unsigned char *str, size_t len)
+native-width-integer	libclamav/htmlnorm.c	447	    int i;
+native-width-integer	libclamav/htmlnorm.c	459	    int i;
+native-width-integer	libclamav/htmlnorm.c	474	cl_error_t cli_html_tag_table_size(size_t count, size_t element_size, size_t *bytes)
+native-width-integer	libclamav/htmlnorm.c	480	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+native-width-integer	libclamav/htmlnorm.c	490	    int len, i;
+native-width-integer	libclamav/htmlnorm.c	491	    int tagCnt;
+native-width-integer	libclamav/htmlnorm.c	492	    int valueCnt;
+native-width-integer	libclamav/htmlnorm.c	493	    int contentCnt;
+native-width-integer	libclamav/htmlnorm.c	494	    size_t next_count;
+native-width-integer	libclamav/htmlnorm.c	495	    size_t tag_table_size;
+native-width-integer	libclamav/htmlnorm.c	496	    size_t value_table_size;
+native-width-integer	libclamav/htmlnorm.c	497	    size_t content_table_size;
+native-width-integer	libclamav/htmlnorm.c	506	    next_count = (size_t)tags->count + 1U;
+native-width-integer	libclamav/htmlnorm.c	601	    int i, j, len;
+native-width-integer	libclamav/htmlnorm.c	622	    int i;
+native-width-integer	libclamav/htmlnorm.c	651	    size_t i;
+native-width-integer	libclamav/htmlnorm.c	688	static inline bool html_tag_contents_done(tag_arguments_t *tags, int idx, struct tag_contents *cont)
+native-width-integer	libclamav/htmlnorm.c	769	        size_t remaining;
+native-width-integer	libclamav/htmlnorm.c	826	    size_t cnt;
+native-width-integer	libclamav/htmlnorm.c	827	    size_t table_size;
+native-width-integer	libclamav/htmlnorm.c	863	    size_t i;
+native-width-integer	libclamav/htmlnorm.c	880	static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const char *dirname, tag_arguments_t *hrefs,
+native-width-integer	libclamav/htmlnorm.c	883	    int fd_tmp, tag_length = 0, tag_arg_length = 0;
+native-width-integer	libclamav/htmlnorm.c	895	    unsigned long length = 0;
+native-width-integer	libclamav/htmlnorm.c	899	    int in_ahref                       = 0;    /* index of <a> tag, whose contents we are parsing. Indexing starts from 1, 0 means outside of <a>*/
+native-width-integer	libclamav/htmlnorm.c	906	    size_t entity_val_length = 0;
+native-width-integer	libclamav/htmlnorm.c	907	    const int dconf_entconv  = dconf ? dconf->phishing & PHISHING_CONF_ENTCONV : 1;
+native-width-integer	libclamav/htmlnorm.c	908	    const int dconf_js       = dirname && (dconf ? dconf->doc & DOC_CONF_JSNORM : 1); /* TODO */
+native-width-integer	libclamav/htmlnorm.c	913	    size_t style_buff_size           = 0;
 native-width-integer	libclamav/htmlnorm.h	34	    int count;
 native-width-integer	libclamav/htmlnorm.h	35	    int scanContents;
 native-width-integer	libclamav/htmlnorm.h	43	    off_t length;
 native-width-integer	libclamav/htmlnorm.h	44	    off_t offset;
 native-width-integer	libclamav/htmlnorm.h	51	    size_t count;
-native-width-integer	libclamav/htmlnorm.h	54	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf);
-native-width-integer	libclamav/htmlnorm.h	55	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data);
+native-width-integer	libclamav/htmlnorm.h	63	cl_error_t cli_html_tag_table_size(size_t count, size_t element_size, size_t *bytes);
+native-width-integer	libclamav/htmlnorm.h	65	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf);
+native-width-integer	libclamav/htmlnorm.h	66	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data);
 native-width-integer	libclamav/hwp.c	1107	                        !hwp3_checked_add(new_offset, (size_t)length, &new_offset) ||
 native-width-integer	libclamav/hwp.c	1143	                        !hwp3_checked_add(new_offset, (size_t)length, &new_offset) ||
 native-width-integer	libclamav/hwp.c	120	            size_t requested = FILEBUFF;
@@ -20497,12 +20506,13 @@ native-width-integer	unit_tests/check_disasm.c	226	    ck_assert_msg(size == st.
 native-width-integer	unit_tests/check_disasm.c	48	    int fd               = -1;
 native-width-integer	unit_tests/check_disasm.c	51	    int ref;
 native-width-integer	unit_tests/check_fpu_endian.c	34	int main(int argc, char **argv)
-native-width-integer	unit_tests/check_htmlnorm.c	112	    int fd, reffd;
-native-width-integer	unit_tests/check_htmlnorm.c	148	    int fd;
-native-width-integer	unit_tests/check_htmlnorm.c	294	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
-native-width-integer	unit_tests/check_htmlnorm.c	321	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
-native-width-integer	unit_tests/check_htmlnorm.c	356	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
-native-width-integer	unit_tests/check_htmlnorm.c	50	static off_t htmlnorm_failing_pread(void *handle, void *buf, size_t count, off_t offset)
+native-width-integer	unit_tests/check_htmlnorm.c	113	    int fd, reffd;
+native-width-integer	unit_tests/check_htmlnorm.c	149	    int fd;
+native-width-integer	unit_tests/check_htmlnorm.c	190	    size_t bytes = 0;
+native-width-integer	unit_tests/check_htmlnorm.c	332	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
+native-width-integer	unit_tests/check_htmlnorm.c	359	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
+native-width-integer	unit_tests/check_htmlnorm.c	394	    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
+native-width-integer	unit_tests/check_htmlnorm.c	51	static off_t htmlnorm_failing_pread(void *handle, void *buf, size_t count, off_t offset)
 native-width-integer	unit_tests/check_jsnorm.c	135	    int val = 0x1234567;
 native-width-integer	unit_tests/check_jsnorm.c	187	    size_t p;
 native-width-integer	unit_tests/check_jsnorm.c	214	extern size_t __real_cli_writen(int fd, const void *buff, size_t count);
@@ -20893,6 +20903,9 @@ boundary-constant	libclamav/hfsplus.c	490	    if (targetSize > ULONG_MAX) {
 boundary-constant	libclamav/hfsplus.c	502	    if (targetSize > SIZE_MAX || cli_scan_reserve_temporary(ctx, targetSize) != CL_SUCCESS) {
 boundary-constant	libclamav/hfsplus.c	587	            if (blockOffset > SIZE_MAX || blockOffset > ctx->fmap->len ||
 boundary-constant	libclamav/hfsplus.c	74	    if (ctx == NULL || input == NULL || input_size == 0 || input_size > UINT_MAX ||
+boundary-constant	libclamav/htmlnorm.c	479	    if (count > SIZE_MAX / element_size ||
+boundary-constant	libclamav/htmlnorm.c	503	    if (tags->count < 0 || tags->count == INT_MAX)
+boundary-constant	libclamav/htmlnorm.c	830	    if (!value || !tags || tags->count == SIZE_MAX)
 boundary-constant	libclamav/hwp.c	165	            if (outsize > SIZE_MAX - count) {
 boundary-constant	libclamav/hwp.c	345	    if (payload_size > UINT32_MAX) {
 boundary-constant	libclamav/hwp.c	577	    if (sum == NULL || extra > SIZE_MAX - base)
@@ -21449,6 +21462,11 @@ boundary-constant	unit_tests/check_clamd.c	1097	    ck_assert_int_eq(send_stream
 boundary-constant	unit_tests/check_clamd.c	1178	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamd.c	980	    ck_assert_uint_eq(clamd_stream_chunk_length(4, 1024, UINT32_MAX), 1020);
 boundary-constant	unit_tests/check_clamd.c	981	    ck_assert_uint_eq(clamd_stream_chunk_length(1024, 1024, UINT32_MAX), 0);
+boundary-constant	unit_tests/check_htmlnorm.c	199	    ck_assert_int_eq(cli_html_tag_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
+boundary-constant	unit_tests/check_htmlnorm.c	204	    args.count = INT_MAX;
+boundary-constant	unit_tests/check_htmlnorm.c	206	    ck_assert_int_eq(args.count, INT_MAX);
+boundary-constant	unit_tests/check_htmlnorm.c	219	    form.count = SIZE_MAX;
+boundary-constant	unit_tests/check_htmlnorm.c	221	    ck_assert_uint_eq(form.count, SIZE_MAX);
 boundary-constant	unit_tests/check_matchers.c	1290	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_matchers.c	1314	    thefmap.len         = (size_t)UINT32_MAX + 1U;
 boundary-constant	unit_tests/check_matchers.c	2083	#if SIZE_MAX > UINT32_MAX
@@ -22585,8 +22603,8 @@ format-width	libclamav/hfsplus.c	816	                cli_dbgmsg("hfsplus_check_a
 format-width	libclamav/hfsplus.c	823	                cli_dbgmsg("hfsplus_check_attribute: Not enough data for an attribute key at location %x for %u!\n",
 format-width	libclamav/hfsplus.c	842	                cli_dbgmsg("hfsplus_check_attribute: key too long for location %x for %u!\n",
 format-width	libclamav/hfsplus.c	851	                cli_dbgmsg("hfsplus_check_attribute: Attribute name is longer than expected: %u\n", attrKey.nameLength);
-format-width	libclamav/htmlnorm.c	2604	        cli_dbgmsg("html_screnc_decode: missing %u bytes\n", screnc_state.length);
-format-width	libclamav/htmlnorm.c	753	                cli_dbgmsg("screnc_decode: checksum mismatch: %u != %" PRIu64 "\n", s->sum, expected);
+format-width	libclamav/htmlnorm.c	2641	        cli_dbgmsg("html_screnc_decode: missing %u bytes\n", screnc_state.length);
+format-width	libclamav/htmlnorm.c	782	                cli_dbgmsg("screnc_decode: checksum mismatch: %u != %" PRIu64 "\n", s->sum, expected);
 format-width	libclamav/hwp.c	1000	        cli_errmsg("HWP3.x: Paragraph[%u, %d]: nlines value is too high, invalid. %u\n", level, p, nlines);
 format-width	libclamav/hwp.c	1024	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: character font style data @ offset %zu\n", level, p, offset);
 format-width	libclamav/hwp.c	1035	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: CFS %u: pcsd_size %u\n", level, p, 0, pcsd_size);
@@ -27836,160 +27854,163 @@ offset-size-arithmetic	libclamav/hostid_internal.c	290	                printable
 offset-size-arithmetic	libclamav/hostid_internal.c	65	struct device *get_device_entry(struct device *devices, size_t *ndevices, const char *name);
 offset-size-arithmetic	libclamav/hostid_internal.c	67	struct device *get_device_entry(struct device *devices, size_t *ndevices, const char *name)
 offset-size-arithmetic	libclamav/hostid_internal.c	83	            p = realloc(devices, sizeof(struct device) * (*ndevices + 1));
-offset-size-arithmetic	libclamav/htmlnorm.c	1063	                            /*append this text portion to the contents of <a>*/
-offset-size-arithmetic	libclamav/htmlnorm.c	1111	                    if ((tag_length == 0) && (*ptr == '!')) {
-offset-size-arithmetic	libclamav/htmlnorm.c	1119	                                file_buff_o2->length--;
-offset-size-arithmetic	libclamav/htmlnorm.c	1134	                        if (in_tag != TAG_DONT_EXTRACT && tag_length == 0 && *ptr != '/') {
-offset-size-arithmetic	libclamav/htmlnorm.c	1138	                            tag[tag_length++] = tolower(*ptr);
-offset-size-arithmetic	libclamav/htmlnorm.c	1184	                            tag_arg[tag_arg_length++] = tolower(*ptr);
-offset-size-arithmetic	libclamav/htmlnorm.c	1218	                            file_buff_o2->length--;
-offset-size-arithmetic	libclamav/htmlnorm.c	1232	                            file_buff_o2->length--;
-offset-size-arithmetic	libclamav/htmlnorm.c	1251	                                tag_val[tag_val_length++] = '"';
-offset-size-arithmetic	libclamav/htmlnorm.c	1258	                                    tag_val[tag_val_length++] = '"';
-offset-size-arithmetic	libclamav/htmlnorm.c	1273	                                    tag_val[tag_val_length++] = '"';
-offset-size-arithmetic	libclamav/htmlnorm.c	1283	                                tag_val[tag_val_length++] = '"';
-offset-size-arithmetic	libclamav/htmlnorm.c	1290	                                    tag_val[tag_val_length++] = '"';
-offset-size-arithmetic	libclamav/htmlnorm.c	1305	                                    tag_val[tag_val_length++] = '"';
-offset-size-arithmetic	libclamav/htmlnorm.c	1325	                                    tag_val[tag_val_length++] = ' ';
-offset-size-arithmetic	libclamav/htmlnorm.c	1327	                                    tag_val[tag_val_length++] = '>';
-offset-size-arithmetic	libclamav/htmlnorm.c	1342	                                    tag_val[tag_val_length++] = '.';
-offset-size-arithmetic	libclamav/htmlnorm.c	1358	                                    tag_val[tag_val_length++] = c0;
-offset-size-arithmetic	libclamav/htmlnorm.c	1360	                                    tag_val[tag_val_length++] = c1;
-offset-size-arithmetic	libclamav/htmlnorm.c	1362	                                    tag_val[tag_val_length++] = c2;
-offset-size-arithmetic	libclamav/htmlnorm.c	1371	                                tag_val[tag_val_length++] = *ptr;
-offset-size-arithmetic	libclamav/htmlnorm.c	1426	                            style_end = ptr - strlen("</style>");
-offset-size-arithmetic	libclamav/htmlnorm.c	1433	                            chunk_size = style_end - style_begin;
-offset-size-arithmetic	libclamav/htmlnorm.c	1436	                                CLI_MAX_MALLOC_OR_GOTO_DONE(style_buff, chunk_size + 1);
-offset-size-arithmetic	libclamav/htmlnorm.c	1438	                                CLI_MAX_REALLOC_OR_GOTO_DONE(style_buff, style_buff_size + chunk_size + 1);
-offset-size-arithmetic	libclamav/htmlnorm.c	1443	                            style_buff_size += chunk_size;
-offset-size-arithmetic	libclamav/htmlnorm.c	1523	                            if (arg_value && strlen((const char *)arg_value) > 0) {
-offset-size-arithmetic	libclamav/htmlnorm.c	1528	                                        /*we encountered nested <a> tags, pretend previous closed*/
-offset-size-arithmetic	libclamav/htmlnorm.c	1531	                                            /*add pending contents between tags*/
-offset-size-arithmetic	libclamav/htmlnorm.c	1546	                                        html_tag_contents_append(&contents, (const unsigned char *)arg_value,
-offset-size-arithmetic	libclamav/htmlnorm.c	1563	                                                                 in_form_action + strlen((const char *)in_form_action));
-offset-size-arithmetic	libclamav/htmlnorm.c	1578	                                    href_contents_begin = ptr;          /* contents begin after <a ..> ends */
-offset-size-arithmetic	libclamav/htmlnorm.c	1628	                                                             in_form_action + strlen((const char *)in_form_action));
-offset-size-arithmetic	libclamav/htmlnorm.c	1661	                                                             in_form_action + strlen((const char *)in_form_action));
-offset-size-arithmetic	libclamav/htmlnorm.c	1695	                                                             in_form_action + strlen((const char *)in_form_action));
-offset-size-arithmetic	libclamav/htmlnorm.c	1729	                                                             in_form_action + strlen((const char *)in_form_action));
-offset-size-arithmetic	libclamav/htmlnorm.c	1743	                            html_output_str(file_buff_text, (const unsigned char *)arg_value, strlen((const char *)arg_value));
-offset-size-arithmetic	libclamav/htmlnorm.c	175	    while (!isspace(chunk[len - 1]) && (len > 1)) {
-offset-size-arithmetic	libclamav/htmlnorm.c	1750	                            html_output_str(file_buff_text, (const unsigned char *)arg_value, strlen((const char *)arg_value));
-offset-size-arithmetic	libclamav/htmlnorm.c	176	        len--;
-offset-size-arithmetic	libclamav/htmlnorm.c	1768	                                tag_val[tag_val_length++] = '&';
-offset-size-arithmetic	libclamav/htmlnorm.c	1788	                                    tag_val[tag_val_length++] = c;
-offset-size-arithmetic	libclamav/htmlnorm.c	1794	                                tag_val[tag_val_length++] = '&';
-offset-size-arithmetic	libclamav/htmlnorm.c	1800	                                    tag_val[tag_val_length++] = c;
-offset-size-arithmetic	libclamav/htmlnorm.c	1804	                                tag_val[tag_val_length++] = ';';
-offset-size-arithmetic	libclamav/htmlnorm.c	1813	                        entity_val[entity_val_length++] = *ptr++;
-offset-size-arithmetic	libclamav/htmlnorm.c	1818	                            tag_val[tag_val_length++] = '&';
-offset-size-arithmetic	libclamav/htmlnorm.c	1825	                                tag_val[tag_val_length++] = c;
-offset-size-arithmetic	libclamav/htmlnorm.c	1840	                            tag_val[tag_val_length++] = value; /* store encoded values too */
-offset-size-arithmetic	libclamav/htmlnorm.c	185	 * This used to be called cli_readline, but we don't stop at end-of-line anymore */
-offset-size-arithmetic	libclamav/htmlnorm.c	188	    unsigned char *chunk, *start, *ptr, *end;
-offset-size-arithmetic	libclamav/htmlnorm.c	1905	                    /* Check for start marker */
-offset-size-arithmetic	libclamav/htmlnorm.c	1918	                    if (strlen((const char *)ptr) < 8) {
-offset-size-arithmetic	libclamav/htmlnorm.c	1924	                    screnc_state.length = base64_chars[ptr[0]] < 0 ? 0 : base64_chars[ptr[0]] << 2;
-offset-size-arithmetic	libclamav/htmlnorm.c	1925	                    screnc_state.length += base64_chars[ptr[1]] >> 4;
-offset-size-arithmetic	libclamav/htmlnorm.c	1926	                    screnc_state.length += (base64_chars[ptr[1]] & 0x0f) << 12;
-offset-size-arithmetic	libclamav/htmlnorm.c	1927	                    screnc_state.length += ((base64_chars[ptr[2]] >> 2) < 0 ? 0 : (base64_chars[ptr[2]] >> 2)) << 8;
-offset-size-arithmetic	libclamav/htmlnorm.c	1928	                    screnc_state.length += (base64_chars[ptr[2]] & 0x03) << 22;
-offset-size-arithmetic	libclamav/htmlnorm.c	1929	                    screnc_state.length += base64_chars[ptr[3]] < 0 ? 0 : base64_chars[ptr[3]] << 16;
-offset-size-arithmetic	libclamav/htmlnorm.c	1930	                    screnc_state.length += (base64_chars[ptr[4]] < 0 ? 0 : base64_chars[ptr[4]] << 2) << 24;
-offset-size-arithmetic	libclamav/htmlnorm.c	1931	                    screnc_state.length += ((base64_chars[ptr[5]] >> 4) < 0 ? 0 : (base64_chars[ptr[5]] >> 4)) << 24;
-offset-size-arithmetic	libclamav/htmlnorm.c	1954	                            /* Early end of data detected. Error */
-offset-size-arithmetic	libclamav/htmlnorm.c	1961	                                tag_val[tag_val_length++] = '"';
-offset-size-arithmetic	libclamav/htmlnorm.c	1967	                            /* Early end of data detected. Error */
-offset-size-arithmetic	libclamav/htmlnorm.c	1974	                                tag_val[tag_val_length++] = '"';
-offset-size-arithmetic	libclamav/htmlnorm.c	1980	                            /* Early end of data detected. Error */
-offset-size-arithmetic	libclamav/htmlnorm.c	1987	                                    tag_val[tag_val_length++] = ' ';
-offset-size-arithmetic	libclamav/htmlnorm.c	1989	                                    tag_val[tag_val_length++] = '>';
-offset-size-arithmetic	libclamav/htmlnorm.c	200	         * we could have less than max_len bytes available */
-offset-size-arithmetic	libclamav/htmlnorm.c	2008	                            tag_val[tag_val_length++] = tolower(*ptr);
-offset-size-arithmetic	libclamav/htmlnorm.c	201	        chunk_len = MIN(m_area->length - m_area->offset, max_len - 1);
-offset-size-arithmetic	libclamav/htmlnorm.c	2050	                        if (LSTAT(filename, &statbuf) == -1) {
-offset-size-arithmetic	libclamav/htmlnorm.c	207	            ptr = (unsigned char *)fmap_need_off_once(m_area->map, m_area->offset, chunk_len);
-offset-size-arithmetic	libclamav/htmlnorm.c	2075	                        if ((tag_val_length == 0) && (*tag_val == ';')) {
-offset-size-arithmetic	libclamav/htmlnorm.c	216	        end   = ptr - m_area->offset + m_area->length;
-offset-size-arithmetic	libclamav/htmlnorm.c	2176	                    length++;
-offset-size-arithmetic	libclamav/htmlnorm.c	2194	            /* end of line, append contents now, resume on next line */
-offset-size-arithmetic	libclamav/htmlnorm.c	2217	            size_t chunk_size = ptr - style_begin;
-offset-size-arithmetic	libclamav/htmlnorm.c	2220	                CLI_MAX_MALLOC_OR_GOTO_DONE(style_buff, chunk_size + 1);
-offset-size-arithmetic	libclamav/htmlnorm.c	2222	                CLI_MAX_REALLOC_OR_GOTO_DONE(style_buff, style_buff_size + chunk_size + 1);
-offset-size-arithmetic	libclamav/htmlnorm.c	2227	            style_buff_size += chunk_size;
-offset-size-arithmetic	libclamav/htmlnorm.c	2232	            /* start found, and stuff before it already processed */
-offset-size-arithmetic	libclamav/htmlnorm.c	229	            m_area->offset += chunk_len;
-offset-size-arithmetic	libclamav/htmlnorm.c	232	            ptr = start + chunk_len;
-offset-size-arithmetic	libclamav/htmlnorm.c	235	            chunk_len = ptr - start;
-offset-size-arithmetic	libclamav/htmlnorm.c	2384	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf)
-offset-size-arithmetic	libclamav/htmlnorm.c	2389	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data)
-offset-size-arithmetic	libclamav/htmlnorm.c	243	                ptr = (unsigned char *)fmap_need_ptr_once(m_area->map, ptr, end - ptr);
-offset-size-arithmetic	libclamav/htmlnorm.c	2454	    m_area.length     = map->len;
-offset-size-arithmetic	libclamav/htmlnorm.c	252	            while ((ptr < end) && (chunk_len < max_len - 1)) {
-offset-size-arithmetic	libclamav/htmlnorm.c	2524	    m_area.length = map->len;
-offset-size-arithmetic	libclamav/htmlnorm.c	2559	    /* Calculate the length of the encoded string */
-offset-size-arithmetic	libclamav/htmlnorm.c	257	                    chunk[chunk_len++] = c;
-offset-size-arithmetic	libclamav/htmlnorm.c	2580	    screnc_state.length = base64_chars[tmpstr[0]] < 0 ? 0 : base64_chars[tmpstr[0]] << 2;
-offset-size-arithmetic	libclamav/htmlnorm.c	2581	    screnc_state.length += base64_chars[tmpstr[1]] >> 4;
-offset-size-arithmetic	libclamav/htmlnorm.c	2582	    screnc_state.length += (base64_chars[tmpstr[1]] & 0x0f) << 12;
-offset-size-arithmetic	libclamav/htmlnorm.c	2583	    screnc_state.length += ((base64_chars[tmpstr[2]] >> 2) < 0 ? 0 : (base64_chars[tmpstr[2]] >> 2)) << 8;
-offset-size-arithmetic	libclamav/htmlnorm.c	2584	    screnc_state.length += (base64_chars[tmpstr[2]] & 0x03) << 22;
-offset-size-arithmetic	libclamav/htmlnorm.c	2585	    screnc_state.length += base64_chars[tmpstr[3]] < 0 ? 0 : base64_chars[tmpstr[3]] << 16;
-offset-size-arithmetic	libclamav/htmlnorm.c	2586	    screnc_state.length += (base64_chars[tmpstr[4]] < 0 ? 0 : base64_chars[tmpstr[4]] << 2) << 24;
-offset-size-arithmetic	libclamav/htmlnorm.c	2587	    screnc_state.length += ((base64_chars[tmpstr[5]] >> 4) < 0 ? 0 : (base64_chars[tmpstr[5]] >> 4)) << 24;
-offset-size-arithmetic	libclamav/htmlnorm.c	2595	        if (!html_screnc_write(ctx, ofd, ptr, strlen((const char *)ptr), temporary_reserved))
-offset-size-arithmetic	libclamav/htmlnorm.c	260	            m_area->offset += ptr - start;
-offset-size-arithmetic	libclamav/htmlnorm.c	2609	    if (!html_screnc_write(ctx, ofd, "</script>", strlen("</script>"), temporary_reserved))
-offset-size-arithmetic	libclamav/htmlnorm.c	263	        if (ptr && ptr < end && !isspace(*ptr)) {
-offset-size-arithmetic	libclamav/htmlnorm.c	264	            /* we hit max_len, rewind to a space */
-offset-size-arithmetic	libclamav/htmlnorm.c	268	                m_area->offset -= chunk_len - count;
-offset-size-arithmetic	libclamav/htmlnorm.c	277	        chunk_len = fread(chunk, 1, max_len - 1, stream);
-offset-size-arithmetic	libclamav/htmlnorm.c	278	        if (!chunk_len || chunk_len > max_len - 1) {
-offset-size-arithmetic	libclamav/htmlnorm.c	290	            end   = chunk + chunk_len;
-offset-size-arithmetic	libclamav/htmlnorm.c	292	            /* start of NULL chars, we will copy non-NULL characters
-offset-size-arithmetic	libclamav/htmlnorm.c	293	             * to this position */
-offset-size-arithmetic	libclamav/htmlnorm.c	294	            chunk_len = ptr - chunk;
-offset-size-arithmetic	libclamav/htmlnorm.c	297	            while ((ptr < end) && !(*ptr)) {
-offset-size-arithmetic	libclamav/htmlnorm.c	301	            while ((ptr < end) && (chunk_len < max_len - 1)) {
-offset-size-arithmetic	libclamav/htmlnorm.c	304	                    chunk[chunk_len++] = c;
-offset-size-arithmetic	libclamav/htmlnorm.c	309	        if (chunk_len == max_len - 1) {
-offset-size-arithmetic	libclamav/htmlnorm.c	314	                /* seek-back to space */
-offset-size-arithmetic	libclamav/htmlnorm.c	315	                fseek(stream, -(long)(chunk_len - count), SEEK_CUR);
-offset-size-arithmetic	libclamav/htmlnorm.c	350	    if (fbuff == NULL || length == 0 || fbuff->temporary_reserved == NULL)
-offset-size-arithmetic	libclamav/htmlnorm.c	375	    if (fbuff == NULL || length == 0 || fbuff->temporary_reserved == NULL || fbuff->ctx == NULL)
-offset-size-arithmetic	libclamav/htmlnorm.c	387	        size_t length = (size_t)fbuff->length;
-offset-size-arithmetic	libclamav/htmlnorm.c	398	        if (cli_writen(fbuff->fd, fbuff->buffer, fbuff->length) != fbuff->length) {
-offset-size-arithmetic	libclamav/htmlnorm.c	414	        fbuff1->buffer[fbuff1->length++] = c;
-offset-size-arithmetic	libclamav/htmlnorm.c	421	        if (len >= HTML_FILE_BUFF_LEN - fbuff->length) {
-offset-size-arithmetic	libclamav/htmlnorm.c	439	            fbuff->length += len;
-offset-size-arithmetic	libclamav/htmlnorm.c	488	    tmp = (unsigned char **)cli_max_realloc(tags->tag, (tagCnt + 1) * sizeof(char *));
-offset-size-arithmetic	libclamav/htmlnorm.c	495	    tmp = (unsigned char **)cli_max_realloc(tags->value, (valueCnt + 1) * sizeof(char *));
-offset-size-arithmetic	libclamav/htmlnorm.c	504	        tmp        = (unsigned char **)cli_max_realloc(tags->contents, (contentCnt + 1) * sizeof(*tags->contents));
-offset-size-arithmetic	libclamav/htmlnorm.c	522	            len = strlen((const char *)value + 1);
-offset-size-arithmetic	libclamav/htmlnorm.c	524	                tags->value[tags->count][len - 1] = '\0';
-offset-size-arithmetic	libclamav/htmlnorm.c	578	        html_output_str(fbuff, tags->tag[i], strlen((const char *)tags->tag[i]));
-offset-size-arithmetic	libclamav/htmlnorm.c	581	            len = strlen((const char *)tags->value[i]);
-offset-size-arithmetic	libclamav/htmlnorm.c	620	static inline void html_tag_contents_append(struct tag_contents *cont, const unsigned char *begin, const unsigned char *end)
-offset-size-arithmetic	libclamav/htmlnorm.c	664	        cont->pos >= sizeof(cont->contents))
-offset-size-arithmetic	libclamav/htmlnorm.c	667	    cont->contents[cont->pos++] = '\0';
-offset-size-arithmetic	libclamav/htmlnorm.c	693	    while (s->length > 0 && *ptr) {
-offset-size-arithmetic	libclamav/htmlnorm.c	699	            value = decrypt_tables[table_order[s->table_pos]][*ptr];
-offset-size-arithmetic	libclamav/htmlnorm.c	702	                s->length--;
-offset-size-arithmetic	libclamav/htmlnorm.c	705	                        /* Fixup for end of line */
-offset-size-arithmetic	libclamav/htmlnorm.c	727	            s->table_pos = (s->table_pos + 1) % 64;
-offset-size-arithmetic	libclamav/htmlnorm.c	737	        s->length--;
-offset-size-arithmetic	libclamav/htmlnorm.c	741	        if (strlen((const char *)ptr) >= 12) {
-offset-size-arithmetic	libclamav/htmlnorm.c	764	        remaining = strlen((const char *)ptr) + 1;
-offset-size-arithmetic	libclamav/htmlnorm.c	782	        cli_js_process_buffer(js_state, (const char *)js_begin, js_end - js_begin);
-offset-size-arithmetic	libclamav/htmlnorm.c	797	    size_t cnt = tags->count + 1;
-offset-size-arithmetic	libclamav/htmlnorm.c	804	    tmp = cli_max_realloc(tags->urls, cnt * sizeof(unsigned char *));
-offset-size-arithmetic	libclamav/htmlnorm.c	818	        memset(tags, 0, sizeof(*tags));
-offset-size-arithmetic	libclamav/htmlnorm.c	853	    char filename[1024], tag[HTML_STR_LENGTH + 1], tag_arg[HTML_STR_LENGTH + 1];
-offset-size-arithmetic	libclamav/htmlnorm.c	862	    int in_ahref                       = 0;    /* index of <a> tag, whose contents we are parsing. Indexing starts from 1, 0 means outside of <a>*/
-offset-size-arithmetic	libclamav/htmlnorm.c	864	    unsigned char *ptrend              = NULL; /*end of <a> contents*/
-offset-size-arithmetic	libclamav/htmlnorm.c	978	            href_contents_begin = ptr; /*start of a new line, last line already appended to contents see below*/
-offset-size-arithmetic	libclamav/htmlnorm.h	54	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf);
-offset-size-arithmetic	libclamav/htmlnorm.h	55	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data);
+offset-size-arithmetic	libclamav/htmlnorm.c	1015	            href_contents_begin = ptr; /*start of a new line, last line already appended to contents see below*/
+offset-size-arithmetic	libclamav/htmlnorm.c	1100	                            /*append this text portion to the contents of <a>*/
+offset-size-arithmetic	libclamav/htmlnorm.c	1148	                    if ((tag_length == 0) && (*ptr == '!')) {
+offset-size-arithmetic	libclamav/htmlnorm.c	1156	                                file_buff_o2->length--;
+offset-size-arithmetic	libclamav/htmlnorm.c	1171	                        if (in_tag != TAG_DONT_EXTRACT && tag_length == 0 && *ptr != '/') {
+offset-size-arithmetic	libclamav/htmlnorm.c	1175	                            tag[tag_length++] = tolower(*ptr);
+offset-size-arithmetic	libclamav/htmlnorm.c	1221	                            tag_arg[tag_arg_length++] = tolower(*ptr);
+offset-size-arithmetic	libclamav/htmlnorm.c	1255	                            file_buff_o2->length--;
+offset-size-arithmetic	libclamav/htmlnorm.c	1269	                            file_buff_o2->length--;
+offset-size-arithmetic	libclamav/htmlnorm.c	1288	                                tag_val[tag_val_length++] = '"';
+offset-size-arithmetic	libclamav/htmlnorm.c	1295	                                    tag_val[tag_val_length++] = '"';
+offset-size-arithmetic	libclamav/htmlnorm.c	1310	                                    tag_val[tag_val_length++] = '"';
+offset-size-arithmetic	libclamav/htmlnorm.c	1320	                                tag_val[tag_val_length++] = '"';
+offset-size-arithmetic	libclamav/htmlnorm.c	1327	                                    tag_val[tag_val_length++] = '"';
+offset-size-arithmetic	libclamav/htmlnorm.c	1342	                                    tag_val[tag_val_length++] = '"';
+offset-size-arithmetic	libclamav/htmlnorm.c	1362	                                    tag_val[tag_val_length++] = ' ';
+offset-size-arithmetic	libclamav/htmlnorm.c	1364	                                    tag_val[tag_val_length++] = '>';
+offset-size-arithmetic	libclamav/htmlnorm.c	1379	                                    tag_val[tag_val_length++] = '.';
+offset-size-arithmetic	libclamav/htmlnorm.c	1395	                                    tag_val[tag_val_length++] = c0;
+offset-size-arithmetic	libclamav/htmlnorm.c	1397	                                    tag_val[tag_val_length++] = c1;
+offset-size-arithmetic	libclamav/htmlnorm.c	1399	                                    tag_val[tag_val_length++] = c2;
+offset-size-arithmetic	libclamav/htmlnorm.c	1408	                                tag_val[tag_val_length++] = *ptr;
+offset-size-arithmetic	libclamav/htmlnorm.c	1463	                            style_end = ptr - strlen("</style>");
+offset-size-arithmetic	libclamav/htmlnorm.c	1470	                            chunk_size = style_end - style_begin;
+offset-size-arithmetic	libclamav/htmlnorm.c	1473	                                CLI_MAX_MALLOC_OR_GOTO_DONE(style_buff, chunk_size + 1);
+offset-size-arithmetic	libclamav/htmlnorm.c	1475	                                CLI_MAX_REALLOC_OR_GOTO_DONE(style_buff, style_buff_size + chunk_size + 1);
+offset-size-arithmetic	libclamav/htmlnorm.c	1480	                            style_buff_size += chunk_size;
+offset-size-arithmetic	libclamav/htmlnorm.c	1560	                            if (arg_value && strlen((const char *)arg_value) > 0) {
+offset-size-arithmetic	libclamav/htmlnorm.c	1565	                                        /*we encountered nested <a> tags, pretend previous closed*/
+offset-size-arithmetic	libclamav/htmlnorm.c	1568	                                            /*add pending contents between tags*/
+offset-size-arithmetic	libclamav/htmlnorm.c	1583	                                        html_tag_contents_append(&contents, (const unsigned char *)arg_value,
+offset-size-arithmetic	libclamav/htmlnorm.c	1600	                                                                 in_form_action + strlen((const char *)in_form_action));
+offset-size-arithmetic	libclamav/htmlnorm.c	1615	                                    href_contents_begin = ptr;          /* contents begin after <a ..> ends */
+offset-size-arithmetic	libclamav/htmlnorm.c	1665	                                                             in_form_action + strlen((const char *)in_form_action));
+offset-size-arithmetic	libclamav/htmlnorm.c	1698	                                                             in_form_action + strlen((const char *)in_form_action));
+offset-size-arithmetic	libclamav/htmlnorm.c	1732	                                                             in_form_action + strlen((const char *)in_form_action));
+offset-size-arithmetic	libclamav/htmlnorm.c	176	    while (!isspace(chunk[len - 1]) && (len > 1)) {
+offset-size-arithmetic	libclamav/htmlnorm.c	1766	                                                             in_form_action + strlen((const char *)in_form_action));
+offset-size-arithmetic	libclamav/htmlnorm.c	177	        len--;
+offset-size-arithmetic	libclamav/htmlnorm.c	1780	                            html_output_str(file_buff_text, (const unsigned char *)arg_value, strlen((const char *)arg_value));
+offset-size-arithmetic	libclamav/htmlnorm.c	1787	                            html_output_str(file_buff_text, (const unsigned char *)arg_value, strlen((const char *)arg_value));
+offset-size-arithmetic	libclamav/htmlnorm.c	1805	                                tag_val[tag_val_length++] = '&';
+offset-size-arithmetic	libclamav/htmlnorm.c	1825	                                    tag_val[tag_val_length++] = c;
+offset-size-arithmetic	libclamav/htmlnorm.c	1831	                                tag_val[tag_val_length++] = '&';
+offset-size-arithmetic	libclamav/htmlnorm.c	1837	                                    tag_val[tag_val_length++] = c;
+offset-size-arithmetic	libclamav/htmlnorm.c	1841	                                tag_val[tag_val_length++] = ';';
+offset-size-arithmetic	libclamav/htmlnorm.c	1850	                        entity_val[entity_val_length++] = *ptr++;
+offset-size-arithmetic	libclamav/htmlnorm.c	1855	                            tag_val[tag_val_length++] = '&';
+offset-size-arithmetic	libclamav/htmlnorm.c	186	 * This used to be called cli_readline, but we don't stop at end-of-line anymore */
+offset-size-arithmetic	libclamav/htmlnorm.c	1862	                                tag_val[tag_val_length++] = c;
+offset-size-arithmetic	libclamav/htmlnorm.c	1877	                            tag_val[tag_val_length++] = value; /* store encoded values too */
+offset-size-arithmetic	libclamav/htmlnorm.c	189	    unsigned char *chunk, *start, *ptr, *end;
+offset-size-arithmetic	libclamav/htmlnorm.c	1942	                    /* Check for start marker */
+offset-size-arithmetic	libclamav/htmlnorm.c	1955	                    if (strlen((const char *)ptr) < 8) {
+offset-size-arithmetic	libclamav/htmlnorm.c	1961	                    screnc_state.length = base64_chars[ptr[0]] < 0 ? 0 : base64_chars[ptr[0]] << 2;
+offset-size-arithmetic	libclamav/htmlnorm.c	1962	                    screnc_state.length += base64_chars[ptr[1]] >> 4;
+offset-size-arithmetic	libclamav/htmlnorm.c	1963	                    screnc_state.length += (base64_chars[ptr[1]] & 0x0f) << 12;
+offset-size-arithmetic	libclamav/htmlnorm.c	1964	                    screnc_state.length += ((base64_chars[ptr[2]] >> 2) < 0 ? 0 : (base64_chars[ptr[2]] >> 2)) << 8;
+offset-size-arithmetic	libclamav/htmlnorm.c	1965	                    screnc_state.length += (base64_chars[ptr[2]] & 0x03) << 22;
+offset-size-arithmetic	libclamav/htmlnorm.c	1966	                    screnc_state.length += base64_chars[ptr[3]] < 0 ? 0 : base64_chars[ptr[3]] << 16;
+offset-size-arithmetic	libclamav/htmlnorm.c	1967	                    screnc_state.length += (base64_chars[ptr[4]] < 0 ? 0 : base64_chars[ptr[4]] << 2) << 24;
+offset-size-arithmetic	libclamav/htmlnorm.c	1968	                    screnc_state.length += ((base64_chars[ptr[5]] >> 4) < 0 ? 0 : (base64_chars[ptr[5]] >> 4)) << 24;
+offset-size-arithmetic	libclamav/htmlnorm.c	1991	                            /* Early end of data detected. Error */
+offset-size-arithmetic	libclamav/htmlnorm.c	1998	                                tag_val[tag_val_length++] = '"';
+offset-size-arithmetic	libclamav/htmlnorm.c	2004	                            /* Early end of data detected. Error */
+offset-size-arithmetic	libclamav/htmlnorm.c	201	         * we could have less than max_len bytes available */
+offset-size-arithmetic	libclamav/htmlnorm.c	2011	                                tag_val[tag_val_length++] = '"';
+offset-size-arithmetic	libclamav/htmlnorm.c	2017	                            /* Early end of data detected. Error */
+offset-size-arithmetic	libclamav/htmlnorm.c	202	        chunk_len = MIN(m_area->length - m_area->offset, max_len - 1);
+offset-size-arithmetic	libclamav/htmlnorm.c	2024	                                    tag_val[tag_val_length++] = ' ';
+offset-size-arithmetic	libclamav/htmlnorm.c	2026	                                    tag_val[tag_val_length++] = '>';
+offset-size-arithmetic	libclamav/htmlnorm.c	2045	                            tag_val[tag_val_length++] = tolower(*ptr);
+offset-size-arithmetic	libclamav/htmlnorm.c	208	            ptr = (unsigned char *)fmap_need_off_once(m_area->map, m_area->offset, chunk_len);
+offset-size-arithmetic	libclamav/htmlnorm.c	2087	                        if (LSTAT(filename, &statbuf) == -1) {
+offset-size-arithmetic	libclamav/htmlnorm.c	2112	                        if ((tag_val_length == 0) && (*tag_val == ';')) {
+offset-size-arithmetic	libclamav/htmlnorm.c	217	        end   = ptr - m_area->offset + m_area->length;
+offset-size-arithmetic	libclamav/htmlnorm.c	2213	                    length++;
+offset-size-arithmetic	libclamav/htmlnorm.c	2231	            /* end of line, append contents now, resume on next line */
+offset-size-arithmetic	libclamav/htmlnorm.c	2254	            size_t chunk_size = ptr - style_begin;
+offset-size-arithmetic	libclamav/htmlnorm.c	2257	                CLI_MAX_MALLOC_OR_GOTO_DONE(style_buff, chunk_size + 1);
+offset-size-arithmetic	libclamav/htmlnorm.c	2259	                CLI_MAX_REALLOC_OR_GOTO_DONE(style_buff, style_buff_size + chunk_size + 1);
+offset-size-arithmetic	libclamav/htmlnorm.c	2264	            style_buff_size += chunk_size;
+offset-size-arithmetic	libclamav/htmlnorm.c	2269	            /* start found, and stuff before it already processed */
+offset-size-arithmetic	libclamav/htmlnorm.c	230	            m_area->offset += chunk_len;
+offset-size-arithmetic	libclamav/htmlnorm.c	233	            ptr = start + chunk_len;
+offset-size-arithmetic	libclamav/htmlnorm.c	236	            chunk_len = ptr - start;
+offset-size-arithmetic	libclamav/htmlnorm.c	2421	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf)
+offset-size-arithmetic	libclamav/htmlnorm.c	2426	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data)
+offset-size-arithmetic	libclamav/htmlnorm.c	244	                ptr = (unsigned char *)fmap_need_ptr_once(m_area->map, ptr, end - ptr);
+offset-size-arithmetic	libclamav/htmlnorm.c	2491	    m_area.length     = map->len;
+offset-size-arithmetic	libclamav/htmlnorm.c	253	            while ((ptr < end) && (chunk_len < max_len - 1)) {
+offset-size-arithmetic	libclamav/htmlnorm.c	2561	    m_area.length = map->len;
+offset-size-arithmetic	libclamav/htmlnorm.c	258	                    chunk[chunk_len++] = c;
+offset-size-arithmetic	libclamav/htmlnorm.c	2596	    /* Calculate the length of the encoded string */
+offset-size-arithmetic	libclamav/htmlnorm.c	261	            m_area->offset += ptr - start;
+offset-size-arithmetic	libclamav/htmlnorm.c	2617	    screnc_state.length = base64_chars[tmpstr[0]] < 0 ? 0 : base64_chars[tmpstr[0]] << 2;
+offset-size-arithmetic	libclamav/htmlnorm.c	2618	    screnc_state.length += base64_chars[tmpstr[1]] >> 4;
+offset-size-arithmetic	libclamav/htmlnorm.c	2619	    screnc_state.length += (base64_chars[tmpstr[1]] & 0x0f) << 12;
+offset-size-arithmetic	libclamav/htmlnorm.c	2620	    screnc_state.length += ((base64_chars[tmpstr[2]] >> 2) < 0 ? 0 : (base64_chars[tmpstr[2]] >> 2)) << 8;
+offset-size-arithmetic	libclamav/htmlnorm.c	2621	    screnc_state.length += (base64_chars[tmpstr[2]] & 0x03) << 22;
+offset-size-arithmetic	libclamav/htmlnorm.c	2622	    screnc_state.length += base64_chars[tmpstr[3]] < 0 ? 0 : base64_chars[tmpstr[3]] << 16;
+offset-size-arithmetic	libclamav/htmlnorm.c	2623	    screnc_state.length += (base64_chars[tmpstr[4]] < 0 ? 0 : base64_chars[tmpstr[4]] << 2) << 24;
+offset-size-arithmetic	libclamav/htmlnorm.c	2624	    screnc_state.length += ((base64_chars[tmpstr[5]] >> 4) < 0 ? 0 : (base64_chars[tmpstr[5]] >> 4)) << 24;
+offset-size-arithmetic	libclamav/htmlnorm.c	2632	        if (!html_screnc_write(ctx, ofd, ptr, strlen((const char *)ptr), temporary_reserved))
+offset-size-arithmetic	libclamav/htmlnorm.c	264	        if (ptr && ptr < end && !isspace(*ptr)) {
+offset-size-arithmetic	libclamav/htmlnorm.c	2646	    if (!html_screnc_write(ctx, ofd, "</script>", strlen("</script>"), temporary_reserved))
+offset-size-arithmetic	libclamav/htmlnorm.c	265	            /* we hit max_len, rewind to a space */
+offset-size-arithmetic	libclamav/htmlnorm.c	269	                m_area->offset -= chunk_len - count;
+offset-size-arithmetic	libclamav/htmlnorm.c	278	        chunk_len = fread(chunk, 1, max_len - 1, stream);
+offset-size-arithmetic	libclamav/htmlnorm.c	279	        if (!chunk_len || chunk_len > max_len - 1) {
+offset-size-arithmetic	libclamav/htmlnorm.c	291	            end   = chunk + chunk_len;
+offset-size-arithmetic	libclamav/htmlnorm.c	293	            /* start of NULL chars, we will copy non-NULL characters
+offset-size-arithmetic	libclamav/htmlnorm.c	294	             * to this position */
+offset-size-arithmetic	libclamav/htmlnorm.c	295	            chunk_len = ptr - chunk;
+offset-size-arithmetic	libclamav/htmlnorm.c	298	            while ((ptr < end) && !(*ptr)) {
+offset-size-arithmetic	libclamav/htmlnorm.c	302	            while ((ptr < end) && (chunk_len < max_len - 1)) {
+offset-size-arithmetic	libclamav/htmlnorm.c	305	                    chunk[chunk_len++] = c;
+offset-size-arithmetic	libclamav/htmlnorm.c	310	        if (chunk_len == max_len - 1) {
+offset-size-arithmetic	libclamav/htmlnorm.c	315	                /* seek-back to space */
+offset-size-arithmetic	libclamav/htmlnorm.c	316	                fseek(stream, -(long)(chunk_len - count), SEEK_CUR);
+offset-size-arithmetic	libclamav/htmlnorm.c	351	    if (fbuff == NULL || length == 0 || fbuff->temporary_reserved == NULL)
+offset-size-arithmetic	libclamav/htmlnorm.c	376	    if (fbuff == NULL || length == 0 || fbuff->temporary_reserved == NULL || fbuff->ctx == NULL)
+offset-size-arithmetic	libclamav/htmlnorm.c	388	        size_t length = (size_t)fbuff->length;
+offset-size-arithmetic	libclamav/htmlnorm.c	399	        if (cli_writen(fbuff->fd, fbuff->buffer, fbuff->length) != fbuff->length) {
+offset-size-arithmetic	libclamav/htmlnorm.c	415	        fbuff1->buffer[fbuff1->length++] = c;
+offset-size-arithmetic	libclamav/htmlnorm.c	422	        if (len >= HTML_FILE_BUFF_LEN - fbuff->length) {
+offset-size-arithmetic	libclamav/htmlnorm.c	440	            fbuff->length += len;
+offset-size-arithmetic	libclamav/htmlnorm.c	474	cl_error_t cli_html_tag_table_size(size_t count, size_t element_size, size_t *bytes)
+offset-size-arithmetic	libclamav/htmlnorm.c	480	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+offset-size-arithmetic	libclamav/htmlnorm.c	506	    next_count = (size_t)tags->count + 1U;
+offset-size-arithmetic	libclamav/htmlnorm.c	507	    if (cli_html_tag_table_size(next_count, sizeof(char *), &tag_table_size) != CL_SUCCESS ||
+offset-size-arithmetic	libclamav/htmlnorm.c	508	        cli_html_tag_table_size(next_count, sizeof(char *), &value_table_size) != CL_SUCCESS ||
+offset-size-arithmetic	libclamav/htmlnorm.c	510	         cli_html_tag_table_size(next_count, sizeof(*tags->contents), &content_table_size) != CL_SUCCESS))
+offset-size-arithmetic	libclamav/htmlnorm.c	551	            len = strlen((const char *)value + 1);
+offset-size-arithmetic	libclamav/htmlnorm.c	553	                tags->value[tags->count][len - 1] = '\0';
+offset-size-arithmetic	libclamav/htmlnorm.c	607	        html_output_str(fbuff, tags->tag[i], strlen((const char *)tags->tag[i]));
+offset-size-arithmetic	libclamav/htmlnorm.c	610	            len = strlen((const char *)tags->value[i]);
+offset-size-arithmetic	libclamav/htmlnorm.c	649	static inline void html_tag_contents_append(struct tag_contents *cont, const unsigned char *begin, const unsigned char *end)
+offset-size-arithmetic	libclamav/htmlnorm.c	693	        cont->pos >= sizeof(cont->contents))
+offset-size-arithmetic	libclamav/htmlnorm.c	696	    cont->contents[cont->pos++] = '\0';
+offset-size-arithmetic	libclamav/htmlnorm.c	722	    while (s->length > 0 && *ptr) {
+offset-size-arithmetic	libclamav/htmlnorm.c	728	            value = decrypt_tables[table_order[s->table_pos]][*ptr];
+offset-size-arithmetic	libclamav/htmlnorm.c	731	                s->length--;
+offset-size-arithmetic	libclamav/htmlnorm.c	734	                        /* Fixup for end of line */
+offset-size-arithmetic	libclamav/htmlnorm.c	756	            s->table_pos = (s->table_pos + 1) % 64;
+offset-size-arithmetic	libclamav/htmlnorm.c	766	        s->length--;
+offset-size-arithmetic	libclamav/htmlnorm.c	770	        if (strlen((const char *)ptr) >= 12) {
+offset-size-arithmetic	libclamav/htmlnorm.c	793	        remaining = strlen((const char *)ptr) + 1;
+offset-size-arithmetic	libclamav/htmlnorm.c	811	        cli_js_process_buffer(js_state, (const char *)js_begin, js_end - js_begin);
+offset-size-arithmetic	libclamav/htmlnorm.c	834	    if (cli_html_tag_table_size(cnt, sizeof(unsigned char *), &table_size) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/htmlnorm.c	855	        memset(tags, 0, sizeof(*tags));
+offset-size-arithmetic	libclamav/htmlnorm.c	890	    char filename[1024], tag[HTML_STR_LENGTH + 1], tag_arg[HTML_STR_LENGTH + 1];
+offset-size-arithmetic	libclamav/htmlnorm.c	899	    int in_ahref                       = 0;    /* index of <a> tag, whose contents we are parsing. Indexing starts from 1, 0 means outside of <a>*/
+offset-size-arithmetic	libclamav/htmlnorm.c	901	    unsigned char *ptrend              = NULL; /*end of <a> contents*/
+offset-size-arithmetic	libclamav/htmlnorm.h	63	cl_error_t cli_html_tag_table_size(size_t count, size_t element_size, size_t *bytes);
+offset-size-arithmetic	libclamav/htmlnorm.h	65	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf);
+offset-size-arithmetic	libclamav/htmlnorm.h	66	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data);
 offset-size-arithmetic	libclamav/hwp.c	1006	    if (offset >= map->len)
 offset-size-arithmetic	libclamav/hwp.c	1020	            offset += sizeof(cfsb);
 offset-size-arithmetic	libclamav/hwp.c	1027	                    if (fmap_readn(map, &pcsd_size, offset + PCSD_SIZE, sizeof(pcsd_size)) != sizeof(pcsd_size))
@@ -38607,10 +38628,15 @@ offset-size-arithmetic	unit_tests/check_clamfi_quota.c	28	    CHECK(!clamfi_norm
 offset-size-arithmetic	unit_tests/check_disasm.c	112	        /* addrsize, m00/rm110 - mov [eax-5355], ebp */
 offset-size-arithmetic	unit_tests/check_disasm.c	228	    d = malloc(size * 2);
 offset-size-arithmetic	unit_tests/check_disasm.c	229	    ck_assert_msg(d != NULL, "disasm malloc(%zd) failed", size * 2);
-offset-size-arithmetic	unit_tests/check_htmlnorm.c	244	    map = cl_fmap_open_memory(input, sizeof(input) - 1);
-offset-size-arithmetic	unit_tests/check_htmlnorm.c	273	    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
-offset-size-arithmetic	unit_tests/check_htmlnorm.c	389	    tcase_add_loop_test(tc_htmlnorm_api, test_htmlnorm_api, 0, sizeof(tests) / sizeof(tests[0]));
-offset-size-arithmetic	unit_tests/check_htmlnorm.c	50	static off_t htmlnorm_failing_pread(void *handle, void *buf, size_t count, off_t offset)
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	194	    ck_assert_int_eq(cli_html_tag_table_size(0, sizeof(char *), &bytes), CL_SUCCESS);
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	196	    ck_assert_int_eq(cli_html_tag_table_size(CLI_MAX_ALLOCATION / sizeof(char *) + 1,
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	197	                                             sizeof(char *), &bytes),
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	199	    ck_assert_int_eq(cli_html_tag_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	201	    ck_assert_int_eq(cli_html_tag_table_size(1, sizeof(char *), NULL), CL_EARG);
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	282	    map = cl_fmap_open_memory(input, sizeof(input) - 1);
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	311	    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	427	    tcase_add_loop_test(tc_htmlnorm_api, test_htmlnorm_api, 0, sizeof(tests) / sizeof(tests[0]));
+offset-size-arithmetic	unit_tests/check_htmlnorm.c	51	static off_t htmlnorm_failing_pread(void *handle, void *buf, size_t count, off_t offset)
 offset-size-arithmetic	unit_tests/check_jsnorm.c	214	extern size_t __real_cli_writen(int fd, const void *buff, size_t count);
 offset-size-arithmetic	unit_tests/check_jsnorm.c	219	extern size_t __real_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 offset-size-arithmetic	unit_tests/check_jsnorm.c	236	size_t __wrap_cli_writen(int fd, const void *buff, size_t count)

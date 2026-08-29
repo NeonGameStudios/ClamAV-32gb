@@ -51,6 +51,17 @@ typedef struct form_data_tag {
     size_t count;
 } form_data_t;
 
+/**
+ * @brief Validate and calculate an HTML normalization pointer-table size.
+ *
+ * @param count         The requested number of pointer elements.
+ * @param element_size  The size of each element.
+ * @param[out] bytes    The checked allocation size in bytes.
+ * @return cl_error_t   CL_SUCCESS if representable and within the individual
+ *                      allocation limit, otherwise an error code.
+ */
+cl_error_t cli_html_tag_table_size(size_t count, size_t element_size, size_t *bytes);
+
 bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf);
 bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data);
 bool html_normalise_map(cli_ctx *ctx, fmap_t *map, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf);
@@ -71,6 +82,8 @@ bool html_screnc_decode_ctx(cli_ctx *ctx, fmap_t *map, const char *dirname,
 bool html_screnc_decode_ctx_status(cli_ctx *ctx, fmap_t *map, const char *dirname,
                                    uint64_t *temporary_reserved, bool *read_error);
 bool html_tag_arg_add(tag_arguments_t *tags, const char *tag, char *value);
+
+bool html_insert_form_data(const char *const value, form_data_t *tags);
 
 void html_form_data_tag_free(form_data_t *tags);
 
