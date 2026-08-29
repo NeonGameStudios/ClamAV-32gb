@@ -33328,6 +33328,61 @@ START_TEST(test_dmg_external_sort_is_bounded_and_complete)
 }
 END_TEST
 
+START_TEST(test_dmg_truncated_metadata_is_parse_not_read)
+{
+    const size_t stripe_count = 2U;
+    const size_t metadata_len = sizeof(struct dmg_mish_block) +
+                                stripe_count * sizeof(struct dmg_block_data);
+    const size_t mapped_len = metadata_len - sizeof(struct dmg_block_data);
+    struct dmg_mish_block mish;
+    struct dmg_mish_with_stripes mish_set;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    char *path = NULL;
+    uint8_t *metadata;
+    cl_error_t ret;
+    int fd = -1;
+
+    metadata = calloc(1, mapped_len);
+    ck_assert_ptr_nonnull(metadata);
+    memcpy(metadata, "mish", 4);
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(cli_writen(fd, metadata, mapped_len), (ssize_t)mapped_len);
+    free(metadata);
+    metadata = NULL;
+
+    map = fmap_new(fd, 0, mapped_len, path, NULL);
+    ck_assert_ptr_nonnull(map);
+    memset(&mish, 0, sizeof(mish));
+    mish.blockDataCount = (uint32_t)stripe_count;
+    memset(&mish_set, 0, sizeof(mish_set));
+    mish_set.mish         = &mish;
+    mish_set.metadata_map = map;
+    mish_set.metadata_fd  = fd;
+    mish_set.metadata_len = metadata_len;
+    memset(&engine, 0, sizeof(engine));
+    engine.maxcontiguoussize = 8U * 1024U * 1024U;
+    engine.maxtemporarysize  = 1U * 1024U * 1024U;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine          = &engine;
+    ctx.fmap            = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_dmg_external_sort_stripes(&ctx, &mish_set);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_ptr_eq(mish_set.metadata_map, map);
+
+    fmap_free(map);
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+}
+END_TEST
+
 START_TEST(test_dmg_strict_base64_and_terminal_end_validation)
 {
     const uint32_t terminal_end[] = {DMG_STRIPE_END};
@@ -46422,6 +46477,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_dmg_map, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg_map, test_dmg_in_memory_stripes_keep_host_order);
     tcase_add_test(tc_dmg_map, test_dmg_external_sort_is_bounded_and_complete);
+    tcase_add_test(tc_dmg_map, test_dmg_truncated_metadata_is_parse_not_read);
     tcase_add_test(tc_dmg_map, test_dmg_malformed_metadata_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_trailer_read_failure_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_invalid_trailer_is_fail_visible);
@@ -46774,6 +46830,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_dmg, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg, test_dmg_in_memory_stripes_keep_host_order);
     tcase_add_test(tc_dmg, test_dmg_external_sort_is_bounded_and_complete);
+    tcase_add_test(tc_dmg, test_dmg_truncated_metadata_is_parse_not_read);
     tcase_add_test(tc_dmg, test_dmg_malformed_metadata_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_trailer_read_failure_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_invalid_trailer_is_fail_visible);

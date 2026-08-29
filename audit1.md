@@ -15,6 +15,21 @@ coherent public TCase, production-CVD/service, materialized-large-file,
 certified Linux x86-64, Sonic1, and final parser-family/release qualification
 remain open.
 
+## DMG truncated-range read classification — 2026-08-29
+
+The DMG `blkx` metadata readers previously treated any failed `fmap_readn()`
+request as `CL_EREAD`, including a request that extended beyond the mapped
+metadata range. The readers now use the full-range fmap helper and distinguish
+structural short/out-of-range requests (`CL_EPARSE`) from in-range backing
+callback failures (`CL_EREAD`), preserving sticky incomplete and
+non-cacheable state in both cases. The registered
+`test_dmg_truncated_metadata_is_parse_not_read` regression covers the public
+external-sort entry. A current-source GCC ASan/UBSan direct runner passes 2/2
+for the truncated and injected in-range-failure cases; the full DMG corpus,
+coherent public TCase relink/execution, production-CVD/service,
+materialized-large-file, certified Linux x86-64, Sonic1, and final
+parser-family/release qualification remain open.
+
 ## ARJ member CRC verification — 2026-08-29
 
 ARJ file headers declare `orig_crc`, but the parser previously ignored that

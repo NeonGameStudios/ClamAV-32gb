@@ -461,6 +461,7 @@ static int dmg_read_stream_stripe(cli_ctx *ctx, struct dmg_mish_with_stripes *mi
                                   uint32_t index, struct dmg_block_data *stripe)
 {
     uint64_t offset;
+    size_t read_result;
 
     if (!ctx || !mish_set || !mish_set->metadata_map || !mish_set->mish || !stripe ||
         index >= mish_set->mish->blockDataCount)
@@ -473,10 +474,14 @@ static int dmg_read_stream_stripe(cli_ctx *ctx, struct dmg_mish_with_stripes *mi
     }
     offset = (uint64_t)sizeof(struct dmg_mish_block) +
              (uint64_t)index * (uint64_t)sizeof(struct dmg_block_data);
-    if (offset > (uint64_t)SIZE_MAX ||
-        fmap_readn(mish_set->metadata_map, stripe, (size_t)offset, sizeof(*stripe)) != sizeof(*stripe)) {
+    if (offset > (uint64_t)SIZE_MAX) {
+        cli_mark_scan_incomplete(ctx, "DMG blkx stripe metadata offset is not addressable");
+        return CL_EPARSE;
+    }
+    read_result = fmap_readn_full(mish_set->metadata_map, stripe, (size_t)offset, sizeof(*stripe));
+    if (read_result != sizeof(*stripe)) {
         cli_mark_scan_incomplete(ctx, "DMG blkx stripe metadata could not be read completely");
-        return CL_EREAD;
+        return read_result == (size_t)-1 ? CL_EREAD : CL_EPARSE;
     }
 
     stripe->type        = be32_to_host(stripe->type);
@@ -733,6 +738,7 @@ static int dmg_sort_reader_peek(cli_ctx *ctx, struct dmg_sort_reader *reader,
     uint64_t offset;
     size_t records;
     size_t bytes;
+    size_t read_result;
 
     if (!ctx || !reader || !reader->map || !stripe)
         return CL_ENULLARG;
@@ -757,10 +763,14 @@ static int dmg_sort_reader_peek(cli_ctx *ctx, struct dmg_sort_reader *reader,
         return CL_EPARSE;
     }
     offset = reader->base + reader->next * (uint64_t)sizeof(struct dmg_block_data);
-    if (offset > (uint64_t)SIZE_MAX ||
-        fmap_readn(reader->map, reader->records, (size_t)offset, bytes) != bytes) {
+    if (offset > (uint64_t)SIZE_MAX) {
+        cli_mark_scan_incomplete(ctx, "DMG external metadata sort input offset is not addressable");
+        return CL_EPARSE;
+    }
+    read_result = fmap_readn_full(reader->map, reader->records, (size_t)offset, bytes);
+    if (read_result != bytes) {
         cli_mark_scan_incomplete(ctx, "DMG external metadata sort input could not be read completely");
-        return CL_EREAD;
+        return read_result == (size_t)-1 ? CL_EREAD : CL_EPARSE;
     }
 
     reader->next += records;
@@ -962,6 +972,7 @@ int cli_dmg_external_sort_stripes(cli_ctx *ctx, struct dmg_mish_with_stripes *mi
         size_t records = (size_t)MIN((uint64_t)run_records, count - start);
         size_t bytes   = records * sizeof(struct dmg_block_data);
         uint64_t offset;
+        size_t read_result;
 
         if (cli_checktimelimit(ctx) != CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "DMG external metadata sort reached the configured time limit");
@@ -969,10 +980,15 @@ int cli_dmg_external_sort_stripes(cli_ctx *ctx, struct dmg_mish_with_stripes *mi
             goto done;
         }
         offset = sizeof(struct dmg_mish_block) + start * (uint64_t)sizeof(struct dmg_block_data);
-        if (offset > (uint64_t)SIZE_MAX ||
-            fmap_readn(mish_set->metadata_map, run, (size_t)offset, bytes) != bytes) {
+        if (offset > (uint64_t)SIZE_MAX) {
+            cli_mark_scan_incomplete(ctx, "DMG external metadata sort run offset is not addressable");
+            ret = CL_EPARSE;
+            goto done;
+        }
+        read_result = fmap_readn_full(mish_set->metadata_map, run, (size_t)offset, bytes);
+        if (read_result != bytes) {
             cli_mark_scan_incomplete(ctx, "DMG external metadata sort run could not be read completely");
-            ret = CL_EREAD;
+            ret = read_result == (size_t)-1 ? CL_EREAD : CL_EPARSE;
             goto done;
         }
         cli_qsort(run, records, sizeof(struct dmg_block_data), cmp_mish_stripes_be);

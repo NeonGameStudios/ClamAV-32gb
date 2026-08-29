@@ -1,5 +1,29 @@
 # Wishlist
 
+## Legacy CPIO high-word size arithmetic — 2026-08-29
+
+- Keep old-binary CPIO member-size assembly explicitly widened before the
+  high-word shift so valid large declared sizes cannot invoke signed-shift
+  undefined behavior.
+- Retain `test_cpio_old_high_word_size_is_fail_visible` and its source guard.
+  The current-source GCC ASan/UBSan direct parser runner passes the short-map
+  boundary with `CL_EPARSE` and non-cacheability. Complete CPIO corpus,
+  coherent public TCase, production-CVD/service, materialized-large-file,
+  certified Linux x86-64, Sonic1, parser-family, and release evidence remain
+  open.
+
+## DMG truncated-range read classification — 2026-08-29
+
+- Keep DMG `blkx` metadata reads fail-visible by using the full-range fmap
+  helper: truncated or out-of-range requests return `CL_EPARSE`, while an
+  in-range backing callback failure remains `CL_EREAD`; both outcomes must
+  remain incomplete and non-cacheable.
+- Retain `test_dmg_truncated_metadata_is_parse_not_read` and its source guards.
+  The current-source GCC ASan/UBSan direct runner passes 2/2 for both range
+  classes. Complete DMG corpus, coherent public TCase relink/execution,
+  production-CVD/service, materialized large-file, certified Linux x86-64,
+  Sonic1, parser-family, and release evidence remain open.
+
 ## ARJ member CRC verification — 2026-08-29
 
 - Keep ARJ extraction fail-closed: convert the declared `orig_crc`, account

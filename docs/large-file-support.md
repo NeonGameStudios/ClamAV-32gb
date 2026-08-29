@@ -298,6 +298,18 @@ the existing Rust 1.97.1 environment. Full OneNote corpus, current full-C ABI,
 sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
 parser-family qualification remain release gates.
 
+## DMG truncated-range read classification — 2026-08-29
+
+The DMG `blkx` metadata readers now use the full-range fmap helper. A
+truncated or out-of-range metadata request is a structural parse failure
+(`CL_EPARSE`), while a fully in-range backing callback failure remains
+`CL_EREAD`; both paths mark the scan incomplete and non-cacheable. The
+registered `test_dmg_truncated_metadata_is_parse_not_read` regression covers
+the public external-sort entry, and a current-source GCC ASan/UBSan direct
+runner passes 2/2 across the two read classes. Complete DMG corpus, coherent
+public TCase relink/execution, production-CVD/service, materialized-large-file,
+certified Linux x86-64, Sonic1, and release qualification remain gates.
+
 ## DMG parser qualification recheck — 2026-08-29
 
 The authoritative current-source DMG parser was relinked into the existing
