@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## Directory-walk entry-table admission — 2026-08-29
+
+The recursive directory walker grew its `dirent_data` array with
+`entries_cnt * sizeof(*entries)` directly at the `readdir()` admission point.
+On a narrow target, a wrapped product could make `cli_max_realloc()` return a
+small successful buffer while the newly indexed entry still used the full
+logical count. `cli_ftw_entry_table_size()` now checks zero, native-size
+representability, and the individual allocation ceiling before the count is
+incremented or reallocated; the existing callback failure contract remains
+mapped to `CL_EMEM` and preserves cleanup of the candidate entry. The
+registered `test_cli_ftw_entry_table_size_rejects_overflow` regression covers
+zero, null output, `SIZE_MAX`, and a valid one-entry table. The current
+`others_common.c` object and Check source compile with Docker production GCC
+(the monolithic translation still has the known unrelated `cryptff`
+declaration failures), and an isolated current-source production-linked
+harness prints `ftw_entry_table_size_guard_passed`. Full directory-ingress
+corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+and final ingress/release qualification remain open.
+
 ## Bytecode JSON API size admission — 2026-08-29
 
 The bytecode JSON API previously formed `ctx->njsonobjs + 1` and the pointer

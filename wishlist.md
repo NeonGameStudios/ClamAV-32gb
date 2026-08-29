@@ -1,5 +1,19 @@
 # Wishlist
 
+## Directory-walk entry-table admission — 2026-08-29
+
+- Keep recursive `cli_ftw()` entry growth behind native-size and individual
+  allocation-ceiling checks before incrementing the entry count or indexing a
+  newly allocated slot; preserve callback-visible `CL_EMEM` and cleanup.
+- Retain `test_cli_ftw_entry_table_size_rejects_overflow` and its source
+  guards. The current `others_common.c` object and Check source compile with
+  Docker production GCC subject to the known unrelated `cryptff` declaration
+  failures in the monolithic translation, and the isolated current-source
+  production-linked harness prints `ftw_entry_table_size_guard_passed`; full
+  directory-ingress corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, parser-family, and release qualification
+  remain open.
+
 ## Bytecode JSON API size admission — 2026-08-29
 
 - Keep JSON object and array table growth behind the shared native-width

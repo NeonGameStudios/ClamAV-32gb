@@ -597,6 +597,19 @@ struct dirent_data {
     int is_dir; /* 0 - no, 1 - yes */
 };
 
+cl_error_t cli_ftw_entry_table_size(size_t count, size_t *bytes)
+{
+    if (bytes == NULL || count == 0)
+        return CL_EARG;
+
+    if (count > SIZE_MAX / sizeof(struct dirent_data) ||
+        count > (size_t)CLI_MAX_ALLOCATION / sizeof(struct dirent_data))
+        return CL_ERESOURCE;
+
+    *bytes = count * sizeof(struct dirent_data);
+    return CL_SUCCESS;
+}
+
 /* sort files before directories, and lower inodes before higher inodes */
 static int ftw_compare(const void *a, const void *b)
 {
@@ -866,6 +879,7 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
             STATBUF statbuf;
             STATBUF *statbufp;
             struct dirent_data *new_entries;
+            size_t entries_size;
 
             errno = 0;
             dent  = readdir(dd);
@@ -953,8 +967,18 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
                 statbufp = 0;
             }
 
+            if (entries_cnt == SIZE_MAX ||
+                CL_SUCCESS != cli_ftw_entry_table_size(entries_cnt + 1, &entries_size)) {
+                ret = callback(stated ? &statbuf : NULL, NULL, fname, error_mem, data);
+                walk_status = (ret == CL_SUCCESS) ? CL_EMEM : ret;
+                free(fname);
+                if (statbufp)
+                    free(statbufp);
+                break;
+            }
+
             entries_cnt++;
-            new_entries = cli_max_realloc(entries, entries_cnt * sizeof(*entries));
+            new_entries = cli_max_realloc(entries, entries_size);
             if (!new_entries) {
                 ret = callback(stated ? &statbuf : NULL, NULL, fname, error_mem, data);
                 walk_status = (ret == CL_SUCCESS) ? CL_EMEM : ret;

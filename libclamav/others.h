@@ -1322,6 +1322,16 @@ typedef int (*cli_ftw_pathchk)(const char *path, struct cli_ftw_cbdata *data);
  */
 cl_error_t cli_ftw(char *base, int flags, int maxdepth, cli_ftw_cb callback, struct cli_ftw_cbdata *data, cli_ftw_pathchk pathchk);
 
+/**
+ * @brief Validate and calculate the directory-entry table size used by cli_ftw().
+ *
+ * @param count         The requested number of directory entries.
+ * @param[out] bytes    The checked allocation size in bytes.
+ * @return cl_error_t   CL_SUCCESS if the size is representable and within
+ *                      the individual allocation limit, else an error code.
+ */
+cl_error_t cli_ftw_entry_table_size(size_t count, size_t *bytes);
+
 const char *cli_strerror(int errnum, char *buf, size_t len);
 
 #ifdef _WIN32

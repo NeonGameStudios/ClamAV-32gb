@@ -2098,6 +2098,18 @@ START_TEST(test_scan_temporary_directory_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_cli_ftw_entry_table_size_rejects_overflow)
+{
+    size_t bytes = 0;
+
+    ck_assert_int_eq(cli_ftw_entry_table_size(0, &bytes), CL_EARG);
+    ck_assert_int_eq(cli_ftw_entry_table_size(SIZE_MAX, &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_ftw_entry_table_size(1, NULL), CL_EARG);
+    ck_assert_int_eq(cli_ftw_entry_table_size(1, &bytes), CL_SUCCESS);
+    ck_assert_uint_gt(bytes, 0U);
+}
+END_TEST
+
 START_TEST(test_scan_report_detection_precedes_incomplete_state)
 {
     cl_scan_report_t *report = NULL;
@@ -47205,6 +47217,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_descriptor_temporary_reservation_is_reported);
     tcase_add_test(tc_cl, test_scanfile_temporary_reservation_is_reported);
     tcase_add_test(tc_cl, test_scan_temporary_directory_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_cli_ftw_entry_table_size_rejects_overflow);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_recursion_stack_helpers_reject_invalid_contexts);
     tcase_add_test(tc_cl, test_largefile_default_profile_values);
