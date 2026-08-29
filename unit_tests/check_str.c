@@ -33,6 +33,7 @@
 
 // libclamav
 #include "clamav.h"
+#include "conv.h"
 #include "others.h"
 #include "str.h"
 #include "entconv.h"
@@ -194,6 +195,25 @@ START_TEST(test_str2hex_rejects_output_size_wrap)
     /* The old unsigned-int product allocated one byte for this length. */
     ck_assert_ptr_null(cli_str2hex(input, (unsigned int)native_wrap_len));
     ck_assert_ptr_null(cli_str2hex(input, UINT_MAX));
+}
+END_TEST
+
+START_TEST(test_base64_decode_rejects_length_overflow)
+{
+    static char valid[] = "Zg==";
+    static char input[] = "A";
+    unsigned char *decoded;
+    size_t decoded_len = 0;
+
+    decoded = (unsigned char *)cl_base64_decode(valid, sizeof(valid) - 1, NULL, &decoded_len, 1);
+    ck_assert_ptr_nonnull(decoded);
+    ck_assert_uint_eq(decoded_len, 1);
+    ck_assert_int_eq(decoded[0], 'f');
+    free(decoded);
+
+    /* These lengths must be rejected before the decoder inspects input. */
+    ck_assert_ptr_null(cl_base64_decode(input, (size_t)-1, NULL, &decoded_len, 0));
+    ck_assert_ptr_null(cl_base64_decode(input, (size_t)CLI_MAX_ALLOCATION + 1U, NULL, &decoded_len, 0));
 }
 END_TEST
 
@@ -391,6 +411,7 @@ Suite *test_str_suite(void)
     suite_add_tcase(s, tc_str);
     tcase_add_test(tc_str, hex2str);
     tcase_add_test(tc_str, test_str2hex_rejects_output_size_wrap);
+    tcase_add_test(tc_str, test_base64_decode_rejects_length_overflow);
 
     tcase_add_loop_test(tc_str, test_u16_u8, 0, sizeof(u16_tests) / sizeof(u16_tests[0]));
 

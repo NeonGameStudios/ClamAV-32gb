@@ -42,23 +42,34 @@
 #include "conv.h"
 #include "others.h"
 
-/** Get the expected decoded length of a base64-encoded string
- * @param[in] data Base64-encoded string
- * @param[in] len length of the string
- * @return The expected decoded length of the base64-encoded string
+/** Get the expected decoded length of a base64-encoded string.
+ *
+ * The OpenSSL memory BIO used by cl_base64_decode() accepts an int length,
+ * and the decoded buffer is subject to the individual allocation ceiling.
+ * Reject oversized inputs before inspecting data or forming 3 * len.
  */
-static size_t base64_len(const char *data, size_t len)
+static int base64_len(const char *data, size_t len, size_t *decoded_len)
 {
-    int padding = 0;
+    size_t padding = 0;
     size_t i;
 
-    if (!len)
+    if (!decoded_len || len > (size_t)INT_MAX ||
+        len > (size_t)CLI_MAX_ALLOCATION || len > (size_t)-1 / 3)
         return 0;
+
+    if (!len) {
+        *decoded_len = 0;
+        return 1;
+    }
 
     for (i = len - 1; i > 0 && data[i] == '='; i--)
         padding++;
 
-    return (size_t)((3 * len) / 4 - padding);
+    *decoded_len = (3 * len) / 4;
+    if (padding > *decoded_len)
+        return 0;
+    *decoded_len -= padding;
+    return 1;
 }
 
 /** Decode a base64-encoded string
@@ -72,8 +83,13 @@ void *cl_base64_decode(char *data, size_t len, void *obuf, size_t *olen, int one
 {
     BIO *bio, *b64;
     void *buf;
+    size_t decoded_len;
+    int read_len;
 
-    buf = (obuf) ? obuf : cli_max_malloc(base64_len(data, len) + 1);
+    if (!olen || !base64_len(data, len, &decoded_len))
+        return NULL;
+
+    buf = (obuf) ? obuf : cli_max_malloc(decoded_len + 1);
     if (!(buf))
         return NULL;
 
@@ -98,7 +114,14 @@ void *cl_base64_decode(char *data, size_t len, void *obuf, size_t *olen, int one
     if (oneline)
         BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
 
-    *olen = BIO_read(bio, buf, base64_len(data, len));
+    read_len = BIO_read(bio, buf, (int)decoded_len);
+    if (read_len < 0) {
+        if (!obuf)
+            free(buf);
+        BIO_free_all(bio);
+        return NULL;
+    }
+    *olen = (size_t)read_len;
 
     BIO_free_all(bio);
 

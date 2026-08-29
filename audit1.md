@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## Shared Base64 length admission — 2026-08-29
+
+The shared Base64 decoder already routed its decoded allocation through the
+individual ceiling, but its length helper still formed `3 * len` before
+admission and passed the caller's native `size_t` length to OpenSSL's
+`int`-sized memory BIO. Oversized input could therefore wrap the decoded
+length or narrow the BIO input length before parsing. `base64_len()` now
+rejects lengths above the native `int`/individual-input boundary and checks
+the multiplication before inspecting the input; the decoder allocates only
+from the checked result, passes a representable length to OpenSSL, and
+handles a negative BIO read as failure. The registered
+`test_base64_decode_rejects_length_overflow` regression covers a valid
+decode, `SIZE_MAX`, and the individual ceiling plus one; the current
+`conv.c` and `check_str.c` pass Docker production-GCC syntax checks, and an
+isolated current-source production-linked harness prints
+`base64_length_guard_passed`. Full Base64 call-site/corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and release
+qualification remain open.
+
 ## cli_str2hex output-size admission — 2026-08-29
 
 The shared hexadecimal conversion helper formed `2 * len + 1` in

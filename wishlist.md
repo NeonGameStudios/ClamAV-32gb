@@ -1,5 +1,17 @@
 # Wishlist
 
+## Shared Base64 length admission — 2026-08-29
+
+- Keep Base64 decode length derivation behind native `int`, input-ceiling,
+  and checked `3 * len` admission before input inspection; pass only the
+  checked decoded length to OpenSSL and preserve fail-visible BIO errors.
+- Retain `test_base64_decode_rejects_length_overflow` and its source guards.
+  The current `conv.c` and `check_str.c` pass Docker production-GCC syntax
+  checks, and the isolated current-source production-linked harness prints
+  `base64_length_guard_passed`; full Base64 call-site/corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, parser-family,
+  and release qualification remain open.
+
 ## cli_str2hex output-size admission — 2026-08-29
 
 - Keep `cli_str2hex()` behind the pre-allocation output-size check so
