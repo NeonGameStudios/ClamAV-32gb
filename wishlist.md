@@ -2368,6 +2368,16 @@ service, and Sonic1 qualification open.
   materialized large-file, production-CVD/service parity, and Sonic1 evidence
   before certification.
 
+## OOXML content-types part-name admission — 2026-08-28
+
+- Keep `ooxml_content_cb()` from converting an empty or unrooted untrusted
+  `PartName` through `xmlStrlen(PN) - 1` and `PN + 1`; require a non-empty
+  rooted path before ZIP lookup and record `OOXML_ERROR_INVALID_PART_NAME`.
+- Retain `test_ooxml_rejects_invalid_declared_part_name` for empty, unrooted,
+  and `/` values. Current-source production-linked execution, full OOXML
+  corpus, sanitizer, materialized-large-file, production-CVD/service, Sonic1,
+  and parser-family qualification remain open.
+
 ## UUEncode direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null UUEncode parser context, but mark a
@@ -6925,3 +6935,15 @@ qualification gates.
 - Retain the source guards and complete OneNote corpus, current full-C ABI,
   sanitizer, production-CVD/service, materialized large-file, Sonic1, and
   parser-family qualification.
+
+## OneNote legacy reader declared-range admission — 2026-08-28
+
+- Keep `scan_legacy_reader()` from reading the fixed 16-byte prefix when the
+  caller-declared `file_len` is shorter than that prefix, and cap marker-search
+  reads to the remaining declared extent.
+- Retain `legacy_reader_rejects_declared_length_before_fixed_prefix` and
+  `legacy_reader_does_not_scan_beyond_declared_length` alongside the existing
+  declared-EOF, streaming, boundary, and source-failure tests.
+  Keep the broader OneNote corpus, full-C ABI, sanitizer, production-CVD/
+  service, materialized-large-file, Sonic1, and parser-family qualification
+  open.

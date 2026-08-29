@@ -970,6 +970,19 @@ compatibility arithmetic boundary. Complete OneNote corpus, current full-C
 ABI, sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
 parser-family qualification remain open.
 
+## OneNote legacy reader declared-range admission audit — 2026-08-28
+
+The streaming legacy OneNote reader validated the fixed magic bytes against the
+reader but did not first validate that the caller-declared `file_len` could
+contain those bytes, and its marker-search loop could request a full chunk
+past the logical input boundary when the backing reader had more data
+available. `scan_legacy_reader()` now rejects the undersized prefix extent and
+caps each marker-search read to the remaining declared length before scanning;
+`legacy_reader_rejects_declared_length_before_fixed_prefix` and
+`legacy_reader_does_not_scan_beyond_declared_length` cover both boundaries.
+The broader OneNote corpus, full-C ABI, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and parser-family qualification remain open.
+
 ## PDF direct-entry context evidence — 2026-08-27
 
 The public PDF parser already returned `CL_ENULLARG` for a null context, but
@@ -2891,6 +2904,19 @@ Complete OOXML ZIP-part lookup/content-types/core-properties corpus,
 full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so all `CL_TYPE_OOXML_*` rows stay pending.
+
+## OOXML content-types part-name admission audit — 2026-08-28
+
+The content-types parser passed `xmlStrlen(PN) - 1` and `PN + 1` directly to
+ZIP lookup. An empty or non-rooted untrusted `PartName` could therefore turn
+the signed length subtraction into a very large `size_t` or silently remove
+the first real path character. `ooxml_search_declared_part()` now requires a
+non-empty rooted part name before lookup, records
+`OOXML_ERROR_INVALID_PART_NAME`, and leaves the confirmed document incomplete
+and non-cacheable. The registered regression covers empty, unrooted, and `/`
+part names; current-source production-linked execution, full OOXML corpus,
+sanitizer, materialized-large-file, production-CVD/service, Sonic1, and parser
+qualification remain open.
 
 ## UUEncode direct-entry admission — 2026-08-25
 

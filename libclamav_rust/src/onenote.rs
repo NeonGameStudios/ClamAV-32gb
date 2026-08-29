@@ -184,6 +184,10 @@ where
 {
     use std::io::SeekFrom;
 
+    if file_len < ONE_MAGIC.len() as u64 {
+        return Err(Error::Parse);
+    }
+
     let mut magic = [0u8; ONE_MAGIC.len()];
     reader
         .seek(SeekFrom::Start(0))
@@ -205,8 +209,16 @@ where
         let mut valid = 0usize;
         let mut reached_eof = false;
         while valid < scan_buffer.len() {
+            let remaining = file_len
+                .checked_sub(scan_start)
+                .ok_or(Error::Format)?
+                .saturating_sub(valid as u64);
+            if remaining == 0 {
+                break;
+            }
+            let request = remaining.min((scan_buffer.len() - valid) as u64) as usize;
             let read = reader
-                .read(&mut scan_buffer[valid..])
+                .read(&mut scan_buffer[valid..valid + request])
                 .map_err(reader_error)?;
             if read == 0 {
                 reached_eof = true;
@@ -800,6 +812,36 @@ mod tests {
             scan_legacy_reader(&mut reader, declared_len, &mut sink),
             Err(Error::Parse)
         ));
+        assert!(sink.files.is_empty());
+        assert!(!sink.aborted);
+    }
+
+    #[test]
+    fn legacy_reader_rejects_declared_length_before_fixed_prefix() {
+        let fixture = legacy_fixture(b"attachment");
+        let mut reader = Cursor::new(fixture);
+        let mut sink = CollectSink::new();
+
+        assert!(matches!(
+            scan_legacy_reader(&mut reader, (ONE_MAGIC.len() - 1) as u64, &mut sink),
+            Err(Error::Parse)
+        ));
+        assert!(sink.files.is_empty());
+        assert!(!sink.aborted);
+    }
+
+    #[test]
+    fn legacy_reader_does_not_scan_beyond_declared_length() {
+        let fixture = legacy_fixture(b"attachment");
+        let mut reader = Cursor::new(fixture);
+        let mut sink = CollectSink::new();
+
+        scan_legacy_reader(
+            &mut reader,
+            (ONE_MAGIC.len() + 1) as u64,
+            &mut sink,
+        )
+        .expect("declared extent should bound legacy scanning");
         assert!(sink.files.is_empty());
         assert!(!sink.aborted);
     }

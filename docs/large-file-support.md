@@ -42,6 +42,29 @@ the existing Rust 1.97.1 environment. Full OneNote corpus, current full-C ABI,
 sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
 parser-family qualification remain release gates.
 
+## OneNote legacy reader declared-range admission — 2026-08-28
+
+`scan_legacy_reader()` now rejects a caller-declared `file_len` shorter than
+the fixed 16-byte OneNote prefix before reading, and caps each marker-search
+read to the remaining declared extent. This keeps the reader inside its
+declared extent even when the backing reader contains additional bytes. The
+registered `legacy_reader_rejects_declared_length_before_fixed_prefix` and
+`legacy_reader_does_not_scan_beyond_declared_length` regressions cover both
+admission boundaries; the broader OneNote corpus, full-C ABI, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and parser-family
+qualification remain release gates.
+
+## OOXML content-types part-name admission — 2026-08-28
+
+`ooxml_content_cb()` now requires every declared metadata `PartName` to be a
+non-empty rooted path before stripping its leading slash for ZIP lookup. Empty
+or unrooted values no longer reach the former `xmlStrlen(PN) - 1` conversion;
+they record `OOXML_ERROR_INVALID_PART_NAME` and remain incomplete and
+non-cacheable. The registered regression covers empty, unrooted, and `/`
+values; current-source production-linked execution and full OOXML corpus,
+sanitizer, materialized-large-file, production-CVD/service, Sonic1, and parser
+qualification remain open.
+
 ## GIF short-signature admission — 2026-08-28
 
 A forced GIF parser entry with fewer than the three signature bytes now records

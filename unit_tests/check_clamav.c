@@ -74,6 +74,7 @@
 #include "dmg.h"
 #include "egg.h"
 #include "7z_iface.h"
+#include "ooxml.h"
 #include "7z/7z.h"
 #include "7z/7zAlloc.h"
 #include "7z/Bcj2.h"
@@ -6042,6 +6043,64 @@ static uint8_t *zip_stream_empty_central_archive(size_t entry_count, size_t *arc
     return archive;
 }
 
+static uint8_t *zip_stream_named_stored_archive(const char *filename,
+                                                const uint8_t *input,
+                                                size_t input_length,
+                                                size_t *archive_length)
+{
+    const size_t local_header_length   = 30U;
+    const size_t central_header_length = 46U;
+    const size_t end_length            = 22U;
+    const size_t filename_length       = strlen(filename);
+    const size_t local_length          = local_header_length + filename_length + input_length;
+    const size_t central_length        = central_header_length + filename_length;
+    const uint32_t crc                 = (uint32_t)crc32(0L, input, (uInt)input_length);
+    uint8_t *archive;
+    uint8_t *central;
+    uint8_t *end;
+
+    ck_assert_msg(filename_length <= UINT16_MAX, "test ZIP filename is too long");
+    ck_assert_msg(input_length <= UINT32_MAX, "test ZIP input is too large");
+    ck_assert_msg(filename_length <= SIZE_MAX - local_header_length - input_length,
+                  "test ZIP local record overflows");
+    ck_assert_msg(central_length <= SIZE_MAX - local_length - end_length,
+                  "test ZIP central directory overflows");
+    ck_assert_msg(local_length <= UINT32_MAX && central_length <= UINT32_MAX,
+                  "test ZIP central offsets exceed 32 bits");
+
+    *archive_length = local_length + central_length + end_length;
+    archive         = calloc(1, *archive_length);
+    ck_assert_ptr_nonnull(archive);
+
+    zip_stream_write_u32(archive, 0x04034b50U);
+    zip_stream_write_u16(archive + 4, 20U);
+    zip_stream_write_u32(archive + 14, crc);
+    zip_stream_write_u32(archive + 18, (uint32_t)input_length);
+    zip_stream_write_u32(archive + 22, (uint32_t)input_length);
+    zip_stream_write_u16(archive + 26, (uint16_t)filename_length);
+    memcpy(archive + local_header_length, filename, filename_length);
+    memcpy(archive + local_header_length + filename_length, input, input_length);
+
+    central = archive + local_length;
+    zip_stream_write_u32(central, 0x02014b50U);
+    zip_stream_write_u16(central + 4, 20U);
+    zip_stream_write_u16(central + 6, 20U);
+    zip_stream_write_u32(central + 16, crc);
+    zip_stream_write_u32(central + 20, (uint32_t)input_length);
+    zip_stream_write_u32(central + 24, (uint32_t)input_length);
+    zip_stream_write_u16(central + 28, (uint16_t)filename_length);
+    zip_stream_write_u32(central + 42, 0U);
+    memcpy(central + central_header_length, filename, filename_length);
+
+    end = central + central_length;
+    zip_stream_write_u32(end, 0x06054b50U);
+    zip_stream_write_u16(end + 8, 1U);
+    zip_stream_write_u16(end + 10, 1U);
+    zip_stream_write_u32(end + 12, (uint32_t)central_length);
+    zip_stream_write_u32(end + 16, (uint32_t)local_length);
+    return archive;
+}
+
 static cl_error_t zip_index_run_maxfiles(
     size_t entry_count,
     uint32_t maxfiles,
@@ -9219,6 +9278,78 @@ START_TEST(test_ooxml_null_context_is_fail_visible)
 
     for (i = 0; i < sizeof(types) / sizeof(types[0]); i++)
         ck_assert_int_eq(cli_process_ooxml(NULL, types[i]), CL_ENULLARG);
+}
+END_TEST
+
+START_TEST(test_ooxml_rejects_invalid_declared_part_name)
+{
+    static const char *const part_names[] = {
+        "",
+        "docProps/core.xml",
+        "/",
+    };
+    static const char content_prefix[] =
+        "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
+        "<Override ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\" "
+        "PartName=\"";
+    static const char content_suffix[] = "\"/></Types>";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    size_t i;
+
+    for (i = 0; i < sizeof(part_names) / sizeof(part_names[0]); i++) {
+        size_t content_length = strlen(content_prefix) + strlen(part_names[i]) + strlen(content_suffix);
+        char *content         = malloc(content_length + 1U);
+        size_t archive_length;
+        uint8_t *archive;
+        fmap_t *map;
+        json_object *metadata;
+        cl_error_t ret;
+
+        ck_assert_ptr_nonnull(content);
+        ck_assert_msg(snprintf(content, content_length + 1U, "%s%s%s", content_prefix,
+                               part_names[i], content_suffix) == (int)content_length,
+                      "failed to construct OOXML content-types fixture");
+        archive = zip_stream_named_stored_archive("[Content_Types].xml", (const uint8_t *)content,
+                                                  content_length, &archive_length);
+        free(content);
+        map = cl_fmap_open_memory(archive, archive_length);
+        ck_assert_ptr_nonnull(map);
+        metadata = json_object_new_object();
+        ck_assert_ptr_nonnull(metadata);
+
+        memset(&engine, 0, sizeof(engine));
+        memset(&options, 0, sizeof(options));
+        memset(&layer, 0, sizeof(layer));
+        memset(&ctx, 0, sizeof(ctx));
+        engine.maxfilesize      = CLI_MAX_LARGE_FILESIZE;
+        engine.maxscansize      = CLI_MAX_LARGE_FILESIZE;
+        engine.maxfiles         = 1000;
+        engine.maxtemporarysize = CLI_MAX_LARGE_FILESIZE;
+        ctx.engine                  = &engine;
+        ctx.options                 = &options;
+        ctx.fmap                    = map;
+        ctx.this_layer_tmpdir       = tmpdir;
+        ctx.this_layer_metadata_json = metadata;
+        ctx.recursion_stack         = &layer;
+        ctx.recursion_stack_size    = 1;
+        layer.fmap                   = map;
+        layer.type                   = CL_TYPE_OOXML_WORD;
+        layer.size                   = archive_length;
+
+        ret = cli_process_ooxml(&ctx, CL_TYPE_OOXML_WORD);
+        ck_assert_int_eq(ret, CL_EFORMAT);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         "OOXML content-types part name is not a rooted path");
+        ck_assert(map->dont_cache_flag);
+
+        json_object_put(metadata);
+        cl_fmap_close(map);
+        free(archive);
+    }
 }
 END_TEST
 
@@ -45710,7 +45841,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_ooxml_entry);
+    tcase_add_checked_fixture(tc_ooxml_entry, cl_setup, cl_teardown);
     tcase_add_test(tc_ooxml_entry, test_ooxml_null_context_is_fail_visible);
+    tcase_add_test(tc_ooxml_entry, test_ooxml_rejects_invalid_declared_part_name);
     suite_add_tcase(s, tc_swf);
     tcase_add_checked_fixture(tc_swf, cl_setup, cl_teardown);
     tcase_add_test(tc_swf, test_swf_zlib_truncated_stream_is_fail_visible);

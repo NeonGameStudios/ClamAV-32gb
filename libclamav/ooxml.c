@@ -118,6 +118,26 @@ static void ooxml_note_failure(cli_ctx *ctx, cl_error_t status, const char *reas
         cli_mark_scan_incomplete(ctx, reason);
 }
 
+static cl_error_t ooxml_search_declared_part(cli_ctx *ctx, const xmlChar *part_name, size_t *loff)
+{
+    int part_length;
+
+    if (part_name == NULL) {
+        cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_INVALID_PART_NAME");
+        cli_mark_scan_incomplete(ctx, "OOXML content-types part name is missing");
+        return CL_EFORMAT;
+    }
+
+    part_length = xmlStrlen(part_name);
+    if (part_length < 2 || part_name[0] != '/') {
+        cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_INVALID_PART_NAME");
+        cli_mark_scan_incomplete(ctx, "OOXML content-types part name is not a rooted path");
+        return CL_EFORMAT;
+    }
+
+    return unzip_search_single(ctx, (const char *)(part_name + 1), (size_t)(part_length - 1), loff);
+}
+
 static cl_error_t ooxml_parse_document(int fd, cli_ctx *ctx)
 {
     cl_error_t ret          = CL_SUCCESS;
@@ -255,7 +275,7 @@ static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, c
 
         if (!xmlStrcmp(CT, (const xmlChar *)"application/vnd.openxmlformats-package.core-properties+xml")) {
             /* default: /docProps/core.xml*/
-            tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
+            tmp = ooxml_search_declared_part(ctx, PN, &loff);
             if (tmp == CL_ETIMEOUT) {
                 ret = tmp;
             } else if (tmp != CL_SUCCESS && tmp != CL_VIRUS) {
@@ -279,7 +299,7 @@ static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, c
             }
         } else if (!xmlStrcmp(CT, (const xmlChar *)"application/vnd.openxmlformats-officedocument.extended-properties+xml")) {
             /* default: /docProps/app.xml */
-            tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
+            tmp = ooxml_search_declared_part(ctx, PN, &loff);
             if (tmp == CL_ETIMEOUT) {
                 ret = tmp;
             } else if (tmp != CL_SUCCESS && tmp != CL_VIRUS) {
@@ -303,7 +323,7 @@ static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, c
             }
         } else if (!xmlStrcmp(CT, (const xmlChar *)"application/vnd.openxmlformats-officedocument.custom-properties+xml")) {
             /* default: /docProps/custom.xml */
-            tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
+            tmp = ooxml_search_declared_part(ctx, PN, &loff);
             if (tmp == CL_ETIMEOUT) {
                 ret = tmp;
             } else if (tmp != CL_SUCCESS && tmp != CL_VIRUS) {
