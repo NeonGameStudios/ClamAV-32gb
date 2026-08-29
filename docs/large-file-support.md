@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Bytecode API constructor failure atomicity — 2026-08-29
+
+Bytecode API resource constructors now keep hashset, map, decompressor, and
+JavaScript-normalizer table counts unchanged until the new slot initializes
+successfully. Failed initialization clears the extra slot while retaining the
+reallocated table pointer for normal context teardown, and LZMA input-window
+failure releases the read window without advancing its cursor. The registered
+`test_bytecode_resource_constructors_publish_only_initialized_slots`
+regression covers invalid zlib initialization, invalid map dimensions, and
+bounded hashset admission. Complete bytecode execution/JIT, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and release
+qualification remain required.
+
 ## GPT header-location admission — 2026-08-29
 
 GPT header validation now binds each copy to its physical location: the

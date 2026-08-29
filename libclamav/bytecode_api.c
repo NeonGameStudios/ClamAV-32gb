@@ -905,10 +905,13 @@ int32_t cli_bcapi_hashset_new(struct cli_bc_ctx *ctx)
         cli_event_error_oom(EV, 0);
         return -1;
     }
-    ctx->hashsets  = s;
+    ctx->hashsets = s;
+    s             = &s[n - 1];
+    if (cli_hashset_init(s, 16, 80) != CL_SUCCESS) {
+        memset(s, 0, sizeof(*s));
+        return -1;
+    }
     ctx->nhashsets = n;
-    s              = &s[n - 1];
-    cli_hashset_init(s, 16, 80);
     return n - 1;
 }
 
@@ -1235,8 +1238,7 @@ int32_t cli_bcapi_inflate_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to,
     if (!b) {
         return -1;
     }
-    ctx->inflates  = b;
-    ctx->ninflates = n;
+    ctx->inflates = b;
     b              = &b[n - 1];
 
     b->from     = from;
@@ -1247,20 +1249,25 @@ int32_t cli_bcapi_inflate_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to,
     switch (ret) {
         case Z_MEM_ERROR:
             cli_dbgmsg("bytecode api: inflateInit2: out of memory!\n");
+            memset(b, 0, sizeof(*b));
             return -1;
         case Z_VERSION_ERROR:
             cli_dbgmsg("bytecode api: inflateinit2: zlib version error!\n");
+            memset(b, 0, sizeof(*b));
             return -1;
         case Z_STREAM_ERROR:
             cli_dbgmsg("bytecode api: inflateinit2: zlib stream error!\n");
+            memset(b, 0, sizeof(*b));
             return -1;
         case Z_OK:
             break;
         default:
             cli_dbgmsg("bytecode api: inflateInit2: unknown error %d\n", ret);
+            memset(b, 0, sizeof(*b));
             return -1;
     }
 
+    ctx->ninflates = n;
     return n - 1;
 }
 
@@ -1372,8 +1379,7 @@ int32_t cli_bcapi_lzma_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
     if (!b) {
         return -1;
     }
-    ctx->lzmas  = b;
-    ctx->nlzmas = n;
+    ctx->lzmas = b;
     b           = &b[n - 1];
 
     b->from = from;
@@ -1385,13 +1391,22 @@ int32_t cli_bcapi_lzma_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
     b->stream.next_in = (void *)cli_bcapi_buffer_pipe_read_get(ctx, b->from,
                                                                b->stream.avail_in);
 
+    if (!b->stream.next_in) {
+        cli_bcapi_buffer_pipe_read_stopped(ctx, b->from, 0);
+        memset(b, 0, sizeof(*b));
+        return -1;
+    }
+
     if ((ret = cli_LzmaInit(&b->stream, 0)) != LZMA_RESULT_OK) {
         cli_dbgmsg("bytecode api: LzmaInit: Failed to initialize LZMA decompressor: %d!\n", ret);
         cli_bcapi_buffer_pipe_read_stopped(ctx, b->from, avail_in_orig - b->stream.avail_in);
+        cli_LzmaShutdown(&b->stream);
+        memset(b, 0, sizeof(*b));
         return ret;
     }
 
     cli_bcapi_buffer_pipe_read_stopped(ctx, b->from, avail_in_orig - b->stream.avail_in);
+    ctx->nlzmas = n;
     return n - 1;
 }
 
@@ -1465,8 +1480,7 @@ int32_t cli_bcapi_bzip2_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
     if (!b) {
         return -1;
     }
-    ctx->bzip2s  = b;
-    ctx->nbzip2s = n;
+    ctx->bzip2s = b;
     b            = &b[n - 1];
 
     b->from = from;
@@ -1476,20 +1490,25 @@ int32_t cli_bcapi_bzip2_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
     switch (ret) {
         case BZ_CONFIG_ERROR:
             cli_dbgmsg("bytecode api: BZ2_bzDecompressInit: Library has been mis-compiled!\n");
+            memset(b, 0, sizeof(*b));
             return -1;
         case BZ_PARAM_ERROR:
             cli_dbgmsg("bytecode api: BZ2_bzDecompressInit: Invalid arguments!\n");
+            memset(b, 0, sizeof(*b));
             return -1;
         case BZ_MEM_ERROR:
             cli_dbgmsg("bytecode api: BZ2_bzDecompressInit: Insufficient memory available!\n");
+            memset(b, 0, sizeof(*b));
             return -1;
         case BZ_OK:
             break;
         default:
             cli_dbgmsg("bytecode api: BZ2_bzDecompressInit: unknown error %d\n", ret);
+            memset(b, 0, sizeof(*b));
             return -1;
     }
 
+    ctx->nbzip2s = n;
     return n - 1;
 }
 
@@ -1578,8 +1597,7 @@ int32_t cli_bcapi_jsnorm_init(struct cli_bc_ctx *ctx, int32_t from)
         cli_js_destroy(state);
         return -1;
     }
-    ctx->jsnorms  = b;
-    ctx->njsnorms = n;
+    ctx->jsnorms = b;
     b             = &b[n - 1];
     b->from       = from;
     b->state      = state;
@@ -1588,6 +1606,8 @@ int32_t cli_bcapi_jsnorm_init(struct cli_bc_ctx *ctx, int32_t from)
         ctx->jsnormdir = cli_gentemp_with_prefix(cctx && cctx->engine ? cctx->engine->tmpdir : NULL, "normalized-js");
         if (!ctx->jsnormdir) {
             cli_bcapi_mark_map_read_error(ctx, "Bytecode normalized JavaScript directory could not be allocated");
+            cli_js_destroy(b->state);
+            memset(b, 0, sizeof(*b));
             return -1;
         }
         if (mkdir(ctx->jsnormdir, 0700)) {
@@ -1595,9 +1615,12 @@ int32_t cli_bcapi_jsnorm_init(struct cli_bc_ctx *ctx, int32_t from)
             cli_bcapi_mark_map_read_error(ctx, "Bytecode normalized JavaScript directory could not be created");
             free(ctx->jsnormdir);
             ctx->jsnormdir = NULL;
+            cli_js_destroy(b->state);
+            memset(b, 0, sizeof(*b));
             return CL_ETMPDIR;
         }
     }
+    ctx->njsnorms = n;
     return n - 1;
 }
 
@@ -1824,15 +1847,18 @@ int32_t cli_bcapi_map_new(struct cli_bc_ctx *ctx, int32_t keysize, int32_t value
         cli_event_error_oom(EV, 0);
         return -1;
     }
-    if (!keysize)
+    if (keysize <= 0 || valuesize < 0)
         return -1;
     s = cli_max_realloc(ctx->maps, table_size);
     if (!s)
         return -1;
-    ctx->maps  = s;
-    ctx->nmaps = n;
+    ctx->maps = s;
     s          = &s[n - 1];
-    (void)cli_map_init(s, keysize, valuesize, 16);
+    if (cli_map_init(s, keysize, valuesize, 16) != CL_SUCCESS) {
+        memset(s, 0, sizeof(*s));
+        return -1;
+    }
+    ctx->nmaps = n;
     return n - 1;
 }
 

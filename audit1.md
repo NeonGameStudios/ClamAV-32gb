@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## Bytecode API constructor failure atomicity — 2026-08-29
+
+Bytecode API resource constructors previously published a new table count
+before initializing the corresponding hashset, map, decompressor, or
+JavaScript-normalizer slot. A failed initializer could therefore leave an
+in-range ID backed by an uninitialized slot, making later API calls or context
+cleanup unsafe. The constructors now publish the table pointer while keeping
+the old count, clear the extra slot on initializer failure, and commit the
+count only after successful initialization; LZMA input-window failures are
+also released without advancing the source cursor. The registered
+`test_bytecode_resource_constructors_publish_only_initialized_slots`
+regression covers invalid zlib initialization, invalid map dimensions, and
+the bounded hashset initializer. Current-source production-GCC compilation,
+source guards, and focused production-linked execution remain required;
+complete bytecode execution/JIT, sanitizer, service, materialized-large-file,
+Sonic1, and release qualification remain open.
+
 ## PCRE metadata table admission — 2026-08-29
 
 PCRE signature registration formed `root->pcre_metas + 1` directly in the

@@ -1886,6 +1886,38 @@ START_TEST(test_bytecode_json_api_admission_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_bytecode_resource_constructors_publish_only_initialized_slots)
+{
+    struct cli_bc_ctx bytecode_ctx;
+    struct bc_buffer buffers[2];
+    struct cli_hashset hashset;
+
+    memset(&bytecode_ctx, 0, sizeof(bytecode_ctx));
+    memset(buffers, 0, sizeof(buffers));
+    bytecode_ctx.buffers  = buffers;
+    bytecode_ctx.nbuffers = 2;
+
+    /* An invalid zlib window must not leave an in-range, uninitialized ID. */
+    ck_assert_int_eq(cli_bcapi_inflate_init(&bytecode_ctx, 0, 1, 99), -1);
+    ck_assert_uint_eq(bytecode_ctx.ninflates, 0);
+    ck_assert_ptr_nonnull(bytecode_ctx.inflates);
+    free(bytecode_ctx.inflates);
+    bytecode_ctx.inflates = NULL;
+
+    /* Invalid map dimensions must be rejected before table publication. */
+    ck_assert_int_eq(cli_bcapi_map_new(&bytecode_ctx, -1, 0), -1);
+    ck_assert_uint_eq(bytecode_ctx.nmaps, 0);
+    ck_assert_ptr_null(bytecode_ctx.maps);
+
+    memset(&hashset, 0, sizeof(hashset));
+    ck_assert_int_eq(cli_hashset_init(&hashset,
+                                      CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1,
+                                      80),
+                     CL_EMEM);
+    ck_assert_ptr_null(hashset.keys);
+}
+END_TEST
+
 Suite *test_bytecode_suite(void)
 {
     Suite *s            = suite_create("bytecode");
@@ -1980,6 +2012,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_loader, test_bytecode_table_size_admission_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_map_value_size_product_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_json_api_admission_is_fail_visible);
+    tcase_add_test(tc_cli_loader, test_bytecode_resource_constructors_publish_only_initialized_slots);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
 #endif

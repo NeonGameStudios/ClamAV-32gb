@@ -1,5 +1,18 @@
 # Wishlist
 
+## Bytecode API constructor failure atomicity — 2026-08-29
+
+- Keep hashset, map, inflate, LZMA, BZip2, and JavaScript-normalizer
+  constructors from publishing a resource-table count until the new slot has
+  initialized successfully; clear the extra slot and preserve the old count
+  when initialization fails.
+- Retain
+  `test_bytecode_resource_constructors_publish_only_initialized_slots` and
+  its source guards. Current-source production-GCC compilation and focused
+  production-linked execution remain required; complete bytecode execution/JIT,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  release qualification remain open.
+
 ## PCRE metadata table admission — 2026-08-29
 
 - Keep PCRE metadata and per-scan offset-state tables behind checked native-size
