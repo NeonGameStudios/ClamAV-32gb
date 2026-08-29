@@ -7787,4 +7787,13 @@ qualification gates.
   LHA member-range admission behind checked native-to-64-bit conversions.
 - Retain focused Rust execution, current full-C ABI, sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final
-  parser/release qualification as open requirements.
+parser/release qualification as open requirements.
+
+## Legacy PDF RunLength input range — 2026-08-29
+
+- Keep legacy RunLength packet admission subtraction-based after the encoded
+  length byte is consumed, including repeated-byte packets at the uint32_t
+  boundary.
+- Add current-source GCC and sanitizer execution when the production harness
+  is available; retain complete PDF filter, production-CVD/service,
+  materialized-large-file, Sonic1, and final qualification as open.

@@ -2599,6 +2599,8 @@ contains libclamav/pdfdecode.c 'PDF ASCII85 decoded output could not be allocate
 contains libclamav/pdfdecode.c 'PDF RunLength decoded output could not be allocated'
 contains libclamav/pdfdecode.c 'PDF RunLength decoded output could not be grown'
 contains libclamav/pdfdecode.c 'PDF RunLength decoded output could not be resized'
+contains libclamav/pdfdecode.c 'if ((uint32_t)srclen + 1U > length - offset)'
+contains libclamav/pdfdecode.c 'if (offset >= length)'
 contains libclamav/pdfdecode.c 'PDF Flate decoded output could not be allocated'
 contains libclamav/pdfdecode.c 'PDF Flate decoder could not be initialized'
 contains libclamav/pdfdecode.c 'PDF Flate decoded output could not be grown'

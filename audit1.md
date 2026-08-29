@@ -14581,3 +14581,17 @@ conversion helper and the `SeekFrom::End` regression; the focused Rust test
 suite, current full-C ABI build, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification
 remain open.
+
+## Legacy PDF RunLength input-range audit — 2026-08-29
+
+The legacy in-memory RunLength decoder consumed its packet-length byte and
+then validated a literal `offset + srclen + 1` expression in `uint32_t`
+arithmetic. For a filtered stream near the decoder's maximum admitted length,
+that expression could wrap before the packet boundary check. The decoder now
+compares the packet width against `length - offset` and uses the same
+remaining-length form for a repeated-byte packet, so packet-end admission is
+fail-visible without forming a wrapped coordinate. The new capability row and
+source guards pin both branches; focused current-source GCC execution,
+sanitizer, complete PDF filter corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.

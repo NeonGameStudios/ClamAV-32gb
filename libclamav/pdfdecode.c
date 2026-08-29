@@ -1533,9 +1533,9 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
 
         if (srclen < 128) {
             /* direct copy of (srclen + 1) bytes */
-            if (offset + srclen + 1 > length) {
+            if ((uint32_t)srclen + 1U > length - offset) {
                 cli_dbgmsg("cli_pdf: required source length (%lu) exceeds remaining length (%lu)\n",
-                           (long unsigned)(offset + srclen + 1), (long unsigned)(length - offset));
+                           (long unsigned)((uint32_t)srclen + 1U), (long unsigned)(length - offset));
                 rc = CL_EFORMAT;
                 break;
             }
@@ -1564,9 +1564,9 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
             declen += output_length;
         } else if (srclen > 128) {
             /* copy the next byte (257 - srclen) times */
-            if (offset + 1 > length) {
+            if (offset >= length) {
                 cli_dbgmsg("cli_pdf: required source length (%lu) exceeds remaining length (%lu)\n",
-                           (long unsigned)(offset + srclen + 1), (long unsigned)(length - offset));
+                           1UL, (long unsigned)(length - offset));
                 rc = CL_EFORMAT;
                 break;
             }
