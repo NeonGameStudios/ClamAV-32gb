@@ -13,6 +13,20 @@ boundaries. Injected allocation-failure execution, complete MIME/mbox/MHTML
 corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
 and final parser/release qualification remain open.
 
+## MIME header-constructor allocation visibility — 2026-08-29
+
+The surrounding MIME constructors had equivalent fail-open boundaries:
+parser-table initialization, mailbox/body/header message creation, the
+header read-list growth path, and Content-Type/Content-Disposition scratch
+buffers could fail without a sticky incomplete result. The body/header paths
+could then return a null message or continue with only a partial header
+representation. These failures now record explicit reasons before returning
+or continuing, and the old goto-on-null header macro is removed from the two
+read paths. Source guards pin the failure branches. Injected allocation
+execution, complete MIME/mbox/MHTML corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.
+
 ## Generic hash-table capacity and rehash failure visibility — 2026-08-29
 
 The shared string and uint32 hash tables rounded externally supplied

@@ -7845,3 +7845,12 @@ parser/release qualification as open requirements.
 - Add injected allocator execution and retain complete MIME/mbox/MHTML corpus,
   sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
   final qualification as open.
+
+## MIME header-constructor allocation visibility — 2026-08-29
+
+- Keep parser-table initialization, message construction, header read-list
+  growth, and MIME scratch-buffer failures sticky and fail-visible before
+  partial header state can be returned or scanned.
+- Add injected allocator execution and retain complete MIME/mbox/MHTML corpus,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final qualification as open.

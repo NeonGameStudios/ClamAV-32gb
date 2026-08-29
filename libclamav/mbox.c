@@ -460,6 +460,8 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
 #ifdef CL_THREAD_SAFE
         pthread_mutex_unlock(&tables_mutex);
 #endif
+        cli_mark_scan_incomplete(ctx,
+                                 "MIME parser tables could not be initialized");
         return CL_EMEM;
     }
 
@@ -512,6 +514,8 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         message *m = messageCreate(); /*Create an empty email */
 
         if (m == NULL) {
+            cli_mark_scan_incomplete(ctx,
+                                     "MIME mailbox message object could not be allocated");
             return CL_EMEM;
         }
 
@@ -1059,8 +1063,11 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
     cli_dbgmsg("parseEmailFile\n");
 
     ret = messageCreate();
-    if (ret == NULL)
+    if (ret == NULL) {
+        cli_mark_scan_incomplete(ctx,
+                                 "MIME message body object could not be allocated");
         return NULL;
+    }
     messageSetCTX(ret, ctx);
 
     CLI_CALLOC_OR_GOTO_DONE(head, 1, sizeof(ReadStruct));
@@ -1132,7 +1139,11 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                     if (head->bufferLen) {
                         char *header     = getMallocedBufferFromList(head);
                         int needContinue = 0;
-                        CLI_VERIFY_POINTER_OR_GOTO_DONE(header);
+                        if (header == NULL) {
+                            cli_mark_scan_incomplete(ctx,
+                                                     "MIME header line could not be materialized");
+                            goto done;
+                        }
 
                         totalHeaderCnt++;
                         if (haveTooManyEmailHeaders(totalHeaderCnt, ctx, heuristicFound)) {
@@ -1220,13 +1231,19 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                     }
                     curr = appendReadStruct(curr, line);
                     if (NULL == curr) {
-                        if (ret) {
-                            ret->isTruncated = true;
-                        }
+                        cli_mark_scan_incomplete(ctx,
+                                                 "MIME header read structure could not be allocated");
+                        ret->isTruncated = true;
                         break;
                     }
                 } else if (line != NULL) {
                     curr = appendReadStruct(curr, line);
+                    if (NULL == curr) {
+                        cli_mark_scan_incomplete(ctx,
+                                                 "MIME header read structure could not be allocated");
+                        ret->isTruncated = true;
+                        break;
+                    }
                 } else {
                     lineAdded = false;
                 }
@@ -1264,7 +1281,11 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                 {
                     char *header     = getMallocedBufferFromList(head); /*This is the issue */
                     int needContinue = 0;
-                    CLI_VERIFY_POINTER_OR_GOTO_DONE(header);
+                    if (header == NULL) {
+                        cli_mark_scan_incomplete(ctx,
+                                                 "MIME header line could not be materialized");
+                        goto done;
+                    }
 
                     needContinue = (header[strlen(header) - 1] == ';');
                     if (0 == needContinue) {
@@ -1352,6 +1373,9 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
 
     err = 0;
 done:
+    if (head == NULL)
+        cli_mark_scan_incomplete(ctx,
+                                 "MIME header read list could not be allocated");
     if (err) {
         cli_errmsg("parseEmailFile: ERROR parsing file\n");
         ret->isTruncated = true;
@@ -1412,10 +1436,13 @@ parseEmailHeaders(message *m, const table_t *rfc821, bool *heuristicFound)
         return NULL;
 
     ret = messageCreate();
-    if (ret != NULL) {
-        messageSetCTX(ret, m->ctx);
-        ret->isTruncated = m->isTruncated;
+    if (ret == NULL) {
+        cli_mark_scan_incomplete(m->ctx,
+                                 "MIME parsed-header object could not be allocated");
+        return NULL;
     }
+    messageSetCTX(ret, m->ctx);
+    ret->isTruncated = m->isTruncated;
 
     for (t = messageGetBody(m); t; t = t->t_next) {
         const char *line;
@@ -1492,11 +1519,22 @@ parseEmailHeaders(message *m, const table_t *rfc821, bool *heuristicFound)
                     }
                     fullline       = cli_safer_strdup(line);
                     fulllinelength = strlen(line) + 1;
+                    if (fullline == NULL) {
+                        cli_mark_scan_incomplete(m->ctx,
+                                                 "MIME header line could not be allocated");
+                        continue;
+                    }
                 } else if (line) {
                     fulllinelength += strlen(line) + 1;
                     ptr = cli_max_realloc(fullline, fulllinelength);
-                    if (ptr == NULL)
+                    if (ptr == NULL) {
+                        cli_mark_scan_incomplete(m->ctx,
+                                                 "MIME folded header could not be allocated");
+                        free(fullline);
+                        fullline       = NULL;
+                        fulllinelength = 0;
                         continue;
+                    }
                     fullline = ptr;
                     cli_strlcat(fullline, line, fulllinelength);
                 } else {
@@ -1636,6 +1674,8 @@ parseEmailHeader(message *m, const char *line, const table_t *rfc821, cli_ctx *c
         /* an RFC checker would return -1 here */
         copy = cli_safer_strdup(line);
         if (NULL == copy) {
+            cli_mark_scan_incomplete(ctx,
+                                     "MIME header command could not be allocated");
             goto done;
         }
     }
@@ -4085,6 +4125,8 @@ parseMimeHeader(message *m, const char *cmd, const table_t *rfc821Table, const c
                 buf = cli_max_malloc(strlen(ptr) + 1);
                 if (buf == NULL) {
                     cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
+                    cli_mark_scan_incomplete(ctx,
+                                             "MIME Content-Type buffer could not be allocated");
                     if (copy)
                         free(copy);
                     return -1;
@@ -4127,6 +4169,8 @@ parseMimeHeader(message *m, const char *cmd, const table_t *rfc821Table, const c
                             char *buf2 = cli_safer_strdup(buf);
 
                             if (buf2 == NULL) {
+                                cli_mark_scan_incomplete(ctx,
+                                                         "MIME Content-Type token buffer could not be allocated");
                                 if (copy)
                                     free(copy);
                                 free(buf);
@@ -4198,6 +4242,8 @@ parseMimeHeader(message *m, const char *cmd, const table_t *rfc821Table, const c
             buf = cli_max_malloc(strlen(ptr) + 1);
             if (buf == NULL) {
                 cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
+                cli_mark_scan_incomplete(ctx,
+                                         "MIME Content-Disposition buffer could not be allocated");
                 if (copy)
                     free(copy);
                 return -1;

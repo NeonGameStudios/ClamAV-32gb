@@ -3432,9 +3432,9 @@ fixed-width-integer	libclamav/matcher.h	94	    const uint64_t *filesize;
 fixed-width-integer	libclamav/matcher.h	95	    const uint32_t *container, *handlertype;
 fixed-width-integer	libclamav/matcher.h	96	    const uint32_t *intermediates;
 fixed-width-integer	libclamav/matcher.h	98	    const uint32_t *sectoff, *sectrva, *sectvsz, *sectraw, *sectrsz,
-fixed-width-integer	libclamav/mbox.c	5023	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/mbox.c	5043	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
-fixed-width-integer	libclamav/mbox.c	5803	            cli_jsonint(thisobj, "ContainedObjectsIndex", (int32_t)arrlen);
+fixed-width-integer	libclamav/mbox.c	5069	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/mbox.c	5089	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
+fixed-width-integer	libclamav/mbox.c	5849	            cli_jsonint(thisobj, "ContainedObjectsIndex", (int32_t)arrlen);
 fixed-width-integer	libclamav/mbr.c	103	static bool mbr_partition_range(uint64_t lba, uint64_t count, size_t sectorsize,
 fixed-width-integer	libclamav/mbr.c	364	    uint64_t record_lba, part_lba;
 fixed-width-integer	libclamav/mbr.c	693	    uint64_t record_lba;
@@ -12016,192 +12016,192 @@ native-width-integer	libclamav/matcher.h	362	cl_error_t cli_scan_fmap(cli_ctx *c
 native-width-integer	libclamav/matcher.h	377	bool cli_matcher_window_reaches_map_end(uint64_t offset, uint32_t length, size_t map_length);
 native-width-integer	libclamav/matcher.h	399	int cli_lsig_bytecode_compatible(uint64_t file_size, const uint64_t *offsets, uint32_t *legacy_offsets);
 native-width-integer	libclamav/matcher.h	411	cl_error_t cli_matchmeta(cli_ctx *ctx, const char *fname, size_t fsizec, size_t fsizer, int encrypted, unsigned int filepos, int res1);
-native-width-integer	libclamav/mbox.c	1013	haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound)
-native-width-integer	libclamav/mbox.c	1035	parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status)
-native-width-integer	libclamav/mbox.c	1042	    int commandNumber    = -1;
-native-width-integer	libclamav/mbox.c	1046	    int err                 = 1;
-native-width-integer	libclamav/mbox.c	1047	    size_t totalHeaderBytes = 0;
-native-width-integer	libclamav/mbox.c	1048	    size_t totalHeaderCnt   = 0;
-native-width-integer	libclamav/mbox.c	1049	    size_t first_line_len;
+native-width-integer	libclamav/mbox.c	1002	haveTooManyMIMEPartsPerMessage(size_t mimePartCnt, cli_ctx *ctx, mbox_status *rc)
+native-width-integer	libclamav/mbox.c	1017	haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound)
+native-width-integer	libclamav/mbox.c	1039	parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status)
+native-width-integer	libclamav/mbox.c	1046	    int commandNumber    = -1;
 native-width-integer	libclamav/mbox.c	105	static void sigsegv(int sig);
-native-width-integer	libclamav/mbox.c	1051	    size_t lineFoldCnt = 0;
+native-width-integer	libclamav/mbox.c	1050	    int err                 = 1;
+native-width-integer	libclamav/mbox.c	1051	    size_t totalHeaderBytes = 0;
+native-width-integer	libclamav/mbox.c	1052	    size_t totalHeaderCnt   = 0;
+native-width-integer	libclamav/mbox.c	1053	    size_t first_line_len;
+native-width-integer	libclamav/mbox.c	1055	    size_t lineFoldCnt = 0;
 native-width-integer	libclamav/mbox.c	106	static void print_trace(int use_syslog);
-native-width-integer	libclamav/mbox.c	1134	                        int needContinue = 0;
-native-width-integer	libclamav/mbox.c	1266	                    int needContinue = 0;
-native-width-integer	libclamav/mbox.c	1301	            int decode_status = uudecodeFile(ret, line, dir, map, at);
-native-width-integer	libclamav/mbox.c	1400	    int commandNumber     = -1;
-native-width-integer	libclamav/mbox.c	1402	    size_t fulllinelength = 0;
-native-width-integer	libclamav/mbox.c	1404	    size_t lineFoldCnt    = 0;
-native-width-integer	libclamav/mbox.c	1405	    size_t totalHeaderCnt = 0;
-native-width-integer	libclamav/mbox.c	1609	static int
-native-width-integer	libclamav/mbox.c	1612	    int ret = -1;
-native-width-integer	libclamav/mbox.c	1684	static size_t num_mhtml_keys = sizeof(mhtml_keys) / sizeof(struct key_entry);
+native-width-integer	libclamav/mbox.c	1141	                        int needContinue = 0;
+native-width-integer	libclamav/mbox.c	1283	                    int needContinue = 0;
+native-width-integer	libclamav/mbox.c	1322	            int decode_status = uudecodeFile(ret, line, dir, map, at);
+native-width-integer	libclamav/mbox.c	1424	    int commandNumber     = -1;
+native-width-integer	libclamav/mbox.c	1426	    size_t fulllinelength = 0;
+native-width-integer	libclamav/mbox.c	1428	    size_t lineFoldCnt    = 0;
+native-width-integer	libclamav/mbox.c	1429	    size_t totalHeaderCnt = 0;
+native-width-integer	libclamav/mbox.c	1647	static int
+native-width-integer	libclamav/mbox.c	1650	    int ret = -1;
 native-width-integer	libclamav/mbox.c	170	    unsigned int files; /* number of files extracted */
-native-width-integer	libclamav/mbox.c	1707	static size_t num_mhtml_comment_keys = sizeof(mhtml_comment_keys) / sizeof(struct key_entry);
-native-width-integer	libclamav/mbox.c	1711	 * or an int-sized length conversion. */
-native-width-integer	libclamav/mbox.c	1725	    size_t comment_len, remaining, xml_offset, xml_remaining, fragment_len;
-native-width-integer	libclamav/mbox.c	1737	    comment_len = CLI_STRNLEN(comment, (size_t)MHTML_COMMENT_XML_MAX_SIZE + 1U);
-native-width-integer	libclamav/mbox.c	1747	        xml_offset   = (size_t)(xmlsrt - comment);
-native-width-integer	libclamav/mbox.c	1757	        fragment_len = (size_t)(xmlend - xmlsrt) + (sizeof("</xml>") - 1U);
-native-width-integer	libclamav/mbox.c	1764	        reader = xmlReaderForMemory(xmlsrt, (int)fragment_len, "comment.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
-native-width-integer	libclamav/mbox.c	1788	        remaining = comment_len - (size_t)(search - comment);
-native-width-integer	libclamav/mbox.c	1810	    int ret        = CL_SUCCESS;
+native-width-integer	libclamav/mbox.c	1724	static size_t num_mhtml_keys = sizeof(mhtml_keys) / sizeof(struct key_entry);
+native-width-integer	libclamav/mbox.c	1747	static size_t num_mhtml_comment_keys = sizeof(mhtml_comment_keys) / sizeof(struct key_entry);
+native-width-integer	libclamav/mbox.c	1751	 * or an int-sized length conversion. */
+native-width-integer	libclamav/mbox.c	1765	    size_t comment_len, remaining, xml_offset, xml_remaining, fragment_len;
+native-width-integer	libclamav/mbox.c	1777	    comment_len = CLI_STRNLEN(comment, (size_t)MHTML_COMMENT_XML_MAX_SIZE + 1U);
+native-width-integer	libclamav/mbox.c	1787	        xml_offset   = (size_t)(xmlsrt - comment);
+native-width-integer	libclamav/mbox.c	1797	        fragment_len = (size_t)(xmlend - xmlsrt) + (sizeof("</xml>") - 1U);
+native-width-integer	libclamav/mbox.c	1804	        reader = xmlReaderForMemory(xmlsrt, (int)fragment_len, "comment.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
+native-width-integer	libclamav/mbox.c	1828	        remaining = comment_len - (size_t)(search - comment);
+native-width-integer	libclamav/mbox.c	1850	    int ret        = CL_SUCCESS;
 native-width-integer	libclamav/mbox.c	187	static int cli_parse_mbox(const char *dir, cli_ctx *ctx);
 native-width-integer	libclamav/mbox.c	188	static int scanFileblob(mbox_ctx *mctx, fileblob *fb);
 native-width-integer	libclamav/mbox.c	189	static message *parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821Table, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status);
 native-width-integer	libclamav/mbox.c	191	static int parseEmailHeader(message *m, const char *line, const table_t *rfc821, cli_ctx *ctx, bool *heuristicFound);
 native-width-integer	libclamav/mbox.c	194	static mbox_status parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int recursion_level);
-native-width-integer	libclamav/mbox.c	1942	                                               unsigned int recursion_level)
 native-width-integer	libclamav/mbox.c	195	static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx, unsigned int recursion_level);
 native-width-integer	libclamav/mbox.c	196	static int boundaryStart(const char *line, const char *boundary);
-native-width-integer	libclamav/mbox.c	1962	static int queueStreamedMimePart(streamed_mime_part **head,
 native-width-integer	libclamav/mbox.c	197	static int boundaryEnd(const char *line, const char *boundary);
 native-width-integer	libclamav/mbox.c	198	static int initialiseTables(table_t **rfc821Table, table_t **subtypeTable);
+native-width-integer	libclamav/mbox.c	1982	                                               unsigned int recursion_level)
 native-width-integer	libclamav/mbox.c	199	static int getTextPart(message *const messages[], size_t size);
 native-width-integer	libclamav/mbox.c	200	static size_t strip(char *buf, int len);
-native-width-integer	libclamav/mbox.c	2002	                         unsigned int recursion_level)
+native-width-integer	libclamav/mbox.c	2002	static int queueStreamedMimePart(streamed_mime_part **head,
 native-width-integer	libclamav/mbox.c	201	static int parseMimeHeader(message *m, const char *cmd, const table_t *rfc821Table, const char *arg, cli_ctx *ctx, bool *heuristicFound);
 native-width-integer	libclamav/mbox.c	202	static int saveTextPart(mbox_ctx *mctx, message *m, int destroy_text);
+native-width-integer	libclamav/mbox.c	2042	                         unsigned int recursion_level)
 native-width-integer	libclamav/mbox.c	205	static int rfc1341(mbox_ctx *mctx, message *m);
 native-width-integer	libclamav/mbox.c	206	static bool usefulHeader(int commandNumber, const char *cmd);
 native-width-integer	libclamav/mbox.c	207	static char *getline_from_mbox(char *buffer, size_t len, fmap_t *map, size_t *at, cli_ctx *ctx,
-native-width-integer	libclamav/mbox.c	2071	                                           unsigned int recursion_level)
 native-width-integer	libclamav/mbox.c	211	static int exportBounceMessage(mbox_ctx *ctx, text *start);
-native-width-integer	libclamav/mbox.c	2123	        size_t line_len = strlen(line);
+native-width-integer	libclamav/mbox.c	2111	                                           unsigned int recursion_level)
 native-width-integer	libclamav/mbox.c	214	static message *do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, mbox_ctx *mctx, message *messageIn, text **tptr, unsigned int recursion_level);
 native-width-integer	libclamav/mbox.c	215	static int count_quotes(const char *buf);
+native-width-integer	libclamav/mbox.c	2163	        size_t line_len = strlen(line);
 native-width-integer	libclamav/mbox.c	233	static void checkURLs(message *m, mbox_ctx *mctx, mbox_status *rc, int is_html);
-native-width-integer	libclamav/mbox.c	2337	parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int recursion_level)
-native-width-integer	libclamav/mbox.c	2345	    const int doPhishingScan       = engine->dboptions & CL_DB_PHISHING_URLS && (DCONF_PHISHING & PHISHING_CONF_ENGINE);
 native-width-integer	libclamav/mbox.c	235	static bool haveTooManyMIMEPartsPerMessage(size_t mimePartCnt, cli_ctx *ctx, mbox_status *rc);
 native-width-integer	libclamav/mbox.c	236	static bool hitLineFoldCnt(const char *const line, size_t *lineFoldCnt, cli_ctx *ctx, bool *heuristicFound);
 native-width-integer	libclamav/mbox.c	237	static bool haveTooManyHeaderBytes(size_t totalLen, cli_ctx *ctx, bool *heuristicFound);
+native-width-integer	libclamav/mbox.c	2377	parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int recursion_level)
 native-width-integer	libclamav/mbox.c	238	static bool haveTooManyEmailHeaders(size_t totalHeaderCnt, cli_ctx *ctx, bool *heuristicFound);
+native-width-integer	libclamav/mbox.c	2385	    const int doPhishingScan       = engine->dboptions & CL_DB_PHISHING_URLS && (DCONF_PHISHING & PHISHING_CONF_ENGINE);
 native-width-integer	libclamav/mbox.c	239	static bool haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound);
-native-width-integer	libclamav/mbox.c	2399	                const int partial_rc = rfc1341(mctx, mainMessage);
 native-width-integer	libclamav/mbox.c	242	 * long time in input, header, or part traversal without reaching a generic
-native-width-integer	libclamav/mbox.c	2444	                const int scan_rc = scanFileblob(mctx, fb);
-native-width-integer	libclamav/mbox.c	2460	        int subtype, inhead, htmltextPart, inMimeHead, i;
-native-width-integer	libclamav/mbox.c	2466	        int multiparts     = 0;
-native-width-integer	libclamav/mbox.c	2511	            cli_dbgmsg("mimeType = %d\n", (int)mimeType);
-native-width-integer	libclamav/mbox.c	2660	                    int lines = 0;
-native-width-integer	libclamav/mbox.c	2663	                    size_t message_table_size;
-native-width-integer	libclamav/mbox.c	2666	                        cli_message_table_size((size_t)multiparts + 1,
-native-width-integer	libclamav/mbox.c	2756	                            while (isspace((int)*line))
-native-width-integer	libclamav/mbox.c	2766	                            /*int quotes;*/
-native-width-integer	libclamav/mbox.c	2820	                            if (isspace((int)*line)) {
-native-width-integer	libclamav/mbox.c	2877	                                size_t datasz;
-native-width-integer	libclamav/mbox.c	2947	                               multiparts, lines, (int)rc);
+native-width-integer	libclamav/mbox.c	2439	                const int partial_rc = rfc1341(mctx, mainMessage);
+native-width-integer	libclamav/mbox.c	2484	                const int scan_rc = scanFileblob(mctx, fb);
+native-width-integer	libclamav/mbox.c	2500	        int subtype, inhead, htmltextPart, inMimeHead, i;
+native-width-integer	libclamav/mbox.c	2506	        int multiparts     = 0;
+native-width-integer	libclamav/mbox.c	2551	            cli_dbgmsg("mimeType = %d\n", (int)mimeType);
+native-width-integer	libclamav/mbox.c	2700	                    int lines = 0;
+native-width-integer	libclamav/mbox.c	2703	                    size_t message_table_size;
+native-width-integer	libclamav/mbox.c	2706	                        cli_message_table_size((size_t)multiparts + 1,
+native-width-integer	libclamav/mbox.c	2796	                            while (isspace((int)*line))
+native-width-integer	libclamav/mbox.c	2806	                            /*int quotes;*/
+native-width-integer	libclamav/mbox.c	2860	                            if (isspace((int)*line)) {
+native-width-integer	libclamav/mbox.c	2917	                                size_t datasz;
+native-width-integer	libclamav/mbox.c	2987	                               multiparts, lines, (int)rc);
 native-width-integer	libclamav/mbox.c	310	    int value;
-native-width-integer	libclamav/mbox.c	3252	                                int scan_rc = scanFileblob(mctx, textToFileblob(aText, fb, 1));
-native-width-integer	libclamav/mbox.c	3331	                        const int partial_rc = rfc1341(mctx, mainMessage);
-native-width-integer	libclamav/mbox.c	3393	                            int scan_rc = scanFileblob(mctx, fb);
+native-width-integer	libclamav/mbox.c	3292	                                int scan_rc = scanFileblob(mctx, textToFileblob(aText, fb, 1));
+native-width-integer	libclamav/mbox.c	3371	                        const int partial_rc = rfc1341(mctx, mainMessage);
+native-width-integer	libclamav/mbox.c	3433	                            int scan_rc = scanFileblob(mctx, fb);
 native-width-integer	libclamav/mbox.c	348	int cli_mbox(const char *dir, cli_ctx *ctx)
-native-width-integer	libclamav/mbox.c	3567	                const int scan_rc = scanFileblob(mctx, fb);
-native-width-integer	libclamav/mbox.c	3596	            int scan_rc = exportBounceMessage(mctx, t_line);
-native-width-integer	libclamav/mbox.c	3631	                    const int scan_rc = scanFileblob(mctx, textToFileblob(t_line, fb, 1));
-native-width-integer	libclamav/mbox.c	3650	                           (int)rc);
-native-width-integer	libclamav/mbox.c	3652	                    int scan_rc = saveTextPart(mctx, mainMessage, 1);
-native-width-integer	libclamav/mbox.c	3678	    cli_dbgmsg("parseEmailBody() returning %d\n", (int)rc);
-native-width-integer	libclamav/mbox.c	3688	static int
-native-width-integer	libclamav/mbox.c	3693	    int rc;
+native-width-integer	libclamav/mbox.c	3607	                const int scan_rc = scanFileblob(mctx, fb);
+native-width-integer	libclamav/mbox.c	3636	            int scan_rc = exportBounceMessage(mctx, t_line);
+native-width-integer	libclamav/mbox.c	3671	                    const int scan_rc = scanFileblob(mctx, textToFileblob(t_line, fb, 1));
+native-width-integer	libclamav/mbox.c	3690	                           (int)rc);
+native-width-integer	libclamav/mbox.c	3692	                    int scan_rc = saveTextPart(mctx, mainMessage, 1);
+native-width-integer	libclamav/mbox.c	3718	    cli_dbgmsg("parseEmailBody() returning %d\n", (int)rc);
+native-width-integer	libclamav/mbox.c	3728	static int
+native-width-integer	libclamav/mbox.c	3733	    int rc;
 native-width-integer	libclamav/mbox.c	381	static int
-native-width-integer	libclamav/mbox.c	3815	static int
-native-width-integer	libclamav/mbox.c	3818	    size_t len;
 native-width-integer	libclamav/mbox.c	384	    int rc;
-native-width-integer	libclamav/mbox.c	3897	static int
-native-width-integer	libclamav/mbox.c	3949	static int
-native-width-integer	libclamav/mbox.c	3950	getTextPart(message *const messages[], size_t size)
-native-width-integer	libclamav/mbox.c	3952	    size_t i;
-native-width-integer	libclamav/mbox.c	3953	    int textpart = -1;
-native-width-integer	libclamav/mbox.c	3958	                return (int)i;
-native-width-integer	libclamav/mbox.c	3959	            textpart = (int)i;
-native-width-integer	libclamav/mbox.c	3976	 * len must be int not size_t because of the >= 0 test, it is sizeof(buf)
-native-width-integer	libclamav/mbox.c	3979	static size_t
-native-width-integer	libclamav/mbox.c	3980	strip(char *buf, int len)
-native-width-integer	libclamav/mbox.c	3983	    register size_t i;
-native-width-integer	libclamav/mbox.c	3989	    if (len > (int)(i + 1))
-native-width-integer	libclamav/mbox.c	4004	    while ((--len >= 0) && ((*--ptr == '\0') || isspace((int)(*ptr & 0xFF))));
-native-width-integer	libclamav/mbox.c	4006	    return ((size_t)(len + 1));
-native-width-integer	libclamav/mbox.c	4013	size_t
-native-width-integer	libclamav/mbox.c	4025	static int
-native-width-integer	libclamav/mbox.c	4030	    int commandNumber;
-native-width-integer	libclamav/mbox.c	4031	    size_t argCnt = 0;
-native-width-integer	libclamav/mbox.c	4083	                int i;
-native-width-integer	libclamav/mbox.c	4087	                    cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
-native-width-integer	libclamav/mbox.c	4137	                                int set = messageSetMimeType(m, strtok_r(s, "/", &strptr));
-native-width-integer	libclamav/mbox.c	4139	                                int set = messageSetMimeType(m, strtok(s, "/"));
-native-width-integer	libclamav/mbox.c	4150	                                    size_t len = strstrip(s) - 1;
-native-width-integer	libclamav/mbox.c	4200	                cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
-native-width-integer	libclamav/mbox.c	4231	static int
-native-width-integer	libclamav/mbox.c	4232	saveTextPart(mbox_ctx *mctx, message *m, int destroy_text)
-native-width-integer	libclamav/mbox.c	4264	    int backslash, inquote, commentlevel;
+native-width-integer	libclamav/mbox.c	3855	static int
+native-width-integer	libclamav/mbox.c	3858	    size_t len;
+native-width-integer	libclamav/mbox.c	3937	static int
+native-width-integer	libclamav/mbox.c	3989	static int
+native-width-integer	libclamav/mbox.c	3990	getTextPart(message *const messages[], size_t size)
+native-width-integer	libclamav/mbox.c	3992	    size_t i;
+native-width-integer	libclamav/mbox.c	3993	    int textpart = -1;
+native-width-integer	libclamav/mbox.c	3998	                return (int)i;
+native-width-integer	libclamav/mbox.c	3999	            textpart = (int)i;
+native-width-integer	libclamav/mbox.c	4016	 * len must be int not size_t because of the >= 0 test, it is sizeof(buf)
+native-width-integer	libclamav/mbox.c	4019	static size_t
+native-width-integer	libclamav/mbox.c	4020	strip(char *buf, int len)
+native-width-integer	libclamav/mbox.c	4023	    register size_t i;
+native-width-integer	libclamav/mbox.c	4029	    if (len > (int)(i + 1))
+native-width-integer	libclamav/mbox.c	4044	    while ((--len >= 0) && ((*--ptr == '\0') || isspace((int)(*ptr & 0xFF))));
+native-width-integer	libclamav/mbox.c	4046	    return ((size_t)(len + 1));
+native-width-integer	libclamav/mbox.c	4053	size_t
+native-width-integer	libclamav/mbox.c	4065	static int
+native-width-integer	libclamav/mbox.c	4070	    int commandNumber;
+native-width-integer	libclamav/mbox.c	4071	    size_t argCnt = 0;
+native-width-integer	libclamav/mbox.c	4123	                int i;
+native-width-integer	libclamav/mbox.c	4127	                    cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
+native-width-integer	libclamav/mbox.c	4181	                                int set = messageSetMimeType(m, strtok_r(s, "/", &strptr));
+native-width-integer	libclamav/mbox.c	4183	                                int set = messageSetMimeType(m, strtok(s, "/"));
+native-width-integer	libclamav/mbox.c	4194	                                    size_t len = strstrip(s) - 1;
+native-width-integer	libclamav/mbox.c	4244	                cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
+native-width-integer	libclamav/mbox.c	4277	static int
+native-width-integer	libclamav/mbox.c	4278	saveTextPart(mbox_ctx *mctx, message *m, int destroy_text)
 native-width-integer	libclamav/mbox.c	428	static int
-native-width-integer	libclamav/mbox.c	4282	            cli_errmsg("rfc822comments: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
 native-width-integer	libclamav/mbox.c	431	    int retcode;
-native-width-integer	libclamav/mbox.c	4342	    size_t len;
-native-width-integer	libclamav/mbox.c	4351	        cli_errmsg("rfc2047: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
+native-width-integer	libclamav/mbox.c	4310	    int backslash, inquote, commentlevel;
+native-width-integer	libclamav/mbox.c	4328	            cli_errmsg("rfc822comments: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
 native-width-integer	libclamav/mbox.c	436	    size_t at   = 0;
-native-width-integer	libclamav/mbox.c	4443	        cli_dbgmsg("Decoded as '%*.*s'\n", (int)len, (int)len,
-native-width-integer	libclamav/mbox.c	4466	parsePartialCount(const char *value, unsigned int *count)
-native-width-integer	libclamav/mbox.c	4470	    unsigned long parsed;
-native-width-integer	libclamav/mbox.c	4497	    *count = (unsigned int)parsed;
-native-width-integer	libclamav/mbox.c	4501	static int
-native-width-integer	libclamav/mbox.c	4506	    unsigned int n, t = 0;
-native-width-integer	libclamav/mbox.c	4509	    int pdir_length;
-native-width-integer	libclamav/mbox.c	4565	    if (pdir_length < 0 || pdir_length >= (int)sizeof(pdir)) {
-native-width-integer	libclamav/mbox.c	4567	                                 "Partial MIME directory path is too long");
-native-width-integer	libclamav/mbox.c	4601	                        (int)(statb.st_mode & ACCESSPERMS)
-native-width-integer	libclamav/mbox.c	4603	                        (int)(statb.st_mode & 0777)
-native-width-integer	libclamav/mbox.c	4716	                    int nblanks;
-native-width-integer	libclamav/mbox.c	4717	                    int fin_error;
-native-width-integer	libclamav/mbox.c	4718	                    int fin_close_error;
-native-width-integer	libclamav/mbox.c	4721	                    int test_fd;
-native-width-integer	libclamav/mbox.c	4871	                int scan_rc = scanFileblob(mctx, fout);
-native-width-integer	libclamav/mbox.c	4914	    size_t history_len = 0;
-native-width-integer	libclamav/mbox.c	4915	    size_t url_len     = 0;
-native-width-integer	libclamav/mbox.c	4916	    size_t offset      = 0;
-native-width-integer	libclamav/mbox.c	4919	        size_t wanted = MIN((size_t)TEXT_URL_MAP_CHUNK, map->len - offset);
-native-width-integer	libclamav/mbox.c	4920	        size_t i;
-native-width-integer	libclamav/mbox.c	5043	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
-native-width-integer	libclamav/mbox.c	5053	    map = fmap_new(input->fd, 0, (size_t)sb.st_size, input->fullname, input->fullname);
-native-width-integer	libclamav/mbox.c	5103	checkURLs(message *mainMessage, mbox_ctx *mctx, mbox_status *rc, int is_html)
-native-width-integer	libclamav/mbox.c	511	        int messagenumber;
-native-width-integer	libclamav/mbox.c	5149	sigsegv(int sig)
-native-width-integer	libclamav/mbox.c	5157	print_trace(int use_syslog)
-native-width-integer	libclamav/mbox.c	5160	    size_t size;
-native-width-integer	libclamav/mbox.c	5162	    size_t i;
-native-width-integer	libclamav/mbox.c	5177	            syslog(LOG_ERR, "bt[%llu]: %s", (unsigned long long)i, strings[i]);
-native-width-integer	libclamav/mbox.c	5191	usefulHeader(int commandNumber, const char *cmd)
-native-width-integer	libclamav/mbox.c	5214	getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx,
-native-width-integer	libclamav/mbox.c	5219	    size_t i;
-native-width-integer	libclamav/mbox.c	5230	    size_t input_len = MIN(map->len - *at, buffer_len + 1);
-native-width-integer	libclamav/mbox.c	5315	    size_t len;
-native-width-integer	libclamav/mbox.c	5332	        int numSpaces = 0, numDigits = 0;
-native-width-integer	libclamav/mbox.c	5371	            const int scan_rc = scanFileblob(mctx, fb);
-native-width-integer	libclamav/mbox.c	5392	static int
-native-width-integer	libclamav/mbox.c	5395	    int rc = CL_CLEAN;
-native-width-integer	libclamav/mbox.c	5500	do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, mbox_ctx *mctx, message *messageIn, text **tptr, unsigned int recursion_level)
-native-width-integer	libclamav/mbox.c	5508	    const int doPhishingScan = mctx->ctx->engine->dboptions & CL_DB_PHISHING_URLS && (DCONF_PHISHING & PHISHING_CONF_ENGINE);
-native-width-integer	libclamav/mbox.c	5628	                    const int is_html = (tableFind(mctx->subtypeTable, cptr) == HTML);
-native-width-integer	libclamav/mbox.c	5675	                int scan_rc = saveTextPart(mctx, aMessage, 1);
-native-width-integer	libclamav/mbox.c	5728	                cli_dbgmsg("Finished recursion, rc = %d\n", (int)*rc);
-native-width-integer	libclamav/mbox.c	5753	        int arrlen = 0;
-native-width-integer	libclamav/mbox.c	5755	        size_t arrlen = 0;
-native-width-integer	libclamav/mbox.c	5771	            int scan_rc = scanFileblob(mctx, fb);
-native-width-integer	libclamav/mbox.c	5820	static int
-native-width-integer	libclamav/mbox.c	5823	    int quotes = 0;
-native-width-integer	libclamav/mbox.c	649	                    int decode_status = uudecodeFile(m, buffer, dir, map, &at);
-native-width-integer	libclamav/mbox.c	820	    size_t bufferLen;
-native-width-integer	libclamav/mbox.c	834	    size_t spaceLeft = (READ_STRUCT_BUFFER_LEN - rs->bufferLen);
-native-width-integer	libclamav/mbox.c	838	        int part         = spaceLeft;
-native-width-integer	libclamav/mbox.c	863	    int bufferLen        = 1;
-native-width-integer	libclamav/mbox.c	921	        size_t i   = 0;
-native-width-integer	libclamav/mbox.c	922	        int doCont = 1;
-native-width-integer	libclamav/mbox.c	945	hitLineFoldCnt(const char *const line, size_t *lineFoldCnt, cli_ctx *ctx, bool *heuristicFound)
-native-width-integer	libclamav/mbox.c	968	haveTooManyHeaderBytes(size_t totalLen, cli_ctx *ctx, bool *heuristicFound)
-native-width-integer	libclamav/mbox.c	983	haveTooManyEmailHeaders(size_t totalHeaderCnt, cli_ctx *ctx, bool *heuristicFound)
-native-width-integer	libclamav/mbox.c	998	haveTooManyMIMEPartsPerMessage(size_t mimePartCnt, cli_ctx *ctx, mbox_status *rc)
+native-width-integer	libclamav/mbox.c	4388	    size_t len;
+native-width-integer	libclamav/mbox.c	4397	        cli_errmsg("rfc2047: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
+native-width-integer	libclamav/mbox.c	4489	        cli_dbgmsg("Decoded as '%*.*s'\n", (int)len, (int)len,
+native-width-integer	libclamav/mbox.c	4512	parsePartialCount(const char *value, unsigned int *count)
+native-width-integer	libclamav/mbox.c	4516	    unsigned long parsed;
+native-width-integer	libclamav/mbox.c	4543	    *count = (unsigned int)parsed;
+native-width-integer	libclamav/mbox.c	4547	static int
+native-width-integer	libclamav/mbox.c	4552	    unsigned int n, t = 0;
+native-width-integer	libclamav/mbox.c	4555	    int pdir_length;
+native-width-integer	libclamav/mbox.c	4611	    if (pdir_length < 0 || pdir_length >= (int)sizeof(pdir)) {
+native-width-integer	libclamav/mbox.c	4613	                                 "Partial MIME directory path is too long");
+native-width-integer	libclamav/mbox.c	4647	                        (int)(statb.st_mode & ACCESSPERMS)
+native-width-integer	libclamav/mbox.c	4649	                        (int)(statb.st_mode & 0777)
+native-width-integer	libclamav/mbox.c	4762	                    int nblanks;
+native-width-integer	libclamav/mbox.c	4763	                    int fin_error;
+native-width-integer	libclamav/mbox.c	4764	                    int fin_close_error;
+native-width-integer	libclamav/mbox.c	4767	                    int test_fd;
+native-width-integer	libclamav/mbox.c	4917	                int scan_rc = scanFileblob(mctx, fout);
+native-width-integer	libclamav/mbox.c	4960	    size_t history_len = 0;
+native-width-integer	libclamav/mbox.c	4961	    size_t url_len     = 0;
+native-width-integer	libclamav/mbox.c	4962	    size_t offset      = 0;
+native-width-integer	libclamav/mbox.c	4965	        size_t wanted = MIN((size_t)TEXT_URL_MAP_CHUNK, map->len - offset);
+native-width-integer	libclamav/mbox.c	4966	        size_t i;
+native-width-integer	libclamav/mbox.c	5089	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
+native-width-integer	libclamav/mbox.c	5099	    map = fmap_new(input->fd, 0, (size_t)sb.st_size, input->fullname, input->fullname);
+native-width-integer	libclamav/mbox.c	513	        int messagenumber;
+native-width-integer	libclamav/mbox.c	5149	checkURLs(message *mainMessage, mbox_ctx *mctx, mbox_status *rc, int is_html)
+native-width-integer	libclamav/mbox.c	5195	sigsegv(int sig)
+native-width-integer	libclamav/mbox.c	5203	print_trace(int use_syslog)
+native-width-integer	libclamav/mbox.c	5206	    size_t size;
+native-width-integer	libclamav/mbox.c	5208	    size_t i;
+native-width-integer	libclamav/mbox.c	5223	            syslog(LOG_ERR, "bt[%llu]: %s", (unsigned long long)i, strings[i]);
+native-width-integer	libclamav/mbox.c	5237	usefulHeader(int commandNumber, const char *cmd)
+native-width-integer	libclamav/mbox.c	5260	getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx,
+native-width-integer	libclamav/mbox.c	5265	    size_t i;
+native-width-integer	libclamav/mbox.c	5276	    size_t input_len = MIN(map->len - *at, buffer_len + 1);
+native-width-integer	libclamav/mbox.c	5361	    size_t len;
+native-width-integer	libclamav/mbox.c	5378	        int numSpaces = 0, numDigits = 0;
+native-width-integer	libclamav/mbox.c	5417	            const int scan_rc = scanFileblob(mctx, fb);
+native-width-integer	libclamav/mbox.c	5438	static int
+native-width-integer	libclamav/mbox.c	5441	    int rc = CL_CLEAN;
+native-width-integer	libclamav/mbox.c	5546	do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, mbox_ctx *mctx, message *messageIn, text **tptr, unsigned int recursion_level)
+native-width-integer	libclamav/mbox.c	5554	    const int doPhishingScan = mctx->ctx->engine->dboptions & CL_DB_PHISHING_URLS && (DCONF_PHISHING & PHISHING_CONF_ENGINE);
+native-width-integer	libclamav/mbox.c	5674	                    const int is_html = (tableFind(mctx->subtypeTable, cptr) == HTML);
+native-width-integer	libclamav/mbox.c	5721	                int scan_rc = saveTextPart(mctx, aMessage, 1);
+native-width-integer	libclamav/mbox.c	5774	                cli_dbgmsg("Finished recursion, rc = %d\n", (int)*rc);
+native-width-integer	libclamav/mbox.c	5799	        int arrlen = 0;
+native-width-integer	libclamav/mbox.c	5801	        size_t arrlen = 0;
+native-width-integer	libclamav/mbox.c	5817	            int scan_rc = scanFileblob(mctx, fb);
+native-width-integer	libclamav/mbox.c	5866	static int
+native-width-integer	libclamav/mbox.c	5869	    int quotes = 0;
+native-width-integer	libclamav/mbox.c	653	                    int decode_status = uudecodeFile(m, buffer, dir, map, &at);
+native-width-integer	libclamav/mbox.c	824	    size_t bufferLen;
+native-width-integer	libclamav/mbox.c	838	    size_t spaceLeft = (READ_STRUCT_BUFFER_LEN - rs->bufferLen);
+native-width-integer	libclamav/mbox.c	842	        int part         = spaceLeft;
+native-width-integer	libclamav/mbox.c	867	    int bufferLen        = 1;
+native-width-integer	libclamav/mbox.c	925	        size_t i   = 0;
+native-width-integer	libclamav/mbox.c	926	        int doCont = 1;
+native-width-integer	libclamav/mbox.c	949	hitLineFoldCnt(const char *const line, size_t *lineFoldCnt, cli_ctx *ctx, bool *heuristicFound)
+native-width-integer	libclamav/mbox.c	972	haveTooManyHeaderBytes(size_t totalLen, cli_ctx *ctx, bool *heuristicFound)
+native-width-integer	libclamav/mbox.c	987	haveTooManyEmailHeaders(size_t totalHeaderCnt, cli_ctx *ctx, bool *heuristicFound)
 native-width-integer	libclamav/mbox.h	75	size_t strstrip(char *s); /* remove trailing white space */
 native-width-integer	libclamav/mbox.h	76	int cli_mbox(const char *dir, cli_ctx *ctx);
 native-width-integer	libclamav/mbr.c	103	static bool mbr_partition_range(uint64_t lba, uint64_t count, size_t sectorsize,
@@ -21145,10 +21145,10 @@ boundary-constant	libclamav/matcher-pcre.c	352	    if (root->pcre_metas == UINT3
 boundary-constant	libclamav/matcher.c	1144	    if (!offsets || !legacy_offsets || file_size > UINT32_MAX)
 boundary-constant	libclamav/matcher.c	1476	            return SIZE_MAX;
 boundary-constant	libclamav/matcher.c	1516	        if (operand_size == SIZE_MAX) {
-boundary-constant	libclamav/mbox.c	1758	        if (fragment_len > INT_MAX) {
-boundary-constant	libclamav/mbox.c	2665	                    if (multiparts < 0 || multiparts == INT_MAX ||
-boundary-constant	libclamav/mbox.c	4610	    if (strlen(id) > SIZE_MAX - 10U ||
-boundary-constant	libclamav/mbox.c	4611	        strlen(number) > SIZE_MAX - 10U - strlen(id)) {
+boundary-constant	libclamav/mbox.c	1798	        if (fragment_len > INT_MAX) {
+boundary-constant	libclamav/mbox.c	2705	                    if (multiparts < 0 || multiparts == INT_MAX ||
+boundary-constant	libclamav/mbox.c	4656	    if (strlen(id) > SIZE_MAX - 10U ||
+boundary-constant	libclamav/mbox.c	4657	        strlen(number) > SIZE_MAX - 10U - strlen(id)) {
 boundary-constant	libclamav/mbr.c	371	        extoff > SIZE_MAX - extsize) {
 boundary-constant	libclamav/mbr.c	72	    if (!offset || sectorsize == 0 || lba > SIZE_MAX / sectorsize)
 boundary-constant	libclamav/mbr.c	97	    if (*offset > SIZE_MAX - base)
@@ -21782,7 +21782,7 @@ quantity-parser	libclamav/matcher-byte-comp.c	182	                offset_param =
 quantity-parser	libclamav/matcher-byte-comp.c	295	    byte_length = strtol(buf_start, (char **)&buf_end, 0);
 quantity-parser	libclamav/matcher-byte-comp.c	399	        comp_val = strtoll(comp_buf, (char **)&comp_end, 0);
 quantity-parser	libclamav/matcher.c	486	    parsed = strtoull(text, &end, 10);
-quantity-parser	libclamav/mbox.c	4482	    parsed = strtoul(start, &end, 10);
+quantity-parser	libclamav/mbox.c	4528	    parsed = strtoul(start, &end, 10);
 quantity-parser	libclamav/msxml_parser.c	185	    val2 = strtol(value, &endptr, 10);
 quantity-parser	libclamav/pdf.c	4643	            strtoul(end, &end, 10);
 quantity-parser	libclamav/pdfdecode.c	2164	    *parsed = strtol(value, &end, 10);
@@ -21875,8 +21875,8 @@ narrowing-cast	libclamav/matcher-hash.c	269	            htitem.key         = (ui
 narrowing-cast	libclamav/matcher-hash.c	442	    return root->hm.sizehashes[type].capacity && cli_htu32_find(&root->hm.sizehashes[type], (uint32_t)size);
 narrowing-cast	libclamav/matcher-hash.c	507	    item = cli_htu32_find(&root->hm.sizehashes[type], (uint32_t)size);
 narrowing-cast	libclamav/matcher.c	1156	            legacy_offsets[i] = (uint32_t)offsets[i];
-narrowing-cast	libclamav/mbox.c	4443	        cli_dbgmsg("Decoded as '%*.*s'\n", (int)len, (int)len,
-narrowing-cast	libclamav/mbox.c	4565	    if (pdir_length < 0 || pdir_length >= (int)sizeof(pdir)) {
+narrowing-cast	libclamav/mbox.c	4489	        cli_dbgmsg("Decoded as '%*.*s'\n", (int)len, (int)len,
+narrowing-cast	libclamav/mbox.c	4611	    if (pdir_length < 0 || pdir_length >= (int)sizeof(pdir)) {
 narrowing-cast	libclamav/message.c	1707	                   (unsigned long)size, (int)enctype);
 narrowing-cast	libclamav/message.c	906	                   (unsigned long)len, variable, ptr);
 narrowing-cast	libclamav/message.c	979	                   (unsigned long)len, variable, ptr);
@@ -23120,39 +23120,39 @@ format-width	libclamav/matcher.c	275	                cli_dbgmsg("matcher_run: pe
 format-width	libclamav/matcher.c	310	            cli_dbgmsg("matcher_run: performing regex matching on buffer with no map: " STDu64 "+%u(" STDu64 ")\n", offset, length, offset + length);
 format-width	libclamav/matcher.c	644	                cli_errmsg("cli_caloff: Invalid offset type for target %u\n", target);
 format-width	libclamav/matcher.c	881	                    cli_dbgmsg("cli_check_fp: Failed to get hash for the map at stack index # %u\n", stack_index);
-format-width	libclamav/mbox.c	2358	    cli_dbgmsg("in parseEmailBody, %u files saved so far\n",
-format-width	libclamav/mbox.c	2369	            cli_dbgmsg("parseEmailBody: hit maximum recursion level (%u)\n", recursion_level);
-format-width	libclamav/mbox.c	2379	        cli_dbgmsg("parseEmailBody: number of files exceeded %u\n", engine->maxfiles);
-format-width	libclamav/mbox.c	2511	            cli_dbgmsg("mimeType = %d\n", (int)mimeType);
-format-width	libclamav/mbox.c	2692	                    cli_dbgmsg("Now read in part %d\n", multiparts);
-format-width	libclamav/mbox.c	2725	                        cli_dbgmsg("multipart %d: inMimeHead %d inhead %d boundary '%s' line '%s' next '%s'\n",
-format-width	libclamav/mbox.c	2741	                            cli_dbgmsg("Multipart %d: About to add mime Argument '%s'\n",
-format-width	libclamav/mbox.c	2815	                                cli_dbgmsg("Multipart %d: End of header information\n",
-format-width	libclamav/mbox.c	2829	                                cli_dbgmsg("Part %d starts with a continuation line\n",
-format-width	libclamav/mbox.c	2890	                                    cli_dbgmsg("Multipart %d: headers not terminated by blank line\n",
-format-width	libclamav/mbox.c	2917	                            cli_dbgmsg("Multipart %d: About to parse folded header '%s'\n",
-format-width	libclamav/mbox.c	2946	                    cli_dbgmsg("Part %d has %d lines, rc = %d\n",
-format-width	libclamav/mbox.c	3042	                cli_dbgmsg("The message has %d parts\n", multiparts);
-format-width	libclamav/mbox.c	3198	                        cli_dbgmsg("Mixed message with %d parts\n", multiparts);
-format-width	libclamav/mbox.c	3649	                cli_dbgmsg("Saving text part to scan, rc = %d\n",
-format-width	libclamav/mbox.c	3678	    cli_dbgmsg("parseEmailBody() returning %d\n", (int)rc);
-format-width	libclamav/mbox.c	4087	                    cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
-format-width	libclamav/mbox.c	4200	                cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
-format-width	libclamav/mbox.c	4282	            cli_errmsg("rfc822comments: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
-format-width	libclamav/mbox.c	4351	        cli_errmsg("rfc2047: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
-format-width	libclamav/mbox.c	4711	                snprintf(filename, sizeof(filename), "_%s-%u", md5_hex, n);
-format-width	libclamav/mbox.c	5170	    cli_errmsg("Backtrace of pid %d:\n", pid);
-format-width	libclamav/mbox.c	5172	        syslog(LOG_ERR, "Backtrace of pid %d:", pid);
-format-width	libclamav/mbox.c	5177	            syslog(LOG_ERR, "bt[%llu]: %s", (unsigned long long)i, strings[i]);
-format-width	libclamav/mbox.c	527	                cli_dbgmsg("Deal with message number %d\n", messagenumber++);
-format-width	libclamav/mbox.c	5539	    cli_dbgmsg("Mixed message part %d is of type %d\n",
-format-width	libclamav/mbox.c	5563	            cli_dbgmsg("No mime headers found in multipart part %d\n", i);
-format-width	libclamav/mbox.c	5640	            cli_dbgmsg("Found message inside multipart (encoding type %d)\n",
-format-width	libclamav/mbox.c	5728	                cli_dbgmsg("Finished recursion, rc = %d\n", (int)*rc);
-format-width	libclamav/mbox.c	573	                        cli_dbgmsg("Message number %d is infected\n",
-format-width	libclamav/mbox.c	5743	            cli_dbgmsg("Only text and application attachments are fully supported, type = %d\n",
-format-width	libclamav/mbox.c	679	            cli_dbgmsg("Extract attachments from email %d\n", messagenumber);
-format-width	libclamav/mbox.c	811	    cli_dbgmsg("cli_mbox returning %d\n", retcode);
+format-width	libclamav/mbox.c	2398	    cli_dbgmsg("in parseEmailBody, %u files saved so far\n",
+format-width	libclamav/mbox.c	2409	            cli_dbgmsg("parseEmailBody: hit maximum recursion level (%u)\n", recursion_level);
+format-width	libclamav/mbox.c	2419	        cli_dbgmsg("parseEmailBody: number of files exceeded %u\n", engine->maxfiles);
+format-width	libclamav/mbox.c	2551	            cli_dbgmsg("mimeType = %d\n", (int)mimeType);
+format-width	libclamav/mbox.c	2732	                    cli_dbgmsg("Now read in part %d\n", multiparts);
+format-width	libclamav/mbox.c	2765	                        cli_dbgmsg("multipart %d: inMimeHead %d inhead %d boundary '%s' line '%s' next '%s'\n",
+format-width	libclamav/mbox.c	2781	                            cli_dbgmsg("Multipart %d: About to add mime Argument '%s'\n",
+format-width	libclamav/mbox.c	2855	                                cli_dbgmsg("Multipart %d: End of header information\n",
+format-width	libclamav/mbox.c	2869	                                cli_dbgmsg("Part %d starts with a continuation line\n",
+format-width	libclamav/mbox.c	2930	                                    cli_dbgmsg("Multipart %d: headers not terminated by blank line\n",
+format-width	libclamav/mbox.c	2957	                            cli_dbgmsg("Multipart %d: About to parse folded header '%s'\n",
+format-width	libclamav/mbox.c	2986	                    cli_dbgmsg("Part %d has %d lines, rc = %d\n",
+format-width	libclamav/mbox.c	3082	                cli_dbgmsg("The message has %d parts\n", multiparts);
+format-width	libclamav/mbox.c	3238	                        cli_dbgmsg("Mixed message with %d parts\n", multiparts);
+format-width	libclamav/mbox.c	3689	                cli_dbgmsg("Saving text part to scan, rc = %d\n",
+format-width	libclamav/mbox.c	3718	    cli_dbgmsg("parseEmailBody() returning %d\n", (int)rc);
+format-width	libclamav/mbox.c	4127	                    cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
+format-width	libclamav/mbox.c	4244	                cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
+format-width	libclamav/mbox.c	4328	            cli_errmsg("rfc822comments: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
+format-width	libclamav/mbox.c	4397	        cli_errmsg("rfc2047: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
+format-width	libclamav/mbox.c	4757	                snprintf(filename, sizeof(filename), "_%s-%u", md5_hex, n);
+format-width	libclamav/mbox.c	5216	    cli_errmsg("Backtrace of pid %d:\n", pid);
+format-width	libclamav/mbox.c	5218	        syslog(LOG_ERR, "Backtrace of pid %d:", pid);
+format-width	libclamav/mbox.c	5223	            syslog(LOG_ERR, "bt[%llu]: %s", (unsigned long long)i, strings[i]);
+format-width	libclamav/mbox.c	531	                cli_dbgmsg("Deal with message number %d\n", messagenumber++);
+format-width	libclamav/mbox.c	5585	    cli_dbgmsg("Mixed message part %d is of type %d\n",
+format-width	libclamav/mbox.c	5609	            cli_dbgmsg("No mime headers found in multipart part %d\n", i);
+format-width	libclamav/mbox.c	5686	            cli_dbgmsg("Found message inside multipart (encoding type %d)\n",
+format-width	libclamav/mbox.c	577	                        cli_dbgmsg("Message number %d is infected\n",
+format-width	libclamav/mbox.c	5774	                cli_dbgmsg("Finished recursion, rc = %d\n", (int)*rc);
+format-width	libclamav/mbox.c	5789	            cli_dbgmsg("Only text and application attachments are fully supported, type = %d\n",
+format-width	libclamav/mbox.c	683	            cli_dbgmsg("Extract attachments from email %d\n", messagenumber);
+format-width	libclamav/mbox.c	815	    cli_dbgmsg("cli_mbox returning %d\n", retcode);
 format-width	libclamav/mbr.c	174	        cli_dbgmsg("cli_scanmbr: File sized %lu is not a multiple of sector size %lu\n",
 format-width	libclamav/mbr.c	241	        cli_dbgmsg("cli_scanmbr: File sized %lu is not a multiple of sector size %lu\n",
 format-width	libclamav/mbr.c	292	        cli_dbgmsg("MBR Partition Entry %u:\n", i);
@@ -29855,146 +29855,146 @@ offset-size-arithmetic	libclamav/matcher.h	399	int cli_lsig_bytecode_compatible(
 offset-size-arithmetic	libclamav/matcher.h	402	 * @brief Determine if an alert is a known false positive, using each fmap in the ctx->container stack to check MD5, SHA1, and SHA2-256 hashes.
 offset-size-arithmetic	libclamav/matcher.h	98	    const uint32_t *sectoff, *sectrva, *sectvsz, *sectraw, *sectrsz,
 offset-size-arithmetic	libclamav/matcher.h	99	                   *secturva, *sectuvsz, *secturaw, *sectursz;
-offset-size-arithmetic	libclamav/mbox.c	1013	haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound)
-offset-size-arithmetic	libclamav/mbox.c	1035	parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status)
-offset-size-arithmetic	libclamav/mbox.c	1070	    while (first_line_len < sizeof(buffer) - 1U && firstLine[first_line_len] != '\0')
-offset-size-arithmetic	libclamav/mbox.c	1071	        first_line_len++;
-offset-size-arithmetic	libclamav/mbox.c	1241	                lookahead = fmap_need_off_once(map, *at, 1);
-offset-size-arithmetic	libclamav/mbox.c	1269	                    needContinue = (header[strlen(header) - 1] == ';');
-offset-size-arithmetic	libclamav/mbox.c	1350	    } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, at, ctx,
-offset-size-arithmetic	libclamav/mbox.c	1366	         * False positive in believing we have an e-mail when we don't
-offset-size-arithmetic	libclamav/mbox.c	1385	 * The given message contains a raw e-mail.
-offset-size-arithmetic	libclamav/mbox.c	1494	                    fulllinelength = strlen(line) + 1;
-offset-size-arithmetic	libclamav/mbox.c	1496	                    fulllinelength += strlen(line) + 1;
-offset-size-arithmetic	libclamav/mbox.c	1512	                    if (haveTooManyHeaderBytes(fulllinelength, m->ctx, heuristicFound)) {
-offset-size-arithmetic	libclamav/mbox.c	1589	         * False positive in believing we have an e-mail when we don't
-offset-size-arithmetic	libclamav/mbox.c	1677	    /* root html tags for microsoft office document */
-offset-size-arithmetic	libclamav/mbox.c	1684	static size_t num_mhtml_keys = sizeof(mhtml_keys) / sizeof(struct key_entry);
-offset-size-arithmetic	libclamav/mbox.c	1687	    /* embedded xml tags (comment) for microsoft office document */
-offset-size-arithmetic	libclamav/mbox.c	1707	static size_t num_mhtml_comment_keys = sizeof(mhtml_comment_keys) / sizeof(struct key_entry);
-offset-size-arithmetic	libclamav/mbox.c	1711	 * or an int-sized length conversion. */
-offset-size-arithmetic	libclamav/mbox.c	1724	    const char *xmlsrt, *xmlend, *search;
-offset-size-arithmetic	libclamav/mbox.c	1737	    comment_len = CLI_STRNLEN(comment, (size_t)MHTML_COMMENT_XML_MAX_SIZE + 1U);
-offset-size-arithmetic	libclamav/mbox.c	1747	        xml_offset   = (size_t)(xmlsrt - comment);
-offset-size-arithmetic	libclamav/mbox.c	1748	        xml_remaining = comment_len - xml_offset;
-offset-size-arithmetic	libclamav/mbox.c	1749	        xmlend       = CLI_STRNSTR(xmlsrt + sizeof("<xml>") - 1U, "</xml>",
-offset-size-arithmetic	libclamav/mbox.c	1750	                             xml_remaining - (sizeof("<xml>") - 1U));
-offset-size-arithmetic	libclamav/mbox.c	1757	        fragment_len = (size_t)(xmlend - xmlsrt) + (sizeof("</xml>") - 1U);
+offset-size-arithmetic	libclamav/mbox.c	1002	haveTooManyMIMEPartsPerMessage(size_t mimePartCnt, cli_ctx *ctx, mbox_status *rc)
+offset-size-arithmetic	libclamav/mbox.c	1017	haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound)
+offset-size-arithmetic	libclamav/mbox.c	1039	parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status)
+offset-size-arithmetic	libclamav/mbox.c	1077	    while (first_line_len < sizeof(buffer) - 1U && firstLine[first_line_len] != '\0')
+offset-size-arithmetic	libclamav/mbox.c	1078	        first_line_len++;
+offset-size-arithmetic	libclamav/mbox.c	1258	                lookahead = fmap_need_off_once(map, *at, 1);
+offset-size-arithmetic	libclamav/mbox.c	1290	                    needContinue = (header[strlen(header) - 1] == ';');
+offset-size-arithmetic	libclamav/mbox.c	1371	    } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, at, ctx,
+offset-size-arithmetic	libclamav/mbox.c	1390	         * False positive in believing we have an e-mail when we don't
+offset-size-arithmetic	libclamav/mbox.c	1409	 * The given message contains a raw e-mail.
+offset-size-arithmetic	libclamav/mbox.c	1521	                    fulllinelength = strlen(line) + 1;
+offset-size-arithmetic	libclamav/mbox.c	1528	                    fulllinelength += strlen(line) + 1;
+offset-size-arithmetic	libclamav/mbox.c	1550	                    if (haveTooManyHeaderBytes(fulllinelength, m->ctx, heuristicFound)) {
+offset-size-arithmetic	libclamav/mbox.c	1627	         * False positive in believing we have an e-mail when we don't
+offset-size-arithmetic	libclamav/mbox.c	1717	    /* root html tags for microsoft office document */
+offset-size-arithmetic	libclamav/mbox.c	1724	static size_t num_mhtml_keys = sizeof(mhtml_keys) / sizeof(struct key_entry);
+offset-size-arithmetic	libclamav/mbox.c	1727	    /* embedded xml tags (comment) for microsoft office document */
+offset-size-arithmetic	libclamav/mbox.c	1747	static size_t num_mhtml_comment_keys = sizeof(mhtml_comment_keys) / sizeof(struct key_entry);
+offset-size-arithmetic	libclamav/mbox.c	1751	 * or an int-sized length conversion. */
 offset-size-arithmetic	libclamav/mbox.c	176	 * and is possibly implemented entirely as a macro */
-offset-size-arithmetic	libclamav/mbox.c	1787	        search    = xmlend + (sizeof("</xml>") - 1U);
-offset-size-arithmetic	libclamav/mbox.c	1788	        remaining = comment_len - (size_t)(search - comment);
-offset-size-arithmetic	libclamav/mbox.c	1839	            fileblobSetFilename(input_fb, mctx->dir, "mhtml-root");
+offset-size-arithmetic	libclamav/mbox.c	1764	    const char *xmlsrt, *xmlend, *search;
+offset-size-arithmetic	libclamav/mbox.c	1777	    comment_len = CLI_STRNLEN(comment, (size_t)MHTML_COMMENT_XML_MAX_SIZE + 1U);
+offset-size-arithmetic	libclamav/mbox.c	1787	        xml_offset   = (size_t)(xmlsrt - comment);
+offset-size-arithmetic	libclamav/mbox.c	1788	        xml_remaining = comment_len - xml_offset;
+offset-size-arithmetic	libclamav/mbox.c	1789	        xmlend       = CLI_STRNSTR(xmlsrt + sizeof("<xml>") - 1U, "</xml>",
+offset-size-arithmetic	libclamav/mbox.c	1790	                             xml_remaining - (sizeof("<xml>") - 1U));
+offset-size-arithmetic	libclamav/mbox.c	1797	        fragment_len = (size_t)(xmlend - xmlsrt) + (sizeof("</xml>") - 1U);
+offset-size-arithmetic	libclamav/mbox.c	1827	        search    = xmlend + (sizeof("</xml>") - 1U);
+offset-size-arithmetic	libclamav/mbox.c	1828	        remaining = comment_len - (size_t)(search - comment);
+offset-size-arithmetic	libclamav/mbox.c	1879	            fileblobSetFilename(input_fb, mctx->dir, "mhtml-root");
 offset-size-arithmetic	libclamav/mbox.c	189	static message *parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821Table, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status);
-offset-size-arithmetic	libclamav/mbox.c	1938	#endif /* LIBXML_HTML_ENABLED */
-offset-size-arithmetic	libclamav/mbox.c	1971	    entry = (streamed_mime_part *)calloc(1, sizeof(*entry));
+offset-size-arithmetic	libclamav/mbox.c	1978	#endif /* LIBXML_HTML_ENABLED */
 offset-size-arithmetic	libclamav/mbox.c	200	static size_t strip(char *buf, int len);
+offset-size-arithmetic	libclamav/mbox.c	2011	    entry = (streamed_mime_part *)calloc(1, sizeof(*entry));
 offset-size-arithmetic	libclamav/mbox.c	207	static char *getline_from_mbox(char *buffer, size_t len, fmap_t *map, size_t *at, cli_ctx *ctx,
-offset-size-arithmetic	libclamav/mbox.c	2130	        if (line_len == sizeof(line) - 1 && line[line_len - 1] != '\n' && !feof(input)) {
+offset-size-arithmetic	libclamav/mbox.c	2170	        if (line_len == sizeof(line) - 1 && line[line_len - 1] != '\n' && !feof(input)) {
 offset-size-arithmetic	libclamav/mbox.c	235	static bool haveTooManyMIMEPartsPerMessage(size_t mimePartCnt, cli_ctx *ctx, mbox_status *rc);
 offset-size-arithmetic	libclamav/mbox.c	236	static bool hitLineFoldCnt(const char *const line, size_t *lineFoldCnt, cli_ctx *ctx, bool *heuristicFound);
 offset-size-arithmetic	libclamav/mbox.c	237	static bool haveTooManyHeaderBytes(size_t totalLen, cli_ctx *ctx, bool *heuristicFound);
 offset-size-arithmetic	libclamav/mbox.c	238	static bool haveTooManyEmailHeaders(size_t totalHeaderCnt, cli_ctx *ctx, bool *heuristicFound);
-offset-size-arithmetic	libclamav/mbox.c	2389	     * ordinary and encapsulated bodies are scanned from their completed spool. */
 offset-size-arithmetic	libclamav/mbox.c	239	static bool haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound);
-offset-size-arithmetic	libclamav/mbox.c	2420	                     strcasecmp(streamed_subtype, "disposition-notification") != 0))) {
-offset-size-arithmetic	libclamav/mbox.c	2422	                cli_warnmsg("Attempt to send Content-type message/external-body trapped\n");
+offset-size-arithmetic	libclamav/mbox.c	2429	     * ordinary and encapsulated bodies are scanned from their completed spool. */
+offset-size-arithmetic	libclamav/mbox.c	2460	                     strcasecmp(streamed_subtype, "disposition-notification") != 0))) {
+offset-size-arithmetic	libclamav/mbox.c	2462	                cli_warnmsg("Attempt to send Content-type message/external-body trapped\n");
 offset-size-arithmetic	libclamav/mbox.c	254	/* Maximum line length according to RFC2821 */
-offset-size-arithmetic	libclamav/mbox.c	2666	                        cli_message_table_size((size_t)multiparts + 1,
-offset-size-arithmetic	libclamav/mbox.c	2667	                                               sizeof(*messages), &message_table_size) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/mbox.c	2701	                            (strlen(lineGetData(t_line->t_line)) > 0))
-offset-size-arithmetic	libclamav/mbox.c	2896	                                datasz = strlen(fullline) + strlen(data) + 1;
-offset-size-arithmetic	libclamav/mbox.c	3119	                            /* Send root HTML file for preclassification */
-offset-size-arithmetic	libclamav/mbox.c	3248	                            fileblobSetFilename(fb, mctx->dir, "textpart");
-offset-size-arithmetic	libclamav/mbox.c	3324	                } else if (strcasecmp(mimeSubtype, "disposition-notification") == 0) {
-offset-size-arithmetic	libclamav/mbox.c	3347	                    cli_warnmsg("Attempt to send Content-type message/external-body trapped\n");
-offset-size-arithmetic	libclamav/mbox.c	3532	            fileblobSetFilename(fb, mctx->dir, "bounce");
-offset-size-arithmetic	libclamav/mbox.c	3625	                    fileblobSetFilename(fb, mctx->dir, "bounce");
-offset-size-arithmetic	libclamav/mbox.c	3686	 * New sections start with --boundary
-offset-size-arithmetic	libclamav/mbox.c	3709	        p = newline + strlen(line) - 1;
-offset-size-arithmetic	libclamav/mbox.c	3762	     * that has -1 in it instead of starting --1. This needs some more work.
-offset-size-arithmetic	libclamav/mbox.c	3813	 * The message ends with --boundary--
-offset-size-arithmetic	libclamav/mbox.c	3832	        p2 = newline + strlen(line) - 1;
-offset-size-arithmetic	libclamav/mbox.c	3863	    if (strlen(p) < (len + 2)) {
-offset-size-arithmetic	libclamav/mbox.c	3989	    if (len > (int)(i + 1))
-offset-size-arithmetic	libclamav/mbox.c	3997	    while ((--len >= 0) && (!isgraph(*--ptr)) && (*ptr != '\n') && (*ptr != '\r'));
-offset-size-arithmetic	libclamav/mbox.c	4004	    while ((--len >= 0) && ((*--ptr == '\0') || isspace((int)(*ptr & 0xFF))));
-offset-size-arithmetic	libclamav/mbox.c	4006	    return ((size_t)(len + 1));
-offset-size-arithmetic	libclamav/mbox.c	4019	    return (strip(s, strlen(s) + 1));
-offset-size-arithmetic	libclamav/mbox.c	4059	             * that send content-type: Text instead
-offset-size-arithmetic	libclamav/mbox.c	4085	                buf = cli_max_malloc(strlen(ptr) + 1);
-offset-size-arithmetic	libclamav/mbox.c	4087	                    cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
-offset-size-arithmetic	libclamav/mbox.c	4150	                                    size_t len = strstrip(s) - 1;
-offset-size-arithmetic	libclamav/mbox.c	4198	            buf = cli_max_malloc(strlen(ptr) + 1);
-offset-size-arithmetic	libclamav/mbox.c	4200	                cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
-offset-size-arithmetic	libclamav/mbox.c	4280	        out = cli_max_malloc(strlen(in) + 1);
-offset-size-arithmetic	libclamav/mbox.c	4282	            cli_errmsg("rfc822comments: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
-offset-size-arithmetic	libclamav/mbox.c	4348	    out = cli_max_malloc(strlen(in) + 1);
-offset-size-arithmetic	libclamav/mbox.c	4351	        cli_errmsg("rfc2047: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
-offset-size-arithmetic	libclamav/mbox.c	4448	        if (len > 0 && pout[len - 1] == '\n')
-offset-size-arithmetic	libclamav/mbox.c	4449	            pout += len - 1;
-offset-size-arithmetic	libclamav/mbox.c	4477	        start++;
-offset-size-arithmetic	libclamav/mbox.c	4488	        end++;
-offset-size-arithmetic	libclamav/mbox.c	4490	        end++;
-offset-size-arithmetic	libclamav/mbox.c	4492	            end++;
-offset-size-arithmetic	libclamav/mbox.c	4564	                      : snprintf(pdir, sizeof(pdir), "%s" PATHSEP "clamav-partial", tmpdir);
-offset-size-arithmetic	libclamav/mbox.c	4610	    if (strlen(id) > SIZE_MAX - 10U ||
-offset-size-arithmetic	libclamav/mbox.c	4611	        strlen(number) > SIZE_MAX - 10U - strlen(id)) {
-offset-size-arithmetic	libclamav/mbox.c	4619	    arg = cli_max_malloc(10U + strlen(id) + strlen(number));
-offset-size-arithmetic	libclamav/mbox.c	4668	            snprintf(outname, sizeof(outname) - 1, "%s" PATHSEP "%s", mctx->dir, id);
-offset-size-arithmetic	libclamav/mbox.c	4698	                char filename[NAME_MAX + 1];
-offset-size-arithmetic	libclamav/mbox.c	4711	                snprintf(filename, sizeof(filename), "_%s-%u", md5_hex, n);
-offset-size-arithmetic	libclamav/mbox.c	4755	                    snprintf(fullname, sizeof(fullname) - 1,
-offset-size-arithmetic	libclamav/mbox.c	4800	                    while (fgets(buffer, sizeof(buffer) - 1, fin) != NULL)
-offset-size-arithmetic	libclamav/mbox.c	4912	    char history[sizeof("https:") - 1];
-offset-size-arithmetic	libclamav/mbox.c	4918	    while (offset < map->len) {
-offset-size-arithmetic	libclamav/mbox.c	4919	        size_t wanted = MIN((size_t)TEXT_URL_MAP_CHUNK, map->len - offset);
-offset-size-arithmetic	libclamav/mbox.c	4944	                } else if (url_len < sizeof(url) - 1) {
-offset-size-arithmetic	libclamav/mbox.c	4945	                    url[url_len++] = (char)c;
-offset-size-arithmetic	libclamav/mbox.c	4959	                history[history_len++] = (char)c;
-offset-size-arithmetic	libclamav/mbox.c	4961	                memmove(history, history + 1, sizeof(history) - 1);
-offset-size-arithmetic	libclamav/mbox.c	4962	                history[sizeof(history) - 1] = (char)c;
-offset-size-arithmetic	libclamav/mbox.c	4966	                (history[history_len - 6] | 0x20) == 'h' &&
-offset-size-arithmetic	libclamav/mbox.c	4967	                (history[history_len - 5] | 0x20) == 't' &&
-offset-size-arithmetic	libclamav/mbox.c	4968	                (history[history_len - 4] | 0x20) == 't' &&
-offset-size-arithmetic	libclamav/mbox.c	4969	                (history[history_len - 3] | 0x20) == 'p' &&
-offset-size-arithmetic	libclamav/mbox.c	4970	                (history[history_len - 2] | 0x20) == 's' && history[history_len - 1] == ':') {
-offset-size-arithmetic	libclamav/mbox.c	4971	                memcpy(url, history + history_len - 6, 6);
-offset-size-arithmetic	libclamav/mbox.c	4974	                       (history[history_len - 5] | 0x20) == 'h' &&
-offset-size-arithmetic	libclamav/mbox.c	4975	                       (history[history_len - 4] | 0x20) == 't' &&
-offset-size-arithmetic	libclamav/mbox.c	4976	                       (history[history_len - 3] | 0x20) == 't' &&
-offset-size-arithmetic	libclamav/mbox.c	4977	                       (history[history_len - 2] | 0x20) == 'p' &&
-offset-size-arithmetic	libclamav/mbox.c	4978	                       history[history_len - 1] == ':') {
-offset-size-arithmetic	libclamav/mbox.c	4979	                memcpy(url, history + history_len - 5, 5);
-offset-size-arithmetic	libclamav/mbox.c	4982	                       (history[history_len - 4] | 0x20) == 'f' &&
-offset-size-arithmetic	libclamav/mbox.c	4983	                       (history[history_len - 3] | 0x20) == 't' &&
-offset-size-arithmetic	libclamav/mbox.c	4984	                       (history[history_len - 2] | 0x20) == 'p' &&
-offset-size-arithmetic	libclamav/mbox.c	4985	                       history[history_len - 1] == ':') {
-offset-size-arithmetic	libclamav/mbox.c	4986	                memcpy(url, history + history_len - 4, 4);
-offset-size-arithmetic	libclamav/mbox.c	4991	        offset += wanted;
-offset-size-arithmetic	libclamav/mbox.c	5029	    /* A completed raw body spool is already file-backed. Encoded spools and
-offset-size-arithmetic	libclamav/mbox.c	5043	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
-offset-size-arithmetic	libclamav/mbox.c	5053	    map = fmap_new(input->fd, 0, (size_t)sb.st_size, input->fullname, input->fullname);
-offset-size-arithmetic	libclamav/mbox.c	5214	getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx,
-offset-size-arithmetic	libclamav/mbox.c	5230	    size_t input_len = MIN(map->len - *at, buffer_len + 1);
-offset-size-arithmetic	libclamav/mbox.c	5231	    src = cursrc = fmap_need_off_once(map, *at, input_len);
-offset-size-arithmetic	libclamav/mbox.c	5255	        if (!input_len--) {
-offset-size-arithmetic	libclamav/mbox.c	5269	                if (input_len && *cursrc == '\r') {
-offset-size-arithmetic	libclamav/mbox.c	5277	                if (input_len && *cursrc == '\n') {
-offset-size-arithmetic	libclamav/mbox.c	5292	        const char *next = fmap_need_off_once(map, *at, 1);
-offset-size-arithmetic	libclamav/mbox.c	5349	    return (bool)(cli_compare_ftm_file((const unsigned char *)line, len, mctx->ctx->engine) == CL_TYPE_MAIL);
-offset-size-arithmetic	libclamav/mbox.c	5450	        fileblobSetFilename(fb, mctx->dir, "bounce");
-offset-size-arithmetic	libclamav/mbox.c	5759	            /* attempt to determine container size - prevents incorrect type reporting */
-offset-size-arithmetic	libclamav/mbox.c	5891	                continue; /* white space at end of line */
-offset-size-arithmetic	libclamav/mbox.c	672	        } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx,
-offset-size-arithmetic	libclamav/mbox.c	726	               (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx,
-offset-size-arithmetic	libclamav/mbox.c	734	        buffer[sizeof(buffer) - 1] = '\0';
-offset-size-arithmetic	libclamav/mbox.c	827	appendReadStruct(ReadStruct *rs, const char *const buffer)
-offset-size-arithmetic	libclamav/mbox.c	834	    size_t spaceLeft = (READ_STRUCT_BUFFER_LEN - rs->bufferLen);
-offset-size-arithmetic	libclamav/mbox.c	912	#endif /*FREELIST_REALLOC*/
-offset-size-arithmetic	libclamav/mbox.c	945	hitLineFoldCnt(const char *const line, size_t *lineFoldCnt, cli_ctx *ctx, bool *heuristicFound)
-offset-size-arithmetic	libclamav/mbox.c	968	haveTooManyHeaderBytes(size_t totalLen, cli_ctx *ctx, bool *heuristicFound)
-offset-size-arithmetic	libclamav/mbox.c	983	haveTooManyEmailHeaders(size_t totalHeaderCnt, cli_ctx *ctx, bool *heuristicFound)
-offset-size-arithmetic	libclamav/mbox.c	998	haveTooManyMIMEPartsPerMessage(size_t mimePartCnt, cli_ctx *ctx, mbox_status *rc)
+offset-size-arithmetic	libclamav/mbox.c	2706	                        cli_message_table_size((size_t)multiparts + 1,
+offset-size-arithmetic	libclamav/mbox.c	2707	                                               sizeof(*messages), &message_table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/mbox.c	2741	                            (strlen(lineGetData(t_line->t_line)) > 0))
+offset-size-arithmetic	libclamav/mbox.c	2936	                                datasz = strlen(fullline) + strlen(data) + 1;
+offset-size-arithmetic	libclamav/mbox.c	3159	                            /* Send root HTML file for preclassification */
+offset-size-arithmetic	libclamav/mbox.c	3288	                            fileblobSetFilename(fb, mctx->dir, "textpart");
+offset-size-arithmetic	libclamav/mbox.c	3364	                } else if (strcasecmp(mimeSubtype, "disposition-notification") == 0) {
+offset-size-arithmetic	libclamav/mbox.c	3387	                    cli_warnmsg("Attempt to send Content-type message/external-body trapped\n");
+offset-size-arithmetic	libclamav/mbox.c	3572	            fileblobSetFilename(fb, mctx->dir, "bounce");
+offset-size-arithmetic	libclamav/mbox.c	3665	                    fileblobSetFilename(fb, mctx->dir, "bounce");
+offset-size-arithmetic	libclamav/mbox.c	3726	 * New sections start with --boundary
+offset-size-arithmetic	libclamav/mbox.c	3749	        p = newline + strlen(line) - 1;
+offset-size-arithmetic	libclamav/mbox.c	3802	     * that has -1 in it instead of starting --1. This needs some more work.
+offset-size-arithmetic	libclamav/mbox.c	3853	 * The message ends with --boundary--
+offset-size-arithmetic	libclamav/mbox.c	3872	        p2 = newline + strlen(line) - 1;
+offset-size-arithmetic	libclamav/mbox.c	3903	    if (strlen(p) < (len + 2)) {
+offset-size-arithmetic	libclamav/mbox.c	4029	    if (len > (int)(i + 1))
+offset-size-arithmetic	libclamav/mbox.c	4037	    while ((--len >= 0) && (!isgraph(*--ptr)) && (*ptr != '\n') && (*ptr != '\r'));
+offset-size-arithmetic	libclamav/mbox.c	4044	    while ((--len >= 0) && ((*--ptr == '\0') || isspace((int)(*ptr & 0xFF))));
+offset-size-arithmetic	libclamav/mbox.c	4046	    return ((size_t)(len + 1));
+offset-size-arithmetic	libclamav/mbox.c	4059	    return (strip(s, strlen(s) + 1));
+offset-size-arithmetic	libclamav/mbox.c	4099	             * that send content-type: Text instead
+offset-size-arithmetic	libclamav/mbox.c	4125	                buf = cli_max_malloc(strlen(ptr) + 1);
+offset-size-arithmetic	libclamav/mbox.c	4127	                    cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
+offset-size-arithmetic	libclamav/mbox.c	4194	                                    size_t len = strstrip(s) - 1;
+offset-size-arithmetic	libclamav/mbox.c	4242	            buf = cli_max_malloc(strlen(ptr) + 1);
+offset-size-arithmetic	libclamav/mbox.c	4244	                cli_errmsg("parseMimeHeader: Unable to allocate memory for buf %llu\n", (long long unsigned)(strlen(ptr) + 1));
+offset-size-arithmetic	libclamav/mbox.c	4326	        out = cli_max_malloc(strlen(in) + 1);
+offset-size-arithmetic	libclamav/mbox.c	4328	            cli_errmsg("rfc822comments: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
+offset-size-arithmetic	libclamav/mbox.c	4394	    out = cli_max_malloc(strlen(in) + 1);
+offset-size-arithmetic	libclamav/mbox.c	4397	        cli_errmsg("rfc2047: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
+offset-size-arithmetic	libclamav/mbox.c	4494	        if (len > 0 && pout[len - 1] == '\n')
+offset-size-arithmetic	libclamav/mbox.c	4495	            pout += len - 1;
+offset-size-arithmetic	libclamav/mbox.c	4523	        start++;
+offset-size-arithmetic	libclamav/mbox.c	4534	        end++;
+offset-size-arithmetic	libclamav/mbox.c	4536	        end++;
+offset-size-arithmetic	libclamav/mbox.c	4538	            end++;
+offset-size-arithmetic	libclamav/mbox.c	4610	                      : snprintf(pdir, sizeof(pdir), "%s" PATHSEP "clamav-partial", tmpdir);
+offset-size-arithmetic	libclamav/mbox.c	4656	    if (strlen(id) > SIZE_MAX - 10U ||
+offset-size-arithmetic	libclamav/mbox.c	4657	        strlen(number) > SIZE_MAX - 10U - strlen(id)) {
+offset-size-arithmetic	libclamav/mbox.c	4665	    arg = cli_max_malloc(10U + strlen(id) + strlen(number));
+offset-size-arithmetic	libclamav/mbox.c	4714	            snprintf(outname, sizeof(outname) - 1, "%s" PATHSEP "%s", mctx->dir, id);
+offset-size-arithmetic	libclamav/mbox.c	4744	                char filename[NAME_MAX + 1];
+offset-size-arithmetic	libclamav/mbox.c	4757	                snprintf(filename, sizeof(filename), "_%s-%u", md5_hex, n);
+offset-size-arithmetic	libclamav/mbox.c	4801	                    snprintf(fullname, sizeof(fullname) - 1,
+offset-size-arithmetic	libclamav/mbox.c	4846	                    while (fgets(buffer, sizeof(buffer) - 1, fin) != NULL)
+offset-size-arithmetic	libclamav/mbox.c	4958	    char history[sizeof("https:") - 1];
+offset-size-arithmetic	libclamav/mbox.c	4964	    while (offset < map->len) {
+offset-size-arithmetic	libclamav/mbox.c	4965	        size_t wanted = MIN((size_t)TEXT_URL_MAP_CHUNK, map->len - offset);
+offset-size-arithmetic	libclamav/mbox.c	4990	                } else if (url_len < sizeof(url) - 1) {
+offset-size-arithmetic	libclamav/mbox.c	4991	                    url[url_len++] = (char)c;
+offset-size-arithmetic	libclamav/mbox.c	5005	                history[history_len++] = (char)c;
+offset-size-arithmetic	libclamav/mbox.c	5007	                memmove(history, history + 1, sizeof(history) - 1);
+offset-size-arithmetic	libclamav/mbox.c	5008	                history[sizeof(history) - 1] = (char)c;
+offset-size-arithmetic	libclamav/mbox.c	5012	                (history[history_len - 6] | 0x20) == 'h' &&
+offset-size-arithmetic	libclamav/mbox.c	5013	                (history[history_len - 5] | 0x20) == 't' &&
+offset-size-arithmetic	libclamav/mbox.c	5014	                (history[history_len - 4] | 0x20) == 't' &&
+offset-size-arithmetic	libclamav/mbox.c	5015	                (history[history_len - 3] | 0x20) == 'p' &&
+offset-size-arithmetic	libclamav/mbox.c	5016	                (history[history_len - 2] | 0x20) == 's' && history[history_len - 1] == ':') {
+offset-size-arithmetic	libclamav/mbox.c	5017	                memcpy(url, history + history_len - 6, 6);
+offset-size-arithmetic	libclamav/mbox.c	5020	                       (history[history_len - 5] | 0x20) == 'h' &&
+offset-size-arithmetic	libclamav/mbox.c	5021	                       (history[history_len - 4] | 0x20) == 't' &&
+offset-size-arithmetic	libclamav/mbox.c	5022	                       (history[history_len - 3] | 0x20) == 't' &&
+offset-size-arithmetic	libclamav/mbox.c	5023	                       (history[history_len - 2] | 0x20) == 'p' &&
+offset-size-arithmetic	libclamav/mbox.c	5024	                       history[history_len - 1] == ':') {
+offset-size-arithmetic	libclamav/mbox.c	5025	                memcpy(url, history + history_len - 5, 5);
+offset-size-arithmetic	libclamav/mbox.c	5028	                       (history[history_len - 4] | 0x20) == 'f' &&
+offset-size-arithmetic	libclamav/mbox.c	5029	                       (history[history_len - 3] | 0x20) == 't' &&
+offset-size-arithmetic	libclamav/mbox.c	5030	                       (history[history_len - 2] | 0x20) == 'p' &&
+offset-size-arithmetic	libclamav/mbox.c	5031	                       history[history_len - 1] == ':') {
+offset-size-arithmetic	libclamav/mbox.c	5032	                memcpy(url, history + history_len - 4, 4);
+offset-size-arithmetic	libclamav/mbox.c	5037	        offset += wanted;
+offset-size-arithmetic	libclamav/mbox.c	5075	    /* A completed raw body spool is already file-backed. Encoded spools and
+offset-size-arithmetic	libclamav/mbox.c	5089	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
+offset-size-arithmetic	libclamav/mbox.c	5099	    map = fmap_new(input->fd, 0, (size_t)sb.st_size, input->fullname, input->fullname);
+offset-size-arithmetic	libclamav/mbox.c	5260	getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx,
+offset-size-arithmetic	libclamav/mbox.c	5276	    size_t input_len = MIN(map->len - *at, buffer_len + 1);
+offset-size-arithmetic	libclamav/mbox.c	5277	    src = cursrc = fmap_need_off_once(map, *at, input_len);
+offset-size-arithmetic	libclamav/mbox.c	5301	        if (!input_len--) {
+offset-size-arithmetic	libclamav/mbox.c	5315	                if (input_len && *cursrc == '\r') {
+offset-size-arithmetic	libclamav/mbox.c	5323	                if (input_len && *cursrc == '\n') {
+offset-size-arithmetic	libclamav/mbox.c	5338	        const char *next = fmap_need_off_once(map, *at, 1);
+offset-size-arithmetic	libclamav/mbox.c	5395	    return (bool)(cli_compare_ftm_file((const unsigned char *)line, len, mctx->ctx->engine) == CL_TYPE_MAIL);
+offset-size-arithmetic	libclamav/mbox.c	5496	        fileblobSetFilename(fb, mctx->dir, "bounce");
+offset-size-arithmetic	libclamav/mbox.c	5805	            /* attempt to determine container size - prevents incorrect type reporting */
+offset-size-arithmetic	libclamav/mbox.c	5937	                continue; /* white space at end of line */
+offset-size-arithmetic	libclamav/mbox.c	676	        } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx,
+offset-size-arithmetic	libclamav/mbox.c	730	               (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx,
+offset-size-arithmetic	libclamav/mbox.c	738	        buffer[sizeof(buffer) - 1] = '\0';
+offset-size-arithmetic	libclamav/mbox.c	831	appendReadStruct(ReadStruct *rs, const char *const buffer)
+offset-size-arithmetic	libclamav/mbox.c	838	    size_t spaceLeft = (READ_STRUCT_BUFFER_LEN - rs->bufferLen);
+offset-size-arithmetic	libclamav/mbox.c	916	#endif /*FREELIST_REALLOC*/
+offset-size-arithmetic	libclamav/mbox.c	949	hitLineFoldCnt(const char *const line, size_t *lineFoldCnt, cli_ctx *ctx, bool *heuristicFound)
+offset-size-arithmetic	libclamav/mbox.c	972	haveTooManyHeaderBytes(size_t totalLen, cli_ctx *ctx, bool *heuristicFound)
+offset-size-arithmetic	libclamav/mbox.c	987	haveTooManyEmailHeaders(size_t totalHeaderCnt, cli_ctx *ctx, bool *heuristicFound)
 offset-size-arithmetic	libclamav/mbox.h	75	size_t strstrip(char *s); /* remove trailing white space */
 offset-size-arithmetic	libclamav/mbox.h	78	#endif /* __MBOX_H */
 offset-size-arithmetic	libclamav/mbr.c	104	                                size_t *offset, size_t *length)
