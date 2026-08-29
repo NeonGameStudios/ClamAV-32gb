@@ -7719,3 +7719,20 @@ qualification gates.
   sanitizer/I/O-fault, production-CVD/service, materialized-large-metadata,
   certified Linux x86-64, Sonic1, and parser-family/release qualification
   open.
+
+## MULTISCAN one-worker fallback guard — 2026-08-29
+
+- Keep `MULTISCAN` sequential when `MaxThreads=1`; the source guard now pins
+  the explicit fallback branch and contract comment.
+- Compiled daemon/service, concurrency, sanitizer, production-CVD, and Sonic1
+  evidence remain open.
+
+## InstallShield CAB-index allocation failure — 2026-08-29
+
+- Mark confirmed InstallShield CAB-index growth failure incomplete before
+  returning `CL_EMEM`, so a failed legacy PE-overlay walk cannot remain
+  cacheable.
+- Retain the source guard and add injected allocation-failure execution when
+  the current GCC production harness is available; complete InstallShield/PE
+  corpus, sanitizer, production-CVD/service, materialized-large-file, and
+  Sonic1 qualification remain required.

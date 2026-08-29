@@ -655,6 +655,7 @@ cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
                 if (i == c.cabcnt) {
                     c.cabcnt++;
                     if (!(c.cabs = cli_max_realloc_or_free(c.cabs, sizeof(struct CABARRAY) * c.cabcnt))) {
+                        cli_mark_scan_incomplete(ctx, "InstallShield CAB index could not be allocated");
                         ret = CL_EMEM;
                         break;
                     }

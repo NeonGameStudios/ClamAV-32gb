@@ -14479,3 +14479,25 @@ the individual allocation boundary would be exceeded. The focused helper
 regression covers the exact boundary and addition overflow. Complete LHA
 variant corpus, sanitizer, production-CVD/service, materialized-large-file,
 Sonic1, and parser-family qualification remain open.
+
+## MULTISCAN one-worker source-guard audit — 2026-08-29
+
+The clamd command path already falls back from `MULTISCAN` to the ordinary
+sequential directory walker when `MaxThreads <= 1`, while retaining parallel
+child aggregation for larger pools. The source guard now explicitly requires
+both the one-worker branch and its contract comment, protecting the release
+profile from regressing to the historical “Not enough threads” rejection.
+Compiled daemon, service protocol, concurrency, sanitizer, production-CVD,
+and Sonic1 qualification remain open.
+
+## InstallShield CAB-index allocation failure audit — 2026-08-29
+
+The legacy InstallShield overlay parser recorded `CL_EMEM` when its confirmed
+CAB index could not be grown, but did not mark the containing PE layer
+incomplete. `cli_scanpe()` returns that parser status directly, so the failure
+could otherwise leave the input cacheable despite required overlay metadata
+being uninspected. The allocation-failure branch now records a sticky
+incomplete reason before returning; the source guard pins this boundary.
+Current-source GCC compilation, injected allocation-failure execution,
+complete InstallShield/PE corpus, sanitizer, production-CVD/service,
+materialized-large-file, Linux x86-64, and Sonic1 qualification remain open.
