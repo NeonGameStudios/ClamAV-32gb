@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## Hash matcher table admission — 2026-08-29
+
+The exact-hash matcher accumulated a `uint32_t` item count and formed digest
+and virus-name pointer-table products directly before `MPOOL_REALLOC2()`. On
+a 32-bit target, a large signature database could wrap either product while
+the later indexed copy still used the logical item count; the 64-bit exact
+size side table also formed its count-plus-one product without an explicit
+admission check. `cli_hm_table_size()` now checks native-size multiplication
+and the individual allocation ceiling, the side-table growth uses its
+checked result, and saturated hash-item counts are rejected before
+incrementing. The registered `test_hash_table_size_rejects_product_wrap`
+regression covers zero, invalid arguments, `SIZE_MAX`, the allocation ceiling,
+and a `UINT32_MAX` product; the focused current-source production-linked
+UBSan harness also drives `hm_addhash_bin()` with a saturated item count and
+prints `hash_table_size_guard_passed`. The current matcher-hash source and
+matcher Check source compile with Docker production GCC. Full production
+signature-database/corpus, sanitizer matrix, production-CVD/service,
+materialized-large-file, Sonic1, and final matcher/release qualification
+remain open.
+
 ## HTML normalization pointer-table admission — 2026-08-29
 
 The HTML normalizer formed count-plus-one pointer-table products directly at

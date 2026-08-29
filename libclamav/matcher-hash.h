@@ -60,6 +60,17 @@ struct cli_hash_wild {
     struct cli_sz_hash hashes[CLI_HASH_AVAIL_TYPES];
 };
 
+/**
+ * @brief Validate and calculate a hash matcher table size.
+ *
+ * @param count         The requested number of entries.
+ * @param element_size  The size of each entry.
+ * @param[out] bytes    The checked allocation size in bytes.
+ * @return cl_error_t   CL_SUCCESS if representable and within the individual
+ *                      allocation limit, otherwise an error code.
+ */
+cl_error_t cli_hm_table_size(size_t count, size_t element_size, size_t *bytes);
+
 cl_error_t hm_addhash_str(struct cl_engine *engine, hash_purpose_t purpose, const char *strhash, uint64_t size, const char *virusname);
 cl_error_t hm_addhash_bin(struct cl_engine *engine, hash_purpose_t purpose, const void *binhash, cli_hash_type_t type, uint64_t size, const char *virusname);
 void hm_flush(struct cli_matcher *root);

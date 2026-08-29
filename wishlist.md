@@ -1,5 +1,18 @@
 # Wishlist
 
+## Hash matcher table admission — 2026-08-29
+
+- Keep exact-hash digest arrays, virus-name pointer arrays, and the 64-bit
+  size side table behind `cli_hm_table_size()` before `MPOOL_REALLOC2()`;
+  reject saturated `uint32_t` item counts before increment or indexed copy.
+- Retain `test_hash_table_size_rejects_product_wrap` and its source guards.
+  The current matcher-hash source and matcher Check source compile with
+  Docker production GCC, and the focused current-source production-linked
+  UBSan harness prints `hash_table_size_guard_passed`; full production
+  signature-database/corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, parser-family, and release qualification
+  remain open.
+
 ## HTML normalization pointer-table admission — 2026-08-29
 
 - Keep HTML tag-argument and form-data URL table growth behind

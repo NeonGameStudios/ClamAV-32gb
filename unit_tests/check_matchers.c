@@ -786,6 +786,22 @@ START_TEST(test_bm_pattern_table_size_rejects_product_wrap)
 }
 END_TEST
 
+START_TEST(test_hash_table_size_rejects_product_wrap)
+{
+    size_t bytes;
+
+    ck_assert_int_eq(cli_hm_table_size(0, sizeof(uint8_t), &bytes), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, 0);
+    ck_assert_int_eq(cli_hm_table_size(CLI_MAX_ALLOCATION / sizeof(uint8_t) + 1,
+                                       sizeof(uint8_t), &bytes),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_hm_table_size(SIZE_MAX, sizeof(uint8_t), &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_hm_table_size(1, 0, &bytes), CL_EARG);
+    ck_assert_int_eq(cli_hm_table_size(1, sizeof(uint8_t), NULL), CL_EARG);
+    ck_assert_int_eq(cli_hm_table_size(UINT32_MAX, sizeof(uint64_t), &bytes), CL_ERESOURCE);
+}
+END_TEST
+
 START_TEST(test_ac_offset_mode_matches_above_uint32)
 {
 #if SIZE_MAX > UINT32_MAX
@@ -2594,6 +2610,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bm_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_bm_initoff_rejects_coordinate_wrap);
     tcase_add_test(tc_matchers, test_bm_pattern_table_size_rejects_product_wrap);
+    tcase_add_test(tc_matchers, test_hash_table_size_rejects_product_wrap);
     tcase_add_test(tc_matchers, test_ac_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_ac_initdata_rejects_count_product_wrap);
     tcase_add_test(tc_matchers, test_mpool_allocation_size_wrap_is_fail_visible);

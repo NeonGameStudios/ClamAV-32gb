@@ -99,6 +99,19 @@ size_t cli_hash_len(cli_hash_type_t type)
     }
 }
 
+cl_error_t cli_hm_table_size(size_t count, size_t element_size, size_t *bytes)
+{
+    if (bytes == NULL || element_size == 0)
+        return CL_EARG;
+
+    if (count > SIZE_MAX / element_size ||
+        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+        return CL_ERESOURCE;
+
+    *bytes = count * element_size;
+    return CL_SUCCESS;
+}
+
 cl_error_t cli_hash_type_from_name(const char *name, cli_hash_type_t *type_out)
 {
     if (!name || !type_out) {
@@ -212,7 +225,14 @@ cl_error_t hm_addhash_bin(struct cl_engine *engine, hash_purpose_t purpose, cons
 
         if (!szh64) {
             size_t count = root->hm.sizehashes64_count[type];
-            szh64        = MPOOL_REALLOC2(root->mempool, root->hm.sizehashes64[type], (count + 1) * sizeof(*szh64));
+            size_t size_table_size;
+
+            if (count == SIZE_MAX ||
+                cli_hm_table_size(count + 1, sizeof(*szh64), &size_table_size) != CL_SUCCESS) {
+                cli_errmsg("hm_addhash_bin: 64-bit size hash table exceeds allocation limits\n");
+                return CL_EMEM;
+            }
+            szh64 = MPOOL_REALLOC2(root->mempool, root->hm.sizehashes64[type], size_table_size);
             if (!szh64) {
                 root->hm.sizehashes64[type]       = NULL;
                 root->hm.sizehashes64_count[type] = 0;
@@ -261,28 +281,45 @@ cl_error_t hm_addhash_bin(struct cl_engine *engine, hash_purpose_t purpose, cons
         /* size 0 = wildcard */
         szh = &root->hwild.hashes[type];
     }
-    szh->items++;
-
-    szh->hash_array = MPOOL_REALLOC2(root->mempool, szh->hash_array, hlen * szh->items);
-    if (!szh->hash_array) {
-        cli_errmsg("hm_addhash_bin: failed to grow hash array to %u entries\n", szh->items);
-        szh->items = 0;
-        MPOOL_FREE(root->mempool, (void *)szh->virusnames);
-        szh->virusnames = NULL;
+    if (szh->items == UINT32_MAX) {
+        cli_errmsg("hm_addhash_bin: hash table entry count is saturated\n");
         return CL_EMEM;
     }
 
-    szh->virusnames = MPOOL_REALLOC2(root->mempool, (void *)szh->virusnames, sizeof(*szh->virusnames) * szh->items);
-    if (!szh->virusnames) {
-        cli_errmsg("hm_addhash_bin: failed to grow virusname array to %u entries\n", szh->items);
-        szh->items = 0;
-        MPOOL_FREE(root->mempool, szh->hash_array);
-        szh->hash_array = NULL;
-        return CL_EMEM;
-    }
+    {
+        const size_t next_items = (size_t)szh->items + 1U;
+        size_t hash_table_size;
+        size_t virusname_table_size;
 
-    memcpy(&szh->hash_array[(szh->items - 1) * hlen], binhash, hlen);
-    szh->virusnames[(szh->items - 1)] = virusname;
+        if (cli_hm_table_size(next_items, hlen, &hash_table_size) != CL_SUCCESS ||
+            cli_hm_table_size(next_items, sizeof(*szh->virusnames), &virusname_table_size) != CL_SUCCESS) {
+            cli_errmsg("hm_addhash_bin: hash table exceeds allocation limits\n");
+            return CL_EMEM;
+        }
+
+        szh->items++;
+
+        szh->hash_array = MPOOL_REALLOC2(root->mempool, szh->hash_array, hash_table_size);
+        if (!szh->hash_array) {
+            cli_errmsg("hm_addhash_bin: failed to grow hash array to %u entries\n", szh->items);
+            szh->items = 0;
+            MPOOL_FREE(root->mempool, (void *)szh->virusnames);
+            szh->virusnames = NULL;
+            return CL_EMEM;
+        }
+
+        szh->virusnames = MPOOL_REALLOC2(root->mempool, (void *)szh->virusnames, virusname_table_size);
+        if (!szh->virusnames) {
+            cli_errmsg("hm_addhash_bin: failed to grow virusname array to %u entries\n", szh->items);
+            szh->items = 0;
+            MPOOL_FREE(root->mempool, szh->hash_array);
+            szh->hash_array = NULL;
+            return CL_EMEM;
+        }
+
+        memcpy(&szh->hash_array[(szh->items - 1) * hlen], binhash, hlen);
+        szh->virusnames[(szh->items - 1)] = virusname;
+    }
 
     return CL_SUCCESS;
 }
