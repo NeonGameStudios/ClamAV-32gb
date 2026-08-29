@@ -1450,8 +1450,11 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
 
     ret = (*create)();
 
-    if (ret == NULL)
+    if (ret == NULL) {
+        messageMarkMaterializationFailure(m,
+                                          "MIME export output could not be allocated");
         return NULL;
+    }
 
     /* Set the scan context before the fast-copy path can return. Without
      * this, plain message bodies bypass the authoritative fileblob scan. */
@@ -1504,6 +1507,8 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
         if (m->numberOfEncTypes == 0) {
             void *exported = exportText(messageGetBody(m), ret, destroy_text);
             if (exported == NULL) {
+                messageMarkMaterializationFailure(m,
+                                                  "MIME decoded message could not be materialized completely");
                 (*destroy)(ret);
                 return NULL;
             }
@@ -1521,11 +1526,15 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
             newret = (*create)();
             if (newret == NULL) {
                 cli_warnmsg("messageExport: unable to create output for all decoding algorithms\n");
+                messageMarkMaterializationFailure(m,
+                                                  "MIME export output could not be allocated");
                 (*destroy)(ret);
                 return NULL;
             }
             (*destroy)(ret);
             ret = newret;
+            if (setCTX && m->ctx)
+                (*setCTX)(ret, m->ctx);
         }
         cli_dbgmsg("messageExport: enctype %d is %d\n", i, (int)enctype);
         /*
@@ -1610,6 +1619,8 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
                 /* last one */
                 void *exported = exportText(t_line, ret, destroy_text);
                 if (exported == NULL) {
+                    messageMarkMaterializationFailure(m,
+                                                      "MIME decoded message could not be materialized completely");
                     (*destroy)(ret);
                     return NULL;
                 }
@@ -1617,6 +1628,8 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
                 break;
             }
             if (exportText(t_line, ret, 0) == NULL) {
+                messageMarkMaterializationFailure(m,
+                                                  "MIME decoded message could not be materialized completely");
                 (*destroy)(ret);
                 return NULL;
             }
@@ -1649,6 +1662,9 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
                 data = bigbuf = (unsigned char *)cli_max_malloc(datasize);
                 if (NULL == data) {
                     cli_dbgmsg("Failed to allocate data buffer of size %zu\n", datasize);
+                    messageMarkMaterializationFailure(m,
+                                                      "MIME decoded line buffer could not be allocated");
+                    export_failed = 1;
                     break;
                 }
             } else {
@@ -1662,12 +1678,16 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
                 if (data == bigbuf) {
                     free(data);
                 }
+                messageMarkMaterializationFailure(m,
+                                                  "MIME decoded line could not be decoded completely");
                 export_failed = 1;
                 break;
             }
 
             if (uptr != data) {
                 if ((*addData)(ret, data, (size_t)(uptr - data)) < 0) {
+                    messageMarkMaterializationFailure(m,
+                                                      "MIME decoded message could not be materialized completely");
                     export_failed = 1;
                 } else {
                     size += (size_t)(uptr - data);
@@ -1715,6 +1735,8 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
             if (ptr) {
                 if ((*addData)(ret, data, (size_t)(ptr - data)) < 0) {
                     cli_warnmsg("messageExport: trailing decoded data could not be materialized\n");
+                    messageMarkMaterializationFailure(m,
+                                                      "MIME decoded message could not be materialized completely");
                     (*destroy)(ret);
                     return NULL;
                 }
@@ -2071,6 +2093,8 @@ messageToText(message *m)
             }
 
             if (last == NULL) {
+                messageMarkMaterializationFailure(m,
+                                                  "MIME text output node could not be allocated");
                 if (first)
                     textDestroy(first);
                 return NULL;
@@ -2079,6 +2103,13 @@ messageToText(message *m)
                 last->t_line = lineLink(t_line->t_line);
             else
                 last->t_line = NULL; /* empty line */
+            if (t_line->t_line && last->t_line == NULL) {
+                messageMarkMaterializationFailure(m,
+                                                  "MIME text line could not be linked");
+                last->t_next = NULL;
+                textDestroy(first);
+                return NULL;
+            }
         }
         if (last)
             last->t_next = NULL;
@@ -2111,6 +2142,8 @@ messageToText(message *m)
                     }
 
                     if (last == NULL) {
+                        messageMarkMaterializationFailure(m,
+                                                          "MIME text output node could not be allocated");
                         if (first) {
                             textDestroy(first);
                         }
@@ -2120,6 +2153,13 @@ messageToText(message *m)
                         last->t_line = lineLink(t_line->t_line);
                     else
                         last->t_line = NULL; /* empty line */
+                    if (t_line->t_line && last->t_line == NULL) {
+                        messageMarkMaterializationFailure(m,
+                                                          "MIME text line could not be linked");
+                        last->t_next = NULL;
+                        textDestroy(first);
+                        return NULL;
+                    }
                 }
                 continue;
             case UUENCODE:
@@ -2165,17 +2205,36 @@ messageToText(message *m)
 
             if ((line != NULL) && (strlen(line) > sizeof(data))) {
                 cli_errmsg("Internal email parser error: line size greater than size of receiving data buffer\n");
-                break;
+                messageMarkMaterializationFailure(m,
+                                                  "MIME decoded line exceeded its bounded output buffer");
+                if (last)
+                    last->t_next = NULL;
+                if (first)
+                    textDestroy(first);
+                return NULL;
             }
 
             uptr = decodeLine(m, enctype, line, data, sizeof(data));
 
-            if (uptr == NULL)
-                break;
+            if (uptr == NULL) {
+                messageMarkMaterializationFailure(m,
+                                                  "MIME decoded line could not be decoded completely");
+                if (last)
+                    last->t_next = NULL;
+                if (first)
+                    textDestroy(first);
+                return NULL;
+            }
 
             if ((size_t)(uptr - data) > sizeof(data)) {
                 cli_errmsg("Internal email parser error: line size greater than size of receiving data buffer\n");
-                break;
+                messageMarkMaterializationFailure(m,
+                                                  "MIME decoded line exceeded its bounded output buffer");
+                if (last)
+                    last->t_next = NULL;
+                if (first)
+                    textDestroy(first);
+                return NULL;
             }
 
             if (first == NULL)
@@ -2185,8 +2244,13 @@ messageToText(message *m)
                 last         = last->t_next;
             }
 
-            if (last == NULL)
-                break;
+            if (last == NULL) {
+                messageMarkMaterializationFailure(m,
+                                                  "MIME text output node could not be allocated");
+                if (first)
+                    textDestroy(first);
+                return NULL;
+            }
 
             /*
              * If the decoded line is the same as the encoded
@@ -2207,6 +2271,15 @@ messageToText(message *m)
             } else
                 last->t_line = lineCreate((char *)data);
 
+            if (last->t_line == NULL && data[0] != '\n' && data[0] != '\0') {
+                messageMarkMaterializationFailure(m,
+                                                  "MIME decoded text line could not be allocated");
+                last->t_next = NULL;
+                if (first)
+                    textDestroy(first);
+                return NULL;
+            }
+
             if (line && enctype == BASE64)
                 if (strchr(line, '='))
                     break;
@@ -2223,8 +2296,22 @@ messageToText(message *m)
                     last         = last->t_next;
                 }
 
-                if (last != NULL)
-                    last->t_line = lineCreate((char *)data);
+                if (last == NULL) {
+                    messageMarkMaterializationFailure(m,
+                                                      "MIME text output node could not be allocated");
+                    if (first)
+                        textDestroy(first);
+                    return NULL;
+                }
+                last->t_line = lineCreate((char *)data);
+                if (last->t_line == NULL) {
+                    messageMarkMaterializationFailure(m,
+                                                      "MIME decoded text line could not be allocated");
+                    last->t_next = NULL;
+                    if (first)
+                        textDestroy(first);
+                    return NULL;
+                }
             }
             m->base64chars = 0;
         }

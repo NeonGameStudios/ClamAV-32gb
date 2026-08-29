@@ -1297,6 +1297,15 @@ not_contains libclamav/message.c '(m->numberOfEncTypes + 1) * sizeof(encoding_ty
 not_contains libclamav/mbox.c '((multiparts + 1) * sizeof(message *))'
 contains unit_tests/check_str.c 'test_message_table_size_rejects_product_wrap'
 
+contains libclamav/message.c 'MIME export output could not be allocated'
+contains libclamav/message.c 'MIME decoded message could not be materialized completely'
+contains libclamav/message.c 'MIME decoded line buffer could not be allocated'
+contains libclamav/message.c 'MIME decoded line could not be decoded completely'
+contains libclamav/message.c 'MIME decoded line exceeded its bounded output buffer'
+contains libclamav/message.c 'MIME text output node could not be allocated'
+contains libclamav/message.c 'MIME decoded text line could not be allocated'
+contains libclamav/message.c 'MIME text line could not be linked'
+
 contains libclamav/htmlnorm.c 'if (!html_tag_arg_add(&tag_args'
 contains libclamav/htmlnorm.c 'if (!html_tag_contents_done(hrefs'
 contains libclamav/htmlnorm.c 'if (!html_insert_form_data'

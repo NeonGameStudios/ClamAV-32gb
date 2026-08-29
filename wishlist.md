@@ -7844,7 +7844,16 @@ parser/release qualification as open requirements.
   parsing can continue with incomplete state.
 - Add injected allocator execution and retain complete MIME/mbox/MHTML corpus,
   sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
-  final qualification as open.
+final qualification as open.
+
+## MIME export failure visibility — 2026-08-29
+
+- Keep MIME decoded-line, output-object, writer, text-node, and line-link
+  failures sticky and fail-visible; never return partially decoded output as
+  a successful attachment or text conversion.
+- Add injected allocator/write execution and retain complete MIME/mbox/MHTML
+  corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  and final qualification as open.
 
 ## MIME header-constructor allocation visibility — 2026-08-29
 

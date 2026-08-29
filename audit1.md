@@ -27,6 +27,21 @@ execution, complete MIME/mbox/MHTML corpus, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification remain
 open.
 
+## MIME export failure visibility — 2026-08-29
+
+The shared MIME exporter could break on a failed decoded-line allocation while
+leaving `export_failed` clear, then return a partially materialized attachment
+as successful. Its text conversion path likewise returned partial lists after
+text-node or line-copy allocation failures. Export replacement outputs also
+did not inherit the scan context. The exporter now records sticky incomplete
+state for output creation, decoded-line, writer, text-node, and line-link
+failures, rejects partial results, treats malformed/oversized decoded lines as
+incomplete, and carries context to replacement outputs.
+Source guards pin these branches. Injected allocator/write execution, complete
+MIME/mbox/MHTML corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.
+
 ## Generic hash-table capacity and rehash failure visibility — 2026-08-29
 
 The shared string and uint32 hash tables rounded externally supplied
