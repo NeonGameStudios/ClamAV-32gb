@@ -7736,3 +7736,12 @@ qualification gates.
   the current GCC production harness is available; complete InstallShield/PE
   corpus, sanitizer, production-CVD/service, materialized-large-file, and
   Sonic1 qualification remain required.
+
+## PEspin resource-section failure handling — 2026-08-29
+
+- Preserve sticky incomplete/non-cacheable state when confirmed PEspin resource
+  allocation or decompression fails and the parser falls back to original
+  section bytes.
+- Add injected resource-failure execution and retain complete PE/unpacker,
+  sanitizer, production-CVD/service, materialized-large-file, and Sonic1
+  qualification as open requirements.

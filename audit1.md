@@ -14501,3 +14501,15 @@ incomplete reason before returning; the source guard pins this boundary.
 Current-source GCC compilation, injected allocation-failure execution,
 complete InstallShield/PE corpus, sanitizer, production-CVD/service,
 materialized-large-file, Linux x86-64, and Sonic1 qualification remain open.
+
+## PEspin resource-section failure audit — 2026-08-29
+
+The confirmed PEspin path could continue rebuilding after a compressed
+resource section failed allocation or decompression, silently substituting
+the original section bytes. That left required resource content uninspected.
+Both failure branches now record sticky incomplete state before preserving the
+existing fallback behavior, so a clean result cannot be treated as complete or
+cacheable. The source guard pins both reasons. Injected resource-failure
+execution, complete PE/unpacker corpus, sanitizer, production-CVD/service,
+materialized-large-file, Linux x86-64, Sonic1, and parser-family qualification
+remain open.

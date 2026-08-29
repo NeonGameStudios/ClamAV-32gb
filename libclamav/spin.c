@@ -475,7 +475,8 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
                 if (cli_unfsg_ctx(src + sections[j].raw + key32 - sections[j].rva, curr + key32 - sections[j].rva, sections[j].rsz - (key32 - sections[j].rva), sections[j].vsz - (key32 - sections[j].rva), NULL, NULL, ctx)) {
 
                     free(curr);
-                    cli_dbgmsg("spin: Failed to grow resources, continuing anyway\n");
+                    cli_mark_scan_incomplete(ctx, "PEspin resource section could not be rebuilt");
+                    cli_dbgmsg("spin: Failed to grow resources, continuing with incomplete output\n");
                     blobsz += sections[j].rsz;
                 } else {
                     sects[j] = curr;
@@ -484,8 +485,8 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
                     blobsz += sections[j].vsz;
                 }
             } else {
-                /* malloc failed but i'm too deep into this crap to quit without leaking more :( */
-                cli_dbgmsg("spin: memory allocation failed, continuing anyway\n");
+                cli_mark_scan_incomplete(ctx, "PEspin resource section could not be allocated");
+                cli_dbgmsg("spin: memory allocation failed, continuing with incomplete output\n");
                 blobsz += sections[j].rsz;
             }
         } else {

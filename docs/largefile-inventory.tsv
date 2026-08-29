@@ -15070,7 +15070,7 @@ native-width-integer	libclamav/spin.c	369	        int xcfailure = 0;
 native-width-integer	libclamav/spin.c	394	                int xcfailure = 0;
 native-width-integer	libclamav/spin.c	420	        cli_dbgmsg("spin: malloc(%zu) failed\n", (size_t)sectcnt * sizeof(char *));
 native-width-integer	libclamav/spin.c	450	        int t;
-native-width-integer	libclamav/spin.c	507	            int retval = 0;
+native-width-integer	libclamav/spin.c	508	            int retval = 0;
 native-width-integer	libclamav/spin.c	65	static char exec86(uint8_t aelle, uint8_t cielle, char *curremu, int *retval)
 native-width-integer	libclamav/spin.c	67	    int len = 0;
 native-width-integer	libclamav/spin.h	28	int unspin(char *, int, struct cli_exe_section *, int, uint32_t, int, cli_ctx *);
@@ -33254,8 +33254,8 @@ offset-size-arithmetic	libclamav/spin.c	469	        if (j != sectcnt && ((bitman
 offset-size-arithmetic	libclamav/spin.c	470	            cli_dbgmsg("spin: Resources (sect%d) appear to be compressed\n\tuncompressed offset %x, len %x\n\tcompressed offset %x, len %x\n", j, sections[j].rva, key32 - sections[j].rva, key32, sections[j].vsz - (key32 - sections[j].rva));
 offset-size-arithmetic	libclamav/spin.c	473	                memcpy(curr, src + sections[j].raw, key32 - sections[j].rva);                           /* Uncompressed part */
 offset-size-arithmetic	libclamav/spin.c	475	                if (cli_unfsg_ctx(src + sections[j].raw + key32 - sections[j].rva, curr + key32 - sections[j].rva, sections[j].rsz - (key32 - sections[j].rva), sections[j].vsz - (key32 - sections[j].rva), NULL, NULL, ctx)) {
-offset-size-arithmetic	libclamav/spin.c	505	        if ((rebhlp = (struct cli_exe_section *)cli_max_malloc(sizeof(struct cli_exe_section) * (sectcnt))) != NULL) {
-offset-size-arithmetic	libclamav/spin.c	510	                rebhlp[j].raw = (j > 0) ? (rebhlp[j - 1].raw + rebhlp[j - 1].rsz) : 0;
+offset-size-arithmetic	libclamav/spin.c	506	        if ((rebhlp = (struct cli_exe_section *)cli_max_malloc(sizeof(struct cli_exe_section) * (sectcnt))) != NULL) {
+offset-size-arithmetic	libclamav/spin.c	511	                rebhlp[j].raw = (j > 0) ? (rebhlp[j - 1].raw + rebhlp[j - 1].rsz) : 0;
 offset-size-arithmetic	libclamav/spin.c	71	        len++;
 offset-size-arithmetic	libclamav/spin.c	74	                len++;
 offset-size-arithmetic	libclamav/spin.c	77	                len++;
