@@ -1,5 +1,16 @@
 # Wishlist
 
+## TNEF message-range fail visibility — 2026-08-28
+
+- Keep message-level TNEF range failures sticky and non-cacheable when a
+  declared payload extends past the input; retain bounded fixed-width debug
+  metadata reads within each declared attribute payload.
+- Retain `test_tnef_message_attribute_range_is_fail_visible` and its source
+  guards. The focused current-source GCC direct-parser runner passes the same
+  boundary. Complete corpus, production-linked TNEF execution, sanitizer,
+  materialized large-file, production-CVD/service, Sonic1, and final
+  parser-family/release evidence remain open.
+
 ## Structured-detector counter width — 2026-08-28
 
 - Keep cumulative credit-card and SSN detector counts saturating `uint64_t`
