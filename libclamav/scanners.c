@@ -8671,8 +8671,9 @@ static cl_error_t scan_common(
     }
 
     ctx.recursion_stack_size = ctx.engine->max_recursion_level;
-    ctx.recursion_stack      = calloc(sizeof(cli_scan_layer_t), ctx.recursion_stack_size);
+    ctx.recursion_stack      = cli_max_calloc(ctx.recursion_stack_size, sizeof(cli_scan_layer_t));
     if (!ctx.recursion_stack) {
+        cli_errmsg("scan_common: unable to allocate the bounded recursion stack\n");
         status = CL_EMEM;
         goto done;
     }

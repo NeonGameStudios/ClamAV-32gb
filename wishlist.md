@@ -7872,3 +7872,12 @@ final qualification as open.
 - Add injected allocator and malformed-XML execution, then retain complete
   OpenIOC corpus, sanitizer, production-CVD/service, materialized-large-file,
   Sonic1, and final qualification as open.
+
+## Scan recursion-stack admission — 2026-08-29
+
+- Keep the public scan-common recursion-layer table behind native-size and
+  individual-allocation admission before nested parser state is published;
+  retain CL_EMEM as the fail-visible result for an over-limit configuration.
+- Add a focused oversized-MaxRecursion execution and retain nested-parser
+  corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  and final qualification as open.

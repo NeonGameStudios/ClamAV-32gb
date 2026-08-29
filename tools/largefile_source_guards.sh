@@ -6175,6 +6175,10 @@ not_contains libclamav/openioc.c 'uint16_t ioclen;'
 not_contains libclamav/openioc.c 'int i, hashlen;'
 not_contains libclamav/openioc.c 'virusname = calloc(1, ioclen + hashlen + 2);'
 contains docs/largefile-capabilities.tsv 'openioc-database-admission'
+contains libclamav/scanners.c 'cli_max_calloc(ctx.recursion_stack_size, sizeof(cli_scan_layer_t));'
+contains libclamav/scanners.c 'unable to allocate the bounded recursion stack'
+not_contains libclamav/scanners.c 'ctx.recursion_stack      = calloc(sizeof(cli_scan_layer_t), ctx.recursion_stack_size);'
+contains docs/largefile-capabilities.tsv 'scan-recursion-stack-admission'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2

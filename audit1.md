@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Scan recursion-stack admission — 2026-08-29
+
+The top-level scan setup formed the recursion-layer table with a raw
+`calloc()` product whose count came from the configurable `MaxRecursion`
+value. On a native-width overflow, the allocation could be smaller than the
+number of layers later indexed by nested scanning. The table now uses
+`cli_max_calloc()` with the count and element width in checked order, making
+native-size overflow and the shared individual-allocation ceiling fail as
+`CL_EMEM` before the first layer is published. The source guard pins the
+former raw boundary. Nested-parser corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.
+
 ## OpenIOC database admission — 2026-08-29
 
 The OpenIOC loader accumulated XML hash values with unchecked `calloc()` and
