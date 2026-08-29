@@ -1173,7 +1173,7 @@ static SRes SzReadHeader2(
       if (file->HasStream)
       {
         file->IsDir = 0;
-        if (!(*unpackSizes) || (sizeIndex > numUnpackStreams))
+        if (!(*unpackSizes) || sizeIndex >= numUnpackStreams)
           return SZ_ERROR_FAIL;
         file->Size = (*unpackSizes)[sizeIndex];
         file->Crc = (*digests)[sizeIndex];
@@ -1192,6 +1192,8 @@ static SRes SzReadHeader2(
         file->CrcDefined = 0;
       }
     }
+    if (sizeIndex != numUnpackStreams)
+      return SZ_ERROR_FAIL;
   }
   return SzArEx_Fill(p, allocMain);
 }

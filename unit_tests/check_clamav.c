@@ -26641,6 +26641,71 @@ START_TEST(test_7z_files_info_property_boundary_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_7z_files_info_stream_count_is_fail_visible)
+{
+    uint8_t data[96] = {0};
+    size_t header_size = 0;
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* Two stream-bearing files cannot be described by one unpack stream. The
+     * header reader must reject the second file before indexing past the
+     * declared stream metadata (the old '>' check admitted that access). */
+    memcpy(data, "7z\xbc\xaf'\x1c", 6);
+    data[6] = 0;
+    data[7] = 4;
+    zip_stream_write_u64(data + 12, 0U);
+    header_size = 32U;
+    data[header_size++] = 0x01; /* Header. */
+    data[header_size++] = 0x04; /* MainStreamsInfo. */
+    data[header_size++] = 0x06; /* PackInfo. */
+    data[header_size++] = 0x00; /* Data offset. */
+    data[header_size++] = 0x01; /* One packed stream. */
+    data[header_size++] = 0x09; /* Pack sizes. */
+    data[header_size++] = 0x00; /* No packed bytes are needed for admission. */
+    data[header_size++] = 0x00; /* End PackInfo. */
+    data[header_size++] = 0x07; /* UnpackInfo. */
+    data[header_size++] = 0x0b; /* Folder. */
+    data[header_size++] = 0x01; /* One folder. */
+    data[header_size++] = 0x00; /* Folder is internal. */
+    data[header_size++] = 0x01; /* One-byte Copy method ID. */
+    data[header_size++] = 0x00; /* Copy method. */
+    data[header_size++] = 0x0c; /* Coder unpack sizes. */
+    data[header_size++] = 0x01; /* One declared unpack stream. */
+    data[header_size++] = 0x00; /* End UnpackInfo. */
+    data[header_size++] = 0x08; /* SubStreamsInfo. */
+    data[header_size++] = 0x00; /* Default one substream. */
+    data[header_size++] = 0x00; /* End StreamsInfo. */
+    data[header_size++] = 0x05; /* FilesInfo. */
+    data[header_size++] = 0x02; /* Two stream-bearing files. */
+    data[header_size++] = 0x00; /* End FilesInfo. */
+    zip_stream_write_u64(data + 20, (uint64_t)(header_size - 32U));
+    zip_stream_write_u32(data + 28,
+                         (uint32_t)crc32(0L, data + 32, header_size - 32U));
+
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ctx.engine  = scan_engine;
+    ctx.options = &options;
+    map         = cl_fmap_open_memory(data, header_size);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_7unz(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_7z_read_failure_is_fail_visible)
 {
     uint8_t data[34] = {0};
@@ -46271,6 +46336,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_truncated_header_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_archive_property_truncation_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_files_info_property_boundary_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_files_info_stream_count_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_read_failure_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_truncated_member_is_parse_error);
     tcase_add_test(tc_7z, test_7z_output_size_mismatch_is_fail_visible);

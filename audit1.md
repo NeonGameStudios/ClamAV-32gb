@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip FilesInfo stream-count admission — 2026-08-29
+
+The vendored 7-Zip header reader could index one unpack-size, CRC, and
+definedness entry past the declared unpack-stream count when FilesInfo listed
+more stream-bearing files than SubStreamsInfo described. It now rejects an
+out-of-range index before dereferencing the metadata and requires the final
+stream count to match exactly. The registered
+`test_7z_files_info_stream_count_is_fail_visible` regression covers the
+two-files/one-stream boundary; the authoritative current-source SDK reader
+passes the focused GCC and GCC ASan/UBSan checks with a fail-visible archive
+error and no sanitizer finding. Full current-source production-linked 7-Zip
+TCase, complete 7-Zip/BCJ2 corpus, production CVD/service, materialized
+large-file, certified Linux x86-64, Sonic1, and release qualification remain
+open.
+
 ## GIF fixed-extension admission — 2026-08-29
 
 GIF Plain Text and Application extensions have fixed first-block sizes, but

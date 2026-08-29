@@ -1,5 +1,16 @@
 # Wishlist
 
+## 7-Zip FilesInfo stream-count admission — 2026-08-29
+
+- Keep FilesInfo stream metadata fail-closed: reject an index at or beyond
+  `numUnpackStreams` and require the consumed stream count to match exactly.
+- Retain `test_7z_files_info_stream_count_is_fail_visible` and its source
+  guard. The authoritative current-source SDK reader passes the focused GCC
+  and GCC ASan/UBSan checks; complete 7-Zip/BCJ2 corpus, coherent
+  production-linked TCase, production-CVD/service, materialized large-file,
+  certified Linux x86-64, Sonic1, parser-family, and release evidence remain
+  open.
+
 ## GIF fixed-extension admission — 2026-08-29
 
 - Keep GIF Plain Text and Application extension first-block sizes fail-closed:

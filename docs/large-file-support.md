@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## 7-Zip FilesInfo stream-count admission — 2026-08-29
+
+The 7-Zip header reader now rejects a FilesInfo stream index at or beyond the
+declared SubStreamsInfo count and requires every declared unpack stream to be
+consumed exactly once. This prevents malformed two-files/one-stream metadata
+from reading a sentinel or stale entry past the declared arrays. The
+registered `test_7z_files_info_stream_count_is_fail_visible` regression and
+the authoritative current-source SDK reader pass focused GCC and GCC
+ASan/UBSan checks with an explicit archive failure and no sanitizer finding.
+Full current-source production-linked 7-Zip TCase, complete 7-Zip/BCJ2
+corpus, production-CVD/service, materialized-large-file, certified Linux
+x86-64, Sonic1, parser-family, and release qualification remain required.
+
 ## GIF fixed-extension admission — 2026-08-29
 
 GIF Plain Text and Application extensions now validate their fixed first-block
