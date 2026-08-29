@@ -7808,3 +7808,14 @@ parser/release qualification as open requirements.
   Current-source GCC execution, sanitizer, complete text-normalization/ISO/HTML
   corpus, production-CVD/service, materialized-large-file, Sonic1, and final
   parser/release qualification remain open.
+
+## PDF encryption password-check workspace admission — 2026-08-29
+
+- Keep legacy R2-R4 password-check workspaces behind checked
+  prefix/file-ID/suffix arithmetic and cli_max_calloc; reject overflow and
+  workspaces above the individual 1 GiB allocation ceiling before copying the
+  PDF /ID bytes.
+- Retain test_pdf_encryption_buffer_size_is_fail_visible and its source
+  guards. Current-source GCC execution, encrypted PDF corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification remain open.

@@ -3730,11 +3730,20 @@ static void check_user_password(struct pdf_struct *pdf, int R, const char *O,
         case 3:
         case 4: {
             unsigned char *d;
-            size_t sz = 68 + pdf->fileIDlen + (R >= 4 && !EM ? 4 : 0);
-            d         = calloc(1, sz);
+            size_t sz;
+            size_t suffix_length = (R >= 4 && !EM) ? 4U : 0U;
 
-            if (!(d))
+            if (cli_pdf_encryption_buffer_size(pdf->fileIDlen, 68U,
+                                                suffix_length, &sz) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF encryption password-check workspace exceeds the allocation boundary");
                 goto done;
+            }
+            d = cli_max_calloc(1, sz);
+
+            if (!(d)) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF encryption password-check workspace could not be allocated");
+                goto done;
+            }
 
             memcpy(d, key_padding, 32);
             memcpy(d + 32, O, 32);
@@ -3786,15 +3795,23 @@ static void check_user_password(struct pdf_struct *pdf, int R, const char *O,
                 // R is 3 or 4
                 unsigned len = pdf->keylen;
                 unsigned char *d;
+                size_t sz;
 
-                d = calloc(1, 32 + pdf->fileIDlen);
-                if (!(d))
+                if (cli_pdf_encryption_buffer_size(pdf->fileIDlen, 32U, 0,
+                                                    &sz) != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF encryption password-check workspace exceeds the allocation boundary");
                     goto done;
+                }
+                d = cli_max_calloc(1, sz);
+                if (!(d)) {
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF encryption password-check workspace could not be allocated");
+                    goto done;
+                }
 
                 /* 7.6.3.3 Algorithm 5 */
                 memcpy(d, key_padding, 32);
                 memcpy(d + 32, pdf->fileID, pdf->fileIDlen);
-                cl_hash_data("md5", d, 32 + pdf->fileIDlen, result, NULL);
+                cl_hash_data("md5", d, sz, result, NULL);
                 memcpy(data, pdf->key, len);
 
                 if (false == arc4_init(&arc4, (const uint8_t *)data, len)) {

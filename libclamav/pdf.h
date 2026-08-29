@@ -49,6 +49,32 @@ static inline cl_error_t cli_pdf_legacy_dict_length(size_t length, int *legacy_l
     return CL_SUCCESS;
 }
 
+/* Compute the bounded workspace used by legacy PDF password checks. The
+ * file-ID length is derived from PDF input and the callers must not form the
+ * native-size additions until both overflow and the shared allocation ceiling
+ * have been checked. */
+static inline cl_error_t cli_pdf_encryption_buffer_size(size_t file_id_length,
+                                                         size_t prefix_length,
+                                                         size_t suffix_length,
+                                                         size_t *buffer_size)
+{
+    size_t total;
+
+    if (buffer_size == NULL)
+        return CL_ENULLARG;
+    if (prefix_length > SIZE_MAX - file_id_length)
+        return CL_ERESOURCE;
+    total = prefix_length + file_id_length;
+    if (suffix_length > SIZE_MAX - total)
+        return CL_ERESOURCE;
+    total += suffix_length;
+    if (total > CLI_MAX_ALLOCATION)
+        return CL_ERESOURCE;
+
+    *buffer_size = total;
+    return CL_SUCCESS;
+}
+
 #define PDF_OBJECT_RECURSION_LIMIT 25
 /* Internal object IDs pack the format's object number and generation into
  * one 32-bit lookup key; reject values that cannot be represented losslessly. */

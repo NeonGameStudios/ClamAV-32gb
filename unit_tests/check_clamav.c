@@ -16219,6 +16219,38 @@ START_TEST(test_pdf_legacy_dictionary_length_boundary_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_encryption_buffer_size_is_fail_visible)
+{
+    size_t buffer_size = 0;
+
+    ck_assert_int_eq(cli_pdf_encryption_buffer_size(0, 68, 0, &buffer_size),
+                     CL_SUCCESS);
+    ck_assert_uint_eq(buffer_size, 68);
+    ck_assert_int_eq(cli_pdf_encryption_buffer_size(
+                         CLI_MAX_ALLOCATION - 68, 68, 0, &buffer_size),
+                     CL_SUCCESS);
+    ck_assert_uint_eq(buffer_size, CLI_MAX_ALLOCATION);
+    ck_assert_int_eq(cli_pdf_encryption_buffer_size(
+                         CLI_MAX_ALLOCATION - 67, 68, 0, &buffer_size),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_pdf_encryption_buffer_size(
+                         CLI_MAX_ALLOCATION - 72, 68, 4, &buffer_size),
+                     CL_SUCCESS);
+    ck_assert_uint_eq(buffer_size, CLI_MAX_ALLOCATION);
+    ck_assert_int_eq(cli_pdf_encryption_buffer_size(
+                         CLI_MAX_ALLOCATION - 71, 68, 4, &buffer_size),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_pdf_encryption_buffer_size(SIZE_MAX, 68, 0,
+                                                    &buffer_size),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_pdf_encryption_buffer_size(SIZE_MAX - 68, 68, 1,
+                                                    &buffer_size),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_pdf_encryption_buffer_size(0, 68, 0, NULL),
+                     CL_ENULLARG);
+}
+END_TEST
+
 #if SIZE_MAX > UINT32_MAX
 START_TEST(test_pdf_stream_width_boundary_is_fail_visible)
 {
@@ -47801,6 +47833,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_crypt_decodeparms_are_unique_and_exact);
     tcase_add_test(tc_pdf, test_pdf_explicit_identity_crypt_precedes_supported_filters);
     tcase_add_test(tc_pdf, test_pdf_legacy_dictionary_length_boundary_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_encryption_buffer_size_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_flate_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_lzw_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_ascii85_markerless_partial_group_is_fail_visible);

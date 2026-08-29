@@ -54,6 +54,23 @@ Current-source GCC execution, sanitizer, complete text-normalization/ISO/HTML
 corpus, production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## PDF encryption password-check workspace admission — 2026-08-29
+
+The legacy PDF R2-R4 password checks formed 68 + fileIDlen (and, for R4, an
+additional four bytes) and allocated the result with raw calloc. fileIDlen is
+derived from the PDF /ID value, so a large encrypted document could bypass the
+individual allocation ceiling even though ordinary ClamAV allocations use the
+shared wrapper. The R3/R4 follow-up workspace had the same raw-allocation
+boundary. Both paths now use checked prefix/file-ID/suffix arithmetic and
+cli_max_calloc, with sticky incomplete state for overflow, over-capacity, or
+allocation failure. The registered
+test_pdf_encryption_buffer_size_is_fail_visible regression covers exact
+capacity, over-capacity, native addition overflow, and a null output pointer
+without materializing a large buffer.
+Current-source GCC execution, encrypted PDF corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## JavaScript-normalizer decoder table admission — 2026-08-29
 
 The JavaScript normalizer's `decode_de()` path allocated its delimiter-token
