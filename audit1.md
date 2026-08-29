@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip dynamic-buffer growth admission — 2026-08-28
+
+The vendored 7-Zip `DynBuf_Write()` helper previously formed `pos + size`
+and then added 25% growth without checked arithmetic. An invalid `pos > size`
+state could also make the available-space subtraction wrap. The helper now
+rejects invalid arguments and both growth overflows before allocation, while
+avoiding a zero-length copy from a null buffer. The registered
+`test_7z_dynbuf_growth_overflow_is_fail_visible` regression and source guards
+cover the boundary; current-source compilation and focused production-linked
+execution, complete 7-Zip/BCJ2 corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and final parser-family/release
+qualification remain open.
+
 ## HFS+ volume-header read status — 2026-08-28
 
 `hfsplus_volumeheader()` preflights the complete 512-byte header at offset

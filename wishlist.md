@@ -1,5 +1,14 @@
 # Wishlist
 
+## 7-Zip dynamic-buffer growth admission — 2026-08-28
+
+- Keep `DynBuf_Write()` fail-closed for invalid buffer invariants, null
+  arguments, `pos + size` overflow, and 25%-growth overflow before allocation.
+- Retain `test_7z_dynbuf_growth_overflow_is_fail_visible` and its source guard.
+  Keep current-source production-linked execution, complete 7-Zip/BCJ2
+  corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1,
+  and final parser-family/release evidence open.
+
 ## HFS+ volume-header read status — 2026-08-28
 
 - Preserve `CL_EREAD` for an in-range HFS+ volume-header fmap callback

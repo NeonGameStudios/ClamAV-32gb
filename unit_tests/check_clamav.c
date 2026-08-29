@@ -26853,6 +26853,37 @@ START_TEST(test_7z_output_range_is_bounded)
 }
 END_TEST
 
+static void *sevenzip_dynbuf_test_alloc(void *opaque, size_t size)
+{
+    (void)opaque;
+    return malloc(size == 0 ? 1 : size);
+}
+
+static void sevenzip_dynbuf_test_free(void *opaque, void *address)
+{
+    (void)opaque;
+    free(address);
+}
+
+START_TEST(test_7z_dynbuf_growth_overflow_is_fail_visible)
+{
+    CDynBuf buffer;
+    ISzAlloc alloc = {sevenzip_dynbuf_test_alloc, sevenzip_dynbuf_test_free};
+    uint8_t byte = 0;
+
+    DynBuf_Construct(&buffer);
+    buffer.size = SIZE_MAX;
+    buffer.pos  = SIZE_MAX;
+
+    ck_assert_int_eq(DynBuf_Write(&buffer, &byte, 1, &alloc), 0);
+    ck_assert_uint_eq(buffer.size, SIZE_MAX);
+    ck_assert_uint_eq(buffer.pos, SIZE_MAX);
+    ck_assert_ptr_null(buffer.data);
+
+    DynBuf_Free(&buffer, &alloc);
+}
+END_TEST
+
 START_TEST(test_7z_substream_size_overflow_is_fail_visible)
 {
     ck_assert(SzSubStreamsSizeAllowed(10, 0, 10));
@@ -45968,6 +45999,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_output_size_mismatch_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_legacy_fallback_discards_stream_prefix);
     tcase_add_test(tc_7z, test_7z_output_range_is_bounded);
+    tcase_add_test(tc_7z, test_7z_dynbuf_growth_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_substream_size_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_input_time_limit_is_fail_visible);

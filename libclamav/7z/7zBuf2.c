@@ -24,16 +24,26 @@ void DynBuf_SeekToBeg(CDynBuf *p)
 
 int DynBuf_Write(CDynBuf *p, const Byte *buf, size_t size, ISzAlloc *alloc)
 {
+  size_t newSize;
+  Byte *data;
+
+  if (p == 0 || alloc == 0 || p->pos > p->size || (size != 0 && buf == 0))
+    return 0;
+
   if (size > p->size - p->pos)
   {
-    size_t newSize = p->pos + size;
-    Byte *data;
+    if (size > (size_t)-1 - p->pos)
+      return 0;
+    newSize = p->pos + size;
+    if (newSize > (size_t)-1 - newSize / 4)
+      return 0;
     newSize += newSize / 4;
     data = (Byte *)alloc->Alloc(alloc, newSize);
     if (data == 0)
       return 0;
     p->size = newSize;
-    memcpy(data, p->data, p->pos);
+    if (p->pos != 0)
+      memcpy(data, p->data, p->pos);
     alloc->Free(alloc, p->data);
     p->data = data;
   }

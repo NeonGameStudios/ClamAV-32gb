@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## 7-Zip dynamic-buffer growth admission — 2026-08-28
+
+The vendored 7-Zip dynamic buffer now rejects invalid `pos > size` state,
+null arguments, `pos + size` overflow, and 25%-growth overflow before
+allocation. A zero-length copy from a null old buffer is avoided during a
+valid first allocation. The registered
+`test_7z_dynbuf_growth_overflow_is_fail_visible` regression and source guard
+cover the boundary. Current-source compilation and focused production-linked
+execution, complete 7-Zip/BCJ2 corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and final parser-family/release
+qualification remain required.
+
 ## HFS+ volume-header read status — 2026-08-28
 
 HFS+ admission preflights the complete 512-byte volume header before
