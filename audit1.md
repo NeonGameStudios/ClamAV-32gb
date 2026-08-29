@@ -14550,3 +14550,15 @@ that state before any engine-dependent work; the focused regression covers both
 paths. Current-source GCC compilation and linked execution, complete NSIS/SFX
 corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
 and parser-family qualification remain open.
+
+## Stats JSON buffer and escaping audit — 2026-08-29
+
+The legacy stats serializer formed `len * 2 + 1` without an overflow check,
+grew its buffer by only one fixed chunk even when a single string was larger,
+and used unbounded `sprintf()` calls for host metadata. It also emitted raw
+host, host-info, and virus-name strings and based sample commas on list links
+instead of serialized entries. The serializer now uses checked, individually
+bounded growth, measured appends, JSON string escaping, and explicit serialized
+sample tracking; the existing large-size regression covers long metadata,
+escaping, and skipped-tail comma validity. Current-source GCC, sanitizer,
+production-CVD/service, Sonic1, and final report qualification remain open.

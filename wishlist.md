@@ -7771,3 +7771,12 @@ qualification gates.
 - Add linked execution of the new regression and retain complete NSIS/SFX,
   sanitizer, production-CVD/service, materialized-large-file, and Sonic1
   qualification as open requirements.
+
+## Stats JSON buffer and escaping — 2026-08-29
+
+- Keep stats serialization behind checked native-size growth and the shared
+  individual-allocation ceiling; escape metadata and signature names before
+  emitting JSON and base commas on serialized samples.
+- Add current-source GCC/sanitizer execution of long metadata, escaped names,
+  and skipped-sample cases, while retaining production-CVD/service, Sonic1,
+  and final report qualification as open requirements.

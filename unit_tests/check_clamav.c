@@ -4512,31 +4512,31 @@ START_TEST(test_stats_preserves_large_sample_size)
     size_t large_size = (size_t)UINT32_MAX + 123;
     char expected[64];
     char *json;
+    char long_host_info[2048], *old_host_info;
 
     ck_assert_msg(NULL != intel, "stats state was not initialized");
-    memset(md5, 0x5a, sizeof(md5));
-    clamav_stats_flush(g_engine, intel);
-
-    old_maxsamples = intel->maxsamples;
-    old_maxmem     = intel->maxmem;
-    intel->maxsamples = UINT32_MAX;
-    intel->maxmem     = UINT32_MAX;
+    memset(md5, 0x5a, sizeof(md5)); clamav_stats_flush(g_engine, intel);
+    old_maxsamples = intel->maxsamples; old_maxmem = intel->maxmem; old_host_info = intel->host_info;
+    intel->maxsamples = UINT32_MAX; intel->maxmem = UINT32_MAX;
     g_engine->dconf->stats &= ~DCONF_STATS_DISABLED;
-
-    clamav_stats_add_sample("Large.Sample", md5, large_size, NULL, intel);
+    memset(long_host_info, 'h', sizeof(long_host_info) - 1); long_host_info[sizeof(long_host_info) - 1] = '\0'; intel->host_info = long_host_info;
+    clamav_stats_add_sample("Suppressed.Sample", md5, large_size, NULL, intel);
+    memset(md5, 0x5a, sizeof(md5)); clamav_stats_add_sample("Large.Sample\"Name\n", md5, large_size, NULL, intel);
     ck_assert_msg(NULL != intel->samples, "large stats sample was not recorded");
     ck_assert_msg((uint64_t)large_size == intel->samples->size, "large stats sample size was truncated");
+    ck_assert_ptr_nonnull(intel->samples->next); intel->samples->next->hits = 0;
+
 
     json = export_stats_to_json(g_engine, intel);
     ck_assert_msg(NULL != json, "large stats sample JSON was not produced");
     snprintf(expected, sizeof(expected), "\"size\": " STDu64, (uint64_t)large_size);
     ck_assert_msg(NULL != strstr(json, expected), "large stats sample JSON size was truncated: %s", json);
+    ck_assert_msg(NULL != strstr(json, "\"host_info\": \""), "long stats host info was not serialized");
+    ck_assert_msg(strlen(json) > sizeof(long_host_info), "long stats JSON was truncated");
+    ck_assert_msg(NULL != strstr(json, "Large.Sample\\\"Name\\n"), "stats string was not JSON escaped");
+    ck_assert_ptr_null(strstr(json, "},\n\t]\n}"));
     free(json);
-
-    clamav_stats_flush(g_engine, intel);
-    intel->maxsamples       = old_maxsamples;
-    intel->maxmem           = old_maxmem;
-    g_engine->dconf->stats  = old_stats_flags;
+    clamav_stats_flush(g_engine, intel); intel->host_info = old_host_info; intel->maxsamples = old_maxsamples; intel->maxmem = old_maxmem; g_engine->dconf->stats = old_stats_flags;
 }
 END_TEST
 

@@ -6884,7 +6884,7 @@ fixed-width-integer	unit_tests/check_clamav.c	45062	static void pe_icon_test_wri
 fixed-width-integer	unit_tests/check_clamav.c	4509	    uint32_t old_stats_flags = g_engine->dconf->stats;
 fixed-width-integer	unit_tests/check_clamav.c	4510	    uint32_t old_maxsamples;
 fixed-width-integer	unit_tests/check_clamav.c	4511	    uint32_t old_maxmem;
-fixed-width-integer	unit_tests/check_clamav.c	4528	    ck_assert_msg((uint64_t)large_size == intel->samples->size, "large stats sample size was truncated");
+fixed-width-integer	unit_tests/check_clamav.c	4526	    ck_assert_msg((uint64_t)large_size == intel->samples->size, "large stats sample size was truncated");
 fixed-width-integer	unit_tests/check_clamav.c	4532	    snprintf(expected, sizeof(expected), "\"size\": " STDu64, (uint64_t)large_size);
 fixed-width-integer	unit_tests/check_clamav.c	45546	    uint64_t scanned = 0;
 fixed-width-integer	unit_tests/check_clamav.c	4576	        (uint64_t)(offset - state->source_offset) >= state->length)
@@ -15113,14 +15113,29 @@ native-width-integer	libclamav/stats.h	30	void clamav_stats_remove_sample(const 
 native-width-integer	libclamav/stats.h	31	void clamav_stats_decrement_count(const char *virname, const unsigned char *md5, size_t size, void *cbdata);
 native-width-integer	libclamav/stats.h	32	size_t clamav_stats_get_num(void *cbdata);
 native-width-integer	libclamav/stats.h	33	size_t clamav_stats_get_size(void *cbdata);
-native-width-integer	libclamav/stats_json.c	182	                snprintf(buf + curused, bufsz - curused, "\t\t\t\t\t\"size\": %llu\n", (long long unsigned)sample->sections->sections[i].len);
-native-width-integer	libclamav/stats_json.c	43	char *hex_encode(char *buf, char *data, size_t len);
-native-width-integer	libclamav/stats_json.c	44	char *ensure_bufsize(char *buf, size_t *oldsize, size_t used, size_t additional);
-native-width-integer	libclamav/stats_json.c	47	char *hex_encode(char *buf, char *data, size_t len)
-native-width-integer	libclamav/stats_json.c	49	    size_t i;
-native-width-integer	libclamav/stats_json.c	51	    int t;
-native-width-integer	libclamav/stats_json.c	65	char *ensure_bufsize(char *buf, size_t *oldsize, size_t used, size_t additional)
-native-width-integer	libclamav/stats_json.c	87	    size_t bufsz, curused, i, j;
+native-width-integer	libclamav/stats_json.c	124	static char *json_appendf(char *buf, size_t *bufsz, size_t *used, const char *format, ...)
+native-width-integer	libclamav/stats_json.c	128	    int needed;
+native-width-integer	libclamav/stats_json.c	129	    int written;
+native-width-integer	libclamav/stats_json.c	140	    if (needed < 0 || (size_t)needed == SIZE_MAX ||
+native-width-integer	libclamav/stats_json.c	141	        (size_t)needed + 1 > SIZE_MAX - *used) {
+native-width-integer	libclamav/stats_json.c	147	    buf = ensure_bufsize(buf, bufsz, *used, (size_t)needed + 1);
+native-width-integer	libclamav/stats_json.c	159	    *used += (size_t)written;
+native-width-integer	libclamav/stats_json.c	163	static char *json_append_escaped(char *buf, size_t *bufsz, size_t *used, const char *value)
+native-width-integer	libclamav/stats_json.c	166	    size_t required = 2;
+native-width-integer	libclamav/stats_json.c	172	        size_t addition;
+native-width-integer	libclamav/stats_json.c	252	    size_t bufsz = JSON_BUFSZ;
+native-width-integer	libclamav/stats_json.c	253	    size_t curused = 0;
+native-width-integer	libclamav/stats_json.c	254	    size_t i, j;
+native-width-integer	libclamav/stats_json.c	45	char *hex_encode(char *buf, char *data, size_t len);
+native-width-integer	libclamav/stats_json.c	46	char *ensure_bufsize(char *buf, size_t *oldsize, size_t used, size_t additional);
+native-width-integer	libclamav/stats_json.c	49	char *hex_encode(char *buf, char *data, size_t len)
+native-width-integer	libclamav/stats_json.c	51	    size_t i;
+native-width-integer	libclamav/stats_json.c	72	char *ensure_bufsize(char *buf, size_t *oldsize, size_t used, size_t additional)
+native-width-integer	libclamav/stats_json.c	75	    size_t required;
+native-width-integer	libclamav/stats_json.c	76	    size_t growth;
+native-width-integer	libclamav/stats_json.c	77	    size_t chunks;
+native-width-integer	libclamav/stats_json.c	78	    size_t increase;
+native-width-integer	libclamav/stats_json.c	79	    size_t newsize;
 native-width-integer	libclamav/str.c	1055	int cli_hexnibbles(char *str, int len)
 native-width-integer	libclamav/str.c	1057	    int i;
 native-width-integer	libclamav/str.c	1059	        int c = cli_hex2int(str[i]);
@@ -20007,6 +20022,8 @@ native-width-integer	unit_tests/check_clamav.c	45079	static size_t pe_icon_read_
 native-width-integer	unit_tests/check_clamav.c	45081	static const void *pe_icon_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 native-width-integer	unit_tests/check_clamav.c	45091	static void pe_icon_test_build_resource_tree(uint8_t *data, size_t data_size)
 native-width-integer	unit_tests/check_clamav.c	4512	    size_t large_size = (size_t)UINT32_MAX + 123;
+native-width-integer	unit_tests/check_clamav.c	4534	    ck_assert_msg(NULL != strstr(json, "\"host_info\": \""), "long stats host info was not serialized");
+native-width-integer	unit_tests/check_clamav.c	4535	    ck_assert_msg(strlen(json) > sizeof(long_host_info), "long stats JSON was truncated");
 native-width-integer	unit_tests/check_clamav.c	4543	static int get_test_file(int i, char *file, unsigned fsize, unsigned long *size)
 native-width-integer	unit_tests/check_clamav.c	4545	    int fd;
 native-width-integer	unit_tests/check_clamav.c	45545	    unsigned int sigs = 0;
@@ -21245,6 +21262,14 @@ boundary-constant	libclamav/scanners.c	9604	            *scanned = UINT32_MAX;
 boundary-constant	libclamav/scanners.c	9646	        if (SIZEOF_LONG == 4 && scanned_out > UINT32_MAX) {
 boundary-constant	libclamav/scanners.c	9647	            cli_warnmsg("cl_scanfile_callback: scanned_out exceeds UINT32_MAX, setting to UINT32_MAX\n");
 boundary-constant	libclamav/scanners.c	9648	            *scanned = UINT32_MAX;
+boundary-constant	libclamav/stats_json.c	100	    if (chunks > SIZE_MAX / JSON_BUFSZ) {
+boundary-constant	libclamav/stats_json.c	106	    if (increase > SIZE_MAX - *oldsize)
+boundary-constant	libclamav/stats_json.c	140	    if (needed < 0 || (size_t)needed == SIZE_MAX ||
+boundary-constant	libclamav/stats_json.c	141	        (size_t)needed + 1 > SIZE_MAX - *used) {
+boundary-constant	libclamav/stats_json.c	182	        if (addition > SIZE_MAX - required) {
+boundary-constant	libclamav/stats_json.c	188	    if (required == SIZE_MAX || *used > SIZE_MAX - (required + 1)) {
+boundary-constant	libclamav/stats_json.c	55	    if ((len != 0 && data == NULL) || len > (SIZE_MAX - 1) / 2)
+boundary-constant	libclamav/stats_json.c	81	    if (oldsize == NULL || used > *oldsize || additional > SIZE_MAX - used) {
 boundary-constant	libclamav/str.c	737	    cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
 boundary-constant	libclamav/str.c	738	    cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
 boundary-constant	libclamav/str.c	759	        acc   = ULONG_MAX;
@@ -21573,8 +21598,7 @@ boundary-constant	unit_tests/check_clamav.c	44859	    jpeg_photoshop_boundary_fa
 boundary-constant	unit_tests/check_clamav.c	45079	static size_t pe_icon_read_failure_offset = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	4512	    size_t large_size = (size_t)UINT32_MAX + 123;
 boundary-constant	unit_tests/check_clamav.c	45162	    pe_icon_read_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	4522	    intel->maxsamples = UINT32_MAX;
-boundary-constant	unit_tests/check_clamav.c	4523	    intel->maxmem     = UINT32_MAX;
+boundary-constant	unit_tests/check_clamav.c	4520	    intel->maxsamples = UINT32_MAX; intel->maxmem = UINT32_MAX;
 boundary-constant	unit_tests/check_clamav.c	45347	    pe_icon_read_failure_offset = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	45403	    pe_icon_test_write_u32(data + 0x100, UINT32_MAX);
 boundary-constant	unit_tests/check_clamav.c	45487	    pe_icon_read_failure_offset = SIZE_MAX;
@@ -23790,9 +23814,9 @@ format-width	libclamav/stats.c	468	        cli_warnmsg("clamav_stats_decrement_c
 format-width	libclamav/stats.c	492	        cli_warnmsg("clamav_stats_decrement_count: unlocking mutex failed (err: %d): %s\n", err, strerror(err));
 format-width	libclamav/stats.c	526	        cli_warnmsg("clamav_stats_get_size: locking mutex failed (err: %d): %s\n", err, strerror(err));
 format-width	libclamav/stats.c	543	        cli_warnmsg("clamav_stats_get_size: unlocking mutex failed (err: %d): %s\n", err, strerror(err));
-format-width	libclamav/stats_json.c	129	        snprintf(md5, sizeof(md5), "%u", sample->hits);
-format-width	libclamav/stats_json.c	182	                snprintf(buf + curused, bufsz - curused, "\t\t\t\t\t\"size\": %llu\n", (long long unsigned)sample->sections->sections[i].len);
-format-width	libclamav/stats_json.c	72	            cli_errmsg("ensure_bufsize: Could not allocate more memory: %s (errno: %d)\n", strerror(errno), errno);
+format-width	libclamav/stats_json.c	115	        cli_errmsg("ensure_bufsize: Could not allocate more memory: %s (errno: %d)\n", strerror(errno), errno);
+format-width	libclamav/stats_json.c	320	        snprintf(md5, sizeof(md5), "%u", sample->hits);
+format-width	libclamav/stats_json.c	356	                buf = json_appendf(buf, &bufsz, &curused, "\t\t\t\t\t\"size\": %zu\n", sample->sections->sections[i].len);
 format-width	libclamav/str.c	132	        cli_errmsg("cli_hex2ui(): Malformed hexstring: %s (length: %u)\n", hex,
 format-width	libclamav/str.c	156	        cli_errmsg("cli_hex2str(): Malformed hexstring: %s (length: %u)\n", hex,
 format-width	libclamav/str.c	203	        cli_errmsg("cli_hex2num(): Malformed hexstring: %s (length: %d)\n", hex,
@@ -33305,35 +33329,26 @@ offset-size-arithmetic	libclamav/stats.h	30	void clamav_stats_remove_sample(cons
 offset-size-arithmetic	libclamav/stats.h	31	void clamav_stats_decrement_count(const char *virname, const unsigned char *md5, size_t size, void *cbdata);
 offset-size-arithmetic	libclamav/stats.h	32	size_t clamav_stats_get_num(void *cbdata);
 offset-size-arithmetic	libclamav/stats.h	33	size_t clamav_stats_get_size(void *cbdata);
-offset-size-arithmetic	libclamav/stats_json.c	102	        sprintf(buf + strlen(buf), "\t\"host_info\": \"%s\",\n", intel->host_info);
-offset-size-arithmetic	libclamav/stats_json.c	112	        hex_encode(md5, sample->md5, sizeof(sample->md5));
-offset-size-arithmetic	libclamav/stats_json.c	114	        buf = ensure_bufsize(buf, &bufsz, curused, strlen(md5) + sizeof(SAMPLE_PREFIX) + 45);
-offset-size-arithmetic	libclamav/stats_json.c	119	        curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	121	        buf = ensure_bufsize(buf, &bufsz, curused, sizeof("\t\t\t\"hash\": \"\",\n") + strlen(md5) + 1);
-offset-size-arithmetic	libclamav/stats_json.c	126	        curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	129	        snprintf(md5, sizeof(md5), "%u", sample->hits);
-offset-size-arithmetic	libclamav/stats_json.c	131	        buf = ensure_bufsize(buf, &bufsz, curused, strlen(md5) + 20);
-offset-size-arithmetic	libclamav/stats_json.c	136	        curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	138	        snprintf(md5, sizeof(md5), STDu64, sample->size);
-offset-size-arithmetic	libclamav/stats_json.c	140	        buf = ensure_bufsize(buf, &bufsz, curused, strlen(md5) + 20);
-offset-size-arithmetic	libclamav/stats_json.c	145	        curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	157	            curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	165	                curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	176	                curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	182	                snprintf(buf + curused, bufsz - curused, "\t\t\t\t\t\"size\": %llu\n", (long long unsigned)sample->sections->sections[i].len);
-offset-size-arithmetic	libclamav/stats_json.c	183	                curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	190	                curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	198	            curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	202	        curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	205	            buf = ensure_bufsize(buf, &bufsz, curused, strlen(sample->virus_name[i]) + 5);
-offset-size-arithmetic	libclamav/stats_json.c	210	            curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	218	        curused += strlen(buf + curused);
-offset-size-arithmetic	libclamav/stats_json.c	44	char *ensure_bufsize(char *buf, size_t *oldsize, size_t used, size_t additional);
-offset-size-arithmetic	libclamav/stats_json.c	53	    p = (buf != NULL) ? buf : calloc(1, (len * 2) + 1);
-offset-size-arithmetic	libclamav/stats_json.c	65	char *ensure_bufsize(char *buf, size_t *oldsize, size_t used, size_t additional)
-offset-size-arithmetic	libclamav/stats_json.c	69	    if (*oldsize - used < additional) {
-offset-size-arithmetic	libclamav/stats_json.c	70	        p = realloc(buf, *oldsize + JSON_BUFSZ);
-offset-size-arithmetic	libclamav/stats_json.c	77	        *oldsize += JSON_BUFSZ;
+offset-size-arithmetic	libclamav/stats_json.c	109	        newsize = *oldsize + increase;
+offset-size-arithmetic	libclamav/stats_json.c	124	static char *json_appendf(char *buf, size_t *bufsz, size_t *used, const char *format, ...)
+offset-size-arithmetic	libclamav/stats_json.c	141	        (size_t)needed + 1 > SIZE_MAX - *used) {
+offset-size-arithmetic	libclamav/stats_json.c	147	    buf = ensure_bufsize(buf, bufsz, *used, (size_t)needed + 1);
+offset-size-arithmetic	libclamav/stats_json.c	163	static char *json_append_escaped(char *buf, size_t *bufsz, size_t *used, const char *value)
+offset-size-arithmetic	libclamav/stats_json.c	193	    buf = ensure_bufsize(buf, bufsz, *used, required + 1);
+offset-size-arithmetic	libclamav/stats_json.c	283	        buf = json_append_escaped(buf, &bufsz, &curused, intel->host_info);
+offset-size-arithmetic	libclamav/stats_json.c	306	        if (hex_encode(md5, sample->md5, sizeof(sample->md5)) == NULL) {
+offset-size-arithmetic	libclamav/stats_json.c	320	        snprintf(md5, sizeof(md5), "%u", sample->hits);
+offset-size-arithmetic	libclamav/stats_json.c	325	        snprintf(md5, sizeof(md5), STDu64, sample->size);
+offset-size-arithmetic	libclamav/stats_json.c	351	                    snprintf(md5 + (j * 2), sizeof(md5) - (j * 2), "%02x", sample->sections->sections[i].md5[j]);
+offset-size-arithmetic	libclamav/stats_json.c	356	                buf = json_appendf(buf, &bufsz, &curused, "\t\t\t\t\t\"size\": %zu\n", sample->sections->sections[i].len);
+offset-size-arithmetic	libclamav/stats_json.c	382	                buf = json_append_escaped(buf, &bufsz, &curused, sample->virus_name[i]);
+offset-size-arithmetic	libclamav/stats_json.c	46	char *ensure_bufsize(char *buf, size_t *oldsize, size_t used, size_t additional);
+offset-size-arithmetic	libclamav/stats_json.c	55	    if ((len != 0 && data == NULL) || len > (SIZE_MAX - 1) / 2)
+offset-size-arithmetic	libclamav/stats_json.c	58	    p = (buf != NULL) ? buf : cli_max_calloc(1, (len * 2) + 1);
+offset-size-arithmetic	libclamav/stats_json.c	67	    p[len * 2] = '\0';
+offset-size-arithmetic	libclamav/stats_json.c	72	char *ensure_bufsize(char *buf, size_t *oldsize, size_t used, size_t additional)
+offset-size-arithmetic	libclamav/stats_json.c	81	    if (oldsize == NULL || used > *oldsize || additional > SIZE_MAX - used) {
+offset-size-arithmetic	libclamav/stats_json.c	86	    if (additional <= *oldsize - used)
 offset-size-arithmetic	libclamav/str.c	1037	                        buf->pos += output_utf8(u, (unsigned char *)&buf->data[buf->pos]);
 offset-size-arithmetic	libclamav/str.c	1081	    index = filepath + filepath_len - 1;
 offset-size-arithmetic	libclamav/str.c	1103	    if (0 == CLI_STRNLEN(index, filepath_len - (index - filepath))) {
@@ -38401,7 +38416,8 @@ offset-size-arithmetic	unit_tests/check_clamav.c	44930	    written = text_normal
 offset-size-arithmetic	unit_tests/check_clamav.c	4497	    ck_assert_msg(CL_VIRUS == clean_cache_check(&ctx), "large clean-cache size aliased its truncated 32-bit value");
 offset-size-arithmetic	unit_tests/check_clamav.c	45086	    if (len == 0 || at > map->len || len > map->len - at)
 offset-size-arithmetic	unit_tests/check_clamav.c	4512	    size_t large_size = (size_t)UINT32_MAX + 123;
-offset-size-arithmetic	unit_tests/check_clamav.c	4528	    ck_assert_msg((uint64_t)large_size == intel->samples->size, "large stats sample size was truncated");
+offset-size-arithmetic	unit_tests/check_clamav.c	4522	    memset(long_host_info, 'h', sizeof(long_host_info) - 1); long_host_info[sizeof(long_host_info) - 1] = '\0'; intel->host_info = long_host_info;
+offset-size-arithmetic	unit_tests/check_clamav.c	4526	    ck_assert_msg((uint64_t)large_size == intel->samples->size, "large stats sample size was truncated");
 offset-size-arithmetic	unit_tests/check_clamav.c	45372	     * declared size wraps a 32-bit file offset in the old implementation. */
 offset-size-arithmetic	unit_tests/check_clamav.c	4543	static int get_test_file(int i, char *file, unsigned fsize, unsigned long *size)
 offset-size-arithmetic	unit_tests/check_clamav.c	45555	    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1),
