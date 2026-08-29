@@ -1062,12 +1062,22 @@ cl_error_t cli_elfheader(cli_ctx *ctx, struct cli_exe_info *elfinfo)
         cli_dbgmsg("cli_elfheader: Assumption Violated: elfinfo->offset != 0\n");
     }
 
+    ret = cli_elf_checktimelimit(ctx, "ELF metadata inspection reached the configured time limit");
+    if (ret != CL_SUCCESS) {
+        goto done;
+    }
+
     ret = cli_elf_fileheader(NULL, ctx->fmap, &file_hdr, &conv, &is64);
     if (ret != CL_SUCCESS) {
         goto done;
     }
 
     /* Program headers and Entry */
+    ret = cli_elf_checktimelimit(ctx, "ELF metadata program-header inspection reached the configured time limit");
+    if (ret != CL_SUCCESS) {
+        goto done;
+    }
+
     if (is64) {
         ret = cli_elf_ph64(NULL, ctx->fmap, elfinfo, &(file_hdr.hdr64), conv);
     } else {
@@ -1078,6 +1088,11 @@ cl_error_t cli_elfheader(cli_ctx *ctx, struct cli_exe_info *elfinfo)
     }
 
     /* Section Headers */
+    ret = cli_elf_checktimelimit(ctx, "ELF metadata section-header inspection reached the configured time limit");
+    if (ret != CL_SUCCESS) {
+        goto done;
+    }
+
     if (is64) {
         ret = cli_elf_sh64(NULL, ctx->fmap, elfinfo, &(file_hdr.hdr64), conv);
     } else {

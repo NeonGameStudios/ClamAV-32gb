@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ELF metadata deadline admission — 2026-08-29
+
+The metadata-only `cli_elfheader()` path now checks the shared deadline before
+each required header, program-table, and section-table phase. This prevents a
+metadata caller from starting a required walk after the scan has expired. The
+registered `test_elf_metadata_time_limit_is_fail_visible` regression and a
+disposable direct current-source GCC check linked against the existing
+production shared libraries pass 1/1, preserving `CL_ETIMEOUT`, the specific
+metadata deadline reason, and non-cacheability. Full coherent ELF TCase,
+corpus, sanitizer, production-CVD/service, materialized-large-file, certified
+Linux x86-64, Sonic1, parser-family, and release qualification remain
+required.
+
 ## ELF timeout-path isolation — 2026-08-29
 
 The mixed production-linked `elf` TCase remains non-authoritative because its

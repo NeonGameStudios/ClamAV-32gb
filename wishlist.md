@@ -1,5 +1,17 @@
 # Wishlist
 
+## ELF metadata deadline admission — 2026-08-29
+
+- Keep `cli_elfheader()` deadline checks at the header, program-table, and
+  section-table phase boundaries so metadata-only callers cannot begin a
+  required walk after the shared deadline has expired.
+- Retain `test_elf_metadata_time_limit_is_fail_visible` and its source guards;
+  the isolated current-source production-shared-library check passes 1/1 for
+  `CL_ETIMEOUT`, the specific metadata deadline reason, and non-cacheability.
+  Complete coherent ELF TCase, corpus, sanitizer, production-CVD/service,
+  materialized large-file, certified Linux x86-64, Sonic1, parser-family, and
+  release qualification remain open.
+
 ## ELF timeout-path isolation — 2026-08-29
 
 - Treat the mixed `elf` TCase timeout SIGSEGV as a stale internal `cli_ctx`

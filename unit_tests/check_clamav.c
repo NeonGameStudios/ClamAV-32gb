@@ -38610,6 +38610,35 @@ START_TEST(test_elf_metadata_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_elf_metadata_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    struct cli_exe_info exeinfo;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+    cli_exe_info_init(&exeinfo, 0);
+
+    ck_assert_int_eq(cli_elfheader(&ctx, &exeinfo), CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ELF metadata inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cli_exe_info_destroy(&exeinfo);
+    cl_fmap_close(map);
+}
+END_TEST
+
 static const void *elf_truncated_program_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -45664,6 +45693,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_elf_map, test_elf_unknown_data_encoding_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_header_size_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
+    tcase_add_test(tc_elf_map, test_elf_metadata_time_limit_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_truncated_header_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_truncated_program_header_is_parse_error);
     tcase_add_test(tc_elf_map, test_elf_program_table_is_required_without_entrypoint);

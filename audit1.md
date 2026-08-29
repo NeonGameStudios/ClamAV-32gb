@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## ELF metadata deadline admission — 2026-08-29
+
+The metadata-only `cli_elfheader()` path could enter required ELF header,
+program-table, and section-table parsing without checking the shared scan
+deadline. It now checks the deadline at each phase boundary before borrowing
+or traversing the next required structure. The registered
+`test_elf_metadata_time_limit_is_fail_visible` regression and a disposable
+direct current-source GCC check linked against the existing production shared
+libraries pass 1/1: an expired deadline returns `CL_ETIMEOUT`, preserves the
+specific metadata deadline reason, and taints the fmap as non-cacheable. Full
+coherent ELF TCase, corpus, sanitizer, production CVD/service, materialized
+large-file, certified Linux x86-64, Sonic1, and parser-family/release
+qualification remain open.
+
 ## ELF timeout-path isolation — 2026-08-29
 
 The existing mixed production-linked `elf` TCase still reports a timeout-test
