@@ -202,6 +202,28 @@ does not contain all current internal helpers. Full OneNote corpus, current
 full-C ABI, sanitizer, production-CVD/service, materialized-large-file,
 Sonic1, and parser-family qualification remain open.
 
+## Embedded parser qualification recheck — 2026-08-29
+
+The authoritative current-source Docker harness was reused without installing
+software. AutoIt admission, SFX admission, and the repository-generated EA05
+stored/compressed plus EA06 script corpus now pass together as 9/9 against the
+current `autoit.c` object and production-linked libraries; the EA06 script
+oracle completes at 65,557 bytes. The exact-tail `CL_TYPE_BINARY_DATA` public
+dispatch case passes 1/1. The current `special.c` object and production-linked
+Mydoom detector TCase pass 5/5, including null/missing-map, in-range callback
+failure, unaligned input, and the two-record public-dispatch corpus.
+
+A fresh coherent current-source BinHex relink passes 11/11 focused map and
+failure checks. Fresh current `scanners.c` and `libmspack.c` objects pass all
+three CABSFX admission checks (3/3). The six-check BZip2 core rerun passes
+4/6: truncation, callback failures, and concatenated-stream inspection pass;
+the two materialized corpus cases still return `CL_EPARSE` after reaching the
+downstream malformed InstallShield record (`InstallShield file record
+contained an invalid size or range`) and therefore are not counted as BZip2
+child-detection evidence. Full parser-family, sanitizer, production-CVD/
+service, materialized large-file, certified Linux x86-64, Sonic1, and final
+release qualification remain open.
+
 ## GIF short-signature admission — 2026-08-28
 
 The GIF parser returned clean when a forced `CL_TYPE_GIF` entry supplied a

@@ -7085,3 +7085,15 @@ qualification gates.
   Keep the broader OneNote corpus, full-C ABI, sanitizer, production-CVD/
   service, materialized-large-file, Sonic1, and parser-family qualification
   open.
+
+## Embedded parser qualification recheck — 2026-08-29
+
+- Retain the fresh current-source production-linked evidence: AutoIt
+  admission/SFX/generated corpus 9/9, binary-data exact-tail dispatch 1/1,
+  Mydoom detector 5/5, BinHex focused map/failure 11/11, and CABSFX 3/3.
+- Keep BZip2’s two materialized corpus detections open until the downstream
+  InstallShield malformed-record path is separately qualified; the current
+  six-check BZip2 core run is 4/6 with the two corpus cases returning
+  fail-visible `CL_EPARSE`.
+- Complete the remaining parser-family, sanitizer, production-CVD/service,
+  materialized-large-file, certified Linux x86-64, Sonic1, and release gates.
