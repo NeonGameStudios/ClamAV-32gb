@@ -14386,7 +14386,8 @@ native-width-integer	libclamav/rebuildpe.h	30	int cli_rebuildpe(char *, struct c
 native-width-integer	libclamav/rebuildpe.h	31	int cli_rebuildpe_align(char *, struct cli_exe_section *, int, uint32_t, uint32_t, uint32_t, uint32_t, int, uint32_t);
 native-width-integer	libclamav/rebuildpe.h	32	int cli_rebuildpe_ctx(struct cli_ctx_tag *, char *, struct cli_exe_section *, int, uint32_t, uint32_t, uint32_t, uint32_t, int);
 native-width-integer	libclamav/rebuildpe.h	33	int cli_rebuildpe_align_ctx(struct cli_ctx_tag *, char *, struct cli_exe_section *, int, uint32_t, uint32_t, uint32_t, uint32_t, int, uint32_t);
-native-width-integer	libclamav/regex/engine.c	1018	pchar(int ch)
+native-width-integer	libclamav/regex/engine.c	1012		(void)printf("%ld-%ld\n", (long)startst, (long)stopst);
+native-width-integer	libclamav/regex/engine.c	1032	pchar(int ch)
 native-width-integer	libclamav/regex/engine.c	109	static void print(struct match *, const char *, states, int, FILE *);
 native-width-integer	libclamav/regex/engine.c	116	static const char *pchar(int);
 native-width-integer	libclamav/regex/engine.c	123	static int nope = 0;
@@ -14394,32 +14395,36 @@ native-width-integer	libclamav/regex/engine.c	133	static int			/* 0 success, REG
 native-width-integer	libclamav/regex/engine.c	134	matcher(struct re_guts *g, const char *string, size_t nmatch,
 native-width-integer	libclamav/regex/engine.c	135	    regmatch_t pmatch[], int eflags)
 native-width-integer	libclamav/regex/engine.c	138		int i;
-native-width-integer	libclamav/regex/engine.c	299		int i;
-native-width-integer	libclamav/regex/engine.c	355					/* how long could this one be? */
-native-width-integer	libclamav/regex/engine.c	379					/* how long could this one be? */
-native-width-integer	libclamav/regex/engine.c	415					/* how long could this one be? */
-native-width-integer	libclamav/regex/engine.c	479	    sopno stopst, sopno lev, int rec)			/* PLUS nesting level */
-native-width-integer	libclamav/regex/engine.c	481		int i;
-native-width-integer	libclamav/regex/engine.c	488		size_t len;
-native-width-integer	libclamav/regex/engine.c	489		int hard;
-native-width-integer	libclamav/regex/engine.c	682		int c;
-native-width-integer	libclamav/regex/engine.c	683		int lastc;		/* previous c */
-native-width-integer	libclamav/regex/engine.c	684		int flagch;
-native-width-integer	libclamav/regex/engine.c	685		int i;
+native-width-integer	libclamav/regex/engine.c	212				size_t pmatch_size;
+native-width-integer	libclamav/regex/engine.c	213				if (m->g->nsub == (size_t)-1 ||
+native-width-integer	libclamav/regex/engine.c	233					size_t lastpos_size;
+native-width-integer	libclamav/regex/engine.c	234					if ((size_t)g->nplus == (size_t)-1 ||
+native-width-integer	libclamav/regex/engine.c	235						!regex_allocation_size((size_t)g->nplus + 1, sizeof(char *), &lastpos_size)) {
+native-width-integer	libclamav/regex/engine.c	313		int i;
+native-width-integer	libclamav/regex/engine.c	369					/* how long could this one be? */
+native-width-integer	libclamav/regex/engine.c	393					/* how long could this one be? */
+native-width-integer	libclamav/regex/engine.c	429					/* how long could this one be? */
+native-width-integer	libclamav/regex/engine.c	493	    sopno stopst, sopno lev, int rec)			/* PLUS nesting level */
+native-width-integer	libclamav/regex/engine.c	495		int i;
+native-width-integer	libclamav/regex/engine.c	502		size_t len;
+native-width-integer	libclamav/regex/engine.c	503		int hard;
+native-width-integer	libclamav/regex/engine.c	696		int c;
+native-width-integer	libclamav/regex/engine.c	697		int lastc;		/* previous c */
+native-width-integer	libclamav/regex/engine.c	698		int flagch;
+native-width-integer	libclamav/regex/engine.c	699		int i;
 native-width-integer	libclamav/regex/engine.c	73		int eflags;
-native-width-integer	libclamav/regex/engine.c	771		int c;
-native-width-integer	libclamav/regex/engine.c	772		int lastc;		/* previous c */
-native-width-integer	libclamav/regex/engine.c	773		int flagch;
-native-width-integer	libclamav/regex/engine.c	774		int i;
-native-width-integer	libclamav/regex/engine.c	853	    int ch,			/* character or NONCHAR code */
-native-width-integer	libclamav/regex/engine.c	861		int i;
+native-width-integer	libclamav/regex/engine.c	785		int c;
+native-width-integer	libclamav/regex/engine.c	786		int lastc;		/* previous c */
+native-width-integer	libclamav/regex/engine.c	787		int flagch;
+native-width-integer	libclamav/regex/engine.c	788		int i;
+native-width-integer	libclamav/regex/engine.c	867	    int ch,			/* character or NONCHAR code */
 native-width-integer	libclamav/regex/engine.c	87	static int matcher(struct re_guts *, const char *, size_t, regmatch_t[], int);
+native-width-integer	libclamav/regex/engine.c	875		int i;
 native-width-integer	libclamav/regex/engine.c	91	    sopno, sopno, int);
 native-width-integer	libclamav/regex/engine.c	96	static states step(struct re_guts *, sopno, sopno, states, int, states);
-native-width-integer	libclamav/regex/engine.c	966	print(struct match *m, const char *caption, states st, int ch, FILE *d)
-native-width-integer	libclamav/regex/engine.c	969		int i;
-native-width-integer	libclamav/regex/engine.c	970		int first = 1;
-native-width-integer	libclamav/regex/engine.c	998		(void)printf("%ld-%ld\n", (long)startst, (long)stopst);
+native-width-integer	libclamav/regex/engine.c	980	print(struct match *m, const char *caption, states st, int ch, FILE *d)
+native-width-integer	libclamav/regex/engine.c	983		int i;
+native-width-integer	libclamav/regex/engine.c	984		int first = 1;
 native-width-integer	libclamav/regex/regcomp.c	1021	seterr(struct parse *p, int e)
 native-width-integer	libclamav/regex/regcomp.c	1035		int no = p->g->ncsets++;
 native-width-integer	libclamav/regex/regcomp.c	1036		size_t nc;
@@ -14533,23 +14538,27 @@ native-width-integer	libclamav/regex/regex2.h	154		int backrefs;		/* does it use
 native-width-integer	libclamav/regex/regex2.h	155		size_t nsub;		/* copy of re_nsub */
 native-width-integer	libclamav/regex/regex2.h	62	typedef unsigned long sop;	/* strip operator */
 native-width-integer	libclamav/regex/regex2.h	63	typedef long sopno;
-native-width-integer	libclamav/regex/regexec.c	112	#define	STATEVARS	long vn; char *space
-native-width-integer	libclamav/regex/regexec.c	118	#define	onestate	long
-native-width-integer	libclamav/regex/regexec.c	139	int				/* 0 success, REG_NOMATCH failure */
-native-width-integer	libclamav/regex/regexec.c	140	cli_regexec(const regex_t *preg, const char *string, size_t nmatch,
-native-width-integer	libclamav/regex/regexec.c	141	    regmatch_t pmatch[], int eflags)
-native-width-integer	libclamav/regex/regexec.c	158		if ((unsigned long)g->nstates <= CHAR_BIT*sizeof(states1) && !(eflags&REG_LARGE))
-native-width-integer	libclamav/regex/regexec.c	57	#define	states	long
-native-width-integer	libclamav/regex/regexec.c	58	#define	states1	long		/* for later use in cli_regexec() decision */
-native-width-integer	libclamav/regex/regexec.c	60	#define	SET0(v, n)	((v) &= ~((unsigned long)1 << (n)))
-native-width-integer	libclamav/regex/regexec.c	61	#define	SET1(v, n)	((v) |= (unsigned long)1 << (n))
-native-width-integer	libclamav/regex/regexec.c	62	#define	ISSET(v, n)	(((v) & ((unsigned long)1 << (n))) != 0)
-native-width-integer	libclamav/regex/regexec.c	65	#define	STATEVARS	long dummy	/* dummy version */
-native-width-integer	libclamav/regex/regexec.c	69	#define	onestate	long
-native-width-integer	libclamav/regex/regexec.c	70	#define	INIT(o, n)	((o) = (unsigned long)1 << (n))
-native-width-integer	libclamav/regex/regexec.c	75	#define	FWD(dst, src, n)	((dst) |= ((unsigned long)(src)&(here)) << (n))
-native-width-integer	libclamav/regex/regexec.c	76	#define	BACK(dst, src, n)	((dst) |= ((unsigned long)(src)&(here)) >> (n))
-native-width-integer	libclamav/regex/regexec.c	77	#define	ISSETBACK(v, n)		(((v) & ((unsigned long)here >> (n))) != 0)
+native-width-integer	libclamav/regex/regexec.c	121	#define	STATEVARS	long vn; char *space
+native-width-integer	libclamav/regex/regexec.c	122	#define	STATESETUP(m, nv)	{ size_t state_size; \
+native-width-integer	libclamav/regex/regexec.c	123					if (!regex_allocation_size((size_t)(nv), (size_t)(m)->g->nstates, &state_size)) return(REG_ESPACE); \
+native-width-integer	libclamav/regex/regexec.c	129	#define	onestate	long
+native-width-integer	libclamav/regex/regexec.c	150	int				/* 0 success, REG_NOMATCH failure */
+native-width-integer	libclamav/regex/regexec.c	151	cli_regexec(const regex_t *preg, const char *string, size_t nmatch,
+native-width-integer	libclamav/regex/regexec.c	152	    regmatch_t pmatch[], int eflags)
+native-width-integer	libclamav/regex/regexec.c	169		if ((unsigned long)g->nstates <= CHAR_BIT*sizeof(states1) && !(eflags&REG_LARGE))
+native-width-integer	libclamav/regex/regexec.c	56	static int regex_allocation_size(size_t count, size_t element_size, size_t *size)
+native-width-integer	libclamav/regex/regexec.c	58	    if (size == NULL || element_size == 0 || count > (size_t)-1 / element_size)
+native-width-integer	libclamav/regex/regexec.c	66	#define	states	long
+native-width-integer	libclamav/regex/regexec.c	67	#define	states1	long		/* for later use in cli_regexec() decision */
+native-width-integer	libclamav/regex/regexec.c	69	#define	SET0(v, n)	((v) &= ~((unsigned long)1 << (n)))
+native-width-integer	libclamav/regex/regexec.c	70	#define	SET1(v, n)	((v) |= (unsigned long)1 << (n))
+native-width-integer	libclamav/regex/regexec.c	71	#define	ISSET(v, n)	(((v) & ((unsigned long)1 << (n))) != 0)
+native-width-integer	libclamav/regex/regexec.c	74	#define	STATEVARS	long dummy	/* dummy version */
+native-width-integer	libclamav/regex/regexec.c	78	#define	onestate	long
+native-width-integer	libclamav/regex/regexec.c	79	#define	INIT(o, n)	((o) = (unsigned long)1 << (n))
+native-width-integer	libclamav/regex/regexec.c	84	#define	FWD(dst, src, n)	((dst) |= ((unsigned long)(src)&(here)) << (n))
+native-width-integer	libclamav/regex/regexec.c	85	#define	BACK(dst, src, n)	((dst) |= ((unsigned long)(src)&(here)) >> (n))
+native-width-integer	libclamav/regex/regexec.c	86	#define	ISSETBACK(v, n)		(((v) & ((unsigned long)here >> (n))) != 0)
 native-width-integer	libclamav/regex/strlcpy.c	32	size_t
 native-width-integer	libclamav/regex/strlcpy.c	33	cli_strlcpy(char *dst, const char *src, size_t siz)
 native-width-integer	libclamav/regex/strlcpy.c	40		size_t n = siz;
@@ -23631,8 +23640,8 @@ format-width	libclamav/readdb.c	6317	            cli_dbgmsg("Matcher[%u]: %s: AC
 format-width	libclamav/readdb.c	741	        if (sscanf(wild, "%c%zu%c", &l, &range, &r) == 3 && l == '{' && r == '}' && range > 0 && range < 128) {
 format-width	libclamav/readdb.c	932	                cli_errmsg("cli_add_content_match_pattern: Can't extract part %zu of partial signature.\n", i);
 format-width	libclamav/rebuildpe.c	211	            cli_dbgmsg("More sections than expect (%d). The section number in the rebuilt pe section name was truncated.\n", i);
-format-width	libclamav/regex/engine.c	979				(void)fprintf(d, "%s%d", (first) ? "\t" : ", ", i);
-format-width	libclamav/regex/engine.c	998		(void)printf("%ld-%ld\n", (long)startst, (long)stopst);
+format-width	libclamav/regex/engine.c	1012		(void)printf("%ld-%ld\n", (long)startst, (long)stopst);
+format-width	libclamav/regex/engine.c	993				(void)fprintf(d, "%s%d", (first) ? "\t" : ", ", i);
 format-width	libclamav/regex/regerror.c	127		(void)snprintf(localbuf, localbufsize, "%d", r->code);
 format-width	libclamav/regex_list.c	100	    cli_dbgmsg("calc_pos_with_skip: skip:%llu, %llu - %llu \"%s\",\"%s\"\n", (long long unsigned)pos, (long long unsigned)info->host_start,
 format-width	libclamav/regex_list.c	384	            cli_dbgmsg("regex list line %s not loaded (required f-level: %u)\n", line, (unsigned int)min);
@@ -32504,73 +32513,76 @@ offset-size-arithmetic	libclamav/rebuildpe.c	237	            datasize += PESALIG
 offset-size-arithmetic	libclamav/rebuildpe.c	48	#define EC32(x) le32_to_host(x) /* Convert little endian to host */
 offset-size-arithmetic	libclamav/rebuildpe.c	49	#define EC16(x) le16_to_host(x) /* Convert little endian to host */
 offset-size-arithmetic	libclamav/rebuildpe.c	59	    return ((offset / alignment) + ((offset % alignment) != 0)) * alignment;
-offset-size-arithmetic	libclamav/regex/engine.c	1006		((c) - OUT < (sizeof(nonchars)/sizeof(nonchars[0]))	\
-offset-size-arithmetic	libclamav/regex/engine.c	1023			if (ch - OUT < (sizeof(nonchars)/sizeof(nonchars[0])))
+offset-size-arithmetic	libclamav/regex/engine.c	1004	at(struct match *m, const char *title, const char *start, const char *stop,
+offset-size-arithmetic	libclamav/regex/engine.c	1020		((c) - OUT < (sizeof(nonchars)/sizeof(nonchars[0]))	\
+offset-size-arithmetic	libclamav/regex/engine.c	1037			if (ch - OUT < (sizeof(nonchars)/sizeof(nonchars[0])))
 offset-size-arithmetic	libclamav/regex/engine.c	147		/* simplify the situation where possible */
 offset-size-arithmetic	libclamav/regex/engine.c	151			start = string + pmatch[0].rm_so;
 offset-size-arithmetic	libclamav/regex/engine.c	155			stop = start + strlen(start);
 offset-size-arithmetic	libclamav/regex/engine.c	188			if (endp == NULL) {		/* a miss */
 offset-size-arithmetic	libclamav/regex/engine.c	201				endp = slow(m, m->coldp, stop, gf, gl);
-offset-size-arithmetic	libclamav/regex/engine.c	226					m->lastpos = (char **)cli_max_malloc((g->nplus+1) *
-offset-size-arithmetic	libclamav/regex/engine.c	227								sizeof(char *));
-offset-size-arithmetic	libclamav/regex/engine.c	243				if (dp != NULL || endp <= m->coldp)
-offset-size-arithmetic	libclamav/regex/engine.c	246				endp = slow(m, m->coldp, endp-1, gf, gl);
-offset-size-arithmetic	libclamav/regex/engine.c	249				/* try it on a shorter possibility */
-offset-size-arithmetic	libclamav/regex/engine.c	267			start = m->coldp + 1;	/* recycle starting later */
-offset-size-arithmetic	libclamav/regex/engine.c	273			pmatch[0].rm_eo = endp - m->offp;
-offset-size-arithmetic	libclamav/regex/engine.c	296	dissect(struct match *m, const char *start, const char *stop, sopno startst,
-offset-size-arithmetic	libclamav/regex/engine.c	300		sopno ss;		/* start sop of current subRE */
-offset-size-arithmetic	libclamav/regex/engine.c	301		sopno es;		/* end sop of current subRE */
-offset-size-arithmetic	libclamav/regex/engine.c	302		const char *sp;		/* start of string matched by it */
-offset-size-arithmetic	libclamav/regex/engine.c	304		const char *rest;	/* start of rest of string */
-offset-size-arithmetic	libclamav/regex/engine.c	306		sopno ssub;		/* start sop of subsubRE */
-offset-size-arithmetic	libclamav/regex/engine.c	307		sopno esub;		/* end sop of subsubRE */
-offset-size-arithmetic	libclamav/regex/engine.c	308		const char *ssp;	/* start of string matched by subsubRE */
-offset-size-arithmetic	libclamav/regex/engine.c	309		const char *sep;	/* end of string matched by subsubRE */
-offset-size-arithmetic	libclamav/regex/engine.c	316			/* identify end of subRE */
-offset-size-arithmetic	libclamav/regex/engine.c	351			/* cases where length of match is hard to find */
-offset-size-arithmetic	libclamav/regex/engine.c	478	backref(struct match *m, const char *start, const char *stop, sopno startst,
-offset-size-arithmetic	libclamav/regex/engine.c	482		sopno ss;	/* start sop of current subRE */
-offset-size-arithmetic	libclamav/regex/engine.c	483		const char *sp;	/* start of string matched by it */
-offset-size-arithmetic	libclamav/regex/engine.c	484		sopno ssub;	/* start sop of subsubRE */
-offset-size-arithmetic	libclamav/regex/engine.c	485		sopno esub;	/* end sop of subsubRE */
-offset-size-arithmetic	libclamav/regex/engine.c	486		const char *ssp;/* start of string matched by subsubRE */
-offset-size-arithmetic	libclamav/regex/engine.c	517				    (sp > m->offp && sp < m->endp &&
-offset-size-arithmetic	libclamav/regex/engine.c	524				if ( (sp == m->endp && !(m->eflags&REG_NOTEOL)) ||
-offset-size-arithmetic	libclamav/regex/engine.c	525						(sp < m->endp && *sp == '\n' &&
-offset-size-arithmetic	libclamav/regex/engine.c	532				if (sp < m->endp && ISWORD(*sp) &&
-offset-size-arithmetic	libclamav/regex/engine.c	534				     (sp > m->offp && !ISWORD(*(sp-1)))))
-offset-size-arithmetic	libclamav/regex/engine.c	540				if (( (sp == m->endp && !(m->eflags&REG_NOTEOL)) ||
-offset-size-arithmetic	libclamav/regex/engine.c	541						(sp < m->endp && *sp == '\n' &&
-offset-size-arithmetic	libclamav/regex/engine.c	543						(sp < m->endp && !ISWORD(*sp)) ) &&
-offset-size-arithmetic	libclamav/regex/engine.c	581			len = m->pmatch[i].rm_eo - m->pmatch[i].rm_so;
-offset-size-arithmetic	libclamav/regex/engine.c	582			if (len == 0 && rec++ > MAX_RECURSION)
-offset-size-arithmetic	libclamav/regex/engine.c	587			ssp = m->offp + m->pmatch[i].rm_so;
-offset-size-arithmetic	libclamav/regex/engine.c	592			return(backref(m, sp+len, stop, ss+1, stopst, lev, rec));
-offset-size-arithmetic	libclamav/regex/engine.c	603			m->lastpos[lev+1] = sp;
-offset-size-arithmetic	libclamav/regex/engine.c	607			if (sp == m->lastpos[lev])	/* last pass matched null */
-offset-size-arithmetic	libclamav/regex/engine.c	641			offsave = m->pmatch[i].rm_so;
-offset-size-arithmetic	libclamav/regex/engine.c	652			offsave = m->pmatch[i].rm_eo;
-offset-size-arithmetic	libclamav/regex/engine.c	674	static const char *			/* where tentative match ended, or NULL */
-offset-size-arithmetic	libclamav/regex/engine.c	675	fast(struct match *m, const char *start, const char *stop, sopno startst,
-offset-size-arithmetic	libclamav/regex/engine.c	688		if (start == m->offp || (start == m->beginp && !(m->eflags&REG_NOTBOL)))
-offset-size-arithmetic	libclamav/regex/engine.c	691			c = *(start-1);
-offset-size-arithmetic	libclamav/regex/engine.c	697		SP("start", st, *p);
-offset-size-arithmetic	libclamav/regex/engine.c	702			c = (p == m->endp) ? OUT : *p;
+offset-size-arithmetic	libclamav/regex/engine.c	213				if (m->g->nsub == (size_t)-1 ||
+offset-size-arithmetic	libclamav/regex/engine.c	214					!regex_allocation_size(m->g->nsub + 1, sizeof(regmatch_t), &pmatch_size)) {
+offset-size-arithmetic	libclamav/regex/engine.c	234					if ((size_t)g->nplus == (size_t)-1 ||
+offset-size-arithmetic	libclamav/regex/engine.c	235						!regex_allocation_size((size_t)g->nplus + 1, sizeof(char *), &lastpos_size)) {
+offset-size-arithmetic	libclamav/regex/engine.c	240					m->lastpos = (char **)cli_max_malloc(lastpos_size);
+offset-size-arithmetic	libclamav/regex/engine.c	257				if (dp != NULL || endp <= m->coldp)
+offset-size-arithmetic	libclamav/regex/engine.c	260				endp = slow(m, m->coldp, endp-1, gf, gl);
+offset-size-arithmetic	libclamav/regex/engine.c	263				/* try it on a shorter possibility */
+offset-size-arithmetic	libclamav/regex/engine.c	281			start = m->coldp + 1;	/* recycle starting later */
+offset-size-arithmetic	libclamav/regex/engine.c	287			pmatch[0].rm_eo = endp - m->offp;
+offset-size-arithmetic	libclamav/regex/engine.c	310	dissect(struct match *m, const char *start, const char *stop, sopno startst,
+offset-size-arithmetic	libclamav/regex/engine.c	314		sopno ss;		/* start sop of current subRE */
+offset-size-arithmetic	libclamav/regex/engine.c	315		sopno es;		/* end sop of current subRE */
+offset-size-arithmetic	libclamav/regex/engine.c	316		const char *sp;		/* start of string matched by it */
+offset-size-arithmetic	libclamav/regex/engine.c	318		const char *rest;	/* start of rest of string */
+offset-size-arithmetic	libclamav/regex/engine.c	320		sopno ssub;		/* start sop of subsubRE */
+offset-size-arithmetic	libclamav/regex/engine.c	321		sopno esub;		/* end sop of subsubRE */
+offset-size-arithmetic	libclamav/regex/engine.c	322		const char *ssp;	/* start of string matched by subsubRE */
+offset-size-arithmetic	libclamav/regex/engine.c	323		const char *sep;	/* end of string matched by subsubRE */
+offset-size-arithmetic	libclamav/regex/engine.c	330			/* identify end of subRE */
+offset-size-arithmetic	libclamav/regex/engine.c	365			/* cases where length of match is hard to find */
+offset-size-arithmetic	libclamav/regex/engine.c	492	backref(struct match *m, const char *start, const char *stop, sopno startst,
+offset-size-arithmetic	libclamav/regex/engine.c	496		sopno ss;	/* start sop of current subRE */
+offset-size-arithmetic	libclamav/regex/engine.c	497		const char *sp;	/* start of string matched by it */
+offset-size-arithmetic	libclamav/regex/engine.c	498		sopno ssub;	/* start sop of subsubRE */
+offset-size-arithmetic	libclamav/regex/engine.c	499		sopno esub;	/* end sop of subsubRE */
+offset-size-arithmetic	libclamav/regex/engine.c	500		const char *ssp;/* start of string matched by subsubRE */
+offset-size-arithmetic	libclamav/regex/engine.c	531				    (sp > m->offp && sp < m->endp &&
+offset-size-arithmetic	libclamav/regex/engine.c	538				if ( (sp == m->endp && !(m->eflags&REG_NOTEOL)) ||
+offset-size-arithmetic	libclamav/regex/engine.c	539						(sp < m->endp && *sp == '\n' &&
+offset-size-arithmetic	libclamav/regex/engine.c	546				if (sp < m->endp && ISWORD(*sp) &&
+offset-size-arithmetic	libclamav/regex/engine.c	548				     (sp > m->offp && !ISWORD(*(sp-1)))))
+offset-size-arithmetic	libclamav/regex/engine.c	554				if (( (sp == m->endp && !(m->eflags&REG_NOTEOL)) ||
+offset-size-arithmetic	libclamav/regex/engine.c	555						(sp < m->endp && *sp == '\n' &&
+offset-size-arithmetic	libclamav/regex/engine.c	557						(sp < m->endp && !ISWORD(*sp)) ) &&
+offset-size-arithmetic	libclamav/regex/engine.c	595			len = m->pmatch[i].rm_eo - m->pmatch[i].rm_so;
+offset-size-arithmetic	libclamav/regex/engine.c	596			if (len == 0 && rec++ > MAX_RECURSION)
+offset-size-arithmetic	libclamav/regex/engine.c	601			ssp = m->offp + m->pmatch[i].rm_so;
+offset-size-arithmetic	libclamav/regex/engine.c	606			return(backref(m, sp+len, stop, ss+1, stopst, lev, rec));
+offset-size-arithmetic	libclamav/regex/engine.c	617			m->lastpos[lev+1] = sp;
+offset-size-arithmetic	libclamav/regex/engine.c	621			if (sp == m->lastpos[lev])	/* last pass matched null */
+offset-size-arithmetic	libclamav/regex/engine.c	655			offsave = m->pmatch[i].rm_so;
+offset-size-arithmetic	libclamav/regex/engine.c	666			offsave = m->pmatch[i].rm_eo;
+offset-size-arithmetic	libclamav/regex/engine.c	688	static const char *			/* where tentative match ended, or NULL */
+offset-size-arithmetic	libclamav/regex/engine.c	689	fast(struct match *m, const char *start, const char *stop, sopno startst,
+offset-size-arithmetic	libclamav/regex/engine.c	702		if (start == m->offp || (start == m->beginp && !(m->eflags&REG_NOTBOL)))
+offset-size-arithmetic	libclamav/regex/engine.c	705			c = *(start-1);
+offset-size-arithmetic	libclamav/regex/engine.c	711		SP("start", st, *p);
+offset-size-arithmetic	libclamav/regex/engine.c	716			c = (p == m->endp) ? OUT : *p;
 offset-size-arithmetic	libclamav/regex/engine.c	75		const char *offp;	/* offsets work from here */
 offset-size-arithmetic	libclamav/regex/engine.c	76		const char *beginp;	/* start of string -- virtual NUL precedes */
-offset-size-arithmetic	libclamav/regex/engine.c	763	static const char *		/* where it ended */
-offset-size-arithmetic	libclamav/regex/engine.c	764	slow(struct match *m, const char *start, const char *stop, sopno startst,
 offset-size-arithmetic	libclamav/regex/engine.c	77		const char *endp;	/* end of string -- virtual NUL here */
-offset-size-arithmetic	libclamav/regex/engine.c	775		const char *matchp;	/* last p at which a match ended */
-offset-size-arithmetic	libclamav/regex/engine.c	777		if (start == m->offp || (start == m->beginp && !(m->eflags&REG_NOTBOL)))
+offset-size-arithmetic	libclamav/regex/engine.c	777	static const char *		/* where it ended */
+offset-size-arithmetic	libclamav/regex/engine.c	778	slow(struct match *m, const char *start, const char *stop, sopno startst,
 offset-size-arithmetic	libclamav/regex/engine.c	78		const char *coldp;	/* can be no match starting before here */
-offset-size-arithmetic	libclamav/regex/engine.c	780			c = *(start-1);
-offset-size-arithmetic	libclamav/regex/engine.c	785		SP("sstart", st, *p);
-offset-size-arithmetic	libclamav/regex/engine.c	791			c = (p == m->endp) ? OUT : *p;
+offset-size-arithmetic	libclamav/regex/engine.c	789		const char *matchp;	/* last p at which a match ended */
+offset-size-arithmetic	libclamav/regex/engine.c	791		if (start == m->offp || (start == m->beginp && !(m->eflags&REG_NOTBOL)))
+offset-size-arithmetic	libclamav/regex/engine.c	794			c = *(start-1);
+offset-size-arithmetic	libclamav/regex/engine.c	799		SP("sstart", st, *p);
+offset-size-arithmetic	libclamav/regex/engine.c	805			c = (p == m->endp) ? OUT : *p;
 offset-size-arithmetic	libclamav/regex/engine.c	82		states fresh;		/* states for a fresh start */
-offset-size-arithmetic	libclamav/regex/engine.c	850	    sopno start,		/* start state within strip */
-offset-size-arithmetic	libclamav/regex/engine.c	990	at(struct match *m, const char *title, const char *start, const char *stop,
+offset-size-arithmetic	libclamav/regex/engine.c	864	    sopno start,		/* start state within strip */
 offset-size-arithmetic	libclamav/regex/regcomp.c	1039		size_t css = (size_t)p->g->csetsize;
 offset-size-arithmetic	libclamav/regex/regcomp.c	1095		size_t css = (size_t)p->g->csetsize;
 offset-size-arithmetic	libclamav/regex/regcomp.c	111	#define	MORE()	(p->end - p->next > 0)
@@ -32671,6 +32683,10 @@ offset-size-arithmetic	libclamav/regex/regex2.h	72	#define	OEND	(1LU<<OPSHIFT)	/
 offset-size-arithmetic	libclamav/regex/regex2.h	79	#define	O_BACK	(8LU<<OPSHIFT)	/* end \d	paren number		*/
 offset-size-arithmetic	libclamav/regex/regex2.h	89	#define	O_CH	(18LU<<OPSHIFT)	/* end choice	back to OOR1		*/
 offset-size-arithmetic	libclamav/regex/regex2.h	91	#define	OEOW	(20LU<<OPSHIFT)	/* end word	-			*/
+offset-size-arithmetic	libclamav/regex/regexec.c	123					if (!regex_allocation_size((size_t)(nv), (size_t)(m)->g->nstates, &state_size)) return(REG_ESPACE); \
+offset-size-arithmetic	libclamav/regex/regexec.c	56	static int regex_allocation_size(size_t count, size_t element_size, size_t *size)
+offset-size-arithmetic	libclamav/regex/regexec.c	58	    if (size == NULL || element_size == 0 || count > (size_t)-1 / element_size)
+offset-size-arithmetic	libclamav/regex/regexec.c	61	    *size = count * element_size;
 offset-size-arithmetic	libclamav/regex/strlcpy.c	28	 * Copy src to string dst of size siz.  At most siz-1 characters
 offset-size-arithmetic	libclamav/regex/utils.h	48	/* switch off assertions (if not already off) if no REDEBUG */
 offset-size-arithmetic	libclamav/regex_list.c	100	    cli_dbgmsg("calc_pos_with_skip: skip:%llu, %llu - %llu \"%s\",\"%s\"\n", (long long unsigned)pos, (long long unsigned)info->host_start,

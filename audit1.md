@@ -14526,3 +14526,16 @@ the registered public-API regression covers the malformed count and pointer
 cases. Complete SIS corpus, injected allocation-failure execution, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and parser-family
 qualification remain open.
+
+## Regex executor allocation-product audit — 2026-08-29
+
+The large-state regex executor formed products for its four state-set buffers,
+capture-match array, and back-reference position array before calling the
+bounded allocator. Native-size overflow could turn an oversized request into
+a small allocation, and a large but non-wrapping request did not receive an
+explicit preflight against the shared 1 GiB contiguous-allocation ceiling.
+`regex_allocation_size()` now checks both conditions before each product is
+formed and returns `REG_ESPACE` on rejection. The source guard pins all three
+executor call sites. Current-source GCC compilation, direct overflow/failure
+execution, complete phishing/regex corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and parser-family qualification remain open.

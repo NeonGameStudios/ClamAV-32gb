@@ -53,6 +53,15 @@
 #include "utils.h"
 #include "regex2.h"
 
+static int regex_allocation_size(size_t count, size_t element_size, size_t *size)
+{
+    if (size == NULL || element_size == 0 || count > (size_t)-1 / element_size)
+        return 0;
+
+    *size = count * element_size;
+    return *size <= CLI_MAX_ALLOCATION;
+}
+
 /* macros for manipulating states, small version */
 #define	states	long
 #define	states1	long		/* for later use in cli_regexec() decision */
@@ -110,7 +119,9 @@
 #define	ASSIGN(d, s)	memcpy(d, s, m->g->nstates)
 #define	EQ(a, b)	(memcmp(a, b, m->g->nstates) == 0)
 #define	STATEVARS	long vn; char *space
-#define	STATESETUP(m, nv)	{ (m)->space = cli_max_malloc((nv)*(m)->g->nstates); \
+#define	STATESETUP(m, nv)	{ size_t state_size; \
+				if (!regex_allocation_size((size_t)(nv), (size_t)(m)->g->nstates, &state_size)) return(REG_ESPACE); \
+				(m)->space = cli_max_malloc(state_size); \
 				if ((m)->space == NULL) return(REG_ESPACE); \
 				(m)->vn = 0; }
 #define	STATETEARDOWN(m)	{ free((m)->space); }

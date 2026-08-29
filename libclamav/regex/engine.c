@@ -208,9 +208,16 @@ matcher(struct re_guts *g, const char *string, size_t nmatch,
 			break;		/* no further info needed */
 
 		/* oh my, he wants the subexpressions... */
-		if (m->pmatch == NULL)
-			m->pmatch = (regmatch_t *)cli_max_malloc((m->g->nsub + 1) *
-							sizeof(regmatch_t));
+		if (m->pmatch == NULL) {
+			size_t pmatch_size;
+			if (m->g->nsub == (size_t)-1 ||
+				!regex_allocation_size(m->g->nsub + 1, sizeof(regmatch_t), &pmatch_size)) {
+					free(m->lastpos);
+					STATETEARDOWN(m);
+					return(REG_ESPACE);
+			}
+			m->pmatch = (regmatch_t *)cli_max_malloc(pmatch_size);
+		}
 		if (m->pmatch == NULL) {
 			free(m->lastpos);
 			STATETEARDOWN(m);
@@ -222,9 +229,16 @@ matcher(struct re_guts *g, const char *string, size_t nmatch,
 			NOTE("dissecting");
 			dp = dissect(m, m->coldp, endp, gf, gl);
 		} else {
-			if (g->nplus > 0 && m->lastpos == NULL)
-				m->lastpos = (char **)cli_max_malloc((g->nplus+1) *
-							sizeof(char *));
+			if (g->nplus > 0 && m->lastpos == NULL) {
+				size_t lastpos_size;
+				if ((size_t)g->nplus == (size_t)-1 ||
+					!regex_allocation_size((size_t)g->nplus + 1, sizeof(char *), &lastpos_size)) {
+						free(m->pmatch);
+						STATETEARDOWN(m);
+						return(REG_ESPACE);
+				}
+				m->lastpos = (char **)cli_max_malloc(lastpos_size);
+			}
 			if (g->nplus > 0 && m->lastpos == NULL) {
 				free(m->pmatch);
 				STATETEARDOWN(m);

@@ -7754,3 +7754,11 @@ qualification gates.
   failures; add injected allocation-failure execution and retain complete SIS,
   sanitizer, production-CVD/service, materialized-large-file, and Sonic1
   qualification as open requirements.
+
+## Regex executor allocation products — 2026-08-29
+
+- Keep large-state regex state-set, capture-array, and back-reference position
+  allocations behind native product and 1 GiB ceiling checks.
+- Add direct overflow/failure execution and retain full phishing/regex corpus,
+  sanitizer, production-CVD/service, materialized-large-file, and Sonic1
+  qualification as open requirements.
