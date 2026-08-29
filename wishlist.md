@@ -1,5 +1,14 @@
 # Wishlist
 
+## TAR member output admission — 2026-08-28
+
+- Keep TAR member temporary-output creation failures sticky and non-cacheable;
+  return `CL_ETMPFILE` only with the required incomplete state recorded.
+- Retain `test_tar_member_output_open_failure_is_fail_visible` and its source
+  guard. The focused current-source direct runner passes the expected result.
+  Keep complete TAR corpus, production-CVD/service, sanitizer, materialized
+  large-file, Sonic1, and final parser-family/release evidence open.
+
 ## XAR heap extent admission — 2026-08-28
 
 - Keep confirmed XAR data/EA heap extents bounded by the input fmap after

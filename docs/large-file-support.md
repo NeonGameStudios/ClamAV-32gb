@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## TAR member output admission — 2026-08-28
+
+TAR member staging now marks the recognized layer incomplete when its
+temporary output file cannot be opened, while preserving `CL_ETMPFILE`.
+Previously the open failure returned without sticky cache-taint state. The
+registered `test_tar_member_output_open_failure_is_fail_visible` regression
+and focused current-source GCC runner require the exact incomplete reason
+`TAR member temporary output could not be created` and a non-cacheable fmap.
+Complete TAR corpus, production-CVD/service, sanitizer, materialized
+large-file, Sonic1, and final parser-family/release qualification remain
+required.
+
 ## XAR heap extent admission — 2026-08-28
 
 Confirmed XAR data/EA entries now use the incomplete-result helper when their

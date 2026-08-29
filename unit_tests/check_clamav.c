@@ -44727,6 +44727,52 @@ START_TEST(test_tar_null_output_directory_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tar_member_output_open_failure_is_fail_visible)
+{
+    uint8_t data[3 * 512] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    char output_dir[PATH_MAX];
+    cl_error_t ret;
+
+    tar_test_make_posix_header(data, "payload", 1, '0');
+    data[512] = 'x';
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    layers[0].type = CL_TYPE_POSIX_TAR;
+    layers[0].size = map->len;
+    layers[0].fmap = map;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    snprintf(output_dir, sizeof(output_dir), "%s/tar-open-failure-%ld", tmpdir, (long)getpid());
+
+    ret = cli_untar(output_dir, 1, &ctx);
+    ck_assert_int_eq(ret, CL_ETMPFILE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "TAR member temporary output could not be created");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 static const TTest *test_hwp3_missing_options_is_fail_visible;
 static const TTest *test_ole2_missing_options_is_fail_visible;
 static const TTest *test_xar_missing_engine_is_fail_visible;
@@ -45548,6 +45594,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_tar_map, cl_setup, cl_teardown);
     tcase_add_test(tc_tar_map, test_tar_missing_map_is_fail_visible);
     tcase_add_test(tc_tar_map, test_tar_null_output_directory_is_fail_visible);
+    tcase_add_test(tc_tar_map, test_tar_member_output_open_failure_is_fail_visible);
     suite_add_tcase(s, tc_tar_corpus);
     tcase_add_checked_fixture(tc_tar_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_tar_corpus, test_tar_corpus_detects_embedded_mz);

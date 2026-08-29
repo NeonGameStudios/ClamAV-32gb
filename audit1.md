@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## TAR member output admission — 2026-08-28
+
+`cli_untar()` previously returned `CL_ETMPFILE` when a recognized TAR member's
+temporary output could not be opened, but it did not record sticky incomplete
+state. A direct caller could therefore observe a required staging failure
+without non-cacheable state. The parser now records
+`TAR member temporary output could not be created` before returning. The new
+`test_tar_member_output_open_failure_is_fail_visible` regression and source
+guards cover the exact result; the focused current-source GCC runner passes
+`CL_ETMPFILE` with incomplete/non-cacheable state. Complete TAR corpus,
+production-CVD/service, sanitizer, materialized large-file, Sonic1, and final
+parser-family/release qualification remain open.
+
 ## XAR heap extent admission — 2026-08-28
 
 The XAR member walker checked `offset` and `length` against the remaining fmap

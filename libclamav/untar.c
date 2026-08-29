@@ -623,6 +623,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             if (fout < 0) {
                 char err[128];
                 cli_errmsg("cli_untar: Can't create temporary file %s: %s\n", fullname, cli_strerror(errno, err, sizeof(err)));
+                cli_mark_scan_incomplete(ctx, "TAR member temporary output could not be created");
                 if (temporary_reserved)
                     cli_scan_release_temporary(ctx, temporary_reserved);
                 temporary_reserved = 0;
