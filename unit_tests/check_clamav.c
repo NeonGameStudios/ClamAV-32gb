@@ -27629,8 +27629,14 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     char **comments = NULL;
     uint32_t ncomments = 0;
     const char *filename = NULL;
+    const char *legacy_filename = NULL;
+    const char *legacy_buffer = NULL;
     uint64_t output_length = 0;
+    size_t legacy_length = 0;
     size_t offset = 0;
+    size_t crc_offset;
+    struct cl_engine engine;
+    cli_ctx ctx;
 
     memset(archive, 0, sizeof(archive));
     zip_stream_write_u32(archive + offset, 0x41474745U);
@@ -27668,7 +27674,9 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     offset += 4;
     zip_stream_write_u32(archive + offset, sizeof(lzma_data));
     offset += 4;
-    zip_stream_write_u32(archive + offset, 0U);
+    crc_offset = offset;
+    zip_stream_write_u32(archive + offset,
+                         (uint32_t)crc32(0L, expected, (uInt)(sizeof(expected) - 1U)));
     offset += 4;
     zip_stream_write_u32(archive + offset, 0x08E28222U);
     offset += 4;
@@ -27694,6 +27702,71 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     ck_assert_mem_eq(output.buffer, expected, sizeof(expected) - 1U);
 
     free((void *)filename);
+    cli_egg_close(handle);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(archive, offset);
+    ck_assert_ptr_nonnull(map);
+    handle = NULL;
+    comments = NULL;
+    ncomments = 0;
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_SUCCESS);
+    ck_assert_int_eq(cli_egg_extract_file(handle, &legacy_filename, &legacy_buffer,
+                                          &legacy_length), CL_SUCCESS);
+    ck_assert_str_eq(legacy_filename, "test.txt");
+    ck_assert_uint_eq(legacy_length, sizeof(expected) - 1U);
+    ck_assert_mem_eq(legacy_buffer, expected, sizeof(expected) - 1U);
+    free((void *)legacy_filename);
+    free((void *)legacy_buffer);
+    cli_egg_close(handle);
+    cl_fmap_close(map);
+
+    zip_stream_write_u32(archive + crc_offset,
+                         (uint32_t)crc32(0L, expected, (uInt)(sizeof(expected) - 1U)) ^ 1U);
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(decoded);
+    memset(&engine, 0, sizeof(engine));
+    engine.maxcontiguoussize = CLI_DEFAULT_MAX_CONTIGUOUS_SIZE;
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, offset);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx), CL_SUCCESS);
+    ck_assert_int_eq(cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                                 &filename, &output_length),
+                     CL_EUNPACK);
+    ck_assert_ptr_null(filename);
+    ck_assert_uint_eq(output_length, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "EGG block CRC-32 did not match decoded output");
+    ck_assert(map->dont_cache_flag);
+    cli_egg_close(handle);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, offset);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    handle = NULL;
+    comments = NULL;
+    ncomments = 0;
+    legacy_filename = NULL;
+    legacy_buffer = NULL;
+    legacy_length = 0;
+    ck_assert_int_eq(cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx), CL_SUCCESS);
+    ck_assert_int_eq(cli_egg_extract_file(handle, &legacy_filename, &legacy_buffer,
+                                          &legacy_length), CL_EUNPACK);
+    ck_assert_ptr_null(legacy_filename);
+    ck_assert_ptr_null(legacy_buffer);
+    ck_assert_uint_eq(legacy_length, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "EGG block CRC-32 did not match decoded output");
+    ck_assert(map->dont_cache_flag);
     cli_egg_close(handle);
     cl_fmap_close(map);
 }

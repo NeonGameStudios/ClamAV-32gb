@@ -12,6 +12,19 @@
   certified Linux x86-64, Sonic1, parser-family, and release evidence remain
   open.
 
+## EGG decoded-block CRC verification — 2026-08-29
+
+- Keep EGG block extraction fail-closed by computing CRC-32 over decoded output
+  in bounded windows and verifying it against the block header before success
+  or nested handoff; cover both scanner streaming and the legacy contiguous
+  extraction path.
+- Retain the expanded `test_egg_lzma_stream_extracts_bounded_member` valid/
+  mismatch regression and source guards. The current-source GCC ASan/UBSan
+  runner passes 2/2 for the streaming cases. Complete EGG/SFX corpus,
+  coherent public TCase execution, production-CVD/service, materialized large
+  file, certified Linux x86-64, Sonic1, parser-family, and release evidence
+  remain open.
+
 ## DMG truncated-range read classification — 2026-08-29
 
 - Keep DMG `blkx` metadata reads fail-visible by using the full-range fmap

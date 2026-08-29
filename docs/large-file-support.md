@@ -310,6 +310,20 @@ runner passes 2/2 across the two read classes. Complete DMG corpus, coherent
 public TCase relink/execution, production-CVD/service, materialized-large-file,
 certified Linux x86-64, Sonic1, and release qualification remain gates.
 
+## EGG decoded-block CRC verification — 2026-08-29
+
+EGG block extraction now computes CRC-32 over decoded output and verifies the
+result against each block header before returning success. The streaming path
+updates the checksum as bounded output windows are emitted; the legacy
+contiguous path verifies stored and decompressed block buffers before exposing
+them to callers. A mismatch returns `CL_EUNPACK` and marks a scanner-owned
+context incomplete and non-cacheable before nested handoff. The registered
+`test_egg_lzma_stream_extracts_bounded_member` regression covers a valid CRC
+and a deliberate mismatch, and a current-source GCC ASan/UBSan runner passes
+2/2 for the streaming cases. Complete EGG/SFX corpus, coherent public TCase
+execution, production-CVD/service, materialized-large-file, certified Linux
+x86-64, Sonic1, and release qualification remain gates.
+
 ## DMG parser qualification recheck — 2026-08-29
 
 The authoritative current-source DMG parser was relinked into the existing

@@ -15,6 +15,21 @@ coherent public TCase, production-CVD/service, materialized-large-file,
 certified Linux x86-64, Sonic1, and final parser-family/release qualification
 remain open.
 
+## EGG decoded-block CRC verification — 2026-08-29
+
+EGG block headers carry a CRC-32 for the decoded block, but the extraction
+paths previously accepted output without checking it. The bounded streaming
+path now accumulates CRC-32 over every emitted decoded window and the legacy
+contiguous path verifies each decoded block before returning success. A
+mismatch returns `CL_EUNPACK` and, when scanner context is present, records
+sticky incomplete/non-cacheable state before nested handoff. The registered
+`test_egg_lzma_stream_extracts_bounded_member` regression now covers both a
+valid CRC and a deliberate mismatch; a current-source GCC ASan/UBSan runner
+passes 2/2 for the valid and mismatch streaming cases. Complete EGG/SFX
+corpus, coherent public TCase execution, production-CVD/service,
+materialized-large-file, certified Linux x86-64, Sonic1, and final
+parser-family/release qualification remain open.
+
 ## DMG truncated-range read classification — 2026-08-29
 
 The DMG `blkx` metadata readers previously treated any failed `fmap_readn()`

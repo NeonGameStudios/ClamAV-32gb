@@ -2349,6 +2349,7 @@ typedef struct {
     void* opaque;
     uint64_t expected;
     uint64_t written;
+    uint32_t checksum;
 } egg_stream_output;
 
 static cl_error_t egg_stream_emit(egg_stream_output* output, const unsigned char* data, size_t length)
@@ -2366,8 +2367,36 @@ static cl_error_t egg_stream_emit(egg_stream_output* output, const unsigned char
     if (status != CL_SUCCESS)
         return status;
 
+    output->checksum = (uint32_t)crc32(output->checksum, data, (uInt)length);
     output->written += (uint64_t)length;
     return CL_SUCCESS;
+}
+
+static uint32_t egg_crc32(const void* data, size_t length)
+{
+    const uint8_t* bytes = data;
+    uLong checksum       = crc32(0L, Z_NULL, 0);
+
+    while (length != 0) {
+        uInt chunk = length > UINT_MAX ? UINT_MAX : (uInt)length;
+
+        checksum = crc32(checksum, bytes, chunk);
+        bytes += chunk;
+        length -= chunk;
+    }
+    return (uint32_t)checksum;
+}
+
+static cl_error_t egg_check_block_crc(const egg_handle* handle, const egg_block* block,
+                                      uint32_t checksum)
+{
+    if (handle == NULL || block == NULL || block->blockHeader == NULL)
+        return CL_EARG;
+    if (checksum == le32_to_host(block->blockHeader->crc32))
+        return CL_SUCCESS;
+    if (handle->ctx != NULL)
+        cli_mark_scan_incomplete(handle->ctx, "EGG block CRC-32 did not match decoded output");
+    return CL_EUNPACK;
 }
 
 static cl_error_t egg_stream_read(const egg_handle* handle, const egg_block* block,
@@ -2672,24 +2701,35 @@ done:
 static cl_error_t egg_stream_block(const egg_handle* handle, const egg_block* block,
                                    egg_stream_output* output)
 {
+    cl_error_t status;
+
     if (handle == NULL || block == NULL || output == NULL || block->blockHeader == NULL ||
         block->compressedSize == 0)
         return CL_EFORMAT;
 
+    output->checksum = (uint32_t)crc32(0L, Z_NULL, 0);
     switch (block->compressionAlgorithm) {
         case BLOCK_HEADER_COMPRESS_ALGORITHM_STORE:
-            return egg_stream_store(handle, block, output);
+            status = egg_stream_store(handle, block, output);
+            break;
         case BLOCK_HEADER_COMPRESS_ALGORITHM_DEFLATE:
-            return egg_stream_deflate(handle, block, output);
+            status = egg_stream_deflate(handle, block, output);
+            break;
         case BLOCK_HEADER_COMPRESS_ALGORITHM_BZIP2:
-            return egg_stream_bzip2(handle, block, output);
+            status = egg_stream_bzip2(handle, block, output);
+            break;
         case BLOCK_HEADER_COMPRESS_ALGORITHM_LZMA:
-            return egg_stream_lzma(handle, block, output);
+            status = egg_stream_lzma(handle, block, output);
+            break;
         case BLOCK_HEADER_COMPRESS_ALGORITHM_AZO:
             return CL_EUNPACK;
         default:
             return CL_EFORMAT;
     }
+
+    if (status != CL_SUCCESS)
+        return status;
+    return egg_check_block_crc(handle, block, output->checksum);
 }
 
 cl_error_t cli_egg_extract_file_stream(void* hArchive, cli_egg_write_callback write,
@@ -3290,6 +3330,14 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
                     memcpy(decompressed + decompressed_size, compressedData, currBlock->compressedSize);
                     decompressed_size = next_size;
 
+                    if (CL_SUCCESS != (retval = egg_check_block_crc(handle, currBlock,
+                                                                      egg_crc32(decompressed +
+                                                                                    decompressed_size - currBlock->compressedSize,
+                                                                                currBlock->compressedSize)))) {
+                        status = retval;
+                        goto done;
+                    }
+
                     retval = CL_SUCCESS;
                     break;
                 }
@@ -3309,6 +3357,13 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
                     if (decompressed_block_size != currBlock->uncompressedSize) {
                         free(decompressed_block);
                         status = CL_EFORMAT;
+                        goto done;
+                    }
+                    if (CL_SUCCESS != (retval = egg_check_block_crc(handle, currBlock,
+                                                                      egg_crc32(decompressed_block,
+                                                                                decompressed_block_size)))) {
+                        free(decompressed_block);
+                        status = retval;
                         goto done;
                     }
                     /* Decompressed block. Add it to the file data */
@@ -3348,6 +3403,13 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
                     if (decompressed_block_size != currBlock->uncompressedSize) {
                         free(decompressed_block);
                         status = CL_EFORMAT;
+                        goto done;
+                    }
+                    if (CL_SUCCESS != (retval = egg_check_block_crc(handle, currBlock,
+                                                                      egg_crc32(decompressed_block,
+                                                                                decompressed_block_size)))) {
+                        free(decompressed_block);
+                        status = retval;
                         goto done;
                     }
                     /* Decompressed block. Add it to the file data */
