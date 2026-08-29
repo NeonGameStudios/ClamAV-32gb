@@ -1,5 +1,16 @@
 # Wishlist
 
+## 7-Zip allocation-product admission — 2026-08-29
+
+- Keep every vendored 7-Zip array allocation fail-closed: convert the declared
+  count once and reject `count > SIZE_MAX/sizeof(T)` before multiplication or
+  allocation, returning `SZ_ERROR_MEM` on product overflow.
+- Retain the canonical source guard and Docker production-GCC syntax evidence
+  for the modified translation unit. This is static portability evidence only;
+  a 32-bit runtime, complete 7-Zip/BCJ2 corpus, sanitizer matrix,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, parser-family, and release qualification remain open.
+
 ## HTML raw fallback after normalization admission — 2026-08-29
 
 - Keep a recognized HTML input fail-visible when `MaxHTMLNormalize` prevents

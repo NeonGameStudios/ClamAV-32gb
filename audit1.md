@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip allocation-product admission — 2026-08-29
+
+The vendored 7-Zip `MY_ALLOC` macro multiplied a declared element count by
+`sizeof(T)` before checking the product. On a narrower `size_t` target, a
+malformed but representable count could therefore wrap the allocation size.
+The macro now converts the count once, requires `count <= SIZE_MAX/sizeof(T)`,
+and returns `SZ_ERROR_MEM` before multiplication or allocation when the product
+cannot be represented. The canonical source guard passes, and the modified
+translation unit passes the existing Docker production GCC syntax check with
+`-std=gnu90 -Wall -Wextra -Wformat-security`. This is static portability
+hardening only; a 32-bit runtime, complete 7-Zip/BCJ2 corpus, sanitizer matrix,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, and final parser-family/release qualification remain open.
+
 ## HTML raw fallback after normalization admission — 2026-08-29
 
 When `MaxHTMLNormalize` rejects a recognized HTML input, the enabled parser

@@ -194,8 +194,15 @@ UInt64 GetFilePackSize(int fileIndex) const
 }
 */
 
-#define MY_ALLOC(T, p, size, alloc) { if ((size) == 0) p = 0; else \
-  if ((p = (T *)IAlloc_Alloc(alloc, (size) * sizeof(T))) == 0) return SZ_ERROR_MEM; }
+#define MY_ALLOC(T, p, size, alloc) do { \
+  size_t sz_count = (size_t)(size); \
+  if (sz_count == 0) \
+    (p) = 0; \
+  else if (sz_count > (size_t)-1 / sizeof(T)) \
+    return SZ_ERROR_MEM; \
+  else if (((p) = (T *)IAlloc_Alloc((alloc), sz_count * sizeof(T))) == 0) \
+    return SZ_ERROR_MEM; \
+} while (0)
 
 static SRes SzArEx_Fill(CSzArEx *p, ISzAlloc *alloc)
 {

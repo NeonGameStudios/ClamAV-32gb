@@ -4009,6 +4009,7 @@ contains unit_tests/check_clamav.c 'test_compressed_cleanup_status_is_fail_visib
 contains unit_tests/check_clamav.c 'tcase_create("compressed_cleanup")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_compressed_cleanup, test_compressed_cleanup_status_is_fail_visible)'
 contains libclamav/7z/7zIn.c 'SzSubStreamsSizeAllowed'
+contains libclamav/7z/7zIn.c 'sz_count > (size_t)-1 / sizeof(T)'
 contains libclamav/7z/7zBuf2.c 'p->pos > p->size'
 contains libclamav/7z/7zBuf2.c 'size > (size_t)-1 - p->pos'
 contains libclamav/7z/7zBuf2.c 'newSize > (size_t)-1 - newSize / 4'
