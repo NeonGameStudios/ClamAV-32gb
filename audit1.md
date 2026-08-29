@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## ELF timeout-path isolation — 2026-08-29
+
+The existing mixed production-linked `elf` TCase still reports a timeout-test
+SIGSEGV because it combines the current `elf.c` object with stale internal
+`cli_ctx`-ABI objects. Per the harness rule, that crash is not evidence of a
+production parser defect. A disposable direct current-source `cli_scanelf`
+regression linked against the existing production shared libraries, with
+stubs only for unused unpacker and heuristic helpers, passes 1/1: an expired
+deadline returns `CL_ETIMEOUT`, records `ELF inspection reached the configured
+time limit`, and taints the fmap as non-cacheable. The mixed TCase remains
+non-authoritative; coherent full ELF TCase, corpus, sanitizer, production
+CVD/service, materialized large-file, certified Linux x86-64, Sonic1, and
+parser-family/release qualification remain open.
+
 ## ARJ Huffman code-length admission — 2026-08-29
 
 The ARJ decoder now rejects a Huffman code-length count larger than the

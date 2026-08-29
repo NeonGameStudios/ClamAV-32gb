@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ELF timeout-path isolation — 2026-08-29
+
+The mixed production-linked `elf` TCase remains non-authoritative because its
+current `elf.c` object is combined with stale internal `cli_ctx`-ABI objects;
+its timeout test still SIGSEGVs in that mixed harness. A disposable direct
+current-source `cli_scanelf` regression linked against the existing production
+shared libraries, with stubs limited to helpers used only by the unexercised
+unpacker and heuristic paths, passes 1/1. It verifies `CL_ETIMEOUT`, the
+canonical reason `ELF inspection reached the configured time limit`, and
+non-cacheability. A coherent full ELF TCase and all corpus, sanitizer,
+production-CVD/service, materialized-large-file, certified Linux x86-64,
+Sonic1, parser-family, and release gates remain required.
+
 ## ARJ Huffman code-length admission — 2026-08-29
 
 The ARJ decoder now rejects a Huffman code-length count larger than its

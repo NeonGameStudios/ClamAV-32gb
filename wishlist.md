@@ -1,5 +1,16 @@
 # Wishlist
 
+## ELF timeout-path isolation — 2026-08-29
+
+- Treat the mixed `elf` TCase timeout SIGSEGV as a stale internal `cli_ctx`
+  ABI harness failure, not production parser evidence.
+- Retain the disposable direct current-source `cli_scanelf` check linked with
+  production shared libraries: it passes 1/1 for `CL_ETIMEOUT`, the canonical
+  incomplete reason, and non-cacheability. Replace this provisional isolation
+  evidence with a coherent full ELF TCase, then complete ELF corpus,
+  sanitizer, production-CVD/service, materialized large-file, certified Linux
+  x86-64, Sonic1, parser-family, and release qualification.
+
 ## ARJ Huffman code-length admission — 2026-08-29
 
 - Preserve the fail-closed `read_pt_len()` count bound and immediate
