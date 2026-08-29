@@ -2495,11 +2495,17 @@ int32_t cli_bcapi_json_is_active(struct cli_bc_ctx *ctx)
 
 static int32_t cli_bcapi_json_objs_init(struct cli_bc_ctx *ctx)
 {
-    unsigned n = ctx->njsonobjs + 1;
+    unsigned n;
+    size_t table_size;
     json_object **j, **jobjs = (json_object **)(ctx->jsonobjs);
     cli_ctx *cctx = (cli_ctx *)ctx->ctx;
 
-    j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
+    if (cli_bcapi_table_size(ctx->njsonobjs, sizeof(json_object *), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
+
+    j = cli_max_realloc(jobjs, table_size);
     if (!j) { /* memory allocation failure */
         cli_event_error_oom(EV, 0);
         return -1;
@@ -2523,6 +2529,7 @@ static int32_t cli_bcapi_json_objs_init(struct cli_bc_ctx *ctx)
 int32_t cli_bcapi_json_get_object(struct cli_bc_ctx *ctx, const int8_t *name, int32_t name_len, int32_t objid)
 {
     unsigned n;
+    size_t name_size, table_size;
     json_object **j, *jobj, **jobjs;
     char *namep;
 
@@ -2538,22 +2545,33 @@ int32_t cli_bcapi_json_get_object(struct cli_bc_ctx *ctx, const int8_t *name, in
         return -1;
     }
 
-    n    = ctx->njsonobjs + 1;
+    if (cli_bcapi_table_size(ctx->njsonobjs, sizeof(json_object *), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
+
     jobj = jobjs[objid];
     if (!jobj) /* shouldn't be possible */
         return -1;
-    namep = (char *)cli_max_malloc(sizeof(char) * (name_len + 1));
+
+    name_size = (size_t)name_len;
+    if (name_size > (size_t)CLI_MAX_ALLOCATION - 1) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
+
+    namep = (char *)cli_max_malloc(name_size + 1);
     if (!namep)
         return -1;
-    strncpy(namep, (char *)name, name_len);
-    namep[name_len] = '\0';
+    strncpy(namep, (char *)name, name_size);
+    namep[name_size] = '\0';
 
     if (!json_object_object_get_ex(jobj, namep, &jobj)) { /* object not found */
         free(namep);
         return 0;
     }
 
-    j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
+    j = cli_max_realloc(jobjs, table_size);
     if (!j) { /* memory allocation failure */
         free(namep);
         cli_event_error_oom(EV, 0);
@@ -2627,6 +2645,7 @@ int32_t cli_bcapi_json_get_array_idx(struct cli_bc_ctx *ctx, int32_t idx, int32_
 {
     enum json_type type;
     unsigned n;
+    size_t table_size;
     int length;
     json_object **j, *jarr = NULL, *jobj = NULL, **jobjs;
 
@@ -2648,14 +2667,17 @@ int32_t cli_bcapi_json_get_array_idx(struct cli_bc_ctx *ctx, int32_t idx, int32_
 
     length = json_object_array_length(jarr);
     if (idx >= 0 && idx < length) {
-        n = ctx->njsonobjs + 1;
+        if (cli_bcapi_table_size(ctx->njsonobjs, sizeof(json_object *), &n, &table_size) != 0) {
+            cli_event_error_oom(EV, 0);
+            return -1;
+        }
 
         jobj = json_object_array_get_idx(jarr, idx);
         if (!jobj) { /* object not found */
             return 0;
         }
 
-        j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
+        j = cli_max_realloc(jobjs, table_size);
         if (!j) { /* memory allocation failure */
             cli_event_error_oom(EV, 0);
             return -1;

@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## Bytecode JSON API size admission — 2026-08-29
+
+The bytecode JSON API previously formed `ctx->njsonobjs + 1` and the pointer
+table product directly at three growth sites, bypassing the existing checked
+table-size helper. Its object-name copy also evaluated `name_len + 1` in
+signed `int32_t` before allocation. Saturated object/array tables could
+therefore wrap on a narrow target, and `INT32_MAX` could trigger signed
+overflow before the bounded allocator rejected the request. JSON object and
+array growth now use `cli_bcapi_table_size()` and allocate only from its
+checked result; name lengths are promoted to `size_t`, capped before `+1`,
+and copied using the checked size. The registered
+`test_bytecode_json_api_admission_is_fail_visible` regression covers
+`UINT_MAX` object and array tables plus `INT32_MAX` name length without a
+large allocation. The current `bytecode_api.c` and Check source compile with
+Docker production GCC, and an isolated current-source production-linked
+UBSan harness prints `bytecode_json_api_guard_passed`. Full bytecode JSON
+corpus/execution, sanitizer matrix, production-CVD/service,
+materialized-large-file, Sonic1, and final bytecode/release qualification
+remain open.
+
 ## Shared Uniq table-size admission — 2026-08-29
 
 The OLE/Uniq support path multiplied its caller-provided `uint32_t` entry

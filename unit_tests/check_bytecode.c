@@ -1849,6 +1849,43 @@ START_TEST(test_bytecode_map_value_size_product_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_bytecode_json_api_admission_is_fail_visible)
+{
+    struct cli_bc_ctx bytecode_ctx;
+    cli_ctx scan_ctx;
+    json_object *root;
+    json_object *array;
+    json_object *json_objects[1];
+
+    memset(&bytecode_ctx, 0, sizeof(bytecode_ctx));
+    memset(&scan_ctx, 0, sizeof(scan_ctx));
+    root = json_object_new_object();
+    ck_assert_ptr_nonnull(root);
+    scan_ctx.metadata_json = root;
+    bytecode_ctx.ctx = &scan_ctx;
+
+    /* A saturated object table must be rejected before dereferencing it. */
+    json_objects[0] = root;
+    bytecode_ctx.jsonobjs = (void **)json_objects;
+    bytecode_ctx.njsonobjs = UINT_MAX;
+    ck_assert_int_eq(cli_bcapi_json_get_object(&bytecode_ctx, (const int8_t *)"x", 1, 0), -1);
+
+    array = json_object_new_array();
+    ck_assert_ptr_nonnull(array);
+    json_object_array_add(array, json_object_new_object());
+    json_objects[0] = array;
+    ck_assert_int_eq(cli_bcapi_json_get_array_idx(&bytecode_ctx, 0, 0), -1);
+
+    /* INT32_MAX must not overflow the signed name_len + 1 expression. */
+    bytecode_ctx.jsonobjs = NULL;
+    bytecode_ctx.njsonobjs = 0;
+    ck_assert_int_eq(cli_bcapi_json_get_object(&bytecode_ctx, (const int8_t *)"x", INT32_MAX, 0), -1);
+    free(bytecode_ctx.jsonobjs);
+    json_object_put(root);
+    json_object_put(array);
+}
+END_TEST
+
 Suite *test_bytecode_suite(void)
 {
     Suite *s            = suite_create("bytecode");
@@ -1942,6 +1979,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_recursive_or_oversized_types);
     tcase_add_test(tc_cli_loader, test_bytecode_table_size_admission_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_map_value_size_product_is_fail_visible);
+    tcase_add_test(tc_cli_loader, test_bytecode_json_api_admission_is_fail_visible);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
 #endif

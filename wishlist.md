@@ -1,5 +1,19 @@
 # Wishlist
 
+## Bytecode JSON API size admission — 2026-08-29
+
+- Keep JSON object and array table growth behind the shared native-width
+  count/product helper, rejecting saturated counts before dereference or
+  reallocation.
+- Keep bytecode JSON name lengths in `size_t`, cap them before forming the
+  NUL terminator size, and retain
+  `test_bytecode_json_api_admission_is_fail_visible` plus its source guards.
+  The current `bytecode_api.c` and Check source compile with Docker production
+  GCC, and the isolated current-source production-linked UBSan harness prints
+  `bytecode_json_api_guard_passed`; full bytecode JSON corpus/execution,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  parser-family, and release qualification remain open.
+
 ## Shared Uniq table-size admission — 2026-08-29
 
 - Keep `uniq_init()` behind checked `uint64_t` table-size derivation,

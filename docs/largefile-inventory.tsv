@@ -908,22 +908,22 @@ fixed-width-integer	libclamav/bytecode_api.c	248	            base = (uint64_t)ct
 fixed-width-integer	libclamav/bytecode_api.c	2481	int32_t cli_bcapi_get_file_reliability(struct cli_bc_ctx *ctx)
 fixed-width-integer	libclamav/bytecode_api.c	2487	int32_t cli_bcapi_json_is_active(struct cli_bc_ctx *ctx)
 fixed-width-integer	libclamav/bytecode_api.c	2496	static int32_t cli_bcapi_json_objs_init(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode_api.c	2523	int32_t cli_bcapi_json_get_object(struct cli_bc_ctx *ctx, const int8_t *name, int32_t name_len, int32_t objid)
-fixed-width-integer	libclamav/bytecode_api.c	2571	int32_t cli_bcapi_json_get_type(struct cli_bc_ctx *ctx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2529	int32_t cli_bcapi_json_get_object(struct cli_bc_ctx *ctx, const int8_t *name, int32_t name_len, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2589	int32_t cli_bcapi_json_get_type(struct cli_bc_ctx *ctx, int32_t objid)
 fixed-width-integer	libclamav/bytecode_api.c	259	        uint64_t magnitude = (uint64_t)(-(pos + 1)) + 1;
-fixed-width-integer	libclamav/bytecode_api.c	2606	int32_t cli_bcapi_json_get_array_length(struct cli_bc_ctx *ctx, int32_t objid)
-fixed-width-integer	libclamav/bytecode_api.c	2626	int32_t cli_bcapi_json_get_array_idx(struct cli_bc_ctx *ctx, int32_t idx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2624	int32_t cli_bcapi_json_get_array_length(struct cli_bc_ctx *ctx, int32_t objid)
 fixed-width-integer	libclamav/bytecode_api.c	264	        if (base > UINT64_MAX - (uint64_t)pos)
+fixed-width-integer	libclamav/bytecode_api.c	2644	int32_t cli_bcapi_json_get_array_idx(struct cli_bc_ctx *ctx, int32_t idx, int32_t objid)
 fixed-width-integer	libclamav/bytecode_api.c	266	        target = base + (uint64_t)pos;
-fixed-width-integer	libclamav/bytecode_api.c	2674	int32_t cli_bcapi_json_get_string_length(struct cli_bc_ctx *ctx, int32_t objid)
-fixed-width-integer	libclamav/bytecode_api.c	2678	    int32_t len;
 fixed-width-integer	libclamav/bytecode_api.c	268	    if (target > ctx->file_size64 || target > (uint64_t)INT64_MAX || target > (uint64_t)SIZE_MAX) {
-fixed-width-integer	libclamav/bytecode_api.c	2704	int32_t cli_bcapi_json_get_string(struct cli_bc_ctx *ctx, int8_t *str, int32_t str_len, int32_t objid)
-fixed-width-integer	libclamav/bytecode_api.c	2708	    int32_t len;
-fixed-width-integer	libclamav/bytecode_api.c	2744	int32_t cli_bcapi_json_get_boolean(struct cli_bc_ctx *ctx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2696	int32_t cli_bcapi_json_get_string_length(struct cli_bc_ctx *ctx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2700	    int32_t len;
+fixed-width-integer	libclamav/bytecode_api.c	2726	int32_t cli_bcapi_json_get_string(struct cli_bc_ctx *ctx, int8_t *str, int32_t str_len, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2730	    int32_t len;
 fixed-width-integer	libclamav/bytecode_api.c	275	    return (int64_t)target;
-fixed-width-integer	libclamav/bytecode_api.c	2759	int32_t cli_bcapi_json_get_int(struct cli_bc_ctx *ctx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2766	int32_t cli_bcapi_json_get_boolean(struct cli_bc_ctx *ctx, int32_t objid)
 fixed-width-integer	libclamav/bytecode_api.c	278	uint32_t cli_bcapi_debug_print_str(struct cli_bc_ctx *ctx, const uint8_t *str, uint32_t len)
+fixed-width-integer	libclamav/bytecode_api.c	2781	int32_t cli_bcapi_json_get_int(struct cli_bc_ctx *ctx, int32_t objid)
 fixed-width-integer	libclamav/bytecode_api.c	286	uint32_t cli_bcapi_debug_print_uint(struct cli_bc_ctx *ctx, uint32_t a)
 fixed-width-integer	libclamav/bytecode_api.c	300	uint32_t cli_bcapi_setvirusname(struct cli_bc_ctx *ctx, const uint8_t *name, uint32_t len)
 fixed-width-integer	libclamav/bytecode_api.c	307	uint32_t cli_bcapi_disasm_x86(struct cli_bc_ctx *ctx, struct DISASM_RESULT *res, uint32_t len)
@@ -9816,16 +9816,21 @@ native-width-integer	libclamav/bytecode_api.c	2226	        cli_dbgmsg("cli_bcapi
 native-width-integer	libclamav/bytecode_api.c	223	                   (long long)off, ctx->file_size);
 native-width-integer	libclamav/bytecode_api.c	2272	    unsigned long li = 0, ri = 0;
 native-width-integer	libclamav/bytecode_api.c	2299	static int check_bits(uint32_t query, uint32_t value, uint8_t shift, uint8_t mask)
-native-width-integer	libclamav/bytecode_api.c	2531	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2578	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2613	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2630	    int length;
-native-width-integer	libclamav/bytecode_api.c	2635	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2683	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2713	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2499	    size_t table_size;
+native-width-integer	libclamav/bytecode_api.c	2532	    size_t name_size, table_size;
+native-width-integer	libclamav/bytecode_api.c	2538	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2557	    name_size = (size_t)name_len;
+native-width-integer	libclamav/bytecode_api.c	2558	    if (name_size > (size_t)CLI_MAX_ALLOCATION - 1) {
+native-width-integer	libclamav/bytecode_api.c	2596	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2631	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2648	    size_t table_size;
+native-width-integer	libclamav/bytecode_api.c	2649	    int length;
+native-width-integer	libclamav/bytecode_api.c	2654	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2705	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2735	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
 native-width-integer	libclamav/bytecode_api.c	274	    ctx->off = (off_t)target;
-native-width-integer	libclamav/bytecode_api.c	2750	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2765	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2772	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2787	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
 native-width-integer	libclamav/bytecode_api.c	309	    int n;
 native-width-integer	libclamav/bytecode_api.c	313	    if (!res || !ctx->fmap || (size_t)(ctx->off) >= ctx->fmap->len) {
 native-width-integer	libclamav/bytecode_api.c	342	    size_t materialized;
@@ -21108,6 +21113,7 @@ boundary-constant	unit_tests/check_bytecode.c	1464	    const off_t pdf_start = (
 boundary-constant	unit_tests/check_bytecode.c	1508	    ck_assert(cli_bytecode_file_size_compatible(UINT32_MAX));
 boundary-constant	unit_tests/check_bytecode.c	1569	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_bytecode.c	1616	    bcctx->lsigoff[0] = (uint64_t)UINT32_MAX + 1;
+boundary-constant	unit_tests/check_bytecode.c	1870	    bytecode_ctx.njsonobjs = UINT_MAX;
 boundary-constant	unit_tests/check_bytecode.c	610	    if (state->marker_offset > SIZE_MAX - state->marker_length)
 boundary-constant	unit_tests/check_bytecode.c	675	        size_t offset = SIZE_MAX;
 boundary-constant	unit_tests/check_bytecode.c	681	        } else if (line[0] == 'E' && maxapi != UINT_MAX) {
@@ -22325,9 +22331,9 @@ format-width	libclamav/bytecode_api.c	156	        cli_dbgmsg("bcapi_read: fmap_r
 format-width	libclamav/bytecode_api.c	181	        cli_dbgmsg("bcapi_read64: fmap_readn returned %s (requested %u)\n",
 format-width	libclamav/bytecode_api.c	222	        cli_dbgmsg("bcapi_seek: out of file: %lld (max %d)\n",
 format-width	libclamav/bytecode_api.c	2226	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
-format-width	libclamav/bytecode_api.c	2566	    cli_dbgmsg("bytecode api[json_get_object]: assigned %s => ID %d\n", namep, n - 1);
-format-width	libclamav/bytecode_api.c	2600	            cli_dbgmsg("bytecode api[json_get_type]: unrecognized json type %d\n", type);
-format-width	libclamav/bytecode_api.c	2667	        cli_dbgmsg("bytecode api[json_array_get_idx]: assigned array @ %d => ID %d\n", idx, n - 1);
+format-width	libclamav/bytecode_api.c	2584	    cli_dbgmsg("bytecode api[json_get_object]: assigned %s => ID %d\n", namep, n - 1);
+format-width	libclamav/bytecode_api.c	2618	            cli_dbgmsg("bytecode api[json_get_type]: unrecognized json type %d\n", type);
+format-width	libclamav/bytecode_api.c	2689	        cli_dbgmsg("bytecode api[json_array_get_idx]: assigned array @ %d => ID %d\n", idx, n - 1);
 format-width	libclamav/bytecode_api.c	289	    // cli_dbgmsg("bytecode debug: %d\n", a);
 format-width	libclamav/bytecode_api.c	294	    return cli_eprintf("%d", a);
 format-width	libclamav/bytecode_api.c	411	            cli_warnmsg("Bytecode API: short write: %zu of " STDu64 " bytes\n", res, write_len);
@@ -26290,23 +26296,24 @@ offset-size-arithmetic	libclamav/bytecode_api.c	2446	        cli_bcapi_mark_coor
 offset-size-arithmetic	libclamav/bytecode_api.c	2452	uint64_t cli_bcapi_pdf_get_offset64(struct cli_bc_ctx *ctx, int32_t objidx)
 offset-size-arithmetic	libclamav/bytecode_api.c	2458	        (uint64_t)ctx->pdf_startoff > UINT64_MAX - ctx->pdf_objs[objidx]->start)
 offset-size-arithmetic	libclamav/bytecode_api.c	2460	    return (uint64_t)ctx->pdf_startoff + ctx->pdf_objs[objidx]->start;
-offset-size-arithmetic	libclamav/bytecode_api.c	2502	    j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
-offset-size-arithmetic	libclamav/bytecode_api.c	2543	    if (!jobj) /* shouldn't be possible */
-offset-size-arithmetic	libclamav/bytecode_api.c	2545	    namep = (char *)cli_max_malloc(sizeof(char) * (name_len + 1));
-offset-size-arithmetic	libclamav/bytecode_api.c	2556	    j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
+offset-size-arithmetic	libclamav/bytecode_api.c	2503	    if (cli_bcapi_table_size(ctx->njsonobjs, sizeof(json_object *), &n, &table_size) != 0) {
+offset-size-arithmetic	libclamav/bytecode_api.c	2548	    if (cli_bcapi_table_size(ctx->njsonobjs, sizeof(json_object *), &n, &table_size) != 0) {
+offset-size-arithmetic	libclamav/bytecode_api.c	2554	    if (!jobj) /* shouldn't be possible */
+offset-size-arithmetic	libclamav/bytecode_api.c	2558	    if (name_size > (size_t)CLI_MAX_ALLOCATION - 1) {
+offset-size-arithmetic	libclamav/bytecode_api.c	2563	    namep = (char *)cli_max_malloc(name_size + 1);
 offset-size-arithmetic	libclamav/bytecode_api.c	259	        uint64_t magnitude = (uint64_t)(-(pos + 1)) + 1;
-offset-size-arithmetic	libclamav/bytecode_api.c	2606	int32_t cli_bcapi_json_get_array_length(struct cli_bc_ctx *ctx, int32_t objid)
-offset-size-arithmetic	libclamav/bytecode_api.c	2641	    if (!jarr) /* shouldn't be possible */
-offset-size-arithmetic	libclamav/bytecode_api.c	2658	        j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
-offset-size-arithmetic	libclamav/bytecode_api.c	2674	int32_t cli_bcapi_json_get_string_length(struct cli_bc_ctx *ctx, int32_t objid)
-offset-size-arithmetic	libclamav/bytecode_api.c	2689	    if (!jobj) /* shouldn't be possible */
-offset-size-arithmetic	libclamav/bytecode_api.c	2719	    if (!jobj) /* shouldn't be possible */
-offset-size-arithmetic	libclamav/bytecode_api.c	2731	    if (len + 1 > str_len) {
-offset-size-arithmetic	libclamav/bytecode_api.c	2732	        /* limit on str-len */
-offset-size-arithmetic	libclamav/bytecode_api.c	2733	        strncpy((char *)str, jstr, str_len - 1);
-offset-size-arithmetic	libclamav/bytecode_api.c	2734	        str[str_len - 1] = '\0';
-offset-size-arithmetic	libclamav/bytecode_api.c	2737	        /* limit on len+1 */
-offset-size-arithmetic	libclamav/bytecode_api.c	2740	        return len + 1;
+offset-size-arithmetic	libclamav/bytecode_api.c	2624	int32_t cli_bcapi_json_get_array_length(struct cli_bc_ctx *ctx, int32_t objid)
+offset-size-arithmetic	libclamav/bytecode_api.c	2660	    if (!jarr) /* shouldn't be possible */
+offset-size-arithmetic	libclamav/bytecode_api.c	2670	        if (cli_bcapi_table_size(ctx->njsonobjs, sizeof(json_object *), &n, &table_size) != 0) {
+offset-size-arithmetic	libclamav/bytecode_api.c	2696	int32_t cli_bcapi_json_get_string_length(struct cli_bc_ctx *ctx, int32_t objid)
+offset-size-arithmetic	libclamav/bytecode_api.c	2711	    if (!jobj) /* shouldn't be possible */
+offset-size-arithmetic	libclamav/bytecode_api.c	2741	    if (!jobj) /* shouldn't be possible */
+offset-size-arithmetic	libclamav/bytecode_api.c	2753	    if (len + 1 > str_len) {
+offset-size-arithmetic	libclamav/bytecode_api.c	2754	        /* limit on str-len */
+offset-size-arithmetic	libclamav/bytecode_api.c	2755	        strncpy((char *)str, jstr, str_len - 1);
+offset-size-arithmetic	libclamav/bytecode_api.c	2756	        str[str_len - 1] = '\0';
+offset-size-arithmetic	libclamav/bytecode_api.c	2759	        /* limit on len+1 */
+offset-size-arithmetic	libclamav/bytecode_api.c	2762	        return len + 1;
 offset-size-arithmetic	libclamav/bytecode_api.c	281	    cli_event_fastdata(EV, BCEV_DBG_STR, str, strlen((const char *)str));
 offset-size-arithmetic	libclamav/bytecode_api.c	313	    if (!res || !ctx->fmap || (size_t)(ctx->off) >= ctx->fmap->len) {
 offset-size-arithmetic	libclamav/bytecode_api.c	319	    n   = MIN(32, ctx->fmap->len - ctx->off);
@@ -36144,6 +36151,7 @@ offset-size-arithmetic	unit_tests/check_bytecode.c	1627	    ck_assert(bcctx->hoo
 offset-size-arithmetic	unit_tests/check_bytecode.c	1720	    engine->bcs.all_bcs   = calloc(1, sizeof(*engine->bcs.all_bcs));
 offset-size-arithmetic	unit_tests/check_bytecode.c	1721	    engine->hooks[hook_slot] = calloc(1, sizeof(*engine->hooks[hook_slot]));
 offset-size-arithmetic	unit_tests/check_bytecode.c	1731	    hook_bc->funcs                = calloc(1, sizeof(*hook_bc->funcs));
+offset-size-arithmetic	unit_tests/check_bytecode.c	1879	    /* INT32_MAX must not overflow the signed name_len + 1 expression. */
 offset-size-arithmetic	unit_tests/check_bytecode.c	521	    str = malloc(strlen(SRCDIR) + 1 + strlen(dbname) + 1);
 offset-size-arithmetic	unit_tests/check_bytecode.c	569	static off_t bytecode_failing_pread_cb(void *handle, void *buf, size_t count, off_t offset)
 offset-size-arithmetic	unit_tests/check_bytecode.c	573	    if (offset >= state->fail_at) {
