@@ -38823,6 +38823,47 @@ START_TEST(test_elf_unknown_data_encoding_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_elf_version_is_fail_visible)
+{
+    uint8_t data[sizeof(struct elf_file_hdr64)] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t mode;
+
+    data[0] = 0x7f;
+    data[1] = 'E';
+    data[2] = 'L';
+    data[3] = 'F';
+    data[4] = 2; /* ELFCLASS64. */
+    data[5] = 1; /* ELFDATA2LSB. */
+    data[6] = 1; /* EI_VERSION = EV_CURRENT. */
+    zip_stream_write_u32(data + 20, 1); /* e_version = EV_CURRENT. */
+    zip_stream_write_u16(data + 52, sizeof(struct elf_file_hdr64));
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    for (mode = 0; mode < 2; mode++) {
+        data[6]  = mode == 0 ? 0 : 1;
+        zip_stream_write_u32(data + 20, mode == 0 ? 1 : 2);
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine  = &engine;
+        ctx.options = &options;
+        map         = cl_fmap_open_memory(data, sizeof(data));
+        ck_assert_ptr_nonnull(map);
+        ctx.fmap = map;
+
+        ck_assert_int_eq(cli_scanelf(&ctx), CL_EFORMAT);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF file version is invalid");
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+    }
+}
+END_TEST
+
 START_TEST(test_elf_header_size_is_fail_visible)
 {
     uint8_t data[sizeof(struct elf_file_hdr64)] = {0};
@@ -46041,6 +46082,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_autoit_map, test_autoit_requires_engine);
     tcase_add_test(tc_mspack_map, test_mspack_parsers_require_engine);
     tcase_add_test(tc_elf_map, test_elf_unknown_data_encoding_is_fail_visible);
+    tcase_add_test(tc_elf_map, test_elf_version_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_header_size_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_time_limit_is_fail_visible);

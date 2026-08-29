@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## ELF version admission — 2026-08-29
+
+The ELF header parser converted `e_version` but did not validate either the
+object-header version or `EI_VERSION`. A fully read confirmed ELF with an
+invalid or reserved version could therefore proceed into program- and
+section-table inspection as if its format contract were known. The parser now
+requires both fields to be the current ELF version before trusting any table
+metadata, returning `CL_EFORMAT`, recording `ELF file version is invalid`, and
+disabling clean-result caching. The registered
+`test_elf_version_is_fail_visible` regression covers invalid `EI_VERSION` and
+invalid `e_version`; the current-source GCC ASan/UBSan runner passes 2/2 with
+no sanitizer finding. Complete ELF corpus, coherent public TCase execution,
+production-CVD/service, materialized-large-file, certified Linux x86-64,
+Sonic1, and final parser-family/release qualification remain open.
+
 ## Legacy CPIO high-word size arithmetic — 2026-08-29
 
 The old-binary CPIO parser assembled a 32-bit member size by shifting a

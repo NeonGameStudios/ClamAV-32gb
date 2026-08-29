@@ -238,6 +238,17 @@ static cl_error_t cli_elf_fileheader(cli_ctx *ctx, fmap_t *map, union elf_file_h
     file_hdr->hdr64.e_machine = EC16(file_hdr->hdr64.e_machine, conv);
     file_hdr->hdr64.e_version = EC32(file_hdr->hdr64.e_version, conv);
 
+    /* Both the identification-byte version and the object-header version
+     * must describe the current ELF format before any table metadata is
+     * trusted. Reserved or invalid versions are confirmed malformed input,
+     * not a reason to continue with partial structural assumptions. */
+    if (file_hdr->hdr64.e_ident[6] != 1 || file_hdr->hdr64.e_version != 1) {
+        cli_dbgmsg("ELF: Unsupported or invalid file version\n");
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "ELF file version is invalid");
+        return CL_EFORMAT;
+    }
+
     if (format64) {
         /* Read rest of 64-bit header */
         bytes_read  = cli_elf_readn(map, file_hdr->hdr32.pad, sizeof(struct elf_file_hdr32), ELF_HDR_SIZEDIFF);

@@ -1,5 +1,17 @@
 # Wishlist
 
+## ELF version admission — 2026-08-29
+
+- Keep confirmed ELF admission fail-closed by requiring both `EI_VERSION` and
+  `e_version` to equal the current ELF version before program- or
+  section-table metadata is trusted; invalid or reserved values return
+  `CL_EFORMAT`, record `ELF file version is invalid`, and disable caching.
+- Retain `test_elf_version_is_fail_visible` and its source guards. The
+  current-source GCC ASan/UBSan runner passes 2/2 for invalid identification
+  and object-header versions. Complete ELF corpus, coherent public TCase,
+  production-CVD/service, materialized-large-file, certified Linux x86-64,
+  Sonic1, parser-family, and release evidence remain open.
+
 ## Legacy CPIO high-word size arithmetic — 2026-08-29
 
 - Keep old-binary CPIO member-size assembly explicitly widened before the

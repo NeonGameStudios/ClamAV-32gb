@@ -310,6 +310,19 @@ runner passes 2/2 across the two read classes. Complete DMG corpus, coherent
 public TCase relink/execution, production-CVD/service, materialized-large-file,
 certified Linux x86-64, Sonic1, and release qualification remain gates.
 
+## ELF version admission — 2026-08-29
+
+ELF admission now requires both the identification-byte version and the
+object-header `e_version` to equal the current format version before any
+program- or section-table metadata is trusted. Invalid or reserved values
+return `CL_EFORMAT`, record `ELF file version is invalid`, and leave the
+recognized map non-cacheable. The registered
+`test_elf_version_is_fail_visible` regression covers both invalid version
+fields, and a current-source GCC ASan/UBSan runner passes 2/2 with no
+sanitizer finding. Complete ELF corpus, coherent public TCase execution,
+production-CVD/service, materialized-large-file, certified Linux x86-64,
+Sonic1, and release qualification remain gates.
+
 ## EGG decoded-block CRC verification — 2026-08-29
 
 EGG block extraction now computes CRC-32 over decoded output and verifies the
