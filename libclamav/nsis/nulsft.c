@@ -759,6 +759,8 @@ cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
         cli_mark_scan_incomplete(ctx, "NSIS header input map is unavailable");
         return CL_EPARSE;
     }
+    if (!ctx->engine)
+        return CL_ENULLARG;
     if (nsis_checktimelimit(ctx, "NSIS header inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;
     if (offset < 0 || (uint64_t)offset > ctx->fmap->len)
@@ -833,6 +835,8 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
         cli_mark_scan_incomplete(ctx, "NSIS input map is unavailable");
         return CL_EPARSE;
     }
+    if (!ctx->engine)
+        return CL_ENULLARG;
     ret = nsis_checktimelimit(ctx, "NSIS inspection reached the configured time limit");
     if (ret != CL_SUCCESS)
         return ret;

@@ -7762,3 +7762,12 @@ qualification gates.
 - Add direct overflow/failure execution and retain full phishing/regex corpus,
   sanitizer, production-CVD/service, materialized-large-file, and Sonic1
   qualification as open requirements.
+
+## NSIS missing-engine admission — 2026-08-29
+
+- Keep NULSFT header-check and confirmed decoder entries fail-visible with
+  `CL_ENULLARG` when the owning engine is absent, before deadline or temporary
+  output access.
+- Add linked execution of the new regression and retain complete NSIS/SFX,
+  sanitizer, production-CVD/service, materialized-large-file, and Sonic1
+  qualification as open requirements.

@@ -14539,3 +14539,14 @@ formed and returns `REG_ESPACE` on rejection. The source guard pins all three
 executor call sites. Current-source GCC compilation, direct overflow/failure
 execution, complete phishing/regex corpus, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and parser-family qualification remain open.
+
+## NSIS missing-engine admission audit — 2026-08-29
+
+The NULSFT header-check and confirmed decoder entry points reached the shared
+deadline helper before validating the owning engine. A recognized map with a
+missing engine could therefore dereference incomplete scan state instead of
+returning the established `CL_ENULLARG` contract. Both entry points now reject
+that state before any engine-dependent work; the focused regression covers both
+paths. Current-source GCC compilation and linked execution, complete NSIS/SFX
+corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+and parser-family qualification remain open.
