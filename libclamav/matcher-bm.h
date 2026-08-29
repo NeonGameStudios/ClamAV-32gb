@@ -53,6 +53,7 @@ struct cli_bm_off {
 };
 
 cl_error_t cli_bm_addpatt(struct cli_matcher *root, struct cli_bm_patt *pattern, const char *offset);
+cl_error_t cli_bm_pattern_table_size(uint32_t pattern_count, size_t element_size, size_t *bytes);
 cl_error_t cli_bm_init(struct cli_matcher *root);
 cl_error_t cli_bm_initoff(const struct cli_matcher *root, struct cli_bm_off *data, const struct cli_target_info *info);
 void cli_bm_freeoff(struct cli_bm_off *data);

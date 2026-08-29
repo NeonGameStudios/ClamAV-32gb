@@ -61,12 +61,29 @@ static bool cli_bm_add_u64(uint64_t left, uint64_t right, uint64_t *result)
     return true;
 }
 
+cl_error_t cli_bm_pattern_table_size(uint32_t pattern_count, size_t element_size, size_t *bytes)
+{
+    if (bytes == NULL || element_size == 0)
+        return CL_EARG;
+
+    if ((uint64_t)pattern_count > (uint64_t)SIZE_MAX / (uint64_t)element_size ||
+        (uint64_t)pattern_count > (uint64_t)CLI_MAX_ALLOCATION / (uint64_t)element_size)
+        return CL_ERESOURCE;
+
+    *bytes = (size_t)pattern_count * element_size;
+    return CL_SUCCESS;
+}
+
 cl_error_t cli_bm_addpatt(struct cli_matcher *root, struct cli_bm_patt *pattern, const char *offset)
 {
     uint16_t idx, i;
     const unsigned char *pt = pattern->pattern;
     struct cli_bm_patt *prev, *next = NULL;
     cl_error_t ret;
+    size_t pattern_table_size;
+
+    if (root->bm_patterns == UINT32_MAX)
+        return CL_EMEM;
 
     if (pattern->length < BM_MIN_LENGTH) {
         cli_errmsg("cli_bm_addpatt: Signature for %s is too short\n", pattern->virname);
@@ -141,7 +158,11 @@ cl_error_t cli_bm_addpatt(struct cli_matcher *root, struct cli_bm_patt *pattern,
     root->bm_suffix[idx]->cnt++;
 
     if (root->bm_offmode) {
-        root->bm_pattab = (struct cli_bm_patt **)MPOOL_REALLOC2(root->mempool, root->bm_pattab, (root->bm_patterns + 1) * sizeof(struct cli_bm_patt *));
+        if (cli_bm_pattern_table_size(root->bm_patterns + 1, sizeof(struct cli_bm_patt *), &pattern_table_size) != CL_SUCCESS) {
+            cli_errmsg("cli_bm_addpatt: BM pattern table exceeds allocation limits\n");
+            return CL_EMEM;
+        }
+        root->bm_pattab = (struct cli_bm_patt **)MPOOL_REALLOC2(root->mempool, root->bm_pattab, pattern_table_size);
         if (!root->bm_pattab) {
             cli_errmsg("cli_bm_addpatt: Can't allocate memory for root->bm_pattab\n");
             return CL_EMEM;
@@ -182,6 +203,7 @@ cl_error_t cli_bm_initoff(const struct cli_matcher *root, struct cli_bm_off *dat
     unsigned int i;
     struct cli_bm_patt *patt;
     uint64_t match_offset;
+    size_t offset_table_size;
 
     if (!root->bm_patterns) {
         data->offtab = data->offset = NULL;
@@ -190,12 +212,16 @@ cl_error_t cli_bm_initoff(const struct cli_matcher *root, struct cli_bm_off *dat
     }
 
     data->cnt = data->pos = 0;
-    data->offtab          = (uint64_t *)cli_max_malloc(root->bm_patterns * sizeof(uint64_t));
+    if (cli_bm_pattern_table_size(root->bm_patterns, sizeof(uint64_t), &offset_table_size) != CL_SUCCESS) {
+        cli_errmsg("cli_bm_initoff: BM offset table exceeds allocation limits\n");
+        return CL_EMEM;
+    }
+    data->offtab          = (uint64_t *)cli_max_malloc(offset_table_size);
     if (!data->offtab) {
         cli_errmsg("cli_bm_initoff: Can't allocate memory for data->offtab\n");
         return CL_EMEM;
     }
-    data->offset = (uint64_t *)cli_max_malloc(root->bm_patterns * sizeof(uint64_t));
+    data->offset = (uint64_t *)cli_max_malloc(offset_table_size);
     if (!data->offset) {
         cli_errmsg("cli_bm_initoff: Can't allocate memory for data->offset\n");
         free(data->offtab);

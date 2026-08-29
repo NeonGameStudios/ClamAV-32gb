@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## BM pattern-table product admission — 2026-08-29
+
+The enabled Boyer–Moore matcher kept its database pattern count in
+`uint32_t`, then formed `bm_patterns * sizeof(...)` directly for BM offset
+tables and `(bm_patterns + 1) * sizeof(pointer)` for offset-mode growth. On a
+narrower build, either product could wrap before the allocator rejected the
+request, and the count-plus-one expression could itself wrap at
+`UINT32_MAX`. `cli_bm_pattern_table_size()` now checks native representability
+and the individual 1-GiB allocation ceiling before every affected allocation;
+BM pattern growth also rejects a saturated count. The registered
+`test_bm_pattern_table_size_rejects_product_wrap` regression covers zero,
+the exact ceiling, the first over-ceiling count, `UINT32_MAX`, zero element
+width, and a null output pointer. The current BM source and matcher test
+translation pass the Docker production-GCC syntax checks (with one existing
+signedness warning in the offset-coordinate comparison), and an isolated
+current-source production-linked harness prints
+`bm_pattern_table_guard_passed`. Full production-signature corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, and final matcher/release qualification remain open.
+
 ## Aspack block-buffer size admission — 2026-08-29
 
 The enabled Aspack decoder validated a compressed block with the source-map

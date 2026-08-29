@@ -1,5 +1,19 @@
 # Wishlist
 
+## BM pattern-table product admission — 2026-08-29
+
+- Keep BM offset-mode pattern growth and per-scan offset tables behind
+  `cli_bm_pattern_table_size()`, rejecting native-width and
+  `CLI_MAX_ALLOCATION` product overflow before allocation; reject a saturated
+  `bm_patterns` count before `bm_patterns + 1` can wrap.
+- Retain `test_bm_pattern_table_size_rejects_product_wrap` and its source
+  guards. The current BM source and matcher test pass the Docker production-
+  GCC syntax checks, and the isolated current-source harness prints
+  `bm_pattern_table_guard_passed`; full production-signature corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, parser-family, and release qualification
+  remain open.
+
 ## Aspack block-buffer size admission — 2026-08-29
 
 - Keep Aspack compressed-block work-buffer sizing behind
