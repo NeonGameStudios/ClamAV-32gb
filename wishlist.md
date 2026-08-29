@@ -1,5 +1,17 @@
 # Wishlist
 
+## Mpool calloc count-product admission — 2026-08-29
+
+- Keep `USE_MPOOL` calloc fail-closed: reject zero operands and
+  `nmemb > SIZE_MAX / size` before multiplying the requested count and element
+  size.
+- Retain `test_mpool_calloc_rejects_count_product_wrap` and the source guard;
+  the modified allocator and matcher test source pass Docker production-GCC
+  syntax checks with `USE_MPOOL`, and the isolated current allocator harness
+  prints `mpool_count_product_rejected`. Full allocator-variant, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, parser-family, and release qualification remain open.
+
 ## AC matcher count-product admission — 2026-08-29
 
 - Keep AC per-scan state allocation products in `size_t` before invoking the
