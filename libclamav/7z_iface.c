@@ -666,19 +666,23 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             else {
                 newnamelen = SzArEx_GetFileNameUtf16(&db, i, NULL);
                 if (newnamelen > namelen) {
-                    if (namelen > UTFBUFSZ)
-                        free(utf16name);
+                    UInt16 *new_utf16name;
+
                     if (newnamelen > SIZE_MAX / sizeof(*utf16name)) {
                         cli_mark_scan_incomplete(ctx, "7-Zip member name length could not be represented");
                         found = CL_ERESOURCE;
                         break;
                     }
-                    utf16name = cli_max_malloc(newnamelen * sizeof(*utf16name));
-                    if (!utf16name) {
+                    new_utf16name = cli_max_malloc(newnamelen * sizeof(*utf16name));
+                    if (!new_utf16name) {
                         cli_mark_scan_incomplete(ctx, "7-Zip member name could not be allocated");
                         found = CL_EMEM;
                         break;
                     }
+                    /* Keep the old buffer owned until replacement succeeds. */
+                    if (namelen > UTFBUFSZ)
+                        free(utf16name);
+                    utf16name = new_utf16name;
                     namelen = newnamelen;
                 }
                 SzArEx_GetFileNameUtf16(&db, i, utf16name);

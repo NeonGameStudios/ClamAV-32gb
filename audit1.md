@@ -35,6 +35,21 @@ bytecode execution/JIT, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification remain
 open.
 
+## 7-Zip member-name buffer ownership — 2026-08-29
+
+The 7-Zip interface reused a stack-sized UTF-16 filename buffer and replaced
+it with a dynamically allocated buffer for long member names. On a later
+member requiring further growth, it freed the existing dynamic buffer before
+checking the new size or allocation result. A representation-boundary or
+allocation failure then left the still-owned pointer dangling; the common
+cleanup path could free it a second time. Growth now allocates the replacement
+first and releases the previous dynamic buffer only after successful
+allocation, preserving fail-visible incomplete handling and cleanup
+ownership. The source guard pins this ordering; injected growth-failure,
+current-source production-GCC, complete 7-Zip/BCJ2 corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## UTF-16 converter output-size admission — 2026-08-29
 
 The exported UTF-16-to-UTF-8 helper formed `length * 3 / 2 + 2` before

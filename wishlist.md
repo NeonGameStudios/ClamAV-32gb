@@ -7819,3 +7819,12 @@ parser/release qualification as open requirements.
   guards. Current-source GCC execution, encrypted PDF corpus, sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final
   parser/release qualification remain open.
+
+## 7-Zip member-name buffer ownership — 2026-08-29
+
+- Allocate a replacement UTF-16 member-name buffer before freeing the prior
+  dynamic buffer, so later growth failures cannot leave cleanup with a
+  dangling pointer or double-free.
+- Add injected multi-member filename-growth failure coverage and retain
+  complete 7-Zip/BCJ2 corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final qualification as open.

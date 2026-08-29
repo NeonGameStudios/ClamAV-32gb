@@ -413,7 +413,7 @@ fixed-width-integer	libclamav/7z_iface.c	58	    uint64_t next_header_offset;
 fixed-width-integer	libclamav/7z_iface.c	59	    uint64_t next_header_size;
 fixed-width-integer	libclamav/7z_iface.c	643	            uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/7z_iface.c	78	    next_header_offset = (uint64_t)cli_readint64(header + 12);
-fixed-width-integer	libclamav/7z_iface.c	780	                    cli_dbgmsg("cli_7unz: refusing whole-folder fallback for " STDu64 " bytes\n", (uint64_t)folderSize);
+fixed-width-integer	libclamav/7z_iface.c	783	                    cli_dbgmsg("cli_7unz: refusing whole-folder fallback for " STDu64 " bytes\n", (uint64_t)folderSize);
 fixed-width-integer	libclamav/7z_iface.c	79	    next_header_size   = (uint64_t)cli_readint64(header + 20);
 fixed-width-integer	libclamav/7z_iface.c	83	    archive_size = (uint64_t)(ctx->fmap->len - offset);
 fixed-width-integer	libclamav/7z_iface.c	98	    uint64_t declared_size;
@@ -9408,11 +9408,11 @@ native-width-integer	libclamav/7z_iface.c	636	            size_t j;
 native-width-integer	libclamav/7z_iface.c	637	            size_t newnamelen;
 native-width-integer	libclamav/7z_iface.c	638	            int fd;
 native-width-integer	libclamav/7z_iface.c	644	            unsigned int encrypted      = 0;
-native-width-integer	libclamav/7z_iface.c	688	            for (j = 0; j < (size_t)newnamelen; j++) /* FIXME */
-native-width-integer	libclamav/7z_iface.c	741	                int allow_legacy   = folderIndex == (UInt32)-1;
-native-width-integer	libclamav/7z_iface.c	755	                    size_t legacyOffset = 0;
-native-width-integer	libclamav/7z_iface.c	756	                    size_t legacySize   = 0;
-native-width-integer	libclamav/7z_iface.c	767	                        size_t legacy_written = ClamFileOutStream_Write(&output, outBuffer + legacyOffset, legacySize);
+native-width-integer	libclamav/7z_iface.c	691	            for (j = 0; j < (size_t)newnamelen; j++) /* FIXME */
+native-width-integer	libclamav/7z_iface.c	744	                int allow_legacy   = folderIndex == (UInt32)-1;
+native-width-integer	libclamav/7z_iface.c	758	                    size_t legacyOffset = 0;
+native-width-integer	libclamav/7z_iface.c	759	                    size_t legacySize   = 0;
+native-width-integer	libclamav/7z_iface.c	770	                        size_t legacy_written = ClamFileOutStream_Write(&output, outBuffer + legacyOffset, legacySize);
 native-width-integer	libclamav/7z_iface.c	97	    int fd;
 native-width-integer	libclamav/7z_iface.h	31	int cli_7unz(cli_ctx *, size_t);
 native-width-integer	libclamav/7z_iface.h	32	cl_error_t cli_7z_header_check(cli_ctx *, size_t);
@@ -20990,7 +20990,7 @@ boundary-constant	common/optparser.c	1664	                numarg = lnumarg ? lnu
 boundary-constant	common/optparser.c	90	        if (parsed > (UINT32_MAX - digit) / 10U)
 boundary-constant	libclamav/7z/7zIn.c	796	        if (*numUnpackStreams > UINT32_MAX - numStreams)
 boundary-constant	libclamav/7z_iface.c	671	                    if (newnamelen > SIZE_MAX / sizeof(*utf16name)) {
-boundary-constant	libclamav/7z_iface.c	693	            if (f->Size > SIZE_MAX) {
+boundary-constant	libclamav/7z_iface.c	696	            if (f->Size > SIZE_MAX) {
 boundary-constant	libclamav/apm.c	133	    if (ddm.blockSize != 0 && ddm.blockCount > SIZE_MAX / ddm.blockSize) {
 boundary-constant	libclamav/apm.c	357	    /* Keep the inclusive walk safe when MaxPartitions is UINT32_MAX. */
 boundary-constant	libclamav/apm.c	407	                if (apentry.pBlockCount > UINT32_MAX / 4U) {
@@ -22313,8 +22313,8 @@ format-width	fuzz/clamav_dbload_fuzzer.cpp	96	    snprintf(tmp_file_name, sizeof
 format-width	fuzz/clamav_dbload_fuzzer.cpp	98	    snprintf(tmp_file_name, sizeof(tmp_file_name), "tmp.dbload.%d.hsb", pid);
 format-width	fuzz/clamav_scanfile_fuzzer.cpp	114	    snprintf(tmp_file_name, sizeof(tmp_file_name), "tmp.scanfile.%d", pid);
 format-width	libclamav/7z/XzDec.c	559	    printf("\nf[%d] = %2X: ", i, filter->id);
-format-width	libclamav/7z_iface.c	814	                cli_dbgmsg("cli_unz: extraction failed with %d\n", res);
-format-width	libclamav/7z_iface.c	872	        cli_dbgmsg("cli_7unz: error %d\n", res);
+format-width	libclamav/7z_iface.c	817	                cli_dbgmsg("cli_unz: extraction failed with %d\n", res);
+format-width	libclamav/7z_iface.c	875	        cli_dbgmsg("cli_7unz: error %d\n", res);
 format-width	libclamav/adc.c	130	                adc_dbgmsg("adc_decompress: GETTYPE bData %x state %u offset %u length %u\n",
 format-width	libclamav/adc.c	141	                adc_dbgmsg("adc_decompress: LONGOP2 bData %x state %u offset %u length %u\n",
 format-width	libclamav/adc.c	152	                adc_dbgmsg("adc_decompress: LONGOP1 bData %x state %u offset %u length %u\n",
@@ -25914,9 +25914,9 @@ offset-size-arithmetic	libclamav/7z_iface.c	64	    if (offset > ctx->fmap->len |
 offset-size-arithmetic	libclamav/7z_iface.c	665	                newnamelen = 0; /* no filename */
 offset-size-arithmetic	libclamav/7z_iface.c	67	    header = (const unsigned char *)fmap_need_off_once(ctx->fmap, offset, k7zStartHeaderSize);
 offset-size-arithmetic	libclamav/7z_iface.c	671	                    if (newnamelen > SIZE_MAX / sizeof(*utf16name)) {
-offset-size-arithmetic	libclamav/7z_iface.c	676	                    utf16name = cli_max_malloc(newnamelen * sizeof(*utf16name));
-offset-size-arithmetic	libclamav/7z_iface.c	713	            output.declared_size = f->Size;
-offset-size-arithmetic	libclamav/7z_iface.c	767	                        size_t legacy_written = ClamFileOutStream_Write(&output, outBuffer + legacyOffset, legacySize);
+offset-size-arithmetic	libclamav/7z_iface.c	676	                    new_utf16name = cli_max_malloc(newnamelen * sizeof(*utf16name));
+offset-size-arithmetic	libclamav/7z_iface.c	716	            output.declared_size = f->Size;
+offset-size-arithmetic	libclamav/7z_iface.c	770	                        size_t legacy_written = ClamFileOutStream_Write(&output, outBuffer + legacyOffset, legacySize);
 offset-size-arithmetic	libclamav/7z_iface.c	78	    next_header_offset = (uint64_t)cli_readint64(header + 12);
 offset-size-arithmetic	libclamav/7z_iface.c	79	    next_header_size   = (uint64_t)cli_readint64(header + 20);
 offset-size-arithmetic	libclamav/7z_iface.c	83	    archive_size = (uint64_t)(ctx->fmap->len - offset);
