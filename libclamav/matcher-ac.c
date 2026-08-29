@@ -1651,6 +1651,30 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
     return CL_SUCCESS;
 }
 
+cl_error_t cli_ac_match_offset_table_size(uint32_t last, size_t *bytes, uint32_t *new_last)
+{
+    const size_t base_size     = sizeof(struct cli_subsig_matches);
+    const size_t initial_slots = sizeof(((struct cli_subsig_matches *)0)->offsets) / sizeof(uint64_t);
+    size_t extra_slots;
+
+    if (bytes == NULL || new_last == NULL)
+        return CL_ENULLARG;
+
+    if ((size_t)last > (SIZE_MAX - base_size) / (sizeof(uint64_t) * 2U))
+        return CL_ERESOURCE;
+
+    extra_slots = (size_t)last * 2U;
+    if (extra_slots > (size_t)UINT32_MAX - initial_slots + 1U)
+        return CL_ERESOURCE;
+
+    *bytes = base_size + extra_slots * sizeof(uint64_t);
+    if (*bytes > CLI_MAX_ALLOCATION)
+        return CL_ERESOURCE;
+
+    *new_last = (uint32_t)(initial_slots + extra_slots - 1U);
+    return CL_SUCCESS;
+}
+
 cl_error_t cli_ac_caloff(const struct cli_matcher *root, struct cli_ac_data *data, const struct cli_target_info *info)
 {
     cl_error_t ret;
@@ -1887,8 +1911,17 @@ cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *
             }
             if (ss_matches->next > ss_matches->last) { /* cli_matches out of space? realloc */
                 struct cli_subsig_matches *new_matches;
+                size_t match_table_size;
+                uint32_t new_last;
 
-                new_matches = cli_max_realloc(ss_matches, sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2);
+                if (cli_ac_match_offset_table_size(ss_matches->last, &match_table_size, &new_last) != CL_SUCCESS) {
+                    cli_errmsg("lsig_sub_matched: match-offset table exceeded allocation limits\n");
+                    if (ctx)
+                        cli_mark_scan_incomplete(ctx, "logical signature match-offset tracking exceeded allocation limits");
+                    return CL_ERESOURCE;
+                }
+
+                new_matches = cli_max_realloc(ss_matches, match_table_size);
                 if (new_matches == NULL) {
                     cli_errmsg("lsig_sub_matched: realloc failed for cli_subsig_matches struct\n");
                     if (ctx)
@@ -1896,7 +1929,7 @@ cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *
                     return CL_EMEM;
                 }
                 ss_matches = ls_matches->matches[subsig_id] = new_matches;
-                ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) + ss_matches->last * 2 - 1;
+                ss_matches->last = new_last;
             }
 
             ss_matches->offsets[ss_matches->next] = realoff; /* finally, store the offset */

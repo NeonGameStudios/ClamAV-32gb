@@ -25,6 +25,21 @@ allocating the requested array. Complete hash-table caller corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## AC logical match-offset growth admission — 2026-08-29
+
+AC YARA-offset signatures retain every matching offset in a dynamically grown
+`uint64_t` array. The growth path previously formed the doubled `uint32_t`
+capacity and byte product before `cli_max_realloc()`, allowing a native-width
+wrap or `last`-index wrap after enough matches. The new
+`cli_ac_match_offset_table_size()` helper checks the product, the 32-bit index
+representation, and the shared individual-allocation ceiling before growth;
+an over-limit confirmed match returns `CL_ERESOURCE` and marks the layer
+incomplete. `test_ac_match_offset_growth_rejects_product_wrap` covers exact,
+over-limit, `UINT32_MAX`, and null-output boundaries without a large
+allocation. Complete production-signature corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final
+matcher/release qualification remain open.
+
 ## OpenIOC database admission — 2026-08-29
 
 The OpenIOC loader accumulated XML hash values with unchecked `calloc()` and

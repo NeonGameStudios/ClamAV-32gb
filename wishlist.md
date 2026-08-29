@@ -7889,3 +7889,11 @@ final qualification as open.
 - Retain the no-allocation over-limit regression and add full hash-table
   caller, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
   and final qualification evidence.
+
+## AC logical match-offset growth admission — 2026-08-29
+
+- Keep YARA-offset logical-signature match history growth behind checked
+  native-size, uint32-index, and individual-allocation limits before reallocation.
+- Retain `test_ac_match_offset_growth_rejects_product_wrap` and add complete
+  production-signature, sanitizer, production-CVD/service, materialized-large-file,
+  Sonic1, and final matcher qualification evidence.

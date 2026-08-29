@@ -155,6 +155,7 @@ cl_error_t cli_ac_addpatt(struct cli_matcher *root, struct cli_ac_patt *pattern)
 void lsig_increment_subsig_match(struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id);
 
 cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t lsigs, uint32_t reloffsigs, uint8_t tracklen);
+cl_error_t cli_ac_match_offset_table_size(uint32_t last, size_t *bytes, uint32_t *new_last);
 
 /**
  * @brief Increment the count for a subsignature of a logical signature.

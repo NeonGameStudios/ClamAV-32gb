@@ -6183,6 +6183,13 @@ contains libclamav/hashtab.c 'if (!hs || !array)'
 contains libclamav/hashtab.c 'cli_hashtab_table_size(hs->count, sizeof(*arr), &array_size)'
 contains unit_tests/check_bytecode.c 'hashset.count = CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1U;'
 contains docs/largefile-capabilities.tsv 'hashtab-set-export-admission'
+contains libclamav/matcher-ac.h 'cli_ac_match_offset_table_size(uint32_t last, size_t *bytes, uint32_t *new_last)'
+contains libclamav/matcher-ac.c 'cli_ac_match_offset_table_size(uint32_t last, size_t *bytes, uint32_t *new_last)'
+contains libclamav/matcher-ac.c 'logical signature match-offset tracking exceeded allocation limits'
+contains libclamav/matcher-ac.c 'new_matches = cli_max_realloc(ss_matches, match_table_size);'
+not_contains libclamav/matcher-ac.c 'sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2'
+contains unit_tests/check_matchers.c 'test_ac_match_offset_growth_rejects_product_wrap'
+contains docs/largefile-capabilities.tsv 'ac-match-offset-growth-admission'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2

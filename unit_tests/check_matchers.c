@@ -871,6 +871,24 @@ START_TEST(test_ac_initdata_rejects_count_product_wrap)
 }
 END_TEST
 
+START_TEST(test_ac_match_offset_growth_rejects_product_wrap)
+{
+    size_t bytes;
+    uint32_t new_last;
+    const size_t max_last = (CLI_MAX_ALLOCATION - sizeof(struct cli_subsig_matches)) /
+                            (sizeof(uint64_t) * 2U);
+
+    ck_assert_int_eq(cli_ac_match_offset_table_size(15, &bytes, &new_last), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, sizeof(struct cli_subsig_matches) + 15U * 2U * sizeof(uint64_t));
+    ck_assert_uint_eq(new_last, 45U);
+    ck_assert_int_eq(cli_ac_match_offset_table_size((uint32_t)max_last, &bytes, &new_last), CL_SUCCESS);
+    ck_assert_int_eq(cli_ac_match_offset_table_size((uint32_t)(max_last + 1U), &bytes, &new_last), CL_ERESOURCE);
+    ck_assert_int_eq(cli_ac_match_offset_table_size(UINT32_MAX, &bytes, &new_last), CL_ERESOURCE);
+    ck_assert_int_eq(cli_ac_match_offset_table_size(15, NULL, &new_last), CL_ENULLARG);
+    ck_assert_int_eq(cli_ac_match_offset_table_size(15, &bytes, NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_ac_pattern_table_rejects_saturated_count)
 {
     struct cli_matcher root;
@@ -2651,6 +2669,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_readdb_table_size_rejects_product_wrap);
     tcase_add_test(tc_matchers, test_ac_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_ac_initdata_rejects_count_product_wrap);
+    tcase_add_test(tc_matchers, test_ac_match_offset_growth_rejects_product_wrap);
     tcase_add_test(tc_matchers, test_ac_pattern_table_rejects_saturated_count);
     tcase_add_test(tc_matchers, test_mpool_allocation_size_wrap_is_fail_visible);
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
