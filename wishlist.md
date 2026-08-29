@@ -402,6 +402,16 @@
   production-CVD/service, materialized large-file, Sonic1, and final
   parser-family qualification remain required.
 
+## APM nested partition-name termination — 2026-08-29
+
+- Keep fixed-width APM partition names explicitly NUL-terminated before nested
+  fmap metadata duplication. The current-source GCC object compile and the
+  disposable production-library ASan/UBSan full-width-name fixture pass;
+  retain the full-width name/type corpus coverage and source guards.
+- Complete APM corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized large-file, Sonic1, and final
+  parser-family qualification remain required.
+
 ## ALZ empty-member accounting — 2026-08-28
 
 - Keep ALZ extraction accounting ahead of empty-member cleanup so a successful

@@ -653,6 +653,21 @@ preserve this boundary. Complete APM partition corpus, sanitizer,
 production-CVD/service, materialized large-file, certified Linux x86-64,
 Sonic1, and final release qualification remain required.
 
+## APM nested partition-name termination — 2026-08-29
+
+APM partition names are fixed-width 32-byte fields, but nested fmap metadata
+duplicates the supplied name as a C string. A full-width name with no NUL
+could therefore read beyond the decoded partition entry during child
+admission. The parser now copies each name into a 33-byte local buffer and
+adds an explicit terminator before nested scanning. The registered
+`test_apm_corpus_detects_embedded_mz` fixture now fills both the partition name
+and type fields completely while still requiring the exact nested `MZP` child
+match. A current-source GCC object compile completed, and the disposable
+production-library ASan/UBSan runner completed this non-terminated-name
+fixture without a finding. Complete APM corpus, sanitizer, production-CVD/
+service, materialized large-file, certified Linux x86-64, Sonic1, and final
+release qualification remain required.
+
 ## ALZ empty-member accounting — 2026-08-28
 
 The reusable `Vec<ExtractedFile>` ALZ sink previously removed a successful

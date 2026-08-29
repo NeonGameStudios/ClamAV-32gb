@@ -24596,8 +24596,9 @@ START_TEST(test_apm_corpus_detects_embedded_mz)
     data[PARTITION_BLOCK * BLOCK_SIZE + 7] = 0x02;
     data[PARTITION_BLOCK * BLOCK_SIZE + 11] = 0x03; /* payload block. */
     data[PARTITION_BLOCK * BLOCK_SIZE + 15] = 0x01;
-    memcpy(data + PARTITION_BLOCK * BLOCK_SIZE + 16, "MZ partition", 12);
-    memcpy(data + PARTITION_BLOCK * BLOCK_SIZE + 48, "Apple_HFS", 9);
+    /* Both fields are fixed-width and may legally consume all 32 bytes. */
+    memset(data + PARTITION_BLOCK * BLOCK_SIZE + 16, 'N', 32);
+    memset(data + PARTITION_BLOCK * BLOCK_SIZE + 48, 'T', 32);
     memcpy(data + PAYLOAD_BLOCK * BLOCK_SIZE, "MZP", 3);
 
     memset(&options, 0, sizeof(options));

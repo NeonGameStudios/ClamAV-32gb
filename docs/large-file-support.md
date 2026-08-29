@@ -507,6 +507,18 @@ without a finding. Complete APM corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized large-file, Sonic1, and final
 parser-family qualification remain required.
 
+## APM nested partition-name termination — 2026-08-29
+
+APM partition names are fixed-width 32-byte fields, while nested fmap
+metadata expects a NUL-terminated C string. The parser now copies each name
+into a 33-byte buffer and terminates it before child admission. The current
+source corpus fills the name and type fields completely and still reaches the
+exact nested `MZP` matcher. A current-source GCC object compile completed,
+and the disposable production-library ASan/UBSan runner completed the
+non-terminated-name fixture without a finding. Complete APM corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized large-file,
+Sonic1, and final parser-family qualification remain required.
+
 ## ALZ empty-member accounting — 2026-08-28
 
 The reusable ALZ `Vec<ExtractedFile>` sink now accounts for a completed member

@@ -83,6 +83,7 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     size_t tableoff = 0, tablesize = 0;
     size_t tableend = 0;
     size_t pos = 0, partoff = 0;
+    char partition_name[sizeof(apentry.name) + 1];
     /* maxpartitions is a full uint32_t setting. Keep the loop counter wider
      * than that setting so its inclusive terminal iteration cannot wrap back
      * to zero when MaxPartitions is UINT32_MAX. */
@@ -317,8 +318,15 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
         cli_dbgmsg("Blocks: [%u, +%u), ([%zu, +%zu))\n",
                    apentry.pBlockStart, apentry.pBlockCount, partoff, partsize);
 
+        /* APM names are fixed-width fields and need not be NUL-terminated.
+         * Materialize a bounded C string before handing the name to fmap
+         * metadata code, which duplicates names with an unbounded string
+         * operation. */
+        memcpy(partition_name, apentry.name, sizeof(apentry.name));
+        partition_name[sizeof(apentry.name)] = '\0';
+
         /* send the partition to cli_magic_scan_nested_fmap_type */
-        status = cli_magic_scan_nested_fmap_type(ctx->fmap, partoff, partsize, ctx, CL_TYPE_PART_ANY, (const char *)apentry.name, LAYER_ATTRIBUTES_NONE);
+        status = cli_magic_scan_nested_fmap_type(ctx->fmap, partoff, partsize, ctx, CL_TYPE_PART_ANY, partition_name, LAYER_ATTRIBUTES_NONE);
         if (status != CL_SUCCESS) {
             goto done;
         }
