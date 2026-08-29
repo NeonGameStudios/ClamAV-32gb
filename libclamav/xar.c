@@ -1120,7 +1120,7 @@ int cli_scanxar(cli_ctx *ctx)
             heap_start = hdr.size + (size_t)hdr.toc_length_compressed;
             if (offset > map->len - heap_start || length > map->len - heap_start - offset) {
                 cli_dbgmsg("cli_scanxar: heap extent exceeds the input map\n");
-                rc = CL_EFORMAT;
+                rc = xar_incomplete(ctx, "XAR heap extent is outside the input map");
                 goto exit_reader;
             }
 

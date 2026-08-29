@@ -1,5 +1,15 @@
 # Wishlist
 
+## XAR heap extent admission — 2026-08-28
+
+- Keep confirmed XAR data/EA heap extents bounded by the input fmap after
+  checked native-width arithmetic; an out-of-map extent must return
+  `CL_EPARSE`, mark the layer incomplete, and disable caching.
+- Retain `test_xar_heap_extent_outside_map_is_fail_visible` and its source
+  guards. Keep current-source production-linked execution, complete XAR
+  corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1,
+  and final parser-family/release evidence open.
+
 ## UUEncode explicit-map cache binding — 2026-08-28
 
 - Keep `cli_uuencode()` bound to the explicit input fmap before any required

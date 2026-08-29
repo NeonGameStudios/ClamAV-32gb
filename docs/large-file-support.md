@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## XAR heap extent admission — 2026-08-28
+
+Confirmed XAR data/EA entries now use the incomplete-result helper when their
+declared heap extent falls outside the input fmap. The previous path returned
+`CL_EFORMAT` without sticky incomplete state, allowing a recognized archive
+to retain cacheable clean state. The registered
+`test_xar_heap_extent_outside_map_is_fail_visible` regression requires
+`CL_EPARSE`, a cleared verdict, and a non-cacheable fmap. Current-source
+compilation and focused production-linked execution remain to be rerun for
+this change; complete XAR corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and final parser-family/release qualification
+remain required.
+
 ## UUEncode explicit-map cache binding — 2026-08-28
 
 `cli_uuencode()` now binds its explicitly supplied input fmap to `ctx->fmap`

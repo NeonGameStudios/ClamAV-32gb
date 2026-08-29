@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## XAR heap extent admission — 2026-08-28
+
+The XAR member walker checked `offset` and `length` against the remaining fmap
+range, but an out-of-map heap extent returned `CL_EFORMAT` without recording
+that the recognized archive had not been completely inspected. Such an input
+could therefore retain clean-cache state. The path now uses the XAR incomplete
+helper with the reason `XAR heap extent is outside the input map`, preserving
+`CL_EPARSE` while marking the layer incomplete and non-cacheable. The new
+`test_xar_heap_extent_outside_map_is_fail_visible` public-API regression and
+source guards cover the boundary. Current-source compilation, focused
+production-linked execution, complete XAR corpus, sanitizer, materialized
+large-file, production-CVD/service, Sonic1, and final parser-family/release
+qualification remain open.
+
 ## UUEncode explicit-map cache binding — 2026-08-28
 
 `cli_uuencode()` accepts its input `fmap_t` explicitly because the helper is
