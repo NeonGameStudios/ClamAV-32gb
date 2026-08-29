@@ -1,5 +1,15 @@
 # Wishlist
 
+## HFS+ volume-header read status — 2026-08-28
+
+- Preserve `CL_EREAD` for an in-range HFS+ volume-header fmap callback
+  failure, with `HFS+ volume header could not be read completely`, sticky
+  incomplete state, and disabled caching.
+- Retain `test_hfsplus_volume_header_read_failure_is_fail_visible` and its
+  source guard. Keep complete HFS+ corpus, production-CVD/service,
+  sanitizer, materialized large-file, Sonic1, and final parser-family/release
+  evidence open.
+
 ## GPT secondary-header admission — 2026-08-28
 
 - Keep a malformed secondary GPT header fail-visible even when the primary

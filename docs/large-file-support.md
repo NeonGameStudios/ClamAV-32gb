@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HFS+ volume-header read status — 2026-08-28
+
+HFS+ admission preflights the complete 512-byte volume header before
+borrowing it from the fmap. A fully in-range callback failure now returns
+`CL_EREAD`, records `HFS+ volume header could not be read completely`, and
+disables caching; truncated maps remain `CL_EPARSE`. The registered
+`test_hfsplus_volume_header_read_failure_is_fail_visible` regression and
+source guard cover this status distinction. Current-source compilation and
+focused execution, complete HFS+ corpus, production-CVD/service, sanitizer,
+materialized large-file, Sonic1, and final parser-family/release
+qualification remain required.
+
 ## GPT secondary-header admission — 2026-08-28
 
 GPT scans now mark the recognized layer incomplete when the primary header is

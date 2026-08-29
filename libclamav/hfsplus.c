@@ -236,7 +236,7 @@ static cl_error_t hfsplus_volumeheader(cli_ctx *ctx, hfsPlusVolumeHeader **heade
     if (!mPtr) {
         cli_errmsg("hfsplus_volumeheader: cannot read header from map\n");
         cli_mark_scan_incomplete(ctx, "HFS+ volume header could not be read completely");
-        return CL_EMAP;
+        return CL_EREAD;
     }
 
     volHeader = malloc(sizeof(hfsPlusVolumeHeader));

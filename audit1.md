@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## HFS+ volume-header read status — 2026-08-28
+
+`hfsplus_volumeheader()` preflights the complete 512-byte header at offset
+1024, so a NULL fmap callback there is an in-range operational read failure.
+It previously returned `CL_EMAP`; it now preserves `CL_EREAD` while recording
+`HFS+ volume header could not be read completely` and leaving the fmap
+non-cacheable. The registered
+`test_hfsplus_volume_header_read_failure_is_fail_visible` regression and
+source guards cover the boundary; current-source compilation and focused
+execution, complete HFS+ corpus, production-CVD/service, sanitizer,
+materialized large-file, Sonic1, and final parser-family/release
+qualification remain open.
+
 ## GPT secondary-header admission — 2026-08-28
 
 `cli_scangpt()` previously tolerated a malformed secondary GPT header when
