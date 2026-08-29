@@ -1,5 +1,18 @@
 # Wishlist
 
+## cli_str2hex output-size admission — 2026-08-29
+
+- Keep `cli_str2hex()` behind the pre-allocation output-size check so
+  `2 * len + 1` is formed in `size_t` only after native-width and
+  `CLI_MAX_ALLOCATION` admission; preserve NULL for oversized conversion
+  requests.
+- Retain `test_str2hex_rejects_output_size_wrap` and its source guards. The
+  current `str.c` and `check_str.c` pass Docker production-GCC syntax checks,
+  and the isolated current-source production-linked harness prints
+  `str2hex_output_size_guard_passed`; full string/call-site corpus,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  parser-family, and release qualification remain open.
+
 ## BM pattern-table product admission — 2026-08-29
 
 - Keep BM offset-mode pattern growth and per-scan offset tables behind

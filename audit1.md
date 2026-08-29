@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## cli_str2hex output-size admission — 2026-08-29
+
+The shared hexadecimal conversion helper formed `2 * len + 1` in
+`unsigned int` before calling the bounded allocator. An input length just
+above `UINT_MAX / 2` could therefore allocate a one-byte buffer while the
+conversion loop continued to write the full doubled output. `cli_str2hex()`
+now rejects input lengths whose NUL-terminated hexadecimal result would
+exceed the individual `CLI_MAX_ALLOCATION` ceiling, computes the output
+length in `size_t`, and retains the existing NULL-on-allocation-failure
+contract. The registered `test_str2hex_rejects_output_size_wrap` regression
+covers normal conversion plus the native-product wrap and `UINT_MAX`
+boundaries; the current `str.c` and `check_str.c` pass the Docker
+production-GCC syntax checks, and an isolated current-source
+production-linked harness prints `str2hex_output_size_guard_passed`. Full
+string/call-site corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and release qualification remain open.
+
 ## BM pattern-table product admission — 2026-08-29
 
 The enabled Boyer–Moore matcher kept its database pattern count in

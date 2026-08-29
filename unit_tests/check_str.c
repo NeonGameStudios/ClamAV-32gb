@@ -180,6 +180,23 @@ START_TEST(hex2str)
 }
 END_TEST
 
+START_TEST(test_str2hex_rejects_output_size_wrap)
+{
+    static const char input[] = "ClamAV";
+    char *hex;
+    size_t native_wrap_len = (size_t)(UINT_MAX / 2U) + 1U;
+
+    hex = cli_str2hex(input, sizeof(input) - 1);
+    ck_assert_ptr_nonnull(hex);
+    ck_assert_str_eq(hex, "436c616d4156");
+    free(hex);
+
+    /* The old unsigned-int product allocated one byte for this length. */
+    ck_assert_ptr_null(cli_str2hex(input, (unsigned int)native_wrap_len));
+    ck_assert_ptr_null(cli_str2hex(input, UINT_MAX));
+}
+END_TEST
+
 static struct base64lines {
     const char *line;
     const char *decoded;
@@ -373,6 +390,7 @@ Suite *test_str_suite(void)
     tc_str = tcase_create("str functions");
     suite_add_tcase(s, tc_str);
     tcase_add_test(tc_str, hex2str);
+    tcase_add_test(tc_str, test_str2hex_rejects_output_size_wrap);
 
     tcase_add_loop_test(tc_str, test_u16_u8, 0, sizeof(u16_tests) / sizeof(u16_tests[0]));
 

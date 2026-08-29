@@ -5009,14 +5009,14 @@ fixed-width-integer	libclamav/spin.h	28	int unspin(char *, int, struct cli_exe_s
 fixed-width-integer	libclamav/spin.h	29	int cli_pespin_check_limits(cli_ctx *, const struct cli_exe_section *, int, uint32_t);
 fixed-width-integer	libclamav/spin.h	30	cl_error_t cli_pespin_output_size_check(uint64_t);
 fixed-width-integer	libclamav/stats.c	256	        sample->size = (uint64_t)size;
-fixed-width-integer	libclamav/str.c	1021	                        uint16_t u =
+fixed-width-integer	libclamav/str.c	1027	                        uint16_t u =
 fixed-width-integer	libclamav/str.c	124	uint16_t *cli_hex2ui(const char *hex)
 fixed-width-integer	libclamav/str.c	126	    uint16_t *str;
 fixed-width-integer	libclamav/str.c	137	    str = cli_max_calloc((len / 2) + 1, sizeof(uint16_t));
 fixed-width-integer	libclamav/str.c	75	int cli_realhex2ui(const char *hex, uint16_t *ptr, unsigned int len)
 fixed-width-integer	libclamav/str.c	77	    uint16_t val;
-fixed-width-integer	libclamav/str.c	911	static inline size_t output_utf8(uint16_t u, unsigned char *dst)
-fixed-width-integer	libclamav/str.c	961	                uint16_t u =
+fixed-width-integer	libclamav/str.c	917	static inline size_t output_utf8(uint16_t u, unsigned char *dst)
+fixed-width-integer	libclamav/str.c	967	                uint16_t u =
 fixed-width-integer	libclamav/str.h	74	int cli_realhex2ui(const char *hex, uint16_t *ptr, unsigned int len);
 fixed-width-integer	libclamav/str.h	75	uint16_t *cli_hex2ui(const char *hex);
 fixed-width-integer	libclamav/swf.c	176	        v = (uint16_t)(getword_1 & 0xff) | ((getword_2 & 0xff) << 8);                 \
@@ -14949,13 +14949,13 @@ native-width-integer	libclamav/stats_json.c	49	    size_t i;
 native-width-integer	libclamav/stats_json.c	51	    int t;
 native-width-integer	libclamav/stats_json.c	65	char *ensure_bufsize(char *buf, size_t *oldsize, size_t used, size_t additional)
 native-width-integer	libclamav/stats_json.c	87	    size_t bufsz, curused, i, j;
-native-width-integer	libclamav/str.c	1049	int cli_hexnibbles(char *str, int len)
-native-width-integer	libclamav/str.c	1051	    int i;
-native-width-integer	libclamav/str.c	1053	        int c = cli_hex2int(str[i]);
-native-width-integer	libclamav/str.c	1063	    size_t filepath_len,
-native-width-integer	libclamav/str.c	1116	cl_error_t cli_hexstr_to_bytes(const char *hexstr, size_t hexlen, uint8_t *outbuf)
-native-width-integer	libclamav/str.c	1118	    size_t i;
-native-width-integer	libclamav/str.c	1124	        int hi, lo;
+native-width-integer	libclamav/str.c	1055	int cli_hexnibbles(char *str, int len)
+native-width-integer	libclamav/str.c	1057	    int i;
+native-width-integer	libclamav/str.c	1059	        int c = cli_hex2int(str[i]);
+native-width-integer	libclamav/str.c	1069	    size_t filepath_len,
+native-width-integer	libclamav/str.c	1122	cl_error_t cli_hexstr_to_bytes(const char *hexstr, size_t hexlen, uint8_t *outbuf)
+native-width-integer	libclamav/str.c	1124	    size_t i;
+native-width-integer	libclamav/str.c	1130	        int hi, lo;
 native-width-integer	libclamav/str.c	127	    unsigned int len;
 native-width-integer	libclamav/str.c	151	    size_t len;
 native-width-integer	libclamav/str.c	172	int cli_hex2str_to(const char *hex, char *ptr, size_t len)
@@ -14966,81 +14966,84 @@ native-width-integer	libclamav/str.c	198	    int hexval, ret = 0, len, i;
 native-width-integer	libclamav/str.c	217	int cli_xtoi(const char *hex)
 native-width-integer	libclamav/str.c	219	    int len, val, i;
 native-width-integer	libclamav/str.c	240	char *cli_str2hex(const char *string, unsigned int len)
-native-width-integer	libclamav/str.c	245	    unsigned int i, j;
-native-width-integer	libclamav/str.c	258	int cli_strbcasestr(const char *haystack, const char *needle)
-native-width-integer	libclamav/str.c	261	    int i, j;
-native-width-integer	libclamav/str.c	278	 * @return int      the new length of the string (ala strlen)
-native-width-integer	libclamav/str.c	279	 * @return int      -1 if string was NULL.
-native-width-integer	libclamav/str.c	281	int cli_chomp(char *string)
-native-width-integer	libclamav/str.c	283	    int l;
-native-width-integer	libclamav/str.c	302	 * char *cli_strok(const char *line, int fieldno, char *delim)
-native-width-integer	libclamav/str.c	308	char *cli_strtok(const char *line, int fieldno, const char *delim)
-native-width-integer	libclamav/str.c	310	    int counter  = 0, i, j;
-native-width-integer	libclamav/str.c	352	char *cli_strtokbuf(const char *input, int fieldno, const char *delim,
-native-width-integer	libclamav/str.c	355	    int counter = 0, i, j;
-native-width-integer	libclamav/str.c	385	const char *cli_memstr(const char *haystack, size_t hs, const char *needle, size_t ns)
-native-width-integer	libclamav/str.c	387	    size_t i, s1, s2;
-native-width-integer	libclamav/str.c	435	    size_t l;
-native-width-integer	libclamav/str.c	437	    const size_t strlen_a = strlen(haystack);
-native-width-integer	libclamav/str.c	438	    const size_t strlen_b = strlen(needle);
-native-width-integer	libclamav/str.c	449	char *__cli_strndup(const char *s, size_t n)
-native-width-integer	libclamav/str.c	452	    size_t len;
-native-width-integer	libclamav/str.c	470	size_t __cli_strnlen(const char *s, size_t n)
-native-width-integer	libclamav/str.c	472	    size_t i = 0;
+native-width-integer	libclamav/str.c	245	    size_t hexlen;
+native-width-integer	libclamav/str.c	246	    size_t i, j;
+native-width-integer	libclamav/str.c	248	    if ((size_t)len > ((size_t)CLI_MAX_ALLOCATION - 1) / 2)
+native-width-integer	libclamav/str.c	251	    hexlen = (size_t)len * 2 + 1;
+native-width-integer	libclamav/str.c	264	int cli_strbcasestr(const char *haystack, const char *needle)
+native-width-integer	libclamav/str.c	267	    int i, j;
+native-width-integer	libclamav/str.c	284	 * @return int      the new length of the string (ala strlen)
+native-width-integer	libclamav/str.c	285	 * @return int      -1 if string was NULL.
+native-width-integer	libclamav/str.c	287	int cli_chomp(char *string)
+native-width-integer	libclamav/str.c	289	    int l;
+native-width-integer	libclamav/str.c	308	 * char *cli_strok(const char *line, int fieldno, char *delim)
+native-width-integer	libclamav/str.c	314	char *cli_strtok(const char *line, int fieldno, const char *delim)
+native-width-integer	libclamav/str.c	316	    int counter  = 0, i, j;
+native-width-integer	libclamav/str.c	358	char *cli_strtokbuf(const char *input, int fieldno, const char *delim,
+native-width-integer	libclamav/str.c	361	    int counter = 0, i, j;
+native-width-integer	libclamav/str.c	391	const char *cli_memstr(const char *haystack, size_t hs, const char *needle, size_t ns)
+native-width-integer	libclamav/str.c	393	    size_t i, s1, s2;
+native-width-integer	libclamav/str.c	441	    size_t l;
+native-width-integer	libclamav/str.c	443	    const size_t strlen_a = strlen(haystack);
+native-width-integer	libclamav/str.c	444	    const size_t strlen_b = strlen(needle);
+native-width-integer	libclamav/str.c	455	char *__cli_strndup(const char *s, size_t n)
+native-width-integer	libclamav/str.c	458	    size_t len;
+native-width-integer	libclamav/str.c	476	size_t __cli_strnlen(const char *s, size_t n)
+native-width-integer	libclamav/str.c	478	    size_t i = 0;
 native-width-integer	libclamav/str.c	49	static const int hex_chars[256] = {
-native-width-integer	libclamav/str.c	498	char *__cli_strnstr(const char *s, const char *find, size_t slen)
-native-width-integer	libclamav/str.c	501	    size_t len;
-native-width-integer	libclamav/str.c	518	size_t cli_strtokenize(char *buffer, const char delim, const size_t token_count,
-native-width-integer	libclamav/str.c	521	    size_t tokens_found, i;
-native-width-integer	libclamav/str.c	540	 * @brief The strntol() function converts the string in str to a long value.
-native-width-integer	libclamav/str.c	556	 * @param int           The conversion is done according to the given base,
-native-width-integer	libclamav/str.c	558	 * @return long         The signed long value.
-native-width-integer	libclamav/str.c	560	long cli_strntol(const char *nptr, size_t n, char **endptr, register int base)
-native-width-integer	libclamav/str.c	563	    register unsigned long acc = 0;
-native-width-integer	libclamav/str.c	564	    register int c;
-native-width-integer	libclamav/str.c	565	    register unsigned long cutoff;
-native-width-integer	libclamav/str.c	566	    register int neg = 0, any = 0, cutlim;
-native-width-integer	libclamav/str.c	629	    cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
-native-width-integer	libclamav/str.c	630	    cutlim = cutoff % (unsigned long)base;
-native-width-integer	libclamav/str.c	631	    cutoff /= (unsigned long)base;
-native-width-integer	libclamav/str.c	664	 * @brief The strntoul() function converts the string in str to an unsigned long
-native-width-integer	libclamav/str.c	680	 * @param int           The conversion is done according to the given base,
-native-width-integer	libclamav/str.c	682	 * @return unsigned long The unsigned long value.
-native-width-integer	libclamav/str.c	684	unsigned long cli_strntoul(const char *nptr, size_t n, char **endptr,
-native-width-integer	libclamav/str.c	685	                           register int base)
-native-width-integer	libclamav/str.c	688	    register unsigned long acc = 0;
-native-width-integer	libclamav/str.c	689	    register int c;
-native-width-integer	libclamav/str.c	690	    register unsigned long cutoff;
-native-width-integer	libclamav/str.c	691	    register int neg = 0, any = 0, cutlim;
+native-width-integer	libclamav/str.c	504	char *__cli_strnstr(const char *s, const char *find, size_t slen)
+native-width-integer	libclamav/str.c	507	    size_t len;
+native-width-integer	libclamav/str.c	524	size_t cli_strtokenize(char *buffer, const char delim, const size_t token_count,
+native-width-integer	libclamav/str.c	527	    size_t tokens_found, i;
+native-width-integer	libclamav/str.c	546	 * @brief The strntol() function converts the string in str to a long value.
+native-width-integer	libclamav/str.c	562	 * @param int           The conversion is done according to the given base,
+native-width-integer	libclamav/str.c	564	 * @return long         The signed long value.
+native-width-integer	libclamav/str.c	566	long cli_strntol(const char *nptr, size_t n, char **endptr, register int base)
+native-width-integer	libclamav/str.c	569	    register unsigned long acc = 0;
+native-width-integer	libclamav/str.c	570	    register int c;
+native-width-integer	libclamav/str.c	571	    register unsigned long cutoff;
+native-width-integer	libclamav/str.c	572	    register int neg = 0, any = 0, cutlim;
+native-width-integer	libclamav/str.c	635	    cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
+native-width-integer	libclamav/str.c	636	    cutlim = cutoff % (unsigned long)base;
+native-width-integer	libclamav/str.c	637	    cutoff /= (unsigned long)base;
+native-width-integer	libclamav/str.c	670	 * @brief The strntoul() function converts the string in str to an unsigned long
+native-width-integer	libclamav/str.c	686	 * @param int           The conversion is done according to the given base,
+native-width-integer	libclamav/str.c	688	 * @return unsigned long The unsigned long value.
+native-width-integer	libclamav/str.c	690	unsigned long cli_strntoul(const char *nptr, size_t n, char **endptr,
+native-width-integer	libclamav/str.c	691	                           register int base)
+native-width-integer	libclamav/str.c	694	    register unsigned long acc = 0;
+native-width-integer	libclamav/str.c	695	    register int c;
+native-width-integer	libclamav/str.c	696	    register unsigned long cutoff;
+native-width-integer	libclamav/str.c	697	    register int neg = 0, any = 0, cutlim;
 native-width-integer	libclamav/str.c	70	static inline int cli_hex2int(const char c)
-native-width-integer	libclamav/str.c	731	    cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
-native-width-integer	libclamav/str.c	732	    cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
+native-width-integer	libclamav/str.c	737	    cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
+native-width-integer	libclamav/str.c	738	    cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
 native-width-integer	libclamav/str.c	75	int cli_realhex2ui(const char *hex, uint16_t *ptr, unsigned int len)
-native-width-integer	libclamav/str.c	765	 * @brief 	cli_strntol_wrap() converts the string in str to a long value.
+native-width-integer	libclamav/str.c	771	 * @brief 	cli_strntol_wrap() converts the string in str to a long value.
 native-width-integer	libclamav/str.c	78	    unsigned int i;
-native-width-integer	libclamav/str.c	781	cl_error_t cli_strntol_wrap(const char *buf, size_t buf_size,
-native-width-integer	libclamav/str.c	782	                            int fail_at_nondigit, int base, long *result)
-native-width-integer	libclamav/str.c	785	    long num;
+native-width-integer	libclamav/str.c	787	cl_error_t cli_strntol_wrap(const char *buf, size_t buf_size,
+native-width-integer	libclamav/str.c	788	                            int fail_at_nondigit, int base, long *result)
 native-width-integer	libclamav/str.c	79	    int c;
-native-width-integer	libclamav/str.c	811	 * @brief 	cli_strntoul_wrap() converts the string in str to a long value.
-native-width-integer	libclamav/str.c	823	 * @param[out] result 	    Unsigned long integer value of ascii number.
-native-width-integer	libclamav/str.c	827	cl_error_t cli_strntoul_wrap(const char *buf, size_t buf_size,
-native-width-integer	libclamav/str.c	828	                             int fail_at_nondigit, int base,
-native-width-integer	libclamav/str.c	829	                             unsigned long *result)
-native-width-integer	libclamav/str.c	832	    unsigned long num;
-native-width-integer	libclamav/str.c	857	size_t cli_ldbtokenize(char *buffer, const char delim, const size_t token_count,
-native-width-integer	libclamav/str.c	858	                       const char **tokens, size_t token_skip)
-native-width-integer	libclamav/str.c	860	    size_t tokens_found = 0;
-native-width-integer	libclamav/str.c	861	    size_t token_index  = 0;
-native-width-integer	libclamav/str.c	862	    size_t buffer_index = 0;
-native-width-integer	libclamav/str.c	897	int cli_isnumber(const char *str)
-native-width-integer	libclamav/str.c	911	static inline size_t output_utf8(uint16_t u, unsigned char *dst)
-native-width-integer	libclamav/str.c	939	    size_t k, i = 0;
-native-width-integer	libclamav/str.c	940	    const size_t len = strlen(str);
-native-width-integer	libclamav/str.c	941	    /* unescaped string is at most as long as original,
-native-width-integer	libclamav/str.c	982	int cli_textbuffer_append_normalize(struct text_buffer *buf, const char *str,
-native-width-integer	libclamav/str.c	983	                                    size_t len)
-native-width-integer	libclamav/str.c	985	    size_t i;
+native-width-integer	libclamav/str.c	791	    long num;
+native-width-integer	libclamav/str.c	817	 * @brief 	cli_strntoul_wrap() converts the string in str to a long value.
+native-width-integer	libclamav/str.c	829	 * @param[out] result 	    Unsigned long integer value of ascii number.
+native-width-integer	libclamav/str.c	833	cl_error_t cli_strntoul_wrap(const char *buf, size_t buf_size,
+native-width-integer	libclamav/str.c	834	                             int fail_at_nondigit, int base,
+native-width-integer	libclamav/str.c	835	                             unsigned long *result)
+native-width-integer	libclamav/str.c	838	    unsigned long num;
+native-width-integer	libclamav/str.c	863	size_t cli_ldbtokenize(char *buffer, const char delim, const size_t token_count,
+native-width-integer	libclamav/str.c	864	                       const char **tokens, size_t token_skip)
+native-width-integer	libclamav/str.c	866	    size_t tokens_found = 0;
+native-width-integer	libclamav/str.c	867	    size_t token_index  = 0;
+native-width-integer	libclamav/str.c	868	    size_t buffer_index = 0;
+native-width-integer	libclamav/str.c	903	int cli_isnumber(const char *str)
+native-width-integer	libclamav/str.c	917	static inline size_t output_utf8(uint16_t u, unsigned char *dst)
+native-width-integer	libclamav/str.c	945	    size_t k, i = 0;
+native-width-integer	libclamav/str.c	946	    const size_t len = strlen(str);
+native-width-integer	libclamav/str.c	947	    /* unescaped string is at most as long as original,
+native-width-integer	libclamav/str.c	988	int cli_textbuffer_append_normalize(struct text_buffer *buf, const char *str,
+native-width-integer	libclamav/str.c	989	                                    size_t len)
+native-width-integer	libclamav/str.c	991	    size_t i;
 native-width-integer	libclamav/str.h	114	    size_t filepath_len,
 native-width-integer	libclamav/str.h	126	cl_error_t cli_hexstr_to_bytes(const char *hexstr, size_t hexlen, uint8_t *outbuf);
 native-width-integer	libclamav/str.h	34	#define SIZE_T_CHARLEN ((sizeof(size_t) * CHAR_BIT + 2) / 3 + 1)
@@ -20573,9 +20576,12 @@ native-width-integer	unit_tests/check_regex.c	654	    int match;
 native-width-integer	unit_tests/check_str.c	143	    buf.pos      = (size_t)-1;
 native-width-integer	unit_tests/check_str.c	144	    buf.capacity = (size_t)-1;
 native-width-integer	unit_tests/check_str.c	155	    int rc;
-native-width-integer	unit_tests/check_str.c	186	    unsigned int len;
-native-width-integer	unit_tests/check_str.c	268	    const size_t expected_bytes = strlen("body") + 1 + sizeof(text) + sizeof(line_t);
-native-width-integer	unit_tests/check_str.c	287	    size_t materialized_bytes;
+native-width-integer	unit_tests/check_str.c	187	    size_t native_wrap_len = (size_t)(UINT_MAX / 2U) + 1U;
+native-width-integer	unit_tests/check_str.c	194	    /* The old unsigned-int product allocated one byte for this length. */
+native-width-integer	unit_tests/check_str.c	195	    ck_assert_ptr_null(cli_str2hex(input, (unsigned int)native_wrap_len));
+native-width-integer	unit_tests/check_str.c	203	    unsigned int len;
+native-width-integer	unit_tests/check_str.c	285	    const size_t expected_bytes = strlen("body") + 1 + sizeof(text) + sizeof(line_t);
+native-width-integer	unit_tests/check_str.c	304	    size_t materialized_bytes;
 native-width-integer	unit_tests/check_uniq.c	60	    int i;
 native-width-integer	unit_tests/check_uniq.c	87	    int i, j;
 native-width-integer	unit_tests/checks.h	13	int open_testfile(const char *name, int flags);
@@ -20993,10 +20999,10 @@ boundary-constant	libclamav/scanners.c	9604	            *scanned = UINT32_MAX;
 boundary-constant	libclamav/scanners.c	9646	        if (SIZEOF_LONG == 4 && scanned_out > UINT32_MAX) {
 boundary-constant	libclamav/scanners.c	9647	            cli_warnmsg("cl_scanfile_callback: scanned_out exceeds UINT32_MAX, setting to UINT32_MAX\n");
 boundary-constant	libclamav/scanners.c	9648	            *scanned = UINT32_MAX;
-boundary-constant	libclamav/str.c	731	    cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
-boundary-constant	libclamav/str.c	732	    cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
-boundary-constant	libclamav/str.c	753	        acc   = ULONG_MAX;
-boundary-constant	libclamav/str.c	840	    if ((num == ULONG_MAX) && (errno == ERANGE)) {
+boundary-constant	libclamav/str.c	737	    cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
+boundary-constant	libclamav/str.c	738	    cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
+boundary-constant	libclamav/str.c	759	        acc   = ULONG_MAX;
+boundary-constant	libclamav/str.c	846	    if ((num == ULONG_MAX) && (errno == ERANGE)) {
 boundary-constant	libclamav/tiff.c	104	    if (offset == NULL || disk_offset > (uint64_t)SIZE_MAX)
 boundary-constant	libclamav/tiff.c	300	        if (num_entries > (uint64_t)(SIZE_MAX / entry_size) ||
 boundary-constant	libclamav/tiff.c	95	    if (width != 0 && count > (uint64_t)(SIZE_MAX / width))
@@ -21427,6 +21433,8 @@ boundary-constant	unit_tests/check_matchers.c	859	    ck_assert(cli_matcher_wind
 boundary-constant	unit_tests/check_matchers.c	875	    ck_assert(cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
 boundary-constant	unit_tests/check_matchers.c	880	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
 boundary-constant	unit_tests/check_matchers.c	882	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
+boundary-constant	unit_tests/check_str.c	187	    size_t native_wrap_len = (size_t)(UINT_MAX / 2U) + 1U;
+boundary-constant	unit_tests/check_str.c	196	    ck_assert_ptr_null(cli_str2hex(input, UINT_MAX));
 quantity-parser	clamav-milter/clamav-milter.c	245	            gid_t sock_gid = strtol(gname, &end, 10);
 quantity-parser	clamav-milter/clamav-milter.c	284	            sock_mode = strtol(optget(opts, "MilterSocketMode")->strarg, &end, 8);
 quantity-parser	clamav-milter/netcode.c	563	        nmask = atoi(mask);
@@ -21508,10 +21516,10 @@ quantity-parser	libclamav/readdb.c	860	                    if (!cli_isnumber(n) 
 quantity-parser	libclamav/readdb.c	870	                    if (!cli_isnumber(n) || (maxdist = atoi(n)) < 0) {
 quantity-parser	libclamav/regex_list.c	363	        min       = atoi(ptmin);
 quantity-parser	libclamav/regex_list.c	367	            max = atoi(ptmax);
-quantity-parser	libclamav/str.c	549	 * @param[out] endptr   [optional] If endptr is not NULL, strtol() stores the
-quantity-parser	libclamav/str.c	551	 * all, however, strtol() stores the original value of str in *endptr. Nota
-quantity-parser	libclamav/str.c	673	 * @param[out] endptr   [optional] If endptr is not NULL, strtol() stores the
-quantity-parser	libclamav/str.c	675	 * all, however, strtol() stores the original value of str in *endptr. Nota
+quantity-parser	libclamav/str.c	555	 * @param[out] endptr   [optional] If endptr is not NULL, strtol() stores the
+quantity-parser	libclamav/str.c	557	 * all, however, strtol() stores the original value of str in *endptr. Nota
+quantity-parser	libclamav/str.c	679	 * @param[out] endptr   [optional] If endptr is not NULL, strtol() stores the
+quantity-parser	libclamav/str.c	681	 * all, however, strtol() stores the original value of str in *endptr. Nota
 quantity-parser	libclamav/xar.c	467	            numval       = strtoull(start, &endptr, 10);
 quantity-parser	libclamav/yara_lexer.c	1528	  yylval->integer = (size_t) atol(yytext);
 quantity-parser	libfreshclam/libfreshclam.c	575	    recordTime = atoi(reply_token);
@@ -24126,8 +24134,8 @@ format-width	unit_tests/check_regex.c	329	    ck_assert_msg(signo == 201, "Incor
 format-width	unit_tests/check_regex.c	340	        ck_assert_msg(signo == 4, "Incorrect number of signatures: %u, expected %u", signo, 4);
 format-width	unit_tests/check_regex.c	353	    ck_assert_msg(signo == 31, "Incorrect number of signatures: %u, expected %u", signo, 31);
 format-width	unit_tests/check_regex.c	512	    ck_assert_msg(rc == CL_SUCCESS || rc == CL_VIRUS, "phishingScan failed with error code: %s (%u)",
-format-width	unit_tests/check_str.c	217	    ck_assert_msg(len == test->len, "invalid base64 decoded length: %u expected %u (%s)\n",
-format-width	unit_tests/check_str.c	348	    ck_assert_msg(!strcmp(result, u16_tests[_i].u8), "utf16_to_8 %d failed, expected: %s, got %s", _i, u16_tests[_i].u8, result);
+format-width	unit_tests/check_str.c	234	    ck_assert_msg(len == test->len, "invalid base64 decoded length: %u expected %u (%s)\n",
+format-width	unit_tests/check_str.c	365	    ck_assert_msg(!strcmp(result, u16_tests[_i].u8), "utf16_to_8 %d failed, expected: %s, got %s", _i, u16_tests[_i].u8, result);
 format-width	unit_tests/check_str.c	84	    char *str = cli_unescape("%u05D0");
 format-width	unit_tests/check_str.c	89	    str = cli_unescape("%u00a2%u007f%u0080%u07ff%u0800%ue000");
 format-width	unit_tests/check_str.c	94	    str = cli_unescape("%%u123%u12%u1%u%u1234");
@@ -32954,45 +32962,46 @@ offset-size-arithmetic	libclamav/stats_json.c	65	char *ensure_bufsize(char *buf,
 offset-size-arithmetic	libclamav/stats_json.c	69	    if (*oldsize - used < additional) {
 offset-size-arithmetic	libclamav/stats_json.c	70	        p = realloc(buf, *oldsize + JSON_BUFSZ);
 offset-size-arithmetic	libclamav/stats_json.c	77	        *oldsize += JSON_BUFSZ;
-offset-size-arithmetic	libclamav/str.c	1031	                        buf->pos += output_utf8(u, (unsigned char *)&buf->data[buf->pos]);
-offset-size-arithmetic	libclamav/str.c	1075	    index = filepath + filepath_len - 1;
-offset-size-arithmetic	libclamav/str.c	1097	    if (0 == CLI_STRNLEN(index, filepath_len - (index - filepath))) {
-offset-size-arithmetic	libclamav/str.c	1103	    *filebase = CLI_STRNDUP(index, filepath_len - (index - filepath));
-offset-size-arithmetic	libclamav/str.c	1116	cl_error_t cli_hexstr_to_bytes(const char *hexstr, size_t hexlen, uint8_t *outbuf)
-offset-size-arithmetic	libclamav/str.c	1123	    for (i = 0; i < hexlen / 2; ++i) {
+offset-size-arithmetic	libclamav/str.c	1037	                        buf->pos += output_utf8(u, (unsigned char *)&buf->data[buf->pos]);
+offset-size-arithmetic	libclamav/str.c	1081	    index = filepath + filepath_len - 1;
+offset-size-arithmetic	libclamav/str.c	1103	    if (0 == CLI_STRNLEN(index, filepath_len - (index - filepath))) {
+offset-size-arithmetic	libclamav/str.c	1109	    *filebase = CLI_STRNDUP(index, filepath_len - (index - filepath));
+offset-size-arithmetic	libclamav/str.c	1122	cl_error_t cli_hexstr_to_bytes(const char *hexstr, size_t hexlen, uint8_t *outbuf)
+offset-size-arithmetic	libclamav/str.c	1129	    for (i = 0; i < hexlen / 2; ++i) {
 offset-size-arithmetic	libclamav/str.c	137	    str = cli_max_calloc((len / 2) + 1, sizeof(uint16_t));
 offset-size-arithmetic	libclamav/str.c	161	    str = cli_max_calloc((len / 2) + 1, sizeof(char));
 offset-size-arithmetic	libclamav/str.c	165	    if (cli_hex2str_to(hex, str, len) == -1) {
 offset-size-arithmetic	libclamav/str.c	227	    hexbuf = cli_max_calloc(len + 2, sizeof(char));
-offset-size-arithmetic	libclamav/str.c	247	    if ((hexstr = (char *)cli_max_calloc(2 * len + 1, sizeof(char))) == NULL)
-offset-size-arithmetic	libclamav/str.c	323	        /* end of buffer before field reached */
-offset-size-arithmetic	libclamav/str.c	367	        /* end of buffer before field reached */
-offset-size-arithmetic	libclamav/str.c	385	const char *cli_memstr(const char *haystack, size_t hs, const char *needle, size_t ns)
-offset-size-arithmetic	libclamav/str.c	459	    alloc = malloc(len + 1);
-offset-size-arithmetic	libclamav/str.c	470	size_t __cli_strnlen(const char *s, size_t n)
-offset-size-arithmetic	libclamav/str.c	507	                if (slen-- < 1 || (sc = *s++) == '\0')
-offset-size-arithmetic	libclamav/str.c	518	size_t cli_strtokenize(char *buffer, const char delim, const size_t token_count,
-offset-size-arithmetic	libclamav/str.c	541	 * Modifications made to validate the length of the string for non-null term
-offset-size-arithmetic	libclamav/str.c	554	 * should check if endptr >= nptr + n.
-offset-size-arithmetic	libclamav/str.c	560	long cli_strntol(const char *nptr, size_t n, char **endptr, register int base)
-offset-size-arithmetic	libclamav/str.c	629	    cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
-offset-size-arithmetic	libclamav/str.c	631	    cutoff /= (unsigned long)base;
-offset-size-arithmetic	libclamav/str.c	659	        *endptr = (char *)(any ? s : nptr);
-offset-size-arithmetic	libclamav/str.c	665	 * value. Modifications made to validate the length of the string for non-null
-offset-size-arithmetic	libclamav/str.c	678	 * should check if endptr >= nptr + n.
-offset-size-arithmetic	libclamav/str.c	684	unsigned long cli_strntoul(const char *nptr, size_t n, char **endptr,
-offset-size-arithmetic	libclamav/str.c	731	    cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
-offset-size-arithmetic	libclamav/str.c	760	        *endptr = (char *)(any ? s : nptr);
-offset-size-arithmetic	libclamav/str.c	773	 * before the end of the buffer. If 0, non-digit character represents end of
-offset-size-arithmetic	libclamav/str.c	801	    if (fail_at_nondigit && (endptr < (buf + buf_size)) && (*endptr != '\0')) {
-offset-size-arithmetic	libclamav/str.c	819	 * before the end of the buffer. If 0, non-digit character represents end of
-offset-size-arithmetic	libclamav/str.c	848	    if (fail_at_nondigit && (endptr < (buf + buf_size)) && (*endptr != '\0')) {
-offset-size-arithmetic	libclamav/str.c	857	size_t cli_ldbtokenize(char *buffer, const char delim, const size_t token_count,
-offset-size-arithmetic	libclamav/str.c	911	static inline size_t output_utf8(uint16_t u, unsigned char *dst)
-offset-size-arithmetic	libclamav/str.c	943	    R = cli_max_malloc(len + 1);
-offset-size-arithmetic	libclamav/str.c	951	            if (k + 5 >= len || str[k + 1] != 'u' || !isxdigit(str[k + 2]) ||
-offset-size-arithmetic	libclamav/str.c	954	                if (k + 2 < len && isxdigit(str[k + 1]) && isxdigit(str[k + 2])) {
-offset-size-arithmetic	libclamav/str.c	982	int cli_textbuffer_append_normalize(struct text_buffer *buf, const char *str,
+offset-size-arithmetic	libclamav/str.c	248	    if ((size_t)len > ((size_t)CLI_MAX_ALLOCATION - 1) / 2)
+offset-size-arithmetic	libclamav/str.c	251	    hexlen = (size_t)len * 2 + 1;
+offset-size-arithmetic	libclamav/str.c	329	        /* end of buffer before field reached */
+offset-size-arithmetic	libclamav/str.c	373	        /* end of buffer before field reached */
+offset-size-arithmetic	libclamav/str.c	391	const char *cli_memstr(const char *haystack, size_t hs, const char *needle, size_t ns)
+offset-size-arithmetic	libclamav/str.c	465	    alloc = malloc(len + 1);
+offset-size-arithmetic	libclamav/str.c	476	size_t __cli_strnlen(const char *s, size_t n)
+offset-size-arithmetic	libclamav/str.c	513	                if (slen-- < 1 || (sc = *s++) == '\0')
+offset-size-arithmetic	libclamav/str.c	524	size_t cli_strtokenize(char *buffer, const char delim, const size_t token_count,
+offset-size-arithmetic	libclamav/str.c	547	 * Modifications made to validate the length of the string for non-null term
+offset-size-arithmetic	libclamav/str.c	560	 * should check if endptr >= nptr + n.
+offset-size-arithmetic	libclamav/str.c	566	long cli_strntol(const char *nptr, size_t n, char **endptr, register int base)
+offset-size-arithmetic	libclamav/str.c	635	    cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
+offset-size-arithmetic	libclamav/str.c	637	    cutoff /= (unsigned long)base;
+offset-size-arithmetic	libclamav/str.c	665	        *endptr = (char *)(any ? s : nptr);
+offset-size-arithmetic	libclamav/str.c	671	 * value. Modifications made to validate the length of the string for non-null
+offset-size-arithmetic	libclamav/str.c	684	 * should check if endptr >= nptr + n.
+offset-size-arithmetic	libclamav/str.c	690	unsigned long cli_strntoul(const char *nptr, size_t n, char **endptr,
+offset-size-arithmetic	libclamav/str.c	737	    cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
+offset-size-arithmetic	libclamav/str.c	766	        *endptr = (char *)(any ? s : nptr);
+offset-size-arithmetic	libclamav/str.c	779	 * before the end of the buffer. If 0, non-digit character represents end of
+offset-size-arithmetic	libclamav/str.c	807	    if (fail_at_nondigit && (endptr < (buf + buf_size)) && (*endptr != '\0')) {
+offset-size-arithmetic	libclamav/str.c	825	 * before the end of the buffer. If 0, non-digit character represents end of
+offset-size-arithmetic	libclamav/str.c	854	    if (fail_at_nondigit && (endptr < (buf + buf_size)) && (*endptr != '\0')) {
+offset-size-arithmetic	libclamav/str.c	863	size_t cli_ldbtokenize(char *buffer, const char delim, const size_t token_count,
+offset-size-arithmetic	libclamav/str.c	917	static inline size_t output_utf8(uint16_t u, unsigned char *dst)
+offset-size-arithmetic	libclamav/str.c	949	    R = cli_max_malloc(len + 1);
+offset-size-arithmetic	libclamav/str.c	957	            if (k + 5 >= len || str[k + 1] != 'u' || !isxdigit(str[k + 2]) ||
+offset-size-arithmetic	libclamav/str.c	960	                if (k + 2 < len && isxdigit(str[k + 1]) && isxdigit(str[k + 2])) {
+offset-size-arithmetic	libclamav/str.c	988	int cli_textbuffer_append_normalize(struct text_buffer *buf, const char *str,
 offset-size-arithmetic	libclamav/str.h	108	 * @param posix_support_backslash_pathsep Whether to treat backslashes as path separators on Linux/Unix systems.
 offset-size-arithmetic	libclamav/str.h	123	 * @param outbuf   The output buffer (must be at least hexlen/2 bytes).
 offset-size-arithmetic	libclamav/str.h	126	cl_error_t cli_hexstr_to_bytes(const char *hexstr, size_t hexlen, uint8_t *outbuf);
@@ -38673,13 +38682,16 @@ offset-size-arithmetic	unit_tests/check_str.c	128	    ck_assert_msg(textbuffer_a
 offset-size-arithmetic	unit_tests/check_str.c	143	    buf.pos      = (size_t)-1;
 offset-size-arithmetic	unit_tests/check_str.c	144	    buf.capacity = (size_t)-1;
 offset-size-arithmetic	unit_tests/check_str.c	174	    ck_assert_msg(!memcmp(r, out1, sizeof(out1) - 1),
-offset-size-arithmetic	unit_tests/check_str.c	216	    len   = ret2 - buf;
-offset-size-arithmetic	unit_tests/check_str.c	217	    ck_assert_msg(len == test->len, "invalid base64 decoded length: %u expected %u (%s)\n",
-offset-size-arithmetic	unit_tests/check_str.c	218	                  len, test->len, buf);
-offset-size-arithmetic	unit_tests/check_str.c	268	    const size_t expected_bytes = strlen("body") + 1 + sizeof(text) + sizeof(line_t);
-offset-size-arithmetic	unit_tests/check_str.c	336	static unsigned u16_len(const char *s)
-offset-size-arithmetic	unit_tests/check_str.c	377	    tcase_add_loop_test(tc_str, test_u16_u8, 0, sizeof(u16_tests) / sizeof(u16_tests[0]));
-offset-size-arithmetic	unit_tests/check_str.c	382	    tcase_add_loop_test(tc_decodeline, test_base64, 0, sizeof(base64tests) / sizeof(base64tests[0]));
+offset-size-arithmetic	unit_tests/check_str.c	187	    size_t native_wrap_len = (size_t)(UINT_MAX / 2U) + 1U;
+offset-size-arithmetic	unit_tests/check_str.c	189	    hex = cli_str2hex(input, sizeof(input) - 1);
+offset-size-arithmetic	unit_tests/check_str.c	194	    /* The old unsigned-int product allocated one byte for this length. */
+offset-size-arithmetic	unit_tests/check_str.c	233	    len   = ret2 - buf;
+offset-size-arithmetic	unit_tests/check_str.c	234	    ck_assert_msg(len == test->len, "invalid base64 decoded length: %u expected %u (%s)\n",
+offset-size-arithmetic	unit_tests/check_str.c	235	                  len, test->len, buf);
+offset-size-arithmetic	unit_tests/check_str.c	285	    const size_t expected_bytes = strlen("body") + 1 + sizeof(text) + sizeof(line_t);
+offset-size-arithmetic	unit_tests/check_str.c	353	static unsigned u16_len(const char *s)
+offset-size-arithmetic	unit_tests/check_str.c	395	    tcase_add_loop_test(tc_str, test_u16_u8, 0, sizeof(u16_tests) / sizeof(u16_tests[0]));
+offset-size-arithmetic	unit_tests/check_str.c	400	    tcase_add_loop_test(tc_decodeline, test_base64, 0, sizeof(base64tests) / sizeof(base64tests[0]));
 offset-size-arithmetic	unit_tests/input/embedded_testfiles/emb/smol_exe/src/main.rs	13	/// $env:RUSTFLAGS="-Ctarget-cpu=native -Clink-args=/ENTRY:_start -Clink-args=/SUBSYSTEM:CONSOLE -Clink-args=/LARGEADDRESSAWARE:NO -Clink-args=ucrt.lib -Crelocation-model=static -Clink-args=-Wl,-n,-N,--no-dynamic-linker,--no-pie,--build-id=none,--no-eh-frame-hdr"
 offset-size-arithmetic	unit_tests/input/embedded_testfiles/emb/smol_exe/src/main.rs	14	/// cargo +nightly build  -Z build-std=std,panic_abort -Z build-std-features="optimize_for_size" --target x86_64-pc-windows-msvc  --release
 offset-size-arithmetic	unit_tests/input/embedded_testfiles/emb/smol_exe/src/main.rs	19	pub extern "C" fn _start() -> ! {

@@ -242,9 +242,15 @@ char *cli_str2hex(const char *string, unsigned int len)
     char *hexstr;
     char HEX[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                   '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-    unsigned int i, j;
+    size_t hexlen;
+    size_t i, j;
 
-    if ((hexstr = (char *)cli_max_calloc(2 * len + 1, sizeof(char))) == NULL)
+    if ((size_t)len > ((size_t)CLI_MAX_ALLOCATION - 1) / 2)
+        return NULL;
+
+    hexlen = (size_t)len * 2 + 1;
+
+    if ((hexstr = (char *)cli_max_calloc(hexlen, sizeof(char))) == NULL)
         return NULL;
 
     for (i = 0, j = 0; i < len; i++, j += 2) {
