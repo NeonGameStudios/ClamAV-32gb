@@ -12931,6 +12931,19 @@ The matcher boundary review found that `cli_matchmeta()` and `cli_check_fp()` as
 
 The SWF parser can inspect an uncompressed FWS map without an engine, but CWS and ZWS dispatch materializes a temporary decompressed SWF and its cleanup path requires `ctx->engine`. Before this guard, a valid compressed header paired with a missing engine could reach that path and dereference null state. CWS/ZWS admission now returns `CL_ENULLARG` before decoder setup, and a focused direct regression covers the boundary. The SWF capability remains pending until the production-linked parser TCase, complete corpus, sanitizer, materialized large-file, Sonic1, and release qualification evidence are complete.
 
+## SWF compressed-entry incomplete-state audit — 2026-08-28
+
+The CWS and ZWS parser entries correctly require an owning engine before
+decompression and temporary-output setup, but their `CL_ENULLARG` admission
+return previously left the recognized layer looking clean and cacheable. Both
+compressed branches now mark the scan incomplete and non-cacheable with the
+explicit reason `SWF compressed input requires an owning engine` before
+returning. The existing direct regression now asserts the return code, sticky
+reason, and cache flag, and source guards cover both implementation and test
+evidence. Production-linked full-C execution, complete SWF corpus, sanitizer,
+materialized large-file, Sonic1, service, and final release qualification
+remain open.
+
 ## Bytecode context cleanup audit — 2026-08-27
 
 `bytecode_context_reset()` could dereference `cctx->engine` while removing

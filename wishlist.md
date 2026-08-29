@@ -6577,6 +6577,15 @@ Made destructive fileblob cleanup safe when its attached context has no engine, 
 
 Added explicit engine admission for CWS/ZWS decompression before temporary-output setup, preventing a valid compressed header from reaching cleanup code with a null engine. Added a direct regression; complete SWF/parser-family, sanitizer, Sonic1, and release qualification remain pending.
 
+## SWF compressed-entry incomplete-state hardening — 2026-08-28
+
+Keep recognized CWS/ZWS input fail-visible when a direct parser call lacks an
+owning engine. The compressed branches now mark the layer incomplete and
+non-cacheable with `SWF compressed input requires an owning engine` before
+returning `CL_ENULLARG`; the focused regression asserts the reason and cache
+flag. Full SWF corpus, production-CVD/service, sanitizer, materialized
+large-file, Sonic1, and release qualification remain pending.
+
 ## Bytecode context cleanup without an engine — 2026-08-27
 
 - Keep bytecode context teardown safe when temporary output or normalized

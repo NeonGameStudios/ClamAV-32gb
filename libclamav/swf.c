@@ -582,6 +582,7 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
         cli_dbgmsg("SWF: zlib compressed file\n");
         if (ctx->engine == NULL) {
             cli_errmsg("SWF compressed input requires a scan engine\n");
+            cli_mark_scan_incomplete(ctx, "SWF compressed input requires an owning engine");
             return CL_ENULLARG;
         }
         return scancws(ctx, &file_hdr);
@@ -589,6 +590,7 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
         cli_dbgmsg("SWF: LZMA compressed file\n");
         if (ctx->engine == NULL) {
             cli_errmsg("SWF compressed input requires a scan engine\n");
+            cli_mark_scan_incomplete(ctx, "SWF compressed input requires an owning engine");
             return CL_ENULLARG;
         }
         return scanzws(ctx, &file_hdr);

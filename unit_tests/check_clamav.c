@@ -44676,7 +44676,9 @@ START_TEST(test_swf_compressed_requires_engine)
     memset(&ctx, 0, sizeof(ctx));
     ctx.fmap = map;
     ck_assert_int_eq(cli_scanswf(&ctx), CL_ENULLARG);
-    ck_assert(!ctx.scan_incomplete);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "SWF compressed input requires an owning engine");
+    ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
 }
 END_TEST

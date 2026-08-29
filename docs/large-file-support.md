@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## SWF compressed engine admission — 2026-08-28
+
+Recognized CWS and ZWS input without an owning scan engine now returns
+`CL_ENULLARG` with sticky incomplete/non-cacheable state and the explicit
+reason `SWF compressed input requires an owning engine`. The registered
+current-source regression checks the result, reason, and cache flag, and the
+source guard covers both the implementation and test assertion. Full SWF
+corpus, production-linked execution, sanitizer, materialized-large-file,
+production-CVD/service, Sonic1, and final release qualification remain
+required.
+
 ## Runtime gate ELF-interpreter binding — 2026-08-28
 
 The release evidence gate now treats the ELF `PT_INTERP` loader as a distinct
