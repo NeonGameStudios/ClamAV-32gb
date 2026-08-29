@@ -182,11 +182,20 @@ int cli_pespin_check_limits(cli_ctx *ctx, const struct cli_exe_section *sections
     return 0;
 }
 
+cl_error_t cli_pespin_output_size_check(uint64_t output_size)
+{
+    if (output_size > (uint64_t)CLI_MAX_ALLOCATION)
+        return CL_ERESOURCE;
+
+    return CL_SUCCESS;
+}
+
 int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, uint32_t nep, int desc, cli_ctx *ctx)
 {
     char *curr, *emu, *ep, *spinned;
     char **sects;
-    int blobsz = 0, j;
+    uint64_t blobsz = 0;
+    int j;
     uint32_t key32, bitmap, bitman;
     uint32_t len;
     uint8_t key8;
@@ -486,6 +495,11 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
 
     bitmap = bitman; /* save as a free() bitmap */
 
+    if (cli_pespin_output_size_check(blobsz) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "PEspin rebuilt output exceeds allocation limits");
+        goto cleanup;
+    }
+
     if ((ep = (char *)cli_max_malloc(blobsz)) != NULL) {
         struct cli_exe_section *rebhlp;
         if ((rebhlp = (struct cli_exe_section *)cli_max_malloc(sizeof(struct cli_exe_section) * (sectcnt))) != NULL) {
@@ -517,6 +531,7 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
         free(ep);
     }
 
+cleanup:
     cli_dbgmsg("spin: free bitmap is %x\n", bitman);
     for (j = 0; j < sectcnt; j++) {
         if (bitmap & 1)

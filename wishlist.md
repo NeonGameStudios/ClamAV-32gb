@@ -1,5 +1,15 @@
 # Wishlist
 
+## PEspin rebuilt-output size admission — 2026-08-29
+
+- Keep PEspin rebuilt-output accounting in `uint64_t`; never accumulate
+  attacker-controlled section sizes in a signed or narrower native type.
+- Retain `cli_pespin_output_size_check()` before the final contiguous output
+  allocation, with `test_pespin_output_size_check_is_fail_visible` covering
+  the exact 1-GiB ceiling and `UINT64_MAX`; full PE/unpacker corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, parser-family, and release qualification remain open.
+
 ## PE FSG section-table product admission — 2026-08-29
 
 - Keep both legacy PE FSG section-table allocations behind

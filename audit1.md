@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## PEspin rebuilt-output size admission — 2026-08-29
+
+The enabled PEspin unpacker accumulated the rebuilt section output in a
+signed `int` even though each section size is a format-defined 32-bit value.
+On a narrower build, a large section set could wrap the accumulator to a
+small positive value, causing the final contiguous output allocation to be
+smaller than the subsequent section-copy loop. The accumulator is now
+`uint64_t`, and `cli_pespin_output_size_check()` rejects rebuilt output above
+the individual 1-GiB allocation ceiling before `cli_max_malloc()`. The
+registered `test_pespin_output_size_check_is_fail_visible` regression covers
+the exact ceiling and `UINT64_MAX` boundary, and the source guard keeps both
+the wide accumulator and admission helper present. Full PE/unpacker corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## PE FSG section-table product admission — 2026-08-29
 
 The legacy PE FSG paths counted packed sections from attacker-controlled

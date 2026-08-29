@@ -36767,6 +36767,15 @@ START_TEST(test_pespin_limit_accounting_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pespin_output_size_check_is_fail_visible)
+{
+    ck_assert_int_eq(cli_pespin_output_size_check(0), CL_SUCCESS);
+    ck_assert_int_eq(cli_pespin_output_size_check(CLI_MAX_ALLOCATION), CL_SUCCESS);
+    ck_assert_int_eq(cli_pespin_output_size_check((uint64_t)CLI_MAX_ALLOCATION + 1), CL_ERESOURCE);
+    ck_assert_int_eq(cli_pespin_output_size_check(UINT64_MAX), CL_ERESOURCE);
+}
+END_TEST
+
 static void mspack_test_write_u16(uint8_t *dst, uint16_t value)
 {
     dst[0] = (uint8_t)value;
@@ -47574,6 +47583,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_fsg_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_upx_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pespin_limit_accounting_is_fail_visible);
+    tcase_add_test(tc_cl, test_pespin_output_size_check_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_member_limit_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_script_normalization_time_limit_is_fail_visible);
