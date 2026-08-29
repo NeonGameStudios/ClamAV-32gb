@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Bytecode interpreter layout-size admission — 2026-08-29
+
+Aligned bytecode global, function-value, constant, and context parameter
+layouts now use `cli_bytecode_layout_size_add()` before totals are narrowed to
+the legacy 32-bit fields or allocated. The helper rejects invalid alignment,
+native-size arithmetic overflow, and cumulative layouts beyond the 1-GiB
+individual-allocation ceiling. The focused regression
+`test_bytecode_layout_size_admission_is_fail_visible`, current-source
+production-GCC compilation, and source guards cover the admission boundary.
+Full bytecode execution/JIT, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and parser/release qualification remain
+required.
+
 ## JavaScript-normalizer decoder table admission — 2026-08-29
 
 JavaScript decoder delimiter-token tables and parser-token growth now use

@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## Bytecode interpreter layout-size admission — 2026-08-29
+
+The bytecode interpreter previously bounded individual type and table
+allocations but accumulated aligned global and function-value layouts in
+32-bit totals without checking each addition. A crafted collection of valid
+bounded types could wrap `numGlobalBytes`, `numBytes`, or the context parameter
+layout before allocation and execution. The interpreter now uses
+`cli_bytecode_layout_size_add()` for alignment and addition, rejects native or
+1-GiB-limit overflow, and makes context setup validate the complete layout
+before publishing allocations. The
+`test_bytecode_layout_size_admission_is_fail_visible` regression covers exact
+limit, overflow, alignment, and invalid-output cases; current-source
+production-GCC compilation and the existing bytecode table guards pass. Full
+bytecode execution/JIT, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.
+
 ## JavaScript-normalizer decoder table admission — 2026-08-29
 
 The JavaScript normalizer's `decode_de()` path allocated its delimiter-token

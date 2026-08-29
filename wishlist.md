@@ -1,5 +1,15 @@
 # Wishlist
 
+## Bytecode interpreter layout-size admission — 2026-08-29
+
+- Keep aligned global, function-value, constant, and context parameter
+  layouts behind `cli_bytecode_layout_size_add()` so cumulative totals cannot
+  wrap or exceed the individual allocation ceiling.
+- Retain `test_bytecode_layout_size_admission_is_fail_visible`, current-source
+  GCC compilation, and source guards; complete bytecode execution/JIT,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  parser/release qualification remain open.
+
 ## JavaScript-normalizer decoder table admission — 2026-08-29
 
 - Keep decoder delimiter-token and parser-token table products behind

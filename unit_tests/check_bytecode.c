@@ -1337,6 +1337,45 @@ START_TEST(test_bytecode_table_size_admission_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_bytecode_layout_size_admission_is_fail_visible)
+{
+    struct cli_bc bc;
+    struct cli_bc_func func;
+    struct cli_bc_type type;
+    struct cli_bc_ctx ctx;
+    uint16_t types[2] = {65, 65};
+    size_t next = 0;
+
+    ck_assert_int_eq(cli_bytecode_layout_size_add(0, 8, 8, &next), CL_SUCCESS);
+    ck_assert_uint_eq(next, 8);
+    ck_assert_int_eq(cli_bytecode_layout_size_add(CLI_MAX_ALLOCATION - 8, 8, 8, &next), CL_SUCCESS);
+    ck_assert_uint_eq(next, CLI_MAX_ALLOCATION);
+    ck_assert_int_eq(cli_bytecode_layout_size_add(CLI_MAX_ALLOCATION, 1, 1, &next), CL_ERESOURCE);
+    ck_assert_int_eq(cli_bytecode_layout_size_add(SIZE_MAX, 8, 1, &next), CL_ERESOURCE);
+    ck_assert_int_eq(cli_bytecode_layout_size_add(0, 3, 1, &next), CL_EARG);
+    ck_assert_int_eq(cli_bytecode_layout_size_add(0, 8, 1, NULL), CL_EARG);
+
+    /* Two individually bounded values must not wrap the cumulative context
+     * layout before the values buffer is allocated. */
+    memset(&bc, 0, sizeof(bc));
+    memset(&func, 0, sizeof(func));
+    memset(&type, 0, sizeof(type));
+    memset(&ctx, 0, sizeof(ctx));
+    bc.num_types = 66;
+    bc.num_func  = 1;
+    bc.types     = &type;
+    bc.funcs     = &func;
+    type.size    = CLI_MAX_ALLOCATION;
+    type.align   = 1;
+    func.numArgs = 2;
+    func.types   = types;
+    ck_assert_int_eq(cli_bytecode_context_setfuncid(&ctx, &bc, 0), CL_ERESOURCE);
+    ck_assert_ptr_null(ctx.values);
+    ck_assert_ptr_null(ctx.operands);
+    ck_assert_ptr_null(ctx.opsizes);
+}
+END_TEST
+
 START_TEST(test_bytecode_engine_scan_options_query)
 {
     static const uint8_t general_name[]   = "GeNeRaL AlLmAtCh";
@@ -2010,6 +2049,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_truncated_records);
     tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_recursive_or_oversized_types);
     tcase_add_test(tc_cli_loader, test_bytecode_table_size_admission_is_fail_visible);
+    tcase_add_test(tc_cli_loader, test_bytecode_layout_size_admission_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_map_value_size_product_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_json_api_admission_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_resource_constructors_publish_only_initialized_slots);

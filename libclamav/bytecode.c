@@ -615,13 +615,37 @@ malformed:
 
 cl_error_t cli_bytecode_context_setfuncid(struct cli_bc_ctx *ctx, const struct cli_bc *bc, unsigned funcid)
 {
-    unsigned i, s = 0;
+    unsigned i, offset = 0;
+    size_t layout_size = 0, next_size;
+    cl_error_t layout_ret;
     const struct cli_bc_func *func;
+
+    if (!ctx || !bc || !bc->funcs)
+        return CL_ENULLARG;
     if (funcid >= bc->num_func) {
         cli_errmsg("bytecode: function ID doesn't exist: %u\n", funcid);
         return CL_EARG;
     }
-    func = ctx->func = &bc->funcs[funcid];
+    func = &bc->funcs[funcid];
+    if (func->numArgs && !func->types)
+        return CL_EBYTECODE;
+    for (i = 0; i < func->numArgs; i++) {
+        unsigned al   = typealign(bc, func->types[i]);
+        unsigned size = typesize(bc, func->types[i]);
+        layout_ret    = cli_bytecode_layout_size_add(layout_size, al, size, &next_size);
+        if (layout_ret != CL_SUCCESS) {
+            cli_errmsg("bytecode: parameter layout exceeds the allocation limit\n");
+            return layout_ret;
+        }
+        layout_size = next_size;
+    }
+    layout_ret = cli_bytecode_layout_size_add(layout_size, 1, 8, &next_size);
+    if (layout_ret != CL_SUCCESS) {
+        cli_errmsg("bytecode: return-value layout exceeds the allocation limit\n");
+        return layout_ret;
+    }
+    layout_size = next_size;
+    ctx->func      = func;
     ctx->bc          = bc;
     ctx->numParams   = func->numArgs;
     ctx->funcid      = funcid;
@@ -634,20 +658,26 @@ cl_error_t cli_bytecode_context_setfuncid(struct cli_bc_ctx *ctx, const struct c
         ctx->opsizes = cli_max_malloc(sizeof(*ctx->opsizes) * func->numArgs);
         if (!ctx->opsizes) {
             cli_errmsg("bytecode: error allocating memory for opsizes\n");
+            free(ctx->operands);
+            ctx->operands = NULL;
             return CL_EMEM;
         }
+        offset = 0;
         for (i = 0; i < func->numArgs; i++) {
             unsigned al          = typealign(bc, func->types[i]);
-            s                    = (s + al - 1) & ~(al - 1);
-            ctx->operands[i]     = s;
-            s += ctx->opsizes[i] = typesize(bc, func->types[i]);
+            offset               = (offset + al - 1) & ~(al - 1);
+            ctx->operands[i]     = offset;
+            offset += ctx->opsizes[i] = typesize(bc, func->types[i]);
         }
     }
-    s += 8; /* return value */
-    ctx->bytes  = s;
-    ctx->values = cli_max_malloc(s);
+    ctx->bytes  = (unsigned)layout_size;
+    ctx->values = cli_max_malloc(ctx->bytes);
     if (!ctx->values) {
         cli_errmsg("bytecode: error allocating memory for parameters\n");
+        free(ctx->opsizes);
+        free(ctx->operands);
+        ctx->opsizes  = NULL;
+        ctx->operands = NULL;
         return CL_EMEM;
     }
     return CL_SUCCESS;
@@ -980,6 +1010,22 @@ cl_error_t cli_bytecode_table_size_check(size_t count, size_t element_size)
     if (count > SIZE_MAX / element_size || count > CLI_MAX_ALLOCATION / element_size)
         return CL_ERESOURCE;
 
+    return CL_SUCCESS;
+}
+
+cl_error_t cli_bytecode_layout_size_add(size_t current, size_t alignment,
+                                        size_t amount, size_t *next)
+{
+    size_t aligned;
+
+    if (!next || !alignment || (alignment & (alignment - 1)) != 0)
+        return CL_EARG;
+    if (current > SIZE_MAX - (alignment - 1))
+        return CL_ERESOURCE;
+    aligned = (current + alignment - 1) & ~(alignment - 1);
+    if (aligned > CLI_MAX_ALLOCATION || amount > CLI_MAX_ALLOCATION - aligned)
+        return CL_ERESOURCE;
+    *next = aligned + amount;
     return CL_SUCCESS;
 }
 
@@ -2799,6 +2845,7 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
 {
     unsigned i, j, k;
     uint64_t *gmap;
+    size_t global_size = 0, next_size;
     unsigned bcglobalid = cli_apicall_maxglobal - _FIRST_GLOBAL + 2;
     cl_error_t ret      = CL_SUCCESS;
     bc->numGlobalBytes  = 0;
@@ -2812,13 +2859,18 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
         return CL_EMEM;
     }
     for (j = 0; j < bc->num_globals; j++) {
-        uint16_t ty    = bc->globaltys[j];
-        unsigned align = typealign(bc, ty);
-        assert(align);
-        bc->numGlobalBytes = (bc->numGlobalBytes + align - 1) & (~(align - 1));
-        gmap[j]            = bc->numGlobalBytes;
-        bc->numGlobalBytes += typesize(bc, ty);
+        uint16_t ty     = bc->globaltys[j];
+        unsigned align  = typealign(bc, ty);
+        unsigned size   = typesize(bc, ty);
+        if (cli_bytecode_layout_size_add(global_size, align, size, &next_size) != CL_SUCCESS) {
+            cli_errmsg("interpreter: global layout exceeds the allocation limit\n");
+            free(gmap);
+            return CL_ERESOURCE;
+        }
+        gmap[j]    = global_size;
+        global_size = next_size;
     }
+    bc->numGlobalBytes = (uint32_t)global_size;
     if (bc->numGlobalBytes) {
         bc->globalBytes = cli_max_calloc(1, bc->numGlobalBytes);
         if (!bc->globalBytes) {
@@ -2888,6 +2940,7 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
         uint64_t total_values      = (uint64_t)bcfunc->numValues +
                                      (uint64_t)bcfunc->numConstants +
                                      (uint64_t)bc->num_globals;
+        size_t function_size = 0, next_size;
         unsigned totValues;
         unsigned *map;
         if (total_values > UINT_MAX ||
@@ -2903,24 +2956,40 @@ static cl_error_t cli_bytecode_prepare_interpreter(struct cli_bc *bc)
             free(gmap);
             return CL_EMEM;
         }
-        bcfunc->numBytes = 0;
         for (j = 0; j < bcfunc->numValues; j++) {
             uint16_t ty = bcfunc->types[j];
             unsigned align;
+            unsigned size;
+
             align = typealign(bc, ty);
-            assert(!ty || typesize(bc, ty));
-            assert(align);
-            bcfunc->numBytes = (bcfunc->numBytes + align - 1) & (~(align - 1));
-            map[j]           = bcfunc->numBytes;
-            /* printf("%d -> %d, %u\n", j, map[j], typesize(bc, ty)); */
-            bcfunc->numBytes += typesize(bc, ty);
-            /* TODO: don't allow size 0, it is always a bug! */
+            size  = typesize(bc, ty);
+            if (cli_bytecode_layout_size_add(function_size, align, size, &next_size) != CL_SUCCESS) {
+                cli_errmsg("interpreter: function value layout exceeds the allocation limit\n");
+                free(map);
+                free(gmap);
+                return CL_ERESOURCE;
+            }
+            map[j]      = (unsigned)(next_size - size);
+            function_size = next_size;
         }
-        bcfunc->numBytes = (bcfunc->numBytes + 7) & ~7;
+        if (cli_bytecode_layout_size_add(function_size, 8, 0, &next_size) != CL_SUCCESS) {
+            cli_errmsg("interpreter: function value alignment exceeds the allocation limit\n");
+            free(map);
+            free(gmap);
+            return CL_ERESOURCE;
+        }
+        function_size = next_size;
         for (j = 0; j < bcfunc->numConstants; j++) {
-            map[bcfunc->numValues + j] = bcfunc->numBytes;
-            bcfunc->numBytes += 8;
+            map[bcfunc->numValues + j] = (unsigned)function_size;
+            if (cli_bytecode_layout_size_add(function_size, 1, 8, &next_size) != CL_SUCCESS) {
+                cli_errmsg("interpreter: function constant layout exceeds the allocation limit\n");
+                free(map);
+                free(gmap);
+                return CL_ERESOURCE;
+            }
+            function_size = next_size;
         }
+        bcfunc->numBytes = (uint32_t)function_size;
         for (j = 0; j < bcfunc->numInsts && ret == CL_SUCCESS; j++) {
             struct cli_bc_inst *inst = &bcfunc->allinsts[j];
             if (inst->opcode != OP_BC_JMP && inst->opcode != OP_BC_BRANCH &&
