@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Regex matcher table admission — 2026-08-29
+
+The phishing/allow-list matcher grew suffix-bucket and compiled-regex pointer
+tables from database-controlled counts using direct native-size products.
+`cli_regex_table_size()` now checks native multiplication and the individual
+allocation ceiling before suffix or regex table growth. Suffix hash insertion
+and bucket-table reallocations are fail-visible, and `new_preg()` allocates the
+regex object and commits the pointer/count only after table admission succeeds.
+If suffix extraction later fails, the newly allocated compiled-regex slot is
+cleared and its count is rolled back before the compiled object is released.
+The registered `test_regex_table_size_rejects_product_wrap` regression covers
+the exact allocation boundary, `SIZE_MAX`, and invalid arguments. Current
+`regex_list.c`, `regex_list.h`, and `check_regex.c` compile with Docker
+production GCC, and an isolated current-source UBSan oracle prints
+`regex_table_size_guard_passed`. Full phishing/regex corpus, sanitizer matrix,
+service, materialized-large-file, Sonic1, and final release qualification
+remain open.
+
 ## Iconv cache table admission — 2026-08-29
 
 The entity/encoding converter grew its process or thread-local iconv handle

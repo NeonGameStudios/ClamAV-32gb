@@ -1,5 +1,19 @@
 # Wishlist
 
+## Regex matcher table admission — 2026-08-29
+
+- Keep phishing/allow-list suffix buckets and compiled-regex pointer tables
+  behind `cli_regex_table_size()` before native-size multiplication; commit
+  regex counts and pointers only after allocation succeeds, and preserve
+  hash/table failure visibility, rolling back a compiled-regex slot when
+  suffix extraction fails.
+- Retain `test_regex_table_size_rejects_product_wrap` and its source guards.
+  Current `regex_list.c`, `regex_list.h`, and `check_regex.c` compile with
+  Docker production GCC, and the isolated current-source UBSan oracle prints
+  `regex_table_size_guard_passed`; full phishing/regex corpus, sanitizer,
+  service, materialized-large-file, Sonic1, and release qualification remain
+  open.
+
 ## Iconv cache table admission — 2026-08-29
 
 - Keep process/thread-local iconv handle-table growth behind

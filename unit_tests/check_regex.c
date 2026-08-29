@@ -702,6 +702,25 @@ START_TEST(phishing_fake_test_allscan)
 }
 END_TEST
 
+START_TEST(test_regex_table_size_rejects_product_wrap)
+{
+    size_t bytes;
+
+    ck_assert_int_eq(cli_regex_table_size(0, sizeof(void *), &bytes), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, 0);
+    ck_assert_int_eq(cli_regex_table_size(CLI_MAX_ALLOCATION / sizeof(void *),
+                                          sizeof(void *), &bytes),
+                     CL_SUCCESS);
+    ck_assert_uint_eq(bytes, CLI_MAX_ALLOCATION);
+    ck_assert_int_eq(cli_regex_table_size(CLI_MAX_ALLOCATION / sizeof(void *) + 1,
+                                          sizeof(void *), &bytes),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_regex_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_regex_table_size(1, 0, &bytes), CL_EARG);
+    ck_assert_int_eq(cli_regex_table_size(1, sizeof(void *), NULL), CL_EARG);
+}
+END_TEST
+
 Suite *test_regex_suite(void)
 {
     Suite *s = suite_create("regex");
@@ -712,6 +731,7 @@ Suite *test_regex_suite(void)
     tcase_add_checked_fixture(tc_api, setup, teardown);
     tcase_add_test(tc_api, empty);
     tcase_add_test(tc_api, one);
+    tcase_add_test(tc_api, test_regex_table_size_rejects_product_wrap);
 
     tcase_add_loop_test(tc_api, test_suffix, 0, sizeof(tests) / sizeof(tests[0]));
 

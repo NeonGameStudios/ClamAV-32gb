@@ -38,6 +38,9 @@ struct regex_list_ht {
     struct regex_list* tail;
 };
 
+/* Check a regex matcher table before forming its native-size product. */
+cl_error_t cli_regex_table_size(size_t count, size_t element_size, size_t* bytes);
+
 struct regex_matcher {
     struct cli_hashtable suffix_hash;
     size_t suffix_cnt;

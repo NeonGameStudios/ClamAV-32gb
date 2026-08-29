@@ -4595,7 +4595,7 @@ fixed-width-integer	libclamav/rebuildpe.h	30	int cli_rebuildpe(char *, struct cl
 fixed-width-integer	libclamav/rebuildpe.h	31	int cli_rebuildpe_align(char *, struct cli_exe_section *, int, uint32_t, uint32_t, uint32_t, uint32_t, int, uint32_t);
 fixed-width-integer	libclamav/rebuildpe.h	32	int cli_rebuildpe_ctx(struct cli_ctx_tag *, char *, struct cli_exe_section *, int, uint32_t, uint32_t, uint32_t, uint32_t, int);
 fixed-width-integer	libclamav/rebuildpe.h	33	int cli_rebuildpe_align_ctx(struct cli_ctx_tag *, char *, struct cli_exe_section *, int, uint32_t, uint32_t, uint32_t, uint32_t, int, uint32_t);
-fixed-width-integer	libclamav/regex_list.c	708	    new->length[0]  = (uint16_t)len;
+fixed-width-integer	libclamav/regex_list.c	722	    new->length[0]  = (uint16_t)len;
 fixed-width-integer	libclamav/rijndael.c	1026	void rijndaelDecrypt(const uint32_t *rk, int nrounds, const uint8_t ciphertext[16],
 fixed-width-integer	libclamav/rijndael.c	1029	  uint32_t s0, s1, s2, s3, t0, t1, t2, t3;
 fixed-width-integer	libclamav/rijndael.c	142	static const uint32_t Te2[256] =
@@ -14485,53 +14485,58 @@ native-width-integer	libclamav/regex/regexec.c	77	#define	ISSETBACK(v, n)		(((v)
 native-width-integer	libclamav/regex/strlcpy.c	32	size_t
 native-width-integer	libclamav/regex/strlcpy.c	33	cli_strlcpy(char *dst, const char *src, size_t siz)
 native-width-integer	libclamav/regex/strlcpy.c	40		size_t n = siz;
-native-width-integer	libclamav/regex_list.c	102	    size_t match_len;
-native-width-integer	libclamav/regex_list.c	117	            const size_t pos = real_len - match_len - 1;
-native-width-integer	libclamav/regex_list.c	123	                size_t orig_real_len = strlen(orig_real_url);
-native-width-integer	libclamav/regex_list.c	150	cl_error_t regex_list_match(struct regex_matcher *matcher, char *real_url, const char *display_url, const struct pre_fixup_info *pre_fixup, int hostOnly, const char **info, int is_allow_list_lookup)
-native-width-integer	libclamav/regex_list.c	154	    size_t real_len, display_len, buffer_len;
-native-width-integer	libclamav/regex_list.c	159	    int filter_search_rc = 0;
-native-width-integer	libclamav/regex_list.c	160	    int root;
-native-width-integer	libclamav/regex_list.c	338	static int functionality_level_check(char *line)
-native-width-integer	libclamav/regex_list.c	342	    size_t j;
-native-width-integer	libclamav/regex_list.c	354	        size_t min, max;
-native-width-integer	libclamav/regex_list.c	370	            cli_dbgmsg("regex list line %s not loaded (required f-level: %u)\n", line, (unsigned int)min);
-native-width-integer	libclamav/regex_list.c	381	static int add_hash(struct regex_matcher *matcher, char *pattern, const char fl, int is_prefix)
-native-width-integer	libclamav/regex_list.c	383	    int rc                  = CL_SUCCESS;
-native-width-integer	libclamav/regex_list.c	458	cl_error_t load_regex_matcher(struct cl_engine *engine, struct regex_matcher *matcher, FILE *fd, unsigned int *signo, unsigned int options, int is_allow_list_lookup, struct cli_dbio *dbio, uint8_t dconf_prefiltering)
-native-width-integer	libclamav/regex_list.c	461	    int line = 0, entry = 0;
-native-width-integer	libclamav/regex_list.c	509	        size_t pattern_len;
-native-width-integer	libclamav/regex_list.c	61	static size_t reverse_string(char *pattern);
-native-width-integer	libclamav/regex_list.c	614	        size_t i;
-native-width-integer	libclamav/regex_list.c	62	static cl_error_t add_pattern_suffix(void *cbdata, const char *suffix, size_t suffix_len, const struct regex_list *regex);
-native-width-integer	libclamav/regex_list.c	655	int is_regex_ok(struct regex_matcher *matcher)
-native-width-integer	libclamav/regex_list.c	657	    int ret = 0;
-native-width-integer	libclamav/regex_list.c	667	static cl_error_t add_newsuffix(struct regex_matcher *matcher, struct regex_list *info, const char *suffix, size_t len)
-native-width-integer	libclamav/regex_list.c	671	    size_t i;
-native-width-integer	libclamav/regex_list.c	721	        new->pattern[i] = suffix[i]; /*new->pattern is short int* */
-native-width-integer	libclamav/regex_list.c	763	static cl_error_t add_pattern_suffix(void *cbdata, const char *suffix, size_t suffix_len, const struct regex_list *iregex)
-native-width-integer	libclamav/regex_list.c	78	static inline char get_char_at_pos_with_skip(const struct pre_fixup_info *info, const char *buffer, size_t pos)
-native-width-integer	libclamav/regex_list.c	804	        if ((size_t)el->data >= matcher->suffix_cnt) {
-native-width-integer	libclamav/regex_list.c	809	        list_add_tail(&matcher->suffix_regexes[(size_t)el->data], regex);
-native-width-integer	libclamav/regex_list.c	81	    size_t realpos = 0;
-native-width-integer	libclamav/regex_list.c	812	        size_t n = matcher->suffix_cnt;
-native-width-integer	libclamav/regex_list.c	844	static size_t reverse_string(char *pattern)
-native-width-integer	libclamav/regex_list.c	846	    size_t len = strlen(pattern);
-native-width-integer	libclamav/regex_list.c	847	    size_t i;
-native-width-integer	libclamav/regex_list.c	86	    cli_dbgmsg("calc_pos_with_skip: skip:%llu, %llu - %llu \"%s\",\"%s\"\n", (long long unsigned)pos, (long long unsigned)info->host_start,
-native-width-integer	libclamav/regex_list.c	87	               (long long unsigned)info->host_end, str, buffer);
-native-width-integer	libclamav/regex_list.c	875	    size_t len;
-native-width-integer	libclamav/regex_list.c	895	    size_t len;
-native-width-integer	libclamav/regex_list.c	99	static int validate_subdomain(const struct regex_list *regex, const struct pre_fixup_info *pre_fixup, const char *buffer, size_t buffer_len, char *real_url, size_t real_len, char *orig_real_url)
-native-width-integer	libclamav/regex_list.h	43	    size_t suffix_cnt;
-native-width-integer	libclamav/regex_list.h	45	    size_t root_regex_idx;
-native-width-integer	libclamav/regex_list.h	46	    size_t regex_cnt;
-native-width-integer	libclamav/regex_list.h	56	    int list_inited : 2;
-native-width-integer	libclamav/regex_list.h	57	    int list_loaded : 2;
-native-width-integer	libclamav/regex_list.h	58	    int list_built : 2;
-native-width-integer	libclamav/regex_list.h	63	cl_error_t regex_list_match(struct regex_matcher* matcher, char* real_url, const char* display_url, const struct pre_fixup_info* pre_fixup, int hostOnly, const char** info, int is_allow_list_lookup);
-native-width-integer	libclamav/regex_list.h	65	cl_error_t load_regex_matcher(struct cl_engine* engine, struct regex_matcher* matcher, FILE* fd, unsigned int* signo, unsigned int options, int is_allow_list_lookup, struct cli_dbio* dbio, uint8_t dconf_prefiltering);
-native-width-integer	libclamav/regex_list.h	68	int is_regex_ok(struct regex_matcher* matcher);
+native-width-integer	libclamav/regex_list.c	100	    cli_dbgmsg("calc_pos_with_skip: skip:%llu, %llu - %llu \"%s\",\"%s\"\n", (long long unsigned)pos, (long long unsigned)info->host_start,
+native-width-integer	libclamav/regex_list.c	101	               (long long unsigned)info->host_end, str, buffer);
+native-width-integer	libclamav/regex_list.c	113	static int validate_subdomain(const struct regex_list *regex, const struct pre_fixup_info *pre_fixup, const char *buffer, size_t buffer_len, char *real_url, size_t real_len, char *orig_real_url)
+native-width-integer	libclamav/regex_list.c	116	    size_t match_len;
+native-width-integer	libclamav/regex_list.c	131	            const size_t pos = real_len - match_len - 1;
+native-width-integer	libclamav/regex_list.c	137	                size_t orig_real_len = strlen(orig_real_url);
+native-width-integer	libclamav/regex_list.c	164	cl_error_t regex_list_match(struct regex_matcher *matcher, char *real_url, const char *display_url, const struct pre_fixup_info *pre_fixup, int hostOnly, const char **info, int is_allow_list_lookup)
+native-width-integer	libclamav/regex_list.c	168	    size_t real_len, display_len, buffer_len;
+native-width-integer	libclamav/regex_list.c	173	    int filter_search_rc = 0;
+native-width-integer	libclamav/regex_list.c	174	    int root;
+native-width-integer	libclamav/regex_list.c	352	static int functionality_level_check(char *line)
+native-width-integer	libclamav/regex_list.c	356	    size_t j;
+native-width-integer	libclamav/regex_list.c	368	        size_t min, max;
+native-width-integer	libclamav/regex_list.c	384	            cli_dbgmsg("regex list line %s not loaded (required f-level: %u)\n", line, (unsigned int)min);
+native-width-integer	libclamav/regex_list.c	395	static int add_hash(struct regex_matcher *matcher, char *pattern, const char fl, int is_prefix)
+native-width-integer	libclamav/regex_list.c	397	    int rc                  = CL_SUCCESS;
+native-width-integer	libclamav/regex_list.c	472	cl_error_t load_regex_matcher(struct cl_engine *engine, struct regex_matcher *matcher, FILE *fd, unsigned int *signo, unsigned int options, int is_allow_list_lookup, struct cli_dbio *dbio, uint8_t dconf_prefiltering)
+native-width-integer	libclamav/regex_list.c	475	    int line = 0, entry = 0;
+native-width-integer	libclamav/regex_list.c	523	        size_t pattern_len;
+native-width-integer	libclamav/regex_list.c	62	static size_t reverse_string(char *pattern);
+native-width-integer	libclamav/regex_list.c	628	        size_t i;
+native-width-integer	libclamav/regex_list.c	63	static cl_error_t add_pattern_suffix(void *cbdata, const char *suffix, size_t suffix_len, const struct regex_list *regex);
+native-width-integer	libclamav/regex_list.c	669	int is_regex_ok(struct regex_matcher *matcher)
+native-width-integer	libclamav/regex_list.c	671	    int ret = 0;
+native-width-integer	libclamav/regex_list.c	681	static cl_error_t add_newsuffix(struct regex_matcher *matcher, struct regex_list *info, const char *suffix, size_t len)
+native-width-integer	libclamav/regex_list.c	685	    size_t i;
+native-width-integer	libclamav/regex_list.c	70	cl_error_t cli_regex_table_size(size_t count, size_t element_size, size_t* bytes)
+native-width-integer	libclamav/regex_list.c	735	        new->pattern[i] = suffix[i]; /*new->pattern is short int* */
+native-width-integer	libclamav/regex_list.c	76	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+native-width-integer	libclamav/regex_list.c	777	static cl_error_t add_pattern_suffix(void *cbdata, const char *suffix, size_t suffix_len, const struct regex_list *iregex)
+native-width-integer	libclamav/regex_list.c	818	        if ((size_t)el->data >= matcher->suffix_cnt) {
+native-width-integer	libclamav/regex_list.c	823	        list_add_tail(&matcher->suffix_regexes[(size_t)el->data], regex);
+native-width-integer	libclamav/regex_list.c	826	        size_t n = matcher->suffix_cnt;
+native-width-integer	libclamav/regex_list.c	827	        size_t table_size;
+native-width-integer	libclamav/regex_list.c	886	static size_t reverse_string(char *pattern)
+native-width-integer	libclamav/regex_list.c	888	    size_t len = strlen(pattern);
+native-width-integer	libclamav/regex_list.c	889	    size_t i;
+native-width-integer	libclamav/regex_list.c	902	    size_t next_count, table_size;
+native-width-integer	libclamav/regex_list.c	92	static inline char get_char_at_pos_with_skip(const struct pre_fixup_info *info, const char *buffer, size_t pos)
+native-width-integer	libclamav/regex_list.c	932	    size_t len;
+native-width-integer	libclamav/regex_list.c	95	    size_t realpos = 0;
+native-width-integer	libclamav/regex_list.c	952	    size_t len;
+native-width-integer	libclamav/regex_list.h	42	cl_error_t cli_regex_table_size(size_t count, size_t element_size, size_t* bytes);
+native-width-integer	libclamav/regex_list.h	46	    size_t suffix_cnt;
+native-width-integer	libclamav/regex_list.h	48	    size_t root_regex_idx;
+native-width-integer	libclamav/regex_list.h	49	    size_t regex_cnt;
+native-width-integer	libclamav/regex_list.h	59	    int list_inited : 2;
+native-width-integer	libclamav/regex_list.h	60	    int list_loaded : 2;
+native-width-integer	libclamav/regex_list.h	61	    int list_built : 2;
+native-width-integer	libclamav/regex_list.h	66	cl_error_t regex_list_match(struct regex_matcher* matcher, char* real_url, const char* display_url, const struct pre_fixup_info* pre_fixup, int hostOnly, const char** info, int is_allow_list_lookup);
+native-width-integer	libclamav/regex_list.h	68	cl_error_t load_regex_matcher(struct cl_engine* engine, struct regex_matcher* matcher, FILE* fd, unsigned int* signo, unsigned int options, int is_allow_list_lookup, struct cli_dbio* dbio, uint8_t dconf_prefiltering);
+native-width-integer	libclamav/regex_list.h	71	int is_regex_ok(struct regex_matcher* matcher);
 native-width-integer	libclamav/regex_pcre.c	125	                   (long long unsigned)erroffset, errmsg);
 native-width-integer	libclamav/regex_pcre.c	149	int cli_pcre_match(struct cli_pcre_data *pd, const unsigned char *buffer, size_t buflen, size_t override_offset, int options, struct cli_pcre_results *results)
 native-width-integer	libclamav/regex_pcre.c	151	    int rc;
@@ -20672,6 +20677,7 @@ native-width-integer	unit_tests/check_regex.c	63	static cl_error_t cb_expect_sin
 native-width-integer	unit_tests/check_regex.c	630	    size_t host_len, path_len;
 native-width-integer	unit_tests/check_regex.c	643	    int match;
 native-width-integer	unit_tests/check_regex.c	654	    int match;
+native-width-integer	unit_tests/check_regex.c	707	    size_t bytes;
 native-width-integer	unit_tests/check_str.c	144	    buf.pos      = (size_t)-1;
 native-width-integer	unit_tests/check_str.c	145	    buf.capacity = (size_t)-1;
 native-width-integer	unit_tests/check_str.c	156	    int rc;
@@ -21118,7 +21124,10 @@ boundary-constant	libclamav/readdb.c	2577	            if (engine->hooks_cnt[hook
 boundary-constant	libclamav/readdb.c	4163	                if (root->ac_lsigs == UINT32_MAX ||
 boundary-constant	libclamav/readdb.c	4479	    if (root->ac_lsigs == UINT32_MAX ||
 boundary-constant	libclamav/readdb.c	5705	                if (dbstat->entries == UINT_MAX ||
-boundary-constant	libclamav/regex_list.c	365	            max = INT_MAX;
+boundary-constant	libclamav/regex_list.c	379	            max = INT_MAX;
+boundary-constant	libclamav/regex_list.c	75	    if (count > SIZE_MAX / element_size ||
+boundary-constant	libclamav/regex_list.c	830	        if (n == SIZE_MAX ||
+boundary-constant	libclamav/regex_list.c	904	    if (matcher->regex_cnt == SIZE_MAX ||
 boundary-constant	libclamav/scanners.c	6180	                                if ((uint64_t)fpt->offset > UINT32_MAX) {
 boundary-constant	libclamav/scanners.c	9134	            (scanned_out / CL_COUNT_PRECISION > UINT32_MAX)) {
 boundary-constant	libclamav/scanners.c	9135	            cli_warnmsg("cl_scanfile_callback: scanned_out exceeds UINT32_MAX, setting to UINT32_MAX\n");
@@ -21581,6 +21590,7 @@ boundary-constant	unit_tests/check_matchers.c	894	    ck_assert(cli_matcher_wind
 boundary-constant	unit_tests/check_matchers.c	910	    ck_assert(cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
 boundary-constant	unit_tests/check_matchers.c	915	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
 boundary-constant	unit_tests/check_matchers.c	917	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
+boundary-constant	unit_tests/check_regex.c	718	    ck_assert_int_eq(cli_regex_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
 boundary-constant	unit_tests/check_str.c	188	    size_t native_wrap_len = (size_t)(UINT_MAX / 2U) + 1U;
 boundary-constant	unit_tests/check_str.c	197	    ck_assert_ptr_null(cli_str2hex(input, UINT_MAX));
 boundary-constant	unit_tests/check_str.c	363	    ck_assert_int_eq(cli_message_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
@@ -21666,8 +21676,8 @@ quantity-parser	libclamav/readdb.c	4847	        pwstype = atoi(tokens[2]);
 quantity-parser	libclamav/readdb.c	867	                if (!cli_isnumber(pt) || (mindist = maxdist = atoi(pt)) < 0) {
 quantity-parser	libclamav/readdb.c	874	                    if (!cli_isnumber(n) || (mindist = atoi(n)) < 0) {
 quantity-parser	libclamav/readdb.c	884	                    if (!cli_isnumber(n) || (maxdist = atoi(n)) < 0) {
-quantity-parser	libclamav/regex_list.c	363	        min       = atoi(ptmin);
-quantity-parser	libclamav/regex_list.c	367	            max = atoi(ptmax);
+quantity-parser	libclamav/regex_list.c	377	        min       = atoi(ptmin);
+quantity-parser	libclamav/regex_list.c	381	            max = atoi(ptmax);
 quantity-parser	libclamav/str.c	555	 * @param[out] endptr   [optional] If endptr is not NULL, strtol() stores the
 quantity-parser	libclamav/str.c	557	 * all, however, strtol() stores the original value of str in *endptr. Nota
 quantity-parser	libclamav/str.c	679	 * @param[out] endptr   [optional] If endptr is not NULL, strtol() stores the
@@ -21734,7 +21744,7 @@ narrowing-cast	libclamav/mpool.c	783	        cli_errmsg("cli_mpool_hex2str(): Ma
 narrowing-cast	libclamav/mpool.c	886	        cli_errmsg("cli_mpool_hex2ui(): Malformed hexstring: %s (length: %lu)\n", hex, (unsigned long)len);
 narrowing-cast	libclamav/mpool.c	924	        spam("checking object %p - size %lu\n", mpm, (unsigned long)len);
 narrowing-cast	libclamav/pdf.h	48	    *legacy_length = (int)length;
-narrowing-cast	libclamav/regex_list.c	708	    new->length[0]  = (uint16_t)len;
+narrowing-cast	libclamav/regex_list.c	722	    new->length[0]  = (uint16_t)len;
 narrowing-cast	libclamav/tnef.c	177	                        (int)length);
 narrowing-cast	libclamav/tnef.c	335	               (int)length);
 narrowing-cast	libclamav/tnef.c	414	               (int)length);
@@ -23531,12 +23541,12 @@ format-width	libclamav/rebuildpe.c	211	            cli_dbgmsg("More sections tha
 format-width	libclamav/regex/engine.c	979				(void)fprintf(d, "%s%d", (first) ? "\t" : ", ", i);
 format-width	libclamav/regex/engine.c	998		(void)printf("%ld-%ld\n", (long)startst, (long)stopst);
 format-width	libclamav/regex/regerror.c	127		(void)snprintf(localbuf, localbufsize, "%d", r->code);
-format-width	libclamav/regex_list.c	370	            cli_dbgmsg("regex list line %s not loaded (required f-level: %u)\n", line, (unsigned int)min);
-format-width	libclamav/regex_list.c	530	            cli_errmsg("Malformed regex list line %d\n", line);
-format-width	libclamav/regex_list.c	546	            cli_errmsg("Overlong regex line %d\n", line);
-format-width	libclamav/regex_list.c	567	                    cli_errmsg("Error loading at line: %d\n", line);
-format-width	libclamav/regex_list.c	571	                cli_errmsg("Error loading line: %d, %c\n", line, *pattern);
-format-width	libclamav/regex_list.c	86	    cli_dbgmsg("calc_pos_with_skip: skip:%llu, %llu - %llu \"%s\",\"%s\"\n", (long long unsigned)pos, (long long unsigned)info->host_start,
+format-width	libclamav/regex_list.c	100	    cli_dbgmsg("calc_pos_with_skip: skip:%llu, %llu - %llu \"%s\",\"%s\"\n", (long long unsigned)pos, (long long unsigned)info->host_start,
+format-width	libclamav/regex_list.c	384	            cli_dbgmsg("regex list line %s not loaded (required f-level: %u)\n", line, (unsigned int)min);
+format-width	libclamav/regex_list.c	544	            cli_errmsg("Malformed regex list line %d\n", line);
+format-width	libclamav/regex_list.c	560	            cli_errmsg("Overlong regex line %d\n", line);
+format-width	libclamav/regex_list.c	581	                    cli_errmsg("Error loading at line: %d\n", line);
+format-width	libclamav/regex_list.c	585	                cli_errmsg("Error loading line: %d, %c\n", line, *pattern);
 format-width	libclamav/regex_pcre.c	124	        cli_errmsg("cli_pcre_compile: PCRE2 compilation failed at offset %llu: %s\n",
 format-width	libclamav/regex_pcre.c	180	                cli_errmsg("cli_pcre_match: pcre_exec: returned error %d\n", rc);
 format-width	libclamav/regex_pcre.c	240	            cli_dbgmsg("cli_pcre_report: (%d) %*s: %s%s\n", n, name_entry_size - 3, tabptr + 2,
@@ -32531,68 +32541,72 @@ offset-size-arithmetic	libclamav/regex/regex2.h	89	#define	O_CH	(18LU<<OPSHIFT)	
 offset-size-arithmetic	libclamav/regex/regex2.h	91	#define	OEOW	(20LU<<OPSHIFT)	/* end word	-			*/
 offset-size-arithmetic	libclamav/regex/strlcpy.c	28	 * Copy src to string dst of size siz.  At most siz-1 characters
 offset-size-arithmetic	libclamav/regex/utils.h	48	/* switch off assertions (if not already off) if no REDEBUG */
-offset-size-arithmetic	libclamav/regex_list.c	106	    match_len = strlen(regex->pattern);
-offset-size-arithmetic	libclamav/regex_list.c	107	    if (((c = get_char_at_pos_with_skip(pre_fixup, buffer, buffer_len + 1)) == ' ' || c == '\0' || c == '/' || c == '?') &&
-offset-size-arithmetic	libclamav/regex_list.c	108	        (match_len == buffer_len || /* full match */
-offset-size-arithmetic	libclamav/regex_list.c	110	          ((c = get_char_at_pos_with_skip(pre_fixup, buffer, buffer_len - match_len)) == '.' || (c == ' ')))
-offset-size-arithmetic	libclamav/regex_list.c	112	        /* we have an extra / at the end */
-offset-size-arithmetic	libclamav/regex_list.c	113	        if (match_len > 0) match_len--;
-offset-size-arithmetic	libclamav/regex_list.c	116	        if (real_len >= match_len + 1) {
-offset-size-arithmetic	libclamav/regex_list.c	117	            const size_t pos = real_len - match_len - 1;
-offset-size-arithmetic	libclamav/regex_list.c	126	                memmove(real_url, real_url + 1, orig_real_len - match_len - 1);
-offset-size-arithmetic	libclamav/regex_list.c	127	                real_url[orig_real_len - match_len - 1] = '.';
-offset-size-arithmetic	libclamav/regex_list.c	198	    buffer_len  = (hostOnly && !is_allow_list_lookup) ? real_len + 1 : real_len + display_len + 1 + 1;
-offset-size-arithmetic	libclamav/regex_list.c	200	        /* too short, no match possible */
-offset-size-arithmetic	libclamav/regex_list.c	203	    buffer = cli_max_malloc(buffer_len + 1);
-offset-size-arithmetic	libclamav/regex_list.c	210	    buffer[real_len] = (!is_allow_list_lookup && hostOnly) ? '/' : ':';
-offset-size-arithmetic	libclamav/regex_list.c	218	        strncpy(buffer + real_len + 1, display_url, buffer_len - real_len);
-offset-size-arithmetic	libclamav/regex_list.c	220	    buffer[buffer_len - 1] = '/';
-offset-size-arithmetic	libclamav/regex_list.c	243	    rc = cli_ac_scanbuff((const unsigned char *)bufrev, buffer_len, NULL, (void *)&regex, &res, &matcher->suffixes, &mdata, 0, 0, NULL, AC_SCAN_VIR, NULL);
-offset-size-arithmetic	libclamav/regex_list.c	308	    memset(matcher, 0, sizeof(*matcher));
-offset-size-arithmetic	libclamav/regex_list.c	394	    pat = MPOOL_CALLOC(matcher->mempool, 1, sizeof(*pat));
-offset-size-arithmetic	libclamav/regex_list.c	542	        if ((pattern - buffer) + pattern_len < (FILEBUFF - 3)) {
-offset-size-arithmetic	libclamav/regex_list.c	543	            pattern[pattern_len]     = '/';
-offset-size-arithmetic	libclamav/regex_list.c	544	            pattern[pattern_len + 1] = '\0';
-offset-size-arithmetic	libclamav/regex_list.c	61	static size_t reverse_string(char *pattern);
-offset-size-arithmetic	libclamav/regex_list.c	62	static cl_error_t add_pattern_suffix(void *cbdata, const char *suffix, size_t suffix_len, const struct regex_list *regex);
-offset-size-arithmetic	libclamav/regex_list.c	693	    new = MPOOL_CALLOC(matcher->mempool, 1, sizeof(*new));
-offset-size-arithmetic	libclamav/regex_list.c	711	    if (new->length[0] > root->maxpatlen)
-offset-size-arithmetic	libclamav/regex_list.c	712	        root->maxpatlen = new->length[0];
-offset-size-arithmetic	libclamav/regex_list.c	714	    new->pattern = MPOOL_MALLOC(matcher->mempool, sizeof(new->pattern[0]) * len);
-offset-size-arithmetic	libclamav/regex_list.c	763	static cl_error_t add_pattern_suffix(void *cbdata, const char *suffix, size_t suffix_len, const struct regex_list *iregex)
-offset-size-arithmetic	libclamav/regex_list.c	78	static inline char get_char_at_pos_with_skip(const struct pre_fixup_info *info, const char *buffer, size_t pos)
-offset-size-arithmetic	libclamav/regex_list.c	786	    CLI_MALLOC_OR_GOTO_DONE(regex, sizeof(*regex),
-offset-size-arithmetic	libclamav/regex_list.c	804	        if ((size_t)el->data >= matcher->suffix_cnt) {
-offset-size-arithmetic	libclamav/regex_list.c	809	        list_add_tail(&matcher->suffix_regexes[(size_t)el->data], regex);
-offset-size-arithmetic	libclamav/regex_list.c	812	        size_t n = matcher->suffix_cnt;
-offset-size-arithmetic	libclamav/regex_list.c	815	                                     (n + 1) * sizeof(*matcher->suffix_regexes),
-offset-size-arithmetic	libclamav/regex_list.c	828	            /*shrink the size back to what it was.*/
-offset-size-arithmetic	libclamav/regex_list.c	829	            CLI_MAX_REALLOC_OR_GOTO_DONE(matcher->suffix_regexes, n * sizeof(*matcher->suffix_regexes));
-offset-size-arithmetic	libclamav/regex_list.c	83	        return (pos <= strlen(buffer)) ? buffer[pos > 0 ? pos - 1 : 0] : '\0';
-offset-size-arithmetic	libclamav/regex_list.c	844	static size_t reverse_string(char *pattern)
-offset-size-arithmetic	libclamav/regex_list.c	848	    for (i = 0; i < (len / 2); i++) {
-offset-size-arithmetic	libclamav/regex_list.c	850	        pattern[i]           = pattern[len - i - 1];
-offset-size-arithmetic	libclamav/regex_list.c	851	        pattern[len - i - 1] = aux;
-offset-size-arithmetic	libclamav/regex_list.c	859	    matcher->all_pregs = MPOOL_REALLOC(matcher->mempool, matcher->all_pregs, ++matcher->regex_cnt * sizeof(*matcher->all_pregs));
-offset-size-arithmetic	libclamav/regex_list.c	86	    cli_dbgmsg("calc_pos_with_skip: skip:%llu, %llu - %llu \"%s\",\"%s\"\n", (long long unsigned)pos, (long long unsigned)info->host_start,
-offset-size-arithmetic	libclamav/regex_list.c	864	    r = MPOOL_MALLOC(matcher->mempool, sizeof(*r));
-offset-size-arithmetic	libclamav/regex_list.c	88	    pos += info->host_start;
-offset-size-arithmetic	libclamav/regex_list.c	89	    while (str[realpos] && !isalnum(str[realpos])) realpos++;
-offset-size-arithmetic	libclamav/regex_list.c	897	    const char remove_end[]  = "([/?].*)?/";
-offset-size-arithmetic	libclamav/regex_list.c	898	    const char remove_end2[] = "([/?].*)/";
-offset-size-arithmetic	libclamav/regex_list.c	90	    for (; str[realpos] && (pos > 0); pos--) {
-offset-size-arithmetic	libclamav/regex_list.c	902	        if (strncmp(&pattern[len - sizeof(remove_end) + 1], remove_end, sizeof(remove_end) - 1) == 0) {
-offset-size-arithmetic	libclamav/regex_list.c	903	            len -= sizeof(remove_end) - 1;
-offset-size-arithmetic	libclamav/regex_list.c	904	            pattern[len++] = '/';
-offset-size-arithmetic	libclamav/regex_list.c	908	        if (strncmp(&pattern[len - sizeof(remove_end2) + 1], remove_end2, sizeof(remove_end2) - 1) == 0) {
-offset-size-arithmetic	libclamav/regex_list.c	909	            len -= sizeof(remove_end2) - 1;
-offset-size-arithmetic	libclamav/regex_list.c	91	        while (str[realpos] == ' ') realpos++;
-offset-size-arithmetic	libclamav/regex_list.c	910	            pattern[len++] = '/';
-offset-size-arithmetic	libclamav/regex_list.c	92	        realpos++;
-offset-size-arithmetic	libclamav/regex_list.c	94	    while (str[realpos] == ' ') realpos++;
-offset-size-arithmetic	libclamav/regex_list.c	95	    cli_dbgmsg("calc_pos_with_skip:%s\n", str + realpos);
-offset-size-arithmetic	libclamav/regex_list.c	96	    return (pos > 0 && !str[realpos]) ? '\0' : str[realpos > 0 ? realpos - 1 : 0];
-offset-size-arithmetic	libclamav/regex_list.c	99	static int validate_subdomain(const struct regex_list *regex, const struct pre_fixup_info *pre_fixup, const char *buffer, size_t buffer_len, char *real_url, size_t real_len, char *orig_real_url)
+offset-size-arithmetic	libclamav/regex_list.c	100	    cli_dbgmsg("calc_pos_with_skip: skip:%llu, %llu - %llu \"%s\",\"%s\"\n", (long long unsigned)pos, (long long unsigned)info->host_start,
+offset-size-arithmetic	libclamav/regex_list.c	102	    pos += info->host_start;
+offset-size-arithmetic	libclamav/regex_list.c	103	    while (str[realpos] && !isalnum(str[realpos])) realpos++;
+offset-size-arithmetic	libclamav/regex_list.c	104	    for (; str[realpos] && (pos > 0); pos--) {
+offset-size-arithmetic	libclamav/regex_list.c	105	        while (str[realpos] == ' ') realpos++;
+offset-size-arithmetic	libclamav/regex_list.c	106	        realpos++;
+offset-size-arithmetic	libclamav/regex_list.c	108	    while (str[realpos] == ' ') realpos++;
+offset-size-arithmetic	libclamav/regex_list.c	109	    cli_dbgmsg("calc_pos_with_skip:%s\n", str + realpos);
+offset-size-arithmetic	libclamav/regex_list.c	110	    return (pos > 0 && !str[realpos]) ? '\0' : str[realpos > 0 ? realpos - 1 : 0];
+offset-size-arithmetic	libclamav/regex_list.c	113	static int validate_subdomain(const struct regex_list *regex, const struct pre_fixup_info *pre_fixup, const char *buffer, size_t buffer_len, char *real_url, size_t real_len, char *orig_real_url)
+offset-size-arithmetic	libclamav/regex_list.c	120	    match_len = strlen(regex->pattern);
+offset-size-arithmetic	libclamav/regex_list.c	121	    if (((c = get_char_at_pos_with_skip(pre_fixup, buffer, buffer_len + 1)) == ' ' || c == '\0' || c == '/' || c == '?') &&
+offset-size-arithmetic	libclamav/regex_list.c	122	        (match_len == buffer_len || /* full match */
+offset-size-arithmetic	libclamav/regex_list.c	124	          ((c = get_char_at_pos_with_skip(pre_fixup, buffer, buffer_len - match_len)) == '.' || (c == ' ')))
+offset-size-arithmetic	libclamav/regex_list.c	126	        /* we have an extra / at the end */
+offset-size-arithmetic	libclamav/regex_list.c	127	        if (match_len > 0) match_len--;
+offset-size-arithmetic	libclamav/regex_list.c	130	        if (real_len >= match_len + 1) {
+offset-size-arithmetic	libclamav/regex_list.c	131	            const size_t pos = real_len - match_len - 1;
+offset-size-arithmetic	libclamav/regex_list.c	140	                memmove(real_url, real_url + 1, orig_real_len - match_len - 1);
+offset-size-arithmetic	libclamav/regex_list.c	141	                real_url[orig_real_len - match_len - 1] = '.';
+offset-size-arithmetic	libclamav/regex_list.c	212	    buffer_len  = (hostOnly && !is_allow_list_lookup) ? real_len + 1 : real_len + display_len + 1 + 1;
+offset-size-arithmetic	libclamav/regex_list.c	214	        /* too short, no match possible */
+offset-size-arithmetic	libclamav/regex_list.c	217	    buffer = cli_max_malloc(buffer_len + 1);
+offset-size-arithmetic	libclamav/regex_list.c	224	    buffer[real_len] = (!is_allow_list_lookup && hostOnly) ? '/' : ':';
+offset-size-arithmetic	libclamav/regex_list.c	232	        strncpy(buffer + real_len + 1, display_url, buffer_len - real_len);
+offset-size-arithmetic	libclamav/regex_list.c	234	    buffer[buffer_len - 1] = '/';
+offset-size-arithmetic	libclamav/regex_list.c	257	    rc = cli_ac_scanbuff((const unsigned char *)bufrev, buffer_len, NULL, (void *)&regex, &res, &matcher->suffixes, &mdata, 0, 0, NULL, AC_SCAN_VIR, NULL);
+offset-size-arithmetic	libclamav/regex_list.c	322	    memset(matcher, 0, sizeof(*matcher));
+offset-size-arithmetic	libclamav/regex_list.c	408	    pat = MPOOL_CALLOC(matcher->mempool, 1, sizeof(*pat));
+offset-size-arithmetic	libclamav/regex_list.c	556	        if ((pattern - buffer) + pattern_len < (FILEBUFF - 3)) {
+offset-size-arithmetic	libclamav/regex_list.c	557	            pattern[pattern_len]     = '/';
+offset-size-arithmetic	libclamav/regex_list.c	558	            pattern[pattern_len + 1] = '\0';
+offset-size-arithmetic	libclamav/regex_list.c	62	static size_t reverse_string(char *pattern);
+offset-size-arithmetic	libclamav/regex_list.c	63	static cl_error_t add_pattern_suffix(void *cbdata, const char *suffix, size_t suffix_len, const struct regex_list *regex);
+offset-size-arithmetic	libclamav/regex_list.c	70	cl_error_t cli_regex_table_size(size_t count, size_t element_size, size_t* bytes)
+offset-size-arithmetic	libclamav/regex_list.c	707	    new = MPOOL_CALLOC(matcher->mempool, 1, sizeof(*new));
+offset-size-arithmetic	libclamav/regex_list.c	725	    if (new->length[0] > root->maxpatlen)
+offset-size-arithmetic	libclamav/regex_list.c	726	        root->maxpatlen = new->length[0];
+offset-size-arithmetic	libclamav/regex_list.c	728	    new->pattern = MPOOL_MALLOC(matcher->mempool, sizeof(new->pattern[0]) * len);
+offset-size-arithmetic	libclamav/regex_list.c	76	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+offset-size-arithmetic	libclamav/regex_list.c	777	static cl_error_t add_pattern_suffix(void *cbdata, const char *suffix, size_t suffix_len, const struct regex_list *iregex)
+offset-size-arithmetic	libclamav/regex_list.c	800	    CLI_MALLOC_OR_GOTO_DONE(regex, sizeof(*regex),
+offset-size-arithmetic	libclamav/regex_list.c	818	        if ((size_t)el->data >= matcher->suffix_cnt) {
+offset-size-arithmetic	libclamav/regex_list.c	823	        list_add_tail(&matcher->suffix_regexes[(size_t)el->data], regex);
+offset-size-arithmetic	libclamav/regex_list.c	826	        size_t n = matcher->suffix_cnt;
+offset-size-arithmetic	libclamav/regex_list.c	831	            cli_regex_table_size(n + 1, sizeof(*matcher->suffix_regexes), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/regex_list.c	862	            /*shrink the size back to what it was.*/
+offset-size-arithmetic	libclamav/regex_list.c	866	            } else if (cli_regex_table_size(n, sizeof(*matcher->suffix_regexes), &table_size) != CL_SUCCESS ||
+offset-size-arithmetic	libclamav/regex_list.c	886	static size_t reverse_string(char *pattern)
+offset-size-arithmetic	libclamav/regex_list.c	890	    for (i = 0; i < (len / 2); i++) {
+offset-size-arithmetic	libclamav/regex_list.c	892	        pattern[i]           = pattern[len - i - 1];
+offset-size-arithmetic	libclamav/regex_list.c	893	        pattern[len - i - 1] = aux;
+offset-size-arithmetic	libclamav/regex_list.c	905	        cli_regex_table_size(matcher->regex_cnt + 1, sizeof(*matcher->all_pregs), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/regex_list.c	910	    r = MPOOL_MALLOC(matcher->mempool, sizeof(*r));
+offset-size-arithmetic	libclamav/regex_list.c	92	static inline char get_char_at_pos_with_skip(const struct pre_fixup_info *info, const char *buffer, size_t pos)
+offset-size-arithmetic	libclamav/regex_list.c	954	    const char remove_end[]  = "([/?].*)?/";
+offset-size-arithmetic	libclamav/regex_list.c	955	    const char remove_end2[] = "([/?].*)/";
+offset-size-arithmetic	libclamav/regex_list.c	959	        if (strncmp(&pattern[len - sizeof(remove_end) + 1], remove_end, sizeof(remove_end) - 1) == 0) {
+offset-size-arithmetic	libclamav/regex_list.c	960	            len -= sizeof(remove_end) - 1;
+offset-size-arithmetic	libclamav/regex_list.c	961	            pattern[len++] = '/';
+offset-size-arithmetic	libclamav/regex_list.c	965	        if (strncmp(&pattern[len - sizeof(remove_end2) + 1], remove_end2, sizeof(remove_end2) - 1) == 0) {
+offset-size-arithmetic	libclamav/regex_list.c	966	            len -= sizeof(remove_end2) - 1;
+offset-size-arithmetic	libclamav/regex_list.c	967	            pattern[len++] = '/';
+offset-size-arithmetic	libclamav/regex_list.c	97	        return (pos <= strlen(buffer)) ? buffer[pos > 0 ? pos - 1 : 0] : '\0';
+offset-size-arithmetic	libclamav/regex_list.h	41	/* Check a regex matcher table before forming its native-size product. */
+offset-size-arithmetic	libclamav/regex_list.h	42	cl_error_t cli_regex_table_size(size_t count, size_t element_size, size_t* bytes);
 offset-size-arithmetic	libclamav/regex_pcre.c	149	int cli_pcre_match(struct cli_pcre_data *pd, const unsigned char *buffer, size_t buflen, size_t override_offset, int options, struct cli_pcre_results *results)
 offset-size-arithmetic	libclamav/regex_pcre.c	156	    /* set the startoffset, override if a value is specified */
 offset-size-arithmetic	libclamav/regex_pcre.c	157	    startoffset = pd->search_offset;
@@ -38891,14 +38905,21 @@ offset-size-arithmetic	unit_tests/check_regex.c	507	    ctx.recursion_stack_size
 offset-size-arithmetic	unit_tests/check_regex.c	52	static cl_error_t cb_fail(void *cbdata, const char *suffix, size_t len, const struct regex_list *regex)
 offset-size-arithmetic	unit_tests/check_regex.c	63	static cl_error_t cb_expect_single(void *cbdata, const char *suffix, size_t len, const struct regex_list *regex)
 offset-size-arithmetic	unit_tests/check_regex.c	633	    cli_url_canon(u->in, strlen(u->in), urlbuff, sizeof(urlbuff), &host, &host_len, &path, &path_len);
-offset-size-arithmetic	unit_tests/check_regex.c	716	    tcase_add_loop_test(tc_api, test_suffix, 0, sizeof(tests) / sizeof(tests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	722	    tcase_add_loop_test(tc_matching, regex_list_match_test, 0, sizeof(rtests) / sizeof(rtests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	728	    tcase_add_loop_test(tc_phish, phishingScan_test, 0, sizeof(rtests) / sizeof(rtests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	729	    tcase_add_loop_test(tc_phish, phishingScan_test_allscan, 0, sizeof(rtests) / sizeof(rtests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	738	    tcase_add_loop_test(tc_phish2, phishingScan_test, 0, sizeof(rtests) / sizeof(rtests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	739	    tcase_add_loop_test(tc_phish2, phishingScan_test_allscan, 0, sizeof(rtests) / sizeof(rtests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	744	    tcase_add_loop_test(tc_phish, test_url_canon, 0, sizeof(uc) / sizeof(uc[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	749	    tcase_add_loop_test(tc_regex, test_regexes, 0, sizeof(rg) / sizeof(rg[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	709	    ck_assert_int_eq(cli_regex_table_size(0, sizeof(void *), &bytes), CL_SUCCESS);
+offset-size-arithmetic	unit_tests/check_regex.c	711	    ck_assert_int_eq(cli_regex_table_size(CLI_MAX_ALLOCATION / sizeof(void *),
+offset-size-arithmetic	unit_tests/check_regex.c	712	                                          sizeof(void *), &bytes),
+offset-size-arithmetic	unit_tests/check_regex.c	715	    ck_assert_int_eq(cli_regex_table_size(CLI_MAX_ALLOCATION / sizeof(void *) + 1,
+offset-size-arithmetic	unit_tests/check_regex.c	716	                                          sizeof(void *), &bytes),
+offset-size-arithmetic	unit_tests/check_regex.c	718	    ck_assert_int_eq(cli_regex_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
+offset-size-arithmetic	unit_tests/check_regex.c	720	    ck_assert_int_eq(cli_regex_table_size(1, sizeof(void *), NULL), CL_EARG);
+offset-size-arithmetic	unit_tests/check_regex.c	736	    tcase_add_loop_test(tc_api, test_suffix, 0, sizeof(tests) / sizeof(tests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	742	    tcase_add_loop_test(tc_matching, regex_list_match_test, 0, sizeof(rtests) / sizeof(rtests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	748	    tcase_add_loop_test(tc_phish, phishingScan_test, 0, sizeof(rtests) / sizeof(rtests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	749	    tcase_add_loop_test(tc_phish, phishingScan_test_allscan, 0, sizeof(rtests) / sizeof(rtests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	758	    tcase_add_loop_test(tc_phish2, phishingScan_test, 0, sizeof(rtests) / sizeof(rtests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	759	    tcase_add_loop_test(tc_phish2, phishingScan_test_allscan, 0, sizeof(rtests) / sizeof(rtests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	764	    tcase_add_loop_test(tc_phish, test_url_canon, 0, sizeof(uc) / sizeof(uc[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	769	    tcase_add_loop_test(tc_regex, test_regexes, 0, sizeof(rg) / sizeof(rg[0]));
 offset-size-arithmetic	unit_tests/check_regex.c	84	    preg = malloc(sizeof(*regex.preg));
 offset-size-arithmetic	unit_tests/check_regex.c	99	    preg = malloc(sizeof(*regex.preg));
 offset-size-arithmetic	unit_tests/check_str.c	119	    ck_assert_msg(textbuffer_append_len(&buf, "test", 3) != -1, "tbuf append");

@@ -38,6 +38,7 @@
 #include <zlib.h>
 
 #include <limits.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 #include "regex/regex.h"
@@ -65,6 +66,19 @@ static cl_error_t add_static_pattern(struct regex_matcher *matcher, char *patter
 
 #define MATCH_SUCCESS 0
 #define MATCH_FAILED -1
+
+cl_error_t cli_regex_table_size(size_t count, size_t element_size, size_t* bytes)
+{
+    if (bytes == NULL || element_size == 0)
+        return CL_EARG;
+
+    if (count > SIZE_MAX / element_size ||
+        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+        return CL_ERESOURCE;
+
+    *bytes = count * element_size;
+    return CL_SUCCESS;
+}
 
 /*
  * Call this function when an unrecoverable error has occurred, (instead of exit).
@@ -810,11 +824,31 @@ static cl_error_t add_pattern_suffix(void *cbdata, const char *suffix, size_t su
     } else {
         /* new suffix */
         size_t n = matcher->suffix_cnt;
+        size_t table_size;
+        struct regex_list_ht* new_suffixes;
+
+        if (n == SIZE_MAX ||
+            cli_regex_table_size(n + 1, sizeof(*matcher->suffix_regexes), &table_size) != CL_SUCCESS) {
+            cli_errmsg("add_pattern_suffix: suffix table is too large\n");
+            ret = CL_EMEM;
+            goto done;
+        }
+
         el       = cli_hashtab_insert(&matcher->suffix_hash, suffix, suffix_len, (cli_element_data)n);
-        CLI_MAX_REALLOC_OR_GOTO_DONE(matcher->suffix_regexes,
-                                     (n + 1) * sizeof(*matcher->suffix_regexes),
-                                     cli_errmsg("add_pattern_suffix: Unable to reallocate memory for matcher->suffix_regexes\n");
-                                     ret = CL_EMEM);
+        if (!el) {
+            cli_errmsg("add_pattern_suffix: Unable to add suffix to matcher hash\n");
+            ret = CL_EMEM;
+            goto done;
+        }
+
+        new_suffixes = cli_max_realloc(matcher->suffix_regexes, table_size);
+        if (!new_suffixes) {
+            cli_hashtab_delete(&matcher->suffix_hash, suffix, suffix_len);
+            cli_errmsg("add_pattern_suffix: Unable to reallocate memory for matcher->suffix_regexes\n");
+            ret = CL_EMEM;
+            goto done;
+        }
+        matcher->suffix_regexes = new_suffixes;
         matcher->suffix_regexes[n].tail = regex;
         matcher->suffix_regexes[n].head = regex;
         if (suffix[0] == '/' && suffix[1] == '\0') {
@@ -826,7 +860,15 @@ static cl_error_t add_pattern_suffix(void *cbdata, const char *suffix, size_t su
         if (CL_SUCCESS != ret) {
             cli_hashtab_delete(&matcher->suffix_hash, suffix, suffix_len);
             /*shrink the size back to what it was.*/
-            CLI_MAX_REALLOC_OR_GOTO_DONE(matcher->suffix_regexes, n * sizeof(*matcher->suffix_regexes));
+            if (n == 0) {
+                free(matcher->suffix_regexes);
+                matcher->suffix_regexes = NULL;
+            } else if (cli_regex_table_size(n, sizeof(*matcher->suffix_regexes), &table_size) != CL_SUCCESS ||
+                       !(new_suffixes = cli_max_realloc(matcher->suffix_regexes, table_size))) {
+                ret = CL_EMEM;
+            } else {
+                matcher->suffix_regexes = new_suffixes;
+            }
         } else {
             matcher->suffix_cnt++;
         }
@@ -856,17 +898,32 @@ static size_t reverse_string(char *pattern)
 static regex_t *new_preg(struct regex_matcher *matcher)
 {
     regex_t *r;
-    matcher->all_pregs = MPOOL_REALLOC(matcher->mempool, matcher->all_pregs, ++matcher->regex_cnt * sizeof(*matcher->all_pregs));
-    if (!matcher->all_pregs) {
-        cli_errmsg("new_preg: Unable to reallocate memory\n");
+    regex_t** new_pregs;
+    size_t next_count, table_size;
+
+    if (matcher->regex_cnt == SIZE_MAX ||
+        cli_regex_table_size(matcher->regex_cnt + 1, sizeof(*matcher->all_pregs), &table_size) != CL_SUCCESS) {
+        cli_errmsg("new_preg: regex table is too large\n");
         return NULL;
     }
+
     r = MPOOL_MALLOC(matcher->mempool, sizeof(*r));
     if (!r) {
         cli_errmsg("new_preg: Unable to allocate memory\n");
         return NULL;
     }
-    matcher->all_pregs[matcher->regex_cnt - 1] = r;
+
+    next_count = matcher->regex_cnt + 1;
+    new_pregs  = MPOOL_REALLOC(matcher->mempool, matcher->all_pregs, table_size);
+    if (!new_pregs) {
+        cli_errmsg("new_preg: Unable to reallocate memory\n");
+        MPOOL_FREE(matcher->mempool, r);
+        return NULL;
+    }
+
+    new_pregs[next_count - 1] = r;
+    matcher->all_pregs         = new_pregs;
+    matcher->regex_cnt         = next_count;
     return r;
 }
 
@@ -919,6 +976,8 @@ cl_error_t regex_list_add_pattern(struct regex_matcher *matcher, char *pattern)
     rc = cli_regex2suffix(pattern, preg, add_pattern_suffix, (void *)matcher);
     if (rc) {
         cli_regfree(preg);
+        matcher->all_pregs[matcher->regex_cnt - 1] = NULL;
+        matcher->regex_cnt--;
     }
 
     return rc;
