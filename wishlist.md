@@ -7863,3 +7863,12 @@ final qualification as open.
 - Add injected allocator execution and retain complete MIME/mbox/MHTML corpus,
   sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
   final qualification as open.
+
+## OpenIOC database admission — 2026-08-29
+
+- Keep OpenIOC XML/hash-value allocation, engine, length arithmetic, and XML
+  reader failures fail-visible, with pending hash nodes released on every
+  parse or database-admission abort.
+- Add injected allocator and malformed-XML execution, then retain complete
+  OpenIOC corpus, sanitizer, production-CVD/service, materialized-large-file,
+  Sonic1, and final qualification as open.

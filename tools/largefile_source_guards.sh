@@ -6162,6 +6162,20 @@ if ! awk '
     exit 1
 fi
 
+contains libclamav/openioc.c 'static void openioc_free_hashes'
+contains libclamav/openioc.c 'strlen((const char *)xmlval) > (size_t)CLI_MAX_ALLOCATION'
+contains libclamav/openioc.c 'elem->hash == NULL'
+contains libclamav/openioc.c 'if (engine == NULL)'
+contains libclamav/openioc.c 'if (rc < 0)'
+contains libclamav/openioc.c 'size_t ioclen;'
+contains libclamav/openioc.c 'size_t i, hashlen, virusname_size;'
+contains libclamav/openioc.c 'cli_max_calloc(1, virusname_size);'
+contains libclamav/openioc.c 'openioc_free_hashes(elems);'
+not_contains libclamav/openioc.c 'uint16_t ioclen;'
+not_contains libclamav/openioc.c 'int i, hashlen;'
+not_contains libclamav/openioc.c 'virusname = calloc(1, ioclen + hashlen + 2);'
+contains docs/largefile-capabilities.tsv 'openioc-database-admission'
+
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2
     exit 1

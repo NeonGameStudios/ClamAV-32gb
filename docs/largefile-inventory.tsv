@@ -3788,8 +3788,6 @@ fixed-width-integer	libclamav/ooxml.c	171	static cl_error_t ooxml_core_cb(int fd
 fixed-width-integer	libclamav/ooxml.c	189	static cl_error_t ooxml_extn_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
 fixed-width-integer	libclamav/ooxml.c	207	static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
 fixed-width-integer	libclamav/ooxml.c	402	static cl_error_t ooxml_hwp_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
-fixed-width-integer	libclamav/openioc.c	183	    uint16_t ioclen;
-fixed-width-integer	libclamav/openioc.c	227	    ioclen = (uint16_t)strlen(fname);
 fixed-width-integer	libclamav/others.c	1021	            if (num < 0 || (uint64_t)num > UINT32_MAX) {
 fixed-width-integer	libclamav/others.c	1025	            engine->maxscantime = (uint32_t)num;
 fixed-width-integer	libclamav/others.c	1030	            engine->pcre_match_limit = (uint64_t)num;
@@ -12891,19 +12889,23 @@ native-width-integer	libclamav/ooxml.c	474	cl_error_t cli_process_ooxml(cli_ctx 
 native-width-integer	libclamav/ooxml.c	476	    size_t loff    = 0;
 native-width-integer	libclamav/ooxml.c	88	static size_t num_ooxml_keys = sizeof(ooxml_keys) / sizeof(struct key_entry);
 native-width-integer	libclamav/ooxml.h	31	cl_error_t cli_process_ooxml(cli_ctx *, int);
-native-width-integer	libclamav/openioc.c	119	static int openioc_parse_indicatoritem(xmlTextReaderPtr reader, struct openioc_hash **elems)
-native-width-integer	libclamav/openioc.c	122	    int rc           = CL_SUCCESS;
-native-width-integer	libclamav/openioc.c	123	    int context_hash = 0;
-native-width-integer	libclamav/openioc.c	146	static int openioc_parse_indicator(xmlTextReaderPtr reader, struct openioc_hash **elems)
-native-width-integer	libclamav/openioc.c	149	    int rc = CL_SUCCESS;
-native-width-integer	libclamav/openioc.c	176	int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned int options)
-native-width-integer	libclamav/openioc.c	178	    int rc;
-native-width-integer	libclamav/openioc.c	185	    int hash_count = 0;
-native-width-integer	libclamav/openioc.c	246	        int i, hashlen;
-native-width-integer	libclamav/openioc.c	57	static int openioc_is_context_hash(xmlTextReaderPtr reader)
-native-width-integer	libclamav/openioc.c	61	    int rc            = 0;
-native-width-integer	libclamav/openioc.c	76	static int openioc_parse_content(xmlTextReaderPtr reader, struct openioc_hash **elems, int context_hash)
-native-width-integer	libclamav/openioc.c	80	    int rc = CL_SUCCESS;
+native-width-integer	libclamav/openioc.c	100	    int rc = CL_SUCCESS;
+native-width-integer	libclamav/openioc.c	122	            if (strlen((const char *)xmlval) > (size_t)CLI_MAX_ALLOCATION) {
+native-width-integer	libclamav/openioc.c	149	static int openioc_parse_indicatoritem(xmlTextReaderPtr reader, struct openioc_hash **elems)
+native-width-integer	libclamav/openioc.c	152	    int rc           = CL_SUCCESS;
+native-width-integer	libclamav/openioc.c	153	    int context_hash = 0;
+native-width-integer	libclamav/openioc.c	176	static int openioc_parse_indicator(xmlTextReaderPtr reader, struct openioc_hash **elems)
+native-width-integer	libclamav/openioc.c	179	    int rc = CL_SUCCESS;
+native-width-integer	libclamav/openioc.c	206	int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned int options)
+native-width-integer	libclamav/openioc.c	208	    int rc;
+native-width-integer	libclamav/openioc.c	212	    size_t ioclen;
+native-width-integer	libclamav/openioc.c	214	    size_t hash_count = 0;
+native-width-integer	libclamav/openioc.c	281	        size_t i, hashlen, virusname_size;
+native-width-integer	libclamav/openioc.c	298	        if (ioclen > (size_t)CLI_MAX_ALLOCATION - 2U ||
+native-width-integer	libclamav/openioc.c	299	            hashlen > (size_t)CLI_MAX_ALLOCATION - ioclen - 2U) {
+native-width-integer	libclamav/openioc.c	77	static int openioc_is_context_hash(xmlTextReaderPtr reader)
+native-width-integer	libclamav/openioc.c	81	    int rc            = 0;
+native-width-integer	libclamav/openioc.c	96	static int openioc_parse_content(xmlTextReaderPtr reader, struct openioc_hash **elems, int context_hash)
 native-width-integer	libclamav/openioc.h	24	int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned int options);
 native-width-integer	libclamav/others.c	100	static int is_rar_inited = 0;
 native-width-integer	libclamav/others.c	1084	long long cl_engine_get_num(const struct cl_engine *engine, enum cl_engine_field field, int *err)
@@ -23294,8 +23296,8 @@ format-width	libclamav/ole2_extract.c	917	        cli_dbgmsg("ERROR: Invalid off
 format-width	libclamav/ole2_extract.c	991	    ole2_listmsg("rec_level: %d\n", rec_level);
 format-width	libclamav/ole2_extract.c	992	    ole2_listmsg("file_count: %d\n", *file_count);
 format-width	libclamav/ooxml.c	108	        cli_errmsg("ooxml_updatelimits: Can't fstat descriptor %d\n", fd);
-format-width	libclamav/openioc.c	316	            cli_dbgmsg("openioc_parse: hm_addhash_str failed with %i hash len %i for %s.\n",
-format-width	libclamav/openioc.c	328	        cli_dbgmsg("openioc_parse: %i hash signature%s extracted from %s.\n",
+format-width	libclamav/openioc.c	364	            cli_dbgmsg("openioc_parse: hm_addhash_str failed with %i hash len %zu for %s.\n",
+format-width	libclamav/openioc.c	375	        cli_dbgmsg("openioc_parse: %zu hash signature%s extracted from %s.\n",
 format-width	libclamav/others.c	1251	        cli_errmsg("cl_engine_settings_copy: Unable to allocate memory for settings %llu\n",
 format-width	libclamav/others.c	1530	        cli_dbgmsg("%s: files limit reached (max: %u)\n", who, ctx->engine->maxfiles);
 format-width	libclamav/others.c	1733	        cli_errmsg("cli_hashstream: Unsupported hash type %d\n", type);
@@ -30720,9 +30722,12 @@ offset-size-arithmetic	libclamav/ooxml.c	310	                cli_mark_scan_incom
 offset-size-arithmetic	libclamav/ooxml.c	318	                        ooxml_note_failure(ctx, tmp, "OOXML extended-properties part could not be inspected completely");
 offset-size-arithmetic	libclamav/ooxml.c	324	        } else if (!xmlStrcmp(CT, (const xmlChar *)"application/vnd.openxmlformats-officedocument.custom-properties+xml")) {
 offset-size-arithmetic	libclamav/ooxml.c	88	static size_t num_ooxml_keys = sizeof(ooxml_keys) / sizeof(struct key_entry);
-offset-size-arithmetic	libclamav/openioc.c	259	        vp = hash + hashlen - 1;
-offset-size-arithmetic	libclamav/openioc.c	262	            hashlen--;
-offset-size-arithmetic	libclamav/openioc.c	264	        virusname = calloc(1, ioclen + hashlen + 2);
+offset-size-arithmetic	libclamav/openioc.c	122	            if (strlen((const char *)xmlval) > (size_t)CLI_MAX_ALLOCATION) {
+offset-size-arithmetic	libclamav/openioc.c	293	        vp = hash + hashlen - 1;
+offset-size-arithmetic	libclamav/openioc.c	296	            hashlen--;
+offset-size-arithmetic	libclamav/openioc.c	298	        if (ioclen > (size_t)CLI_MAX_ALLOCATION - 2U ||
+offset-size-arithmetic	libclamav/openioc.c	299	            hashlen > (size_t)CLI_MAX_ALLOCATION - ioclen - 2U) {
+offset-size-arithmetic	libclamav/openioc.c	307	        virusname_size = ioclen + hashlen + 2U;
 offset-size-arithmetic	libclamav/other_types.h	35	#endif /* __OTHER_TYPES_H_LC */
 offset-size-arithmetic	libclamav/others.c	1042	            ret = cli_validate_pcre_maxfilesize((uint64_t)num, &engine->pcre_max_filesize);
 offset-size-arithmetic	libclamav/others.c	1262	    settings->maxscansize         = engine->maxscansize;

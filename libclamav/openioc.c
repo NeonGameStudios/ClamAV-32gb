@@ -41,6 +41,26 @@ struct openioc_hash {
     void *next;
 };
 
+static void openioc_free_hash(struct openioc_hash *elem)
+{
+    if (elem == NULL)
+        return;
+
+    if (elem->hash)
+        xmlFree(elem->hash);
+    free(elem);
+}
+
+static void openioc_free_hashes(struct openioc_hash *elems)
+{
+    while (elems != NULL) {
+        struct openioc_hash *next = (struct openioc_hash *)elems->next;
+
+        openioc_free_hash(elems);
+        elems = next;
+    }
+}
+
 static const xmlChar *openioc_read(xmlTextReaderPtr reader)
 {
     const xmlChar *name;
@@ -99,12 +119,22 @@ static int openioc_parse_content(xmlTextReaderPtr reader, struct openioc_hash **
     if (xmlTextReaderRead(reader) == 1 && xmlTextReaderNodeType(reader) == XML_READER_TYPE_TEXT) {
         xmlval = xmlTextReaderConstValue(reader);
         if (xmlval) {
-            elem = calloc(1, sizeof(struct openioc_hash));
+            if (strlen((const char *)xmlval) > (size_t)CLI_MAX_ALLOCATION) {
+                cli_dbgmsg("openioc_parse: Content value exceeds allocation limit.\n");
+                return CL_ERESOURCE;
+            }
+
+            elem = cli_max_calloc(1, sizeof(struct openioc_hash));
             if (NULL == elem) {
-                cli_dbgmsg("openioc_parse: calloc fails for openioc_hash.\n");
+                cli_dbgmsg("openioc_parse: allocation fails for openioc_hash.\n");
                 return CL_EMEM;
             }
             elem->hash = xmlStrdup(xmlval);
+            if (elem->hash == NULL) {
+                cli_dbgmsg("openioc_parse: xmlStrdup fails for Content value.\n");
+                openioc_free_hash(elem);
+                return CL_EMEM;
+            }
             elem->next = *elems;
             *elems     = elem;
         } else {
@@ -179,16 +209,18 @@ int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned 
     xmlTextReaderPtr reader = NULL;
     const xmlChar *name;
     struct openioc_hash *elems = NULL, *elem = NULL;
-    const char *iocp = NULL;
-    uint16_t ioclen;
+    size_t ioclen;
     char *virusname;
-    int hash_count = 0;
+    size_t hash_count = 0;
 
     if (fname == NULL)
         return CL_ENULLARG;
 
     if (fd < 0)
         return CL_EARG;
+
+    if (engine == NULL)
+        return CL_ENULLARG;
 
     cli_dbgmsg("openioc_parse: XML parsing file %s\n", fname);
 
@@ -205,6 +237,7 @@ int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned 
             xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
             rc = openioc_parse_indicator(reader, &elems);
             if (rc != CL_SUCCESS) {
+                openioc_free_hashes(elems);
                 xmlTextReaderClose(reader);
                 xmlFreeTextReader(reader);
                 return rc;
@@ -217,19 +250,21 @@ int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned 
         rc = xmlTextReaderRead(reader);
     }
 
-    iocp = strrchr(fname, *PATHSEP);
+    if (rc < 0) {
+        cli_dbgmsg("openioc_parse: XML reader reported a parse error.\n");
+        openioc_free_hashes(elems);
+        xmlTextReaderClose(reader);
+        xmlFreeTextReader(reader);
+        return CL_EPARSE;
+    }
 
-    if (NULL == iocp)
-        iocp = fname;
-    else
-        iocp++;
-
-    ioclen = (uint16_t)strlen(fname);
+    ioclen = strlen(fname);
 
     if (elems != NULL) {
         if (NULL == engine->hm_hdb) {
             engine->hm_hdb = MPOOL_CALLOC(engine->mempool, 1, sizeof(struct cli_matcher));
             if (NULL == engine->hm_hdb) {
+                openioc_free_hashes(elems);
                 xmlTextReaderClose(reader);
                 xmlFreeTextReader(reader);
                 return CL_EMEM;
@@ -243,27 +278,38 @@ int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned 
     while (elems != NULL) {
         const char *sp;
         char *hash, *vp;
-        int i, hashlen;
+        size_t i, hashlen, virusname_size;
 
         elem  = elems;
-        elems = elems->next;
+        elems = (struct openioc_hash *)elems->next;
         hash  = (char *)(elem->hash);
-        while (isspace(*hash))
+        while (isspace((unsigned char)*hash))
             hash++;
         hashlen = strlen(hash);
         if (hashlen == 0) {
-            xmlFree(elem->hash);
-            free(elem);
+            openioc_free_hash(elem);
             continue;
         }
         vp = hash + hashlen - 1;
-        while (isspace(*vp) && vp > hash) {
+        while (isspace((unsigned char)*vp) && vp > hash) {
             *vp-- = '\0';
             hashlen--;
         }
-        virusname = calloc(1, ioclen + hashlen + 2);
+        if (ioclen > (size_t)CLI_MAX_ALLOCATION - 2U ||
+            hashlen > (size_t)CLI_MAX_ALLOCATION - ioclen - 2U) {
+            cli_dbgmsg("openioc_parse: virus name exceeds allocation limits.\n");
+            openioc_free_hash(elem);
+            openioc_free_hashes(elems);
+            xmlTextReaderClose(reader);
+            xmlFreeTextReader(reader);
+            return CL_ERESOURCE;
+        }
+        virusname_size = ioclen + hashlen + 2U;
+        virusname      = cli_max_calloc(1, virusname_size);
         if (NULL == virusname) {
-            cli_dbgmsg("openioc_parse: calloc for virname memory failed.\n");
+            cli_dbgmsg("openioc_parse: allocation for virname memory failed.\n");
+            openioc_free_hash(elem);
+            openioc_free_hashes(elems);
             xmlTextReaderClose(reader);
             xmlFreeTextReader(reader);
             return CL_EMEM;
@@ -303,6 +349,8 @@ int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned 
         virusname = CLI_MPOOL_VIRNAME(engine->mempool, virusname, options & CL_DB_OFFICIAL);
         if (!(virusname)) {
             cli_dbgmsg("openioc_parse: MPOOL_MALLOC for virname memory failed.\n");
+            openioc_free_hash(elem);
+            openioc_free_hashes(elems);
             xmlTextReaderClose(reader);
             xmlFreeTextReader(reader);
             free(vp);
@@ -313,19 +361,18 @@ int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned 
 
         rc = hm_addhash_str(engine, HASH_PURPOSE_WHOLE_FILE_DETECT, hash, 0, virusname);
         if (rc != CL_SUCCESS)
-            cli_dbgmsg("openioc_parse: hm_addhash_str failed with %i hash len %i for %s.\n",
+            cli_dbgmsg("openioc_parse: hm_addhash_str failed with %i hash len %zu for %s.\n",
                        rc, hashlen, virusname);
         else
             hash_count++;
 
-        xmlFree(elem->hash);
-        free(elem);
+        openioc_free_hash(elem);
     }
 
     if (hash_count == 0)
         cli_warnmsg("openioc_parse: No hash signatures extracted from %s.\n", fname);
     else
-        cli_dbgmsg("openioc_parse: %i hash signature%s extracted from %s.\n",
+        cli_dbgmsg("openioc_parse: %zu hash signature%s extracted from %s.\n",
                    hash_count, hash_count == 1 ? "" : "s", fname);
 
     xmlTextReaderClose(reader);

@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## OpenIOC database admission — 2026-08-29
+
+The OpenIOC loader accumulated XML hash values with unchecked `calloc()` and
+`xmlStrdup()` results, narrowed the file-name and hash lengths to `uint16_t`
+and `int`, formed the virus-name allocation from unchecked additions, and
+accepted an XML reader error as a successful database load. Parse and
+allocation exits also leaked the current or remaining hash nodes. The loader
+now validates the engine, bounds XML/hash-derived representations through the
+shared individual-allocation limit, preserves `size_t` arithmetic, checks
+duplication, returns `CL_EPARSE` for reader errors, and cleans all pending
+nodes on abort. Source guards and a current-source Docker production-GCC
+syntax check cover the implementation; OpenIOC corpus, injected allocator
+execution, sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, and final parser/release qualification remain open.
+
 ## MIME multipart allocation-failure visibility — 2026-08-29
 
 The multipart MIME path previously broke out of message-table growth and
