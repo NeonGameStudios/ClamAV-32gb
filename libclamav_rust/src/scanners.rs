@@ -1013,10 +1013,21 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
         // Get the file header.
         let header = decoder.header();
 
+        let fmap_len = match u64::try_from(fmap.len()) {
+            Ok(value) => value,
+            Err(_) => {
+                return parser_failure(
+                    ctx,
+                    "LHA/LZH",
+                    cl_error_t_CL_ERESOURCE,
+                    "fmap length is not representable in the 64-bit archive coordinate space",
+                );
+            }
+        };
         let member_data_end = match lha_member_range_end(
             member_data_start,
             header.compressed_size,
-            fmap.len() as u64,
+            fmap_len,
         ) {
             Some(end) => end,
             None => {

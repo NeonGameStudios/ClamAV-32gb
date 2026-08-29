@@ -162,6 +162,15 @@ impl<'a> FMapReader<'a> {
         Ok(requested)
     }
 
+    fn map_len_u64(&self) -> io::Result<u64> {
+        u64::try_from(self.map.len()).map_err(|_| {
+            io::Error::new(
+                ErrorKind::InvalidInput,
+                "fmap length is not representable in the 64-bit reader coordinate space",
+            )
+        })
+    }
+
     fn checked_position(base: u64, offset: i64) -> io::Result<u64> {
         let next = i128::from(base) + i128::from(offset);
         if next < 0 || next > i128::from(u64::MAX) {
@@ -180,13 +189,22 @@ impl Read for FMapReader<'_> {
             self.check_scan_deadline()?;
         }
 
-        let len = self.map.len() as u64;
+        let len = self.map_len_u64()?;
         if self.position >= len || dst.is_empty() {
             return Ok(0);
         }
 
         let remaining = len - self.position;
-        let requested = (dst.len() as u64).min(remaining) as usize;
+        let requested = if remaining < Self::MAX_READ_CHUNK as u64 {
+            usize::try_from(remaining).map_err(|_| {
+                io::Error::new(
+                    ErrorKind::InvalidInput,
+                    "fmap read length is not representable on this platform",
+                )
+            })?
+        } else {
+            dst.len().min(Self::MAX_READ_CHUNK)
+        };
         let at = usize::try_from(self.position).map_err(|_| {
             io::Error::new(
                 ErrorKind::InvalidInput,
@@ -194,9 +212,17 @@ impl Read for FMapReader<'_> {
             )
         })?;
         let read = self.read_window(at, &mut dst[..requested])?;
-        self.position = self.position.checked_add(read as u64).ok_or_else(|| {
-            io::Error::new(ErrorKind::InvalidInput, "fmap position overflow")
-        })?;
+        self.position = self
+            .position
+            .checked_add(u64::try_from(read).map_err(|_| {
+                io::Error::new(
+                    ErrorKind::InvalidInput,
+                    "fmap read length is not representable in the 64-bit reader coordinate space",
+                )
+            })?)
+            .ok_or_else(|| {
+                io::Error::new(ErrorKind::InvalidInput, "fmap position overflow")
+            })?;
         Ok(read)
     }
 }
@@ -208,7 +234,7 @@ impl Seek for FMapReader<'_> {
         let next = match from {
             SeekFrom::Start(offset) => offset,
             SeekFrom::Current(offset) => Self::checked_position(self.position, offset)?,
-            SeekFrom::End(offset) => Self::checked_position(self.map.len() as u64, offset)?,
+            SeekFrom::End(offset) => Self::checked_position(self.map_len_u64()?, offset)?,
         };
         self.position = next;
         Ok(next)
@@ -447,5 +473,18 @@ mod tests {
 
         assert!(reader.seek(SeekFrom::Current(-1)).is_err());
         assert_eq!(reader.stream_position().expect("position"), 0);
+    }
+
+    #[test]
+    fn reader_seek_end_uses_checked_map_length() {
+        let _guard = NEED_TEST_LOCK.lock().expect("need test lock");
+        let mut raw: sys::cl_fmap_t = unsafe { std::mem::zeroed() };
+        raw.len = 8;
+        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+        let mut reader = FMapReader::new(&map);
+
+        assert_eq!(reader.seek(SeekFrom::End(-2)).expect("tail seek"), 6);
+        assert!(reader.seek(SeekFrom::End(-9)).is_err());
+        assert_eq!(reader.stream_position().expect("position"), 6);
     }
 }

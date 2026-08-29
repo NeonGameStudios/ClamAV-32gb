@@ -14562,3 +14562,22 @@ bounded growth, measured appends, JSON string escaping, and explicit serialized
 sample tracking; the existing large-size regression covers long metadata,
 escaping, and skipped-tail comma validity. Current-source GCC, sanitizer,
 production-CVD/service, Sonic1, and final report qualification remain open.
+
+## Rust fmap native-to-64-bit coordinate audit — 2026-08-29
+
+The bounded Rust `FMapReader` previously narrowed the native fmap length,
+destination length, and read result with `as u64` before performing reader
+range and position arithmetic. The LHA scanner also passed `fmap.len()` through
+an unchecked native-to-64-bit cast when validating a member's compressed
+range. Those casts are representable on the current Linux x86-64 build, but
+they are not a safe boundary for the reader contract on wider native targets.
+
+`FMapReader` now converts map lengths and read lengths with checked
+conversions, uses a bounded native-size window when a remaining range is
+smaller than the read chunk, and applies the same checked map-length helper to
+`SeekFrom::End`. The LHA path rejects an unrepresentable map length as
+`CL_ERESOURCE` before archive coordinate validation. The source guard pins the
+conversion helper and the `SeekFrom::End` regression; the focused Rust test
+suite, current full-C ABI build, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification
+remain open.

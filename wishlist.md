@@ -7780,3 +7780,11 @@ qualification gates.
 - Add current-source GCC/sanitizer execution of long metadata, escaped names,
   and skipped-sample cases, while retaining production-CVD/service, Sonic1,
   and final report qualification as open requirements.
+
+## Rust fmap native-to-64-bit coordinates — 2026-08-29
+
+- Keep Rust fmap reader lengths, `SeekFrom::End`, read-result accounting, and
+  LHA member-range admission behind checked native-to-64-bit conversions.
+- Retain focused Rust execution, current full-C ABI, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification as open requirements.
