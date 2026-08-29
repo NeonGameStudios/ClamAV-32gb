@@ -365,6 +365,17 @@
   production-CVD/service, materialized large-file, Sonic1, and final HFS+
   qualification open.
 
+## HFS+ compressed-resource block-offset admission — 2026-08-28
+
+- Keep compressed-resource block-table offsets in checked 64-bit arithmetic
+  before converting to native `off_t` and seeking. Negative, overflowing, or
+  non-representable coordinates must remain sticky incomplete and
+  non-cacheable.
+- Retain the null, ordinary, and overflowing
+  `cli_hfsplus_resource_block_offset()` oracle. Keep production-linked HFS+
+  corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  and final HFS+ qualification open.
+
 ## UnRAR declared-output bound — 2026-08-28
 
 - Keep optional UnRAR extraction bounded by the member's declared unpacked

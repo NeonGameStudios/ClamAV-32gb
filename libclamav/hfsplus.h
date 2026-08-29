@@ -345,6 +345,18 @@ static inline cl_error_t cli_hfsplus_resource_reference_offset(uint64_t instance
     return CL_SUCCESS;
 }
 
+static inline cl_error_t cli_hfsplus_resource_block_offset(uint64_t data_offset, uint32_t block_offset,
+                                                           uint64_t *offset)
+{
+    if (offset == NULL)
+        return CL_ENULLARG;
+    if (data_offset > UINT64_MAX - (uint64_t)block_offset)
+        return CL_EFORMAT;
+
+    *offset = data_offset + (uint64_t)block_offset;
+    return CL_SUCCESS;
+}
+
 struct hfsPlusResourceBlockTable {
     uint32_t offset;
     uint32_t length;

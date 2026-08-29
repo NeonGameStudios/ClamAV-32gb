@@ -418,6 +418,17 @@ checking. Full production-linked HFS+ corpus, sanitizer, resource-measurement,
 production-CVD/service, materialized large-file, Sonic1, and final HFS+
 qualification remain required.
 
+## HFS+ compressed-resource block-offset admission — 2026-08-28
+
+The compressed-resource walker now checks the addition of each untrusted
+block-table offset to the current resource-data position before converting the
+coordinate to native `off_t` and calling `lseek()`. Negative positions,
+unsigned-addition overflow, and non-round-trippable native conversions record
+a sticky incomplete, non-cacheable format result. The new header oracle covers
+null, ordinary, and overflowing additions; full production-linked HFS+ corpus,
+sanitizer, resource-measurement, production-CVD/service, materialized
+large-file, Sonic1, and final HFS+ qualification remain required.
+
 ## UnRAR declared-output bound — 2026-08-28
 
 The optional UnRAR extraction path now passes each member's declared 64-bit

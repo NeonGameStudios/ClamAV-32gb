@@ -1637,7 +1637,8 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                             }
 
                                             int z_ret;
-                                            off_t blockOffset = dataOffset + (off_t)table[curBlock].offset;
+                                            uint64_t blockOffset64;
+                                            off_t blockOffset;
                                             size_t curOffset;
                                             size_t readLen;
                                             z_stream stream;
@@ -1645,6 +1646,23 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                             int streamCompressed = 0;
                                             bool stream_initialized = false;
                                             bool stream_complete    = false;
+
+                                            if (dataOffset < 0 ||
+                                                cli_hfsplus_resource_block_offset((uint64_t)dataOffset,
+                                                                                  table[curBlock].offset,
+                                                                                  &blockOffset64) != CL_SUCCESS) {
+                                                cli_dbgmsg("hfsplus_walk_catalog: compressed resource block offset overflowed\n");
+                                                cli_mark_scan_incomplete(ctx, "HFS+ compressed resource block offset overflowed");
+                                                status = CL_EFORMAT;
+                                                goto done;
+                                            }
+                                            blockOffset = (off_t)blockOffset64;
+                                            if (blockOffset < 0 || (uint64_t)blockOffset != blockOffset64) {
+                                                cli_dbgmsg("hfsplus_walk_catalog: compressed resource block offset is not representable\n");
+                                                cli_mark_scan_incomplete(ctx, "HFS+ compressed resource block offset is not representable");
+                                                status = CL_EFORMAT;
+                                                goto done;
+                                            }
 
                                             cli_dbgmsg("Handling block %u of %" PRIu32 " at offset %" PRIi64 " (size %u)\n", curBlock, numBlocks, (int64_t)blockOffset, table[curBlock].length);
 
