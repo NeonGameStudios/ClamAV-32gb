@@ -18564,6 +18564,65 @@ START_TEST(test_sis_option_skip_overflow_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_sis_malformed_metadata_is_fail_visible)
+{
+    uint8_t data[92] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    data[8]  = 0x19;
+    data[9]  = 0x04;
+    data[11] = 0x10;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    /* A confirmed old-format SIS with no language entries is malformed and
+     * must not inherit the clean status left by the successful header read. */
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_SIS", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    /* A language table may be present while the file-record table pointer
+     * still points into the package header; that malformed state is equally
+     * required to be sticky and non-cacheable. */
+    data[18] = 1;
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_SIS", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_sis_truncated_compressed_member_is_fail_visible)
 {
     uint8_t data[134] = {0};
@@ -46603,6 +46662,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_sis_structure);
     tcase_add_checked_fixture(tc_sis_structure, cl_setup, cl_teardown);
     tcase_add_test(tc_sis_structure, test_sis_option_skip_overflow_is_fail_visible);
+    tcase_add_test(tc_sis_structure, test_sis_malformed_metadata_is_fail_visible);
     suite_add_tcase(s, tc_tar);
     tcase_add_checked_fixture(tc_tar, cl_setup, cl_teardown);
     tcase_add_test(tc_tar, test_tar_truncated_header_is_fail_visible);

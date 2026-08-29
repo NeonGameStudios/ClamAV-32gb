@@ -360,7 +360,7 @@ cl_error_t cli_scansis(cli_ctx *ctx)
         i = real_scansis9x(ctx, tmpd);
     } else {
         cli_dbgmsg("SIS: UIDs failed to match\n");
-        i = CL_EFORMAT;
+        i = sis_incomplete(ctx, "SIS package identifiers were invalid");
     }
 
     sis_note_cleanup_failure(ctx, &i, !ctx->engine->keeptmp && cli_rmdirs(tmpd) != 0,
@@ -625,6 +625,7 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
     if (!sis.langs || sis.langs >= MAXLANG) {
         cli_dbgmsg("SIS: Too many or too few languages found\n");
+        status = sis_incomplete(ctx, "SIS language table count was invalid");
         goto done;
     }
 
@@ -639,6 +640,8 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
     pos += sis.langs * sizeof(uint16_t);
     if (!(alangs = cli_max_malloc(sis.langs * sizeof(char *)))) {
         cli_dbgmsg("SIS: OOM\n");
+        cli_mark_scan_incomplete(ctx, "SIS language names could not be allocated");
+        status = CL_EMEM;
         goto done;
     }
     for (i = 0; i < sis.langs; i++) {
@@ -715,6 +718,7 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
     if (SIZEOF_HEADER_UUIDS + sizeof(sis) > sis.pfiles) {
         cli_dbgmsg("SIS: Invalid SIS format or not an SIS file. The pointer to the file records must not point to within the SIS header: %u\n", sis.pfiles);
+        status = sis_incomplete(ctx, "SIS file-record table pointer was invalid");
         goto done;
     }
 
@@ -798,6 +802,7 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
                 if (!(ptrs = cli_max_malloc(fcount * sizeof(uint32_t) * 3))) {
                     cli_dbgmsg("\tOOM\n");
+                    cli_mark_scan_incomplete(ctx, "SIS file metadata table could not be allocated");
                     status = CL_EMEM;
                     goto done;
                 }

@@ -14513,3 +14513,16 @@ cacheable. The source guard pins both reasons. Injected resource-failure
 execution, complete PE/unpacker corpus, sanitizer, production-CVD/service,
 materialized-large-file, Linux x86-64, Sonic1, and parser-family qualification
 remain open.
+
+## SIS legacy metadata fail-visible audit — 2026-08-29
+
+The old-format SIS handler could inherit `CL_SUCCESS` after a complete header
+read when the language count or file-record pointer was malformed. Its
+language-name allocation failure also reached cleanup without setting a
+failure status, and file metadata-table allocation returned `CL_EMEM` without
+sticky incomplete state. The wrapper now marks unknown package identifiers,
+invalid metadata counts/pointers, and both allocation boundaries explicitly;
+the registered public-API regression covers the malformed count and pointer
+cases. Complete SIS corpus, injected allocation-failure execution, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and parser-family
+qualification remain open.

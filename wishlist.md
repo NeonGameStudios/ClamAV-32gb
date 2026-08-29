@@ -7745,3 +7745,12 @@ qualification gates.
 - Add injected resource-failure execution and retain complete PE/unpacker,
   sanitizer, production-CVD/service, materialized-large-file, and Sonic1
   qualification as open requirements.
+
+## SIS legacy metadata failures — 2026-08-29
+
+- Keep malformed old-format package identifiers, language counts, and
+  file-record pointers fail-visible and non-cacheable after header admission.
+- Preserve sticky `CL_EMEM` for language-name and file-metadata allocation
+  failures; add injected allocation-failure execution and retain complete SIS,
+  sanitizer, production-CVD/service, materialized-large-file, and Sonic1
+  qualification as open requirements.
