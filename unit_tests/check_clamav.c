@@ -71,6 +71,7 @@
 #include "pe_icons.h"
 #include "spin.h"
 #include "mew.h"
+#include "aspack.h"
 #include "elf.h"
 #include "dmg.h"
 #include "egg.h"
@@ -36661,6 +36662,20 @@ START_TEST(test_pe_mew_section_table_size_rejects_overflow)
 }
 END_TEST
 
+START_TEST(test_pe_aspack_block_buffer_size_rejects_overflow)
+{
+    size_t bytes;
+
+    ck_assert_int_eq(cli_aspack_block_buffer_size(0, &bytes), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, 0x10eU);
+    ck_assert_int_eq(cli_aspack_block_buffer_size((uint32_t)CLI_MAX_ALLOCATION - 0x10eU, &bytes), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, CLI_MAX_ALLOCATION);
+    ck_assert_int_eq(cli_aspack_block_buffer_size((uint32_t)CLI_MAX_ALLOCATION - 0x10eU + 1U, &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_aspack_block_buffer_size(UINT32_MAX, &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_aspack_block_buffer_size(0, NULL), CL_EARG);
+}
+END_TEST
+
 static void assert_pe_unpack_section_read_failure(const char *file, const char *reason)
 {
     struct cl_engine *scan_engine;
@@ -47594,6 +47609,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_unpack_contiguous_size_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_fsg_section_table_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_mew_section_table_size_rejects_overflow);
+    tcase_add_test(tc_cl, test_pe_aspack_block_buffer_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_fsg_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_upx_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pespin_limit_accounting_is_fail_visible);

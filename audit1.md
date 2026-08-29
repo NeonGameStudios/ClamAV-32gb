@@ -1,5 +1,26 @@
 # Independent read-only audit of audit.md
 
+## Aspack block-buffer size admission — 2026-08-29
+
+The enabled Aspack decoder validated a compressed block with the source-map
+range check, then formed `block_size + 0x10e` directly for the work buffer and
+its end pointer. On a narrower `size_t`, a block near the native maximum could
+wrap that addition even though the block itself was contained, so the
+following `memcpy()` could exceed the allocation. The shared
+`cli_aspack_block_buffer_size()` helper now performs the addition in
+`uint64_t`, checks native representability and the individual 1-GiB
+allocation ceiling, and the decoder marks the scan incomplete before leaving
+the confirmed path when admission fails. The registered
+`test_pe_aspack_block_buffer_size_rejects_overflow` regression covers the zero
+block/tail size, exact ceiling, first over-ceiling value, `UINT32_MAX`, and a
+null output pointer. The current Aspack source passes the Docker
+production-GCC syntax check, the full current unit translation reaches only the
+pre-existing stale `cryptff` declarations, and an isolated current-source
+production-linked harness prints `aspack_block_buffer_guard_passed`. Full
+Aspack/PE corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final parser-family/release qualification
+remain open.
+
 ## MEW section-table product admission — 2026-08-29
 
 The enabled non-LZMA MEW rebuild path accumulated packed sections in an

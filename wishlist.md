@@ -1,5 +1,19 @@
 # Wishlist
 
+## Aspack block-buffer size admission — 2026-08-29
+
+- Keep Aspack compressed-block work-buffer sizing behind
+  `cli_aspack_block_buffer_size()`, performing the `block_size + 0x10e` sum in
+  a wide type and rejecting native-width or `CLI_MAX_ALLOCATION` overflow
+  before allocation, `stream.iend`, or block copy; preserve sticky incomplete
+  state on the confirmed-path rejection.
+- Retain `test_pe_aspack_block_buffer_size_rejects_overflow` and its source
+  guards. The current Aspack source passes the Docker production-GCC syntax
+  check and the isolated current-source harness prints
+  `aspack_block_buffer_guard_passed`; full Aspack/PE corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, parser-family, and release qualification remain open.
+
 ## MEW section-table product admission — 2026-08-29
 
 - Keep non-LZMA MEW rebuilt section-table growth behind

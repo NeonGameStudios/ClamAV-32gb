@@ -46,6 +46,7 @@
 #define ASPACK_OEP_OFFSET_212 0x39b
 #define ASPACK_OEP_OFFSET_OTHER 0x401
 #define ASPACK_OEP_OFFSET_242 0x40d
+#define ASPACK_BLOCK_BUFFER_TAIL 0x10eU
 
 struct DICT_HELPER {
     uint32_t *starts;
@@ -83,6 +84,21 @@ static int aspack_checktimelimit(struct ASPK *stream)
     }
 
     return 0;
+}
+
+cl_error_t cli_aspack_block_buffer_size(uint32_t block_size, size_t *buffer_size)
+{
+    uint64_t required;
+
+    if (buffer_size == NULL)
+        return CL_EARG;
+
+    required = (uint64_t)block_size + (uint64_t)ASPACK_BLOCK_BUFFER_TAIL;
+    if (required > (uint64_t)SIZE_MAX || required > (uint64_t)CLI_MAX_ALLOCATION)
+        return CL_ERESOURCE;
+
+    *buffer_size = (size_t)required;
+    return CL_SUCCESS;
 }
 
 static inline int readstream(struct ASPK *stream)
@@ -388,6 +404,7 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
     uint32_t i = 0, j = 0;
     uint8_t *blocks    = NULL, *wrkbuf;
     uint32_t block_rva = 1, block_size;
+    size_t block_buffer_size;
     struct cli_exe_section *outsects;
 
     uint32_t blocks_offset, stream_init_multiplier_offset, comp_block_offset, wrkbuf_offset, oep_offset;
@@ -456,14 +473,19 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
             break;
 
         cli_dbgmsg("Aspack: unpacking block rva:%x - sz:%x\n", block_rva, block_size);
-        wrkbuf = (uint8_t *)cli_max_calloc(block_size + 0x10e, sizeof(uint8_t));
+        if (cli_aspack_block_buffer_size(block_size, &block_buffer_size) != CL_SUCCESS) {
+            if (ctx)
+                cli_mark_scan_incomplete(ctx, "Aspack block buffer exceeds allocation limits");
+            break;
+        }
+        wrkbuf = (uint8_t *)cli_max_calloc(block_buffer_size, sizeof(uint8_t));
 
         if (!wrkbuf) {
             cli_dbgmsg("Aspack: Null work buff\n");
             break;
         }
         stream.input = wrkbuf;
-        stream.iend  = &wrkbuf[block_size + 0x10e];
+        stream.iend  = &wrkbuf[block_buffer_size];
 
         memcpy(wrkbuf, image + block_rva, block_size);
 

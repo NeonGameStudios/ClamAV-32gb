@@ -22,6 +22,8 @@
 #ifndef __ASPACK_H
 #define __ASPACK_H
 
+#include <stddef.h>
+
 #include "clamav-types.h"
 #include "execs.h"
 
@@ -41,6 +43,8 @@ typedef enum aspack_version_tag {
     ASPACK_VER_OTHER,
     ASPACK_VER_242
 } aspack_version_t;
+
+cl_error_t cli_aspack_block_buffer_size(uint32_t block_size, size_t *buffer_size);
 
 int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, struct cli_ctx_tag *);
 
