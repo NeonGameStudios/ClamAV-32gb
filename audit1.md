@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## PCRE metadata table admission — 2026-08-29
+
+PCRE signature registration formed `root->pcre_metas + 1` directly in the
+metadata-pointer realloc, and per-scan offset state formed two native-size
+products directly in `cli_max_calloc()`. Registration now rejects a saturated
+metadata count and uses `cli_readdb_table_size()` before growth; offset-state
+allocation uses one checked byte size for both tables and treats a malformed
+zero-metadata root as an empty successful state. The current matcher-pcre.c
+source compiles with Docker production GCC, and source guards cover saturation,
+the shared admission call, and the former direct products. Full PCRE corpus,
+sanitizer, full-subject, service, materialized-large-file, Sonic1, and final
+matcher/release qualification remain open.
+
 ## AC root table admission — 2026-08-29
 
 AC signature loading formed root-owned pointer-table products directly before

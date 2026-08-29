@@ -1,5 +1,15 @@
 # Wishlist
 
+## PCRE metadata table admission — 2026-08-29
+
+- Keep PCRE metadata and per-scan offset-state tables behind checked native-size
+  admission before allocation, and reject saturated metadata counts before
+  count-plus-one arithmetic.
+- Retain the source guards and shared table-boundary regression. Full PCRE
+  corpus, sanitizer, full-subject, production-CVD/service,
+  materialized-large-file, Sonic1, and matcher/release qualification remain
+  open.
+
 ## AC root table admission — 2026-08-29
 
 - Keep AC list, transition-cleanup, node, pattern, and relative-offset pointer

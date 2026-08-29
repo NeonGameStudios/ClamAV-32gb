@@ -3307,19 +3307,19 @@ fixed-width-integer	libclamav/matcher-hash.h	79	bool cli_hm_have_size(const stru
 fixed-width-integer	libclamav/matcher-pcre.c	117	    uint64_t usecs;
 fixed-width-integer	libclamav/matcher-pcre.c	142	        uint32_t count;
 fixed-width-integer	libclamav/matcher-pcre.c	191	cl_error_t cli_pcre_addpatt(struct cli_matcher *root, const char *virname, const char *trigger, const char *pattern, const char *cflags, const char *offset, const uint32_t *lsigid, unsigned int options)
-fixed-width-integer	libclamav/matcher-pcre.c	194	    uint32_t pcre_count;
-fixed-width-integer	libclamav/matcher-pcre.c	233	            if ((uint32_t)rssigs > lsigid[1]) {
-fixed-width-integer	libclamav/matcher-pcre.c	237	            if ((uint32_t)rssigs == lsigid[1]) {
-fixed-width-integer	libclamav/matcher-pcre.c	434	    uint64_t endoff;
-fixed-width-integer	libclamav/matcher-pcre.c	447	    data->shift = (uint64_t *)cli_max_calloc(root->pcre_metas, sizeof(uint64_t));
-fixed-width-integer	libclamav/matcher-pcre.c	454	    data->offset = (uint64_t *)cli_max_calloc(root->pcre_metas, sizeof(uint64_t));
-fixed-width-integer	libclamav/matcher-pcre.c	558	    uint64_t evalids = 0;
-fixed-width-integer	libclamav/matcher-pcre.c	559	    uint32_t global, encompass, rolling;
-fixed-width-integer	libclamav/matcher-pcre.c	614	            if (data->offset[i] != (uint64_t)(size_t)data->offset[i] ||
-fixed-width-integer	libclamav/matcher-pcre.c	615	                data->shift[i] != (uint64_t)(size_t)data->shift[i]) {
-fixed-width-integer	libclamav/matcher-pcre.c	703	                    ret = lsig_sub_matched(root, mdata, pm->lsigid[1], pm->lsigid[2], (uint64_t)match_offset, 0, ctx);
-fixed-width-integer	libclamav/matcher-pcre.c	732	                            cli_set_match_offset(ctx, (uint64_t)(adjbuffer + p_res.match[0]));
-fixed-width-integer	libclamav/matcher-pcre.c	797	    uint32_t i;
+fixed-width-integer	libclamav/matcher-pcre.c	195	    uint32_t pcre_count;
+fixed-width-integer	libclamav/matcher-pcre.c	234	            if ((uint32_t)rssigs > lsigid[1]) {
+fixed-width-integer	libclamav/matcher-pcre.c	238	            if ((uint32_t)rssigs == lsigid[1]) {
+fixed-width-integer	libclamav/matcher-pcre.c	443	    uint64_t endoff;
+fixed-width-integer	libclamav/matcher-pcre.c	467	    data->shift = (uint64_t *)cli_max_calloc(1, table_size);
+fixed-width-integer	libclamav/matcher-pcre.c	474	    data->offset = (uint64_t *)cli_max_calloc(1, table_size);
+fixed-width-integer	libclamav/matcher-pcre.c	578	    uint64_t evalids = 0;
+fixed-width-integer	libclamav/matcher-pcre.c	579	    uint32_t global, encompass, rolling;
+fixed-width-integer	libclamav/matcher-pcre.c	634	            if (data->offset[i] != (uint64_t)(size_t)data->offset[i] ||
+fixed-width-integer	libclamav/matcher-pcre.c	635	                data->shift[i] != (uint64_t)(size_t)data->shift[i]) {
+fixed-width-integer	libclamav/matcher-pcre.c	723	                    ret = lsig_sub_matched(root, mdata, pm->lsigid[1], pm->lsigid[2], (uint64_t)match_offset, 0, ctx);
+fixed-width-integer	libclamav/matcher-pcre.c	752	                            cli_set_match_offset(ctx, (uint64_t)(adjbuffer + p_res.match[0]));
+fixed-width-integer	libclamav/matcher-pcre.c	817	    uint32_t i;
 fixed-width-integer	libclamav/matcher-pcre.h	45	    uint64_t *offset, *shift;
 fixed-width-integer	libclamav/matcher-pcre.h	57	    uint32_t lsigid[3]; /* 0=valid, 1=lsigid, 2=subsigid */
 fixed-width-integer	libclamav/matcher-pcre.h	60	    uint64_t offdata[4];
@@ -11890,25 +11890,29 @@ native-width-integer	libclamav/matcher-pcre.c	164	    if (max_name_len < (int)st
 native-width-integer	libclamav/matcher-pcre.c	165	        max_name_len = (int)strlen("PCRE Expression");
 native-width-integer	libclamav/matcher-pcre.c	178	                    12, (long long unsigned)elem->usecs, 9, (double)elem->usecs / elem->run_count);
 native-width-integer	libclamav/matcher-pcre.c	191	cl_error_t cli_pcre_addpatt(struct cli_matcher *root, const char *virname, const char *trigger, const char *pattern, const char *cflags, const char *offset, const uint32_t *lsigid, unsigned int options)
-native-width-integer	libclamav/matcher-pcre.c	196	    int ret = CL_SUCCESS, rssigs;
-native-width-integer	libclamav/matcher-pcre.c	369	cl_error_t cli_pcre_build(struct cli_matcher *root, long long unsigned match_limit, long long unsigned recmatch_limit, const struct cli_dconf *dconf)
-native-width-integer	libclamav/matcher-pcre.c	371	    unsigned int i;
-native-width-integer	libclamav/matcher-pcre.c	374	    int disable_all          = 0;
-native-width-integer	libclamav/matcher-pcre.c	432	    unsigned int i;
-native-width-integer	libclamav/matcher-pcre.c	521	int cli_pcre_qoff(struct cli_pcre_meta *pm, size_t length, size_t *adjbuffer, size_t *adjshift)
-native-width-integer	libclamav/matcher-pcre.c	548	cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const char **virname, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, const struct cli_pcre_off *data, cli_ctx *ctx)
-native-width-integer	libclamav/matcher-pcre.c	556	    size_t adjbuffer, adjshift, adjlength;
-native-width-integer	libclamav/matcher-pcre.c	557	    unsigned int i, evalcnt = 0;
-native-width-integer	libclamav/matcher-pcre.c	560	    int rc        = 0;
-native-width-integer	libclamav/matcher-pcre.c	561	    int options   = 0;
-native-width-integer	libclamav/matcher-pcre.c	562	    size_t offset = 0;
+native-width-integer	libclamav/matcher-pcre.c	194	    size_t table_size;
+native-width-integer	libclamav/matcher-pcre.c	197	    int ret = CL_SUCCESS, rssigs;
+native-width-integer	libclamav/matcher-pcre.c	353	        cli_readdb_table_size((size_t)root->pcre_metas + 1,
+native-width-integer	libclamav/matcher-pcre.c	378	cl_error_t cli_pcre_build(struct cli_matcher *root, long long unsigned match_limit, long long unsigned recmatch_limit, const struct cli_dconf *dconf)
+native-width-integer	libclamav/matcher-pcre.c	380	    unsigned int i;
+native-width-integer	libclamav/matcher-pcre.c	383	    int disable_all          = 0;
+native-width-integer	libclamav/matcher-pcre.c	441	    unsigned int i;
+native-width-integer	libclamav/matcher-pcre.c	444	    size_t table_size;
+native-width-integer	libclamav/matcher-pcre.c	459	    if (cli_readdb_table_size((size_t)root->pcre_metas, sizeof(*data->shift), &table_size) != CL_SUCCESS) {
+native-width-integer	libclamav/matcher-pcre.c	541	int cli_pcre_qoff(struct cli_pcre_meta *pm, size_t length, size_t *adjbuffer, size_t *adjshift)
+native-width-integer	libclamav/matcher-pcre.c	568	cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const char **virname, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, const struct cli_pcre_off *data, cli_ctx *ctx)
+native-width-integer	libclamav/matcher-pcre.c	576	    size_t adjbuffer, adjshift, adjlength;
+native-width-integer	libclamav/matcher-pcre.c	577	    unsigned int i, evalcnt = 0;
+native-width-integer	libclamav/matcher-pcre.c	580	    int rc        = 0;
+native-width-integer	libclamav/matcher-pcre.c	581	    int options   = 0;
+native-width-integer	libclamav/matcher-pcre.c	582	    size_t offset = 0;
 native-width-integer	libclamav/matcher-pcre.c	60	unsigned int p_sigid      = 0;
-native-width-integer	libclamav/matcher-pcre.c	614	            if (data->offset[i] != (uint64_t)(size_t)data->offset[i] ||
-native-width-integer	libclamav/matcher-pcre.c	615	                data->shift[i] != (uint64_t)(size_t)data->shift[i]) {
-native-width-integer	libclamav/matcher-pcre.c	616	                pm_dbgmsg("cli_pcre_scanbuf: skipping offset not representable by size_t for /%s/\n", pd->expression);
+native-width-integer	libclamav/matcher-pcre.c	634	            if (data->offset[i] != (uint64_t)(size_t)data->offset[i] ||
+native-width-integer	libclamav/matcher-pcre.c	635	                data->shift[i] != (uint64_t)(size_t)data->shift[i]) {
+native-width-integer	libclamav/matcher-pcre.c	636	                pm_dbgmsg("cli_pcre_scanbuf: skipping offset not representable by size_t for /%s/\n", pd->expression);
 native-width-integer	libclamav/matcher-pcre.c	64	    int ret;
 native-width-integer	libclamav/matcher-pcre.c	65	    size_t namelen;
-native-width-integer	libclamav/matcher-pcre.c	699	                    size_t match_offset = adjbuffer + p_res.match[0];
+native-width-integer	libclamav/matcher-pcre.c	719	                    size_t match_offset = adjbuffer + p_res.match[0];
 native-width-integer	libclamav/matcher-pcre.h	72	cl_error_t cli_pcre_addpatt(struct cli_matcher *root, const char *virname, const char *trigger, const char *pattern, const char *cflags, const char *offset, const uint32_t *lsigid, unsigned int options);
 native-width-integer	libclamav/matcher-pcre.h	76	cl_error_t cli_pcre_build(struct cli_matcher *root, long long unsigned match_limit, long long unsigned recmatch_limit, const struct cli_dconf *dconf);
 native-width-integer	libclamav/matcher-pcre.h	77	cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const char **virname, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, const struct cli_pcre_off *data, cli_ctx *ctx);
@@ -21034,6 +21038,7 @@ boundary-constant	libclamav/matcher-hash.c	230	            if (count == SIZE_MAX
 boundary-constant	libclamav/matcher-hash.c	284	    if (szh->items == UINT32_MAX) {
 boundary-constant	libclamav/matcher-hash.c	434	    if (size >= UINT32_MAX) {
 boundary-constant	libclamav/matcher-hash.c	496	    if (size >= UINT32_MAX) {
+boundary-constant	libclamav/matcher-pcre.c	352	    if (root->pcre_metas == UINT32_MAX ||
 boundary-constant	libclamav/matcher.c	1144	    if (!offsets || !legacy_offsets || file_size > UINT32_MAX)
 boundary-constant	libclamav/matcher.c	1476	            return SIZE_MAX;
 boundary-constant	libclamav/matcher.c	1516	        if (operand_size == SIZE_MAX) {
@@ -22976,17 +22981,17 @@ format-width	libclamav/matcher-hash.c	313	            cli_errmsg("hm_addhash_bin
 format-width	libclamav/matcher-hash.c	79	            cli_dbgmsg("to_openssl_alg: unknown hash type %d\n", type);
 format-width	libclamav/matcher-pcre.c	100	        cli_errmsg("pcre_perf: cli_event_define() error for time event id %d\n", pm->sigtime_id);
 format-width	libclamav/matcher-pcre.c	109	        cli_errmsg("pcre_perf: cli_event_define() error for matches event id %d\n", pm->sigmatch_id);
-format-width	libclamav/matcher-pcre.c	214	        pm_dbgmsg("cli_pcre_addpatt: Adding /%s/%s%s triggered on (%s) as subsig %d for lsigid %d\n",
-format-width	libclamav/matcher-pcre.c	234	                cli_errmsg("cli_pcre_addpatt: regex subsig %d logical trigger refers to subsequent subsig %d\n", lsigid[1], rssigs);
-format-width	libclamav/matcher-pcre.c	238	                cli_errmsg("cli_pcre_addpatt: regex subsig %d logical trigger is self-referential\n", lsigid[1]);
-format-width	libclamav/matcher-pcre.c	382	            cli_errmsg("cli_pcre_build: metadata for pcre %d is missing\n", i);
-format-width	libclamav/matcher-pcre.c	504	        pm_dbgmsg("%u: " STDu64 " " STDu64 "->" STDu64 "(+" STDu64 ")\n", i, pm->offdata[0], data->offset[i],
-format-width	libclamav/matcher-pcre.c	647	            pm_dbgmsg("cli_pcre_scanbuf: starting offset is outside bounds of file %zu >= %zu\n", adjbuffer, length);
-format-width	libclamav/matcher-pcre.c	651	        pm_dbgmsg("cli_pcre_scanbuf: passed buffer adjusted to %zu +%zu(%zu)[%zu]%s\n", adjbuffer, adjlength, adjbuffer + adjlength, adjshift, encompass ? " (encompass)" : "");
-format-width	libclamav/matcher-pcre.c	656	                cli_dbgmsg("cli_unzip: Time limit reached (max: %u)\n", ctx->engine->maxscantime);
-format-width	libclamav/matcher-pcre.c	682	                cli_dbgmsg("cli_pcre_scanbuf: located regex match @ %zu\n", adjbuffer + p_res.match[0]);
-format-width	libclamav/matcher-pcre.c	688	                        cli_dbgmsg("cli_pcre_scanbuf: match found outside of maxshift @%zu\n", adjbuffer + p_res.match[0]);
-format-width	libclamav/matcher-pcre.c	700	                    pm_dbgmsg("cli_pcre_scanbuf: assigning lsigcnt[%d][%d], located @ %zu\n",
+format-width	libclamav/matcher-pcre.c	215	        pm_dbgmsg("cli_pcre_addpatt: Adding /%s/%s%s triggered on (%s) as subsig %d for lsigid %d\n",
+format-width	libclamav/matcher-pcre.c	235	                cli_errmsg("cli_pcre_addpatt: regex subsig %d logical trigger refers to subsequent subsig %d\n", lsigid[1], rssigs);
+format-width	libclamav/matcher-pcre.c	239	                cli_errmsg("cli_pcre_addpatt: regex subsig %d logical trigger is self-referential\n", lsigid[1]);
+format-width	libclamav/matcher-pcre.c	391	            cli_errmsg("cli_pcre_build: metadata for pcre %d is missing\n", i);
+format-width	libclamav/matcher-pcre.c	524	        pm_dbgmsg("%u: " STDu64 " " STDu64 "->" STDu64 "(+" STDu64 ")\n", i, pm->offdata[0], data->offset[i],
+format-width	libclamav/matcher-pcre.c	667	            pm_dbgmsg("cli_pcre_scanbuf: starting offset is outside bounds of file %zu >= %zu\n", adjbuffer, length);
+format-width	libclamav/matcher-pcre.c	671	        pm_dbgmsg("cli_pcre_scanbuf: passed buffer adjusted to %zu +%zu(%zu)[%zu]%s\n", adjbuffer, adjlength, adjbuffer + adjlength, adjshift, encompass ? " (encompass)" : "");
+format-width	libclamav/matcher-pcre.c	676	                cli_dbgmsg("cli_unzip: Time limit reached (max: %u)\n", ctx->engine->maxscantime);
+format-width	libclamav/matcher-pcre.c	702	                cli_dbgmsg("cli_pcre_scanbuf: located regex match @ %zu\n", adjbuffer + p_res.match[0]);
+format-width	libclamav/matcher-pcre.c	708	                        cli_dbgmsg("cli_pcre_scanbuf: match found outside of maxshift @%zu\n", adjbuffer + p_res.match[0]);
+format-width	libclamav/matcher-pcre.c	720	                    pm_dbgmsg("cli_pcre_scanbuf: assigning lsigcnt[%d][%d], located @ %zu\n",
 format-width	libclamav/matcher-pcre.c	94	    pm_dbgmsg("pcre_perf: adding sig ids starting %u for %s\n", p_sigid, pm->statname);
 format-width	libclamav/matcher.c	1331	            cli_dbgmsg("lsig_eval: logical signature '%s' references unavailable bytecode entry %u\n",
 format-width	libclamav/matcher.c	1685	            cli_dbgmsg("lsig_eval: logical signature has an unsupported type %u\n", root->ac_lsigtable[i]->type);
@@ -29472,52 +29477,54 @@ offset-size-arithmetic	libclamav/matcher-hash.h	77	cl_error_t cli_hm_scan(const 
 offset-size-arithmetic	libclamav/matcher-hash.h	79	bool cli_hm_have_size(const struct cli_matcher *root, cli_hash_type_t type, uint64_t size);
 offset-size-arithmetic	libclamav/matcher-pcre.c	176	        cli_infomsg(NULL, "%-*s %*lu %*lu %*llu %*.2f\n", max_name_len, elem->name,
 offset-size-arithmetic	libclamav/matcher-pcre.c	191	cl_error_t cli_pcre_addpatt(struct cli_matcher *root, const char *virname, const char *trigger, const char *pattern, const char *cflags, const char *offset, const uint32_t *lsigid, unsigned int options)
-offset-size-arithmetic	libclamav/matcher-pcre.c	249	    pm = (struct cli_pcre_meta *)MPOOL_CALLOC(root->mempool, 1, sizeof(*pm));
-offset-size-arithmetic	libclamav/matcher-pcre.c	280	    /* offset parsing and usage, similar to cli_ac_addsig */
-offset-size-arithmetic	libclamav/matcher-pcre.c	281	    /* relative and type-specific offsets handled during scan */
-offset-size-arithmetic	libclamav/matcher-pcre.c	282	    ret = cli_caloff(offset, NULL, root->type, pm->offdata, &(pm->offset_min), &(pm->offset_max));
-offset-size-arithmetic	libclamav/matcher-pcre.c	291	            root->pcre_absoff_num++;
-offset-size-arithmetic	libclamav/matcher-pcre.c	293	            root->pcre_reloff_num++;
-offset-size-arithmetic	libclamav/matcher-pcre.c	353	                                                          pcre_count * sizeof(struct cli_pcre_meta *));
-offset-size-arithmetic	libclamav/matcher-pcre.c	427	/* TODO - handle VI and Macro offset types */
-offset-size-arithmetic	libclamav/matcher-pcre.c	428	cl_error_t cli_pcre_recaloff(struct cli_matcher *root, struct cli_pcre_off *data, struct cli_target_info *info, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/matcher-pcre.c	430	    /* TANGENT: maintain relative offset data in cli_ac_data? */
-offset-size-arithmetic	libclamav/matcher-pcre.c	449	        cli_errmsg("cli_pcre_initoff: cannot allocate memory for data->shift\n");
-offset-size-arithmetic	libclamav/matcher-pcre.c	454	    data->offset = (uint64_t *)cli_max_calloc(root->pcre_metas, sizeof(uint64_t));
-offset-size-arithmetic	libclamav/matcher-pcre.c	456	        cli_errmsg("cli_pcre_initoff: cannot allocate memory for data->offset\n");
-offset-size-arithmetic	libclamav/matcher-pcre.c	466	    /* iterate across all pcre metadata and recalc offsets */
-offset-size-arithmetic	libclamav/matcher-pcre.c	484	            data->offset[i] = pm->offdata[1];
-offset-size-arithmetic	libclamav/matcher-pcre.c	487	            ret = cli_caloff(NULL, info, root->type, pm->offdata, &data->offset[i], &endoff);
-offset-size-arithmetic	libclamav/matcher-pcre.c	500	                data->shift[i] = endoff - (data->offset[i]);
-offset-size-arithmetic	libclamav/matcher-pcre.c	504	        pm_dbgmsg("%u: " STDu64 " " STDu64 "->" STDu64 "(+" STDu64 ")\n", i, pm->offdata[0], data->offset[i],
-offset-size-arithmetic	libclamav/matcher-pcre.c	505	                  data->offset[i] + data->shift[i], data->shift[i]);
-offset-size-arithmetic	libclamav/matcher-pcre.c	511	void cli_pcre_freeoff(struct cli_pcre_off *data)
-offset-size-arithmetic	libclamav/matcher-pcre.c	521	int cli_pcre_qoff(struct cli_pcre_meta *pm, size_t length, size_t *adjbuffer, size_t *adjshift)
-offset-size-arithmetic	libclamav/matcher-pcre.c	526	    /* default to scanning whole buffer but try to use existing offdata */
-offset-size-arithmetic	libclamav/matcher-pcre.c	536	        *adjbuffer = length - pm->offdata[1];
-offset-size-arithmetic	libclamav/matcher-pcre.c	539	        /* all relative offsets */
-offset-size-arithmetic	libclamav/matcher-pcre.c	540	        /* TODO - check if relative offsets apply for normal hex substrs */
-offset-size-arithmetic	libclamav/matcher-pcre.c	548	cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const char **virname, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, const struct cli_pcre_off *data, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/matcher-pcre.c	592	                if (cli_ac_chklsig(pm->trigger, pm->trigger + strlen(pm->trigger), mdata->lsigcnt[pm->lsigid[1]], &evalcnt, &evalids, 0) != 1)
-offset-size-arithmetic	libclamav/matcher-pcre.c	600	        encompass = (pm->flags & CLI_PCRE_ENCOMPASS); /* encompass search to offset->offset+maxshift */
-offset-size-arithmetic	libclamav/matcher-pcre.c	602	        offset    = pd->search_offset;                /* this is usually 0 */
-offset-size-arithmetic	libclamav/matcher-pcre.c	607	        /* adjust the buffer sent to cli_pcre_match for offset and maxshift */
-offset-size-arithmetic	libclamav/matcher-pcre.c	614	            if (data->offset[i] != (uint64_t)(size_t)data->offset[i] ||
-offset-size-arithmetic	libclamav/matcher-pcre.c	615	                data->shift[i] != (uint64_t)(size_t)data->shift[i]) {
-offset-size-arithmetic	libclamav/matcher-pcre.c	616	                pm_dbgmsg("cli_pcre_scanbuf: skipping offset not representable by size_t for /%s/\n", pd->expression);
-offset-size-arithmetic	libclamav/matcher-pcre.c	632	        /* check the offset bounds */
-offset-size-arithmetic	libclamav/matcher-pcre.c	637	                    adjlength = length - adjbuffer;
-offset-size-arithmetic	libclamav/matcher-pcre.c	643	                adjlength = length - adjbuffer;
-offset-size-arithmetic	libclamav/matcher-pcre.c	646	            /* starting offset is outside bounds of file, skip pcre execution silently */
-offset-size-arithmetic	libclamav/matcher-pcre.c	651	        pm_dbgmsg("cli_pcre_scanbuf: passed buffer adjusted to %zu +%zu(%zu)[%zu]%s\n", adjbuffer, adjlength, adjbuffer + adjlength, adjshift, encompass ? " (encompass)" : "");
-offset-size-arithmetic	libclamav/matcher-pcre.c	673	            cli_event_time_start(p_sigevents, pm->sigtime_id);
-offset-size-arithmetic	libclamav/matcher-pcre.c	684	                /* check if we've gone over offset+shift */
-offset-size-arithmetic	libclamav/matcher-pcre.c	687	                        /* ignore matched offset (outside of maxshift) */
-offset-size-arithmetic	libclamav/matcher-pcre.c	699	                    size_t match_offset = adjbuffer + p_res.match[0];
-offset-size-arithmetic	libclamav/matcher-pcre.c	708	                    /* for raw match data - sigtool only */
-offset-size-arithmetic	libclamav/matcher-pcre.c	721	                        newres->offset     = adjbuffer + p_res.match[0];
-offset-size-arithmetic	libclamav/matcher-pcre.c	732	                            cli_set_match_offset(ctx, (uint64_t)(adjbuffer + p_res.match[0]));
-offset-size-arithmetic	libclamav/matcher-pcre.c	743	             * NOTE: misses matches starting within the last match; TODO: start from start of last match? */
+offset-size-arithmetic	libclamav/matcher-pcre.c	250	    pm = (struct cli_pcre_meta *)MPOOL_CALLOC(root->mempool, 1, sizeof(*pm));
+offset-size-arithmetic	libclamav/matcher-pcre.c	281	    /* offset parsing and usage, similar to cli_ac_addsig */
+offset-size-arithmetic	libclamav/matcher-pcre.c	282	    /* relative and type-specific offsets handled during scan */
+offset-size-arithmetic	libclamav/matcher-pcre.c	283	    ret = cli_caloff(offset, NULL, root->type, pm->offdata, &(pm->offset_min), &(pm->offset_max));
+offset-size-arithmetic	libclamav/matcher-pcre.c	292	            root->pcre_absoff_num++;
+offset-size-arithmetic	libclamav/matcher-pcre.c	294	            root->pcre_reloff_num++;
+offset-size-arithmetic	libclamav/matcher-pcre.c	353	        cli_readdb_table_size((size_t)root->pcre_metas + 1,
+offset-size-arithmetic	libclamav/matcher-pcre.c	354	                              sizeof(*newmetatable), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/matcher-pcre.c	436	/* TODO - handle VI and Macro offset types */
+offset-size-arithmetic	libclamav/matcher-pcre.c	437	cl_error_t cli_pcre_recaloff(struct cli_matcher *root, struct cli_pcre_off *data, struct cli_target_info *info, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/matcher-pcre.c	439	    /* TANGENT: maintain relative offset data in cli_ac_data? */
+offset-size-arithmetic	libclamav/matcher-pcre.c	459	    if (cli_readdb_table_size((size_t)root->pcre_metas, sizeof(*data->shift), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/matcher-pcre.c	469	        cli_errmsg("cli_pcre_initoff: cannot allocate memory for data->shift\n");
+offset-size-arithmetic	libclamav/matcher-pcre.c	474	    data->offset = (uint64_t *)cli_max_calloc(1, table_size);
+offset-size-arithmetic	libclamav/matcher-pcre.c	476	        cli_errmsg("cli_pcre_initoff: cannot allocate memory for data->offset\n");
+offset-size-arithmetic	libclamav/matcher-pcre.c	486	    /* iterate across all pcre metadata and recalc offsets */
+offset-size-arithmetic	libclamav/matcher-pcre.c	504	            data->offset[i] = pm->offdata[1];
+offset-size-arithmetic	libclamav/matcher-pcre.c	507	            ret = cli_caloff(NULL, info, root->type, pm->offdata, &data->offset[i], &endoff);
+offset-size-arithmetic	libclamav/matcher-pcre.c	520	                data->shift[i] = endoff - (data->offset[i]);
+offset-size-arithmetic	libclamav/matcher-pcre.c	524	        pm_dbgmsg("%u: " STDu64 " " STDu64 "->" STDu64 "(+" STDu64 ")\n", i, pm->offdata[0], data->offset[i],
+offset-size-arithmetic	libclamav/matcher-pcre.c	525	                  data->offset[i] + data->shift[i], data->shift[i]);
+offset-size-arithmetic	libclamav/matcher-pcre.c	531	void cli_pcre_freeoff(struct cli_pcre_off *data)
+offset-size-arithmetic	libclamav/matcher-pcre.c	541	int cli_pcre_qoff(struct cli_pcre_meta *pm, size_t length, size_t *adjbuffer, size_t *adjshift)
+offset-size-arithmetic	libclamav/matcher-pcre.c	546	    /* default to scanning whole buffer but try to use existing offdata */
+offset-size-arithmetic	libclamav/matcher-pcre.c	556	        *adjbuffer = length - pm->offdata[1];
+offset-size-arithmetic	libclamav/matcher-pcre.c	559	        /* all relative offsets */
+offset-size-arithmetic	libclamav/matcher-pcre.c	560	        /* TODO - check if relative offsets apply for normal hex substrs */
+offset-size-arithmetic	libclamav/matcher-pcre.c	568	cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const char **virname, struct cli_ac_result **res, const struct cli_matcher *root, struct cli_ac_data *mdata, const struct cli_pcre_off *data, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/matcher-pcre.c	612	                if (cli_ac_chklsig(pm->trigger, pm->trigger + strlen(pm->trigger), mdata->lsigcnt[pm->lsigid[1]], &evalcnt, &evalids, 0) != 1)
+offset-size-arithmetic	libclamav/matcher-pcre.c	620	        encompass = (pm->flags & CLI_PCRE_ENCOMPASS); /* encompass search to offset->offset+maxshift */
+offset-size-arithmetic	libclamav/matcher-pcre.c	622	        offset    = pd->search_offset;                /* this is usually 0 */
+offset-size-arithmetic	libclamav/matcher-pcre.c	627	        /* adjust the buffer sent to cli_pcre_match for offset and maxshift */
+offset-size-arithmetic	libclamav/matcher-pcre.c	634	            if (data->offset[i] != (uint64_t)(size_t)data->offset[i] ||
+offset-size-arithmetic	libclamav/matcher-pcre.c	635	                data->shift[i] != (uint64_t)(size_t)data->shift[i]) {
+offset-size-arithmetic	libclamav/matcher-pcre.c	636	                pm_dbgmsg("cli_pcre_scanbuf: skipping offset not representable by size_t for /%s/\n", pd->expression);
+offset-size-arithmetic	libclamav/matcher-pcre.c	652	        /* check the offset bounds */
+offset-size-arithmetic	libclamav/matcher-pcre.c	657	                    adjlength = length - adjbuffer;
+offset-size-arithmetic	libclamav/matcher-pcre.c	663	                adjlength = length - adjbuffer;
+offset-size-arithmetic	libclamav/matcher-pcre.c	666	            /* starting offset is outside bounds of file, skip pcre execution silently */
+offset-size-arithmetic	libclamav/matcher-pcre.c	671	        pm_dbgmsg("cli_pcre_scanbuf: passed buffer adjusted to %zu +%zu(%zu)[%zu]%s\n", adjbuffer, adjlength, adjbuffer + adjlength, adjshift, encompass ? " (encompass)" : "");
+offset-size-arithmetic	libclamav/matcher-pcre.c	693	            cli_event_time_start(p_sigevents, pm->sigtime_id);
+offset-size-arithmetic	libclamav/matcher-pcre.c	704	                /* check if we've gone over offset+shift */
+offset-size-arithmetic	libclamav/matcher-pcre.c	707	                        /* ignore matched offset (outside of maxshift) */
+offset-size-arithmetic	libclamav/matcher-pcre.c	719	                    size_t match_offset = adjbuffer + p_res.match[0];
+offset-size-arithmetic	libclamav/matcher-pcre.c	728	                    /* for raw match data - sigtool only */
+offset-size-arithmetic	libclamav/matcher-pcre.c	741	                        newres->offset     = adjbuffer + p_res.match[0];
+offset-size-arithmetic	libclamav/matcher-pcre.c	752	                            cli_set_match_offset(ctx, (uint64_t)(adjbuffer + p_res.match[0]));
+offset-size-arithmetic	libclamav/matcher-pcre.c	763	             * NOTE: misses matches starting within the last match; TODO: start from start of last match? */
 offset-size-arithmetic	libclamav/matcher-pcre.c	84	        namelen = strlen(virname) + strlen(pm->pdata.expression) + 3;
 offset-size-arithmetic	libclamav/matcher-pcre.c	92	    snprintf(pm->statname, namelen, "%s/%s/", virname, pm->pdata.expression);
 offset-size-arithmetic	libclamav/matcher-pcre.c	94	    pm_dbgmsg("pcre_perf: adding sig ids starting %u for %s\n", p_sigid, pm->statname);

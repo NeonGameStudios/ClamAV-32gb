@@ -191,6 +191,7 @@ void cli_pcre_perf_events_destroy()
 cl_error_t cli_pcre_addpatt(struct cli_matcher *root, const char *virname, const char *trigger, const char *pattern, const char *cflags, const char *offset, const uint32_t *lsigid, unsigned int options)
 {
     struct cli_pcre_meta **newmetatable = NULL, *pm = NULL;
+    size_t table_size;
     uint32_t pcre_count;
     const char *opt;
     int ret = CL_SUCCESS, rssigs;
@@ -348,9 +349,17 @@ cl_error_t cli_pcre_addpatt(struct cli_matcher *root, const char *virname, const
         pcre_perf_events_init(pm, virname);
 
     /* add pcre data to root after reallocation */
+    if (root->pcre_metas == UINT32_MAX ||
+        cli_readdb_table_size((size_t)root->pcre_metas + 1,
+                              sizeof(*newmetatable), &table_size) != CL_SUCCESS) {
+        cli_errmsg("cli_pcre_addpatt: PCRE metadata table is too large\n");
+        cli_pcre_freemeta(root, pm);
+        MPOOL_FREE(root->mempool, pm);
+        return CL_EMEM;
+    }
     pcre_count   = root->pcre_metas + 1;
     newmetatable = (struct cli_pcre_meta **)MPOOL_REALLOC(root->mempool, root->pcre_metatable,
-                                                          pcre_count * sizeof(struct cli_pcre_meta *));
+                                                          table_size);
     if (!newmetatable) {
         cli_errmsg("cli_pcre_addpatt: Unable to allocate memory for new pcre meta table\n");
         cli_pcre_freemeta(root, pm);
@@ -432,6 +441,7 @@ cl_error_t cli_pcre_recaloff(struct cli_matcher *root, struct cli_pcre_off *data
     unsigned int i;
     struct cli_pcre_meta *pm;
     uint64_t endoff;
+    size_t table_size;
 
     if (!data) {
         return CL_ENULLARG;
@@ -443,15 +453,25 @@ cl_error_t cli_pcre_recaloff(struct cli_matcher *root, struct cli_pcre_off *data
         return CL_SUCCESS;
     }
 
+    if (root->pcre_metas == 0)
+        return CL_SUCCESS;
+
+    if (cli_readdb_table_size((size_t)root->pcre_metas, sizeof(*data->shift), &table_size) != CL_SUCCESS) {
+        cli_errmsg("cli_pcre_initoff: PCRE offset table is too large\n");
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "PCRE offset state exceeds allocation limits");
+        return CL_EMEM;
+    }
+
     /* allocate data structures */
-    data->shift = (uint64_t *)cli_max_calloc(root->pcre_metas, sizeof(uint64_t));
+    data->shift = (uint64_t *)cli_max_calloc(1, table_size);
     if (!data->shift) {
         cli_errmsg("cli_pcre_initoff: cannot allocate memory for data->shift\n");
         if (ctx)
             cli_mark_scan_incomplete(ctx, "PCRE offset state could not be allocated");
         return CL_EMEM;
     }
-    data->offset = (uint64_t *)cli_max_calloc(root->pcre_metas, sizeof(uint64_t));
+    data->offset = (uint64_t *)cli_max_calloc(1, table_size);
     if (!data->offset) {
         cli_errmsg("cli_pcre_initoff: cannot allocate memory for data->offset\n");
         if (ctx)
