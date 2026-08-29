@@ -21,6 +21,17 @@
   certified Linux x86-64, Sonic1, parser-family, and release evidence remain
   open.
 
+## AutoIt initial header read status — 2026-08-29
+
+- Keep direct AutoIt header admission fail-visible when the initial version
+  byte cannot be read: return `CL_EREAD`, mark the context incomplete, and
+  disable caching just as later header reads do.
+- Retain the expanded `test_autoit_version_read_failure_is_fail_visible`
+  regression and source guard. Current-source AutoIt compile and focused
+  execution, complete corpus, sanitizer, production-CVD/service, materialized
+  large-file, certified Linux x86-64, Sonic1, parser-family, and release
+  evidence remain open.
+
 ## ALZ end-marker boundary admission — 2026-08-29
 
 - Keep the bounded ALZ parser fail-closed when bytes remain after the

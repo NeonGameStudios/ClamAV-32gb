@@ -26,6 +26,18 @@ complete ARJ-SFX corpus, coherent public TCase execution, sanitizer,
 production-CVD/service, materialized-large-file, certified Linux x86-64,
 Sonic1, parser-family, and release qualification remain required.
 
+## AutoIt initial header read status — 2026-08-29
+
+The direct AutoIt header checker now marks a recognized layer incomplete and
+non-cacheable when its initial version-byte fmap read fails, while preserving
+`CL_EREAD`. This matches the existing sticky behavior for larger signature and
+header-body reads. The expanded
+`test_autoit_version_read_failure_is_fail_visible` regression and source guard
+cover both direct helper read boundaries. Current-source AutoIt compile and
+focused execution, complete corpus, sanitizer, production-CVD/service,
+materialized-large-file, certified Linux x86-64, Sonic1, parser-family, and
+release qualification remain required.
+
 ## ALZ end-marker boundary admission — 2026-08-29
 
 The bounded ALZ reader now verifies that its end-of-central-directory marker is

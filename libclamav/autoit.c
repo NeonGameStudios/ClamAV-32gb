@@ -982,8 +982,10 @@ cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
     remaining = ctx->fmap->len - (size_t)offset;
     if (remaining < 1)
         return CL_EFORMAT;
-    if (!(buf = fmap_need_off_once(ctx->fmap, offset, 1)))
+    if (!(buf = fmap_need_off_once(ctx->fmap, offset, 1))) {
+        cli_mark_scan_incomplete(ctx, "AutoIt header version byte could not be read completely");
         return CL_EREAD;
+    }
 
     /* File-type recognition normally reports the 23-byte signature prefix;
      * accepting the version byte directly also keeps this check usable by

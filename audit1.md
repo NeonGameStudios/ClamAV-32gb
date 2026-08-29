@@ -27,6 +27,19 @@ TCase execution, sanitizer, production-CVD/service, materialized-large-file,
 certified Linux x86-64, Sonic1, and final parser-family/release qualification
 remain open.
 
+## AutoIt initial header read status — 2026-08-29
+
+The direct AutoIt header admission helper previously returned `CL_EREAD` when
+its initial version-byte fmap read failed without recording incomplete state.
+It now preserves the sticky incomplete/non-cacheable contract used by its
+later signature and body reads. The existing
+`test_autoit_version_read_failure_is_fail_visible` regression now covers both
+the initial version probe and the larger signature probe, with a source guard
+for the specific reason. Current-source AutoIt compile and focused execution,
+complete corpus, sanitizer, production-CVD/service, materialized-large-file,
+certified Linux x86-64, Sonic1, and final parser-family/release qualification
+remain open.
+
 ## ALZ end-marker boundary admission — 2026-08-29
 
 The bounded ALZ reader previously stopped as soon as it saw the end-of-central-

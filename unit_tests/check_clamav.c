@@ -28527,6 +28527,22 @@ START_TEST(test_autoit_version_read_failure_is_fail_visible)
 
     cl_fmap_close(map);
 
+    /* The header checker must also preserve a failure of its initial version
+     * byte probe, before it attempts the larger signature read. */
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_autoit_header_check(&ctx, 0), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "AutoIt header version byte could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+
     /* The header checker also performs a larger signature read after the
      * initial version probe. That direct helper boundary must be sticky too. */
     {
