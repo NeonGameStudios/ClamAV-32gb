@@ -16,6 +16,17 @@ execution. Complete ARJ/ARJ-SFX corpus, sanitizer matrix, production-CVD/
 service, materialized-large-file, certified Linux x86-64, Sonic1, and final
 parser-family/release qualification remain open.
 
+## ARJ-SFX checksum handoff — 2026-08-29
+
+The ARJ-SFX nested-admission regression now supplies the stored member's
+declared CRC-32, matching the ARJ extractor's fail-closed checksum contract.
+This keeps the valid prefixed SFX case focused on SFX admission and exact child
+matching rather than relying on the former checksum omission. A source guard
+covers the fixture's CRC declaration; complete ARJ-SFX corpus, coherent public
+TCase execution, sanitizer, production-CVD/service, materialized-large-file,
+certified Linux x86-64, Sonic1, and final parser-family/release qualification
+remain open.
+
 ## ALZ end-marker boundary admission — 2026-08-29
 
 The bounded ALZ reader previously stopped as soon as it saw the end-of-central-

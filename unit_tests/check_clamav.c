@@ -38022,6 +38022,8 @@ START_TEST(test_arjsfx_admission_reaches_nested_matcher)
     data[ARJ_SFX_OFFSET + 86] = 'x';
     data[ARJ_SFX_OFFSET + 87] = 'x';
     data[ARJ_SFX_OFFSET + 88] = 'x';
+    arj_test_write_u32(data + ARJ_SFX_OFFSET + 67,
+                       (uint32_t)crc32(0L, data + ARJ_SFX_OFFSET + 86, 3U));
     data[ARJ_SFX_OFFSET + 89] = 0x60;
     data[ARJ_SFX_OFFSET + 90] = 0xea;
 

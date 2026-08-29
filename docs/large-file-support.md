@@ -16,6 +16,16 @@ execution, complete ARJ/ARJ-SFX corpus, sanitizer, production-CVD/service,
 materialized-large-file, certified Linux x86-64, Sonic1, parser-family, and
 release qualification remain required.
 
+## ARJ-SFX checksum handoff — 2026-08-29
+
+The valid prefixed ARJ-SFX regression now writes the stored member's declared
+CRC-32 from its `xxx` payload. This keeps the SFX admission test compatible
+with the ARJ extractor's new fail-closed checksum contract while preserving
+its exact nested-child assertion. A source guard covers the declaration;
+complete ARJ-SFX corpus, coherent public TCase execution, sanitizer,
+production-CVD/service, materialized-large-file, certified Linux x86-64,
+Sonic1, parser-family, and release qualification remain required.
+
 ## ALZ end-marker boundary admission — 2026-08-29
 
 The bounded ALZ reader now verifies that its end-of-central-directory marker is

@@ -11,6 +11,16 @@
   production-CVD/service, materialized large-file, certified Linux x86-64,
   Sonic1, parser-family, and release evidence remain open.
 
+## ARJ-SFX checksum handoff — 2026-08-29
+
+- Keep the valid prefixed ARJ-SFX regression's stored member CRC declaration in
+  sync with the ARJ extractor's fail-closed checksum validation, so the test
+  proves SFX admission and exact child matching rather than checksum omission.
+- Retain the fixture source guard. Complete ARJ-SFX corpus, coherent public
+  TCase execution, sanitizer, production-CVD/service, materialized large-file,
+  certified Linux x86-64, Sonic1, parser-family, and release evidence remain
+  open.
+
 ## ALZ end-marker boundary admission — 2026-08-29
 
 - Keep the bounded ALZ parser fail-closed when bytes remain after the

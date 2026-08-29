@@ -4040,6 +4040,7 @@ contains unit_tests/check_clamav.c 'tcase_add_checked_fixture(tc_arjsfx, cl_setu
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_arjsfx, test_arjsfx_malformed_confirmed_header_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_arjsfx, test_arjsfx_header_read_failure_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_arjsfx, test_arjsfx_admission_reaches_nested_matcher)'
+contains unit_tests/check_clamav.c 'arj_test_write_u32(data + ARJ_SFX_OFFSET + 67,'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_arjsfx, test_arjsfx_weak_candidate_is_rejected_without_incomplete_state)'
 contains unit_tests/check_clamav.c 'test_autoit_sfx_admission_reaches_nested_matcher'
 contains unit_tests/check_clamav.c 'tcase_create("autoit_sfx")'
