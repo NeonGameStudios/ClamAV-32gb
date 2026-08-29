@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## MEW section-table product admission — 2026-08-29
+
+The enabled non-LZMA MEW rebuild path accumulated packed sections in an
+`int` and formed `(i + 2) * sizeof(struct cli_exe_section)` directly at each
+growth point. On a narrower `size_t`, that product could wrap before
+`cli_max_realloc()`, leaving the subsequent section-table writes larger than
+the allocation. `cli_mew_section_table_size()` now checks native
+representability and the individual 1-GiB allocation ceiling before
+`cli_max_realloc()`; an over-limit table marks the scan incomplete and returns
+the existing rebuild failure. The registered
+`test_pe_mew_section_table_size_rejects_overflow` regression covers a valid
+entry, the exact ceiling plus one, `SIZE_MAX`, and a null output pointer. The
+current MEW source and full current unit translation pass production-GCC
+syntax checks up to the pre-existing stale `cryptff` test declarations, and an
+isolated current-source production-linked harness prints
+`mew_section_table_guard_passed`. Full MEW/PE corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
+final parser-family/release qualification remain open.
+
 ## USE_MPOOL malloc-size admission — 2026-08-29
 
 The shared `USE_MPOOL` allocator formed its fragment request with

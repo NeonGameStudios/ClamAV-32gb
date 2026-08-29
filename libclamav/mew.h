@@ -22,6 +22,8 @@
 #ifndef __MEW_H
 #define __MEW_H
 
+#include <stddef.h>
+
 #if HAVE_CONFIG_H
 #include "clamav-config.h"
 #endif
@@ -38,6 +40,8 @@ struct lzmastate {
 };
 
 int mew_lzma(char *, const char *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
+
+cl_error_t cli_mew_section_table_size(size_t section_count, size_t *bytes);
 
 uint32_t lzma_upack_esi_00(struct lzmastate *, char *, char *, uint32_t);
 uint32_t lzma_upack_esi_50(struct lzmastate *, uint32_t, uint32_t, char **, char *, uint32_t *, char *, uint32_t);

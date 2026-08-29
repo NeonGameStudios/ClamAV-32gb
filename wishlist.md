@@ -1,5 +1,18 @@
 # Wishlist
 
+## MEW section-table product admission — 2026-08-29
+
+- Keep non-LZMA MEW rebuilt section-table growth behind
+  `cli_mew_section_table_size()`, rejecting native-size product overflow and
+  requests above `CLI_MAX_ALLOCATION` before `cli_max_realloc()` or section
+  writes; preserve sticky incomplete state on the existing rebuild failure.
+- Retain `test_pe_mew_section_table_size_rejects_overflow` and its source
+  guards. The current MEW source passes the Docker production-GCC syntax
+  check and the isolated current-source harness prints
+  `mew_section_table_guard_passed`; full MEW/PE corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  parser-family, and release qualification remain open.
+
 ## USE_MPOOL malloc-size admission — 2026-08-29
 
 - Keep `mpool_malloc()` behind checked fragment-overhead and alignment

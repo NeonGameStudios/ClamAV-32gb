@@ -802,6 +802,19 @@ uint32_t lzma_upack_esi_54(struct lzmastate *p, uint32_t old_eax, uint32_t *old_
     return 0;
 }
 
+cl_error_t cli_mew_section_table_size(size_t section_count, size_t *bytes)
+{
+    if (bytes == NULL || section_count == 0)
+        return CL_EARG;
+
+    if (section_count > SIZE_MAX / sizeof(struct cli_exe_section) ||
+        section_count > CLI_MAX_ALLOCATION / sizeof(struct cli_exe_section))
+        return CL_ERESOURCE;
+
+    *bytes = section_count * sizeof(struct cli_exe_section);
+    return CL_SUCCESS;
+}
+
 /**
  * @brief 	Unpack MEW 11 packed PE file
  *
@@ -824,6 +837,7 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
     const char *f1;
     char *f2;
     int i;
+    size_t section_bytes;
     struct cli_exe_section *section = NULL;
     uint32_t vma                    = base + vadd;
     uint32_t size_sum               = ssize + dsize;
@@ -905,7 +919,14 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
                 return -1;
             }
 
-            if (!(newsect = cli_max_realloc(section, (i + 2) * sizeof(struct cli_exe_section)))) {
+            if (cli_mew_section_table_size((size_t)i + 2, &section_bytes) != CL_SUCCESS) {
+                if (ctx)
+                    cli_mark_scan_incomplete(ctx, "MEW section table exceeds allocation limits");
+                free(section);
+                return -1;
+            }
+
+            if (!(newsect = cli_max_realloc(section, section_bytes))) {
                 cli_dbgmsg("MEW: Out of memory\n");
                 free(section);
                 return -1;
