@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## MIME multipart allocation-failure visibility — 2026-08-29
+
+The multipart MIME path previously broke out of message-table growth and
+message-object construction when allocation failed without setting a sticky
+incomplete result. Header-line fallback and folded-header growth had the same
+problem; a failed fallback could leave a NULL line buffer on a later strlen()
+or parser call, while a failed fold could silently parse only a prefix. The
+path now records distinct incomplete reasons, preserves `FAIL`, and stops
+before using a missing header buffer. Source guards pin all four allocation
+boundaries. Injected allocation-failure execution, complete MIME/mbox/MHTML
+corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+and final parser/release qualification remain open.
+
 ## Generic hash-table capacity and rehash failure visibility — 2026-08-29
 
 The shared string and uint32 hash tables rounded externally supplied

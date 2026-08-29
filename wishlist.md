@@ -7836,3 +7836,12 @@ parser/release qualification as open requirements.
 - Add injected multi-member filename-growth failure coverage and retain
   complete 7-Zip/BCJ2 corpus, sanitizer, production-CVD/service,
   materialized-large-file, Sonic1, and final qualification as open.
+
+## MIME multipart allocation-failure visibility — 2026-08-29
+
+- Keep MIME multipart table, message-object, original-header, and folded-header
+  allocation failures sticky and fail-visible before part admission or header
+  parsing can continue with incomplete state.
+- Add injected allocator execution and retain complete MIME/mbox/MHTML corpus,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final qualification as open.

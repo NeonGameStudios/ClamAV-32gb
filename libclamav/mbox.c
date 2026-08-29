@@ -2672,16 +2672,19 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                     }
 
                     m = cli_max_realloc(messages, message_table_size);
-                    if (m == NULL)
+                    if (m == NULL) {
+                        cli_mark_scan_incomplete(mctx->ctx,
+                                                 "MIME multipart table could not be allocated");
+                        rc = FAIL;
                         break;
+                    }
                     messages = m;
 
                     aMessage = messages[multiparts] = messageCreate();
                     if (aMessage == NULL) {
-                        multiparts--;
-                        /* if allocation failed the first time,
-                         * there's no point in retrying, just
-                         * break out */
+                        cli_mark_scan_incomplete(mctx->ctx,
+                                                 "MIME multipart message could not be allocated");
+                        rc = FAIL;
                         break;
                     }
                     messageSetCTX(aMessage, mctx->ctx);
@@ -2853,6 +2856,12 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                             fullline = rfc822comments(line, NULL);
                             if (fullline == NULL)
                                 fullline = cli_safer_strdup(line);
+                            if (fullline == NULL) {
+                                cli_mark_scan_incomplete(mctx->ctx,
+                                                         "MIME header line could not be allocated");
+                                rc = FAIL;
+                                break;
+                            }
 
                             /*quotes = count_quotes(fullline);*/
 
@@ -2887,14 +2896,23 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                                 datasz = strlen(fullline) + strlen(data) + 1;
                                 ptr    = cli_max_realloc(fullline, datasz);
 
-                                if (ptr == NULL)
+                                if (ptr == NULL) {
+                                    cli_mark_scan_incomplete(mctx->ctx,
+                                                             "MIME folded header could not be allocated");
+                                    free(fullline);
+                                    fullline = NULL;
+                                    rc = FAIL;
                                     break;
+                                }
 
                                 fullline = ptr;
                                 cli_strlcat(fullline, data, datasz);
 
                                 /*quotes = count_quotes(data);*/
                             }
+
+                            if (fullline == NULL)
+                                break;
 
                             cli_dbgmsg("Multipart %d: About to parse folded header '%s'\n",
                                        multiparts, fullline);
