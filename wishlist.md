@@ -7097,3 +7097,19 @@ qualification gates.
   fail-visible `CL_EPARSE`.
 - Complete the remaining parser-family, sanitizer, production-CVD/service,
   materialized-large-file, certified Linux x86-64, Sonic1, and release gates.
+
+## CPIO parser qualification recheck — 2026-08-29
+
+- Retain the fresh current-source production-linked CPIO boundary evidence:
+  15/15 across checksum/member matching, checksum mismatch/read failure,
+  64 KiB-window tail matching, malformed and unterminated names and numeric
+  fields, timeout, missing-map/engine admission, header/member ranges, and
+  read failures; timeout uses the canonical
+  `Heuristics.Limits.Exceeded.MaxScanTime` reason.
+- Keep the legacy four-file materialized corpus open. Each original 1 KiB
+  old-binary (both endian), NEWC, and ODC fixture returns fail-visible
+  `CL_EPARSE` after downstream InstallShield/PE admission without the expected
+  `Cpio.Member.MZ` alert, while controlled known-valid replacements pass
+  16/16. Do not count that corpus as complete CPIO nested-detection evidence.
+- Complete CPIO parser-family, sanitizer, production-CVD/service,
+  materialized-large-file, certified Linux x86-64, Sonic1, and release gates.

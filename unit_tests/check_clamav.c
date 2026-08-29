@@ -20594,7 +20594,7 @@ START_TEST(test_cpio_time_limit_is_fail_visible)
 
         ck_assert_int_eq(ret, CL_ETIMEOUT);
         ck_assert(ctx.scan_incomplete);
-        ck_assert_str_eq(ctx.scan_incomplete_reason, "CPIO member traversal reached the configured time limit");
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
         ck_assert(map->dont_cache_flag);
         cl_fmap_close(map);
     }
