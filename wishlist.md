@@ -1,5 +1,17 @@
 # Wishlist
 
+## USE_MPOOL malloc-size admission — 2026-08-29
+
+- Keep `mpool_malloc()` behind checked fragment-overhead and alignment
+  additions so a maximal native `size_t` request cannot wrap into a small
+  fragment class. Retain the extended
+  `test_mpool_allocation_size_wrap_is_fail_visible` regression and source guards;
+  the current allocator and matcher test sources pass Docker production-GCC
+  syntax checks, and the isolated current-source harness prints
+  `mpool_malloc_size_wrap_rejected`. Full allocator-variant, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, parser-family,
+  and release qualification remain open.
+
 ## Bytecode header table-size admission — 2026-08-29
 
 - Keep the initial bytecode function and type table products behind
@@ -40,7 +52,7 @@
 - Keep `USE_MPOOL` calloc fail-closed: reject zero operands and
   `nmemb > SIZE_MAX / size` before multiplying the requested count and element
   size.
-- Retain `test_mpool_calloc_rejects_count_product_wrap` and the source guard;
+- Retain `test_mpool_allocation_size_wrap_is_fail_visible` and the source guard;
   the modified allocator and matcher test source pass Docker production-GCC
   syntax checks with `USE_MPOOL`, and the isolated current allocator harness
   prints `mpool_count_product_rejected`. Full allocator-variant, sanitizer,

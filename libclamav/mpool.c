@@ -619,13 +619,22 @@ static void *allocate_aligned(struct MPMAP *mpm, size_t size, unsigned align, co
 void *mpool_malloc(struct MP *mp, size_t size)
 {
     size_t align = alignof(size);
-    size_t i, needed = align_increase(size + FRAG_OVERHEAD, align);
-    const unsigned int sbits = to_bits(needed);
+    size_t i, needed;
+    unsigned int sbits;
     struct FRAG *f           = NULL;
     struct MPMAP *mpm        = &mp->u.mpm;
 
+    if (!size || size > SIZE_MAX - FRAG_OVERHEAD ||
+        size + FRAG_OVERHEAD > SIZE_MAX - (align - 1)) {
+        cli_errmsg("mpool_malloc(): Attempt to allocate %lu bytes. Please report to https://github.com/Cisco-Talos/clamav/issues\n", (unsigned long)size);
+        return NULL;
+    }
+
+    needed = align_increase(size + FRAG_OVERHEAD, align);
+    sbits  = to_bits(needed);
+
     /*  check_all(mp); */
-    if (!size || sbits == FRAGSBITS) {
+    if (sbits == FRAGSBITS) {
         cli_errmsg("mpool_malloc(): Attempt to allocate %lu bytes. Please report to https://github.com/Cisco-Talos/clamav/issues\n", (unsigned long)size);
         return NULL;
     }

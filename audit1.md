@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## USE_MPOOL malloc-size admission — 2026-08-29
+
+The shared `USE_MPOOL` allocator formed its fragment request with
+`size + FRAG_OVERHEAD` before checking the fragment class. A maximal native
+`size_t` request could therefore wrap into a small class and return a pointer
+instead of rejecting the request. `mpool_malloc()` now checks both overhead
+and alignment additions before forming the request, preserving a fail-visible
+allocation failure for all matcher and signature-database pool users. The
+existing allocator regression `test_mpool_allocation_size_wrap_is_fail_visible`
+now covers both `mpool_malloc(SIZE_MAX)` and `mpool_calloc(SIZE_MAX, 2)`; the modified allocator and matcher test
+translation pass the Docker production-GCC syntax checks, and an isolated
+current-source production-linked harness prints
+`mpool_malloc_size_wrap_rejected`. Full allocator-variant, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and release
+qualification remain open.
+
 ## Bytecode header table-size admission — 2026-08-29
 
 The bytecode loader formed the initial function and type table allocation
