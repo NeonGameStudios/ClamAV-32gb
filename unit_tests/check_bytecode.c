@@ -44,6 +44,7 @@
 #include "bytecode_api_impl.h"
 #include "dconf.h"
 #include "bytecode_priv.h"
+#include "hashtab.h"
 #include "pdf.h"
 #include "pe.h"
 #include "clamav_rust.h"
@@ -1834,6 +1835,20 @@ START_TEST(test_bytecode_timeout_respects_scan_deadline)
 }
 END_TEST
 
+START_TEST(test_bytecode_map_value_size_product_is_fail_visible)
+{
+    struct cli_map map;
+    uint8_t key = 0;
+
+    ck_assert_int_eq(cli_map_init(&map, 1, 0x40000001, 16), CL_SUCCESS);
+    /* Simulate the fourth entry without materializing the first three
+     * 1-GiB-plus values. The old uint32_t product wrapped to four bytes. */
+    map.nvalues = 3;
+    ck_assert_int_eq(cli_map_addkey(&map, &key, 1), CL_EMEM);
+    cli_map_delete(&map);
+}
+END_TEST
+
 Suite *test_bytecode_suite(void)
 {
     Suite *s            = suite_create("bytecode");
@@ -1926,6 +1941,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_truncated_records);
     tcase_add_test(tc_cli_loader, test_bytecode_loader_rejects_recursive_or_oversized_types);
     tcase_add_test(tc_cli_loader, test_bytecode_table_size_admission_is_fail_visible);
+    tcase_add_test(tc_cli_loader, test_bytecode_map_value_size_product_is_fail_visible);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
 #endif

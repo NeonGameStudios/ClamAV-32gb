@@ -72,14 +72,31 @@ The `USE_MPOOL` allocator formed `nmemb * size` before checking whether the
 product was representable. A malformed count could therefore wrap the pool
 allocation size before any parser-specific limit was reached. `mpool_calloc()`
 now rejects zero operands and count products larger than `SIZE_MAX` before
-multiplication. `test_mpool_calloc_rejects_count_product_wrap` exercises the
-maximal-count boundary without allocating memory, and the source guard keeps
-the check present. The modified allocator and matcher test translation unit
+multiplication. `test_mpool_allocation_size_wrap_is_fail_visible` exercises
+the maximal-count boundary without allocating memory, and the source guard
+keeps the check present. The modified allocator and matcher test translation unit
 pass the existing Docker production-GCC syntax checks with `USE_MPOOL`
 enabled, and an isolated harness linked against the current allocator object
 prints `mpool_count_product_rejected`. Full allocator-variant, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, and final release qualification remain open.
+
+## Bytecode API map value-size admission — 2026-08-29
+
+The bytecode API map path multiplied its `uint32_t` entry count by the signed
+`valuesize` before converting to `size_t`. A crafted fourth-entry request with
+`valuesize = 0x40000001` wrapped the 32-bit product to four bytes, allowing a
+small allocation before the map wrote the intended large value slot. The map
+path now promotes both operands before checking native representability and
+the individual 1-GiB allocation ceiling, rejects `UINT32_MAX` entry-count
+growth, and performs the allocation and zeroing with the checked product. The
+registered `test_bytecode_map_value_size_product_is_fail_visible` regression
+reaches the wrapped-product boundary without materializing the preceding
+large entries. The current hashtab and bytecode test sources pass Docker
+production-GCC syntax checks, and an isolated current-source production-linked
+harness prints `bytecode_map_value_product_rejected`. Full bytecode execution,
+sanitizer, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.
 
 ## AC matcher count-product admission — 2026-08-29
 

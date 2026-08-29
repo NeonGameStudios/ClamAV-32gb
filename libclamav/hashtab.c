@@ -882,6 +882,12 @@ cl_error_t cli_map_init(struct cli_map *m, int32_t keysize, int32_t valuesize,
     return CL_SUCCESS;
 }
 
+static int cli_map_allocation_size_valid(size_t count, size_t element_size)
+{
+    return element_size != 0 && count <= SIZE_MAX / element_size &&
+           count <= CLI_MAX_ALLOCATION / element_size;
+}
+
 cl_error_t cli_map_addkey(struct cli_map *m, const void *key, int32_t keysize)
 {
     uint32_t n;
@@ -897,21 +903,35 @@ cl_error_t cli_map_addkey(struct cli_map *m, const void *key, int32_t keysize)
         m->last_insert = (int32_t)el->data;
         return CL_ECREAT;
     }
+
+    if (m->nvalues == UINT32_MAX) {
+        return CL_EMEM;
+    }
     n = m->nvalues + 1;
     if (m->valuesize) {
         void *v;
+        const size_t value_count = (size_t)n;
+        const size_t value_size  = (size_t)m->valuesize;
 
-        v = cli_max_realloc(m->u.sized_values, (size_t)n * (size_t)m->valuesize);
+        if (!cli_map_allocation_size_valid(value_count, value_size)) {
+            return CL_EMEM;
+        }
+
+        v = cli_max_realloc(m->u.sized_values, value_count * value_size);
         if (!v) {
             return CL_EMEM;
         }
 
         m->u.sized_values = v;
-        memset((char *)m->u.sized_values + (n - 1) * m->valuesize, 0, m->valuesize);
+        memset((char *)m->u.sized_values + (value_count - 1) * value_size, 0, value_size);
     } else {
         struct cli_map_value *v;
 
-        v = cli_max_realloc(m->u.unsized_values, n * sizeof(*m->u.unsized_values));
+        if (!cli_map_allocation_size_valid((size_t)n, sizeof(*v))) {
+            return CL_EMEM;
+        }
+
+        v = cli_max_realloc(m->u.unsized_values, (size_t)n * sizeof(*v));
         if (!v) {
             return CL_EMEM;
         }

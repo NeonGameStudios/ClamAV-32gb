@@ -2373,9 +2373,10 @@ fixed-width-integer	libclamav/gpt.h	82	    uint64_t firstLBA __attribute__((pack
 fixed-width-integer	libclamav/gpt.h	83	    uint64_t lastLBA __attribute__((packed));
 fixed-width-integer	libclamav/gpt.h	84	    uint64_t attributes __attribute__((packed));
 fixed-width-integer	libclamav/gpt.h	85	    uint16_t name[36] __attribute__((packed));
-fixed-width-integer	libclamav/hashtab.c	1005	    m->last_find = (int32_t)el->data;
-fixed-width-integer	libclamav/hashtab.c	1016	    if (m->last_find < 0 || (uint32_t)(m->last_find) >= m->nvalues) {
-fixed-width-integer	libclamav/hashtab.c	1025	    if (m->last_find < 0 || (uint32_t)(m->last_find) >= m->nvalues) {
+fixed-width-integer	libclamav/hashtab.c	1012	cl_error_t cli_map_find(struct cli_map *m, const void *key, int32_t keysize)
+fixed-width-integer	libclamav/hashtab.c	1025	    m->last_find = (int32_t)el->data;
+fixed-width-integer	libclamav/hashtab.c	1036	    if (m->last_find < 0 || (uint32_t)(m->last_find) >= m->nvalues) {
+fixed-width-integer	libclamav/hashtab.c	1045	    if (m->last_find < 0 || (uint32_t)(m->last_find) >= m->nvalues) {
 fixed-width-integer	libclamav/hashtab.c	215	static inline uint32_t hash32shift(uint32_t key)
 fixed-width-integer	libclamav/hashtab.c	240	static inline size_t hash_htu32(uint32_t k, const size_t SIZE)
 fixed-width-integer	libclamav/hashtab.c	277	const struct cli_htu32_element *cli_htu32_find(const struct cli_htu32 *s, uint32_t key)
@@ -2394,16 +2395,15 @@ fixed-width-integer	libclamav/hashtab.c	827	    uint32_t *arr;
 fixed-width-integer	libclamav/hashtab.c	852	bool cli_hashset_contains_maybe_noalloc(const struct cli_hashset *hs, const uint32_t key)
 fixed-width-integer	libclamav/hashtab.c	861	cl_error_t cli_map_init(struct cli_map *m, int32_t keysize, int32_t valuesize,
 fixed-width-integer	libclamav/hashtab.c	862	                        int32_t capacity)
-fixed-width-integer	libclamav/hashtab.c	885	cl_error_t cli_map_addkey(struct cli_map *m, const void *key, int32_t keysize)
-fixed-width-integer	libclamav/hashtab.c	887	    uint32_t n;
-fixed-width-integer	libclamav/hashtab.c	897	        m->last_insert = (int32_t)el->data;
-fixed-width-integer	libclamav/hashtab.c	931	cl_error_t cli_map_removekey(struct cli_map *m, const void *key, int32_t keysize)
-fixed-width-integer	libclamav/hashtab.c	945	    if ((int32_t)el->data >= (int32_t)m->nvalues || (int32_t)el->data < 0) {
-fixed-width-integer	libclamav/hashtab.c	950	        struct cli_map_value *v = &m->u.unsized_values[(int32_t)el->data];
-fixed-width-integer	libclamav/hashtab.c	955	        char *v = (char *)m->u.sized_values + (int32_t)el->data * m->valuesize;
-fixed-width-integer	libclamav/hashtab.c	964	cl_error_t cli_map_setvalue(struct cli_map *m, const void *value, int32_t valuesize)
-fixed-width-integer	libclamav/hashtab.c	966	    if ((m->valuesize && m->valuesize != valuesize) || (uint32_t)(m->last_insert) >= m->nvalues || m->last_insert < 0) {
-fixed-width-integer	libclamav/hashtab.c	992	cl_error_t cli_map_find(struct cli_map *m, const void *key, int32_t keysize)
+fixed-width-integer	libclamav/hashtab.c	891	cl_error_t cli_map_addkey(struct cli_map *m, const void *key, int32_t keysize)
+fixed-width-integer	libclamav/hashtab.c	893	    uint32_t n;
+fixed-width-integer	libclamav/hashtab.c	903	        m->last_insert = (int32_t)el->data;
+fixed-width-integer	libclamav/hashtab.c	951	cl_error_t cli_map_removekey(struct cli_map *m, const void *key, int32_t keysize)
+fixed-width-integer	libclamav/hashtab.c	965	    if ((int32_t)el->data >= (int32_t)m->nvalues || (int32_t)el->data < 0) {
+fixed-width-integer	libclamav/hashtab.c	970	        struct cli_map_value *v = &m->u.unsized_values[(int32_t)el->data];
+fixed-width-integer	libclamav/hashtab.c	975	        char *v = (char *)m->u.sized_values + (int32_t)el->data * m->valuesize;
+fixed-width-integer	libclamav/hashtab.c	984	cl_error_t cli_map_setvalue(struct cli_map *m, const void *value, int32_t valuesize)
+fixed-width-integer	libclamav/hashtab.c	986	    if ((m->valuesize && m->valuesize != valuesize) || (uint32_t)(m->last_insert) >= m->nvalues || m->last_insert < 0) {
 fixed-width-integer	libclamav/hashtab.h	177	    uint32_t key;
 fixed-width-integer	libclamav/hashtab.h	268	const struct cli_htu32_element *cli_htu32_find(const struct cli_htu32 *s, uint32_t key);
 fixed-width-integer	libclamav/hashtab.h	276	void cli_htu32_delete(struct cli_htu32 *s, uint32_t key);
@@ -6252,34 +6252,35 @@ fixed-width-integer	sigtool/vba.c	900	                w_length = (uint16_t)(buff
 fixed-width-integer	sigtool/vba.c	929	                w_length = (uint16_t)(buff[i + 2] << 8) + buff[i + 1];
 fixed-width-integer	sigtool/vba.c	939	                int_val = (uint16_t)(buff[i + 2] << 8) + buff[i + 1];
 fixed-width-integer	sigtool/vba.c	958	                w_length = (uint16_t)(buff[i + 2] << 8) + buff[i + 1];
-fixed-width-integer	unit_tests/check_bytecode.c	1072	    int32_t input_id;
-fixed-width-integer	unit_tests/check_bytecode.c	1073	    int32_t jsnorm_id;
-fixed-width-integer	unit_tests/check_bytecode.c	1109	    const uint64_t boundary = UINT64_C(4294967296);
-fixed-width-integer	unit_tests/check_bytecode.c	1116	    int32_t pipe_id;
-fixed-width-integer	unit_tests/check_bytecode.c	1138	    ck_assert_uint_eq((uint64_t)bcctx->off, boundary + 1);
-fixed-width-integer	unit_tests/check_bytecode.c	1140	    ck_assert_int_eq(cli_bcapi_seek64(bcctx, -1, SEEK_END), (int64_t)boundary);
-fixed-width-integer	unit_tests/check_bytecode.c	1145	                     (int64_t)boundary);
-fixed-width-integer	unit_tests/check_bytecode.c	1199	    if (sizeof(off_t) >= sizeof(int64_t)) {
-fixed-width-integer	unit_tests/check_bytecode.c	1212	                         (int64_t)state.marker_offset);
-fixed-width-integer	unit_tests/check_bytecode.c	1329	    ck_assert_int_eq(cli_bytecode_table_size_check(0, sizeof(uint32_t)), CL_SUCCESS);
-fixed-width-integer	unit_tests/check_bytecode.c	1330	    ck_assert_int_eq(cli_bytecode_table_size_check(1, sizeof(uint32_t)), CL_SUCCESS);
-fixed-width-integer	unit_tests/check_bytecode.c	1331	    ck_assert_int_eq(cli_bytecode_table_size_check(CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1,
-fixed-width-integer	unit_tests/check_bytecode.c	1332	                                                   sizeof(uint32_t)),
-fixed-width-integer	unit_tests/check_bytecode.c	1334	    ck_assert_int_eq(cli_bytecode_table_size_check(SIZE_MAX, sizeof(uint32_t)), CL_ERESOURCE);
-fixed-width-integer	unit_tests/check_bytecode.c	1486	                      (uint64_t)pdf_start + first_offset);
-fixed-width-integer	unit_tests/check_bytecode.c	1615	    bcctx->lsigoff[0] = (uint64_t)UINT32_MAX + 1;
-fixed-width-integer	unit_tests/check_bytecode.c	1664	    uint32_t lsigcnt[64] = {0};
-fixed-width-integer	unit_tests/check_bytecode.c	1665	    uint64_t lsigoff[64];
-fixed-width-integer	unit_tests/check_bytecode.c	576	    if (offset < 0 || (uint64_t)offset >= state->length)
-fixed-width-integer	unit_tests/check_bytecode.c	602	    if (offset < 0 || (uint64_t)offset >= state->length)
-fixed-width-integer	unit_tests/check_bytecode.c	623	                                          size_t offset, uint64_t value)
-fixed-width-integer	unit_tests/check_bytecode.c	626	    uint64_t remaining = value;
-fixed-width-integer	unit_tests/check_bytecode.c	63	static void runtest(const char *file, uint64_t expected, int fail, int nojit,
-fixed-width-integer	unit_tests/check_bytecode.c	675	        uint64_t value = 0;
-fixed-width-integer	unit_tests/check_bytecode.c	76	    uint64_t v;
-fixed-width-integer	unit_tests/check_bytecode.c	850	    if ((uint64_t)SIZE_MAX < (uint64_t)INT64_MAX) {
-fixed-width-integer	unit_tests/check_bytecode.c	863	    const uint64_t boundary = (uint64_t)INT32_MAX + 1;
-fixed-width-integer	unit_tests/check_bytecode.c	890	    ck_assert_uint_eq((uint64_t)bcctx->off, 0);
+fixed-width-integer	unit_tests/check_bytecode.c	1073	    int32_t input_id;
+fixed-width-integer	unit_tests/check_bytecode.c	1074	    int32_t jsnorm_id;
+fixed-width-integer	unit_tests/check_bytecode.c	1110	    const uint64_t boundary = UINT64_C(4294967296);
+fixed-width-integer	unit_tests/check_bytecode.c	1117	    int32_t pipe_id;
+fixed-width-integer	unit_tests/check_bytecode.c	1139	    ck_assert_uint_eq((uint64_t)bcctx->off, boundary + 1);
+fixed-width-integer	unit_tests/check_bytecode.c	1141	    ck_assert_int_eq(cli_bcapi_seek64(bcctx, -1, SEEK_END), (int64_t)boundary);
+fixed-width-integer	unit_tests/check_bytecode.c	1146	                     (int64_t)boundary);
+fixed-width-integer	unit_tests/check_bytecode.c	1200	    if (sizeof(off_t) >= sizeof(int64_t)) {
+fixed-width-integer	unit_tests/check_bytecode.c	1213	                         (int64_t)state.marker_offset);
+fixed-width-integer	unit_tests/check_bytecode.c	1330	    ck_assert_int_eq(cli_bytecode_table_size_check(0, sizeof(uint32_t)), CL_SUCCESS);
+fixed-width-integer	unit_tests/check_bytecode.c	1331	    ck_assert_int_eq(cli_bytecode_table_size_check(1, sizeof(uint32_t)), CL_SUCCESS);
+fixed-width-integer	unit_tests/check_bytecode.c	1332	    ck_assert_int_eq(cli_bytecode_table_size_check(CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1,
+fixed-width-integer	unit_tests/check_bytecode.c	1333	                                                   sizeof(uint32_t)),
+fixed-width-integer	unit_tests/check_bytecode.c	1335	    ck_assert_int_eq(cli_bytecode_table_size_check(SIZE_MAX, sizeof(uint32_t)), CL_ERESOURCE);
+fixed-width-integer	unit_tests/check_bytecode.c	1487	                      (uint64_t)pdf_start + first_offset);
+fixed-width-integer	unit_tests/check_bytecode.c	1616	    bcctx->lsigoff[0] = (uint64_t)UINT32_MAX + 1;
+fixed-width-integer	unit_tests/check_bytecode.c	1665	    uint32_t lsigcnt[64] = {0};
+fixed-width-integer	unit_tests/check_bytecode.c	1666	    uint64_t lsigoff[64];
+fixed-width-integer	unit_tests/check_bytecode.c	1845	     * 1-GiB-plus values. The old uint32_t product wrapped to four bytes. */
+fixed-width-integer	unit_tests/check_bytecode.c	577	    if (offset < 0 || (uint64_t)offset >= state->length)
+fixed-width-integer	unit_tests/check_bytecode.c	603	    if (offset < 0 || (uint64_t)offset >= state->length)
+fixed-width-integer	unit_tests/check_bytecode.c	624	                                          size_t offset, uint64_t value)
+fixed-width-integer	unit_tests/check_bytecode.c	627	    uint64_t remaining = value;
+fixed-width-integer	unit_tests/check_bytecode.c	64	static void runtest(const char *file, uint64_t expected, int fail, int nojit,
+fixed-width-integer	unit_tests/check_bytecode.c	676	        uint64_t value = 0;
+fixed-width-integer	unit_tests/check_bytecode.c	77	    uint64_t v;
+fixed-width-integer	unit_tests/check_bytecode.c	851	    if ((uint64_t)SIZE_MAX < (uint64_t)INT64_MAX) {
+fixed-width-integer	unit_tests/check_bytecode.c	864	    const uint64_t boundary = (uint64_t)INT32_MAX + 1;
+fixed-width-integer	unit_tests/check_bytecode.c	891	    ck_assert_uint_eq((uint64_t)bcctx->off, 0);
 fixed-width-integer	unit_tests/check_clamav.c	10011	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	10060	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	10116	    uint64_t scanned;
@@ -10948,7 +10949,7 @@ native-width-integer	libclamav/gpt.c	757	    size_t maplen;
 native-width-integer	libclamav/gpt.c	785	    pos = (size_t)hdr.tableStartLBA * sectorsize;
 native-width-integer	libclamav/gpt.h	96	size_t gpt_detect_size(fmap_t *map);
 native-width-integer	libclamav/gpt.h	97	cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize);
-native-width-integer	libclamav/hashtab.c	1010	int cli_map_getvalue_size(struct cli_map *m)
+native-width-integer	libclamav/hashtab.c	1030	int cli_map_getvalue_size(struct cli_map *m)
 native-width-integer	libclamav/hashtab.c	106	static inline void PROFILE_DELETED_REUSE(struct cli_hashtable *s, size_t tries)
 native-width-integer	libclamav/hashtab.c	112	static inline void PROFILE_INSERT(struct cli_hashtable *s, size_t tries)
 native-width-integer	libclamav/hashtab.c	118	static inline void PROFILE_DATA_UPDATE(struct cli_hashtable *s, size_t tries)
@@ -11001,7 +11002,11 @@ native-width-integer	libclamav/hashtab.c	808	    const size_t idx = cli_hashset_
 native-width-integer	libclamav/hashtab.c	820	    const size_t idx = cli_hashset_search(hs, key);
 native-width-integer	libclamav/hashtab.c	824	ssize_t cli_hashset_toarray(const struct cli_hashset *hs, uint32_t **array)
 native-width-integer	libclamav/hashtab.c	826	    size_t i, j;
-native-width-integer	libclamav/hashtab.c	904	        v = cli_max_realloc(m->u.sized_values, (size_t)n * (size_t)m->valuesize);
+native-width-integer	libclamav/hashtab.c	885	static int cli_map_allocation_size_valid(size_t count, size_t element_size)
+native-width-integer	libclamav/hashtab.c	913	        const size_t value_count = (size_t)n;
+native-width-integer	libclamav/hashtab.c	914	        const size_t value_size  = (size_t)m->valuesize;
+native-width-integer	libclamav/hashtab.c	930	        if (!cli_map_allocation_size_valid((size_t)n, sizeof(*v))) {
+native-width-integer	libclamav/hashtab.c	934	        v = cli_max_realloc(m->u.unsized_values, (size_t)n * sizeof(*v));
 native-width-integer	libclamav/hashtab.c	96	static inline void PROFILE_GROW_FOUND(struct cli_hashtable *s, size_t tries)
 native-width-integer	libclamav/hashtab.h	111	struct cli_element *cli_hashtab_find(const struct cli_hashtable *s, const char *key, const size_t len);
 native-width-integer	libclamav/hashtab.h	120	cl_error_t cli_hashtab_init(struct cli_hashtable *s, size_t capacity);
@@ -18222,64 +18227,64 @@ native-width-integer	sigtool/vba.c	804	static void wm_decode_macro(unsigned char
 native-width-integer	sigtool/vba.c	806	static void wm_decode_macro(unsigned char *buff, uint32_t len, int hex_output)
 native-width-integer	sigtool/vba.c	92	    int i;
 native-width-integer	sigtool/vba.h	28	int sigtool_vba_scandir(const struct optstruct *opts, const char *dirname, int hex_output, struct uniq *U);
-native-width-integer	unit_tests/check_bytecode.c	1121	    pread_state.length       = (size_t)(boundary + 1);
-native-width-integer	unit_tests/check_bytecode.c	1135	    bcctx->off = (off_t)boundary;
-native-width-integer	unit_tests/check_bytecode.c	1143	    bcctx->off = (off_t)boundary;
-native-width-integer	unit_tests/check_bytecode.c	1156	    pread_state.fail_at         = (off_t)boundary;
-native-width-integer	unit_tests/check_bytecode.c	1199	    if (sizeof(off_t) >= sizeof(int64_t)) {
-native-width-integer	unit_tests/check_bytecode.c	1201	        state.marker_offset     = (size_t)UINT64_C(4294967296) + 4095U;
-native-width-integer	unit_tests/check_bytecode.c	1210	        bcctx->off = (off_t)UINT64_C(4294967296);
-native-width-integer	unit_tests/check_bytecode.c	1263	    int fd;
-native-width-integer	unit_tests/check_bytecode.c	1283	    size_t length;
-native-width-integer	unit_tests/check_bytecode.c	1284	    size_t cut;
-native-width-integer	unit_tests/check_bytecode.c	1285	    int fd;
-native-width-integer	unit_tests/check_bytecode.c	1298	    ck_assert_int_gt((int)length, (int)(sizeof(BC_HEADER) - 1));
-native-width-integer	unit_tests/check_bytecode.c	1460	    const size_t first_offset = (size_t)UINT32_MAX + 128U;
-native-width-integer	unit_tests/check_bytecode.c	1461	    const size_t first_size = 37U;
-native-width-integer	unit_tests/check_bytecode.c	1462	    const size_t second_offset = first_offset + 4U + first_size;
-native-width-integer	unit_tests/check_bytecode.c	1463	    const off_t pdf_start = (off_t)UINT32_MAX + 64;
-native-width-integer	unit_tests/check_bytecode.c	1514	    map.len                  = (size_t)UINT64_C(4294967296);
-native-width-integer	unit_tests/check_bytecode.c	518	    int rc;
-native-width-integer	unit_tests/check_bytecode.c	564	    size_t length;
-native-width-integer	unit_tests/check_bytecode.c	565	    off_t fail_at;
-native-width-integer	unit_tests/check_bytecode.c	568	static off_t bytecode_failing_pread_cb(void *handle, void *buf, size_t count, off_t offset)
-native-width-integer	unit_tests/check_bytecode.c	578	    if (count > state->length - (size_t)offset)
-native-width-integer	unit_tests/check_bytecode.c	579	        count = state->length - (size_t)offset;
-native-width-integer	unit_tests/check_bytecode.c	58	extern int clamav_test_fail_write;
-native-width-integer	unit_tests/check_bytecode.c	580	    if (count > (size_t)(state->fail_at - offset))
-native-width-integer	unit_tests/check_bytecode.c	581	        count = (size_t)(state->fail_at - offset);
-native-width-integer	unit_tests/check_bytecode.c	583	    return (off_t)count;
-native-width-integer	unit_tests/check_bytecode.c	587	    size_t length;
-native-width-integer	unit_tests/check_bytecode.c	588	    size_t marker_offset;
-native-width-integer	unit_tests/check_bytecode.c	59	extern int clamav_test_short_write;
-native-width-integer	unit_tests/check_bytecode.c	590	    size_t marker_length;
-native-width-integer	unit_tests/check_bytecode.c	593	static off_t bytecode_search_pread_cb(void *handle, void *buf, size_t count, off_t offset)
-native-width-integer	unit_tests/check_bytecode.c	596	    size_t start;
-native-width-integer	unit_tests/check_bytecode.c	597	    size_t end;
-native-width-integer	unit_tests/check_bytecode.c	598	    size_t marker_end;
-native-width-integer	unit_tests/check_bytecode.c	599	    size_t copy_start;
-native-width-integer	unit_tests/check_bytecode.c	60	extern size_t clamav_test_short_write_count;
-native-width-integer	unit_tests/check_bytecode.c	600	    size_t copy_end;
-native-width-integer	unit_tests/check_bytecode.c	604	    start = (size_t)offset;
-native-width-integer	unit_tests/check_bytecode.c	619	    return (off_t)count;
-native-width-integer	unit_tests/check_bytecode.c	622	static int bytecode_write_number_override(FILE *output, const char *line,
-native-width-integer	unit_tests/check_bytecode.c	623	                                          size_t offset, uint64_t value)
-native-width-integer	unit_tests/check_bytecode.c	63	static void runtest(const char *file, uint64_t expected, int fail, int nojit,
-native-width-integer	unit_tests/check_bytecode.c	657	    int fd;
-native-width-integer	unit_tests/check_bytecode.c	66	                    int testmode)
-native-width-integer	unit_tests/check_bytecode.c	674	        size_t offset = SIZE_MAX;
-native-width-integer	unit_tests/check_bytecode.c	69	    int rc;
-native-width-integer	unit_tests/check_bytecode.c	70	    int fd = open_testfile(file, O_RDONLY); /* CBC databases should be opened in text mode (not binary), or else CRLF line indexing with `fgets()` will fail. */
-native-width-integer	unit_tests/check_bytecode.c	705	static cl_error_t bytecode_load_mutated_type_fixture(int mutation)
-native-width-integer	unit_tests/check_bytecode.c	713	    int fd;
-native-width-integer	unit_tests/check_bytecode.c	714	    int found = 0;
-native-width-integer	unit_tests/check_bytecode.c	78	    int fdin = -1;
-native-width-integer	unit_tests/check_bytecode.c	812	    int fd;
-native-width-integer	unit_tests/check_bytecode.c	851	        bcctx->off = (off_t)SIZE_MAX;
-native-width-integer	unit_tests/check_bytecode.c	876	    pread_state.length  = (size_t)(boundary + 1);
-native-width-integer	unit_tests/check_bytecode.c	899	    bcctx->off                  = (off_t)boundary;
-native-width-integer	unit_tests/check_bytecode.c	911	                                                  objects, NULL, 1, (off_t)boundary),
-native-width-integer	unit_tests/check_bytecode.c	934	    int replacement_fd;
+native-width-integer	unit_tests/check_bytecode.c	1122	    pread_state.length       = (size_t)(boundary + 1);
+native-width-integer	unit_tests/check_bytecode.c	1136	    bcctx->off = (off_t)boundary;
+native-width-integer	unit_tests/check_bytecode.c	1144	    bcctx->off = (off_t)boundary;
+native-width-integer	unit_tests/check_bytecode.c	1157	    pread_state.fail_at         = (off_t)boundary;
+native-width-integer	unit_tests/check_bytecode.c	1200	    if (sizeof(off_t) >= sizeof(int64_t)) {
+native-width-integer	unit_tests/check_bytecode.c	1202	        state.marker_offset     = (size_t)UINT64_C(4294967296) + 4095U;
+native-width-integer	unit_tests/check_bytecode.c	1211	        bcctx->off = (off_t)UINT64_C(4294967296);
+native-width-integer	unit_tests/check_bytecode.c	1264	    int fd;
+native-width-integer	unit_tests/check_bytecode.c	1284	    size_t length;
+native-width-integer	unit_tests/check_bytecode.c	1285	    size_t cut;
+native-width-integer	unit_tests/check_bytecode.c	1286	    int fd;
+native-width-integer	unit_tests/check_bytecode.c	1299	    ck_assert_int_gt((int)length, (int)(sizeof(BC_HEADER) - 1));
+native-width-integer	unit_tests/check_bytecode.c	1461	    const size_t first_offset = (size_t)UINT32_MAX + 128U;
+native-width-integer	unit_tests/check_bytecode.c	1462	    const size_t first_size = 37U;
+native-width-integer	unit_tests/check_bytecode.c	1463	    const size_t second_offset = first_offset + 4U + first_size;
+native-width-integer	unit_tests/check_bytecode.c	1464	    const off_t pdf_start = (off_t)UINT32_MAX + 64;
+native-width-integer	unit_tests/check_bytecode.c	1515	    map.len                  = (size_t)UINT64_C(4294967296);
+native-width-integer	unit_tests/check_bytecode.c	519	    int rc;
+native-width-integer	unit_tests/check_bytecode.c	565	    size_t length;
+native-width-integer	unit_tests/check_bytecode.c	566	    off_t fail_at;
+native-width-integer	unit_tests/check_bytecode.c	569	static off_t bytecode_failing_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+native-width-integer	unit_tests/check_bytecode.c	579	    if (count > state->length - (size_t)offset)
+native-width-integer	unit_tests/check_bytecode.c	580	        count = state->length - (size_t)offset;
+native-width-integer	unit_tests/check_bytecode.c	581	    if (count > (size_t)(state->fail_at - offset))
+native-width-integer	unit_tests/check_bytecode.c	582	        count = (size_t)(state->fail_at - offset);
+native-width-integer	unit_tests/check_bytecode.c	584	    return (off_t)count;
+native-width-integer	unit_tests/check_bytecode.c	588	    size_t length;
+native-width-integer	unit_tests/check_bytecode.c	589	    size_t marker_offset;
+native-width-integer	unit_tests/check_bytecode.c	59	extern int clamav_test_fail_write;
+native-width-integer	unit_tests/check_bytecode.c	591	    size_t marker_length;
+native-width-integer	unit_tests/check_bytecode.c	594	static off_t bytecode_search_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+native-width-integer	unit_tests/check_bytecode.c	597	    size_t start;
+native-width-integer	unit_tests/check_bytecode.c	598	    size_t end;
+native-width-integer	unit_tests/check_bytecode.c	599	    size_t marker_end;
+native-width-integer	unit_tests/check_bytecode.c	60	extern int clamav_test_short_write;
+native-width-integer	unit_tests/check_bytecode.c	600	    size_t copy_start;
+native-width-integer	unit_tests/check_bytecode.c	601	    size_t copy_end;
+native-width-integer	unit_tests/check_bytecode.c	605	    start = (size_t)offset;
+native-width-integer	unit_tests/check_bytecode.c	61	extern size_t clamav_test_short_write_count;
+native-width-integer	unit_tests/check_bytecode.c	620	    return (off_t)count;
+native-width-integer	unit_tests/check_bytecode.c	623	static int bytecode_write_number_override(FILE *output, const char *line,
+native-width-integer	unit_tests/check_bytecode.c	624	                                          size_t offset, uint64_t value)
+native-width-integer	unit_tests/check_bytecode.c	64	static void runtest(const char *file, uint64_t expected, int fail, int nojit,
+native-width-integer	unit_tests/check_bytecode.c	658	    int fd;
+native-width-integer	unit_tests/check_bytecode.c	67	                    int testmode)
+native-width-integer	unit_tests/check_bytecode.c	675	        size_t offset = SIZE_MAX;
+native-width-integer	unit_tests/check_bytecode.c	70	    int rc;
+native-width-integer	unit_tests/check_bytecode.c	706	static cl_error_t bytecode_load_mutated_type_fixture(int mutation)
+native-width-integer	unit_tests/check_bytecode.c	71	    int fd = open_testfile(file, O_RDONLY); /* CBC databases should be opened in text mode (not binary), or else CRLF line indexing with `fgets()` will fail. */
+native-width-integer	unit_tests/check_bytecode.c	714	    int fd;
+native-width-integer	unit_tests/check_bytecode.c	715	    int found = 0;
+native-width-integer	unit_tests/check_bytecode.c	79	    int fdin = -1;
+native-width-integer	unit_tests/check_bytecode.c	813	    int fd;
+native-width-integer	unit_tests/check_bytecode.c	852	        bcctx->off = (off_t)SIZE_MAX;
+native-width-integer	unit_tests/check_bytecode.c	877	    pread_state.length  = (size_t)(boundary + 1);
+native-width-integer	unit_tests/check_bytecode.c	900	    bcctx->off                  = (off_t)boundary;
+native-width-integer	unit_tests/check_bytecode.c	912	                                                  objects, NULL, 1, (off_t)boundary),
+native-width-integer	unit_tests/check_bytecode.c	935	    int replacement_fd;
 native-width-integer	unit_tests/check_clamav.c	10013	    int saved_sdb;
 native-width-integer	unit_tests/check_clamav.c	10062	    size_t archive_length;
 native-width-integer	unit_tests/check_clamav.c	10064	    int ret;
@@ -20806,6 +20811,8 @@ boundary-constant	libclamav/gpt.c	413	    if (hdr.tableStartLBA > SIZE_MAX / sec
 boundary-constant	libclamav/gpt.c	548	        hdr.tableStartLBA > SIZE_MAX / sectorsize ||
 boundary-constant	libclamav/gpt.c	549	        hdr.tableNumEntries > SIZE_MAX / hdr.tableEntrySize) {
 boundary-constant	libclamav/gpt.c	781	        hdr.tableStartLBA > SIZE_MAX / sectorsize) {
+boundary-constant	libclamav/hashtab.c	887	    return element_size != 0 && count <= SIZE_MAX / element_size &&
+boundary-constant	libclamav/hashtab.c	907	    if (m->nvalues == UINT32_MAX) {
 boundary-constant	libclamav/hfsplus.c	1004	            if (fileOffset64 > SIZE_MAX) {
 boundary-constant	libclamav/hfsplus.c	1014	            if (startOffset > SIZE_MAX - fileOffset) {
 boundary-constant	libclamav/hfsplus.c	1501	                    if (header.fileSize > SIZE_MAX) {
@@ -21024,26 +21031,26 @@ boundary-constant	libclammspack/test/md5.h	54	# ifndef UINT_MAX
 boundary-constant	libclammspack/test/md5.h	55	#  define UINT_MAX UINT_MAX_32_BITS
 boundary-constant	libclammspack/test/md5.h	58	# if UINT_MAX == UINT_MAX_32_BITS
 boundary-constant	libclammspack/test/md5.h	64	#   if ULONG_MAX == UINT_MAX_32_BITS
-boundary-constant	unit_tests/check_bytecode.c	1006	    bcctx->written = UINT32_MAX;
-boundary-constant	unit_tests/check_bytecode.c	1198	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_bytecode.c	1245	                         BC_FORMAT_LEVEL, BC_V1_API_COUNT + 1U, UINT_MAX),
-boundary-constant	unit_tests/check_bytecode.c	1248	                         BC_FORMAT_LEVEL, UINT_MAX, GLOBAL_FILESIZE64),
-boundary-constant	unit_tests/check_bytecode.c	1334	    ck_assert_int_eq(cli_bytecode_table_size_check(SIZE_MAX, sizeof(uint32_t)), CL_ERESOURCE);
-boundary-constant	unit_tests/check_bytecode.c	1454	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_bytecode.c	1460	    const size_t first_offset = (size_t)UINT32_MAX + 128U;
-boundary-constant	unit_tests/check_bytecode.c	1463	    const off_t pdf_start = (off_t)UINT32_MAX + 64;
-boundary-constant	unit_tests/check_bytecode.c	1507	    ck_assert(cli_bytecode_file_size_compatible(UINT32_MAX));
-boundary-constant	unit_tests/check_bytecode.c	1568	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_bytecode.c	1615	    bcctx->lsigoff[0] = (uint64_t)UINT32_MAX + 1;
-boundary-constant	unit_tests/check_bytecode.c	609	    if (state->marker_offset > SIZE_MAX - state->marker_length)
-boundary-constant	unit_tests/check_bytecode.c	674	        size_t offset = SIZE_MAX;
-boundary-constant	unit_tests/check_bytecode.c	680	        } else if (line[0] == 'E' && maxapi != UINT_MAX) {
-boundary-constant	unit_tests/check_bytecode.c	683	        } else if (line[0] == 'G' && maxglobal != UINT_MAX) {
-boundary-constant	unit_tests/check_bytecode.c	687	        if (offset == SIZE_MAX) {
-boundary-constant	unit_tests/check_bytecode.c	733	             * { self } or retain the array shape with UINT_MAX elements. */
-boundary-constant	unit_tests/check_bytecode.c	850	    if ((uint64_t)SIZE_MAX < (uint64_t)INT64_MAX) {
-boundary-constant	unit_tests/check_bytecode.c	851	        bcctx->off = (off_t)SIZE_MAX;
-boundary-constant	unit_tests/check_bytecode.c	862	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_bytecode.c	1007	    bcctx->written = UINT32_MAX;
+boundary-constant	unit_tests/check_bytecode.c	1199	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_bytecode.c	1246	                         BC_FORMAT_LEVEL, BC_V1_API_COUNT + 1U, UINT_MAX),
+boundary-constant	unit_tests/check_bytecode.c	1249	                         BC_FORMAT_LEVEL, UINT_MAX, GLOBAL_FILESIZE64),
+boundary-constant	unit_tests/check_bytecode.c	1335	    ck_assert_int_eq(cli_bytecode_table_size_check(SIZE_MAX, sizeof(uint32_t)), CL_ERESOURCE);
+boundary-constant	unit_tests/check_bytecode.c	1455	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_bytecode.c	1461	    const size_t first_offset = (size_t)UINT32_MAX + 128U;
+boundary-constant	unit_tests/check_bytecode.c	1464	    const off_t pdf_start = (off_t)UINT32_MAX + 64;
+boundary-constant	unit_tests/check_bytecode.c	1508	    ck_assert(cli_bytecode_file_size_compatible(UINT32_MAX));
+boundary-constant	unit_tests/check_bytecode.c	1569	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_bytecode.c	1616	    bcctx->lsigoff[0] = (uint64_t)UINT32_MAX + 1;
+boundary-constant	unit_tests/check_bytecode.c	610	    if (state->marker_offset > SIZE_MAX - state->marker_length)
+boundary-constant	unit_tests/check_bytecode.c	675	        size_t offset = SIZE_MAX;
+boundary-constant	unit_tests/check_bytecode.c	681	        } else if (line[0] == 'E' && maxapi != UINT_MAX) {
+boundary-constant	unit_tests/check_bytecode.c	684	        } else if (line[0] == 'G' && maxglobal != UINT_MAX) {
+boundary-constant	unit_tests/check_bytecode.c	688	        if (offset == SIZE_MAX) {
+boundary-constant	unit_tests/check_bytecode.c	734	             * { self } or retain the array shape with UINT_MAX elements. */
+boundary-constant	unit_tests/check_bytecode.c	851	    if ((uint64_t)SIZE_MAX < (uint64_t)INT64_MAX) {
+boundary-constant	unit_tests/check_bytecode.c	852	        bcctx->off = (off_t)SIZE_MAX;
+boundary-constant	unit_tests/check_bytecode.c	863	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	10044	    rar_sfx_header_read_failure_offset = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	10045	    rar_sfx_header_read_failure_length = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	10584	    zip_stream_write_u32(locator_archive + 32, UINT32_MAX);
@@ -21543,7 +21550,7 @@ narrowing-cast	libclammspack/mspack/chmd.c	969	        if ((off_t)run > length) 
 narrowing-cast	libclammspack/mspack/lzxd.c	378	        if (bytes < (int)length) return MSPACK_ERR_READ;
 narrowing-cast	libfreshclam/libfreshclam_internal.c	1651	        if (((int)sizeof(cvdfile) <= ret) || (-1 == ret)) {
 narrowing-cast	libfreshclam/libfreshclam_internal.c	1658	            if (((int)sizeof(cvdfile) <= ret) || (-1 == ret)) {
-narrowing-cast	unit_tests/check_bytecode.c	1298	    ck_assert_int_gt((int)length, (int)(sizeof(BC_HEADER) - 1));
+narrowing-cast	unit_tests/check_bytecode.c	1299	    ck_assert_int_gt((int)length, (int)(sizeof(BC_HEADER) - 1));
 narrowing-cast	unit_tests/check_clamav.c	13797	                     (int)sizeof(output_path));
 narrowing-cast	unit_tests/check_clamav.c	18373	    ck_assert_msg(snprintf(invalid_tmpdir, sizeof(invalid_tmpdir), "%s/legacy-staging-root-does-not-exist", tmpdir) < (int)sizeof(invalid_tmpdir),
 narrowing-cast	unit_tests/check_clamav.c	20015	    ck_assert_msg(snprintf(tempfile, sizeof(tempfile), "%s" PATHSEP "tar01", tmpdir) < (int)sizeof(tempfile),
@@ -23882,9 +23889,9 @@ format-width	sigtool/sigtool.c	813	                if (fprintf(fh, "%s:%u:%s\n",
 format-width	sigtool/sigtool.c	935	        sprintf(sign_file_name, "%s/%s-%u.%s.sign", dir, cvd_name, cvd_version, cvd_extension);
 format-width	sigtool/vba.c	924	                printf("\n%d", int_val);
 format-width	sigtool/vba.c	940	                printf(" %d", int_val);
-format-width	unit_tests/check_bytecode.c	1312	                      "truncated bytecode header prefix of %zu bytes was accepted",
-format-width	unit_tests/check_bytecode.c	155	    ck_assert_msg(rc == fail, "cli_bytecode_run failed, expected: %u, have: %u\n",
-format-width	unit_tests/check_bytecode.c	527	    ck_assert_msg(signo == signoexp, "different number of signatures loaded, expected %u, got %u\n",
+format-width	unit_tests/check_bytecode.c	1313	                      "truncated bytecode header prefix of %zu bytes was accepted",
+format-width	unit_tests/check_bytecode.c	156	    ck_assert_msg(rc == fail, "cli_bytecode_run failed, expected: %u, have: %u\n",
+format-width	unit_tests/check_bytecode.c	528	    ck_assert_msg(signo == signoexp, "different number of signatures loaded, expected %u, got %u\n",
 format-width	unit_tests/check_clamav.c	10139	                  "truncated CWS stream returned %s (%d)", cl_strerror(ret), ret);
 format-width	unit_tests/check_clamav.c	10222	                  "SWF temporary limit returned %s (%d)", cl_strerror(ret), ret);
 format-width	unit_tests/check_clamav.c	10344	                  "unsupported ZIP method requested %zu bytes in one fmap read", max_read);
@@ -27569,11 +27576,11 @@ offset-size-arithmetic	libclamav/gpt.h	52	/* 92-byte gpt_header, these are littl
 offset-size-arithmetic	libclamav/gpt.h	75	    /* zeroes fill remainder of sector (420 bytes in 512 sector size) */
 offset-size-arithmetic	libclamav/gpt.h	78	/* 128-byte partition entry, part of an array of 128+ entries, in little_endian */
 offset-size-arithmetic	libclamav/gpt.h	96	size_t gpt_detect_size(fmap_t *map);
-offset-size-arithmetic	libclamav/hashtab.c	1010	int cli_map_getvalue_size(struct cli_map *m)
-offset-size-arithmetic	libclamav/hashtab.c	1020	    return m->u.unsized_values[m->last_find].valuesize;
-offset-size-arithmetic	libclamav/hashtab.c	1030	        return (char *)m->u.sized_values + m->last_find * m->valuesize;
-offset-size-arithmetic	libclamav/hashtab.c	1033	    return m->u.unsized_values[m->last_find].value;
-offset-size-arithmetic	libclamav/hashtab.c	1052	    memset(m, 0, sizeof(*m));
+offset-size-arithmetic	libclamav/hashtab.c	1030	int cli_map_getvalue_size(struct cli_map *m)
+offset-size-arithmetic	libclamav/hashtab.c	1040	    return m->u.unsized_values[m->last_find].valuesize;
+offset-size-arithmetic	libclamav/hashtab.c	1050	        return (char *)m->u.sized_values + m->last_find * m->valuesize;
+offset-size-arithmetic	libclamav/hashtab.c	1053	    return m->u.unsized_values[m->last_find].value;
+offset-size-arithmetic	libclamav/hashtab.c	1072	    memset(m, 0, sizeof(*m));
 offset-size-arithmetic	libclamav/hashtab.c	154	    cli_dbgmsg("--------Report end-------------\n");
 offset-size-arithmetic	libclamav/hashtab.c	183	    s->htable = cli_max_calloc(capacity, sizeof(*s->htable));
 offset-size-arithmetic	libclamav/hashtab.c	193	cl_error_t cli_htu32_init(struct cli_htu32 *s, size_t capacity, mpool_t *mempool)
@@ -27616,16 +27623,19 @@ offset-size-arithmetic	libclamav/hashtab.c	824	ssize_t cli_hashset_toarray(const
 offset-size-arithmetic	libclamav/hashtab.c	833	    *array = arr = cli_max_malloc(hs->count * sizeof(*arr));
 offset-size-arithmetic	libclamav/hashtab.c	849	    memset(hs, 0, sizeof(*hs));
 offset-size-arithmetic	libclamav/hashtab.c	870	    memset(m, 0, sizeof(*m));
-offset-size-arithmetic	libclamav/hashtab.c	904	        v = cli_max_realloc(m->u.sized_values, (size_t)n * (size_t)m->valuesize);
-offset-size-arithmetic	libclamav/hashtab.c	910	        memset((char *)m->u.sized_values + (n - 1) * m->valuesize, 0, m->valuesize);
-offset-size-arithmetic	libclamav/hashtab.c	914	        v = cli_max_realloc(m->u.unsized_values, n * sizeof(*m->u.unsized_values));
-offset-size-arithmetic	libclamav/hashtab.c	920	        memset(&m->u.unsized_values[n - 1], 0, sizeof(*m->u.unsized_values));
-offset-size-arithmetic	libclamav/hashtab.c	923	    if (!cli_hashtab_insert(&m->htab, key, keysize, (const cli_element_data)(n - 1))) {
-offset-size-arithmetic	libclamav/hashtab.c	950	        struct cli_map_value *v = &m->u.unsized_values[(int32_t)el->data];
-offset-size-arithmetic	libclamav/hashtab.c	955	        char *v = (char *)m->u.sized_values + (int32_t)el->data * m->valuesize;
-offset-size-arithmetic	libclamav/hashtab.c	966	    if ((m->valuesize && m->valuesize != valuesize) || (uint32_t)(m->last_insert) >= m->nvalues || m->last_insert < 0) {
-offset-size-arithmetic	libclamav/hashtab.c	971	        memcpy((char *)m->u.sized_values + m->last_insert * m->valuesize,
-offset-size-arithmetic	libclamav/hashtab.c	974	        struct cli_map_value *v = &m->u.unsized_values[m->last_insert];
+offset-size-arithmetic	libclamav/hashtab.c	887	    return element_size != 0 && count <= SIZE_MAX / element_size &&
+offset-size-arithmetic	libclamav/hashtab.c	914	        const size_t value_size  = (size_t)m->valuesize;
+offset-size-arithmetic	libclamav/hashtab.c	920	        v = cli_max_realloc(m->u.sized_values, value_count * value_size);
+offset-size-arithmetic	libclamav/hashtab.c	926	        memset((char *)m->u.sized_values + (value_count - 1) * value_size, 0, value_size);
+offset-size-arithmetic	libclamav/hashtab.c	930	        if (!cli_map_allocation_size_valid((size_t)n, sizeof(*v))) {
+offset-size-arithmetic	libclamav/hashtab.c	934	        v = cli_max_realloc(m->u.unsized_values, (size_t)n * sizeof(*v));
+offset-size-arithmetic	libclamav/hashtab.c	940	        memset(&m->u.unsized_values[n - 1], 0, sizeof(*m->u.unsized_values));
+offset-size-arithmetic	libclamav/hashtab.c	943	    if (!cli_hashtab_insert(&m->htab, key, keysize, (const cli_element_data)(n - 1))) {
+offset-size-arithmetic	libclamav/hashtab.c	970	        struct cli_map_value *v = &m->u.unsized_values[(int32_t)el->data];
+offset-size-arithmetic	libclamav/hashtab.c	975	        char *v = (char *)m->u.sized_values + (int32_t)el->data * m->valuesize;
+offset-size-arithmetic	libclamav/hashtab.c	986	    if ((m->valuesize && m->valuesize != valuesize) || (uint32_t)(m->last_insert) >= m->nvalues || m->last_insert < 0) {
+offset-size-arithmetic	libclamav/hashtab.c	991	        memcpy((char *)m->u.sized_values + m->last_insert * m->valuesize,
+offset-size-arithmetic	libclamav/hashtab.c	994	        struct cli_map_value *v = &m->u.unsized_values[m->last_insert];
 offset-size-arithmetic	libclamav/hashtab.h	239	cl_error_t cli_htu32_init(struct cli_htu32 *s, size_t capacity, mpool_t *mempool);
 offset-size-arithmetic	libclamav/hashtab.h	302	size_t cli_htu32_numitems(struct cli_htu32 *s);
 offset-size-arithmetic	libclamav/hashtab.h	393	int cli_map_getvalue_size(struct cli_map *m);
@@ -36009,81 +36019,81 @@ offset-size-arithmetic	sigtool/vba.c	958	                w_length = (uint16_t)(b
 offset-size-arithmetic	sigtool/vba.c	963	                print_hex_buff(line_start, buff + i + 1, hex_output);
 offset-size-arithmetic	sigtool/vba.c	966	                line_start = buff + i;
 offset-size-arithmetic	sigtool/vba.c	974	    print_hex_buff(line_start, buff + i, hex_output);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1036	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1044	    ck_assert_int_eq(lseek(bcctx->outfd, 0, SEEK_SET), 0);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1086	    map = cl_fmap_open_memory((const unsigned char *)input, sizeof(input) - 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1121	    pread_state.length       = (size_t)(boundary + 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1133	    ck_assert_uint_eq(bcctx->file_size64, boundary + 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1138	    ck_assert_uint_eq((uint64_t)bcctx->off, boundary + 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1140	    ck_assert_int_eq(cli_bcapi_seek64(bcctx, -1, SEEK_END), (int64_t)boundary);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1201	        state.marker_offset     = (size_t)UINT64_C(4294967296) + 4095U;
-offset-size-arithmetic	unit_tests/check_bytecode.c	1202	        state.length            = state.marker_offset + sizeof(marker);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1296	    while (length && (line[length - 1] == '\n' || line[length - 1] == '\r'))
-offset-size-arithmetic	unit_tests/check_bytecode.c	1298	    ck_assert_int_gt((int)length, (int)(sizeof(BC_HEADER) - 1));
-offset-size-arithmetic	unit_tests/check_bytecode.c	1302	     * exercises all end-of-line reads without relying on an allocator fault. */
-offset-size-arithmetic	unit_tests/check_bytecode.c	1303	    for (cut = sizeof(BC_HEADER) - 1; cut <= length; cut++) {
-offset-size-arithmetic	unit_tests/check_bytecode.c	1331	    ck_assert_int_eq(cli_bytecode_table_size_check(CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1,
-offset-size-arithmetic	unit_tests/check_bytecode.c	1366	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, general_name, sizeof(general_name) - 1), 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1367	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, parse_name, sizeof(parse_name) - 1), 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1368	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, heuristic_name, sizeof(heuristic_name) - 1), 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1369	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, mail_name, sizeof(mail_name) - 1), 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1370	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, dev_name, sizeof(dev_name) - 1), 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1371	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, precedence_name, sizeof(precedence_name) - 1), 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1372	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, disabled_name, sizeof(disabled_name) - 1), 0);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1373	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, unknown_name, sizeof(unknown_name) - 1), 0);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1374	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, embedded_nul, sizeof(embedded_nul) - 1), 0);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1460	    const size_t first_offset = (size_t)UINT32_MAX + 128U;
-offset-size-arithmetic	unit_tests/check_bytecode.c	1462	    const size_t second_offset = first_offset + 4U + first_size;
-offset-size-arithmetic	unit_tests/check_bytecode.c	1463	    const off_t pdf_start = (off_t)UINT32_MAX + 64;
-offset-size-arithmetic	unit_tests/check_bytecode.c	1479	                                                 second_offset + 11U,
-offset-size-arithmetic	unit_tests/check_bytecode.c	1486	                      (uint64_t)pdf_start + first_offset);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1487	    ck_assert_int_eq(cli_bcapi_pdf_get_offset(bcctx, 0), -1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1533	    engine->bcs.all_bcs = calloc(1, sizeof(*engine->bcs.all_bcs));
-offset-size-arithmetic	unit_tests/check_bytecode.c	1534	    engine->hooks[hook_slot] = calloc(1, sizeof(*engine->hooks[hook_slot]));
-offset-size-arithmetic	unit_tests/check_bytecode.c	1593	    engine->bcs.all_bcs         = calloc(2, sizeof(*engine->bcs.all_bcs));
-offset-size-arithmetic	unit_tests/check_bytecode.c	1594	    engine->hooks[hook_slot]    = calloc(2, sizeof(*engine->hooks[hook_slot]));
-offset-size-arithmetic	unit_tests/check_bytecode.c	1607	        bcs[i].funcs                = calloc(1, sizeof(*bcs[i].funcs));
-offset-size-arithmetic	unit_tests/check_bytecode.c	1615	    bcctx->lsigoff[0] = (uint64_t)UINT32_MAX + 1;
-offset-size-arithmetic	unit_tests/check_bytecode.c	1625	     * offset array before its intentionally unprepared runtime failed. */
-offset-size-arithmetic	unit_tests/check_bytecode.c	1626	    ck_assert(bcctx->hooks.match_offsets64 == bcctx->lsigoff);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1719	    engine->bcs.all_bcs   = calloc(1, sizeof(*engine->bcs.all_bcs));
-offset-size-arithmetic	unit_tests/check_bytecode.c	1720	    engine->hooks[hook_slot] = calloc(1, sizeof(*engine->hooks[hook_slot]));
-offset-size-arithmetic	unit_tests/check_bytecode.c	1730	    hook_bc->funcs                = calloc(1, sizeof(*hook_bc->funcs));
-offset-size-arithmetic	unit_tests/check_bytecode.c	520	    str = malloc(strlen(SRCDIR) + 1 + strlen(dbname) + 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	568	static off_t bytecode_failing_pread_cb(void *handle, void *buf, size_t count, off_t offset)
-offset-size-arithmetic	unit_tests/check_bytecode.c	572	    if (offset >= state->fail_at) {
-offset-size-arithmetic	unit_tests/check_bytecode.c	576	    if (offset < 0 || (uint64_t)offset >= state->length)
-offset-size-arithmetic	unit_tests/check_bytecode.c	578	    if (count > state->length - (size_t)offset)
-offset-size-arithmetic	unit_tests/check_bytecode.c	579	        count = state->length - (size_t)offset;
-offset-size-arithmetic	unit_tests/check_bytecode.c	580	    if (count > (size_t)(state->fail_at - offset))
-offset-size-arithmetic	unit_tests/check_bytecode.c	581	        count = (size_t)(state->fail_at - offset);
-offset-size-arithmetic	unit_tests/check_bytecode.c	593	static off_t bytecode_search_pread_cb(void *handle, void *buf, size_t count, off_t offset)
-offset-size-arithmetic	unit_tests/check_bytecode.c	602	    if (offset < 0 || (uint64_t)offset >= state->length)
-offset-size-arithmetic	unit_tests/check_bytecode.c	605	    if (count > state->length - start)
-offset-size-arithmetic	unit_tests/check_bytecode.c	606	        count = state->length - start;
-offset-size-arithmetic	unit_tests/check_bytecode.c	608	    end = start + count;
-offset-size-arithmetic	unit_tests/check_bytecode.c	609	    if (state->marker_offset > SIZE_MAX - state->marker_length)
-offset-size-arithmetic	unit_tests/check_bytecode.c	611	    marker_end = state->marker_offset + state->marker_length;
-offset-size-arithmetic	unit_tests/check_bytecode.c	612	    copy_start = MAX(start, state->marker_offset);
-offset-size-arithmetic	unit_tests/check_bytecode.c	615	        memcpy((uint8_t *)buf + copy_start - start,
-offset-size-arithmetic	unit_tests/check_bytecode.c	616	               state->marker + copy_start - state->marker_offset,
-offset-size-arithmetic	unit_tests/check_bytecode.c	617	               copy_end - copy_start);
-offset-size-arithmetic	unit_tests/check_bytecode.c	634	    old_digits = (unsigned char)line[offset] - 0x60;
-offset-size-arithmetic	unit_tests/check_bytecode.c	642	        fputs(line + offset + old_digits + 1, output) == EOF)
-offset-size-arithmetic	unit_tests/check_bytecode.c	677	        if (!strncmp(line, BC_HEADER, sizeof(BC_HEADER) - 1)) {
-offset-size-arithmetic	unit_tests/check_bytecode.c	678	            offset = sizeof(BC_HEADER) - 1;
-offset-size-arithmetic	unit_tests/check_bytecode.c	786	    bcctx->off = map->len;
-offset-size-arithmetic	unit_tests/check_bytecode.c	791	    ck_assert_int_eq(cli_bcapi_read(bcctx, buffer, sizeof(buffer)), -1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	847	    bcctx->off = -1;
-offset-size-arithmetic	unit_tests/check_bytecode.c	876	    pread_state.length  = (size_t)(boundary + 1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	889	    ck_assert_int_eq(cli_bcapi_seek(bcctx, 0, SEEK_END), -1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	893	                     "Bytecode v1 seek result requires 64-bit file coordinates");
-offset-size-arithmetic	unit_tests/check_bytecode.c	913	    ck_assert_int_eq(cli_bcapi_pdf_get_offset(bcctx, 0), -1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	916	                     "Bytecode v1 PDF offset requires 64-bit coordinates");
-offset-size-arithmetic	unit_tests/check_bytecode.c	95	    cctx.recursion_stack_size = cctx.engine->max_recursion_level;
-offset-size-arithmetic	unit_tests/check_bytecode.c	951	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	976	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
-offset-size-arithmetic	unit_tests/check_bytecode.c	995	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1037	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1045	    ck_assert_int_eq(lseek(bcctx->outfd, 0, SEEK_SET), 0);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1087	    map = cl_fmap_open_memory((const unsigned char *)input, sizeof(input) - 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1122	    pread_state.length       = (size_t)(boundary + 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1134	    ck_assert_uint_eq(bcctx->file_size64, boundary + 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1139	    ck_assert_uint_eq((uint64_t)bcctx->off, boundary + 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1141	    ck_assert_int_eq(cli_bcapi_seek64(bcctx, -1, SEEK_END), (int64_t)boundary);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1202	        state.marker_offset     = (size_t)UINT64_C(4294967296) + 4095U;
+offset-size-arithmetic	unit_tests/check_bytecode.c	1203	        state.length            = state.marker_offset + sizeof(marker);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1297	    while (length && (line[length - 1] == '\n' || line[length - 1] == '\r'))
+offset-size-arithmetic	unit_tests/check_bytecode.c	1299	    ck_assert_int_gt((int)length, (int)(sizeof(BC_HEADER) - 1));
+offset-size-arithmetic	unit_tests/check_bytecode.c	1303	     * exercises all end-of-line reads without relying on an allocator fault. */
+offset-size-arithmetic	unit_tests/check_bytecode.c	1304	    for (cut = sizeof(BC_HEADER) - 1; cut <= length; cut++) {
+offset-size-arithmetic	unit_tests/check_bytecode.c	1332	    ck_assert_int_eq(cli_bytecode_table_size_check(CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1,
+offset-size-arithmetic	unit_tests/check_bytecode.c	1367	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, general_name, sizeof(general_name) - 1), 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1368	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, parse_name, sizeof(parse_name) - 1), 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1369	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, heuristic_name, sizeof(heuristic_name) - 1), 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1370	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, mail_name, sizeof(mail_name) - 1), 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1371	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, dev_name, sizeof(dev_name) - 1), 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1372	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, precedence_name, sizeof(precedence_name) - 1), 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1373	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, disabled_name, sizeof(disabled_name) - 1), 0);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1374	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, unknown_name, sizeof(unknown_name) - 1), 0);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1375	    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, embedded_nul, sizeof(embedded_nul) - 1), 0);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1461	    const size_t first_offset = (size_t)UINT32_MAX + 128U;
+offset-size-arithmetic	unit_tests/check_bytecode.c	1463	    const size_t second_offset = first_offset + 4U + first_size;
+offset-size-arithmetic	unit_tests/check_bytecode.c	1464	    const off_t pdf_start = (off_t)UINT32_MAX + 64;
+offset-size-arithmetic	unit_tests/check_bytecode.c	1480	                                                 second_offset + 11U,
+offset-size-arithmetic	unit_tests/check_bytecode.c	1487	                      (uint64_t)pdf_start + first_offset);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1488	    ck_assert_int_eq(cli_bcapi_pdf_get_offset(bcctx, 0), -1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1534	    engine->bcs.all_bcs = calloc(1, sizeof(*engine->bcs.all_bcs));
+offset-size-arithmetic	unit_tests/check_bytecode.c	1535	    engine->hooks[hook_slot] = calloc(1, sizeof(*engine->hooks[hook_slot]));
+offset-size-arithmetic	unit_tests/check_bytecode.c	1594	    engine->bcs.all_bcs         = calloc(2, sizeof(*engine->bcs.all_bcs));
+offset-size-arithmetic	unit_tests/check_bytecode.c	1595	    engine->hooks[hook_slot]    = calloc(2, sizeof(*engine->hooks[hook_slot]));
+offset-size-arithmetic	unit_tests/check_bytecode.c	1608	        bcs[i].funcs                = calloc(1, sizeof(*bcs[i].funcs));
+offset-size-arithmetic	unit_tests/check_bytecode.c	1616	    bcctx->lsigoff[0] = (uint64_t)UINT32_MAX + 1;
+offset-size-arithmetic	unit_tests/check_bytecode.c	1626	     * offset array before its intentionally unprepared runtime failed. */
+offset-size-arithmetic	unit_tests/check_bytecode.c	1627	    ck_assert(bcctx->hooks.match_offsets64 == bcctx->lsigoff);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1720	    engine->bcs.all_bcs   = calloc(1, sizeof(*engine->bcs.all_bcs));
+offset-size-arithmetic	unit_tests/check_bytecode.c	1721	    engine->hooks[hook_slot] = calloc(1, sizeof(*engine->hooks[hook_slot]));
+offset-size-arithmetic	unit_tests/check_bytecode.c	1731	    hook_bc->funcs                = calloc(1, sizeof(*hook_bc->funcs));
+offset-size-arithmetic	unit_tests/check_bytecode.c	521	    str = malloc(strlen(SRCDIR) + 1 + strlen(dbname) + 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	569	static off_t bytecode_failing_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+offset-size-arithmetic	unit_tests/check_bytecode.c	573	    if (offset >= state->fail_at) {
+offset-size-arithmetic	unit_tests/check_bytecode.c	577	    if (offset < 0 || (uint64_t)offset >= state->length)
+offset-size-arithmetic	unit_tests/check_bytecode.c	579	    if (count > state->length - (size_t)offset)
+offset-size-arithmetic	unit_tests/check_bytecode.c	580	        count = state->length - (size_t)offset;
+offset-size-arithmetic	unit_tests/check_bytecode.c	581	    if (count > (size_t)(state->fail_at - offset))
+offset-size-arithmetic	unit_tests/check_bytecode.c	582	        count = (size_t)(state->fail_at - offset);
+offset-size-arithmetic	unit_tests/check_bytecode.c	594	static off_t bytecode_search_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+offset-size-arithmetic	unit_tests/check_bytecode.c	603	    if (offset < 0 || (uint64_t)offset >= state->length)
+offset-size-arithmetic	unit_tests/check_bytecode.c	606	    if (count > state->length - start)
+offset-size-arithmetic	unit_tests/check_bytecode.c	607	        count = state->length - start;
+offset-size-arithmetic	unit_tests/check_bytecode.c	609	    end = start + count;
+offset-size-arithmetic	unit_tests/check_bytecode.c	610	    if (state->marker_offset > SIZE_MAX - state->marker_length)
+offset-size-arithmetic	unit_tests/check_bytecode.c	612	    marker_end = state->marker_offset + state->marker_length;
+offset-size-arithmetic	unit_tests/check_bytecode.c	613	    copy_start = MAX(start, state->marker_offset);
+offset-size-arithmetic	unit_tests/check_bytecode.c	616	        memcpy((uint8_t *)buf + copy_start - start,
+offset-size-arithmetic	unit_tests/check_bytecode.c	617	               state->marker + copy_start - state->marker_offset,
+offset-size-arithmetic	unit_tests/check_bytecode.c	618	               copy_end - copy_start);
+offset-size-arithmetic	unit_tests/check_bytecode.c	635	    old_digits = (unsigned char)line[offset] - 0x60;
+offset-size-arithmetic	unit_tests/check_bytecode.c	643	        fputs(line + offset + old_digits + 1, output) == EOF)
+offset-size-arithmetic	unit_tests/check_bytecode.c	678	        if (!strncmp(line, BC_HEADER, sizeof(BC_HEADER) - 1)) {
+offset-size-arithmetic	unit_tests/check_bytecode.c	679	            offset = sizeof(BC_HEADER) - 1;
+offset-size-arithmetic	unit_tests/check_bytecode.c	787	    bcctx->off = map->len;
+offset-size-arithmetic	unit_tests/check_bytecode.c	792	    ck_assert_int_eq(cli_bcapi_read(bcctx, buffer, sizeof(buffer)), -1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	848	    bcctx->off = -1;
+offset-size-arithmetic	unit_tests/check_bytecode.c	877	    pread_state.length  = (size_t)(boundary + 1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	890	    ck_assert_int_eq(cli_bcapi_seek(bcctx, 0, SEEK_END), -1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	894	                     "Bytecode v1 seek result requires 64-bit file coordinates");
+offset-size-arithmetic	unit_tests/check_bytecode.c	914	    ck_assert_int_eq(cli_bcapi_pdf_get_offset(bcctx, 0), -1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	917	                     "Bytecode v1 PDF offset requires 64-bit coordinates");
+offset-size-arithmetic	unit_tests/check_bytecode.c	952	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	96	    cctx.recursion_stack_size = cctx.engine->max_recursion_level;
+offset-size-arithmetic	unit_tests/check_bytecode.c	977	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
+offset-size-arithmetic	unit_tests/check_bytecode.c	996	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
 offset-size-arithmetic	unit_tests/check_clamav.c	10005	        0x07, 0x00};                               /* header size */
 offset-size-arithmetic	unit_tests/check_clamav.c	10055	    uint8_t body[sizeof(body_prefix) + sizeof(child)];
 offset-size-arithmetic	unit_tests/check_clamav.c	10129	    map = cl_fmap_open_memory(archive, archive_length - 1U);

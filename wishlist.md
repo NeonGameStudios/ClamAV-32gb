@@ -12,6 +12,18 @@
   production-CVD/service, materialized-large-file, Sonic1, parser-family,
   and release qualification remain open.
 
+## Bytecode API map value-size admission — 2026-08-29
+
+- Keep bytecode API map value-table growth behind native-width and
+  `CLI_MAX_ALLOCATION` product checks, including the `UINT32_MAX` entry-count
+  boundary; allocate and zero only the checked product.
+- Retain `test_bytecode_map_value_size_product_is_fail_visible` and its source
+  guards. The current hashtab and bytecode test sources pass Docker
+  production-GCC syntax checks, and the isolated current-source harness prints
+  `bytecode_map_value_product_rejected`. Full bytecode execution, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, parser-family, and
+  release qualification remain open.
+
 ## Bytecode header table-size admission — 2026-08-29
 
 - Keep the initial bytecode function and type table products behind
