@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Signature-database table admission — 2026-08-29
+
+The signature-database loader formed native-size products directly for icon
+metrics and groups, logical-signature and bytecode tables, YARA string tables,
+and database-directory statistics. Several counters are fixed-width or signed;
+on a narrow target, a wrapped product could make a small allocation appear
+successful before later indexed writes. `cli_readdb_table_size()` now checks
+native-size multiplication and the individual allocation ceiling across those
+tables, rejects saturated counters before count-plus-one arithmetic, and
+propagates YARA string-table insertion failures instead of silently dropping a
+string. The registered `test_readdb_table_size_rejects_product_wrap`
+regression covers the exact allocation boundary, `SIZE_MAX`, and invalid
+arguments. Current `readdb.c` and `check_matchers.c` compile with Docker
+production GCC, and an isolated current-source production-linked UBSan oracle
+prints `readdb_table_size_guard_passed`. Full production CVD/signature corpus,
+sanitizer matrix, service, materialized-large-file, Sonic1, and final matcher
+and release qualification remain open.
+
 ## MIME message table admission — 2026-08-29
 
 MIME argument and encoding tables, plus the multipart message table, formed

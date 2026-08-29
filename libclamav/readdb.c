@@ -42,6 +42,7 @@
 #include <fcntl.h>
 #include <zlib.h>
 #include <errno.h>
+#include <limits.h>
 
 #ifdef _WIN32
 #include "libgen.h"
@@ -93,6 +94,19 @@ static pthread_mutex_t cli_ref_mutex = PTHREAD_MUTEX_INITIALIZER;
 #include "yara_grammar.h"
 #include "yara_lexer.h"
 #endif
+
+cl_error_t cli_readdb_table_size(size_t count, size_t element_size, size_t *bytes)
+{
+    if (bytes == NULL || element_size == 0)
+        return CL_EARG;
+
+    if (count > SIZE_MAX / element_size ||
+        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+        return CL_ERESOURCE;
+
+    *bytes = count * element_size;
+    return CL_SUCCESS;
+}
 
 #ifdef _WIN32
 static char DATABASE_DIRECTORY[MAX_PATH] = "";
@@ -1327,6 +1341,7 @@ static cl_error_t cli_loadidb(FILE *fs, struct cl_engine *engine, unsigned int *
     unsigned int line = 0, sigs = 0, tokens_count, i, size, enginesize;
     struct icomtr *metric        = NULL;
     struct icon_matcher *matcher = NULL;
+    size_t table_size;
 
     if (NULL != engine->iconcheck) {
         // If we've already loaded an icon database for this engine, we need to add to it.
@@ -1399,7 +1414,16 @@ static cl_error_t cli_loadidb(FILE *fs, struct cl_engine *engine, unsigned int *
         enginesize = (size >> 3) - 2;
         hash += 2;
 
-        metric = (struct icomtr *)MPOOL_REALLOC(engine->mempool, matcher->icons[enginesize], sizeof(struct icomtr) * (matcher->icon_counts[enginesize] + 1));
+        if (matcher->icon_counts[enginesize] == UINT32_MAX ||
+            cli_readdb_table_size((size_t)matcher->icon_counts[enginesize] + 1,
+                                  sizeof(*metric), &table_size) != CL_SUCCESS) {
+            cli_errmsg("cli_loadidb: icon metric table count is saturated\n");
+            ret = CL_EMEM;
+            goto done;
+        }
+
+        metric = (struct icomtr *)MPOOL_REALLOC(engine->mempool,
+                                                matcher->icons[enginesize], table_size);
         if (!metric) {
             ret = CL_EMEM;
             goto done;
@@ -1515,7 +1539,14 @@ static cl_error_t cli_loadidb(FILE *fs, struct cl_engine *engine, unsigned int *
                 break;
         }
         if (i == matcher->group_counts[0]) {
-            if (!(matcher->group_names[0] = MPOOL_REALLOC(engine->mempool, matcher->group_names[0], sizeof(char *) * (i + 1))) ||
+            if (matcher->group_counts[0] >= 256) {
+                cli_errmsg("cli_loadidb: too many icon groups!\n");
+                ret = CL_EMALFDB;
+                goto done;
+            }
+            if (i == UINT_MAX ||
+                cli_readdb_table_size((size_t)i + 1, sizeof(*matcher->group_names[0]), &table_size) != CL_SUCCESS ||
+                !(matcher->group_names[0] = MPOOL_REALLOC(engine->mempool, matcher->group_names[0], table_size)) ||
                 !(matcher->group_names[0][i] = CLI_MPOOL_STRDUP(engine->mempool, tokens[1]))) {
                 ret = CL_EMEM;
                 goto done;
@@ -1529,7 +1560,14 @@ static cl_error_t cli_loadidb(FILE *fs, struct cl_engine *engine, unsigned int *
                 break;
         }
         if (i == matcher->group_counts[1]) {
-            if (!(matcher->group_names[1] = MPOOL_REALLOC(engine->mempool, matcher->group_names[1], sizeof(char *) * (i + 1))) ||
+            if (matcher->group_counts[1] >= 256) {
+                cli_errmsg("cli_loadidb: too many icon groups!\n");
+                ret = CL_EMALFDB;
+                goto done;
+            }
+            if (i == UINT_MAX ||
+                cli_readdb_table_size((size_t)i + 1, sizeof(*matcher->group_names[1]), &table_size) != CL_SUCCESS ||
+                !(matcher->group_names[1] = MPOOL_REALLOC(engine->mempool, matcher->group_names[1], table_size)) ||
                 !(matcher->group_names[1][i] = CLI_MPOOL_STRDUP(engine->mempool, tokens[2]))) {
                 ret = CL_EMEM;
                 goto done;
@@ -1830,6 +1868,7 @@ static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
     char *tokens[ATTRIB_TOKENS], *pt, *pt2;
     unsigned int v1, v2, v3, i, j, tokens_count, have_newext = 0;
     uint32_t cnt, off[ATTRIB_TOKENS];
+    size_t next_count, table_size, string_len;
 
     tokens_count = cli_strtokenize(attribs, ',', ATTRIB_TOKENS, (const char **)tokens);
 
@@ -1869,8 +1908,13 @@ static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
                     return -1;
                 }
 
+                if (tdb->cnt[CLI_TDB_UINT] < 0 || tdb->cnt[CLI_TDB_UINT] == INT_MAX ||
+                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + 1,
+                                          sizeof(*tdb->val), &table_size) != CL_SUCCESS)
+                    return -1;
+
                 off[i] = cnt = tdb->cnt[CLI_TDB_UINT]++;
-                tdb->val     = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, tdb->cnt[CLI_TDB_UINT] * sizeof(uint32_t));
+                tdb->val = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, table_size);
                 if (!tdb->val) {
                     tdb->cnt[CLI_TDB_UINT] = 0;
                     return -1;
@@ -1885,8 +1929,13 @@ static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
                     return 1; /* skip */
                 }
 
+                if (tdb->cnt[CLI_TDB_UINT] < 0 || tdb->cnt[CLI_TDB_UINT] == INT_MAX ||
+                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + 1,
+                                          sizeof(*tdb->val), &table_size) != CL_SUCCESS)
+                    return -1;
+
                 off[i] = cnt = tdb->cnt[CLI_TDB_UINT]++;
-                tdb->val     = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, tdb->cnt[CLI_TDB_UINT] * sizeof(uint32_t));
+                tdb->val = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, table_size);
                 if (!tdb->val) {
                     tdb->cnt[CLI_TDB_UINT] = 0;
                     return -1;
@@ -1905,8 +1954,15 @@ static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
                     cli_dbgmsg("lsigattribs: No intermediate container tokens found.");
                     return 1;
                 }
-                tdb->cnt[CLI_TDB_UINT] += (ftypes_count + 1);
-                tdb->val = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, tdb->cnt[CLI_TDB_UINT] * sizeof(uint32_t));
+                if (tdb->cnt[CLI_TDB_UINT] < 0 ||
+                    (size_t)tdb->cnt[CLI_TDB_UINT] > (size_t)INT_MAX - ((size_t)ftypes_count + 1) ||
+                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + ftypes_count + 1,
+                                          sizeof(*tdb->val), &table_size) != CL_SUCCESS)
+                    return -1;
+
+                next_count            = (size_t)tdb->cnt[CLI_TDB_UINT] + ftypes_count + 1;
+                tdb->cnt[CLI_TDB_UINT] = (tdb_type_t)next_count;
+                tdb->val = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, table_size);
                 if (!tdb->val) {
                     tdb->cnt[CLI_TDB_UINT] = 0;
                     return -1;
@@ -1949,8 +2005,15 @@ static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
                 }
 
                 off[i] = cnt = tdb->cnt[CLI_TDB_RANGE];
-                tdb->cnt[CLI_TDB_RANGE] += 2;
-                tdb->range = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->range, tdb->cnt[CLI_TDB_RANGE] * sizeof(uint32_t));
+                if (tdb->cnt[CLI_TDB_RANGE] < 0 ||
+                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 2 ||
+                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_RANGE] + 2,
+                                          sizeof(*tdb->range), &table_size) != CL_SUCCESS)
+                    return -1;
+
+                next_count             = (size_t)tdb->cnt[CLI_TDB_RANGE] + 2;
+                tdb->cnt[CLI_TDB_RANGE] = (tdb_type_t)next_count;
+                tdb->range = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->range, table_size);
                 if (!tdb->range) {
                     tdb->cnt[CLI_TDB_RANGE] = 0;
                     return -1;
@@ -1972,8 +2035,15 @@ static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
                 }
 
                 off[i] = cnt = tdb->cnt[CLI_TDB_RANGE];
-                tdb->cnt[CLI_TDB_RANGE] += 3;
-                tdb->range = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->range, tdb->cnt[CLI_TDB_RANGE] * sizeof(uint32_t));
+                if (tdb->cnt[CLI_TDB_RANGE] < 0 ||
+                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 3 ||
+                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_RANGE] + 3,
+                                          sizeof(*tdb->range), &table_size) != CL_SUCCESS)
+                    return -1;
+
+                next_count             = (size_t)tdb->cnt[CLI_TDB_RANGE] + 3;
+                tdb->cnt[CLI_TDB_RANGE] = (tdb_type_t)next_count;
+                tdb->range = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->range, table_size);
                 if (!tdb->range) {
                     tdb->cnt[CLI_TDB_RANGE] = 0;
                     return -1;
@@ -1991,8 +2061,16 @@ static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
 
             case CLI_TDB_STR:
                 off[i] = cnt = tdb->cnt[CLI_TDB_STR];
-                tdb->cnt[CLI_TDB_STR] += strlen(pt) + 1;
-                tdb->str = (char *)MPOOL_REALLOC2(tdb->mempool, tdb->str, tdb->cnt[CLI_TDB_STR] * sizeof(char));
+                string_len = strlen(pt);
+                if (string_len >= (size_t)INT_MAX || tdb->cnt[CLI_TDB_STR] < 0 ||
+                    (size_t)tdb->cnt[CLI_TDB_STR] > (size_t)INT_MAX - (string_len + 1) ||
+                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_STR] + string_len + 1,
+                                          sizeof(*tdb->str), &table_size) != CL_SUCCESS)
+                    return -1;
+
+                next_count             = (size_t)tdb->cnt[CLI_TDB_STR] + string_len + 1;
+                tdb->cnt[CLI_TDB_STR] = (tdb_type_t)next_count;
+                tdb->str = (char *)MPOOL_REALLOC2(tdb->mempool, tdb->str, table_size);
                 if (!tdb->str) {
                     cli_errmsg("lsigattribs: Can't allocate memory for tdb->str\n");
                     return -1;
@@ -2154,6 +2232,7 @@ static cl_error_t load_oneldb(char *buffer, int chkpua, struct cl_engine *engine
     struct cli_lsig_tdb tdb;
     uint32_t lsigid[2];
     bool tdb_initialized = false;
+    size_t lsig_table_size;
 
     UNUSEDPARAM(dbname);
 
@@ -2248,9 +2327,18 @@ static cl_error_t load_oneldb(char *buffer, int chkpua, struct cl_engine *engine
         goto done;
     }
 
+    if (root->ac_lsigs == UINT32_MAX ||
+        cli_readdb_table_size((size_t)root->ac_lsigs + 1,
+                              sizeof(*newtable), &lsig_table_size) != CL_SUCCESS) {
+        cli_errmsg("cli_loadldb: logical-signature table count is saturated\n");
+        status = CL_EMEM;
+        goto done;
+    }
+
     lsigid[0] = lsig->id = root->ac_lsigs;
 
-    newtable = (struct cli_ac_lsig **)MPOOL_REALLOC(engine->mempool, root->ac_lsigtable, (root->ac_lsigs + 1) * sizeof(struct cli_ac_lsig *));
+    newtable = (struct cli_ac_lsig **)MPOOL_REALLOC(engine->mempool,
+                                                    root->ac_lsigtable, lsig_table_size);
     if (!newtable) {
         cli_errmsg("cli_loadldb: Can't realloc root->ac_lsigtable\n");
         status = CL_EMEM;
@@ -2387,6 +2475,7 @@ static int cli_loadcbc(FILE *fs, struct cl_engine *engine, unsigned int *signo, 
     unsigned sigs           = 0;
     unsigned security_trust = 0;
     unsigned i;
+    size_t table_size;
 
     /* TODO: virusname have a common prefix, and allow by that */
     if ((rc = cli_initroots(engine, options)))
@@ -2407,7 +2496,13 @@ static int cli_loadcbc(FILE *fs, struct cl_engine *engine, unsigned int *signo, 
         return CL_SUCCESS;
     }
 
-    bcs->all_bcs = cli_safer_realloc_or_free(bcs->all_bcs, sizeof(*bcs->all_bcs) * (bcs->count + 1));
+    if (bcs->count == UINT_MAX ||
+        cli_readdb_table_size((size_t)bcs->count + 1, sizeof(*bcs->all_bcs), &table_size) != CL_SUCCESS) {
+        cli_errmsg("cli_loadcbc: bytecode table count is saturated\n");
+        return CL_EMEM;
+    }
+
+    bcs->all_bcs = cli_safer_realloc_or_free(bcs->all_bcs, table_size);
     if (!bcs->all_bcs) {
         cli_errmsg("cli_loadcbc: Can't allocate memory for bytecode entry\n");
         return CL_EMEM;
@@ -2477,9 +2572,17 @@ static int cli_loadcbc(FILE *fs, struct cl_engine *engine, unsigned int *signo, 
         }
         if (bc->kind >= _BC_START_HOOKS && bc->kind < _BC_LAST_HOOK) {
             unsigned hook       = bc->kind - _BC_START_HOOKS;
-            unsigned cnt        = ++engine->hooks_cnt[hook];
-            engine->hooks[hook] = cli_safer_realloc_or_free(engine->hooks[hook],
-                                                            sizeof(*engine->hooks[0]) * cnt);
+            unsigned cnt;
+
+            if (engine->hooks_cnt[hook] == UINT_MAX ||
+                cli_readdb_table_size((size_t)engine->hooks_cnt[hook] + 1,
+                                      sizeof(*engine->hooks[0]), &table_size) != CL_SUCCESS) {
+                cli_errmsg("Out of memory allocating memory for hook %u\n", hook);
+                return CL_EMEM;
+            }
+
+            cnt                 = ++engine->hooks_cnt[hook];
+            engine->hooks[hook] = cli_safer_realloc_or_free(engine->hooks[hook], table_size);
             if (!engine->hooks[hook]) {
                 cli_errmsg("Out of memory allocating memory for hook %u", hook);
                 return CL_EMEM;
@@ -3786,6 +3889,8 @@ static int ytable_add_string(struct cli_ytable *ytable, const char *hexsig)
 {
     struct cli_ytable_entry *new;
     struct cli_ytable_entry **newtable;
+    size_t next_count;
+    size_t table_size;
     int ret;
 
     if (!ytable || !hexsig)
@@ -3804,16 +3909,25 @@ static int ytable_add_string(struct cli_ytable *ytable, const char *hexsig)
         return CL_EMEM;
     }
 
-    ytable->tbl_cnt++;
-    newtable = cli_safer_realloc(ytable->table, ytable->tbl_cnt * sizeof(struct cli_ytable_entry *));
+    if (ytable->tbl_cnt < 0 || ytable->tbl_cnt == INT32_MAX ||
+        cli_readdb_table_size((size_t)ytable->tbl_cnt + 1,
+                              sizeof(*newtable), &table_size) != CL_SUCCESS) {
+        cli_yaramsg("ytable_add_string: table count is saturated\n");
+        free(new->hexstr);
+        free(new);
+        return CL_EMEM;
+    }
+
+    next_count = (size_t)ytable->tbl_cnt + 1;
+    newtable   = cli_safer_realloc(ytable->table, table_size);
     if (!newtable) {
         cli_yaramsg("ytable_add_string: failed to reallocate new ytable table\n");
         free(new->hexstr);
         free(new);
-        ytable->tbl_cnt--;
         return CL_EMEM;
     }
 
+    ytable->tbl_cnt              = (int32_t)next_count;
     newtable[ytable->tbl_cnt - 1] = new;
     ytable->table                 = newtable;
 
@@ -3893,6 +4007,7 @@ static int load_oneyara(YR_RULE *rule, int chkpua, struct cl_engine *engine, uns
     struct cli_ac_lsig **newtable, *lsig, *tsig = NULL;
     char *logic = NULL, *target_str = NULL;
     char *newident = NULL;
+    size_t lsig_table_size;
     /* size_t lsize; */       // only used in commented out code
     /* char *exp_op = "|"; */ // only used in commented out code
 
@@ -4045,8 +4160,20 @@ static int load_oneyara(YR_RULE *rule, int chkpua, struct cl_engine *engine, uns
                     return CL_EMEM;
                 }
 
+                if (root->ac_lsigs == UINT32_MAX ||
+                    cli_readdb_table_size((size_t)root->ac_lsigs + 1,
+                                          sizeof(*newtable), &lsig_table_size) != CL_SUCCESS) {
+                    cli_errmsg("load_oneyara: test logical-signature table count is saturated\n");
+                    MPOOL_FREE(engine->mempool, tsig->virname);
+                    MPOOL_FREE(engine->mempool, tsig);
+                    free(substr);
+                    free(newident);
+                    return CL_EMEM;
+                }
+
                 root->ac_lsigs++;
-                newtable = (struct cli_ac_lsig **)MPOOL_REALLOC(engine->mempool, root->ac_lsigtable, root->ac_lsigs * sizeof(struct cli_ac_lsig *));
+                newtable = (struct cli_ac_lsig **)MPOOL_REALLOC(engine->mempool,
+                                                                 root->ac_lsigtable, lsig_table_size);
                 if (!newtable) {
                     root->ac_lsigs--;
                     cli_errmsg("load_oneyara: cannot allocate test root->ac_lsigtable\n");
@@ -4072,8 +4199,12 @@ static int load_oneyara(YR_RULE *rule, int chkpua, struct cl_engine *engine, uns
 
             cli_yaramsg("load_oneyara: hex string: [%.*s] => [%s]\n", string->length, string->string, substr);
 
-            ytable_add_string(&ytable, substr);
+            ret = ytable_add_string(&ytable, substr);
             free(substr);
+            if (ret != CL_SUCCESS) {
+                str_error++;
+                break;
+            }
         } else if (STRING_IS_REGEXP(string)) {
             /* TODO - rewrite to NOT use PCRE_BYPASS */
             size_t length = strlen(PCRE_BYPASS) + string->length + 3;
@@ -4090,8 +4221,12 @@ static int load_oneyara(YR_RULE *rule, int chkpua, struct cl_engine *engine, uns
 
             cli_yaramsg("load_oneyara: regex string: [%.*s] => [%s]\n", string->length, string->string, substr);
 
-            ytable_add_string(&ytable, substr);
+            ret = ytable_add_string(&ytable, substr);
             free(substr);
+            if (ret != CL_SUCCESS) {
+                str_error++;
+                break;
+            }
         } else {
             /* TODO - extract the string length to handle NULL hex-escaped characters
              * For now, we'll just use the strlen we get which crudely finds the length
@@ -4120,8 +4255,12 @@ static int load_oneyara(YR_RULE *rule, int chkpua, struct cl_engine *engine, uns
 
             cli_yaramsg("load_oneyara: generic string: [%.*s] => [%s]\n", string->length, string->string, substr);
 
-            ytable_add_string(&ytable, substr);
+            ret = ytable_add_string(&ytable, substr);
             free(substr);
+            if (ret != CL_SUCCESS) {
+                str_error++;
+                break;
+            }
         }
 
         /* modifier handler */
@@ -4337,8 +4476,21 @@ static int load_oneyara(YR_RULE *rule, int chkpua, struct cl_engine *engine, uns
 
     lsigid[0] = lsig->id = root->ac_lsigs;
 
+    if (root->ac_lsigs == UINT32_MAX ||
+        cli_readdb_table_size((size_t)root->ac_lsigs + 1,
+                              sizeof(*newtable), &lsig_table_size) != CL_SUCCESS) {
+        cli_errmsg("load_oneyara: logical-signature table count is saturated\n");
+        FREE_TDB(tdb);
+        ytable_delete(&ytable);
+        MPOOL_FREE(engine->mempool, lsig->virname);
+        MPOOL_FREE(engine->mempool, lsig);
+        free(newident);
+        return CL_EMEM;
+    }
+
     root->ac_lsigs++;
-    newtable = (struct cli_ac_lsig **)MPOOL_REALLOC(engine->mempool, root->ac_lsigtable, root->ac_lsigs * sizeof(struct cli_ac_lsig *));
+    newtable = (struct cli_ac_lsig **)MPOOL_REALLOC(engine->mempool,
+                                                    root->ac_lsigtable, lsig_table_size);
     if (!newtable) {
         root->ac_lsigs--;
         cli_errmsg("cli_loadldb: Can't realloc root->ac_lsigtable\n");
@@ -5548,8 +5700,18 @@ cl_error_t cl_statinidir(const char *dirname, struct cl_stat *dbstat)
     while ((dent = readdir(dd))) {
         if (dent->d_ino) {
             if (strcmp(dent->d_name, ".") && strcmp(dent->d_name, "..") && CLI_DBEXT(dent->d_name)) {
+                size_t stat_table_size;
+
+                if (dbstat->entries == UINT_MAX ||
+                    cli_readdb_table_size((size_t)dbstat->entries + 1,
+                                          sizeof(*dbstat->stattab), &stat_table_size) != CL_SUCCESS) {
+                    cl_statfree(dbstat);
+                    closedir(dd);
+                    return CL_EMEM;
+                }
+
                 dbstat->entries++;
-                dbstat->stattab = (STATBUF *)cli_safer_realloc_or_free(dbstat->stattab, dbstat->entries * sizeof(STATBUF));
+                dbstat->stattab = (STATBUF *)cli_safer_realloc_or_free(dbstat->stattab, stat_table_size);
                 if (!dbstat->stattab) {
                     cl_statfree(dbstat);
                     closedir(dd);
@@ -5557,7 +5719,14 @@ cl_error_t cl_statinidir(const char *dirname, struct cl_stat *dbstat)
                 }
 
 #ifdef _WIN32
-                dbstat->statdname = (char **)cli_safer_realloc_or_free(dbstat->statdname, dbstat->entries * sizeof(char *));
+                if (cli_readdb_table_size((size_t)dbstat->entries,
+                                          sizeof(*dbstat->statdname), &stat_table_size) != CL_SUCCESS) {
+                    cl_statfree(dbstat);
+                    closedir(dd);
+                    return CL_EMEM;
+                }
+
+                dbstat->statdname = (char **)cli_safer_realloc_or_free(dbstat->statdname, stat_table_size);
                 if (!dbstat->statdname) {
                     cli_errmsg("cl_statinidir: Can't allocate memory for dbstat->statdname\n");
                     cl_statfree(dbstat);

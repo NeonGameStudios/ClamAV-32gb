@@ -1,5 +1,18 @@
 # Wishlist
 
+## Signature-database table admission — 2026-08-29
+
+- Keep icon, logical-signature, bytecode, YARA string, and database-directory
+  tables behind `cli_readdb_table_size()` before native-size multiplication;
+  reject saturated fixed-width counters and propagate YARA table insertion
+  failures.
+- Retain `test_readdb_table_size_rejects_product_wrap` and its source guards.
+  Current `readdb.c` and `check_matchers.c` compile with Docker production GCC,
+  and the isolated current-source production-linked UBSan oracle prints
+  `readdb_table_size_guard_passed`; full production CVD/signature corpus,
+  sanitizer, service, materialized-large-file, Sonic1, matcher, and release
+  qualification remain open.
+
 ## MIME message table admission — 2026-08-29
 
 - Keep MIME argument, encoding, and multipart message tables behind

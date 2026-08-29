@@ -34,6 +34,9 @@
 
 #define MAX_LDB_SUBSIGS 64
 
+/* Check a signature-database table before forming its native-size product. */
+cl_error_t cli_readdb_table_size(size_t count, size_t element_size, size_t *bytes);
+
 struct cli_matcher;
 
 /* NOTE: We don't include .info in CLI_DBEXT because they are only used for
