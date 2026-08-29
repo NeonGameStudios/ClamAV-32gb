@@ -7,11 +7,14 @@
   charge the staged source against the shared temporary quota, and preserve
   deadline, read, parse, write, rewind, close, and unlink failures.
 - Retain `test_gzip_legacy_fallback_stages_visible_map`, the
-  `inflateInit2_` fault-injection seam, and source guards. Complete coherent
-  static production-linked fallback execution, legacy-fallback read-failure/
-  cleanup/quota coverage, full GZip corpus, sanitizer, certified Linux
-  x86-64, production-CVD/service, materialized-large-file, Sonic1,
-  parser-family, and release qualification.
+  `inflateInit2_` fault-injection seam, and source guards. A focused
+  current-source production-linked public-API runner passes 1/1 for the
+  forced-fallback bounded nested map, and its GCC ASan/UBSan build passes 1/1
+  without a sanitizer finding. Complete coherent static production-linked
+  fallback execution, legacy-fallback read-failure/cleanup/quota coverage,
+  full GZip corpus, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, parser-family, and release qualification
+  remain open.
 
 ## GPT header-location admission — 2026-08-29
 

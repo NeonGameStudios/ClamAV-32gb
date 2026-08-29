@@ -11,11 +11,16 @@ range. The fallback now stages exactly the visible fmap range through bounded
 write, charges the input staging file against temporary storage, and preserves
 read, parse, write, rewind, and cleanup statuses before invoking `gzdopen()`.
 The forced-fallback prefixed nested-map regression is registered, and the
-current scanner plus unit translation compile with production GCC. A coherent
-static production-linked fallback execution and sanitizer run remain open,
-along with complete GZip corpus, certified Linux x86-64, production-CVD/
-service, materialized-large-file, Sonic1, and final parser-family/release
-qualification.
+current scanner plus unit translation compile with production GCC. A focused
+current-source production-linked public-API runner passes 1/1 against the
+current scanner object and existing production libraries: the forced fallback
+decodes the bounded child, returns `CL_SUCCESS`, clears the injected fault,
+and leaves the child map cacheable. The same runner compiled with GCC
+ASan/UBSan passes 1/1 without a sanitizer finding. A coherent static
+production relink of the full unit binary and legacy-fallback read-failure,
+cleanup, quota, and complete-corpus coverage remain open, along with
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, and final parser-family/release qualification.
 
 ## GPT header-location admission — 2026-08-29
 
