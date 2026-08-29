@@ -984,13 +984,17 @@ bool cli_hashset_contains(const struct cli_hashset *hs, const uint32_t key)
 ssize_t cli_hashset_toarray(const struct cli_hashset *hs, uint32_t **array)
 {
     size_t i, j;
+    size_t array_size;
     uint32_t *arr;
 
-    if (!array) {
+    if (!hs || !array) {
         return -1;
     }
 
-    *array = arr = cli_max_malloc(hs->count * sizeof(*arr));
+    if (cli_hashtab_table_size(hs->count, sizeof(*arr), &array_size) != CL_SUCCESS)
+        return -1;
+
+    *array = arr = cli_max_malloc(array_size);
     if (!arr) {
         cli_errmsg("hashtab.c: Unable to allocate memory for array\n");
         return -1;

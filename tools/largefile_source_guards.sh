@@ -6179,6 +6179,10 @@ contains libclamav/scanners.c 'cli_max_calloc(ctx.recursion_stack_size, sizeof(c
 contains libclamav/scanners.c 'unable to allocate the bounded recursion stack'
 not_contains libclamav/scanners.c 'ctx.recursion_stack      = calloc(sizeof(cli_scan_layer_t), ctx.recursion_stack_size);'
 contains docs/largefile-capabilities.tsv 'scan-recursion-stack-admission'
+contains libclamav/hashtab.c 'if (!hs || !array)'
+contains libclamav/hashtab.c 'cli_hashtab_table_size(hs->count, sizeof(*arr), &array_size)'
+contains unit_tests/check_bytecode.c 'hashset.count = CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1U;'
+contains docs/largefile-capabilities.tsv 'hashtab-set-export-admission'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2

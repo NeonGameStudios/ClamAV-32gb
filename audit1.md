@@ -13,6 +13,18 @@ former raw boundary. Nested-parser corpus, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification remain
 open.
 
+## Hash-set export allocation admission — 2026-08-29
+
+The shared `cli_hashset_toarray()` helper formed `count * sizeof(uint32_t)`
+directly before calling the bounded allocator and dereferenced `hs` without a
+null check. A native-width product wrap could therefore produce an
+undersized export array before indexed copy. The helper now uses
+`cli_hashtab_table_size()` before allocation and rejects null inputs; the
+existing hashtab boundary TCase exercises null and over-limit counts without
+allocating the requested array. Complete hash-table caller corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## OpenIOC database admission — 2026-08-29
 
 The OpenIOC loader accumulated XML hash values with unchecked `calloc()` and

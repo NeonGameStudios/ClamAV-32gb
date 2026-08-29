@@ -7881,3 +7881,11 @@ final qualification as open.
 - Add a focused oversized-MaxRecursion execution and retain nested-parser
   corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
   and final qualification as open.
+
+## Hash-set export allocation admission — 2026-08-29
+
+- Keep `cli_hashset_toarray()` behind null-input and native-size/
+  individual-allocation product checks before result-array allocation.
+- Retain the no-allocation over-limit regression and add full hash-table
+  caller, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  and final qualification evidence.

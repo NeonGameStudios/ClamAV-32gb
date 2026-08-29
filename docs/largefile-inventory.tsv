@@ -2380,22 +2380,22 @@ fixed-width-integer	libclamav/gpt.h	82	    uint64_t firstLBA __attribute__((pack
 fixed-width-integer	libclamav/gpt.h	83	    uint64_t lastLBA __attribute__((packed));
 fixed-width-integer	libclamav/gpt.h	84	    uint64_t attributes __attribute__((packed));
 fixed-width-integer	libclamav/gpt.h	85	    uint16_t name[36] __attribute__((packed));
-fixed-width-integer	libclamav/hashtab.c	1012	bool cli_hashset_contains_maybe_noalloc(const struct cli_hashset *hs, const uint32_t key)
-fixed-width-integer	libclamav/hashtab.c	1021	cl_error_t cli_map_init(struct cli_map *m, int32_t keysize, int32_t valuesize,
-fixed-width-integer	libclamav/hashtab.c	1022	                        int32_t capacity)
-fixed-width-integer	libclamav/hashtab.c	1051	cl_error_t cli_map_addkey(struct cli_map *m, const void *key, int32_t keysize)
-fixed-width-integer	libclamav/hashtab.c	1053	    uint32_t n;
-fixed-width-integer	libclamav/hashtab.c	1063	        m->last_insert = (int32_t)el->data;
-fixed-width-integer	libclamav/hashtab.c	1111	cl_error_t cli_map_removekey(struct cli_map *m, const void *key, int32_t keysize)
-fixed-width-integer	libclamav/hashtab.c	1125	    if ((int32_t)el->data >= (int32_t)m->nvalues || (int32_t)el->data < 0) {
-fixed-width-integer	libclamav/hashtab.c	1130	        struct cli_map_value *v = &m->u.unsized_values[(int32_t)el->data];
-fixed-width-integer	libclamav/hashtab.c	1135	        char *v = (char *)m->u.sized_values + (int32_t)el->data * m->valuesize;
-fixed-width-integer	libclamav/hashtab.c	1144	cl_error_t cli_map_setvalue(struct cli_map *m, const void *value, int32_t valuesize)
-fixed-width-integer	libclamav/hashtab.c	1146	    if ((m->valuesize && m->valuesize != valuesize) || (uint32_t)(m->last_insert) >= m->nvalues || m->last_insert < 0) {
-fixed-width-integer	libclamav/hashtab.c	1172	cl_error_t cli_map_find(struct cli_map *m, const void *key, int32_t keysize)
-fixed-width-integer	libclamav/hashtab.c	1185	    m->last_find = (int32_t)el->data;
-fixed-width-integer	libclamav/hashtab.c	1196	    if (m->last_find < 0 || (uint32_t)(m->last_find) >= m->nvalues) {
-fixed-width-integer	libclamav/hashtab.c	1205	    if (m->last_find < 0 || (uint32_t)(m->last_find) >= m->nvalues) {
+fixed-width-integer	libclamav/hashtab.c	1016	bool cli_hashset_contains_maybe_noalloc(const struct cli_hashset *hs, const uint32_t key)
+fixed-width-integer	libclamav/hashtab.c	1025	cl_error_t cli_map_init(struct cli_map *m, int32_t keysize, int32_t valuesize,
+fixed-width-integer	libclamav/hashtab.c	1026	                        int32_t capacity)
+fixed-width-integer	libclamav/hashtab.c	1055	cl_error_t cli_map_addkey(struct cli_map *m, const void *key, int32_t keysize)
+fixed-width-integer	libclamav/hashtab.c	1057	    uint32_t n;
+fixed-width-integer	libclamav/hashtab.c	1067	        m->last_insert = (int32_t)el->data;
+fixed-width-integer	libclamav/hashtab.c	1115	cl_error_t cli_map_removekey(struct cli_map *m, const void *key, int32_t keysize)
+fixed-width-integer	libclamav/hashtab.c	1129	    if ((int32_t)el->data >= (int32_t)m->nvalues || (int32_t)el->data < 0) {
+fixed-width-integer	libclamav/hashtab.c	1134	        struct cli_map_value *v = &m->u.unsized_values[(int32_t)el->data];
+fixed-width-integer	libclamav/hashtab.c	1139	        char *v = (char *)m->u.sized_values + (int32_t)el->data * m->valuesize;
+fixed-width-integer	libclamav/hashtab.c	1148	cl_error_t cli_map_setvalue(struct cli_map *m, const void *value, int32_t valuesize)
+fixed-width-integer	libclamav/hashtab.c	1150	    if ((m->valuesize && m->valuesize != valuesize) || (uint32_t)(m->last_insert) >= m->nvalues || m->last_insert < 0) {
+fixed-width-integer	libclamav/hashtab.c	1176	cl_error_t cli_map_find(struct cli_map *m, const void *key, int32_t keysize)
+fixed-width-integer	libclamav/hashtab.c	1189	    m->last_find = (int32_t)el->data;
+fixed-width-integer	libclamav/hashtab.c	1200	    if (m->last_find < 0 || (uint32_t)(m->last_find) >= m->nvalues) {
+fixed-width-integer	libclamav/hashtab.c	1209	    if (m->last_find < 0 || (uint32_t)(m->last_find) >= m->nvalues) {
 fixed-width-integer	libclamav/hashtab.c	262	static inline uint32_t hash32shift(uint32_t key)
 fixed-width-integer	libclamav/hashtab.c	287	static inline size_t hash_htu32(uint32_t k, const size_t SIZE)
 fixed-width-integer	libclamav/hashtab.c	324	const struct cli_htu32_element *cli_htu32_find(const struct cli_htu32 *s, uint32_t key)
@@ -2420,7 +2420,7 @@ fixed-width-integer	libclamav/hashtab.c	947	cl_error_t cli_hashset_addkey(struct
 fixed-width-integer	libclamav/hashtab.c	966	cl_error_t cli_hashset_removekey(struct cli_hashset *hs, const uint32_t key)
 fixed-width-integer	libclamav/hashtab.c	978	bool cli_hashset_contains(const struct cli_hashset *hs, const uint32_t key)
 fixed-width-integer	libclamav/hashtab.c	984	ssize_t cli_hashset_toarray(const struct cli_hashset *hs, uint32_t **array)
-fixed-width-integer	libclamav/hashtab.c	987	    uint32_t *arr;
+fixed-width-integer	libclamav/hashtab.c	988	    uint32_t *arr;
 fixed-width-integer	libclamav/hashtab.h	187	    uint32_t key;
 fixed-width-integer	libclamav/hashtab.h	278	const struct cli_htu32_element *cli_htu32_find(const struct cli_htu32 *s, uint32_t key);
 fixed-width-integer	libclamav/hashtab.h	286	void cli_htu32_delete(struct cli_htu32 *s, uint32_t key);
@@ -6307,11 +6307,13 @@ fixed-width-integer	unit_tests/check_bytecode.c	1704	    uint32_t lsigcnt[64] = 
 fixed-width-integer	unit_tests/check_bytecode.c	1705	    uint64_t lsigoff[64];
 fixed-width-integer	unit_tests/check_bytecode.c	1884	     * 1-GiB-plus values. The old uint32_t product wrapped to four bytes. */
 fixed-width-integer	unit_tests/check_bytecode.c	1953	                                      CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1,
-fixed-width-integer	unit_tests/check_bytecode.c	1970	    ck_assert_int_eq(cli_hashtab_table_size(0, sizeof(uint32_t), &bytes), CL_SUCCESS);
-fixed-width-integer	unit_tests/check_bytecode.c	1972	    ck_assert_int_eq(cli_hashtab_table_size(CLI_MAX_ALLOCATION / sizeof(uint32_t), sizeof(uint32_t), &bytes), CL_SUCCESS);
-fixed-width-integer	unit_tests/check_bytecode.c	1973	    ck_assert_int_eq(cli_hashtab_table_size(CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1, sizeof(uint32_t), &bytes), CL_ERESOURCE);
-fixed-width-integer	unit_tests/check_bytecode.c	1974	    ck_assert_int_eq(cli_hashtab_table_size(SIZE_MAX, sizeof(uint32_t), &bytes), CL_ERESOURCE);
-fixed-width-integer	unit_tests/check_bytecode.c	1976	    ck_assert_int_eq(cli_hashtab_table_size(1, sizeof(uint32_t), NULL), CL_EARG);
+fixed-width-integer	unit_tests/check_bytecode.c	1966	    uint32_t *hashset_array = NULL;
+fixed-width-integer	unit_tests/check_bytecode.c	1972	    ck_assert_int_eq(cli_hashtab_table_size(0, sizeof(uint32_t), &bytes), CL_SUCCESS);
+fixed-width-integer	unit_tests/check_bytecode.c	1974	    ck_assert_int_eq(cli_hashtab_table_size(CLI_MAX_ALLOCATION / sizeof(uint32_t), sizeof(uint32_t), &bytes), CL_SUCCESS);
+fixed-width-integer	unit_tests/check_bytecode.c	1975	    ck_assert_int_eq(cli_hashtab_table_size(CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1, sizeof(uint32_t), &bytes), CL_ERESOURCE);
+fixed-width-integer	unit_tests/check_bytecode.c	1976	    ck_assert_int_eq(cli_hashtab_table_size(SIZE_MAX, sizeof(uint32_t), &bytes), CL_ERESOURCE);
+fixed-width-integer	unit_tests/check_bytecode.c	1978	    ck_assert_int_eq(cli_hashtab_table_size(1, sizeof(uint32_t), NULL), CL_EARG);
+fixed-width-integer	unit_tests/check_bytecode.c	2009	    hashset.count = CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1U;
 fixed-width-integer	unit_tests/check_bytecode.c	577	    if (offset < 0 || (uint64_t)offset >= state->length)
 fixed-width-integer	unit_tests/check_bytecode.c	603	    if (offset < 0 || (uint64_t)offset >= state->length)
 fixed-width-integer	unit_tests/check_bytecode.c	624	                                          size_t offset, uint64_t value)
@@ -11027,14 +11029,14 @@ native-width-integer	libclamav/gpt.c	757	    size_t maplen;
 native-width-integer	libclamav/gpt.c	785	    pos = (size_t)hdr.tableStartLBA * sectorsize;
 native-width-integer	libclamav/gpt.h	96	size_t gpt_detect_size(fmap_t *map);
 native-width-integer	libclamav/gpt.h	97	cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize);
-native-width-integer	libclamav/hashtab.c	1045	static int cli_map_allocation_size_valid(size_t count, size_t element_size)
-native-width-integer	libclamav/hashtab.c	1073	        const size_t value_count = (size_t)n;
-native-width-integer	libclamav/hashtab.c	1074	        const size_t value_size  = (size_t)m->valuesize;
-native-width-integer	libclamav/hashtab.c	1090	        if (!cli_map_allocation_size_valid((size_t)n, sizeof(*v))) {
-native-width-integer	libclamav/hashtab.c	1094	        v = cli_max_realloc(m->u.unsized_values, (size_t)n * sizeof(*v));
+native-width-integer	libclamav/hashtab.c	1049	static int cli_map_allocation_size_valid(size_t count, size_t element_size)
+native-width-integer	libclamav/hashtab.c	1077	        const size_t value_count = (size_t)n;
+native-width-integer	libclamav/hashtab.c	1078	        const size_t value_size  = (size_t)m->valuesize;
+native-width-integer	libclamav/hashtab.c	1094	        if (!cli_map_allocation_size_valid((size_t)n, sizeof(*v))) {
+native-width-integer	libclamav/hashtab.c	1098	        v = cli_max_realloc(m->u.unsized_values, (size_t)n * sizeof(*v));
 native-width-integer	libclamav/hashtab.c	111	static inline void PROFILE_FIND_NOTFOUND(struct cli_hashtable *s, size_t tries)
 native-width-integer	libclamav/hashtab.c	117	static inline void PROFILE_FIND_FOUND(struct cli_hashtable *s, size_t tries)
-native-width-integer	libclamav/hashtab.c	1190	int cli_map_getvalue_size(struct cli_map *m)
+native-width-integer	libclamav/hashtab.c	1194	int cli_map_getvalue_size(struct cli_map *m)
 native-width-integer	libclamav/hashtab.c	133	static inline void PROFILE_GROW_FOUND(struct cli_hashtable *s, size_t tries)
 native-width-integer	libclamav/hashtab.c	143	static inline void PROFILE_DELETED_REUSE(struct cli_hashtable *s, size_t tries)
 native-width-integer	libclamav/hashtab.c	149	static inline void PROFILE_INSERT(struct cli_hashtable *s, size_t tries)
@@ -11098,6 +11100,7 @@ native-width-integer	libclamav/hashtab.c	968	    const size_t idx = cli_hashset_
 native-width-integer	libclamav/hashtab.c	980	    const size_t idx = cli_hashset_search(hs, key);
 native-width-integer	libclamav/hashtab.c	984	ssize_t cli_hashset_toarray(const struct cli_hashset *hs, uint32_t **array)
 native-width-integer	libclamav/hashtab.c	986	    size_t i, j;
+native-width-integer	libclamav/hashtab.c	987	    size_t array_size;
 native-width-integer	libclamav/hashtab.h	108	cl_error_t cli_hashtab_table_size(size_t count, size_t element_size, size_t *bytes);
 native-width-integer	libclamav/hashtab.h	121	struct cli_element *cli_hashtab_find(const struct cli_hashtable *s, const char *key, const size_t len);
 native-width-integer	libclamav/hashtab.h	130	cl_error_t cli_hashtab_init(struct cli_hashtable *s, size_t capacity);
@@ -18482,9 +18485,9 @@ native-width-integer	unit_tests/check_bytecode.c	1501	    const size_t first_siz
 native-width-integer	unit_tests/check_bytecode.c	1502	    const size_t second_offset = first_offset + 4U + first_size;
 native-width-integer	unit_tests/check_bytecode.c	1503	    const off_t pdf_start = (off_t)UINT32_MAX + 64;
 native-width-integer	unit_tests/check_bytecode.c	1554	    map.len                  = (size_t)UINT64_C(4294967296);
-native-width-integer	unit_tests/check_bytecode.c	1965	    size_t bytes;
-native-width-integer	unit_tests/check_bytecode.c	1966	    size_t capacity;
-native-width-integer	unit_tests/check_bytecode.c	1967	    size_t u32_capacity;
+native-width-integer	unit_tests/check_bytecode.c	1967	    size_t bytes;
+native-width-integer	unit_tests/check_bytecode.c	1968	    size_t capacity;
+native-width-integer	unit_tests/check_bytecode.c	1969	    size_t u32_capacity;
 native-width-integer	unit_tests/check_bytecode.c	519	    int rc;
 native-width-integer	unit_tests/check_bytecode.c	565	    size_t length;
 native-width-integer	unit_tests/check_bytecode.c	566	    off_t fail_at;
@@ -21083,8 +21086,8 @@ boundary-constant	libclamav/gpt.c	413	    if (hdr.tableStartLBA > SIZE_MAX / sec
 boundary-constant	libclamav/gpt.c	548	        hdr.tableStartLBA > SIZE_MAX / sectorsize ||
 boundary-constant	libclamav/gpt.c	549	        hdr.tableNumEntries > SIZE_MAX / hdr.tableEntrySize) {
 boundary-constant	libclamav/gpt.c	781	        hdr.tableStartLBA > SIZE_MAX / sectorsize) {
-boundary-constant	libclamav/hashtab.c	1047	    return element_size != 0 && count <= SIZE_MAX / element_size &&
-boundary-constant	libclamav/hashtab.c	1067	    if (m->nvalues == UINT32_MAX) {
+boundary-constant	libclamav/hashtab.c	1051	    return element_size != 0 && count <= SIZE_MAX / element_size &&
+boundary-constant	libclamav/hashtab.c	1071	    if (m->nvalues == UINT32_MAX) {
 boundary-constant	libclamav/hashtab.c	382	    if (s->capacity == SIZE_MAX)
 boundary-constant	libclamav/hashtab.c	447	    if (s->capacity == SIZE_MAX)
 boundary-constant	libclamav/hashtab.c	49	        if (n > SIZE_MAX / 2)
@@ -21379,7 +21382,7 @@ boundary-constant	unit_tests/check_bytecode.c	1547	    ck_assert(cli_bytecode_fi
 boundary-constant	unit_tests/check_bytecode.c	1608	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_bytecode.c	1655	    bcctx->lsigoff[0] = (uint64_t)UINT32_MAX + 1;
 boundary-constant	unit_tests/check_bytecode.c	1909	    bytecode_ctx.njsonobjs = UINT_MAX;
-boundary-constant	unit_tests/check_bytecode.c	1974	    ck_assert_int_eq(cli_hashtab_table_size(SIZE_MAX, sizeof(uint32_t), &bytes), CL_ERESOURCE);
+boundary-constant	unit_tests/check_bytecode.c	1976	    ck_assert_int_eq(cli_hashtab_table_size(SIZE_MAX, sizeof(uint32_t), &bytes), CL_ERESOURCE);
 boundary-constant	unit_tests/check_bytecode.c	610	    if (state->marker_offset > SIZE_MAX - state->marker_length)
 boundary-constant	unit_tests/check_bytecode.c	675	        size_t offset = SIZE_MAX;
 boundary-constant	unit_tests/check_bytecode.c	681	        } else if (line[0] == 'E' && maxapi != UINT_MAX) {
@@ -27966,26 +27969,26 @@ offset-size-arithmetic	libclamav/gpt.h	52	/* 92-byte gpt_header, these are littl
 offset-size-arithmetic	libclamav/gpt.h	75	    /* zeroes fill remainder of sector (420 bytes in 512 sector size) */
 offset-size-arithmetic	libclamav/gpt.h	78	/* 128-byte partition entry, part of an array of 128+ entries, in little_endian */
 offset-size-arithmetic	libclamav/gpt.h	96	size_t gpt_detect_size(fmap_t *map);
-offset-size-arithmetic	libclamav/hashtab.c	1009	    memset(hs, 0, sizeof(*hs));
-offset-size-arithmetic	libclamav/hashtab.c	1030	    memset(m, 0, sizeof(*m));
-offset-size-arithmetic	libclamav/hashtab.c	1047	    return element_size != 0 && count <= SIZE_MAX / element_size &&
-offset-size-arithmetic	libclamav/hashtab.c	1074	        const size_t value_size  = (size_t)m->valuesize;
-offset-size-arithmetic	libclamav/hashtab.c	1080	        v = cli_max_realloc(m->u.sized_values, value_count * value_size);
-offset-size-arithmetic	libclamav/hashtab.c	1086	        memset((char *)m->u.sized_values + (value_count - 1) * value_size, 0, value_size);
-offset-size-arithmetic	libclamav/hashtab.c	1090	        if (!cli_map_allocation_size_valid((size_t)n, sizeof(*v))) {
-offset-size-arithmetic	libclamav/hashtab.c	1094	        v = cli_max_realloc(m->u.unsized_values, (size_t)n * sizeof(*v));
-offset-size-arithmetic	libclamav/hashtab.c	1100	        memset(&m->u.unsized_values[n - 1], 0, sizeof(*m->u.unsized_values));
-offset-size-arithmetic	libclamav/hashtab.c	1103	    if (!cli_hashtab_insert(&m->htab, key, keysize, (const cli_element_data)(n - 1))) {
-offset-size-arithmetic	libclamav/hashtab.c	1130	        struct cli_map_value *v = &m->u.unsized_values[(int32_t)el->data];
-offset-size-arithmetic	libclamav/hashtab.c	1135	        char *v = (char *)m->u.sized_values + (int32_t)el->data * m->valuesize;
-offset-size-arithmetic	libclamav/hashtab.c	1146	    if ((m->valuesize && m->valuesize != valuesize) || (uint32_t)(m->last_insert) >= m->nvalues || m->last_insert < 0) {
-offset-size-arithmetic	libclamav/hashtab.c	1151	        memcpy((char *)m->u.sized_values + m->last_insert * m->valuesize,
-offset-size-arithmetic	libclamav/hashtab.c	1154	        struct cli_map_value *v = &m->u.unsized_values[m->last_insert];
-offset-size-arithmetic	libclamav/hashtab.c	1190	int cli_map_getvalue_size(struct cli_map *m)
-offset-size-arithmetic	libclamav/hashtab.c	1200	    return m->u.unsized_values[m->last_find].valuesize;
-offset-size-arithmetic	libclamav/hashtab.c	1210	        return (char *)m->u.sized_values + m->last_find * m->valuesize;
-offset-size-arithmetic	libclamav/hashtab.c	1213	    return m->u.unsized_values[m->last_find].value;
-offset-size-arithmetic	libclamav/hashtab.c	1232	    memset(m, 0, sizeof(*m));
+offset-size-arithmetic	libclamav/hashtab.c	1013	    memset(hs, 0, sizeof(*hs));
+offset-size-arithmetic	libclamav/hashtab.c	1034	    memset(m, 0, sizeof(*m));
+offset-size-arithmetic	libclamav/hashtab.c	1051	    return element_size != 0 && count <= SIZE_MAX / element_size &&
+offset-size-arithmetic	libclamav/hashtab.c	1078	        const size_t value_size  = (size_t)m->valuesize;
+offset-size-arithmetic	libclamav/hashtab.c	1084	        v = cli_max_realloc(m->u.sized_values, value_count * value_size);
+offset-size-arithmetic	libclamav/hashtab.c	1090	        memset((char *)m->u.sized_values + (value_count - 1) * value_size, 0, value_size);
+offset-size-arithmetic	libclamav/hashtab.c	1094	        if (!cli_map_allocation_size_valid((size_t)n, sizeof(*v))) {
+offset-size-arithmetic	libclamav/hashtab.c	1098	        v = cli_max_realloc(m->u.unsized_values, (size_t)n * sizeof(*v));
+offset-size-arithmetic	libclamav/hashtab.c	1104	        memset(&m->u.unsized_values[n - 1], 0, sizeof(*m->u.unsized_values));
+offset-size-arithmetic	libclamav/hashtab.c	1107	    if (!cli_hashtab_insert(&m->htab, key, keysize, (const cli_element_data)(n - 1))) {
+offset-size-arithmetic	libclamav/hashtab.c	1134	        struct cli_map_value *v = &m->u.unsized_values[(int32_t)el->data];
+offset-size-arithmetic	libclamav/hashtab.c	1139	        char *v = (char *)m->u.sized_values + (int32_t)el->data * m->valuesize;
+offset-size-arithmetic	libclamav/hashtab.c	1150	    if ((m->valuesize && m->valuesize != valuesize) || (uint32_t)(m->last_insert) >= m->nvalues || m->last_insert < 0) {
+offset-size-arithmetic	libclamav/hashtab.c	1155	        memcpy((char *)m->u.sized_values + m->last_insert * m->valuesize,
+offset-size-arithmetic	libclamav/hashtab.c	1158	        struct cli_map_value *v = &m->u.unsized_values[m->last_insert];
+offset-size-arithmetic	libclamav/hashtab.c	1194	int cli_map_getvalue_size(struct cli_map *m)
+offset-size-arithmetic	libclamav/hashtab.c	1204	    return m->u.unsized_values[m->last_find].valuesize;
+offset-size-arithmetic	libclamav/hashtab.c	1214	        return (char *)m->u.sized_values + m->last_find * m->valuesize;
+offset-size-arithmetic	libclamav/hashtab.c	1217	    return m->u.unsized_values[m->last_find].value;
+offset-size-arithmetic	libclamav/hashtab.c	1236	    memset(m, 0, sizeof(*m));
 offset-size-arithmetic	libclamav/hashtab.c	191	    cli_dbgmsg("--------Report end-------------\n");
 offset-size-arithmetic	libclamav/hashtab.c	221	    ret = cli_hashtab_capacity(capacity, sizeof(*s->htable), &capacity);
 offset-size-arithmetic	libclamav/hashtab.c	225	    s->htable = cli_max_calloc(capacity, sizeof(*s->htable));
@@ -28035,7 +28038,7 @@ offset-size-arithmetic	libclamav/hashtab.c	929	        rc = cli_hashset_init(&ne
 offset-size-arithmetic	libclamav/hashtab.c	937	            const size_t key = hs->keys[i];
 offset-size-arithmetic	libclamav/hashtab.c	98	    memset(&s->PROFILE_STRUCT, 0, sizeof(s->PROFILE_STRUCT));
 offset-size-arithmetic	libclamav/hashtab.c	984	ssize_t cli_hashset_toarray(const struct cli_hashset *hs, uint32_t **array)
-offset-size-arithmetic	libclamav/hashtab.c	993	    *array = arr = cli_max_malloc(hs->count * sizeof(*arr));
+offset-size-arithmetic	libclamav/hashtab.c	994	    if (cli_hashtab_table_size(hs->count, sizeof(*arr), &array_size) != CL_SUCCESS)
 offset-size-arithmetic	libclamav/hashtab.h	108	cl_error_t cli_hashtab_table_size(size_t count, size_t element_size, size_t *bytes);
 offset-size-arithmetic	libclamav/hashtab.h	249	cl_error_t cli_htu32_init(struct cli_htu32 *s, size_t capacity, mpool_t *mempool);
 offset-size-arithmetic	libclamav/hashtab.h	312	size_t cli_htu32_numitems(struct cli_htu32 *s);
@@ -36547,10 +36550,11 @@ offset-size-arithmetic	unit_tests/check_bytecode.c	1760	    engine->hooks[hook_s
 offset-size-arithmetic	unit_tests/check_bytecode.c	1770	    hook_bc->funcs                = calloc(1, sizeof(*hook_bc->funcs));
 offset-size-arithmetic	unit_tests/check_bytecode.c	1918	    /* INT32_MAX must not overflow the signed name_len + 1 expression. */
 offset-size-arithmetic	unit_tests/check_bytecode.c	1953	                                      CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1,
-offset-size-arithmetic	unit_tests/check_bytecode.c	1972	    ck_assert_int_eq(cli_hashtab_table_size(CLI_MAX_ALLOCATION / sizeof(uint32_t), sizeof(uint32_t), &bytes), CL_SUCCESS);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1973	    ck_assert_int_eq(cli_hashtab_table_size(CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1, sizeof(uint32_t), &bytes), CL_ERESOURCE);
-offset-size-arithmetic	unit_tests/check_bytecode.c	1979	    while (capacity <= CLI_MAX_ALLOCATION / sizeof(struct cli_element) / 2)
-offset-size-arithmetic	unit_tests/check_bytecode.c	1982	    while (u32_capacity <= CLI_MAX_ALLOCATION / sizeof(struct cli_htu32_element) / 2)
+offset-size-arithmetic	unit_tests/check_bytecode.c	1974	    ck_assert_int_eq(cli_hashtab_table_size(CLI_MAX_ALLOCATION / sizeof(uint32_t), sizeof(uint32_t), &bytes), CL_SUCCESS);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1975	    ck_assert_int_eq(cli_hashtab_table_size(CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1, sizeof(uint32_t), &bytes), CL_ERESOURCE);
+offset-size-arithmetic	unit_tests/check_bytecode.c	1981	    while (capacity <= CLI_MAX_ALLOCATION / sizeof(struct cli_element) / 2)
+offset-size-arithmetic	unit_tests/check_bytecode.c	1984	    while (u32_capacity <= CLI_MAX_ALLOCATION / sizeof(struct cli_htu32_element) / 2)
+offset-size-arithmetic	unit_tests/check_bytecode.c	2009	    hashset.count = CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1U;
 offset-size-arithmetic	unit_tests/check_bytecode.c	521	    str = malloc(strlen(SRCDIR) + 1 + strlen(dbname) + 1);
 offset-size-arithmetic	unit_tests/check_bytecode.c	569	static off_t bytecode_failing_pread_cb(void *handle, void *buf, size_t count, off_t offset)
 offset-size-arithmetic	unit_tests/check_bytecode.c	573	    if (offset >= state->fail_at) {

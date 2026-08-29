@@ -1962,6 +1962,8 @@ START_TEST(test_hashtab_capacity_admission_is_fail_visible)
     struct cli_hashtable table;
     struct cli_htu32 u32table;
     struct cli_htu32_element item;
+    struct cli_hashset hashset;
+    uint32_t *hashset_array = NULL;
     size_t bytes;
     size_t capacity;
     size_t u32_capacity;
@@ -2002,6 +2004,12 @@ START_TEST(test_hashtab_capacity_admission_is_fail_visible)
     u32table.used     = 1;
     u32table.maxfill  = 0;
     ck_assert_int_eq(cli_htu32_insert(&u32table, &item, NULL), CL_ERESOURCE);
+
+    memset(&hashset, 0, sizeof(hashset));
+    hashset.count = CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1U;
+    ck_assert_int_eq(cli_hashset_toarray(&hashset, &hashset_array), -1);
+    ck_assert_ptr_null(hashset_array);
+    ck_assert_int_eq(cli_hashset_toarray(NULL, &hashset_array), -1);
 }
 END_TEST
 
