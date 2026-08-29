@@ -18,6 +18,20 @@ production-GCC check. Full hash-table caller corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## PDFNG string materialization admission — 2026-08-29
+
+PDFNG string finalization and UTF conversion used the shared allocation
+wrappers but returned `NULL` without marking the confirmed PDF layer
+incomplete when a working, escape, decrypt, or conversion result buffer could
+not be allocated. The parser could therefore treat a required string as an
+ordinary parse miss and retain a clean-looking layer. These allocation failure
+paths now record a sticky incomplete reason. The registered
+`test_pdfng_string_allocation_is_fail_visible` regression passes an invalid
+pointer with an over-limit length and verifies rejection occurs before input
+access. Current-source production-GCC execution, complete PDFNG/string
+corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+and final parser/release qualification remain open.
+
 ## Bytecode interpreter layout-size admission — 2026-08-29
 
 The bytecode interpreter previously bounded individual type and table

@@ -93,6 +93,12 @@ static int pdfng_checktimelimit_at(struct pdf_struct *pdf, const char *reason, s
     return pdfng_checktimelimit(pdf, reason);
 }
 
+static void pdfng_mark_alloc_failure(struct pdf_struct *pdf, const char *reason)
+{
+    if (pdf != NULL && pdf->ctx != NULL)
+        cli_mark_scan_incomplete(pdf->ctx, reason);
+}
+
 static void pdfng_cleanup_referenced_object(struct pdf_struct *pdf, int *fd, char **path)
 {
     if (fd && *fd >= 0) {
@@ -122,8 +128,10 @@ static char *pdf_convert_utf(struct pdf_struct *pdf, char *begin, size_t sz)
 #endif
 
     buf = cli_max_calloc(1, sz + 1);
-    if (!(buf))
+    if (!(buf)) {
+        pdfng_mark_alloc_failure(pdf, "PDF UTF string conversion buffer could not be allocated");
         return NULL;
+    }
 
     if (pdfng_checktimelimit(pdf, "PDF UTF string conversion reached the configured time limit")) {
         free(buf);
@@ -141,6 +149,7 @@ static char *pdf_convert_utf(struct pdf_struct *pdf, char *begin, size_t sz)
 
     p2 = outbuf = cli_max_calloc(1, sz + 1);
     if (!(outbuf)) {
+        pdfng_mark_alloc_failure(pdf, "PDF UTF string conversion output could not be allocated");
         free(buf);
         return NULL;
     }
@@ -176,6 +185,8 @@ static char *pdf_convert_utf(struct pdf_struct *pdf, char *begin, size_t sz)
         outbuf[sz - outlen] = '\0';
 
         res = strdup(outbuf);
+        if (res == NULL)
+            pdfng_mark_alloc_failure(pdf, "PDF UTF string conversion result could not be allocated");
         if (iconv_close(cd) != 0 && pdf && pdf->ctx)
             cli_mark_scan_incomplete(pdf->ctx, "PDF UTF conversion state could not be closed");
         break;
@@ -183,6 +194,7 @@ static char *pdf_convert_utf(struct pdf_struct *pdf, char *begin, size_t sz)
 #else
     outbuf = cli_utf16_to_utf8(buf, sz, E_UTF16);
     if (!outbuf) {
+        pdfng_mark_alloc_failure(pdf, "PDF UTF string conversion result could not be allocated");
         free(buf);
         return NULL;
     }
@@ -194,6 +206,8 @@ static char *pdf_convert_utf(struct pdf_struct *pdf, char *begin, size_t sz)
     }
 
     res = strdup(outbuf);
+    if (res == NULL)
+        pdfng_mark_alloc_failure(pdf, "PDF UTF string conversion result could not be allocated");
 #endif
     free(buf);
     free(outbuf);
@@ -410,8 +424,10 @@ char *pdf_finalize_string(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
 
     /* get a working copy */
     wrkstr = cli_max_calloc(len + 1, sizeof(char));
-    if (!wrkstr)
+    if (!wrkstr) {
+        pdfng_mark_alloc_failure(pdf, "PDF string working buffer could not be allocated");
         return NULL;
+    }
     memcpy(wrkstr, in, len);
 
     // cli_errmsg("pdf_final: start(%d):   %s\n", wrklen, wrkstr);
@@ -421,6 +437,7 @@ char *pdf_finalize_string(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
     if (strchr(wrkstr, '\\')) {
         output = cli_max_calloc(wrklen + 1, sizeof(char));
         if (!output) {
+            pdfng_mark_alloc_failure(pdf, "PDF string escape buffer could not be allocated");
             free(wrkstr);
             return NULL;
         }
@@ -489,6 +506,7 @@ char *pdf_finalize_string(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
         free(wrkstr);
         wrkstr = cli_max_calloc(outlen + 1, sizeof(char));
         if (!wrkstr) {
+            pdfng_mark_alloc_failure(pdf, "PDF string escape result could not be allocated");
             free(output);
             return NULL;
         }
@@ -508,6 +526,7 @@ char *pdf_finalize_string(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
         if (output) {
             wrkstr = cli_max_calloc(outlen + 1, sizeof(char));
             if (!wrkstr) {
+                pdfng_mark_alloc_failure(pdf, "PDF decrypted string buffer could not be allocated");
                 free(output);
                 return NULL;
             }

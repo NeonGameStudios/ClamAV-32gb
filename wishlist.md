@@ -12,6 +12,14 @@
   production-CVD/service, materialized-large-file, Sonic1, and final
   parser/release qualification remain open.
 
+## PDFNG string materialization admission — 2026-08-29
+
+- Mark PDFNG working, escape, decrypt, and UTF-conversion string allocation
+  failures incomplete before returning a null parse result.
+- Retain the no-read over-limit regression and add production-GCC, complete
+  PDFNG/string corpus, sanitizer, production-CVD/service, materialized-large-
+  file, Sonic1, and final qualification evidence.
+
 ## Bytecode interpreter layout-size admission — 2026-08-29
 
 - Keep aligned global, function-value, constant, and context parameter

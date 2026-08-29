@@ -16251,6 +16251,27 @@ START_TEST(test_pdf_encryption_buffer_size_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdfng_string_allocation_is_fail_visible)
+{
+    struct cli_ctx ctx;
+    struct pdf_struct pdf;
+    char *result;
+
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&pdf, 0, sizeof(pdf));
+    pdf.ctx = &ctx;
+
+    /* cli_max_calloc rejects this before touching the deliberately invalid
+     * input pointer; the confirmed PDF layer must still become incomplete. */
+    result = pdf_finalize_string(&pdf, NULL, (const char *)(uintptr_t)1,
+                                 (size_t)CLI_MAX_ALLOCATION, NULL);
+    ck_assert_ptr_null(result);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PDF string working buffer could not be allocated");
+}
+END_TEST
+
 #if SIZE_MAX > UINT32_MAX
 START_TEST(test_pdf_stream_width_boundary_is_fail_visible)
 {
@@ -47834,6 +47855,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_explicit_identity_crypt_precedes_supported_filters);
     tcase_add_test(tc_pdf, test_pdf_legacy_dictionary_length_boundary_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_encryption_buffer_size_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdfng_string_allocation_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_flate_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_lzw_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_ascii85_markerless_partial_group_is_fail_visible);
