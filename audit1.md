@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## PE FSG section-table product admission — 2026-08-29
+
+The legacy PE FSG paths counted packed sections from attacker-controlled
+support data and formed `(sectcnt + 1) * sizeof(struct cli_exe_section)`
+directly. On a 32-bit `size_t`, a support region that is within the existing
+1-GiB unpack limit could still wrap this allocation size before
+`cli_max_malloc()`, allowing the subsequent section-table writes to exceed
+the allocation. Both FSG allocation sites now call
+`cli_pe_fsg_section_table_size()`, which checks native representability and
+the individual-allocation ceiling before multiplication. The registered
+`test_pe_fsg_section_table_size_rejects_overflow` boundary test is covered by
+an isolated current-source GCC harness (`pe_fsg_section_table_guard_passed`),
+and the edited PE source passes the Docker production-GCC syntax check. The
+full stale unit translation still stops on pre-existing missing `cryptff`
+test declarations; full PE/unpacker corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.
+
 ## Mpool calloc count-product admission — 2026-08-29
 
 The `USE_MPOOL` allocator formed `nmemb * size` before checking whether the

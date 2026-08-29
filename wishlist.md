@@ -1,5 +1,17 @@
 # Wishlist
 
+## PE FSG section-table product admission — 2026-08-29
+
+- Keep both legacy PE FSG section-table allocations behind
+  `cli_pe_fsg_section_table_size()`, rejecting native-size product overflow
+  and requests above `CLI_MAX_ALLOCATION` before allocation or section-table
+  writes.
+- Retain `test_pe_fsg_section_table_size_rejects_overflow` and its source
+  guards. The isolated current-source GCC helper harness passes with
+  `pe_fsg_section_table_guard_passed`; full PE/unpacker corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, parser-family, and release qualification remain open.
+
 ## Mpool calloc count-product admission — 2026-08-29
 
 - Keep `USE_MPOOL` calloc fail-closed: reject zero operands and

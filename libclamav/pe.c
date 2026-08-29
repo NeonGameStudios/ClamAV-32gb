@@ -323,6 +323,19 @@ cl_error_t cli_pe_unpack_size_check(cli_ctx *ctx, const char *who, uint64_t size
     return cli_checklimits(who, ctx, size, 0, 0);
 }
 
+cl_error_t cli_pe_fsg_section_table_size(size_t section_count, size_t *bytes)
+{
+    if (bytes == NULL || section_count == 0)
+        return CL_EARG;
+
+    if (section_count > SIZE_MAX / sizeof(struct cli_exe_section) ||
+        section_count > CLI_MAX_ALLOCATION / sizeof(struct cli_exe_section))
+        return CL_ERESOURCE;
+
+    *bytes = section_count * sizeof(struct cli_exe_section);
+    return CL_SUCCESS;
+}
+
 static int cli_pe_add_u32(uint32_t left, uint32_t right, uint32_t *result)
 {
     if (result == NULL || UINT32_MAX - left < right)
@@ -4109,6 +4122,7 @@ int cli_scanpe(cli_ctx *ctx)
         int sectcnt = 0;
         const char *support;
         uint32_t newesi, newedi, oldep, gp, t, fsg_input_size;
+        size_t section_bytes;
         struct cli_exe_section *sections;
 
         /* FSG support - v. 1.33 (thx trog for the many samples) */
@@ -4179,8 +4193,14 @@ int cli_scanpe(cli_ctx *ctx)
             break;
         }
 
-        if ((sections = (struct cli_exe_section *)cli_max_malloc((sectcnt + 1) * sizeof(struct cli_exe_section))) == NULL) {
-            cli_errmsg("cli_scanpe: FSG: Unable to allocate memory for sections %llu\n", (long long unsigned)((sectcnt + 1) * sizeof(struct cli_exe_section)));
+        if (cli_pe_fsg_section_table_size((size_t)sectcnt + 1, &section_bytes) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "PE FSG section table exceeds allocation limits");
+            cli_exe_info_destroy(peinfo);
+            return CL_ERESOURCE;
+        }
+
+        if ((sections = (struct cli_exe_section *)cli_max_malloc(section_bytes)) == NULL) {
+            cli_errmsg("cli_scanpe: FSG: Unable to allocate memory for sections %llu\n", (long long unsigned)section_bytes);
             cli_exe_info_destroy(peinfo);
             return CL_EMEM;
         }
@@ -4235,6 +4255,7 @@ int cli_scanpe(cli_ctx *ctx)
         uint32_t gp, t = cli_rawaddr(cli_readint32(epbuff + 1) - EC32(peinfo->pe_opt.opt32.ImageBase), NULL, 0, &err, fsize, peinfo->hdr_size);
         uint32_t fsg_input_size;
         const char *support;
+        size_t section_bytes;
         uint32_t newesi = cli_readint32(epbuff + 11) - EC32(peinfo->pe_opt.opt32.ImageBase);
         uint32_t newedi = cli_readint32(epbuff + 6) - EC32(peinfo->pe_opt.opt32.ImageBase);
         uint32_t oldep  = peinfo->vep - peinfo->sections[i + 1].rva;
@@ -4300,8 +4321,14 @@ int cli_scanpe(cli_ctx *ctx)
         if (t >= gp - 10 || cli_readint32(support + t + 6) != 2)
             break;
 
-        if ((sections = (struct cli_exe_section *)cli_max_malloc((sectcnt + 1) * sizeof(struct cli_exe_section))) == NULL) {
-            cli_errmsg("cli_scanpe: FSG: Unable to allocate memory for sections %llu\n", (long long unsigned)((sectcnt + 1) * sizeof(struct cli_exe_section)));
+        if (cli_pe_fsg_section_table_size((size_t)sectcnt + 1, &section_bytes) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "PE FSG section table exceeds allocation limits");
+            cli_exe_info_destroy(peinfo);
+            return CL_ERESOURCE;
+        }
+
+        if ((sections = (struct cli_exe_section *)cli_max_malloc(section_bytes)) == NULL) {
+            cli_errmsg("cli_scanpe: FSG: Unable to allocate memory for sections %llu\n", (long long unsigned)section_bytes);
             cli_exe_info_destroy(peinfo);
             return CL_EMEM;
         }

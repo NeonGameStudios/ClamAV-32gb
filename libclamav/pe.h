@@ -78,6 +78,7 @@ int cli_scanpe(cli_ctx *ctx);
  * incomplete resource failures rather than partial unpack attempts.
  */
 cl_error_t cli_pe_unpack_size_check(cli_ctx *ctx, const char *who, uint64_t size);
+cl_error_t cli_pe_fsg_section_table_size(size_t section_count, size_t *bytes);
 
 enum {
     CL_GENHASH_PE_CLASS_SECTION,

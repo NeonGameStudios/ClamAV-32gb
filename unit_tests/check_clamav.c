@@ -36636,6 +36636,18 @@ START_TEST(test_pe_unpack_contiguous_size_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pe_fsg_section_table_size_rejects_overflow)
+{
+    size_t bytes;
+
+    ck_assert_int_eq(cli_pe_fsg_section_table_size(1, &bytes), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, sizeof(struct cli_exe_section));
+    ck_assert_int_eq(cli_pe_fsg_section_table_size(CLI_MAX_ALLOCATION / sizeof(struct cli_exe_section) + 1, &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_pe_fsg_section_table_size(SIZE_MAX, &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_pe_fsg_section_table_size(1, NULL), CL_EARG);
+}
+END_TEST
+
 static void assert_pe_unpack_section_read_failure(const char *file, const char *reason)
 {
     struct cl_engine *scan_engine;
@@ -47558,6 +47570,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_unpack_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_contiguous_size_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_fsg_section_table_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_fsg_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_upx_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pespin_limit_accounting_is_fail_visible);
