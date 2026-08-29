@@ -719,10 +719,13 @@ void mpool_free(struct MP *mp, void *ptr)
 
 void *mpool_calloc(struct MP *mp, size_t nmemb, size_t size)
 {
-    size_t needed = nmemb * size;
+    size_t needed;
     void *ptr;
 
-    if (!needed) return NULL;
+    if (!nmemb || !size || nmemb > SIZE_MAX / size)
+        return NULL;
+
+    needed = nmemb * size;
     if ((ptr = mpool_malloc(mp, needed)))
         memset(ptr, 0, needed);
     return ptr;

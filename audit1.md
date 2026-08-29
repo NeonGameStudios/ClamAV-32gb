@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Mpool calloc count-product admission — 2026-08-29
+
+The `USE_MPOOL` allocator formed `nmemb * size` before checking whether the
+product was representable. A malformed count could therefore wrap the pool
+allocation size before any parser-specific limit was reached. `mpool_calloc()`
+now rejects zero operands and count products larger than `SIZE_MAX` before
+multiplication. `test_mpool_calloc_rejects_count_product_wrap` exercises the
+maximal-count boundary without allocating memory, and the source guard keeps
+the check present. The modified allocator and matcher test translation unit
+pass the existing Docker production-GCC syntax checks with `USE_MPOOL`
+enabled, and an isolated harness linked against the current allocator object
+prints `mpool_count_product_rejected`. Full allocator-variant, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification remain open.
+
 ## AC matcher count-product admission — 2026-08-29
 
 The native AC matcher formed several per-scan allocation sizes directly from

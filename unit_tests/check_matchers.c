@@ -821,6 +821,21 @@ START_TEST(test_ac_initdata_rejects_count_product_wrap)
 }
 END_TEST
 
+START_TEST(test_mpool_calloc_rejects_count_product_wrap)
+{
+#ifdef USE_MPOOL
+    mpool_t *pool;
+
+    pool = mpool_create();
+    ck_assert_ptr_nonnull(pool);
+    ck_assert_ptr_null(mpool_calloc(pool, SIZE_MAX, 2));
+    mpool_destroy(pool);
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_pcre_full_map_range_arithmetic)
 {
     ck_assert(cli_matcher_window_reaches_map_end(31, 1, 32));
@@ -2564,6 +2579,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bm_initoff_rejects_coordinate_wrap);
     tcase_add_test(tc_matchers, test_ac_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_ac_initdata_rejects_count_product_wrap);
+    tcase_add_test(tc_matchers, test_mpool_calloc_rejects_count_product_wrap);
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
     tcase_add_test(tc_matchers, test_exact_hash_at_large_size);
