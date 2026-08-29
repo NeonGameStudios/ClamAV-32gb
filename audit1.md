@@ -35,6 +35,25 @@ bytecode execution/JIT, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification remain
 open.
 
+## UTF-16 converter output-size admission — 2026-08-29
+
+The exported UTF-16-to-UTF-8 helper formed `length * 3 / 2 + 2` before
+normalizing odd input lengths or checking the individual allocation ceiling. A
+native-size length selected near one third of the native maximum could make
+that product wrap to a tiny allocation and then cause the conversion loop to
+read through the caller's buffer far beyond its actual extent. The converter
+now reduces odd lengths first, checks the quotient before multiplication, and
+rejects both native arithmetic overflow and output above the 1-GiB individual
+allocation boundary before any input access. The registered
+`test_utf16_to_utf8_rejects_length_overflow` regression uses an invalid pointer
+with the wrapped-length shape, proving the rejection happens before a read.
+The same regression also supplies the first even input length whose computed
+output exceeds the 1-GiB individual allocation ceiling, covering the explicit
+resource boundary before any input access.
+Current-source GCC execution, sanitizer, complete text-normalization/ISO/HTML
+corpus, production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## JavaScript-normalizer decoder table admission — 2026-08-29
 
 The JavaScript normalizer's `decode_de()` path allocated its delimiter-token

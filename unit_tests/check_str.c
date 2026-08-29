@@ -28,6 +28,7 @@
 
 #include <stdlib.h>
 #include <limits.h>
+#include <stdint.h>
 #include <string.h>
 #include <check.h>
 
@@ -434,6 +435,21 @@ START_TEST(test_u16_u8)
 }
 END_TEST
 
+START_TEST(test_utf16_to_utf8_rejects_length_overflow)
+{
+    /* This length makes length * 3 wrap to a tiny value on unsigned native
+     * arithmetic. The converter must reject it before reading the pointer. */
+    const size_t overflowing_length = SIZE_MAX / 3 + 1;
+    const size_t over_allocation_length =
+        (((size_t)CLI_MAX_ALLOCATION - 2) / 3 + 1) * 2;
+
+    ck_assert_ptr_null(cli_utf16_to_utf8((const char *)(uintptr_t)1,
+                                         overflowing_length, E_UTF16_LE));
+    ck_assert_ptr_null(cli_utf16_to_utf8((const char *)(uintptr_t)1,
+                                         over_allocation_length, E_UTF16_LE));
+}
+END_TEST
+
 Suite *test_str_suite(void)
 {
     Suite *s = suite_create("str");
@@ -459,6 +475,7 @@ Suite *test_str_suite(void)
     tcase_add_test(tc_str, hex2str);
     tcase_add_test(tc_str, test_str2hex_rejects_output_size_wrap);
     tcase_add_test(tc_str, test_base64_decode_rejects_length_overflow);
+    tcase_add_test(tc_str, test_utf16_to_utf8_rejects_length_overflow);
 
     tcase_add_loop_test(tc_str, test_u16_u8, 0, sizeof(u16_tests) / sizeof(u16_tests[0]));
 

@@ -7797,3 +7797,14 @@ parser/release qualification as open requirements.
 - Add current-source GCC and sanitizer execution when the production harness
   is available; retain complete PDF filter, production-CVD/service,
   materialized-large-file, Sonic1, and final qualification as open.
+
+## UTF-16 converter output-size admission — 2026-08-29
+
+- Keep the shared UTF-16-to-UTF-8 converter behind quotient-first native-size
+  arithmetic and the 1-GiB individual allocation ceiling; reject wrapped
+  lengths before reading the input buffer.
+- Retain `test_utf16_to_utf8_rejects_length_overflow` for both native-size wrap
+  and the individual allocation ceiling, along with the source guards.
+  Current-source GCC execution, sanitizer, complete text-normalization/ISO/HTML
+  corpus, production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification remain open.

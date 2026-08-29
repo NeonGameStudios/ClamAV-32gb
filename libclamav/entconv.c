@@ -1504,7 +1504,7 @@ char* cli_utf16_to_utf8(const char* utf16, size_t length, encoding_t type)
      * 4 bytes for utf16 high+low surrogate (4 bytes input)
      * 3 bytes for utf16 otherwise (2 bytes input) */
     size_t i, j;
-    size_t needed = length * 3 / 2 + 2;
+    size_t needed;
     char* s2;
 
     if (length < 2)
@@ -1513,6 +1513,18 @@ char* cli_utf16_to_utf8(const char* utf16, size_t length, encoding_t type)
         cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
         length--;
     }
+
+    /* The output is at most three bytes per input code unit, plus a NUL.
+     * Check the quotient before multiplying so a caller-supplied native
+     * length cannot wrap the allocation-size expression into a small buffer.
+     * The individual allocation ceiling is part of this converter's contract
+     * even when the eventual caller has already bounded its input. */
+    if (length / 2 > (SIZE_MAX - 2) / 3 ||
+        length / 2 > ((size_t)CLI_MAX_ALLOCATION - 2) / 3) {
+        cli_dbgmsg("cli_utf16_to_utf8: output size exceeds the allocation boundary\n");
+        return NULL;
+    }
+    needed = (length / 2) * 3 + 2;
 
     s2 = cli_max_malloc(needed);
     if (!s2)
