@@ -1,5 +1,16 @@
 # Wishlist
 
+## Bytecode VM pointer-table admission — 2026-08-29
+
+- Keep stack and global pointer-registration table growth behind
+  `cli_bytecode_table_size_check()` so native multiplication and the 1-GiB
+  individual-allocation ceiling are checked before `cli_max_realloc()`.
+- Retain sticky `allocation_failed` propagation, the existing
+  `test_bytecode_table_size_admission_is_fail_visible` boundary regression,
+  and source guards. Full bytecode execution/JIT, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and release
+  qualification remain open.
+
 ## Bytecode API constructor failure atomicity — 2026-08-29
 
 - Keep hashset, map, inflate, LZMA, BZip2, and JavaScript-normalizer

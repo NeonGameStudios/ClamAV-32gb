@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Bytecode VM pointer-table admission — 2026-08-29
+
+The bytecode interpreter's stack and global pointer-registration tables now
+use `cli_bytecode_table_size_check()` before native-size multiplication and
+reallocation. The shared check enforces both representable products and the
+1-GiB individual-allocation ceiling while preserving sticky execution failure
+and the previous table on admission failure. The existing bytecode table-size
+regression and source guards cover the boundary. Full bytecode execution/JIT,
+sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+release qualification remain required.
+
 ## Bytecode API constructor failure atomicity — 2026-08-29
 
 Bytecode API resource constructors now keep hashset, map, decompressor, and

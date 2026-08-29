@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Bytecode VM pointer-table admission — 2026-08-29
+
+The bytecode interpreter's stack and global pointer-registration tables
+checked native multiplication overflow but did not apply the shared
+individual-allocation ceiling. A large or adversarially constructed execution
+state could therefore reach a table realloc that was outside the release
+resource contract. Both growth paths now use
+`cli_bytecode_table_size_check()` before forming the product; allocation
+failure remains sticky through `ptr_infos` and the old table remains owned by
+the context. The existing `test_bytecode_table_size_admission_is_fail_visible`
+regression covers the shared ceiling and native-wrap contract, and source
+guards pin both VM call sites. Full bytecode execution/JIT, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and release
+qualification remain open.
+
 ## Bytecode API constructor failure atomicity — 2026-08-29
 
 Bytecode API resource constructors previously published a new table count

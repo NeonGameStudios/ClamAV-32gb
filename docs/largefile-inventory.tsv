@@ -1444,53 +1444,53 @@ fixed-width-integer	libclamav/bytecode_priv.h	90	    uint16_t returnType;
 fixed-width-integer	libclamav/bytecode_priv.h	91	    uint16_t *types;
 fixed-width-integer	libclamav/bytecode_priv.h	92	    uint32_t insn_idx;
 fixed-width-integer	libclamav/bytecode_priv.h	95	    uint64_t *constants;
-fixed-width-integer	libclamav/bytecode_vm.c	1010	                            int32_t arg1, arg2;
-fixed-width-integer	libclamav/bytecode_vm.c	1024	                            int32_t arg1, arg2, arg3;
-fixed-width-integer	libclamav/bytecode_vm.c	1033	                            int32_t arg2, arg4;
-fixed-width-integer	libclamav/bytecode_vm.c	1035	                            int32_t resp;
-fixed-width-integer	libclamav/bytecode_vm.c	1046	                            int32_t arg2, arg3;
-fixed-width-integer	libclamav/bytecode_vm.c	1048	                            int32_t resp;
-fixed-width-integer	libclamav/bytecode_vm.c	1058	                            int64_t arg1;
-fixed-width-integer	libclamav/bytecode_vm.c	1059	                            uint32_t arg2;
-fixed-width-integer	libclamav/bytecode_vm.c	1068	                            uint32_t arg2, arg1size;
-fixed-width-integer	libclamav/bytecode_vm.c	1077	                            uint64_t arg1;
-fixed-width-integer	libclamav/bytecode_vm.c	1084	                            int32_t arg1;
-fixed-width-integer	libclamav/bytecode_vm.c	1092	                            uint32_t arg2;
-fixed-width-integer	libclamav/bytecode_vm.c	1093	                            uint64_t arg3;
+fixed-width-integer	libclamav/bytecode_vm.c	1011	                            int32_t arg1, arg2;
+fixed-width-integer	libclamav/bytecode_vm.c	1025	                            int32_t arg1, arg2, arg3;
+fixed-width-integer	libclamav/bytecode_vm.c	1034	                            int32_t arg2, arg4;
+fixed-width-integer	libclamav/bytecode_vm.c	1036	                            int32_t resp;
+fixed-width-integer	libclamav/bytecode_vm.c	1047	                            int32_t arg2, arg3;
+fixed-width-integer	libclamav/bytecode_vm.c	1049	                            int32_t resp;
+fixed-width-integer	libclamav/bytecode_vm.c	1059	                            int64_t arg1;
+fixed-width-integer	libclamav/bytecode_vm.c	1060	                            uint32_t arg2;
+fixed-width-integer	libclamav/bytecode_vm.c	1069	                            uint32_t arg2, arg1size;
+fixed-width-integer	libclamav/bytecode_vm.c	1078	                            uint64_t arg1;
+fixed-width-integer	libclamav/bytecode_vm.c	1085	                            int32_t arg1;
+fixed-width-integer	libclamav/bytecode_vm.c	1093	                            uint32_t arg2;
+fixed-width-integer	libclamav/bytecode_vm.c	1094	                            uint64_t arg3;
 fixed-width-integer	libclamav/bytecode_vm.c	112	#define SIGNEXT(a, from) CLI_SRS(((int64_t)(a)) << (64 - (from)), (64 - (from)))
-fixed-width-integer	libclamav/bytecode_vm.c	1138	                            uint16_t v;
-fixed-width-integer	libclamav/bytecode_vm.c	1142	                            *(uint16_t *)&values[j] = v;
-fixed-width-integer	libclamav/bytecode_vm.c	1147	                            uint32_t v;
-fixed-width-integer	libclamav/bytecode_vm.c	1151	                            *(uint32_t *)&values[j] = v;
-fixed-width-integer	libclamav/bytecode_vm.c	1156	                            uint64_t v;
-fixed-width-integer	libclamav/bytecode_vm.c	1160	                            *(uint64_t *)&values[j] = v;
-fixed-width-integer	libclamav/bytecode_vm.c	1168	                    int64_t stackptr = ptr_register_stack(&ptrinfos, values, 0, func->numBytes);
+fixed-width-integer	libclamav/bytecode_vm.c	1139	                            uint16_t v;
+fixed-width-integer	libclamav/bytecode_vm.c	1143	                            *(uint16_t *)&values[j] = v;
+fixed-width-integer	libclamav/bytecode_vm.c	1148	                            uint32_t v;
+fixed-width-integer	libclamav/bytecode_vm.c	1152	                            *(uint32_t *)&values[j] = v;
+fixed-width-integer	libclamav/bytecode_vm.c	1157	                            uint64_t v;
+fixed-width-integer	libclamav/bytecode_vm.c	1161	                            *(uint64_t *)&values[j] = v;
+fixed-width-integer	libclamav/bytecode_vm.c	1169	                    int64_t stackptr = ptr_register_stack(&ptrinfos, values, 0, func->numBytes);
 fixed-width-integer	libclamav/bytecode_vm.c	119	static always_inline int jump(const struct cli_bc_func *func, uint16_t bbid, struct cli_bc_bb **bb, const struct cli_bc_inst **inst,
-fixed-width-integer	libclamav/bytecode_vm.c	1193	                uint16_t op;
-fixed-width-integer	libclamav/bytecode_vm.c	1199	                uint32_t op;
-fixed-width-integer	libclamav/bytecode_vm.c	1205	                uint64_t op;
-fixed-width-integer	libclamav/bytecode_vm.c	1255	                uint16_t v;
-fixed-width-integer	libclamav/bytecode_vm.c	1263	                uint32_t v;
-fixed-width-integer	libclamav/bytecode_vm.c	1271	                uint64_t v;
-fixed-width-integer	libclamav/bytecode_vm.c	1284	                    int64_t ptr, iptr;
-fixed-width-integer	libclamav/bytecode_vm.c	1285	                    int32_t off;
-fixed-width-integer	libclamav/bytecode_vm.c	1300	                        iptr = (ptr & 0xffffffff00000000ULL) + (uint64_t)(off);
-fixed-width-integer	libclamav/bytecode_vm.c	1307	                    int32_t arg3;
-fixed-width-integer	libclamav/bytecode_vm.c	1317	                    int64_t arg3;
-fixed-width-integer	libclamav/bytecode_vm.c	1323	                    memcpy(arg1, arg2, (int32_t)arg3);
-fixed-width-integer	libclamav/bytecode_vm.c	1328	                    int64_t arg3;
-fixed-width-integer	libclamav/bytecode_vm.c	1334	                    memmove(arg1, arg2, (int32_t)arg3);
-fixed-width-integer	libclamav/bytecode_vm.c	1339	                    int64_t arg3;
-fixed-width-integer	libclamav/bytecode_vm.c	1340	                    int32_t arg2;
-fixed-width-integer	libclamav/bytecode_vm.c	1346	                    memset(arg1, arg2, (int32_t)arg3);
-fixed-width-integer	libclamav/bytecode_vm.c	1351	                    int16_t arg1;
-fixed-width-integer	libclamav/bytecode_vm.c	1358	                    int32_t arg1;
-fixed-width-integer	libclamav/bytecode_vm.c	1365	                    int64_t arg1;
-fixed-width-integer	libclamav/bytecode_vm.c	1372	                    int64_t ptr1, ptr2;
-fixed-width-integer	libclamav/bytecode_vm.c	1386	                    int64_t ptr;
-fixed-width-integer	libclamav/bytecode_vm.c	1396	                    int64_t ptr, iptr;
-fixed-width-integer	libclamav/bytecode_vm.c	1397	                    int32_t off;
-fixed-width-integer	libclamav/bytecode_vm.c	1415	                        iptr = (ptr & 0xffffffff00000000ULL) + (uint64_t)(off);
+fixed-width-integer	libclamav/bytecode_vm.c	1194	                uint16_t op;
+fixed-width-integer	libclamav/bytecode_vm.c	1200	                uint32_t op;
+fixed-width-integer	libclamav/bytecode_vm.c	1206	                uint64_t op;
+fixed-width-integer	libclamav/bytecode_vm.c	1256	                uint16_t v;
+fixed-width-integer	libclamav/bytecode_vm.c	1264	                uint32_t v;
+fixed-width-integer	libclamav/bytecode_vm.c	1272	                uint64_t v;
+fixed-width-integer	libclamav/bytecode_vm.c	1285	                    int64_t ptr, iptr;
+fixed-width-integer	libclamav/bytecode_vm.c	1286	                    int32_t off;
+fixed-width-integer	libclamav/bytecode_vm.c	1301	                        iptr = (ptr & 0xffffffff00000000ULL) + (uint64_t)(off);
+fixed-width-integer	libclamav/bytecode_vm.c	1308	                    int32_t arg3;
+fixed-width-integer	libclamav/bytecode_vm.c	1318	                    int64_t arg3;
+fixed-width-integer	libclamav/bytecode_vm.c	1324	                    memcpy(arg1, arg2, (int32_t)arg3);
+fixed-width-integer	libclamav/bytecode_vm.c	1329	                    int64_t arg3;
+fixed-width-integer	libclamav/bytecode_vm.c	1335	                    memmove(arg1, arg2, (int32_t)arg3);
+fixed-width-integer	libclamav/bytecode_vm.c	1340	                    int64_t arg3;
+fixed-width-integer	libclamav/bytecode_vm.c	1341	                    int32_t arg2;
+fixed-width-integer	libclamav/bytecode_vm.c	1347	                    memset(arg1, arg2, (int32_t)arg3);
+fixed-width-integer	libclamav/bytecode_vm.c	1352	                    int16_t arg1;
+fixed-width-integer	libclamav/bytecode_vm.c	1359	                    int32_t arg1;
+fixed-width-integer	libclamav/bytecode_vm.c	1366	                    int64_t arg1;
+fixed-width-integer	libclamav/bytecode_vm.c	1373	                    int64_t ptr1, ptr2;
+fixed-width-integer	libclamav/bytecode_vm.c	1387	                    int64_t ptr;
+fixed-width-integer	libclamav/bytecode_vm.c	1397	                    int64_t ptr, iptr;
+fixed-width-integer	libclamav/bytecode_vm.c	1398	                    int32_t off;
+fixed-width-integer	libclamav/bytecode_vm.c	1416	                        iptr = (ptr & 0xffffffff00000000ULL) + (uint64_t)(off);
 fixed-width-integer	libclamav/bytecode_vm.c	142	    uint16_t last_size;
 fixed-width-integer	libclamav/bytecode_vm.c	147	typedef uint64_t align_t;
 fixed-width-integer	libclamav/bytecode_vm.c	152	    uint16_t last_size_off;
@@ -1531,31 +1531,31 @@ fixed-width-integer	libclamav/bytecode_vm.c	604	    int32_t ptrid2 = ptr2 >> 32;
 fixed-width-integer	libclamav/bytecode_vm.c	610	    return (uint32_t)ptr1 - (uint32_t)ptr2;
 fixed-width-integer	libclamav/bytecode_vm.c	613	static inline int64_t ptr_register_stack(struct ptr_infos *infos,
 fixed-width-integer	libclamav/bytecode_vm.c	615	                                         uint32_t off, uint32_t size)
-fixed-width-integer	libclamav/bytecode_vm.c	638	static inline int64_t ptr_register_glob_fixedid(struct ptr_infos *infos,
-fixed-width-integer	libclamav/bytecode_vm.c	639	                                                void *values, uint32_t size, unsigned n)
-fixed-width-integer	libclamav/bytecode_vm.c	670	static inline int64_t ptr_register_glob(struct ptr_infos *infos,
-fixed-width-integer	libclamav/bytecode_vm.c	671	                                        void *values, uint32_t size)
-fixed-width-integer	libclamav/bytecode_vm.c	682	static inline void *ptr_torealptr(const struct ptr_infos *infos, int64_t ptr,
-fixed-width-integer	libclamav/bytecode_vm.c	683	                                  uint32_t read_size)
-fixed-width-integer	libclamav/bytecode_vm.c	686	    int32_t ptrid   = ptr >> 32;
-fixed-width-integer	libclamav/bytecode_vm.c	687	    uint32_t ptroff = (uint32_t)ptr;
-fixed-width-integer	libclamav/bytecode_vm.c	720	static always_inline int check_sdivops(int64_t op0, int64_t op1)
-fixed-width-integer	libclamav/bytecode_vm.c	725	static unsigned globaltypesize(uint16_t id)
-fixed-width-integer	libclamav/bytecode_vm.c	751	    uint32_t override_size;
-fixed-width-integer	libclamav/bytecode_vm.c	760	    uint32_t j;
-fixed-width-integer	libclamav/bytecode_vm.c	778	        uint32_t size;
-fixed-width-integer	libclamav/bytecode_vm.c	873	            DEFINE_OP_BC_RET_N(OP_BC_RET * 5 + 2, uint16_t, READ16, WRITE16);
-fixed-width-integer	libclamav/bytecode_vm.c	874	            DEFINE_OP_BC_RET_N(OP_BC_RET * 5 + 3, uint32_t, READ32, WRITE32);
-fixed-width-integer	libclamav/bytecode_vm.c	875	            DEFINE_OP_BC_RET_N(OP_BC_RET * 5 + 4, uint64_t, READ64, WRITE64);
-fixed-width-integer	libclamav/bytecode_vm.c	912	                uint16_t t1, t2;
-fixed-width-integer	libclamav/bytecode_vm.c	921	                uint32_t t1, t2;
-fixed-width-integer	libclamav/bytecode_vm.c	930	                uint64_t t1, t2;
-fixed-width-integer	libclamav/bytecode_vm.c	941	                    int32_t res32;
-fixed-width-integer	libclamav/bytecode_vm.c	942	                    int64_t res64;
-fixed-width-integer	libclamav/bytecode_vm.c	947	                            int32_t a, b;
-fixed-width-integer	libclamav/bytecode_vm.c	972	                            int32_t a;
-fixed-width-integer	libclamav/bytecode_vm.c	979	                            int32_t a;
-fixed-width-integer	libclamav/bytecode_vm.c	992	                            int32_t arg2, arg3, arg4, arg5;
+fixed-width-integer	libclamav/bytecode_vm.c	639	static inline int64_t ptr_register_glob_fixedid(struct ptr_infos *infos,
+fixed-width-integer	libclamav/bytecode_vm.c	640	                                                void *values, uint32_t size, unsigned n)
+fixed-width-integer	libclamav/bytecode_vm.c	671	static inline int64_t ptr_register_glob(struct ptr_infos *infos,
+fixed-width-integer	libclamav/bytecode_vm.c	672	                                        void *values, uint32_t size)
+fixed-width-integer	libclamav/bytecode_vm.c	683	static inline void *ptr_torealptr(const struct ptr_infos *infos, int64_t ptr,
+fixed-width-integer	libclamav/bytecode_vm.c	684	                                  uint32_t read_size)
+fixed-width-integer	libclamav/bytecode_vm.c	687	    int32_t ptrid   = ptr >> 32;
+fixed-width-integer	libclamav/bytecode_vm.c	688	    uint32_t ptroff = (uint32_t)ptr;
+fixed-width-integer	libclamav/bytecode_vm.c	721	static always_inline int check_sdivops(int64_t op0, int64_t op1)
+fixed-width-integer	libclamav/bytecode_vm.c	726	static unsigned globaltypesize(uint16_t id)
+fixed-width-integer	libclamav/bytecode_vm.c	752	    uint32_t override_size;
+fixed-width-integer	libclamav/bytecode_vm.c	761	    uint32_t j;
+fixed-width-integer	libclamav/bytecode_vm.c	779	        uint32_t size;
+fixed-width-integer	libclamav/bytecode_vm.c	874	            DEFINE_OP_BC_RET_N(OP_BC_RET * 5 + 2, uint16_t, READ16, WRITE16);
+fixed-width-integer	libclamav/bytecode_vm.c	875	            DEFINE_OP_BC_RET_N(OP_BC_RET * 5 + 3, uint32_t, READ32, WRITE32);
+fixed-width-integer	libclamav/bytecode_vm.c	876	            DEFINE_OP_BC_RET_N(OP_BC_RET * 5 + 4, uint64_t, READ64, WRITE64);
+fixed-width-integer	libclamav/bytecode_vm.c	913	                uint16_t t1, t2;
+fixed-width-integer	libclamav/bytecode_vm.c	922	                uint32_t t1, t2;
+fixed-width-integer	libclamav/bytecode_vm.c	931	                uint64_t t1, t2;
+fixed-width-integer	libclamav/bytecode_vm.c	942	                    int32_t res32;
+fixed-width-integer	libclamav/bytecode_vm.c	943	                    int64_t res64;
+fixed-width-integer	libclamav/bytecode_vm.c	948	                            int32_t a, b;
+fixed-width-integer	libclamav/bytecode_vm.c	973	                            int32_t a;
+fixed-width-integer	libclamav/bytecode_vm.c	980	                            int32_t a;
+fixed-width-integer	libclamav/bytecode_vm.c	993	                            int32_t arg2, arg3, arg4, arg5;
 fixed-width-integer	libclamav/c++/bytecode2llvm.cpp	2055	        uint32_t result          = ((uint32_t(*)(struct cli_bc_ctx *))(intptr_t)code)(ctx);
 fixed-width-integer	libclamav/c++/bytecode2llvm.cpp	2056	        *(uint32_t *)ctx->values = result;
 fixed-width-integer	libclamav/c++/bytecode2llvm.cpp	302	static int64_t rtlib_sdiv_i64(int64_t a, int64_t b)
@@ -9882,21 +9882,21 @@ native-width-integer	libclamav/bytecode_priv.h	196	    off_t pdf_startoff;
 native-width-integer	libclamav/bytecode_priv.h	241	    int on_jit;
 native-width-integer	libclamav/bytecode_priv.h	242	    int no_diff;
 native-width-integer	libclamav/bytecode_priv.h	256	cl_error_t cli_bytecode_done_jit(struct cli_all_bc *bc, int partial);
-native-width-integer	libclamav/bytecode_vm.c	1173	                    stackid = (int)(stackptr >> 32);
+native-width-integer	libclamav/bytecode_vm.c	1174	                    stackid = (int)(stackptr >> 32);
 native-width-integer	libclamav/bytecode_vm.c	119	static always_inline int jump(const struct cli_bc_func *func, uint16_t bbid, struct cli_bc_bb **bb, const struct cli_bc_inst **inst,
 native-width-integer	libclamav/bytecode_vm.c	145	/* type with largest alignment that we use (in general it is a long double, but
 native-width-integer	libclamav/bytecode_vm.c	49	static int never_inline bcfail(const char *msg, long a, long b,
 native-width-integer	libclamav/bytecode_vm.c	552	            stackid = (int)(stackptr >> 32);                                      \
 native-width-integer	libclamav/bytecode_vm.c	577	            stackid = (int)(stackptr >> 32);                                      \
-native-width-integer	libclamav/bytecode_vm.c	620	    if (infos->nstacks == UINT_MAX || (size_t)(infos->nstacks + 1) > SIZE_MAX / sizeof(*sinfos)) {
-native-width-integer	libclamav/bytecode_vm.c	647	        if ((size_t)n > SIZE_MAX / sizeof(*sinfos)) {
-native-width-integer	libclamav/bytecode_vm.c	695	        if (UNLIKELY((const unsigned int)ptrid >= infos->nstacks)) {
-native-width-integer	libclamav/bytecode_vm.c	702	        if (UNLIKELY((const unsigned int)ptrid >= infos->nglobs)) {
-native-width-integer	libclamav/bytecode_vm.c	720	static always_inline int check_sdivops(int64_t op0, int64_t op1)
-native-width-integer	libclamav/bytecode_vm.c	759	    size_t i;
+native-width-integer	libclamav/bytecode_vm.c	621	        cli_bytecode_table_size_check((size_t)infos->nstacks + 1, sizeof(*sinfos)) != CL_SUCCESS) {
+native-width-integer	libclamav/bytecode_vm.c	648	        if (cli_bytecode_table_size_check((size_t)n, sizeof(*sinfos)) != CL_SUCCESS) {
+native-width-integer	libclamav/bytecode_vm.c	696	        if (UNLIKELY((const unsigned int)ptrid >= infos->nstacks)) {
+native-width-integer	libclamav/bytecode_vm.c	703	        if (UNLIKELY((const unsigned int)ptrid >= infos->nglobs)) {
+native-width-integer	libclamav/bytecode_vm.c	721	static always_inline int check_sdivops(int64_t op0, int64_t op1)
+native-width-integer	libclamav/bytecode_vm.c	760	    size_t i;
 native-width-integer	libclamav/bytecode_vm.c	77	static inline int bcfail(const char *msg, long a, long b,
-native-width-integer	libclamav/bytecode_vm.c	770	    int stackid = 0;
-native-width-integer	libclamav/bytecode_vm.c	776	    for (i = 0; i < (size_t)cli_apicall_maxglobal - _FIRST_GLOBAL; i++) {
+native-width-integer	libclamav/bytecode_vm.c	771	    int stackid = 0;
+native-width-integer	libclamav/bytecode_vm.c	777	    for (i = 0; i < (size_t)cli_apicall_maxglobal - _FIRST_GLOBAL; i++) {
 native-width-integer	libclamav/bytecode_vm.c	91	#define TRACE_R(x) cli_dbgmsg("bytecode trace: %u, read %llx\n", pc, (long long)x);
 native-width-integer	libclamav/bytecode_vm.c	92	#define TRACE_W(x, w, p) cli_dbgmsg("bytecode trace: %u, write%d @%u %llx\n", pc, p, w, (long long)(x));
 native-width-integer	libclamav/c++/bytecode2llvm.cpp	163	extern "C" unsigned int cli_rndnum(unsigned int max);
@@ -20948,9 +20948,8 @@ boundary-constant	libclamav/bytecode_api.c	2420	    return size > UINT32_MAX ? 0
 boundary-constant	libclamav/bytecode_api.c	268	    if (target > ctx->file_size64 || target > (uint64_t)INT64_MAX || target > (uint64_t)SIZE_MAX) {
 boundary-constant	libclamav/bytecode_api.c	613	        if (!remaining || off > (uint64_t)SIZE_MAX)
 boundary-constant	libclamav/bytecode_api.c	680	    if (!ctx->fmap || off > (uint64_t)SIZE_MAX) {
-boundary-constant	libclamav/bytecode_vm.c	620	    if (infos->nstacks == UINT_MAX || (size_t)(infos->nstacks + 1) > SIZE_MAX / sizeof(*sinfos)) {
-boundary-constant	libclamav/bytecode_vm.c	647	        if ((size_t)n > SIZE_MAX / sizeof(*sinfos)) {
-boundary-constant	libclamav/bytecode_vm.c	675	    if (infos->nglobs == UINT_MAX) {
+boundary-constant	libclamav/bytecode_vm.c	620	    if (infos->nstacks == UINT_MAX ||
+boundary-constant	libclamav/bytecode_vm.c	676	    if (infos->nglobs == UINT_MAX) {
 boundary-constant	libclamav/conv.c	56	    if (!decoded_len || len > (size_t)INT_MAX ||
 boundary-constant	libclamav/cpio.c	108	    if (value > SIZE_MAX - padding)
 boundary-constant	libclamav/cpio.c	116	    if (NULL == position || amount > SIZE_MAX - *position)
@@ -22511,16 +22510,16 @@ format-width	libclamav/bytecode_detect.c	308	            snprintf((char *)env->v
 format-width	libclamav/bytecode_detect.c	79	    cli_dbgmsg("OS LLVM category: %d\n", env->os);
 format-width	libclamav/bytecode_detect.c	80	    cli_dbgmsg("Has JIT compiled: %d\n", env->has_jit_compiled);
 format-width	libclamav/bytecode_vm.c	101	#define TRACE_API(s, dest, ty, stack) cli_dbgmsg("bytecode trace: executing %s, -> %u (%u); %u\n", s, dest, ty, stack)
-format-width	libclamav/bytecode_vm.c	1102	                            cli_warnmsg("bytecode: type %u apicalls not yet implemented!\n", api->kind);
-format-width	libclamav/bytecode_vm.c	1290	                        cli_dbgmsg("bytecode warning: found GEP with negative offset %d!\n", off);
-format-width	libclamav/bytecode_vm.c	1402	                        cli_dbgmsg("bytecode warning: GEP with negative offset %d!\n", off);
-format-width	libclamav/bytecode_vm.c	1422	                cli_errmsg("Opcode %u of type %u is not implemented yet!\n",
-format-width	libclamav/bytecode_vm.c	1438	        cli_dbgmsg("interpreter bytecode run finished in %luus, after executing %u opcodes\n",
+format-width	libclamav/bytecode_vm.c	1103	                            cli_warnmsg("bytecode: type %u apicalls not yet implemented!\n", api->kind);
+format-width	libclamav/bytecode_vm.c	1291	                        cli_dbgmsg("bytecode warning: found GEP with negative offset %d!\n", off);
+format-width	libclamav/bytecode_vm.c	1403	                        cli_dbgmsg("bytecode warning: GEP with negative offset %d!\n", off);
+format-width	libclamav/bytecode_vm.c	1423	                cli_errmsg("Opcode %u of type %u is not implemented yet!\n",
+format-width	libclamav/bytecode_vm.c	1439	        cli_dbgmsg("interpreter bytecode run finished in %luus, after executing %u opcodes\n",
 format-width	libclamav/bytecode_vm.c	172	        cli_warnmsg("cli_stack_alloc: Attempt to allocate more than STACK_CHUNKSIZE bytes: %u!\n", bytes);
 format-width	libclamav/bytecode_vm.c	178	        cli_warnmsg("cli_stack_alloc: Unable to allocate memory for stack-chunk: bytes: %zu!\n", sizeof(*stack->chunk));
 format-width	libclamav/bytecode_vm.c	52	    cli_warnmsg("bytecode: check failed %s (%lx and %lx) at %s:%u\n", msg, a, b, file, line);
-format-width	libclamav/bytecode_vm.c	665	    cli_dbgmsg("bytecode: registered ctx variable at %p (+%u) id %u\n", values,
-format-width	libclamav/bytecode_vm.c	808	                cli_warnmsg("Bytecode run timed out in interpreter after %u opcodes\n", pc);
+format-width	libclamav/bytecode_vm.c	666	    cli_dbgmsg("bytecode: registered ctx variable at %p (+%u) id %u\n", values,
+format-width	libclamav/bytecode_vm.c	809	                cli_warnmsg("Bytecode run timed out in interpreter after %u opcodes\n", pc);
 format-width	libclamav/bytecode_vm.c	91	#define TRACE_R(x) cli_dbgmsg("bytecode trace: %u, read %llx\n", pc, (long long)x);
 format-width	libclamav/bytecode_vm.c	92	#define TRACE_W(x, w, p) cli_dbgmsg("bytecode trace: %u, write%d @%u %llx\n", pc, p, w, (long long)(x));
 format-width	libclamav/bytecode_vm.c	93	#define TRACE_EXEC(id, dest, ty, stack) cli_dbgmsg("bytecode trace: executing %d, -> %u (%u); %u\n", id, dest, ty, stack)
@@ -26604,15 +26603,15 @@ offset-size-arithmetic	libclamav/bytecode_detect.c	325	    env->platform_id_b = 
 offset-size-arithmetic	libclamav/bytecode_detect.h	152	        strncpy((char *)(field), (value), sizeof(field) - 1); \
 offset-size-arithmetic	libclamav/bytecode_detect.h	153	        (field)[sizeof(field) - 1] = 0;                       \
 offset-size-arithmetic	libclamav/bytecode_priv.h	88	    uint32_t numBytes; /* stack size */
-offset-size-arithmetic	libclamav/bytecode_vm.c	1037	                            /* check that arg2 is size of arg1 */
-offset-size-arithmetic	libclamav/bytecode_vm.c	1050	                            /* check that arg2 is size of arg1 */
-offset-size-arithmetic	libclamav/bytecode_vm.c	1286	                    READ32(off, inst->u.three[2]);
-offset-size-arithmetic	libclamav/bytecode_vm.c	1299	                        off += (ptr & 0x00000000ffffffffULL);
-offset-size-arithmetic	libclamav/bytecode_vm.c	1388	                        ptr = ptr_compose(stackid, inst->u.unaryop & 0xbfffffff);
-offset-size-arithmetic	libclamav/bytecode_vm.c	1398	                    READ32(off, inst->u.three[2]);
-offset-size-arithmetic	libclamav/bytecode_vm.c	1408	                        off *= inst->u.three[0];
-offset-size-arithmetic	libclamav/bytecode_vm.c	1413	                        off *= inst->u.three[0];
-offset-size-arithmetic	libclamav/bytecode_vm.c	1414	                        off += (ptr & 0x00000000ffffffffULL);
+offset-size-arithmetic	libclamav/bytecode_vm.c	1038	                            /* check that arg2 is size of arg1 */
+offset-size-arithmetic	libclamav/bytecode_vm.c	1051	                            /* check that arg2 is size of arg1 */
+offset-size-arithmetic	libclamav/bytecode_vm.c	1287	                    READ32(off, inst->u.three[2]);
+offset-size-arithmetic	libclamav/bytecode_vm.c	1300	                        off += (ptr & 0x00000000ffffffffULL);
+offset-size-arithmetic	libclamav/bytecode_vm.c	1389	                        ptr = ptr_compose(stackid, inst->u.unaryop & 0xbfffffff);
+offset-size-arithmetic	libclamav/bytecode_vm.c	1399	                    READ32(off, inst->u.three[2]);
+offset-size-arithmetic	libclamav/bytecode_vm.c	1409	                        off *= inst->u.three[0];
+offset-size-arithmetic	libclamav/bytecode_vm.c	1414	                        off *= inst->u.three[0];
+offset-size-arithmetic	libclamav/bytecode_vm.c	1415	                        off += (ptr & 0x00000000ffffffffULL);
 offset-size-arithmetic	libclamav/bytecode_vm.c	154	    /* last_size is stored after data */
 offset-size-arithmetic	libclamav/bytecode_vm.c	155	    /* align bytes to pointer size */
 offset-size-arithmetic	libclamav/bytecode_vm.c	156	    bytes         = (bytes + sizeof(uint16_t) + sizeof(align_t)) & ~(sizeof(align_t) - 1);
@@ -26631,27 +26630,27 @@ offset-size-arithmetic	libclamav/bytecode_vm.c	209	    chunk->used -= stack->las
 offset-size-arithmetic	libclamav/bytecode_vm.c	245	    struct stack_entry *entry = cli_stack_alloc(stack, sizeof(*entry) + sizeof(*values) * func->numBytes);
 offset-size-arithmetic	libclamav/bytecode_vm.c	257	               sizeof(*values) * func->numConstants * 8);
 offset-size-arithmetic	libclamav/bytecode_vm.c	47	 * debugging purposes we have explicit checks, these should never fail! */
-offset-size-arithmetic	libclamav/bytecode_vm.c	620	    if (infos->nstacks == UINT_MAX || (size_t)(infos->nstacks + 1) > SIZE_MAX / sizeof(*sinfos)) {
-offset-size-arithmetic	libclamav/bytecode_vm.c	625	    sinfos = cli_max_realloc(infos->stack_infos, sizeof(*sinfos) * n);
-offset-size-arithmetic	libclamav/bytecode_vm.c	635	    return ptr_compose(-n, 0);
-offset-size-arithmetic	libclamav/bytecode_vm.c	647	        if ((size_t)n > SIZE_MAX / sizeof(*sinfos)) {
-offset-size-arithmetic	libclamav/bytecode_vm.c	651	        sinfos = cli_max_realloc(infos->glob_infos, sizeof(*sinfos) * n);
-offset-size-arithmetic	libclamav/bytecode_vm.c	656	        memset(sinfos + infos->nglobs, 0, (n - infos->nglobs) * sizeof(*sinfos));
-offset-size-arithmetic	libclamav/bytecode_vm.c	679	    return ptr_register_glob_fixedid(infos, values, size, infos->nglobs + 1);
-offset-size-arithmetic	libclamav/bytecode_vm.c	708	    if (LIKELY(ptroff < info->size &&
-offset-size-arithmetic	libclamav/bytecode_vm.c	709	               read_size <= info->size &&
-offset-size-arithmetic	libclamav/bytecode_vm.c	710	               ptroff + read_size <= info->size)) {
-offset-size-arithmetic	libclamav/bytecode_vm.c	714	    (void)bcfail("ptr1", ptroff, info->size, __FILE__, __LINE__);
-offset-size-arithmetic	libclamav/bytecode_vm.c	715	    (void)bcfail("ptr2", read_size, info->size, __FILE__, __LINE__);
-offset-size-arithmetic	libclamav/bytecode_vm.c	716	    (void)bcfail("ptr3", ptroff + read_size, info->size, __FILE__, __LINE__);
-offset-size-arithmetic	libclamav/bytecode_vm.c	735	            return ty->numElements * globaltypesize(ty->containedTypes[0]);
-offset-size-arithmetic	libclamav/bytecode_vm.c	740	                s += globaltypesize(ty->containedTypes[i]);
-offset-size-arithmetic	libclamav/bytecode_vm.c	776	    for (i = 0; i < (size_t)cli_apicall_maxglobal - _FIRST_GLOBAL; i++) {
-offset-size-arithmetic	libclamav/bytecode_vm.c	784	        size   = globaltypesize(g->type);
-offset-size-arithmetic	libclamav/bytecode_vm.c	785	        if (!ptr_register_glob_fixedid(&ptrinfos, apiptr, size, g->globalid - _FIRST_GLOBAL + 1)) {
-offset-size-arithmetic	libclamav/bytecode_vm.c	958	                            /* check that arg2 is size of arg1 */
-offset-size-arithmetic	libclamav/bytecode_vm.c	960	                            for (i = 0; i < sizeof(apisize_override) / sizeof(apisize_override[0]); i++) {
-offset-size-arithmetic	libclamav/bytecode_vm.c	995	                            /* check that arg2 is size of arg1 */
+offset-size-arithmetic	libclamav/bytecode_vm.c	621	        cli_bytecode_table_size_check((size_t)infos->nstacks + 1, sizeof(*sinfos)) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/bytecode_vm.c	626	    sinfos = cli_max_realloc(infos->stack_infos, sizeof(*sinfos) * n);
+offset-size-arithmetic	libclamav/bytecode_vm.c	636	    return ptr_compose(-n, 0);
+offset-size-arithmetic	libclamav/bytecode_vm.c	648	        if (cli_bytecode_table_size_check((size_t)n, sizeof(*sinfos)) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/bytecode_vm.c	652	        sinfos = cli_max_realloc(infos->glob_infos, sizeof(*sinfos) * n);
+offset-size-arithmetic	libclamav/bytecode_vm.c	657	        memset(sinfos + infos->nglobs, 0, (n - infos->nglobs) * sizeof(*sinfos));
+offset-size-arithmetic	libclamav/bytecode_vm.c	680	    return ptr_register_glob_fixedid(infos, values, size, infos->nglobs + 1);
+offset-size-arithmetic	libclamav/bytecode_vm.c	709	    if (LIKELY(ptroff < info->size &&
+offset-size-arithmetic	libclamav/bytecode_vm.c	710	               read_size <= info->size &&
+offset-size-arithmetic	libclamav/bytecode_vm.c	711	               ptroff + read_size <= info->size)) {
+offset-size-arithmetic	libclamav/bytecode_vm.c	715	    (void)bcfail("ptr1", ptroff, info->size, __FILE__, __LINE__);
+offset-size-arithmetic	libclamav/bytecode_vm.c	716	    (void)bcfail("ptr2", read_size, info->size, __FILE__, __LINE__);
+offset-size-arithmetic	libclamav/bytecode_vm.c	717	    (void)bcfail("ptr3", ptroff + read_size, info->size, __FILE__, __LINE__);
+offset-size-arithmetic	libclamav/bytecode_vm.c	736	            return ty->numElements * globaltypesize(ty->containedTypes[0]);
+offset-size-arithmetic	libclamav/bytecode_vm.c	741	                s += globaltypesize(ty->containedTypes[i]);
+offset-size-arithmetic	libclamav/bytecode_vm.c	777	    for (i = 0; i < (size_t)cli_apicall_maxglobal - _FIRST_GLOBAL; i++) {
+offset-size-arithmetic	libclamav/bytecode_vm.c	785	        size   = globaltypesize(g->type);
+offset-size-arithmetic	libclamav/bytecode_vm.c	786	        if (!ptr_register_glob_fixedid(&ptrinfos, apiptr, size, g->globalid - _FIRST_GLOBAL + 1)) {
+offset-size-arithmetic	libclamav/bytecode_vm.c	959	                            /* check that arg2 is size of arg1 */
+offset-size-arithmetic	libclamav/bytecode_vm.c	961	                            for (i = 0; i < sizeof(apisize_override) / sizeof(apisize_override[0]); i++) {
+offset-size-arithmetic	libclamav/bytecode_vm.c	996	                            /* check that arg2 is size of arg1 */
 offset-size-arithmetic	libclamav/c++/bytecode2llvm.cpp	1076	            mdnodes.resize(i + 1);
 offset-size-arithmetic	libclamav/c++/bytecode2llvm.cpp	1163	        unsigned maxh   = cli_globals[0].offset + sizeof(struct cli_bc_hooks);
 offset-size-arithmetic	libclamav/c++/bytecode2llvm.cpp	1168	        FakeGVs.resize(bc->num_globals);

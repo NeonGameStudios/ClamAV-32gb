@@ -617,7 +617,8 @@ static inline int64_t ptr_register_stack(struct ptr_infos *infos,
     unsigned n;
     struct ptr_info *sinfos;
 
-    if (infos->nstacks == UINT_MAX || (size_t)(infos->nstacks + 1) > SIZE_MAX / sizeof(*sinfos)) {
+    if (infos->nstacks == UINT_MAX ||
+        cli_bytecode_table_size_check((size_t)infos->nstacks + 1, sizeof(*sinfos)) != CL_SUCCESS) {
         infos->allocation_failed = true;
         return 0;
     }
@@ -644,7 +645,7 @@ static inline int64_t ptr_register_glob_fixedid(struct ptr_infos *infos,
         return 0;
     }
     if (n > infos->nglobs) {
-        if ((size_t)n > SIZE_MAX / sizeof(*sinfos)) {
+        if (cli_bytecode_table_size_check((size_t)n, sizeof(*sinfos)) != CL_SUCCESS) {
             infos->allocation_failed = true;
             return 0;
         }
