@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## JavaScript-normalizer decoder table admission — 2026-08-29
+
+JavaScript decoder delimiter-token tables and parser-token growth now use
+`cli_jsnorm_table_size()` before native-size multiplication and reallocation,
+enforcing the 1-GiB individual-allocation ceiling. Decoder output append
+failures and token-growth failures remain sticky in parser state and are
+returned by `cli_js_output_ctx_with_quota()`, with a scan marked incomplete
+when a scan context is present. The current-source normalizer and Check
+translation units compile with production GCC, and
+`test_jsnorm_table_size_rejects_overflow` plus source guards cover the
+admission boundary. Full JavaScript/HTML corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and parser/release
+qualification remain required.
+
 ## Bytecode VM pointer-table admission — 2026-08-29
 
 The bytecode interpreter's stack and global pointer-registration tables now

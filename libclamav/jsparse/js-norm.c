@@ -39,6 +39,7 @@
 #include "jsparse/lexglobal.h"
 #include "hashtab.h"
 #include "others.h"
+#include "scanners.h"
 #include "str.h"
 #include "js-norm.h"
 #include "jsparse/generated/operators.h"
@@ -112,7 +113,21 @@ struct parser_state {
     yyscan_t scanner;
     struct tokens tokens;
     unsigned int rec;
+    cl_error_t error;
 };
+
+cl_error_t cli_jsnorm_table_size(size_t count, size_t element_size, size_t *bytes)
+{
+    if (bytes == NULL || element_size == 0)
+        return CL_EARG;
+
+    if (count > (size_t)-1 / element_size ||
+        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+        return CL_ERESOURCE;
+
+    *bytes = count * element_size;
+    return CL_SUCCESS;
+}
 
 static struct scope *scope_new(struct parser_state *state)
 {
@@ -285,14 +300,15 @@ static cl_error_t tokens_ensure_capacity(struct tokens *tokens, size_t cap)
 {
     if (tokens->capacity < cap) {
         yystype *data;
+        size_t table_size;
 
         if (cap > (size_t)-1 - 1024)
-            return CL_EMEM;
+            return CL_ERESOURCE;
         cap += 1024;
-        if (cap > (size_t)-1 / sizeof(*data))
-            return CL_EMEM;
+        if (cli_jsnorm_table_size(cap, sizeof(*data), &table_size) != CL_SUCCESS)
+            return CL_ERESOURCE;
         /* Keep old data if OOM */
-        data = cli_max_realloc(tokens->data, cap * sizeof(*tokens->data));
+        data = cli_max_realloc(tokens->data, table_size);
         if (!data)
             return CL_EMEM;
         tokens->data     = data;
@@ -303,10 +319,17 @@ static cl_error_t tokens_ensure_capacity(struct tokens *tokens, size_t cap)
 
 static int add_token(struct parser_state *state, const yystype *token)
 {
-    if (state->tokens.cnt == (size_t)-1)
+    cl_error_t ret;
+
+    if (state->tokens.cnt == (size_t)-1) {
+        state->error = CL_ERESOURCE;
         return -1;
-    if (tokens_ensure_capacity(&state->tokens, state->tokens.cnt + 1))
+    }
+    ret = tokens_ensure_capacity(&state->tokens, state->tokens.cnt + 1);
+    if (ret != CL_SUCCESS) {
+        state->error = ret;
         return -1;
+    }
     state->tokens.data[state->tokens.cnt++] = *token;
     return 0;
 }
@@ -629,9 +652,22 @@ static void free_token(yystype *token)
     }
 }
 
+static void tokens_free(struct tokens *tokens)
+{
+    size_t i;
+
+    if (!tokens)
+        return;
+    for (i = 0; i < tokens->cnt; i++)
+        free_token(&tokens->data[i]);
+    free(tokens->data);
+    memset(tokens, 0, sizeof(*tokens));
+}
+
 static cl_error_t replace_token_range(struct tokens *dst, size_t start, size_t end, const struct tokens *with)
 {
     const size_t len = with ? with->cnt : 0;
+    cl_error_t ret;
     size_t remaining;
     size_t new_count;
     size_t i;
@@ -643,8 +679,9 @@ static cl_error_t replace_token_range(struct tokens *dst, size_t start, size_t e
     if (len > (size_t)-1 - remaining)
         return CL_EMEM;
     new_count = remaining + len;
-    if (tokens_ensure_capacity(dst, new_count))
-        return CL_EMEM;
+    ret = tokens_ensure_capacity(dst, new_count);
+    if (ret != CL_SUCCESS)
+        return ret;
     for (i = start; i < end; i++) {
         free_token(&dst->data[i]);
     }
@@ -658,19 +695,22 @@ static cl_error_t replace_token_range(struct tokens *dst, size_t start, size_t e
 
 static cl_error_t append_tokens(struct tokens *dst, const struct tokens *src)
 {
+    cl_error_t ret;
+
     if (!dst || !src)
         return CL_ENULLARG;
     if (src->cnt > (size_t)-1 - dst->cnt)
         return CL_EMEM;
-    if (tokens_ensure_capacity(dst, dst->cnt + src->cnt))
-        return CL_EMEM;
+    ret = tokens_ensure_capacity(dst, dst->cnt + src->cnt);
+    if (ret != CL_SUCCESS)
+        return ret;
     cli_dbgmsg(MODULE "Appending %lu tokens\n", (unsigned long)(src->cnt));
     memcpy(&dst->data[dst->cnt], src->data, src->cnt * sizeof(dst->data[0]));
     dst->cnt += src->cnt;
     return CL_SUCCESS;
 }
 
-static void decode_de(yystype *params[], struct text_buffer *txtbuf)
+static cl_error_t decode_de(yystype *params[], struct text_buffer *txtbuf)
 {
     const char *p = TOKEN_GET(params[0], cstring);
     const long a  = TOKEN_GET(params[1], ival);
@@ -679,18 +719,25 @@ static void decode_de(yystype *params[], struct text_buffer *txtbuf)
     /*const char *r = params[5];*/
 
     unsigned val    = 0;
-    unsigned nsplit = 0;
+    size_t nsplit = 0;
     const char *o;
     const char **tokens;
+    size_t table_size;
 
     if (!p || !k)
-        return;
+        return CL_SUCCESS;
+    nsplit = 1;
     for (o = k; *o; o++)
-        if (*o == '|') nsplit++;
-    nsplit++;
-    tokens = malloc(sizeof(char *) * nsplit);
+        if (*o == '|') {
+            if (nsplit == (size_t)-1)
+                return CL_ERESOURCE;
+            nsplit++;
+        }
+    if (cli_jsnorm_table_size(nsplit, sizeof(*tokens), &table_size) != CL_SUCCESS)
+        return CL_ERESOURCE;
+    tokens = cli_max_malloc(table_size);
     if (!tokens) {
-        return;
+        return CL_EMEM;
     }
     cli_strtokenize(k, '|', nsplit, tokens);
 
@@ -698,8 +745,12 @@ static void decode_de(yystype *params[], struct text_buffer *txtbuf)
         while (*p && !isalnum(*p)) {
             if (*p == '\\' && (p[1] == '\'' || p[1] == '\"'))
                 p++;
-            else
-                textbuffer_putc(txtbuf, *p++);
+            else {
+                if (textbuffer_putc(txtbuf, *p++) != 0) {
+                    free((void *)tokens);
+                    return CL_EMEM;
+                }
+            }
         }
         if (!*p) break;
         val = 0;
@@ -717,19 +768,28 @@ static void decode_de(yystype *params[], struct text_buffer *txtbuf)
             val = val * a + x;
         }
         if (val >= nsplit || !tokens[val] || !tokens[val][0])
-            while (o != p)
-                textbuffer_putc(txtbuf, *o++);
-        else
-            textbuffer_append(txtbuf, tokens[val]);
+            while (o != p) {
+                if (textbuffer_putc(txtbuf, *o++) != 0) {
+                    free((void *)tokens);
+                    return CL_EMEM;
+                }
+            }
+        else if (textbuffer_append(txtbuf, tokens[val]) != 0) {
+            free((void *)tokens);
+            return CL_EMEM;
+        }
     } while (*p);
     free((void *)tokens);
-    textbuffer_append(txtbuf, "\0");
+    if (textbuffer_append(txtbuf, "\0") != 0)
+        return CL_EMEM;
+    return CL_SUCCESS;
 }
 
 struct decode_result {
     struct text_buffer txtbuf;
     size_t pos_begin;
     size_t pos_end;
+    cl_error_t error;
     unsigned append : 1; /* 0: tokens are replaced with new token(s),
                             1: old tokens are deleted, new ones appended at the end */
 };
@@ -780,7 +840,9 @@ static void handle_de(yystype *tokens, size_t start, const size_t cnt, const cha
                     }
                     last = parameters[parameters_cnt - 1];
 
-                    decode_de(parameters, &res->txtbuf);
+                    res->error = decode_de(parameters, &res->txtbuf);
+                    if (res->error != CL_SUCCESS)
+                        return;
                 }
             }
         }
@@ -803,7 +865,9 @@ static void handle_de(yystype *tokens, size_t start, const size_t cnt, const cha
             }
             last = parameters[parameters_cnt - 1];
 
-            decode_de(parameters, &res->txtbuf);
+            res->error = decode_de(parameters, &res->txtbuf);
+            if (res->error != CL_SUCCESS)
+                return;
         }
     }
     if (first && last) {
@@ -831,20 +895,16 @@ static cl_error_t handle_unescape(struct tokens *tokens, size_t start)
         yystype tok;
 
         R        = cli_unescape(TOKEN_GET(&tokens->data[start], cstring));
+        if (!R)
+            return CL_EMEM;
         tok.type = TOK_StringLiteral;
         TOKEN_SET(&tok, string, R);
         new_tokens.capacity = new_tokens.cnt = 1;
         new_tokens.data                      = &tok;
         if (CL_SUCCESS != (retval = replace_token_range(tokens, start - 2, start + 2, &new_tokens))) {
-            if (retval == CL_EARG) {
-                size_t i;
-                cli_dbgmsg(MODULE "replace_token_range failed.\n");
-
-                for (i = 0; i < new_tokens.cnt; i++) {
-                    free_token(&(new_tokens.data[i]));
-                }
-            }
-            return CL_EMEM;
+            cli_dbgmsg(MODULE "replace_token_range failed.\n");
+            free_token(&new_tokens.data[0]);
+            return retval;
         }
     }
     return CL_SUCCESS;
@@ -870,12 +930,20 @@ static void handle_df(const yystype *tokens, size_t start, struct decode_result 
 
     str[len - 1] = '\0';
     s1           = cli_unescape(str);
+    if (!s1) {
+        res->error = CL_EMEM;
+        return;
+    }
     s1_len       = strlen(s1);
     for (i = 0; i < s1_len; i++) {
         s1[i] -= clast;
     }
     R = cli_unescape(s1);
     free(s1);
+    if (!R) {
+        res->error = CL_EMEM;
+        return;
+    }
     res->pos_begin   = start - 2;
     res->pos_end     = start + 2;
     res->txtbuf.data = R;
@@ -898,9 +966,10 @@ static void handle_eval(struct tokens *tokens, size_t start, struct decode_resul
     }
 }
 
-static void run_folders(struct tokens *tokens)
+static cl_error_t run_folders(struct tokens *tokens)
 {
     size_t i;
+    cl_error_t ret;
 
     for (i = 0; i < tokens->cnt; i++) {
         const char *cstring = TOKEN_GET(&tokens->data[i], cstring);
@@ -908,9 +977,12 @@ static void run_folders(struct tokens *tokens)
             cstring &&
             !strcmp("unescape", cstring) && tokens->data[i + 1].type == TOK_PAR_OPEN) {
 
-            handle_unescape(tokens, i + 2);
+            ret = handle_unescape(tokens, i + 2);
+            if (ret != CL_SUCCESS)
+                return ret;
         }
     }
+    return CL_SUCCESS;
 }
 
 static inline int state_update_scope(struct parser_state *state, const yystype *token)
@@ -941,6 +1013,7 @@ static void run_decoders(struct parser_state *state)
         struct decode_result res;
         memset(&(res.txtbuf), 0, sizeof(res.txtbuf));
         res.pos_begin = res.pos_end = 0;
+        res.error                    = CL_SUCCESS;
         res.append                  = 0;
         if (tokens->data[i].type == TOK_FUNCTION && i + 13 < tokens->cnt) {
             name = NULL;
@@ -967,6 +1040,11 @@ static void run_decoders(struct parser_state *state)
                    !strcmp("eval", cstring) && tokens->data[i + 1].type == TOK_PAR_OPEN) {
             handle_eval(tokens, i + 2, &res);
         }
+        if (res.error != CL_SUCCESS) {
+            CLI_FREE_AND_SET_NULL(res.txtbuf.data);
+            state->error = res.error;
+            break;
+        }
         if (res.pos_end > res.pos_begin) {
             struct tokens parent_tokens;
             if (res.pos_end < tokens->cnt && tokens->data[res.pos_end].type == TOK_SEMICOLON)
@@ -981,24 +1059,39 @@ static void run_decoders(struct parser_state *state)
                 --state->rec;
             }
             CLI_FREE_AND_SET_NULL(res.txtbuf.data);
+            if (state->error != CL_SUCCESS) {
+                tokens_free(&state->tokens);
+                state->tokens = parent_tokens;
+                break;
+            }
             /* state->tokens still refers to the embedded/nested context here */
             if (!res.append) {
-                if (CL_EARG == replace_token_range(&parent_tokens, res.pos_begin, res.pos_end, &state->tokens)) {
-                    size_t j;
+                cl_error_t replace_ret = replace_token_range(&parent_tokens, res.pos_begin, res.pos_end, &state->tokens);
+                if (replace_ret != CL_SUCCESS && replace_ret == CL_EARG) {
                     cli_dbgmsg(MODULE "replace_token_range failed.\n");
-
-                    for (j = 0; j < state->tokens.cnt; j++) {
-                        free_token(&(state->tokens.data[j]));
-                    }
+                    tokens_free(&state->tokens);
+                } else if (replace_ret != CL_SUCCESS) {
+                    state->error = replace_ret;
+                    tokens_free(&state->tokens);
                 }
             } else {
                 /* delete tokens */
-                replace_token_range(&parent_tokens, res.pos_begin, res.pos_end, NULL);
-                append_tokens(&parent_tokens, &state->tokens);
+                cl_error_t replace_ret = replace_token_range(&parent_tokens, res.pos_begin, res.pos_end, NULL);
+                cl_error_t append_ret = CL_SUCCESS;
+                if (replace_ret == CL_SUCCESS)
+                    append_ret = append_tokens(&parent_tokens, &state->tokens);
+                if (replace_ret != CL_SUCCESS || append_ret != CL_SUCCESS) {
+                    state->error = replace_ret != CL_SUCCESS ? replace_ret : append_ret;
+                }
             }
             /* end of embedded context, restore tokens state */
-            free(state->tokens.data);
+            if (state->error != CL_SUCCESS)
+                tokens_free(&state->tokens);
+            else
+                free(state->tokens.data);
             state->tokens = parent_tokens;
+            if (state->error != CL_SUCCESS)
+                break;
         }
         state_update_scope(state, &state->tokens.data[i]);
     }
@@ -1025,26 +1118,32 @@ void cli_js_parse_done(struct parser_state *state)
     }
     if (end != '\0')
         cli_js_process_buffer(state, &end, 1);
-    /* close remaining parenthesis */
-    for (i = 0; i < tokens->cnt; i++) {
-        if (tokens->data[i].type == TOK_PAR_OPEN)
-            par_balance++;
-        else if (tokens->data[i].type == TOK_PAR_CLOSE && par_balance > 0)
-            par_balance--;
-    }
-    if (par_balance > 0) {
-        memset(&val, 0, sizeof(val));
-        val.type = TOK_PAR_CLOSE;
-        TOKEN_SET(&val, cstring, ")");
-        while (par_balance-- > 0) {
-            add_token(state, &val);
+    if (state->error == CL_SUCCESS) {
+        /* close remaining parenthesis */
+        for (i = 0; i < tokens->cnt; i++) {
+            if (tokens->data[i].type == TOK_PAR_OPEN)
+                par_balance++;
+            else if (tokens->data[i].type == TOK_PAR_CLOSE && par_balance > 0)
+                par_balance--;
+        }
+        if (par_balance > 0) {
+            memset(&val, 0, sizeof(val));
+            val.type = TOK_PAR_CLOSE;
+            TOKEN_SET(&val, cstring, ")");
+            while (par_balance-- > 0) {
+                if (add_token(state, &val))
+                    break;
+            }
+        }
+
+        /* we had to close unfinished strings, parenthesis,
+         * so that the folders/decoders can run properly */
+        if (state->error == CL_SUCCESS) {
+            state->error = run_folders(&state->tokens);
+            if (state->error == CL_SUCCESS)
+                run_decoders(state);
         }
     }
-
-    /* we had to close unfinished strings, parenthesis,
-     * so that the folders/decoders can run properly */
-    run_folders(&state->tokens);
-    run_decoders(state);
 
     yylex_destroy(state->scanner);
     state->scanner = NULL;
@@ -1057,6 +1156,14 @@ cl_error_t cli_js_output_ctx_with_quota(struct parser_state *state, const char *
     struct buf buf;
     char lastchar = '\0';
     char filename[1024];
+
+    if (!state)
+        return CL_ENULLARG;
+    if (state->error != CL_SUCCESS) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, MODULE "normalized script parser state is incomplete");
+        return state->error;
+    }
 
     snprintf(filename, 1024, "%s" PATHSEP "javascript", tempdir);
 
@@ -1115,14 +1222,10 @@ cl_error_t cli_js_output(struct parser_state *state, const char *tempdir)
 
 void cli_js_destroy(struct parser_state *state)
 {
-    size_t i;
     if (!state)
         return;
     scope_free_all(state->list);
-    for (i = 0; i < state->tokens.cnt; i++) {
-        free_token(&state->tokens.data[i]);
-    }
-    free(state->tokens.data);
+    tokens_free(&state->tokens);
     /* detect use after free */
     if (state->scanner)
         yylex_destroy(state->scanner);
@@ -1139,17 +1242,18 @@ void cli_js_destroy(struct parser_state *state)
  * a stringliteral)*/
 void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n)
 {
-    struct scope *current = state->current;
+    struct scope *current;
     YYSTYPE val           = {0};
     int yv;
 
-    if (!state->global) {
+    if (!state || state->error != CL_SUCCESS || !state->global) {
         /* this state has either not been initialized,
          * or cli_js_parse_done() was already called on it */
         cli_warnmsg(MODULE "invalid state\n");
         return;
     }
 
+    current = state->current;
     yy_scan_bytes(buf, n, state->scanner);
 
     val.vtype = vtype_undefined;
@@ -1251,7 +1355,8 @@ void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n
                         /* add dummy FUNCTION token to
                          * mark function end */
                         TOKEN_SET(&val, cstring, "}");
-                        add_token(state, &val);
+                        if (add_token(state, &val))
+                            break;
                         TOKEN_SET(&val, scope, NULL);
                         val.type = TOK_FUNCTION;
 
@@ -1290,6 +1395,10 @@ void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n
                 break;
             case TOK_FUNCTION:
                 current            = scope_new(state);
+                if (!current) {
+                    state->error = CL_EMEM;
+                    break;
+                }
                 current->fsm_state = WaitFunctionName;
                 TOKEN_SET(&val, scope, state->current);
                 break;
@@ -1325,12 +1434,22 @@ void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n
                 }
                 break;
         }
+        if (state->error != CL_SUCCESS) {
+            free_token(&val);
+            break;
+        }
         if (val.vtype == vtype_undefined) {
             text = yyget_text(state->scanner);
             TOKEN_SET(&val, string, cli_safer_strdup(text));
-            abort();
+            if (!val.val.string) {
+                state->error = CL_EMEM;
+                break;
+            }
         }
-        add_token(state, &val);
+        if (add_token(state, &val)) {
+            free_token(&val);
+            break;
+        }
         current->last_token = yv;
         memset(&val, 0, sizeof(val));
         val.vtype = vtype_undefined;

@@ -160,6 +160,20 @@ START_TEST(test_token_dval)
 }
 END_TEST
 
+START_TEST(test_jsnorm_table_size_rejects_overflow)
+{
+    size_t bytes = 0;
+
+    ck_assert_int_eq(cli_jsnorm_table_size(0, sizeof(char *), &bytes), CL_SUCCESS);
+    ck_assert_int_eq(cli_jsnorm_table_size(1, sizeof(char *), &bytes), CL_SUCCESS);
+    ck_assert_int_eq(cli_jsnorm_table_size(CLI_MAX_ALLOCATION / sizeof(char *) + 1,
+                                           sizeof(char *), &bytes),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_jsnorm_table_size((size_t)-1, sizeof(char *), &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_jsnorm_table_size(1, 0, &bytes), CL_EARG);
+}
+END_TEST
+
 START_TEST(test_init_destroy)
 {
     struct parser_state *state = cli_js_init();
@@ -621,6 +635,7 @@ Suite *test_jsnorm_suite(void)
     tcase_add_test(tc_jsnorm_token, test_token_scope);
     tcase_add_test(tc_jsnorm_token, test_token_ival);
     tcase_add_test(tc_jsnorm_token, test_token_dval);
+    tcase_add_test(tc_jsnorm_token, test_jsnorm_table_size_rejects_overflow);
 
     tc_jsnorm_api = tcase_create("jsnorm api functions");
     suite_add_tcase(s, tc_jsnorm_api);

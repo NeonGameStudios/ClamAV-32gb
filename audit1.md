@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## JavaScript-normalizer decoder table admission — 2026-08-29
+
+The JavaScript normalizer's `decode_de()` path allocated its delimiter-token
+pointer table with a raw `sizeof(char *) * nsplit` product and ignored both
+allocation and decoded-output growth failures. A large encoded string could
+therefore exceed the individual allocation contract, and a failed decoder
+could remove source tokens without a fail-visible result. The normalizer now
+uses `cli_jsnorm_table_size()` for token and decoder tables, checks each
+decoded append, and carries the error through parser state to
+`cli_js_output_ctx_with_quota()`, which marks a scan incomplete when a context
+is present. The new
+`test_jsnorm_table_size_rejects_overflow` regression and source guards cover
+the shared boundaries. Full JavaScript/HTML corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## Bytecode VM pointer-table admission — 2026-08-29
 
 The bytecode interpreter's stack and global pointer-registration tables

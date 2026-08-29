@@ -1,5 +1,17 @@
 # Wishlist
 
+## JavaScript-normalizer decoder table admission — 2026-08-29
+
+- Keep decoder delimiter-token and parser-token table products behind
+  `cli_jsnorm_table_size()` and the 1-GiB individual-allocation ceiling.
+- Preserve decoder append failures and parser token-growth failures through
+  the normalizer's sticky error state so HTML and bytecode callers receive a
+  fail-visible result. Retain
+  `test_jsnorm_table_size_rejects_overflow` and source guards. Full
+  JavaScript/HTML corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and parser/release qualification remain
+  open.
+
 ## Bytecode VM pointer-table admission — 2026-08-29
 
 - Keep stack and global pointer-registration table growth behind

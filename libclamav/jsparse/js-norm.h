@@ -22,12 +22,14 @@
  */
 #ifndef JS_NORM_H
 #define JS_NORM_H
+#include <stddef.h>
 #include <stdint.h>
 
 struct parser_state;
 struct text_buffer;
 struct cli_ctx_tag;
 
+cl_error_t cli_jsnorm_table_size(size_t count, size_t element_size, size_t *bytes);
 struct parser_state *cli_js_init(void);
 void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n);
 void cli_js_parse_done(struct parser_state *state);
