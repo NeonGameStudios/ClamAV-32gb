@@ -36,6 +36,8 @@
 #include <fcntl.h>
 #include <ctype.h>
 
+#include <zlib.h>
+
 #include "clamav.h"
 #include "str.h"
 #include "others.h"
@@ -330,10 +332,12 @@ static cl_error_t decode_start(arj_decode_t *decode_data)
     return init_getbits(decode_data);
 }
 
-static cl_error_t write_text(cli_ctx *ctx, int ofd, unsigned char *data, size_t length)
+static cl_error_t arj_write_text(arj_metadata_t *metadata, int ofd, const unsigned char *data, size_t length,
+                                 const char *write_failure_reason)
 {
     size_t count;
     cl_error_t status;
+    cli_ctx *ctx = metadata->ctx;
 
     status = arj_checktimelimit(ctx, "ARJ member output reached the configured time limit");
     if (status != CL_SUCCESS)
@@ -341,9 +345,10 @@ static cl_error_t write_text(cli_ctx *ctx, int ofd, unsigned char *data, size_t 
 
     count = cli_writen(ofd, data, length);
     if (count != length) {
-        cli_mark_scan_incomplete(ctx, "ARJ member output could not be written completely");
+        cli_mark_scan_incomplete(ctx, write_failure_reason);
         return CL_EWRITE;
     }
+    metadata->crc = (uint32_t)crc32(metadata->crc, data, (uInt)length);
     return CL_SUCCESS;
 }
 
@@ -721,7 +726,8 @@ static cl_error_t decode(arj_metadata_t *metadata)
             count++;
             if (++out_ptr >= DDICSIZ) {
                 out_ptr = 0;
-                if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, DDICSIZ)) != CL_SUCCESS) {
+                if ((ret = arj_write_text(metadata, metadata->ofd, decode_data.text, DDICSIZ,
+                                          "ARJ member output could not be written completely")) != CL_SUCCESS) {
                     free(decode_data.text);
                     metadata->offset = decode_data.offset;
                     return ret;
@@ -753,7 +759,8 @@ static cl_error_t decode(arj_metadata_t *metadata)
                     decode_data.text[out_ptr] = decode_data.text[i];
                     if (++out_ptr >= DDICSIZ) {
                         out_ptr = 0;
-                        if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, DDICSIZ)) != CL_SUCCESS) {
+                        if ((ret = arj_write_text(metadata, metadata->ofd, decode_data.text, DDICSIZ,
+                                                  "ARJ member output could not be written completely")) != CL_SUCCESS) {
                             free(decode_data.text);
                             metadata->offset = decode_data.offset;
                             return ret;
@@ -772,7 +779,8 @@ static cl_error_t decode(arj_metadata_t *metadata)
         }
     }
     if (decode_data.status == CL_SUCCESS && out_ptr != 0) {
-        if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, out_ptr)) != CL_SUCCESS)
+        if ((ret = arj_write_text(metadata, metadata->ofd, decode_data.text, out_ptr,
+                                  "ARJ member output could not be written completely")) != CL_SUCCESS)
             decode_data.status = ret;
     }
     if (decode_data.status != CL_SUCCESS) {
@@ -909,7 +917,8 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
             count++;
             if (++out_ptr >= DDICSIZ) {
                 out_ptr = 0;
-                if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, DDICSIZ)) != CL_SUCCESS) {
+                if ((ret = arj_write_text(metadata, metadata->ofd, decode_data.text, DDICSIZ,
+                                          "ARJ member output could not be written completely")) != CL_SUCCESS) {
                     free(decode_data.text);
                     metadata->offset = decode_data.offset;
                     return ret;
@@ -941,7 +950,8 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
                 decode_data.text[out_ptr] = decode_data.text[i];
                 if (++out_ptr >= DDICSIZ) {
                     out_ptr = 0;
-                    if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, DDICSIZ)) != CL_SUCCESS) {
+                    if ((ret = arj_write_text(metadata, metadata->ofd, decode_data.text, DDICSIZ,
+                                              "ARJ member output could not be written completely")) != CL_SUCCESS) {
                         free(decode_data.text);
                         metadata->offset = decode_data.offset;
                         return ret;
@@ -954,7 +964,8 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
         }
     }
     if (decode_data.status == CL_SUCCESS && out_ptr != 0) {
-        if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, out_ptr)) != CL_SUCCESS)
+        if ((ret = arj_write_text(metadata, metadata->ofd, decode_data.text, out_ptr,
+                                  "ARJ member output could not be written completely")) != CL_SUCCESS)
             decode_data.status = ret;
     }
     if (decode_data.status != CL_SUCCESS) {
@@ -991,13 +1002,13 @@ static cl_error_t arj_unstore(arj_metadata_t *metadata, int ofd, uint32_t len)
             return read_status;
         }
         metadata->offset += count;
-        if (arj_checktimelimit(metadata->ctx, "ARJ stored member output reached the configured time limit") != CL_SUCCESS)
-            return CL_ETIMEOUT;
-        if (cli_writen(ofd, data, count) != count) {
-            /* File writing problem */
-            cli_mark_scan_incomplete(metadata->ctx, "ARJ stored member output could not be written completely");
-            return CL_EWRITE;
-        }
+        read_status = arj_checktimelimit(metadata->ctx, "ARJ stored member output reached the configured time limit");
+        if (read_status != CL_SUCCESS)
+            return read_status;
+        read_status = arj_write_text(metadata, ofd, data, count,
+                                     "ARJ stored member output could not be written completely");
+        if (read_status != CL_SUCCESS)
+            return read_status;
         rem -= count;
     }
     return CL_SUCCESS;
@@ -1248,6 +1259,7 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
     metadata->offset += 30;
     file_hdr.comp_size = le32_to_host(file_hdr.comp_size);
     file_hdr.orig_size = le32_to_host(file_hdr.orig_size);
+    file_hdr.orig_crc  = le32_to_host(file_hdr.orig_crc);
 
     cli_dbgmsg("ARJ File Header\n");
     cli_dbgmsg("First Header Size: %d\n", file_hdr.first_hdr_size);
@@ -1393,6 +1405,8 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
     }
     metadata->comp_size = file_hdr.comp_size;
     metadata->orig_size = file_hdr.orig_size;
+    metadata->orig_crc  = file_hdr.orig_crc;
+    metadata->crc       = 0;
     metadata->method    = file_hdr.method;
     metadata->encrypted = ((file_hdr.flags & GARBLE_FLAG) != 0) ? true : false;
     metadata->ofd       = -1;

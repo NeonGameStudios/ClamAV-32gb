@@ -1730,6 +1730,19 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
                 break;
             }
 
+            if (metadata.crc != metadata.orig_crc) {
+                cli_dbgmsg("ARJ: extracted CRC32 %08x does not match declared CRC32 %08x; refusing to scan\n",
+                           metadata.crc, metadata.orig_crc);
+                cli_mark_scan_incomplete(ctx, "ARJ extracted member checksum did not match its declaration");
+                ret = CL_EUNPACK;
+                cli_arj_close_output(ctx, &metadata.ofd, &ret);
+                if (temporary_reserved) {
+                    cli_scan_release_temporary(ctx, temporary_reserved);
+                    temporary_reserved = 0;
+                }
+                break;
+            }
+
             if (lseek(metadata.ofd, 0, SEEK_SET) == -1) {
                 cli_dbgmsg("ARJ: call to lseek() failed; refusing to scan extracted output\n");
                 cli_mark_scan_incomplete(ctx, "ARJ extracted member could not be rewound for scanning");

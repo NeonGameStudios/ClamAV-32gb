@@ -1,5 +1,16 @@
 # Wishlist
 
+## ARJ member CRC verification — 2026-08-29
+
+- Keep ARJ extraction fail-closed: convert the declared `orig_crc`, account
+  for CRC-32 across every stored and decompressed output write, and reject a
+  mismatch before nested scanning with an incomplete, non-cacheable result.
+- Retain `test_arj_member_crc_mismatch_is_fail_visible` and its source guards.
+  The current-source direct parser GCC ASan/UBSan accounting runner passes;
+  complete public scanner relink/execution, ARJ/ARJ-SFX corpus, sanitizer,
+  production-CVD/service, materialized large-file, certified Linux x86-64,
+  Sonic1, parser-family, and release evidence remain open.
+
 ## ALZ end-marker boundary admission — 2026-08-29
 
 - Keep the bounded ALZ parser fail-closed when bytes remain after the

@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## ARJ member CRC verification — 2026-08-29
+
+ARJ file headers declare `orig_crc`, but the parser previously ignored that
+value after extraction. The current source now converts the declared value and
+streams CRC-32 over every successfully written stored or decompressed output
+chunk. `cli_scanarj()` rejects a mismatch with `CL_EUNPACK`, records the
+incomplete reason, releases the temporary reservation, and closes the output
+before nested dispatch. The registered
+`test_arj_member_crc_mismatch_is_fail_visible` regression uses a deliberately
+wrong member CRC and requires no child alert plus non-cacheability. The
+current-source direct parser GCC ASan/UBSan runner passes the accounting
+boundary; the public scanner regression still needs a coherent relink and
+execution. Complete ARJ/ARJ-SFX corpus, sanitizer matrix, production-CVD/
+service, materialized-large-file, certified Linux x86-64, Sonic1, and final
+parser-family/release qualification remain open.
+
 ## ALZ end-marker boundary admission — 2026-08-29
 
 The bounded ALZ reader previously stopped as soon as it saw the end-of-central-

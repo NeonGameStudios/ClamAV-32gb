@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ARJ member CRC verification — 2026-08-29
+
+ARJ extraction now converts each member's declared original CRC-32 and updates
+the checksum over every output chunk successfully written by stored and
+compressed paths. A mismatch is rejected with `CL_EUNPACK` and an incomplete,
+non-cacheable scan result before nested dispatch. The registered
+`test_arj_member_crc_mismatch_is_fail_visible` regression and source guards
+cover the wrong-CRC boundary; a current-source direct parser GCC ASan/UBSan
+runner passes the streaming accounting check. Public scanner relink and
+execution, complete ARJ/ARJ-SFX corpus, sanitizer, production-CVD/service,
+materialized-large-file, certified Linux x86-64, Sonic1, parser-family, and
+release qualification remain required.
+
 ## ALZ end-marker boundary admission — 2026-08-29
 
 The bounded ALZ reader now verifies that its end-of-central-directory marker is

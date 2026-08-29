@@ -32,6 +32,8 @@ typedef struct arj_metadata_tag {
     char *filename;
     uint32_t comp_size;
     uint32_t orig_size;
+    uint32_t orig_crc;
+    uint32_t crc;
     int encrypted;
     int ofd;
     uint8_t method;
