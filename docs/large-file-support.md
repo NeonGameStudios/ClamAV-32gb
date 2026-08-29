@@ -187,6 +187,17 @@ the existing Rust 1.97.1 environment. Full OneNote corpus, current full-C ABI,
 sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
 parser-family qualification remain release gates.
 
+## DMG parser qualification recheck — 2026-08-29
+
+The authoritative current-source DMG parser was relinked into the existing
+production-linked GCC test stack. Its focused `dmg` TCase passes 9/9 for
+context/map/engine admission, strict Base64 and terminal-END validation,
+host-order retained stripes, bounded external sorting, malformed metadata,
+trailer read failure, and invalid trailer handling. This confirms the bounded
+DMG contracts without claiming complete parser-family qualification. Full DMG
+corpus, sanitizer, production-CVD/service, materialized-large-file, certified
+Linux x86-64, Sonic1, and release evidence remain gates.
+
 ## OneNote legacy reader declared-range admission — 2026-08-28
 
 `scan_legacy_reader()` now rejects a caller-declared `file_len` shorter than

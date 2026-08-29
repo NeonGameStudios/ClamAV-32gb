@@ -218,6 +218,19 @@ containers pass 16/16. Full CPIO parser-family, sanitizer, production-CVD/
 service, materialized-large-file, certified Linux x86-64, Sonic1, and release
 qualification remain open.
 
+## DMG parser qualification recheck — 2026-08-29
+
+The current-source production-linked GCC DMG TCase was relinked against the
+authoritative `dmg.c`, with the existing production scanner stack retained for
+the remaining integration path. It passes 9/9 across null-context, missing-map
+and missing-engine admission, strict Base64 and terminal-END validation,
+host-order retained stripes, bounded external sorting, malformed metadata,
+trailer read failure, and invalid trailer handling. The run preserves the
+existing distinction between incomplete parse results and in-range callback
+read failures. Full DMG corpus, sanitizer, production-CVD/service,
+materialized-large-file, certified Linux x86-64, Sonic1, and parser-family
+qualification remain open.
+
 ## Embedded parser qualification recheck — 2026-08-29
 
 The authoritative current-source Docker harness was reused without installing

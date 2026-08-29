@@ -7113,3 +7113,14 @@ qualification gates.
   16/16. Do not count that corpus as complete CPIO nested-detection evidence.
 - Complete CPIO parser-family, sanitizer, production-CVD/service,
   materialized-large-file, certified Linux x86-64, Sonic1, and release gates.
+
+## DMG parser qualification recheck — 2026-08-29
+
+- Retain the relinked current-source production-linked GCC DMG result: the
+  isolated `dmg` TCase passes 9/9 across context/map/engine admission, strict
+  Base64 and terminal-END validation, host-order retained stripes, bounded
+  external sorting, malformed metadata, trailer read failure, and invalid
+  trailer handling.
+- Keep full DMG corpus, sanitizer, production-CVD/service,
+  materialized-large-file, certified Linux x86-64, Sonic1, parser-family, and
+  release qualification open.
