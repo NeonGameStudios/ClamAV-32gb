@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## GPT header-location admission — 2026-08-29
+
+GPT header validation now binds each copy to its physical location: the
+primary must name the primary LBA and the secondary must name the final LBA,
+with reciprocal backup fields. A fully read but misplaced secondary header is
+therefore rejected as `CL_EPARSE`, recorded as `GPT secondary header was
+invalid`, and left non-cacheable while the valid primary walk remains usable.
+The registered `test_gpt_secondary_location_is_fail_visible` regression and a
+current-source GCC ASan/UBSan runner pass 1/1 with no sanitizer finding.
+Complete GPT/partition-image corpus, coherent public TCase execution,
+production-CVD/service, materialized-large-file, certified Linux x86-64,
+Sonic1, and release qualification remain gates.
+
 ## Legacy CPIO high-word size arithmetic — 2026-08-29
 
 Legacy binary CPIO now widens the high 16-bit member-size word before shifting

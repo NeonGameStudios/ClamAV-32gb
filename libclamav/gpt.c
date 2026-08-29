@@ -110,7 +110,8 @@ enum GPT_SCANSTATE {
 };
 
 static cl_error_t gpt_scan_partitions(cli_ctx *ctx, struct gpt_header hdr, size_t sectorsize);
-static cl_error_t gpt_validate_header(cli_ctx *ctx, struct gpt_header hdr, size_t sectorsize);
+static cl_error_t gpt_validate_header(cli_ctx *ctx, struct gpt_header hdr, size_t sectorsize,
+                                      uint64_t expected_current_lba);
 static cl_error_t gpt_check_mbr(cli_ctx *ctx, size_t sectorsize);
 static void gpt_printSectors(cli_ctx *ctx, size_t sectorsize);
 static void gpt_printGUID(uint8_t GUID[], const char *msg);
@@ -242,7 +243,7 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
 
     pos = maplen - sectorsize; /* last sector is the secondary gpt header */
 
-    header_status = gpt_validate_header(ctx, phdr, sectorsize);
+    header_status = gpt_validate_header(ctx, phdr, sectorsize, GPT_PRIMARY_HDR_LBA);
     if (header_status != CL_SUCCESS) {
         /* A malformed primary header can legitimately fall back to the
          * secondary copy. An operational failure while validating its
@@ -265,7 +266,7 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
             goto done;
         }
 
-        header_status = gpt_validate_header(ctx, shdr, sectorsize);
+        header_status = gpt_validate_header(ctx, shdr, sectorsize, maplen / sectorsize - 1);
         if (header_status != CL_SUCCESS) {
             cli_dbgmsg("cli_scangpt: Secondary GPT header is invalid\n");
             cli_dbgmsg("cli_scangpt: Disk is unusable\n");
@@ -286,7 +287,7 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
                 goto done;
             }
         } else {
-            header_status = gpt_validate_header(ctx, shdr, sectorsize);
+            header_status = gpt_validate_header(ctx, shdr, sectorsize, maplen / sectorsize - 1);
             if (header_status != CL_SUCCESS) {
                 cli_dbgmsg("cli_scangpt: Secondary GPT header is invalid\n");
                 if (header_status != CL_EFORMAT) {
@@ -505,7 +506,8 @@ done:
     return status;
 }
 
-static cl_error_t gpt_validate_header(cli_ctx *ctx, struct gpt_header hdr, size_t sectorsize)
+static cl_error_t gpt_validate_header(cli_ctx *ctx, struct gpt_header hdr, size_t sectorsize,
+                                      uint64_t expected_current_lba)
 {
     cl_error_t status = CL_SUCCESS;
     uint32_t crc32_calc, crc32_ref;
@@ -590,9 +592,9 @@ static cl_error_t gpt_validate_header(cli_ctx *ctx, struct gpt_header hdr, size_
     }
 
     /* check that sectors are in a valid configuration */
-    if (!((hdr.currentLBA == GPT_PRIMARY_HDR_LBA && hdr.backupLBA == lastLBA) ||
-          (hdr.currentLBA == lastLBA && hdr.backupLBA == GPT_PRIMARY_HDR_LBA))) {
-        cli_dbgmsg("cli_scangpt: GPT secondary header is not last LBA\n");
+    if (hdr.currentLBA != expected_current_lba ||
+        hdr.backupLBA != (expected_current_lba == GPT_PRIMARY_HDR_LBA ? lastLBA : GPT_PRIMARY_HDR_LBA)) {
+        cli_dbgmsg("cli_scangpt: GPT header location does not match its physical copy\n");
         status = CL_EFORMAT;
         goto done;
     }

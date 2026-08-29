@@ -1,5 +1,18 @@
 # Wishlist
 
+## GPT header-location admission — 2026-08-29
+
+- Keep primary and secondary GPT copies bound to their physical locations:
+  validation must require the expected `currentLBA` and reciprocal
+  `backupLBA` before accepting a header as usable metadata. A misplaced
+  secondary copy returns the existing fail-visible invalid-header result and
+  disables caching while preserving the usable primary walk.
+- Retain `test_gpt_secondary_location_is_fail_visible` and its source guards.
+  The current-source GCC ASan/UBSan runner passes 1/1 for the malformed
+  secondary location. Complete GPT/partition-image corpus, coherent public
+  TCase, production-CVD/service, materialized-large-file, certified Linux
+  x86-64, Sonic1, parser-family, and release evidence remain open.
+
 ## ELF version admission — 2026-08-29
 
 - Keep confirmed ELF admission fail-closed by requiring both `EI_VERSION` and

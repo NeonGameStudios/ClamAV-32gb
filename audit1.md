@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## GPT header-location admission — 2026-08-29
+
+GPT validation accepted a fully read secondary header even when its
+`currentLBA` and `backupLBA` fields described the primary copy's location. A
+misplaced or copied backup could therefore be treated as a valid redundant
+header. Validation now receives the physical copy's expected LBA and requires
+the matching primary/secondary pair before table metadata is trusted. The
+registered `test_gpt_secondary_location_is_fail_visible` regression preserves
+the primary walk but requires `CL_EPARSE`, the existing
+`GPT secondary header was invalid` reason, and non-cacheability for the bad
+backup copy. A current-source GCC ASan/UBSan runner passes 1/1 with no
+sanitizer finding. Complete GPT/partition-image corpus, coherent public TCase
+execution, production-CVD/service, materialized-large-file, certified Linux
+x86-64, Sonic1, and final parser-family/release qualification remain open.
+
 ## ELF version admission — 2026-08-29
 
 The ELF header parser converted `e_version` but did not validate either the
