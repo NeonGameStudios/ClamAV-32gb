@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ARJ Huffman code-length admission — 2026-08-29
+
+The ARJ decoder now rejects a Huffman code-length count larger than its
+fixed table before consuming entries and stops immediately when compressed
+bit-window reads or table construction fail. The registered
+`test_arj_invalid_code_length_count_is_fail_visible` regression and source
+guards cover the malformed compressed-member boundary. Current-source GCC
+compilation and focused production-linked ARJ decoder execution pass 2/2.
+Complete ARJ/ARJ-SFX corpus, sanitizer, production-CVD/service, materialized
+large-file, Sonic1, and final parser-family/release qualification remain
+required.
+
 ## 7-Zip dynamic-buffer growth admission — 2026-08-28
 
 The vendored 7-Zip dynamic buffer now rejects invalid `pos > size` state,

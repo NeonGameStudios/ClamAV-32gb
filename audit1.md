@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## ARJ Huffman code-length admission — 2026-08-29
+
+The ARJ decoder now rejects a Huffman code-length count larger than the
+fixed decoder table before consuming table entries, and it stops immediately
+when bit-window reads or table construction fail. This prevents malformed
+compressed input from being partially interpreted with stale or incomplete
+tables. The registered
+`test_arj_invalid_code_length_count_is_fail_visible` regression and source
+guards cover the boundary; current-source GCC compilation and focused
+production-linked ARJ decoder execution pass 2/2. Complete ARJ/ARJ-SFX
+corpus, sanitizer, production-CVD/service, materialized large-file, Sonic1,
+and final parser-family/release qualification remain open.
+
 ## 7-Zip dynamic-buffer growth admission — 2026-08-28
 
 The vendored 7-Zip `DynBuf_Write()` helper previously formed `pos + size`

@@ -1,5 +1,15 @@
 # Wishlist
 
+## ARJ Huffman code-length admission — 2026-08-29
+
+- Preserve the fail-closed `read_pt_len()` count bound and immediate
+  decoder-status checks for malformed compressed members.
+- Retain `test_arj_invalid_code_length_count_is_fail_visible` and its source
+  guards. Keep current-source production-linked execution, complete ARJ/
+  ARJ-SFX corpus, sanitizer, production-CVD/service, materialized large-file,
+  Sonic1, and final parser-family/release evidence remain open; the focused
+  current-source production-linked decoder run passes 2/2.
+
 ## 7-Zip dynamic-buffer growth admission — 2026-08-28
 
 - Keep `DynBuf_Write()` fail-closed for invalid buffer invariants, null

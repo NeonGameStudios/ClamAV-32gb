@@ -463,6 +463,13 @@ static cl_error_t read_pt_len(arj_decode_t *decode_data, int nn, int nbit, int i
     unsigned short mask;
 
     n = arj_getbits(decode_data, nbit);
+    if (decode_data->status != CL_SUCCESS)
+        return decode_data->status;
+    if (n > nn || n > NPT) {
+        cli_dbgmsg("UNARJ: code-length count exceeds the decoder table\n");
+        decode_data->status = CL_EUNPACK;
+        return CL_EUNPACK;
+    }
     if (n == 0) {
         if (nn > NPT) {
             cli_dbgmsg("UNARJ: bounds exceeded\n");
@@ -470,6 +477,8 @@ static cl_error_t read_pt_len(arj_decode_t *decode_data, int nn, int nbit, int i
             return CL_EUNPACK;
         }
         c = arj_getbits(decode_data, nbit);
+        if (decode_data->status != CL_SUCCESS)
+            return decode_data->status;
         for (i = 0; i < nn; i++) {
             decode_data->pt_len[i] = 0;
         }
@@ -605,9 +614,14 @@ static uint16_t decode_c(arj_decode_t *decode_data)
 
     if (decode_data->blocksize == 0) {
         decode_data->blocksize = arj_getbits(decode_data, 16);
-        read_pt_len(decode_data, NT, TBIT, 3);
-        read_c_len(decode_data);
-        read_pt_len(decode_data, NT, PBIT, -1);
+        if (decode_data->status != CL_SUCCESS)
+            return 0;
+        if (read_pt_len(decode_data, NT, TBIT, 3) != CL_SUCCESS)
+            return 0;
+        if (read_c_len(decode_data) != CL_SUCCESS)
+            return 0;
+        if (read_pt_len(decode_data, NT, PBIT, -1) != CL_SUCCESS)
+            return 0;
     }
     decode_data->blocksize--;
     j = decode_data->c_table[decode_data->bit_buf >> 4];
@@ -628,12 +642,17 @@ static uint16_t decode_c(arj_decode_t *decode_data)
         } while (j >= NC);
     }
     fill_buf(decode_data, (int)(decode_data->c_len[j]));
+    if (decode_data->status != CL_SUCCESS)
+        return 0;
     return j;
 }
 
 static uint16_t decode_p(arj_decode_t *decode_data)
 {
     unsigned short j, mask;
+
+    if (decode_data->status != CL_SUCCESS)
+        return 0;
 
     j = decode_data->pt_table[decode_data->bit_buf >> 8];
     if (j >= NP) {
@@ -653,9 +672,13 @@ static uint16_t decode_p(arj_decode_t *decode_data)
         } while (j >= NP);
     }
     fill_buf(decode_data, (int)(decode_data->pt_len[j]));
+    if (decode_data->status != CL_SUCCESS)
+        return 0;
     if (j != 0) {
         j--;
         j = (1 << j) + arj_getbits(decode_data, (int)j);
+        if (decode_data->status != CL_SUCCESS)
+            return 0;
     }
     return j;
 }
