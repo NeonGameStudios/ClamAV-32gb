@@ -7044,7 +7044,6 @@ fixed-width-integer	unit_tests/check_matchers.c	98	    const uint16_t sigopts;
 fixed-width-integer	unit_tests/check_uniq.c	48	    uint32_t u;
 fixed-width-integer	unit_tests/check_uniq.c	51	        const uint32_t key_len;
 fixed-width-integer	unit_tests/check_uniq.c	85	    uint32_t u;
-fixed-width-integer	unit_tests/temporary_gif_extension_direct.c	51	                                           uint32_t attributes)
 fixed-width-integer	win32/compat/resolv.h	109	        var = ((uint16_t)(*(uint8_t *)ptr++)) << 8; \
 fixed-width-integer	win32/compat/resolv.h	115	        var = ((uint32_t)(*(uint8_t *)ptr++)) << 24; \
 fixed-width-integer	win32/compat/resolv.h	116	        var = ((uint32_t)(*(uint8_t *)ptr++)) << 16; \
@@ -20460,10 +20459,6 @@ native-width-integer	unit_tests/input/pe_allmatch/test-exe-src/extract.h	112	   
 native-width-integer	unit_tests/input/pe_allmatch/test-exe-src/test.c	10	int main(int argc, char **argv)
 native-width-integer	unit_tests/input/pe_allmatch/test-exe-src/test.c	52	    int index = 0;
 native-width-integer	unit_tests/input/pe_allmatch/test-exe-src/test.c	62	    printf("Listing current time\n - %d\n", (int)time(NULL));
-native-width-integer	unit_tests/temporary_gif_extension_direct.c	13	static const void *memory_need(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/temporary_gif_extension_direct.c	49	cl_error_t cli_magic_scan_nested_fmap_type(fmap_t *map, size_t offset, size_t length,
-native-width-integer	unit_tests/temporary_gif_extension_direct.c	73	static int run_case(const uint8_t *data, size_t length, const char *reason)
-native-width-integer	unit_tests/temporary_gif_extension_direct.c	98	int main(void)
 native-width-integer	win32/compat/dirent.c	106	int closedir(DIR *dirp)
 native-width-integer	win32/compat/dirent.c	35	    int len;
 native-width-integer	win32/compat/dirent.h	65	int closedir(DIR *dirp);
@@ -23987,7 +23982,6 @@ format-width	unit_tests/check_uniq.c	69	        ck_assert_msg(u == 1 && strcmp(h
 format-width	unit_tests/check_uniq.c	76	        ck_assert_msg(u == 1 && strcmp(hash, tests[i].expected) == 0, "uniq_get(%s) = %u - expected %s, got %s", tests[i].key, u, tests[i].expected, hash);
 format-width	unit_tests/input/pe_allmatch/test-exe-src/extract.h	102	        printf("Extracting file with size %zd\n", size);                                                   \
 format-width	unit_tests/input/pe_allmatch/test-exe-src/test.c	62	    printf("Listing current time\n - %d\n", (int)time(NULL));
-format-width	unit_tests/temporary_gif_extension_direct.c	88	    printf("ret=%d incomplete=%d reason=%s dont_cache=%d\n", ret,
 format-width	win32/compat/strptime.c	141	#define HERE_D_FMT "%m/%d/%y"
 format-width	win32/compat/strptime.c	382	                if (!recursive("%Y-%m-%d"))
 offset-size-arithmetic	clamav-milter/allow_list.c	152	            len = strlen(buf) - 1;
@@ -38446,9 +38440,6 @@ offset-size-arithmetic	unit_tests/input/embedded_testfiles/emb/smol_exe/src/main
 offset-size-arithmetic	unit_tests/input/pe_allmatch/test-exe-src/extract.h	100	        size_t size = exe##index##_end - exe##index##_start;                                               \
 offset-size-arithmetic	unit_tests/input/pe_allmatch/test-exe-src/extract.h	112	            int written = write(fd, exe##index##_start + pos, size - pos);                                 \
 offset-size-arithmetic	unit_tests/input/pe_allmatch/test-exe-src/extract.h	117	            pos += written;                                                                                \
-offset-size-arithmetic	unit_tests/temporary_gif_extension_direct.c	16	    if (at > map->len || len > map->len - at)
-offset-size-arithmetic	unit_tests/temporary_gif_extension_direct.c	42	cl_error_t cli_append_potentially_unwanted(cli_ctx *ctx, const char *name)
-offset-size-arithmetic	unit_tests/temporary_gif_extension_direct.c	73	static int run_case(const uint8_t *data, size_t length, const char *reason)
 offset-size-arithmetic	win32/compat/dirent.c	31	DIR *opendir(const char *name)
 offset-size-arithmetic	win32/compat/dirent.c	46	    if (!(d = malloc(sizeof(*d)))) {
 offset-size-arithmetic	win32/compat/dirent.c	53	    wcsncpy(d->entry, wpath, sizeof(d->entry) / sizeof(d->entry[0]));
