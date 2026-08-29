@@ -2072,11 +2072,24 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
 
         size_t length;
         size_t orig_length;
-        int dict_len = obj->stream - start; /* Dictionary should end where the stream begins */
+        size_t dict_size;
+        int dict_len; /* Legacy dictionary helpers use an int length. */
 
         const char *pstr;
         struct objstm_struct *objstm = NULL;
         int xref                     = 0;
+
+        if (obj->stream == NULL || obj->stream < start) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF stream dictionary bounds are invalid");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        dict_size = (size_t)(obj->stream - start);
+        if (cli_pdf_legacy_dict_length(dict_size, &dict_len) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF stream dictionary exceeds the legacy parser width");
+            status = CL_ERESOURCE;
+            goto done;
+        }
 
         /* Find and interpret the length dictionary value */
         length = find_length(pdf, obj, start, dict_len);
@@ -2151,7 +2164,6 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
         /*
          * Identify the DecodeParms, if available.
          */
-        dict_len = obj->stream - start;
         {
             const char *dict_start;
             struct pdf_dict_node *decodeparms_node = NULL;
@@ -2238,7 +2250,6 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
          * Go back to the start of the dictionary and check to see if the stream
          * is an object stream. If so, collect the relevant info.
          */
-        dict_len = obj->stream - start;
         if (NULL != (pstr = pdf_getdict(pdf, start, &dict_len, "/Type/ObjStm"))) {
             int objstm_first  = -1;
             int objstm_length = -1;
@@ -2246,7 +2257,6 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
 
             cli_dbgmsg("pdf_extract_obj: Found /Type/ObjStm\n");
 
-            dict_len = obj->stream - start;
             if (-1 == (objstm_first = pdf_readint(pdf, start, dict_len, "/First"))) {
                 cli_warnmsg("pdf_extract_obj: Failed to find offset of first object in object stream\n");
             } else if (-1 == (objstm_length = pdf_readint(pdf, start, dict_len, "/Length"))) {
@@ -4073,6 +4083,7 @@ void pdf_handle_enc(struct pdf_struct *pdf)
     struct pdf_obj *obj = NULL;
     cl_error_t search_status;
     uint32_t len, n, R, P, length, EM = 1, i, oulen;
+    int cf_len;
 
     char *O       = NULL;
     char *OE      = NULL;
@@ -4103,7 +4114,11 @@ void pdf_handle_enc(struct pdf_struct *pdf)
         return;
     }
 
-    len = obj->size;
+    if (obj->size > UINT32_MAX || obj->size > (size_t)INT_MAX) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF encryption dictionary exceeds the legacy parser width");
+        goto done;
+    }
+    len = (uint32_t)obj->size;
 
     if (NULL == obj->objstm) {
         q = (const char *)(obj->start + pdf->map);
@@ -4190,9 +4205,12 @@ void pdf_handle_enc(struct pdf_struct *pdf)
         StmF      = pdf_readval(pdf, q, len, "/StmF");
         StrF      = pdf_readval(pdf, q, len, "/StrF");
         EFF       = pdf_readval(pdf, q, len, "/EFF");
-        n         = len;
-        pdf->CF   = pdf_getdict(pdf, q, (int *)(&n), "/CF");
-        pdf->CF_n = n;
+        if (cli_pdf_legacy_dict_length((size_t)len, &cf_len) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF encryption dictionary exceeds the legacy parser width");
+            goto done;
+        }
+        pdf->CF   = pdf_getdict(pdf, q, &cf_len, "/CF");
+        pdf->CF_n = cf_len;
 
         if (StmF) {
             cli_dbgmsg("pdf_handle_enc: StmF: %s\n", StmF);

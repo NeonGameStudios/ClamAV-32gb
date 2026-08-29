@@ -21,6 +21,8 @@
 #ifndef __PDF_H
 #define __PDF_H
 
+#include <limits.h>
+
 #include "others.h"
 #define PDF_FILTERLIST_MAX 64
 
@@ -35,6 +37,17 @@
 #else
 #define PDF_HAVE_FILE_BACKED_OBJECT_STREAMS 0
 #endif
+
+static inline cl_error_t cli_pdf_legacy_dict_length(size_t length, int *legacy_length)
+{
+    if (legacy_length == NULL)
+        return CL_ENULLARG;
+    if (length > (size_t)INT_MAX)
+        return CL_ERESOURCE;
+
+    *legacy_length = (int)length;
+    return CL_SUCCESS;
+}
 
 #define PDF_OBJECT_RECURSION_LIMIT 25
 /* Internal object IDs pack the format's object number and generation into

@@ -16121,6 +16121,20 @@ START_TEST(test_pdf_packed_object_reference_bounds_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_legacy_dictionary_length_boundary_is_fail_visible)
+{
+    int legacy_length = -1;
+
+    ck_assert_int_eq(cli_pdf_legacy_dict_length(0, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_pdf_legacy_dict_length(17, &legacy_length), CL_SUCCESS);
+    ck_assert_int_eq(legacy_length, 17);
+    ck_assert_int_eq(cli_pdf_legacy_dict_length((size_t)INT_MAX, &legacy_length), CL_SUCCESS);
+#if SIZE_MAX > INT_MAX
+    ck_assert_int_eq(cli_pdf_legacy_dict_length((size_t)INT_MAX + 1U, &legacy_length), CL_ERESOURCE);
+#endif
+}
+END_TEST
+
 #if SIZE_MAX > UINT32_MAX
 START_TEST(test_pdf_stream_width_boundary_is_fail_visible)
 {
@@ -46508,6 +46522,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_crypt_filter_dictionary_is_exact_and_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_crypt_decodeparms_are_unique_and_exact);
     tcase_add_test(tc_pdf, test_pdf_explicit_identity_crypt_precedes_supported_filters);
+    tcase_add_test(tc_pdf, test_pdf_legacy_dictionary_length_boundary_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_flate_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_lzw_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_ascii85_markerless_partial_group_is_fail_visible);

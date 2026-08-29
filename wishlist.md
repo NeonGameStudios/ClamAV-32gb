@@ -307,6 +307,17 @@
   production-CVD/service, materialized large-file, Sonic1, and final
   parser-family qualification remain required.
 
+## PDF legacy dictionary-width admission — 2026-08-28
+
+- Keep stream and encryption dictionaries within the signed `int` width used
+  by the legacy PDF dictionary helpers. Validate pointer distances and object
+  sizes before conversion, and reject invalid or oversized values as sticky
+  incomplete, non-cacheable results.
+- Retain `test_pdf_legacy_dictionary_length_boundary_is_fail_visible` and the
+  source guards; the null/normal/limit oracle passes in the existing Docker
+  GCC environment. Keep full PDF corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final PDF qualification open.
+
 ## MSPack CAB/CHM output close failures — 2026-08-28
 
 - Keep CAB and CHM decoder output `fclose()` failures fail-visible as

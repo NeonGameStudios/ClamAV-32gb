@@ -446,6 +446,21 @@ checks are required evidence. Complete PDF corpus, sanitizer,
 production-CVD/service, materialized large-file, certified Linux x86-64,
 Sonic1, and final parser-family qualification remain open.
 
+## PDF legacy dictionary-width admission — 2026-08-28
+
+The legacy PDF dictionary helpers accept signed `int` lengths. Stream-object
+extraction previously narrowed the pointer distance to that type without a
+boundary check, and encryption-dictionary handling narrowed the object size and
+used an aliasing cast when locating `/CF`. A confirmed dictionary larger than
+the helper width could therefore wrap or be misinterpreted before parsing.
+`cli_pdf_legacy_dict_length()` now validates the conversion; stream extraction
+rejects invalid bounds or lengths as sticky incomplete/resource results, and
+encryption setup rejects oversized legacy dictionaries before helper access.
+The focused null/normal/limit oracle passes in the existing Docker GCC
+environment and is registered and source-guarded; full
+production-linked PDF corpus, sanitizer, materialized-large-file,
+production-CVD/service, Sonic1, and final PDF qualification remain open.
+
 ## MSPack CAB/CHM output close failures — 2026-08-28
 
 The MSPack fmap-backed output callback already recorded a failed `fclose()`
