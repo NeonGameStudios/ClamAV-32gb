@@ -346,6 +346,34 @@ START_TEST(test_message_export_rejects_truncated_materialization)
 }
 END_TEST
 
+START_TEST(test_message_table_size_rejects_product_wrap)
+{
+    size_t bytes;
+    message *m;
+
+    ck_assert_int_eq(cli_message_table_size(0, sizeof(char *), &bytes), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, 0);
+    ck_assert_int_eq(cli_message_table_size(CLI_MAX_ALLOCATION / sizeof(char *),
+                                            sizeof(char *), &bytes),
+                     CL_SUCCESS);
+    ck_assert_uint_eq(bytes, CLI_MAX_ALLOCATION);
+    ck_assert_int_eq(cli_message_table_size(CLI_MAX_ALLOCATION / sizeof(char *) + 1,
+                                            sizeof(char *), &bytes),
+                     CL_ERESOURCE);
+    ck_assert_int_eq(cli_message_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_message_table_size(1, 0, &bytes), CL_EARG);
+    ck_assert_int_eq(cli_message_table_size(1, sizeof(char *), NULL), CL_EARG);
+
+    m = messageCreate();
+    ck_assert_ptr_nonnull(m);
+    messageAddArgument(m, "name=file");
+    ck_assert_uint_eq(m->numberOfArguments, 1);
+    messageSetEncoding(m, "base64");
+    ck_assert_int_eq(m->numberOfEncTypes, 1);
+    messageDestroy(m);
+}
+END_TEST
+
 static struct {
     const char *u16;
     const char *u8;
@@ -424,6 +452,7 @@ Suite *test_str_suite(void)
     tcase_add_test(tc_str, test_message_move_text_preserves_materialization_limit);
     tcase_add_test(tc_str, test_message_addstr_deduplicated_blank_does_not_charge);
     tcase_add_test(tc_str, test_message_export_rejects_truncated_materialization);
+    tcase_add_test(tc_str, test_message_table_size_rejects_product_wrap);
 
     return s;
 }

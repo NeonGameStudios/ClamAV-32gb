@@ -2660,8 +2660,18 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                     int lines = 0;
                     message **m;
                     mbox_status old_rc;
+                    size_t message_table_size;
 
-                    m = cli_max_realloc(messages, ((multiparts + 1) * sizeof(message *)));
+                    if (multiparts < 0 || multiparts == INT_MAX ||
+                        cli_message_table_size((size_t)multiparts + 1,
+                                               sizeof(*messages), &message_table_size) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(mctx->ctx,
+                                                 "MIME multipart table exceeded its bounded representation");
+                        rc = FAIL;
+                        break;
+                    }
+
+                    m = cli_max_realloc(messages, message_table_size);
                     if (m == NULL)
                         break;
                     messages = m;

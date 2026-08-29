@@ -1,5 +1,18 @@
 # Wishlist
 
+## MIME message table admission — 2026-08-29
+
+- Keep MIME argument, encoding, and multipart message tables behind
+  `cli_message_table_size()` before count-plus-one arithmetic or
+  `cli_max_realloc()`; reject saturated signed counters and mark an
+  over-limit multipart representation incomplete.
+- Retain `test_message_table_size_rejects_product_wrap` and its source guards.
+  Current `message.c`, `mbox.c`, and `check_str.c` compile with Docker
+  production GCC, and the isolated current-source production-linked UBSan
+  oracle prints `message_table_size_guard_passed`; full MIME/mbox/MHTML
+  corpus, sanitizer, production-CVD/service, materialized-large-file,
+  Sonic1, parser-family, and release qualification remain open.
+
 ## Hash matcher table admission — 2026-08-29
 
 - Keep exact-hash digest arrays, virus-name pointer arrays, and the 64-bit

@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## MIME message table admission — 2026-08-29
+
+MIME argument and encoding tables, plus the multipart message table, formed
+count-plus-one products directly before `cli_max_realloc()`. The argument
+count is native `size_t`, while the encoding and multipart counters are signed
+`int`; a saturated or narrow-target value could therefore wrap before the
+allocator’s individual limit check. `cli_message_table_size()` now checks
+native-size multiplication and the individual allocation ceiling. Message
+argument and encoding growth reject saturated counters before arithmetic, and
+multipart growth uses the checked size while marking an over-limit table
+incomplete. The registered
+`test_message_table_size_rejects_product_wrap` regression covers the exact
+allocation boundary, `SIZE_MAX`, invalid arguments, and ordinary argument and
+encoding insertion. Current `message.c`, `mbox.c`, and `check_str.c` compile
+with the Docker production GCC profile, and an isolated current-source
+production-linked UBSan oracle prints `message_table_size_guard_passed`.
+Full MIME/mbox/MHTML corpus, sanitizer matrix, production-CVD/service,
+materialized-large-file, Sonic1, and final parser-family/release
+qualification remain open.
+
 ## Hash matcher table admission — 2026-08-29
 
 The exact-hash matcher accumulated a `uint32_t` item count and formed digest

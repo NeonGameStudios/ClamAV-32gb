@@ -26,6 +26,9 @@
 
 #define MESSAGE_MAX_MATERIALIZED_BYTES (64U * 1024U * 1024U)
 
+/* Check a message-owned pointer table before forming its native-size product. */
+cl_error_t cli_message_table_size(size_t count, size_t element_size, size_t *bytes);
+
 /* The contents could change, ONLY access in message.c */
 typedef struct message {
     encoding_type *encodingTypes;

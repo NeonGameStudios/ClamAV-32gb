@@ -42,6 +42,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <limits.h>
 
 #ifdef CL_THREAD_SAFE
 #include <pthread.h>
@@ -83,6 +84,19 @@ static char *rfc2231(const char *in);
 static int simil(const char *str1, const char *str2);
 static void messageSetSpoolBuildContext(fileblob *fb, cli_ctx *ctx);
 static int messageCopyBodySpool(message *m, fileblob *out);
+
+cl_error_t cli_message_table_size(size_t count, size_t element_size, size_t *bytes)
+{
+    if (bytes == NULL || element_size == 0)
+        return CL_EARG;
+
+    if (count > SIZE_MAX / element_size ||
+        count > (size_t)CLI_MAX_ALLOCATION / element_size)
+        return CL_ERESOURCE;
+
+    *bytes = count * element_size;
+    return CL_SUCCESS;
+}
 
 static size_t messageMaterializedEntryBytes(size_t line_bytes, bool has_line)
 {
@@ -610,6 +624,9 @@ void messageAddArgument(message *m, const char *arg)
     if (!usefulArg(arg))
         return;
 
+    if (m->numberOfArguments == SIZE_MAX)
+        return;
+
     for (offset = 0; offset < m->numberOfArguments; offset++)
         if (m->mimeArguments[offset] == NULL)
             break;
@@ -618,14 +635,19 @@ void messageAddArgument(message *m, const char *arg)
 
     if (offset == m->numberOfArguments) {
         char **q;
+        size_t next_count;
+        size_t table_size;
 
-        m->numberOfArguments++;
-        q = (char **)cli_max_realloc(m->mimeArguments, m->numberOfArguments * sizeof(char *));
+        next_count = m->numberOfArguments + 1;
+        if (cli_message_table_size(next_count, sizeof(char *), &table_size) != CL_SUCCESS)
+            return;
+
+        q = (char **)cli_max_realloc(m->mimeArguments, table_size);
         if (q == NULL) {
-            m->numberOfArguments--;
             return;
         }
         m->mimeArguments = q;
+        m->numberOfArguments = next_count;
     }
 
     p = m->mimeArguments[offset] = rfc2231(arg);
@@ -1036,6 +1058,13 @@ void messageSetEncoding(message *m, const char *enctype)
             if (sim == 100) {
                 int j;
                 encoding_type *et;
+                size_t next_count;
+                size_t table_size;
+
+                if (m->numberOfEncTypes < 0 || m->numberOfEncTypes == INT_MAX) {
+                    cli_errmsg("messageSetEncoding: encoding type table count is saturated\n");
+                    break;
+                }
 
                 for (j = 0; j < m->numberOfEncTypes; j++)
                     if (m->encodingTypes[j] == e->type)
@@ -1047,12 +1076,17 @@ void messageSetEncoding(message *m, const char *enctype)
                     break;
                 }
 
-                et = (encoding_type *)cli_max_realloc(m->encodingTypes, (m->numberOfEncTypes + 1) * sizeof(encoding_type));
+                next_count = (size_t)m->numberOfEncTypes + 1;
+                if (cli_message_table_size(next_count, sizeof(encoding_type), &table_size) != CL_SUCCESS)
+                    break;
+
+                et = (encoding_type *)cli_max_realloc(m->encodingTypes, table_size);
                 if (et == NULL)
                     break;
 
-                m->encodingTypes                        = et;
-                m->encodingTypes[m->numberOfEncTypes++] = e->type;
+                m->encodingTypes                = et;
+                m->encodingTypes[m->numberOfEncTypes] = e->type;
+                m->numberOfEncTypes++;
 
                 cli_dbgmsg("Encoding type %d is \"%s\"\n", m->numberOfEncTypes, type);
                 break;
