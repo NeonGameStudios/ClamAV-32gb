@@ -1437,6 +1437,8 @@ inline static int ac_findmatch(const unsigned char *buffer, uint32_t offset, uin
 cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t lsigs, uint32_t reloffsigs, uint8_t tracklen)
 {
     unsigned int i, j;
+    size_t offset_entries;
+    size_t lsig_entries;
 
     UNUSEDPARAM(tracklen);
 
@@ -1446,14 +1448,28 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
     }
     memset((void *)data, 0, sizeof(struct cli_ac_data));
 
+    /* Promote signature counts before forming allocation products. The
+     * counts come from loaded signature databases and are uint32_t, so an
+     * unchecked product here can wrap on a 32-bit build before the guarded
+     * allocator gets to reject it. */
+    offset_entries = (size_t)reloffsigs;
+    if (offset_entries > SIZE_MAX / 2)
+        return CL_EMEM;
+    offset_entries *= 2;
+
+    lsig_entries = (size_t)lsigs;
+    if (lsig_entries > SIZE_MAX / 64)
+        return CL_EMEM;
+    lsig_entries *= 64;
+
     data->reloffsigs = reloffsigs;
     if (reloffsigs) {
-        data->offset = (uint64_t *)cli_max_malloc(reloffsigs * 2 * sizeof(uint64_t));
+        data->offset = (uint64_t *)cli_max_calloc((size_t)reloffsigs, 2 * sizeof(uint64_t));
         if (!data->offset) {
             cli_errmsg("cli_ac_init: Can't allocate memory for data->offset\n");
             return CL_EMEM;
         }
-        for (i = 0; i < reloffsigs * 2; i += 2)
+        for (i = 0; i < offset_entries; i += 2)
             data->offset[i] = CLI_OFF_NONE64;
     }
 
@@ -1472,7 +1488,7 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
 
     data->lsigs = lsigs;
     if (lsigs) {
-        data->lsigcnt = (uint32_t **)cli_max_malloc(lsigs * sizeof(uint32_t *));
+        data->lsigcnt = (uint32_t **)cli_max_malloc((size_t)lsigs * sizeof(uint32_t *));
         if (!data->lsigcnt) {
             if (partsigs)
                 free(data->offmatrix);
@@ -1483,7 +1499,7 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
             cli_errmsg("cli_ac_init: Can't allocate memory for data->lsigcnt\n");
             return CL_EMEM;
         }
-        data->lsigcnt[0] = (uint32_t *)cli_max_calloc(lsigs * 64, sizeof(uint32_t));
+        data->lsigcnt[0] = (uint32_t *)cli_max_calloc(lsig_entries, sizeof(uint32_t));
         if (!data->lsigcnt[0]) {
             free(data->lsigcnt);
             if (partsigs)
@@ -1510,7 +1526,7 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
         }
 
         /* subsig offsets */
-        data->lsig_matches = (struct cli_lsig_matches **)cli_max_calloc(lsigs, sizeof(struct cli_lsig_matches *));
+        data->lsig_matches = (struct cli_lsig_matches **)cli_max_calloc((size_t)lsigs, sizeof(struct cli_lsig_matches *));
         if (!data->lsig_matches) {
             free(data->yr_matches);
             free(data->lsigcnt[0]);
@@ -1524,8 +1540,8 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
             cli_errmsg("cli_ac_init: Can't allocate memory for data->lsig_matches\n");
             return CL_EMEM;
         }
-        data->lsigsuboff_last  = (uint64_t **)cli_max_malloc(lsigs * sizeof(uint64_t *));
-        data->lsigsuboff_first = (uint64_t **)cli_max_malloc(lsigs * sizeof(uint64_t *));
+        data->lsigsuboff_last  = (uint64_t **)cli_max_malloc((size_t)lsigs * sizeof(uint64_t *));
+        data->lsigsuboff_first = (uint64_t **)cli_max_malloc((size_t)lsigs * sizeof(uint64_t *));
         if (!data->lsigsuboff_last || !data->lsigsuboff_first) {
             free(data->lsig_matches);
             free(data->lsigsuboff_last);
@@ -1542,8 +1558,8 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
             cli_errmsg("cli_ac_init: Can't allocate memory for data->lsigsuboff_(last|first)\n");
             return CL_EMEM;
         }
-        data->lsigsuboff_last[0]  = (uint64_t *)cli_max_calloc(lsigs * 64, sizeof(uint64_t));
-        data->lsigsuboff_first[0] = (uint64_t *)cli_max_calloc(lsigs * 64, sizeof(uint64_t));
+        data->lsigsuboff_last[0]  = (uint64_t *)cli_max_calloc(lsig_entries, sizeof(uint64_t));
+        data->lsigsuboff_first[0] = (uint64_t *)cli_max_calloc(lsig_entries, sizeof(uint64_t));
         if (!data->lsigsuboff_last[0] || !data->lsigsuboff_first[0]) {
             free(data->lsig_matches);
             free(data->lsigsuboff_last[0]);

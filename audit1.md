@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## AC matcher count-product admission — 2026-08-29
+
+The native AC matcher formed several per-scan allocation sizes directly from
+`uint32_t` signature counts. On a narrower `size_t` target, the `2*` relative-
+offset and `64*` logical-signature products could wrap before the guarded
+allocator saw them. `cli_ac_initdata()` now promotes the counts to `size_t`,
+checks the products before use, and passes count/element-size pairs to the
+guarded allocators. The new `test_ac_initdata_rejects_count_product_wrap`
+regression exercises maximal count inputs and returns `CL_EMEM` without a
+large allocation. The modified AC source and matcher unit translation unit
+both pass the existing Docker production GCC syntax checks with
+`-std=gnu90 -Wall -Wextra -Wformat-security`; this is allocation-admission
+and compile evidence only. Full production-signature corpus, sanitizer,
+certified Linux x86-64, materialized-large-file, production-CVD/service,
+Sonic1, and final matcher/release qualification remain open.
+
 ## XZ index-allocation product admission — 2026-08-29
 
 The XZ decoder converted attacker-controlled block counts to `size_t` and

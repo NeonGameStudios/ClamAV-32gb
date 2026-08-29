@@ -1,5 +1,17 @@
 # Wishlist
 
+## AC matcher count-product admission — 2026-08-29
+
+- Keep AC per-scan state allocation products in `size_t` before invoking the
+  guarded allocators; reject unrepresentable relative-offset and
+  logical-signature count products with `CL_EMEM`.
+- Retain `test_ac_initdata_rejects_count_product_wrap` and the source guards.
+  The modified AC source and matcher unit translation unit pass the existing
+  Docker production-GCC syntax checks; this is allocation-admission and
+  compile evidence only. Full production-signature corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, parser-family, and release qualification remain open.
+
 ## XZ index-allocation product admission — 2026-08-29
 
 - Keep XZ index and backward stream-table allocations fail-closed: validate

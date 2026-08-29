@@ -811,6 +811,16 @@ START_TEST(test_ac_offset_mode_matches_above_uint32)
 }
 END_TEST
 
+START_TEST(test_ac_initdata_rejects_count_product_wrap)
+{
+    struct cli_ac_data mdata;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, UINT32_MAX, 0, 0, CLI_DEFAULT_AC_TRACKLEN), CL_EMEM);
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, UINT32_MAX, 0, CLI_DEFAULT_AC_TRACKLEN), CL_EMEM);
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 0, UINT32_MAX, CLI_DEFAULT_AC_TRACKLEN), CL_EMEM);
+}
+END_TEST
+
 START_TEST(test_pcre_full_map_range_arithmetic)
 {
     ck_assert(cli_matcher_window_reaches_map_end(31, 1, 32));
@@ -2553,6 +2563,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bm_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_bm_initoff_rejects_coordinate_wrap);
     tcase_add_test(tc_matchers, test_ac_offset_mode_matches_above_uint32);
+    tcase_add_test(tc_matchers, test_ac_initdata_rejects_count_product_wrap);
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
     tcase_add_test(tc_matchers, test_exact_hash_at_large_size);

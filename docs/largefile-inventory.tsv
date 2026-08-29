@@ -3089,51 +3089,52 @@ fixed-width-integer	libclamav/matcher-ac.c	142	        res = memcmp(a->pattern, 
 fixed-width-integer	libclamav/matcher-ac.c	1422	inline static int ac_findmatch(const unsigned char *buffer, uint32_t offset, uint64_t fileoffset, uint32_t length, const struct cli_ac_patt *pattern, uint32_t *start, uint32_t *end)
 fixed-width-integer	libclamav/matcher-ac.c	1425	    uint16_t specialcnt = pattern->special_pattern;
 fixed-width-integer	libclamav/matcher-ac.c	1437	cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t lsigs, uint32_t reloffsigs, uint8_t tracklen)
-fixed-width-integer	libclamav/matcher-ac.c	1451	        data->offset = (uint64_t *)cli_max_malloc(reloffsigs * 2 * sizeof(uint64_t));
-fixed-width-integer	libclamav/matcher-ac.c	1462	        data->offmatrix = (uint64_t ***)cli_max_calloc(partsigs, sizeof(uint64_t **));
-fixed-width-integer	libclamav/matcher-ac.c	1475	        data->lsigcnt = (uint32_t **)cli_max_malloc(lsigs * sizeof(uint32_t *));
+fixed-width-integer	libclamav/matcher-ac.c	1452	     * counts come from loaded signature databases and are uint32_t, so an
+fixed-width-integer	libclamav/matcher-ac.c	1467	        data->offset = (uint64_t *)cli_max_calloc((size_t)reloffsigs, 2 * sizeof(uint64_t));
+fixed-width-integer	libclamav/matcher-ac.c	1478	        data->offmatrix = (uint64_t ***)cli_max_calloc(partsigs, sizeof(uint64_t **));
 fixed-width-integer	libclamav/matcher-ac.c	148	        res = memcmp(a->prefix, b->prefix, a->prefix_length[0] * sizeof(uint16_t));
-fixed-width-integer	libclamav/matcher-ac.c	1486	        data->lsigcnt[0] = (uint32_t *)cli_max_calloc(lsigs * 64, sizeof(uint32_t));
-fixed-width-integer	libclamav/matcher-ac.c	1527	        data->lsigsuboff_last  = (uint64_t **)cli_max_malloc(lsigs * sizeof(uint64_t *));
-fixed-width-integer	libclamav/matcher-ac.c	1528	        data->lsigsuboff_first = (uint64_t **)cli_max_malloc(lsigs * sizeof(uint64_t *));
-fixed-width-integer	libclamav/matcher-ac.c	1545	        data->lsigsuboff_last[0]  = (uint64_t *)cli_max_calloc(lsigs * 64, sizeof(uint64_t));
-fixed-width-integer	libclamav/matcher-ac.c	1546	        data->lsigsuboff_first[0] = (uint64_t *)cli_max_calloc(lsigs * 64, sizeof(uint64_t));
-fixed-width-integer	libclamav/matcher-ac.c	1612	    uint32_t i;
-fixed-width-integer	libclamav/matcher-ac.c	1634	                    uint32_t j;
-fixed-width-integer	libclamav/matcher-ac.c	1706	        cli_dbgmsg("ac_addtype: added %s embedded object at offset " STDi64 ". Embedded object count: %d\n", cli_ftname(type), (uint64_t)offset, (*list)->cnt);
-fixed-width-integer	libclamav/matcher-ac.c	1712	void lsig_increment_subsig_match(struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id)
-fixed-width-integer	libclamav/matcher-ac.c	1729	                                               uint32_t lsig_id, uint32_t subsig_id,
-fixed-width-integer	libclamav/matcher-ac.c	1751	cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id, uint64_t realoff, int partial, cli_ctx *ctx)
-fixed-width-integer	libclamav/matcher-ac.c	1818	                ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) - 1;
-fixed-width-integer	libclamav/matcher-ac.c	1823	                new_matches = cli_max_realloc(ss_matches, sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2);
-fixed-width-integer	libclamav/matcher-ac.c	1831	                ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) + ss_matches->last * 2 - 1;
-fixed-width-integer	libclamav/matcher-ac.c	1849	        uint32_t id, smin, smax, macro_group_id;
-fixed-width-integer	libclamav/matcher-ac.c	1850	        uint64_t last_macro_match, last_macroprev_match;
-fixed-width-integer	libclamav/matcher-ac.c	1922	    uint32_t length,
-fixed-width-integer	libclamav/matcher-ac.c	1928	    uint64_t offset,
-fixed-width-integer	libclamav/matcher-ac.c	1937	    uint32_t i, bp, matchstart, matchend;
-fixed-width-integer	libclamav/matcher-ac.c	1938	    uint64_t exptoff[2], realoff;
-fixed-width-integer	libclamav/matcher-ac.c	1939	    uint16_t j;
-fixed-width-integer	libclamav/matcher-ac.c	1941	    uint64_t **offmatrix, swp;
-fixed-width-integer	libclamav/matcher-ac.c	2011	                            if (false == cli_hashset_contains_maybe_noalloc(mdata->vinfo, (uint32_t)realoff)) {
-fixed-width-integer	libclamav/matcher-ac.c	2046	                            if ((uint32_t)(pt->partno + 1) > mdata->min_partno)
-fixed-width-integer	libclamav/matcher-ac.c	2051	                                mdata->offmatrix[pt->sigid - 1] = cli_max_malloc(pt->parts * sizeof(uint64_t *));
-fixed-width-integer	libclamav/matcher-ac.c	2059	                                mdata->offmatrix[pt->sigid - 1][0] = cli_max_malloc(pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
-fixed-width-integer	libclamav/matcher-ac.c	2068	                                memset(mdata->offmatrix[pt->sigid - 1][0], 0xff, pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
-fixed-width-integer	libclamav/matcher-ac.c	2079	                                for (j = 1; (j <= CLI_DEFAULT_AC_TRACKLEN + 1) && (offmatrix[pt->partno - 2][j] != (uint64_t)-1); j++) {
-fixed-width-integer	libclamav/matcher-ac.c	2180	                                                for (j = 1; j <= CLI_DEFAULT_AC_TRACKLEN + 1 && offmatrix[0][j] != (uint64_t)-1; j++) {
-fixed-width-integer	libclamav/matcher-ac.c	2189	                                        memset(offmatrix[0], 0xff, pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
-fixed-width-integer	libclamav/matcher-ac.c	2388	    uint16_t len = *(uint16_t *)arg;
-fixed-width-integer	libclamav/matcher-ac.c	2475	inline static int ac_uicmp(uint16_t *a, size_t alen, uint16_t *b, size_t blen, int *wild)
-fixed-width-integer	libclamav/matcher-ac.c	2477	    uint16_t awild, bwild, side_wild;
-fixed-width-integer	libclamav/matcher-ac.c	2582	    uint16_t *s                  = NULL;
-fixed-width-integer	libclamav/matcher-ac.c	2604	    newnode->len    = (uint16_t)strlen(subexpr) / 2;
-fixed-width-integer	libclamav/matcher-ac.c	2647	static int ac_special_altexpand(char *hexpr, char *subexpr, uint16_t maxlen, int lvl, int maxlvl, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
-fixed-width-integer	libclamav/matcher-ac.c	2856	cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const char *hexsig, uint8_t sigopts, uint32_t sigid, uint16_t parts, uint16_t partno, uint16_t rtype, uint16_t type, uint32_t mindist, uint32_t maxdist, const char *offset, const uint32_t *lsigid, unsigned int options)
-fixed-width-integer	libclamav/matcher-ac.c	2860	    uint16_t i, j, ppos = 0, pend, *dec, nzpos = 0;
-fixed-width-integer	libclamav/matcher-ac.c	2891	        memcpy(&new->lsigid[1], lsigid, 2 * sizeof(uint32_t));
-fixed-width-integer	libclamav/matcher-ac.c	3145	     * Convert the hex string pattern to a uint16_t* pattern (flags + byte) patterns.
-fixed-width-integer	libclamav/matcher-ac.c	3157	    new->length[0] = (uint16_t)strlen(hex ? hex : hexsig) / 2;
+fixed-width-integer	libclamav/matcher-ac.c	1491	        data->lsigcnt = (uint32_t **)cli_max_malloc((size_t)lsigs * sizeof(uint32_t *));
+fixed-width-integer	libclamav/matcher-ac.c	1502	        data->lsigcnt[0] = (uint32_t *)cli_max_calloc(lsig_entries, sizeof(uint32_t));
+fixed-width-integer	libclamav/matcher-ac.c	1543	        data->lsigsuboff_last  = (uint64_t **)cli_max_malloc((size_t)lsigs * sizeof(uint64_t *));
+fixed-width-integer	libclamav/matcher-ac.c	1544	        data->lsigsuboff_first = (uint64_t **)cli_max_malloc((size_t)lsigs * sizeof(uint64_t *));
+fixed-width-integer	libclamav/matcher-ac.c	1561	        data->lsigsuboff_last[0]  = (uint64_t *)cli_max_calloc(lsig_entries, sizeof(uint64_t));
+fixed-width-integer	libclamav/matcher-ac.c	1562	        data->lsigsuboff_first[0] = (uint64_t *)cli_max_calloc(lsig_entries, sizeof(uint64_t));
+fixed-width-integer	libclamav/matcher-ac.c	1628	    uint32_t i;
+fixed-width-integer	libclamav/matcher-ac.c	1650	                    uint32_t j;
+fixed-width-integer	libclamav/matcher-ac.c	1722	        cli_dbgmsg("ac_addtype: added %s embedded object at offset " STDi64 ". Embedded object count: %d\n", cli_ftname(type), (uint64_t)offset, (*list)->cnt);
+fixed-width-integer	libclamav/matcher-ac.c	1728	void lsig_increment_subsig_match(struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id)
+fixed-width-integer	libclamav/matcher-ac.c	1745	                                               uint32_t lsig_id, uint32_t subsig_id,
+fixed-width-integer	libclamav/matcher-ac.c	1767	cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id, uint64_t realoff, int partial, cli_ctx *ctx)
+fixed-width-integer	libclamav/matcher-ac.c	1834	                ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) - 1;
+fixed-width-integer	libclamav/matcher-ac.c	1839	                new_matches = cli_max_realloc(ss_matches, sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2);
+fixed-width-integer	libclamav/matcher-ac.c	1847	                ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) + ss_matches->last * 2 - 1;
+fixed-width-integer	libclamav/matcher-ac.c	1865	        uint32_t id, smin, smax, macro_group_id;
+fixed-width-integer	libclamav/matcher-ac.c	1866	        uint64_t last_macro_match, last_macroprev_match;
+fixed-width-integer	libclamav/matcher-ac.c	1938	    uint32_t length,
+fixed-width-integer	libclamav/matcher-ac.c	1944	    uint64_t offset,
+fixed-width-integer	libclamav/matcher-ac.c	1953	    uint32_t i, bp, matchstart, matchend;
+fixed-width-integer	libclamav/matcher-ac.c	1954	    uint64_t exptoff[2], realoff;
+fixed-width-integer	libclamav/matcher-ac.c	1955	    uint16_t j;
+fixed-width-integer	libclamav/matcher-ac.c	1957	    uint64_t **offmatrix, swp;
+fixed-width-integer	libclamav/matcher-ac.c	2027	                            if (false == cli_hashset_contains_maybe_noalloc(mdata->vinfo, (uint32_t)realoff)) {
+fixed-width-integer	libclamav/matcher-ac.c	2062	                            if ((uint32_t)(pt->partno + 1) > mdata->min_partno)
+fixed-width-integer	libclamav/matcher-ac.c	2067	                                mdata->offmatrix[pt->sigid - 1] = cli_max_malloc(pt->parts * sizeof(uint64_t *));
+fixed-width-integer	libclamav/matcher-ac.c	2075	                                mdata->offmatrix[pt->sigid - 1][0] = cli_max_malloc(pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
+fixed-width-integer	libclamav/matcher-ac.c	2084	                                memset(mdata->offmatrix[pt->sigid - 1][0], 0xff, pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
+fixed-width-integer	libclamav/matcher-ac.c	2095	                                for (j = 1; (j <= CLI_DEFAULT_AC_TRACKLEN + 1) && (offmatrix[pt->partno - 2][j] != (uint64_t)-1); j++) {
+fixed-width-integer	libclamav/matcher-ac.c	2196	                                                for (j = 1; j <= CLI_DEFAULT_AC_TRACKLEN + 1 && offmatrix[0][j] != (uint64_t)-1; j++) {
+fixed-width-integer	libclamav/matcher-ac.c	2205	                                        memset(offmatrix[0], 0xff, pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
+fixed-width-integer	libclamav/matcher-ac.c	2404	    uint16_t len = *(uint16_t *)arg;
+fixed-width-integer	libclamav/matcher-ac.c	2491	inline static int ac_uicmp(uint16_t *a, size_t alen, uint16_t *b, size_t blen, int *wild)
+fixed-width-integer	libclamav/matcher-ac.c	2493	    uint16_t awild, bwild, side_wild;
+fixed-width-integer	libclamav/matcher-ac.c	2598	    uint16_t *s                  = NULL;
+fixed-width-integer	libclamav/matcher-ac.c	2620	    newnode->len    = (uint16_t)strlen(subexpr) / 2;
+fixed-width-integer	libclamav/matcher-ac.c	2663	static int ac_special_altexpand(char *hexpr, char *subexpr, uint16_t maxlen, int lvl, int maxlvl, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
+fixed-width-integer	libclamav/matcher-ac.c	2872	cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const char *hexsig, uint8_t sigopts, uint32_t sigid, uint16_t parts, uint16_t partno, uint16_t rtype, uint16_t type, uint32_t mindist, uint32_t maxdist, const char *offset, const uint32_t *lsigid, unsigned int options)
+fixed-width-integer	libclamav/matcher-ac.c	2876	    uint16_t i, j, ppos = 0, pend, *dec, nzpos = 0;
+fixed-width-integer	libclamav/matcher-ac.c	2907	        memcpy(&new->lsigid[1], lsigid, 2 * sizeof(uint32_t));
+fixed-width-integer	libclamav/matcher-ac.c	3161	     * Convert the hex string pattern to a uint16_t* pattern (flags + byte) patterns.
+fixed-width-integer	libclamav/matcher-ac.c	3173	    new->length[0] = (uint16_t)strlen(hex ? hex : hexsig) / 2;
 fixed-width-integer	libclamav/matcher-ac.c	348	    uint32_t i = 0;
 fixed-width-integer	libclamav/matcher-ac.c	360	static inline struct cli_ac_node *add_new_node(struct cli_matcher *root, uint16_t i, uint16_t len)
 fixed-width-integer	libclamav/matcher-ac.c	403	static int cli_ac_addpatt_recursive(struct cli_matcher *root, struct cli_ac_patt *pattern, struct cli_ac_node *pt, uint16_t i, uint16_t len)
@@ -7028,46 +7029,46 @@ fixed-width-integer	unit_tests/check_htmlnorm.c	298	    uint64_t temporary_reser
 fixed-width-integer	unit_tests/check_htmlnorm.c	325	    uint64_t temporary_reserved = 0;
 fixed-width-integer	unit_tests/check_htmlnorm.c	360	    uint64_t temporary_reserved = 0;
 fixed-width-integer	unit_tests/check_jsnorm.c	121	    struct scope *sc = (struct scope *)(uint64_t)0xdeadbeef;
-fixed-width-integer	unit_tests/check_matchers.c	1301	    uint32_t expected;
-fixed-width-integer	unit_tests/check_matchers.c	1307	    ck_assert_int_eq(read_uint32_t(map, 0), (int64_t)expected);
-fixed-width-integer	unit_tests/check_matchers.c	1316	    uint32_t expected;
-fixed-width-integer	unit_tests/check_matchers.c	1322	    ck_assert_int_eq(read_uint32_t(map, 1), (int64_t)expected);
-fixed-width-integer	unit_tests/check_matchers.c	1331	    uint8_t code[1 + sizeof(uint64_t) + 1 + 1 + 1];
-fixed-width-integer	unit_tests/check_matchers.c	1332	    uint64_t offset = 1;
-fixed-width-integer	unit_tests/check_matchers.c	1342	    code[1 + sizeof(uint64_t)] = OP_UINT32;
-fixed-width-integer	unit_tests/check_matchers.c	1343	    code[1 + sizeof(uint64_t) + 1] = OP_POP;
-fixed-width-integer	unit_tests/check_matchers.c	1344	    code[1 + sizeof(uint64_t) + 1 + 1] = OP_HALT;
-fixed-width-integer	unit_tests/check_matchers.c	1378	    if (at == 0 && len == sizeof(uint32_t))
-fixed-width-integer	unit_tests/check_matchers.c	1385	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
-fixed-width-integer	unit_tests/check_matchers.c	1397	    uint64_t offset = 0;
+fixed-width-integer	unit_tests/check_matchers.c	1311	    uint32_t expected;
+fixed-width-integer	unit_tests/check_matchers.c	1317	    ck_assert_int_eq(read_uint32_t(map, 0), (int64_t)expected);
+fixed-width-integer	unit_tests/check_matchers.c	1326	    uint32_t expected;
+fixed-width-integer	unit_tests/check_matchers.c	1332	    ck_assert_int_eq(read_uint32_t(map, 1), (int64_t)expected);
+fixed-width-integer	unit_tests/check_matchers.c	1341	    uint8_t code[1 + sizeof(uint64_t) + 1 + 1 + 1];
+fixed-width-integer	unit_tests/check_matchers.c	1342	    uint64_t offset = 1;
+fixed-width-integer	unit_tests/check_matchers.c	1352	    code[1 + sizeof(uint64_t)] = OP_UINT32;
+fixed-width-integer	unit_tests/check_matchers.c	1353	    code[1 + sizeof(uint64_t) + 1] = OP_POP;
+fixed-width-integer	unit_tests/check_matchers.c	1354	    code[1 + sizeof(uint64_t) + 1 + 1] = OP_HALT;
+fixed-width-integer	unit_tests/check_matchers.c	1388	    if (at == 0 && len == sizeof(uint32_t))
+fixed-width-integer	unit_tests/check_matchers.c	1395	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
+fixed-width-integer	unit_tests/check_matchers.c	1407	    uint64_t offset = 0;
 fixed-width-integer	unit_tests/check_matchers.c	143	    const uint16_t sigopts;
-fixed-width-integer	unit_tests/check_matchers.c	1515	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-fixed-width-integer	unit_tests/check_matchers.c	1516	    uint64_t target;
-fixed-width-integer	unit_tests/check_matchers.c	1647	    enum { YARA_STACK_CAPACITY = 16384, YARA_PUSH_BYTES = 1 + sizeof(uint64_t) };
-fixed-width-integer	unit_tests/check_matchers.c	1696	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-fixed-width-integer	unit_tests/check_matchers.c	1742	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-fixed-width-integer	unit_tests/check_matchers.c	1864	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-fixed-width-integer	unit_tests/check_matchers.c	1865	    const uint64_t invalid_index = MAX_LOOP_NESTING * LOOP_LOCAL_VARS;
-fixed-width-integer	unit_tests/check_matchers.c	1906	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-fixed-width-integer	unit_tests/check_matchers.c	1907	    const uint64_t argument_count = MAX_FUNCTION_ARGS + 1;
-fixed-width-integer	unit_tests/check_matchers.c	1952	    uint64_t target = PTR_TO_UINT64(code);
-fixed-width-integer	unit_tests/check_matchers.c	2043	    const uint64_t reference_offset = 5000000000ULL;
-fixed-width-integer	unit_tests/check_matchers.c	2168	    static const uint64_t sizes[] = {
-fixed-width-integer	unit_tests/check_matchers.c	2271	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
-fixed-width-integer	unit_tests/check_matchers.c	2471	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
-fixed-width-integer	unit_tests/check_matchers.c	2472	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2475	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
-fixed-width-integer	unit_tests/check_matchers.c	2476	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2504	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2506	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
-fixed-width-integer	unit_tests/check_matchers.c	2513	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+fixed-width-integer	unit_tests/check_matchers.c	1525	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+fixed-width-integer	unit_tests/check_matchers.c	1526	    uint64_t target;
+fixed-width-integer	unit_tests/check_matchers.c	1657	    enum { YARA_STACK_CAPACITY = 16384, YARA_PUSH_BYTES = 1 + sizeof(uint64_t) };
+fixed-width-integer	unit_tests/check_matchers.c	1706	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+fixed-width-integer	unit_tests/check_matchers.c	1752	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+fixed-width-integer	unit_tests/check_matchers.c	1874	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+fixed-width-integer	unit_tests/check_matchers.c	1875	    const uint64_t invalid_index = MAX_LOOP_NESTING * LOOP_LOCAL_VARS;
+fixed-width-integer	unit_tests/check_matchers.c	1916	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+fixed-width-integer	unit_tests/check_matchers.c	1917	    const uint64_t argument_count = MAX_FUNCTION_ARGS + 1;
+fixed-width-integer	unit_tests/check_matchers.c	1962	    uint64_t target = PTR_TO_UINT64(code);
+fixed-width-integer	unit_tests/check_matchers.c	2053	    const uint64_t reference_offset = 5000000000ULL;
+fixed-width-integer	unit_tests/check_matchers.c	2178	    static const uint64_t sizes[] = {
+fixed-width-integer	unit_tests/check_matchers.c	2281	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
+fixed-width-integer	unit_tests/check_matchers.c	2481	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
+fixed-width-integer	unit_tests/check_matchers.c	2482	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2485	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
+fixed-width-integer	unit_tests/check_matchers.c	2486	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2514	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2516	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+fixed-width-integer	unit_tests/check_matchers.c	2523	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
 fixed-width-integer	unit_tests/check_matchers.c	49	extern int64_t read_uint32_t(fmap_t *fmap, size_t offset);
 fixed-width-integer	unit_tests/check_matchers.c	51	#define TEST_YARA_UNDEFINED ((int64_t)0xFFFABADAFABADAFF)
 fixed-width-integer	unit_tests/check_matchers.c	639	    uint64_t offdata[4] = {0};
 fixed-width-integer	unit_tests/check_matchers.c	640	    uint64_t offset_min = 0, offset_max = 0;
 fixed-width-integer	unit_tests/check_matchers.c	804	    ck_assert_uint_eq((uint64_t)results->offset, 5000000000ULL);
-fixed-width-integer	unit_tests/check_matchers.c	826	    uint64_t offsets[64];
-fixed-width-integer	unit_tests/check_matchers.c	827	    uint32_t legacy_offsets[64];
+fixed-width-integer	unit_tests/check_matchers.c	836	    uint64_t offsets[64];
+fixed-width-integer	unit_tests/check_matchers.c	837	    uint32_t legacy_offsets[64];
 fixed-width-integer	unit_tests/check_matchers.c	95	    uint32_t dlength;
 fixed-width-integer	unit_tests/check_matchers.c	98	    const uint16_t sigopts;
 fixed-width-integer	unit_tests/check_uniq.c	48	    uint32_t u;
@@ -9040,91 +9041,93 @@ native-width-integer	libclamav/7z/7zFile.c	97	WRes File_Read(CSzFile *p, void *d
 native-width-integer	libclamav/7z/7zFile.c	99	  size_t originalSize = *size;
 native-width-integer	libclamav/7z/7zFile.h	45	WRes File_Read(CSzFile *p, void *data, size_t *size);
 native-width-integer	libclamav/7z/7zFile.h	48	WRes File_Write(CSzFile *p, const void *data, size_t *size);
-native-width-integer	libclamav/7z/7zIn.c	1056	  MY_ALLOC(CSzFileItem, files, (size_t)numFiles, allocMain);
 native-width-integer	libclamav/7z/7zIn.c	106	  int i = (int)SzFolder_GetNumOutStreams(p);
-native-width-integer	libclamav/7z/7zIn.c	1066	    size_t propertySize;
-native-width-integer	libclamav/7z/7zIn.c	1067	    size_t propertyRemaining;
-native-width-integer	libclamav/7z/7zIn.c	1074	    propertySize      = (size_t)size;
-native-width-integer	libclamav/7z/7zIn.c	1076	    if ((UInt64)(int)type != type)
-native-width-integer	libclamav/7z/7zIn.c	1081	    switch((int)type)
-native-width-integer	libclamav/7z/7zIn.c	1085	        size_t namesSize;
-native-width-integer	libclamav/7z/7zIn.c	1087	        namesSize = (size_t)size - 1;
-native-width-integer	libclamav/7z/7zIn.c	1094	        MY_ALLOC(size_t, p->FileNameOffsets, numFiles + 1, allocMain);
-native-width-integer	libclamav/7z/7zIn.c	1256	  if (unpackSize > (UInt64)(size_t)-1)
-native-width-integer	libclamav/7z/7zIn.c	1261	  if (!Buf_Create(outBuffer, (size_t)unpackSize, allocTemp))
-native-width-integer	libclamav/7z/7zIn.c	1266	          outBuffer->data, (size_t)unpackSize, allocTemp);
-native-width-integer	libclamav/7z/7zIn.c	1269	    if (CrcCalc(outBuffer->data, (size_t)unpackSize) != folder->UnpackCRC)
-native-width-integer	libclamav/7z/7zIn.c	1306	  size_t nextHeaderSizeT;
-native-width-integer	libclamav/7z/7zIn.c	1334	    int i, checkSize = 500;
-native-width-integer	libclamav/7z/7zIn.c	1341	    if(endpos-curpos < 500) checkSize = (int)(endpos-curpos);
-native-width-integer	libclamav/7z/7zIn.c	1345	    for (i = (int)checkSize - 2; i >= 0; i--)
-native-width-integer	libclamav/7z/7zIn.c	1355	    nextHeaderCRC = CrcCalc(buf + i, (size_t)nextHeaderSize);
-native-width-integer	libclamav/7z/7zIn.c	1360	  nextHeaderSizeT = (size_t)nextHeaderSize;
-native-width-integer	libclamav/7z/7zIn.c	1444	    size_t *outBufferSize,
-native-width-integer	libclamav/7z/7zIn.c	1445	    size_t *offset,
-native-width-integer	libclamav/7z/7zIn.c	1446	    size_t *outSizeProcessed,
-native-width-integer	libclamav/7z/7zIn.c	1475	    size_t unpackSize;
-native-width-integer	libclamav/7z/7zIn.c	1482	    if (unpackSizeSpec > (UInt64)(size_t)-1)
-native-width-integer	libclamav/7z/7zIn.c	1484	    unpackSize = (size_t)unpackSizeSpec;
-native-width-integer	libclamav/7z/7zIn.c	1532	      if (offset64 > (UInt64)(size_t)-1 ||
-native-width-integer	libclamav/7z/7zIn.c	1533	          fileItem->Size > (UInt64)(size_t)-1)
-native-width-integer	libclamav/7z/7zIn.c	1535	      *offset           = (size_t)offset64;
-native-width-integer	libclamav/7z/7zIn.c	1536	      *outSizeProcessed = (size_t)fileItem->Size;
-native-width-integer	libclamav/7z/7zIn.c	1558	static size_t SzMemberOutStream_Write(void *pp, const void *data, size_t size)
-native-width-integer	libclamav/7z/7zIn.c	1564	  size_t selected;
-native-width-integer	libclamav/7z/7zIn.c	1574	  selected   = (size_t)(writeEnd - writeStart);
-native-width-integer	libclamav/7z/7zIn.c	1576	                           (const Byte *)data + (size_t)(writeStart - chunkStart), selected) != selected)
-native-width-integer	libclamav/7z/7zIn.c	1579	                     (const Byte *)data + (size_t)(writeStart - chunkStart), selected);
+native-width-integer	libclamav/7z/7zIn.c	1063	  MY_ALLOC(CSzFileItem, files, (size_t)numFiles, allocMain);
+native-width-integer	libclamav/7z/7zIn.c	1073	    size_t propertySize;
+native-width-integer	libclamav/7z/7zIn.c	1074	    size_t propertyRemaining;
+native-width-integer	libclamav/7z/7zIn.c	1081	    propertySize      = (size_t)size;
+native-width-integer	libclamav/7z/7zIn.c	1083	    if ((UInt64)(int)type != type)
+native-width-integer	libclamav/7z/7zIn.c	1088	    switch((int)type)
+native-width-integer	libclamav/7z/7zIn.c	1092	        size_t namesSize;
+native-width-integer	libclamav/7z/7zIn.c	1094	        namesSize = (size_t)size - 1;
+native-width-integer	libclamav/7z/7zIn.c	1101	        MY_ALLOC(size_t, p->FileNameOffsets, numFiles + 1, allocMain);
+native-width-integer	libclamav/7z/7zIn.c	1263	  if (unpackSize > (UInt64)(size_t)-1)
+native-width-integer	libclamav/7z/7zIn.c	1268	  if (!Buf_Create(outBuffer, (size_t)unpackSize, allocTemp))
+native-width-integer	libclamav/7z/7zIn.c	1273	          outBuffer->data, (size_t)unpackSize, allocTemp);
+native-width-integer	libclamav/7z/7zIn.c	1276	    if (CrcCalc(outBuffer->data, (size_t)unpackSize) != folder->UnpackCRC)
+native-width-integer	libclamav/7z/7zIn.c	1313	  size_t nextHeaderSizeT;
+native-width-integer	libclamav/7z/7zIn.c	1341	    int i, checkSize = 500;
+native-width-integer	libclamav/7z/7zIn.c	1348	    if(endpos-curpos < 500) checkSize = (int)(endpos-curpos);
+native-width-integer	libclamav/7z/7zIn.c	1352	    for (i = (int)checkSize - 2; i >= 0; i--)
+native-width-integer	libclamav/7z/7zIn.c	1362	    nextHeaderCRC = CrcCalc(buf + i, (size_t)nextHeaderSize);
+native-width-integer	libclamav/7z/7zIn.c	1367	  nextHeaderSizeT = (size_t)nextHeaderSize;
+native-width-integer	libclamav/7z/7zIn.c	1451	    size_t *outBufferSize,
+native-width-integer	libclamav/7z/7zIn.c	1452	    size_t *offset,
+native-width-integer	libclamav/7z/7zIn.c	1453	    size_t *outSizeProcessed,
+native-width-integer	libclamav/7z/7zIn.c	1482	    size_t unpackSize;
+native-width-integer	libclamav/7z/7zIn.c	1489	    if (unpackSizeSpec > (UInt64)(size_t)-1)
+native-width-integer	libclamav/7z/7zIn.c	1491	    unpackSize = (size_t)unpackSizeSpec;
+native-width-integer	libclamav/7z/7zIn.c	1539	      if (offset64 > (UInt64)(size_t)-1 ||
+native-width-integer	libclamav/7z/7zIn.c	1540	          fileItem->Size > (UInt64)(size_t)-1)
+native-width-integer	libclamav/7z/7zIn.c	1542	      *offset           = (size_t)offset64;
+native-width-integer	libclamav/7z/7zIn.c	1543	      *outSizeProcessed = (size_t)fileItem->Size;
+native-width-integer	libclamav/7z/7zIn.c	1565	static size_t SzMemberOutStream_Write(void *pp, const void *data, size_t size)
+native-width-integer	libclamav/7z/7zIn.c	1571	  size_t selected;
+native-width-integer	libclamav/7z/7zIn.c	1581	  selected   = (size_t)(writeEnd - writeStart);
+native-width-integer	libclamav/7z/7zIn.c	1583	                           (const Byte *)data + (size_t)(writeStart - chunkStart), selected) != selected)
+native-width-integer	libclamav/7z/7zIn.c	1586	                     (const Byte *)data + (size_t)(writeStart - chunkStart), selected);
 native-width-integer	libclamav/7z/7zIn.c	179	UInt64 GetFolderPackStreamSize(int folderIndex, int streamIndex) const
 native-width-integer	libclamav/7z/7zIn.c	184	UInt64 GetFilePackSize(int fileIndex) const
 native-width-integer	libclamav/7z/7zIn.c	186	  int folderIndex = FileIndexToFolderIndexMap[fileIndex];
+native-width-integer	libclamav/7z/7zIn.c	198	  size_t sz_count = (size_t)(size); \
+native-width-integer	libclamav/7z/7zIn.c	201	  else if (sz_count > (size_t)-1 / sizeof(T)) \
 native-width-integer	libclamav/7z/7zIn.c	22	static int SzSizeOverflow(UInt32 count, size_t itemSize, size_t extra)
-native-width-integer	libclamav/7z/7zIn.c	233	    int emptyStream = !file->HasStream;
+native-width-integer	libclamav/7z/7zIn.c	240	    int emptyStream = !file->HasStream;
 native-width-integer	libclamav/7z/7zIn.c	25	         (size_t)count > ((size_t)-1 - extra) / itemSize;
-native-width-integer	libclamav/7z/7zIn.c	275	int SzArEx_GetFolderFullPackSize(const CSzArEx *p, UInt32 folderIndex, UInt64 *resSize)
+native-width-integer	libclamav/7z/7zIn.c	282	int SzArEx_GetFolderFullPackSize(const CSzArEx *p, UInt32 folderIndex, UInt64 *resSize)
 native-width-integer	libclamav/7z/7zIn.c	29	int SzFolder_FindBindPairForOutStream(CSzFolder *p, UInt32 outStreamIndex);
-native-width-integer	libclamav/7z/7zIn.c	303	  for (int i = 0; i < files.Size(); i++)
-native-width-integer	libclamav/7z/7zIn.c	327	static int TestSignatureCandidate(Byte *testBytes)
-native-width-integer	libclamav/7z/7zIn.c	329	  size_t i;
-native-width-integer	libclamav/7z/7zIn.c	339	  size_t Size;
-native-width-integer	libclamav/7z/7zIn.c	351	static SRes SzReadBytes(CSzData *sd, Byte *data, size_t size)
-native-width-integer	libclamav/7z/7zIn.c	353	  size_t i;
-native-width-integer	libclamav/7z/7zIn.c	363	  int i;
-native-width-integer	libclamav/7z/7zIn.c	378	  int i;
-native-width-integer	libclamav/7z/7zIn.c	403	  if (value64 >= ((UInt64)(1) << ((sizeof(size_t) - 1) * 8 + 2)))
-native-width-integer	libclamav/7z/7zIn.c	418	  sd->Size -= (size_t)size;
-native-width-integer	libclamav/7z/7zIn.c	419	  sd->Data += (size_t)size;
-native-width-integer	libclamav/7z/7zIn.c	457	static SRes SzReadBoolVector(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
-native-width-integer	libclamav/7z/7zIn.c	461	  size_t i;
-native-width-integer	libclamav/7z/7zIn.c	479	static SRes SzReadBoolVector2(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
-native-width-integer	libclamav/7z/7zIn.c	482	  size_t i;
-native-width-integer	libclamav/7z/7zIn.c	496	    size_t numItems,
-native-width-integer	libclamav/7z/7zIn.c	501	  size_t i;
-native-width-integer	libclamav/7z/7zIn.c	531	  MY_ALLOC(UInt64, *packSizes, (size_t)*numPackStreams, alloc);
-native-width-integer	libclamav/7z/7zIn.c	546	      RINOK(SzReadHashDigests(sd, (size_t)*numPackStreams, packCRCsDefined, packCRCs, alloc));
-native-width-integer	libclamav/7z/7zIn.c	555	    MY_ALLOC(Byte, *packCRCsDefined, (size_t)*numPackStreams, alloc);
-native-width-integer	libclamav/7z/7zIn.c	556	    MY_ALLOC(UInt32, *packCRCs, (size_t)*numPackStreams, alloc);
-native-width-integer	libclamav/7z/7zIn.c	583	  MY_ALLOC(CSzCoderInfo, folder->Coders, (size_t)numCoders, alloc);
-native-width-integer	libclamav/7z/7zIn.c	621	        if (!Buf_Create(&coder->Props, (size_t)propertiesSize, alloc))
-native-width-integer	libclamav/7z/7zIn.c	623	        RINOK(SzReadBytes(sd, coder->Props.data, (size_t)propertiesSize));
-native-width-integer	libclamav/7z/7zIn.c	651	  MY_ALLOC(CSzBindPair, folder->BindPairs, (size_t)numBindPairs, alloc);
-native-width-integer	libclamav/7z/7zIn.c	664	  MY_ALLOC(UInt32, folder->PackStreams, (size_t)numPackStreams, alloc);
-native-width-integer	libclamav/7z/7zIn.c	697	    MY_ALLOC(CSzFolder, *folders, (size_t)nfdrs, alloc);
-native-width-integer	libclamav/7z/7zIn.c	721	    MY_ALLOC(UInt64, folder->UnpackSizes, (size_t)numOutStreams, alloc);
+native-width-integer	libclamav/7z/7zIn.c	310	  for (int i = 0; i < files.Size(); i++)
+native-width-integer	libclamav/7z/7zIn.c	334	static int TestSignatureCandidate(Byte *testBytes)
+native-width-integer	libclamav/7z/7zIn.c	336	  size_t i;
+native-width-integer	libclamav/7z/7zIn.c	346	  size_t Size;
+native-width-integer	libclamav/7z/7zIn.c	358	static SRes SzReadBytes(CSzData *sd, Byte *data, size_t size)
+native-width-integer	libclamav/7z/7zIn.c	360	  size_t i;
+native-width-integer	libclamav/7z/7zIn.c	370	  int i;
+native-width-integer	libclamav/7z/7zIn.c	385	  int i;
+native-width-integer	libclamav/7z/7zIn.c	410	  if (value64 >= ((UInt64)(1) << ((sizeof(size_t) - 1) * 8 + 2)))
+native-width-integer	libclamav/7z/7zIn.c	425	  sd->Size -= (size_t)size;
+native-width-integer	libclamav/7z/7zIn.c	426	  sd->Data += (size_t)size;
+native-width-integer	libclamav/7z/7zIn.c	464	static SRes SzReadBoolVector(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
+native-width-integer	libclamav/7z/7zIn.c	468	  size_t i;
+native-width-integer	libclamav/7z/7zIn.c	486	static SRes SzReadBoolVector2(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
+native-width-integer	libclamav/7z/7zIn.c	489	  size_t i;
+native-width-integer	libclamav/7z/7zIn.c	503	    size_t numItems,
+native-width-integer	libclamav/7z/7zIn.c	508	  size_t i;
+native-width-integer	libclamav/7z/7zIn.c	538	  MY_ALLOC(UInt64, *packSizes, (size_t)*numPackStreams, alloc);
+native-width-integer	libclamav/7z/7zIn.c	553	      RINOK(SzReadHashDigests(sd, (size_t)*numPackStreams, packCRCsDefined, packCRCs, alloc));
+native-width-integer	libclamav/7z/7zIn.c	562	    MY_ALLOC(Byte, *packCRCsDefined, (size_t)*numPackStreams, alloc);
+native-width-integer	libclamav/7z/7zIn.c	563	    MY_ALLOC(UInt32, *packCRCs, (size_t)*numPackStreams, alloc);
+native-width-integer	libclamav/7z/7zIn.c	590	  MY_ALLOC(CSzCoderInfo, folder->Coders, (size_t)numCoders, alloc);
+native-width-integer	libclamav/7z/7zIn.c	628	        if (!Buf_Create(&coder->Props, (size_t)propertiesSize, alloc))
+native-width-integer	libclamav/7z/7zIn.c	630	        RINOK(SzReadBytes(sd, coder->Props.data, (size_t)propertiesSize));
+native-width-integer	libclamav/7z/7zIn.c	658	  MY_ALLOC(CSzBindPair, folder->BindPairs, (size_t)numBindPairs, alloc);
+native-width-integer	libclamav/7z/7zIn.c	671	  MY_ALLOC(UInt32, folder->PackStreams, (size_t)numPackStreams, alloc);
+native-width-integer	libclamav/7z/7zIn.c	704	    MY_ALLOC(CSzFolder, *folders, (size_t)nfdrs, alloc);
+native-width-integer	libclamav/7z/7zIn.c	728	    MY_ALLOC(UInt64, folder->UnpackSizes, (size_t)numOutStreams, alloc);
 native-width-integer	libclamav/7z/7zIn.c	78	int SzSubStreamsSizeAllowed(UInt64 folderSize, UInt64 accumulatedSize, UInt64 nextSize)
-native-width-integer	libclamav/7z/7zIn.c	817	    *unpackSizes = (UInt64 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt64) + sizeof(UInt64));
-native-width-integer	libclamav/7z/7zIn.c	819	    *digestsDefined = (Byte *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(Byte) + 1);
-native-width-integer	libclamav/7z/7zIn.c	821	    *digests = (UInt32 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt32) + sizeof(UInt32));
+native-width-integer	libclamav/7z/7zIn.c	824	    *unpackSizes = (UInt64 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt64) + sizeof(UInt64));
+native-width-integer	libclamav/7z/7zIn.c	826	    *digestsDefined = (Byte *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(Byte) + 1);
+native-width-integer	libclamav/7z/7zIn.c	828	    *digests = (UInt32 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt32) + sizeof(UInt32));
 native-width-integer	libclamav/7z/7zIn.c	85	int SzFolder_FindBindPairForInStream(CSzFolder *p, UInt32 inStreamIndex)
-native-width-integer	libclamav/7z/7zIn.c	876	      int digestIndex = 0;
-native-width-integer	libclamav/7z/7zIn.c	942	    if ((UInt64)(int)type != type)
-native-width-integer	libclamav/7z/7zIn.c	944	    switch((int)type)
+native-width-integer	libclamav/7z/7zIn.c	883	      int digestIndex = 0;
+native-width-integer	libclamav/7z/7zIn.c	949	    if ((UInt64)(int)type != type)
 native-width-integer	libclamav/7z/7zIn.c	95	int SzFolder_FindBindPairForOutStream(CSzFolder *p, UInt32 outStreamIndex)
-native-width-integer	libclamav/7z/7zIn.c	971	size_t SzArEx_GetFileNameUtf16(const CSzArEx *p, size_t fileIndex, UInt16 *dest)
-native-width-integer	libclamav/7z/7zIn.c	973	  size_t len = p->FileNameOffsets[fileIndex + 1] - p->FileNameOffsets[fileIndex];
-native-width-integer	libclamav/7z/7zIn.c	976	    size_t i;
-native-width-integer	libclamav/7z/7zIn.c	984	static SRes SzReadFileNames(const Byte *p, size_t size, UInt32 numFiles, size_t *sizes)
-native-width-integer	libclamav/7z/7zIn.c	987	  size_t pos = 0;
+native-width-integer	libclamav/7z/7zIn.c	951	    switch((int)type)
+native-width-integer	libclamav/7z/7zIn.c	978	size_t SzArEx_GetFileNameUtf16(const CSzArEx *p, size_t fileIndex, UInt16 *dest)
+native-width-integer	libclamav/7z/7zIn.c	980	  size_t len = p->FileNameOffsets[fileIndex + 1] - p->FileNameOffsets[fileIndex];
+native-width-integer	libclamav/7z/7zIn.c	983	    size_t i;
+native-width-integer	libclamav/7z/7zIn.c	991	static SRes SzReadFileNames(const Byte *p, size_t size, UInt32 numFiles, size_t *sizes)
+native-width-integer	libclamav/7z/7zIn.c	994	  size_t pos = 0;
 native-width-integer	libclamav/7z/7zStream.c	113	static SRes LookToRead_Skip(void *pp, size_t offset)
 native-width-integer	libclamav/7z/7zStream.c	12	    size_t processed = size;
 native-width-integer	libclamav/7z/7zStream.c	120	static SRes LookToRead_Read(void *pp, void *buf, size_t *size)
@@ -9289,22 +9292,26 @@ native-width-integer	libclamav/7z/XzDec.c	64	  size_t bufConv;
 native-width-integer	libclamav/7z/XzDec.c	65	  size_t bufTotal;
 native-width-integer	libclamav/7z/XzDec.c	68	  int encodeMode;
 native-width-integer	libclamav/7z/XzDec.c	82	SRes BraState_SetProps(void *pp, const Byte *props, size_t propSize, ISzAlloc *alloc)
-native-width-integer	libclamav/7z/XzIn.c	125	  size_t size;
-native-width-integer	libclamav/7z/XzIn.c	129	  size = (size_t)indexSize;
-native-width-integer	libclamav/7z/XzIn.c	165	      int j;
-native-width-integer	libclamav/7z/XzIn.c	166	      size_t processedSize;
-native-width-integer	libclamav/7z/XzIn.c	171	      processedSize = (*startOffset > TEMP_BUF_SIZE) ? TEMP_BUF_SIZE : (size_t)*startOffset;
-native-width-integer	libclamav/7z/XzIn.c	176	      for (j = (int)processedSize; j >= 0; j--)
-native-width-integer	libclamav/7z/XzIn.c	243	  size_t i;
-native-width-integer	libclamav/7z/XzIn.c	254	  size_t i;
-native-width-integer	libclamav/7z/XzIn.c	263	  size_t i;
-native-width-integer	libclamav/7z/XzIn.c	273	  size_t i;
-native-width-integer	libclamav/7z/XzIn.c	295	      size_t newNum = p->num + p->num / 4 + 1;
+native-width-integer	libclamav/7z/XzIn.c	127	  size_t size;
+native-width-integer	libclamav/7z/XzIn.c	131	  size = (size_t)indexSize;
+native-width-integer	libclamav/7z/XzIn.c	167	      int j;
+native-width-integer	libclamav/7z/XzIn.c	168	      size_t processedSize;
+native-width-integer	libclamav/7z/XzIn.c	173	      processedSize = (*startOffset > TEMP_BUF_SIZE) ? TEMP_BUF_SIZE : (size_t)*startOffset;
+native-width-integer	libclamav/7z/XzIn.c	178	      for (j = (int)processedSize; j >= 0; j--)
+native-width-integer	libclamav/7z/XzIn.c	245	  size_t i;
+native-width-integer	libclamav/7z/XzIn.c	256	  size_t i;
+native-width-integer	libclamav/7z/XzIn.c	265	  size_t i;
+native-width-integer	libclamav/7z/XzIn.c	275	  size_t i;
+native-width-integer	libclamav/7z/XzIn.c	297	      size_t growth = p->num / 4 + 1;
+native-width-integer	libclamav/7z/XzIn.c	298	      size_t newNum;
+native-width-integer	libclamav/7z/XzIn.c	300	      if (p->num > (size_t)-1 - growth ||
+native-width-integer	libclamav/7z/XzIn.c	301	          (newNum = p->num + growth) > (size_t)-1 / sizeof(CXzStream))
 native-width-integer	libclamav/7z/XzIn.c	55	  size_t i;
 native-width-integer	libclamav/7z/XzIn.c	64	  size_t i;
 native-width-integer	libclamav/7z/XzIn.c	77	static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAlloc *alloc)
 native-width-integer	libclamav/7z/XzIn.c	79	  size_t i, numBlocks, crcStartPos, pos = 1;
 native-width-integer	libclamav/7z/XzIn.c	93	    numBlocks = (size_t)numBlocks64;
+native-width-integer	libclamav/7z/XzIn.c	96	    if (numBlocks > (size_t)-1 / sizeof(CXzBlockSizes))
 native-width-integer	libclamav/7z_iface.c	131	    int fd;
 native-width-integer	libclamav/7z_iface.c	152	static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
 native-width-integer	libclamav/7z_iface.c	155	    size_t written;
@@ -11658,49 +11665,58 @@ native-width-integer	libclamav/matcher-ac.c	1349	    int match;
 native-width-integer	libclamav/matcher-ac.c	1422	inline static int ac_findmatch(const unsigned char *buffer, uint32_t offset, uint64_t fileoffset, uint32_t length, const struct cli_ac_patt *pattern, uint32_t *start, uint32_t *end)
 native-width-integer	libclamav/matcher-ac.c	1424	    int match;
 native-width-integer	libclamav/matcher-ac.c	1439	    unsigned int i, j;
-native-width-integer	libclamav/matcher-ac.c	1589	    unsigned int i;
-native-width-integer	libclamav/matcher-ac.c	1675	inline static cl_error_t ac_addtype(struct cli_matched_type **list, cli_file_t type, off_t offset, cli_ctx *ctx)
+native-width-integer	libclamav/matcher-ac.c	1440	    size_t offset_entries;
+native-width-integer	libclamav/matcher-ac.c	1441	    size_t lsig_entries;
+native-width-integer	libclamav/matcher-ac.c	1455	    offset_entries = (size_t)reloffsigs;
+native-width-integer	libclamav/matcher-ac.c	1460	    lsig_entries = (size_t)lsigs;
+native-width-integer	libclamav/matcher-ac.c	1467	        data->offset = (uint64_t *)cli_max_calloc((size_t)reloffsigs, 2 * sizeof(uint64_t));
+native-width-integer	libclamav/matcher-ac.c	1491	        data->lsigcnt = (uint32_t **)cli_max_malloc((size_t)lsigs * sizeof(uint32_t *));
+native-width-integer	libclamav/matcher-ac.c	1529	        data->lsig_matches = (struct cli_lsig_matches **)cli_max_calloc((size_t)lsigs, sizeof(struct cli_lsig_matches *));
+native-width-integer	libclamav/matcher-ac.c	1543	        data->lsigsuboff_last  = (uint64_t **)cli_max_malloc((size_t)lsigs * sizeof(uint64_t *));
+native-width-integer	libclamav/matcher-ac.c	1544	        data->lsigsuboff_first = (uint64_t **)cli_max_malloc((size_t)lsigs * sizeof(uint64_t *));
+native-width-integer	libclamav/matcher-ac.c	1605	    unsigned int i;
 native-width-integer	libclamav/matcher-ac.c	169	            unsigned int j;
-native-width-integer	libclamav/matcher-ac.c	1751	cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id, uint64_t realoff, int partial, cli_ctx *ctx)
+native-width-integer	libclamav/matcher-ac.c	1691	inline static cl_error_t ac_addtype(struct cli_matched_type **list, cli_file_t type, off_t offset, cli_ctx *ctx)
+native-width-integer	libclamav/matcher-ac.c	1767	cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id, uint64_t realoff, int partial, cli_ctx *ctx)
 native-width-integer	libclamav/matcher-ac.c	190	static int sort_list_fn(const void *a, const void *b)
-native-width-integer	libclamav/matcher-ac.c	1931	    unsigned int mode,
+native-width-integer	libclamav/matcher-ac.c	1947	    unsigned int mode,
 native-width-integer	libclamav/matcher-ac.c	196	    int res;
-native-width-integer	libclamav/matcher-ac.c	2181	                                                    ret = ac_addtype(ftoffset, type, (off_t)offmatrix[pt->parts - 1][j], ctx);
 native-width-integer	libclamav/matcher-ac.c	219	static int sort_heads_by_partno_fn(const void *a, const void *b)
-native-width-integer	libclamav/matcher-ac.c	2207	                                            cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
-native-width-integer	libclamav/matcher-ac.c	2215	                                        newres->offset     = (off_t)offmatrix[pt->parts - 1][1];
-native-width-integer	libclamav/matcher-ac.c	2305	                                            ret = ac_addtype(ftoffset, type, (off_t)realoff, ctx);
-native-width-integer	libclamav/matcher-ac.c	2324	                                        cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
-native-width-integer	libclamav/matcher-ac.c	2331	                                    newres->offset     = (off_t)realoff;
-native-width-integer	libclamav/matcher-ac.c	2381	static int qcompare_byte(const void *a, const void *b)
-native-width-integer	libclamav/matcher-ac.c	2386	static int qcompare_fstr(const void *arg, const void *a, const void *b)
-native-width-integer	libclamav/matcher-ac.c	2393	inline static size_t find_paren_end(char *hexstr, char **end)
-native-width-integer	libclamav/matcher-ac.c	2395	    size_t i;
-native-width-integer	libclamav/matcher-ac.c	2396	    size_t nest = 0, level = 0;
-native-width-integer	libclamav/matcher-ac.c	2418	inline static int ac_analyze_expr(char *hexstr, int *fixed_len, int *sub_len)
-native-width-integer	libclamav/matcher-ac.c	2420	    unsigned long i;
-native-width-integer	libclamav/matcher-ac.c	2421	    int level = 0, len = 0, numexpr = 1;
-native-width-integer	libclamav/matcher-ac.c	2422	    int flen, slen;
-native-width-integer	libclamav/matcher-ac.c	2475	inline static int ac_uicmp(uint16_t *a, size_t alen, uint16_t *b, size_t blen, int *wild)
-native-width-integer	libclamav/matcher-ac.c	2478	    size_t i, minlen = MIN(alen, blen);
+native-width-integer	libclamav/matcher-ac.c	2197	                                                    ret = ac_addtype(ftoffset, type, (off_t)offmatrix[pt->parts - 1][j], ctx);
+native-width-integer	libclamav/matcher-ac.c	2223	                                            cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
+native-width-integer	libclamav/matcher-ac.c	2231	                                        newres->offset     = (off_t)offmatrix[pt->parts - 1][1];
+native-width-integer	libclamav/matcher-ac.c	2321	                                            ret = ac_addtype(ftoffset, type, (off_t)realoff, ctx);
+native-width-integer	libclamav/matcher-ac.c	2340	                                        cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
+native-width-integer	libclamav/matcher-ac.c	2347	                                    newres->offset     = (off_t)realoff;
+native-width-integer	libclamav/matcher-ac.c	2397	static int qcompare_byte(const void *a, const void *b)
+native-width-integer	libclamav/matcher-ac.c	2402	static int qcompare_fstr(const void *arg, const void *a, const void *b)
+native-width-integer	libclamav/matcher-ac.c	2409	inline static size_t find_paren_end(char *hexstr, char **end)
+native-width-integer	libclamav/matcher-ac.c	2411	    size_t i;
+native-width-integer	libclamav/matcher-ac.c	2412	    size_t nest = 0, level = 0;
+native-width-integer	libclamav/matcher-ac.c	2434	inline static int ac_analyze_expr(char *hexstr, int *fixed_len, int *sub_len)
+native-width-integer	libclamav/matcher-ac.c	2436	    unsigned long i;
+native-width-integer	libclamav/matcher-ac.c	2437	    int level = 0, len = 0, numexpr = 1;
+native-width-integer	libclamav/matcher-ac.c	2438	    int flen, slen;
+native-width-integer	libclamav/matcher-ac.c	2491	inline static int ac_uicmp(uint16_t *a, size_t alen, uint16_t *b, size_t blen, int *wild)
+native-width-integer	libclamav/matcher-ac.c	2494	    size_t i, minlen = MIN(alen, blen);
 native-width-integer	libclamav/matcher-ac.c	252	static inline void link_node_lists(struct cli_ac_list **listtable, unsigned int nentries)
 native-width-integer	libclamav/matcher-ac.c	256	    unsigned int i, nheads = 1;
-native-width-integer	libclamav/matcher-ac.c	2577	inline static int ac_addspecial_add_alt_node(const char *subexpr, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
-native-width-integer	libclamav/matcher-ac.c	2583	    int i                        = 0;
-native-width-integer	libclamav/matcher-ac.c	2584	    int cmp                      = 0;
-native-width-integer	libclamav/matcher-ac.c	2585	    int wild                     = 0;
+native-width-integer	libclamav/matcher-ac.c	2593	inline static int ac_addspecial_add_alt_node(const char *subexpr, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
+native-width-integer	libclamav/matcher-ac.c	2599	    int i                        = 0;
 native-width-integer	libclamav/matcher-ac.c	260	        int ret = patt_cmp_fn(prev->me, listtable[i]->me);
-native-width-integer	libclamav/matcher-ac.c	2647	static int ac_special_altexpand(char *hexpr, char *subexpr, uint16_t maxlen, int lvl, int maxlvl, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
-native-width-integer	libclamav/matcher-ac.c	2649	    int ret, scnt = 0, numexpr;
-native-width-integer	libclamav/matcher-ac.c	2710	            int inner, found;
-native-width-integer	libclamav/matcher-ac.c	2763	inline static int ac_special_altstr(const char *hexpr, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
-native-width-integer	libclamav/matcher-ac.c	2766	    int i, ret, num, fixed, slen;
-native-width-integer	libclamav/matcher-ac.c	2856	cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const char *hexsig, uint8_t sigopts, uint32_t sigid, uint16_t parts, uint16_t partno, uint16_t rtype, uint16_t type, uint32_t mindist, uint32_t maxdist, const char *offset, const uint32_t *lsigid, unsigned int options)
-native-width-integer	libclamav/matcher-ac.c	2863	    int ret, error = CL_SUCCESS;
+native-width-integer	libclamav/matcher-ac.c	2600	    int cmp                      = 0;
+native-width-integer	libclamav/matcher-ac.c	2601	    int wild                     = 0;
+native-width-integer	libclamav/matcher-ac.c	2663	static int ac_special_altexpand(char *hexpr, char *subexpr, uint16_t maxlen, int lvl, int maxlvl, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
+native-width-integer	libclamav/matcher-ac.c	2665	    int ret, scnt = 0, numexpr;
+native-width-integer	libclamav/matcher-ac.c	2726	            int inner, found;
+native-width-integer	libclamav/matcher-ac.c	2779	inline static int ac_special_altstr(const char *hexpr, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
+native-width-integer	libclamav/matcher-ac.c	2782	    int i, ret, num, fixed, slen;
+native-width-integer	libclamav/matcher-ac.c	2872	cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const char *hexsig, uint8_t sigopts, uint32_t sigid, uint16_t parts, uint16_t partno, uint16_t rtype, uint16_t type, uint32_t mindist, uint32_t maxdist, const char *offset, const uint32_t *lsigid, unsigned int options)
+native-width-integer	libclamav/matcher-ac.c	2879	    int ret, error = CL_SUCCESS;
 native-width-integer	libclamav/matcher-ac.c	289	    unsigned int i, grouplen;
-native-width-integer	libclamav/matcher-ac.c	2902	            unsigned int n, n1, n2;
-native-width-integer	libclamav/matcher-ac.c	2989	        size_t nest;
-native-width-integer	libclamav/matcher-ac.c	2990	        size_t hexnewsz;
+native-width-integer	libclamav/matcher-ac.c	2918	            unsigned int n, n1, n2;
+native-width-integer	libclamav/matcher-ac.c	3005	        size_t nest;
+native-width-integer	libclamav/matcher-ac.c	3006	        size_t hexnewsz;
 native-width-integer	libclamav/matcher-ac.c	323	        size_t newCapacity        = root->trans_capacity + 1024;
 native-width-integer	libclamav/matcher-ac.c	403	static int cli_ac_addpatt_recursive(struct cli_matcher *root, struct cli_ac_patt *pattern, struct cli_ac_node *pt, uint16_t i, uint16_t len)
 native-width-integer	libclamav/matcher-ac.c	406	    int ret;
@@ -20441,32 +20457,32 @@ native-width-integer	unit_tests/check_jsnorm.c	539	    const size_t len   = 512 
 native-width-integer	unit_tests/check_jsnorm.c	546	    const size_t explen = len + sizeof(s_exp) + sizeof(e_exp) - 2;
 native-width-integer	unit_tests/check_jsnorm.c	56	    int is;
 native-width-integer	unit_tests/check_jsnorm.c	571	    size_t p;
-native-width-integer	unit_tests/check_matchers.c	1273	    thefmap.len         = (size_t)UINT32_MAX + 1U;
-native-width-integer	unit_tests/check_matchers.c	1375	static const void *yara_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_matchers.c	1385	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
-native-width-integer	unit_tests/check_matchers.c	1648	    const size_t push_count = YARA_STACK_CAPACITY + 1;
-native-width-integer	unit_tests/check_matchers.c	1649	    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
-native-width-integer	unit_tests/check_matchers.c	1655	    size_t i;
-native-width-integer	unit_tests/check_matchers.c	1697	    size_t offset = 0;
-native-width-integer	unit_tests/check_matchers.c	1743	    size_t offset = 0;
+native-width-integer	unit_tests/check_matchers.c	1283	    thefmap.len         = (size_t)UINT32_MAX + 1U;
+native-width-integer	unit_tests/check_matchers.c	1385	static const void *yara_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+native-width-integer	unit_tests/check_matchers.c	1395	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
+native-width-integer	unit_tests/check_matchers.c	1658	    const size_t push_count = YARA_STACK_CAPACITY + 1;
+native-width-integer	unit_tests/check_matchers.c	1659	    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
+native-width-integer	unit_tests/check_matchers.c	1665	    size_t i;
+native-width-integer	unit_tests/check_matchers.c	1707	    size_t offset = 0;
+native-width-integer	unit_tests/check_matchers.c	1753	    size_t offset = 0;
 native-width-integer	unit_tests/check_matchers.c	183	static const void *matcher_test_fmap_need(fmap_t *map, size_t at, size_t len, int lock)
 native-width-integer	unit_tests/check_matchers.c	194	static const void *matcher_test_fmap_read_failure(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_matchers.c	2174	    size_t i, j;
-native-width-integer	unit_tests/check_matchers.c	2261	    size_t length;
-native-width-integer	unit_tests/check_matchers.c	2262	    size_t fail_at;
-native-width-integer	unit_tests/check_matchers.c	2263	    unsigned int reads;
-native-width-integer	unit_tests/check_matchers.c	2266	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
-native-width-integer	unit_tests/check_matchers.c	2275	    if (count > state->fail_at - (size_t)offset)
-native-width-integer	unit_tests/check_matchers.c	2276	        count = state->fail_at - (size_t)offset;
-native-width-integer	unit_tests/check_matchers.c	2277	    if (count > state->length - (size_t)offset)
-native-width-integer	unit_tests/check_matchers.c	2278	        count = state->length - (size_t)offset;
-native-width-integer	unit_tests/check_matchers.c	2280	    return (off_t)count;
-native-width-integer	unit_tests/check_matchers.c	2290	    state.length  = (size_t)SCANBUFF + 1;
-native-width-integer	unit_tests/check_matchers.c	2291	    state.fail_at = (size_t)SCANBUFF;
-native-width-integer	unit_tests/check_matchers.c	2302	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
-native-width-integer	unit_tests/check_matchers.c	2312	static const void *matcher_pcre_full_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_matchers.c	2467	    int get_status;
-native-width-integer	unit_tests/check_matchers.c	2474	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, (long long)CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
+native-width-integer	unit_tests/check_matchers.c	2184	    size_t i, j;
+native-width-integer	unit_tests/check_matchers.c	2271	    size_t length;
+native-width-integer	unit_tests/check_matchers.c	2272	    size_t fail_at;
+native-width-integer	unit_tests/check_matchers.c	2273	    unsigned int reads;
+native-width-integer	unit_tests/check_matchers.c	2276	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
+native-width-integer	unit_tests/check_matchers.c	2285	    if (count > state->fail_at - (size_t)offset)
+native-width-integer	unit_tests/check_matchers.c	2286	        count = state->fail_at - (size_t)offset;
+native-width-integer	unit_tests/check_matchers.c	2287	    if (count > state->length - (size_t)offset)
+native-width-integer	unit_tests/check_matchers.c	2288	        count = state->length - (size_t)offset;
+native-width-integer	unit_tests/check_matchers.c	2290	    return (off_t)count;
+native-width-integer	unit_tests/check_matchers.c	2300	    state.length  = (size_t)SCANBUFF + 1;
+native-width-integer	unit_tests/check_matchers.c	2301	    state.fail_at = (size_t)SCANBUFF;
+native-width-integer	unit_tests/check_matchers.c	2312	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
+native-width-integer	unit_tests/check_matchers.c	2322	static const void *matcher_pcre_full_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+native-width-integer	unit_tests/check_matchers.c	2477	    int get_status;
+native-width-integer	unit_tests/check_matchers.c	2484	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, (long long)CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
 native-width-integer	unit_tests/check_matchers.c	258	    unsigned int i;
 native-width-integer	unit_tests/check_matchers.c	259	    int ret;
 native-width-integer	unit_tests/check_matchers.c	301	    unsigned int i;
@@ -20485,7 +20501,7 @@ native-width-integer	unit_tests/check_matchers.c	569	    int ret;
 native-width-integer	unit_tests/check_matchers.c	665	    info.fsize = (off_t)34359738368ULL;
 native-width-integer	unit_tests/check_matchers.c	714	    info.fsize = (off_t)34359738368ULL;
 native-width-integer	unit_tests/check_matchers.c	748	    info.fsize = (off_t)34359738368ULL;
-native-width-integer	unit_tests/check_matchers.c	828	    unsigned int i;
+native-width-integer	unit_tests/check_matchers.c	838	    unsigned int i;
 native-width-integer	unit_tests/check_regex.c	118	static cl_error_t cb_expect_multi(void *cbdata, const char *suffix, size_t len, const struct regex_list *r)
 native-width-integer	unit_tests/check_regex.c	140	    size_t n            = 0;
 native-width-integer	unit_tests/check_regex.c	305	static int loaded_2 = 0;
@@ -20683,7 +20699,7 @@ boundary-constant	common/optparser.c	1602	                    lnumlimit = LLONG_
 boundary-constant	common/optparser.c	1650	                    lnumarg = (optentry->argtype == CLOPT_TYPE_SIZE64) ? lnumlimit : UINT_MAX;
 boundary-constant	common/optparser.c	1664	                numarg = lnumarg ? lnumarg : ((optentry->argtype == CLOPT_TYPE_SIZE64) ? lnumlimit : UINT_MAX);
 boundary-constant	common/optparser.c	90	        if (parsed > (UINT32_MAX - digit) / 10U)
-boundary-constant	libclamav/7z/7zIn.c	789	        if (*numUnpackStreams > UINT32_MAX - numStreams)
+boundary-constant	libclamav/7z/7zIn.c	796	        if (*numUnpackStreams > UINT32_MAX - numStreams)
 boundary-constant	libclamav/7z_iface.c	671	                    if (newnamelen > SIZE_MAX / sizeof(*utf16name)) {
 boundary-constant	libclamav/7z_iface.c	693	            if (f->Size > SIZE_MAX) {
 boundary-constant	libclamav/apm.c	133	    if (ddm.blockSize != 0 && ddm.blockCount > SIZE_MAX / ddm.blockSize) {
@@ -20793,7 +20809,9 @@ boundary-constant	libclamav/macho.c	615	                        sections64[sect]
 boundary-constant	libclamav/macho.c	654	                        if (padding > UINT32_MAX - sections[sect].vsz) {
 boundary-constant	libclamav/macho.c	787	            else if (ep <= UINT32_MAX)
 boundary-constant	libclamav/macho.c	808	            if (ep <= UINT32_MAX)
-boundary-constant	libclamav/matcher-ac.c	2005	                            if (realoff > UINT32_MAX) {
+boundary-constant	libclamav/matcher-ac.c	1456	    if (offset_entries > SIZE_MAX / 2)
+boundary-constant	libclamav/matcher-ac.c	1461	    if (lsig_entries > SIZE_MAX / 64)
+boundary-constant	libclamav/matcher-ac.c	2021	                            if (realoff > UINT32_MAX) {
 boundary-constant	libclamav/matcher-ac.c	789	        if (parsed > (UINT_MAX - digit) / 10U)
 boundary-constant	libclamav/matcher-bm.c	308	        if (delta > (uint64_t)(UINT32_MAX - i))
 boundary-constant	libclamav/matcher-bm.c	330	                    if (delta > (uint64_t)(UINT32_MAX - i))
@@ -21315,21 +21333,24 @@ boundary-constant	unit_tests/check_clamd.c	1097	    ck_assert_int_eq(send_stream
 boundary-constant	unit_tests/check_clamd.c	1178	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamd.c	980	    ck_assert_uint_eq(clamd_stream_chunk_length(4, 1024, UINT32_MAX), 1020);
 boundary-constant	unit_tests/check_clamd.c	981	    ck_assert_uint_eq(clamd_stream_chunk_length(1024, 1024, UINT32_MAX), 0);
-boundary-constant	unit_tests/check_matchers.c	1249	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_matchers.c	1273	    thefmap.len         = (size_t)UINT32_MAX + 1U;
-boundary-constant	unit_tests/check_matchers.c	2042	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_matchers.c	2136	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, second, CLI_HASH_MD5, UINT32_MAX, second_name), CL_SUCCESS);
-boundary-constant	unit_tests/check_matchers.c	2137	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, first, CLI_HASH_MD5, UINT32_MAX, first_name), CL_SUCCESS);
-boundary-constant	unit_tests/check_matchers.c	2140	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
-boundary-constant	unit_tests/check_matchers.c	2141	    ck_assert_int_eq(cli_hm_scan(first, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
-boundary-constant	unit_tests/check_matchers.c	2144	    ck_assert_int_eq(cli_hm_scan(second, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
-boundary-constant	unit_tests/check_matchers.c	2151	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_matchers.c	1259	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_matchers.c	1283	    thefmap.len         = (size_t)UINT32_MAX + 1U;
+boundary-constant	unit_tests/check_matchers.c	2052	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_matchers.c	2146	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, second, CLI_HASH_MD5, UINT32_MAX, second_name), CL_SUCCESS);
+boundary-constant	unit_tests/check_matchers.c	2147	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, first, CLI_HASH_MD5, UINT32_MAX, first_name), CL_SUCCESS);
+boundary-constant	unit_tests/check_matchers.c	2150	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
+boundary-constant	unit_tests/check_matchers.c	2151	    ck_assert_int_eq(cli_hm_scan(first, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
+boundary-constant	unit_tests/check_matchers.c	2154	    ck_assert_int_eq(cli_hm_scan(second, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
+boundary-constant	unit_tests/check_matchers.c	2161	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_matchers.c	692	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_matchers.c	776	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_matchers.c	818	    ck_assert(cli_matcher_window_reaches_map_end(UINT64_MAX, UINT32_MAX, 32));
-boundary-constant	unit_tests/check_matchers.c	834	    ck_assert(cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
-boundary-constant	unit_tests/check_matchers.c	839	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
-boundary-constant	unit_tests/check_matchers.c	841	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
+boundary-constant	unit_tests/check_matchers.c	818	    ck_assert_int_eq(cli_ac_initdata(&mdata, UINT32_MAX, 0, 0, CLI_DEFAULT_AC_TRACKLEN), CL_EMEM);
+boundary-constant	unit_tests/check_matchers.c	819	    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, UINT32_MAX, 0, CLI_DEFAULT_AC_TRACKLEN), CL_EMEM);
+boundary-constant	unit_tests/check_matchers.c	820	    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 0, UINT32_MAX, CLI_DEFAULT_AC_TRACKLEN), CL_EMEM);
+boundary-constant	unit_tests/check_matchers.c	828	    ck_assert(cli_matcher_window_reaches_map_end(UINT64_MAX, UINT32_MAX, 32));
+boundary-constant	unit_tests/check_matchers.c	844	    ck_assert(cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
+boundary-constant	unit_tests/check_matchers.c	849	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
+boundary-constant	unit_tests/check_matchers.c	851	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
 quantity-parser	clamav-milter/clamav-milter.c	245	            gid_t sock_gid = strtol(gname, &end, 10);
 quantity-parser	clamav-milter/clamav-milter.c	284	            sock_mode = strtol(optget(opts, "MilterSocketMode")->strarg, &end, 8);
 quantity-parser	clamav-milter/netcode.c	563	        nmask = atoi(mask);
@@ -21453,8 +21474,8 @@ narrowing-cast	libclamav/egg.c	2571	        stream.avail_out = (unsigned int)siz
 narrowing-cast	libclamav/entconv.c	1477	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
 narrowing-cast	libclamav/iso9660.c	320	            name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
 narrowing-cast	libclamav/jsparse/js-norm.c	639	               (unsigned long)end, (unsigned long)len);
-narrowing-cast	libclamav/matcher-ac.c	2207	                                            cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
-narrowing-cast	libclamav/matcher-ac.c	2324	                                        cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
+narrowing-cast	libclamav/matcher-ac.c	2223	                                            cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
+narrowing-cast	libclamav/matcher-ac.c	2340	                                        cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
 narrowing-cast	libclamav/matcher-hash.c	240	        item = cli_htu32_find(ht, (uint32_t)size);
 narrowing-cast	libclamav/matcher-hash.c	249	            htitem.key         = (uint32_t)size;
 narrowing-cast	libclamav/matcher-hash.c	405	    return root->hm.sizehashes[type].capacity && cli_htu32_find(&root->hm.sizehashes[type], (uint32_t)size);
@@ -22652,20 +22673,20 @@ format-width	libclamav/macho.c	935	        cli_dbgmsg("UNIBIN: Binary %u of %u\n
 format-width	libclamav/macho.c	936	        cli_dbgmsg("UNIBIN: File offset: %u\n", fat_arch.offset);
 format-width	libclamav/macho.c	937	        cli_dbgmsg("UNIBIN: File size: %u\n", fat_arch.size);
 format-width	libclamav/macho.c	943	            cli_dbgmsg("Invalid fat offset: %d\n", fat_arch.offset);
-format-width	libclamav/matcher-ac.c	1706	        cli_dbgmsg("ac_addtype: added %s embedded object at offset " STDi64 ". Embedded object count: %d\n", cli_ftname(type), (uint64_t)offset, (*list)->cnt);
-format-width	libclamav/matcher-ac.c	1794	            cli_dbgmsg("lsig_sub_matched lsig %u:%u at " STDu64 "\n", lsig_id, subsig_id, realoff);
-format-width	libclamav/matcher-ac.c	1888	            cli_dbgmsg("Checking macro match: " STDu64 " + (%u - %u) == " STDu64 "\n",
-format-width	libclamav/matcher-ac.c	2053	                                    cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u]\n", pt->sigid - 1);
-format-width	libclamav/matcher-ac.c	2061	                                    cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u][0]\n", pt->sigid - 1);
-format-width	libclamav/matcher-ac.c	2148	                                                            cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached maxfiles limit of %u\n", cli_ftname(type), (*ftoffset)->offset, ctx->engine->maxfiles);
-format-width	libclamav/matcher-ac.c	2156	                                                            cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached MAX_EMBEDDED_OBJ limit of %u\n", cli_ftname(type), (*ftoffset)->offset, MAX_EMBEDDED_OBJ);
-format-width	libclamav/matcher-ac.c	2207	                                            cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
-format-width	libclamav/matcher-ac.c	2277	                                                        cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached maxfiles limit of %u\n", cli_ftname(type), (*ftoffset)->offset, ctx->engine->maxfiles);
-format-width	libclamav/matcher-ac.c	2285	                                                        cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached MAX_EMBEDDED_OBJ limit of %u\n", cli_ftname(type), (*ftoffset)->offset, MAX_EMBEDDED_OBJ);
-format-width	libclamav/matcher-ac.c	2324	                                        cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
-format-width	libclamav/matcher-ac.c	2917	            n = sscanf(pt, "%u-%u", &n1, &n2);
-format-width	libclamav/matcher-ac.c	3159	        cli_errmsg("cli_ac_addsig: Subpattern in signature is shorter than the minimum depth of the AC trie. (%u < %u)\n", new->length[0], root->ac_mindepth);
-format-width	libclamav/matcher-ac.c	3288	            cli_errmsg("cli_ac_addsig: Can't find a static subpattern of length %u\n", root->ac_mindepth);
+format-width	libclamav/matcher-ac.c	1722	        cli_dbgmsg("ac_addtype: added %s embedded object at offset " STDi64 ". Embedded object count: %d\n", cli_ftname(type), (uint64_t)offset, (*list)->cnt);
+format-width	libclamav/matcher-ac.c	1810	            cli_dbgmsg("lsig_sub_matched lsig %u:%u at " STDu64 "\n", lsig_id, subsig_id, realoff);
+format-width	libclamav/matcher-ac.c	1904	            cli_dbgmsg("Checking macro match: " STDu64 " + (%u - %u) == " STDu64 "\n",
+format-width	libclamav/matcher-ac.c	2069	                                    cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u]\n", pt->sigid - 1);
+format-width	libclamav/matcher-ac.c	2077	                                    cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u][0]\n", pt->sigid - 1);
+format-width	libclamav/matcher-ac.c	2164	                                                            cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached maxfiles limit of %u\n", cli_ftname(type), (*ftoffset)->offset, ctx->engine->maxfiles);
+format-width	libclamav/matcher-ac.c	2172	                                                            cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached MAX_EMBEDDED_OBJ limit of %u\n", cli_ftname(type), (*ftoffset)->offset, MAX_EMBEDDED_OBJ);
+format-width	libclamav/matcher-ac.c	2223	                                            cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
+format-width	libclamav/matcher-ac.c	2293	                                                        cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached maxfiles limit of %u\n", cli_ftname(type), (*ftoffset)->offset, ctx->engine->maxfiles);
+format-width	libclamav/matcher-ac.c	2301	                                                        cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached MAX_EMBEDDED_OBJ limit of %u\n", cli_ftname(type), (*ftoffset)->offset, MAX_EMBEDDED_OBJ);
+format-width	libclamav/matcher-ac.c	2340	                                        cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
+format-width	libclamav/matcher-ac.c	2933	            n = sscanf(pt, "%u-%u", &n1, &n2);
+format-width	libclamav/matcher-ac.c	3175	        cli_errmsg("cli_ac_addsig: Subpattern in signature is shorter than the minimum depth of the AC trie. (%u < %u)\n", new->length[0], root->ac_mindepth);
+format-width	libclamav/matcher-ac.c	3304	            cli_errmsg("cli_ac_addsig: Can't find a static subpattern of length %u\n", root->ac_mindepth);
 format-width	libclamav/matcher-ac.c	639	        cli_dbgmsg("Using filter for trie %d\n", root->type);
 format-width	libclamav/matcher-ac.c	895	            cli_errmsg("cli_ac_chklsig: Subsignature id %u exceeds MAX_LDB_SUBSIGS\n", id);
 format-width	libclamav/matcher-byte-comp.c	147	        cli_errmsg("cli_bcomp_addpatt: %zu (or more) params provided, 3 expected\n", toks);
@@ -24006,7 +24027,7 @@ format-width	unit_tests/check_clamd.c	772	    ck_assert_msg(headroom == 750, "hy
 format-width	unit_tests/check_clamd.c	789	    ck_assert_msg(headroom == 750, "hybrid cgroup without matching v2 mount ignored v1 memory headroom: %llu", (unsigned long long)headroom);
 format-width	unit_tests/check_disasm.c	226	    ck_assert_msg(size == st.st_size, "disasm size mismatch(value %zd, expected: %zd)", size, (ssize_t)st.st_size);
 format-width	unit_tests/check_disasm.c	229	    ck_assert_msg(d != NULL, "disasm malloc(%zd) failed", size * 2);
-format-width	unit_tests/check_matchers.c	2181	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
+format-width	unit_tests/check_matchers.c	2191	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
 format-width	unit_tests/check_matchers.c	286	        ck_assert_msg(!strncmp(virname, ac_testdata[i].virname, strlen(ac_testdata[i].virname)), "Dataset %u matched with %s", i, virname);
 format-width	unit_tests/check_matchers.c	290	        ck_assert_msg(!strncmp(virname, ac_testdata[i].virname, strlen(ac_testdata[i].virname)), "Dataset %u matched with %s", i, virname);
 format-width	unit_tests/check_matchers.c	329	        ck_assert_msg(!strncmp(virname, ac_testdata[i].virname, strlen(ac_testdata[i].virname)), "Dataset %u matched with %s", i, virname);
@@ -25225,64 +25246,64 @@ offset-size-arithmetic	libclamav/7z/7zFile.h	44	/* reads max(*size, remain file'
 offset-size-arithmetic	libclamav/7z/7zFile.h	45	WRes File_Read(CSzFile *p, void *data, size_t *size);
 offset-size-arithmetic	libclamav/7z/7zFile.h	47	/* writes *size bytes */
 offset-size-arithmetic	libclamav/7z/7zFile.h	48	WRes File_Write(CSzFile *p, const void *data, size_t *size);
-offset-size-arithmetic	libclamav/7z/7zIn.c	1072	    if (size > sd->Size)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1087	        namesSize = (size_t)size - 1;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1094	        MY_ALLOC(size_t, p->FileNameOffsets, numFiles + 1, allocMain);
-offset-size-arithmetic	libclamav/7z/7zIn.c	1181	        sizeIndex++;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1256	  if (unpackSize > (UInt64)(size_t)-1)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1269	    if (CrcCalc(outBuffer->data, (size_t)unpackSize) != folder->UnpackCRC)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1325	  if (startArcPos < 0 || (UInt64)startArcPos > (UInt64)-1 - k7zStartHeaderSize)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1327	  p->startPosAfterHeader = (UInt64)startArcPos + k7zStartHeaderSize;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1341	    if(endpos-curpos < 500) checkSize = (int)(endpos-curpos);
-offset-size-arithmetic	libclamav/7z/7zIn.c	1342	    readpos = endpos - checkSize;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1351	    nextHeaderOffset = readpos + i;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1376	        (UInt64)pos - (UInt64)startArcPos < k7zStartHeaderSize + nextHeaderOffset ||
-offset-size-arithmetic	libclamav/7z/7zIn.c	1377	        (UInt64)pos - (UInt64)startArcPos < k7zStartHeaderSize + nextHeaderOffset + nextHeaderSize)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1381	  RINOK(LookInStream_SeekTo(inStream, startArcPos + k7zStartHeaderSize + nextHeaderOffset));
-offset-size-arithmetic	libclamav/7z/7zIn.c	1444	    size_t *outBufferSize,
-offset-size-arithmetic	libclamav/7z/7zIn.c	1445	    size_t *offset,
-offset-size-arithmetic	libclamav/7z/7zIn.c	1446	    size_t *outSizeProcessed,
-offset-size-arithmetic	libclamav/7z/7zIn.c	1482	    if (unpackSizeSpec > (UInt64)(size_t)-1)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1528	        if (offset64 > (UInt64)-1 - p->db.Files[i].Size)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1530	        offset64 += p->db.Files[i].Size;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1532	      if (offset64 > (UInt64)(size_t)-1 ||
-offset-size-arithmetic	libclamav/7z/7zIn.c	1533	          fileItem->Size > (UInt64)(size_t)-1)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1536	      *outSizeProcessed = (size_t)fileItem->Size;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1538	    if (*offset > *outBufferSize ||
-offset-size-arithmetic	libclamav/7z/7zIn.c	1541	    if (fileItem->CrcDefined && CrcCalc(*outBuffer + *offset, *outSizeProcessed) != fileItem->Crc)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1558	static size_t SzMemberOutStream_Write(void *pp, const void *data, size_t size)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1569	  if (chunkEnd <= p->start || chunkStart >= p->end)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1572	  writeStart = chunkStart > p->start ? chunkStart : p->start;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1573	  writeEnd   = chunkEnd < p->end ? chunkEnd : p->end;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1574	  selected   = (size_t)(writeEnd - writeStart);
-offset-size-arithmetic	libclamav/7z/7zIn.c	1576	                           (const Byte *)data + (size_t)(writeStart - chunkStart), selected) != selected)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1579	                     (const Byte *)data + (size_t)(writeStart - chunkStart), selected);
-offset-size-arithmetic	libclamav/7z/7zIn.c	1641	  if (member.position != SzFolder_GetUnpackSize(folder) || member.written != fileItem->Size)
-offset-size-arithmetic	libclamav/7z/7zIn.c	198	  if ((p = (T *)IAlloc_Alloc(alloc, (size) * sizeof(T))) == 0) return SZ_ERROR_MEM; }
-offset-size-arithmetic	libclamav/7z/7zIn.c	213	    startPos += p->db.Folders[i].NumPackStreams;
-offset-size-arithmetic	libclamav/7z/7zIn.c	220	    if (startPosSize > (UInt64)-1 - p->dataPos ||
-offset-size-arithmetic	libclamav/7z/7zIn.c	224	    startPosSize += p->db.PackSizes[i];
+offset-size-arithmetic	libclamav/7z/7zIn.c	1002	      if (p[pos * 2] == 0 && p[pos * 2 + 1] == 0)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1004	      pos++;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1006	    pos++;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1079	    if (size > sd->Size)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1094	        namesSize = (size_t)size - 1;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1101	        MY_ALLOC(size_t, p->FileNameOffsets, numFiles + 1, allocMain);
+offset-size-arithmetic	libclamav/7z/7zIn.c	1188	        sizeIndex++;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1263	  if (unpackSize > (UInt64)(size_t)-1)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1276	    if (CrcCalc(outBuffer->data, (size_t)unpackSize) != folder->UnpackCRC)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1332	  if (startArcPos < 0 || (UInt64)startArcPos > (UInt64)-1 - k7zStartHeaderSize)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1334	  p->startPosAfterHeader = (UInt64)startArcPos + k7zStartHeaderSize;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1348	    if(endpos-curpos < 500) checkSize = (int)(endpos-curpos);
+offset-size-arithmetic	libclamav/7z/7zIn.c	1349	    readpos = endpos - checkSize;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1358	    nextHeaderOffset = readpos + i;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1383	        (UInt64)pos - (UInt64)startArcPos < k7zStartHeaderSize + nextHeaderOffset ||
+offset-size-arithmetic	libclamav/7z/7zIn.c	1384	        (UInt64)pos - (UInt64)startArcPos < k7zStartHeaderSize + nextHeaderOffset + nextHeaderSize)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1388	  RINOK(LookInStream_SeekTo(inStream, startArcPos + k7zStartHeaderSize + nextHeaderOffset));
+offset-size-arithmetic	libclamav/7z/7zIn.c	1451	    size_t *outBufferSize,
+offset-size-arithmetic	libclamav/7z/7zIn.c	1452	    size_t *offset,
+offset-size-arithmetic	libclamav/7z/7zIn.c	1453	    size_t *outSizeProcessed,
+offset-size-arithmetic	libclamav/7z/7zIn.c	1489	    if (unpackSizeSpec > (UInt64)(size_t)-1)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1535	        if (offset64 > (UInt64)-1 - p->db.Files[i].Size)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1537	        offset64 += p->db.Files[i].Size;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1539	      if (offset64 > (UInt64)(size_t)-1 ||
+offset-size-arithmetic	libclamav/7z/7zIn.c	1540	          fileItem->Size > (UInt64)(size_t)-1)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1543	      *outSizeProcessed = (size_t)fileItem->Size;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1545	    if (*offset > *outBufferSize ||
+offset-size-arithmetic	libclamav/7z/7zIn.c	1548	    if (fileItem->CrcDefined && CrcCalc(*outBuffer + *offset, *outSizeProcessed) != fileItem->Crc)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1565	static size_t SzMemberOutStream_Write(void *pp, const void *data, size_t size)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1576	  if (chunkEnd <= p->start || chunkStart >= p->end)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1579	  writeStart = chunkStart > p->start ? chunkStart : p->start;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1580	  writeEnd   = chunkEnd < p->end ? chunkEnd : p->end;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1581	  selected   = (size_t)(writeEnd - writeStart);
+offset-size-arithmetic	libclamav/7z/7zIn.c	1583	                           (const Byte *)data + (size_t)(writeStart - chunkStart), selected) != selected)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1586	                     (const Byte *)data + (size_t)(writeStart - chunkStart), selected);
+offset-size-arithmetic	libclamav/7z/7zIn.c	1648	  if (member.position != SzFolder_GetUnpackSize(folder) || member.written != fileItem->Size)
+offset-size-arithmetic	libclamav/7z/7zIn.c	201	  else if (sz_count > (size_t)-1 / sizeof(T)) \
+offset-size-arithmetic	libclamav/7z/7zIn.c	220	    startPos += p->db.Folders[i].NumPackStreams;
+offset-size-arithmetic	libclamav/7z/7zIn.c	227	    if (startPosSize > (UInt64)-1 - p->dataPos ||
+offset-size-arithmetic	libclamav/7z/7zIn.c	231	    startPosSize += p->db.PackSizes[i];
 offset-size-arithmetic	libclamav/7z/7zIn.c	25	         (size_t)count > ((size_t)-1 - extra) / itemSize;
-offset-size-arithmetic	libclamav/7z/7zIn.c	283	    UInt64 t = size + p->db.PackSizes[packStreamIndex + i];
-offset-size-arithmetic	libclamav/7z/7zIn.c	284	    if (t < size) /* check it */
-offset-size-arithmetic	libclamav/7z/7zIn.c	403	  if (value64 >= ((UInt64)(1) << ((sizeof(size_t) - 1) * 8 + 2)))
-offset-size-arithmetic	libclamav/7z/7zIn.c	416	  if (size > sd->Size)
-offset-size-arithmetic	libclamav/7z/7zIn.c	457	static SRes SzReadBoolVector(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
-offset-size-arithmetic	libclamav/7z/7zIn.c	479	static SRes SzReadBoolVector2(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
-offset-size-arithmetic	libclamav/7z/7zIn.c	531	  MY_ALLOC(UInt64, *packSizes, (size_t)*numPackStreams, alloc);
-offset-size-arithmetic	libclamav/7z/7zIn.c	546	      RINOK(SzReadHashDigests(sd, (size_t)*numPackStreams, packCRCsDefined, packCRCs, alloc));
-offset-size-arithmetic	libclamav/7z/7zIn.c	555	    MY_ALLOC(Byte, *packCRCsDefined, (size_t)*numPackStreams, alloc);
-offset-size-arithmetic	libclamav/7z/7zIn.c	556	    MY_ALLOC(UInt32, *packCRCs, (size_t)*numPackStreams, alloc);
-offset-size-arithmetic	libclamav/7z/7zIn.c	598	      if (idSize > sizeof(coder->MethodID))
-offset-size-arithmetic	libclamav/7z/7zIn.c	817	    *unpackSizes = (UInt64 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt64) + sizeof(UInt64));
-offset-size-arithmetic	libclamav/7z/7zIn.c	819	    *digestsDefined = (Byte *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(Byte) + 1);
-offset-size-arithmetic	libclamav/7z/7zIn.c	821	    *digests = (UInt32 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt32) + sizeof(UInt32));
-offset-size-arithmetic	libclamav/7z/7zIn.c	971	size_t SzArEx_GetFileNameUtf16(const CSzArEx *p, size_t fileIndex, UInt16 *dest)
-offset-size-arithmetic	libclamav/7z/7zIn.c	973	  size_t len = p->FileNameOffsets[fileIndex + 1] - p->FileNameOffsets[fileIndex];
-offset-size-arithmetic	libclamav/7z/7zIn.c	984	static SRes SzReadFileNames(const Byte *p, size_t size, UInt32 numFiles, size_t *sizes)
-offset-size-arithmetic	libclamav/7z/7zIn.c	995	      if (p[pos * 2] == 0 && p[pos * 2 + 1] == 0)
-offset-size-arithmetic	libclamav/7z/7zIn.c	997	      pos++;
-offset-size-arithmetic	libclamav/7z/7zIn.c	999	    pos++;
+offset-size-arithmetic	libclamav/7z/7zIn.c	290	    UInt64 t = size + p->db.PackSizes[packStreamIndex + i];
+offset-size-arithmetic	libclamav/7z/7zIn.c	291	    if (t < size) /* check it */
+offset-size-arithmetic	libclamav/7z/7zIn.c	410	  if (value64 >= ((UInt64)(1) << ((sizeof(size_t) - 1) * 8 + 2)))
+offset-size-arithmetic	libclamav/7z/7zIn.c	423	  if (size > sd->Size)
+offset-size-arithmetic	libclamav/7z/7zIn.c	464	static SRes SzReadBoolVector(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
+offset-size-arithmetic	libclamav/7z/7zIn.c	486	static SRes SzReadBoolVector2(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
+offset-size-arithmetic	libclamav/7z/7zIn.c	538	  MY_ALLOC(UInt64, *packSizes, (size_t)*numPackStreams, alloc);
+offset-size-arithmetic	libclamav/7z/7zIn.c	553	      RINOK(SzReadHashDigests(sd, (size_t)*numPackStreams, packCRCsDefined, packCRCs, alloc));
+offset-size-arithmetic	libclamav/7z/7zIn.c	562	    MY_ALLOC(Byte, *packCRCsDefined, (size_t)*numPackStreams, alloc);
+offset-size-arithmetic	libclamav/7z/7zIn.c	563	    MY_ALLOC(UInt32, *packCRCs, (size_t)*numPackStreams, alloc);
+offset-size-arithmetic	libclamav/7z/7zIn.c	605	      if (idSize > sizeof(coder->MethodID))
+offset-size-arithmetic	libclamav/7z/7zIn.c	824	    *unpackSizes = (UInt64 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt64) + sizeof(UInt64));
+offset-size-arithmetic	libclamav/7z/7zIn.c	826	    *digestsDefined = (Byte *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(Byte) + 1);
+offset-size-arithmetic	libclamav/7z/7zIn.c	828	    *digests = (UInt32 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt32) + sizeof(UInt32));
+offset-size-arithmetic	libclamav/7z/7zIn.c	978	size_t SzArEx_GetFileNameUtf16(const CSzArEx *p, size_t fileIndex, UInt16 *dest)
+offset-size-arithmetic	libclamav/7z/7zIn.c	980	  size_t len = p->FileNameOffsets[fileIndex + 1] - p->FileNameOffsets[fileIndex];
+offset-size-arithmetic	libclamav/7z/7zIn.c	991	static SRes SzReadFileNames(const Byte *p, size_t size, UInt32 numFiles, size_t *sizes)
 offset-size-arithmetic	libclamav/7z/7zStream.c	105	    size2 = p->size = *size;
 offset-size-arithmetic	libclamav/7z/7zStream.c	107	  if (size2 < *size)
 offset-size-arithmetic	libclamav/7z/7zStream.c	116	  p->pos += offset;
@@ -25435,34 +25456,38 @@ offset-size-arithmetic	libclamav/7z/XzDec.c	793	          if (*src++ != p->buf[p
 offset-size-arithmetic	libclamav/7z/XzDec.c	82	SRes BraState_SetProps(void *pp, const Byte *props, size_t propSize, ISzAlloc *alloc)
 offset-size-arithmetic	libclamav/7z/XzDec.c	844	          p->buf[p->pos++] = *src++;
 offset-size-arithmetic	libclamav/7z/XzDec.c	862	        p->pos += cur;
-offset-size-arithmetic	libclamav/7z/XzIn.c	104	    p->blocks = alloc->Alloc(alloc, sizeof(CXzBlockSizes) * numBlocks);
-offset-size-arithmetic	libclamav/7z/XzIn.c	110	      READ_VARINT_AND_CHECK(buf, pos, size, &block->totalSize);
-offset-size-arithmetic	libclamav/7z/XzIn.c	111	      READ_VARINT_AND_CHECK(buf, pos, size, &block->unpackSize);
-offset-size-arithmetic	libclamav/7z/XzIn.c	117	    if (buf[pos++] != 0)
-offset-size-arithmetic	libclamav/7z/XzIn.c	147	static SRes Xz_ReadBackward(CXzStream *p, ILookInStream *stream, Int64 *startOffset, ISzAlloc *alloc)
-offset-size-arithmetic	libclamav/7z/XzIn.c	152	  if ((*startOffset & 3) != 0 || *startOffset < XZ_STREAM_FOOTER_SIZE)
-offset-size-arithmetic	libclamav/7z/XzIn.c	154	  *startOffset = -XZ_STREAM_FOOTER_SIZE;
-offset-size-arithmetic	libclamav/7z/XzIn.c	162	    *startOffset += XZ_STREAM_FOOTER_SIZE;
-offset-size-arithmetic	libclamav/7z/XzIn.c	169	      if (*startOffset < XZ_STREAM_FOOTER_SIZE || i > (1 << 16))
-offset-size-arithmetic	libclamav/7z/XzIn.c	171	      processedSize = (*startOffset > TEMP_BUF_SIZE) ? TEMP_BUF_SIZE : (size_t)*startOffset;
-offset-size-arithmetic	libclamav/7z/XzIn.c	173	      *startOffset = -(Int64)processedSize;
-offset-size-arithmetic	libclamav/7z/XzIn.c	183	        *startOffset += j;
-offset-size-arithmetic	libclamav/7z/XzIn.c	186	        *startOffset -= XZ_STREAM_FOOTER_SIZE;
-offset-size-arithmetic	libclamav/7z/XzIn.c	206	  *startOffset = -(Int64)(indexSize + XZ_STREAM_FOOTER_SIZE);
-offset-size-arithmetic	libclamav/7z/XzIn.c	218	    *startOffset = -(Int64)sum;
+offset-size-arithmetic	libclamav/7z/XzIn.c	106	    p->blocks = alloc->Alloc(alloc, sizeof(CXzBlockSizes) * numBlocks);
+offset-size-arithmetic	libclamav/7z/XzIn.c	112	      READ_VARINT_AND_CHECK(buf, pos, size, &block->totalSize);
+offset-size-arithmetic	libclamav/7z/XzIn.c	113	      READ_VARINT_AND_CHECK(buf, pos, size, &block->unpackSize);
+offset-size-arithmetic	libclamav/7z/XzIn.c	119	    if (buf[pos++] != 0)
+offset-size-arithmetic	libclamav/7z/XzIn.c	149	static SRes Xz_ReadBackward(CXzStream *p, ILookInStream *stream, Int64 *startOffset, ISzAlloc *alloc)
+offset-size-arithmetic	libclamav/7z/XzIn.c	154	  if ((*startOffset & 3) != 0 || *startOffset < XZ_STREAM_FOOTER_SIZE)
+offset-size-arithmetic	libclamav/7z/XzIn.c	156	  *startOffset = -XZ_STREAM_FOOTER_SIZE;
+offset-size-arithmetic	libclamav/7z/XzIn.c	164	    *startOffset += XZ_STREAM_FOOTER_SIZE;
+offset-size-arithmetic	libclamav/7z/XzIn.c	171	      if (*startOffset < XZ_STREAM_FOOTER_SIZE || i > (1 << 16))
+offset-size-arithmetic	libclamav/7z/XzIn.c	173	      processedSize = (*startOffset > TEMP_BUF_SIZE) ? TEMP_BUF_SIZE : (size_t)*startOffset;
+offset-size-arithmetic	libclamav/7z/XzIn.c	175	      *startOffset = -(Int64)processedSize;
+offset-size-arithmetic	libclamav/7z/XzIn.c	185	        *startOffset += j;
+offset-size-arithmetic	libclamav/7z/XzIn.c	188	        *startOffset -= XZ_STREAM_FOOTER_SIZE;
+offset-size-arithmetic	libclamav/7z/XzIn.c	208	  *startOffset = -(Int64)(indexSize + XZ_STREAM_FOOTER_SIZE);
+offset-size-arithmetic	libclamav/7z/XzIn.c	220	    *startOffset = -(Int64)sum;
 offset-size-arithmetic	libclamav/7z/XzIn.c	26	  { unsigned s = Xz_ReadVarInt(buf + pos, size - pos, res); \
-offset-size-arithmetic	libclamav/7z/XzIn.c	265	    ADD_SIZE_CHECH(size, Xz_GetUnpackSize(&p->streams[i]));
+offset-size-arithmetic	libclamav/7z/XzIn.c	267	    ADD_SIZE_CHECH(size, Xz_GetUnpackSize(&p->streams[i]));
 offset-size-arithmetic	libclamav/7z/XzIn.c	27	  if (s == 0) return SZ_ERROR_ARCHIVE; pos += s; }
-offset-size-arithmetic	libclamav/7z/XzIn.c	275	    ADD_SIZE_CHECH(size, Xz_GetTotalSize(&p->streams[i]));
-offset-size-arithmetic	libclamav/7z/XzIn.c	280	SRes Xzs_ReadBackward(CXzs *p, ILookInStream *stream, Int64 *startOffset, ICompressProgress *progress, ISzAlloc *alloc)
-offset-size-arithmetic	libclamav/7z/XzIn.c	291	    st.startOffset = *startOffset;
-offset-size-arithmetic	libclamav/7z/XzIn.c	295	      size_t newNum = p->num + p->num / 4 + 1;
-offset-size-arithmetic	libclamav/7z/XzIn.c	308	    if (progress && progress->Progress(progress, endOffset - *startOffset, (UInt64)(Int64)-1) != SZ_OK)
+offset-size-arithmetic	libclamav/7z/XzIn.c	277	    ADD_SIZE_CHECH(size, Xz_GetTotalSize(&p->streams[i]));
+offset-size-arithmetic	libclamav/7z/XzIn.c	282	SRes Xzs_ReadBackward(CXzs *p, ILookInStream *stream, Int64 *startOffset, ICompressProgress *progress, ISzAlloc *alloc)
+offset-size-arithmetic	libclamav/7z/XzIn.c	293	    st.startOffset = *startOffset;
+offset-size-arithmetic	libclamav/7z/XzIn.c	297	      size_t growth = p->num / 4 + 1;
+offset-size-arithmetic	libclamav/7z/XzIn.c	300	      if (p->num > (size_t)-1 - growth ||
+offset-size-arithmetic	libclamav/7z/XzIn.c	301	          (newNum = p->num + growth) > (size_t)-1 / sizeof(CXzStream))
+offset-size-arithmetic	libclamav/7z/XzIn.c	315	    if (progress && progress->Progress(progress, endOffset - *startOffset, (UInt64)(Int64)-1) != SZ_OK)
 offset-size-arithmetic	libclamav/7z/XzIn.c	50	  { UInt64 newSize = size + (val); if (newSize < size) return XZ_SIZE_OVERFLOW; size = newSize; }
 offset-size-arithmetic	libclamav/7z/XzIn.c	57	    ADD_SIZE_CHECH(size, p->blocks[i].unpackSize);
 offset-size-arithmetic	libclamav/7z/XzIn.c	66	    ADD_SIZE_CHECH(size, (p->blocks[i].totalSize + 3) & ~(UInt64)3);
 offset-size-arithmetic	libclamav/7z/XzIn.c	77	static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAlloc *alloc)
 offset-size-arithmetic	libclamav/7z/XzIn.c	85	  size -= 4;
+offset-size-arithmetic	libclamav/7z/XzIn.c	94	    if (numBlocks != numBlocks64 || numBlocks > size / 2)
+offset-size-arithmetic	libclamav/7z/XzIn.c	96	    if (numBlocks > (size_t)-1 / sizeof(CXzBlockSizes))
 offset-size-arithmetic	libclamav/7z_iface.c	149	    return written <= declared_size && size <= declared_size - written;
 offset-size-arithmetic	libclamav/7z_iface.c	152	static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
 offset-size-arithmetic	libclamav/7z_iface.c	160	    if (!cli_7z_output_range_allowed(p->written, (uint64_t)size, p->declared_size)) {
@@ -28733,182 +28758,183 @@ offset-size-arithmetic	libclamav/matcher-ac.c	1422	inline static int ac_findmatc
 offset-size-arithmetic	libclamav/matcher-ac.c	1427	    /* minimal check as the maximum variable length may exceed the buffer */
 offset-size-arithmetic	libclamav/matcher-ac.c	1428	    if ((offset + pattern->length[1] > length) || (pattern->prefix_length[1] > offset))
 offset-size-arithmetic	libclamav/matcher-ac.c	1431	    match = ac_forward_match_branch(buffer, offset + pattern->depth, offset, fileoffset, length, pattern, pattern->depth, specialcnt, start, end);
-offset-size-arithmetic	libclamav/matcher-ac.c	1451	        data->offset = (uint64_t *)cli_max_malloc(reloffsigs * 2 * sizeof(uint64_t));
-offset-size-arithmetic	libclamav/matcher-ac.c	1456	        for (i = 0; i < reloffsigs * 2; i += 2)
-offset-size-arithmetic	libclamav/matcher-ac.c	1462	        data->offmatrix = (uint64_t ***)cli_max_calloc(partsigs, sizeof(uint64_t **));
-offset-size-arithmetic	libclamav/matcher-ac.c	1475	        data->lsigcnt = (uint32_t **)cli_max_malloc(lsigs * sizeof(uint32_t *));
+offset-size-arithmetic	libclamav/matcher-ac.c	1456	    if (offset_entries > SIZE_MAX / 2)
+offset-size-arithmetic	libclamav/matcher-ac.c	1458	    offset_entries *= 2;
+offset-size-arithmetic	libclamav/matcher-ac.c	1467	        data->offset = (uint64_t *)cli_max_calloc((size_t)reloffsigs, 2 * sizeof(uint64_t));
+offset-size-arithmetic	libclamav/matcher-ac.c	1478	        data->offmatrix = (uint64_t ***)cli_max_calloc(partsigs, sizeof(uint64_t **));
 offset-size-arithmetic	libclamav/matcher-ac.c	148	        res = memcmp(a->prefix, b->prefix, a->prefix_length[0] * sizeof(uint16_t));
-offset-size-arithmetic	libclamav/matcher-ac.c	1512	        /* subsig offsets */
-offset-size-arithmetic	libclamav/matcher-ac.c	1513	        data->lsig_matches = (struct cli_lsig_matches **)cli_max_calloc(lsigs, sizeof(struct cli_lsig_matches *));
-offset-size-arithmetic	libclamav/matcher-ac.c	1527	        data->lsigsuboff_last  = (uint64_t **)cli_max_malloc(lsigs * sizeof(uint64_t *));
-offset-size-arithmetic	libclamav/matcher-ac.c	1528	        data->lsigsuboff_first = (uint64_t **)cli_max_malloc(lsigs * sizeof(uint64_t *));
-offset-size-arithmetic	libclamav/matcher-ac.c	1529	        if (!data->lsigsuboff_last || !data->lsigsuboff_first) {
-offset-size-arithmetic	libclamav/matcher-ac.c	1545	        data->lsigsuboff_last[0]  = (uint64_t *)cli_max_calloc(lsigs * 64, sizeof(uint64_t));
-offset-size-arithmetic	libclamav/matcher-ac.c	1546	        data->lsigsuboff_first[0] = (uint64_t *)cli_max_calloc(lsigs * 64, sizeof(uint64_t));
-offset-size-arithmetic	libclamav/matcher-ac.c	1547	        if (!data->lsigsuboff_last[0] || !data->lsigsuboff_first[0]) {
-offset-size-arithmetic	libclamav/matcher-ac.c	1570	            data->lsigsuboff_last[i]  = data->lsigsuboff_last[0] + 64 * i;
-offset-size-arithmetic	libclamav/matcher-ac.c	1571	            data->lsigsuboff_first[i] = data->lsigsuboff_first[0] + 64 * i;
-offset-size-arithmetic	libclamav/matcher-ac.c	1586	cl_error_t cli_ac_caloff(const struct cli_matcher *root, struct cli_ac_data *data, const struct cli_target_info *info)
-offset-size-arithmetic	libclamav/matcher-ac.c	1598	            data->offset[patt->offset_min] = CLI_OFF_NONE64;
-offset-size-arithmetic	libclamav/matcher-ac.c	1599	        } else if (CL_SUCCESS != (ret = cli_caloff(NULL, info, root->type, patt->offdata, &data->offset[patt->offset_min], &data->offset[patt->offset_max]))) {
-offset-size-arithmetic	libclamav/matcher-ac.c	1600	            cli_errmsg("cli_ac_caloff: Can't calculate relative offset in signature for %s\n", patt->virname);
-offset-size-arithmetic	libclamav/matcher-ac.c	1602	        } else if ((data->offset[patt->offset_min] != CLI_OFF_NONE64) && (data->offset[patt->offset_min] + patt->length[1] > info->fsize)) {
-offset-size-arithmetic	libclamav/matcher-ac.c	1603	            data->offset[patt->offset_min] = CLI_OFF_NONE64;
-offset-size-arithmetic	libclamav/matcher-ac.c	1675	inline static cl_error_t ac_addtype(struct cli_matched_type **list, cli_file_t type, off_t offset, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/matcher-ac.c	1491	        data->lsigcnt = (uint32_t **)cli_max_malloc((size_t)lsigs * sizeof(uint32_t *));
+offset-size-arithmetic	libclamav/matcher-ac.c	1528	        /* subsig offsets */
+offset-size-arithmetic	libclamav/matcher-ac.c	1529	        data->lsig_matches = (struct cli_lsig_matches **)cli_max_calloc((size_t)lsigs, sizeof(struct cli_lsig_matches *));
+offset-size-arithmetic	libclamav/matcher-ac.c	1543	        data->lsigsuboff_last  = (uint64_t **)cli_max_malloc((size_t)lsigs * sizeof(uint64_t *));
+offset-size-arithmetic	libclamav/matcher-ac.c	1544	        data->lsigsuboff_first = (uint64_t **)cli_max_malloc((size_t)lsigs * sizeof(uint64_t *));
+offset-size-arithmetic	libclamav/matcher-ac.c	1545	        if (!data->lsigsuboff_last || !data->lsigsuboff_first) {
+offset-size-arithmetic	libclamav/matcher-ac.c	1561	        data->lsigsuboff_last[0]  = (uint64_t *)cli_max_calloc(lsig_entries, sizeof(uint64_t));
+offset-size-arithmetic	libclamav/matcher-ac.c	1562	        data->lsigsuboff_first[0] = (uint64_t *)cli_max_calloc(lsig_entries, sizeof(uint64_t));
+offset-size-arithmetic	libclamav/matcher-ac.c	1563	        if (!data->lsigsuboff_last[0] || !data->lsigsuboff_first[0]) {
+offset-size-arithmetic	libclamav/matcher-ac.c	1586	            data->lsigsuboff_last[i]  = data->lsigsuboff_last[0] + 64 * i;
+offset-size-arithmetic	libclamav/matcher-ac.c	1587	            data->lsigsuboff_first[i] = data->lsigsuboff_first[0] + 64 * i;
+offset-size-arithmetic	libclamav/matcher-ac.c	1602	cl_error_t cli_ac_caloff(const struct cli_matcher *root, struct cli_ac_data *data, const struct cli_target_info *info)
+offset-size-arithmetic	libclamav/matcher-ac.c	1614	            data->offset[patt->offset_min] = CLI_OFF_NONE64;
+offset-size-arithmetic	libclamav/matcher-ac.c	1615	        } else if (CL_SUCCESS != (ret = cli_caloff(NULL, info, root->type, patt->offdata, &data->offset[patt->offset_min], &data->offset[patt->offset_max]))) {
+offset-size-arithmetic	libclamav/matcher-ac.c	1616	            cli_errmsg("cli_ac_caloff: Can't calculate relative offset in signature for %s\n", patt->virname);
+offset-size-arithmetic	libclamav/matcher-ac.c	1618	        } else if ((data->offset[patt->offset_min] != CLI_OFF_NONE64) && (data->offset[patt->offset_min] + patt->length[1] > info->fsize)) {
+offset-size-arithmetic	libclamav/matcher-ac.c	1619	            data->offset[patt->offset_min] = CLI_OFF_NONE64;
+offset-size-arithmetic	libclamav/matcher-ac.c	1691	inline static cl_error_t ac_addtype(struct cli_matched_type **list, cli_file_t type, off_t offset, cli_ctx *ctx)
 offset-size-arithmetic	libclamav/matcher-ac.c	170	            RETURN_RES_IF_NE(spcl_a->len[0], spcl_b->len[0]);
-offset-size-arithmetic	libclamav/matcher-ac.c	1706	        cli_dbgmsg("ac_addtype: added %s embedded object at offset " STDi64 ". Embedded object count: %d\n", cli_ftname(type), (uint64_t)offset, (*list)->cnt);
-offset-size-arithmetic	libclamav/matcher-ac.c	1736	        !mdata->lsigsuboff_last || !mdata->lsigsuboff_first ||
-offset-size-arithmetic	libclamav/matcher-ac.c	1738	        !mdata->lsigsuboff_last[lsig_id] || !mdata->lsigsuboff_first[lsig_id]) {
-offset-size-arithmetic	libclamav/matcher-ac.c	1751	cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id, uint64_t realoff, int partial, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/matcher-ac.c	1764	            /* If this is the first subsig in the lsig, store the offset in the first-list. */
-offset-size-arithmetic	libclamav/matcher-ac.c	1771	            ((!partial && realoff <= mdata->lsigsuboff_last[lsig_id][subsig_id]) ||
-offset-size-arithmetic	libclamav/matcher-ac.c	1772	             (partial && realoff < mdata->lsigsuboff_last[lsig_id][subsig_id]))) {
+offset-size-arithmetic	libclamav/matcher-ac.c	1722	        cli_dbgmsg("ac_addtype: added %s embedded object at offset " STDi64 ". Embedded object count: %d\n", cli_ftname(type), (uint64_t)offset, (*list)->cnt);
+offset-size-arithmetic	libclamav/matcher-ac.c	1752	        !mdata->lsigsuboff_last || !mdata->lsigsuboff_first ||
+offset-size-arithmetic	libclamav/matcher-ac.c	1754	        !mdata->lsigsuboff_last[lsig_id] || !mdata->lsigsuboff_first[lsig_id]) {
+offset-size-arithmetic	libclamav/matcher-ac.c	1767	cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id, uint64_t realoff, int partial, cli_ctx *ctx)
 offset-size-arithmetic	libclamav/matcher-ac.c	178	                RETURN_RES_IF_NE(alt_a->len, alt_b->len);
-offset-size-arithmetic	libclamav/matcher-ac.c	1780	            /* Store the offset of this subsig match in the last-list (except in certain circumstances) */
-offset-size-arithmetic	libclamav/matcher-ac.c	1798	                ls_matches = mdata->lsig_matches[lsig_id] = (struct cli_lsig_matches *)cli_max_calloc(1, sizeof(struct cli_lsig_matches) +
-offset-size-arithmetic	libclamav/matcher-ac.c	1799	                                                                                                            (ac_lsig->tdb.subsigs - 1) * sizeof(struct cli_subsig_matches *));
-offset-size-arithmetic	libclamav/matcher-ac.c	1818	                ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) - 1;
-offset-size-arithmetic	libclamav/matcher-ac.c	1823	                new_matches = cli_max_realloc(ss_matches, sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2);
-offset-size-arithmetic	libclamav/matcher-ac.c	1831	                ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) + ss_matches->last * 2 - 1;
-offset-size-arithmetic	libclamav/matcher-ac.c	1834	            ss_matches->offsets[ss_matches->next] = realoff; /* finally, store the offset */
-offset-size-arithmetic	libclamav/matcher-ac.c	1868	        if (macro_group_id >= sizeof(mdata->macro_lastmatch) / sizeof(mdata->macro_lastmatch[0]))
-offset-size-arithmetic	libclamav/matcher-ac.c	1871	        /* start of last macro match */
-offset-size-arithmetic	libclamav/matcher-ac.c	1874	        /* start of previous lsig subsig match */
-offset-size-arithmetic	libclamav/matcher-ac.c	1892	            mdata->lsigsuboff_last[lsig_id][subsig_id + 1] = last_macro_match;
-offset-size-arithmetic	libclamav/matcher-ac.c	1971	                if (patt->offdata[0] != CLI_OFF_VERSION && patt->offdata[0] != CLI_OFF_MACRO && !pattN->next_same && (patt->offset_min != CLI_OFF_ANY64) && (!patt->sigid || patt->partno == 1)) {
-offset-size-arithmetic	libclamav/matcher-ac.c	1976	                    exptoff[0] = offset + bp - patt->prefix_length[2]; /* lower offset end */
-offset-size-arithmetic	libclamav/matcher-ac.c	1977	                    exptoff[1] = offset + bp - patt->prefix_length[1]; /* higher offset end */
-offset-size-arithmetic	libclamav/matcher-ac.c	1979	                        if (patt->offset_max < exptoff[0] || patt->offset_min > exptoff[1]) {
-offset-size-arithmetic	libclamav/matcher-ac.c	1984	                        if (mdata->offset[patt->offset_min] == CLI_OFF_NONE64 || mdata->offset[patt->offset_max] < exptoff[0] || mdata->offset[patt->offset_min] > exptoff[1]) {
-offset-size-arithmetic	libclamav/matcher-ac.c	1992	                if (ac_findmatch(buffer, bp, offset + bp, length, patt, &matchstart, &matchend)) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2003	                        realoff = offset + matchstart;
-offset-size-arithmetic	libclamav/matcher-ac.c	2020	                        } else if (pt->offset_min != CLI_OFF_ANY64 && (!pt->sigid || pt->partno == 1)) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2026	                                if (pt->offset_max < realoff || pt->offset_min > realoff) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2031	                                if (mdata->offset[pt->offset_min] == CLI_OFF_NONE64 || mdata->offset[pt->offset_max] < realoff || mdata->offset[pt->offset_min] > realoff) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2041	                            if (pt->partno != 1 && (!mdata->offmatrix[pt->sigid - 1] || !mdata->offmatrix[pt->sigid - 1][pt->partno - 2][0])) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2050	                            if (!mdata->offmatrix[pt->sigid - 1]) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2051	                                mdata->offmatrix[pt->sigid - 1] = cli_max_malloc(pt->parts * sizeof(uint64_t *));
-offset-size-arithmetic	libclamav/matcher-ac.c	2052	                                if (!mdata->offmatrix[pt->sigid - 1]) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2053	                                    cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u]\n", pt->sigid - 1);
-offset-size-arithmetic	libclamav/matcher-ac.c	2059	                                mdata->offmatrix[pt->sigid - 1][0] = cli_max_malloc(pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
-offset-size-arithmetic	libclamav/matcher-ac.c	2060	                                if (!mdata->offmatrix[pt->sigid - 1][0]) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2061	                                    cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u][0]\n", pt->sigid - 1);
-offset-size-arithmetic	libclamav/matcher-ac.c	2064	                                    free(mdata->offmatrix[pt->sigid - 1]);
-offset-size-arithmetic	libclamav/matcher-ac.c	2065	                                    mdata->offmatrix[pt->sigid - 1] = NULL;
-offset-size-arithmetic	libclamav/matcher-ac.c	2068	                                memset(mdata->offmatrix[pt->sigid - 1][0], 0xff, pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
-offset-size-arithmetic	libclamav/matcher-ac.c	2069	                                mdata->offmatrix[pt->sigid - 1][0][0] = 0;
-offset-size-arithmetic	libclamav/matcher-ac.c	2071	                                    mdata->offmatrix[pt->sigid - 1][j]    = mdata->offmatrix[pt->sigid - 1][0] + j * (CLI_DEFAULT_AC_TRACKLEN + 2);
-offset-size-arithmetic	libclamav/matcher-ac.c	2072	                                    mdata->offmatrix[pt->sigid - 1][j][0] = 0;
-offset-size-arithmetic	libclamav/matcher-ac.c	2075	                            offmatrix = mdata->offmatrix[pt->sigid - 1];
-offset-size-arithmetic	libclamav/matcher-ac.c	2079	                                for (j = 1; (j <= CLI_DEFAULT_AC_TRACKLEN + 1) && (offmatrix[pt->partno - 2][j] != (uint64_t)-1); j++) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2081	                                    if (realoff < offmatrix[pt->partno - 2][j])
-offset-size-arithmetic	libclamav/matcher-ac.c	2085	                                        if (realoff - offmatrix[pt->partno - 2][j] > pt->maxdist)
-offset-size-arithmetic	libclamav/matcher-ac.c	2089	                                        if (realoff - offmatrix[pt->partno - 2][j] < pt->mindist)
-offset-size-arithmetic	libclamav/matcher-ac.c	2103	                                    swp                             = offmatrix[pt->parts - 1][1];
-offset-size-arithmetic	libclamav/matcher-ac.c	2104	                                    offmatrix[pt->parts - 1][1]     = offmatrix[pt->parts - 1][found];
-offset-size-arithmetic	libclamav/matcher-ac.c	2105	                                    offmatrix[pt->parts - 1][found] = swp;
-offset-size-arithmetic	libclamav/matcher-ac.c	2110	                                if (offmatrix[pt->partno - 1][0] == CLI_DEFAULT_AC_TRACKLEN + 1)
-offset-size-arithmetic	libclamav/matcher-ac.c	2111	                                    offmatrix[pt->partno - 1][0] = 1; /* wrap, ends up at 2 */
-offset-size-arithmetic	libclamav/matcher-ac.c	2112	                                offmatrix[pt->partno - 1][0]++;
-offset-size-arithmetic	libclamav/matcher-ac.c	2113	                                offmatrix[pt->partno - 1][offmatrix[pt->partno - 1][0]] = offset + matchend;
-offset-size-arithmetic	libclamav/matcher-ac.c	2115	                                if (pt->partno == 1) /* save realoff for the first part */
-offset-size-arithmetic	libclamav/matcher-ac.c	2116	                                    offmatrix[pt->parts - 1][offmatrix[pt->partno - 1][0]] = realoff;
-offset-size-arithmetic	libclamav/matcher-ac.c	2146	                                                    } else if ((*ftoffset)->cnt >= ctx->engine->maxfiles) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2148	                                                            cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached maxfiles limit of %u\n", cli_ftname(type), (*ftoffset)->offset, ctx->engine->maxfiles);
-offset-size-arithmetic	libclamav/matcher-ac.c	2154	                                                    if ((*ftoffset)->cnt >= MAX_EMBEDDED_OBJ) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2156	                                                            cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached MAX_EMBEDDED_OBJ limit of %u\n", cli_ftname(type), (*ftoffset)->offset, MAX_EMBEDDED_OBJ);
-offset-size-arithmetic	libclamav/matcher-ac.c	2180	                                                for (j = 1; j <= CLI_DEFAULT_AC_TRACKLEN + 1 && offmatrix[0][j] != (uint64_t)-1; j++) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2181	                                                    ret = ac_addtype(ftoffset, type, (off_t)offmatrix[pt->parts - 1][j], ctx);
-offset-size-arithmetic	libclamav/matcher-ac.c	2189	                                        memset(offmatrix[0], 0xff, pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
-offset-size-arithmetic	libclamav/matcher-ac.c	2197	                                        rc = lsig_sub_matched(root, mdata, pt->lsigid[1], pt->lsigid[2], offmatrix[pt->parts - 1][1], 1, ctx);
-offset-size-arithmetic	libclamav/matcher-ac.c	2215	                                        newres->offset     = (off_t)offmatrix[pt->parts - 1][1];
-offset-size-arithmetic	libclamav/matcher-ac.c	2222	                                            cli_set_match_offset(ctx, offmatrix[pt->parts - 1][1]);
-offset-size-arithmetic	libclamav/matcher-ac.c	2224	                                            ret = cli_append_virus(ctx, (const char *)pt->virname);
-offset-size-arithmetic	libclamav/matcher-ac.c	2275	                                                } else if ((*ftoffset)->cnt >= ctx->engine->maxfiles) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2277	                                                        cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached maxfiles limit of %u\n", cli_ftname(type), (*ftoffset)->offset, ctx->engine->maxfiles);
-offset-size-arithmetic	libclamav/matcher-ac.c	2283	                                                if ((*ftoffset)->cnt >= MAX_EMBEDDED_OBJ) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2285	                                                        cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached MAX_EMBEDDED_OBJ limit of %u\n", cli_ftname(type), (*ftoffset)->offset, MAX_EMBEDDED_OBJ);
-offset-size-arithmetic	libclamav/matcher-ac.c	2341	                                        ret = cli_append_virus(ctx, (const char *)pt->virname);
-offset-size-arithmetic	libclamav/matcher-ac.c	2388	    uint16_t len = *(uint16_t *)arg;
-offset-size-arithmetic	libclamav/matcher-ac.c	2392	/* returns if level of nesting, end set to MATCHING paren, start AFTER staring paren */
-offset-size-arithmetic	libclamav/matcher-ac.c	2393	inline static size_t find_paren_end(char *hexstr, char **end)
-offset-size-arithmetic	libclamav/matcher-ac.c	2415	/* analyzes expr, returns number of subexpr, if fixed length subexpr and longest subexpr len *
-offset-size-arithmetic	libclamav/matcher-ac.c	2417	 * counts applied to start of expr (not end, i.e. numexpr starts at 1 for the first expr     */
-offset-size-arithmetic	libclamav/matcher-ac.c	2418	inline static int ac_analyze_expr(char *hexstr, int *fixed_len, int *sub_len)
-offset-size-arithmetic	libclamav/matcher-ac.c	2456	            len++;
-offset-size-arithmetic	libclamav/matcher-ac.c	2475	inline static int ac_uicmp(uint16_t *a, size_t alen, uint16_t *b, size_t blen, int *wild)
-offset-size-arithmetic	libclamav/matcher-ac.c	2604	    newnode->len    = (uint16_t)strlen(subexpr) / 2;
-offset-size-arithmetic	libclamav/matcher-ac.c	2620	        cmp = ac_uicmp(ins->str, ins->len, newnode->str, newnode->len, &wild);
-offset-size-arithmetic	libclamav/matcher-ac.c	2622	            if (newnode->len != ins->len) { /* derivative */
-offset-size-arithmetic	libclamav/matcher-ac.c	2630	        } /* TODO - possible sorting of altstr uniques and derivative groups? */
-offset-size-arithmetic	libclamav/matcher-ac.c	2638	    if ((special->num == 0) || (newnode->len < special->len[0]))
-offset-size-arithmetic	libclamav/matcher-ac.c	2639	        special->len[0] = newnode->len;
-offset-size-arithmetic	libclamav/matcher-ac.c	2640	    if ((special->num == 0) || (newnode->len > special->len[1]))
-offset-size-arithmetic	libclamav/matcher-ac.c	2641	        special->len[1] = newnode->len;
-offset-size-arithmetic	libclamav/matcher-ac.c	2647	static int ac_special_altexpand(char *hexpr, char *subexpr, uint16_t maxlen, int lvl, int maxlvl, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
-offset-size-arithmetic	libclamav/matcher-ac.c	2673	        /* appended token */
-offset-size-arithmetic	libclamav/matcher-ac.c	2693	                end++;
-offset-size-arithmetic	libclamav/matcher-ac.c	2695	                if ((ret = ac_special_altexpand(end, subexpr, maxlen, lvl - 1, lvl, sigopts, special, root)) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/matcher-ac.c	2706	            if ((ret = ac_special_altexpand(ept, subexpr, maxlen, lvl - 1, lvl, sigopts, special, root)) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/matcher-ac.c	2716	            end++;
-offset-size-arithmetic	libclamav/matcher-ac.c	2718	            if ((ret = ac_special_altexpand(ept, subexpr, maxlen, lvl + 1, lvl + 1, sigopts, special, root)) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/matcher-ac.c	2721	            /* move ept to end of current alternate expression (recursive call already populates them) */
-offset-size-arithmetic	libclamav/matcher-ac.c	2777	        special->len[0] = special->len[1] = slen / 2;
-offset-size-arithmetic	libclamav/matcher-ac.c	2778	        /* single-bytes are len 2 in hex */
-offset-size-arithmetic	libclamav/matcher-ac.c	2789	            (special->alt).f_str = (unsigned char **)MPOOL_MALLOC(root->mempool, num * sizeof(unsigned char *));
-offset-size-arithmetic	libclamav/matcher-ac.c	2826	            cli_qsort_r((special->alt).f_str, special->num, sizeof(unsigned char *), qcompare_fstr, &(special->len));
-offset-size-arithmetic	libclamav/matcher-ac.c	2838	        if (!(subexpr = calloc(slen + 1, sizeof(char)))) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2844	        ret = ac_special_altexpand(hexprcpy, subexpr, slen + 1, 0, 0, sigopts, special, root);
-offset-size-arithmetic	libclamav/matcher-ac.c	2856	cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const char *hexsig, uint8_t sigopts, uint32_t sigid, uint16_t parts, uint16_t partno, uint16_t rtype, uint16_t type, uint32_t mindist, uint32_t maxdist, const char *offset, const uint32_t *lsigid, unsigned int options)
-offset-size-arithmetic	libclamav/matcher-ac.c	2860	    uint16_t i, j, ppos = 0, pend, *dec, nzpos = 0;
-offset-size-arithmetic	libclamav/matcher-ac.c	2871	    if (strlen(hexsig) / 2 < root->ac_mindepth) {
+offset-size-arithmetic	libclamav/matcher-ac.c	1780	            /* If this is the first subsig in the lsig, store the offset in the first-list. */
+offset-size-arithmetic	libclamav/matcher-ac.c	1787	            ((!partial && realoff <= mdata->lsigsuboff_last[lsig_id][subsig_id]) ||
+offset-size-arithmetic	libclamav/matcher-ac.c	1788	             (partial && realoff < mdata->lsigsuboff_last[lsig_id][subsig_id]))) {
+offset-size-arithmetic	libclamav/matcher-ac.c	1796	            /* Store the offset of this subsig match in the last-list (except in certain circumstances) */
+offset-size-arithmetic	libclamav/matcher-ac.c	1814	                ls_matches = mdata->lsig_matches[lsig_id] = (struct cli_lsig_matches *)cli_max_calloc(1, sizeof(struct cli_lsig_matches) +
+offset-size-arithmetic	libclamav/matcher-ac.c	1815	                                                                                                            (ac_lsig->tdb.subsigs - 1) * sizeof(struct cli_subsig_matches *));
+offset-size-arithmetic	libclamav/matcher-ac.c	1834	                ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) - 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	1839	                new_matches = cli_max_realloc(ss_matches, sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2);
+offset-size-arithmetic	libclamav/matcher-ac.c	1847	                ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) + ss_matches->last * 2 - 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	1850	            ss_matches->offsets[ss_matches->next] = realoff; /* finally, store the offset */
+offset-size-arithmetic	libclamav/matcher-ac.c	1884	        if (macro_group_id >= sizeof(mdata->macro_lastmatch) / sizeof(mdata->macro_lastmatch[0]))
+offset-size-arithmetic	libclamav/matcher-ac.c	1887	        /* start of last macro match */
+offset-size-arithmetic	libclamav/matcher-ac.c	1890	        /* start of previous lsig subsig match */
+offset-size-arithmetic	libclamav/matcher-ac.c	1908	            mdata->lsigsuboff_last[lsig_id][subsig_id + 1] = last_macro_match;
+offset-size-arithmetic	libclamav/matcher-ac.c	1987	                if (patt->offdata[0] != CLI_OFF_VERSION && patt->offdata[0] != CLI_OFF_MACRO && !pattN->next_same && (patt->offset_min != CLI_OFF_ANY64) && (!patt->sigid || patt->partno == 1)) {
+offset-size-arithmetic	libclamav/matcher-ac.c	1992	                    exptoff[0] = offset + bp - patt->prefix_length[2]; /* lower offset end */
+offset-size-arithmetic	libclamav/matcher-ac.c	1993	                    exptoff[1] = offset + bp - patt->prefix_length[1]; /* higher offset end */
+offset-size-arithmetic	libclamav/matcher-ac.c	1995	                        if (patt->offset_max < exptoff[0] || patt->offset_min > exptoff[1]) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2000	                        if (mdata->offset[patt->offset_min] == CLI_OFF_NONE64 || mdata->offset[patt->offset_max] < exptoff[0] || mdata->offset[patt->offset_min] > exptoff[1]) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2008	                if (ac_findmatch(buffer, bp, offset + bp, length, patt, &matchstart, &matchend)) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2019	                        realoff = offset + matchstart;
+offset-size-arithmetic	libclamav/matcher-ac.c	2036	                        } else if (pt->offset_min != CLI_OFF_ANY64 && (!pt->sigid || pt->partno == 1)) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2042	                                if (pt->offset_max < realoff || pt->offset_min > realoff) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2047	                                if (mdata->offset[pt->offset_min] == CLI_OFF_NONE64 || mdata->offset[pt->offset_max] < realoff || mdata->offset[pt->offset_min] > realoff) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2057	                            if (pt->partno != 1 && (!mdata->offmatrix[pt->sigid - 1] || !mdata->offmatrix[pt->sigid - 1][pt->partno - 2][0])) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2066	                            if (!mdata->offmatrix[pt->sigid - 1]) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2067	                                mdata->offmatrix[pt->sigid - 1] = cli_max_malloc(pt->parts * sizeof(uint64_t *));
+offset-size-arithmetic	libclamav/matcher-ac.c	2068	                                if (!mdata->offmatrix[pt->sigid - 1]) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2069	                                    cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u]\n", pt->sigid - 1);
+offset-size-arithmetic	libclamav/matcher-ac.c	2075	                                mdata->offmatrix[pt->sigid - 1][0] = cli_max_malloc(pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
+offset-size-arithmetic	libclamav/matcher-ac.c	2076	                                if (!mdata->offmatrix[pt->sigid - 1][0]) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2077	                                    cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u][0]\n", pt->sigid - 1);
+offset-size-arithmetic	libclamav/matcher-ac.c	2080	                                    free(mdata->offmatrix[pt->sigid - 1]);
+offset-size-arithmetic	libclamav/matcher-ac.c	2081	                                    mdata->offmatrix[pt->sigid - 1] = NULL;
+offset-size-arithmetic	libclamav/matcher-ac.c	2084	                                memset(mdata->offmatrix[pt->sigid - 1][0], 0xff, pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
+offset-size-arithmetic	libclamav/matcher-ac.c	2085	                                mdata->offmatrix[pt->sigid - 1][0][0] = 0;
+offset-size-arithmetic	libclamav/matcher-ac.c	2087	                                    mdata->offmatrix[pt->sigid - 1][j]    = mdata->offmatrix[pt->sigid - 1][0] + j * (CLI_DEFAULT_AC_TRACKLEN + 2);
+offset-size-arithmetic	libclamav/matcher-ac.c	2088	                                    mdata->offmatrix[pt->sigid - 1][j][0] = 0;
+offset-size-arithmetic	libclamav/matcher-ac.c	2091	                            offmatrix = mdata->offmatrix[pt->sigid - 1];
+offset-size-arithmetic	libclamav/matcher-ac.c	2095	                                for (j = 1; (j <= CLI_DEFAULT_AC_TRACKLEN + 1) && (offmatrix[pt->partno - 2][j] != (uint64_t)-1); j++) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2097	                                    if (realoff < offmatrix[pt->partno - 2][j])
+offset-size-arithmetic	libclamav/matcher-ac.c	2101	                                        if (realoff - offmatrix[pt->partno - 2][j] > pt->maxdist)
+offset-size-arithmetic	libclamav/matcher-ac.c	2105	                                        if (realoff - offmatrix[pt->partno - 2][j] < pt->mindist)
+offset-size-arithmetic	libclamav/matcher-ac.c	2119	                                    swp                             = offmatrix[pt->parts - 1][1];
+offset-size-arithmetic	libclamav/matcher-ac.c	2120	                                    offmatrix[pt->parts - 1][1]     = offmatrix[pt->parts - 1][found];
+offset-size-arithmetic	libclamav/matcher-ac.c	2121	                                    offmatrix[pt->parts - 1][found] = swp;
+offset-size-arithmetic	libclamav/matcher-ac.c	2126	                                if (offmatrix[pt->partno - 1][0] == CLI_DEFAULT_AC_TRACKLEN + 1)
+offset-size-arithmetic	libclamav/matcher-ac.c	2127	                                    offmatrix[pt->partno - 1][0] = 1; /* wrap, ends up at 2 */
+offset-size-arithmetic	libclamav/matcher-ac.c	2128	                                offmatrix[pt->partno - 1][0]++;
+offset-size-arithmetic	libclamav/matcher-ac.c	2129	                                offmatrix[pt->partno - 1][offmatrix[pt->partno - 1][0]] = offset + matchend;
+offset-size-arithmetic	libclamav/matcher-ac.c	2131	                                if (pt->partno == 1) /* save realoff for the first part */
+offset-size-arithmetic	libclamav/matcher-ac.c	2132	                                    offmatrix[pt->parts - 1][offmatrix[pt->partno - 1][0]] = realoff;
+offset-size-arithmetic	libclamav/matcher-ac.c	2162	                                                    } else if ((*ftoffset)->cnt >= ctx->engine->maxfiles) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2164	                                                            cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached maxfiles limit of %u\n", cli_ftname(type), (*ftoffset)->offset, ctx->engine->maxfiles);
+offset-size-arithmetic	libclamav/matcher-ac.c	2170	                                                    if ((*ftoffset)->cnt >= MAX_EMBEDDED_OBJ) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2172	                                                            cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached MAX_EMBEDDED_OBJ limit of %u\n", cli_ftname(type), (*ftoffset)->offset, MAX_EMBEDDED_OBJ);
+offset-size-arithmetic	libclamav/matcher-ac.c	2196	                                                for (j = 1; j <= CLI_DEFAULT_AC_TRACKLEN + 1 && offmatrix[0][j] != (uint64_t)-1; j++) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2197	                                                    ret = ac_addtype(ftoffset, type, (off_t)offmatrix[pt->parts - 1][j], ctx);
+offset-size-arithmetic	libclamav/matcher-ac.c	2205	                                        memset(offmatrix[0], 0xff, pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
+offset-size-arithmetic	libclamav/matcher-ac.c	2213	                                        rc = lsig_sub_matched(root, mdata, pt->lsigid[1], pt->lsigid[2], offmatrix[pt->parts - 1][1], 1, ctx);
+offset-size-arithmetic	libclamav/matcher-ac.c	2231	                                        newres->offset     = (off_t)offmatrix[pt->parts - 1][1];
+offset-size-arithmetic	libclamav/matcher-ac.c	2238	                                            cli_set_match_offset(ctx, offmatrix[pt->parts - 1][1]);
+offset-size-arithmetic	libclamav/matcher-ac.c	2240	                                            ret = cli_append_virus(ctx, (const char *)pt->virname);
+offset-size-arithmetic	libclamav/matcher-ac.c	2291	                                                } else if ((*ftoffset)->cnt >= ctx->engine->maxfiles) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2293	                                                        cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached maxfiles limit of %u\n", cli_ftname(type), (*ftoffset)->offset, ctx->engine->maxfiles);
+offset-size-arithmetic	libclamav/matcher-ac.c	2299	                                                if ((*ftoffset)->cnt >= MAX_EMBEDDED_OBJ) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2301	                                                        cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached MAX_EMBEDDED_OBJ limit of %u\n", cli_ftname(type), (*ftoffset)->offset, MAX_EMBEDDED_OBJ);
+offset-size-arithmetic	libclamav/matcher-ac.c	2357	                                        ret = cli_append_virus(ctx, (const char *)pt->virname);
+offset-size-arithmetic	libclamav/matcher-ac.c	2404	    uint16_t len = *(uint16_t *)arg;
+offset-size-arithmetic	libclamav/matcher-ac.c	2408	/* returns if level of nesting, end set to MATCHING paren, start AFTER staring paren */
+offset-size-arithmetic	libclamav/matcher-ac.c	2409	inline static size_t find_paren_end(char *hexstr, char **end)
+offset-size-arithmetic	libclamav/matcher-ac.c	2431	/* analyzes expr, returns number of subexpr, if fixed length subexpr and longest subexpr len *
+offset-size-arithmetic	libclamav/matcher-ac.c	2433	 * counts applied to start of expr (not end, i.e. numexpr starts at 1 for the first expr     */
+offset-size-arithmetic	libclamav/matcher-ac.c	2434	inline static int ac_analyze_expr(char *hexstr, int *fixed_len, int *sub_len)
+offset-size-arithmetic	libclamav/matcher-ac.c	2472	            len++;
+offset-size-arithmetic	libclamav/matcher-ac.c	2491	inline static int ac_uicmp(uint16_t *a, size_t alen, uint16_t *b, size_t blen, int *wild)
+offset-size-arithmetic	libclamav/matcher-ac.c	2620	    newnode->len    = (uint16_t)strlen(subexpr) / 2;
+offset-size-arithmetic	libclamav/matcher-ac.c	2636	        cmp = ac_uicmp(ins->str, ins->len, newnode->str, newnode->len, &wild);
+offset-size-arithmetic	libclamav/matcher-ac.c	2638	            if (newnode->len != ins->len) { /* derivative */
+offset-size-arithmetic	libclamav/matcher-ac.c	2646	        } /* TODO - possible sorting of altstr uniques and derivative groups? */
+offset-size-arithmetic	libclamav/matcher-ac.c	2654	    if ((special->num == 0) || (newnode->len < special->len[0]))
+offset-size-arithmetic	libclamav/matcher-ac.c	2655	        special->len[0] = newnode->len;
+offset-size-arithmetic	libclamav/matcher-ac.c	2656	    if ((special->num == 0) || (newnode->len > special->len[1]))
+offset-size-arithmetic	libclamav/matcher-ac.c	2657	        special->len[1] = newnode->len;
+offset-size-arithmetic	libclamav/matcher-ac.c	2663	static int ac_special_altexpand(char *hexpr, char *subexpr, uint16_t maxlen, int lvl, int maxlvl, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
+offset-size-arithmetic	libclamav/matcher-ac.c	2689	        /* appended token */
+offset-size-arithmetic	libclamav/matcher-ac.c	2709	                end++;
+offset-size-arithmetic	libclamav/matcher-ac.c	2711	                if ((ret = ac_special_altexpand(end, subexpr, maxlen, lvl - 1, lvl, sigopts, special, root)) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/matcher-ac.c	2722	            if ((ret = ac_special_altexpand(ept, subexpr, maxlen, lvl - 1, lvl, sigopts, special, root)) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/matcher-ac.c	2732	            end++;
+offset-size-arithmetic	libclamav/matcher-ac.c	2734	            if ((ret = ac_special_altexpand(ept, subexpr, maxlen, lvl + 1, lvl + 1, sigopts, special, root)) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/matcher-ac.c	2737	            /* move ept to end of current alternate expression (recursive call already populates them) */
+offset-size-arithmetic	libclamav/matcher-ac.c	2793	        special->len[0] = special->len[1] = slen / 2;
+offset-size-arithmetic	libclamav/matcher-ac.c	2794	        /* single-bytes are len 2 in hex */
+offset-size-arithmetic	libclamav/matcher-ac.c	2805	            (special->alt).f_str = (unsigned char **)MPOOL_MALLOC(root->mempool, num * sizeof(unsigned char *));
+offset-size-arithmetic	libclamav/matcher-ac.c	2842	            cli_qsort_r((special->alt).f_str, special->num, sizeof(unsigned char *), qcompare_fstr, &(special->len));
+offset-size-arithmetic	libclamav/matcher-ac.c	2854	        if (!(subexpr = calloc(slen + 1, sizeof(char)))) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2860	        ret = ac_special_altexpand(hexprcpy, subexpr, slen + 1, 0, 0, sigopts, special, root);
+offset-size-arithmetic	libclamav/matcher-ac.c	2872	cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const char *hexsig, uint8_t sigopts, uint32_t sigid, uint16_t parts, uint16_t partno, uint16_t rtype, uint16_t type, uint32_t mindist, uint32_t maxdist, const char *offset, const uint32_t *lsigid, unsigned int options)
+offset-size-arithmetic	libclamav/matcher-ac.c	2876	    uint16_t i, j, ppos = 0, pend, *dec, nzpos = 0;
+offset-size-arithmetic	libclamav/matcher-ac.c	2887	    if (strlen(hexsig) / 2 < root->ac_mindepth) {
 offset-size-arithmetic	libclamav/matcher-ac.c	295	    cli_qsort(root->ac_listtable, root->ac_lists, sizeof(root->ac_listtable[0]), sort_list_fn);
 offset-size-arithmetic	libclamav/matcher-ac.c	298	    for (i = 1, grouplen = 1; i <= root->ac_lists; i++, grouplen++) {
-offset-size-arithmetic	libclamav/matcher-ac.c	2999	        hexnewsz = strlen(hexsig) + 1;
-offset-size-arithmetic	libclamav/matcher-ac.c	3035	            *start++ = 0;
-offset-size-arithmetic	libclamav/matcher-ac.c	3103	            newtable = (struct cli_ac_special **)MPOOL_REALLOC(root->mempool, new->special_table, new->special * sizeof(struct cli_ac_special *));
-offset-size-arithmetic	libclamav/matcher-ac.c	3157	    new->length[0] = (uint16_t)strlen(hex ? hex : hexsig) / 2;
-offset-size-arithmetic	libclamav/matcher-ac.c	3158	    if (new->length[0] < root->ac_mindepth) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3159	        cli_errmsg("cli_ac_addsig: Subpattern in signature is shorter than the minimum depth of the AC trie. (%u < %u)\n", new->length[0], root->ac_mindepth);
-offset-size-arithmetic	libclamav/matcher-ac.c	3171	            new->length[1] += new->special_table[j]->len[0];
-offset-size-arithmetic	libclamav/matcher-ac.c	3172	            new->length[2] += new->special_table[j]->len[1];
-offset-size-arithmetic	libclamav/matcher-ac.c	3175	            new->length[1]++;
-offset-size-arithmetic	libclamav/matcher-ac.c	3176	            new->length[2]++;
-offset-size-arithmetic	libclamav/matcher-ac.c	3203	        /* TODO: should this affect maxpatlen? */
-offset-size-arithmetic	libclamav/matcher-ac.c	3229	         * We'll try to shift the start of the pattern right a bit to find a static subpattern to use for the bytes that go in the A-C trie.
+offset-size-arithmetic	libclamav/matcher-ac.c	3015	        hexnewsz = strlen(hexsig) + 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	3051	            *start++ = 0;
+offset-size-arithmetic	libclamav/matcher-ac.c	3119	            newtable = (struct cli_ac_special **)MPOOL_REALLOC(root->mempool, new->special_table, new->special * sizeof(struct cli_ac_special *));
+offset-size-arithmetic	libclamav/matcher-ac.c	3173	    new->length[0] = (uint16_t)strlen(hex ? hex : hexsig) / 2;
+offset-size-arithmetic	libclamav/matcher-ac.c	3174	    if (new->length[0] < root->ac_mindepth) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3175	        cli_errmsg("cli_ac_addsig: Subpattern in signature is shorter than the minimum depth of the AC trie. (%u < %u)\n", new->length[0], root->ac_mindepth);
+offset-size-arithmetic	libclamav/matcher-ac.c	3187	            new->length[1] += new->special_table[j]->len[0];
+offset-size-arithmetic	libclamav/matcher-ac.c	3188	            new->length[2] += new->special_table[j]->len[1];
+offset-size-arithmetic	libclamav/matcher-ac.c	3191	            new->length[1]++;
+offset-size-arithmetic	libclamav/matcher-ac.c	3192	            new->length[2]++;
+offset-size-arithmetic	libclamav/matcher-ac.c	3219	        /* TODO: should this affect maxpatlen? */
 offset-size-arithmetic	libclamav/matcher-ac.c	323	        size_t newCapacity        = root->trans_capacity + 1024;
-offset-size-arithmetic	libclamav/matcher-ac.c	3232	        // If needed, we can shift the start of the pattern that goes in the A-C Trie right up to the pattern length minus min-depth bytes
-offset-size-arithmetic	libclamav/matcher-ac.c	3233	        // The original starting bytes will become a "prefix" that gets backward-matched.
-offset-size-arithmetic	libclamav/matcher-ac.c	3234	        pend = new->length[0] - root->ac_mindepth + 1;
-offset-size-arithmetic	libclamav/matcher-ac.c	3236	        // Search for static bytes to start the pattern in the A-C trie that starts within original min-depth, and of a length up to max-depth.
 offset-size-arithmetic	libclamav/matcher-ac.c	324	        struct cli_ac_node ***ret = MPOOL_REALLOC(root->mempool, root->trans_array, newCapacity * sizeof(struct cli_ac_node **));
-offset-size-arithmetic	libclamav/matcher-ac.c	3245	                // Record the start + length of the shifted prefix.
-offset-size-arithmetic	libclamav/matcher-ac.c	3247	                    plen = j - i + 1;
-offset-size-arithmetic	libclamav/matcher-ac.c	3251	                // Check if the starting bytes at this offset are both non-zero.  If they are, then that's even better.
-offset-size-arithmetic	libclamav/matcher-ac.c	3253	                    ((new->length[0] > ppos + 1) && (0 != new->pattern[ppos + 1]))) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3256	                    if (plen >= root->ac_maxdepth) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3262	                    if (plen >= root->ac_mindepth && plen > nzplen) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3264	                        // Store off the length and position of this starting position with the non-zero bytes, in case we want to roll back to it.
-offset-size-arithmetic	libclamav/matcher-ac.c	3271	            if (plen >= root->ac_maxdepth && (0 != new->pattern[ppos] || 0 != new->pattern[ppos + 1])) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3277	            (new->length[0] > ppos + 1) &&
-offset-size-arithmetic	libclamav/matcher-ac.c	3279	            (0 == new->pattern[ppos + 1])) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3287	        if (plen < root->ac_mindepth) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3288	            cli_errmsg("cli_ac_addsig: Can't find a static subpattern of length %u\n", root->ac_mindepth);
-offset-size-arithmetic	libclamav/matcher-ac.c	3304	                new->prefix_length[1] += new->special_table[j]->len[0];
-offset-size-arithmetic	libclamav/matcher-ac.c	3305	                new->prefix_length[2] += new->special_table[j]->len[1];
-offset-size-arithmetic	libclamav/matcher-ac.c	3308	                new->prefix_length[1]++;
-offset-size-arithmetic	libclamav/matcher-ac.c	3309	                new->prefix_length[2]++;
-offset-size-arithmetic	libclamav/matcher-ac.c	3316	        new->length[0] -= new->prefix_length[0];
-offset-size-arithmetic	libclamav/matcher-ac.c	3317	        new->length[1] -= new->prefix_length[1];
-offset-size-arithmetic	libclamav/matcher-ac.c	3318	        new->length[2] -= new->prefix_length[2];
-offset-size-arithmetic	libclamav/matcher-ac.c	3321	    if (new->length[2] + new->prefix_length[2] > root->maxpatlen) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3323	        root->maxpatlen = new->length[2] + new->prefix_length[2];
-offset-size-arithmetic	libclamav/matcher-ac.c	3344	    ret = cli_caloff(offset, NULL, root->type, new->offdata, &new->offset_min, &new->offset_max);
-offset-size-arithmetic	libclamav/matcher-ac.c	3369	        root->ac_reloff = (struct cli_ac_patt **)MPOOL_REALLOC2(root->mempool, root->ac_reloff, (root->ac_reloff_num + 1) * sizeof(struct cli_ac_patt *));
-offset-size-arithmetic	libclamav/matcher-ac.c	3375	        root->ac_reloff[root->ac_reloff_num] = new;
-offset-size-arithmetic	libclamav/matcher-ac.c	3376	        new->offset_min                      = root->ac_reloff_num * 2;
-offset-size-arithmetic	libclamav/matcher-ac.c	3377	        new->offset_max                      = new->offset_min + 1;
-offset-size-arithmetic	libclamav/matcher-ac.c	3378	        root->ac_reloff_num++;
+offset-size-arithmetic	libclamav/matcher-ac.c	3245	         * We'll try to shift the start of the pattern right a bit to find a static subpattern to use for the bytes that go in the A-C trie.
+offset-size-arithmetic	libclamav/matcher-ac.c	3248	        // If needed, we can shift the start of the pattern that goes in the A-C Trie right up to the pattern length minus min-depth bytes
+offset-size-arithmetic	libclamav/matcher-ac.c	3249	        // The original starting bytes will become a "prefix" that gets backward-matched.
+offset-size-arithmetic	libclamav/matcher-ac.c	3250	        pend = new->length[0] - root->ac_mindepth + 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	3252	        // Search for static bytes to start the pattern in the A-C trie that starts within original min-depth, and of a length up to max-depth.
+offset-size-arithmetic	libclamav/matcher-ac.c	3261	                // Record the start + length of the shifted prefix.
+offset-size-arithmetic	libclamav/matcher-ac.c	3263	                    plen = j - i + 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	3267	                // Check if the starting bytes at this offset are both non-zero.  If they are, then that's even better.
+offset-size-arithmetic	libclamav/matcher-ac.c	3269	                    ((new->length[0] > ppos + 1) && (0 != new->pattern[ppos + 1]))) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3272	                    if (plen >= root->ac_maxdepth) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3278	                    if (plen >= root->ac_mindepth && plen > nzplen) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3280	                        // Store off the length and position of this starting position with the non-zero bytes, in case we want to roll back to it.
+offset-size-arithmetic	libclamav/matcher-ac.c	3287	            if (plen >= root->ac_maxdepth && (0 != new->pattern[ppos] || 0 != new->pattern[ppos + 1])) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3293	            (new->length[0] > ppos + 1) &&
+offset-size-arithmetic	libclamav/matcher-ac.c	3295	            (0 == new->pattern[ppos + 1])) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3303	        if (plen < root->ac_mindepth) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3304	            cli_errmsg("cli_ac_addsig: Can't find a static subpattern of length %u\n", root->ac_mindepth);
+offset-size-arithmetic	libclamav/matcher-ac.c	3320	                new->prefix_length[1] += new->special_table[j]->len[0];
+offset-size-arithmetic	libclamav/matcher-ac.c	3321	                new->prefix_length[2] += new->special_table[j]->len[1];
+offset-size-arithmetic	libclamav/matcher-ac.c	3324	                new->prefix_length[1]++;
+offset-size-arithmetic	libclamav/matcher-ac.c	3325	                new->prefix_length[2]++;
+offset-size-arithmetic	libclamav/matcher-ac.c	3332	        new->length[0] -= new->prefix_length[0];
+offset-size-arithmetic	libclamav/matcher-ac.c	3333	        new->length[1] -= new->prefix_length[1];
+offset-size-arithmetic	libclamav/matcher-ac.c	3334	        new->length[2] -= new->prefix_length[2];
+offset-size-arithmetic	libclamav/matcher-ac.c	3337	    if (new->length[2] + new->prefix_length[2] > root->maxpatlen) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3339	        root->maxpatlen = new->length[2] + new->prefix_length[2];
+offset-size-arithmetic	libclamav/matcher-ac.c	3360	    ret = cli_caloff(offset, NULL, root->type, new->offdata, &new->offset_min, &new->offset_max);
+offset-size-arithmetic	libclamav/matcher-ac.c	3385	        root->ac_reloff = (struct cli_ac_patt **)MPOOL_REALLOC2(root->mempool, root->ac_reloff, (root->ac_reloff_num + 1) * sizeof(struct cli_ac_patt *));
+offset-size-arithmetic	libclamav/matcher-ac.c	3391	        root->ac_reloff[root->ac_reloff_num] = new;
+offset-size-arithmetic	libclamav/matcher-ac.c	3392	        new->offset_min                      = root->ac_reloff_num * 2;
+offset-size-arithmetic	libclamav/matcher-ac.c	3393	        new->offset_max                      = new->offset_min + 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	3394	        root->ac_reloff_num++;
 offset-size-arithmetic	libclamav/matcher-ac.c	371	    if (i != len - 1) {
 offset-size-arithmetic	libclamav/matcher-ac.c	372	        new->trans = (struct cli_ac_node **)MPOOL_CALLOC(root->mempool, 256, sizeof(struct cli_ac_node *));
 offset-size-arithmetic	libclamav/matcher-ac.c	387	    newtable = MPOOL_REALLOC(root->mempool, root->ac_nodetable, root->ac_nodes * sizeof(struct cli_ac_node *));
@@ -38456,52 +38482,52 @@ offset-size-arithmetic	unit_tests/check_matchers.c	117	    {"slllll", 6, "(W)6c6
 offset-size-arithmetic	unit_tests/check_matchers.c	118	    {"mmmmme", 6, "6d6d6d6d6d(W)", "*", ACPATT_OPTION_NOOPTS, "AC_Sigopts_Test_13", CL_CLEAN}, /* fullword class end */
 offset-size-arithmetic	unit_tests/check_matchers.c	121	    {"soOoOo", 6, "6f6f6f6f6f", "*", ACPATT_OPTION_NOCASE | ACPATT_OPTION_FULLWORD, "AC_Sigopts_Test_15", CL_CLEAN}, /* nocase fullword start fail */
 offset-size-arithmetic	unit_tests/check_matchers.c	122	    {"pPpPpe", 6, "7070707070", "*", ACPATT_OPTION_NOCASE | ACPATT_OPTION_FULLWORD, "AC_Sigopts_Test_16", CL_CLEAN}, /* nocase fullword end fail */
-offset-size-arithmetic	unit_tests/check_matchers.c	1273	    thefmap.len         = (size_t)UINT32_MAX + 1U;
-offset-size-arithmetic	unit_tests/check_matchers.c	1278	    engine->bcs.all_bcs = calloc(1, sizeof(*engine->bcs.all_bcs));
-offset-size-arithmetic	unit_tests/check_matchers.c	1331	    uint8_t code[1 + sizeof(uint64_t) + 1 + 1 + 1];
-offset-size-arithmetic	unit_tests/check_matchers.c	1343	    code[1 + sizeof(uint64_t) + 1] = OP_POP;
-offset-size-arithmetic	unit_tests/check_matchers.c	1344	    code[1 + sizeof(uint64_t) + 1 + 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	1380	    if (at > map->len || len > map->len - at)
-offset-size-arithmetic	unit_tests/check_matchers.c	1385	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
-offset-size-arithmetic	unit_tests/check_matchers.c	1387	    code[offset++] = OP_PUSH;
-offset-size-arithmetic	unit_tests/check_matchers.c	1389	    return offset + sizeof(value);
-offset-size-arithmetic	unit_tests/check_matchers.c	1515	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-offset-size-arithmetic	unit_tests/check_matchers.c	1526	    code[sizeof(code) - 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	1630	    ck_assert_int_eq(cl_engine_set_num((struct cl_engine *)ctx.engine, CL_ENGINE_MAX_MATCHER_WORK, sizeof(bytes) - 1), CL_SUCCESS);
-offset-size-arithmetic	unit_tests/check_matchers.c	1648	    const size_t push_count = YARA_STACK_CAPACITY + 1;
-offset-size-arithmetic	unit_tests/check_matchers.c	1649	    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
-offset-size-arithmetic	unit_tests/check_matchers.c	1658	    code = calloc(code_length, sizeof(*code));
-offset-size-arithmetic	unit_tests/check_matchers.c	1662	    code[code_length - 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	1696	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-offset-size-arithmetic	unit_tests/check_matchers.c	1706	    code[offset++] = OP_DIV;
-offset-size-arithmetic	unit_tests/check_matchers.c	1742	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-offset-size-arithmetic	unit_tests/check_matchers.c	1752	    code[offset++] = OP_SHL;
-offset-size-arithmetic	unit_tests/check_matchers.c	1864	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	1283	    thefmap.len         = (size_t)UINT32_MAX + 1U;
+offset-size-arithmetic	unit_tests/check_matchers.c	1288	    engine->bcs.all_bcs = calloc(1, sizeof(*engine->bcs.all_bcs));
+offset-size-arithmetic	unit_tests/check_matchers.c	1341	    uint8_t code[1 + sizeof(uint64_t) + 1 + 1 + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	1353	    code[1 + sizeof(uint64_t) + 1] = OP_POP;
+offset-size-arithmetic	unit_tests/check_matchers.c	1354	    code[1 + sizeof(uint64_t) + 1 + 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	1390	    if (at > map->len || len > map->len - at)
+offset-size-arithmetic	unit_tests/check_matchers.c	1395	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
+offset-size-arithmetic	unit_tests/check_matchers.c	1397	    code[offset++] = OP_PUSH;
+offset-size-arithmetic	unit_tests/check_matchers.c	1399	    return offset + sizeof(value);
+offset-size-arithmetic	unit_tests/check_matchers.c	1525	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	1536	    code[sizeof(code) - 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	1640	    ck_assert_int_eq(cl_engine_set_num((struct cl_engine *)ctx.engine, CL_ENGINE_MAX_MATCHER_WORK, sizeof(bytes) - 1), CL_SUCCESS);
+offset-size-arithmetic	unit_tests/check_matchers.c	1658	    const size_t push_count = YARA_STACK_CAPACITY + 1;
+offset-size-arithmetic	unit_tests/check_matchers.c	1659	    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
+offset-size-arithmetic	unit_tests/check_matchers.c	1668	    code = calloc(code_length, sizeof(*code));
+offset-size-arithmetic	unit_tests/check_matchers.c	1672	    code[code_length - 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	1706	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+offset-size-arithmetic	unit_tests/check_matchers.c	1716	    code[offset++] = OP_DIV;
+offset-size-arithmetic	unit_tests/check_matchers.c	1752	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+offset-size-arithmetic	unit_tests/check_matchers.c	1762	    code[offset++] = OP_SHL;
 offset-size-arithmetic	unit_tests/check_matchers.c	187	    if (map == NULL || len == 0 || at > map->len || len > map->len - at ||
-offset-size-arithmetic	unit_tests/check_matchers.c	1874	    code[sizeof(code) - 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	1906	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-offset-size-arithmetic	unit_tests/check_matchers.c	1916	    code[sizeof(code) - 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	2091	    ck_assert_uint_eq(mdata.lsigsuboff_last[0][1], reference_offset + 4);
-offset-size-arithmetic	unit_tests/check_matchers.c	2130	    first_name  = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundaryFirst") + 1, 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2131	    second_name = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundarySecond") + 1, 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2140	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
-offset-size-arithmetic	unit_tests/check_matchers.c	2176	    for (i = 0; i < sizeof(labels) / sizeof(labels[0]); i++) {
-offset-size-arithmetic	unit_tests/check_matchers.c	2177	        for (j = 0; j < sizeof(sizes) / sizeof(sizes[0]); j++) {
-offset-size-arithmetic	unit_tests/check_matchers.c	2181	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
-offset-size-arithmetic	unit_tests/check_matchers.c	2182	            name = MPOOL_CALLOC(ctx.engine->mempool, strlen(label) + 1, 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2193	            ck_assert(cli_hm_have_size(*roots[i], CLI_HASH_MD5, sizes[j]));
-offset-size-arithmetic	unit_tests/check_matchers.c	2194	            ck_assert_int_eq(cli_hm_scan(digest, sizes[j], &matched, *roots[i], CLI_HASH_MD5),
+offset-size-arithmetic	unit_tests/check_matchers.c	1874	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	1884	    code[sizeof(code) - 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	1916	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	1926	    code[sizeof(code) - 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	2101	    ck_assert_uint_eq(mdata.lsigsuboff_last[0][1], reference_offset + 4);
+offset-size-arithmetic	unit_tests/check_matchers.c	2140	    first_name  = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundaryFirst") + 1, 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2141	    second_name = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundarySecond") + 1, 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2150	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
+offset-size-arithmetic	unit_tests/check_matchers.c	2186	    for (i = 0; i < sizeof(labels) / sizeof(labels[0]); i++) {
+offset-size-arithmetic	unit_tests/check_matchers.c	2187	        for (j = 0; j < sizeof(sizes) / sizeof(sizes[0]); j++) {
+offset-size-arithmetic	unit_tests/check_matchers.c	2191	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
+offset-size-arithmetic	unit_tests/check_matchers.c	2192	            name = MPOOL_CALLOC(ctx.engine->mempool, strlen(label) + 1, 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2203	            ck_assert(cli_hm_have_size(*roots[i], CLI_HASH_MD5, sizes[j]));
+offset-size-arithmetic	unit_tests/check_matchers.c	2204	            ck_assert_int_eq(cli_hm_scan(digest, sizes[j], &matched, *roots[i], CLI_HASH_MD5),
 offset-size-arithmetic	unit_tests/check_matchers.c	224	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
-offset-size-arithmetic	unit_tests/check_matchers.c	2266	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
-offset-size-arithmetic	unit_tests/check_matchers.c	2271	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
-offset-size-arithmetic	unit_tests/check_matchers.c	2277	    if (count > state->length - (size_t)offset)
-offset-size-arithmetic	unit_tests/check_matchers.c	2278	        count = state->length - (size_t)offset;
-offset-size-arithmetic	unit_tests/check_matchers.c	2290	    state.length  = (size_t)SCANBUFF + 1;
-offset-size-arithmetic	unit_tests/check_matchers.c	2302	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
-offset-size-arithmetic	unit_tests/check_matchers.c	2315	    if ((at == 0) && (len == map->len))
-offset-size-arithmetic	unit_tests/check_matchers.c	2317	    if ((len == 0) || (at > map->len) || (len > map->len - at))
-offset-size-arithmetic	unit_tests/check_matchers.c	2506	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2513	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2276	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
+offset-size-arithmetic	unit_tests/check_matchers.c	2281	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
+offset-size-arithmetic	unit_tests/check_matchers.c	2287	    if (count > state->length - (size_t)offset)
+offset-size-arithmetic	unit_tests/check_matchers.c	2288	        count = state->length - (size_t)offset;
+offset-size-arithmetic	unit_tests/check_matchers.c	2300	    state.length  = (size_t)SCANBUFF + 1;
+offset-size-arithmetic	unit_tests/check_matchers.c	2312	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
+offset-size-arithmetic	unit_tests/check_matchers.c	2325	    if ((at == 0) && (len == map->len))
+offset-size-arithmetic	unit_tests/check_matchers.c	2327	    if ((len == 0) || (at > map->len) || (len > map->len - at))
+offset-size-arithmetic	unit_tests/check_matchers.c	2516	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2523	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
 offset-size-arithmetic	unit_tests/check_matchers.c	527	        hexlen = strlen(PCRE_BYPASS) + strlen(pcre_testdata[i].hexsig) + 1;
 offset-size-arithmetic	unit_tests/check_matchers.c	530	        ck_assert_msg(hexsig != NULL, "[pcre] failed to prepend bypass (out-of-memory)");
 offset-size-arithmetic	unit_tests/check_matchers.c	579	        hexlen = strlen(PCRE_BYPASS) + strlen(pcre_testdata[i].hexsig) + 1;
