@@ -1,5 +1,15 @@
 # Wishlist
 
+## Structured-detector counter width — 2026-08-28
+
+- Keep cumulative credit-card and SSN detector counts saturating `uint64_t`
+  values across bounded fmap windows; retain the configured `uint32_t`
+  thresholds and existing `CL_EREAD`/timeout behavior.
+- The current-source GCC compile and production-linked `structured_map`
+  boundary TCase remain focused evidence. Keep complete detector corpus,
+  sanitizer, production-CVD/service, materialized large-file, Sonic1, and
+  final release qualification open.
+
 ## Service gate ELF-interpreter binding — 2026-08-28
 
 - Keep service ELF interpreter records separate from `ldd`-resolved shared

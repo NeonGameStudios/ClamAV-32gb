@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Structured-detector counter width — 2026-08-28
+
+The structured credit-card and SSN detector now accumulates bounded-window
+results in saturating `uint64_t` counters instead of 32-bit totals, so a
+high-density document cannot wrap a cumulative count during a large logical
+scan. Configured thresholds remain backward-compatible `uint32_t` values, and
+existing callback/read and deadline failure behavior is unchanged. Current
+source GCC compilation and the production-linked `structured_map` boundary
+TCase remain focused evidence; complete detector corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## SWF compressed engine admission — 2026-08-28
 
 Recognized CWS and ZWS input without an owning scan engine now returns

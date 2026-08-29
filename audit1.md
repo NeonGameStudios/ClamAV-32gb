@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Structured-detector counter-width audit — 2026-08-28
+
+`cli_scan_structured()` accumulated per-window credit-card and SSN counts in
+32-bit counters even though an enabled detector can inspect the full logical
+scan budget. A high-density document could therefore wrap a cumulative count
+before comparing it with the configured threshold or reporting the result.
+The counters now use saturating `uint64_t` accumulation while retaining the
+existing `uint32_t` configuration thresholds and fail-visible read/timeout
+handling. The current-source GCC compile and existing production-linked
+`structured_map` boundary TCase remain the focused evidence; a complete
+structured-detector corpus, sanitizer, production-CVD/service, materialized
+large-file, Sonic1, and final release qualification remain open.
+
 ## Runtime gate ELF-interpreter binding — 2026-08-28
 
 The release runtime gate previously extracted every absolute path from `ldd`

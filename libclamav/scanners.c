@@ -5090,8 +5090,8 @@ cl_error_t cli_scan_structured(cli_ctx *ctx)
     cl_error_t status;
     char buf[8192];
     size_t result          = 0;
-    unsigned int cc_count  = 0;
-    unsigned int ssn_count = 0;
+    uint64_t cc_count  = 0;
+    uint64_t ssn_count = 0;
     bool done              = false;
     fmap_t *map;
     size_t pos = 0;
@@ -5167,13 +5167,27 @@ cl_error_t cli_scan_structured(cli_ctx *ctx)
             break;
 
         pos += result;
-        if ((cc_count += ccfunc((const unsigned char *)buf, result,
-                                (ctx->options->heuristic & CL_SCAN_HEURISTIC_STRUCTURED_CC) ? 1 : 0)) >= ctx->engine->min_cc_count) {
+        {
+            int cc_found = ccfunc((const unsigned char *)buf, result,
+                                   (ctx->options->heuristic & CL_SCAN_HEURISTIC_STRUCTURED_CC) ? 1 : 0);
+            if (cc_found > 0) {
+                uint64_t add = (uint64_t)cc_found;
+                cc_count    = add > UINT64_MAX - cc_count ? UINT64_MAX : cc_count + add;
+            }
+        }
+        if (cc_count >= ctx->engine->min_cc_count) {
             done = true;
         }
 
-        if (ssnfunc && ((ssn_count += ssnfunc((const unsigned char *)buf, result)) >= ctx->engine->min_ssn_count)) {
-            done = true;
+        if (ssnfunc) {
+            int ssn_found = ssnfunc((const unsigned char *)buf, result);
+            if (ssn_found > 0) {
+                uint64_t add = (uint64_t)ssn_found;
+                ssn_count    = add > UINT64_MAX - ssn_count ? UINT64_MAX : ssn_count + add;
+            }
+            if (ssn_count >= ctx->engine->min_ssn_count) {
+                done = true;
+            }
         }
     }
 
@@ -5185,7 +5199,7 @@ cl_error_t cli_scan_structured(cli_ctx *ctx)
     if (cc_count != 0 && cc_count >= ctx->engine->min_cc_count) {
         cl_error_t append_ret;
 
-        cli_dbgmsg("cli_scan_structured: %u credit card numbers detected\n", cc_count);
+        cli_dbgmsg("cli_scan_structured: %llu credit card numbers detected\n", (unsigned long long)cc_count);
         append_ret = cli_append_potentially_unwanted(ctx, "Heuristics.Structured.CreditCardNumber");
         if (append_ret != CL_SUCCESS) {
             if (append_ret != CL_VIRUS && append_ret != CL_VERIFIED && append_ret != CL_BREAK) {
@@ -5198,7 +5212,7 @@ cl_error_t cli_scan_structured(cli_ctx *ctx)
     if (ssn_count != 0 && ssn_count >= ctx->engine->min_ssn_count) {
         cl_error_t append_ret;
 
-        cli_dbgmsg("cli_scan_structured: %u social security numbers detected\n", ssn_count);
+        cli_dbgmsg("cli_scan_structured: %llu social security numbers detected\n", (unsigned long long)ssn_count);
         append_ret = cli_append_potentially_unwanted(ctx, "Heuristics.Structured.SSN");
         if (append_ret != CL_SUCCESS) {
             if (append_ret != CL_VIRUS && append_ret != CL_VERIFIED && append_ret != CL_BREAK) {
