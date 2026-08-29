@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## BinHex empty-stream admission — 2026-08-28
+
+Recognized zero-length BinHex input now returns `CL_EPARSE` with sticky
+incomplete state and the reason `BinHex stream is empty`. Previously the
+direct parser returned `CL_CLEAN` before any stream could be inspected, leaving
+the fmap cacheable. The registered `test_binhex_empty_stream_is_fail_visible`
+regression and source guard cover the boundary. Current-source compilation and
+focused execution, complete BinHex corpus, production-CVD/service, sanitizer,
+materialized large-file, Sonic1, and final parser-family/release qualification
+remain required.
+
 ## TAR member output admission — 2026-08-28
 
 TAR member staging now marks the recognized layer incomplete when its

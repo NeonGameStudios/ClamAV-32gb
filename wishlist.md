@@ -1,5 +1,13 @@
 # Wishlist
 
+## BinHex empty-stream admission — 2026-08-28
+
+- Keep a recognized zero-length BinHex fmap fail-visible: return `CL_EPARSE`,
+  record `BinHex stream is empty`, and disable caching.
+- Retain `test_binhex_empty_stream_is_fail_visible` and its source guard.
+  Keep complete BinHex corpus, production-CVD/service, sanitizer, materialized
+  large-file, Sonic1, and final parser-family/release evidence open.
+
 ## TAR member output admission — 2026-08-28
 
 - Keep TAR member temporary-output creation failures sticky and non-cacheable;

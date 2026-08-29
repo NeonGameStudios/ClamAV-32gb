@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## BinHex empty-stream admission — 2026-08-28
+
+`cli_binhex()` previously returned `CL_CLEAN` immediately for a zero-length
+fmap after recognizing the parser entry, even though no BinHex stream could
+have been inspected. That left a required parser result cacheable. Empty
+recognized input now records `BinHex stream is empty` and returns `CL_EPARSE`.
+The new `test_binhex_empty_stream_is_fail_visible` regression and source guards
+cover the direct boundary; current-source compilation and focused execution,
+complete BinHex corpus, production-CVD/service, sanitizer, materialized
+large-file, Sonic1, and final parser-family/release qualification remain open.
+
 ## TAR member output admission — 2026-08-28
 
 `cli_untar()` previously returned `CL_ETMPFILE` when a recognized TAR member's

@@ -122,7 +122,10 @@ int cli_binhex(cli_ctx *ctx)
     ret = binhex_checktimelimit(ctx, "BinHex inspection reached the configured time limit");
     if (ret != CL_SUCCESS)
         return ret;
-    if (!map->len) return CL_CLEAN;
+    if (!map->len) {
+        cli_mark_scan_incomplete(ctx, "BinHex stream is empty");
+        return CL_EPARSE;
+    }
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &dname, &datafd)) != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "BinHex data temporary output could not be created");
