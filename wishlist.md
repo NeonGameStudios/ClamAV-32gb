@@ -1,5 +1,16 @@
 # Wishlist
 
+## ALZ end-marker boundary admission — 2026-08-29
+
+- Keep the bounded ALZ parser fail-closed when bytes remain after the
+  end-of-central-directory marker; compare the reader position with the source
+  length before returning a successful parse result.
+- Retain `trailing_bytes_after_end_marker_are_fail_visible` and its source
+  guards. The authoritative current-source isolated Rust 1.97.1 runner passes
+  the full ALZ module suite 42/42. Full C-ABI linkage, sanitizer,
+  production-CVD/service, materialized-large-file, certified Linux x86-64,
+  Sonic1, parser-family, and release evidence remain open.
+
 ## 7-Zip FilesInfo stream-count admission — 2026-08-29
 
 - Keep FilesInfo stream metadata fail-closed: reject an index at or beyond

@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## ALZ end-marker boundary admission — 2026-08-29
+
+The bounded ALZ reader previously stopped as soon as it saw the end-of-central-
+directory marker and did not verify that the marker reached the physical end of
+the source. It now compares the reader position with the bounded source length;
+trailing bytes set the parser's incomplete state while preserving any members
+already extracted, so the scanner returns a fail-visible format result instead
+of silently ignoring the suffix. The registered
+`trailing_bytes_after_end_marker_are_fail_visible` regression passes in the
+authoritative current-source isolated Rust 1.97.1 runner, and the complete ALZ
+module suite passes 42/42. Full current-C-ABI linkage, sanitizer,
+production-CVD/service, materialized-large-file, certified Linux x86-64,
+Sonic1, and parser-family/release qualification remain open.
+
 ## 7-Zip FilesInfo stream-count admission — 2026-08-29
 
 The vendored 7-Zip header reader could index one unpack-size, CRC, and

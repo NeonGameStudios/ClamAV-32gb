@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ALZ end-marker boundary admission — 2026-08-29
+
+The bounded ALZ reader now verifies that its end-of-central-directory marker is
+at the physical end of the source. Any trailing byte marks the archive
+incomplete while preserving earlier extracted members for the final
+fail-visible result; it is no longer silently ignored. The registered
+`trailing_bytes_after_end_marker_are_fail_visible` regression passes, and the
+authoritative current-source isolated Rust 1.97.1 runner passes all 42 ALZ
+module tests. Full current-C-ABI linkage, sanitizer, production-CVD/service,
+materialized-large-file, certified Linux x86-64, Sonic1, parser-family, and
+release qualification remain required.
+
 ## 7-Zip FilesInfo stream-count admission — 2026-08-29
 
 The 7-Zip header reader now rejects a FilesInfo stream index at or beyond the

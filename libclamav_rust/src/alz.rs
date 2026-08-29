@@ -1271,6 +1271,19 @@ impl<'aa> Alz {
             }
         }
 
+        if saw_end_marker {
+            let end_position = reader
+                .stream_position()
+                .map_err(|err| classify_read_error(err, "archive end position"))?;
+            if end_position != source_len {
+                debug!(
+                    "ALZ archive has {} trailing bytes after its end marker",
+                    source_len.saturating_sub(end_position),
+                );
+                alz.parse_error = true;
+            }
+        }
+
         if !saw_end_marker && !stopped_early {
             alz.parse_error = true;
         }
@@ -1503,6 +1516,31 @@ mod tests {
         .unwrap();
 
         assert!(alz.has_parse_error());
+    }
+
+    #[test]
+    fn trailing_bytes_after_end_marker_are_fail_visible() {
+        const ALZ_COMP_NOCOMP: u8 = 0;
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_file(&mut bytes, "payload.txt", ALZ_COMP_NOCOMP, 7, b"payload");
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+        bytes.push(0xde);
+
+        let mut files = Vec::new();
+        let alz = Alz::from_reader_with_filter_stream(
+            Cursor::new(bytes),
+            |_| AlzExtractionDecision::Extract(extraction_limits()),
+            &mut files,
+        )
+        .unwrap();
+
+        assert!(alz.has_parse_error());
+        assert_eq!(files.len(), 1);
+        assert_eq!(files[0].name.as_deref(), Some("payload.txt"));
+        assert_eq!(files[0].data, b"payload");
     }
 
     fn raw_deflate(data: &[u8]) -> Vec<u8> {
