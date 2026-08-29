@@ -1,5 +1,17 @@
 # Wishlist
 
+## Generic hash-table capacity and rehash failure visibility — 2026-08-29
+
+- Keep string/u32 hash-table and hashset capacities behind
+  cli_hashtab_table_size() and checked power-of-two rounding; reject native
+  or 1-GiB product overflow before allocation.
+- Preserve fail-visible growth errors, reset probe state after rehash, release
+  failed u32 rehash allocations, and reject oversized len + 1 key copies.
+  Retain test_hashtab_capacity_admission_is_fail_visible, the source guards,
+  and the current-source runner. Full caller corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification remain open.
+
 ## Bytecode interpreter layout-size admission — 2026-08-29
 
 - Keep aligned global, function-value, constant, and context parameter

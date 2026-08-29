@@ -98,6 +98,16 @@ struct cli_hashtable {
 };
 
 /**
+ * @brief Check a hash-table allocation product against native and ClamAV limits.
+ *
+ * @param count Number of elements.
+ * @param element_size Size of each element.
+ * @param bytes Receives the checked byte count.
+ * @return cl_error_t
+ */
+cl_error_t cli_hashtab_table_size(size_t count, size_t element_size, size_t *bytes);
+
+/**
  * @brief Generate C source code that represents the given hash table
  *
  * Comment: We don't really use this.

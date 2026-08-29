@@ -38,17 +38,54 @@
 static const char DELETED_KEY[] = "";
 #define DELETED_HTU32_KEY ((uint32_t)(-1))
 
-static unsigned long nearest_power(unsigned long num)
+static cl_error_t nearest_power(size_t num, size_t *power)
 {
-    unsigned long n = 64;
+    size_t n = 64;
+
+    if (!power)
+        return CL_ENULLARG;
 
     while (n < num) {
-        n <<= 1;
-        if (n == 0) {
-            return num;
-        }
+        if (n > SIZE_MAX / 2)
+            return CL_ERESOURCE;
+        n *= 2;
     }
-    return n;
+
+    *power = n;
+    return CL_SUCCESS;
+}
+
+cl_error_t cli_hashtab_table_size(size_t count, size_t element_size, size_t *bytes)
+{
+    if (!bytes || !element_size)
+        return CL_EARG;
+
+    if (count > SIZE_MAX / element_size || count > CLI_MAX_ALLOCATION / element_size)
+        return CL_ERESOURCE;
+
+    *bytes = count * element_size;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_hashtab_capacity(size_t requested, size_t element_size, size_t *capacity)
+{
+    cl_error_t ret;
+    size_t rounded;
+    size_t table_size;
+
+    if (!capacity || !element_size)
+        return CL_EARG;
+
+    ret = nearest_power(requested, &rounded);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    ret = cli_hashtab_table_size(rounded, element_size, &table_size);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    *capacity = rounded;
+    return CL_SUCCESS;
 }
 
 #ifdef PROFILE_HASHTABLE
@@ -174,12 +211,17 @@ static inline void PROFILE_REPORT(const struct cli_hashtable *s)
 
 cl_error_t cli_hashtab_init(struct cli_hashtable *s, size_t capacity)
 {
+    cl_error_t ret;
+
     if (!s)
         return CL_ENULLARG;
 
     PROFILE_INIT(s);
 
-    capacity  = nearest_power(capacity);
+    ret = cli_hashtab_capacity(capacity, sizeof(*s->htable), &capacity);
+    if (ret != CL_SUCCESS)
+        return ret;
+
     s->htable = cli_max_calloc(capacity, sizeof(*s->htable));
     if (!s->htable) {
         return CL_EMEM;
@@ -192,6 +234,8 @@ cl_error_t cli_hashtab_init(struct cli_hashtable *s, size_t capacity)
 
 cl_error_t cli_htu32_init(struct cli_htu32 *s, size_t capacity, mpool_t *mempool)
 {
+    cl_error_t ret;
+
 #ifndef USE_MPOOL
     UNUSEDPARAM(mempool);
 #endif
@@ -201,7 +245,10 @@ cl_error_t cli_htu32_init(struct cli_htu32 *s, size_t capacity, mpool_t *mempool
 
     PROFILE_INIT(s);
 
-    capacity  = nearest_power(capacity);
+    ret = cli_hashtab_capacity(capacity, sizeof(*s->htable), &capacity);
+    if (ret != CL_SUCCESS)
+        return ret;
+
     s->htable = MPOOL_CALLOC(mempool, capacity, sizeof(*s->htable));
     if (!s->htable) {
         return CL_EMEM;
@@ -327,14 +374,22 @@ const struct cli_htu32_element *cli_htu32_next(const struct cli_htu32 *s, const 
 
 static cl_error_t cli_hashtab_grow(struct cli_hashtable *s)
 {
-    const size_t new_capacity = nearest_power(s->capacity + 1);
+    cl_error_t ret;
+    size_t new_capacity;
     struct cli_element *htable;
     size_t i, idx, used = 0;
+
+    if (s->capacity == SIZE_MAX)
+        return CL_ERESOURCE;
+
+    ret = cli_hashtab_capacity(s->capacity + 1, sizeof(*s->htable), &new_capacity);
+    if (ret != CL_SUCCESS)
+        return ret;
 
     cli_dbgmsg("hashtab.c: new capacity: %zu\n", new_capacity);
     if (new_capacity == s->capacity) {
         cli_errmsg("hashtab.c: capacity problem growing from: %zu\n", s->capacity);
-        return CL_EMEM;
+        return CL_ERESOURCE;
     }
     htable = cli_max_calloc(new_capacity, sizeof(*s->htable));
     if (!htable) {
@@ -384,11 +439,23 @@ static cl_error_t cli_hashtab_grow(struct cli_hashtable *s)
 
 static cl_error_t cli_htu32_grow(struct cli_htu32 *s, mpool_t *mempool)
 {
-    const size_t new_capacity        = nearest_power(s->capacity + 1);
-    struct cli_htu32_element *htable = MPOOL_CALLOC(mempool, new_capacity, sizeof(*s->htable));
+    cl_error_t ret;
+    size_t new_capacity;
+    struct cli_htu32_element *htable;
     size_t i, idx, used = 0;
+
+    if (s->capacity == SIZE_MAX)
+        return CL_ERESOURCE;
+
+    ret = cli_hashtab_capacity(s->capacity + 1, sizeof(*s->htable), &new_capacity);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    htable = MPOOL_CALLOC(mempool, new_capacity, sizeof(*s->htable));
     cli_dbgmsg("hashtab.c: new capacity: %zu\n", new_capacity);
-    if (new_capacity == s->capacity || !htable)
+    if (new_capacity == s->capacity)
+        return CL_ERESOURCE;
+    if (!htable)
         return CL_EMEM;
 
     PROFILE_GROW_START(s);
@@ -413,6 +480,7 @@ static cl_error_t cli_htu32_grow(struct cli_htu32 *s, mpool_t *mempool)
                 used++;
             } else {
                 cli_errmsg("hashtab.c: Impossible - unable to rehash table");
+                MPOOL_FREE(mempool, htable);
                 return CL_EMEM; /* this means we didn't find enough room for all elements in the new table, should never happen */
             }
         }
@@ -429,17 +497,28 @@ static cl_error_t cli_htu32_grow(struct cli_htu32 *s, mpool_t *mempool)
 
 const struct cli_element *cli_hashtab_insert(struct cli_hashtable *s, const char *key, const size_t len, const cli_element_data data)
 {
+    cl_error_t ret;
     struct cli_element *element;
-    struct cli_element *deleted_element = NULL;
-    size_t tries                        = 1;
+    struct cli_element *deleted_element;
+    size_t tries;
     size_t idx;
-    if (!s)
+
+    if (!s || !key)
         return NULL;
-    if (s->used > s->maxfill) {
-        cli_dbgmsg("hashtab.c:Growing hashtable %p, because it has exceeded maxfill, old size: %zu\n", (void *)s, s->capacity);
-        cli_hashtab_grow(s);
-    }
-    do {
+    if (!s->htable || !s->capacity || len == SIZE_MAX || len >= CLI_MAX_ALLOCATION)
+        return NULL;
+
+    for (;;) {
+        tries          = 1;
+        deleted_element = NULL;
+
+        if (s->used > s->maxfill) {
+            cli_dbgmsg("hashtab.c:Growing hashtable %p, because it has exceeded maxfill, old size: %zu\n", (void *)s, s->capacity);
+            ret = cli_hashtab_grow(s);
+            if (ret != CL_SUCCESS)
+                return NULL;
+        }
+
         PROFILE_CALC_HASH(s);
         idx     = hash((const unsigned char *)key, len, s->capacity);
         element = &s->htable[idx];
@@ -482,17 +561,20 @@ const struct cli_element *cli_hashtab_insert(struct cli_hashtable *s, const char
         /* no free place found*/
         PROFILE_HASH_EXHAUSTED(s);
         cli_dbgmsg("hashtab.c: Growing hashtable %p, because it's full, old size: %zu.\n", (void *)s, s->capacity);
-    } while (cli_hashtab_grow(s) >= 0);
-    cli_warnmsg("hashtab.c: Unable to grow hashtable\n");
-    return NULL;
+        ret = cli_hashtab_grow(s);
+        if (ret != CL_SUCCESS) {
+            cli_warnmsg("hashtab.c: Unable to grow hashtable\n");
+            return NULL;
+        }
+    }
 }
 
 cl_error_t cli_htu32_insert(struct cli_htu32 *s, const struct cli_htu32_element *item, mpool_t *mempool)
 {
     cl_error_t ret;
     struct cli_htu32_element *element;
-    struct cli_htu32_element *deleted_element = NULL;
-    size_t tries                              = 1;
+    struct cli_htu32_element *deleted_element;
+    size_t tries;
     size_t idx;
 
 #ifndef USE_MPOOL
@@ -501,11 +583,22 @@ cl_error_t cli_htu32_insert(struct cli_htu32 *s, const struct cli_htu32_element 
 
     if (!s)
         return CL_ENULLARG;
-    if (s->used > s->maxfill) {
-        cli_dbgmsg("hashtab.c:Growing hashtable %p, because it has exceeded maxfill, old size: %zu\n", (void *)s, s->capacity);
-        cli_htu32_grow(s, mempool);
-    }
-    do {
+    if (!item)
+        return CL_ENULLARG;
+    if (!s->htable || !s->capacity)
+        return CL_ESTATE;
+
+    for (;;) {
+        tries          = 1;
+        deleted_element = NULL;
+
+        if (s->used > s->maxfill) {
+            cli_dbgmsg("hashtab.c:Growing hashtable %p, because it has exceeded maxfill, old size: %zu\n", (void *)s, s->capacity);
+            ret = cli_htu32_grow(s, mempool);
+            if (ret != CL_SUCCESS)
+                return ret;
+        }
+
         PROFILE_CALC_HASH(s);
         idx     = hash_htu32(item->key, s->capacity);
         element = &s->htable[idx];
@@ -538,9 +631,12 @@ cl_error_t cli_htu32_insert(struct cli_htu32 *s, const struct cli_htu32_element 
         /* no free place found*/
         PROFILE_HASH_EXHAUSTED(s);
         cli_dbgmsg("hashtab.c: Growing hashtable %p, because it's full, old size: %zu.\n", (void *)s, s->capacity);
-    } while ((ret = cli_htu32_grow(s, mempool)) >= 0);
-    cli_warnmsg("hashtab.c: Unable to grow hashtable\n");
-    return ret;
+        ret = cli_htu32_grow(s, mempool);
+        if (ret != CL_SUCCESS) {
+            cli_warnmsg("hashtab.c: Unable to grow hashtable\n");
+            return ret;
+        }
+    }
 }
 
 void cli_hashtab_delete(struct cli_hashtable *s, const char *key, const size_t len)
@@ -644,64 +740,120 @@ cl_error_t cli_hashtab_generate_c(const struct cli_hashtable *s, const char *nam
 cl_error_t cli_hashtab_load(FILE *in, struct cli_hashtable *s)
 {
     char line[1024];
+
+    if (!in || !s)
+        return CL_ENULLARG;
+
     while (fgets(line, sizeof(line), in)) {
         char l[1024];
         size_t val;
-        sscanf(line, "%zu %1023s", &val, l);
-        cli_hashtab_insert(s, l, strlen(l), (const cli_element_data)val);
+        if (sscanf(line, "%zu %1023s", &val, l) != 2)
+            return CL_EFORMAT;
+        if (!cli_hashtab_insert(s, l, strlen(l), (const cli_element_data)val))
+            return CL_EMEM;
     }
     return CL_SUCCESS;
 }
 
 cl_error_t cli_hashset_init(struct cli_hashset *hs, size_t initial_capacity, uint8_t load_factor)
 {
+    cl_error_t ret;
+    size_t capacity;
+    size_t keys_size;
+    size_t bitmap_size;
+    uint32_t *keys;
+    uint32_t *bitmap;
+
+    if (!hs)
+        return CL_ENULLARG;
+
     if (load_factor < 50 || load_factor > 99) {
         cli_dbgmsg(MODULE_NAME "Invalid load factor: %u, using default of 80%%\n", load_factor);
         load_factor = 80;
     }
-    initial_capacity = nearest_power(initial_capacity);
-    hs->limit        = initial_capacity * load_factor / 100;
-    hs->capacity     = initial_capacity;
-    hs->mask         = initial_capacity - 1;
-    hs->count        = 0;
-    hs->keys         = cli_max_malloc(initial_capacity * sizeof(*hs->keys));
-    hs->mempool      = NULL;
-    if (!hs->keys) {
+
+    ret = cli_hashtab_capacity(initial_capacity, sizeof(*hs->keys), &capacity);
+    if (ret != CL_SUCCESS || capacity > UINT32_MAX)
+        return (ret == CL_SUCCESS) ? CL_ERESOURCE : ret;
+    ret = cli_hashtab_table_size(capacity >> 5, sizeof(*hs->bitmap), &bitmap_size);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    ret = cli_hashtab_table_size(capacity, sizeof(*hs->keys), &keys_size);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    keys = cli_max_malloc(keys_size);
+    if (!keys) {
         cli_errmsg("hashtab.c: Unable to allocate memory for hs->keys\n");
         return CL_EMEM;
     }
-    hs->bitmap = cli_max_calloc(initial_capacity >> 5, sizeof(*hs->bitmap));
-    if (!hs->bitmap) {
-        free(hs->keys);
+
+    bitmap = cli_max_calloc(1, bitmap_size);
+    if (!bitmap) {
+        free(keys);
         cli_errmsg("hashtab.c: Unable to allocate memory for hs->bitmap\n");
         return CL_EMEM;
     }
+
+    hs->limit    = (uint32_t)(capacity * load_factor / 100);
+    hs->capacity = (uint32_t)capacity;
+    hs->mask     = (uint32_t)capacity - 1;
+    hs->count    = 0;
+    hs->keys     = keys;
+    hs->bitmap   = bitmap;
+    hs->mempool  = NULL;
     return CL_SUCCESS;
 }
 
 cl_error_t cli_hashset_init_pool(struct cli_hashset *hs, size_t initial_capacity, uint8_t load_factor, mpool_t *mempool)
 {
+    cl_error_t ret;
+    size_t capacity;
+    size_t keys_size;
+    size_t bitmap_size;
+    uint32_t *keys;
+    uint32_t *bitmap;
+
+    if (!hs)
+        return CL_ENULLARG;
+
     if (load_factor < 50 || load_factor > 99) {
         cli_dbgmsg(MODULE_NAME "Invalid load factor: %u, using default of 80%%\n", load_factor);
         load_factor = 80;
     }
-    initial_capacity = nearest_power(initial_capacity);
-    hs->limit        = initial_capacity * load_factor / 100;
-    hs->capacity     = initial_capacity;
-    hs->mask         = initial_capacity - 1;
-    hs->count        = 0;
-    hs->mempool      = mempool;
-    hs->keys         = MPOOL_MALLOC(mempool, initial_capacity * sizeof(*hs->keys));
-    if (!hs->keys) {
+
+    ret = cli_hashtab_capacity(initial_capacity, sizeof(*hs->keys), &capacity);
+    if (ret != CL_SUCCESS || capacity > UINT32_MAX)
+        return (ret == CL_SUCCESS) ? CL_ERESOURCE : ret;
+    ret = cli_hashtab_table_size(capacity >> 5, sizeof(*hs->bitmap), &bitmap_size);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    ret = cli_hashtab_table_size(capacity, sizeof(*hs->keys), &keys_size);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    keys = MPOOL_MALLOC(mempool, keys_size);
+    if (!keys) {
         cli_errmsg("hashtab.c: Unable to allocate memory pool for hs->keys\n");
         return CL_EMEM;
     }
-    hs->bitmap = MPOOL_CALLOC(mempool, initial_capacity >> 5, sizeof(*hs->bitmap));
-    if (!hs->bitmap) {
-        MPOOL_FREE(mempool, hs->keys);
+
+    bitmap = MPOOL_CALLOC(mempool, 1, bitmap_size);
+    if (!bitmap) {
+        MPOOL_FREE(mempool, keys);
         cli_errmsg("hashtab.c: Unable to allocate/initialize memory for hs->keys\n");
         return CL_EMEM;
     }
+
+    hs->limit    = (uint32_t)(capacity * load_factor / 100);
+    hs->capacity = (uint32_t)capacity;
+    hs->mask     = (uint32_t)capacity - 1;
+    hs->count    = 0;
+    hs->mempool  = mempool;
+    hs->keys     = keys;
+    hs->bitmap   = bitmap;
     return CL_SUCCESS;
 }
 
@@ -768,10 +920,13 @@ static cl_error_t cli_hashset_grow(struct cli_hashset *hs)
     cli_dbgmsg(MODULE_NAME "Growing hashset, used: %u, capacity: %u\n", hs->count, hs->capacity);
     /* create a bigger hashset */
 
+    if (hs->capacity > UINT32_MAX / 2)
+        return CL_ERESOURCE;
+
     if (hs->mempool) {
-        rc = cli_hashset_init_pool(&new_hs, hs->capacity << 1, hs->limit * 100 / hs->capacity, hs->mempool);
+        rc = cli_hashset_init_pool(&new_hs, (size_t)hs->capacity * 2, hs->limit * 100 / hs->capacity, hs->mempool);
     } else {
-        rc = cli_hashset_init(&new_hs, hs->capacity << 1, hs->limit * 100 / hs->capacity);
+        rc = cli_hashset_init(&new_hs, (size_t)hs->capacity * 2, hs->limit * 100 / hs->capacity);
     }
     if (rc != CL_SUCCESS) {
         return rc;
@@ -791,6 +946,11 @@ static cl_error_t cli_hashset_grow(struct cli_hashset *hs)
 
 cl_error_t cli_hashset_addkey(struct cli_hashset *hs, const uint32_t key)
 {
+    if (!hs)
+        return CL_ENULLARG;
+    if (hs->count == UINT32_MAX)
+        return CL_ERESOURCE;
+
     /* check that we didn't reach the load factor.
      * Even if we don't know yet whether we'd add this key */
     if (hs->count + 1 > hs->limit) {

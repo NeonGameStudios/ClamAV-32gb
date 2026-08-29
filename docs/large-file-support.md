@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Generic hash-table capacity admission
+
+The shared string and uint32 hash tables and hashsets round requested
+capacities only after checked power-of-two arithmetic and checked element
+products. Native-size overflow and the 1-GiB individual-allocation ceiling
+return CL_ERESOURCE before allocation. Rehash failures are fail-visible,
+probe state is reset after successful growth, and oversized string keys are
+rejected before forming their NUL-terminated copy. This protects common
+matcher, metadata, and parser tables; complete callers, sanitizer,
+production-database/service, materialized-large-file, Sonic1, and release
+qualification remain required.
+
 ## Bytecode interpreter layout-size admission — 2026-08-29
 
 Aligned bytecode global, function-value, constant, and context parameter

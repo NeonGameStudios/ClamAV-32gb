@@ -1952,8 +1952,56 @@ START_TEST(test_bytecode_resource_constructors_publish_only_initialized_slots)
     ck_assert_int_eq(cli_hashset_init(&hashset,
                                       CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1,
                                       80),
-                     CL_EMEM);
+                     CL_ERESOURCE);
     ck_assert_ptr_null(hashset.keys);
+}
+END_TEST
+
+START_TEST(test_hashtab_capacity_admission_is_fail_visible)
+{
+    struct cli_hashtable table;
+    struct cli_htu32 u32table;
+    struct cli_htu32_element item;
+    size_t bytes;
+    size_t capacity;
+    size_t u32_capacity;
+    FILE *stream;
+
+    ck_assert_int_eq(cli_hashtab_table_size(0, sizeof(uint32_t), &bytes), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, 0);
+    ck_assert_int_eq(cli_hashtab_table_size(CLI_MAX_ALLOCATION / sizeof(uint32_t), sizeof(uint32_t), &bytes), CL_SUCCESS);
+    ck_assert_int_eq(cli_hashtab_table_size(CLI_MAX_ALLOCATION / sizeof(uint32_t) + 1, sizeof(uint32_t), &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_hashtab_table_size(SIZE_MAX, sizeof(uint32_t), &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_hashtab_table_size(1, 0, &bytes), CL_EARG);
+    ck_assert_int_eq(cli_hashtab_table_size(1, sizeof(uint32_t), NULL), CL_EARG);
+
+    capacity = 64;
+    while (capacity <= CLI_MAX_ALLOCATION / sizeof(struct cli_element) / 2)
+        capacity *= 2;
+    u32_capacity = 64;
+    while (u32_capacity <= CLI_MAX_ALLOCATION / sizeof(struct cli_htu32_element) / 2)
+        u32_capacity *= 2;
+
+    memset(&table, 0, sizeof(table));
+    table.htable  = (struct cli_element *)1;
+    table.capacity = capacity;
+    table.used     = 1;
+    table.maxfill  = 0;
+    ck_assert_ptr_null(cli_hashtab_insert(&table, "x", 1, 0));
+    stream = tmpfile();
+    ck_assert_ptr_nonnull(stream);
+    ck_assert_int_eq(fputs("0 x\n", stream), 4);
+    ck_assert_int_eq(fseek(stream, 0, SEEK_SET), 0);
+    ck_assert_int_eq(cli_hashtab_load(stream, &table), CL_EMEM);
+    fclose(stream);
+
+    memset(&u32table, 0, sizeof(u32table));
+    memset(&item, 0, sizeof(item));
+    u32table.htable   = (struct cli_htu32_element *)1;
+    u32table.capacity = u32_capacity;
+    u32table.used     = 1;
+    u32table.maxfill  = 0;
+    ck_assert_int_eq(cli_htu32_insert(&u32table, &item, NULL), CL_ERESOURCE);
 }
 END_TEST
 
@@ -2053,6 +2101,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_loader, test_bytecode_map_value_size_product_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_json_api_admission_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_resource_constructors_publish_only_initialized_slots);
+    tcase_add_test(tc_cli_loader, test_hashtab_capacity_admission_is_fail_visible);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
 #endif

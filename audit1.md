@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Generic hash-table capacity and rehash failure visibility — 2026-08-29
+
+The shared string and uint32 hash tables rounded externally supplied
+capacities with an unchecked power-of-two shift, allowing the rounded value
+to wrap before allocation. Their insert paths also ignored pre-growth errors
+and treated every non-negative growth result as retryable, so a bounded
+allocation failure could become an infinite retry loop. The tables and
+hashsets now use cli_hashtab_table_size() plus checked power-of-two admission,
+return resource failures before allocation, propagate growth failure, reset
+probe state after a successful rehash, and release a failed u32 rehash table.
+Oversized key lengths are rejected before len + 1. The
+test_hashtab_capacity_admission_is_fail_visible regression and isolated
+current-source runner cover native/1-GiB boundaries, fail-visible growth,
+successful rehash, and lookup; the hash-table source passes the existing
+production-GCC check. Full hash-table caller corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## Bytecode interpreter layout-size admission — 2026-08-29
 
 The bytecode interpreter previously bounded individual type and table
