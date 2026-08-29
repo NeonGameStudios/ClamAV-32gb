@@ -6971,6 +6971,18 @@ qualification gates.
   certified Linux x86-64, Sonic1, and release qualification gates.
 
 
+## EGG SFX dispatch reachability — 2026-08-29
+
+- Add the missing nonzero-offset built-in EGG signature so normal file typing
+  can select `CL_TYPE_EGGSFX` and exercise the existing admission and nested
+  `CL_TYPE_EGG` dispatch branch.
+- Retain the current-source production-linked GCC `egg_sfx` result of 2/2:
+  fixed-header admission plus a valid prefixed EGG with exact nested-child
+  matching through the public map API.
+- Keep complete EGG/SFX corpus, sanitizer, production-CVD/service,
+  materialized-large-file, certified Linux x86-64, Sonic1, parser-family, and
+  release qualification open.
+
 ## ELF64 direct table-cursor overflow regression — 2026-08-28
 
 - Keep the ELF64 program- and section-header cursor checks before the next

@@ -27126,6 +27126,105 @@ START_TEST(test_egg_sfx_header_admission)
 }
 END_TEST
 
+START_TEST(test_egg_sfx_admission_reaches_nested_matcher)
+{
+    enum {
+        EGG_SFX_OFFSET      = 1,
+        EGG_HEADER_SIZE     = 14,
+        EGG_ARCHIVE_EOF     = 4,
+        EGG_FILE_HEADER     = 16,
+        EGG_FILENAME_EXTRA  = 4 + 1 + 2 + 9,
+        EGG_FILE_EOF        = 4,
+        EGG_BLOCK_HEADER    = 18,
+        EGG_BLOCK_EOF       = 4,
+        EGG_MEMBER_SIZE     = 9,
+        EGG_TOTAL_SIZE      = EGG_HEADER_SIZE + EGG_ARCHIVE_EOF + EGG_FILE_HEADER +
+                              EGG_FILENAME_EXTRA + EGG_FILE_EOF + EGG_BLOCK_HEADER +
+                              EGG_BLOCK_EOF + EGG_MEMBER_SIZE + EGG_ARCHIVE_EOF,
+        INPUT_SIZE          = EGG_SFX_OFFSET + EGG_TOTAL_SIZE
+    };
+    static const uint8_t member[] = {'E', 'g', 'g', 'N', 'e', 's', 't', 'e', 'd'};
+    static const uint8_t filename[] = {'c', 'h', 'i', 'l', 'd', '.', 'b', 'i', 'n'};
+    uint8_t data[INPUT_SIZE] = {0};
+    uint8_t *egg;
+    size_t cursor;
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* Prefix a valid one-file EGG so normal magic typing must select the
+     * EGGSFX branch before the child is handed to CL_TYPE_EGG. */
+    egg = data + EGG_SFX_OFFSET;
+    memcpy(egg, "EGGA", 4);
+    zip_stream_write_u16(egg + 4, 0x0100U);
+    zip_stream_write_u32(egg + 6, 1U);
+    zip_stream_write_u32(egg + 10, 0U);
+    cursor = EGG_HEADER_SIZE;
+
+    zip_stream_write_u32(egg + cursor, 0x08E28222U);
+    cursor += EGG_ARCHIVE_EOF;
+    zip_stream_write_u32(egg + cursor, 0x0A8590E3U);
+    zip_stream_write_u32(egg + cursor + 4, 0U);
+    zip_stream_write_u64(egg + cursor + 8, sizeof(member));
+    cursor += EGG_FILE_HEADER;
+    zip_stream_write_u32(egg + cursor, 0x0A8591ACU);
+    egg[cursor + 4] = 0;
+    zip_stream_write_u16(egg + cursor + 5, sizeof(filename));
+    memcpy(egg + cursor + 7, filename, sizeof(filename));
+    cursor += EGG_FILENAME_EXTRA;
+    zip_stream_write_u32(egg + cursor, 0x08E28222U);
+    cursor += EGG_FILE_EOF;
+    zip_stream_write_u32(egg + cursor, 0x02B50C13U);
+    egg[cursor + 4] = 0;
+    egg[cursor + 5] = 0;
+    zip_stream_write_u32(egg + cursor + 6, sizeof(member));
+    zip_stream_write_u32(egg + cursor + 10, sizeof(member));
+    zip_stream_write_u32(egg + cursor + 14,
+                         (uint32_t)crc32(0L, member, (uInt)sizeof(member)));
+    cursor += EGG_BLOCK_HEADER;
+    zip_stream_write_u32(egg + cursor, 0x08E28222U);
+    cursor += EGG_BLOCK_EOF;
+    memcpy(egg + cursor, member, sizeof(member));
+    cursor += sizeof(member);
+    zip_stream_write_u32(egg + cursor, 0x08E28222U);
+    cursor += EGG_ARCHIVE_EOF;
+    ck_assert_int_eq(cursor, EGG_TOTAL_SIZE);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(scan_engine->root[0],
+                                                   "EggSfxChild",
+                                                   "4567674e6573746564", 0, 0, 0,
+                                                   "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "EggSfxChild.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_egg_fixed_header_range_classes_are_fail_visible)
 {
     static const uint8_t valid_header[] = {
@@ -45845,6 +45944,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_egg_sfx);
     tcase_add_checked_fixture(tc_egg_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_egg_sfx, test_egg_sfx_header_admission);
+    tcase_add_test(tc_egg_sfx, test_egg_sfx_admission_reaches_nested_matcher);
     suite_add_tcase(s, tc_hfs_inline);
     tcase_add_checked_fixture(tc_hfs_inline, cl_setup, cl_teardown);
     tcase_add_test(tc_hfs_inline, test_hfsplus_inline_compression_streams_large_output);

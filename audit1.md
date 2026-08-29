@@ -254,6 +254,23 @@ coverage, sanitizer and I/O fault injection, production CVD/service parity,
 materialized large metadata, certified Linux x86-64, and Sonic1 evidence
 remain release gates.
 
+## EGG SFX dispatch reachability — 2026-08-29
+
+The built-in file-type table now contains the missing nonzero-offset EGG
+signature, allowing normal magic typing to select `CL_TYPE_EGGSFX` instead of
+leaving the scanner dispatch branch unreachable. The existing fixed-header
+admission check remains fail-visible for malformed, unsupported, and truncated
+confirmed candidates; weak magic-only candidates are still rejected before
+layer creation.
+
+The fresh current-source production-linked GCC `egg_sfx` TCase passes 2/2:
+the header-admission group and a valid prefixed one-file EGG reachability case.
+The latter uses an exact child matcher and proves the public map path selects
+EGG-SFX dispatch, admits the archive, streams the stored member, and reaches
+the nested marker. Complete EGG/SFX corpus, sanitizer, production-CVD/service,
+materialized-large-file, certified Linux x86-64, Sonic1, and parser-family
+qualification remain open.
+
 ## Embedded parser qualification recheck — 2026-08-29
 
 The authoritative current-source Docker harness was reused without installing

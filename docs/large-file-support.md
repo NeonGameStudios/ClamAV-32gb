@@ -9189,6 +9189,21 @@ zero residual contiguous accounting. Complete EGG/split corpus, sanitizer and
 I/O fault injection, production CVD/service parity, materialized large
 metadata, certified Linux x86-64, and Sonic1 evidence remain release gates.
 
+## EGG SFX dispatch reachability — 2026-08-29
+
+The built-in file-type definitions now include the nonzero-offset EGG magic,
+so normal typing can select `CL_TYPE_EGGSFX` and reach the existing confirmed
+header admission and nested `CL_TYPE_EGG` dispatch. The short magic-only case
+remains a weak candidate; malformed, unsupported, or truncated confirmed
+headers remain explicit incomplete results.
+
+The fresh current-source production-linked GCC `egg_sfx` TCase passes 2/2.
+Its valid prefixed archive uses an exact child matcher and proves public map
+typing, EGG-SFX admission, bounded member streaming, and nested marker
+matching. Complete EGG/SFX corpus, sanitizer, production-CVD/service,
+materialized-large-file, certified Linux x86-64, Sonic1, and parser-family
+qualification remain release gates.
+
 ## Bounded HFS+ inline decmpfs output — 2026-08-24
 
 HFS+ inline zlib-compressed attributes now decode through a fixed 64 KiB
