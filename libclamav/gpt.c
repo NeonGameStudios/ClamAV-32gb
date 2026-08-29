@@ -175,6 +175,7 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
     enum GPT_SCANSTATE state = INVALID;
     cl_error_t secondary_status;
     cl_error_t header_status;
+    bool secondary_header_incomplete = false;
     size_t maplen;
     off_t pos = 0;
 
@@ -292,6 +293,8 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
                     status = header_status;
                     goto done;
                 }
+                cli_mark_scan_incomplete(ctx, "GPT secondary header was invalid");
+                secondary_header_incomplete = true;
             }
         }
         /* check that the two partition table crc32 checksum match,
@@ -353,7 +356,8 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
             cli_dbgmsg("cli_scangpt: State is invalid\n");
     }
 
-    status = CL_SUCCESS;
+    if (secondary_header_incomplete && status == CL_SUCCESS)
+        status = CL_EPARSE;
 
 done:
     if (ctx && status != CL_SUCCESS && status != CL_VIRUS && status != CL_BREAK && !ctx->scan_incomplete)

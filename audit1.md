@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## GPT secondary-header admission — 2026-08-28
+
+`cli_scangpt()` previously tolerated a malformed secondary GPT header when
+the primary header was valid, continuing with the primary partitions and
+allowing a clean result without recording that the backup structure was not
+inspected successfully. The parser now records `GPT secondary header was
+invalid` and returns `CL_EPARSE` when primary traversal is otherwise clean,
+while preserving primary-partition detections. The new
+`test_gpt_invalid_secondary_header_is_fail_visible` regression and source
+guards cover the boundary; current-source compilation and focused execution,
+complete GPT/partition corpus, production-CVD/service, sanitizer,
+materialized large-file, Sonic1, and final parser-family/release
+qualification remain open.
+
 ## CPIO invalid-header admission — 2026-08-28
 
 The CPIO old-binary, ODC, and NEWC/CRC walkers returned `CL_EFORMAT` for a

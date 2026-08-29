@@ -1,5 +1,16 @@
 # Wishlist
 
+## GPT secondary-header admission — 2026-08-28
+
+- Keep a malformed secondary GPT header fail-visible even when the primary
+  table remains usable: record `GPT secondary header was invalid`, preserve
+  primary detections, return `CL_EPARSE` for otherwise clean traversal, and
+  disable caching.
+- Retain `test_gpt_invalid_secondary_header_is_fail_visible` and its source
+  guard. Keep complete GPT/partition corpus, production-CVD/service,
+  sanitizer, materialized large-file, Sonic1, and final parser-family/release
+  evidence open.
+
 ## CPIO invalid-header admission — 2026-08-28
 
 - Keep fully read but invalid CPIO header magic fail-visible for every variant:

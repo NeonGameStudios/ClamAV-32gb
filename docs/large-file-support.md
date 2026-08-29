@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## GPT secondary-header admission — 2026-08-28
+
+GPT scans now mark the recognized layer incomplete when the primary header is
+valid but the backup header is malformed, while retaining primary partition
+detections and returning `CL_EPARSE` when no detection overrides the result.
+Previously the malformed backup was silently tolerated and a clean result
+could remain cacheable. The registered
+`test_gpt_invalid_secondary_header_is_fail_visible` regression and source
+guard require `GPT secondary header was invalid` and a non-cacheable fmap.
+Current-source compilation and focused execution, complete GPT/partition
+corpus, production-CVD/service, sanitizer, materialized large-file, Sonic1,
+and final parser-family/release qualification remain required.
+
 ## CPIO invalid-header admission — 2026-08-28
 
 CPIO old-binary, ODC, and NEWC/CRC parser walks now mark a recognized layer
