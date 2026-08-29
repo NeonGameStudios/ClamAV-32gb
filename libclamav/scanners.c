@@ -1880,32 +1880,111 @@ static cl_error_t cli_write_temp_output(cli_ctx *ctx, int fd, const void *data, 
     return CL_SUCCESS;
 }
 
+static cl_error_t cli_stage_gzip_legacy_input(cli_ctx *ctx, unsigned char *buff,
+                                              int *fd, char **tmpname,
+                                              uint64_t *temporary_reserved)
+{
+    cl_error_t ret;
+    size_t at = 0;
+
+    if (NULL == ctx || NULL == ctx->fmap || NULL == buff || NULL == fd ||
+        NULL == tmpname || NULL == temporary_reserved)
+        return CL_ENULLARG;
+
+    *fd                 = -1;
+    *tmpname            = NULL;
+    *temporary_reserved = 0;
+
+    /* The legacy zlib API accepts only a descriptor and has no bounded fmap
+     * interface. Stage exactly the visible fmap range so fallback decoding
+     * cannot start at a parent-file offset or consume bytes past a nested
+     * map's end. Charge the input staging file separately from decoded output.
+     */
+    ret = cli_reserve_temp_output(ctx, temporary_reserved, (uint64_t)ctx->fmap->len,
+                                  "GZip legacy input exceeds temporary storage limits");
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    ret = cli_gentempfd(ctx->this_layer_tmpdir, tmpname, fd);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "GZip legacy input temporary file could not be created");
+        ret = cli_cleanup_compressed_temp(ctx, fd, *tmpname, ret, *temporary_reserved,
+                                          "GZip legacy input temporary file could not be closed",
+                                          "GZip legacy input temporary file could not be removed");
+        free(*tmpname);
+        *tmpname            = NULL;
+        *temporary_reserved = 0;
+        return ret;
+    }
+
+    while (at < ctx->fmap->len) {
+        size_t bytes = MIN(ctx->fmap->len - at, (size_t)FILEBUFF);
+        size_t nread = fmap_readn_full(ctx->fmap, buff, at, bytes);
+
+        if (nread != bytes) {
+            ret = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+            cli_mark_scan_incomplete(ctx, (ret == CL_EREAD)
+                                          ? "GZip legacy input could not be read completely"
+                                          : "GZip legacy input range was truncated");
+            ret = cli_cleanup_compressed_temp(ctx, fd, *tmpname, ret, *temporary_reserved,
+                                              "GZip legacy input temporary file could not be closed",
+                                              "GZip legacy input temporary file could not be removed");
+            free(*tmpname);
+            *tmpname            = NULL;
+            *temporary_reserved = 0;
+            return ret;
+        }
+
+        ret = cli_write_temp_output(ctx, *fd, buff, bytes,
+                                    "GZip legacy input staging reached the configured time limit",
+                                    "GZip legacy input could not be written completely");
+        if (ret != CL_SUCCESS) {
+            ret = cli_cleanup_compressed_temp(ctx, fd, *tmpname, ret, *temporary_reserved,
+                                              "GZip legacy input temporary file could not be closed",
+                                              "GZip legacy input temporary file could not be removed");
+            free(*tmpname);
+            *tmpname            = NULL;
+            *temporary_reserved = 0;
+            return ret;
+        }
+        at += bytes;
+    }
+
+    if (lseek(*fd, 0, SEEK_SET) == (off_t)-1) {
+        cli_mark_scan_incomplete(ctx, "GZip legacy input temporary file could not be rewound");
+        ret = cli_cleanup_compressed_temp(ctx, fd, *tmpname, CL_ESEEK, *temporary_reserved,
+                                          "GZip legacy input temporary file could not be closed",
+                                          "GZip legacy input temporary file could not be removed");
+        free(*tmpname);
+        *tmpname            = NULL;
+        *temporary_reserved = 0;
+        return ret;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char *buff)
 {
     int fd = -1;
-    int sourcefd;
+    int sourcefd = -1;
     int gzclose_ret;
     int gzerr = Z_OK;
     cl_error_t ret;
     cl_error_t decode_status    = CL_SUCCESS;
     uint64_t outsize            = 0;
     uint64_t temporary_reserved = 0;
+    uint64_t input_reserved     = 0;
     int bytes = 0;
     bool stream_complete = false;
     fmap_t *map          = ctx->fmap;
-    char *tmpname;
+    char *tmpname        = NULL;
+    char *source_tmpname = NULL;
     gzFile gz;
 
-    ret = fmap_fd(map);
-    if (ret < 0) {
-        cli_mark_scan_incomplete(ctx, "GZip legacy source descriptor could not be duplicated");
-        return CL_EDUP;
-    }
-    sourcefd = dup(ret);
-    if (sourcefd < 0) {
-        cli_mark_scan_incomplete(ctx, "GZip legacy source descriptor could not be duplicated");
-        return CL_EDUP;
-    }
+    ret = cli_stage_gzip_legacy_input(ctx, buff, &sourcefd, &source_tmpname, &input_reserved);
+    if (ret != CL_SUCCESS)
+        return ret;
 
     if (!(gz = gzdopen(sourcefd, "rb"))) {
         cli_mark_scan_incomplete(ctx, "GZip legacy decoder could not be opened");
@@ -1914,8 +1993,15 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
             cli_mark_scan_incomplete(ctx, "GZip legacy source descriptor could not be closed");
             ret = cli_merge_cleanup_status(ret, CL_EWRITE);
         }
+        sourcefd = -1;
+        ret      = cli_cleanup_compressed_temp(ctx, &sourcefd, source_tmpname, ret,
+                                               input_reserved,
+                                               "GZip legacy input temporary file could not be closed",
+                                               "GZip legacy input temporary file could not be removed");
+        free(source_tmpname);
         return ret;
     }
+    sourcefd = -1; /* gzdopen owns and closes the staged source descriptor. */
 
     fd = -1;
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
@@ -1926,6 +2012,11 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
             cli_mark_scan_incomplete(ctx, "GZip legacy decoder did not close cleanly");
             ret = cli_merge_cleanup_status(ret, CL_EUNPACK);
         }
+        ret = cli_cleanup_compressed_temp(ctx, &sourcefd, source_tmpname, ret,
+                                          input_reserved,
+                                          "GZip legacy input temporary file could not be closed",
+                                          "GZip legacy input temporary file could not be removed");
+        free(source_tmpname);
         return ret;
     }
 
@@ -1975,6 +2066,15 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
             decode_status = CL_EUNPACK;
         stream_complete = false;
     }
+
+    ret = cli_cleanup_compressed_temp(ctx, &sourcefd, source_tmpname, decode_status,
+                                      input_reserved,
+                                      "GZip legacy input temporary file could not be closed",
+                                      "GZip legacy input temporary file could not be removed");
+    free(source_tmpname);
+    source_tmpname = NULL;
+    input_reserved = 0;
+    decode_status  = ret;
 
     if (decode_status != CL_SUCCESS || !stream_complete) {
         if (decode_status == CL_SUCCESS) {

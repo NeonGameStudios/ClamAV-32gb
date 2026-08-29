@@ -1,5 +1,18 @@
 # Wishlist
 
+## GZip legacy-fallback fmap boundary — 2026-08-29
+
+- Keep the legacy zlib fallback bounded to the visible fmap: stage nested and
+  memory-backed maps through checked windows before the descriptor-only API,
+  charge the staged source against the shared temporary quota, and preserve
+  deadline, read, parse, write, rewind, close, and unlink failures.
+- Retain `test_gzip_legacy_fallback_stages_visible_map`, the
+  `inflateInit2_` fault-injection seam, and source guards. Complete coherent
+  static production-linked fallback execution, legacy-fallback read-failure/
+  cleanup/quota coverage, full GZip corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  parser-family, and release qualification.
+
 ## GPT header-location admission — 2026-08-29
 
 - Keep primary and secondary GPT copies bound to their physical locations:

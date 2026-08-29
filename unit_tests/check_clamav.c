@@ -116,6 +116,17 @@ extern int clamav_test_fail_closedir;
 extern int clamav_test_fail_readdir;
 extern int clamav_test_short_write;
 extern size_t clamav_test_short_write_count;
+extern int __real_inflateInit2_(z_streamp strm, int windowBits, const char *version, int stream_size);
+int clamav_test_force_gzip_legacy_fallback;
+
+int __wrap_inflateInit2_(z_streamp strm, int windowBits, const char *version, int stream_size)
+{
+    if (clamav_test_force_gzip_legacy_fallback) {
+        clamav_test_force_gzip_legacy_fallback = 0;
+        return Z_MEM_ERROR;
+    }
+    return __real_inflateInit2_(strm, windowBits, version, stream_size);
+}
 #endif
 
 #ifdef CLAMAV_TEST_MALLOC_WRAP
@@ -7042,6 +7053,65 @@ START_TEST(test_gzip_staging_failures_are_fail_visible)
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+    free(gzip);
+}
+END_TEST
+
+START_TEST(test_gzip_legacy_fallback_stages_visible_map)
+{
+    static const uint8_t input[]  = "GZip legacy fallback bounded input";
+    static const uint8_t prefix[] = "parent prefix";
+    static const uint8_t suffix[] = "parent suffix";
+    uint8_t *gzip;
+    uint8_t *container;
+    size_t gzip_length;
+    size_t container_length;
+    fmap_t *parent;
+    fmap_t *nested;
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    gzip = gzip_stream(input, sizeof(input) - 1U, &gzip_length);
+    ck_assert_ptr_nonnull(gzip);
+    container_length = sizeof(prefix) - 1U + gzip_length + sizeof(suffix) - 1U;
+    container        = malloc(container_length);
+    ck_assert_ptr_nonnull(container);
+    memcpy(container, prefix, sizeof(prefix) - 1U);
+    memcpy(container + sizeof(prefix) - 1U, gzip, gzip_length);
+    memcpy(container + sizeof(prefix) - 1U + gzip_length, suffix, sizeof(suffix) - 1U);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine   = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    parent = cl_fmap_open_memory(container, container_length);
+    ck_assert_ptr_nonnull(parent);
+    nested = fmap_duplicate(parent, sizeof(prefix) - 1U, gzip_length, "bounded-gzip");
+    ck_assert_ptr_nonnull(nested);
+
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    clamav_test_force_gzip_legacy_fallback = 1;
+    ret = cl_scanmap_ex(nested, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_GZ", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(!nested->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_gzip_legacy_fallback, 0);
+
+    free_duplicate_fmap(nested);
+    cl_fmap_close(parent);
+    cl_engine_free(scan_engine);
+    free(container);
     free(gzip);
 }
 END_TEST
@@ -47003,6 +47073,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_bz_map, test_compressed_input_read_failure_is_fail_visible);
     tcase_add_test(tc_bz_map, test_gzip_input_read_failure_is_fail_visible);
     tcase_add_test(tc_bz_map, test_html_input_read_failure_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_bz_map, test_gzip_legacy_fallback_stages_visible_map);
+#endif
     suite_add_tcase(s, tc_bz_core);
     tcase_add_checked_fixture(tc_bz_core, cl_setup, cl_teardown);
     tcase_add_test(tc_bz_core, test_gzip_bzip_truncated_streams_are_fail_visible);

@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## GZip legacy-fallback fmap boundary — 2026-08-29
+
+The legacy zlib fallback accepted only a descriptor and previously duplicated
+the underlying file descriptor directly. That path could not decode a
+memory-backed fmap and, for a nested or bounded file map, could begin at the
+parent descriptor's offset zero or consume bytes beyond the visible child
+range. The fallback now stages exactly the visible fmap range through bounded
+`fmap_readn_full()` windows, checks the shared deadline before each staged
+write, charges the input staging file against temporary storage, and preserves
+read, parse, write, rewind, and cleanup statuses before invoking `gzdopen()`.
+The forced-fallback prefixed nested-map regression is registered, and the
+current scanner plus unit translation compile with production GCC. A coherent
+static production-linked fallback execution and sanitizer run remain open,
+along with complete GZip corpus, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, and final parser-family/release
+qualification.
+
 ## GPT header-location admission — 2026-08-29
 
 GPT validation accepted a fully read secondary header even when its
