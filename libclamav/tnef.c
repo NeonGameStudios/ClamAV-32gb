@@ -204,6 +204,7 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                 }
                 if (tnef_message(ctx->fmap, &pos, type, tag, length, fsize) != 0) {
                     cli_dbgmsg("TNEF: Error reading TNEF message\n");
+                    cli_mark_scan_incomplete(ctx, "TNEF message attribute could not be inspected completely");
                     ret     = CL_EFORMAT;
                     alldone = 1;
                 } else {
@@ -344,8 +345,8 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
             break;
 #ifdef CL_DEBUG
         case attTNEFVERSION:
-            /*assert(length == sizeof(uint32_t))*/
-            if (fmap_readn(map, &i32, *pos, sizeof(uint32_t)) != sizeof(uint32_t))
+            if (length < (int32_t)sizeof(uint32_t) ||
+                tnef_readn(map, &i32, *pos, sizeof(uint32_t)) != sizeof(uint32_t))
                 return -1;
             (*pos) += sizeof(uint32_t);
             i32 = host32(i32);
@@ -353,8 +354,8 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
             break;
         case attOEMCODEPAGE:
             /* 8 bytes, but just print the first 4 */
-            /*assert(length == sizeof(uint32_t))*/
-            if (fmap_readn(map, &i32, *pos, sizeof(uint32_t)) != sizeof(uint32_t))
+            if (length < (int32_t)sizeof(uint32_t) ||
+                tnef_readn(map, &i32, *pos, sizeof(uint32_t)) != sizeof(uint32_t))
                 return -1;
             (*pos) += sizeof(uint32_t);
             i32 = host32(i32);
@@ -374,7 +375,7 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
                 cli_errmsg("tnef_message: Unable to allocate memory for string\n");
                 return -1;
             }
-            if (fmap_readn(map, string, *pos, string_len) != string_len) {
+            if (tnef_readn(map, string, *pos, string_len) != string_len) {
                 free(string);
                 return -1;
             }

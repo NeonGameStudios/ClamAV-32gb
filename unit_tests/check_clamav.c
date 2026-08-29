@@ -29587,6 +29587,38 @@ START_TEST(test_tnef_nonzero_checksum_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tnef_message_attribute_range_is_fail_visible)
+{
+    static const uint8_t input[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x01,                   /* message level */
+        0x34, 0x12, 0x01, 0x00, /* arbitrary type/tag */
+        0x01, 0x00, 0x00, 0x00  /* declared payload extends past EOF */
+    };
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "TNEF message attribute could not be inspected completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_tnef_negative_attribute_length_is_fail_visible)
 {
     static const uint8_t input[] = {
@@ -45151,6 +45183,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tnef, test_tnef_zero_length_attribute_consumes_checksum);
     tcase_add_test(tc_tnef, test_tnef_nonzero_attribute_requires_checksum);
     tcase_add_test(tc_tnef, test_tnef_nonzero_checksum_read_failure_is_fail_visible);
+    tcase_add_test(tc_tnef, test_tnef_message_attribute_range_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_negative_attribute_length_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_time_limit_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_initial_read_failure_is_fail_visible);

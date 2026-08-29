@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## TNEF message-range fail visibility — 2026-08-28
+
+`cli_tnef()` now marks the recognized layer incomplete when a message-level
+attribute cannot be inspected because its declared payload range is outside
+the input. Previously the caller returned `CL_EFORMAT` without changing the
+sticky cacheability state. Debug-only fixed-width TNEF metadata reads now use
+the bounded read helper and require the field to fit inside the declared
+attribute payload. The current-source regression
+`test_tnef_message_attribute_range_is_fail_visible` and source guards cover
+the fail-visible range result; complete TNEF corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and final release
+qualification remain required.
+
 ## Structured-detector counter width — 2026-08-28
 
 The structured credit-card and SSN detector now accumulates bounded-window

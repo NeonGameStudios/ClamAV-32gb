@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## TNEF message-range fail visibility — 2026-08-28
+
+`cli_tnef()` converted any `tnef_message()` failure to `CL_EFORMAT` without
+recording that the recognized TNEF layer had not been inspected completely.
+For example, a message attribute whose declared payload extended past the map
+could therefore remain cacheable. The caller now records a sticky incomplete
+result before returning the parse error. Debug-only fixed-width TNEF metadata
+reads also use the bounded read helper and require the declared payload to
+contain the field, preventing those reads from crossing the attribute range.
+The new `test_tnef_message_attribute_range_is_fail_visible` regression and
+source guards are added; the focused current-source GCC direct-parser runner
+passes the same boundary. Complete TNEF corpus, production-linked TNEF
+execution, sanitizer, materialized large-file, production-CVD/service,
+Sonic1, and final release qualification remain open.
+
 ## Structured-detector counter-width audit — 2026-08-28
 
 `cli_scan_structured()` accumulated per-window credit-card and SSN counts in
