@@ -2618,7 +2618,8 @@ static cl_error_t egg_stream_lzma(const egg_handle* handle, const egg_block* blo
     size_t produced;
     struct CLI_LZMA stream;
     uint64_t declared_size = UINT64_MAX;
-    bool decoder_ready     = false;
+    bool decoder_ready       = false;
+    bool decoder_initialized = false;
     int lzmastat;
     cl_error_t status = CL_EUNPACK;
 
@@ -2651,6 +2652,7 @@ static cl_error_t egg_stream_lzma(const egg_handle* handle, const egg_block* blo
             }
 
             decoder_ready = true;
+            decoder_initialized = true;
             declared_size = stream.usize;
             if (declared_size != UINT64_MAX && declared_size != block->uncompressedSize) {
                 status = CL_EFORMAT;
@@ -2694,7 +2696,8 @@ static cl_error_t egg_stream_lzma(const egg_handle* handle, const egg_block* blo
     }
 
 done:
-    cli_LzmaShutdown(&stream);
+    if (decoder_initialized)
+        cli_LzmaShutdown(&stream);
     return status;
 }
 

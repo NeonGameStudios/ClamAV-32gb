@@ -1,5 +1,13 @@
 # Wishlist
 
+## EGG LZMA stream initialization teardown — 2026-08-30
+
+- Keep EGG streaming LZMA cleanup conditional on a decoder that actually
+  initialized. The existing bounded-member regression now injects init
+  failure and requires `CL_EUNPACK`, zero output, and no shutdown call;
+  complete EGG corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and release qualification remain.
+
 ## YARA VM unaligned pointer operands — 2026-08-30
 
 - Keep bundled YARA jump, rule, and object pointer operands decoded with

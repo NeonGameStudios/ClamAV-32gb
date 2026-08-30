@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## EGG LZMA stream initialization teardown — 2026-08-30
+
+The EGG streaming LZMA member path now records decoder initialization before
+calling `cli_LzmaShutdown()`, so initialization failure and header-only
+termination cannot finalize an uninitialized decoder. The bounded EGG LZMA
+regression injects initialization failure and requires `CL_EUNPACK`, zero
+output, and no shutdown call; the source and unit translation units remain
+under production GCC checks. Complete EGG corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## YARA VM unaligned pointer operands — 2026-08-30
 
 The bundled YARA executor now decodes packed jump-target, rule-pointer, and

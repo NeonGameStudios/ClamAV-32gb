@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## EGG LZMA stream initialization teardown — 2026-08-30
+
+The EGG streaming LZMA path unconditionally called `cli_LzmaShutdown()` on
+every exit, including decoder-initialization failure and the header-only
+state where no decoder allocation had completed. The path now tracks a
+successfully initialized decoder and only tears it down after that state is
+reached. The existing bounded EGG LZMA regression now injects initialization
+failure and asserts `CL_EUNPACK`, zero output, and zero shutdown calls; the
+source and unit translation units remain under the production GCC checks.
+Complete EGG corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## YARA VM unaligned pointer operands — 2026-08-30
 
 The bundled YARA executor loaded jump targets, rule pointers, and object

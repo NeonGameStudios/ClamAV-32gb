@@ -124,11 +124,14 @@ extern int __real_inflateInit_(z_streamp strm, const char *version, int stream_s
 extern int __real_inflateInit2_(z_streamp strm, int windowBits, const char *version, int stream_size);
 extern int __real_BZ2_bzDecompressInit(bz_stream *strm, int blockSize100k, int verbosity);
 extern int __real_cli_LzmaInit(struct CLI_LZMA *lz, uint64_t usize);
+extern void __real_cli_LzmaShutdown(struct CLI_LZMA *lz);
 int clamav_test_force_swf_decoder_init;
 int clamav_test_force_xar_member_decoder_init;
 int clamav_test_force_bzip_concat_decoder_init;
 int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
+int clamav_test_force_egg_lzma_decoder_init;
+int clamav_test_lzma_shutdown_calls;
 
 int __wrap_inflateInit_(z_streamp strm, const char *version, int stream_size)
 {
@@ -160,7 +163,17 @@ int __wrap_cli_LzmaInit(struct CLI_LZMA *lz, uint64_t usize)
         clamav_test_force_xar_lzma_decoder_init = 0;
         return LZMA_RESULT_DATA_ERROR;
     }
+    if (clamav_test_force_egg_lzma_decoder_init) {
+        clamav_test_force_egg_lzma_decoder_init = 0;
+        return LZMA_RESULT_DATA_ERROR;
+    }
     return __real_cli_LzmaInit(lz, usize);
+}
+
+void __wrap_cli_LzmaShutdown(struct CLI_LZMA *lz)
+{
+    clamav_test_lzma_shutdown_calls++;
+    __real_cli_LzmaShutdown(lz);
 }
 
 int clamav_test_force_gzip_legacy_fallback;
@@ -28681,6 +28694,29 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     ck_assert_mem_eq(output.buffer, expected, sizeof(expected) - 1U);
 
     free((void *)filename);
+    cli_egg_close(handle);
+    cl_fmap_close(map);
+
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(decoded);
+    map             = cl_fmap_open_memory(archive, offset);
+    ck_assert_ptr_nonnull(map);
+    handle = NULL;
+    comments = NULL;
+    ncomments = 0;
+    filename = NULL;
+    output_length = 0;
+    clamav_test_lzma_shutdown_calls = 0;
+    clamav_test_force_egg_lzma_decoder_init = 1;
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_SUCCESS);
+    ck_assert_int_eq(cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                                 &filename, &output_length),
+                     CL_EUNPACK);
+    ck_assert_ptr_null(filename);
+    ck_assert_uint_eq(output_length, 0);
+    ck_assert_uint_eq(clamav_test_force_egg_lzma_decoder_init, 0);
+    ck_assert_int_eq(clamav_test_lzma_shutdown_calls, 0);
     cli_egg_close(handle);
     cl_fmap_close(map);
 
