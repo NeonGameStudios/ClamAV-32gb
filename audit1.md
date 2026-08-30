@@ -16097,13 +16097,14 @@ Sonic1, and final parser-family/release qualification remain open.
 
 ## UTF-16 normalization empty-boundary admission — 2026-08-30
 
-The UTF-16 conversion helpers had two unchecked public boundaries. The
+The UTF-16 conversion helpers had three unchecked public boundaries. The
 buffer-normalization wrapper subtracted one from a zero destination size
 before calling its bounded writer, and the UTF-16-to-UTF-8 converter could
-read a null pointer for a non-empty length. The wrapper now rejects null or
-sub-two-byte destinations, and the converter rejects null non-empty input
-before BOM inspection. The registered `check_str` regression covers these
-cases alongside the existing native-size and allocation-ceiling tests.
+read a null pointer for a non-empty length; the legacy UTF-16-to-ASCII helper
+also accepted a null string before allocation. The wrapper now rejects null or
+sub-two-byte destinations, and both converters reject null non-empty input
+before reading or allocating. The registered `check_str` regression covers
+these cases alongside the existing native-size and allocation-ceiling tests.
 Current-source warning-enabled GCC and matching GCC ASan/UBSan direct runners
 pass; complete text-normalization/ISO/HTML corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final

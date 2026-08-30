@@ -1499,7 +1499,7 @@ char* cli_utf16toascii(const char* str, unsigned int length)
     char* decoded;
     unsigned int i, j;
 
-    if (length < 2) {
+    if (length < 2 || str == NULL) {
         cli_dbgmsg("cli_utf16toascii: length < 2\n");
         return NULL;
     }
@@ -1527,10 +1527,10 @@ char* cli_utf16_to_utf8(const char* utf16, size_t length, encoding_t type)
     size_t needed;
     char* s2;
 
+    if (length != 0 && utf16 == NULL)
+        return NULL;
     if (length < 2)
         return cli_safer_strdup("");
-    if (utf16 == NULL)
-        return NULL;
     if (length % 2) {
         cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
         length--;

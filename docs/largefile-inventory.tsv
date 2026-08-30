@@ -18684,9 +18684,10 @@ native-width-integer	sigtool/vba.c	804	static void wm_decode_macro(unsigned char
 native-width-integer	sigtool/vba.c	806	static void wm_decode_macro(unsigned char *buff, uint32_t len, int hex_output)
 native-width-integer	sigtool/vba.c	92	    int i;
 native-width-integer	sigtool/vba.h	28	int sigtool_vba_scandir(const struct optstruct *opts, const char *dirname, int hex_output, struct uniq *U);
-native-width-integer	tools/.codex_utf16_boundary_runner.c	15	    size_t length = source == NULL ? 0 : strlen(source);
-native-width-integer	tools/.codex_utf16_boundary_runner.c	36	int main(void)
-native-width-integer	tools/.codex_utf16_boundary_runner.c	8	void *cli_max_malloc(size_t size)
+native-width-integer	tools/.codex_utf16_boundary_runner.c	12	void *cli_max_calloc(size_t count, size_t size)
+native-width-integer	tools/.codex_utf16_boundary_runner.c	19	    size_t length = source == NULL ? 0 : strlen(source);
+native-width-integer	tools/.codex_utf16_boundary_runner.c	40	int main(void)
+native-width-integer	tools/.codex_utf16_boundary_runner.c	7	void *cli_max_malloc(size_t size)
 native-width-integer	unit_tests/check_bytecode.c	106	    int fdin = -1;
 native-width-integer	unit_tests/check_bytecode.c	1178	    pread_state.length       = (size_t)(boundary + 1);
 native-width-integer	unit_tests/check_bytecode.c	1192	    bcctx->off = (off_t)boundary;
@@ -37050,7 +37051,7 @@ offset-size-arithmetic	sigtool/vba.c	958	                w_length = (uint16_t)(b
 offset-size-arithmetic	sigtool/vba.c	963	                print_hex_buff(line_start, buff + i + 1, hex_output);
 offset-size-arithmetic	sigtool/vba.c	966	                line_start = buff + i;
 offset-size-arithmetic	sigtool/vba.c	974	    print_hex_buff(line_start, buff + i, hex_output);
-offset-size-arithmetic	tools/.codex_utf16_boundary_runner.c	16	    char *copy = malloc(length + 1);
+offset-size-arithmetic	tools/.codex_utf16_boundary_runner.c	20	    char *copy = malloc(length + 1);
 offset-size-arithmetic	unit_tests/check_bytecode.c	1008	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
 offset-size-arithmetic	unit_tests/check_bytecode.c	1033	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
 offset-size-arithmetic	unit_tests/check_bytecode.c	1052	    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
@@ -39825,8 +39826,8 @@ offset-size-arithmetic	unit_tests/check_str.c	423	static unsigned u16_len(const 
 offset-size-arithmetic	unit_tests/check_str.c	442	    /* This length makes length * 3 wrap to a tiny value on unsigned native
 offset-size-arithmetic	unit_tests/check_str.c	444	    const size_t overflowing_length = SIZE_MAX / 3 + 1;
 offset-size-arithmetic	unit_tests/check_str.c	446	        (((size_t)CLI_MAX_ALLOCATION - 2) / 3 + 1) * 2;
-offset-size-arithmetic	unit_tests/check_str.c	493	    tcase_add_loop_test(tc_str, test_u16_u8, 0, sizeof(u16_tests) / sizeof(u16_tests[0]));
-offset-size-arithmetic	unit_tests/check_str.c	498	    tcase_add_loop_test(tc_decodeline, test_base64, 0, sizeof(base64tests) / sizeof(base64tests[0]));
+offset-size-arithmetic	unit_tests/check_str.c	495	    tcase_add_loop_test(tc_str, test_u16_u8, 0, sizeof(u16_tests) / sizeof(u16_tests[0]));
+offset-size-arithmetic	unit_tests/check_str.c	500	    tcase_add_loop_test(tc_decodeline, test_base64, 0, sizeof(base64tests) / sizeof(base64tests[0]));
 offset-size-arithmetic	unit_tests/input/embedded_testfiles/emb/smol_exe/src/main.rs	13	/// $env:RUSTFLAGS="-Ctarget-cpu=native -Clink-args=/ENTRY:_start -Clink-args=/SUBSYSTEM:CONSOLE -Clink-args=/LARGEADDRESSAWARE:NO -Clink-args=ucrt.lib -Crelocation-model=static -Clink-args=-Wl,-n,-N,--no-dynamic-linker,--no-pie,--build-id=none,--no-eh-frame-hdr"
 offset-size-arithmetic	unit_tests/input/embedded_testfiles/emb/smol_exe/src/main.rs	14	/// cargo +nightly build  -Z build-std=std,panic_abort -Z build-std-features="optimize_for_size" --target x86_64-pc-windows-msvc  --release
 offset-size-arithmetic	unit_tests/input/embedded_testfiles/emb/smol_exe/src/main.rs	19	pub extern "C" fn _start() -> ! {

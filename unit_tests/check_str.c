@@ -458,6 +458,8 @@ START_TEST(test_utf16_helpers_reject_invalid_empty_boundaries)
 
     ck_assert_ptr_null(u16_normalize_tobuffer('A', NULL, 0));
     ck_assert_ptr_null(u16_normalize_tobuffer('A', &output, 0));
+    ck_assert_ptr_null(cli_utf16toascii(NULL, 2));
+    ck_assert_ptr_null(cli_utf16_to_utf8(NULL, 1, E_UTF16_LE));
     ck_assert_ptr_null(cli_utf16_to_utf8(NULL, 2, E_UTF16_LE));
 }
 END_TEST
