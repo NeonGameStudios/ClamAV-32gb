@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Bytecode preparation context cleanup — 2026-08-30
+
+`cli_bytecode_prepare2()` now routes startup-context failures after allocation
+through a shared destruction label. The test-mode self-check failure and
+bytecode-mode transition failures therefore release context-owned temporary
+and normalized-output resources before returning their original
+`CL_EBYTECODE_TESTFAIL` status. The source guard and no-engine teardown
+regression remain; focused current-source failure injection, sanitizer,
+complete bytecode/JIT, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification remain required.
+
 ## ELF bytecode-context allocation cleanup — 2026-08-30
 
 `cli_unpackelf()` now initializes its bytecode context pointer before the

@@ -61,6 +61,33 @@ extern int clamav_test_short_write;
 extern size_t clamav_test_short_write_count;
 #endif
 
+#ifdef CLAMAV_TEST_BYTECODE_PREPARE_WRAP
+extern cl_error_t __real_cli_bytecode_run(const struct cli_all_bc *bcs, const struct cli_bc *bc,
+                                          struct cli_bc_ctx *ctx);
+extern void __real_cli_bytecode_context_destroy(struct cli_bc_ctx *ctx);
+static struct cl_engine *bytecode_prepare_test_engine;
+static int bytecode_prepare_test_force_mode_failure;
+static unsigned int bytecode_prepare_test_destroy_count;
+
+cl_error_t __wrap_cli_bytecode_run(const struct cli_all_bc *bcs, const struct cli_bc *bc,
+                                   struct cli_bc_ctx *ctx)
+{
+    if (bytecode_prepare_test_force_mode_failure) {
+        bytecode_prepare_test_force_mode_failure = 0;
+        bytecode_prepare_test_engine->bytecode_mode = CL_BYTECODE_MODE_OFF;
+        ctx->bytecode_disable_status = 1;
+        return CL_SUCCESS;
+    }
+    return __real_cli_bytecode_run(bcs, bc, ctx);
+}
+
+void __wrap_cli_bytecode_context_destroy(struct cli_bc_ctx *ctx)
+{
+    bytecode_prepare_test_destroy_count++;
+    __real_cli_bytecode_context_destroy(ctx);
+}
+#endif
+
 static void runtest(const char *file, uint64_t expected, int fail, int nojit,
                     const char *infile, struct cli_pe_hook_data *pedata,
                     struct cli_exe_section *sections, const char *expectedvirname,
@@ -827,6 +854,35 @@ START_TEST(test_bytecode_context_cleanup_without_engine_is_safe)
     ck_assert_int_eq(access(tempfile, F_OK), -1);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_BYTECODE_PREPARE_WRAP
+START_TEST(test_bytecode_prepare2_failure_destroys_startup_context)
+{
+    struct cl_engine *engine;
+    struct cli_all_bc bcs;
+    struct cli_bc bc;
+    cl_error_t ret;
+    unsigned int destroys_before;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    memset(&bcs, 0, sizeof(bcs));
+    memset(&bc, 0, sizeof(bc));
+    bcs.all_bcs = &bc;
+    bcs.count   = 1;
+
+    bytecode_prepare_test_engine            = engine;
+    bytecode_prepare_test_force_mode_failure = 1;
+    destroys_before                         = bytecode_prepare_test_destroy_count;
+    ret = cli_bytecode_prepare2(engine, &bcs, 0);
+    ck_assert_int_eq(ret, CL_EBYTECODE_TESTFAIL);
+    ck_assert_uint_eq(bytecode_prepare_test_destroy_count, destroys_before + 1U);
+
+    bytecode_prepare_test_engine = NULL;
+    cl_engine_free(engine);
+}
+END_TEST
+#endif
 
 START_TEST(test_bytecode_v1_read_rejects_invalid_offsets)
 {
@@ -2093,6 +2149,9 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_context_cleanup_without_engine_is_safe);
+#ifdef CLAMAV_TEST_BYTECODE_PREPARE_WRAP
+    tcase_add_test(tc_cli_read, test_bytecode_prepare2_failure_destroys_startup_context);
+#endif
     tcase_add_test(tc_cli_read, test_bytecode_v1_read_rejects_invalid_offsets);
     tcase_add_test(tc_cli_read, test_bytecode_v1_coordinate_narrowing_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);

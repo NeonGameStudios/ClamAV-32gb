@@ -3426,6 +3426,7 @@ cl_error_t cli_bytecode_prepare2(struct cl_engine *engine, struct cli_all_bc *bc
 {
     unsigned i, interp = 0, jitcount = 0;
     cl_error_t rc;
+    cl_error_t context_status = CL_SUCCESS;
     struct cli_bc_ctx *ctx;
 
     if (!bcs->count) {
@@ -3486,23 +3487,33 @@ cl_error_t cli_bytecode_prepare2(struct cl_engine *engine, struct cli_all_bc *bc
         if (context_result != (uint64_t)0xda7aba5e) {
             cli_warnmsg("Bytecode: selftest failed with code " STDx64 ". Please report to https://github.com/Cisco-Talos/clamav/issues\n",
                         context_result);
-            if (engine->bytecode_mode == CL_BYTECODE_MODE_TEST)
-                return CL_EBYTECODE_TESTFAIL;
+            if (engine->bytecode_mode == CL_BYTECODE_MODE_TEST) {
+                context_status = CL_EBYTECODE_TESTFAIL;
+                goto context_cleanup;
+            }
         }
     }
     switch (ctx->bytecode_disable_status) {
         case 1:
-            if (set_mode(engine, CL_BYTECODE_MODE_INTERPRETER) == -1)
-                return CL_EBYTECODE_TESTFAIL;
+            if (set_mode(engine, CL_BYTECODE_MODE_INTERPRETER) == -1) {
+                context_status = CL_EBYTECODE_TESTFAIL;
+                goto context_cleanup;
+            }
             break;
         case 2:
-            if (set_mode(engine, CL_BYTECODE_MODE_OFF) == -1)
-                return CL_EBYTECODE_TESTFAIL;
+            if (set_mode(engine, CL_BYTECODE_MODE_OFF) == -1) {
+                context_status = CL_EBYTECODE_TESTFAIL;
+                goto context_cleanup;
+            }
             break;
         default:
             break;
     }
+
+context_cleanup:
     cli_bytecode_context_destroy(ctx);
+    if (context_status != CL_SUCCESS)
+        return context_status;
 
     if (engine->bytecode_mode != CL_BYTECODE_MODE_INTERPRETER &&
         engine->bytecode_mode != CL_BYTECODE_MODE_OFF) {

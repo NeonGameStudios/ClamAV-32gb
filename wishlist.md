@@ -1,5 +1,15 @@
 # Wishlist
 
+## Bytecode preparation context cleanup — 2026-08-30
+
+- Keep `cli_bytecode_prepare2()`'s startup context on one cleanup path when
+  the test-mode self-check or a bytecode-mode transition fails after
+  allocation. The new cleanup label preserves the original failure status;
+  retain the no-engine teardown regression, add focused fault-injected
+  execution and sanitizer evidence, then complete bytecode/JIT,
+  production-CVD/service, materialized-large-file, Sonic1, and release
+  qualification.
+
 ## ELF bytecode-context allocation cleanup — 2026-08-30
 
 - Keep `cli_unpackelf()`'s bytecode context cleanup initialized before the

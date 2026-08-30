@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## Bytecode preparation context cleanup — 2026-08-30
+
+`cli_bytecode_prepare2()` destroyed its startup context only on the ordinary
+path. Test-mode self-check failure and bytecode-mode transition failures
+returned immediately after allocation, bypassing context-owned temporary and
+normalized-output cleanup. Those branches now set a dedicated status and
+converge on a cleanup label before returning. The capability guard covers the
+shared label and the existing no-engine teardown regression remains in place;
+current-source production-GCC/ASan execution of the early-failure branches,
+full bytecode execution/JIT, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification remain open.
+
 ## ELF bytecode-context allocation cleanup — 2026-08-30
 
 `cli_unpackelf()` declared its bytecode context pointer without an initial
