@@ -47,6 +47,9 @@ const SIG_SIZE: usize = 350;
 /// A sane buffer size for various read operations
 const READ_SIZE: usize = 8192;
 
+/// Prevent a missing newline from growing one CDIFF command without bound.
+const CDIFF_MAX_LINE_SIZE: usize = 8 * 1024 * 1024;
+
 /// Acceptable public key for signing CDiffs. The C API expects these to be
 /// represented as a [large] ASCII-encoded decimal number.
 const PUBLIC_KEY_MODULUS: &str = concat!(
@@ -258,6 +261,15 @@ pub enum HeaderError {
 
     #[error("invalid size")]
     InvalidSize(#[from] InvalidNumber),
+
+    #[error("decompressed body size {actual} does not match declared size {expected}")]
+    BodySizeMismatch { expected: usize, actual: usize },
+
+    #[error("decompressed body size overflowed")]
+    BodySizeOverflow,
+
+    #[error("CDIFF command line exceeds {0} bytes")]
+    LineTooLong(usize),
 
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
@@ -667,8 +679,8 @@ pub fn cdiff_apply(
     let mut file = File::open(cdiff_file_path).map_err(Error::IoError)?;
 
     // Only read dsig, header, etc. if this is a cdiff file
-    let header_length = match mode {
-        ApplyMode::Script => 0,
+    let expected_body_size = match mode {
+        ApplyMode::Script => None,
         ApplyMode::Cdiff => {
             // Get file length
             let file_len = usize::try_from(file.metadata()?.len())
@@ -746,7 +758,9 @@ pub fn cdiff_apply(
 
             let current_pos = file.seek(SeekFrom::Start(header_offset as u64))?;
             debug!("cdiff_apply: current file offset = {}", current_pos);
-            header_len as usize
+            let header_length = usize::try_from(header_len)
+                .map_err(|_| Error::Header(HeaderError::BodySizeOverflow))?;
+            Some(header_length)
         }
     };
 
@@ -762,7 +776,7 @@ pub fn cdiff_apply(
     // Create contextual data structure
     let mut ctx: Context = Context::default();
 
-    process_lines(&mut ctx, &mut reader, header_length)
+    process_lines(&mut ctx, &mut reader, expected_body_size)
 }
 
 /// Set up Context structure with data parsed from command open
@@ -1239,36 +1253,85 @@ fn process_line(ctx: &mut Context, line: &[u8]) -> Result<(), InputError> {
 fn process_lines<T>(
     ctx: &mut Context,
     reader: &mut T,
-    uncompressed_size: usize,
+    expected_size: Option<usize>,
 ) -> Result<(), Error>
 where
     T: BufRead,
 {
-    let mut decompressed_bytes = 0;
+    let mut decompressed_bytes = 0usize;
     let mut linebuf = vec![];
     let mut line_no = 0;
     loop {
         line_no += 1;
         linebuf.clear();
-        match reader.read_until(b'\n', &mut linebuf)? {
-            0 => break,
-            n_read => {
-                decompressed_bytes = decompressed_bytes + n_read + 1;
-                match linebuf.first() {
-                    // Skip comment lines
-                    Some(b'#') => continue,
-                    _ => process_line(ctx, &linebuf).map_err(|e| Error::Input {
-                        line: line_no,
-                        err: e,
-                        operation: String::from_utf8_lossy(&linebuf).to_string(),
-                    })?,
+        let mut reached_eof = false;
+
+        loop {
+            let buffered = reader.fill_buf()?;
+            if buffered.is_empty() {
+                reached_eof = true;
+                break;
+            }
+
+            let newline = buffered.iter().position(|byte| *byte == b'\n');
+            let bytes_to_take = newline.map_or(buffered.len(), |position| position + 1);
+            if bytes_to_take > CDIFF_MAX_LINE_SIZE
+                || linebuf.len() > CDIFF_MAX_LINE_SIZE - bytes_to_take
+            {
+                return Err(Error::Header(HeaderError::LineTooLong(
+                    CDIFF_MAX_LINE_SIZE,
+                )));
+            }
+
+            let next_size = decompressed_bytes
+                .checked_add(bytes_to_take)
+                .ok_or(Error::Header(HeaderError::BodySizeOverflow))?;
+            if let Some(expected) = expected_size {
+                if next_size > expected {
+                    return Err(Error::Header(HeaderError::BodySizeMismatch {
+                        expected,
+                        actual: next_size,
+                    }));
                 }
             }
+
+            linebuf.extend_from_slice(&buffered[..bytes_to_take]);
+            reader.consume(bytes_to_take);
+            decompressed_bytes = next_size;
+
+            if newline.is_some() {
+                break;
+            }
+        }
+
+        if linebuf.is_empty() && reached_eof {
+            break;
+        }
+
+        match linebuf.first() {
+            // Skip comment lines
+            Some(b'#') => continue,
+            _ => process_line(ctx, &linebuf).map_err(|e| Error::Input {
+                line: line_no,
+                err: e,
+                operation: String::from_utf8_lossy(&linebuf).to_string(),
+            })?,
         }
     }
+
+    if let Some(expected) = expected_size {
+        if decompressed_bytes != expected {
+            return Err(Error::Header(HeaderError::BodySizeMismatch {
+                expected,
+                actual: decompressed_bytes,
+            }));
+        }
+    }
+
     debug!(
         "Expected {} decompressed bytes, read {} decompressed bytes",
-        uncompressed_size, decompressed_bytes
+        expected_size.unwrap_or(decompressed_bytes),
+        decompressed_bytes
     );
     Ok(())
 }
@@ -1818,6 +1881,30 @@ mod tests {
             hash_reader(&mut std::io::Cursor::new(input)).expect("hash input"),
             expected
         );
+    }
+
+    #[test]
+    fn process_lines_rejects_declared_body_size_mismatch() {
+        let mut ctx = Context::default();
+        let body = b"# comment\n";
+        let mut reader = BufReader::new(std::io::Cursor::new(body));
+
+        assert!(matches!(
+            process_lines(&mut ctx, &mut reader, Some(body.len() + 1)),
+            Err(Error::Header(HeaderError::BodySizeMismatch { .. }))
+        ));
+    }
+
+    #[test]
+    fn process_lines_rejects_overlong_command_line() {
+        let mut ctx = Context::default();
+        let body = vec![b'x'; CDIFF_MAX_LINE_SIZE + 1];
+        let mut reader = BufReader::new(std::io::Cursor::new(body));
+
+        assert!(matches!(
+            process_lines(&mut ctx, &mut reader, None),
+            Err(Error::Header(HeaderError::LineTooLong(CDIFF_MAX_LINE_SIZE)))
+        ));
     }
 
     #[test]

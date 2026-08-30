@@ -8911,3 +8911,11 @@ qualification evidence.
 - Retain the cross-buffer SHA-256 regression and source guards, then add full
   Rust/C ABI execution, CDIFF corpus, sanitizer, production-CVD/service,
   materialized-large-file, Sonic1, and final release qualification evidence.
+
+## CDIFF body-length and line admission — 2026-08-30
+
+- Keep CDIFF body accounting exact against the declared decompressed size;
+  truncated and overlong bodies must return structured header failures.
+- Keep the 8 MiB command-line bound, focused regressions, and source guards;
+  add full Rust/C ABI execution, CDIFF corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification evidence.

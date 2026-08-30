@@ -16201,3 +16201,14 @@ footer now writes the returned bytes directly. The cached Rust 1.97.1 Docker
 check passes. Full Rust/C ABI execution, CDIFF corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
+
+## CDIFF body-length and line admission — 2026-08-30
+
+`process_lines()` previously added an extra byte per line and logged, but did
+not enforce, the declared decompressed body size. It now counts bytes exactly,
+rejects overflow and overlong command lines through an 8 MiB bounded line
+assembler, and returns a header size-mismatch error for truncation or trailing
+decompressed data. Focused source compilation/test registration and source
+guards cover the contract; current Rust/C ABI execution, CDIFF corpus,
+sanitizer, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.
