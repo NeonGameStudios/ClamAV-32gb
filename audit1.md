@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## MSPack filename-backed ferror propagation — 2026-08-30
+
+The custom MSPack callback already returned byte counts correctly, but the
+filename-backed branch still treated a positive short `fread()` result as
+ordinary decoder EOF even when the stream's error indicator was set. That
+could downgrade an operational source-read failure to truncation and leave
+the decoder's status classification ambiguous. The callback now checks
+`ferror()` after every filename-backed read, records the shared read-failure
+state, and returns `-1` so the caller preserves `CL_EREAD`. Source guards pin
+the branch; current-source production-GCC, focused filename-read fault
+injection, sanitizer, complete MSPack corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## Rust fmap reader destination admission — 2026-08-30
 
 `FMapReader::read()` correctly limits normal reads to its 1 MiB window, but its

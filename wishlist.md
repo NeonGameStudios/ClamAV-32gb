@@ -1,5 +1,15 @@
 # Wishlist
 
+## MSPack filename-backed ferror propagation — 2026-08-30
+
+- Keep filename-backed MSPack reads fail-visible when `fread()` sets the
+  stream error indicator, including a positive short read; return the
+  callback error and preserve `CL_EREAD` rather than treating it as EOF.
+- Retain the source guards and add a focused filename-read fault-injection
+  case. Current-source GCC, sanitizer, complete MSPack corpus,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification remain required.
+
 ## Rust fmap reader destination admission — 2026-08-30
 
 - Keep `FMapReader::read()` bounded by both the remaining map range and the

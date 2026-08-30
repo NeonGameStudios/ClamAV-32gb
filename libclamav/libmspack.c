@@ -244,6 +244,13 @@ static int mspack_fmap_read(struct mspack_file *file, void *buffer, int bytes)
     } else {
         /* Use file descriptor */
         count = fread(buffer, 1, (size_t)bytes, mspack_handle->f);
+        if (ferror(mspack_handle->f)) {
+            if (mspack_handle->system_ex != NULL)
+                mspack_handle->system_ex->read_failure = true;
+            cli_dbgmsg("%s() requested %d bytes, filename-backed read failed after %zu bytes\n",
+                       __func__, bytes, count);
+            return -1;
+        }
         if (count == 0) {
             cli_dbgmsg("%s() %d requested %d bytes, read failed (%zu)\n", __func__, __LINE__, bytes, count);
             return -1;

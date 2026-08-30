@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MSPack filename-backed ferror propagation — 2026-08-30
+
+Filename-backed MSPack reads now check `ferror()` after `fread()`. A positive
+short read accompanied by a stream error is returned as a callback failure and
+sets the decoder read-failure state, preserving `CL_EREAD` instead of allowing
+an operational I/O error to look like ordinary EOF. Source guards are
+registered; focused fault injection, current-source GCC execution, sanitizer,
+complete MSPack corpus, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification remain required.
+
 ## Rust fmap reader destination admission — 2026-08-30
 
 The bounded Rust `FMapReader` now caps each short-map read by the caller's
