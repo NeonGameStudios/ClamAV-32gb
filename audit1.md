@@ -16160,3 +16160,15 @@ while restoring a clean current-source crate build. The cached Docker Rust
 1.97.1 `cargo check --offline` passes; full Rust/C ABI execution,
 production-CVD/service, sanitizer, materialized-large-file, Sonic1, and final
 release qualification remain open.
+
+## Production CVD streaming admission — 2026-08-30
+
+The Rust production-CVD path previously read the complete post-header TAR into
+an unbounded `Vec<u8>` before either extracting members or calculating the
+legacy RSA/MD5 digest. `CVD::unpack_to()` now gives `tar::Archive` a borrowed
+gzip or buffered file reader, and `verify_rsa_dsig()` feeds a fixed 64 KiB
+buffer into the MD5 context. This removes the redundant whole-archive resident
+copy while preserving seek, read, archive-entry, and digest error propagation.
+The cached current-source Rust 1.97.1 Docker check and CVD source checks pass;
+current Rust/C ABI execution, production-CVD/service, sanitizer,
+materialized-large-file, Sonic1, and final release qualification remain open.

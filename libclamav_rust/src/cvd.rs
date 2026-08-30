@@ -263,19 +263,12 @@ impl CVD {
             .seek(std::io::SeekFrom::Start(512))
             .map_err(|_| Error::Parse("Failed to seek past CVD header".to_string()))?;
 
-        let mut file_bytes = Vec::<u8>::new();
-        let bytes_read = self
-            .file
-            .read_to_end(&mut file_bytes)
-            .map_err(|_| Error::Parse("Failed to read CVD file".to_string()))?;
-
-        debug!("Read {} bytes from CVD file", bytes_read);
-
-        let mut archive: Archive<Box<dyn Read>> = if self.is_compressed {
-            tar::Archive::new(Box::new(GzDecoder::new(file_bytes.as_slice())))
+        let reader: Box<dyn Read + '_> = if self.is_compressed {
+            Box::new(GzDecoder::new(std::io::Read::by_ref(&mut self.file)))
         } else {
-            tar::Archive::new(Box::new(BufReader::new(file_bytes.as_slice())))
+            Box::new(BufReader::new(std::io::Read::by_ref(&mut self.file)))
         };
+        let mut archive: Archive<Box<dyn Read + '_>> = tar::Archive::new(reader);
 
         let entries = archive.entries().map_err(|e| {
             Error::Parse(format!(
@@ -326,20 +319,32 @@ impl CVD {
     }
 
     pub fn verify_rsa_dsig(&mut self) -> Result<(), Error> {
-        let mut file_bytes = Vec::<u8>::new();
-
         self.file
             .seek(std::io::SeekFrom::Start(512))
             .map_err(|_| Error::Parse("Failed to seek past CVD header".to_string()))?;
 
-        let bytes_read = self
-            .file
-            .read_to_end(&mut file_bytes)
-            .map_err(|_| Error::Parse("Failed to read CVD file".to_string()))?;
+        let mut digest = md5::Context::new();
+        let mut buffer = [0u8; 64 * 1024];
+        let mut bytes_read = 0u64;
+        loop {
+            let count = self
+                .file
+                .read(&mut buffer)
+                .map_err(|_| Error::Parse("Failed to read CVD file".to_string()))?;
+            if count == 0 {
+                break;
+            }
+            bytes_read = bytes_read
+                .checked_add(u64::try_from(count).map_err(|_| {
+                    Error::Parse("CVD byte count is not representable".to_string())
+                })?)
+                .ok_or_else(|| Error::Parse("CVD byte count overflowed".to_string()))?;
+            digest.consume(&buffer[..count]);
+        }
 
         debug!("Read {} bytes from CVD file", bytes_read);
 
-        let digest = md5::compute(&file_bytes);
+        let digest = digest.compute();
         let calculated_md5 = digest.as_slice();
         let calculated_md5 = hex::encode(calculated_md5);
 

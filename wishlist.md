@@ -8884,3 +8884,12 @@ qualification evidence.
 - Retain the current Rust 1.97.1 offline build evidence and add full Rust/C
   ABI execution, production-CVD/service, sanitizer, materialized-large-file,
   Sonic1, and final release qualification evidence.
+
+## Production CVD streaming admission — 2026-08-30
+
+- Keep Rust CVD TAR extraction streaming from the post-header source file and
+  keep legacy RSA/MD5 verification on fixed-size digest chunks; do not restore
+  whole-archive `Vec<u8>` materialization.
+- Retain current Rust 1.97.1 offline-build and source-guard evidence, then add
+  full Rust/C ABI execution, production-CVD/service, sanitizer,
+  materialized-large-file, Sonic1, and final release qualification evidence.
