@@ -19,6 +19,15 @@ compressed-resource corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain required.
 
+## TAR member data read admission — 2026-08-30
+
+The TAR member loop now distinguishes a failed or truncated member data
+window before the zero-block compatibility path. In-range backing-read
+failures return `CL_EREAD`, member data that ends at the map boundary returns
+`CL_EPARSE`, and neither case fabricates zero-filled bytes. Staged output is
+closed/unlinked and its temporary reservation is released on both paths. The
+registered end-of-map regression and source guards cover this boundary.
+
 ## clamd dispatch-failure resource ownership — 2026-08-30
 
 The clamd receive and dispatch boundary now transfers INSTREAM descriptor and

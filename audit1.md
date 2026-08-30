@@ -18,6 +18,21 @@ same declared-offset boundary. Focused compressed-resource corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
 
+## TAR member data read admission — 2026-08-30
+
+The TAR member loop treated every zero-length `fmap` window as an ordinary
+end-of-input block, including an in-range backing-read failure and a member
+whose declared data ended at EOF. It could therefore write zero-filled bytes
+to the staged member before a later header iteration reported failure. The
+loop now distinguishes a failed or truncated member window before the
+zero-block compatibility path, closes/unlinks the staged output, releases its
+temporary reservation, and returns `CL_EREAD` for an in-range callback failure
+or `CL_EPARSE` for a member truncated at the map end. The new
+`test_tar_member_eof_is_fail_visible` regression and source guards cover the
+boundary; current-source production-linked tar-member execution, full TAR
+corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+and final release qualification remain open.
+
 ## SWF decoder initialization evidence — 2026-08-30
 
 The SWF CWS and ZWS paths previously returned `CL_EUNPACK` when the zlib or

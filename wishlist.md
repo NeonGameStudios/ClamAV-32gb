@@ -11,6 +11,15 @@
   injection coverage open, then complete production-CVD/service,
   materialized-large-file, Sonic1, and final release qualification.
 
+## TAR member data read admission — 2026-08-30
+
+- Keep TAR member staging fail-visible when a data window fails in range or
+  ends at the map boundary. Do not substitute fabricated zero bytes; preserve
+  `CL_EREAD` versus `CL_EPARSE`, clean up the staged output and temporary
+  reservation, and retain the current end-of-map regression. Complete TAR
+  corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  and final release qualification.
+
 ## SWF decoder initialization evidence — 2026-08-30
 
 - Keep CWS and ZWS decoder-initialization failures sticky and non-cacheable

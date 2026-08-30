@@ -376,6 +376,26 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             return CL_EPARSE;
         }
 
+        /* A NULL map window with no bytes is EOF only when the requested
+         * position is at the end of the map. Do not turn an in-range backing
+         * read failure, or a truncated member at EOF, into fabricated
+         * zero-filled member data. */
+        if (!block && in_block) {
+            cl_error_t member_status = (pos < ctx->fmap->len) ? CL_EREAD : CL_EPARSE;
+
+            if (member_status == CL_EREAD)
+                cli_mark_scan_incomplete(ctx, "TAR member contents could not be read completely");
+            else
+                cli_mark_scan_incomplete(ctx, "TAR entry ended before its declared content length");
+            if (fout >= 0) {
+                ret = cli_untar_finish_member(ctx, &fout, fullname, name, false, temporary_reserved);
+                temporary_reserved = 0;
+                if (ret != CL_SUCCESS)
+                    return ret;
+            }
+            return member_status;
+        }
+
         if (!nread)
             block = zero;
 
