@@ -1,5 +1,14 @@
 # Wishlist
 
+## CVD age-directory close status — 2026-08-30
+
+- Keep `cl_cvdgetage()` fail-visible when the signature directory cannot be
+  closed; preserve earlier failures and return `CL_EREAD` for a clean walk
+  followed by `closedir()` failure.
+- Retain the registered close-failure wrapper and source guard. Complete
+  current-object, production-CVD/service, sanitizer, materialized-large-file,
+  Sonic1, and final release qualification.
+
 ## Production CVD unpack failure propagation — 2026-08-30
 
 - Keep Rust CVD unpacking fail-visible for archive-entry enumeration, entry

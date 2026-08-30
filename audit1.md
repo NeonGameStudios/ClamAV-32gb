@@ -1,5 +1,15 @@
 # Independent read-only audit of audit.md
 
+## CVD age-directory close status — 2026-08-30
+
+`cl_cvdgetage()` closed a signature directory but discarded a `closedir()`
+failure, allowing a directory-age query to report success after an
+operational cleanup failure. The API now merges `CL_EREAD` while preserving
+any earlier status, and the registered `closedir` fault-injection regression
+requires the failure to remain visible. Source guards cover the new boundary;
+current-object execution, production-CVD/service, sanitizer,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## Production CVD unpack failure propagation — 2026-08-30
 
 The Rust-backed `CVD::unpack_to()` path previously used `for_each` and

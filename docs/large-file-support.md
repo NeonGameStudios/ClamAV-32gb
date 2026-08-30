@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## CVD age-directory close status — 2026-08-30
+
+`cl_cvdgetage()` now preserves `closedir()` failure as `CL_EREAD` instead of
+returning a clean age result after an operational directory-close failure.
+The existing close-failure wrapper is registered for the CVD API TCase and
+source-guarded. Current-object execution and full production-CVD/service,
+sanitizer, materialized-large-file, Sonic1, and final release qualification
+remain required.
+
 ## Production CVD unpack failure propagation — 2026-08-30
 
 Rust-backed CVD unpacking now fails visibly on archive-entry enumeration,

@@ -566,6 +566,21 @@ START_TEST(test_cvd_api_rejects_null_arguments)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_cvd_directory_close_failure_is_fail_visible)
+{
+    time_t age_seconds = 0;
+    cl_error_t ret;
+
+    clamav_test_fail_closedir = 1;
+    ret = cl_cvdgetage(tmpdir, &age_seconds);
+    clamav_test_fail_closedir = 0;
+
+    ck_assert_int_eq(ret, CL_EREAD);
+}
+END_TEST
+#endif
+
 static int get_test_file(int i, char *file, unsigned fsize, unsigned long *size);
 static struct cl_engine *g_engine;
 
@@ -46659,6 +46674,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cvd, test_cl_cvdparse);
     tcase_add_test(tc_cvd, test_cl_cvdparse_rejects_invalid_numeric_fields);
     tcase_add_test(tc_cvd, test_cvd_api_rejects_null_arguments);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cvd, test_cvd_directory_close_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cvd, test_cl_load);
     tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);

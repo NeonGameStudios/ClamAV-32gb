@@ -1171,8 +1171,10 @@ cl_error_t cl_cvdgetage(const char *path, time_t *age_seconds)
     }
 
 done:
-    if (dd)
-        closedir(dd);
+    if (dd != NULL && closedir(dd) != 0) {
+        cli_errmsg("cl_cvdgetage: Can't close directory %s\n", path);
+        status = cli_merge_cleanup_status(status, CL_EREAD);
+    }
 
     return status;
 }
