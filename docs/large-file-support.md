@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Rust signed-database parser panic paths — 2026-08-30
+
+Signed-database verification now requires the exact `#clamsign-1.0` header
+shape, reports unexpected signature types and missing feature-level bounds as
+structured verification errors, and rejects a null verifier error output
+before Rust string validation. CVD header parsing checks epoch-time addition
+and rejects creation seconds outside the platform `SystemTime` range; the time
+getter returns a zero sentinel rather than unwinding for an internally
+pre-epoch value. Focused malformed-header, null-error-output,
+timestamp-overflow, and pre-epoch getter regressions and
+source guards cover the boundaries; Rust/C ABI, sanitizer, production-CVD/
+service, materialized-large-file, Sonic1, and final release qualification
+remain required.
+
 ## Rust image-fuzzy FFI admission — 2026-08-30
 
 The deliberately unsupported image-fuzzy matcher now rejects null hashmap,

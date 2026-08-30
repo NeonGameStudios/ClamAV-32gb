@@ -1,5 +1,17 @@
 # Wishlist
 
+## Rust signed-database parser panic paths — 2026-08-30
+
+- Keep signed-database verification fail-visible for malformed `.sign` header
+  lines, unexpected parsed signature types, and missing feature-level bounds;
+  do not allow untrusted metadata to reach `unwrap()` across the Rust/C
+  boundary. Validate the verifier error output before string admission, reject
+  CVD creation timestamps outside the platform `SystemTime` range, and return
+  a safe zero sentinel if a pre-epoch CVD reaches the time getter. Focused
+  regressions and source guards cover these paths. Rust/C ABI,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final release qualification remain required.
+
 ## Rust image-fuzzy FFI admission — 2026-08-30
 
 - Keep the deliberately unsupported image-fuzzy matcher fail-closed when

@@ -360,6 +360,11 @@ pub unsafe extern "C" fn codesign_verifier_new(
     verifier: *mut *mut c_void,
     err: *mut *mut FFIError,
 ) -> bool {
+    if err.is_null() {
+        warn!("err is NULL");
+        return false;
+    }
+
     let certs_directory_str = validate_str_param!(certs_directory_str, err = err);
     let certs_directory = match Path::new(certs_directory_str).canonicalize() {
         Ok(p) => p,
@@ -438,14 +443,13 @@ pub fn verify_signed_file(
         // First line should be "#clamsign-MAJOR.MINOR"
         if index == 0 {
             let line = line?;
-            if !line.starts_with("#clamsign") {
+            let Some(version) = line.strip_prefix("#clamsign-") else {
                 return Err(Error::CannotVerify(
                     "Unsupported signature file format, expected first line start with '#clamsign-1.0'".to_string(),
                 ));
-            }
+            };
 
             // Check clamsign version
-            let version = line.split('-').nth(1).unwrap();
             if version != "1.0" {
                 return Err(Error::CannotVerify(
                     "Unsupported signature file version, expected '1.0'".to_string(),
@@ -472,7 +476,15 @@ pub fn verify_signed_file(
 
         match parse_from_cvd_with_meta(SigType::DigitalSignature, &data.into()) {
             Ok((sig, meta)) => {
-                let sig = sig.downcast::<DigitalSig>().unwrap();
+                let sig = match sig.downcast::<DigitalSig>() {
+                    Ok(sig) => sig,
+                    Err(_) => {
+                        return Err(Error::CannotVerify(format!(
+                            "{:?}:{}: Parsed signature has an unexpected type",
+                            signature_file_path, index
+                        )));
+                    }
+                };
 
                 sig.validate(&meta).map_err(|e| {
                     Error::CannotVerify(format!(
@@ -483,7 +495,12 @@ pub fn verify_signed_file(
 
                 // verify the flevel bounds of this signature compared with the current flevel
                 let current_flevel = unsafe { cl_retflevel() };
-                let sig_flevel_range = meta.f_level.unwrap();
+                let Some(sig_flevel_range) = meta.f_level else {
+                    return Err(Error::CannotVerify(format!(
+                        "{:?}:{}: Signature is missing feature level bounds",
+                        signature_file_path, index
+                    )));
+                };
                 if !sig_flevel_range.contains(&current_flevel) {
                     debug!(
                         "{:?}:{}: Signature feature level range {:?} does not include current feature level {}",
@@ -614,13 +631,15 @@ impl Verifier {
             let path = file.path();
             if path.is_file() {
                 let ext = path.extension();
-                if ext.is_some() && (ext.unwrap() == "pem" || ext.unwrap() == "crt") {
-                    let read_result = std::fs::read(&path);
-                    if let Err(e) = read_result {
-                        debug!("Error reading certificate file '{:?}': {}", path, e);
-                        continue;
-                    }
-                    let certs_in_file = X509::stack_from_pem(&read_result.unwrap())?;
+                if matches!(ext, Some(ext) if ext == "pem" || ext == "crt") {
+                    let cert_bytes = match std::fs::read(&path) {
+                        Ok(cert_bytes) => cert_bytes,
+                        Err(e) => {
+                            debug!("Error reading certificate file '{:?}': {}", path, e);
+                            continue;
+                        }
+                    };
+                    let certs_in_file = X509::stack_from_pem(&cert_bytes)?;
 
                     for cert in certs_in_file {
                         // Some valid trust anchors do not carry a Common Name.
@@ -685,5 +704,43 @@ impl Verifier {
         } else {
             Err(Error::NotSigned)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn malformed_signature_header_is_fail_visible() {
+        let directory = tempfile::tempdir().unwrap();
+        let signed_file = directory.path().join("signed.bin");
+        let signature_file = directory.path().join("signed.bin.sign");
+        std::fs::write(&signed_file, b"signed data").unwrap();
+        std::fs::write(&signature_file, b"#clamsign\n").unwrap();
+
+        let verifier = Verifier::new(directory.path()).unwrap();
+        let result = verify_signed_file(&signed_file, &signature_file, &verifier);
+
+        assert!(matches!(
+            result,
+            Err(Error::CannotVerify(message))
+                if message.contains("signature file format")
+        ));
+    }
+
+    #[test]
+    fn verifier_new_rejects_null_error_output() {
+        let directory = std::ffi::CString::new(".").unwrap();
+
+        let result = unsafe {
+            codesign_verifier_new(
+                directory.as_ptr(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+        };
+
+        assert!(!result);
     }
 }

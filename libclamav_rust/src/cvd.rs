@@ -234,7 +234,11 @@ impl CVD {
                 time_str
             ))
         })?;
-        let time_creation = SystemTime::UNIX_EPOCH + Duration::from_secs(time_seconds);
+        let time_creation = SystemTime::UNIX_EPOCH
+            .checked_add(Duration::from_secs(time_seconds))
+            .ok_or_else(|| {
+                Error::Parse("Creation time is outside the SystemTime range".to_string())
+            })?;
 
         Ok(Self {
             name,
@@ -774,10 +778,13 @@ pub unsafe extern "C" fn cvd_get_time_creation(cvd: *const c_void) -> u64 {
     }
 
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
-    cvd.time_creation
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
+    match cvd.time_creation.duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(duration) => duration.as_secs(),
+        Err(_) => {
+            warn!("CVD creation time predates the Unix epoch");
+            0
+        }
+    }
 }
 
 /// C interface for getting the version of a CVD.
@@ -1015,5 +1022,48 @@ mod tests {
             #[cfg(windows)]
             assert!(cvd_get_file_handle(std::ptr::null()).is_null());
         }
+    }
+
+    #[test]
+    fn from_file_rejects_creation_time_overflow() {
+        let mut cvd_file = tempfile::NamedTempFile::new().unwrap();
+        let header_fields = format!("ClamAV-VDB:0:1:1:1::x:test:{}", u64::MAX);
+        let mut header = [b' '; 512];
+        header[..header_fields.len()].copy_from_slice(header_fields.as_bytes());
+        cvd_file.write_all(&header).unwrap();
+        cvd_file.write_all(b"COPYING").unwrap();
+        cvd_file.flush().unwrap();
+
+        let result = CVD::from_file(cvd_file.path());
+
+        assert!(matches!(
+            result,
+            Err(Error::Parse(message))
+                if message.contains("outside the SystemTime range")
+        ));
+    }
+
+    #[test]
+    fn time_getter_handles_pre_epoch_value() {
+        let cvd_file = tempfile::NamedTempFile::new().unwrap();
+        let cvd = CVD {
+            name: "test".to_string(),
+            time_creation: SystemTime::UNIX_EPOCH - Duration::from_secs(1),
+            version: 1,
+            num_sigs: 1,
+            min_flevel: 1,
+            rsa_dsig: None,
+            md5: None,
+            builder: "test".to_string(),
+            file: cvd_file.reopen().unwrap(),
+            path: cvd_file.path().to_path_buf(),
+            is_compressed: false,
+        };
+        let cvd = Box::into_raw(Box::new(cvd));
+
+        let creation_time = unsafe { cvd_get_time_creation(cvd as *const c_void) };
+
+        assert_eq!(creation_time, 0);
+        unsafe { cvd_free(cvd as *mut c_void) };
     }
 }

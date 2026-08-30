@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## Rust signed-database parser panic paths — 2026-08-30
+
+The signed-database boundary still had two input-driven panic paths. A
+malformed `.sign` first line beginning with `#clamsign` but lacking the
+version separator reached `split(...).nth(1).unwrap()`, and parsed signature
+metadata was assumed to contain a feature-level range and the expected
+signature type. CVD header creation seconds were also added directly to the
+epoch, allowing an extreme unsigned value to overflow `SystemTime` during
+untrusted header parsing. The verification path now requires the exact
+`#clamsign-1.0` header shape, converts unexpected signature types and missing
+feature-level metadata into structured verification errors, and checks the
+error output before Rust string validation. CVD parsing uses checked time
+construction and rejects values outside the platform `SystemTime` range; the
+time getter returns a safe zero sentinel for an internally pre-epoch value
+instead of unwinding. The new malformed-header, null-error-output,
+timestamp-overflow, and pre-epoch getter regressions are registered; Rust/C
+ABI, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## Rust image-fuzzy FFI admission — 2026-08-30
 
 The deliberately unsupported image-fuzzy matcher still formed a raw
