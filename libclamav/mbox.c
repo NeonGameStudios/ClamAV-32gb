@@ -830,7 +830,7 @@ typedef struct _ReadStruct {
 static ReadStruct *
 appendReadStruct(ReadStruct *rs, const char *const buffer)
 {
-    if (NULL == rs) {
+    if (NULL == rs || NULL == buffer || rs->bufferLen > READ_STRUCT_BUFFER_LEN) {
         cli_dbgmsg("appendReadStruct: Invalid argument\n");
         goto done;
     }
@@ -864,7 +864,7 @@ getMallocedBufferFromList(const ReadStruct *head)
 {
 
     const ReadStruct *rs = head;
-    int bufferLen        = 1;
+    size_t bufferLen      = 1;
     char *working        = NULL;
     char *ret            = NULL;
 
@@ -961,6 +961,8 @@ hitLineFoldCnt(const char *const line, size_t *lineFoldCnt, cli_ctx *ctx, bool *
                 cli_append_potentially_unwanted(ctx, "Heuristics.Limits.Exceeded.EmailLineFoldCnt");
                 *heuristicFound = true;
             }
+            cli_mark_scan_incomplete(ctx,
+                                     "MIME parser exceeded the configured folded-header limit");
 
             return true;
         }
@@ -977,6 +979,8 @@ haveTooManyHeaderBytes(size_t totalLen, cli_ctx *ctx, bool *heuristicFound)
             cli_append_potentially_unwanted(ctx, "Heuristics.Limits.Exceeded.EmailHeaderBytes");
             *heuristicFound = true;
         }
+        cli_mark_scan_incomplete(ctx,
+                                 "MIME parser exceeded the configured header-byte limit");
 
         return true;
     }
@@ -992,6 +996,8 @@ haveTooManyEmailHeaders(size_t totalHeaderCnt, cli_ctx *ctx, bool *heuristicFoun
             cli_append_potentially_unwanted(ctx, "Heuristics.Limits.Exceeded.EmailHeaders");
             *heuristicFound = true;
         }
+        cli_mark_scan_incomplete(ctx,
+                                 "MIME parser exceeded the configured header-count limit");
 
         return true;
     }
@@ -1007,6 +1013,10 @@ haveTooManyMIMEPartsPerMessage(size_t mimePartCnt, cli_ctx *ctx, mbox_status *rc
             cli_append_potentially_unwanted(ctx, "Heuristics.Limits.Exceeded.EmailMIMEPartsPerMessage");
             *rc = VIRUS;
         }
+        cli_mark_scan_incomplete(ctx,
+                                 "MIME parser exceeded the configured MIME-part limit");
+        if (*rc == OK)
+            *rc = FAIL;
 
         return true;
     }
@@ -1022,6 +1032,8 @@ haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound)
             cli_append_potentially_unwanted(ctx, "Heuristics.Limits.Exceeded.EmailMIMEArguments");
             *heuristicFound = true;
         }
+        cli_mark_scan_incomplete(ctx,
+                                 "MIME parser exceeded the configured MIME-argument limit");
 
         return true;
     }
@@ -1249,7 +1261,14 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                 }
 
                 if (lineAdded) {
-                    totalHeaderBytes += strlen(line);
+                    const size_t line_len = strlen(line);
+
+                    if (line_len > SIZE_MAX - totalHeaderBytes) {
+                        cli_mark_scan_incomplete(ctx,
+                                                 "MIME message header size exceeded native representation");
+                        break;
+                    }
+                    totalHeaderBytes += line_len;
                     if (haveTooManyHeaderBytes(totalHeaderBytes, ctx, heuristicFound)) {
                         break;
                     }
@@ -1517,15 +1536,34 @@ parseEmailHeaders(message *m, const table_t *rfc821, bool *heuristicFound)
                                 anyHeadersFound = usefulHeader(commandNumber, cmd);
                             continue;
                     }
-                    fullline       = cli_safer_strdup(line);
-                    fulllinelength = strlen(line) + 1;
+                    {
+                        const size_t line_len = strlen(line);
+
+                        if (line_len == SIZE_MAX) {
+                            cli_mark_scan_incomplete(m->ctx,
+                                                     "MIME header line size exceeded native representation");
+                            continue;
+                        }
+                        fullline       = cli_safer_strdup(line);
+                        fulllinelength = line_len + 1U;
+                    }
                     if (fullline == NULL) {
                         cli_mark_scan_incomplete(m->ctx,
                                                  "MIME header line could not be allocated");
                         continue;
                     }
                 } else if (line) {
-                    fulllinelength += strlen(line) + 1;
+                    const size_t line_len = strlen(line);
+
+                    if (line_len == SIZE_MAX || fulllinelength > SIZE_MAX - line_len - 1U) {
+                        cli_mark_scan_incomplete(m->ctx,
+                                                 "MIME folded header size exceeded native representation");
+                        free(fullline);
+                        fullline       = NULL;
+                        fulllinelength = 0;
+                        continue;
+                    }
+                    fulllinelength += line_len + 1U;
                     ptr = cli_max_realloc(fullline, fulllinelength);
                     if (ptr == NULL) {
                         cli_mark_scan_incomplete(m->ctx,
@@ -2920,7 +2958,17 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
 
                                 data = lineGetData(t_line->t_line);
 
-                                if (data[1] == '\0') {
+                                if (data == NULL) {
+                                    cli_mark_scan_incomplete(
+                                        mctx->ctx,
+                                        "MIME folded header line could not be read");
+                                    free(fullline);
+                                    fullline = NULL;
+                                    rc       = FAIL;
+                                    break;
+                                }
+
+                                if (data[0] == '\0' || data[1] == '\0') {
                                     /*
                                      * Broken message: the
                                      * blank line at the end
@@ -2933,7 +2981,38 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                                     break;
                                 }
 
-                                datasz = strlen(fullline) + strlen(data) + 1;
+                                {
+                                    const size_t full_len = strlen(fullline);
+                                    const size_t data_len = data ? strlen(data) : 0;
+
+                                    if (data == NULL || data_len == SIZE_MAX ||
+                                        full_len > SIZE_MAX - data_len - 1U) {
+                                        cli_mark_scan_incomplete(
+                                            mctx->ctx,
+                                            "MIME folded header size exceeded native representation");
+                                        free(fullline);
+                                        fullline = NULL;
+                                        rc       = FAIL;
+                                        break;
+                                    }
+                                    datasz = full_len + data_len + 1U;
+                                }
+                                {
+                                    bool fold_heuristic = false;
+
+                                    if (haveTooManyHeaderBytes(datasz, mctx->ctx,
+                                                               &fold_heuristic)) {
+                                        if (fold_heuristic) {
+                                            heuristicFound = true;
+                                            rc             = VIRUS;
+                                        } else {
+                                            rc = FAIL;
+                                        }
+                                        free(fullline);
+                                        fullline = NULL;
+                                        break;
+                                    }
+                                }
                                 ptr    = cli_max_realloc(fullline, datasz);
 
                                 if (ptr == NULL) {

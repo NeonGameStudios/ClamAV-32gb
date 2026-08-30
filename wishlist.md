@@ -1,5 +1,20 @@
 # Wishlist
 
+## MIME bounded-limit and folded-header admission — 2026-08-30
+
+- Keep MIME fold-count, aggregate-header-byte, header-count, MIME-argument,
+  and multipart-count limits fail-visible even when heuristic alerts are
+  disabled; preserve detections when a configured multipart limit is reached.
+  Check native-size header additions before arithmetic, reject missing folded
+  lines, and apply the shared bounded header-byte budget before reallocating
+  legacy multipart folded headers. The new folded-header budget regression and
+  source guards are registered; the current `mbox.c` passes the Docker
+  production-GCC syntax check, and source-isolated normal and
+  AddressSanitizer/UndefinedBehaviorSanitizer helper harnesses pass. Complete
+  MIME/mbox/MHTML corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, and final parser/release qualification remain required.
+
 ## 7-Zip stream callback result admission — 2026-08-30
 
 - Keep all vendored 7-Zip stream adapters fail-visible when callbacks return

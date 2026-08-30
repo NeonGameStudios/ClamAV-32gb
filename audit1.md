@@ -1,5 +1,27 @@
 # Independent read-only audit of audit.md
 
+## MIME bounded-limit and folded-header admission — 2026-08-30
+
+The MIME limit helpers previously stopped header-fold, aggregate-header,
+header-count, MIME-argument, and multipart-count traversal without necessarily
+marking the recognized mail layer incomplete when heuristic alerts were
+disabled. Those exits now always record a specific incomplete reason; the
+multipart-count helper also preserves an existing detection while returning a
+failure for a non-heuristic limit rejection. The legacy in-memory multipart
+fold path now checks native-size addition, rejects a missing folded line, and
+applies the same bounded header-byte admission before reallocating. Header-byte
+accumulators and the retained-header length path also reject native-size
+overflow before arithmetic. A new `test_mbox_header_budget_is_fail_visible`
+regression covers a folded header beyond the bounded byte budget with
+heuristics disabled, and source guards pin the limit and arithmetic branches.
+The current `mbox.c` passes the Docker production-GCC syntax check; the
+source-isolated GCC helper harness passes all five no-heuristic limit exits,
+and its AddressSanitizer/UndefinedBehaviorSanitizer variant is clean. The
+monolithic Check syntax pass remains affected by the known mixed-generation
+headers/declarations. Full MIME/mbox/MHTML corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## 7-Zip stream callback result admission — 2026-08-30
 
 The vendored 7-Zip stream adapters previously trusted callback-reported byte
