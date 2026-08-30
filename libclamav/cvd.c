@@ -58,6 +58,21 @@
 
 static int cli_cvd_parse_octal_size(const char *text, unsigned int *value);
 
+static int cli_tgzload_offset_from_u64(uint64_t value, off_t *offset)
+{
+    off_t converted;
+
+    if (offset == NULL)
+        return 0;
+
+    converted = (off_t)value;
+    if (converted < 0 || (uint64_t)converted != value)
+        return 0;
+
+    *offset = converted;
+    return 1;
+}
+
 static cl_error_t cli_tgzload_cleanup(int comp, struct cli_dbio *dbio, int fdd)
 {
     cl_error_t status = CL_SUCCESS;
@@ -103,7 +118,8 @@ static cl_error_t cli_tgzload_tell(int comp, struct cli_dbio *dbio, off_t *off)
 
         if (current < 0)
             return CL_ESEEK;
-        *off = (off_t)current;
+        if (!cli_tgzload_offset_from_u64((uint64_t)current, off))
+            return CL_ESEEK;
     } else {
 #ifdef HAVE_FSEEKO
         *off = ftello(dbio->fs);
@@ -114,7 +130,8 @@ static cl_error_t cli_tgzload_tell(int comp, struct cli_dbio *dbio, off_t *off)
 
         if (current < 0)
             return CL_ESEEK;
-        *off = (off_t)current;
+        if (!cli_tgzload_offset_from_u64((uint64_t)current, off))
+            return CL_ESEEK;
 #endif
     }
 
@@ -126,16 +143,24 @@ static cl_error_t cli_tgzload_skip(int comp, struct cli_dbio *dbio, off_t off,
 {
     off_t current;
     off_t distance;
+    uint64_t distance64;
 
     if (cli_tgzload_tell(comp, dbio, &current) != CL_SUCCESS)
         return CL_ESEEK;
 
-    distance = (current == off) ? (off_t)size + (off_t)pad : (off_t)pad;
-    if (!distance)
+    distance64 = (current == off) ? (uint64_t)size + (uint64_t)pad : (uint64_t)pad;
+    if (!distance64)
         return CL_SUCCESS;
 
+    if (!cli_tgzload_offset_from_u64(distance64, &distance))
+        return CL_ESEEK;
+
     if (comp) {
-        if (gzseek(dbio->gzs, (z_off_t)distance, SEEK_CUR) < 0)
+        z_off_t zdistance = (z_off_t)distance;
+
+        if (zdistance < 0 || (uint64_t)zdistance != distance64)
+            return CL_ESEEK;
+        if (gzseek(dbio->gzs, zdistance, SEEK_CUR) < 0)
             return CL_ESEEK;
     } else {
 #ifdef HAVE_FSEEKO

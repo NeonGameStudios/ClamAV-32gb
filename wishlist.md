@@ -8702,3 +8702,12 @@ qualification as required evidence.
   the source guards and add current-source PE compilation, complete
   embedded-PE corpus, sanitizer, production-CVD/service,
   materialized-large-file, Sonic1, and final release qualification evidence.
+
+## Production CVD TAR position admission — 2026-08-30
+
+- Keep CVD TAR tell/skip positions fail-closed when the compressed or native
+  seek coordinate cannot round-trip through `off_t` or `z_off_t`; preserve
+  `CL_ESEEK` before any wrapped seek. Retain the source guards and add
+  current-source CVD compilation, large-member fixtures, production-CVD/
+  service, sanitizer, materialized-large-file, Sonic1, and final release
+  qualification evidence.

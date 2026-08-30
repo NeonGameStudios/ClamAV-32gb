@@ -15910,3 +15910,16 @@ The source guards pin both the delayed narrowing and removal of the pre-check
 cast. Current-source PE compilation, complete embedded-PE corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
+
+## Production CVD TAR position admission — 2026-08-30
+
+The CVD TAR loader parsed member sizes into an unsigned field, but its
+compressed tell and member-skip paths cast stream positions and relative skip
+distances into `off_t` before proving that the active seek type could represent
+them. On a narrower `off_t`, a valid large member could therefore wrap a
+relative seek or enter implementation-defined conversion behavior. The loader
+now uses a round-trip helper for `off_t`, checks the compressed `z_off_t` seek
+coordinate separately, and returns `CL_ESEEK` before advancing when either
+coordinate is unrepresentable. Current-source CVD compilation, large-member
+fixtures, production-CVD/service, sanitizer, materialized-large-file, Sonic1,
+and final release qualification remain open.
