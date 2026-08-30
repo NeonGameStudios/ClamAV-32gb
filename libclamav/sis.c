@@ -1037,7 +1037,7 @@ struct SISTREAM {
     uint8_t buff[BUFSIZ];
     uint32_t smax;
     uint32_t sleft;
-    long fnext[7];
+    size_t fnext[7];
     uint32_t fsize[7];
     unsigned int level;
     int incomplete;
@@ -1096,6 +1096,8 @@ static inline int getd(struct SISTREAM *s, uint32_t *v)
 static inline int getsize(struct SISTREAM *s)
 {
     uint32_t *fsize = &s->fsize[s->level];
+    size_t field_start;
+
     if (getd(s, fsize) || !*fsize)
         return 1;
     if ((*fsize) >> 31 || (s->level && *fsize > s->fsize[s->level - 1] * 2)) {
@@ -1105,7 +1107,20 @@ static inline int getsize(struct SISTREAM *s)
         return 1;
     }
     /* To handle crafted archives we allow the content to overflow the container but only up to 2 times the container size */
-    s->fnext[s->level] = s->pos - s->sleft + *fsize;
+    if (s->pos < (size_t)s->sleft) {
+        s->incomplete = 1;
+        if (s->failure == CL_CLEAN)
+            s->failure = CL_EPARSE;
+        return 1;
+    }
+    field_start = s->pos - (size_t)s->sleft;
+    if (field_start > SIZE_MAX - (size_t)*fsize) {
+        s->incomplete = 1;
+        if (s->failure == CL_CLEAN)
+            s->failure = CL_EPARSE;
+        return 1;
+    }
+    s->fnext[s->level] = field_start + (size_t)*fsize;
     return 0;
 }
 
@@ -1125,13 +1140,13 @@ static inline int getfield(struct SISTREAM *s, uint32_t *field)
 
 static inline int skip(struct SISTREAM *s, uint32_t size)
 {
-    long seekto;
+    size_t seekto;
     cli_dbgmsg("SIS: skipping %x\n", size);
     if (s->sleft >= size)
         s->sleft -= size;
     else {
-        seekto = size - s->sleft;
-        if (seekto < 0) { /* in case sizeof(long)==sizeof(uint32_t) */
+        seekto = (size_t)size - (size_t)s->sleft;
+        if (seekto > SIZE_MAX - s->pos) {
             s->incomplete = 1;
             if (s->failure == CL_CLEAN)
                 s->failure = CL_EPARSE;
@@ -1258,9 +1273,21 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
                             cli_dbgmsg("SIS: File is%s compressed - size %x -> %x\n", (field) ? "" : " not", s->fsize[s->level], usize);
                             snprintf(tempf, 1024, "%s" PATHSEP "sis9x%02d", tmpd, i++);
                             tempf[1023] = '\0';
-                            s->pos -= (long)s->sleft;
+                            if (s->pos < (size_t)s->sleft) {
+                                s->incomplete = 1;
+                                if (s->failure == CL_CLEAN)
+                                    s->failure = CL_EPARSE;
+                                break;
+                            }
+                            s->pos -= (size_t)s->sleft;
                             s->sleft = s->smax = 0;
                             len                = ALIGN4(s->fsize[s->level]);
+                            if ((size_t)len > SIZE_MAX - s->pos) {
+                                s->incomplete = 1;
+                                if (s->failure == CL_CLEAN)
+                                    s->failure = CL_EPARSE;
+                                break;
+                            }
                             /* The field is four-byte aligned on disk, but
                              * compressed data uses its exact declared length;
                              * the alignment bytes are skipped with the

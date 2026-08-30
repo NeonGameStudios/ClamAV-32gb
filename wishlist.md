@@ -1,5 +1,18 @@
 # Wishlist
 
+## SIS 9.x native coordinate admission — 2026-08-30
+
+- Keep SIS 9.x nested field-end and skip coordinates in native `size_t` form.
+  Reject field-start subtraction, field-end addition, buffered rewinds, skip
+  advancement, and compressed-member advancement when they would wrap, with a
+  sticky incomplete `CL_EPARSE` result. A focused current-source GCC runner
+  reaches the field-end and skip-overflow branches under normal GCC and
+  AddressSanitizer/UndefinedBehaviorSanitizer; source guards and the Docker
+  production-GCC check cover the correction. Complete SIS corpus,
+  production-linked Check execution, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification remain required.
+
 ## MSEXPAND fmap coordinate width — 2026-08-30
 
 - Keep SZDD/MSEXPAND compressed-input coordinates in native `size_t` form

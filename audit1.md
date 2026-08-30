@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## SIS 9.x native coordinate admission — 2026-08-30
+
+The SIS 9.x stream parser stored nested field-end coordinates in signed
+`long` and formed field and skip end positions without a native-size overflow
+check. Those coordinates now use `size_t`; field-start subtraction, field-end
+addition, skip advancement, buffered rewind, and compressed-member advancement
+are fail-visible when the native coordinate would wrap, preserving sticky
+incomplete `CL_EPARSE` rather than allowing traversal to restart at a lower
+offset. The focused current-source GCC runner reaches both field-end and skip
+advancement overflow branches and passes under normal GCC and
+AddressSanitizer/UndefinedBehaviorSanitizer. The Docker production-GCC source
+check also passes, and source guards pin the native coordinate and each checked
+boundary. Full production-linked Check execution, SIS corpus, certified Linux
+x86-64, production-CVD/service, materialized large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## MSEXPAND fmap coordinate width — 2026-08-30
 
 The SZDD/MSEXPAND decoder used signed `off_t` for its compressed-input fmap
