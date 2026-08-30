@@ -61,17 +61,26 @@ static void openioc_free_hashes(struct openioc_hash *elems)
     }
 }
 
-static const xmlChar *openioc_read(xmlTextReaderPtr reader)
+static int openioc_read(xmlTextReaderPtr reader, const xmlChar **name_out)
 {
+    int rc;
     const xmlChar *name;
-    if (xmlTextReaderRead(reader) != 1)
-        return NULL;
+
+    if (name_out == NULL)
+        return -1;
+
+    *name_out = NULL;
+    rc         = xmlTextReaderRead(reader);
+    if (rc != 1)
+        return rc;
+
     name = xmlTextReaderConstLocalName(reader);
     if (name != NULL) {
         cli_dbgmsg("openioc_parse: xmlTextReaderRead read %s%s\n", name,
                    xmlTextReaderNodeType(reader) == XML_READER_TYPE_END_ELEMENT ? " end tag" : "");
     }
-    return name;
+    *name_out = name;
+    return 1;
 }
 
 static int openioc_is_context_hash(xmlTextReaderPtr reader)
@@ -97,6 +106,7 @@ static int openioc_parse_content(xmlTextReaderPtr reader, struct openioc_hash **
 {
     const xmlChar *xmlval;
     struct openioc_hash *elem;
+    int read_rc;
     int rc = CL_SUCCESS;
 
     if (context_hash == 0) {
@@ -116,7 +126,11 @@ static int openioc_parse_content(xmlTextReaderPtr reader, struct openioc_hash **
         xmlFree(type);
     }
 
-    if (xmlTextReaderRead(reader) == 1 && xmlTextReaderNodeType(reader) == XML_READER_TYPE_TEXT) {
+    read_rc = xmlTextReaderRead(reader);
+    if (read_rc < 0)
+        return CL_EPARSE;
+
+    if (read_rc == 1 && xmlTextReaderNodeType(reader) == XML_READER_TYPE_TEXT) {
         xmlval = xmlTextReaderConstValue(reader);
         if (xmlval) {
             if (strlen((const char *)xmlval) > (size_t)CLI_MAX_ALLOCATION) {
@@ -149,13 +163,14 @@ static int openioc_parse_content(xmlTextReaderPtr reader, struct openioc_hash **
 static int openioc_parse_indicatoritem(xmlTextReaderPtr reader, struct openioc_hash **elems)
 {
     const xmlChar *name;
+    int read_rc;
     int rc           = CL_SUCCESS;
     int context_hash = 0;
 
     while (1) {
-        name = openioc_read(reader);
-        if (name == NULL)
-            break;
+        read_rc = openioc_read(reader, &name);
+        if (read_rc <= 0)
+            return read_rc < 0 ? CL_EPARSE : CL_SUCCESS;
         if (xmlStrEqual(name, (const xmlChar *)"Context") &&
             xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
             context_hash = openioc_is_context_hash(reader);
@@ -176,12 +191,13 @@ static int openioc_parse_indicatoritem(xmlTextReaderPtr reader, struct openioc_h
 static int openioc_parse_indicator(xmlTextReaderPtr reader, struct openioc_hash **elems)
 {
     const xmlChar *name;
+    int read_rc;
     int rc = CL_SUCCESS;
 
     while (1) {
-        name = openioc_read(reader);
-        if (name == NULL)
-            return rc;
+        read_rc = openioc_read(reader, &name);
+        if (read_rc <= 0)
+            return read_rc < 0 ? CL_EPARSE : rc;
         if (xmlStrEqual(name, (const xmlChar *)"Indicator") &&
             xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
             rc = openioc_parse_indicator(reader, elems);
@@ -212,6 +228,8 @@ int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned 
     size_t ioclen;
     char *virusname;
     size_t hash_count = 0;
+    int saw_ioc_root = 0;
+    int saw_ioc_root_end = 0;
 
     if (fname == NULL)
         return CL_ENULLARG;
@@ -232,7 +250,36 @@ int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned 
     rc = xmlTextReaderRead(reader);
     while (rc == 1) {
         name = xmlTextReaderConstLocalName(reader);
-        cli_dbgmsg("openioc_parse: xmlTextReaderRead read %s\n", name);
+        cli_dbgmsg("openioc_parse: xmlTextReaderRead read %s\n",
+                   name ? (const char *)name : "(null)");
+
+        if (xmlTextReaderDepth(reader) == 0 &&
+            xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
+            if (saw_ioc_root || !xmlStrEqual(name, (const xmlChar *)"ioc")) {
+                cli_dbgmsg("openioc_parse: XML document root is not <ioc>.\n");
+                openioc_free_hashes(elems);
+                xmlTextReaderClose(reader);
+                xmlFreeTextReader(reader);
+                return CL_EPARSE;
+            }
+            saw_ioc_root = 1;
+            if (xmlTextReaderIsEmptyElement(reader) == 1) {
+                saw_ioc_root_end = 1;
+                break;
+            }
+        } else if (xmlTextReaderDepth(reader) == 0 &&
+                   xmlTextReaderNodeType(reader) == XML_READER_TYPE_END_ELEMENT) {
+            if (!saw_ioc_root || !xmlStrEqual(name, (const xmlChar *)"ioc")) {
+                cli_dbgmsg("openioc_parse: XML document has an invalid <ioc> root closure.\n");
+                openioc_free_hashes(elems);
+                xmlTextReaderClose(reader);
+                xmlFreeTextReader(reader);
+                return CL_EPARSE;
+            }
+            saw_ioc_root_end = 1;
+            break;
+        }
+
         if (xmlStrEqual(name, (const xmlChar *)"Indicator") &&
             xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
             rc = openioc_parse_indicator(reader, &elems);
@@ -250,7 +297,7 @@ int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned 
         rc = xmlTextReaderRead(reader);
     }
 
-    if (rc < 0) {
+    if (rc < 0 || !saw_ioc_root || !saw_ioc_root_end) {
         cli_dbgmsg("openioc_parse: XML reader reported a parse error.\n");
         openioc_free_hashes(elems);
         xmlTextReaderClose(reader);

@@ -2832,6 +2832,41 @@ START_TEST(test_cl_load)
 }
 END_TEST
 
+START_TEST(test_openioc_malformed_xml_is_fail_visible)
+{
+    static const char *fixtures[] = {
+        "<not-ioc/>",
+        "<ioc><Indicator><IndicatorItem>"
+    };
+    char file_path[PATH_MAX];
+    struct cl_engine *engine;
+    unsigned int sigs;
+    cl_error_t ret;
+    int fd;
+    size_t i;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(fixtures) / sizeof(fixtures[0]); i++) {
+        snprintf(file_path, sizeof(file_path), "%s/openioc-malformed-%ld-%zu.ioc", tmpdir,
+                 (long)getpid(), i);
+        fd = open(file_path, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0600);
+        ck_assert_int_ge(fd, 0);
+        ck_assert_int_eq(write(fd, fixtures[i], strlen(fixtures[i])), (ssize_t)strlen(fixtures[i]));
+        ck_assert_int_eq(close(fd), 0);
+
+        engine = cl_engine_new();
+        ck_assert_ptr_nonnull(engine);
+        sigs = 0;
+        ret  = cl_load(file_path, engine, &sigs, CL_DB_STDOPT);
+        ck_assert_int_eq(ret, CL_EMALFDB);
+        ck_assert_uint_eq(sigs, 0);
+        cl_engine_free(engine);
+        ck_assert_int_eq(unlink(file_path), 0);
+    }
+}
+END_TEST
+
 /* cl_error_t cl_cvdverify_ex(const char *file, const char *certs_directory, uint32_t dboptions) */
 START_TEST(test_cl_cvdverify)
 {
@@ -47383,6 +47418,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_cvdparse);
     tcase_add_test(tc_cl, test_cl_cvdparse_rejects_invalid_numeric_fields);
     tcase_add_test(tc_cl, test_cl_load);
+    tcase_add_test(tc_cl, test_openioc_malformed_xml_is_fail_visible);
     tcase_add_test(tc_cl, test_cl_cvdverify);
     tcase_add_test(tc_cl, test_cl_statinidir);
     tcase_add_test(tc_cl, test_cl_statchkdir);

@@ -7921,11 +7921,13 @@ final qualification as open.
 ## OpenIOC database admission — 2026-08-29
 
 - Keep OpenIOC XML/hash-value allocation, engine, length arithmetic, and XML
-  reader failures fail-visible, with pending hash nodes released on every
-  parse or database-admission abort.
-- Add injected allocator and malformed-XML execution, then retain complete
-  OpenIOC corpus, sanitizer, production-CVD/service, materialized-large-file,
-  Sonic1, and final qualification as open.
+  reader failures fail-visible, require a complete `<ioc>` root before hash
+  admission, and release pending hash nodes on every parse or database-admission
+  abort.
+- Retain `test_openioc_malformed_xml_is_fail_visible` and add injected
+  allocator execution, then retain complete OpenIOC corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  qualification as open.
 
 ## Scan recursion-stack admission — 2026-08-29
 

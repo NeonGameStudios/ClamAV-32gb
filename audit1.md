@@ -91,12 +91,15 @@ The OpenIOC loader accumulated XML hash values with unchecked `calloc()` and
 and `int`, formed the virus-name allocation from unchecked additions, and
 accepted an XML reader error as a successful database load. Parse and
 allocation exits also leaked the current or remaining hash nodes. The loader
-now validates the engine, bounds XML/hash-derived representations through the
-shared individual-allocation limit, preserves `size_t` arithmetic, checks
-duplication, returns `CL_EPARSE` for reader errors, and cleans all pending
-nodes on abort. Source guards and a current-source Docker production-GCC
-syntax check cover the implementation; OpenIOC corpus, injected allocator
-execution, sanitizer, production-CVD/service, materialized-large-file,
+now validates the engine, requires exactly one complete `<ioc>` root (or an
+explicitly empty root), preserves negative nested reader results as
+`CL_EPARSE`, bounds XML/hash-derived representations through the shared
+individual-allocation limit, preserves `size_t` arithmetic, checks duplication,
+and cleans all pending nodes on abort. The registered
+`test_openioc_malformed_xml_is_fail_visible` regression covers a wrong root and
+an unterminated nested document. Source guards and a current-source Docker
+production-GCC syntax check cover the implementation; OpenIOC corpus, injected
+allocator execution, sanitizer, production-CVD/service, materialized-large-file,
 Sonic1, and final parser/release qualification remain open.
 
 ## MIME multipart allocation-failure visibility — 2026-08-29
