@@ -8825,3 +8825,14 @@ qualification evidence.
   production-linked 7-Zip execution, complete 7-Zip/BCJ2 corpus, certified
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
   final parser-family/release qualification evidence.
+
+## Base64 null-input admission — 2026-08-30
+
+- Keep `cl_base64_decode()` and `cl_base64_encode()` fail-closed for null
+  non-empty input before padding inspection, allocation, or OpenSSL calls;
+  preserve the documented zero-length convention.
+- Retain the expanded `check_str` regression and source guards; the direct
+  current-source GCC and GCC ASan/UBSan runners pass. Add current-object
+  production-linked execution, complete Base64 call-site/corpus, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
+  final parser-family/release qualification evidence.

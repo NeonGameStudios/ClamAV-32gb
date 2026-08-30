@@ -53,7 +53,7 @@ static int base64_len(const char *data, size_t len, size_t *decoded_len)
     size_t padding = 0;
     size_t i;
 
-    if (!decoded_len || len > (size_t)INT_MAX ||
+    if (!decoded_len || (len != 0 && data == NULL) || len > (size_t)INT_MAX ||
         len > (size_t)CLI_MAX_ALLOCATION || len > (size_t)-1 / 3)
         return 0;
 
@@ -138,6 +138,9 @@ char *cl_base64_encode(void *data, size_t len)
     BIO *bio, *b64;
     char *buf, *p;
     size_t elen;
+
+    if (len != 0 && data == NULL)
+        return NULL;
 
     b64 = BIO_new(BIO_f_base64());
     if (!(b64))

@@ -16080,3 +16080,17 @@ warning-enabled GCC and matching GCC ASan/UBSan direct helper runners pass
 both boundaries. Production-linked execution, complete 7-Zip/BCJ2 corpus,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, and final parser-family/release qualification remain open.
+
+## Base64 null-input admission — 2026-08-30
+
+The shared Base64 conversion boundary checked input length arithmetic but did
+not reject a null input pointer when a non-empty length was supplied. The
+decoder could inspect that pointer while counting padding, and the encoder
+could pass it into OpenSSL. Both APIs now reject null non-empty input before
+allocation or library calls while preserving the zero-length convention. The
+registered `check_str` regression covers both public directions in addition to
+valid decoding and length-overflow rejection. Current-source warning-enabled
+GCC and matching GCC ASan/UBSan direct runners pass; current-object
+production-linked execution, complete Base64 call-site/corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, and final parser-family/release qualification remain open.

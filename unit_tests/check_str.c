@@ -215,6 +215,8 @@ START_TEST(test_base64_decode_rejects_length_overflow)
     /* These lengths must be rejected before the decoder inspects input. */
     ck_assert_ptr_null(cl_base64_decode(input, (size_t)-1, NULL, &decoded_len, 0));
     ck_assert_ptr_null(cl_base64_decode(input, (size_t)CLI_MAX_ALLOCATION + 1U, NULL, &decoded_len, 0));
+    ck_assert_ptr_null(cl_base64_decode(NULL, 1, NULL, &decoded_len, 0));
+    ck_assert_ptr_null(cl_base64_encode(NULL, 1));
 }
 END_TEST
 
