@@ -1,5 +1,14 @@
 # Wishlist
 
+## YARA VM unaligned pointer operands — 2026-08-30
+
+- Keep bundled YARA jump, rule, and object pointer operands decoded with
+  `memcpy()` rather than typed dereferences from packed bytecode. The
+  registered valid unaligned-JLE regression and isolated current-source GCC
+  plus GCC ASan/UBSan leak-enabled runners pass; full YARA matcher/corpus,
+  production-CVD/service, materialized-large-file, Sonic1, and release
+  qualification remain.
+
 ## HFS+ inline decoder initialization visibility — 2026-08-30
 
 - Keep HFS+ inline decmpfs decoder initialization fail-visible and avoid

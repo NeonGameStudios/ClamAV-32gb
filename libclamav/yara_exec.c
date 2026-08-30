@@ -172,6 +172,7 @@ int yr_execute_code(
   int64_t r1;
   int64_t r2;
   int64_t r3;
+  uint64_t pointer_value;
   int64_t mem[MEM_SIZE];
   int64_t stack[STACK_SIZE];
   int64_t args[MAX_FUNCTION_ARGS];
@@ -304,7 +305,8 @@ int yr_execute_code(
 
         if (r1 != UNDEFINED)
         {
-          ip = *(uint8_t**)(ip + 1);
+          memcpy(&pointer_value, ip + 1, sizeof(pointer_value));
+          ip = UINT64_TO_PTR(uint8_t*, pointer_value);
           // ip will be incremented at the end of the loop,
           // decrement it here to compensate.
           ip--;
@@ -323,7 +325,8 @@ int yr_execute_code(
 
         if (r1 <= r2)
         {
-          ip = *(uint8_t**)(ip + 1);
+          memcpy(&pointer_value, ip + 1, sizeof(pointer_value));
+          ip = UINT64_TO_PTR(uint8_t*, pointer_value);
           // ip will be incremented at the end of the loop,
           // decrement it here to compensate.
           ip--;
@@ -504,7 +507,8 @@ int yr_execute_code(
         break;
 
       case OP_PUSH_RULE:
-        rule = *(YR_RULE**)(ip + 1);
+        memcpy(&pointer_value, ip + 1, sizeof(pointer_value));
+        rule = UINT64_TO_PTR(YR_RULE*, pointer_value);
         ip += sizeof(uint64_t);
 #if REAL_YARA
         push(rule->t_flags[tidx] & RULE_TFLAGS_MATCH ? 1 : 0);
@@ -515,7 +519,8 @@ int yr_execute_code(
 
       case OP_MATCH_RULE:
         pop(r1);
-        rule = *(YR_RULE**)(ip + 1);
+        memcpy(&pointer_value, ip + 1, sizeof(pointer_value));
+        rule = UINT64_TO_PTR(YR_RULE*, pointer_value);
         ip += sizeof(uint64_t);
 
         if (!IS_UNDEFINED(r1) && r1)
@@ -535,7 +540,8 @@ int yr_execute_code(
         break;
 
       case OP_OBJ_LOAD:
-        identifier = *(char**)(ip + 1);
+        memcpy(&pointer_value, ip + 1, sizeof(pointer_value));
+        identifier = UINT64_TO_PTR(char*, pointer_value);
         ip += sizeof(uint64_t);
 
         object = (YR_OBJECT*) yr_hash_table_lookup(
@@ -551,7 +557,8 @@ int yr_execute_code(
       case OP_OBJ_FIELD:
         pop(r1);
 
-        identifier = *(char**)(ip + 1);
+        memcpy(&pointer_value, ip + 1, sizeof(pointer_value));
+        identifier = UINT64_TO_PTR(char*, pointer_value);
         ip += sizeof(uint64_t);
 
         if (IS_UNDEFINED(r1))

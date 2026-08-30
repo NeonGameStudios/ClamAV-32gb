@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## YARA VM unaligned pointer operands — 2026-08-30
+
+The bundled YARA executor loaded jump targets, rule pointers, and object
+identifiers from bytecode with typed pointer dereferences at `ip + 1`. Those
+operands are intentionally packed immediately after one-byte opcodes, so the
+loads were not alignment-safe on strict-alignment targets and could also
+violate the C effective-type rules. Every pointer-valued operand is now copied
+through `memcpy()` and converted with the existing 64-bit pointer macros. The
+registered unaligned-JLE regression reaches a valid jump target and completes
+cleanly; the isolated current-source GCC runner and GCC ASan/UBSan
+leak-enabled runner both pass. Full YARA matcher, corpus, production-CVD/
+service, materialized-large-file, Sonic1, and final release qualification
+remain open.
+
 ## HFS+ inline decoder initialization visibility — 2026-08-30
 
 The enabled HFS+ inline decmpfs path already guarded `inflateEnd()` with an

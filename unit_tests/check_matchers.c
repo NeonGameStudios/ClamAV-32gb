@@ -1667,6 +1667,56 @@ START_TEST(test_yara_jump_target_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_yara_unaligned_jump_target_is_defined)
+{
+#ifdef HAVE_YARA
+    uint8_t code[3 * (1 + sizeof(uint64_t)) + 3];
+    uint64_t target;
+    size_t offset = 0;
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    fmap_t *map;
+    cl_error_t ret;
+
+    offset = yara_emit_push(code, offset, 0);
+    offset = yara_emit_push(code, offset, 0);
+    code[offset++] = OP_JLE;
+    target = PTR_TO_UINT64(code + offset + sizeof(target));
+    memcpy(code + offset, &target, sizeof(target));
+    offset += sizeof(target);
+    code[offset++] = OP_POP;
+    code[offset++] = OP_POP;
+    code[offset]   = OP_HALT;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id           = 0;
+    lsig.type         = CLI_YARA_NORMAL;
+    lsig.u.code_start = code;
+    lsig.code_size    = sizeof(code);
+    lsig.virname      = (char *)"YaraUnalignedJumpTarget";
+    lsigtable[0]      = &lsig;
+    root.ac_lsigs     = 1;
+    root.ac_lsigtable = lsigtable;
+
+    map = cl_fmap_open_memory((const unsigned char *)"x", 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_exp_eval(&ctx, &root, &yara_mdata, NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ctx.fmap = &thefmap;
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_yara_missing_matcher_state_is_fail_visible)
 {
 #ifdef HAVE_YARA
@@ -2713,6 +2763,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_yara_missing_code_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_truncated_instruction_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_jump_target_is_fail_visible);
+    tcase_add_test(tc_matchers, test_yara_unaligned_jump_target_is_defined);
     tcase_add_test(tc_matchers, test_yara_missing_matcher_state_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
     tcase_add_test(tc_matchers, test_yara_execution_error_is_fail_visible);

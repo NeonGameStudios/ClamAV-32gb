@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## YARA VM unaligned pointer operands — 2026-08-30
+
+The bundled YARA executor now decodes packed jump-target, rule-pointer, and
+object-identifier operands with `memcpy()` before pointer conversion. This
+removes strict-alignment and effective-type undefined behavior from valid
+one-byte-opcode instruction layouts. The source-guarded unaligned-JLE
+regression and isolated current-source GCC runner pass; the GCC ASan/UBSan
+leak-enabled runner is also clean. Full YARA matcher/corpus,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## HFS+ inline decoder initialization visibility — 2026-08-30
 
 The HFS+ inline decmpfs path now has a registered fault-injected regression
