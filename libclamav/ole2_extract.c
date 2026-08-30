@@ -534,12 +534,14 @@ ole2_get_next_bat_block(ole2_header_t *hdr, int32_t current_block)
     int32_t bat_array_index;
     uint32_t bat[128];
 
-    if (current_block < 0) {
+    if (hdr == NULL || current_block < 0) {
+        ole2_mark_block_read_failure(hdr, CL_EPARSE);
         return -1;
     }
     bat_array_index = current_block / 128;
-    if (bat_array_index > hdr->bat_count) {
+    if (hdr->bat_count <= 0 || bat_array_index >= hdr->bat_count) {
         cli_dbgmsg("bat_array index error\n");
+        ole2_mark_block_read_failure(hdr, CL_EPARSE);
         return -10;
     }
     if (!ole2_read_block(hdr, &bat, 512,
@@ -555,7 +557,8 @@ ole2_get_next_xbat_block(ole2_header_t *hdr, int32_t current_block)
     int32_t xbat_index, xbat_block_index, bat_index, bat_blockno;
     uint32_t xbat[128], bat[128];
 
-    if (current_block < 0) {
+    if (hdr == NULL || current_block < 0) {
+        ole2_mark_block_read_failure(hdr, CL_EPARSE);
         return -1;
     }
     xbat_index = current_block / 128;
@@ -566,6 +569,13 @@ ole2_get_next_xbat_block(ole2_header_t *hdr, int32_t current_block)
      */
     xbat_block_index = (xbat_index - 109) / 127;
     bat_blockno      = (xbat_index - 109) % 127;
+
+    if (hdr->xbat_count <= 0 || hdr->xbat_start < 0 ||
+        xbat_block_index >= hdr->xbat_count) {
+        cli_dbgmsg("xbat index error\n");
+        ole2_mark_block_read_failure(hdr, CL_EPARSE);
+        return -1;
+    }
 
     bat_index = current_block % 128;
 
@@ -3530,6 +3540,12 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
 
     /* If there's no VBA we scan OTF */
     if (hdr.has_vba || hdr.has_xlm || hdr.has_image) {
+        if (dirname == NULL) {
+            cli_mark_scan_incomplete(ctx, "OLE2 extracted output directory is unavailable");
+            ret = CL_ENULLARG;
+            goto done;
+        }
+
         /* PASS 2/A : VBA scan */
         cli_dbgmsg("OLE2: VBA project found\n");
         if (!(hdr.U = uniq_init(file_count))) {
@@ -3544,8 +3560,10 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
             goto done;
         }
         ret    = CL_CLEAN;
-        *files = hdr.U;
-        hdr.U  = NULL;
+        if (files != NULL) {
+            *files = hdr.U;
+            hdr.U  = NULL;
+        }
         if (has_vba) {
             *has_vba = hdr.has_vba;
         }

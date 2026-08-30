@@ -14970,3 +14970,20 @@ Current Rust dependency compilation remains constrained by the host's missing
 OpenSSL development discovery, and the full C ABI, production-CVD/service,
 sanitizer, materialized-large-file, Sonic1, and final release qualification
 remain open.
+
+## OLE2 allocation-table and extraction-output admission — 2026-08-30
+
+The OLE2 sector-chain helpers could treat a BAT index equal to the declared
+BAT count as usable, and XBAT traversal did not reject a missing or exhausted
+XBAT chain before attempting to follow it. The extraction pass also entered
+macro/image materialization with a null destination directory and unconditionally
+wrote the optional extracted-file list output, leaving malformed or direct API
+calls exposed to fail-open behavior or a null dereference.
+
+BAT/XBAT admission now checks the declared table counts and start block before
+reading a table, and records the structural failure as an incomplete parse.
+The extraction pass requires its destination directory before materialization
+and frees the optional result when the caller does not request `files`. Source
+guards pin each boundary; existing OLE2 map/XLM, corpus, and reader
+sanitizer evidence remains partial, so parser-family, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification stay open.

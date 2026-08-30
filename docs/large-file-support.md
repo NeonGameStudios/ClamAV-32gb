@@ -374,6 +374,16 @@ the existing Rust 1.97.1 environment. Full OneNote corpus, current full-C ABI,
 sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
 parser-family qualification remain release gates.
 
+## OLE2 allocation-table and extraction-output admission
+
+OLE2 BAT/XBAT traversal now rejects a missing or out-of-range allocation-table
+entry before following a malformed sector chain. When macro or image streams
+are discovered, extraction requires a destination directory before entering
+materialization, and a caller that does not request the optional extracted-file
+list no longer causes a null output dereference. Existing OLE2/XLM current-
+source GCC, reader sanitizer, corpus, production-CVD/service, materialized
+large-file, Sonic1, and parser-family qualification remain release gates.
+
 ## DMG truncated-range read classification — 2026-08-29
 
 The DMG `blkx` metadata readers now use the full-range fmap helper. A

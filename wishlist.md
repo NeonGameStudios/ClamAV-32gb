@@ -8026,7 +8026,6 @@ final qualification as open.
 - Add an injected-panic execution case when the Rust test/build environment is
   available; retain complete OneNote corpus, current full-C ABI, sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final release
-  qualification as required evidence.
 qualification as required evidence.
 
 ## CVD Rust FFI null-pointer admission — 2026-08-30
@@ -8039,3 +8038,13 @@ qualification as required evidence.
   Rust/C ABI execution, complete CVD corpus, production-CVD/service,
   sanitizer, materialized-large-file, Sonic1, and final release qualification
   remain required.
+
+## OLE2 allocation-table and extraction-output admission — 2026-08-30
+
+- Keep BAT/XBAT sector-chain admission behind declared count and start-block
+  checks before reading allocation tables or following malformed chains.
+- Require a destination directory before macro/image stream materialization and
+  keep the optional `files` result null-safe. Retain the source guards and
+  current-source OLE2 map/XLM, corpus, reader-sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification as required evidence.
