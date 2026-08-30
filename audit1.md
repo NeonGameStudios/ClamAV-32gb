@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## OLE2 XLM/BIFF metadata admission — 2026-08-30
+
+OLE2 property-tree, XLM/BIFF, stream-enumeration, HWP5-type, and encryption
+metadata paths previously ignored `cli_json*` allocation or record failures.
+The requested metadata could therefore be incomplete while the parser
+continued toward a clean result. The current source now propagates those
+failures, marks the layer sticky incomplete with an exact OLE2 reason, and
+keeps ordinary scans unchanged when metadata collection is disabled. The
+current `ole2_extract.c` compiles with the production GCC flags in the
+established Docker environment and source guards pin the helper and failure
+reasons. Focused production-linked JSON fault-injection, full OLE/VBA/XLM
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification
+remain open.
+
 ## HWP5 header metadata record admission — 2026-08-30
 
 `cli_hwp5header()` previously ignored failures from its `RawVersion`,

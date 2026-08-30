@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OLE2 XLM/BIFF metadata admission — 2026-08-30
+
+Requested OLE2 metadata writes now propagate failures for digital-signature
+markers, XLM autorun/macro/language/hidden indicators, stream lists and type
+classification, HWP5 type classification, and encryption status. Each
+failure marks the layer incomplete and remains non-cacheable; non-metadata
+scans do not enter these writes. Current-source Docker production-GCC
+compilation and source guards cover the change. Focused JSON fault injection,
+complete OLE/VBA/XLM corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification
+remain required.
+
 ## HWP5 header metadata record admission — 2026-08-30
 
 `cli_hwp5header()` now propagates `RawVersion`, `RawFlags`, and enabled

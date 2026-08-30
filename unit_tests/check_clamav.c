@@ -144,10 +144,13 @@ extern cl_error_t __real_cli_jsonstr(json_object *obj, const char *key, const ch
 static int hwp3_test_fail_font_counts;
 static int hwp3_test_fail_print_name;
 static int hwp5_test_fail_raw_version;
+static int ole2_test_fail_streams;
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
     if (hwp3_test_fail_font_counts && key && strcmp(key, "FontCounts") == 0)
+        return NULL;
+    if (ole2_test_fail_streams && key && strcmp(key, "Streams") == 0)
         return NULL;
     return __real_cli_jsonarray(obj, key);
 }
@@ -32217,6 +32220,63 @@ START_TEST(test_ole2_workbook_encryption_probe_accepts_terminal_filepass)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_ole2_stream_metadata_allocation_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    struct stat sb;
+    cli_ctx ctx;
+    fmap_t *map;
+    json_object *metadata;
+    uint8_t *data;
+    size_t data_size;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/has_png_and_jpeg.xls", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sb), 0);
+    ck_assert_msg(sb.st_size > 0, "empty OLE2 fixture: %s", file_path);
+
+    data_size = (size_t)sb.st_size;
+    data      = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_int_eq(read(fd, data, data_size), (ssize_t)data_size);
+    ck_assert_int_eq(close(fd), 0);
+
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    options.general             = CL_SCAN_GENERAL_COLLECT_METADATA;
+    ctx.engine                  = &engine;
+    ctx.options                 = &options;
+    ctx.fmap                    = map;
+    ctx.this_layer_metadata_json  = metadata;
+    ctx.this_layer_tmpdir         = tmpdir;
+    ole2_test_fail_streams        = 1;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+
+    ole2_test_fail_streams = 0;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE2 stream metadata could not be allocated");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(metadata);
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
+#endif
+
 START_TEST(test_ole2_xlm_biff_read_failure_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -47357,6 +47417,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2, test_ole2_encryption_probe_read_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_ole2, test_ole2_workbook_encryption_probe_accepts_terminal_filepass);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_ole2, test_ole2_stream_metadata_allocation_failure_is_fail_visible);
+#endif
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_ole2, test_ole2_output_write_failure_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_output_close_failure_is_fail_visible);

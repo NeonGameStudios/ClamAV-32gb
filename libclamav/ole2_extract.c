@@ -72,6 +72,14 @@ static cl_error_t ole2_checktimelimit(cli_ctx *ctx, const char *reason)
     return ret;
 }
 
+static inline cl_error_t ole2_record_metadata(cli_ctx *ctx, cl_error_t ret, const char *reason)
+{
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 #define ole2_endian_convert_16(v) le16_to_host((uint16_t)(v))
 #define ole2_endian_convert_32(v) le32_to_host((uint32_t)(v))
 #define ole2_endian_convert_64(v) le64_to_host((uint64_t)(v))
@@ -1263,7 +1271,14 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
                             name = cli_ole2_get_property_name2(prop_block[idx].name, prop_block[idx].name_size);
                             if (name) {
                                 if (!strcmp(name, "_xmlsignatures") || !strcmp(name, "_signatures")) {
-                                    cli_jsonbool(ctx->this_layer_metadata_json, "HasDigitalSignatures", 1);
+                                    ret = ole2_record_metadata(
+                                        ctx, cli_jsonbool(ctx->this_layer_metadata_json, "HasDigitalSignatures", 1),
+                                        "OLE2 digital-signature metadata could not be recorded");
+                                    if (ret != CL_SUCCESS) {
+                                        free(name);
+                                        ole2_list_delete(&node_list);
+                                        return ret;
+                                    }
                                 }
                                 free(name);
                             }
@@ -1594,11 +1609,15 @@ static cl_error_t scan_biff_for_xlm_macros_and_images(
                             if (buff[i] == 1 || buff[i] == 2) {
                                 if (SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {
                                     json_object *indicators = cli_jsonarray(ctx->this_layer_metadata_json, "MacroIndicators");
-                                    if (indicators) {
-                                        cli_jsonstr(indicators, NULL, "autorun");
-                                    } else {
-                                        cli_dbgmsg("[scan_biff_for_xlm_macros_and_images] Failed to add \"autorun\" entry to MacroIndicators JSON array\n");
+                                    if (!indicators) {
+                                        cli_mark_scan_incomplete(ctx, "OLE2 XLM autorun metadata could not be allocated");
+                                        return CL_EMEM;
                                     }
+                                    status = ole2_record_metadata(
+                                        ctx, cli_jsonstr(indicators, NULL, "autorun"),
+                                        "OLE2 XLM autorun metadata could not be recorded");
+                                    if (status != CL_SUCCESS)
+                                        return status;
                                 }
                             }
 
@@ -1614,20 +1633,32 @@ static cl_error_t scan_biff_for_xlm_macros_and_images(
                             cli_dbgmsg("[scan_biff_for_xlm_macros_and_images] Found XLM macro sheet\n");
 
                             if (SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {
-                                cli_jsonbool(ctx->this_layer_metadata_json, "HasMacros", 1);
+                                status = ole2_record_metadata(
+                                    ctx, cli_jsonbool(ctx->this_layer_metadata_json, "HasMacros", 1),
+                                    "OLE2 XLM macro metadata could not be recorded");
+                                if (status != CL_SUCCESS)
+                                    return status;
                                 json_object *macro_languages = cli_jsonarray(ctx->this_layer_metadata_json, "MacroLanguages");
-                                if (macro_languages) {
-                                    cli_jsonstr(macro_languages, NULL, "XLM");
-                                } else {
-                                    cli_dbgmsg("[scan_biff_for_xlm_macros_and_images] Failed to add \"XLM\" entry to MacroLanguages JSON array\n");
+                                if (!macro_languages) {
+                                    cli_mark_scan_incomplete(ctx, "OLE2 XLM language metadata could not be allocated");
+                                    return CL_EMEM;
                                 }
+                                status = ole2_record_metadata(
+                                    ctx, cli_jsonstr(macro_languages, NULL, "XLM"),
+                                    "OLE2 XLM language metadata could not be recorded");
+                                if (status != CL_SUCCESS)
+                                    return status;
                                 if (state->tmp == 1 || state->tmp == 2) {
                                     json_object *indicators = cli_jsonarray(ctx->this_layer_metadata_json, "MacroIndicators");
-                                    if (indicators) {
-                                        cli_jsonstr(indicators, NULL, "hidden");
-                                    } else {
-                                        cli_dbgmsg("[scan_biff_for_xlm_macros_and_images] Failed to add \"hidden\" entry to MacroIndicators JSON array\n");
+                                    if (!indicators) {
+                                        cli_mark_scan_incomplete(ctx, "OLE2 XLM hidden metadata could not be allocated");
+                                        return CL_EMEM;
                                     }
+                                    status = ole2_record_metadata(
+                                        ctx, cli_jsonstr(indicators, NULL, "hidden"),
+                                        "OLE2 XLM hidden metadata could not be recorded");
+                                    if (status != CL_SUCCESS)
+                                        return status;
                                 }
                             }
 
@@ -1806,8 +1837,7 @@ static cl_error_t handler_enum(ole2_header_t *hdr, property_t *prop, const char 
     unsigned char *hwp_check = NULL;
     int32_t offset           = 0;
 
-    json_object *arrobj  = NULL;
-    json_object *strmobj = NULL;
+    json_object *arrobj = NULL;
 
     encryption_status_t *pEncryptionStatus = (encryption_status_t *)handler_ctx;
     UNUSEDPARAM(dir);
@@ -1817,20 +1847,37 @@ static cl_error_t handler_enum(ole2_header_t *hdr, property_t *prop, const char 
         if (SCAN_COLLECT_METADATA && ctx->this_layer_metadata_json != NULL) {
             arrobj = cli_jsonarray(ctx->this_layer_metadata_json, "Streams");
             if (NULL == arrobj) {
-                cli_warnmsg("ole2: no memory for streams list or streams is not an array\n");
+                cli_mark_scan_incomplete(ctx, "OLE2 stream metadata could not be allocated");
+                status = CL_EMEM;
+                goto done;
             } else {
-                strmobj = json_object_new_string(name);
-                json_object_array_add(arrobj, strmobj);
+                status = ole2_record_metadata(
+                    ctx, cli_jsonstr(arrobj, NULL, name),
+                    "OLE2 stream metadata could not be recorded");
+                if (status != CL_SUCCESS)
+                    goto done;
             }
 
             if (!strcmp(name, "powerpoint document")) {
-                cli_jsonstr(ctx->this_layer_metadata_json, "FileType", "CL_TYPE_MSPPT");
+                status = ole2_record_metadata(
+                    ctx, cli_jsonstr(ctx->this_layer_metadata_json, "FileType", "CL_TYPE_MSPPT"),
+                    "OLE2 stream type metadata could not be recorded");
+                if (status != CL_SUCCESS)
+                    goto done;
             }
             if (!strcmp(name, "worddocument")) {
-                cli_jsonstr(ctx->this_layer_metadata_json, "FileType", "CL_TYPE_MSWORD");
+                status = ole2_record_metadata(
+                    ctx, cli_jsonstr(ctx->this_layer_metadata_json, "FileType", "CL_TYPE_MSWORD"),
+                    "OLE2 stream type metadata could not be recorded");
+                if (status != CL_SUCCESS)
+                    goto done;
             }
             if (!strcmp(name, "workbook")) {
-                cli_jsonstr(ctx->this_layer_metadata_json, "FileType", "CL_TYPE_MSXL");
+                status = ole2_record_metadata(
+                    ctx, cli_jsonstr(ctx->this_layer_metadata_json, "FileType", "CL_TYPE_MSXL"),
+                    "OLE2 stream type metadata could not be recorded");
+                if (status != CL_SUCCESS)
+                    goto done;
             }
         }
     }
@@ -1886,7 +1933,13 @@ static cl_error_t handler_enum(ole2_header_t *hdr, property_t *prop, const char 
                     if (!memcmp(hwp_check + offset, "HWP Document File", 17)) {
                         hwp5_header_t *hwp_new;
 
-                        cli_jsonstr(ctx->this_layer_metadata_json, "FileType", "CL_TYPE_HWP5");
+                        if (SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {
+                            status = ole2_record_metadata(
+                                ctx, cli_jsonstr(ctx->this_layer_metadata_json, "FileType", "CL_TYPE_HWP5"),
+                                "OLE2 HWP5 stream type metadata could not be recorded");
+                            if (status != CL_SUCCESS)
+                                goto done;
+                        }
 
                         CLI_CALLOC_OR_GOTO_DONE(hwp_new, 1, sizeof(hwp5_header_t), status = CL_EMEM);
 
@@ -3491,10 +3544,16 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
     if (SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {
         if (encryption_status.encrypted) {
             if (encryption_status.encryption_type) {
-                cli_jsonstr(ctx->this_layer_metadata_json, ENCRYPTED_JSON_KEY, encryption_status.encryption_type);
+                ret = ole2_record_metadata(
+                    ctx, cli_jsonstr(ctx->this_layer_metadata_json, ENCRYPTED_JSON_KEY, encryption_status.encryption_type),
+                    "OLE2 encryption metadata could not be recorded");
             } else {
-                cli_jsonstr(ctx->this_layer_metadata_json, ENCRYPTED_JSON_KEY, GENERIC_ENCRYPTED);
+                ret = ole2_record_metadata(
+                    ctx, cli_jsonstr(ctx->this_layer_metadata_json, ENCRYPTED_JSON_KEY, GENERIC_ENCRYPTED),
+                    "OLE2 encryption metadata could not be recorded");
             }
+            if (ret != CL_SUCCESS)
+                goto done;
         }
     }
 
