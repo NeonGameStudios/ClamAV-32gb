@@ -139,9 +139,11 @@ static unsigned int pdf_test_output_window_allocation_failures;
 
 #ifdef CLAMAV_TEST_JSON_WRAP
 extern json_object *__real_cli_jsonarray(json_object *obj, const char *key);
+extern cl_error_t __real_cli_jsonint(json_object *obj, const char *key, int32_t i);
 extern cl_error_t __real_cli_jsonstr(json_object *obj, const char *key, const char *s);
 static int hwp3_test_fail_font_counts;
 static int hwp3_test_fail_print_name;
+static int hwp5_test_fail_raw_version;
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
@@ -155,6 +157,13 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
     if (hwp3_test_fail_print_name && key && strcmp(key, "PrintName") == 0)
         return CL_EMEM;
     return __real_cli_jsonstr(obj, key, s);
+}
+
+cl_error_t __wrap_cli_jsonint(json_object *obj, const char *key, int32_t i)
+{
+    if (hwp5_test_fail_raw_version && key && strcmp(key, "RawVersion") == 0)
+        return CL_EMEM;
+    return __real_cli_jsonint(obj, key, i);
 }
 #endif
 
@@ -25561,6 +25570,40 @@ START_TEST(test_hwp5_stream_requires_context_and_engine)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_hwp5_header_metadata_record_failure_is_fail_visible)
+{
+    hwp5_header_t hwp5;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    json_object *metadata;
+    cl_error_t ret;
+
+    memset(&hwp5, 0, sizeof(hwp5));
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    ctx.engine                   = &engine;
+    ctx.options                  = &options;
+    ctx.this_layer_metadata_json = metadata;
+    hwp5_test_fail_raw_version   = 1;
+
+    ret = cli_hwp5header(&ctx, &hwp5);
+
+    hwp5_test_fail_raw_version = 0;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWP5 header metadata could not be recorded");
+
+    json_object_put(metadata);
+}
+END_TEST
+#endif
+
 START_TEST(test_hwpole2_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -47654,6 +47697,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_time_limit_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_missing_map_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp5_stream_requires_context_and_engine);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_hwp3, test_hwp5_header_metadata_record_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_hwp3, test_hwp3_information_block_length_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_variable_length_native_addition_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_read_failure_is_fail_visible);

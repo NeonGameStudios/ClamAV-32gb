@@ -373,6 +373,14 @@ cl_error_t cli_scanhwpole2(cli_ctx *ctx)
 
 /*** HWP5 ***/
 
+static inline cl_error_t hwp5_record_metadata(cli_ctx *ctx, cl_error_t ret, const char *reason)
+{
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 cl_error_t cli_hwp5header(cli_ctx *ctx, hwp5_header_t *hwp5)
 {
     if (!ctx || !hwp5)
@@ -383,6 +391,7 @@ cl_error_t cli_hwp5header(cli_ctx *ctx, hwp5_header_t *hwp5)
 
     if (SCAN_COLLECT_METADATA) {
         json_object *header, *flags;
+        cl_error_t metadata_ret;
 
         header = cli_jsonobj(ctx->this_layer_metadata_json, "Hwp5Header");
         if (!header) {
@@ -392,10 +401,18 @@ cl_error_t cli_hwp5header(cli_ctx *ctx, hwp5_header_t *hwp5)
         }
 
         /* version */
-        cli_jsonint(header, "RawVersion", hwp5->version);
+        metadata_ret = hwp5_record_metadata(
+            ctx, cli_jsonint(header, "RawVersion", hwp5->version),
+            "HWP5 header metadata could not be recorded");
+        if (metadata_ret != CL_SUCCESS)
+            return metadata_ret;
 
         /* flags */
-        cli_jsonint(header, "RawFlags", hwp5->flags);
+        metadata_ret = hwp5_record_metadata(
+            ctx, cli_jsonint(header, "RawFlags", hwp5->flags),
+            "HWP5 header metadata could not be recorded");
+        if (metadata_ret != CL_SUCCESS)
+            return metadata_ret;
 
         flags = cli_jsonarray(header, "Flags");
         if (!flags) {
@@ -405,40 +422,88 @@ cl_error_t cli_hwp5header(cli_ctx *ctx, hwp5_header_t *hwp5)
         }
 
         if (hwp5->flags & HWP5_COMPRESSED) {
-            cli_jsonstr(flags, NULL, "HWP5_COMPRESSED");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_COMPRESSED"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_PASSWORD) {
-            cli_jsonstr(flags, NULL, "HWP5_PASSWORD");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_PASSWORD"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_DISTRIBUTABLE) {
-            cli_jsonstr(flags, NULL, "HWP5_DISTRIBUTABLE");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_DISTRIBUTABLE"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_SCRIPT) {
-            cli_jsonstr(flags, NULL, "HWP5_SCRIPT");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_SCRIPT"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_DRM) {
-            cli_jsonstr(flags, NULL, "HWP5_DRM");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_DRM"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_XMLTEMPLATE) {
-            cli_jsonstr(flags, NULL, "HWP5_XMLTEMPLATE");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_XMLTEMPLATE"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_HISTORY) {
-            cli_jsonstr(flags, NULL, "HWP5_HISTORY");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_HISTORY"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_CERT_SIGNED) {
-            cli_jsonstr(flags, NULL, "HWP5_CERT_SIGNED");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_CERT_SIGNED"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_CERT_ENCRYPTED) {
-            cli_jsonstr(flags, NULL, "HWP5_CERT_ENCRYPTED");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_CERT_ENCRYPTED"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_CERT_EXTRA) {
-            cli_jsonstr(flags, NULL, "HWP5_CERT_EXTRA");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_CERT_EXTRA"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_CERT_DRM) {
-            cli_jsonstr(flags, NULL, "HWP5_CERT_DRM");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_CERT_DRM"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
         if (hwp5->flags & HWP5_CCL) {
-            cli_jsonstr(flags, NULL, "HWP5_CCL");
+            metadata_ret = hwp5_record_metadata(
+                ctx, cli_jsonstr(flags, NULL, "HWP5_CCL"),
+                "HWP5 header flag metadata could not be recorded");
+            if (metadata_ret != CL_SUCCESS)
+                return metadata_ret;
         }
     }
 

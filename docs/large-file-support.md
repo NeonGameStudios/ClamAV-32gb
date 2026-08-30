@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HWP5 header metadata record admission — 2026-08-30
+
+`cli_hwp5header()` now propagates `RawVersion`, `RawFlags`, and enabled
+flag-array `cli_json*` failures instead of silently omitting required metadata.
+Each failed record marks the layer incomplete and preserves the original
+status. The injected current-source JSON-wrapper regression
+`test_hwp5_header_metadata_record_failure_is_fail_visible` requires `CL_EMEM`
+and the exact reason `HWP5 header metadata could not be recorded`; the static
+test link wraps `cli_jsonint`, and source guards pin the helper, reason, test,
+and wrapper. Full HWP corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain required.
+
 ## Generic hash-table capacity admission
 
 The shared string and uint32 hash tables and hashsets round requested

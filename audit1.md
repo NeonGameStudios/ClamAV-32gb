@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## HWP5 header metadata record admission — 2026-08-30
+
+`cli_hwp5header()` previously ignored failures from its `RawVersion`,
+`RawFlags`, and flag-array `cli_json*` writes. A metadata-requested HWP5 scan
+could therefore continue after losing required header evidence. The helper
+now returns each record failure, marks the layer incomplete, and preserves the
+original status. The injected current-source JSON-wrapper regression
+`test_hwp5_header_metadata_record_failure_is_fail_visible` requires `CL_EMEM`
+and the exact sticky reason `HWP5 header metadata could not be recorded`;
+source guards and the production static-test link now include the `cli_jsonint`
+wrapper. Full HWP corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## 7-Zip individual-allocation ceiling — 2026-08-29
 
 The vendored 7-Zip parser previously rejected only native-size overflow in
