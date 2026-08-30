@@ -3040,6 +3040,83 @@ START_TEST(test_cl_load_rejects_null_arguments)
 }
 END_TEST
 
+START_TEST(test_cvd_info_member_size_is_checked)
+{
+    static const char header[] = "ClamAV-VDB:time:5:1:1:X:X:builder:1\n";
+    static const char *invalid_sizes[] = {"", "not-a-size"};
+    char oversized[32];
+    char file_path[PATH_MAX];
+    char contents[256];
+    struct cl_engine *engine;
+    struct cli_dbio dbio;
+    unsigned int sigs;
+    size_t contents_size;
+    size_t i;
+    FILE *fs;
+    int fd;
+    int written;
+    cl_error_t ret;
+
+    snprintf(oversized, sizeof(oversized), "%llu", (unsigned long long)UINT_MAX + 1ULL);
+
+    for (i = 0; i < sizeof(invalid_sizes) / sizeof(invalid_sizes[0]) + 1U; i++) {
+        const char *size_text = i < sizeof(invalid_sizes) / sizeof(invalid_sizes[0]) ? invalid_sizes[i] : oversized;
+        cl_error_t expected = i < sizeof(invalid_sizes) / sizeof(invalid_sizes[0]) ? CL_EMALFDB : CL_ERESOURCE;
+
+        written = snprintf(contents, sizeof(contents), "%stest.hdb:%s:%064d\n", header, size_text, 0);
+        ck_assert_int_gt(written, 0);
+        ck_assert_uint_lt((size_t)written, sizeof(contents));
+
+        snprintf(file_path, sizeof(file_path), "%s/cvd-info-size-%ld.info", tmpdir, (long)getpid());
+        fd = open(file_path, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0600);
+        ck_assert_int_ge(fd, 0);
+        ck_assert_int_eq(write(fd, contents, (size_t)written), written);
+        ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+        fs = fdopen(fd, "rb");
+        ck_assert_ptr_nonnull(fs);
+
+        memset(&dbio, 0, sizeof(dbio));
+        dbio.fs = fs;
+        dbio.size = (unsigned int)written;
+        engine = cl_engine_new();
+        ck_assert_ptr_nonnull(engine);
+        sigs = 0;
+
+        ret = cli_load(file_path, engine, &sigs, CL_DB_UNSIGNED, &dbio, NULL);
+        ck_assert_int_eq(ret, expected);
+        ck_assert_int_eq(fclose(fs), 0);
+        cl_engine_free(engine);
+        ck_assert_int_eq(unlink(file_path), 0);
+    }
+
+    written = snprintf(contents, sizeof(contents), "%stest.hdb:44:%064d\n", header, 0);
+    ck_assert_int_gt(written, 0);
+    contents_size = (size_t)written;
+    snprintf(file_path, sizeof(file_path), "%s/cvd-info-size-valid-%ld.info", tmpdir, (long)getpid());
+    fd = open(file_path, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0600);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(write(fd, contents, contents_size), (ssize_t)contents_size);
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    fs = fdopen(fd, "rb");
+    ck_assert_ptr_nonnull(fs);
+
+    memset(&dbio, 0, sizeof(dbio));
+    dbio.fs = fs;
+    dbio.size = (unsigned int)contents_size;
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    sigs = 0;
+    ret = cli_load(file_path, engine, &sigs, CL_DB_UNSIGNED, &dbio, NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_ptr_nonnull(engine->dbinfo);
+    ck_assert_ptr_nonnull(engine->dbinfo->next);
+    ck_assert_uint_eq(engine->dbinfo->next->size, 44);
+    ck_assert_int_eq(fclose(fs), 0);
+    cl_engine_free(engine);
+    ck_assert_int_eq(unlink(file_path), 0);
+}
+END_TEST
+
 START_TEST(test_openioc_malformed_xml_is_fail_visible)
 {
     static const char *fixtures[] = {
@@ -47975,6 +48052,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cvd, test_cl_load);
     tcase_add_test(tc_cvd, test_cl_load_rejects_null_arguments);
+    tcase_add_test(tc_cvd, test_cvd_info_member_size_is_checked);
     tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_cryptff);

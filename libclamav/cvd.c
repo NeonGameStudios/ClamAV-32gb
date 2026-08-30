@@ -271,6 +271,14 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
                 if (block[i] != '\0')
                     return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
             }
+            if (dbinfo) {
+                for (db = dbinfo; db; db = db->next) {
+                    if (!db->loaded) {
+                        cli_errmsg("cli_tgzload: File %s listed in .info was not found\n", db->name);
+                        return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
+                    }
+                }
+            }
             break;
         }
 
@@ -324,7 +332,7 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
             ret = cli_load(name, engine, signo, options, dbio, sign_verifier);
             if (ret) {
                 cli_errmsg("cli_tgzload: Can't load %s\n", name);
-                return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
+                return cli_tgzload_fail(compr, dbio, fdd, ret);
             }
             if (!dbinfo) {
                 if (dbio->size != 0) {
@@ -338,6 +346,10 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
                     db = db->next;
                 if (!db) {
                     cli_errmsg("cli_tgzload: File %s not found in .info\n", name);
+                    return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
+                }
+                if (db->loaded) {
+                    cli_errmsg("cli_tgzload: File %s appears more than once\n", name);
                     return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
                 }
                 if (db->size != dbio->bread) {
@@ -355,6 +367,7 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
                         return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
                     }
                 }
+                db->loaded = true;
             }
         }
         pad = size % TAR_BLOCKSIZE ? (TAR_BLOCKSIZE - (size % TAR_BLOCKSIZE)) : 0;
@@ -669,7 +682,7 @@ cl_error_t cli_cvdload(
     if (engine == NULL || filename == NULL)
         return CL_ENULLARG;
 
-    dbio.hashctx = NULL;
+    memset(&dbio, 0, sizeof(dbio));
 
     cli_dbgmsg("in cli_cvdload()\n");
 

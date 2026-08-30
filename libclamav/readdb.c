@@ -2757,6 +2757,36 @@ static int cli_loadftm(FILE *fs, struct cl_engine *engine, unsigned int options,
 #define INFO_NSTR "11088894983048545473659556106627194923928941791795047620591658697413581043322715912172496806525381055880964520618400224333320534660299233983755341740679502866829909679955734391392668378361221524205396631090105151641270857277080310734320951653700508941717419168723942507890702904702707587451621691050754307850383399865346487203798464178537392211402786481359824461197231102895415093770394216666324484593935762408468516826633192140826667923494822045805347809932848454845886971706424360558667862775876072059437703365380209101697738577515476935085469455279994113145977994084618328482151013142393373316337519977244732747977"
 #define INFO_ESTR "100002049"
 #define INFO_TOKENS 3
+
+static cl_error_t cli_loadinfo_parse_size(const char *text, size_t *value)
+{
+    const unsigned char *cursor;
+    uint64_t parsed = 0;
+
+    if (!text || !*text || !value)
+        return CL_EMALFDB;
+
+    for (cursor = (const unsigned char *)text; *cursor; cursor++) {
+        uint64_t digit;
+
+        if (*cursor < '0' || *cursor > '9')
+            return CL_EMALFDB;
+        digit = (uint64_t)(*cursor - '0');
+        if (parsed > (UINT64_MAX - digit) / 10U)
+            return CL_ERESOURCE;
+        parsed = parsed * 10U + digit;
+    }
+
+    /* cli_dbio stores member sizes in unsigned int, even though the
+     * metadata node itself uses size_t. Reject values that the loader
+     * cannot account for before publishing the node. */
+    if (parsed > (uint64_t)UINT_MAX || parsed > (uint64_t)SIZE_MAX)
+        return CL_ERESOURCE;
+
+    *value = (size_t)parsed;
+    return CL_SUCCESS;
+}
+
 static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options, struct cli_dbio *dbio)
 {
     const char *tokens[INFO_TOKENS + 1];
@@ -2806,7 +2836,7 @@ static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options
                 ret = CL_EMALFDB;
                 break;
             }
-            last = engine->dbinfo = (struct cli_dbinfo *)MPOOL_CALLOC(engine->mempool, 1, sizeof(struct cli_bm_patt));
+            last = engine->dbinfo = (struct cli_dbinfo *)MPOOL_CALLOC(engine->mempool, 1, sizeof(struct cli_dbinfo));
             if (!engine->dbinfo) {
                 ret = CL_EMEM;
                 break;
@@ -2842,14 +2872,13 @@ static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options
             break;
         }
 
-        if (!cli_isnumber(tokens[1])) {
+        ret = cli_loadinfo_parse_size(tokens[1], &new->size);
+        if (ret != CL_SUCCESS) {
             cli_errmsg("cli_loadinfo: Invalid value in the size field\n");
             MPOOL_FREE(engine->mempool, new->name);
             MPOOL_FREE(engine->mempool, new);
-            ret = CL_EMALFDB;
             break;
         }
-        new->size = atoi(tokens[1]);
 
         if (strlen(tokens[2]) != 64 || !(new->hash = CLI_MPOOL_HEX2STR(engine->mempool, tokens[2]))) {
             cli_errmsg("cli_loadinfo: Malformed SHA2-256 string at line %u\n", line);
@@ -2864,15 +2893,15 @@ static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options
 
     if (!(options & CL_DB_UNSIGNED) && !dsig) {
         cli_errmsg("cli_loadinfo: Digital signature not found\n");
-        return CL_EMALFDB;
+        ret = CL_EMALFDB;
     }
 
     if (ret) {
         cli_errmsg("cli_loadinfo: Problem parsing database at line %u\n", line);
-        return ret;
     }
 
-    return CL_SUCCESS;
+    cl_hash_destroy(ctx);
+    return ret;
 }
 
 #define IGN_MAX_TOKENS 3

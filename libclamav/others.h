@@ -299,6 +299,7 @@ struct cli_dbinfo {
     char *hash;
     size_t size;
     struct cl_cvd *cvd;
+    bool loaded;
     struct cli_dbinfo *next;
 };
 

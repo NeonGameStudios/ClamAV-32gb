@@ -8620,3 +8620,18 @@ qualification as required evidence.
   test/build environment supports it. Keep complete RTF corpus, sanitizer,
   production-CVD/service, materialized large-file, Sonic1, and final
   parser-family qualification open.
+
+## CVD metadata-member admission — 2026-08-30
+
+- Keep `.info` member sizes behind digit-only, checked decimal accumulation;
+  malformed values return `CL_EMALFDB`, values outside both `size_t` and the
+  `cli_dbio` `unsigned int` accounting range return `CL_ERESOURCE`, and no
+  partially parsed metadata node is published as valid.
+- Require the second CVD/CLD/CUD TAR pass to consume each `.info`-listed
+  database member exactly once, reject duplicate or missing members, preserve
+  inner loader status, and release the `.info` hash context on all exits.
+- Retain `test_cvd_info_member_size_is_checked` and the source guards;
+  current-source production-linked execution, malformed/duplicate/missing
+  member fixtures, complete CVD corpus, production-CVD/service, sanitizer,
+  materialized-large-file, Sonic1, and final release qualification remain
+  required.

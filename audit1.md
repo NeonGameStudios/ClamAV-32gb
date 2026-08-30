@@ -15743,6 +15743,33 @@ and frees the optional result when the caller does not request `files`. Source
 guards pin each boundary; existing OLE2 map/XLM, corpus, and reader
 sanitizer evidence remains partial, so parser-family, production-CVD/service,
 materialized-large-file, Sonic1, and final release qualification stay open.
+
+## CVD metadata-member admission audit — 2026-08-30
+
+The CVD/CLD/CUD `.info` loader parsed embedded member sizes with `atoi()` even
+though the subsequent `cli_dbio` accounting field is an `unsigned int`. Empty,
+malformed, or oversized decimal fields could therefore be accepted as zero or
+published with implementation-defined narrowing. The header metadata node was
+also allocated using the unrelated `struct cli_bm_patt` size, and the `.info`
+hash context was leaked on completed and error returns.
+
+The loader now performs digit-only decimal accumulation with explicit
+`size_t`/`UINT_MAX` admission, returns `CL_ERESOURCE` for an unrepresentable
+member size, allocates the exact metadata-node type, and destroys the hash
+context after parsing. The second TAR pass now preserves the inner database
+loader status, rejects duplicate listed members, marks only completely loaded
+and checksum-validated members as consumed, and rejects any `.info`-listed
+member missing at the archive terminator. The new
+`test_cvd_info_member_size_is_checked` regression covers empty, malformed,
+oversized, and valid metadata sizes; source guards pin the parser,
+allocation, cleanup, and exact-consumption contract.
+
+Matching generated-header production-GCC object checks pass for the current
+`cvd.c` and `readdb.c`. The monolithic Docker unit translation remains blocked
+by the existing mixed source/generated-header snapshot (unrelated mmap/PDF
+ABI failures), so current-object execution, duplicate/missing-member archive
+fixtures, complete CVD corpus, production-CVD/service, sanitizer,
+materialized-large-file, Sonic1, and final release qualification remain open.
 ## XAR checksum-value allocation admission — 2026-08-30
 
 The XAR TOC checksum parser duplicated valid-length archived and extracted
