@@ -602,7 +602,7 @@ typedef off_t (*clcb_pread)(void *handle, void *buf, size_t count, off_t offset)
  * @param handle        A handle that may be accessed using lseek + read.
  * @param offset        Initial offset to start scanning.
  * @param len           Length of the data from the start (not the offset).
- * @param pread_cb      A callback function to read data from the handle.
+ * @param pread_cb      A non-NULL callback function to read data from the handle.
  * @param use_aging     Set to a non-zero value to enable aging.
  * @return cl_fmap_t*   A map representing the handle interface.
  */

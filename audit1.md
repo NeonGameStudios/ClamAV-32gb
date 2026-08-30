@@ -15858,3 +15858,16 @@ arguments. Source guards and the current-source GCC syntax check are required
 evidence; full SWF corpus, production-linked execution, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
+
+## Public fmap handle admission — 2026-08-30
+
+The public `cl_fmap_open_handle()` constructor accepted a null read callback,
+leaving a map that would later call through a null function pointer. Its
+source offset is stored as native `size_t` but delivered to the callback as
+`off_t`; on builds where those ranges differ, a positive native offset could
+also convert to a different, valid-looking callback coordinate. Admission now
+requires a non-NULL callback and a successful `size_t` to `off_t` round-trip
+before map allocation. The registered callback/offset regression and source
+guards cover both boundaries. Complete public-ingress parity, current-object
+execution, sanitizer, materialized-large-file, Sonic1, and final release
+qualification remain open.

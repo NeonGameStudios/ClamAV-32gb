@@ -92,6 +92,17 @@ static inline uint64_t fmap_align_to(uint64_t sz, uint64_t al);
 static inline uint64_t fmap_which_page(fmap_t *m, size_t at);
 static inline fmap_t *fmap_aging_owner(fmap_t *m);
 
+/* The public handle fmap stores its source position as size_t but passes it
+ * to a callback whose coordinate type is off_t.  Require a round-trip so an
+ * unrepresentable positive size_t cannot become a different, valid-looking
+ * off_t coordinate on a narrower or differently signed build. */
+static int fmap_offset_fits_off_t(size_t offset)
+{
+    off_t converted = (off_t)offset;
+
+    return converted >= 0 && (size_t)converted == offset;
+}
+
 #ifdef ANONYMOUS_MAP
 static void fmap_release_gets_pages(fmap_t *m, uint64_t first_page, uint64_t last_page);
 #endif
@@ -458,7 +469,19 @@ cl_fmap_t *fmap_open_handle(void *handle, size_t offset, size_t len,
     cl_fmap_t *m = NULL;
     int pgsz     = cli_getpagesize();
 
-    if (pgsz <= 0 || (off_t)offset < 0 || offset % (size_t)pgsz != 0) {
+    if (pgsz <= 0) {
+        cli_warnmsg("fmap: invalid page size\n");
+        goto done;
+    }
+    if (pread_cb == NULL) {
+        cli_warnmsg("fmap: attempted mapping without a read callback\n");
+        goto done;
+    }
+    if (!fmap_offset_fits_off_t(offset)) {
+        cli_warnmsg("fmap: source offset is not representable by off_t\n");
+        goto done;
+    }
+    if (offset % (size_t)pgsz != 0) {
         cli_warnmsg("fmap: attempted mapping with unaligned offset\n");
         goto done;
     }

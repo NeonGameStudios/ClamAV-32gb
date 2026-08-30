@@ -8667,3 +8667,12 @@ qualification as required evidence.
   guards; complete SWF corpus, production-linked execution, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, and final parser/release qualification remain required.
+
+## Public fmap handle admission — 2026-08-30
+
+- Keep `cl_fmap_open_handle()` fail-closed for a null read callback and reject
+  source offsets that cannot round-trip through the callback's `off_t`
+  coordinate before allocating the map. Retain the callback/offset regression
+  and source guards; complete public-ingress parity, current-object execution,
+  sanitizer, materialized-large-file, Sonic1, and final release qualification
+  remain required.

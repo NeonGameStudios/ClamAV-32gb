@@ -5018,6 +5018,37 @@ START_TEST(test_fmap_handle_accepts_tail_window_at_large_source_offset)
 }
 END_TEST
 
+START_TEST(test_fmap_handle_rejects_invalid_callback_and_source_offset)
+{
+    static const unsigned char data[] = "callback-admission";
+    struct offset_pread_state state;
+    cl_fmap_t *map;
+    int pgsz;
+    size_t invalid_offset;
+
+    state.data          = data;
+    state.length        = sizeof(data) - 1U;
+    state.source_offset = 0;
+
+    map = cl_fmap_open_handle(&state, 0, state.length, NULL, 0);
+    ck_assert_ptr_null(map);
+
+    pgsz = cli_getpagesize();
+    if (pgsz <= 0 || SIZE_MAX <= (size_t)INT64_MAX)
+        return;
+
+    /* INT64_MAX + page size + 1 is page-aligned and above the signed
+     * 64-bit range on the production Linux x86-64 build.  Skip the case on a
+     * platform whose off_t is wider or unsigned. */
+    invalid_offset = (size_t)INT64_MAX + (size_t)pgsz + 1U;
+    if ((off_t)invalid_offset >= 0 && (size_t)(off_t)invalid_offset == invalid_offset)
+        return;
+
+    map = cl_fmap_open_handle(&state, invalid_offset, state.length, offset_pread_cb, 0);
+    ck_assert_ptr_null(map);
+}
+END_TEST
+
 #ifdef ANONYMOUS_MAP
 #define TEST_FM_MASK_PAGED 0x40000000U
 #define TEST_FMAP_AGING_SCAN_BUDGET 8192U
@@ -49741,6 +49772,7 @@ static Suite *test_cl_suite(void)
 #if !defined(_WIN32) && defined(ANONYMOUS_MAP)
     tcase_add_test(tc_cl_scan, test_fmap_aging_is_bounded_and_wraps);
     tcase_add_test(tc_cl_scan, test_fmap_handle_accepts_tail_window_at_large_source_offset);
+    tcase_add_test(tc_cl_scan, test_fmap_handle_rejects_invalid_callback_and_source_offset);
     tcase_add_test(tc_cl_scan, test_fmap_gets_releases_read_pages);
     tcase_add_test(tc_cl_scan, test_fmap_release_unlocked_evicts_whole_subject_pages);
     tcase_add_test(tc_cl_scan, test_metadata_hash_read_failure_is_fail_visible);
