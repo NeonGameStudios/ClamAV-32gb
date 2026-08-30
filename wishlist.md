@@ -8685,3 +8685,11 @@ qualification as required evidence.
   OpenIOC corpus, allocator-fault, current-object, sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final release
   qualification remain required.
+
+## GPT native header-position coordinate — 2026-08-30
+
+- Keep GPT primary and secondary physical-header positions in native `size_t`
+  coordinates through fmap range validation and reads; do not narrow the
+  secondary position through `off_t`. Retain the source guard and add
+  current-object, complete GPT/partition corpus, sanitizer,
+  materialized-large-file, Sonic1, and final release qualification evidence.

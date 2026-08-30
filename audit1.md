@@ -15884,3 +15884,14 @@ nodes. The existing malformed-XML regression now also builds a 130-level
 fixture, and source guards pin the cap and recursive call. Complete OpenIOC
 corpus, allocator-fault, current-object, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final release qualification remain open.
+
+## GPT native header-position coordinate — 2026-08-30
+
+`cli_scangpt()` stored the primary/secondary header position in `off_t` even
+though `gpt_read()` and the fmap API use native `size_t` coordinates. On a
+build with a narrower `off_t`, a large valid map could narrow the secondary
+header position before range validation. The position now remains `size_t`
+from physical-header selection through the bounded read. The source guard pins
+the correction; complete GPT/partition corpus, current-object execution,
+sanitizer, materialized-large-file, Sonic1, and final release qualification
+remain open.

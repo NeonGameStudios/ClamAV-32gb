@@ -178,7 +178,7 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
     cl_error_t header_status;
     bool secondary_header_incomplete = false;
     size_t maplen;
-    off_t pos = 0;
+    size_t pos = 0;
 
     gpt_parsemsg("The beginning of something big: GPT parsing\n");
 
