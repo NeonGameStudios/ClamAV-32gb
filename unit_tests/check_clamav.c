@@ -3024,6 +3024,22 @@ START_TEST(test_cl_load)
 }
 END_TEST
 
+START_TEST(test_cl_load_rejects_null_arguments)
+{
+    struct cl_engine *engine;
+    unsigned int sigs = 0;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+
+    ck_assert_int_eq(cl_load(NULL, engine, &sigs, CL_DB_STDOPT), CL_ENULLARG);
+    ck_assert_int_eq(cl_load("test.hdb", NULL, &sigs, CL_DB_STDOPT), CL_ENULLARG);
+    ck_assert_int_eq(cl_load("test.hdb", engine, NULL, CL_DB_STDOPT), CL_ENULLARG);
+
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_openioc_malformed_xml_is_fail_visible)
 {
     static const char *fixtures[] = {
@@ -47913,6 +47929,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cvd, test_cvd_directory_readdir_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cvd, test_cl_load);
+    tcase_add_test(tc_cvd, test_cl_load_rejects_null_arguments);
     tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_cryptff);
@@ -48871,6 +48888,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_cvdparse);
     tcase_add_test(tc_cl, test_cl_cvdparse_rejects_invalid_numeric_fields);
     tcase_add_test(tc_cl, test_cl_load);
+    tcase_add_test(tc_cl, test_cl_load_rejects_null_arguments);
     tcase_add_test(tc_cl, test_openioc_malformed_xml_is_fail_visible);
     tcase_add_test(tc_cl, test_cl_cvdverify);
     tcase_add_test(tc_cl, test_cl_statinidir);

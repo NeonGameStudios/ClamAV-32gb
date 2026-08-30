@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Signature database loader API admission — 2026-08-30
+
+The public `cl_load()` entry now rejects missing path, engine, or signature
+count output arguments with `CL_ENULLARG` before filesystem or parser access.
+The registered API regression covers all three null states; current-source
+GCC syntax evidence is recorded, while complete signature-database,
+production-CVD/service, sanitizer, materialized-large-file, Sonic1, and final
+release qualification remain required.
+
 ## 7-Zip stream callback result admission — 2026-08-30
 
 The vendored 7-Zip stream adapters now reject callback byte counts larger than

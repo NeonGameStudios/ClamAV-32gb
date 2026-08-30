@@ -1,5 +1,15 @@
 # Independent read-only audit of audit.md
 
+## Signature database loader API admission — 2026-08-30
+
+The public `cl_load()` entry validated its engine but allowed a null path to
+reach `stat()` and a null signature-count output pointer to reach loader and
+progress paths. It now rejects missing path, engine, or `signo` arguments with
+`CL_ENULLARG` before filesystem or database access. The registered regression
+covers all three states. Complete signature-database, production-CVD/service,
+sanitizer, materialized-large-file, Sonic1, and final release qualification
+remain open.
+
 ## Matcher pattern-length admission — 2026-08-30
 
 The AC and BM matcher records store pattern lengths in 16-bit fields, but

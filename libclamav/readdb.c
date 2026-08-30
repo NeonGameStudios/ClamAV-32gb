@@ -5528,8 +5528,18 @@ cl_error_t cl_load(const char *path, struct cl_engine *engine, unsigned int *sig
     void *sign_verifier          = NULL;
     FFIError *new_verifier_error = NULL;
 
+    if (!path) {
+        cli_errmsg("cl_load: path == NULL\n");
+        return CL_ENULLARG;
+    }
+
     if (!engine) {
         cli_errmsg("cl_load: engine == NULL\n");
+        return CL_ENULLARG;
+    }
+
+    if (!signo) {
+        cli_errmsg("cl_load: signo == NULL\n");
         return CL_ENULLARG;
     }
 

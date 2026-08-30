@@ -1,5 +1,14 @@
 # Wishlist
 
+## Signature database loader API admission — 2026-08-30
+
+- Reject null `cl_load()` path, engine, and signature-count output arguments
+  before filesystem or parser access; preserve the explicit `CL_ENULLARG`
+  contract with a registered regression and source guard.
+- Complete signature-database, production-CVD/service, sanitizer,
+  materialized-large-file, Sonic1, and final release qualification remain
+  required.
+
 ## Matcher pattern-length admission — 2026-08-30
 
 - Reject AC and BM body signatures whose base or expanded lengths cannot be
