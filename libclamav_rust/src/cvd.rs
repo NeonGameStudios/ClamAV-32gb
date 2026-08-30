@@ -501,6 +501,17 @@ pub unsafe extern "C" fn cvd_check(
     signer_name: *mut *mut c_char,
     err: *mut *mut FFIError,
 ) -> bool {
+    if err.is_null() {
+        warn!("err is NULL");
+        return false;
+    }
+    if signer_name.is_null() {
+        return ffi_error!(
+            err = err,
+            Error::CannotVerify("signer_name output parameter is NULL".to_string())
+        );
+    }
+
     let cvd_file_path_str = validate_str_param!(cvd_file_path_str);
     let cvd_file_path = match Path::new(cvd_file_path_str).canonicalize() {
         Ok(p) => p,
@@ -571,6 +582,17 @@ pub unsafe extern "C" fn cvd_unpack(
     destination_path_str: *const c_char,
     err: *mut *mut FFIError,
 ) -> bool {
+    if err.is_null() {
+        warn!("err is NULL");
+        return false;
+    }
+    if cvd.is_null() {
+        return ffi_error!(
+            err = err,
+            Error::CannotVerify("CVD pointer is NULL".to_string())
+        );
+    }
+
     let mut cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
 
     let destination_path_str = validate_str_param!(destination_path_str);
@@ -609,6 +631,11 @@ pub unsafe extern "C" fn cvd_open(
     cvd_file_path_str: *const c_char,
     err: *mut *mut FFIError,
 ) -> *mut c_void {
+    if err.is_null() {
+        warn!("err is NULL");
+        return std::ptr::null_mut();
+    }
+
     let cvd_file_path_str = validate_str_param_null!(cvd_file_path_str);
     let cvd_file_path = match Path::new(cvd_file_path_str).canonicalize() {
         Ok(p) => p,
@@ -648,6 +675,23 @@ pub unsafe extern "C" fn cvd_verify(
     signer_name: *mut *mut c_char,
     err: *mut *mut FFIError,
 ) -> bool {
+    if err.is_null() {
+        warn!("err is NULL");
+        return false;
+    }
+    if cvd.is_null() {
+        return ffi_error!(
+            err = err,
+            Error::CannotVerify("CVD pointer is NULL".to_string())
+        );
+    }
+    if signer_name.is_null() {
+        return ffi_error!(
+            err = err,
+            Error::CannotVerify("signer_name output parameter is NULL".to_string())
+        );
+    }
+
     let mut cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
 
     if verifier_ptr.is_null() {
@@ -704,6 +748,11 @@ pub unsafe extern "C" fn cvd_free(cvd: *mut c_void) {
 /// The CVD pointer must be valid
 #[export_name = "cvd_get_time_creation"]
 pub unsafe extern "C" fn cvd_get_time_creation(cvd: *const c_void) -> u64 {
+    if cvd.is_null() {
+        warn!("cvd is NULL");
+        return 0;
+    }
+
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
     cvd.time_creation
         .duration_since(SystemTime::UNIX_EPOCH)
@@ -721,6 +770,11 @@ pub unsafe extern "C" fn cvd_get_time_creation(cvd: *const c_void) -> u64 {
 /// The CVD pointer must be valid
 #[export_name = "cvd_get_version"]
 pub unsafe extern "C" fn cvd_get_version(cvd: *const c_void) -> u32 {
+    if cvd.is_null() {
+        warn!("cvd is NULL");
+        return 0;
+    }
+
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
     cvd.version
 }
@@ -736,6 +790,11 @@ pub unsafe extern "C" fn cvd_get_version(cvd: *const c_void) -> u32 {
 /// The caller is responsible for freeing the C string. See `ffi_cstring_free`.
 #[export_name = "cvd_get_name"]
 pub unsafe extern "C" fn cvd_get_name(cvd: *const c_void) -> *mut c_char {
+    if cvd.is_null() {
+        warn!("cvd is NULL");
+        return std::ptr::null_mut();
+    }
+
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
 
     CString::new(cvd.name.clone()).unwrap().into_raw()
@@ -751,6 +810,11 @@ pub unsafe extern "C" fn cvd_get_name(cvd: *const c_void) -> *mut c_char {
 /// The CVD pointer must be valid
 #[export_name = "cvd_get_num_sigs"]
 pub unsafe extern "C" fn cvd_get_num_sigs(cvd: *const c_void) -> u32 {
+    if cvd.is_null() {
+        warn!("cvd is NULL");
+        return 0;
+    }
+
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
     cvd.num_sigs
 }
@@ -765,6 +829,11 @@ pub unsafe extern "C" fn cvd_get_num_sigs(cvd: *const c_void) -> u32 {
 /// The CVD pointer must be valid
 #[export_name = "cvd_get_min_flevel"]
 pub unsafe extern "C" fn cvd_get_min_flevel(cvd: *const c_void) -> u32 {
+    if cvd.is_null() {
+        warn!("cvd is NULL");
+        return 0;
+    }
+
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
     cvd.min_flevel
 }
@@ -780,6 +849,11 @@ pub unsafe extern "C" fn cvd_get_min_flevel(cvd: *const c_void) -> u32 {
 /// The CVD pointer must be valid
 #[export_name = "cvd_get_builder"]
 pub unsafe extern "C" fn cvd_get_builder(cvd: *const c_void) -> *mut c_char {
+    if cvd.is_null() {
+        warn!("cvd is NULL");
+        return std::ptr::null_mut();
+    }
+
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
     CString::new(cvd.builder.clone()).unwrap().into_raw()
 }
@@ -797,6 +871,11 @@ pub unsafe extern "C" fn cvd_get_builder(cvd: *const c_void) -> *mut c_char {
 #[cfg(any(unix))]
 #[export_name = "cvd_get_file_descriptor"]
 pub unsafe extern "C" fn cvd_get_file_descriptor(cvd: *const c_void) -> i32 {
+    if cvd.is_null() {
+        warn!("cvd is NULL");
+        return -1;
+    }
+
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
 
     cvd.file.as_raw_fd()
@@ -815,7 +894,56 @@ pub unsafe extern "C" fn cvd_get_file_descriptor(cvd: *const c_void) -> i32 {
 #[cfg(any(windows))]
 #[export_name = "cvd_get_file_handle"]
 pub unsafe extern "C" fn cvd_get_file_handle(cvd: *const c_void) -> *mut c_void {
+    if cvd.is_null() {
+        warn!("cvd is NULL");
+        return std::ptr::null_mut();
+    }
+
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
 
     cvd.file.as_raw_handle()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ffi_null_arguments_are_fail_visible() {
+        unsafe {
+            assert!(!cvd_check(
+                std::ptr::null(),
+                std::ptr::null(),
+                false,
+                false,
+                std::ptr::null_mut(),
+                std::ptr::null_mut()
+            ));
+            assert!(!cvd_unpack(
+                std::ptr::null_mut(),
+                std::ptr::null(),
+                std::ptr::null_mut()
+            ));
+            assert!(cvd_open(std::ptr::null(), std::ptr::null_mut()).is_null());
+            assert!(!cvd_verify(
+                std::ptr::null(),
+                std::ptr::null(),
+                false,
+                std::ptr::null_mut(),
+                std::ptr::null_mut()
+            ));
+
+            assert_eq!(cvd_get_time_creation(std::ptr::null()), 0);
+            assert_eq!(cvd_get_version(std::ptr::null()), 0);
+            assert!(cvd_get_name(std::ptr::null()).is_null());
+            assert_eq!(cvd_get_num_sigs(std::ptr::null()), 0);
+            assert_eq!(cvd_get_min_flevel(std::ptr::null()), 0);
+            assert!(cvd_get_builder(std::ptr::null()).is_null());
+
+            #[cfg(unix)]
+            assert_eq!(cvd_get_file_descriptor(std::ptr::null()), -1);
+            #[cfg(windows)]
+            assert!(cvd_get_file_handle(std::ptr::null()).is_null());
+        }
+    }
 }

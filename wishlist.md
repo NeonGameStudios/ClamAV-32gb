@@ -8027,3 +8027,15 @@ final qualification as open.
   available; retain complete OneNote corpus, current full-C ABI, sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final release
   qualification as required evidence.
+qualification as required evidence.
+
+## CVD Rust FFI null-pointer admission — 2026-08-30
+
+- Keep raw CVD parse, open, unpack, and verify entry points fail-visible when
+  their error/output pointers or CVD handle is null; no `ffi_error!` macro or
+  `Box::from_raw()` call may be reached with an invalid boundary argument.
+- Keep raw CVD getters null-safe with documented sentinel returns, and retain
+  `ffi_null_arguments_are_fail_visible` plus the source guards. Current
+  Rust/C ABI execution, complete CVD corpus, production-CVD/service,
+  sanitizer, materialized-large-file, Sonic1, and final release qualification
+  remain required.

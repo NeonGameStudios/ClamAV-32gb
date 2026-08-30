@@ -14948,3 +14948,25 @@ panic message.
 A direct injected-panic execution case remains desirable; complete OneNote
 corpus, current full-C ABI, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final release qualification remain open.
+materialized-large-file, Sonic1, and final parser/release qualification remain open.
+
+## CVD Rust FFI null-pointer admission — 2026-08-30
+
+The raw Rust CVD interface previously converted a caller-supplied CVD handle
+to `Box<CVD>` before checking it, allowed a null error receiver to reach the
+error macros' panic paths, and wrote signer output through an unchecked
+pointer. Its metadata getters likewise formed a Rust reference from a null
+handle, making an invalid service or C caller capable of undefined behavior.
+
+`cvd_check`, `cvd_unpack`, `cvd_open`, and `cvd_verify` now reject missing
+error/output pointers before any macro or dereference, and reject a null CVD
+handle with a fail-visible error where an error channel exists. All raw CVD
+getters return documented sentinel values for a null handle, while
+`cvd_free` retains its existing null-safe behavior. The
+`ffi_null_arguments_are_fail_visible` Rust regression and source guards pin
+the no-unwind/no-dereference boundary.
+
+Current Rust dependency compilation remains constrained by the host's missing
+OpenSSL development discovery, and the full C ABI, production-CVD/service,
+sanitizer, materialized-large-file, Sonic1, and final release qualification
+remain open.
