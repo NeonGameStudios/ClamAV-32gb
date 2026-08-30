@@ -16179,8 +16179,9 @@ The Rust signing and detached-verification helpers previously used unbounded
 `std::fs::read()`/`read_to_end()` materialization for their target file. Both
 operations now pass through a metadata-preflighted helper capped at the 1 GiB
 individual-allocation boundary, with `try_reserve_exact()` and a fixed 64 KiB
-read buffer; a file that grows beyond its admitted size becomes an explicit
-verification failure. Certificate and signing-key reads now use the same
+read buffer; a file that grows, shrinks, or otherwise changes beyond its
+admitted size becomes an explicit verification failure. Certificate and
+signing-key reads now use the same
 helper, so no code-signing file input bypasses the bound. The sparse
 oversized-file regression and source guards cover the boundary, and the cached
 Rust 1.97.1 Docker check passes. Full

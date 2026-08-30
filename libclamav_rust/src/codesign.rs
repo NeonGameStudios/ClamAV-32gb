@@ -83,6 +83,13 @@ fn read_bounded_file(path: &Path) -> Result<Vec<u8>, Error> {
         data.extend_from_slice(&buffer[..count]);
     }
 
+    if data.len() != expected_size {
+        return Err(Error::CannotVerify(format!(
+            "File {:?} changed while it was being read",
+            path
+        )));
+    }
+
     Ok(data)
 }
 
