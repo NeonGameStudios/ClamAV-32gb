@@ -16011,3 +16011,18 @@ AC implementation plus matcher test translation unit compile with the
 production warning-enabled GCC flags. Complete matcher corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
+
+## Legacy VBA and PowerPoint seek-result admission — 2026-08-30
+
+The legacy `cli_vba_readdir()` path previously ignored the return values of
+the project-description, extended-project-metadata, module-metadata, and
+terminator `lseek()` calls. A seek failure could therefore leave the parser
+on an untrusted position and allow a partially interpreted project to escape
+the intended failure path. Each metadata skip now checks the seek result and
+breaks the project parse so the scanner's existing caller marks the layer
+incomplete. The PowerPoint LZW helper also records and validates its current
+input offset before using it to construct a temporary output filename. The
+current-source VBA object compiles under the production GCC flags and source
+guards pin the handoffs; complete OLE/VBA/PowerPoint corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.

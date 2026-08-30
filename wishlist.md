@@ -8769,3 +8769,15 @@ qualification as required evidence.
   current-source GCC compilation, complete matcher corpus, sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final release
   qualification remain required.
+
+## Legacy VBA and PowerPoint seek-result admission — 2026-08-30
+
+- Keep every legacy VBA project-directory metadata skip fail-visible when
+  `lseek()` cannot advance the descriptor; the caller must return no project
+  so the owning OLE2 scan records an incomplete result.
+- Keep PowerPoint LZW temporary-file naming behind a checked current input
+  offset; do not format an unchecked `lseek()` result into a path.
+- Retain the source guards and current-source production GCC compile; add
+  deterministic seek-fault execution, complete OLE/VBA/PowerPoint corpus,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final release qualification evidence.

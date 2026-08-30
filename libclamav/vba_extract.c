@@ -2161,26 +2161,44 @@ cli_vba_readdir(const char *dir, struct uniq *U, uint32_t which)
         vba_project->name[i] = hash;
         if (!read_uint16(fd, &length, big_endian))
             break;
-        lseek(fd, length, SEEK_CUR);
+        if (lseek(fd, length, SEEK_CUR) == (off_t)-1) {
+            cli_dbgmsg("vba_readdir: failed to skip project description\n");
+            break;
+        }
 
         if (!read_uint16(fd, &ffff, big_endian))
             break;
         if (ffff == 0xFFFF) {
-            lseek(fd, 2, SEEK_CUR);
+            if (lseek(fd, 2, SEEK_CUR) == (off_t)-1) {
+                cli_dbgmsg("vba_readdir: failed to skip project metadata\n");
+                break;
+            }
             if (!read_uint16(fd, &ffff, big_endian))
                 break;
-            lseek(fd, ffff + 8, SEEK_CUR);
+            if (lseek(fd, ffff + 8, SEEK_CUR) == (off_t)-1) {
+                cli_dbgmsg("vba_readdir: failed to skip extended project metadata\n");
+                break;
+            }
         } else
-            lseek(fd, ffff + 10, SEEK_CUR);
+            if (lseek(fd, ffff + 10, SEEK_CUR) == (off_t)-1) {
+                cli_dbgmsg("vba_readdir: failed to skip project metadata\n");
+                break;
+            }
 
         if (!read_uint16(fd, &byte_count, big_endian))
             break;
-        lseek(fd, (8 * byte_count) + 5, SEEK_CUR);
+        if (lseek(fd, (8 * byte_count) + 5, SEEK_CUR) == (off_t)-1) {
+            cli_dbgmsg("vba_readdir: failed to skip module metadata\n");
+            break;
+        }
         if (!read_uint32(fd, &offset, big_endian))
             break;
         cli_dbgmsg("vba_readdir: offset: %" PRIu32 "\n", offset);
         vba_project->offset[i] = offset;
-        lseek(fd, 2, SEEK_CUR);
+        if (lseek(fd, 2, SEEK_CUR) == (off_t)-1) {
+            cli_dbgmsg("vba_readdir: failed to skip module terminator\n");
+            break;
+        }
     }
 
     if (buf)
@@ -2637,12 +2655,19 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
 {
     int ofd;
     int zret;
+    off_t input_offset;
     z_stream stream;
     unsigned char inbuff[PPT_LZW_BUFFSIZE], outbuff[PPT_LZW_BUFFSIZE];
     char fullname[PATH_MAX + 1];
 
+    input_offset = lseek(fd, 0L, SEEK_CUR);
+    if (input_offset == (off_t)-1) {
+        cli_dbgmsg("ppt_unlzw: failed to record input offset\n");
+        cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream position could not be recorded");
+        return FALSE;
+    }
     snprintf(fullname, sizeof(fullname) - 1, "%s" PATHSEP "ppt%.8lx.doc",
-             dir, (long)lseek(fd, 0L, SEEK_CUR));
+             dir, (long)input_offset);
 
     ofd = open(fullname, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_EXCL,
                S_IWUSR | S_IRUSR);
