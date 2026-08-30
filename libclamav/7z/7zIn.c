@@ -21,8 +21,11 @@ Byte k7zSignature[k7zSignatureSize] = {'7', 'z', 0xBC, 0xAF, 0x27, 0x1C};
 
 static int SzSizeOverflow(UInt32 count, size_t itemSize, size_t extra)
 {
-  return itemSize == 0 ||
-         (size_t)count > ((size_t)-1 - extra) / itemSize;
+  if (itemSize == 0 || extra > (size_t)CLI_MAX_ALLOCATION)
+    return 1;
+
+  return (size_t)count > ((size_t)-1 - extra) / itemSize ||
+         (size_t)count > ((size_t)CLI_MAX_ALLOCATION - extra) / itemSize;
 }
 
 void SzFolder_Free(CSzFolder *p, ISzAlloc *alloc);
@@ -199,6 +202,8 @@ UInt64 GetFilePackSize(int fileIndex) const
   if (sz_count == 0) \
     (p) = 0; \
   else if (sz_count > (size_t)-1 / sizeof(T)) \
+    return SZ_ERROR_MEM; \
+  else if (sz_count > (size_t)CLI_MAX_ALLOCATION / sizeof(T)) \
     return SZ_ERROR_MEM; \
   else if (((p) = (T *)IAlloc_Alloc((alloc), sz_count * sizeof(T))) == 0) \
     return SZ_ERROR_MEM; \

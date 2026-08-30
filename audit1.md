@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip individual-allocation ceiling — 2026-08-29
+
+The vendored 7-Zip parser previously rejected only native-size overflow in
+its declared-count `MY_ALLOC` macro and in the three direct substream metadata
+arrays. The production allocator callback already capped these requests, but
+the parser did not make the shared 1 GiB individual-allocation contract
+explicit before entering the callback. `MY_ALLOC` and `SzSizeOverflow()` now
+reject products above `CLI_MAX_ALLOCATION`, including each trailing sentinel
+allocation, before multiplication or allocation. A crafted FilesInfo count
+regression is registered to require `CL_EMEM`, sticky incomplete state, and a
+non-cacheable fmap without materializing the declared table. The modified
+7-Zip translation unit passes the existing Docker production-GCC syntax check,
+and the source guards pass. Full 7-Zip/BCJ2 corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## Scan recursion-stack admission — 2026-08-29
 
 The top-level scan setup formed the recursion-layer table with a raw

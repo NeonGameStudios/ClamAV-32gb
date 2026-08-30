@@ -1,5 +1,17 @@
 # Wishlist
 
+## 7-Zip individual-allocation ceiling — 2026-08-29
+
+- Keep every vendored 7-Zip declared-count allocation below the shared 1 GiB
+  individual ceiling as well as native-size product admission; include
+  sentinel bytes in direct substream metadata products and fail FilesInfo
+  table admission as `CL_EMEM` before allocation.
+- Retain the crafted allocation-ceiling regression, current-source Docker
+  production-GCC syntax evidence, and source guards. Full 7-Zip/BCJ2 corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, and final parser/release qualification
+  remain open.
+
 ## Generic hash-table capacity and rehash failure visibility — 2026-08-29
 
 - Keep string/u32 hash-table and hashset capacities behind
