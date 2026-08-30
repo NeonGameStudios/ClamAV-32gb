@@ -27364,6 +27364,54 @@ START_TEST(test_7z_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_7z_sfx_weak_candidate_is_rejected_without_incomplete_state)
+{
+    uint8_t data[33] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+    int saved_sdb;
+
+    /* A six-byte signature followed by an all-zero recovery tuple is not
+     * enough to confirm a 7-Zip SFX. The recovery reader needs a real tail
+     * header marker; without one this must remain a weak candidate. */
+    memcpy(data + 1, "7z\xbc\xaf'\x1c", 6);
+    data[7] = 0;
+    data[8] = 4;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    saved_sdb = scan_engine->sdb;
+    scan_engine->sdb = 1;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_TEXT_ASCII", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    scan_engine->sdb = saved_sdb;
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 static size_t sevenzip_sfx_read_failure_offset = SIZE_MAX;
 static size_t sevenzip_sfx_read_failure_length = SIZE_MAX;
 
@@ -47380,6 +47428,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_compressed_cleanup);
     tcase_add_test(tc_compressed_cleanup, test_compressed_cleanup_status_is_fail_visible);
     suite_add_tcase(s, tc_7z_sfx);
+    tcase_add_test(tc_7z_sfx, test_7z_sfx_weak_candidate_is_rejected_without_incomplete_state);
     tcase_add_test(tc_7z_sfx, test_7z_sfx_header_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_7z_sfx_corpus);
     tcase_add_checked_fixture(tc_7z_sfx_corpus, cl_setup, cl_teardown);

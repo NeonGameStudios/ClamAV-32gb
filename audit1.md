@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip SFX recovery admission and unaligned header reads — 2026-08-30
+
+The 7-Zip SFX admission probe previously accepted a complete signature-plus-zero
+recovery tuple even when no recoverable tail header existed. That promoted
+arbitrary payload bytes to a nested parser and could make the containing scan
+incomplete. The probe now requires a recovery marker in the bounded tail,
+validates the start-header CRC for ordinary non-recovery headers, and keeps
+in-range tail read failures as `CL_EREAD`. Its fixed-width header reads are
+bytewise, so odd-offset SFX candidates do not trigger packed-union alignment
+undefined behavior. The isolated current-source Docker GCC oracle passes 4/4
+for weak rejection, valid recovery admission, valid checksummed admission, and
+bad-checksum rejection; the same runner passes under GCC ASan/UBSan. The public
+weak-candidate regression is registered and source-guarded. Current-object
+execution, production-CVD/service, complete SFX corpus, materialized-large-file,
+Sonic1, and final release qualification remain open.
+
 ## 7-Zip zero-length FilesInfo Name — 2026-08-30
 
 The vendored 7-Zip reader accepted a zero-length `Name` property far enough

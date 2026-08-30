@@ -33,6 +33,7 @@
 
 #include "7z/7z.h"
 #include "7z/7zAlloc.h"
+#include "7z/7zCrc.h"
 #include "7z/7zFile.h"
 
 static ISzAlloc allocImp = {__lzma_wrap_alloc, __lzma_wrap_free}, allocTempImp = {__lzma_wrap_alloc, __lzma_wrap_free};
@@ -47,6 +48,20 @@ static cl_error_t cli_7z_checktimelimit(cli_ctx *ctx, const char *reason)
     return ret;
 }
 
+static uint32_t cli_7z_header_u32(const unsigned char *data)
+{
+    return (uint32_t)data[0] |
+           ((uint32_t)data[1] << 8) |
+           ((uint32_t)data[2] << 16) |
+           ((uint32_t)data[3] << 24);
+}
+
+static uint64_t cli_7z_header_u64(const unsigned char *data)
+{
+    return (uint64_t)cli_7z_header_u32(data) |
+           ((uint64_t)cli_7z_header_u32(data + 4) << 32);
+}
+
 /* File-type matching only proves the six-byte 7-Zip signature.  Embedded SFX
  * candidates need the complete start header before they are allowed to become
  * a nested layer; otherwise arbitrary payload bytes can be misclassified as a
@@ -57,6 +72,8 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
     uint64_t archive_size;
     uint64_t next_header_offset;
     uint64_t next_header_size;
+    UInt32 start_header_crc;
+    UInt32 next_header_crc;
 
     if (ctx == NULL || ctx->fmap == NULL)
         return CL_ENULLARG;
@@ -73,12 +90,53 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
     if (header[6] != k7zMajorVersion)
         return CL_EPARSE;
 
+    start_header_crc = cli_7z_header_u32(header + 8);
+    next_header_crc  = cli_7z_header_u32(header + 28);
+
     /* The recovery-mode reader handles an all-zero next-header tuple by
-     * searching the tail, so leave that valid parser behavior intact. */
-    next_header_offset = (uint64_t)cli_readint64(header + 12);
-    next_header_size   = (uint64_t)cli_readint64(header + 20);
+     * searching the tail. Confirm that a recoverable header marker exists
+     * before promoting the candidate to a nested layer; otherwise a random
+     * six-byte signature followed by zero padding would taint its parent. */
+    next_header_offset = cli_7z_header_u64(header + 12);
+    next_header_size   = cli_7z_header_u64(header + 20);
     if (next_header_offset == 0 && next_header_size == 0)
-        return CL_SUCCESS;
+    {
+        if (start_header_crc != 0 || next_header_crc != 0)
+            return CL_EPARSE;
+
+        {
+            size_t recovery_start = offset + k7zStartHeaderSize;
+            size_t recovery_size  = ctx->fmap->len - recovery_start;
+            const unsigned char *recovery;
+            size_t i;
+
+            if (recovery_size > 500)
+                recovery_size = 500;
+            if (recovery_size < 2)
+                return CL_EFORMAT;
+
+            recovery = (const unsigned char *)fmap_need_off_once(
+                ctx->fmap, ctx->fmap->len - recovery_size, recovery_size);
+            if (recovery == NULL)
+                return CL_EREAD;
+
+            for (i = recovery_size - 2;; i--) {
+                if ((recovery[i] == 0x17 && recovery[i + 1] == 0x06) ||
+                    (recovery[i] == 0x01 && recovery[i + 1] == 0x04)) {
+                    if (ctx->fmap->len - recovery_size + i < recovery_start)
+                        return CL_EFORMAT;
+                    return CL_SUCCESS;
+                }
+                if (i == 0)
+                    break;
+            }
+        }
+
+        return CL_EFORMAT;
+    }
+
+    if (CrcCalc(header + 12, 20) != start_header_crc)
+        return CL_EPARSE;
 
     archive_size = (uint64_t)(ctx->fmap->len - offset);
     if (archive_size < k7zStartHeaderSize ||

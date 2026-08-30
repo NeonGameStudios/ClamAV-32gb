@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## 7-Zip SFX recovery admission and unaligned header reads — 2026-08-30
+
+7-Zip SFX admission now rejects an all-zero recovery tuple unless the bounded
+tail contains a recoverable header marker, validates the start-header CRC for
+ordinary headers, and preserves in-range tail read failures as `CL_EREAD`.
+The admission probe uses bytewise fixed-width reads, keeping odd-offset SFX
+candidates free of packed-union alignment undefined behavior. An isolated
+current-source Docker GCC oracle passes 4/4 and the matching GCC ASan/UBSan
+runner is clean. The public weak-candidate regression is registered and
+source-guarded. Current-object execution, production-CVD/service, complete SFX
+corpus, materialized-large-file, Sonic1, and final release qualification remain
+required.
+
 ## 7-Zip zero-length FilesInfo Name — 2026-08-30
 
 The 7-Zip FilesInfo reader now rejects a declared zero-length `Name` property

@@ -1,5 +1,15 @@
 # Wishlist
 
+## 7-Zip SFX recovery admission and unaligned header reads — 2026-08-30
+
+- Keep 7-Zip SFX admission fail-closed for zero recovery tuples without a
+  recoverable tail header, and preserve ordinary start-header CRC validation
+  plus `CL_EREAD` for in-range tail read failures.
+- Keep the bytewise fixed-width reads and the weak-candidate regression so
+  odd-offset SFX matches remain sanitizer-clean. Complete current-object,
+  production-CVD/service, full SFX corpus, materialized-large-file, Sonic1,
+  and final release qualification.
+
 ## 7-Zip zero-length FilesInfo Name — 2026-08-30
 
 - Keep `FilesInfo/Name` property admission fail-closed: reject a declared
