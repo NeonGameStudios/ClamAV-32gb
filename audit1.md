@@ -14893,3 +14893,11 @@ creation seconds; source guards pin the checked parser and removal of the four
 direct `atoi()` assignments. Current-source production-GCC execution, complete
 CVD corpus, production-CVD/service, sanitizer, materialized-large-file, Sonic1,
 and final release qualification remain open.
+
+The same loader also parsed each embedded TAR size field with `sscanf("%o")`
+into an unsigned int. That accepted partial octal text and did not provide a
+defined rejection path for values outside the destination width. The loader now
+requires a complete octal field, checks the uint64 accumulator at each digit,
+and rejects values above `UINT_MAX` before assigning `dbio->size`. Malformed and
+oversized archive-fixture execution remains open with the generated Rust bridge
+and production CVD/service evidence.

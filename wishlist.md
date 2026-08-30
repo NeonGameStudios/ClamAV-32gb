@@ -7986,3 +7986,13 @@ final qualification as open.
   current-source production-GCC execution, complete CVD corpus,
   production-CVD/service, sanitizer, materialized-large-file, Sonic1, and final
   release qualification remain required.
+
+## CVD embedded TAR size parsing — 2026-08-29
+
+- Keep CVD TAR member-size fields behind complete octal parsing, checked
+  uint64 accumulation, and an explicit `UINT_MAX` admission before `dbio->size`
+  is published.
+- Add malformed, partial, and oversized CVD archive fixtures; retain
+  current-source production-GCC, production-CVD/service, sanitizer,
+  materialized-large-file, Sonic1, and final release qualification as required
+  evidence.

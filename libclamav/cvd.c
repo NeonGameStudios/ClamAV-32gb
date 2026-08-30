@@ -56,6 +56,8 @@
 
 #define TAR_BLOCKSIZE 512
 
+static int cli_cvd_parse_octal_size(const char *text, unsigned int *value);
+
 static cl_error_t cli_tgzload_cleanup(int comp, struct cli_dbio *dbio, int fdd)
 {
     cl_error_t status = CL_SUCCESS;
@@ -297,7 +299,7 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
         strncpy(osize, block + 124, 12);
         osize[12] = '\0';
 
-        if ((sscanf(osize, "%o", &size)) == 0) {
+        if (!cli_cvd_parse_octal_size(osize, &size)) {
             cli_errmsg("cli_tgzload: Invalid size in header\n");
             return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
         }
@@ -384,6 +386,36 @@ static int cli_cvd_parse_uint(const char *text, unsigned int *value)
     }
 
     *value = parsed;
+    return 1;
+}
+
+static int cli_cvd_parse_octal_size(const char *text, unsigned int *value)
+{
+    const unsigned char *cursor = (const unsigned char *)text;
+    uint64_t parsed            = 0;
+    bool saw_digit              = false;
+
+    if (!text || !value)
+        return 0;
+
+    while (*cursor == ' ')
+        cursor++;
+    while (*cursor >= '0' && *cursor <= '7') {
+        uint64_t digit = (uint64_t)(*cursor - '0');
+
+        if (parsed > (UINT64_MAX - digit) / 8U)
+            return 0;
+        parsed = parsed * 8U + digit;
+        saw_digit = true;
+        cursor++;
+    }
+    while (*cursor == ' ')
+        cursor++;
+
+    if (!saw_digit || *cursor != '\0' || parsed > UINT_MAX)
+        return 0;
+
+    *value = (unsigned int)parsed;
     return 1;
 }
 
