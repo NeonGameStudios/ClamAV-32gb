@@ -381,6 +381,24 @@ production GCC, and an isolated current-source UBSan oracle prints
 service, materialized-large-file, Sonic1, and final release qualification
 remain open.
 
+## Milter configuration and recipient allocation admission — 2026-08-29
+
+The milter's configured `RejectMsg` transformation formed `strlen(src) * 4 +
+1` before allocation, without checking native-size overflow or the shared
+1-GiB individual-allocation ceiling. Its recipient callback also formed
+`(nrecipients + 1) * sizeof(char *)` directly and incremented the count before
+`strdup()` succeeded; a failed recipient copy could therefore leave
+`nullify()` freeing an uninitialized slot. The path now sizes `RejectMsg`
+through a checked helper, uses `cli_max_malloc()`, validates printable bytes
+as unsigned characters, checks recipient-array growth, copies each recipient
+before publishing it, and frees an allocated zero-count array during cleanup.
+The allocation-free current-source GCC quota regression passes the exact
+RejectMsg overflow, small-size, over-limit, and null-output cases. Full milter
+translation-unit compilation is not available in the existing Docker image
+because its `libmilter` headers are absent; no dependency was installed.
+Milter runtime, sanitizer, service, materialized-large-file, Sonic1, and final
+release qualification remain open.
+
 ## Iconv cache table admission — 2026-08-29
 
 The entity/encoding converter grew its process or thread-local iconv handle

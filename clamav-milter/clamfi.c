@@ -31,6 +31,8 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
+#include <stdint.h>
 
 #include <libmilter/mfapi.h>
 
@@ -135,7 +137,7 @@ static const char *makesanehdr(char *hdr)
     char *ret = hdr;
     if (!hdr) return HDR_UNAVAIL;
     while (*hdr) {
-        if (*hdr == '\'' || *hdr == '\t' || *hdr == '\r' || *hdr == '\n' || !isprint(*hdr))
+        if (*hdr == '\'' || *hdr == '\t' || *hdr == '\r' || *hdr == '\n' || !isprint((unsigned char)*hdr))
             *hdr = ' ';
         hdr++;
     }
@@ -151,7 +153,7 @@ static void nullify(SMFICTX *ctx, struct CLAMFI *cf, enum CFWHAT closewhat)
     if (cf->msg_subj) free(cf->msg_subj);
     if (cf->msg_date) free(cf->msg_date);
     if (cf->msg_id) free(cf->msg_id);
-    if (multircpt && cf->nrecipients) {
+    if (multircpt && cf->recipients) {
         while (cf->nrecipients) {
             cf->nrecipients--;
             free(cf->recipients[cf->nrecipients]);
@@ -766,15 +768,21 @@ int init_actions(struct optstruct *opts)
                 InfectedAction = action_reject_msg;
                 if ((opt = optget(opts, "RejectMsg"))->enabled) {
                     const char *src = opt->strarg;
-                    char *dst, c;
+                    char *dst;
+                    unsigned char c;
+                    size_t reject_size;
                     int gotpctv = 0;
 
-                    rejectfmt = dst = malloc(strlen(src) * 4 + 1);
+                    if (!src || !clamfi_reject_message_size(strlen(src), &reject_size)) {
+                        logg(LOGG_ERROR, "RejectMsg is too large to represent safely\n");
+                        return 1;
+                    }
+                    rejectfmt = dst = (char *)cli_max_malloc(reject_size);
                     if (!dst) {
                         logg(LOGG_ERROR, "Failed to allocate memory for RejectMsg\n");
                         return 1;
                     }
-                    while ((c = *src++)) {
+                    while ((c = (unsigned char)*src++)) {
                         if (!isprint(c)) {
                             logg(LOGG_ERROR, "RejectMsg contains non printable characters\n");
                             free(rejectfmt);
@@ -813,6 +821,11 @@ sfsistat clamfi_envfrom(SMFICTX *ctx, char **argv)
 {
     struct CLAMFI *cf;
     const char *login = smfi_getsymval(ctx, "{auth_authen}");
+
+    if (!argv || !argv[0]) {
+        logg(LOGG_ERROR, "Invalid envelope sender passed by libmilter\n");
+        return FailAction;
+    }
 
     if (login && smtpauthed(login)) {
         logg(LOGG_DEBUG, "Skipping scan for authenticated user %s\n", login);
@@ -857,26 +870,56 @@ sfsistat clamfi_envrcpt(SMFICTX *ctx, char **argv)
     if (!(cf = (struct CLAMFI *)smfi_getpriv(ctx)))
         return SMFIS_CONTINUE; /* whatever */
 
+    if (!argv || !argv[0] || (multircpt && cf->nrecipients == UINT_MAX)) {
+        logg(LOGG_ERROR, "Invalid recipient passed by libmilter\n");
+        nullify(ctx, cf, CF_ANY);
+        free(cf);
+        return FailAction;
+    }
+
     if (cf->all_allowed)
         cf->all_allowed &= allowed(argv[0], 0);
 
     if (multircpt) {
-        void *new_rcpt = realloc(cf->recipients, (cf->nrecipients + 1) * sizeof(*(cf->recipients)));
-        unsigned int rcpt_cnt;
-        if (!new_rcpt) {
-            logg(LOGG_ERROR, "Failed to allocate array for new recipient\n");
+        size_t recipient_count;
+        size_t recipient_length;
+        char *new_recipient;
+        void *new_rcpt;
+
+        recipient_count = (size_t)cf->nrecipients + 1U;
+        if (recipient_count > (size_t)CLI_MAX_ALLOCATION / sizeof(*(cf->recipients))) {
+            logg(LOGG_ERROR, "Recipient list is too large\n");
             nullify(ctx, cf, CF_ANY);
             free(cf);
             return FailAction;
         }
-        cf->recipients = new_rcpt;
-        rcpt_cnt       = cf->nrecipients++;
-        if (!(cf->recipients[rcpt_cnt] = strdup(argv[0]))) {
+
+        recipient_length = strlen(argv[0]);
+        if (recipient_length == SIZE_MAX || recipient_length >= (size_t)CLI_MAX_ALLOCATION) {
+            logg(LOGG_ERROR, "Recipient address is too large\n");
+            nullify(ctx, cf, CF_ANY);
+            free(cf);
+            return FailAction;
+        }
+        new_recipient = (char *)cli_max_malloc(recipient_length + 1U);
+        if (!new_recipient) {
             logg(LOGG_ERROR, "Failed to allocate space for new recipient\n");
             nullify(ctx, cf, CF_ANY);
             free(cf);
             return FailAction;
         }
+        memcpy(new_recipient, argv[0], recipient_length + 1U);
+
+        new_rcpt = cli_max_realloc(cf->recipients, recipient_count * sizeof(*(cf->recipients)));
+        if (!new_rcpt) {
+            logg(LOGG_ERROR, "Failed to allocate array for new recipient\n");
+            free(new_recipient);
+            nullify(ctx, cf, CF_ANY);
+            free(cf);
+            return FailAction;
+        }
+        cf->recipients = new_rcpt;
+        cf->recipients[cf->nrecipients++] = new_recipient;
     }
 
     return SMFIS_CONTINUE;

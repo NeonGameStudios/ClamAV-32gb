@@ -1,19 +1,19 @@
 category	file	line	text
 fixed-width-integer	clamav-milter/clamav-milter.c	403	    if (!clamfi_normalize_maxfilesize((uint64_t)optget(opts, "MaxFileSize")->numarg, &maxfilesize)) {
 fixed-width-integer	clamav-milter/clamav-milter.c	411	    maxtemporarysize = (uint64_t)optget(opts, "MaxTemporarySize")->numarg;
-fixed-width-integer	clamav-milter/clamfi.c	100	    uint32_t sendme;
-fixed-width-integer	clamav-milter/clamfi.c	170	    uint64_t next_size;
-fixed-width-integer	clamav-milter/clamfi.c	241	            uint32_t sendmetoo;
-fixed-width-integer	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
-fixed-width-integer	clamav-milter/clamfi.c	392	        uint32_t sendmetoo = 0;
-fixed-width-integer	clamav-milter/clamfi.c	56	uint64_t maxfilesize;
-fixed-width-integer	clamav-milter/clamfi.c	57	uint64_t maxtemporarysize;
-fixed-width-integer	clamav-milter/clamfi.c	90	    uint64_t totsz;
+fixed-width-integer	clamav-milter/clamfi.c	102	    uint32_t sendme;
+fixed-width-integer	clamav-milter/clamfi.c	172	    uint64_t next_size;
+fixed-width-integer	clamav-milter/clamfi.c	243	            uint32_t sendmetoo;
+fixed-width-integer	clamav-milter/clamfi.c	248	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
+fixed-width-integer	clamav-milter/clamfi.c	394	        uint32_t sendmetoo = 0;
+fixed-width-integer	clamav-milter/clamfi.c	58	uint64_t maxfilesize;
+fixed-width-integer	clamav-milter/clamfi.c	59	uint64_t maxtemporarysize;
+fixed-width-integer	clamav-milter/clamfi.c	92	    uint64_t totsz;
 fixed-width-integer	clamav-milter/clamfi.h	29	extern uint64_t maxfilesize;
 fixed-width-integer	clamav-milter/clamfi.h	30	extern uint64_t maxtemporarysize;
-fixed-width-integer	clamav-milter/clamfi_quota.c	11	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective)
-fixed-width-integer	clamav-milter/clamfi_quota.c	26	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next)
-fixed-width-integer	clamav-milter/clamfi_quota.c	28	    uint64_t requested64 = (uint64_t)requested;
+fixed-width-integer	clamav-milter/clamfi_quota.c	12	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective)
+fixed-width-integer	clamav-milter/clamfi_quota.c	27	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next)
+fixed-width-integer	clamav-milter/clamfi_quota.c	29	    uint64_t requested64 = (uint64_t)requested;
 fixed-width-integer	clamav-milter/clamfi_quota.h	18	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective);
 fixed-width-integer	clamav-milter/clamfi_quota.h	19	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next);
 fixed-width-integer	clamav-milter/netcode.c	344	static int nc_recv_scan_report_frame(int s, char **json, uint32_t *json_length, int *terminated)
@@ -7075,10 +7075,10 @@ fixed-width-integer	unit_tests/check_clamd.c	504	    uint64_t required_bytes;
 fixed-width-integer	unit_tests/check_clamd.c	530	        uint64_t filesystem_magic;
 fixed-width-integer	unit_tests/check_clamd.c	561	        uint64_t max_threads;
 fixed-width-integer	unit_tests/check_clamd.c	610	    uint64_t headroom;
-fixed-width-integer	unit_tests/check_clamfi_quota.c	19	    uint64_t effective = 0;
-fixed-width-integer	unit_tests/check_clamfi_quota.c	20	    uint64_t next      = 0;
-fixed-width-integer	unit_tests/check_clamfi_quota.c	21	    uint64_t four_gib  = (uint64_t)4 * 1024 * 1024 * 1024;
-fixed-width-integer	unit_tests/check_clamfi_quota.c	22	    uint64_t thirty_two_gib = CLI_MAX_LARGE_FILESIZE;
+fixed-width-integer	unit_tests/check_clamfi_quota.c	20	    uint64_t effective = 0;
+fixed-width-integer	unit_tests/check_clamfi_quota.c	21	    uint64_t next      = 0;
+fixed-width-integer	unit_tests/check_clamfi_quota.c	23	    uint64_t four_gib  = (uint64_t)4 * 1024 * 1024 * 1024;
+fixed-width-integer	unit_tests/check_clamfi_quota.c	24	    uint64_t thirty_two_gib = CLI_MAX_LARGE_FILESIZE;
 fixed-width-integer	unit_tests/check_htmlnorm.c	274	    uint64_t temporary_reserved = 0;
 fixed-width-integer	unit_tests/check_htmlnorm.c	336	    uint64_t temporary_reserved = 0;
 fixed-width-integer	unit_tests/check_htmlnorm.c	363	    uint64_t temporary_reserved = 0;
@@ -7168,46 +7168,54 @@ native-width-integer	clamav-milter/clamav-milter.c	458	                int ret  
 native-width-integer	clamav-milter/clamav-milter.c	61	static void milter_exit(int sig)
 native-width-integer	clamav-milter/clamav-milter.c	86	int main(int argc, char **argv)
 native-width-integer	clamav-milter/clamav-milter.c	94	    int dropPrivRet = 0;
-native-width-integer	clamav-milter/clamfi.c	104	static void add_x_header(SMFICTX *ctx, char *st, unsigned int scanned, unsigned int status)
-native-width-integer	clamav-milter/clamfi.c	168	static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, SMFICTX *ctx)
-native-width-integer	clamav-milter/clamfi.c	217	            ssize_t n = write(cf->alt, bodyp, len);
-native-width-integer	clamav-milter/clamfi.c	228	        int sendfailed = 0;
-native-width-integer	clamav-milter/clamfi.c	313	sfsistat clamfi_body(SMFICTX *ctx, unsigned char *bodyp, size_t len)
-native-width-integer	clamav-milter/clamfi.c	351	    int len, ret;
-native-width-integer	clamav-milter/clamfi.c	352	    int infected   = 0;
-native-width-integer	clamav-milter/clamfi.c	353	    int incomplete = 0;
-native-width-integer	clamav-milter/clamfi.c	356	    unsigned int crcpt;
-native-width-integer	clamav-milter/clamfi.c	434	        size_t reply_size = strlen(alert) + sizeof("stream:  FOUND\n");
-native-width-integer	clamav-milter/clamfi.c	490	                unsigned int have_multi = (multircpt != 0 && cf->nrecipients);
-native-width-integer	clamav-milter/clamfi.c	491	                unsigned int lst_rcpt   = (have_multi * (cf->nrecipients - 1)) + 1;
-native-width-integer	clamav-milter/clamfi.c	551	                                        int wret;
-native-width-integer	clamav-milter/clamfi.c	620	static int parse_action(char *action)
-native-width-integer	clamav-milter/clamfi.c	64	int addxvirus = 0; /* 0 - don't add | 1 - replace | 2 - add */
-native-width-integer	clamav-milter/clamfi.c	67	int multircpt   = 1;
-native-width-integer	clamav-milter/clamfi.c	675	int init_actions(struct optstruct *opts)
-native-width-integer	clamav-milter/clamfi.c	74	int loginfected;
-native-width-integer	clamav-milter/clamfi.c	770	                    int gotpctv = 0;
-native-width-integer	clamav-milter/clamfi.c	865	        unsigned int rcpt_cnt;
-native-width-integer	clamav-milter/clamfi.c	87	    int local;
-native-width-integer	clamav-milter/clamfi.c	88	    int main;
-native-width-integer	clamav-milter/clamfi.c	89	    int alt;
-native-width-integer	clamav-milter/clamfi.c	91	    unsigned int stream_started;
-native-width-integer	clamav-milter/clamfi.c	92	    unsigned int over_limit;
-native-width-integer	clamav-milter/clamfi.c	93	    unsigned int bufsz;
-native-width-integer	clamav-milter/clamfi.c	94	    unsigned int all_allowed;
-native-width-integer	clamav-milter/clamfi.c	95	    unsigned int gotbody;
-native-width-integer	clamav-milter/clamfi.c	96	    unsigned int scanned_count;
-native-width-integer	clamav-milter/clamfi.c	97	    unsigned int status_count;
-native-width-integer	clamav-milter/clamfi.c	98	    unsigned int nrecipients;
-native-width-integer	clamav-milter/clamfi.c	99	    unsigned int scan_lock_held;
+native-width-integer	clamav-milter/clamfi.c	100	    unsigned int nrecipients;
+native-width-integer	clamav-milter/clamfi.c	101	    unsigned int scan_lock_held;
+native-width-integer	clamav-milter/clamfi.c	106	static void add_x_header(SMFICTX *ctx, char *st, unsigned int scanned, unsigned int status)
+native-width-integer	clamav-milter/clamfi.c	170	static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, SMFICTX *ctx)
+native-width-integer	clamav-milter/clamfi.c	219	            ssize_t n = write(cf->alt, bodyp, len);
+native-width-integer	clamav-milter/clamfi.c	230	        int sendfailed = 0;
+native-width-integer	clamav-milter/clamfi.c	315	sfsistat clamfi_body(SMFICTX *ctx, unsigned char *bodyp, size_t len)
+native-width-integer	clamav-milter/clamfi.c	353	    int len, ret;
+native-width-integer	clamav-milter/clamfi.c	354	    int infected   = 0;
+native-width-integer	clamav-milter/clamfi.c	355	    int incomplete = 0;
+native-width-integer	clamav-milter/clamfi.c	358	    unsigned int crcpt;
+native-width-integer	clamav-milter/clamfi.c	436	        size_t reply_size = strlen(alert) + sizeof("stream:  FOUND\n");
+native-width-integer	clamav-milter/clamfi.c	492	                unsigned int have_multi = (multircpt != 0 && cf->nrecipients);
+native-width-integer	clamav-milter/clamfi.c	493	                unsigned int lst_rcpt   = (have_multi * (cf->nrecipients - 1)) + 1;
+native-width-integer	clamav-milter/clamfi.c	553	                                        int wret;
+native-width-integer	clamav-milter/clamfi.c	622	static int parse_action(char *action)
+native-width-integer	clamav-milter/clamfi.c	66	int addxvirus = 0; /* 0 - don't add | 1 - replace | 2 - add */
+native-width-integer	clamav-milter/clamfi.c	677	int init_actions(struct optstruct *opts)
+native-width-integer	clamav-milter/clamfi.c	69	int multircpt   = 1;
+native-width-integer	clamav-milter/clamfi.c	76	int loginfected;
+native-width-integer	clamav-milter/clamfi.c	773	                    size_t reject_size;
+native-width-integer	clamav-milter/clamfi.c	774	                    int gotpctv = 0;
+native-width-integer	clamav-milter/clamfi.c	884	        size_t recipient_count;
+native-width-integer	clamav-milter/clamfi.c	885	        size_t recipient_length;
+native-width-integer	clamav-milter/clamfi.c	889	        recipient_count = (size_t)cf->nrecipients + 1U;
+native-width-integer	clamav-milter/clamfi.c	89	    int local;
+native-width-integer	clamav-milter/clamfi.c	890	        if (recipient_count > (size_t)CLI_MAX_ALLOCATION / sizeof(*(cf->recipients))) {
+native-width-integer	clamav-milter/clamfi.c	898	        if (recipient_length == SIZE_MAX || recipient_length >= (size_t)CLI_MAX_ALLOCATION) {
+native-width-integer	clamav-milter/clamfi.c	90	    int main;
+native-width-integer	clamav-milter/clamfi.c	91	    int alt;
+native-width-integer	clamav-milter/clamfi.c	93	    unsigned int stream_started;
+native-width-integer	clamav-milter/clamfi.c	94	    unsigned int over_limit;
+native-width-integer	clamav-milter/clamfi.c	95	    unsigned int bufsz;
+native-width-integer	clamav-milter/clamfi.c	96	    unsigned int all_allowed;
+native-width-integer	clamav-milter/clamfi.c	97	    unsigned int gotbody;
+native-width-integer	clamav-milter/clamfi.c	98	    unsigned int scanned_count;
+native-width-integer	clamav-milter/clamfi.c	99	    unsigned int status_count;
 native-width-integer	clamav-milter/clamfi.h	31	extern int addxvirus;
 native-width-integer	clamav-milter/clamfi.h	33	extern int multircpt;
 native-width-integer	clamav-milter/clamfi.h	35	sfsistat clamfi_body(SMFICTX *ctx, unsigned char *bodyp, size_t len);
 native-width-integer	clamav-milter/clamfi.h	42	int init_actions(struct optstruct *opts);
-native-width-integer	clamav-milter/clamfi_quota.c	11	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective)
-native-width-integer	clamav-milter/clamfi_quota.c	26	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next)
+native-width-integer	clamav-milter/clamfi_quota.c	12	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective)
+native-width-integer	clamav-milter/clamfi_quota.c	27	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next)
+native-width-integer	clamav-milter/clamfi_quota.c	47	int clamfi_reject_message_size(size_t source_length, size_t *output_size)
+native-width-integer	clamav-milter/clamfi_quota.c	53	    return *output_size <= (size_t)CLI_MAX_ALLOCATION;
 native-width-integer	clamav-milter/clamfi_quota.h	18	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective);
 native-width-integer	clamav-milter/clamfi_quota.h	19	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next);
+native-width-integer	clamav-milter/clamfi_quota.h	20	int clamfi_reject_message_size(size_t source_length, size_t *output_size);
 native-width-integer	clamav-milter/connpool.c	100	static int islocal(struct sockaddr *sa, socklen_t addrlen)
 native-width-integer	clamav-milter/connpool.c	102	    int s = socket(sa->sa_family, SOCK_STREAM, 0);
 native-width-integer	clamav-milter/connpool.c	103	    int ret;
@@ -20720,7 +20728,9 @@ native-width-integer	unit_tests/check_clamd.c	971	    stream_limit.numarg = (lon
 native-width-integer	unit_tests/check_clamd.c	985	static int sockd;
 native-width-integer	unit_tests/check_clamd.c	990	    int sockets[2];
 native-width-integer	unit_tests/check_clamd.c	991	    int pipefd[2];
-native-width-integer	unit_tests/check_clamfi_quota.c	17	int main(void)
+native-width-integer	unit_tests/check_clamfi_quota.c	18	int main(void)
+native-width-integer	unit_tests/check_clamfi_quota.c	22	    size_t reject_size = 0;
+native-width-integer	unit_tests/check_clamfi_quota.c	45	    CHECK(!clamfi_reject_message_size((size_t)CLI_MAX_ALLOCATION, &reject_size), "over-limit RejectMsg was accepted");
 native-width-integer	unit_tests/check_disasm.c	218	    ssize_t size;
 native-width-integer	unit_tests/check_disasm.c	226	    ck_assert_msg(size == st.st_size, "disasm size mismatch(value %zd, expected: %zd)", size, (ssize_t)st.st_size);
 native-width-integer	unit_tests/check_disasm.c	48	    int fd               = -1;
@@ -21011,7 +21021,10 @@ native-width-integer	win32/compat/w32_stat.c	45	    size_t i;
 native-width-integer	win32/compat/w32_stat.h	38	int w32_stat(const char *path, struct stat *buf);
 native-width-integer	win32/compat/w32_stat.h	43	int w32_access(const char *pathname, int mode);
 native-width-integer	win32/compat/w32_stat.h	49	int safe_open(const char *path, int flags, ...);
-boundary-constant	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
+boundary-constant	clamav-milter/clamfi.c	248	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
+boundary-constant	clamav-milter/clamfi.c	873	    if (!argv || !argv[0] || (multircpt && cf->nrecipients == UINT_MAX)) {
+boundary-constant	clamav-milter/clamfi.c	898	        if (recipient_length == SIZE_MAX || recipient_length >= (size_t)CLI_MAX_ALLOCATION) {
+boundary-constant	clamav-milter/clamfi_quota.c	49	    if (NULL == output_size || source_length > (SIZE_MAX - 1U) / 4U)
 boundary-constant	clambc/bcrun.c	453	            if (!parse_uint64_arg(opts->filename[1], &parsed_arg) || parsed_arg > UINT_MAX) {
 boundary-constant	clamd/largefile_admission.c	938	        (max_file_size > (uint64_t)SIZE_MAX) ||
 boundary-constant	clamd/largefile_admission.c	939	        (max_scan_size > (uint64_t)SIZE_MAX) ||
@@ -21763,6 +21776,7 @@ boundary-constant	unit_tests/check_clamd.c	1097	    ck_assert_int_eq(send_stream
 boundary-constant	unit_tests/check_clamd.c	1178	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamd.c	980	    ck_assert_uint_eq(clamd_stream_chunk_length(4, 1024, UINT32_MAX), 1020);
 boundary-constant	unit_tests/check_clamd.c	981	    ck_assert_uint_eq(clamd_stream_chunk_length(1024, 1024, UINT32_MAX), 0);
+boundary-constant	unit_tests/check_clamfi_quota.c	44	    CHECK(!clamfi_reject_message_size((SIZE_MAX - 1U) / 4U + 1U, &reject_size), "RejectMsg size overflow was accepted");
 boundary-constant	unit_tests/check_htmlnorm.c	199	    ck_assert_int_eq(cli_html_tag_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
 boundary-constant	unit_tests/check_htmlnorm.c	204	    args.count = INT_MAX;
 boundary-constant	unit_tests/check_htmlnorm.c	206	    ck_assert_int_eq(args.count, INT_MAX);
@@ -21905,7 +21919,7 @@ quantity-parser	sigtool/sigtool.c	3635	        switch (atoi(tokens[1])) {
 quantity-parser	unit_tests/check_clamav.c	48026	        int timeout = atoi(user_timeout);
 quantity-parser	unit_tests/check_clamd.c	102	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 quantity-parser	unit_tests/check_clamd.c	945	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
-narrowing-cast	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
+narrowing-cast	clamav-milter/clamfi.c	248	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
 narrowing-cast	common/clamdcom.c	1071	                sent = sendln(sockd, command, (unsigned int)length);
 narrowing-cast	common/clamdcom.c	1084	                sent = sendln(sockd, command, (unsigned int)length);
 narrowing-cast	common/clamdcom.c	1097	                sent = sendln(sockd, command, (unsigned int)length);
@@ -22022,8 +22036,8 @@ narrowing-cast	unit_tests/check_clamd.c	801	    ck_assert_int_lt(snprintf(path, 
 narrowing-cast	win32/compat/net.c	268	    int ret = send((SOCKET)sockfd, (const char *)buf, (int)len, flags);
 format-width	clamav-milter/clamav-milter.c	443	            if (fprintf(fd, "%u\n", (unsigned int)getpid()) < 0) {
 format-width	clamav-milter/clamav-milter.c	65	    logg(LOGG_DEBUG, "clamav-milter: milter_exit, signal %d\n", sig);
-format-width	clamav-milter/clamfi.c	558	                                                logg(LOGG_DEBUG, "VirusEvent: child exited with code %d\n", WEXITSTATUS(ret));
-format-width	clamav-milter/clamfi.c	560	                                                logg(LOGG_DEBUG, "VirusEvent: child killed by signal %d\n", WTERMSIG(ret));
+format-width	clamav-milter/clamfi.c	560	                                                logg(LOGG_DEBUG, "VirusEvent: child exited with code %d\n", WEXITSTATUS(ret));
+format-width	clamav-milter/clamfi.c	562	                                                logg(LOGG_DEBUG, "VirusEvent: child killed by signal %d\n", WTERMSIG(ret));
 format-width	clamav-milter/connpool.c	139	    logg(LOGG_DEBUG, "%s socket tcp:%s:%s added to the pool (slot %d)\n", cpe->local ? "Local" : "Remote", addr ? addr : "localhost", port ? port : "3310", cp->entries);
 format-width	clamav-milter/connpool.c	176	            logg(LOGG_DEBUG, "Probe for slot %u returned: %s\n", i, cpe->dead ? "failed" : "success");
 format-width	clamav-milter/connpool.c	96	    logg(LOGG_DEBUG, "Local socket unix:%s added to the pool (slot %d)\n", srv->sun_path, cp->entries);
@@ -24539,46 +24553,53 @@ offset-size-arithmetic	clamav-milter/clamav-milter.c	403	    if (!clamfi_normali
 offset-size-arithmetic	clamav-milter/clamav-milter.c	411	    maxtemporarysize = (uint64_t)optget(opts, "MaxTemporarySize")->numarg;
 offset-size-arithmetic	clamav-milter/clamav-milter.c	465	#endif /*_WIN32*/
 offset-size-arithmetic	clamav-milter/clamav-milter.c	95	#endif /* _WIN32 */
-offset-size-arithmetic	clamav-milter/clamfi.c	108	            if (smfi_chgheader(ctx, (char *)"X-Virus-Scanned", scanned--, NULL) != MI_SUCCESS)
-offset-size-arithmetic	clamav-milter/clamfi.c	168	static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, SMFICTX *ctx)
-offset-size-arithmetic	clamav-milter/clamfi.c	191	        if ((ret = sendchunk(cf, (unsigned char *)"From clamav-milter\n", 19, ctx)) != SMFIS_CONTINUE)
-offset-size-arithmetic	clamav-milter/clamfi.c	217	            ssize_t n = write(cf->alt, bodyp, len);
-offset-size-arithmetic	clamav-milter/clamfi.c	224	            len -= n;
-offset-size-arithmetic	clamav-milter/clamfi.c	230	        if (len < CLAMFIBUFSZ - cf->bufsz) {
-offset-size-arithmetic	clamav-milter/clamfi.c	236	            sendfailed = nc_send(cf->main, &cf->sendme, CLAMFIBUFSZ + 4);
-offset-size-arithmetic	clamav-milter/clamfi.c	237	            len -= (CLAMFIBUFSZ - cf->bufsz);
-offset-size-arithmetic	clamav-milter/clamfi.c	242	            cf->sendme = htonl(cf->bufsz);
-offset-size-arithmetic	clamav-milter/clamfi.c	243	            if (cf->bufsz && nc_send(cf->main, &cf->sendme, cf->bufsz + 4))
-offset-size-arithmetic	clamav-milter/clamfi.c	248	                if (nc_send(cf->main, &sendmetoo, 4) || nc_send(cf->main, bodyp, chunk))
-offset-size-arithmetic	clamav-milter/clamfi.c	251	                len -= chunk;
-offset-size-arithmetic	clamav-milter/clamfi.c	291	        if (!strcasecmp(headerf, "X-Virus-Scanned")) cf->scanned_count++;
-offset-size-arithmetic	clamav-milter/clamfi.c	295	    if ((ret = sendchunk(cf, (unsigned char *)headerf, strlen(headerf), ctx)) != SMFIS_CONTINUE) {
-offset-size-arithmetic	clamav-milter/clamfi.c	299	    if ((ret = sendchunk(cf, (unsigned char *)": ", 2, ctx)) != SMFIS_CONTINUE) {
-offset-size-arithmetic	clamav-milter/clamfi.c	303	    if (headerv && (ret = sendchunk(cf, (unsigned char *)headerv, strlen(headerv), ctx)) != SMFIS_CONTINUE) {
-offset-size-arithmetic	clamav-milter/clamfi.c	307	    ret = sendchunk(cf, (unsigned char *)"\r\n", 2, ctx);
-offset-size-arithmetic	clamav-milter/clamfi.c	322	        ret = sendchunk(cf, (unsigned char *)"\r\n", 2, ctx);
-offset-size-arithmetic	clamav-milter/clamfi.c	378	        if (lseek(cf->alt, 0, SEEK_SET) < 0) {
-offset-size-arithmetic	clamav-milter/clamfi.c	385	        if (nc_sendmsg(cf->main, cf->alt) == -1) {
-offset-size-arithmetic	clamav-milter/clamfi.c	393	        cf->sendme         = htonl(cf->bufsz);
-offset-size-arithmetic	clamav-milter/clamfi.c	394	        if ((cf->bufsz && nc_send(cf->main, &cf->sendme, cf->bufsz + 4)) || nc_send(cf->main, &sendmetoo, 4)) {
-offset-size-arithmetic	clamav-milter/clamfi.c	434	        size_t reply_size = strlen(alert) + sizeof("stream:  FOUND\n");
-offset-size-arithmetic	clamav-milter/clamfi.c	450	    if (len > 5 && !strcmp(reply + len - 5, ": OK\n")) {
-offset-size-arithmetic	clamav-milter/clamfi.c	451	        if (addxvirus) add_x_header(ctx, "Clean", cf->scanned_count, cf->status_count);
-offset-size-arithmetic	clamav-milter/clamfi.c	476	    } else if (len > 7 && !strcmp(reply + len - 7, " FOUND\n")) {
-offset-size-arithmetic	clamav-milter/clamfi.c	484	                reply[len - 7] = '\0';
-offset-size-arithmetic	clamav-milter/clamfi.c	499	                    msg[sizeof(msg) - 1] = '\0';
-offset-size-arithmetic	clamav-milter/clamfi.c	500	                    add_x_header(ctx, msg, cf->scanned_count, cf->status_count);
-offset-size-arithmetic	clamav-milter/clamfi.c	669	    snprintf(buf, sizeof(buf), rejectfmt, cf->virusname);
-offset-size-arithmetic	clamav-milter/clamfi.c	670	    buf[sizeof(buf) - 1] = '\0';
-offset-size-arithmetic	clamav-milter/clamfi.c	772	                    rejectfmt = dst = malloc(strlen(src) * 4 + 1);
-offset-size-arithmetic	clamav-milter/clamfi.c	827	    if (!(cf = (struct CLAMFI *)malloc(sizeof(*cf)))) {
-offset-size-arithmetic	clamav-milter/clamfi.c	864	        void *new_rcpt = realloc(cf->recipients, (cf->nrecipients + 1) * sizeof(*(cf->recipients)));
-offset-size-arithmetic	clamav-milter/clamfi_quota.c	11	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective)
+offset-size-arithmetic	clamav-milter/clamfi.c	110	            if (smfi_chgheader(ctx, (char *)"X-Virus-Scanned", scanned--, NULL) != MI_SUCCESS)
+offset-size-arithmetic	clamav-milter/clamfi.c	170	static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, SMFICTX *ctx)
+offset-size-arithmetic	clamav-milter/clamfi.c	193	        if ((ret = sendchunk(cf, (unsigned char *)"From clamav-milter\n", 19, ctx)) != SMFIS_CONTINUE)
+offset-size-arithmetic	clamav-milter/clamfi.c	219	            ssize_t n = write(cf->alt, bodyp, len);
+offset-size-arithmetic	clamav-milter/clamfi.c	226	            len -= n;
+offset-size-arithmetic	clamav-milter/clamfi.c	232	        if (len < CLAMFIBUFSZ - cf->bufsz) {
+offset-size-arithmetic	clamav-milter/clamfi.c	238	            sendfailed = nc_send(cf->main, &cf->sendme, CLAMFIBUFSZ + 4);
+offset-size-arithmetic	clamav-milter/clamfi.c	239	            len -= (CLAMFIBUFSZ - cf->bufsz);
+offset-size-arithmetic	clamav-milter/clamfi.c	244	            cf->sendme = htonl(cf->bufsz);
+offset-size-arithmetic	clamav-milter/clamfi.c	245	            if (cf->bufsz && nc_send(cf->main, &cf->sendme, cf->bufsz + 4))
+offset-size-arithmetic	clamav-milter/clamfi.c	250	                if (nc_send(cf->main, &sendmetoo, 4) || nc_send(cf->main, bodyp, chunk))
+offset-size-arithmetic	clamav-milter/clamfi.c	253	                len -= chunk;
+offset-size-arithmetic	clamav-milter/clamfi.c	293	        if (!strcasecmp(headerf, "X-Virus-Scanned")) cf->scanned_count++;
+offset-size-arithmetic	clamav-milter/clamfi.c	297	    if ((ret = sendchunk(cf, (unsigned char *)headerf, strlen(headerf), ctx)) != SMFIS_CONTINUE) {
+offset-size-arithmetic	clamav-milter/clamfi.c	301	    if ((ret = sendchunk(cf, (unsigned char *)": ", 2, ctx)) != SMFIS_CONTINUE) {
+offset-size-arithmetic	clamav-milter/clamfi.c	305	    if (headerv && (ret = sendchunk(cf, (unsigned char *)headerv, strlen(headerv), ctx)) != SMFIS_CONTINUE) {
+offset-size-arithmetic	clamav-milter/clamfi.c	309	    ret = sendchunk(cf, (unsigned char *)"\r\n", 2, ctx);
+offset-size-arithmetic	clamav-milter/clamfi.c	324	        ret = sendchunk(cf, (unsigned char *)"\r\n", 2, ctx);
+offset-size-arithmetic	clamav-milter/clamfi.c	380	        if (lseek(cf->alt, 0, SEEK_SET) < 0) {
+offset-size-arithmetic	clamav-milter/clamfi.c	387	        if (nc_sendmsg(cf->main, cf->alt) == -1) {
+offset-size-arithmetic	clamav-milter/clamfi.c	395	        cf->sendme         = htonl(cf->bufsz);
+offset-size-arithmetic	clamav-milter/clamfi.c	396	        if ((cf->bufsz && nc_send(cf->main, &cf->sendme, cf->bufsz + 4)) || nc_send(cf->main, &sendmetoo, 4)) {
+offset-size-arithmetic	clamav-milter/clamfi.c	436	        size_t reply_size = strlen(alert) + sizeof("stream:  FOUND\n");
+offset-size-arithmetic	clamav-milter/clamfi.c	452	    if (len > 5 && !strcmp(reply + len - 5, ": OK\n")) {
+offset-size-arithmetic	clamav-milter/clamfi.c	453	        if (addxvirus) add_x_header(ctx, "Clean", cf->scanned_count, cf->status_count);
+offset-size-arithmetic	clamav-milter/clamfi.c	478	    } else if (len > 7 && !strcmp(reply + len - 7, " FOUND\n")) {
+offset-size-arithmetic	clamav-milter/clamfi.c	486	                reply[len - 7] = '\0';
+offset-size-arithmetic	clamav-milter/clamfi.c	501	                    msg[sizeof(msg) - 1] = '\0';
+offset-size-arithmetic	clamav-milter/clamfi.c	502	                    add_x_header(ctx, msg, cf->scanned_count, cf->status_count);
+offset-size-arithmetic	clamav-milter/clamfi.c	671	    snprintf(buf, sizeof(buf), rejectfmt, cf->virusname);
+offset-size-arithmetic	clamav-milter/clamfi.c	672	    buf[sizeof(buf) - 1] = '\0';
+offset-size-arithmetic	clamav-milter/clamfi.c	840	    if (!(cf = (struct CLAMFI *)malloc(sizeof(*cf)))) {
+offset-size-arithmetic	clamav-milter/clamfi.c	889	        recipient_count = (size_t)cf->nrecipients + 1U;
+offset-size-arithmetic	clamav-milter/clamfi.c	890	        if (recipient_count > (size_t)CLI_MAX_ALLOCATION / sizeof(*(cf->recipients))) {
+offset-size-arithmetic	clamav-milter/clamfi.c	904	        new_recipient = (char *)cli_max_malloc(recipient_length + 1U);
+offset-size-arithmetic	clamav-milter/clamfi.c	911	        memcpy(new_recipient, argv[0], recipient_length + 1U);
+offset-size-arithmetic	clamav-milter/clamfi.c	913	        new_rcpt = cli_max_realloc(cf->recipients, recipient_count * sizeof(*(cf->recipients)));
+offset-size-arithmetic	clamav-milter/clamfi_quota.c	12	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective)
 offset-size-arithmetic	clamav-milter/clamfi_quota.c	2	 * Pure message-size policy used by clamav-milter and its unit tests.
-offset-size-arithmetic	clamav-milter/clamfi_quota.c	26	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next)
+offset-size-arithmetic	clamav-milter/clamfi_quota.c	27	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next)
+offset-size-arithmetic	clamav-milter/clamfi_quota.c	47	int clamfi_reject_message_size(size_t source_length, size_t *output_size)
+offset-size-arithmetic	clamav-milter/clamfi_quota.c	49	    if (NULL == output_size || source_length > (SIZE_MAX - 1U) / 4U)
+offset-size-arithmetic	clamav-milter/clamfi_quota.c	52	    *output_size = source_length * 4U + 1U;
 offset-size-arithmetic	clamav-milter/clamfi_quota.h	18	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective);
 offset-size-arithmetic	clamav-milter/clamfi_quota.h	19	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next);
 offset-size-arithmetic	clamav-milter/clamfi_quota.h	2	 * Pure message-size policy used by clamav-milter and its unit tests.
+offset-size-arithmetic	clamav-milter/clamfi_quota.h	20	int clamfi_reject_message_size(size_t source_length, size_t *output_size);
 offset-size-arithmetic	clamav-milter/connpool.c	137	    cpe->socklen   = res->ai_addrlen;
 offset-size-arithmetic	clamav-milter/connpool.c	154	    memset(&cpe[cp->entries], 0, sizeof(*cpe));
 offset-size-arithmetic	clamav-milter/connpool.c	212	    if (!(cp = calloc(sizeof(*cp), 1))) {
@@ -39062,7 +39083,9 @@ offset-size-arithmetic	unit_tests/check_clamd.c	935	    for (i = 0; i < sizeof(v
 offset-size-arithmetic	unit_tests/check_clamd.c	949	    for (i = 0; i < sizeof(invalid) / sizeof(invalid[0]); i++) {
 offset-size-arithmetic	unit_tests/check_clamd.c	96	    for (i = 0; i < sizeof(valid) / sizeof(valid[0]); i++) {
 offset-size-arithmetic	unit_tests/check_clamfi_quota.c	1	/* Small, allocation-free regression tests for clamav-milter size policy. */
-offset-size-arithmetic	unit_tests/check_clamfi_quota.c	28	    CHECK(!clamfi_normalize_maxfilesize(thirty_two_gib + 1, &effective), "32 GiB+1 MaxFileSize was accepted");
+offset-size-arithmetic	unit_tests/check_clamfi_quota.c	30	    CHECK(!clamfi_normalize_maxfilesize(thirty_two_gib + 1, &effective), "32 GiB+1 MaxFileSize was accepted");
+offset-size-arithmetic	unit_tests/check_clamfi_quota.c	44	    CHECK(!clamfi_reject_message_size((SIZE_MAX - 1U) / 4U + 1U, &reject_size), "RejectMsg size overflow was accepted");
+offset-size-arithmetic	unit_tests/check_clamfi_quota.c	45	    CHECK(!clamfi_reject_message_size((size_t)CLI_MAX_ALLOCATION, &reject_size), "over-limit RejectMsg was accepted");
 offset-size-arithmetic	unit_tests/check_disasm.c	112	        /* addrsize, m00/rm110 - mov [eax-5355], ebp */
 offset-size-arithmetic	unit_tests/check_disasm.c	228	    d = malloc(size * 2);
 offset-size-arithmetic	unit_tests/check_disasm.c	229	    ck_assert_msg(d != NULL, "disasm malloc(%zd) failed", size * 2);
@@ -39431,8 +39454,8 @@ offset-size-arithmetic	win32/compat/w32_stat.c	91	    } else if (!(len = MultiBy
 offset-size-arithmetic	win32/compat/w32_stat.c	99	    /* append a backslash to naked drives and get rid of . and .. */
 large-file-option	clamav-milter/clamav-milter.c	403	    if (!clamfi_normalize_maxfilesize((uint64_t)optget(opts, "MaxFileSize")->numarg, &maxfilesize)) {
 large-file-option	clamav-milter/clamav-milter.c	404	        logg(LOGG_ERROR, "MaxFileSize must be at or below 32 GiB\n");
-large-file-option	clamav-milter/clamfi.c	201	        logg(LOGG_ERROR, "Message exceeds MaxFileSize; refusing a partial scan\n");
-large-file-option	clamav-milter/clamfi.c	362	        logg(LOGG_ERROR, "Refusing clean verdict for message exceeding MaxFileSize\n");
+large-file-option	clamav-milter/clamfi.c	203	        logg(LOGG_ERROR, "Message exceeds MaxFileSize; refusing a partial scan\n");
+large-file-option	clamav-milter/clamfi.c	364	        logg(LOGG_ERROR, "Refusing clean verdict for message exceeding MaxFileSize\n");
 large-file-option	clamd/largefile_admission.c	804	    (void)engine_u64(engine, CL_ENGINE_MAX_FILESIZE, &max_file_size);
 large-file-option	clamd/largefile_admission.c	805	    (void)engine_u64(engine, CL_ENGINE_MAX_SCANSIZE, &max_scan_size);
 large-file-option	clamd/largefile_admission.c	875	    if (!engine_u64(engine, CL_ENGINE_MAX_FILESIZE, &max_file_size) ||
@@ -39559,8 +39582,8 @@ large-file-option	unit_tests/check_clamd.c	883	    static const char *const name
 large-file-option	unit_tests/check_clamd.c	904	    static const char *const names[] = {"StreamMaxLength", "OnAccessMaxFileSize"};
 large-file-option	unit_tests/check_clamd.c	910	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, 100LL * 1024LL * 1024LL), CL_SUCCESS);
 large-file-option	unit_tests/check_clamd.c	911	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, 400LL * 1024LL * 1024LL), CL_SUCCESS);
-large-file-option	unit_tests/check_clamfi_quota.c	24	    CHECK(clamfi_normalize_maxfilesize(0, &effective), "zero MaxFileSize was rejected");
-large-file-option	unit_tests/check_clamfi_quota.c	25	    CHECK(effective == thirty_two_gib, "zero MaxFileSize did not select 32 GiB");
-large-file-option	unit_tests/check_clamfi_quota.c	26	    CHECK(clamfi_normalize_maxfilesize(four_gib, &effective), "4 GiB MaxFileSize was rejected");
-large-file-option	unit_tests/check_clamfi_quota.c	27	    CHECK(effective == four_gib, "4 GiB MaxFileSize changed during normalization");
-large-file-option	unit_tests/check_clamfi_quota.c	28	    CHECK(!clamfi_normalize_maxfilesize(thirty_two_gib + 1, &effective), "32 GiB+1 MaxFileSize was accepted");
+large-file-option	unit_tests/check_clamfi_quota.c	26	    CHECK(clamfi_normalize_maxfilesize(0, &effective), "zero MaxFileSize was rejected");
+large-file-option	unit_tests/check_clamfi_quota.c	27	    CHECK(effective == thirty_two_gib, "zero MaxFileSize did not select 32 GiB");
+large-file-option	unit_tests/check_clamfi_quota.c	28	    CHECK(clamfi_normalize_maxfilesize(four_gib, &effective), "4 GiB MaxFileSize was rejected");
+large-file-option	unit_tests/check_clamfi_quota.c	29	    CHECK(effective == four_gib, "4 GiB MaxFileSize changed during normalization");
+large-file-option	unit_tests/check_clamfi_quota.c	30	    CHECK(!clamfi_normalize_maxfilesize(thirty_two_gib + 1, &effective), "32 GiB+1 MaxFileSize was accepted");

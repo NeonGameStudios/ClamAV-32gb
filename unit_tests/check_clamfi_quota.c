@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "default.h"
+#include "others.h"
 #include "clamfi_quota.h"
 
 #define CHECK(condition, message)       \
@@ -18,6 +19,7 @@ int main(void)
 {
     uint64_t effective = 0;
     uint64_t next      = 0;
+    size_t reject_size = 0;
     uint64_t four_gib  = (uint64_t)4 * 1024 * 1024 * 1024;
     uint64_t thirty_two_gib = CLI_MAX_LARGE_FILESIZE;
 
@@ -34,6 +36,14 @@ int main(void)
     CHECK(next == thirty_two_gib, "exact 32 GiB quota produced the wrong total");
     CHECK(CLAMFI_QUOTA_EXCEEDED == clamfi_quota_add(thirty_two_gib, thirty_two_gib, 1, &next), "32 GiB+1 crossing was truncated or accepted");
     CHECK(CLAMFI_QUOTA_EXCEEDED == clamfi_quota_add(UINT64_MAX, UINT64_MAX, 1, &next), "uint64 overflow was accepted");
+
+    CHECK(clamfi_reject_message_size(0, &reject_size), "empty RejectMsg was rejected");
+    CHECK(reject_size == 1, "empty RejectMsg size is incorrect");
+    CHECK(clamfi_reject_message_size(4, &reject_size), "small RejectMsg was rejected");
+    CHECK(reject_size == 17, "small RejectMsg size is incorrect");
+    CHECK(!clamfi_reject_message_size((SIZE_MAX - 1U) / 4U + 1U, &reject_size), "RejectMsg size overflow was accepted");
+    CHECK(!clamfi_reject_message_size((size_t)CLI_MAX_ALLOCATION, &reject_size), "over-limit RejectMsg was accepted");
+    CHECK(!clamfi_reject_message_size(1, NULL), "NULL RejectMsg size output was accepted");
 
     return 0;
 }
