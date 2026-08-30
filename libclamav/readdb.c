@@ -5678,15 +5678,20 @@ cl_error_t cl_statinidir(const char *dirname, struct cl_stat *dbstat)
     DIR *dd;
     struct dirent *dent;
     char *fname;
+    cl_error_t ret = CL_SUCCESS;
 
-    if (dbstat) {
-        dbstat->entries   = 0;
-        dbstat->stattab   = NULL;
-        dbstat->statdname = NULL;
-        dbstat->dir       = cli_safer_strdup(dirname);
-    } else {
+    if (dirname == NULL || dbstat == NULL) {
         cli_errmsg("cl_statdbdir(): Null argument passed.\n");
         return CL_ENULLARG;
+    }
+
+    dbstat->entries   = 0;
+    dbstat->stattab   = NULL;
+    dbstat->statdname = NULL;
+    dbstat->dir       = cli_safer_strdup(dirname);
+    if (dbstat->dir == NULL) {
+        cli_errmsg("cl_statinidir: Can't allocate memory for directory name\n");
+        return CL_EMEM;
     }
 
     if ((dd = opendir(dirname)) == NULL) {
@@ -5697,7 +5702,17 @@ cl_error_t cl_statinidir(const char *dirname, struct cl_stat *dbstat)
 
     cli_dbgmsg("Stat()ing files in %s\n", dirname);
 
-    while ((dent = readdir(dd))) {
+    for (;;) {
+        errno = 0;
+        dent  = readdir(dd);
+        if (dent == NULL) {
+            if (errno != 0) {
+                cli_errmsg("cl_statinidir: Directory enumeration failed for %s\n", dirname);
+                ret = CL_EREAD;
+            }
+            break;
+        }
+
         if (dent->d_ino) {
             if (strcmp(dent->d_name, ".") && strcmp(dent->d_name, "..") && CLI_DBEXT(dent->d_name)) {
                 size_t stat_table_size;
@@ -5705,63 +5720,70 @@ cl_error_t cl_statinidir(const char *dirname, struct cl_stat *dbstat)
                 if (dbstat->entries == UINT_MAX ||
                     cli_readdb_table_size((size_t)dbstat->entries + 1,
                                           sizeof(*dbstat->stattab), &stat_table_size) != CL_SUCCESS) {
-                    cl_statfree(dbstat);
-                    closedir(dd);
-                    return CL_EMEM;
+                    ret = CL_EMEM;
+                    goto done;
                 }
 
                 dbstat->entries++;
                 dbstat->stattab = (STATBUF *)cli_safer_realloc_or_free(dbstat->stattab, stat_table_size);
                 if (!dbstat->stattab) {
-                    cl_statfree(dbstat);
-                    closedir(dd);
-                    return CL_EMEM;
+                    ret = CL_EMEM;
+                    goto done;
                 }
 
 #ifdef _WIN32
                 if (cli_readdb_table_size((size_t)dbstat->entries,
                                           sizeof(*dbstat->statdname), &stat_table_size) != CL_SUCCESS) {
-                    cl_statfree(dbstat);
-                    closedir(dd);
-                    return CL_EMEM;
+                    ret = CL_EMEM;
+                    goto done;
                 }
 
                 dbstat->statdname = (char **)cli_safer_realloc_or_free(dbstat->statdname, stat_table_size);
                 if (!dbstat->statdname) {
                     cli_errmsg("cl_statinidir: Can't allocate memory for dbstat->statdname\n");
-                    cl_statfree(dbstat);
-                    closedir(dd);
-                    return CL_EMEM;
+                    ret = CL_EMEM;
+                    goto done;
                 }
 #endif
 
                 fname = malloc(strlen(dirname) + strlen(dent->d_name) + 32);
                 if (!fname) {
                     cli_errmsg("cl_statinidir: Cant' allocate memory for fname\n");
-                    cl_statfree(dbstat);
-                    closedir(dd);
-                    return CL_EMEM;
+                    ret = CL_EMEM;
+                    goto done;
                 }
                 sprintf(fname, "%s" PATHSEP "%s", dirname, dent->d_name);
 #ifdef _WIN32
                 dbstat->statdname[dbstat->entries - 1] = (char *)malloc(strlen(dent->d_name) + 1);
                 if (!dbstat->statdname[dbstat->entries - 1]) {
                     cli_errmsg("cli_statinidir: Can't allocate memory for dbstat->statdname\n");
-                    cl_statfree(dbstat);
-                    closedir(dd);
-                    return CL_EMEM;
+                    free(fname);
+                    ret = CL_EMEM;
+                    goto done;
                 }
 
                 strcpy(dbstat->statdname[dbstat->entries - 1], dent->d_name);
 #endif
-                CLAMSTAT(fname, &dbstat->stattab[dbstat->entries - 1]);
+                if (CLAMSTAT(fname, &dbstat->stattab[dbstat->entries - 1]) == -1) {
+                    cli_errmsg("cl_statinidir: Can't stat database file %s\n", fname);
+                    free(fname);
+                    ret = CL_ESTAT;
+                    goto done;
+                }
                 free(fname);
             }
         }
     }
 
-    closedir(dd);
-    return CL_SUCCESS;
+done:
+    if (closedir(dd) != 0) {
+        cli_errmsg("cl_statinidir: Can't close directory %s\n", dirname);
+        if (ret == CL_SUCCESS)
+            ret = CL_EREAD;
+    }
+    if (ret != CL_SUCCESS)
+        cl_statfree(dbstat);
+    return ret;
 }
 
 int cl_statchkdir(const struct cl_stat *dbstat)
@@ -5771,6 +5793,7 @@ int cl_statchkdir(const struct cl_stat *dbstat)
     STATBUF sb;
     unsigned int i, found;
     char *fname;
+    int ret = CL_SUCCESS;
 
     if (!dbstat || !dbstat->dir) {
         cli_errmsg("cl_statdbdir(): Null argument passed.\n");
@@ -5784,18 +5807,33 @@ int cl_statchkdir(const struct cl_stat *dbstat)
 
     cli_dbgmsg("Stat()ing files in %s\n", dbstat->dir);
 
-    while ((dent = readdir(dd))) {
+    for (;;) {
+        errno = 0;
+        dent  = readdir(dd);
+        if (dent == NULL) {
+            if (errno != 0) {
+                cli_errmsg("cl_statchkdir: Directory enumeration failed for %s\n", dbstat->dir);
+                ret = CL_EREAD;
+            }
+            break;
+        }
+
         if (dent->d_ino) {
             if (strcmp(dent->d_name, ".") && strcmp(dent->d_name, "..") && CLI_DBEXT(dent->d_name)) {
                 fname = malloc(strlen(dbstat->dir) + strlen(dent->d_name) + 32);
                 if (!fname) {
                     cli_errmsg("cl_statchkdir: can't allocate memory for fname\n");
-                    closedir(dd);
-                    return CL_EMEM;
+                    ret = CL_EMEM;
+                    goto done;
                 }
 
                 sprintf(fname, "%s" PATHSEP "%s", dbstat->dir, dent->d_name);
-                CLAMSTAT(fname, &sb);
+                if (CLAMSTAT(fname, &sb) == -1) {
+                    cli_errmsg("cl_statchkdir: Can't stat database file %s\n", fname);
+                    free(fname);
+                    ret = CL_ESTAT;
+                    goto done;
+                }
                 free(fname);
 
                 found = 0;
@@ -5807,21 +5845,26 @@ int cl_statchkdir(const struct cl_stat *dbstat)
 #endif
                         found = 1;
                         if (dbstat->stattab[i].st_mtime != sb.st_mtime) {
-                            closedir(dd);
-                            return 1;
+                            ret = 1;
+                            goto done;
                         }
                     }
 
                 if (!found) {
-                    closedir(dd);
-                    return 1;
+                    ret = 1;
+                    goto done;
                 }
             }
         }
     }
 
-    closedir(dd);
-    return CL_SUCCESS;
+done:
+    if (closedir(dd) != 0) {
+        cli_errmsg("cl_statchkdir: Can't close directory %s\n", dbstat->dir);
+        if (ret == CL_SUCCESS || ret == 1)
+            ret = CL_EREAD;
+    }
+    return ret;
 }
 
 void cli_pwdb_list_free(struct cl_engine *engine, struct cli_pwdb *pwdb)

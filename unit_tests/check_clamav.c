@@ -118,6 +118,7 @@ extern int clamav_test_fail_fgets;
 extern int clamav_test_fail_fread;
 extern int clamav_test_fail_closedir;
 extern int clamav_test_fail_readdir;
+extern int clamav_test_fail_stat;
 extern int clamav_test_short_write;
 extern size_t clamav_test_short_write_count;
 extern int __real_inflateInit_(z_streamp strm, const char *version, int stream_size);
@@ -3248,6 +3249,71 @@ START_TEST(test_signature_database_and_hash_stream_failures)
     unlink(dir_file_path);
     rmdir(dir_path);
     unlink(file_path);
+}
+END_TEST
+
+START_TEST(test_signature_directory_stat_failures_are_fail_visible)
+{
+    char dbfile[512];
+    struct cl_stat dbstat;
+    cl_error_t ret;
+    int fd;
+
+    memset(&dbstat, 0, sizeof(dbstat));
+    ck_assert_int_eq(cl_statinidir(NULL, &dbstat), CL_ENULLARG);
+    ck_assert_int_eq(cl_statinidir(tmpdir, NULL), CL_ENULLARG);
+
+    snprintf(dbfile, sizeof(dbfile), "%s/stat-failure.hdb", tmpdir);
+    fd = open(dbfile, O_CREAT | O_EXCL | O_WRONLY, 0600);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(close(fd), 0);
+
+    memset(&dbstat, 0, sizeof(dbstat));
+    clamav_test_fail_stat = 1;
+    ret = cl_statinidir(tmpdir, &dbstat);
+    clamav_test_fail_stat = 0;
+    ck_assert_int_eq(ret, CL_ESTAT);
+    ck_assert_ptr_null(dbstat.stattab);
+
+    memset(&dbstat, 0, sizeof(dbstat));
+    ck_assert_int_eq(cl_statinidir(tmpdir, &dbstat), CL_SUCCESS);
+
+    clamav_test_fail_stat = 1;
+    ret = cl_statchkdir(&dbstat);
+    clamav_test_fail_stat = 0;
+    ck_assert_int_eq(ret, CL_ESTAT);
+    cl_statfree(&dbstat);
+
+    unlink(dbfile);
+
+    memset(&dbstat, 0, sizeof(dbstat));
+    clamav_test_fail_readdir = 1;
+    ret = cl_statinidir(tmpdir, &dbstat);
+    clamav_test_fail_readdir = 0;
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_ptr_null(dbstat.stattab);
+
+    memset(&dbstat, 0, sizeof(dbstat));
+    clamav_test_fail_closedir = 1;
+    ret = cl_statinidir(tmpdir, &dbstat);
+    clamav_test_fail_closedir = 0;
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_ptr_null(dbstat.stattab);
+
+    memset(&dbstat, 0, sizeof(dbstat));
+    ck_assert_int_eq(cl_statinidir(tmpdir, &dbstat), CL_SUCCESS);
+
+    clamav_test_fail_readdir = 1;
+    ret = cl_statchkdir(&dbstat);
+    clamav_test_fail_readdir = 0;
+    ck_assert_int_eq(ret, CL_EREAD);
+
+    clamav_test_fail_closedir = 1;
+    ret = cl_statchkdir(&dbstat);
+    clamav_test_fail_closedir = 0;
+    ck_assert_int_eq(ret, CL_EREAD);
+
+    cl_statfree(&dbstat);
 }
 END_TEST
 #endif
@@ -48687,6 +48753,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_strerror);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_signature_database_and_hash_stream_failures);
+    tcase_add_test(tc_cl, test_signature_directory_stat_failures_are_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_top_level_maxfilesize_is_fail_visible);
     tcase_add_test(tc_cl, test_maxscansize_exact_and_crossing_are_fail_visible);

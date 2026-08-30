@@ -34,6 +34,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <dirent.h>
+#include <sys/stat.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -233,6 +234,10 @@ extern char *__real_fgets(char *restrict s, int n, FILE *restrict stream);
 extern size_t __real_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 extern int __real_closedir(DIR *dirp);
 extern struct dirent *__real_readdir(DIR *dirp);
+extern int __real_stat(const char *path, struct stat *buf);
+#ifdef HAVE_STAT64
+extern int __real_stat64(const char *path, STATBUF *buf);
+#endif
 
 static int jsnorm_test_fail_write;
 static int jsnorm_test_fail_close;
@@ -244,6 +249,7 @@ int clamav_test_fail_fgets;
 int clamav_test_fail_fread;
 int clamav_test_fail_closedir;
 int clamav_test_fail_readdir;
+int clamav_test_fail_stat;
 int clamav_test_short_write;
 size_t clamav_test_short_write_count;
 
@@ -315,6 +321,26 @@ struct dirent *__wrap_readdir(DIR *dirp)
     }
     return __real_readdir(dirp);
 }
+
+int __wrap_stat(const char *path, struct stat *buf)
+{
+    if (clamav_test_fail_stat) {
+        errno = EIO;
+        return -1;
+    }
+    return __real_stat(path, buf);
+}
+
+#ifdef HAVE_STAT64
+int __wrap_stat64(const char *path, STATBUF *buf)
+{
+    if (clamav_test_fail_stat) {
+        errno = EIO;
+        return -1;
+    }
+    return __real_stat64(path, buf);
+}
+#endif
 #endif
 
 static void jstest_setup(void)

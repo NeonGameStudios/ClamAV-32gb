@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## Signature-directory stat admission — 2026-08-30
+
+The public signature-directory bookkeeping APIs `cl_statinidir()` and
+`cl_statchkdir()` previously treated `readdir()` and `closedir()` failures as
+ordinary completion, and consumed `st_ino`/`st_mtime` after ignoring a failed
+`stat()`. The public `cl_statinidir()` entry also rejects null arguments and
+surfaces directory-name allocation failure. Both paths now clear `errno`
+before each directory read, classify enumeration and file-stat failures
+explicitly, centralize directory cleanup, and return `CL_EREAD` when cleanup
+fails even after detecting a directory change. The registered wrapper
+regression covers null arguments, read, close, stat, and changed-plus-close-
+failure cases; focused current-source GCC and
+AddressSanitizer/UndefinedBehaviorSanitizer runners pass. Current-object
+execution, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.
+
 ## CVD age-directory read status — 2026-08-30
 
 `cl_cvdgetage()` previously treated `readdir()` returning `NULL` as ordinary
