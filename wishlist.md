@@ -8866,3 +8866,21 @@ qualification evidence.
   current-source production-linked execution, complete bytecode execution/JIT,
   sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
   final release qualification evidence.
+
+## OneNote modern mapped-input residency admission — 2026-08-30
+
+- Keep the bounded modern OneNote whole-input mapping charged to the shared
+  contiguous-residency budget; reject before `mmap()` when the budget is too
+  small and roll the reservation back if mapping fails.
+- Retain the Rust bindings-generator declarations, checked-in bindings, and
+  source guards; add current Rust/C ABI execution, complete OneNote corpus,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final release qualification evidence.
+
+## Rust CVD TAR-entry borrow admission — 2026-08-30
+
+- Keep CVD TAR extraction on an owned filename before mutable entry unpacking;
+  preserve archive-entry and destination-write error propagation.
+- Retain the current Rust 1.97.1 offline build evidence and add full Rust/C
+  ABI execution, production-CVD/service, sanitizer, materialized-large-file,
+  Sonic1, and final release qualification evidence.

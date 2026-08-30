@@ -695,18 +695,30 @@ impl onenote::LegacyAttachmentSink for OneNoteScanSink {
 struct MappedInput {
     address: *mut c_void,
     length: usize,
+    ctx: *mut cli_ctx,
+    contiguous_reserved: u64,
 }
 
 impl MappedInput {
-    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
+    unsafe fn new(ctx: *mut cli_ctx, fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
+        if ctx.is_null() {
+            return Err(cl_error_t_CL_ENULLARG);
+        }
         if length == 0 {
             return Ok(Self {
                 address: null_mut(),
                 length: 0,
+                ctx,
+                contiguous_reserved: 0,
             });
         }
         if length > isize::MAX as usize {
             return Err(cl_error_t_CL_ERESOURCE);
+        }
+        let contiguous_reserved = u64::try_from(length).map_err(|_| cl_error_t_CL_ERESOURCE)?;
+        let status = sys::cli_scan_reserve_contiguous(ctx, contiguous_reserved);
+        if status != cl_error_t_CL_SUCCESS {
+            return Err(status);
         }
 
         let address = libc::mmap(
@@ -718,10 +730,16 @@ impl MappedInput {
             0,
         );
         if address == libc::MAP_FAILED {
+            sys::cli_scan_release_contiguous(ctx, contiguous_reserved);
             return Err(cl_error_t_CL_EMEM);
         }
 
-        Ok(Self { address, length })
+        Ok(Self {
+            address,
+            length,
+            ctx,
+            contiguous_reserved,
+        })
     }
 
     fn as_slice(&self) -> &[u8] {
@@ -740,6 +758,90 @@ impl Drop for MappedInput {
                 libc::munmap(self.address, self.length);
             }
         }
+        if self.contiguous_reserved != 0 {
+            unsafe {
+                sys::cli_scan_release_contiguous(self.ctx, self.contiguous_reserved);
+            }
+            self.contiguous_reserved = 0;
+        }
+    }
+}
+
+#[cfg(test)]
+#[allow(non_upper_case_globals)]
+mod mapped_input_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
+    use std::sync::Mutex;
+
+    static RESERVED: AtomicU64 = AtomicU64::new(0);
+    static RELEASED: AtomicU64 = AtomicU64::new(0);
+    static RESERVE_CALLS: AtomicUsize = AtomicUsize::new(0);
+    static REJECT_RESERVATION: AtomicBool = AtomicBool::new(false);
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    #[no_mangle]
+    unsafe extern "C" fn cli_scan_reserve_contiguous(_ctx: *mut cli_ctx, bytes: u64) -> cl_error_t {
+        RESERVE_CALLS.fetch_add(1, Ordering::SeqCst);
+        if REJECT_RESERVATION.load(Ordering::SeqCst) {
+            return cl_error_t_CL_ERESOURCE;
+        }
+        RESERVED.fetch_add(bytes, Ordering::SeqCst);
+        cl_error_t_CL_SUCCESS
+    }
+
+    #[no_mangle]
+    unsafe extern "C" fn cli_scan_release_contiguous(_ctx: *mut cli_ctx, bytes: u64) {
+        RELEASED.fetch_add(bytes, Ordering::SeqCst);
+    }
+
+    #[test]
+    fn mapped_input_rejects_contiguous_budget_before_mmap() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        RESERVED.store(0, Ordering::SeqCst);
+        RELEASED.store(0, Ordering::SeqCst);
+        RESERVE_CALLS.store(0, Ordering::SeqCst);
+        REJECT_RESERVATION.store(true, Ordering::SeqCst);
+
+        let result = unsafe { MappedInput::new(1 as *mut cli_ctx, -1, 4096) };
+        assert!(matches!(result, Err(cl_error_t_CL_ERESOURCE)));
+        assert_eq!(RESERVE_CALLS.load(Ordering::SeqCst), 1);
+        assert_eq!(RESERVED.load(Ordering::SeqCst), 0);
+        assert_eq!(RELEASED.load(Ordering::SeqCst), 0);
+        REJECT_RESERVATION.store(false, Ordering::SeqCst);
+    }
+
+    #[test]
+    fn mapped_input_rolls_back_reservation_when_mmap_fails() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        RESERVED.store(0, Ordering::SeqCst);
+        RELEASED.store(0, Ordering::SeqCst);
+        RESERVE_CALLS.store(0, Ordering::SeqCst);
+
+        let result = unsafe { MappedInput::new(1 as *mut cli_ctx, -1, 4096) };
+        assert!(matches!(result, Err(cl_error_t_CL_EMEM)));
+        assert_eq!(RESERVE_CALLS.load(Ordering::SeqCst), 1);
+        assert_eq!(RESERVED.load(Ordering::SeqCst), 4096);
+        assert_eq!(RELEASED.load(Ordering::SeqCst), 4096);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn mapped_input_releases_reservation_when_dropped() {
+        use std::os::fd::AsRawFd;
+
+        let _guard = TEST_LOCK.lock().unwrap();
+        RESERVED.store(0, Ordering::SeqCst);
+        RELEASED.store(0, Ordering::SeqCst);
+        RESERVE_CALLS.store(0, Ordering::SeqCst);
+
+        let file = std::fs::File::open("/dev/zero").unwrap();
+        let mapped = unsafe { MappedInput::new(1 as *mut cli_ctx, file.as_raw_fd(), 4096) }.unwrap();
+        assert_eq!(RESERVE_CALLS.load(Ordering::SeqCst), 1);
+        assert_eq!(RESERVED.load(Ordering::SeqCst), 4096);
+        assert_eq!(RELEASED.load(Ordering::SeqCst), 0);
+        drop(mapped);
+        assert_eq!(RELEASED.load(Ordering::SeqCst), 4096);
     }
 }
 
@@ -881,7 +983,7 @@ unsafe fn scan_onenote_inner(ctx: *mut cli_ctx) -> cl_error_t {
         Err(status) => return parser_failure(ctx, "OneNote", status, "root temporary spool could not be populated"),
     };
 
-    let mapped = match MappedInput::new(root_spool.fd, fmap.len()) {
+    let mapped = match MappedInput::new(ctx, root_spool.fd, fmap.len()) {
         Ok(mapped) => mapped,
         Err(status) => {
             let status = parser_failure(ctx, "OneNote", status, "root temporary spool mapping failed");

@@ -16135,3 +16135,28 @@ access. The registered regression covers all constructor and lifecycle entry
 points, and the focused current-source production-linked GCC and ASan/UBSan
 runners pass. Complete bytecode execution/JIT, production-CVD/service,
 materialized-large-file, Sonic1, and final release qualification remain open.
+
+## OneNote modern mapped-input residency admission — 2026-08-30
+
+The bounded modern OneNote compatibility path stages the root and maps it as a
+borrowed whole-input slice because the third-party parser does not yet accept a
+reader. That mapping is now charged to the shared contiguous-residency budget;
+resource rejection happens before `mmap()`, and an `mmap()` failure releases the
+reservation before returning. `MappedInput::Drop` unmaps the view and releases
+the reservation exactly once. The Rust bindings generator and checked-in ABI
+bindings expose the new accounting functions, and source guards pin both
+admission and rollback. The cached Rust 1.97.1 Docker compile passes;
+full Rust/C ABI execution, OneNote corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
+## Rust CVD TAR-entry borrow admission — 2026-08-30
+
+The current Rust 1.97.1 compiler rejected `CVD::unpack_to()` because a TAR
+entry path and filename borrow remained live across the mutable
+`entry.unpack()` call. The extraction path now copies the filename into an
+owned `OsString` before constructing the destination path and unpacking, which
+preserves the existing archive-entry and destination-write error propagation
+while restoring a clean current-source crate build. The cached Docker Rust
+1.97.1 `cargo check --offline` passes; full Rust/C ABI execution,
+production-CVD/service, sanitizer, materialized-large-file, Sonic1, and final
+release qualification remain open.

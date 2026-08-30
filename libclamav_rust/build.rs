@@ -59,6 +59,8 @@ const BINDGEN_FUNCTIONS: &[&str] = &[
     "cli_magic_scan_desc_type_reserved",
     "cli_gentempfd",
     "cli_unlink",
+    "cli_scan_reserve_contiguous",
+    "cli_scan_release_contiguous",
     "cli_scan_reserve_temporary",
     "cli_scan_release_temporary",
     "cli_checklimits",

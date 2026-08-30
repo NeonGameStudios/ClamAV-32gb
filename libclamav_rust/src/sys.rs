@@ -1331,6 +1331,10 @@ extern "C" {
     pub fn cli_unlink(pathname: *const ::std::os::raw::c_char) -> cl_error_t;
 }
 extern "C" {
+    pub fn cli_scan_reserve_contiguous(ctx: *mut cli_ctx, bytes: u64) -> cl_error_t;
+    pub fn cli_scan_release_contiguous(ctx: *mut cli_ctx, bytes: u64);
+}
+extern "C" {
     pub fn cli_scan_reserve_temporary(ctx: *mut cli_ctx, bytes: u64) -> cl_error_t;
     pub fn cli_scan_release_temporary(ctx: *mut cli_ctx, bytes: u64);
 }

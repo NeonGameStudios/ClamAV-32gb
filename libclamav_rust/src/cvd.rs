@@ -303,14 +303,17 @@ impl CVD {
                 ))
             })?;
 
-            let filename = file_path.file_name().ok_or_else(|| {
-                Error::UnpackFailed(format!(
-                    "Failed to get filename for file in signature archive: {:?}",
-                    file_path
-                ))
-            })?;
+            let filename = file_path
+                .file_name()
+                .ok_or_else(|| {
+                    Error::UnpackFailed(format!(
+                        "Failed to get filename for file in signature archive: {:?}",
+                        file_path
+                    ))
+                })?
+                .to_os_string();
 
-            let destination_file_path = path.join(filename);
+            let destination_file_path = path.join(&filename);
 
             debug!("Unpacking {:?} to: {:?}", filename, destination_file_path);
 
