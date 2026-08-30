@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Rust signed-database and logger FFI safety — 2026-08-30
+
+The signed-database Rust FFI could form a raw slice from a null certificate
+array, construct `Box::from_raw()` from a null verifier handle, and panic when
+an intermediate certificate path or returned signer name could not be
+represented as the expected string. CVD getters likewise used unchecked
+`CString::new(...).unwrap()` conversions, and the Rust logger could panic when
+an untrusted message contained an interior NUL. The boundaries now reject or
+report those cases, preserve zero-length null arrays safely, and sanitize log
+messages before C dispatch. Source guards cover the new behavior; Rust/C ABI,
+sanitizer, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.
+
 ## Rust cleanup-helper FFI errors — 2026-08-30
 
 The Rust `glob_rm()` cleanup entry used `glob(glob_str).expect(...)`, so an

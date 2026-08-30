@@ -29,6 +29,15 @@ use log::{set_max_level, Level, LevelFilter, Metadata, Record};
 
 use crate::sys;
 
+fn cstring_log_message(message: String) -> CString {
+    let sanitized = message.replace('\0', "\\0");
+
+    match CString::new(sanitized) {
+        Ok(message) => message,
+        Err(_) => CString::default(),
+    }
+}
+
 pub struct ClamLogger;
 
 impl log::Log for ClamLogger {
@@ -38,7 +47,7 @@ impl log::Log for ClamLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            let msg = CString::new(format!("{}\n", record.args())).unwrap();
+            let msg = cstring_log_message(format!("{}\n", record.args()));
             let ptr = msg.as_ptr();
 
             match record.level() {
@@ -71,7 +80,7 @@ pub extern "C" fn clrs_log_init() -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::clrs_log_init;
+    use super::{clrs_log_init, cstring_log_message};
     use log::{debug, error, info, warn};
 
     #[test]
@@ -82,6 +91,13 @@ mod tests {
         info!("darkness");
         warn!("my old");
         error!("friend.");
+    }
+
+    #[test]
+    fn log_messages_with_nul_are_sanitized() {
+        let message = cstring_log_message("prefix\0suffix".to_string());
+
+        assert_eq!(message.as_bytes(), b"prefix\\0suffix");
     }
 }
 

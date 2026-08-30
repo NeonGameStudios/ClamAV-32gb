@@ -1,5 +1,15 @@
 # Wishlist
 
+## Rust signed-database and logger FFI safety — 2026-08-30
+
+- Keep signed-database FFI boundaries fail-visible: reject null certificate
+  arrays and verifier handles before raw-slice or `Box::from_raw()` use,
+  report invalid intermediate paths and signer strings, and avoid CVD getter
+  panics on interior-NUL metadata. Sanitize interior NULs in Rust log messages
+  before C dispatch. Source guards cover the new boundaries; Rust/C ABI,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final release qualification remain required.
+
 ## Rust cleanup-helper FFI errors — 2026-08-30
 
 - Keep `glob_rm()` fail-visible for invalid glob patterns instead of allowing

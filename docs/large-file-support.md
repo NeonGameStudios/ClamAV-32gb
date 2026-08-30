@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Rust signed-database and logger FFI safety — 2026-08-30
+
+Signed-database FFI now rejects null certificate arrays and verifier handles
+before raw-slice or `Box::from_raw()` use, converts invalid intermediate paths
+and signer strings into explicit errors, and makes CVD string getters return a
+null result rather than panic on interior-NUL metadata. Rust log messages
+sanitize interior NULs before C dispatch. Source guards cover the new
+boundaries; Rust/C ABI, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain
+required.
+
 ## Rust cleanup-helper FFI errors — 2026-08-30
 
 The Rust cleanup helpers now keep invalid input fail-visible across the C ABI.

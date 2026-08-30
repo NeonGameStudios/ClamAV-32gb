@@ -19,7 +19,7 @@
  */
 
 use std::{
-    ffi::{c_void, CStr},
+    ffi::{c_void, CStr, CString},
     fs::File,
     io::{prelude::*, BufReader},
     mem::ManuallyDrop,
@@ -98,7 +98,12 @@ pub unsafe extern "C" fn codesign_sign_file(
     append: bool,
     err: *mut *mut FFIError,
 ) -> bool {
-    let target_file_path_str = validate_str_param!(target_file_path_str);
+    if err.is_null() {
+        warn!("err is NULL");
+        return false;
+    }
+
+    let target_file_path_str = validate_str_param!(target_file_path_str, err = err);
     let target_file_path = match Path::new(target_file_path_str).canonicalize() {
         Ok(p) => p,
         Err(e) => {
@@ -112,11 +117,21 @@ pub unsafe extern "C" fn codesign_sign_file(
         }
     };
 
-    let signature_file_path_str = validate_str_param!(signature_file_path_str);
+    let signature_file_path_str = validate_str_param!(signature_file_path_str, err = err);
     let signature_file_path = Path::new(signature_file_path_str);
 
-    let cert_path_strs: &[*const c_char] =
-        std::slice::from_raw_parts(cert_paths_str, cert_paths_len);
+    if cert_paths_len != 0 && cert_paths_str.is_null() {
+        return ffi_error!(
+            err = err,
+            Error::SignFailed("Intermediate certificate path list is NULL".to_string())
+        );
+    }
+
+    let cert_path_strs: &[*const c_char] = if cert_paths_len == 0 {
+        &[]
+    } else {
+        std::slice::from_raw_parts(cert_paths_str, cert_paths_len)
+    };
 
     // now convert the cert_path_strs to a Vec<&Path>
     let mut cert_paths: Vec<PathBuf> = Vec::with_capacity(cert_paths_len);
@@ -130,16 +145,16 @@ pub unsafe extern "C" fn codesign_sign_file(
         }
 
         #[allow(unused_unsafe)]
-        let path_str = CStr::from_ptr(path_str)
-            .to_str()
-            .map_err(|e| {
+        let path_str = match CStr::from_ptr(path_str).to_str() {
+            Ok(path_str) => path_str,
+            Err(e) => {
                 warn!("Intermediate path string is not valid unicode: {e}");
-                ffi_error!(
+                return ffi_error!(
                     err = err,
-                    Error::SignFailed("Intermediate certificate path is NULL".to_string())
-                )
-            })
-            .unwrap();
+                    Error::SignFailed("Intermediate certificate path is not valid UTF-8".to_string())
+                );
+            }
+        };
 
         match Path::new(path_str).canonicalize() {
             Ok(path) => cert_paths.push(path),
@@ -155,7 +170,7 @@ pub unsafe extern "C" fn codesign_sign_file(
         }
     }
 
-    let signing_key_path_str = validate_str_param!(signing_key_path_str);
+    let signing_key_path_str = validate_str_param!(signing_key_path_str, err = err);
     let signing_key_path = match Path::new(signing_key_path_str).canonicalize() {
         Ok(p) => p,
         Err(e) => {
@@ -263,7 +278,24 @@ pub unsafe extern "C" fn codesign_verify_file(
     signer_name: *mut *mut c_char,
     err: *mut *mut FFIError,
 ) -> bool {
-    let signed_file_path_str = validate_str_param!(signed_file_path_str);
+    if err.is_null() {
+        warn!("err is NULL");
+        return false;
+    }
+    if verifier_ptr.is_null() {
+        return ffi_error!(
+            err = err,
+            Error::CannotVerify("verifier pointer is NULL".to_string())
+        );
+    }
+    if signer_name.is_null() {
+        return ffi_error!(
+            err = err,
+            Error::CannotVerify("signer_name output parameter is NULL".to_string())
+        );
+    }
+
+    let signed_file_path_str = validate_str_param!(signed_file_path_str, err = err);
     let signed_file_path = match Path::new(signed_file_path_str).canonicalize() {
         Ok(p) => p,
         Err(e) => {
@@ -277,7 +309,7 @@ pub unsafe extern "C" fn codesign_verify_file(
         }
     };
 
-    let signature_file_path_str = validate_str_param!(signature_file_path_str);
+    let signature_file_path_str = validate_str_param!(signature_file_path_str, err = err);
     let signature_file_path = match Path::new(signature_file_path_str).canonicalize() {
         Ok(p) => p,
         Err(e) => {
@@ -293,20 +325,19 @@ pub unsafe extern "C" fn codesign_verify_file(
 
     let verifier = ManuallyDrop::new(Box::from_raw(verifier_ptr as *mut Verifier));
 
-    // verify that signer_name is not NULL
-    if signer_name.is_null() {
-        // invalid parameter
-        return ffi_error!(
-            err = err,
-            Error::CannotVerify("signer_name output parameter is NULL".to_string())
-        );
-    }
-
     match verify_signed_file(&signed_file_path, &signature_file_path, &verifier) {
         Ok(signer) => {
             debug!("CVD verified successfully");
             // convert the signer_name to a CString and store it in the output parameter
-            let signer_cstr = std::ffi::CString::new(signer).unwrap();
+            let signer_cstr = match CString::new(signer) {
+                Ok(signer_cstr) => signer_cstr,
+                Err(_) => {
+                    return ffi_error!(
+                        err = err,
+                        Error::CannotVerify("signer name contains an interior NUL".to_string())
+                    );
+                }
+            };
             *signer_name = signer_cstr.into_raw();
             true
         }

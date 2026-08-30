@@ -546,7 +546,15 @@ pub unsafe extern "C" fn cvd_check(
 
             match cvd.verify(Some(&verifier), disable_legacy_dsig) {
                 Ok(signer) => {
-                    let signer_cstr = std::ffi::CString::new(signer).unwrap();
+                    let signer_cstr = match CString::new(signer) {
+                        Ok(signer_cstr) => signer_cstr,
+                        Err(_) => {
+                            return ffi_error!(
+                                err = err,
+                                Error::CannotVerify("signer name contains an interior NUL".to_string())
+                            );
+                        }
+                    };
                     *signer_name = signer_cstr.into_raw();
                     true
                 }
@@ -693,7 +701,15 @@ pub unsafe extern "C" fn cvd_verify(
     if verifier_ptr.is_null() {
         match cvd.verify(None, disable_legacy_dsig) {
             Ok(signer) => {
-                let signer_cstr = std::ffi::CString::new(signer).unwrap();
+                let signer_cstr = match CString::new(signer) {
+                    Ok(signer_cstr) => signer_cstr,
+                    Err(_) => {
+                        return ffi_error!(
+                            err = err,
+                            Error::CannotVerify("signer name contains an interior NUL".to_string())
+                        );
+                    }
+                };
                 *signer_name = signer_cstr.into_raw();
                 true
             }
@@ -706,7 +722,15 @@ pub unsafe extern "C" fn cvd_verify(
 
         match cvd.verify(Some(&verifier), disable_legacy_dsig) {
             Ok(signer) => {
-                let signer_cstr = std::ffi::CString::new(signer).unwrap();
+                let signer_cstr = match CString::new(signer) {
+                    Ok(signer_cstr) => signer_cstr,
+                    Err(_) => {
+                        return ffi_error!(
+                            err = err,
+                            Error::CannotVerify("signer name contains an interior NUL".to_string())
+                        );
+                    }
+                };
                 *signer_name = signer_cstr.into_raw();
                 true
             }
@@ -793,7 +817,13 @@ pub unsafe extern "C" fn cvd_get_name(cvd: *const c_void) -> *mut c_char {
 
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
 
-    CString::new(cvd.name.clone()).unwrap().into_raw()
+    match CString::new(cvd.name.clone()) {
+        Ok(name) => name.into_raw(),
+        Err(_) => {
+            warn!("CVD name contains an interior NUL");
+            std::ptr::null_mut()
+        }
+    }
 }
 
 /// C interface for getting the number of signatures in a CVD.
@@ -851,7 +881,13 @@ pub unsafe extern "C" fn cvd_get_builder(cvd: *const c_void) -> *mut c_char {
     }
 
     let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
-    CString::new(cvd.builder.clone()).unwrap().into_raw()
+    match CString::new(cvd.builder.clone()) {
+        Ok(builder) => builder.into_raw(),
+        Err(_) => {
+            warn!("CVD builder contains an interior NUL");
+            std::ptr::null_mut()
+        }
+    }
 }
 
 /// C interface for getting the file handle of a CVD.
