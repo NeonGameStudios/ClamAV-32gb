@@ -5526,6 +5526,10 @@ contains libclamav/nsis/nulsft.c 'NSIS solid stream contains trailing data'
 contains libclamav/nsis/nulsft.c 'NSIS inspection reached the configured time limit'
 contains libclamav/nsis/nulsft.c 'NSIS member traversal reached the configured time limit'
 contains libclamav/nsis/nulsft.c 'NSIS compressed member traversal reached the configured time limit'
+contains libclamav/nsis/nulsft.c 'nsis_shutdown(n);'
+contains libclamav/nsis/nulsft.c 'if (ret != CL_SUCCESS) {
+                        nsis_shutdown(n);
+                        break;'
 contains libclamav/nsis/nulsft.c 'NSIS solid member traversal reached the configured time limit'
 contains unit_tests/check_clamav.c 'test_nsis_time_limit_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_nsis_header_range_classes_are_fail_visible'

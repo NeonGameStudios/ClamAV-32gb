@@ -423,8 +423,10 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
                     size_t produced;
 
                     ret = nsis_checktimelimit(ctx, "NSIS compressed member traversal reached the configured time limit");
-                    if (ret != CL_SUCCESS)
+                    if (ret != CL_SUCCESS) {
+                        nsis_shutdown(n);
                         break;
+                    }
 
                     if (n->nsis.avail_in == 0 && input_remaining != 0) {
                         size_t chunk = MIN(sizeof(ibuf), input_remaining);

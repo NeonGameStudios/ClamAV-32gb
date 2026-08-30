@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## NSIS non-solid decoder timeout cleanup — 2026-08-30
+
+The NSIS non-solid compressed-member loop now shuts down an initialized BZIP2
+or LZMA decoder before leaving on a traversal time limit. The timeout remains
+sticky and incomplete, and a source guard pins the cleanup boundary. A
+disposable current-source GCC runner injects the timeout after BZIP2
+initialization and observes one decoder finalization, the exact timeout
+reason, and cache taint; the same runner passes under GCC ASan/UBSan with leak
+detection enabled. Complete NSIS/SFX corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain
+required.
+
 ## BZIP2 concatenated-stream decoder initialization cleanup — 2026-08-30
 
 The shared BZIP2 scanner now tracks the active stream across concatenated

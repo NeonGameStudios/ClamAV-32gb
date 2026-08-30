@@ -1,5 +1,15 @@
 # Wishlist
 
+## NSIS non-solid decoder timeout cleanup — 2026-08-30
+
+- Keep the NSIS non-solid compressed-member timeout branch paired with
+  `nsis_shutdown()` after BZIP2 or LZMA initialization. Preserve the
+  fail-visible timeout/incomplete result. The disposable current-source GCC
+  runner and its GCC ASan/UBSan leak-enabled variant now prove the BZIP2
+  timeout/finalization boundary; complete NSIS/SFX corpus,
+  production-CVD/service, materialized-large-file, Sonic1, and release
+  qualification remain.
+
 ## BZIP2 concatenated-stream decoder initialization cleanup — 2026-08-30
 
 - Keep BZIP2 concatenated-stream teardown conditional on a successful active

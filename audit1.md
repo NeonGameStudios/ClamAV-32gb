@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## NSIS non-solid decoder timeout cleanup — 2026-08-30
+
+The NSIS non-solid compressed-member loop initialized the BZIP2 or LZMA
+decoder, then broke on a traversal time-limit result without shutting that
+decoder down. It now releases the active decoder before leaving the loop;
+the outer parser still preserves the sticky timeout and incomplete result.
+The source guard pins this cleanup boundary. A disposable current-source GCC
+runner injects the timeout immediately after BZIP2 initialization and
+observes exactly one decoder finalization with `CL_ETIMEOUT`, sticky
+incomplete state, cache taint, and the exact parser reason; the same runner
+passes under GCC ASan/UBSan with leak detection enabled. Complete NSIS/SFX
+corpus, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.
+
 ## BZIP2 concatenated-stream decoder initialization cleanup — 2026-08-30
 
 The shared BZIP2 scanner finalized the first concatenated stream, then
