@@ -1,5 +1,15 @@
 # Wishlist
 
+## Rust evidence FFI admission — 2026-08-30
+
+- Keep Rust evidence query and mutation entry points fail-visible for null
+  handles and error outputs. Null queries now return safe empty/false values;
+  mutation and child-evidence paths reject null state before raw ownership or
+  panic-on-null error reporting. Focused regressions and source guards cover
+  verdict, alert, indicator, add, and remove operations. Current Rust/C ABI,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final release qualification remain required.
+
 ## Rust CDIFF update and FFI admission — 2026-08-30
 
 - Keep the freshclam/sigtool CDIFF path fail-visible for null verifier

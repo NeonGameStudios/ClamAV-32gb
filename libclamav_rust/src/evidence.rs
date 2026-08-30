@@ -96,13 +96,15 @@ pub unsafe extern "C" fn _evidence_new_from_child(
     from_normalized: bool,
     err: *mut *mut FFIError,
 ) -> bool {
-    if child.is_null() {
-        error!("Attempted to create evidence from a NULL child pointer. Please report this at: https://github.com/Cisco-Talos/clamav/issues");
+    if err.is_null() {
+        error!("err is NULL");
         return false;
     }
+    if child.is_null() {
+        return ffi_error!(err = err, Error::NullParam("child"));
+    }
     if evidence_out.is_null() {
-        error!("evidence_out pointer is NULL. Please report this at: https://github.com/Cisco-Talos/clamav/issues");
-        return false;
+        return ffi_error!(err = err, Error::NullParam("evidence_out"));
     }
 
     // The caller must remain responsible for freeing the child evidence.
@@ -133,13 +135,15 @@ pub unsafe extern "C" fn _evidence_add_child_evidence(
     from_normalized: bool,
     err: *mut *mut FFIError,
 ) -> bool {
-    if evidence.is_null() {
-        error!("Attempted to add child evidence to a NULL evidence pointer. Please report this at: https://github.com/Cisco-Talos/clamav/issues");
+    if err.is_null() {
+        error!("err is NULL");
         return false;
     }
+    if evidence.is_null() {
+        return ffi_error!(err = err, Error::NullParam("evidence"));
+    }
     if child.is_null() {
-        error!("Attempted to add NULL child evidence. Please report this at: https://github.com/Cisco-Talos/clamav/issues");
-        return false;
+        return ffi_error!(err = err, Error::NullParam("child"));
     }
 
     // The caller must remain responsible for freeing the parent evidence.
@@ -176,6 +180,9 @@ pub extern "C" fn evidence_free(evidence: sys::evidence_t) {
 /// No parameters may be NULL
 #[export_name = "evidence_render_verdict"]
 pub unsafe extern "C" fn _evidence_render_verdict(evidence: sys::evidence_t) -> bool {
+    if evidence.is_null() {
+        return false;
+    }
     let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
 
     evidence.render_verdict()
@@ -192,6 +199,9 @@ pub unsafe extern "C" fn _evidence_render_verdict(evidence: sys::evidence_t) -> 
 /// No parameters may be NULL
 #[export_name = "evidence_get_last_alert"]
 pub unsafe extern "C" fn _evidence_get_last_alert(evidence: sys::evidence_t) -> *const c_char {
+    if evidence.is_null() {
+        return std::ptr::null();
+    }
     let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
 
     if let Some(meta) = evidence.strong.values().last() {
@@ -251,6 +261,9 @@ pub unsafe extern "C" fn _evidence_get_indicator(
     out_depth: *mut usize,
     out_object_id: *mut usize,
 ) -> *const c_char {
+    if evidence.is_null() {
+        return std::ptr::null();
+    }
     let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
 
     match indicator_type {
@@ -365,6 +378,13 @@ pub unsafe extern "C" fn _evidence_add_indicator(
     match_offset: u64,
     err: *mut *mut FFIError,
 ) -> bool {
+    if err.is_null() {
+        error!("err is NULL");
+        return false;
+    }
+    if evidence.is_null() {
+        return ffi_error!(err = err, Error::NullParam("evidence"));
+    }
     let name_str = validate_str_param!(name, err = err);
 
     let mut evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
@@ -397,6 +417,13 @@ pub unsafe extern "C" fn _evidence_remove_indicator(
     indicator_type: IndicatorType,
     err: *mut *mut FFIError,
 ) -> bool {
+    if err.is_null() {
+        error!("err is NULL");
+        return false;
+    }
+    if evidence.is_null() {
+        return ffi_error!(err = err, Error::NullParam("evidence"));
+    }
     let name_str = validate_str_param!(name, err = err);
 
     let mut evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
@@ -568,5 +595,63 @@ impl Evidence {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::CString;
+
+    #[test]
+    fn evidence_queries_reject_null_handles() {
+        assert!(!_evidence_render_verdict(std::ptr::null_mut()));
+        assert!(_evidence_get_last_alert(std::ptr::null_mut()).is_null());
+        assert!(_evidence_get_indicator(
+            std::ptr::null_mut(),
+            IndicatorType::Strong,
+            0,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+        )
+        .is_null());
+    }
+
+    #[test]
+    fn evidence_mutations_reject_null_handles_with_errors() {
+        let name = CString::new("indicator").expect("C string");
+        let mut add_error: *mut FFIError = std::ptr::null_mut();
+        let mut remove_error: *mut FFIError = std::ptr::null_mut();
+        let mut child_error: *mut FFIError = std::ptr::null_mut();
+
+        assert!(!_evidence_new_from_child(
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            false,
+            &mut child_error,
+        ));
+        assert!(!child_error.is_null());
+        unsafe { crate::ffi_util::ffierror_free(child_error) };
+
+        assert!(!_evidence_add_indicator(
+            std::ptr::null_mut(),
+            name.as_ptr(),
+            IndicatorType::Strong,
+            0,
+            false,
+            0,
+            &mut add_error,
+        ));
+        assert!(!add_error.is_null());
+        unsafe { crate::ffi_util::ffierror_free(add_error) };
+
+        assert!(!_evidence_remove_indicator(
+            std::ptr::null_mut(),
+            name.as_ptr(),
+            IndicatorType::Strong,
+            &mut remove_error,
+        ));
+        assert!(!remove_error.is_null());
+        unsafe { crate::ffi_util::ffierror_free(remove_error) };
     }
 }

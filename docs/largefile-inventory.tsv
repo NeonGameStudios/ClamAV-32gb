@@ -16708,7 +16708,7 @@ native-width-integer	libclamav_rust/delharc/src/header/parser.rs	269	        let
 native-width-integer	libclamav_rust/delharc/src/header/parser.rs	272	        // establish the first extra header length and the long header length
 native-width-integer	libclamav_rust/delharc/src/header/parser.rs	312	            // check long header length (level 2, 3)
 native-width-integer	libclamav_rust/delharc/src/header/parser.rs	361	        // validate long header length
-native-width-integer	libclamav_rust/src/evidence.rs	243	/// The out_depth and out_object_id parameters are optional, and will be size_t pointers for depth and object_id.
+native-width-integer	libclamav_rust/src/evidence.rs	253	/// The out_depth and out_object_id parameters are optional, and will be size_t pointers for depth and object_id.
 native-width-integer	libclamav_rust/src/sys.rs	1063	    pub offset: off_t,
 native-width-integer	libclamav_rust/src/sys.rs	129	        offset: off_t,
 native-width-integer	libclamav_rust/src/sys.rs	130	    ) -> off_t,
@@ -35346,23 +35346,23 @@ offset-size-arithmetic	libclamav_rust/src/cvd.rs	863	    let cvd = ManuallyDrop:
 offset-size-arithmetic	libclamav_rust/src/cvd.rs	883	    let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
 offset-size-arithmetic	libclamav_rust/src/cvd.rs	911	    let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
 offset-size-arithmetic	libclamav_rust/src/cvd.rs	934	    let cvd = ManuallyDrop::new(Box::from_raw(cvd as *mut CVD));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	109	    let child = ManuallyDrop::new(Box::from_raw(child as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	146	    let mut evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	149	    let child = ManuallyDrop::new(Box::from_raw(child as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	162	        let _ = unsafe { Box::from_raw(evidence as *mut Evidence) };
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	178	pub unsafe extern "C" fn _evidence_render_verdict(evidence: sys::evidence_t) -> bool {
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	179	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	195	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	213	    offset_out: *mut u64,
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	219	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	254	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	320	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	322	    evidence.strong.len() + evidence.pua.len()
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	341	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	370	    let mut evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	402	    let mut evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	412	    pub fn render_verdict(&self) -> bool {
-offset-size-arithmetic	libclamav_rust/src/evidence.rs	415	        let num_alerting_indicators = self.strong.len() + self.pua.len();
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	111	    let child = ManuallyDrop::new(Box::from_raw(child as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	150	    let mut evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	153	    let child = ManuallyDrop::new(Box::from_raw(child as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	166	        let _ = unsafe { Box::from_raw(evidence as *mut Evidence) };
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	182	pub unsafe extern "C" fn _evidence_render_verdict(evidence: sys::evidence_t) -> bool {
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	186	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	205	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	223	    offset_out: *mut u64,
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	229	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	267	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	333	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	335	    evidence.strong.len() + evidence.pua.len()
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	354	    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	390	    let mut evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	429	    let mut evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	439	    pub fn render_verdict(&self) -> bool {
+offset-size-arithmetic	libclamav_rust/src/evidence.rs	442	        let num_alerting_indicators = self.strong.len() + self.pua.len();
 offset-size-arithmetic	libclamav_rust/src/evidence.rs	74	    /// Native-width offset when this alert came from a root-object matcher.
 offset-size-arithmetic	libclamav_rust/src/fmap.rs	131	    fn read_window(&mut self, at: usize, dst: &mut [u8]) -> io::Result<usize> {
 offset-size-arithmetic	libclamav_rust/src/fmap.rs	165	    fn map_len_u64(&self) -> io::Result<u64> {

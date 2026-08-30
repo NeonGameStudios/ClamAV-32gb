@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Rust evidence FFI admission — 2026-08-30
+
+Rust evidence query and mutation FFI now handles null evidence safely. Query
+entries return empty/false results, while mutation and child-evidence entries
+validate evidence and error-output pointers before raw ownership conversion or
+error reporting. Focused null-handle regressions and source guards cover
+verdict, alert, indicator, add, and remove entry points. Rust/C ABI, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## Rust CDIFF update and FFI admission — 2026-08-30
 
 The enabled freshclam/sigtool CDIFF path now rejects null verifier handles

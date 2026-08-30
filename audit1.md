@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Rust evidence FFI admission — 2026-08-30
+
+Several public Rust evidence query and mutation entries formed
+`Box::from_raw()` from null evidence handles. Mutation paths also delegated to
+the panic-on-null error-output macro without first validating the error slot.
+Null query handles now return safe empty/false results; mutation entries
+reject null evidence and error outputs before raw ownership conversion, and
+the child-evidence constructors validate their error slots before any
+fail-visible path. Focused null-handle regressions and source guards cover
+verdict, alert, indicator, add, and remove operations. Rust/C ABI, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.
+
 ## Rust CDIFF update and FFI admission — 2026-08-30
 
 The enabled freshclam/sigtool CDIFF path had several fail-visible gaps. The
