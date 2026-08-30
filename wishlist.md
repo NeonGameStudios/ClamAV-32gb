@@ -66,8 +66,10 @@
 - Keep bundled YARA arena creation fail-visible for zero-sized pages, native
   page-size doubling overflow, page-usage and total-size overflow, and
   unrepresentable relocation offsets. Failed `yr_arena_allocate_struct()`
-  reservations must clear the output pointer and never memset caller storage.
-- Retain the registered matcher regression, source guards, and current-source
+  reservations or relocation registration must clear the output pointer, roll
+  back arena state, and never memset caller storage; null string and append
+  arguments must remain rejected.
+- Retain the registered matcher regressions, source guards, and current-source
   GCC/ASan/UBSan arena oracle. Complete YARA corpus, production-CVD/service,
   materialized-large-file, Sonic1, and final release qualification remain
   required.

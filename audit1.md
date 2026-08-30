@@ -82,16 +82,16 @@ qualification remain open.
 
 The bundled YARA arena layer previously allowed a zero-sized initial page,
 unchecked page-size doubling, and an `int` accumulator during coalescing. More
-critically, `yr_arena_allocate_struct()` cleared its output pointer even when
-reservation failed, so a caller-supplied stale pointer could be overwritten
-after an allocation error. Arena creation now rejects zero-sized pages, failed
-struct reservations leave the output pointer null and untouched caller storage,
-page growth handles native-size saturation, coalescing checks page usage and
-total-size overflow before allocation, and relocation offsets are kept
-representable. The registered matcher regression and disposable current-source
-GCC arena oracle pass under normal and ASan/UBSan builds. Complete YARA corpus,
-production-CVD/service, materialized-large-file, Sonic1, and final release
-qualification remain open.
+critically, `yr_arena_allocate_struct()` could publish a partially allocated
+struct after reservation or relocation-registration failure. Arena creation
+now rejects zero-sized pages, failed struct reservations and late relocation
+failures leave the output pointer null and roll back arena state, page growth
+handles native-size saturation, coalescing checks page usage and total-size
+overflow before allocation, relocation offsets are kept representable, and
+null string/append arguments fail closed. The registered matcher regressions
+and disposable current-source GCC arena oracle pass under normal and
+ASan/UBSan builds. Complete YARA corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
 
 ## Large-file daemon admission measurement closure — 2026-08-30
 

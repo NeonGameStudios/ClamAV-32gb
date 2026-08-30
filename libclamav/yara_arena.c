@@ -59,6 +59,37 @@ typedef struct _ARENA_FILE_HEADER
 #define free_space(page) \
     ((page)->size - (page)->used)
 
+static void _yr_arena_rollback_relocations(
+    YR_ARENA_PAGE* page,
+    YR_RELOC* old_head,
+    YR_RELOC* old_tail)
+{
+  YR_RELOC* reloc;
+  YR_RELOC* next_reloc;
+
+  if (page == NULL)
+    return;
+
+  if (old_tail != NULL)
+  {
+    reloc = old_tail->next;
+    old_tail->next = NULL;
+  }
+  else
+  {
+    reloc = page->reloc_list_head;
+    page->reloc_list_head = old_head;
+  }
+  page->reloc_list_tail = old_tail;
+
+  while (reloc != NULL)
+  {
+    next_reloc = reloc->next;
+    yr_free(reloc);
+    reloc = next_reloc;
+  }
+}
+
 
 //
 // _yr_arena_new_page
@@ -176,6 +207,8 @@ int _yr_arena_make_relocatable(
 
   size_t offset;
   size_t base_offset;
+  YR_RELOC* old_head;
+  YR_RELOC* old_tail;
 
   int result = ERROR_SUCCESS;
 
@@ -184,6 +217,8 @@ int _yr_arena_make_relocatable(
   if (page == NULL)
     return ERROR_INVALID_ARGUMENT;
 
+  old_head = page->reloc_list_head;
+  old_tail = page->reloc_list_tail;
   base_offset = (uint8_t*) base - page->address;
   offset = va_arg(offsets, size_t);
 
@@ -192,12 +227,18 @@ int _yr_arena_make_relocatable(
     if (base_offset > page->used || page->used - base_offset < sizeof(int64_t) ||
         offset > page->used - base_offset - sizeof(int64_t) ||
         base_offset > INT32_MAX || offset > (size_t)INT32_MAX - base_offset)
+    {
+      _yr_arena_rollback_relocations(page, old_head, old_tail);
       return ERROR_INVALID_FORMAT;
+    }
 
     reloc = yr_malloc(sizeof(YR_RELOC));
 
     if (reloc == NULL)
+    {
+      _yr_arena_rollback_relocations(page, old_head, old_tail);
       return ERROR_INSUFICIENT_MEMORY;
+    }
 
     reloc->offset = base_offset + offset;
     reloc->next = NULL;
@@ -693,11 +734,17 @@ int yr_arena_allocate_struct(
     ...)
 {
   int result;
+  YR_ARENA_PAGE* old_page;
+  size_t old_used;
+  int old_flags;
 
   if (allocated_memory == NULL)
     return ERROR_INVALID_ARGUMENT;
 
   *allocated_memory = NULL;
+  old_page = arena != NULL ? arena->current_page : NULL;
+  old_used = old_page != NULL ? old_page->used : 0;
+  old_flags = arena != NULL ? arena->flags : 0;
   va_list offsets;
   va_start(offsets, allocated_memory);
 
@@ -712,6 +759,31 @@ int yr_arena_allocate_struct(
   result = _yr_arena_make_relocatable(arena, *allocated_memory, offsets);
 
   va_end(offsets);
+
+  if (result != ERROR_SUCCESS)
+  {
+    if (arena != NULL && arena->current_page != old_page)
+    {
+      YR_ARENA_PAGE* new_page = arena->current_page;
+
+      if (old_page != NULL)
+        old_page->next = NULL;
+      arena->current_page = old_page;
+      arena->flags = old_flags;
+      if (new_page != NULL)
+      {
+        new_page->prev = NULL;
+        yr_free(new_page->address);
+        yr_free(new_page);
+      }
+    }
+    else if (old_page != NULL)
+    {
+      old_page->used = old_used;
+    }
+    *allocated_memory = NULL;
+    return result;
+  }
 
   memset(*allocated_memory, 0, size);
 
@@ -826,6 +898,11 @@ int yr_arena_write_string(
     const char* string,
     char** written_string)
 {
+  if (written_string != NULL)
+    *written_string = NULL;
+  if (string == NULL)
+    return ERROR_INVALID_ARGUMENT;
+
   return yr_arena_write_data(
       arena,
       (void*) string,
@@ -852,9 +929,15 @@ int yr_arena_append(
     YR_ARENA* target_arena,
     YR_ARENA* source_arena)
 {
+  if (target_arena == NULL || source_arena == NULL || target_arena == source_arena ||
+      target_arena->current_page == NULL || source_arena->page_list_head == NULL ||
+      source_arena->current_page == NULL)
+    return ERROR_INVALID_ARGUMENT;
+
   target_arena->current_page->next = source_arena->page_list_head;
   source_arena->page_list_head->prev = target_arena->current_page;
   target_arena->current_page = source_arena->current_page;
+  target_arena->flags &= ~ARENA_FLAGS_COALESCED;
 
   yr_free(source_arena);
 

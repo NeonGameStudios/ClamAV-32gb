@@ -1800,6 +1800,40 @@ START_TEST(test_yara_arena_struct_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_yara_arena_argument_and_relocation_failures_are_visible)
+{
+    YR_ARENA *arena = NULL;
+    YR_ARENA *other = NULL;
+    unsigned char sentinel[2] = {0xa5, 0x5a};
+    char *written = (char *)sentinel;
+    void *allocated = sentinel;
+
+    ck_assert_int_eq(yr_arena_write_string(NULL, NULL, &written), ERROR_INVALID_ARGUMENT);
+    ck_assert_ptr_null(written);
+
+    ck_assert_int_eq(yr_arena_create(16, ARENA_FLAGS_FIXED_SIZE, &arena), ERROR_SUCCESS);
+    ck_assert_ptr_nonnull(arena);
+    ck_assert_int_eq(yr_arena_write_string(arena, NULL, &written), ERROR_INVALID_ARGUMENT);
+    ck_assert_ptr_null(written);
+    ck_assert_int_eq(sentinel[0], 0xa5);
+    ck_assert_int_eq(sentinel[1], 0x5a);
+
+    ck_assert_int_eq(yr_arena_allocate_struct(arena, 16, &allocated,
+                                               (size_t)0, (size_t)9, EOL),
+                     ERROR_INVALID_FORMAT);
+    ck_assert_ptr_null(allocated);
+    ck_assert_uint_eq(arena->current_page->used, 0);
+    ck_assert_ptr_null(arena->current_page->reloc_list_head);
+    ck_assert_ptr_null(arena->current_page->reloc_list_tail);
+
+    ck_assert_int_eq(yr_arena_create(1, ARENA_FLAGS_FIXED_SIZE, &other), ERROR_SUCCESS);
+    ck_assert_int_eq(yr_arena_append(NULL, other), ERROR_INVALID_ARGUMENT);
+    ck_assert_int_eq(yr_arena_append(arena, arena), ERROR_INVALID_ARGUMENT);
+    yr_arena_destroy(other);
+    yr_arena_destroy(arena);
+}
+END_TEST
+
 START_TEST(test_yara_evaluation_accounts_matcher_work)
 {
 #ifdef HAVE_YARA
@@ -2809,6 +2843,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_yara_unaligned_jump_target_is_defined);
     tcase_add_test(tc_matchers, test_yara_missing_matcher_state_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_arena_struct_failure_is_fail_visible);
+    tcase_add_test(tc_matchers, test_yara_arena_argument_and_relocation_failures_are_visible);
     tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
     tcase_add_test(tc_matchers, test_yara_execution_error_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_division_by_zero_is_fail_visible);
