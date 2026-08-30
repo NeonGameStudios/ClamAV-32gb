@@ -1,5 +1,16 @@
 # Wishlist
 
+## XAR LZMA member decoder initialization visibility — 2026-08-30
+
+- Keep failed XAR LZMA member initialization fail-visible with the exact
+  incomplete reason while retaining output-buffer cleanup and avoiding
+  shutdown of an uninitialized decoder. The source-guarded fault-injected
+  regression and focused current-source Docker GCC runner now cover the
+  boundary; the runner also passes with GCC
+  AddressSanitizer/UndefinedBehaviorSanitizer and leak detection. Complete
+  XAR corpus, production-CVD/service, materialized-large-file, Sonic1, and
+  release qualification remain.
+
 ## NSIS non-solid decoder timeout cleanup — 2026-08-30
 
 - Keep the NSIS non-solid compressed-member timeout branch paired with

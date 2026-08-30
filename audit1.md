@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## XAR LZMA member decoder initialization visibility — 2026-08-30
+
+The XAR LZMA member branch already freed its output buffer and avoided
+`cli_LzmaShutdown()` when initialization failed, but it did not record the
+parser-specific failure before leaving the member switch. It now marks the
+confirmed XAR layer incomplete with the exact decoder-initialization reason
+while retaining `CL_EFORMAT` and temporary-file cleanup; the failure now exits
+through the cleanup label instead of allowing a later member to overwrite the
+error. The source-guarded regression and focused current-source Docker
+production-linked GCC runner inject the LZMA initialization failure and assert
+the exact reason, cache taint, and fail-visible result. The same runner passes
+under GCC AddressSanitizer/UndefinedBehaviorSanitizer with leak detection;
+complete XAR corpus, production-CVD/service, materialized-large-file, Sonic1,
+and final release qualification remain open.
+
 ## NSIS non-solid decoder timeout cleanup — 2026-08-30
 
 The NSIS non-solid compressed-member loop initialized the BZIP2 or LZMA

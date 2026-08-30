@@ -1350,10 +1350,11 @@ int cli_scanxar(cli_ctx *ctx)
                 lret = cli_LzmaInit(&lz, 0);
                 if (lret != LZMA_RESULT_OK) {
                     cli_dbgmsg("cli_scanxar: cli_LzmaInit() fails: %i.\n", lret);
+                    cli_mark_scan_incomplete(ctx, "XAR LZMA member decoder could not be initialized");
                     rc = CL_EFORMAT;
                     __lzma_wrap_free(NULL, buff);
                     extract_errors++;
-                    break;
+                    goto exit_tmpfile;
                 }
 
                 at += CLI_LZMA_HDR_SIZE;

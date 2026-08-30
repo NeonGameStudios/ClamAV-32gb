@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## XAR LZMA member decoder initialization visibility — 2026-08-30
+
+Failed XAR LZMA member initialization now records the exact incomplete reason
+`XAR LZMA member decoder could not be initialized` while preserving
+`CL_EFORMAT`, exiting through temporary-file cleanup, freeing the output
+buffer, and avoiding shutdown of an uninitialized decoder. The source-guarded
+fault-injected regression and focused current-source Docker production-linked
+GCC runner cover the boundary and cache taint; the same runner passes with GCC
+AddressSanitizer/UndefinedBehaviorSanitizer and leak detection. Complete XAR
+corpus, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain required.
+
 ## NSIS non-solid decoder timeout cleanup — 2026-08-30
 
 The NSIS non-solid compressed-member loop now shuts down an initialized BZIP2

@@ -182,6 +182,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=inflateInit_"
         "-Wl,--wrap=inflateInit2_"
         "-Wl,--wrap=BZ2_bzDecompressInit"
+        "-Wl,--wrap=cli_LzmaInit"
         "-Wl,--wrap=closedir"
         "-Wl,--wrap=readdir"
         "-Wl,--wrap=SzArEx_ExtractToStreamEx"
