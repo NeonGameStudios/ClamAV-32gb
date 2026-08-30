@@ -8693,3 +8693,12 @@ qualification as required evidence.
   secondary position through `off_t`. Retain the source guard and add
   current-object, complete GPT/partition corpus, sanitizer,
   materialized-large-file, Sonic1, and final release qualification evidence.
+
+## Embedded PE legacy-coordinate admission — 2026-08-30
+
+- Keep raw embedded-PE dispatch from narrowing the native matcher offset until
+  the `UINT32_MAX` admission check has selected the legacy bridge path. Larger
+  offsets must use the bounded child fmap and zero bridge coordinate. Retain
+  the source guards and add current-source PE compilation, complete
+  embedded-PE corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification evidence.

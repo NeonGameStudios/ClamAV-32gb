@@ -6173,7 +6173,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 struct cli_exe_info peinfo;
                                 fmap_t *parent_map     = ctx->fmap;
                                 fmap_t *pe_header_map  = NULL;
-                                uint32_t header_offset = (uint32_t)fpt->offset;
+                                uint32_t header_offset = 0;
 
                                 if ((uint64_t)(ctx->fmap->len - fpt->offset) > ctx->engine->maxembeddedpe) {
                                     cli_dbgmsg("scanraw: MaxEmbeddedPE exceeded\n");
@@ -6204,6 +6204,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
 
                                     ctx->fmap = pe_header_map;
                                     header_offset = 0;
+                                } else {
+                                    header_offset = (uint32_t)fpt->offset;
                                 }
                                 cli_exe_info_init(&peinfo, header_offset);
 

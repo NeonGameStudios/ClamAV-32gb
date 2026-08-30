@@ -15895,3 +15895,18 @@ from physical-header selection through the bounded read. The source guard pins
 the correction; complete GPT/partition corpus, current-object execution,
 sanitizer, materialized-large-file, Sonic1, and final release qualification
 remain open.
+
+## Embedded PE legacy-coordinate admission — 2026-08-30
+
+The raw embedded-PE dispatcher initialized its legacy 32-bit header coordinate
+by narrowing the native matcher offset before checking whether the offset fit.
+Although the subsequent above-`UINT32_MAX` branch replaced the value with zero
+on ordinary unsigned-conversion builds, that ordering allowed an
+unrepresentable coordinate to exist transiently and weakened the fail-closed
+coordinate contract. The dispatcher now initializes the bridge coordinate to
+zero and assigns the narrowed value only in the proven-fitting branch; larger
+offsets continue through the bounded child fmap rooted at the native position.
+The source guards pin both the delayed narrowing and removal of the pre-check
+cast. Current-source PE compilation, complete embedded-PE corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.
