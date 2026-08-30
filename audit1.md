@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## BZIP2 concatenated-stream decoder initialization cleanup — 2026-08-30
+
+The shared BZIP2 scanner finalized the first concatenated stream, then
+unconditionally called `BZ2_bzDecompressEnd()` after a failed second-stream
+`BZ2_bzDecompressInit()`. It now tracks whether a stream is initialized across
+the reinitialization boundary and only finalizes the active stream. The
+source-guarded regression injects failure into the second initialization of
+the existing concatenated-stream fixture; current-source production-linked
+GCC and GCC ASan/UBSan leak-enabled runners pass with `CL_EMEM`, cleared
+verdict, and cache taint. Complete BZIP2 corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## XAR gzip member decoder initialization cleanup — 2026-08-30
 
 The XAR gzip member branch previously called `inflateEnd()` after a failed

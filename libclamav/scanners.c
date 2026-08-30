@@ -2262,6 +2262,7 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
     size_t avail;
     char buf[FILEBUFF];
     bool stream_complete        = false;
+    bool stream_initialized     = false;
     uint64_t temporary_reserved = 0;
 
     memset(&strm, 0, sizeof(strm));
@@ -2273,6 +2274,7 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "Bzip decoder could not be initialized");
         return CL_EOPEN;
     }
+    stream_initialized = true;
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd))) {
         cli_dbgmsg("Bzip: Can't generate temporary file.\n");
@@ -2369,6 +2371,7 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
                  * after the current stream has reached BZ_STREAM_END, while
                  * preserving any unread bytes in the current fmap window. */
                 BZ2_bzDecompressEnd(&strm);
+                stream_initialized = false;
                 memset(&strm, 0, sizeof(strm));
                 init_status = BZ2_bzDecompressInit(&strm, 0, 0);
                 if (BZ_OK != init_status) {
@@ -2382,6 +2385,7 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
                     }
                     break;
                 }
+                stream_initialized = true;
                 strm.next_in   = next_in;
                 strm.avail_in  = avail_in;
                 strm.next_out  = buf;
@@ -2393,7 +2397,8 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
         }
     } while (BZ_STREAM_END != rc);
 
-    BZ2_bzDecompressEnd(&strm);
+    if (stream_initialized)
+        BZ2_bzDecompressEnd(&strm);
 
     /* Do not scan a temporary member unless the BZip2 decoder reached its
      * terminal state and no configured limit/error stopped extraction. */

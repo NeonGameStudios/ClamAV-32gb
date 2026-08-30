@@ -121,8 +121,10 @@ extern int clamav_test_short_write;
 extern size_t clamav_test_short_write_count;
 extern int __real_inflateInit_(z_streamp strm, const char *version, int stream_size);
 extern int __real_inflateInit2_(z_streamp strm, int windowBits, const char *version, int stream_size);
+extern int __real_BZ2_bzDecompressInit(bz_stream *strm, int blockSize100k, int verbosity);
 int clamav_test_force_swf_decoder_init;
 int clamav_test_force_xar_member_decoder_init;
+int clamav_test_force_bzip_concat_decoder_init;
 
 int __wrap_inflateInit_(z_streamp strm, const char *version, int stream_size)
 {
@@ -136,6 +138,16 @@ int __wrap_inflateInit_(z_streamp strm, const char *version, int stream_size)
             return Z_MEM_ERROR;
     }
     return __real_inflateInit_(strm, version, stream_size);
+}
+
+int __wrap_BZ2_bzDecompressInit(bz_stream *strm, int blockSize100k, int verbosity)
+{
+    if (clamav_test_force_bzip_concat_decoder_init > 0) {
+        clamav_test_force_bzip_concat_decoder_init--;
+        if (clamav_test_force_bzip_concat_decoder_init == 0)
+            return BZ_MEM_ERROR;
+    }
+    return __real_BZ2_bzDecompressInit(strm, blockSize100k, verbosity);
 }
 
 int clamav_test_force_gzip_legacy_fallback;
@@ -7713,6 +7725,66 @@ START_TEST(test_bzip_concatenated_stream_is_fully_inspected)
     free(second_bzip);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_bzip_concatenated_decoder_init_failure_is_fail_visible)
+{
+    static const uint8_t first[]  = "bzip concatenated first stream";
+    static const uint8_t second[] = "BZIP-CONCATENATED-TAIL";
+    uint8_t *first_bzip;
+    uint8_t *second_bzip;
+    uint8_t *combined;
+    size_t first_length;
+    size_t second_length;
+    size_t combined_length;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    first_bzip  = zip_stream_bzip2(first, sizeof(first) - 1U, &first_length);
+    second_bzip = zip_stream_bzip2(second, sizeof(second) - 1U, &second_length);
+    combined_length = first_length + second_length;
+    combined        = malloc(combined_length);
+    ck_assert_ptr_nonnull(combined);
+    memcpy(combined, first_bzip, first_length);
+    memcpy(combined + first_length, second_bzip, second_length);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    map = cl_fmap_open_memory(combined, combined_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    /* Fail the second BZIP2 initialization, after the first stream ends. */
+    clamav_test_force_bzip_concat_decoder_init = 2;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_BZ", NULL);
+    ck_assert_msg(ret != CL_SUCCESS, "BZIP2 concatenated decoder failure was reported clean");
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_bzip_concat_decoder_init, 0);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(combined);
+    free(first_bzip);
+    free(second_bzip);
+}
+END_TEST
+#endif
 
 START_TEST(test_bzip_corpus_detects_embedded_mz)
 {
@@ -20396,7 +20468,6 @@ START_TEST(test_tar_eof_releases_member_resources)
     uint8_t data[1024] = {0};
     struct cl_engine *scan_engine;
     cli_ctx ctx;
-    cli_scan_layer_t layers[2];
     fmap_t *map;
     char tempfile[PATH_MAX];
     cl_error_t ret;
@@ -22571,6 +22642,7 @@ START_TEST(test_xar_member_decoder_init_failure_is_fail_visible)
     struct cl_scan_options options;
     struct cl_engine *scan_engine;
     cli_ctx ctx;
+    cli_scan_layer_t layers[2];
     uint8_t *data;
     size_t data_length;
     fmap_t *map;
@@ -48174,6 +48246,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_bz_core, test_bzip_corpus_detects_embedded_mz);
     tcase_add_test(tc_bz_core, test_gzip_corpus_detects_embedded_mz);
     tcase_add_test(tc_bz_core, test_bzip_concatenated_stream_is_fully_inspected);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_bz_core, test_bzip_concatenated_decoder_init_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

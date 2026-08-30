@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## BZIP2 concatenated-stream decoder initialization cleanup — 2026-08-30
+
+The shared BZIP2 scanner now tracks the active stream across concatenated
+member reinitialization and calls `BZ2_bzDecompressEnd()` only when the
+current initialization succeeded. The source-guarded regression injects
+failure into the second initialization of the concatenated-stream fixture;
+current-source production-linked GCC and GCC ASan/UBSan leak-enabled runners
+pass with `CL_EMEM`, a cleared verdict, and cache taint. Complete BZIP2
+corpus, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain required.
+
 ## XAR gzip member decoder initialization cleanup — 2026-08-30
 
 The XAR gzip member branch now records an explicit incomplete `CL_EFORMAT`

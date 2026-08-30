@@ -1,5 +1,14 @@
 # Wishlist
 
+## BZIP2 concatenated-stream decoder initialization cleanup — 2026-08-30
+
+- Keep BZIP2 concatenated-stream teardown conditional on a successful active
+  `BZ2_bzDecompressInit()` after each stream boundary. The focused
+  current-source GCC and GCC ASan/UBSan leak-enabled runners pass injected
+  second-stream initialization failure with `CL_EMEM`, a cleared verdict,
+  and cache taint; complete BZIP2 corpus, production-CVD/service,
+  materialized-large-file, Sonic1, and release qualification remain.
+
 ## XAR gzip member decoder initialization cleanup — 2026-08-30
 
 - Keep XAR gzip member initialization fail-visible: retain the explicit
