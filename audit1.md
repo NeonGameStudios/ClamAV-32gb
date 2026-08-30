@@ -285,6 +285,25 @@ source guards cover the shared arithmetic contract. Full byte-compare
 signature corpus, sanitizer matrix, service, materialized-large-file, Sonic1,
 and final matcher/release qualification remain open.
 
+## Byte-compare normalizer admission — 2026-08-29
+
+Byte-compare length parsing previously assigned `strtol()` output directly to
+an unsigned `size_t`, allowing negative or overflowing values to enter matcher
+metadata. The comparison path then narrowed that metadata to `uint32_t`, and
+the normalizer formed `byte_len + 1` and odd-length hex expansions before the
+individual allocation ceiling was checked. Length parsing now uses the bounded
+unsigned conversion helper and rejects negative, overflowing, or zero values;
+comparison and normalization retain `size_t`, and both NUL-terminated
+representations are admitted before their allocations are formed. Whitespace
+classification now also receives an unsigned byte, and the hex reverse loop
+uses unsigned range arithmetic. The registered
+`test_byte_compare_normalization_ceiling_is_fail_visible` regression covers a
+direct over-ceiling comparison and the odd-hex boundary without allocating a
+large buffer. The current matcher source compiles with Docker production GCC,
+with the production-linked unit relink/execution, complete byte-compare corpus,
+sanitizer, service, materialized-large-file, Sonic1, and final matcher/release
+qualification still required.
+
 ## Regex matcher table admission — 2026-08-29
 
 The phishing/allow-list matcher grew suffix-bucket and compiled-regex pointer

@@ -2230,6 +2230,23 @@ START_TEST(test_byte_compare_unaligned_binary_read_is_defined)
 }
 END_TEST
 
+START_TEST(test_byte_compare_normalization_ceiling_is_fail_visible)
+{
+    struct cli_bcomp_meta bcomp;
+    const unsigned char *sentinel = (const unsigned char *)(uintptr_t)1;
+
+    memset(&bcomp, 0, sizeof(bcomp));
+    bcomp.options  = CLI_BCOMP_DEC | CLI_BCOMP_BE;
+    bcomp.byte_len = CLI_MAX_ALLOCATION;
+
+    /* The input pointer is never dereferenced once normalization admission
+     * rejects the NUL-terminated representation at the individual ceiling. */
+    ck_assert_int_eq(cli_bcomp_compare_check(sentinel, SIZE_MAX, 0, &bcomp), CL_EMEM);
+    ck_assert_ptr_null(cli_bcomp_normalize_buffer(sentinel, CLI_MAX_ALLOCATION - 1, NULL,
+                                                  CLI_BCOMP_HEX | CLI_BCOMP_BE, 0));
+}
+END_TEST
+
 START_TEST(test_exact_hash_at_uint32_max)
 {
     uint8_t first[16]  = {0};
@@ -2709,6 +2726,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);
     tcase_add_test(tc_matchers, test_byte_compare_offset_above_uint32);
     tcase_add_test(tc_matchers, test_byte_compare_unaligned_binary_read_is_defined);
+    tcase_add_test(tc_matchers, test_byte_compare_normalization_ceiling_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_matchers, test_scan_fmap_pread_failure_is_incomplete);
 #endif
