@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## MSEXPAND fmap coordinate width — 2026-08-30
+
+The SZDD/MSEXPAND decoder used signed `off_t` for its compressed-input fmap
+coordinate even though all fmap offsets and lengths are native `size_t` values.
+On a narrower build, traversal of a large compressed input could overflow the
+signed coordinate before the next bounded read. The coordinate now stays in
+`size_t` for subtraction, callback admission, and advancement; the existing
+bounded input/output and temporary-budget checks remain unchanged. The Docker
+production-GCC source check and source guard cover the change. Full SZDD corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.
+
 ## MIME bounded-limit and folded-header admission — 2026-08-30
 
 The MIME limit helpers previously stopped header-fold, aggregate-header,

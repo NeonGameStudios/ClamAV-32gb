@@ -1532,6 +1532,7 @@ contains libclamav/mbox.c 'MIME parser exceeded the configured MIME-argument lim
 contains libclamav/mbox.c 'MIME message header size exceeded native representation'
 contains libclamav/mbox.c 'MIME folded header size exceeded native representation'
 contains libclamav/mbox.c 'MIME parser reached the configured time limit'
+contains libclamav/msexpand.c 'size_t cur_off = sizeof(*hdr)'
 contains unit_tests/check_clamav.c 'test_mbox_line_read_failure_is_fail_visible'
 contains libclamav/mbox.c 'cl_error_t *failure_status'
 contains libclamav/mbox.c '*failure_status = CL_EREAD'

@@ -123,7 +123,7 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
                                        // in the first iteration of the loop.
     unsigned int j = B_SIZE - 16, k, l, r = 0, w = 0, rbytes = 0, wbytes = 0;
     fmap_t *map;
-    off_t cur_off = sizeof(*hdr);
+    size_t cur_off = sizeof(*hdr);
     unsigned int fsize;
     cl_error_t status;
     size_t ret;

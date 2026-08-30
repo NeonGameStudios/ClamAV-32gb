@@ -1,5 +1,15 @@
 # Wishlist
 
+## MSEXPAND fmap coordinate width — 2026-08-30
+
+- Keep SZDD/MSEXPAND compressed-input coordinates in native `size_t` form
+  through fmap subtraction, bounded callback reads, and advancement; retain
+  the existing output-size, temporary-budget, and deadline checks. The source
+  guard and Docker production-GCC check cover the correction. Complete SZDD
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, and final parser/release qualification
+  remain required.
+
 ## MIME bounded-limit and folded-header admission — 2026-08-30
 
 - Keep MIME fold-count, aggregate-header-byte, header-count, MIME-argument,

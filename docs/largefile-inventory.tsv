@@ -12634,7 +12634,7 @@ native-width-integer	libclamav/msdoc.h	165	    int toval;
 native-width-integer	libclamav/msdoc.h	169	int cli_ole2_summary_json(cli_ctx *ctx, int fd, int mode, const char *filepath);
 native-width-integer	libclamav/msexpand.c	117	cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
 native-width-integer	libclamav/msexpand.c	124	    unsigned int j = B_SIZE - 16, k, l, r = 0, w = 0, rbytes = 0, wbytes = 0;
-native-width-integer	libclamav/msexpand.c	126	    off_t cur_off = sizeof(*hdr);
+native-width-integer	libclamav/msexpand.c	126	    size_t cur_off = sizeof(*hdr);
 native-width-integer	libclamav/msexpand.c	127	    unsigned int fsize;
 native-width-integer	libclamav/msexpand.c	129	    size_t ret;
 native-width-integer	libclamav/msexpand.c	98	    if (ret == (size_t)-1 || (unsigned int)ret != w) {                                        \
@@ -30600,7 +30600,7 @@ offset-size-arithmetic	libclamav/msdoc.c	97	            for (scnt = 0; scnt < si
 offset-size-arithmetic	libclamav/msdoc.c	999	    foff += sizeof(summary_stub_t);
 offset-size-arithmetic	libclamav/msdoc.h	157	    uint32_t pssize; /* track from propset start, not tail start */
 offset-size-arithmetic	libclamav/msdoc.h	171	#endif /* __MSDOC_H_ */
-offset-size-arithmetic	libclamav/msexpand.c	126	    off_t cur_off = sizeof(*hdr);
+offset-size-arithmetic	libclamav/msexpand.c	126	    size_t cur_off = sizeof(*hdr);
 offset-size-arithmetic	libclamav/msexpand.c	149	    if (map->len < sizeof(*hdr)) {
 offset-size-arithmetic	libclamav/msexpand.c	153	    if (!(hdr = fmap_need_off_once(map, 0, sizeof(*hdr)))) {
 offset-size-arithmetic	libclamav/msexpand.c	164	    fsize = EC32(hdr->fsize);
