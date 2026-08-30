@@ -1,5 +1,16 @@
 # Wishlist
 
+## Large-file daemon admission measurement closure — 2026-08-30
+
+- Keep cgroup membership, mount-information, cgroup limit/current, and Linux
+  `MemAvailable` measurements fail-visible when `fclose()` reports an error;
+  do not admit the large-file startup profile from a partially verified
+  measurement.
+- Retain the Linux fixture regression and source guards. The focused
+  current-source GCC and ASan/UBSan runners pass; full clamd build/current
+  object, production-CVD/service, Sonic1 resource measurement, and final
+  release qualification remain.
+
 ## Certificate trust-store directory admission — 2026-08-30
 
 - Keep `cl_validate_certificate_chain_ts_dir()` fail-visible for null paths,
