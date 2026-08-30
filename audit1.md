@@ -16109,3 +16109,17 @@ Current-source warning-enabled GCC and matching GCC ASan/UBSan direct runners
 pass; complete text-normalization/ISO/HTML corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser-family/release qualification remain open.
+
+## Bytecode map API null-state admission — 2026-08-30
+
+The bytecode map constructor dereferenced a null bytecode context before its
+dimension checks, and the underlying map helpers assumed non-null map, key,
+and value pointers. The wrapper now rejects a null context, the map lookup
+wrappers reject a null context through their shared accessor, and map
+initialization, insertion, removal, lookup, value assignment, accessors, and
+deletion fail safely for invalid pointers. The registered bytecode regressions
+cover wrapper and direct-helper paths while retaining the existing
+constructor-atomicity checks. Current-source production-GCC compilation,
+focused production-linked execution, sanitizer, complete bytecode execution/
+JIT, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.

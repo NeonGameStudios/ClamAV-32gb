@@ -1843,6 +1843,9 @@ int32_t cli_bcapi_map_new(struct cli_bc_ctx *ctx, int32_t keysize, int32_t value
     size_t table_size;
     struct cli_map *s;
 
+    if (!ctx)
+        return -1;
+
     if (cli_bcapi_table_size(ctx->nmaps, sizeof(*ctx->maps), &n, &table_size) != 0) {
         cli_event_error_oom(EV, 0);
         return -1;
@@ -1864,7 +1867,7 @@ int32_t cli_bcapi_map_new(struct cli_bc_ctx *ctx, int32_t keysize, int32_t value
 
 static struct cli_map *get_hashtab(struct cli_bc_ctx *ctx, int32_t id)
 {
-    if (id < 0 || (unsigned int)id >= ctx->nmaps || !ctx->maps)
+    if (!ctx || id < 0 || (unsigned int)id >= ctx->nmaps || !ctx->maps)
         return NULL;
     return &ctx->maps[id];
 }

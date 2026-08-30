@@ -2010,6 +2010,31 @@ START_TEST(test_bytecode_resource_constructors_publish_only_initialized_slots)
                                       80),
                      CL_ERESOURCE);
     ck_assert_ptr_null(hashset.keys);
+
+    /* Map wrappers and map helpers must reject missing ownership or data
+     * pointers before dereferencing their state. */
+    ck_assert_int_eq(cli_bcapi_map_new(NULL, 1, 0), -1);
+    ck_assert_int_eq(cli_bcapi_map_addkey(NULL, NULL, 1, 0), -1);
+    ck_assert_int_eq(cli_map_init(NULL, 1, 0, 16), CL_EARG);
+}
+END_TEST
+
+START_TEST(test_bytecode_map_rejects_null_key_and_value)
+{
+    struct cli_map map;
+    uint8_t key = 0;
+    uint8_t value = 0;
+
+    ck_assert_int_eq(cli_map_init(&map, 1, 1, 16), CL_SUCCESS);
+    ck_assert_int_eq(cli_map_addkey(&map, NULL, 1), CL_EARG);
+    ck_assert_int_eq(cli_map_addkey(&map, &key, 1), CL_SUCCESS);
+    ck_assert_int_eq(cli_map_setvalue(&map, NULL, 1), CL_EARG);
+    ck_assert_int_eq(cli_map_setvalue(&map, &value, 1), CL_SUCCESS);
+    ck_assert_int_eq(cli_map_find(&map, NULL, 1), CL_EARG);
+    ck_assert_int_eq(cli_map_removekey(&map, NULL, 1), CL_EARG);
+    ck_assert_int_eq(cli_map_getvalue_size(NULL), -1);
+    ck_assert_ptr_null(cli_map_getvalue(NULL));
+    cli_map_delete(&map);
 }
 END_TEST
 
@@ -2168,6 +2193,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_loader, test_bytecode_map_value_size_product_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_json_api_admission_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_resource_constructors_publish_only_initialized_slots);
+    tcase_add_test(tc_cli_loader, test_bytecode_map_rejects_null_key_and_value);
     tcase_add_test(tc_cli_loader, test_hashtab_capacity_admission_is_fail_visible);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);

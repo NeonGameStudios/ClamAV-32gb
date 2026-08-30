@@ -1027,7 +1027,7 @@ cl_error_t cli_map_init(struct cli_map *m, int32_t keysize, int32_t valuesize,
 {
     cl_error_t ret;
 
-    if (keysize <= 0 || valuesize < 0 || capacity <= 0) {
+    if (!m || keysize <= 0 || valuesize < 0 || capacity <= 0) {
         return CL_EARG;
     }
 
@@ -1057,7 +1057,7 @@ cl_error_t cli_map_addkey(struct cli_map *m, const void *key, int32_t keysize)
     uint32_t n;
     struct cli_element *el;
 
-    if (m->keysize != keysize) {
+    if (!m || !key || m->keysize != keysize) {
         return CL_EARG;
     }
 
@@ -1116,7 +1116,7 @@ cl_error_t cli_map_removekey(struct cli_map *m, const void *key, int32_t keysize
 {
     struct cli_element *el;
 
-    if (m->keysize != keysize) {
+    if (!m || !key || m->keysize != keysize) {
         return CL_EARG;
     }
 
@@ -1147,7 +1147,9 @@ cl_error_t cli_map_removekey(struct cli_map *m, const void *key, int32_t keysize
 
 cl_error_t cli_map_setvalue(struct cli_map *m, const void *value, int32_t valuesize)
 {
-    if ((m->valuesize && m->valuesize != valuesize) || (uint32_t)(m->last_insert) >= m->nvalues || m->last_insert < 0) {
+    if (!m || valuesize < 0 || (valuesize != 0 && !value) ||
+        (m->valuesize && m->valuesize != valuesize) ||
+        (uint32_t)(m->last_insert) >= m->nvalues || m->last_insert < 0) {
         return CL_EARG;
     }
 
@@ -1176,7 +1178,7 @@ cl_error_t cli_map_setvalue(struct cli_map *m, const void *value, int32_t values
 cl_error_t cli_map_find(struct cli_map *m, const void *key, int32_t keysize)
 {
     struct cli_element *el;
-    if (m->keysize != keysize) {
+    if (!m || !key || m->keysize != keysize) {
         return CL_EARG;
     }
 
@@ -1193,6 +1195,9 @@ cl_error_t cli_map_find(struct cli_map *m, const void *key, int32_t keysize)
 
 int cli_map_getvalue_size(struct cli_map *m)
 {
+    if (!m)
+        return -1;
+
     if (m->valuesize) {
         return m->valuesize;
     }
@@ -1206,6 +1211,9 @@ int cli_map_getvalue_size(struct cli_map *m)
 
 void *cli_map_getvalue(struct cli_map *m)
 {
+    if (!m)
+        return NULL;
+
     if (m->last_find < 0 || (uint32_t)(m->last_find) >= m->nvalues) {
         return NULL;
     }
@@ -1219,6 +1227,9 @@ void *cli_map_getvalue(struct cli_map *m)
 
 void cli_map_delete(struct cli_map *m)
 {
+    if (!m)
+        return;
+
     cli_hashtab_free(&m->htab);
 
     if (!m->valuesize) {

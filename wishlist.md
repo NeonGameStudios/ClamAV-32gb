@@ -8848,3 +8848,13 @@ qualification evidence.
   text-normalization/ISO/HTML corpus, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, and final
   parser-family/release qualification evidence.
+
+## Bytecode map API null-state admission — 2026-08-30
+
+- Keep bytecode map wrappers fail-closed for null contexts and keep direct map
+  helpers fail-closed for null maps, keys, and non-empty values before state or
+  buffer dereference.
+- Retain both registered bytecode regressions and source guards; add
+  current-source production-linked execution, complete bytecode execution/JIT,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final release qualification evidence.
