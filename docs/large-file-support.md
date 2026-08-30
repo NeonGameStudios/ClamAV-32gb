@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## InstallShield MSI decompressor cleanup status — 2026-08-30
+
+Confirmed InstallShield MSI extraction now merges temporary-member close and
+unlink failures when `inflateInit()` fails after the output file is opened,
+keeping the original `CL_EUNPACK` or exposing the cleanup error through the
+shared precedence helper. The current source is guarded for both cleanup
+branches; focused fault injection and full InstallShield/SFX, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.
+
 ## Rust archive metadata file-index ABI boundary — 2026-08-30
 
 The ALZ/LHA Rust archive bridge now checks the `usize` member index before

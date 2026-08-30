@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## InstallShield MSI decompressor cleanup status — 2026-08-30
+
+The confirmed InstallShield MSI path previously discarded close and unlink
+failures when `inflateInit()` could not initialize after opening a member
+temporary file. It now merges those cleanup statuses with the original
+`CL_EUNPACK`, preserving the first operational cleanup failure and sticky
+incomplete state. The current source is guarded for both cleanup branches;
+focused production-linked fault injection and complete InstallShield/SFX,
+sanitizer, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.
+
 ## Rust archive metadata file-index ABI boundary — 2026-08-30
 
 The Rust ALZ/LHA archive paths pass member indices through the legacy C

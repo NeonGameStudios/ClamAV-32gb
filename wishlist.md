@@ -1,5 +1,14 @@
 # Wishlist
 
+## InstallShield MSI decompressor cleanup status — 2026-08-30
+
+- Keep `inflateInit()` failure cleanup fail-visible in confirmed InstallShield
+  MSI extraction: merge member temporary close/unlink failures with the
+  original `CL_EUNPACK`, while retaining sticky incomplete state. Add focused
+  fault injection and complete InstallShield/SFX, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification.
+
 ## Rust archive metadata file-index ABI boundary — 2026-08-30
 
 - Keep the ALZ/LHA Rust-to-C archive metadata bridge fail-visible when a
