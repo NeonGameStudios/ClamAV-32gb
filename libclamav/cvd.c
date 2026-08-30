@@ -1139,9 +1139,19 @@ cl_error_t cl_cvdgetage(const char *path, time_t *age_seconds)
         }
     }
 
-    while ((dent = readdir(dd))) {
+    for (;;) {
         char fname[1024] = {0};
         time_t file_age;
+
+        errno = 0;
+        dent  = readdir(dd);
+        if (dent == NULL) {
+            if (errno != 0) {
+                cli_errmsg("CVD directory enumeration failed for %s\n", path);
+                status = CL_EREAD;
+            }
+            break;
+        }
 
         if (!dent->d_ino)
             continue;

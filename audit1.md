@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## CVD age-directory read status — 2026-08-30
+
+`cl_cvdgetage()` previously treated `readdir()` returning `NULL` as ordinary
+directory completion without checking `errno`, so an enumeration I/O failure
+could be reported as a successful age query. The loop now clears `errno`
+before each read, returns `CL_EREAD` for an actual enumeration failure, and
+still merges any later `closedir()` failure. The registered injected
+`readdir` regression and source guards cover the boundary. A focused
+current-source GCC runner returns `CL_EREAD` under both normal GCC and
+AddressSanitizer/UndefinedBehaviorSanitizer when `readdir()` is injected with
+`EIO`. Current-object execution, production-CVD/service, materialized-large-
+file, Sonic1, and final release qualification remain open.
+
 ## Descriptor ingress native-size admission — 2026-08-30
 
 The shared descriptor scan path converted `stat.st_size` to its 64-bit scan

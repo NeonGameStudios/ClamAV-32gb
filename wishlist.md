@@ -1,5 +1,16 @@
 # Wishlist
 
+## CVD age-directory read status — 2026-08-30
+
+- Keep `cl_cvdgetage()` fail-visible when `readdir()` reports a directory
+  enumeration error; distinguish that from ordinary end-of-directory and
+  preserve any subsequent `closedir()` cleanup failure.
+- Retain the registered injected `readdir` regression and source guards.
+  The focused current-source GCC runner passes under normal GCC and
+  AddressSanitizer/UndefinedBehaviorSanitizer with injected `EIO`. Complete
+  current-object, production-CVD/service, materialized-large-file, Sonic1,
+  and final release qualification.
+
 ## Descriptor ingress native-size admission — 2026-08-30
 
 - Keep known-size descriptor roots fail-visible when `st_size` cannot be
