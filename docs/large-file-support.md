@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HFS+ inline decoder initialization visibility — 2026-08-30
+
+The HFS+ inline decmpfs path now has a registered fault-injected regression
+for `inflateInit2()` failure. It requires `CL_EMEM`, the exact incomplete
+reason `HFS+ inline compressed decoder could not be initialized`, zero output,
+and non-cacheable state; the existing resource-map GCC and ASan/UBSan oracles
+remain green. Complete compressed-resource corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain
+required.
+
 ## XAR LZMA member decoder initialization visibility — 2026-08-30
 
 Failed XAR LZMA member initialization now records the exact incomplete reason

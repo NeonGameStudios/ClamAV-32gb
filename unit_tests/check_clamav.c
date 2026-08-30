@@ -128,6 +128,7 @@ int clamav_test_force_swf_decoder_init;
 int clamav_test_force_xar_member_decoder_init;
 int clamav_test_force_bzip_concat_decoder_init;
 int clamav_test_force_xar_lzma_decoder_init;
+int clamav_test_force_hfsplus_decoder_init;
 
 int __wrap_inflateInit_(z_streamp strm, const char *version, int stream_size)
 {
@@ -174,6 +175,10 @@ int __wrap_inflateInit2_(z_streamp strm, int windowBits, const char *version, in
     }
     if (clamav_test_force_ishield_cab_decoder_init) {
         clamav_test_force_ishield_cab_decoder_init = 0;
+        return Z_MEM_ERROR;
+    }
+    if (clamav_test_force_hfsplus_decoder_init) {
+        clamav_test_force_hfsplus_decoder_init = 0;
         return Z_MEM_ERROR;
     }
     if (clamav_test_force_gzip_legacy_fallback) {
@@ -43456,6 +43461,48 @@ START_TEST(test_hfsplus_inline_compression_streams_large_output)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_hfsplus_inline_decoder_init_failure_is_fail_visible)
+{
+    static const uint8_t input[] = {0x78};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    char *path = NULL;
+    uint64_t written = UINT64_MAX;
+    cl_error_t status;
+    struct stat output_stat;
+    int fd = -1;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+
+    clamav_test_force_hfsplus_decoder_init = 1;
+    status = cli_hfsplus_inflate_inline(&ctx, input, sizeof(input), 1, fd, &written);
+    ck_assert_int_eq(status, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "HFS+ inline compressed decoder could not be initialized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(written, 0);
+    ck_assert_int_eq(clamav_test_force_hfsplus_decoder_init, 0);
+    ck_assert_int_eq(fstat(fd, &output_stat), 0);
+    ck_assert_int_eq(output_stat.st_size, 0);
+
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_hfsplus_declared_attributes_failure_is_fail_visible)
 {
     uint8_t data[1024 + (32 * 512)];
@@ -47733,6 +47780,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hfs_inline);
     tcase_add_checked_fixture(tc_hfs_inline, cl_setup, cl_teardown);
     tcase_add_test(tc_hfs_inline, test_hfsplus_inline_compression_streams_large_output);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_hfs_inline, test_hfsplus_inline_decoder_init_failure_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_hfs_map);
     tcase_add_checked_fixture(tc_hfs_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hfs_map, test_hfsplus_null_context_is_fail_visible);

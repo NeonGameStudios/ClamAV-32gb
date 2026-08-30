@@ -1,5 +1,13 @@
 # Wishlist
 
+## HFS+ inline decoder initialization visibility — 2026-08-30
+
+- Keep HFS+ inline decmpfs decoder initialization fail-visible and avoid
+  finalizing an uninitialized zlib stream. The registered fault-injected
+  regression now requires `CL_EMEM`, exact incomplete state, zero output, and
+  cache taint; complete compressed-resource corpus, production-CVD/service,
+  materialized-large-file, Sonic1, and release qualification remain.
+
 ## XAR LZMA member decoder initialization visibility — 2026-08-30
 
 - Keep failed XAR LZMA member initialization fail-visible with the exact

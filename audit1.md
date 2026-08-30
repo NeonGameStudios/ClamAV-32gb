@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## HFS+ inline decoder initialization visibility — 2026-08-30
+
+The enabled HFS+ inline decmpfs path already guarded `inflateEnd()` with an
+initialization flag, but the decoder-initialization failure boundary had no
+fault-injected regression. The registered test now forces `inflateInit2()` to
+return `Z_MEM_ERROR` and asserts `CL_EMEM`, the exact incomplete reason, zero
+output, and cache taint. The existing HFS+ resource-map GCC and ASan/UBSan
+oracles remain green; complete compressed-resource corpus, production-CVD/
+service, materialized-large-file, Sonic1, and final release qualification
+remain open.
+
 ## XAR LZMA member decoder initialization visibility — 2026-08-30
 
 The XAR LZMA member branch already freed its output buffer and avoided
