@@ -35288,12 +35288,12 @@ offset-size-arithmetic	libclamav_rust/src/onenote.rs	807	            eof_at: ONE
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	826	            scan_legacy_reader(&mut reader, (ONE_MAGIC.len() - 1) as u64, &mut sink),
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	841	            (ONE_MAGIC.len() + 1) as u64,
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	98	// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/8806fd18-6735-4874-b111-227b83eaac26
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1023	                    "fmap length is not representable in the 64-bit archive coordinate space",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1094	            // size-limit hint: propagate detections, cancellation, and
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1305	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1317	            engine.maxscansize.saturating_sub((*ctx).scansize)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1373	fn alz_metadata_size(size: u64) -> Option<usize> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1721	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1040	                    "fmap length is not representable in the 64-bit archive coordinate space",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1111	            // size-limit hint: propagate detections, cancellation, and
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1322	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1334	            engine.maxscansize.saturating_sub((*ctx).scansize)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1390	fn alz_metadata_size(size: u64) -> Option<usize> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1738	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	190	fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	202	fn lha_member_range_end(start: u64, length: u64, map_len: u64) -> Option<u64> {
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	203	    start.checked_add(length).filter(|end| *end <= map_len)
@@ -35305,10 +35305,10 @@ offset-size-arithmetic	libclamav_rust/src/scanners.rs	385	            let write_
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	594	    fn last_size(&self) -> u64 {
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	701	    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	776	fn onenote_modern_parser_admitted(input_len: usize) -> bool {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	822	                    "OneNote input size is not representable in the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	839	                    "OneNote input size is not representable in the 64-bit accounting domain",
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	88	const LHA_HEADER_ALLOCATION_LIMIT: usize = 1024 * 1024 * 1024;
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	890	                    "attachment size does not fit the 64-bit accounting domain",
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	90	fn lha_pathname_input_within_allocation_limit(filename_len: usize, extra_headers_len: usize) -> bool {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	907	                    "attachment size does not fit the 64-bit accounting domain",
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1067	    #[doc = " @brief Increment the count for a subsignature of a logical signature.\n\n This is and alternative to lsig_increment_subsig_match() for use in subsigs that don't have a specific offset,\n like byte-compare subsigs and fuzzy-hash subsigs."]
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1104	    pub sizehashes64: [*mut cli_sz_hash64; 3usize],
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1177	    pub filesize_range: *mut u64,

@@ -8017,3 +8017,13 @@ final qualification as open.
 - Retain `test_targetinfo_rejects_missing_context` and its source guard; full
   matcher signatures/CVDs, sanitizer, materialized-large-file, Sonic1, and
   final release qualification remain required.
+
+## OneNote Rust FFI panic containment — 2026-08-29
+
+- Keep the exported `scan_onenote()` wrapper inside `catch_unwind`; parser
+  panics must return `CL_EFORMAT` through the shared incomplete/non-cacheable
+  path rather than crossing the C ABI.
+- Add an injected-panic execution case when the Rust test/build environment is
+  available; retain complete OneNote corpus, current full-C ABI, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification as required evidence.

@@ -14934,3 +14934,17 @@ missing-context/map calls, and source guards pin the boundary message.
 
 Full matcher TCase, production signatures/CVDs, sanitizer, materialized-large-
 file, Sonic1, and final release qualification remain open.
+
+## OneNote Rust FFI panic containment — 2026-08-29
+
+The exported `scan_onenote()` entry now wraps its reader and third-party
+parser path in `catch_unwind`, matching the existing LHA/LZH and ALZ entry
+contracts. A parser panic is converted to `CL_EFORMAT` through the shared
+failure helper, which records the required incomplete/non-cacheable state
+instead of allowing an unwind across the C ABI or terminating the scanning
+service. The source guards pin both the inner dispatch and the fail-visible
+panic message.
+
+A direct injected-panic execution case remains desirable; complete OneNote
+corpus, current full-C ABI, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.

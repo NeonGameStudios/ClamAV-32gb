@@ -788,6 +788,23 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         return cl_error_t_CL_ENULLARG;
     }
 
+    let result = panic::catch_unwind(panic::AssertUnwindSafe(|| unsafe {
+        scan_onenote_inner(ctx)
+    }));
+
+    match result {
+        Ok(status) => status,
+        Err(_) => parser_failure(
+            ctx,
+            "OneNote",
+            cl_error_t_CL_EFORMAT,
+            "parser panicked while reading the document",
+        ),
+    }
+}
+
+unsafe fn scan_onenote_inner(ctx: *mut cli_ctx) -> cl_error_t {
+
     let fmap = match ctx::current_fmap(ctx) {
         Ok(fmap) => fmap,
         Err(e) => {
