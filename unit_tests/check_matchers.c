@@ -1834,6 +1834,29 @@ START_TEST(test_yara_arena_argument_and_relocation_failures_are_visible)
 }
 END_TEST
 
+START_TEST(test_yara_arena_next_address_rejects_unrepresentable_offset)
+{
+    YR_ARENA *arena = NULL;
+    unsigned char first_page[4] = {0, 1, 2, 3};
+    unsigned char second_page = 4;
+    void *first_address = NULL;
+    void *second_address = NULL;
+
+    ck_assert_int_eq(yr_arena_create(sizeof(first_page), 0, &arena), ERROR_SUCCESS);
+    ck_assert_ptr_nonnull(arena);
+    ck_assert_int_eq(yr_arena_write_data(arena, first_page, sizeof(first_page),
+                                          &first_address), ERROR_SUCCESS);
+    ck_assert_int_eq(yr_arena_write_data(arena, &second_page, sizeof(second_page),
+                                          &second_address), ERROR_SUCCESS);
+
+    ck_assert_ptr_eq(yr_arena_next_address(arena, first_address, sizeof(first_page)),
+                     second_address);
+    ck_assert_ptr_null(yr_arena_next_address(arena, first_address, SIZE_MAX));
+
+    yr_arena_destroy(arena);
+}
+END_TEST
+
 START_TEST(test_yara_evaluation_accounts_matcher_work)
 {
 #ifdef HAVE_YARA
@@ -2844,6 +2867,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_yara_missing_matcher_state_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_arena_struct_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_arena_argument_and_relocation_failures_are_visible);
+    tcase_add_test(tc_matchers, test_yara_arena_next_address_rejects_unrepresentable_offset);
     tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
     tcase_add_test(tc_matchers, test_yara_execution_error_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_division_by_zero_is_fail_visible);

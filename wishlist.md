@@ -8741,3 +8741,13 @@ qualification as required evidence.
   complete corpus, sanitizer, materialized-large-file, Sonic1, and final
   release qualification evidence. The focused current-source GCC and
   AddressSanitizer/UndefinedBehaviorSanitizer resource-map runners pass.
+
+## YARA arena next-address admission — 2026-08-30
+
+- Keep YARA arena traversal page-relative before forming a pointer from an
+  offset; an unrepresentable displacement must return `NULL` without pointer
+  arithmetic overflow. Retain the cross-page/`SIZE_MAX` regression and source
+  guards; the current-source GCC and AddressSanitizer/UndefinedBehaviorSanitizer
+  arena runners pass, while complete YARA corpus, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification remain
+  required.

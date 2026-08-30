@@ -402,45 +402,30 @@ void* yr_arena_next_address(
   size_t offset)
 {
   YR_ARENA_PAGE* page;
+  size_t address_offset;
 
   page = _yr_arena_page_for_address(arena, address);
 
   if (page == NULL)
     return NULL;
 
-  if ((uint8_t*) address + offset >= page->address &&
-      (uint8_t*) address + offset < page->address + page->used)
-  {
-    return (uint8_t*) address + offset;
-  }
+  address_offset = (size_t)((uint8_t*)address - page->address);
+  if (address_offset >= page->used)
+    return NULL;
 
-  if (offset > 0)
+  if (offset < page->used - address_offset)
+    return page->address + address_offset + offset;
+
+  offset -= page->used - address_offset;
+  page = page->next;
+
+  while (page != NULL)
   {
-    offset -= page->address + page->used - (uint8_t*) address;
+    if (offset < page->used)
+      return page->address + offset;
+
+    offset -= page->used;
     page = page->next;
-
-    while (page != NULL)
-    {
-      if (offset < page->used)
-        return page->address + offset;
-
-      offset -= page->used;
-      page = page->next;
-    }
-  }
-  else
-  {
-    offset += page->used;
-    page = page->prev;
-
-    while (page != NULL)
-    {
-      if (offset < page->used)
-        return page->address + page->used + offset;
-
-      offset += page->used;
-      page = page->prev;
-    }
   }
 
   return NULL;

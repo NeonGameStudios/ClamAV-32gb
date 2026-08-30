@@ -15970,3 +15970,18 @@ sanitizer, materialized-large-file, Sonic1, and final release qualification
 remain open. The current-source focused GCC runner and its matching
 AddressSanitizer/UndefinedBehaviorSanitizer runner both pass the existing
 declared-offset resource-map checks.
+
+## YARA arena next-address admission — 2026-08-30
+
+The YARA arena traversal helper formed `address + offset` before checking
+whether the requested displacement remained inside the current page. The
+ordinary bundled callers use small, valid record sizes, but an
+unrepresentable displacement could invoke undefined pointer arithmetic before
+the helper returned `NULL`. Traversal now computes the address's page-relative
+position first, subtracts the remaining current-page span with checked
+`size_t` arithmetic, and only forms pointers after the target page and offset
+are known to be valid. The new cross-page and `SIZE_MAX` regression is
+registered and source-guarded; the current-source production GCC arena oracle
+and matching AddressSanitizer/UndefinedBehaviorSanitizer runner pass. Complete
+YARA corpus, production-CVD/service, materialized-large-file, Sonic1, and
+final release qualification remain open.
