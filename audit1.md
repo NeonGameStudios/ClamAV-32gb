@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Production CVD unpack failure propagation — 2026-08-30
+
+The Rust-backed `CVD::unpack_to()` path previously used `for_each` and
+converted archive-entry, entry-path, and destination-unpack errors into log
+messages while returning `Ok(())`. A partial signature database could
+therefore be published as successfully unpacked. The iterator now propagates
+those failures, rejects non-regular archive entries, and returns an explicit
+`UnpackFailed` result for destination writes. The new
+`unpack_to_propagates_archive_entry_failures` Rust regression and source
+guards cover the boundary. The existing Docker Cargo cannot parse this
+repository's lockfile v4, so Rust execution remains pending; full current-C
+ABI, production-CVD/service, sanitizer, materialized-large-file, Sonic1, and
+final release qualification remain open.
+
 ## OLE2 XLM/BIFF metadata admission — 2026-08-30
 
 OLE2 property-tree, XLM/BIFF, stream-enumeration, HWP5-type, and encryption

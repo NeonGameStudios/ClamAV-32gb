@@ -38,7 +38,7 @@ use std::os::windows::io::AsRawHandle;
 use crate::codesign::Verifier;
 use flate2::read::GzDecoder;
 use hex;
-use log::{debug, error, warn};
+use log::{debug, warn};
 use tar::Archive;
 
 use crate::{
@@ -273,51 +273,47 @@ impl CVD {
             tar::Archive::new(Box::new(BufReader::new(file_bytes.as_slice())))
         };
 
-        archive
-            .entries()
-            .map_err(|e| {
-                Error::Parse(format!(
-                    "Failed to enumerate files in signature archive: {}",
+        let entries = archive.entries().map_err(|e| {
+            Error::Parse(format!(
+                "Failed to enumerate files in signature archive: {}",
+                e
+            ))
+        })?;
+
+        for entry in entries {
+            let mut entry = entry.map_err(|e| {
+                Error::UnpackFailed(format!("Failed to get entry in signature archive: {}", e))
+            })?;
+
+            if !entry.header().entry_type().is_file() {
+                return Err(Error::UnpackFailed(format!(
+                    "Unsupported non-file entry in signature archive: {:?}",
+                    entry.path().ok()
+                )));
+            }
+
+            let file_path = entry.path().map_err(|e| {
+                Error::UnpackFailed(format!(
+                    "Failed to get path for file in signature archive: {}",
                     e
                 ))
-            })?
-            // .filter_map(|e| e.ok())
-            .for_each(|entry| {
-                let mut entry = match entry {
-                    Ok(entry) => entry,
-                    Err(e) => {
-                        error!("Failed to get entry in signature archive: {}", e);
-                        return;
-                    }
-                };
+            })?;
 
-                let file_path = match entry.path() {
-                    Ok(file_path) => file_path,
-                    Err(e) => {
-                        error!("Failed to get path for file in signature archive: {}", e);
-                        return;
-                    }
-                };
+            let filename = file_path.file_name().ok_or_else(|| {
+                Error::UnpackFailed(format!(
+                    "Failed to get filename for file in signature archive: {:?}",
+                    file_path
+                ))
+            })?;
 
-                let filename = match file_path.file_name() {
-                    Some(filename) => filename,
-                    None => {
-                        error!(
-                            "Failed to get filename for file in signature archive: {:?}",
-                            file_path
-                        );
-                        return;
-                    }
-                };
+            let destination_file_path = path.join(filename);
 
-                let destination_file_path = path.join(filename);
+            debug!("Unpacking {:?} to: {:?}", filename, destination_file_path);
 
-                debug!("Unpacking {:?} to: {:?}", filename, destination_file_path);
-
-                if let Err(e) = entry.unpack(&destination_file_path) {
-                    error!("Unpack failed: {}", e);
-                }
-            });
+            entry.unpack(&destination_file_path).map_err(|e| {
+                Error::UnpackFailed(format!("Failed to unpack {:?}: {}", filename, e))
+            })?;
+        }
 
         Ok(())
     }
@@ -907,6 +903,44 @@ pub unsafe extern "C" fn cvd_get_file_handle(cvd: *const c_void) -> *mut c_void 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unpack_to_propagates_archive_entry_failures() {
+        let mut archive = tar::Builder::new(Vec::new());
+        let mut header = tar::Header::new_gnu();
+        header.set_size(3);
+        header.set_mode(0o600);
+        header.set_cksum();
+        archive
+            .append_data(&mut header, "blocked", b"abc".as_slice())
+            .unwrap();
+        let archive_bytes = archive.into_inner().unwrap();
+
+        let destination = tempfile::tempdir().unwrap();
+        std::fs::create_dir(destination.path().join("blocked")).unwrap();
+
+        let mut cvd_file = tempfile::NamedTempFile::new().unwrap();
+        cvd_file.write_all(&[0u8; 512]).unwrap();
+        cvd_file.write_all(&archive_bytes).unwrap();
+        cvd_file.flush().unwrap();
+
+        let mut cvd = CVD {
+            name: "test".to_string(),
+            time_creation: SystemTime::UNIX_EPOCH,
+            version: 1,
+            num_sigs: 1,
+            min_flevel: 1,
+            rsa_dsig: None,
+            md5: None,
+            builder: "test".to_string(),
+            file: cvd_file.reopen().unwrap(),
+            path: cvd_file.path().to_path_buf(),
+            is_compressed: false,
+        };
+
+        let result = cvd.unpack_to(destination.path());
+        assert!(matches!(result, Err(Error::UnpackFailed(_))));
+    }
 
     #[test]
     fn ffi_null_arguments_are_fail_visible() {

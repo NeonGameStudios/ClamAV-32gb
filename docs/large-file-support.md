@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Production CVD unpack failure propagation — 2026-08-30
+
+Rust-backed CVD unpacking now fails visibly on archive-entry enumeration,
+entry paths, non-regular entries, and destination writes. A failed or partial
+signature extraction can no longer return success after merely logging the
+problem. The current source and source guards include the
+`unpack_to_propagates_archive_entry_failures` regression. Rust execution is
+pending because the existing Docker Cargo predates this repository's v4 lock
+file; production-CVD/service, sanitizer, materialized-large-file, Sonic1,
+and final parser/release qualification remain required.
+
 ## OLE2 XLM/BIFF metadata admission — 2026-08-30
 
 Requested OLE2 metadata writes now propagate failures for digital-signature

@@ -1,5 +1,25 @@
 # Wishlist
 
+## Production CVD unpack failure propagation — 2026-08-30
+
+- Keep Rust CVD unpacking fail-visible for archive-entry enumeration, entry
+  path, non-regular-entry, and destination write failures; do not publish a
+  partial signature database as successful.
+- Retain `unpack_to_propagates_archive_entry_failures` and its source guards.
+  Run it with a current Rust toolchain, then complete production CVD/service,
+  sanitizer, materialized-large-file, Sonic1, and final release qualification.
+
+## OLE2 XLM/BIFF metadata admission — 2026-08-30
+
+- Keep requested OLE2 digital-signature, XLM/BIFF indicator and language,
+  stream-enumeration/type, HWP5-type, and encryption metadata writes
+  fail-visible: propagate the original `cli_json*` error and mark the layer
+  incomplete instead of allowing a partial metadata result to appear clean.
+- Retain the current-source Docker production-GCC compile and source guards;
+  add focused JSON fault injection, then complete OLE/VBA/XLM corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, and final parser/release qualification.
+
 ## HWP5 header metadata record admission — 2026-08-30
 
 - Keep `cli_hwp5header()` fail-visible when `RawVersion`, `RawFlags`, or any
