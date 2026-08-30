@@ -8676,3 +8676,12 @@ qualification as required evidence.
   and source guards; complete public-ingress parity, current-object execution,
   sanitizer, materialized-large-file, Sonic1, and final release qualification
   remain required.
+
+## OpenIOC nested-indicator admission — 2026-08-30
+
+- Keep OpenIOC `<Indicator>` recursion capped at 128 levels and return a
+  fail-visible resource error before entering deeper parser frames. Retain
+  the malformed-XML/deep-nesting regression and source guards; complete
+  OpenIOC corpus, allocator-fault, current-object, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification remain required.

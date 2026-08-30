@@ -36,6 +36,8 @@
 
 #include <libxml/xmlreader.h>
 
+#define OPENIOC_MAX_INDICATOR_DEPTH 128U
+
 struct openioc_hash {
     uint8_t *hash;
     void *next;
@@ -188,11 +190,17 @@ static int openioc_parse_indicatoritem(xmlTextReaderPtr reader, struct openioc_h
     return rc;
 }
 
-static int openioc_parse_indicator(xmlTextReaderPtr reader, struct openioc_hash **elems)
+static int openioc_parse_indicator(xmlTextReaderPtr reader, struct openioc_hash **elems,
+                                   unsigned int depth)
 {
     const xmlChar *name;
     int read_rc;
     int rc = CL_SUCCESS;
+
+    if (depth >= OPENIOC_MAX_INDICATOR_DEPTH) {
+        cli_dbgmsg("openioc_parse: Indicator nesting exceeds the configured depth limit.\n");
+        return CL_ERESOURCE;
+    }
 
     while (1) {
         read_rc = openioc_read(reader, &name);
@@ -200,7 +208,7 @@ static int openioc_parse_indicator(xmlTextReaderPtr reader, struct openioc_hash 
             return read_rc < 0 ? CL_EPARSE : rc;
         if (xmlStrEqual(name, (const xmlChar *)"Indicator") &&
             xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
-            rc = openioc_parse_indicator(reader, elems);
+            rc = openioc_parse_indicator(reader, elems, depth + 1U);
             if (rc != CL_SUCCESS) {
                 cli_dbgmsg("openioc_parse: openioc_parse_indicator recursion error.\n");
                 break;
@@ -282,7 +290,7 @@ int openioc_parse(const char *fname, int fd, struct cl_engine *engine, unsigned 
 
         if (xmlStrEqual(name, (const xmlChar *)"Indicator") &&
             xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
-            rc = openioc_parse_indicator(reader, &elems);
+            rc = openioc_parse_indicator(reader, &elems, 0);
             if (rc != CL_SUCCESS) {
                 openioc_free_hashes(elems);
                 xmlTextReaderClose(reader);

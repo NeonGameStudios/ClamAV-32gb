@@ -15871,3 +15871,16 @@ before map allocation. The registered callback/offset regression and source
 guards cover both boundaries. Complete public-ingress parity, current-object
 execution, sanitizer, materialized-large-file, Sonic1, and final release
 qualification remain open.
+
+## OpenIOC nested-indicator admission — 2026-08-30
+
+The enabled OpenIOC database loader recursively descended nested
+`<Indicator>` elements without an application-level depth bound. A malformed
+database could therefore consume parser stack space before libxml2's
+implementation-defined limits became relevant. The loader now caps nested
+Indicator recursion at 128 levels and returns `CL_ERESOURCE`, which the
+database API surfaces as a failed database load after releasing pending hash
+nodes. The existing malformed-XML regression now also builds a 130-level
+fixture, and source guards pin the cap and recursive call. Complete OpenIOC
+corpus, allocator-fault, current-object, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.

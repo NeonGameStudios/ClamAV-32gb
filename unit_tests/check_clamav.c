@@ -3149,6 +3149,58 @@ START_TEST(test_openioc_malformed_xml_is_fail_visible)
         cl_engine_free(engine);
         ck_assert_int_eq(unlink(file_path), 0);
     }
+
+    {
+        enum { DEEP_INDICATOR_COUNT = 130, DEEP_FIXTURE_SIZE = 130 * 24 + 128 };
+        char deep_fixture[DEEP_FIXTURE_SIZE];
+        size_t deep_len = 0;
+        int written;
+
+        written = snprintf(deep_fixture + deep_len, sizeof(deep_fixture) - deep_len, "<ioc>");
+        ck_assert_int_ge(written, 0);
+        ck_assert_uint_lt((size_t)written, sizeof(deep_fixture) - deep_len);
+        deep_len += (size_t)written;
+        for (i = 0; i < DEEP_INDICATOR_COUNT; i++) {
+            written = snprintf(deep_fixture + deep_len, sizeof(deep_fixture) - deep_len,
+                               "<Indicator>");
+            ck_assert_int_ge(written, 0);
+            ck_assert_uint_lt((size_t)written, sizeof(deep_fixture) - deep_len);
+            deep_len += (size_t)written;
+        }
+        written = snprintf(deep_fixture + deep_len, sizeof(deep_fixture) - deep_len,
+                            "<IndicatorItem><Content type=\"md5\">"
+                            "0123456789abcdef0123456789abcdef"
+                            "</Content></IndicatorItem>");
+        ck_assert_int_ge(written, 0);
+        ck_assert_uint_lt((size_t)written, sizeof(deep_fixture) - deep_len);
+        deep_len += (size_t)written;
+        for (i = 0; i < DEEP_INDICATOR_COUNT; i++) {
+            written = snprintf(deep_fixture + deep_len, sizeof(deep_fixture) - deep_len,
+                               "</Indicator>");
+            ck_assert_int_ge(written, 0);
+            ck_assert_uint_lt((size_t)written, sizeof(deep_fixture) - deep_len);
+            deep_len += (size_t)written;
+        }
+        written = snprintf(deep_fixture + deep_len, sizeof(deep_fixture) - deep_len, "</ioc>");
+        ck_assert_int_ge(written, 0);
+        ck_assert_uint_lt((size_t)written, sizeof(deep_fixture) - deep_len);
+        deep_len += (size_t)written;
+
+        snprintf(file_path, sizeof(file_path), "%s/openioc-deep-%ld.ioc", tmpdir, (long)getpid());
+        fd = open(file_path, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0600);
+        ck_assert_int_ge(fd, 0);
+        ck_assert_int_eq(write(fd, deep_fixture, deep_len), (ssize_t)deep_len);
+        ck_assert_int_eq(close(fd), 0);
+
+        engine = cl_engine_new();
+        ck_assert_ptr_nonnull(engine);
+        sigs = 0;
+        ret  = cl_load(file_path, engine, &sigs, CL_DB_STDOPT);
+        ck_assert_int_eq(ret, CL_EMALFDB);
+        ck_assert_uint_eq(sigs, 0);
+        cl_engine_free(engine);
+        ck_assert_int_eq(unlink(file_path), 0);
+    }
 }
 END_TEST
 
