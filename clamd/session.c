@@ -585,6 +585,25 @@ int command(client_conn_t *conn, int *virus)
     return error;
 }
 
+static void dispatch_failed_resources(client_conn_t *conn)
+{
+    if (conn == NULL)
+        return;
+
+    if (conn->scanfd != -1) {
+        if (close(conn->scanfd) != 0)
+            logg(LOGG_WARNING, "Failed to close a descriptor after command dispatch failure: %s\n", strerror(errno));
+        conn->scanfd = -1;
+    }
+
+    if (conn->filename != NULL) {
+        if (conn->cmdtype == COMMAND_INSTREAMSCAN && cli_unlink(conn->filename) != CL_SUCCESS)
+            logg(LOGG_WARNING, "Failed to remove staged INSTREAM input after command dispatch failure\n");
+        free(conn->filename);
+        conn->filename = NULL;
+    }
+}
+
 static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
 {
     int ret = 0;
@@ -608,7 +627,8 @@ static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *
         free(dup_conn);
         return -1;
     }
-    dup_conn->scanfd = -1;
+    dup_conn->scanfd   = -1;
+    dup_conn->filename = NULL;
     bulk             = 1;
     switch (cmd) {
         case COMMAND_FILDES:
@@ -634,8 +654,10 @@ static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *
             }
             break;
         case COMMAND_INSTREAMSCAN:
-            dup_conn->scanfd = conn->scanfd;
-            conn->scanfd     = -1;
+            dup_conn->scanfd  = conn->scanfd;
+            conn->scanfd      = -1;
+            dup_conn->filename = conn->filename;
+            conn->filename     = NULL;
             break;
         case COMMAND_STATS:
             /* not a scan command, don't queue to bulk */
@@ -660,6 +682,7 @@ static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *
     if (ret) {
         if (reserved && !dispatch_attempted)
             thrmgr_release_reservation(dup_conn->thrpool);
+        dispatch_failed_resources(dup_conn);
         cl_engine_free(dup_conn->engine);
         free(dup_conn);
     }

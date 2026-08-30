@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## clamd dispatch-failure resource ownership — 2026-08-30
+
+The clamd receive and dispatch boundary now transfers INSTREAM descriptor and
+staged-name ownership to the duplicate command connection only after that
+connection exists, and closes or unlinks both resources if worker dispatch
+fails. Received FILDES descriptors are closed by the receive loop when a
+failure occurs before dispatch can consume them. The current daemon sources
+compile with the established Docker production-GCC flags and pass the source
+guards; focused daemon fault injection,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## SWF decoder initialization evidence — 2026-08-30
 
 The SWF CWS and ZWS paths now mark the compressed layer incomplete and

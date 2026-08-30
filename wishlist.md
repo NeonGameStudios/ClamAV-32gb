@@ -9,6 +9,15 @@
   sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
   final release qualification.
 
+## clamd dispatch-failure resource ownership — 2026-08-30
+
+- Keep clamd dispatch failure cleanup fail-visible and leak-free: transfer
+  INSTREAM descriptors and staged names only after duplicate ownership is
+  established, close/unlink them on worker-dispatch failure, and close
+  received FILDES descriptors that fail before dispatch. Add focused daemon
+  fault injection, then complete production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification.
+
 ## InstallShield MSI decompressor cleanup status — 2026-08-30
 
 - Keep `inflateInit()` failure cleanup fail-visible in confirmed InstallShield

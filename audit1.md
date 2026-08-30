@@ -11,6 +11,17 @@ taint; the LZMA branch is source-guarded. Full SWF corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
 
+## clamd dispatch-failure resource ownership — 2026-08-30
+
+The clamd receive and dispatch boundary now transfers INSTREAM descriptor and
+staged-name ownership only to the duplicate command connection, and closes or
+unlinks those resources when worker dispatch fails. Received FILDES descriptors
+that fail before dispatch ownership is established are also closed by the
+receive loop. The current daemon sources compile with the established Docker
+production-GCC flags and pass the source guards; focused daemon fault
+injection, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## InstallShield MSI decompressor cleanup status — 2026-08-30
 
 The confirmed InstallShield MSI path previously discarded close and unlink

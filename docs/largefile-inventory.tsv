@@ -127,15 +127,15 @@ fixed-width-integer	clamd/scanner.c	246	    *destination = (scaled > (uint64_t)U
 fixed-width-integer	clamd/scanner.c	481	        uint64_t scanned_bytes   = 0;
 fixed-width-integer	clamd/scanner.c	696	        uint64_t scanned_bytes   = 0;
 fixed-width-integer	clamd/scanner.c	734	        uint64_t scanned_bytes = 0;
-fixed-width-integer	clamd/server-th.c	965	                uint32_t cs;
+fixed-width-integer	clamd/server-th.c	966	                uint32_t cs;
 fixed-width-integer	clamd/session.c	216	    uint32_t length;
 fixed-width-integer	clamd/session.c	217	    uint32_t network_length;
 fixed-width-integer	clamd/session.c	218	    uint32_t terminator = 0;
 fixed-width-integer	clamd/session.c	301	    length         = (uint32_t)json_length;
-fixed-width-integer	clamd/session.c	671	    uint32_t ver;
-fixed-width-integer	clamd/session.c	825	            uint64_t stream_limit;
-fixed-width-integer	clamd/session.c	826	            uint64_t temporary_limit;
-fixed-width-integer	clamd/session.c	841	            temporary_limit    = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
+fixed-width-integer	clamd/session.c	694	    uint32_t ver;
+fixed-width-integer	clamd/session.c	848	            uint64_t stream_limit;
+fixed-width-integer	clamd/session.c	849	            uint64_t temporary_limit;
+fixed-width-integer	clamd/session.c	864	            temporary_limit    = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
 fixed-width-integer	clamd/session.h	149	    uint64_t quota;
 fixed-width-integer	clamd/session.h	150	    uint64_t stream_bytes;
 fixed-width-integer	clamdscan/clamdscan.c	112	        int16_t ping_result = ping_clamd(opts);
@@ -7535,36 +7535,36 @@ native-width-integer	clamd/scanner.h	72	int scan_pathchk(const char *path, struc
 native-width-integer	clamd/scanner.h	73	void hash_callback(int fd, unsigned long long size, const char *md5, const char *virname, void *ctx);
 native-width-integer	clamd/scanner.h	75	void clamd_virus_found_cb(int fd, const char *virname, void *context);
 native-width-integer	clamd/server-th.c	102	static int syncpipe_wake_recv_w = -1;
-native-width-integer	clamd/server-th.c	1046	        logg(LOGG_DEBUG_NV, "Processed %llu bytes of chunkdata, pos %llu\n", (long long unsigned)cmdlen, (long long unsigned)pos);
-native-width-integer	clamd/server-th.c	1060	int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigned int dboptions, const struct optstruct *opts)
-native-width-integer	clamd/server-th.c	1062	    int max_threads, max_queue, readtimeout, ret = 0;
-native-width-integer	clamd/server-th.c	1072	    int idletimeout;
-native-width-integer	clamd/server-th.c	1073	    unsigned long long val;
-native-width-integer	clamd/server-th.c	1074	    size_t i, j, rr_last = 0;
-native-width-integer	clamd/server-th.c	1081	    unsigned int selfchk;
-native-width-integer	clamd/server-th.c	1178	                 (size_t)opt->numarg, CLI_MAX_MAXRECLEVEL);
-native-width-integer	clamd/server-th.c	1190	        logg(LOGG_INFO, "Limits: Recursion level limit set to %u.\n", (unsigned int)val);
-native-width-integer	clamd/server-th.c	1203	        logg(LOGG_INFO, "Limits: Files limit set to %u.\n", (unsigned int)val);
-native-width-integer	clamd/server-th.c	1209	        logg(LOGG_DEBUG, "Limits: Core-dump limit is %lu.\n", (unsigned long)rlim.rlim_cur);
+native-width-integer	clamd/server-th.c	1058	        logg(LOGG_DEBUG_NV, "Processed %llu bytes of chunkdata, pos %llu\n", (long long unsigned)cmdlen, (long long unsigned)pos);
+native-width-integer	clamd/server-th.c	1072	int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigned int dboptions, const struct optstruct *opts)
+native-width-integer	clamd/server-th.c	1074	    int max_threads, max_queue, readtimeout, ret = 0;
+native-width-integer	clamd/server-th.c	1084	    int idletimeout;
+native-width-integer	clamd/server-th.c	1085	    unsigned long long val;
+native-width-integer	clamd/server-th.c	1086	    size_t i, j, rr_last = 0;
+native-width-integer	clamd/server-th.c	1093	    unsigned int selfchk;
+native-width-integer	clamd/server-th.c	1190	                 (size_t)opt->numarg, CLI_MAX_MAXRECLEVEL);
+native-width-integer	clamd/server-th.c	1202	        logg(LOGG_INFO, "Limits: Recursion level limit set to %u.\n", (unsigned int)val);
+native-width-integer	clamd/server-th.c	1215	        logg(LOGG_INFO, "Limits: Files limit set to %u.\n", (unsigned int)val);
 native-width-integer	clamd/server-th.c	122	    int ret;
+native-width-integer	clamd/server-th.c	1221	        logg(LOGG_DEBUG, "Limits: Core-dump limit is %lu.\n", (unsigned long)rlim.rlim_cur);
 native-width-integer	clamd/server-th.c	123	    int virus = 0, errors = 0;
-native-width-integer	clamd/server-th.c	1314	        int admission_status            = CL_ERROR;
-native-width-integer	clamd/server-th.c	1567	        logg(LOGG_INFO, "Structured: Minimum Credit Card Number Count set to %u\n", (unsigned int)val);
-native-width-integer	clamd/server-th.c	1580	        logg(LOGG_INFO, "Structured: Minimum Social Security Number Count set to %u\n", (unsigned int)val);
-native-width-integer	clamd/server-th.c	1612	    logg(LOGG_DEBUG, "Listening daemon: PID: %u\n", (unsigned int)getpid());
-native-width-integer	clamd/server-th.c	1622	        int max_max_queue;
-native-width-integer	clamd/server-th.c	1626	        int solaris_has_extended_stdio = 0;
-native-width-integer	clamd/server-th.c	1670	                     (unsigned long)rlim.rlim_cur, strerror(errno));
-native-width-integer	clamd/server-th.c	1686	                 maxrec * max_threads, (unsigned long)rlim.rlim_cur);
-native-width-integer	clamd/server-th.c	1761	        int wake_flags = fcntl(syncpipe_wake_recv_w, F_GETFL, 0);
-native-width-integer	clamd/server-th.c	1786	        int new_sd;
-native-width-integer	clamd/server-th.c	1794	        new_sd = fds_poll_recv(fds, selfchk ? (int)selfchk : -1, 1, event_wake_recv);
-native-width-integer	clamd/server-th.c	1825	            size_t pos         = 0;
-native-width-integer	clamd/server-th.c	1826	            int error          = 0;
-native-width-integer	clamd/server-th.c	1887	                int rc;
+native-width-integer	clamd/server-th.c	1326	        int admission_status            = CL_ERROR;
+native-width-integer	clamd/server-th.c	1579	        logg(LOGG_INFO, "Structured: Minimum Credit Card Number Count set to %u\n", (unsigned int)val);
+native-width-integer	clamd/server-th.c	1592	        logg(LOGG_INFO, "Structured: Minimum Social Security Number Count set to %u\n", (unsigned int)val);
+native-width-integer	clamd/server-th.c	1624	    logg(LOGG_DEBUG, "Listening daemon: PID: %u\n", (unsigned int)getpid());
+native-width-integer	clamd/server-th.c	1634	        int max_max_queue;
+native-width-integer	clamd/server-th.c	1638	        int solaris_has_extended_stdio = 0;
+native-width-integer	clamd/server-th.c	1682	                     (unsigned long)rlim.rlim_cur, strerror(errno));
+native-width-integer	clamd/server-th.c	1698	                 maxrec * max_threads, (unsigned long)rlim.rlim_cur);
+native-width-integer	clamd/server-th.c	1773	        int wake_flags = fcntl(syncpipe_wake_recv_w, F_GETFL, 0);
+native-width-integer	clamd/server-th.c	1798	        int new_sd;
+native-width-integer	clamd/server-th.c	1806	        new_sd = fds_poll_recv(fds, selfchk ? (int)selfchk : -1, 1, event_wake_recv);
+native-width-integer	clamd/server-th.c	1837	            size_t pos         = 0;
+native-width-integer	clamd/server-th.c	1838	            int error          = 0;
+native-width-integer	clamd/server-th.c	1899	                int rc;
 native-width-integer	clamd/server-th.c	191	void sighandler_th(int sig)
-native-width-integer	clamd/server-th.c	1920	                        logg(LOGG_WARNING, "Client sent garbage after last command: %lu bytes\n", (unsigned long)buf->off);
 native-width-integer	clamd/server-th.c	193	    int action = 0;
+native-width-integer	clamd/server-th.c	1932	                        logg(LOGG_WARNING, "Client sent garbage after last command: %lu bytes\n", (unsigned long)buf->off);
 native-width-integer	clamd/server-th.c	224	static int need_db_reload(void)
 native-width-integer	clamd/server-th.c	252	    unsigned int sigs          = 0;
 native-width-integer	clamd/server-th.c	253	    int retval;
@@ -7597,12 +7597,12 @@ native-width-integer	clamd/server-th.c	79	    unsigned int dboptions;
 native-width-integer	clamd/server-th.c	86	int progexit                 = 0;
 native-width-integer	clamd/server-th.c	88	int reload                   = 0;
 native-width-integer	clamd/server-th.c	91	int sighup                   = 0;
-native-width-integer	clamd/server-th.c	939	            logg(LOGG_DEBUG_NV, "Moved partial command: %lu\n", (unsigned long)buf->off);
-native-width-integer	clamd/server-th.c	949	/* static const unsigned char* parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, size_t *ppos, int *error, const struct optstruct *opts, int readtimeout) */
-native-width-integer	clamd/server-th.c	950	static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct optstruct *opts, int *error, size_t *ppos, int readtimeout)
-native-width-integer	clamd/server-th.c	952	    int rc;
-native-width-integer	clamd/server-th.c	953	    size_t pos = *ppos;
-native-width-integer	clamd/server-th.c	954	    size_t cmdlen;
+native-width-integer	clamd/server-th.c	940	            logg(LOGG_DEBUG_NV, "Moved partial command: %lu\n", (unsigned long)buf->off);
+native-width-integer	clamd/server-th.c	950	/* static const unsigned char* parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, size_t *ppos, int *error, const struct optstruct *opts, int readtimeout) */
+native-width-integer	clamd/server-th.c	951	static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct optstruct *opts, int *error, size_t *ppos, int readtimeout)
+native-width-integer	clamd/server-th.c	953	    int rc;
+native-width-integer	clamd/server-th.c	954	    size_t pos = *ppos;
+native-width-integer	clamd/server-th.c	955	    size_t cmdlen;
 native-width-integer	clamd/server.h	39	    int sid;
 native-width-integer	clamd/server.h	45	int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigned int dboptions, const struct optstruct *opts);
 native-width-integer	clamd/server.h	46	int statinidir(const char *dirname);
@@ -7639,22 +7639,22 @@ native-width-integer	clamd/session.c	328	    int maxdirrec;
 native-width-integer	clamd/session.c	329	    int ret   = 0;
 native-width-integer	clamd/session.c	330	    int flags = CLI_FTW_STD;
 native-width-integer	clamd/session.c	370	            int multiscan, max, alive;
-native-width-integer	clamd/session.c	588	static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
-native-width-integer	clamd/session.c	590	    int ret = 0;
-native-width-integer	clamd/session.c	591	    int reserved = 0;
-native-width-integer	clamd/session.c	592	    int dispatch_attempted = 0;
-native-width-integer	clamd/session.c	593	    int bulk;
-native-width-integer	clamd/session.c	669	static int print_ver(int desc, char term, const struct cl_engine *engine)
-native-width-integer	clamd/session.c	682	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
-native-width-integer	clamd/session.c	687	static void print_commands(int desc, char term, const struct cl_engine *engine)
-native-width-integer	clamd/session.c	713	int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
-native-width-integer	clamd/session.c	715	    int desc                       = conn->sd;
-native-width-integer	clamd/session.c	720	     *  - not involve any operation that can block for a long time, such as disk
+native-width-integer	clamd/session.c	607	static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
+native-width-integer	clamd/session.c	609	    int ret = 0;
+native-width-integer	clamd/session.c	610	    int reserved = 0;
+native-width-integer	clamd/session.c	611	    int dispatch_attempted = 0;
+native-width-integer	clamd/session.c	612	    int bulk;
+native-width-integer	clamd/session.c	692	static int print_ver(int desc, char term, const struct cl_engine *engine)
+native-width-integer	clamd/session.c	705	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
+native-width-integer	clamd/session.c	710	static void print_commands(int desc, char term, const struct cl_engine *engine)
+native-width-integer	clamd/session.c	736	int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
+native-width-integer	clamd/session.c	738	    int desc                       = conn->sd;
+native-width-integer	clamd/session.c	743	     *  - not involve any operation that can block for a long time, such as disk
 native-width-integer	clamd/session.c	80	    const size_t len;
 native-width-integer	clamd/session.c	82	    int need_arg;
-native-width-integer	clamd/session.c	827	            int rc;
 native-width-integer	clamd/session.c	83	    int support_old;
 native-width-integer	clamd/session.c	84	    int enabled;
+native-width-integer	clamd/session.c	850	            int rc;
 native-width-integer	clamd/session.h	140	    int scanfd;
 native-width-integer	clamd/session.h	141	    int sd;
 native-width-integer	clamd/session.h	148	    int id;
@@ -22143,44 +22143,44 @@ format-width	clamd/scanner.c	572	                logg(LOGG_INFO, "%s: %s(%s:%llu
 format-width	clamd/scanner.c	661	            snprintf(fdstr, sizeof(fdstr), "instream(%s@%u)", inet_ntoa(sa.sin_addr), ntohs(sa.sin_port));
 format-width	clamd/scanner.c	664	        snprintf(fdstr, sizeof(fdstr), "fd[%d]", fd);
 format-width	clamd/scanner.c	775	            logg(LOGG_INFO, "%s: %s(%s:%llu) FOUND\n", log_filename, virname, context.virhash, context.virsize);
-format-width	clamd/server-th.c	1005	                    logg(LOGG_WARNING, "INSTREAM: Size limit reached, (requested: %u, max: " STDu64 ")\n",
-format-width	clamd/server-th.c	1046	        logg(LOGG_DEBUG_NV, "Processed %llu bytes of chunkdata, pos %llu\n", (long long unsigned)cmdlen, (long long unsigned)pos);
-format-width	clamd/server-th.c	1104	        logg(LOGG_INFO, "Limits: Global time limit set to %llu milliseconds.\n", val);
-format-width	clamd/server-th.c	1117	        logg(LOGG_INFO, "Limits: Global size limit set to %llu bytes.\n", val);
-format-width	clamd/server-th.c	1129	    logg(LOGG_INFO, "Limits: Matcher work limit set to %llu bytes.\n", val);
-format-width	clamd/server-th.c	1139	    logg(LOGG_INFO, "Limits: Temporary size limit set to %llu bytes.\n", val);
-format-width	clamd/server-th.c	1149	    logg(LOGG_INFO, "Limits: Contiguous subject limit set to %llu bytes.\n", val);
-format-width	clamd/server-th.c	1160	        logg(LOGG_INFO, "Limits: File size limit set to %llu bytes.\n", val);
-format-width	clamd/server-th.c	1177	            logg(LOGG_ERROR, "MaxRecursion set to %zu, but cannot be larger than %u, and cannot be 0.\n",
-format-width	clamd/server-th.c	1190	        logg(LOGG_INFO, "Limits: Recursion level limit set to %u.\n", (unsigned int)val);
-format-width	clamd/server-th.c	1203	        logg(LOGG_INFO, "Limits: Files limit set to %u.\n", (unsigned int)val);
-format-width	clamd/server-th.c	1209	        logg(LOGG_DEBUG, "Limits: Core-dump limit is %lu.\n", (unsigned long)rlim.rlim_cur);
-format-width	clamd/server-th.c	1223	    logg(LOGG_INFO, "Limits: MaxEmbeddedPE limit set to %llu bytes.\n", val);
-format-width	clamd/server-th.c	1233	    logg(LOGG_INFO, "Limits: MaxHTMLNormalize limit set to %llu bytes.\n", val);
-format-width	clamd/server-th.c	1243	    logg(LOGG_INFO, "Limits: MaxHTMLNoTags limit set to %llu bytes.\n", val);
-format-width	clamd/server-th.c	1253	    logg(LOGG_INFO, "Limits: MaxScriptNormalize limit set to %llu bytes.\n", val);
-format-width	clamd/server-th.c	1263	    logg(LOGG_INFO, "Limits: MaxZipTypeRcg limit set to %llu bytes.\n", val);
-format-width	clamd/server-th.c	1273	    logg(LOGG_INFO, "Limits: MaxPartitions limit set to %llu.\n", val);
-format-width	clamd/server-th.c	1283	    logg(LOGG_INFO, "Limits: MaxIconsPE limit set to %llu.\n", val);
-format-width	clamd/server-th.c	1293	    logg(LOGG_INFO, "Limits: MaxRecHWP3 limit set to %llu.\n", val);
-format-width	clamd/server-th.c	1297	    logg(LOGG_INFO, "Limits: PCREMatchLimit limit set to %llu.\n", val);
-format-width	clamd/server-th.c	1300	    logg(LOGG_INFO, "Limits: PCRERecMatchLimit limit set to %llu.\n", val);
-format-width	clamd/server-th.c	1310	    logg(LOGG_INFO, "Limits: PCREMaxFileSize limit set to %llu.\n", val);
-format-width	clamd/server-th.c	1567	        logg(LOGG_INFO, "Structured: Minimum Credit Card Number Count set to %u\n", (unsigned int)val);
-format-width	clamd/server-th.c	1580	        logg(LOGG_INFO, "Structured: Minimum Social Security Number Count set to %u\n", (unsigned int)val);
-format-width	clamd/server-th.c	1609	        logg(LOGG_INFO, "Self checking every %u seconds.\n", selfchk);
-format-width	clamd/server-th.c	1612	    logg(LOGG_DEBUG, "Listening daemon: PID: %u\n", (unsigned int)getpid());
-format-width	clamd/server-th.c	1669	                logg(LOGG_ERROR, "setrlimit() for RLIMIT_NOFILE to %lu failed: %s\n",
-format-width	clamd/server-th.c	1682	                logg(LOGG_WARNING, "MaxQueue value too low, increasing to: %d\n", max_queue);
-format-width	clamd/server-th.c	1685	            logg(LOGG_WARNING, "MaxThreads * MaxRecursion is too high: %d, open file descriptor limit is: %lu\n",
-format-width	clamd/server-th.c	1692	                logg(LOGG_WARNING, "MaxQueue value too high, lowering to: %d\n", max_queue);
-format-width	clamd/server-th.c	1698	            logg(LOGG_WARNING, "MaxQueue is lower than twice MaxThreads, increasing to: %d\n", max_queue);
-format-width	clamd/server-th.c	1702	    logg(LOGG_DEBUG, "MaxQueue set to: %d\n", max_queue);
+format-width	clamd/server-th.c	1017	                    logg(LOGG_WARNING, "INSTREAM: Size limit reached, (requested: %u, max: " STDu64 ")\n",
+format-width	clamd/server-th.c	1058	        logg(LOGG_DEBUG_NV, "Processed %llu bytes of chunkdata, pos %llu\n", (long long unsigned)cmdlen, (long long unsigned)pos);
+format-width	clamd/server-th.c	1116	        logg(LOGG_INFO, "Limits: Global time limit set to %llu milliseconds.\n", val);
+format-width	clamd/server-th.c	1129	        logg(LOGG_INFO, "Limits: Global size limit set to %llu bytes.\n", val);
+format-width	clamd/server-th.c	1141	    logg(LOGG_INFO, "Limits: Matcher work limit set to %llu bytes.\n", val);
+format-width	clamd/server-th.c	1151	    logg(LOGG_INFO, "Limits: Temporary size limit set to %llu bytes.\n", val);
+format-width	clamd/server-th.c	1161	    logg(LOGG_INFO, "Limits: Contiguous subject limit set to %llu bytes.\n", val);
+format-width	clamd/server-th.c	1172	        logg(LOGG_INFO, "Limits: File size limit set to %llu bytes.\n", val);
+format-width	clamd/server-th.c	1189	            logg(LOGG_ERROR, "MaxRecursion set to %zu, but cannot be larger than %u, and cannot be 0.\n",
+format-width	clamd/server-th.c	1202	        logg(LOGG_INFO, "Limits: Recursion level limit set to %u.\n", (unsigned int)val);
+format-width	clamd/server-th.c	1215	        logg(LOGG_INFO, "Limits: Files limit set to %u.\n", (unsigned int)val);
+format-width	clamd/server-th.c	1221	        logg(LOGG_DEBUG, "Limits: Core-dump limit is %lu.\n", (unsigned long)rlim.rlim_cur);
+format-width	clamd/server-th.c	1235	    logg(LOGG_INFO, "Limits: MaxEmbeddedPE limit set to %llu bytes.\n", val);
+format-width	clamd/server-th.c	1245	    logg(LOGG_INFO, "Limits: MaxHTMLNormalize limit set to %llu bytes.\n", val);
+format-width	clamd/server-th.c	1255	    logg(LOGG_INFO, "Limits: MaxHTMLNoTags limit set to %llu bytes.\n", val);
+format-width	clamd/server-th.c	1265	    logg(LOGG_INFO, "Limits: MaxScriptNormalize limit set to %llu bytes.\n", val);
+format-width	clamd/server-th.c	1275	    logg(LOGG_INFO, "Limits: MaxZipTypeRcg limit set to %llu bytes.\n", val);
+format-width	clamd/server-th.c	1285	    logg(LOGG_INFO, "Limits: MaxPartitions limit set to %llu.\n", val);
+format-width	clamd/server-th.c	1295	    logg(LOGG_INFO, "Limits: MaxIconsPE limit set to %llu.\n", val);
+format-width	clamd/server-th.c	1305	    logg(LOGG_INFO, "Limits: MaxRecHWP3 limit set to %llu.\n", val);
+format-width	clamd/server-th.c	1309	    logg(LOGG_INFO, "Limits: PCREMatchLimit limit set to %llu.\n", val);
+format-width	clamd/server-th.c	1312	    logg(LOGG_INFO, "Limits: PCRERecMatchLimit limit set to %llu.\n", val);
+format-width	clamd/server-th.c	1322	    logg(LOGG_INFO, "Limits: PCREMaxFileSize limit set to %llu.\n", val);
+format-width	clamd/server-th.c	1579	        logg(LOGG_INFO, "Structured: Minimum Credit Card Number Count set to %u\n", (unsigned int)val);
+format-width	clamd/server-th.c	1592	        logg(LOGG_INFO, "Structured: Minimum Social Security Number Count set to %u\n", (unsigned int)val);
+format-width	clamd/server-th.c	1621	        logg(LOGG_INFO, "Self checking every %u seconds.\n", selfchk);
+format-width	clamd/server-th.c	1624	    logg(LOGG_DEBUG, "Listening daemon: PID: %u\n", (unsigned int)getpid());
+format-width	clamd/server-th.c	1681	                logg(LOGG_ERROR, "setrlimit() for RLIMIT_NOFILE to %lu failed: %s\n",
+format-width	clamd/server-th.c	1694	                logg(LOGG_WARNING, "MaxQueue value too low, increasing to: %d\n", max_queue);
+format-width	clamd/server-th.c	1697	            logg(LOGG_WARNING, "MaxThreads * MaxRecursion is too high: %d, open file descriptor limit is: %lu\n",
+format-width	clamd/server-th.c	1704	                logg(LOGG_WARNING, "MaxQueue value too high, lowering to: %d\n", max_queue);
+format-width	clamd/server-th.c	1710	            logg(LOGG_WARNING, "MaxQueue is lower than twice MaxThreads, increasing to: %d\n", max_queue);
+format-width	clamd/server-th.c	1714	    logg(LOGG_DEBUG, "MaxQueue set to: %d\n", max_queue);
 format-width	clamd/server-th.c	181	        logg(LOGG_DEBUG_NV, "Scanthread: connection shut down (FD %d)\n", conn->sd);
-format-width	clamd/server-th.c	1920	                        logg(LOGG_WARNING, "Client sent garbage after last command: %lu bytes\n", (unsigned long)buf->off);
-format-width	clamd/server-th.c	1952	                        logg(LOGG_DEBUG_NV, "Skipping shutdown of bad socket after error (FD %d)\n", buf->fd);
-format-width	clamd/server-th.c	1954	                        logg(LOGG_DEBUG_NV, "Shutting down socket after error (FD %d)\n", buf->fd);
-format-width	clamd/server-th.c	1981	                        logg(LOGG_DEBUG_NV, "Shutdown closed fd %d\n", fds->buf[i].fd);
+format-width	clamd/server-th.c	1932	                        logg(LOGG_WARNING, "Client sent garbage after last command: %lu bytes\n", (unsigned long)buf->off);
+format-width	clamd/server-th.c	1969	                        logg(LOGG_DEBUG_NV, "Skipping shutdown of bad socket after error (FD %d)\n", buf->fd);
+format-width	clamd/server-th.c	1971	                        logg(LOGG_DEBUG_NV, "Shutting down socket after error (FD %d)\n", buf->fd);
+format-width	clamd/server-th.c	1998	                        logg(LOGG_DEBUG_NV, "Shutdown closed fd %d\n", fds->buf[i].fd);
 format-width	clamd/server-th.c	287	    logg(LOGG_INFO, "Database correctly reloaded (%u signatures)\n", sigs);
 format-width	clamd/server-th.c	437	                logg(LOGG_ERROR, "An unknown error occurred when waiting for the database reload thread: %d\n", join_ret);
 format-width	clamd/server-th.c	593	                logg(LOGG_DEBUG_NV, "Acceptloop closed FD: %d\n", buf->fd);
@@ -22192,8 +22192,8 @@ format-width	clamd/server-th.c	796	        logg(LOGG_DEBUG_NV, "got command %s (
 format-width	clamd/server-th.c	854	                logg(LOGG_DEBUG_NV, "Receive thread: closing conn (FD %d), group finished\n", conn->sd);
 format-width	clamd/server-th.c	899	            logg(LOGG_DEBUG_NV, "Receive thread: INSTREAM: %s fd %u\n", buf->dumpname, buf->dumpfd);
 format-width	clamd/server-th.c	924	        logg(LOGG_DEBUG_NV, "Unclaimed file descriptor received, closing: %d\n", conn->scanfd);
-format-width	clamd/server-th.c	939	            logg(LOGG_DEBUG_NV, "Moved partial command: %lu\n", (unsigned long)buf->off);
-format-width	clamd/server-th.c	969	                logg(LOGG_DEBUG_NV, "Got chunksize: %u\n", buf->chunksize);
+format-width	clamd/server-th.c	940	            logg(LOGG_DEBUG_NV, "Moved partial command: %lu\n", (unsigned long)buf->off);
+format-width	clamd/server-th.c	970	                logg(LOGG_DEBUG_NV, "Got chunksize: %u\n", buf->chunksize);
 format-width	clamd/session.c	151	            return mdprintf(conn->sd, "%u: %s: %s%c", conn->id, path, status, conn->term);
 format-width	clamd/session.c	152	        return mdprintf(conn->sd, "%u: %s%c", conn->id, status, conn->term);
 format-width	clamd/session.c	167	            return mdprintf(conn->sd, "%u: %s: %s %s%c", conn->id, path, msg,
@@ -22206,12 +22206,12 @@ format-width	clamd/session.c	478	                logg(LOGG_DEBUG_NV, "Closed fd 
 format-width	clamd/session.c	493	                mdprintf(desc, "%u: ", conn->id);
 format-width	clamd/session.c	518	                logg(LOGG_DEBUG, "ftruncate failed: %d\n", errno);
 format-width	clamd/session.c	535	            logg(LOGG_ERROR, "Invalid command dispatched: %d\n", conn->cmdtype);
-format-width	clamd/session.c	646	            logg(LOGG_ERROR, "Invalid command dispatch: %d\n", cmd);
-format-width	clamd/session.c	682	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
-format-width	clamd/session.c	746	                logg(LOGG_DEBUG_NV, "SESSION: command is not valid inside IDSESSION: %d\n", cmd);
-format-width	clamd/session.c	794	                mdprintf(desc, "%u: PONG%c", conn->id, term);
-format-width	clamd/session.c	801	                    mdprintf(desc, "%u: ", conn->id);
-format-width	clamd/session.c	811	                mdprintf(desc, "%u: ", conn->id);
+format-width	clamd/session.c	668	            logg(LOGG_ERROR, "Invalid command dispatch: %d\n", cmd);
+format-width	clamd/session.c	705	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
+format-width	clamd/session.c	769	                logg(LOGG_DEBUG_NV, "SESSION: command is not valid inside IDSESSION: %d\n", cmd);
+format-width	clamd/session.c	817	                mdprintf(desc, "%u: PONG%c", conn->id, term);
+format-width	clamd/session.c	824	                    mdprintf(desc, "%u: ", conn->id);
+format-width	clamd/session.c	834	                mdprintf(desc, "%u: ", conn->id);
 format-width	clamd/tcpserver.c	108	    snprintf(port, sizeof(port), "%lld", optget(opts, "TCPSocket")->numarg);
 format-width	clamd/tcpserver.c	166	        snprintf(serv, sizeof(serv), "%u", (unsigned int)(optget(opts, "TCPSocket")->numarg));
 format-width	clamd/tcpserver.c	178	        logg(LOGG_INFO_NF, "TCP: Setting connection queue length to %d\n", backlog);
@@ -24811,26 +24811,28 @@ offset-size-arithmetic	clamd/scanner.h	69	cl_error_t scanfd(client_conn_t *conn,
 offset-size-arithmetic	clamd/scanner.h	70	int scanstream(int odesc, unsigned long int *scanned, const struct cl_engine *engine, struct cl_scan_options *options, const struct optstruct *opts, char term);
 offset-size-arithmetic	clamd/scanner.h	71	cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_ftw_reason reason, struct cli_ftw_cbdata *data);
 offset-size-arithmetic	clamd/scanner.h	73	void hash_callback(int fd, unsigned long long size, const char *md5, const char *virname, void *ctx);
-offset-size-arithmetic	clamd/server-th.c	1004	                if (buf->chunksize > buf->quota) {
-offset-size-arithmetic	clamd/server-th.c	1006	                         buf->chunksize, buf->quota);
-offset-size-arithmetic	clamd/server-th.c	1025	                memmove(buf->buffer, &buf->buffer[pos], buf->off - pos);
-offset-size-arithmetic	clamd/server-th.c	1026	                buf->off -= pos;
-offset-size-arithmetic	clamd/server-th.c	1031	        cmdlen = clamd_stream_chunk_length(pos, buf->off, buf->chunksize);
-offset-size-arithmetic	clamd/server-th.c	1032	        buf->chunksize -= cmdlen;
-offset-size-arithmetic	clamd/server-th.c	1047	        pos += cmdlen;
-offset-size-arithmetic	clamd/server-th.c	1048	        if (pos == buf->off) {
-offset-size-arithmetic	clamd/server-th.c	1167	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxfilesize\n");
-offset-size-arithmetic	clamd/server-th.c	1169	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxscansize\n");
-offset-size-arithmetic	clamd/server-th.c	1178	                 (size_t)opt->numarg, CLI_MAX_MAXRECLEVEL);
-offset-size-arithmetic	clamd/server-th.c	1213	    /* Engine max sizes */
-offset-size-arithmetic	clamd/server-th.c	1620	        /* don't warn if default value is too high, silently fix it */
-offset-size-arithmetic	clamd/server-th.c	1640	        solaris_has_extended_stdio++;
-offset-size-arithmetic	clamd/server-th.c	1644	        if (enable_extended_FILE_stdio(-1, -1) == -1) {
-offset-size-arithmetic	clamd/server-th.c	1648	            solaris_has_extended_stdio++;
-offset-size-arithmetic	clamd/server-th.c	1673	        } /*  If 64bit or has extended stdio  */
-offset-size-arithmetic	clamd/server-th.c	1883	            while (!error && buf->fd != -1 && buf->buffer && pos < buf->off &&
-offset-size-arithmetic	clamd/server-th.c	1906	                conn.filename          = buf->dumpname;
-offset-size-arithmetic	clamd/server-th.c	1919	                        /* Client is not supposed to send anything more */
+offset-size-arithmetic	clamd/server-th.c	1005	                        memmove(buf->buffer, &buf->buffer[pos], buf->off - pos);
+offset-size-arithmetic	clamd/server-th.c	1006	                        buf->off -= pos;
+offset-size-arithmetic	clamd/server-th.c	1016	                if (buf->chunksize > buf->quota) {
+offset-size-arithmetic	clamd/server-th.c	1018	                         buf->chunksize, buf->quota);
+offset-size-arithmetic	clamd/server-th.c	1037	                memmove(buf->buffer, &buf->buffer[pos], buf->off - pos);
+offset-size-arithmetic	clamd/server-th.c	1038	                buf->off -= pos;
+offset-size-arithmetic	clamd/server-th.c	1043	        cmdlen = clamd_stream_chunk_length(pos, buf->off, buf->chunksize);
+offset-size-arithmetic	clamd/server-th.c	1044	        buf->chunksize -= cmdlen;
+offset-size-arithmetic	clamd/server-th.c	1059	        pos += cmdlen;
+offset-size-arithmetic	clamd/server-th.c	1060	        if (pos == buf->off) {
+offset-size-arithmetic	clamd/server-th.c	1179	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxfilesize\n");
+offset-size-arithmetic	clamd/server-th.c	1181	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxscansize\n");
+offset-size-arithmetic	clamd/server-th.c	1190	                 (size_t)opt->numarg, CLI_MAX_MAXRECLEVEL);
+offset-size-arithmetic	clamd/server-th.c	1225	    /* Engine max sizes */
+offset-size-arithmetic	clamd/server-th.c	1632	        /* don't warn if default value is too high, silently fix it */
+offset-size-arithmetic	clamd/server-th.c	1652	        solaris_has_extended_stdio++;
+offset-size-arithmetic	clamd/server-th.c	1656	        if (enable_extended_FILE_stdio(-1, -1) == -1) {
+offset-size-arithmetic	clamd/server-th.c	1660	            solaris_has_extended_stdio++;
+offset-size-arithmetic	clamd/server-th.c	1685	        } /*  If 64bit or has extended stdio  */
+offset-size-arithmetic	clamd/server-th.c	1895	            while (!error && buf->fd != -1 && buf->buffer && pos < buf->off &&
+offset-size-arithmetic	clamd/server-th.c	1918	                conn.filename          = buf->dumpname;
+offset-size-arithmetic	clamd/server-th.c	1931	                        /* Client is not supposed to send anything more */
 offset-size-arithmetic	clamd/server-th.c	471	static const char *get_cmd(struct fd_buf *buf, size_t off, size_t *len, char *term, int *oldstyle)
 offset-size-arithmetic	clamd/server-th.c	474	    if (!buf->off || off >= buf->off) {
 offset-size-arithmetic	clamd/server-th.c	486	            pos = memchr(buf->buffer + off, *term, buf->off - off);
@@ -24850,21 +24852,19 @@ offset-size-arithmetic	clamd/server-th.c	803	            if (buf->buffer + buf->
 offset-size-arithmetic	clamd/server-th.c	808	                buf->buffer[pos + cmdlen] = term;
 offset-size-arithmetic	clamd/server-th.c	814	            cmdlen++;
 offset-size-arithmetic	clamd/server-th.c	894	        pos += cmdlen + 1;
-offset-size-arithmetic	clamd/server-th.c	933	        if (pos < buf->off) {
-offset-size-arithmetic	clamd/server-th.c	934	            memmove(buf->buffer, &buf->buffer[pos], buf->off - pos);
-offset-size-arithmetic	clamd/server-th.c	935	            buf->off -= pos;
-offset-size-arithmetic	clamd/server-th.c	942	        /* adjust pos to account for the buffer shuffle */
-offset-size-arithmetic	clamd/server-th.c	949	/* static const unsigned char* parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, size_t *ppos, int *error, const struct optstruct *opts, int readtimeout) */
-offset-size-arithmetic	clamd/server-th.c	950	static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct optstruct *opts, int *error, size_t *ppos, int readtimeout)
-offset-size-arithmetic	clamd/server-th.c	953	    size_t pos = *ppos;
-offset-size-arithmetic	clamd/server-th.c	961	    while (pos <= buf->off) {
-offset-size-arithmetic	clamd/server-th.c	963	            /* read chunksize */
-offset-size-arithmetic	clamd/server-th.c	964	            if (buf->off - pos >= 4) {
-offset-size-arithmetic	clamd/server-th.c	967	                pos += 4;
-offset-size-arithmetic	clamd/server-th.c	969	                logg(LOGG_DEBUG_NV, "Got chunksize: %u\n", buf->chunksize);
-offset-size-arithmetic	clamd/server-th.c	971	                    /* chunksize 0 marks end of stream */
-offset-size-arithmetic	clamd/server-th.c	993	                        memmove(buf->buffer, &buf->buffer[pos], buf->off - pos);
-offset-size-arithmetic	clamd/server-th.c	994	                        buf->off -= pos;
+offset-size-arithmetic	clamd/server-th.c	934	        if (pos < buf->off) {
+offset-size-arithmetic	clamd/server-th.c	935	            memmove(buf->buffer, &buf->buffer[pos], buf->off - pos);
+offset-size-arithmetic	clamd/server-th.c	936	            buf->off -= pos;
+offset-size-arithmetic	clamd/server-th.c	943	        /* adjust pos to account for the buffer shuffle */
+offset-size-arithmetic	clamd/server-th.c	950	/* static const unsigned char* parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, size_t *ppos, int *error, const struct optstruct *opts, int readtimeout) */
+offset-size-arithmetic	clamd/server-th.c	951	static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct optstruct *opts, int *error, size_t *ppos, int readtimeout)
+offset-size-arithmetic	clamd/server-th.c	954	    size_t pos = *ppos;
+offset-size-arithmetic	clamd/server-th.c	962	    while (pos <= buf->off) {
+offset-size-arithmetic	clamd/server-th.c	964	            /* read chunksize */
+offset-size-arithmetic	clamd/server-th.c	965	            if (buf->off - pos >= 4) {
+offset-size-arithmetic	clamd/server-th.c	968	                pos += 4;
+offset-size-arithmetic	clamd/server-th.c	970	                logg(LOGG_DEBUG_NV, "Got chunksize: %u\n", buf->chunksize);
+offset-size-arithmetic	clamd/server-th.c	972	                    /* chunksize 0 marks end of stream */
 offset-size-arithmetic	clamd/session.c	100	    {CMD18, sizeof(CMD18) - 1, COMMAND_COMMANDS, 0, 0, 1},
 offset-size-arithmetic	clamd/session.c	101	    {CMD7, sizeof(CMD7) - 1, COMMAND_VERSION, 0, 1, 1},
 offset-size-arithmetic	clamd/session.c	102	    {CMD10, sizeof(CMD10) - 1, COMMAND_END, 0, 0, 1},
@@ -24894,13 +24894,14 @@ offset-size-arithmetic	clamd/session.c	423	            char *display_filename = 
 offset-size-arithmetic	clamd/session.c	430	            ret = scan_callback(NULL, display_filename, scan_filename, visit_file, &data); /* callback freed display_filename */
 offset-size-arithmetic	clamd/session.c	559	     * request cannot be reduced to a clean result with no scanned object. */
 offset-size-arithmetic	clamd/session.c	578	        if (conn_reply_single(conn, conn->filename, "OK") == -1)
-offset-size-arithmetic	clamd/session.c	600	    memcpy(dup_conn, conn, sizeof(*conn));
-offset-size-arithmetic	clamd/session.c	681	        timestr[strlen(tstr) - 1] = '\0';
-offset-size-arithmetic	clamd/session.c	699	    n = sizeof(commands) / sizeof(commands[0]);
-offset-size-arithmetic	clamd/session.c	830	            rc = cli_gentempfd(optget(conn->opts, "TemporaryDirectory")->strarg, &conn->filename, &conn->scanfd);
-offset-size-arithmetic	clamd/session.c	874	                /* end without idsession? */
+offset-size-arithmetic	clamd/session.c	619	    memcpy(dup_conn, conn, sizeof(*conn));
+offset-size-arithmetic	clamd/session.c	659	            dup_conn->filename = conn->filename;
+offset-size-arithmetic	clamd/session.c	704	        timestr[strlen(tstr) - 1] = '\0';
+offset-size-arithmetic	clamd/session.c	722	    n = sizeof(commands) / sizeof(commands[0]);
+offset-size-arithmetic	clamd/session.c	853	            rc = cli_gentempfd(optget(conn->opts, "TemporaryDirectory")->strarg, &conn->filename, &conn->scanfd);
 offset-size-arithmetic	clamd/session.c	88	    {CMD25, sizeof(CMD25) - 1, COMMAND_SCANREPORT, 1, 0, 1},
 offset-size-arithmetic	clamd/session.c	89	    {CMD26, sizeof(CMD26) - 1, COMMAND_CONTSCANREPORT, 1, 0, 1},
+offset-size-arithmetic	clamd/session.c	897	                /* end without idsession? */
 offset-size-arithmetic	clamd/session.c	90	    {CMD27, sizeof(CMD27) - 1, COMMAND_MULTISCANREPORT, 1, 0, 1},
 offset-size-arithmetic	clamd/session.c	91	    {CMD28, sizeof(CMD28) - 1, COMMAND_ALLMATCHSCANREPORT, 1, 0, 1},
 offset-size-arithmetic	clamd/session.c	92	    {CMD29, sizeof(CMD29) - 1, COMMAND_FILDESREPORT, 0, 0, FEATURE_FDPASSING},
@@ -39538,19 +39539,19 @@ large-file-option	clamd/largefile_admission.c	875	    if (!engine_u64(engine, CL
 large-file-option	clamd/largefile_admission.c	876	        !engine_u64(engine, CL_ENGINE_MAX_SCANSIZE, &max_scan_size) ||
 large-file-option	clamd/largefile_admission.c	893	    if (!option_u64(opts, "OnAccessMaxFileSize", &onaccess_max_file_size))
 large-file-option	clamd/largefile_admission.c	906	        set_reason(reason, reason_size, "MaxScanSize=0 disables the certified 64 GiB logical scan budget");
-large-file-option	clamd/server-th.c	1108	    if ((opt = optget(opts, "MaxScanSize"))->active) {
-large-file-option	clamd/server-th.c	1109	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, opt->numarg))) {
-large-file-option	clamd/server-th.c	1110	            logg(LOGG_ERROR, "cl_engine_set_num(CL_ENGINE_MAX_SCANSIZE) failed: %s\n", cl_strerror(ret));
-large-file-option	clamd/server-th.c	1115	    val = cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL);
-large-file-option	clamd/server-th.c	1151	    if ((opt = optget(opts, "MaxFileSize"))->active) {
-large-file-option	clamd/server-th.c	1152	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, opt->numarg))) {
-large-file-option	clamd/server-th.c	1153	            logg(LOGG_ERROR, "cl_engine_set_num(CL_ENGINE_MAX_FILESIZE) failed: %s\n", cl_strerror(ret));
-large-file-option	clamd/server-th.c	1158	    val = cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);
-large-file-option	clamd/server-th.c	1166	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL))
-large-file-option	clamd/server-th.c	1168	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL))
-large-file-option	clamd/server-th.c	1302	    if ((opt = optget(opts, "PCREMaxFileSize"))->active) {
-large-file-option	clamd/server-th.c	1304	            logg(LOGG_ERROR, "cli_engine_set_num(PCREMaxFileSize) failed: %s\n", cl_strerror(ret));
-large-file-option	clamd/server-th.c	1310	    logg(LOGG_INFO, "Limits: PCREMaxFileSize limit set to %llu.\n", val);
+large-file-option	clamd/server-th.c	1120	    if ((opt = optget(opts, "MaxScanSize"))->active) {
+large-file-option	clamd/server-th.c	1121	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, opt->numarg))) {
+large-file-option	clamd/server-th.c	1122	            logg(LOGG_ERROR, "cl_engine_set_num(CL_ENGINE_MAX_SCANSIZE) failed: %s\n", cl_strerror(ret));
+large-file-option	clamd/server-th.c	1127	    val = cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL);
+large-file-option	clamd/server-th.c	1163	    if ((opt = optget(opts, "MaxFileSize"))->active) {
+large-file-option	clamd/server-th.c	1164	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, opt->numarg))) {
+large-file-option	clamd/server-th.c	1165	            logg(LOGG_ERROR, "cl_engine_set_num(CL_ENGINE_MAX_FILESIZE) failed: %s\n", cl_strerror(ret));
+large-file-option	clamd/server-th.c	1170	    val = cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);
+large-file-option	clamd/server-th.c	1178	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL))
+large-file-option	clamd/server-th.c	1180	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL))
+large-file-option	clamd/server-th.c	1314	    if ((opt = optget(opts, "PCREMaxFileSize"))->active) {
+large-file-option	clamd/server-th.c	1316	            logg(LOGG_ERROR, "cli_engine_set_num(PCREMaxFileSize) failed: %s\n", cl_strerror(ret));
+large-file-option	clamd/server-th.c	1322	    logg(LOGG_INFO, "Limits: PCREMaxFileSize limit set to %llu.\n", val);
 large-file-option	clamonacc/client/client.c	568	 * @param sizelimit the configured OnAccessMaxFileSize limit for the file
 large-file-option	clamonacc/client/client.c	608	     * OnAccessMaxFileSize are both bounded by the certified ceiling; the
 large-file-option	clamonacc/fanotif/fanotif.c	142	    (*ctx)->sizelimit = optget((*ctx)->clamdopts, "OnAccessMaxFileSize")->numarg;

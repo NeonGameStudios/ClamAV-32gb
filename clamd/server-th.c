@@ -923,6 +923,7 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
     if (conn->scanfd != -1 && conn->scanfd != buf->dumpfd) {
         logg(LOGG_DEBUG_NV, "Unclaimed file descriptor received, closing: %d\n", conn->scanfd);
         close(conn->scanfd);
+        conn->scanfd = -1;
         /* protocol error */
         conn_reply_error(conn, "PROTOCOL ERROR: ancillary data sent without FILDES.");
         *error = 1;
@@ -979,6 +980,17 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                     buf->dumpname = NULL;
                     conn->stream_bytes = buf->stream_bytes;
                     if ((rc = execute_or_dispatch_command(conn, COMMAND_INSTREAMSCAN, NULL)) < 0) {
+                        if (conn->scanfd != -1) {
+                            if (close(conn->scanfd) != 0)
+                                logg(LOGG_WARNING, "Failed to close INSTREAM input after dispatch failure: %s\n", strerror(errno));
+                            conn->scanfd = -1;
+                        }
+                        if (conn->filename != NULL) {
+                            if (cli_unlink(conn->filename) != CL_SUCCESS)
+                                logg(LOGG_WARNING, "Failed to remove INSTREAM input after dispatch failure\n");
+                            free(conn->filename);
+                            conn->filename = NULL;
+                        }
                         buf->stream_admission_reserved = conn->stream_admission_reserved;
                         logg(LOGG_ERROR, "Command dispatch failed\n");
                         reply_structured_dispatch_failure(conn, buf, rc);
@@ -1928,6 +1940,11 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
                         else
                             continue;
                     }
+                }
+                if (error && conn.scanfd != -1) {
+                    if (close(conn.scanfd) != 0)
+                        logg(LOGG_WARNING, "Failed to close received descriptor after command failure: %s\n", strerror(errno));
+                    conn.scanfd = -1;
                 }
                 if (error && error != CL_ETIMEOUT && !buf->response_sent) {
                     conn_reply_error(&conn, "Error processing command.");
