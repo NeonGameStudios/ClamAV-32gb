@@ -120,13 +120,14 @@
 
 ## Descriptor ingress native-size admission — 2026-08-30
 
-- Keep known-size descriptor roots fail-visible when `st_size` cannot be
-  represented by the native fmap `size_t`; return `CL_ERESOURCE` before fmap
-  creation while retaining the root size in structured reports. The source
-  guard covers this boundary; the full scanner syntax check still needs a
-  source-consistent generated-header snapshot. Complete ingress parity,
-  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
-  final release qualification remain required.
+- Keep known-size descriptor roots and extracted children fail-visible when
+  `st_size` cannot be represented by the native fmap `size_t`; return
+  `CL_ERESOURCE` before reservation or fmap creation while retaining the root
+  size in structured reports. Source guards and a conditional narrow-size
+  child regression cover this boundary; the full scanner syntax check still
+  needs a source-consistent generated-header snapshot. Complete ingress
+  parity, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  and final release qualification remain required.
 
 ## SIS 9.x native coordinate admission — 2026-08-30
 

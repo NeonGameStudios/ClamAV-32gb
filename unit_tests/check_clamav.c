@@ -39460,6 +39460,51 @@ START_TEST(test_child_descriptor_entry_rejects_missing_engine)
     cl_fmap_close(map);
 }
 END_TEST
+
+#if !defined(_WIN32) && SIZE_MAX < UINT64_MAX
+START_TEST(test_child_descriptor_rejects_unrepresentable_size)
+{
+    static const uint8_t parent_data[] = {0};
+    const uint64_t oversized_size = (uint64_t)SIZE_MAX + UINT64_C(1);
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    char *path = NULL;
+    cl_error_t ret;
+    int fd = -1;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(ftruncate(fd, (off_t)oversized_size), 0);
+
+    map = cl_fmap_open_memory(parent_data, sizeof(parent_data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    ret = cli_magic_scan_desc_type(fd, path, &ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "child descriptor exceeds the native fmap size range");
+
+    cl_fmap_close(map);
+    close(fd);
+    free(path);
+}
+END_TEST
+#endif
 #endif
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
@@ -48047,6 +48092,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_descriptor_map);
     tcase_add_test(tc_descriptor_map, test_child_descriptor_entry_rejects_null_context);
     tcase_add_test(tc_descriptor_map, test_child_descriptor_entry_rejects_missing_engine);
+#if !defined(_WIN32) && SIZE_MAX < UINT64_MAX
+    tcase_add_test(tc_descriptor_map, test_child_descriptor_rejects_unrepresentable_size);
+#endif
 #endif
     suite_add_tcase(s, tc_pe32plus);
     tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);

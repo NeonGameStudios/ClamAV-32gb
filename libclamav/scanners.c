@@ -8247,6 +8247,15 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
     }
     child_size = (uint64_t)sb.st_size;
 
+    /* fmap_new() accepts a native size_t length. Do not narrow a valid
+     * large-file stat result before applying policy or constructing a map. */
+    if (child_size > (uint64_t)SIZE_MAX) {
+        cli_errmsg("cli_magic_scan_desc_type: Descriptor %d exceeds the native fmap size range\n", desc);
+        cli_mark_scan_incomplete(ctx, "child descriptor exceeds the native fmap size range");
+        status = CL_ERESOURCE;
+        goto done;
+    }
+
     /* Apply known-size child limits before fmap_new() allocates its page
      * bitmap or reserves address space. The push below repeats the check as
      * an invariant, but it is deliberately too late to be the first gate. */

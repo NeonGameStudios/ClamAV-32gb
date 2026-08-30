@@ -156,17 +156,19 @@ file, Sonic1, and final release qualification remain open.
 
 ## Descriptor ingress native-size admission — 2026-08-30
 
-The shared descriptor scan path converted `stat.st_size` to its 64-bit scan
+The shared descriptor scan paths converted `stat.st_size` to their 64-bit scan
 counter but could still pass an unrepresentable value to the native `size_t`
 fmap constructor when `off_t` was wider than `size_t` and no configured size
-limit rejected the input first. The path now returns `CL_ERESOURCE` before
-temporary reservation or fmap creation, after publishing the root size to any
-structured report. The source guard pins the rejection. The attempted Docker
-warning-enabled scanner syntax check is still blocked by the snapshot's known
-mixed generated headers (`FILEBUFF`, Rust evidence types, and related
-declarations), not by this boundary. Full current-object execution, ingress
-parity, sanitizer, production-CVD/service, materialized large-file, Sonic1,
-and final release qualification remain open.
+limit rejected the input first. Both the public root path and extracted child
+path now return `CL_ERESOURCE` before temporary reservation or fmap creation;
+the public path still publishes the root size to any structured report. The
+conditional narrow-size child regression, source guards, and current-source
+scanner review pin the child rejection. The attempted Docker warning-enabled
+scanner syntax check is still blocked by the snapshot's known mixed generated
+headers (`FILEBUFF`, Rust evidence types, and related declarations), not by
+this boundary. Full current-object execution, ingress parity, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and final release
+qualification remain open.
 
 ## SIS 9.x native coordinate admission — 2026-08-30
 

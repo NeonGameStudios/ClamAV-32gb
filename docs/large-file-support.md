@@ -6730,8 +6730,10 @@ descriptor, or staging a force-to-disk copy. Normalized and handler-retyped
 views continue to perform only the time check used by the recursion-stack
 invariant, so they do not consume logical scan size twice. The recursion push
 still repeats the policy check after successful map creation as a defensive
-invariant. The existing force-to-disk nested-range regression now also sets a
-smaller `MaxFileSize` and verifies that no source bytes are read before the
+invariant. Descriptor-backed children whose `st_size` cannot fit in the
+native fmap `size_t` are rejected as `CL_ERESOURCE` before that preflight or
+map creation. The existing force-to-disk nested-range regression now also sets
+a smaller `MaxFileSize` and verifies that no source bytes are read before the
 limit result is returned.
 
 ## HFS+ temporary-fork accounting — 2026-08-20
