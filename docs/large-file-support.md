@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## XAR gzip member decoder initialization cleanup — 2026-08-30
+
+The XAR gzip member branch now records an explicit incomplete `CL_EFORMAT`
+result when `inflateInit()` fails, calls `inflateEnd()` only after successful
+initialization, and exits directly through member cleanup so the outer TOC
+loop cannot convert the failure to clean. The focused current-source
+production-linked GCC and GCC ASan/UBSan leak-enabled runners pass the
+injected member initialization failure with sticky incomplete state and
+cache taint. Complete XAR corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain
+required.
+
 ## OLE2 MSO decoder initialization cleanup — 2026-08-30
 
 The OLE2 MSO stream helper now records an explicit incomplete `CL_EUNPACK`

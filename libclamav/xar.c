@@ -1177,15 +1177,18 @@ int cli_scanxar(cli_ctx *ctx)
             case CL_TYPE_GZ: {
                 uint64_t total_out   = 0;
                 bool stream_complete = false;
+                bool stream_initialized = false;
                 cl_error_t read_status;
                 /* inflate gzip directly because file segments do not contain magic */
                 memset(&strm, 0, sizeof(strm));
                 if ((rc = inflateInit(&strm)) != Z_OK) {
                     cli_dbgmsg("cli_scanxar: InflateInit failed: %d\n", rc);
+                    cli_mark_scan_incomplete(ctx, "XAR gzip member decoder could not be initialized");
                     rc = CL_EFORMAT;
                     extract_errors++;
-                    break;
+                    goto exit_tmpfile;
                 }
+                stream_initialized = true;
 
                 while (at < map->len && at < data_end) {
                     unsigned long avail_in;
@@ -1281,7 +1284,8 @@ int cli_scanxar(cli_ctx *ctx)
                     }
                 }
 
-                inflateEnd(&strm);
+                if (stream_initialized)
+                    inflateEnd(&strm);
                 if (rc == CL_SUCCESS && !stream_complete) {
                     cli_mark_scan_incomplete(ctx, "XAR gzip member ended before the decoder reached stream end");
                     rc = CL_EFORMAT;

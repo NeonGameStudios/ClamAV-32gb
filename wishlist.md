@@ -1,5 +1,15 @@
 # Wishlist
 
+## XAR gzip member decoder initialization cleanup — 2026-08-30
+
+- Keep XAR gzip member initialization fail-visible: retain the explicit
+  incomplete `CL_EFORMAT` result, finalize only an initialized zlib stream,
+  and route the failure directly through member cleanup so the outer TOC
+  loop cannot convert it to clean. The focused current-source GCC and GCC
+  ASan/UBSan leak-enabled runners pass the injected member initialization
+  failure; complete XAR corpus, production-CVD/service,
+  materialized-large-file, Sonic1, and release qualification remain.
+
 ## OLE2 MSO decoder initialization cleanup — 2026-08-30
 
 - Keep the OLE2 MSO stream teardown conditional on successful `inflateInit()`

@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## XAR gzip member decoder initialization cleanup — 2026-08-30
+
+The XAR gzip member branch previously called `inflateEnd()` after a failed
+`inflateInit()` and then continued into the normal TOC loop, allowing the
+loop's `CL_BREAK` completion conversion to swallow the decoder error. It now
+records an explicit incomplete `CL_EFORMAT` reason, tracks successful
+initialization, conditionally finalizes the stream, and exits through member
+temporary-file cleanup immediately on initialization failure. The focused
+source-guarded regression skips the TOC initialization and fails the member
+decoder specifically; current-source production-linked GCC and GCC
+ASan/UBSan leak-enabled runners pass with sticky incomplete state and cache
+taint. Complete XAR corpus, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification remain open.
+
 ## OLE2 MSO decoder initialization cleanup — 2026-08-30
 
 The OLE2 MSO stream helper previously jumped to common cleanup when
