@@ -3515,6 +3515,7 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
     {
         const size_t big_block_size = (size_t)1 << hdr.log2_big_block_size;
         const size_t data_start     = MAX((size_t)512, big_block_size);
+        size_t data_block_count;
 
         if (hdr.map->len < data_start) {
             cli_dbgmsg("OLE2 extract: map is shorter than the first data block\n");
@@ -3522,14 +3523,19 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
             ret = CL_EFORMAT;
             goto done;
         }
+        data_block_count = (hdr.map->len - data_start) / big_block_size;
 
-        hdr.max_block_no = (hdr.map->len - data_start) / ((size_t)1 << hdr.log2_small_block_size);
-        if (hdr.max_block_no > INT32_MAX) {
+        /* Sector IDs address whole big blocks. The small-block divisor here
+         * would over-admit IDs by the small-to-big block ratio and defer a
+         * malformed chain to a later fmap read. Keep the stored bound
+         * inclusive, matching all current_block > max_block_no checks. */
+        if (data_block_count > (size_t)INT32_MAX + 1U) {
             cli_dbgmsg("OLE2 extract: sector chain exceeds the signed CFB block-coordinate limit\n");
             cli_mark_scan_incomplete(ctx, "OLE2 sector chain exceeds the deep-parser ABI");
             ret = CL_EFORMAT;
             goto done;
         }
+        hdr.max_block_no = data_block_count ? (uint32_t)(data_block_count - 1U) : 0U;
     }
 
     print_ole2_header(&hdr);

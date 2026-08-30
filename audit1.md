@@ -15796,6 +15796,31 @@ Evidence collected for this slice:
 - Runtime large-file positioning, full CAB/CHM corpus, sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final release
   qualification remain required.
+
+## OLE2 CFB sector-bound admission — 2026-08-30
+
+The OLE2 extractor derived `hdr.max_block_no` by dividing the bytes after the
+header by the small-block size. CFB sector IDs, however, address big sectors;
+the existing divisor over-admitted sector IDs by the small-to-big ratio and
+allowed malformed directory or stream chains to reach a later out-of-map
+sector read instead of being rejected at the index boundary.
+
+The bound now counts available big blocks and stores the inclusive last sector
+ID, with a checked `INT32_MAX + 1` admission before narrowing to the parser’s
+signed block-coordinate type. The new
+`test_ole2_sector_bound_uses_big_block_size` fixture keeps two 512-byte data
+sectors, points the directory-sector header at sector 2, and requires the
+early `OLE2 property tree index is outside the input map` failure, sticky
+incomplete state, and cache taint.
+
+The current OLE2 source and unit translation unit pass the existing
+warning-enabled GCC syntax checks against the Docker harness paths up to the
+known mixed-source unit failures (mmap/PDF and other unrelated ABI snapshot
+errors); the OLE2 source itself passes with its pre-existing signed-char
+comparison warning. Source guards pin the big-block calculation and test
+registration. Current-object execution of this new fixture, complete OLE2/
+VBA/XLM corpus, sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, and parser/release qualification remain required.
 ## XAR checksum-value allocation admission — 2026-08-30
 
 The XAR TOC checksum parser duplicated valid-length archived and extracted

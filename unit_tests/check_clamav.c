@@ -33504,6 +33504,57 @@ START_TEST(test_ole2_stream_size_preserves_high_word)
 END_TEST
 #endif
 
+START_TEST(test_ole2_sector_bound_uses_big_block_size)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    struct stat sb;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/has_png_and_jpeg.xls", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sb), 0);
+    ck_assert_msg(sb.st_size >= 1536, "OLE2 fixture is too short: %s", file_path);
+    data_size = (size_t)sb.st_size;
+    data      = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_int_eq(read(fd, data, data_size), (ssize_t)data_size);
+    ck_assert_int_eq(close(fd), 0);
+
+    /* Keep two 512-byte data sectors but point the directory stream at
+     * sector 2. The parser must reject the sector ID against the inclusive
+     * big-block bound before attempting a read beyond the map. */
+    cli_writeint32(data + 48U, 2U);
+    map = cl_fmap_open_memory(data, 1536U);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "OLE2 property tree index is outside the input map");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_ole2_sector_range_classes_are_fail_visible)
 {
     uint8_t data[1024];
@@ -48847,6 +48898,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2_xlm, test_ole2_xlm_biff_read_failure_is_fail_visible);
     tcase_add_test(tc_ole2_xlm, test_ole2_stream_size_preserves_high_word);
 #endif
+    tcase_add_test(tc_ole2_xlm, test_ole2_sector_bound_uses_big_block_size);
     suite_add_tcase(s, tc_ole2_map);
     tcase_add_checked_fixture(tc_ole2_map, cl_setup, cl_teardown);
     tcase_add_test(tc_ole2_map, test_ole2_missing_map_is_fail_visible);

@@ -8646,3 +8646,14 @@ qualification as required evidence.
   member fixtures, complete CVD corpus, production-CVD/service, sanitizer,
   materialized-large-file, Sonic1, and final release qualification remain
   required.
+
+## OLE2 CFB sector-bound admission — 2026-08-30
+
+- Keep `hdr.max_block_no` derived from the available big-sector count, stored
+  as an inclusive last sector ID, and checked before narrowing to the signed
+  block-coordinate type. Do not derive CFB sector bounds from the small-block
+  size.
+- Retain `test_ole2_sector_bound_uses_big_block_size` and its source guards;
+  add current-object execution, complete OLE2/VBA/XLM corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification before marking the capability complete.
