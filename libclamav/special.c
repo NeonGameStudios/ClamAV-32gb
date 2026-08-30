@@ -367,6 +367,9 @@ void cli_detect_swizz_str(const unsigned char *str, uint32_t len, struct swizz_s
     uint16_t words = 0;
     int ret;
 
+    if (str == NULL || stats == NULL || len < 2)
+        return;
+
     stats->entries++;
     for (i = 0; (i < (size_t)len - 1) && (j < sizeof(stri) - 2); i += 2) {
         unsigned char c = str[i];

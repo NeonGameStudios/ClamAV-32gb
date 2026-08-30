@@ -45,6 +45,7 @@
 #include "yara_arena.h"
 #include "yara_clam.h"
 #include "bytecode.h"
+#include "special.h"
 
 #include "checks.h"
 
@@ -707,6 +708,22 @@ START_TEST(test_large_file_offset_values)
 
     root->bm_pattab   = NULL;
     root->bm_patterns = 0;
+}
+END_TEST
+
+START_TEST(test_swizz_string_rejects_empty_input)
+{
+    struct swizz_stats stats;
+    unsigned char one_byte = 'A';
+
+    memset(&stats, 0, sizeof(stats));
+    cli_detect_swizz_str(NULL, 0, &stats, 0);
+    cli_detect_swizz_str(&one_byte, 1, &stats, 0);
+    cli_detect_swizz_str((const unsigned char *)"AB", 2, NULL, 0);
+
+    ck_assert_int_eq(stats.entries, 0);
+    ck_assert_int_eq(stats.total, 0);
+    ck_assert_int_eq(stats.suspicious, 0);
 }
 END_TEST
 
@@ -2850,6 +2867,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bm_scanbuff_allscan);
     tcase_add_test(tc_matchers, test_pcre_scanbuff_allscan);
     tcase_add_test(tc_matchers, test_large_file_offset_values);
+    tcase_add_test(tc_matchers, test_swizz_string_rejects_empty_input);
     tcase_add_test(tc_matchers, test_bm_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_bm_initoff_rejects_coordinate_wrap);
     tcase_add_test(tc_matchers, test_bm_pattern_table_size_rejects_product_wrap);

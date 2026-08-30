@@ -78,6 +78,17 @@ normal and ASan/UBSan builds. Complete HTML/MIME corpus, full C ABI execution,
 production CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
 
+## PE Swizzor empty resource-string admission — 2026-08-30
+
+`cli_detect_swizz_str()` computed its UTF-16 pair loop as `len - 1` after
+promoting the 32-bit length to `size_t`. A zero-length resource therefore
+underflowed the bound and read two bytes beyond the confirmed resource window.
+The helper now rejects null input/statistics and lengths below two before any
+pair access. `test_swizz_string_rejects_empty_input` covers empty, one-byte,
+and null-statistics calls; source guards pin the boundary. Current-source
+production-GCC, sanitizer, complete PE/resource corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## Bundled YARA arena admission — 2026-08-30
 
 The bundled YARA arena layer previously allowed a zero-sized initial page,
