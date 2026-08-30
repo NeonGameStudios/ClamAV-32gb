@@ -8760,3 +8760,12 @@ qualification as required evidence.
   current-source production GCC compilation, then add complete signature
   corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
   and final release qualification evidence.
+
+## AC scan entry context admission — 2026-08-30
+
+- Keep direct AC buffer scans fail-visible for null matcher roots or missing
+  per-scan state, marking an owning fmap incomplete and non-cacheable before
+  trie access. Retain the minimal AC-trie regression and source guards;
+  current-source GCC compilation, complete matcher corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification remain required.

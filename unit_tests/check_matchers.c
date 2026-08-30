@@ -296,6 +296,27 @@ START_TEST(test_ac_scanbuff)
 }
 END_TEST
 
+START_TEST(test_ac_scanbuff_rejects_missing_context)
+{
+    struct cli_matcher *root = ctx.engine->root[0];
+    const char *matched = NULL;
+    int ret;
+
+    ck_assert_ptr_nonnull(root);
+    root->ac_only = 1;
+    ck_assert_int_eq(cli_ac_init(root, CLI_DEFAULT_AC_MINDEPTH, CLI_DEFAULT_AC_MAXDEPTH, 1), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(root, "MissingACContext", "6162", 0, 0, 0, "*", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cli_ac_buildtrie(root), CL_SUCCESS);
+
+    ret = cli_ac_scanbuff((const unsigned char *)"ab", 2, &matched, NULL, NULL,
+                          root, NULL, 0, 0, NULL, AC_SCAN_VIR, &ctx);
+    ck_assert_int_eq(ret, CL_ENULLARG);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(thefmap.dont_cache_flag);
+}
+END_TEST
+
 START_TEST(test_ac_scanbuff_allscan)
 {
     struct cli_ac_data mdata;
@@ -2820,6 +2841,7 @@ Suite *test_matchers_suite(void)
     suite_add_tcase(s, tc_matchers);
     tcase_add_checked_fixture(tc_matchers, setup, teardown);
     tcase_add_test(tc_matchers, test_ac_scanbuff);
+    tcase_add_test(tc_matchers, test_ac_scanbuff_rejects_missing_context);
     tcase_add_test(tc_matchers, test_ac_scanbuff_ex);
     tcase_add_test(tc_matchers, test_bm_scanbuff);
     tcase_add_test(tc_matchers, test_pcre_scanbuff);

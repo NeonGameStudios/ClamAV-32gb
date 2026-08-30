@@ -15998,3 +15998,16 @@ registered and source-guarded; the current-source production GCC arena oracle
 and matching AddressSanitizer/UndefinedBehaviorSanitizer runner pass. Complete
 YARA corpus, production-CVD/service, materialized-large-file, Sonic1, and
 final release qualification remain open.
+
+## AC scan entry context admission — 2026-08-30
+
+The direct AC buffer scanner dereferenced its matcher root before validating
+the entry arguments, and a constructed trie with no logical or offset state
+could later dereference a missing per-scan context. The entry now rejects a
+null root or missing matcher state with CL_ENULLARG; when an owning context
+is supplied it also marks the fmap incomplete and non-cacheable. The minimal
+AC-trie regression is registered and source-guarded, and the current-source
+AC implementation plus matcher test translation unit compile with the
+production warning-enabled GCC flags. Complete matcher corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.

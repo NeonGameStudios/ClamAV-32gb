@@ -2045,13 +2045,17 @@ cl_error_t cli_ac_scanbuff(
     cl_error_t rc;
     cl_error_t ret;
 
-    if (!root->ac_root)
-        return CL_CLEAN;
-
-    if (!mdata && (root->ac_partsigs || root->ac_lsigs || root->ac_reloff_num)) {
-        cli_errmsg("cli_ac_scanbuff: mdata == NULL\n");
+    if (root == NULL || mdata == NULL) {
+        if (ctx != NULL) {
+            cli_mark_scan_incomplete(ctx, "AC matcher scan context is unavailable");
+            if (ctx->fmap != NULL)
+                ctx->fmap->dont_cache_flag = 1;
+        }
         return CL_ENULLARG;
     }
+
+    if (!root->ac_root)
+        return CL_CLEAN;
 
     current = root->ac_root;
 
