@@ -1,5 +1,15 @@
 # Wishlist
 
+## Hash file-length and short-read admission — 2026-08-30
+
+- Make `cl_hash_file_fd_ex()` honor its documented zero-length whole-file
+  mode, reject out-of-range offsets, and refuse to publish a digest after an
+  early EOF for a nonzero requested range.
+- Retain the full-file, short-read, and out-of-range regressions. Complete
+  hash-helper callers, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification remain
+  required.
+
 ## Signature database loader API admission — 2026-08-30
 
 - Reject null `cl_load()` path, engine, and signature-count output arguments

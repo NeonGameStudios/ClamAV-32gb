@@ -623,14 +623,31 @@ extern cl_error_t cl_hash_file_fd_ex(
         goto done;
     }
 
-#ifndef _WIN32
-    if (fstat(fd, &sb) < 0) {
+    if (FSTAT(fd, &sb) < 0) {
         cli_errmsg("cl_hash_data_ex: Failed to stat file descriptor %d: %s\n", fd, cl_strerror(CL_ESTAT));
         status = CL_ESTAT;
         goto done;
     }
 
+    if (sb.st_size < 0 || (uintmax_t)sb.st_size > (uintmax_t)SIZE_MAX) {
+        cli_errmsg("cl_hash_data_ex: File size is not representable\n");
+        status = CL_EREAD;
+        goto done;
+    }
+
+    if ((uintmax_t)offset > (uintmax_t)sb.st_size) {
+        cli_errmsg("cl_hash_data_ex: Offset %zu is outside the file\n", offset);
+        status = CL_ESEEK;
+        goto done;
+    }
+
+    if (length == 0)
+        length = (size_t)sb.st_size - offset;
+
+#ifndef _WIN32
     blocksize = sb.st_blksize;
+#else
+    blocksize = 8192;
 #endif
 
     block = (uint8_t *)malloc(blocksize);
@@ -750,6 +767,12 @@ extern cl_error_t cl_hash_file_fd_ex(
         }
 #endif
     } while (true);
+
+    if (byte_read != length) {
+        cli_errmsg("cl_hash_data_ex: Requested %zu bytes but read %zu\n", length, byte_read);
+        status = CL_EREAD;
+        goto done;
+    }
 
     if (!EVP_DigestFinal_ex(ctx, new_hash, &hash_len_final)) {
         cli_errmsg("cl_hash_data_ex: Failed to finalize digest context\n");

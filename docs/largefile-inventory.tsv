@@ -6967,7 +6967,7 @@ fixed-width-integer	unit_tests/check_clamav.c	4992	static uint64_t synthetic_cou
 fixed-width-integer	unit_tests/check_clamav.c	4994	    uint64_t count = 0;
 fixed-width-integer	unit_tests/check_clamav.c	4995	    uint64_t page;
 fixed-width-integer	unit_tests/check_clamav.c	5010	    uint64_t max_paged = 0;
-fixed-width-integer	unit_tests/check_clamav.c	50245	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
+fixed-width-integer	unit_tests/check_clamav.c	50295	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
 fixed-width-integer	unit_tests/check_clamav.c	5091	    uint64_t max_paged = 0;
 fixed-width-integer	unit_tests/check_clamav.c	5156	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	5416	    uint32_t security_offset;
@@ -10269,61 +10269,61 @@ native-width-integer	libclamav/crtmgr.h	85	int cli_crt_init(cli_crt *x509);
 native-width-integer	libclamav/crtmgr.h	92	cli_crt *crtmgr_trust_list_lookup(crtmgr *m, cli_crt *x509, int crb_crts_only);
 native-width-integer	libclamav/crtmgr.h	95	cli_crt *crtmgr_verify_pkcs7(crtmgr *m, const uint8_t *issuer, const uint8_t *serial, const void *signature, unsigned int signature_len, cli_crt_hashtype hashtype, const uint8_t *refhash, cli_vrfy_type vrfytype);
 native-width-integer	libclamav/crtmgr.h	96	int crtmgr_add_roots(struct cl_engine *engine, crtmgr *m, int exclude_bl_crts);
-native-width-integer	libclamav/crypto.c	1000	unsigned char *cl_hash_file_fd_ctx(EVP_MD_CTX *ctx, int fd, unsigned int *olen)
-native-width-integer	libclamav/crypto.c	1004	    int mdsz;
-native-width-integer	libclamav/crypto.c	1005	    unsigned int hashlen;
-native-width-integer	libclamav/crypto.c	1011	    unsigned int blocksize;
-native-width-integer	libclamav/crypto.c	1014	    int nread;
-native-width-integer	libclamav/crypto.c	1016	    ssize_t nread;
-native-width-integer	libclamav/crypto.c	1081	unsigned char *cl_hash_file_fp(FILE *fp, const char *alg, unsigned int *olen)
-native-width-integer	libclamav/crypto.c	1086	unsigned char *cl_sha512(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
-native-width-integer	libclamav/crypto.c	1091	unsigned char *cl_sha384(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
-native-width-integer	libclamav/crypto.c	1096	unsigned char *cl_sha256(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
-native-width-integer	libclamav/crypto.c	1101	unsigned char *cl_sha1(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
-native-width-integer	libclamav/crypto.c	1106	int cl_verify_signature_hash(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
-native-width-integer	libclamav/crypto.c	1110	    size_t mdsz;
-native-width-integer	libclamav/crypto.c	1141	int cl_verify_signature_fd(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, int fd)
-native-width-integer	libclamav/crypto.c	1145	    size_t mdsz;
-native-width-integer	libclamav/crypto.c	1189	int cl_verify_signature(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
-native-width-integer	libclamav/crypto.c	1193	    size_t mdsz;
-native-width-integer	libclamav/crypto.c	1198	        size_t newsiglen;
-native-width-integer	libclamav/crypto.c	1271	int cl_verify_signature_hash_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
-native-width-integer	libclamav/crypto.c	1275	    int res;
-native-width-integer	libclamav/crypto.c	1300	int cl_verify_signature_fd_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, int fd)
-native-width-integer	libclamav/crypto.c	1304	    int res;
-native-width-integer	libclamav/crypto.c	1329	int cl_verify_signature_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
-native-width-integer	libclamav/crypto.c	1333	    int res;
-native-width-integer	libclamav/crypto.c	1358	int cl_verify_signature_hash_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
-native-width-integer	libclamav/crypto.c	1361	    int res;
+native-width-integer	libclamav/crypto.c	1023	unsigned char *cl_hash_file_fd_ctx(EVP_MD_CTX *ctx, int fd, unsigned int *olen)
+native-width-integer	libclamav/crypto.c	1027	    int mdsz;
+native-width-integer	libclamav/crypto.c	1028	    unsigned int hashlen;
+native-width-integer	libclamav/crypto.c	1034	    unsigned int blocksize;
+native-width-integer	libclamav/crypto.c	1037	    int nread;
+native-width-integer	libclamav/crypto.c	1039	    ssize_t nread;
+native-width-integer	libclamav/crypto.c	1104	unsigned char *cl_hash_file_fp(FILE *fp, const char *alg, unsigned int *olen)
+native-width-integer	libclamav/crypto.c	1109	unsigned char *cl_sha512(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
+native-width-integer	libclamav/crypto.c	1114	unsigned char *cl_sha384(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
+native-width-integer	libclamav/crypto.c	1119	unsigned char *cl_sha256(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
+native-width-integer	libclamav/crypto.c	1124	unsigned char *cl_sha1(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
+native-width-integer	libclamav/crypto.c	1129	int cl_verify_signature_hash(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
+native-width-integer	libclamav/crypto.c	1133	    size_t mdsz;
+native-width-integer	libclamav/crypto.c	1164	int cl_verify_signature_fd(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, int fd)
+native-width-integer	libclamav/crypto.c	1168	    size_t mdsz;
+native-width-integer	libclamav/crypto.c	1212	int cl_verify_signature(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
+native-width-integer	libclamav/crypto.c	1216	    size_t mdsz;
+native-width-integer	libclamav/crypto.c	1221	        size_t newsiglen;
+native-width-integer	libclamav/crypto.c	1294	int cl_verify_signature_hash_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
+native-width-integer	libclamav/crypto.c	1298	    int res;
+native-width-integer	libclamav/crypto.c	1323	int cl_verify_signature_fd_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, int fd)
+native-width-integer	libclamav/crypto.c	1327	    int res;
+native-width-integer	libclamav/crypto.c	1352	int cl_verify_signature_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
+native-width-integer	libclamav/crypto.c	1356	    int res;
 native-width-integer	libclamav/crypto.c	137	int cl_initialize_crypto(void)
-native-width-integer	libclamav/crypto.c	1374	int cl_verify_signature_fd_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, int fd)
-native-width-integer	libclamav/crypto.c	1377	    int res;
-native-width-integer	libclamav/crypto.c	1390	int cl_verify_signature_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
-native-width-integer	libclamav/crypto.c	1393	    int res;
-native-width-integer	libclamav/crypto.c	1406	unsigned char *cl_sign_data_keyfile(char *keypath, const char *alg, unsigned char *hash, unsigned int *olen, int encode)
-native-width-integer	libclamav/crypto.c	1435	unsigned char *cl_sign_data(EVP_PKEY *pkey, const char *alg, unsigned char *hash, unsigned int *olen, int encode)
-native-width-integer	libclamav/crypto.c	1439	    unsigned int siglen;
-native-width-integer	libclamav/crypto.c	1484	        siglen = (unsigned int)strlen((const char *)newsig);
-native-width-integer	libclamav/crypto.c	1492	unsigned char *cl_sign_file_fd(int fd, EVP_PKEY *pkey, const char *alg, unsigned int *olen, int encode)
-native-width-integer	libclamav/crypto.c	1495	    unsigned int hashlen;
-native-width-integer	libclamav/crypto.c	1508	unsigned char *cl_sign_file_fp(FILE *fp, EVP_PKEY *pkey, const char *alg, unsigned int *olen, int encode)
-native-width-integer	libclamav/crypto.c	1535	X509 *cl_get_x509_from_mem(void *data, unsigned int len)
-native-width-integer	libclamav/crypto.c	1550	int cl_validate_certificate_chain_ts_dir(char *tsdir, char *certpath)
-native-width-integer	libclamav/crypto.c	1553	    size_t nauths      = 0;
-native-width-integer	libclamav/crypto.c	1554	    size_t tsdir_len;
-native-width-integer	libclamav/crypto.c	1555	    size_t path_sep_len;
-native-width-integer	libclamav/crypto.c	1556	    int res = -1;
-native-width-integer	libclamav/crypto.c	1571	        size_t entry_len;
-native-width-integer	libclamav/crypto.c	1572	        size_t path_len;
-native-width-integer	libclamav/crypto.c	1654	int cl_validate_certificate_chain(char **authorities, char *crlpath, char *certpath)
-native-width-integer	libclamav/crypto.c	1662	    unsigned long i;
-native-width-integer	libclamav/crypto.c	1663	    int res;
+native-width-integer	libclamav/crypto.c	1381	int cl_verify_signature_hash_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
+native-width-integer	libclamav/crypto.c	1384	    int res;
+native-width-integer	libclamav/crypto.c	1397	int cl_verify_signature_fd_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, int fd)
+native-width-integer	libclamav/crypto.c	1400	    int res;
+native-width-integer	libclamav/crypto.c	1413	int cl_verify_signature_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
+native-width-integer	libclamav/crypto.c	1416	    int res;
+native-width-integer	libclamav/crypto.c	1429	unsigned char *cl_sign_data_keyfile(char *keypath, const char *alg, unsigned char *hash, unsigned int *olen, int encode)
+native-width-integer	libclamav/crypto.c	1458	unsigned char *cl_sign_data(EVP_PKEY *pkey, const char *alg, unsigned char *hash, unsigned int *olen, int encode)
+native-width-integer	libclamav/crypto.c	1462	    unsigned int siglen;
+native-width-integer	libclamav/crypto.c	1507	        siglen = (unsigned int)strlen((const char *)newsig);
+native-width-integer	libclamav/crypto.c	1515	unsigned char *cl_sign_file_fd(int fd, EVP_PKEY *pkey, const char *alg, unsigned int *olen, int encode)
+native-width-integer	libclamav/crypto.c	1518	    unsigned int hashlen;
+native-width-integer	libclamav/crypto.c	1531	unsigned char *cl_sign_file_fp(FILE *fp, EVP_PKEY *pkey, const char *alg, unsigned int *olen, int encode)
+native-width-integer	libclamav/crypto.c	1558	X509 *cl_get_x509_from_mem(void *data, unsigned int len)
+native-width-integer	libclamav/crypto.c	1573	int cl_validate_certificate_chain_ts_dir(char *tsdir, char *certpath)
+native-width-integer	libclamav/crypto.c	1576	    size_t nauths      = 0;
+native-width-integer	libclamav/crypto.c	1577	    size_t tsdir_len;
+native-width-integer	libclamav/crypto.c	1578	    size_t path_sep_len;
+native-width-integer	libclamav/crypto.c	1579	    int res = -1;
+native-width-integer	libclamav/crypto.c	1594	        size_t entry_len;
+native-width-integer	libclamav/crypto.c	1595	        size_t path_len;
+native-width-integer	libclamav/crypto.c	1677	int cl_validate_certificate_chain(char **authorities, char *crlpath, char *certpath)
+native-width-integer	libclamav/crypto.c	1685	    unsigned long i;
+native-width-integer	libclamav/crypto.c	1686	    int res;
 native-width-integer	libclamav/crypto.c	178	 * @param[inout] hash_len   A pointer that stores how long the generated hash is.
 native-width-integer	libclamav/crypto.c	189	    size_t data_len,
 native-width-integer	libclamav/crypto.c	191	    size_t *hash_len,
-native-width-integer	libclamav/crypto.c	1949	int cl_update_hash(void *ctx, const void *data, size_t sz)
-native-width-integer	libclamav/crypto.c	1972	int cl_finish_hash(void *ctx, void *buf)
-native-width-integer	libclamav/crypto.c	1974	    int res = 0;
+native-width-integer	libclamav/crypto.c	1972	int cl_update_hash(void *ctx, const void *data, size_t sz)
+native-width-integer	libclamav/crypto.c	1995	int cl_finish_hash(void *ctx, void *buf)
+native-width-integer	libclamav/crypto.c	1997	    int res = 0;
 native-width-integer	libclamav/crypto.c	205	    size_t required_hash_len;
 native-width-integer	libclamav/crypto.c	207	    unsigned int hash_len_final;
 native-width-integer	libclamav/crypto.c	209	    size_t cur;
@@ -10348,15 +10348,16 @@ native-width-integer	libclamav/crypto.c	613	    int nread;
 native-width-integer	libclamav/crypto.c	615	    size_t blocksize;
 native-width-integer	libclamav/crypto.c	616	    ssize_t nread;
 native-width-integer	libclamav/crypto.c	618	    size_t byte_read = 0;
-native-width-integer	libclamav/crypto.c	667	    required_hash_len = (size_t)EVP_MD_size(md);
-native-width-integer	libclamav/crypto.c	705	    if (lseek(fd, offset, SEEK_SET) == (off_t)-1) {
-native-width-integer	libclamav/crypto.c	728	        if (SIZE_MAX - (size_t)nread < byte_read) {
-native-width-integer	libclamav/crypto.c	790	unsigned char *cl_hash_data(const char *alg, const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
-native-width-integer	libclamav/crypto.c	794	    size_t mdsz;
-native-width-integer	libclamav/crypto.c	803	    unsigned int i;
-native-width-integer	libclamav/crypto.c	804	    size_t cur;
-native-width-integer	libclamav/crypto.c	871	        size_t todo = MIN((unsigned long)EVP_MD_block_size(md), (unsigned long)(len - cur));
-native-width-integer	libclamav/crypto.c	937	unsigned char *cl_hash_file_fd(int fd, const char *alg, unsigned int *olen)
+native-width-integer	libclamav/crypto.c	645	        length = (size_t)sb.st_size - offset;
+native-width-integer	libclamav/crypto.c	684	    required_hash_len = (size_t)EVP_MD_size(md);
+native-width-integer	libclamav/crypto.c	722	    if (lseek(fd, offset, SEEK_SET) == (off_t)-1) {
+native-width-integer	libclamav/crypto.c	745	        if (SIZE_MAX - (size_t)nread < byte_read) {
+native-width-integer	libclamav/crypto.c	813	unsigned char *cl_hash_data(const char *alg, const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
+native-width-integer	libclamav/crypto.c	817	    size_t mdsz;
+native-width-integer	libclamav/crypto.c	826	    unsigned int i;
+native-width-integer	libclamav/crypto.c	827	    size_t cur;
+native-width-integer	libclamav/crypto.c	894	        size_t todo = MIN((unsigned long)EVP_MD_block_size(md), (unsigned long)(len - cur));
+native-width-integer	libclamav/crypto.c	960	unsigned char *cl_hash_file_fd(int fd, const char *alg, unsigned int *olen)
 native-width-integer	libclamav/cvd.c	106	        *off = (off_t)current;
 native-width-integer	libclamav/cvd.c	1107	    size_t path_len;
 native-width-integer	libclamav/cvd.c	113	        long current = ftell(dbio->fs);
@@ -20344,37 +20345,42 @@ native-width-integer	unit_tests/check_clamav.c	4968	    size_t chunk;
 native-width-integer	unit_tests/check_clamav.c	49694	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
 native-width-integer	unit_tests/check_clamav.c	49709	    unsigned int signature_length        = 0;
 native-width-integer	unit_tests/check_clamav.c	49738	    int ret;
+native-width-integer	unit_tests/check_clamav.c	49767	    size_t hash_len = 0;
+native-width-integer	unit_tests/check_clamav.c	49768	    size_t expected_len = 0;
+native-width-integer	unit_tests/check_clamav.c	49769	    int fd;
 native-width-integer	unit_tests/check_clamav.c	4977	    if (count > state->length - (size_t)offset)
+native-width-integer	unit_tests/check_clamav.c	49772	    ck_assert_int_gt(snprintf(path, sizeof(path), "%s/hash-file-fd-ex-%ld", tmpdir, (long)getpid()), 0);
+native-width-integer	unit_tests/check_clamav.c	49775	    ck_assert_int_eq(write(fd, content, sizeof(content) - 1U), (ssize_t)(sizeof(content) - 1U));
 native-width-integer	unit_tests/check_clamav.c	4978	        count = state->length - (size_t)offset;
-native-width-integer	unit_tests/check_clamav.c	49789	    int i;
 native-width-integer	unit_tests/check_clamav.c	4981	    position       = (size_t)offset;
+native-width-integer	unit_tests/check_clamav.c	49838	    int i;
 native-width-integer	unit_tests/check_clamav.c	4989	    return (off_t)original_count;
-native-width-integer	unit_tests/check_clamav.c	50073	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	50091	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	50109	    size_t utf8_size = 0;
 native-width-integer	unit_tests/check_clamav.c	5011	    unsigned int reads_before;
 native-width-integer	unit_tests/check_clamav.c	5012	    int wrapped     = 0;
-native-width-integer	unit_tests/check_clamav.c	50127	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	50122	    size_t utf8_size = 0;
 native-width-integer	unit_tests/check_clamav.c	5013	    int saw_release = 0;
 native-width-integer	unit_tests/check_clamav.c	5014	    size_t offset;
-native-width-integer	unit_tests/check_clamav.c	50146	    size_t utf8_size = SIZE_MAX;
+native-width-integer	unit_tests/check_clamav.c	50140	    size_t utf8_size = 0;
 native-width-integer	unit_tests/check_clamav.c	5015	    size_t request;
+native-width-integer	unit_tests/check_clamav.c	50158	    size_t utf8_size = 0;
 native-width-integer	unit_tests/check_clamav.c	5016	    size_t length = 40 * 1024 * 1024;
-native-width-integer	unit_tests/check_clamav.c	50196	int open_testfile(const char *name, int flags)
-native-width-integer	unit_tests/check_clamav.c	50198	    int fd;
-native-width-integer	unit_tests/check_clamav.c	50211	void diff_file_mem(int fd, const char *ref, size_t len)
-native-width-integer	unit_tests/check_clamav.c	50214	    size_t p, reflen = len;
-native-width-integer	unit_tests/check_clamav.c	50237	void diff_files(int fd, int ref_fd)
-native-width-integer	unit_tests/check_clamav.c	50240	    ssize_t nread;
-native-width-integer	unit_tests/check_clamav.c	50241	    off_t siz = lseek(ref_fd, 0, SEEK_END);
-native-width-integer	unit_tests/check_clamav.c	50307	int main(int argc, char **argv)
-native-width-integer	unit_tests/check_clamav.c	50309	    int nf;
+native-width-integer	unit_tests/check_clamav.c	50176	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	50195	    size_t utf8_size = SIZE_MAX;
+native-width-integer	unit_tests/check_clamav.c	50246	int open_testfile(const char *name, int flags)
+native-width-integer	unit_tests/check_clamav.c	50248	    int fd;
+native-width-integer	unit_tests/check_clamav.c	50261	void diff_file_mem(int fd, const char *ref, size_t len)
+native-width-integer	unit_tests/check_clamav.c	50264	    size_t p, reflen = len;
+native-width-integer	unit_tests/check_clamav.c	50287	void diff_files(int fd, int ref_fd)
+native-width-integer	unit_tests/check_clamav.c	50290	    ssize_t nread;
+native-width-integer	unit_tests/check_clamav.c	50291	    off_t siz = lseek(ref_fd, 0, SEEK_END);
+native-width-integer	unit_tests/check_clamav.c	50357	int main(int argc, char **argv)
+native-width-integer	unit_tests/check_clamav.c	50359	    int nf;
 native-width-integer	unit_tests/check_clamav.c	5041	        request = MIN(length - offset, (size_t)(10 * 1024 * 1024));
-native-width-integer	unit_tests/check_clamav.c	50443	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
-native-width-integer	unit_tests/check_clamav.c	50444	static size_t jpeg_entropy_largest_read;
-native-width-integer	unit_tests/check_clamav.c	50448	static const void *jpeg_entropy_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 native-width-integer	unit_tests/check_clamav.c	5047	                      "fmap aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
 native-width-integer	unit_tests/check_clamav.c	5049	                      "fmap aging released %llu pages", (unsigned long long)map->aging_released_last);
+native-width-integer	unit_tests/check_clamav.c	50493	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
+native-width-integer	unit_tests/check_clamav.c	50494	static size_t jpeg_entropy_largest_read;
+native-width-integer	unit_tests/check_clamav.c	50498	static const void *jpeg_entropy_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 native-width-integer	unit_tests/check_clamav.c	5066	                          "wrapped aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
 native-width-integer	unit_tests/check_clamav.c	5068	                          "wrapped aging released %llu pages", (unsigned long long)map->aging_released_last);
 native-width-integer	unit_tests/check_clamav.c	5075	                  "fmap retained %llu pages during a sequential scan", (unsigned long long)max_paged);
@@ -21317,12 +21323,13 @@ boundary-constant	libclamav/cpio.c	108	    if (value > SIZE_MAX - padding)
 boundary-constant	libclamav/cpio.c	116	    if (NULL == position || amount > SIZE_MAX - *position)
 boundary-constant	libclamav/cpio.c	213	        if (parsed > (UINT32_MAX - digit) / 8U)
 boundary-constant	libclamav/cpio.c	650	        if (hdr_namesize > SIZE_MAX - sizeof(hdr_newc)) {
-boundary-constant	libclamav/crypto.c	1589	        if (tsdir_len > SIZE_MAX - path_sep_len)
-boundary-constant	libclamav/crypto.c	1593	        if (entry_len > SIZE_MAX - path_len)
-boundary-constant	libclamav/crypto.c	1597	        if (path_len == SIZE_MAX || nauths == SIZE_MAX ||
-boundary-constant	libclamav/crypto.c	1598	            nauths + 1 > SIZE_MAX / sizeof(*authorities))
-boundary-constant	libclamav/crypto.c	1626	    if (nauths == SIZE_MAX || nauths + 1 > SIZE_MAX / sizeof(*authorities))
-boundary-constant	libclamav/crypto.c	728	        if (SIZE_MAX - (size_t)nread < byte_read) {
+boundary-constant	libclamav/crypto.c	1612	        if (tsdir_len > SIZE_MAX - path_sep_len)
+boundary-constant	libclamav/crypto.c	1616	        if (entry_len > SIZE_MAX - path_len)
+boundary-constant	libclamav/crypto.c	1620	        if (path_len == SIZE_MAX || nauths == SIZE_MAX ||
+boundary-constant	libclamav/crypto.c	1621	            nauths + 1 > SIZE_MAX / sizeof(*authorities))
+boundary-constant	libclamav/crypto.c	1649	    if (nauths == SIZE_MAX || nauths + 1 > SIZE_MAX / sizeof(*authorities))
+boundary-constant	libclamav/crypto.c	632	    if (sb.st_size < 0 || (uintmax_t)sb.st_size > (uintmax_t)SIZE_MAX) {
+boundary-constant	libclamav/crypto.c	745	        if (SIZE_MAX - (size_t)nread < byte_read) {
 boundary-constant	libclamav/cvd.c	383	        if (parsed > (UINT_MAX - digit) / 10U)
 boundary-constant	libclamav/cvd.c	415	    if (!saw_digit || *cursor != '\0' || parsed > UINT_MAX)
 boundary-constant	libclamav/dmg.c	138	    if (!ctx || !ctx->fmap || !window_len || remaining == 0 || offset > (uint64_t)SIZE_MAX) {
@@ -21947,10 +21954,10 @@ boundary-constant	unit_tests/check_clamav.c	49322	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	49378	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	49390	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	49425	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	50146	    size_t utf8_size = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	50148	    ret = cli_codepage_to_utf8((char *)(uintptr_t)1, SIZE_MAX, CODEPAGE_ISO8859_1,
-boundary-constant	unit_tests/check_clamav.c	50443	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	50583	    jpeg_entropy_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	50195	    size_t utf8_size = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	50197	    ret = cli_codepage_to_utf8((char *)(uintptr_t)1, SIZE_MAX, CODEPAGE_ISO8859_1,
+boundary-constant	unit_tests/check_clamav.c	50493	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	50633	    jpeg_entropy_failure_offset = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	5251	    state.fail_at     = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	5275	    state.fail_at     = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	5279	    map.len           = (size_t)UINT32_MAX + 4096;
@@ -22972,14 +22979,16 @@ format-width	libclamav/cpio.c	613	        cli_dbgmsg("CPIO: -- File %u --\n", ++
 format-width	libclamav/cpio.c	682	        cli_dbgmsg("CPIO: Filesize: %zu\n", filesize);
 format-width	libclamav/crtmgr.c	467	        cli_errmsg("crtmgr_rsa_verify: Unsupported hashtype: %d\n", hashtype);
 format-width	libclamav/crtmgr.c	634	        cli_dbgmsg("crtmgr_verify_pkcs7: unsupported sig len: %u\n", signature_len);
-format-width	libclamav/crypto.c	1818	        fmt = "%y%m%d%H%M%S";
-format-width	libclamav/crypto.c	1827	        fmt = "%Y%m%d%H%M%S";
+format-width	libclamav/crypto.c	1841	        fmt = "%y%m%d%H%M%S";
+format-width	libclamav/crypto.c	1850	        fmt = "%Y%m%d%H%M%S";
 format-width	libclamav/crypto.c	255	            cli_errmsg("cl_hash_data_ex: Provided hash buffer for '%s' is too small. Provided bytes: %zu, Required bytes: %zu\n", alg, *hash_len, required_hash_len);
 format-width	libclamav/crypto.c	522	            cli_errmsg("cl_hash_data_ex: Provided hash buffer is too small. Provided bytes: %zu, Required bytes: %zu\n", *hash_len, required_hash_len);
-format-width	libclamav/crypto.c	628	        cli_errmsg("cl_hash_data_ex: Failed to stat file descriptor %d: %s\n", fd, cl_strerror(CL_ESTAT));
-format-width	libclamav/crypto.c	678	            cli_errmsg("cl_hash_data_ex: Provided hash buffer for '%s' is too small. Provided bytes: %zu, Required bytes: %zu\n", alg, *hash_len, required_hash_len);
-format-width	libclamav/crypto.c	706	        cli_errmsg("cl_hash_data_ex: Failed to seek to offset %zu: %s\n", offset, cl_strerror(CL_ESEEK));
-format-width	libclamav/crypto.c	720	            cli_errmsg("cl_hash_data_ex: Failed to read from file descriptor %d: %s\n", fd, cl_strerror(CL_EREAD));
+format-width	libclamav/crypto.c	627	        cli_errmsg("cl_hash_data_ex: Failed to stat file descriptor %d: %s\n", fd, cl_strerror(CL_ESTAT));
+format-width	libclamav/crypto.c	639	        cli_errmsg("cl_hash_data_ex: Offset %zu is outside the file\n", offset);
+format-width	libclamav/crypto.c	695	            cli_errmsg("cl_hash_data_ex: Provided hash buffer for '%s' is too small. Provided bytes: %zu, Required bytes: %zu\n", alg, *hash_len, required_hash_len);
+format-width	libclamav/crypto.c	723	        cli_errmsg("cl_hash_data_ex: Failed to seek to offset %zu: %s\n", offset, cl_strerror(CL_ESEEK));
+format-width	libclamav/crypto.c	737	            cli_errmsg("cl_hash_data_ex: Failed to read from file descriptor %d: %s\n", fd, cl_strerror(CL_EREAD));
+format-width	libclamav/crypto.c	772	        cli_errmsg("cl_hash_data_ex: Requested %zu bytes but read %zu\n", length, byte_read);
 format-width	libclamav/cvd.c	204	        cli_errmsg("cli_tgzload: Can't duplicate descriptor %d\n", fd);
 format-width	libclamav/cvd.c	210	            cli_errmsg("cli_tgzload: Can't gzdopen() descriptor %d, errno = %d\n", fdd, errno);
 format-width	libclamav/cvd.c	218	            cli_errmsg("cli_tgzload: Can't fdopen() descriptor %d, errno = %d\n", fdd, errno);
@@ -24675,16 +24684,17 @@ format-width	unit_tests/check_clamav.c	4706	    ck_assert_msg(testfiles_n == exp
 format-width	unit_tests/check_clamav.c	47443	    snprintf(output_dir, sizeof(output_dir), "%s/tar-open-failure-%ld", tmpdir, (long)getpid());
 format-width	unit_tests/check_clamav.c	4885	    ck_assert_msg(i < testfiles_n, "%i < %i %s", i, testfiles_n, file);
 format-width	unit_tests/check_clamav.c	49574	        printf("Using test case timeout of %d seconds set by user\n", timeout);
-format-width	unit_tests/check_clamav.c	50217	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
-format-width	unit_tests/check_clamav.c	50219	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
-format-width	unit_tests/check_clamav.c	50230	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
-format-width	unit_tests/check_clamav.c	50233	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
-format-width	unit_tests/check_clamav.c	50249	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
-format-width	unit_tests/check_clamav.c	50293	                        "\tVersion from header: %u.%u.%u\n"
-format-width	unit_tests/check_clamav.c	50294	                        "\tVersion from library: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	49772	    ck_assert_int_gt(snprintf(path, sizeof(path), "%s/hash-file-fd-ex-%ld", tmpdir, (long)getpid()), 0);
+format-width	unit_tests/check_clamav.c	50267	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
+format-width	unit_tests/check_clamav.c	50269	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
+format-width	unit_tests/check_clamav.c	50280	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
+format-width	unit_tests/check_clamav.c	50283	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
+format-width	unit_tests/check_clamav.c	50299	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
+format-width	unit_tests/check_clamav.c	50343	                        "\tVersion from header: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	50344	                        "\tVersion from library: %u.%u.%u\n"
 format-width	unit_tests/check_clamav.c	5047	                      "fmap aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
 format-width	unit_tests/check_clamav.c	5049	                      "fmap aging released %llu pages", (unsigned long long)map->aging_released_last);
-format-width	unit_tests/check_clamav.c	50521	                  "JPEG entropy traversal requested %zu bytes in one fmap read",
+format-width	unit_tests/check_clamav.c	50571	                  "JPEG entropy traversal requested %zu bytes in one fmap read",
 format-width	unit_tests/check_clamav.c	5066	                          "wrapped aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
 format-width	unit_tests/check_clamav.c	5068	                          "wrapped aging released %llu pages", (unsigned long long)map->aging_released_last);
 format-width	unit_tests/check_clamav.c	5075	                  "fmap retained %llu pages during a sequential scan", (unsigned long long)max_paged);
@@ -27280,38 +27290,39 @@ offset-size-arithmetic	libclamav/crtmgr.c	650	            !memcmp(i->serial, ser
 offset-size-arithmetic	libclamav/crtmgr.c	66	    memset(x509, 0, sizeof(*x509));
 offset-size-arithmetic	libclamav/crtmgr.h	46	   map_raw) */
 offset-size-arithmetic	libclamav/crtmgr.h	95	cli_crt *crtmgr_verify_pkcs7(crtmgr *m, const uint8_t *issuer, const uint8_t *serial, const void *signature, unsigned int signature_len, cli_crt_hashtype hashtype, const uint8_t *refhash, cli_vrfy_type vrfytype);
-offset-size-arithmetic	libclamav/crypto.c	1086	unsigned char *cl_sha512(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
-offset-size-arithmetic	libclamav/crypto.c	1091	unsigned char *cl_sha384(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
-offset-size-arithmetic	libclamav/crypto.c	1096	unsigned char *cl_sha256(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
-offset-size-arithmetic	libclamav/crypto.c	1101	unsigned char *cl_sha1(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
-offset-size-arithmetic	libclamav/crypto.c	1106	int cl_verify_signature_hash(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
-offset-size-arithmetic	libclamav/crypto.c	1189	int cl_verify_signature(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
-offset-size-arithmetic	libclamav/crypto.c	1271	int cl_verify_signature_hash_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
-offset-size-arithmetic	libclamav/crypto.c	1329	int cl_verify_signature_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
-offset-size-arithmetic	libclamav/crypto.c	1358	int cl_verify_signature_hash_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
-offset-size-arithmetic	libclamav/crypto.c	1390	int cl_verify_signature_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
-offset-size-arithmetic	libclamav/crypto.c	1484	        siglen = (unsigned int)strlen((const char *)newsig);
-offset-size-arithmetic	libclamav/crypto.c	1588	        entry_len = strlen(dirent->d_name);
-offset-size-arithmetic	libclamav/crypto.c	1589	        if (tsdir_len > SIZE_MAX - path_sep_len)
-offset-size-arithmetic	libclamav/crypto.c	1592	        path_len = tsdir_len + path_sep_len;
-offset-size-arithmetic	libclamav/crypto.c	1593	        if (entry_len > SIZE_MAX - path_len)
-offset-size-arithmetic	libclamav/crypto.c	1596	        path_len += entry_len;
-offset-size-arithmetic	libclamav/crypto.c	1598	            nauths + 1 > SIZE_MAX / sizeof(*authorities))
-offset-size-arithmetic	libclamav/crypto.c	1601	        t = (char **)realloc(authorities, sizeof(*authorities) * (nauths + 1));
-offset-size-arithmetic	libclamav/crypto.c	1607	        authorities[nauths] = (char *)malloc(path_len + 1);
-offset-size-arithmetic	libclamav/crypto.c	1614	        memcpy(authorities[nauths] + tsdir_len + path_sep_len, dirent->d_name, entry_len + 1);
-offset-size-arithmetic	libclamav/crypto.c	1626	    if (nauths == SIZE_MAX || nauths + 1 > SIZE_MAX / sizeof(*authorities))
-offset-size-arithmetic	libclamav/crypto.c	1629	    t = (char **)realloc(authorities, sizeof(*authorities) * (nauths + 1));
+offset-size-arithmetic	libclamav/crypto.c	1109	unsigned char *cl_sha512(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
+offset-size-arithmetic	libclamav/crypto.c	1114	unsigned char *cl_sha384(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
+offset-size-arithmetic	libclamav/crypto.c	1119	unsigned char *cl_sha256(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
+offset-size-arithmetic	libclamav/crypto.c	1124	unsigned char *cl_sha1(const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
+offset-size-arithmetic	libclamav/crypto.c	1129	int cl_verify_signature_hash(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
+offset-size-arithmetic	libclamav/crypto.c	1212	int cl_verify_signature(EVP_PKEY *pkey, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
+offset-size-arithmetic	libclamav/crypto.c	1294	int cl_verify_signature_hash_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
+offset-size-arithmetic	libclamav/crypto.c	1352	int cl_verify_signature_x509_keyfile(char *x509path, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
+offset-size-arithmetic	libclamav/crypto.c	1381	int cl_verify_signature_hash_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
+offset-size-arithmetic	libclamav/crypto.c	1413	int cl_verify_signature_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
+offset-size-arithmetic	libclamav/crypto.c	1507	        siglen = (unsigned int)strlen((const char *)newsig);
+offset-size-arithmetic	libclamav/crypto.c	1611	        entry_len = strlen(dirent->d_name);
+offset-size-arithmetic	libclamav/crypto.c	1612	        if (tsdir_len > SIZE_MAX - path_sep_len)
+offset-size-arithmetic	libclamav/crypto.c	1615	        path_len = tsdir_len + path_sep_len;
+offset-size-arithmetic	libclamav/crypto.c	1616	        if (entry_len > SIZE_MAX - path_len)
+offset-size-arithmetic	libclamav/crypto.c	1619	        path_len += entry_len;
+offset-size-arithmetic	libclamav/crypto.c	1621	            nauths + 1 > SIZE_MAX / sizeof(*authorities))
+offset-size-arithmetic	libclamav/crypto.c	1624	        t = (char **)realloc(authorities, sizeof(*authorities) * (nauths + 1));
+offset-size-arithmetic	libclamav/crypto.c	1630	        authorities[nauths] = (char *)malloc(path_len + 1);
+offset-size-arithmetic	libclamav/crypto.c	1637	        memcpy(authorities[nauths] + tsdir_len + path_sep_len, dirent->d_name, entry_len + 1);
+offset-size-arithmetic	libclamav/crypto.c	1649	    if (nauths == SIZE_MAX || nauths + 1 > SIZE_MAX / sizeof(*authorities))
+offset-size-arithmetic	libclamav/crypto.c	1652	    t = (char **)realloc(authorities, sizeof(*authorities) * (nauths + 1));
 offset-size-arithmetic	libclamav/crypto.c	175	 * @param data_len          The length of the to-be-hashed data.
 offset-size-arithmetic	libclamav/crypto.c	191	    size_t *hash_len,
 offset-size-arithmetic	libclamav/crypto.c	286	            data_len - cur);
 offset-size-arithmetic	libclamav/crypto.c	496	    size_t *hash_len,
 offset-size-arithmetic	libclamav/crypto.c	511	    required_hash_len = (size_t)EVP_MD_CTX_size((EVP_MD_CTX *)ctx);
 offset-size-arithmetic	libclamav/crypto.c	585	    size_t *hash_len,
-offset-size-arithmetic	libclamav/crypto.c	705	    if (lseek(fd, offset, SEEK_SET) == (off_t)-1) {
-offset-size-arithmetic	libclamav/crypto.c	712	        blocksize = MIN(blocksize, length - byte_read);
-offset-size-arithmetic	libclamav/crypto.c	790	unsigned char *cl_hash_data(const char *alg, const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
-offset-size-arithmetic	libclamav/crypto.c	871	        size_t todo = MIN((unsigned long)EVP_MD_block_size(md), (unsigned long)(len - cur));
+offset-size-arithmetic	libclamav/crypto.c	645	        length = (size_t)sb.st_size - offset;
+offset-size-arithmetic	libclamav/crypto.c	722	    if (lseek(fd, offset, SEEK_SET) == (off_t)-1) {
+offset-size-arithmetic	libclamav/crypto.c	729	        blocksize = MIN(blocksize, length - byte_read);
+offset-size-arithmetic	libclamav/crypto.c	813	unsigned char *cl_hash_data(const char *alg, const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
+offset-size-arithmetic	libclamav/crypto.c	894	        size_t todo = MIN((unsigned long)EVP_MD_block_size(md), (unsigned long)(len - cur));
 offset-size-arithmetic	libclamav/cvd.c	102	        z_off_t current = gzseek(dbio->gzs, 0, SEEK_CUR);
 offset-size-arithmetic	libclamav/cvd.c	109	        *off = ftello(dbio->fs);
 offset-size-arithmetic	libclamav/cvd.c	1136	        if (strcmp(path + path_len - strlen(PATHSEP), PATHSEP) == 0) {
@@ -38964,23 +38975,26 @@ offset-size-arithmetic	unit_tests/check_clamav.c	49712	    ck_assert_int_gt(snpr
 offset-size-arithmetic	unit_tests/check_clamav.c	49740	    ck_assert_int_gt(snprintf(certdir, sizeof(certdir), "%s/cert-chain", tmpdir), 0);
 offset-size-arithmetic	unit_tests/check_clamav.c	4975	    if (offset < 0 || (uint64_t)offset >= state->length)
 offset-size-arithmetic	unit_tests/check_clamav.c	4977	    if (count > state->length - (size_t)offset)
+offset-size-arithmetic	unit_tests/check_clamav.c	49772	    ck_assert_int_gt(snprintf(path, sizeof(path), "%s/hash-file-fd-ex-%ld", tmpdir, (long)getpid()), 0);
+offset-size-arithmetic	unit_tests/check_clamav.c	49775	    ck_assert_int_eq(write(fd, content, sizeof(content) - 1U), (ssize_t)(sizeof(content) - 1U));
 offset-size-arithmetic	unit_tests/check_clamav.c	4978	        count = state->length - (size_t)offset;
-offset-size-arithmetic	unit_tests/check_clamav.c	49794	    ck_assert_msg(!memcmp(h_sha2_256, res256[0], sizeof(h_sha2_256)), "sha2-256 test vector #1 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	49797	    ck_assert_msg(!memcmp(h_sha2_256, res256[1], sizeof(h_sha2_256)), "sha2-256 test vector #2 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	49805	    ck_assert_msg(!memcmp(h_sha2_256, res256[2], sizeof(h_sha2_256)), "sha2-256 test vector #3 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	49786	    ret = cl_hash_data_ex("sha2-256", content, sizeof(content) - 1U, &expected,
+offset-size-arithmetic	unit_tests/check_clamav.c	49843	    ck_assert_msg(!memcmp(h_sha2_256, res256[0], sizeof(h_sha2_256)), "sha2-256 test vector #1 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	49846	    ck_assert_msg(!memcmp(h_sha2_256, res256[1], sizeof(h_sha2_256)), "sha2-256 test vector #2 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	49854	    ck_assert_msg(!memcmp(h_sha2_256, res256[2], sizeof(h_sha2_256)), "sha2-256 test vector #3 failed");
 offset-size-arithmetic	unit_tests/check_clamav.c	4986	        position += chunk;
-offset-size-arithmetic	unit_tests/check_clamav.c	49949	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
-offset-size-arithmetic	unit_tests/check_clamav.c	49956	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
+offset-size-arithmetic	unit_tests/check_clamav.c	49998	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
+offset-size-arithmetic	unit_tests/check_clamav.c	50005	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
 offset-size-arithmetic	unit_tests/check_clamav.c	5016	    size_t length = 40 * 1024 * 1024;
-offset-size-arithmetic	unit_tests/check_clamav.c	50201	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
-offset-size-arithmetic	unit_tests/check_clamav.c	50227	        len--;
+offset-size-arithmetic	unit_tests/check_clamav.c	50251	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
+offset-size-arithmetic	unit_tests/check_clamav.c	50277	        len--;
 offset-size-arithmetic	unit_tests/check_clamav.c	5029	    data = fmap_need_off_once(map, length - 4096, 4096);
 offset-size-arithmetic	unit_tests/check_clamav.c	5031	    ck_assert_uint_eq(data[0], synthetic_byte_at(length - 4096));
 offset-size-arithmetic	unit_tests/check_clamav.c	5040	    for (offset = 0; offset < length; offset += 10 * 1024 * 1024) {
 offset-size-arithmetic	unit_tests/check_clamav.c	5041	        request = MIN(length - offset, (size_t)(10 * 1024 * 1024));
-offset-size-arithmetic	unit_tests/check_clamav.c	50462	    if (len == 0 || at > map->len || len > map->len - at)
-offset-size-arithmetic	unit_tests/check_clamav.c	50499	    chunk_boundary[sizeof(chunk_boundary) - 2U] = 0xff;
-offset-size-arithmetic	unit_tests/check_clamav.c	50500	    chunk_boundary[sizeof(chunk_boundary) - 1U] = 0xd9;
+offset-size-arithmetic	unit_tests/check_clamav.c	50512	    if (len == 0 || at > map->len || len > map->len - at)
+offset-size-arithmetic	unit_tests/check_clamav.c	50549	    chunk_boundary[sizeof(chunk_boundary) - 2U] = 0xff;
+offset-size-arithmetic	unit_tests/check_clamav.c	50550	    chunk_boundary[sizeof(chunk_boundary) - 1U] = 0xd9;
 offset-size-arithmetic	unit_tests/check_clamav.c	5060	            data              = fmap_need_off_once(duplicate, length - 4096, 4096);
 offset-size-arithmetic	unit_tests/check_clamav.c	5062	            ck_assert_uint_eq(data[0], synthetic_byte_at(length - 4096));
 offset-size-arithmetic	unit_tests/check_clamav.c	5090	    size_t length = 40 * 1024 * 1024;

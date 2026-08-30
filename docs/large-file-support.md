@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Hash file-length and short-read admission — 2026-08-30
+
+`cl_hash_file_fd_ex()` now honors its documented zero-length whole-file mode,
+rejects an offset beyond the file, and returns `CL_EREAD` rather than
+finalizing a digest after an early EOF for a nonzero requested range. The
+registered regression covers full-file hashing, short input, and out-of-range
+offsets; current-source GCC syntax evidence is recorded, while complete
+hash-helper callers, sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification remain required.
+
 ## Signature database loader API admission — 2026-08-30
 
 The public `cl_load()` entry now rejects missing path, engine, or signature

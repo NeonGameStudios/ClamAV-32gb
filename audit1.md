@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## Hash file-length and short-read admission — 2026-08-30
+
+`cl_hash_file_fd_ex()` documented a zero length as “hash the entire file” but
+the implementation hashed an empty range, and a requested nonzero range could
+be finalized successfully after an early EOF. The file-size/offset boundary is
+now checked, zero length is normalized to the remaining file, and any short
+read returns `CL_EREAD` before digest publication. The registered regression
+covers full-file hashing, short input, and an out-of-range offset. Complete
+hash-helper callers, sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification remain open.
+
 ## Signature database loader API admission — 2026-08-30
 
 The public `cl_load()` entry validated its engine but allowed a null path to

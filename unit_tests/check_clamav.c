@@ -49758,6 +49758,55 @@ START_TEST(test_crypto_certificate_directory_failures_are_fail_visible)
 END_TEST
 #endif
 
+START_TEST(test_hash_file_fd_length_and_short_read_are_fail_visible)
+{
+    static const uint8_t content[] = "hash-file-fd-ex";
+    char path[PATH_MAX];
+    uint8_t *hash = NULL;
+    uint8_t *expected = NULL;
+    size_t hash_len = 0;
+    size_t expected_len = 0;
+    int fd;
+    cl_error_t ret;
+
+    ck_assert_int_gt(snprintf(path, sizeof(path), "%s/hash-file-fd-ex-%ld", tmpdir, (long)getpid()), 0);
+    fd = open(path, O_CREAT | O_TRUNC | O_WRONLY, 0600);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(write(fd, content, sizeof(content) - 1U), (ssize_t)(sizeof(content) - 1U));
+    ck_assert_int_eq(close(fd), 0);
+
+    fd = open(path, O_RDONLY);
+    ck_assert_int_ge(fd, 0);
+
+    ret = cl_hash_file_fd_ex("sha2-256", fd, 0, 0, &hash, &hash_len, CL_HASH_FLAG_ALLOCATE);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_ptr_nonnull(hash);
+    ck_assert_uint_eq(hash_len, SHA256_HASH_SIZE);
+
+    ret = cl_hash_data_ex("sha2-256", content, sizeof(content) - 1U, &expected,
+                          &expected_len, CL_HASH_FLAG_ALLOCATE);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_mem_eq(hash, expected, hash_len);
+    free(hash);
+    hash = NULL;
+    free(expected);
+    expected = NULL;
+
+    ret = cl_hash_file_fd_ex("sha2-256", fd, 0, sizeof(content), &hash, &hash_len,
+                             CL_HASH_FLAG_ALLOCATE);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_ptr_null(hash);
+
+    ret = cl_hash_file_fd_ex("sha2-256", fd, sizeof(content), 1, &hash, &hash_len,
+                             CL_HASH_FLAG_ALLOCATE);
+    ck_assert_int_eq(ret, CL_ESEEK);
+    ck_assert_ptr_null(hash);
+
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(unlink(path), 0);
+}
+END_TEST
+
 static uint8_t tv1[3] = {
     0x61, 0x62, 0x63};
 
@@ -50174,6 +50223,7 @@ static Suite *test_cli_suite(void)
     tcase_add_test(tc_cli_dsig, test_crypto_keyfile_close_failure_is_fail_visible);
     tcase_add_test(tc_cli_dsig, test_crypto_certificate_directory_failures_are_fail_visible);
 #endif
+    tcase_add_test(tc_cli_dsig, test_hash_file_fd_length_and_short_read_are_fail_visible);
 
     suite_add_tcase(s, tc_cli_assorted);
     tcase_add_test(tc_cli_assorted, test_sanitize_path);
