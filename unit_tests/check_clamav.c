@@ -21918,6 +21918,50 @@ START_TEST(test_iso_missing_volume_descriptor_terminator_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_iso_descriptor_alignment_is_fail_visible)
+{
+    enum {
+        ISO_OFFSET   = 65536,
+        ISO_BASE     = ISO_OFFSET - (16 * 2048),
+        VOLUME_BLOCKS = 34,
+        ISO_LENGTH   = ISO_BASE + (VOLUME_BLOCKS * 2048)
+    };
+    uint8_t data[ISO_LENGTH] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    /* Keep the image large enough that the old search-based admission would
+     * accept a marker one byte after the descriptor boundary. Its derived
+     * 2049-byte sector size would then place the apparent terminator at the
+     * same shifted coordinate. */
+    data[ISO_OFFSET] = 1;
+    memcpy(data + ISO_OFFSET + 1, "CD001", 5);
+    data[ISO_OFFSET + 80] = VOLUME_BLOCKS;
+    data[ISO_OFFSET + 84 + 3] = VOLUME_BLOCKS;
+    data[ISO_OFFSET + 128] = 0x00;
+    data[ISO_OFFSET + 129] = 0x08;
+    data[ISO_OFFSET + 156] = 34;
+    data[ISO_OFFSET + 158] = 32;
+    data[ISO_OFFSET + 2049] = 0xff;
+    memcpy(data + ISO_OFFSET + 2050, "CD001", 5);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    map        = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scaniso(&ctx, ISO_OFFSET), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ISO volume descriptor sequence was truncated");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_iso_descriptor_terminator_after_sector_31_is_supported)
 {
     enum {
@@ -48217,6 +48261,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_iso_map, test_iso_missing_map_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_truncated_directory_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_missing_volume_descriptor_terminator_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_descriptor_alignment_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_descriptor_terminator_after_sector_31_is_supported);
     tcase_add_test(tc_iso_map, test_iso_time_limit_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_volume_read_failure_is_fail_visible);

@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## ISO-9660 descriptor-boundary admission — 2026-08-30
+
+The ISO parser used to search for the next `CD001` identifier anywhere after
+the primary descriptor and then derive a sector size from the match location.
+That allowed a malformed embedded image to move the apparent descriptor grid
+by one or more bytes, causing subsequent descriptor and directory coordinates
+to be interpreted under attacker-controlled geometry. Admission now requires
+`CD001` at the fixed 2048-byte descriptor boundary. A current-source
+production-linked GCC regression accepts the aligned terminator and rejects a
+one-byte-shifted marker with `CL_EPARSE`, sticky incomplete state, and a
+non-cacheable fmap; the matching GCC ASan/UBSan runner is clean. Complete ISO
+corpus, current-object, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification remain open.
+
 ## HTML normalization read and growth failure audit — 2026-08-30
 
 The HTML normalizer previously allowed a failed `cli_readchunk()` allocation to

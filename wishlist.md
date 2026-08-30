@@ -1,5 +1,15 @@
 # Wishlist
 
+## ISO-9660 descriptor-boundary admission — 2026-08-30
+
+- Require the next ISO-9660 `CD001` identifier at the fixed 2048-byte
+  descriptor boundary; never derive sector geometry from an arbitrary marker
+  found later in the primary-descriptor window.
+- Retain the aligned-versus-one-byte-shifted regression, source guards, and
+  current-source GCC plus ASan/UBSan evidence. Complete ISO corpus,
+  current-object, production-CVD/service, materialized-large-file, Sonic1,
+  and final release qualification remain required.
+
 ## HTML normalization read and growth failure audit — 2026-08-30
 
 - Keep `cli_readchunk()` distinct between EOF and processing failure: chunk

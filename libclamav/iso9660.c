@@ -421,14 +421,18 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
         return iso_incomplete(ctx, "ISO primary volume descriptor was malformed");
     }
 
-    next = (uint8_t *)cli_memstr((char *)primary_map + 2049, sizeof(primary_descriptor) - 2049, "CD001", 5);
-    if (!next) {
+    /* ISO-9660 volume descriptors are fixed 2048-byte sectors. Searching for
+     * CD001 at an arbitrary later byte would admit a malformed descriptor
+     * sequence with a fabricated sector size, shifting every subsequent
+     * descriptor and directory coordinate. */
+    next = (uint8_t *)primary_map + 2048;
+    if (memcmp(next + 1, "CD001", 5)) {
         /* Find next volume descriptor */
         fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
         return iso_incomplete(ctx, "ISO volume descriptor sequence was truncated");
     }
 
-    iso.sectsz = (next - primary_map) - 1;
+    iso.sectsz = (unsigned int)(next - primary_map);
     if (iso.sectsz * 16 > offset) {
         /* Need room for 16 system sectors */
         fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
