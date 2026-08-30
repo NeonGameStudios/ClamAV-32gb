@@ -1,5 +1,16 @@
 # Wishlist
 
+## HWP5 header metadata record admission — 2026-08-30
+
+- Keep `cli_hwp5header()` fail-visible when `RawVersion`, `RawFlags`, or any
+  enabled HWP5 flag-array metadata record cannot be allocated or written;
+  return the original error and mark the layer incomplete.
+- Retain `test_hwp5_header_metadata_record_failure_is_fail_visible`, the
+  `cli_jsonint` static-test wrapper, and source guards. Full HWP corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, and final parser/release qualification
+  remain open.
+
 ## 7-Zip individual-allocation ceiling — 2026-08-29
 
 - Keep every vendored 7-Zip declared-count allocation below the shared 1 GiB
