@@ -1,5 +1,15 @@
 # Wishlist
 
+## InstallShield CAB decoder initialization cleanup — 2026-08-30
+
+- Keep legacy InstallShield CAB teardown conditional on successful
+  `inflateInit2()` initialization. Preserve the fail-visible `CL_EUNPACK`
+  result and temporary-output cleanup. The source-guarded focused fault
+  injection passes in the isolated current-source production-linked GCC and
+  GCC ASan/UBSan leak-enabled runners. Complete the InstallShield/CAB corpus,
+  production-CVD/service, materialized-large-file, Sonic1, and release
+  qualification.
+
 ## PE bytecode-unpacker metadata cleanup — 2026-08-30
 
 - Keep the second `cli_scanpe()` bytecode-context allocation failure fail

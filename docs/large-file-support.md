@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## InstallShield CAB decoder initialization cleanup — 2026-08-30
+
+The legacy InstallShield CAB extractor now tracks whether `inflateInit2()`
+completed before calling `inflateEnd()`. Failed initialization remains a
+sticky, non-cacheable `CL_EUNPACK` result with temporary-output cleanup; source
+guards cover the state transition. The source-guarded focused fault injection
+passes in isolated current-source production-linked GCC and GCC ASan/UBSan
+leak-enabled runners with the exact diagnostic and cache taint. Complete
+InstallShield/CAB corpus, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification remain required.
+
 ## PE bytecode-unpacker metadata cleanup — 2026-08-30
 
 The second PE bytecode hook allocation failure now destroys the populated

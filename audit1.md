@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## InstallShield CAB decoder initialization cleanup — 2026-08-30
+
+The legacy InstallShield CAB extractor unconditionally called `inflateEnd()`
+after `inflateInit2()` failed, even though the zlib stream had not been
+initialized. The path now tracks successful initialization and only tears
+down an initialized stream, while retaining the incomplete `CL_EUNPACK`
+result and temporary-file cleanup. Source guards cover the state transition;
+the isolated current-source production-linked GCC runner passes the forced
+`inflateInit2()` failure with the exact diagnostic and cache taint, and the
+GCC ASan/UBSan runner passes with leak detection enabled. Complete
+InstallShield/CAB corpus, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification remain open.
+
 ## PE bytecode-unpacker metadata cleanup — 2026-08-30
 
 The second PE bytecode hook allocation failure returned `CL_EMEM` after

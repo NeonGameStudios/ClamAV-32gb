@@ -1136,6 +1136,7 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
     while (csize) {
         uint16_t chunksz;
         bool chunk_complete = false;
+        bool z_initialized   = false;
 
         ret = cli_checktimelimit(ctx);
         if (ret != CL_SUCCESS)
@@ -1179,7 +1180,8 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
             ret = CL_EUNPACK;
             break;
         }
-        z.next_in  = (uint8_t *)inbuf;
+        z_initialized = true;
+        z.next_in     = (uint8_t *)inbuf;
         z.avail_in = chunksz;
         while (ret == CL_SUCCESS) {
             int zret;
@@ -1248,7 +1250,8 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
             ret = CL_EUNPACK;
             break;
         }
-        inflateEnd(&z);
+        if (z_initialized)
+            inflateEnd(&z);
         if (!chunk_complete)
             break;
     }

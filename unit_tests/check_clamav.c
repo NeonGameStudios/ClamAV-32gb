@@ -133,9 +133,14 @@ int __wrap_inflateInit_(z_streamp strm, const char *version, int stream_size)
 }
 
 int clamav_test_force_gzip_legacy_fallback;
+int clamav_test_force_ishield_cab_decoder_init;
 
 int __wrap_inflateInit2_(z_streamp strm, int windowBits, const char *version, int stream_size)
 {
+    if (clamav_test_force_ishield_cab_decoder_init) {
+        clamav_test_force_ishield_cab_decoder_init = 0;
+        return Z_MEM_ERROR;
+    }
     if (clamav_test_force_gzip_legacy_fallback) {
         clamav_test_force_gzip_legacy_fallback = 0;
         return Z_MEM_ERROR;
@@ -35068,6 +35073,100 @@ START_TEST(test_ishield_invalid_embedded_header_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_ishield_cab_decoder_init_failure_is_fail_visible)
+{
+    enum {
+        ISHIELD_TEST_HEADER_SIZE       = 0x300,
+        ISHIELD_TEST_DATA_OFFSET       = 0x20,
+        ISHIELD_TEST_DIRS_OFFSET       = 0x100,
+        ISHIELD_TEST_DIR_SIZE          = 0xc0,
+        ISHIELD_TEST_FILE_TABLE_OFFSET = 0x1e0
+    };
+    uint8_t data[2048];
+    uint8_t header[ISHIELD_TEST_HEADER_SIZE];
+    uint8_t *file;
+    size_t used = 0;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    memset(header, 0, sizeof(header));
+    zip_stream_write_u32(header, 0x28635349U);
+    zip_stream_write_u32(header + 12, ISHIELD_TEST_DATA_OFFSET);
+    zip_stream_write_u32(header + ISHIELD_TEST_DATA_OFFSET + 12, ISHIELD_TEST_DIRS_OFFSET);
+    zip_stream_write_u32(header + ISHIELD_TEST_DATA_OFFSET + 40, 1U);
+    zip_stream_write_u32(header + ISHIELD_TEST_DATA_OFFSET + 44, ISHIELD_TEST_DIR_SIZE);
+    zip_stream_write_u32(header + ISHIELD_TEST_DATA_OFFSET + ISHIELD_TEST_DIRS_OFFSET, 4U);
+    memcpy(header + ISHIELD_TEST_DATA_OFFSET + ISHIELD_TEST_DIRS_OFFSET + 4U, "", 1);
+    memcpy(header + ISHIELD_TEST_DATA_OFFSET + ISHIELD_TEST_DIRS_OFFSET + 8U, "x", 2);
+
+    file = header + ISHIELD_TEST_FILE_TABLE_OFFSET;
+    zip_stream_write_u16(file, 4U);
+    ishield_test_write_u64(file + 2, 1U);
+    ishield_test_write_u64(file + 10, 3U);
+    ishield_test_write_u64(file + 18, 0U);
+    zip_stream_write_u32(file + 58, 8U);
+    zip_stream_write_u16(file + 62, 0U);
+    zip_stream_write_u16(file + 85, 1U);
+
+    memcpy(data + used, "data1.hdr", sizeof("data1.hdr"));
+    used += sizeof("data1.hdr");
+    memcpy(data + used, "", 1);
+    used += 1;
+    memcpy(data + used, "", 1);
+    used += 1;
+    memcpy(data + used, "768", sizeof("768"));
+    used += sizeof("768");
+    memcpy(data + used, header, ISHIELD_TEST_HEADER_SIZE);
+    used += ISHIELD_TEST_HEADER_SIZE;
+
+    memcpy(data + used, "data1.cab", sizeof("data1.cab"));
+    used += sizeof("data1.cab");
+    memcpy(data + used, "", 1);
+    used += 1;
+    memcpy(data + used, "", 1);
+    used += 1;
+    memcpy(data + used, "3", sizeof("3"));
+    used += sizeof("3");
+    data[used++] = 1;
+    data[used++] = 0;
+    data[used++] = 0;
+
+    memset(&engine, 0, sizeof(engine));
+    engine.maxtemporarysize = UINT64_MAX;
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse            = CL_SCAN_PARSE_ARCHIVE;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map = cl_fmap_open_memory(data, used);
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+    ck_assert_ptr_nonnull(map);
+
+    clamav_test_force_ishield_cab_decoder_init = 1;
+    ret = cli_scanishield(&ctx, 0, map->len);
+
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "InstallShield CAB decompressor could not be initialized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_ishield_cab_decoder_init, 0);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 static void arj_test_write_u16(uint8_t *dst, uint16_t value)
 {
     dst[0] = (uint8_t)value;
@@ -48431,6 +48530,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ishield_truncated_metadata_is_fail_visible);
     tcase_add_test(tc_cl, test_ishield_metadata_string_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ishield_invalid_embedded_header_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_ishield_cab_decoder_init_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_arj_encrypted_member_range_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_main_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_main_header_string_read_failure_is_fail_visible);
