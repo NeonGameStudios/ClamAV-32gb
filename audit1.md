@@ -15967,4 +15967,6 @@ data seeks, returning a sticky incomplete format result before the seek when
 the coordinate cannot be represented. The source guard pins the new admission
 boundary; current-source production-linked HFS+ execution, complete corpus,
 sanitizer, materialized-large-file, Sonic1, and final release qualification
-remain open.
+remain open. The current-source focused GCC runner and its matching
+AddressSanitizer/UndefinedBehaviorSanitizer runner both pass the existing
+declared-offset resource-map checks.

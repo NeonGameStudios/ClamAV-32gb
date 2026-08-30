@@ -8739,4 +8739,5 @@ qualification as required evidence.
   fail-visible and non-cacheable.
 - Retain the source guard and add current-source production-linked HFS+,
   complete corpus, sanitizer, materialized-large-file, Sonic1, and final
-  release qualification evidence.
+  release qualification evidence. The focused current-source GCC and
+  AddressSanitizer/UndefinedBehaviorSanitizer resource-map runners pass.
