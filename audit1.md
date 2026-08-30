@@ -14987,3 +14987,14 @@ and frees the optional result when the caller does not request `files`. Source
 guards pin each boundary; existing OLE2 map/XLM, corpus, and reader
 sanitizer evidence remains partial, so parser-family, production-CVD/service,
 materialized-large-file, Sonic1, and final release qualification stay open.
+## XAR checksum-value allocation admission — 2026-08-30
+
+The XAR TOC checksum parser duplicated valid-length archived and extracted
+checksum text with `xmlStrdup()` but previously treated a null result as an
+absent checksum. Under allocator failure, a member could therefore continue
+without validating metadata that the TOC supplied. The helper now returns
+`CL_EMEM` when the copy cannot be allocated, and both checksum call sites mark
+the confirmed layer incomplete with an explicit reason before the member is
+admitted. Source guards cover the helper and both callers. Allocator-fault
+execution, complete XAR corpus, sanitizer, production-CVD/service,
+materialized large-file, Sonic1, and parser-family qualification remain open.

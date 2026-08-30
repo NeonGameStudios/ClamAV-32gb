@@ -530,6 +530,17 @@ TCase passes 1/1, and a current-source GCC ASan/UBSan runner passes without a
 sanitizer finding. Complete XAR corpus, production-CVD/service, materialized
 large-file, Sonic1, and final parser-family qualification remain required.
 
+## XAR checksum-value allocation admission — 2026-08-30
+
+XAR archived and extracted checksum values with valid SHA-1 or MD5 lengths are
+now treated as required metadata: if copying the XML value fails, the parser
+returns `CL_EMEM`, marks the confirmed layer incomplete, and prevents the
+checksum from being silently treated as absent. This complements the existing
+hash-context allocation guard. Source guards cover the allocation and both
+call sites; allocator-fault execution, complete XAR corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and final
+parser-family qualification remain required.
+
 ## Byte-compare unaligned binary-field admission — 2026-08-28
 
 The byte-compare matcher now copies bounded 2-, 4-, and 8-byte binary fields

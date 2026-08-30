@@ -486,13 +486,17 @@ static int xar_get_numeric_from_xml_element(xmlTextReaderPtr reader, size_t *val
     reader - xmlTextReaderPtr
     cksum - pointer to char* for returning checksum value.
     hash - pointer to int for returning checksum algorithm.
-  returns - void
+  returns - CL_SUCCESS, CL_EFORMAT, or CL_EMEM
  */
-static void xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cksum, int *hash)
+static int xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cksum, int *hash)
 {
-    xmlChar *style = xmlTextReaderGetAttribute(reader, (const xmlChar *)"style");
+    xmlChar *style;
     const xmlChar *xmlval;
 
+    if (reader == NULL || cksum == NULL || hash == NULL)
+        return CL_EFORMAT;
+
+    style = xmlTextReaderGetAttribute(reader, (const xmlChar *)"style");
     *hash = XAR_CKSUM_NONE;
     if (style == NULL) {
         cli_dbgmsg("cli_scaxar: xmlTextReaderGetAttribute no style attribute "
@@ -518,6 +522,10 @@ static void xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cks
             if (((*hash == XAR_CKSUM_SHA1) && (xmlStrlen(xmlval) == 2 * SHA1_HASH_SIZE)) ||
                 ((*hash == XAR_CKSUM_MD5) && (xmlStrlen(xmlval) == 2 * MD5_HASH_SIZE))) {
                 *cksum = xmlStrdup(xmlval);
+                if (*cksum == NULL) {
+                    cli_dbgmsg("cli_scanxar: checksum value allocation failed.\n");
+                    return CL_EMEM;
+                }
             } else {
                 cli_dbgmsg("cli_scanxar: checksum type is unknown or length is invalid.\n");
                 *hash  = XAR_CKSUM_OTHER;
@@ -529,6 +537,8 @@ static void xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cks
         }
     } else
         cli_dbgmsg("cli_scanxar: No text for XML checksum element.\n");
+
+    return CL_SUCCESS;
 }
 
 /*
@@ -591,13 +601,21 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
             } else if (xmlStrEqual(name, (const xmlChar *)"archived-checksum") &&
                        xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
                 cli_dbgmsg("cli_scanxar: <archived-checksum>:\n");
-                xar_get_checksum_values(reader, a_cksum, a_hash);
+                rc = xar_get_checksum_values(reader, a_cksum, a_hash);
+                if (rc != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "XAR archived checksum value could not be allocated");
+                    return rc;
+                }
 
             } else if ((xmlStrEqual(name, (const xmlChar *)"extracted-checksum") ||
                         xmlStrEqual(name, (const xmlChar *)"unarchived-checksum")) &&
                        xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
                 cli_dbgmsg("cli_scanxar: <extracted-checksum>:\n");
-                xar_get_checksum_values(reader, e_cksum, e_hash);
+                rc = xar_get_checksum_values(reader, e_cksum, e_hash);
+                if (rc != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "XAR extracted checksum value could not be allocated");
+                    return rc;
+                }
 
             } else if (xmlStrEqual(name, (const xmlChar *)"encoding") &&
                        xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {

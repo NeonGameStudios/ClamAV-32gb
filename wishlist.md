@@ -8048,3 +8048,13 @@ qualification as required evidence.
   current-source OLE2 map/XLM, corpus, reader-sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final
   parser/release qualification as required evidence.
+
+## XAR checksum-value allocation admission — 2026-08-30
+
+- Keep valid-length archived and extracted checksum XML values fail-visible:
+  an `xmlStrdup()` failure must return `CL_EMEM`, mark the confirmed layer
+  incomplete, and never downgrade required checksum metadata to absent state.
+- Retain source guards for the helper and both call sites. Add allocator-fault
+  execution when the current test/build environment supports it, and keep
+  complete XAR corpus, sanitizer, production-CVD/service, materialized
+  large-file, Sonic1, and final parser-family/release qualification open.
