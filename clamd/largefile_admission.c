@@ -211,7 +211,8 @@ static int read_u64_file(const char *path, uint64_t *value, int *unlimited)
         fclose(stream);
         return 0;
     }
-    fclose(stream);
+    if (fclose(stream) != 0)
+        return 0;
 
     if (0 == strncmp(buffer, "max", 3) &&
         (buffer[3] == '\0' || buffer[3] == '\n' || buffer[3] == '\r' || buffer[3] == ' ' || buffer[3] == '\t')) {
@@ -253,7 +254,8 @@ static int read_mem_available(uint64_t *available_bytes)
         if (sscanf(line, "MemAvailable: %" SCNu64 " kB", &available_kib) == 1)
             break;
     }
-    fclose(stream);
+    if (fclose(stream) != 0)
+        return 0;
 
     if (available_kib == 0 || available_kib > UINT64_MAX / 1024ULL)
         return 0;
@@ -394,7 +396,8 @@ static int find_cgroup_mount(
         fclose(stream);
         return -1;
     }
-    fclose(stream);
+    if (fclose(stream) != 0)
+        return -1;
     return found;
 }
 
@@ -455,7 +458,8 @@ static int find_cgroup_membership(
         fclose(stream);
         return -1;
     }
-    fclose(stream);
+    if (fclose(stream) != 0)
+        return -1;
     return found;
 }
 

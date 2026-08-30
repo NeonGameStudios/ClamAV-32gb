@@ -97,6 +97,10 @@ if(ENABLE_APP)
     endif()
     target_include_directories(check_clamd PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/libclamav ${PROJECT_SOURCE_DIR}/clamd ${CMAKE_BINARY_DIR})
     target_compile_definitions(check_clamd PUBLIC OBJDIR="${OBJDIR}" SRCDIR="${SRCDIR}")
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_compile_definitions(check_clamd PRIVATE CLAMAV_TEST_LARGEFILE_IO_WRAP)
+        target_link_options(check_clamd PRIVATE "-Wl,--wrap=fclose")
+    endif()
 endif()
 
 #

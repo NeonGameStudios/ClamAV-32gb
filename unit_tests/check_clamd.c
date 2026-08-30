@@ -70,6 +70,20 @@
 #include "optparser.h"
 #include "session.h"
 
+#ifdef CLAMAV_TEST_LARGEFILE_IO_WRAP
+extern int __real_fclose(FILE *stream);
+int clamav_test_largefile_fail_fclose;
+
+int __wrap_fclose(FILE *stream)
+{
+    int ret = __real_fclose(stream);
+
+    if (clamav_test_largefile_fail_fclose)
+        return EOF;
+    return ret;
+}
+#endif
+
 static int conn_tcp(int port)
 {
     struct sockaddr_in server;
@@ -643,6 +657,15 @@ START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
             mount),
         (int)sizeof(line));
     write_cgroup_fixture_file(proc_mountinfo, line);
+
+#ifdef CLAMAV_TEST_LARGEFILE_IO_WRAP
+    clamav_test_largefile_fail_fclose = 1;
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        0);
+    clamav_test_largefile_fail_fclose = 0;
+#endif
 
     headroom = 0;
     bounded  = 0;

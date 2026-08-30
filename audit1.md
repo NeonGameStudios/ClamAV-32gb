@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Large-file daemon admission measurement closure — 2026-08-30
+
+The Linux large-file startup gate read cgroup membership, mount information,
+memory limits/current values, and `/proc/meminfo` through `FILE *` streams but
+ignored `fclose()` failures after otherwise valid reads. A close error can
+represent an unreadable or incompletely verified measurement, so accepting the
+startup budget in that state would weaken the required admission contract. The
+measurement helpers now reject close failure for normal-return paths. The
+registered Linux cgroup fixture injects a close failure through the existing
+headroom API and requires admission failure; isolated current-source GCC and
+AddressSanitizer/UndefinedBehaviorSanitizer runners pass. Full clamd build and
+current-object execution, production-CVD/service, Sonic1 resource measurement,
+and final release qualification remain open.
+
 ## Certificate trust-store directory admission — 2026-08-30
 
 The public `cl_validate_certificate_chain_ts_dir()` helper previously treated
