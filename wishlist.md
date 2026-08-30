@@ -1,5 +1,17 @@
 # Wishlist
 
+## Signature-directory stat admission — 2026-08-30
+
+- Keep `cl_statinidir()` and `cl_statchkdir()` fail-visible for directory
+  enumeration, file-stat, and directory-close errors; never consume stat
+  fields after a failed `stat()`. Reject null directory arguments and failed
+  directory-name allocation, and let cleanup failure override a plain
+  “directory changed” result.
+- Retain the registered read/close/stat wrapper regression and source guards.
+  Focused current-source GCC and AddressSanitizer/UndefinedBehaviorSanitizer
+  runners pass; current-object, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification remain.
+
 ## CVD age-directory read status — 2026-08-30
 
 - Keep `cl_cvdgetage()` fail-visible when `readdir()` reports a directory
