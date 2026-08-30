@@ -8793,3 +8793,13 @@ qualification as required evidence.
   Add current-source production-linked PDF execution, complete PDF/fmap
   corpus, production-CVD/service, materialized-large-file, Sonic1, and final
   release qualification evidence.
+
+## PE Swizzor empty resource-string admission — 2026-08-30
+
+- Keep `cli_detect_swizz_str()` fail-closed for null input/statistics and
+  lengths below one complete UTF-16 pair; do not evaluate `len - 1` before
+  proving the length is nonzero and pair-readable.
+- Retain `test_swizz_string_rejects_empty_input` and the source guards; add
+  current-source production-GCC, sanitizer, complete PE/resource corpus,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification evidence.
