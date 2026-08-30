@@ -5101,6 +5101,33 @@ START_TEST(test_fmap_handle_rejects_invalid_callback_and_source_offset)
 }
 END_TEST
 
+START_TEST(test_fmap_fd_rejects_failed_rewind)
+{
+    static const unsigned char data[] = "pipe-backed fmap";
+    struct offset_pread_state state;
+    cl_fmap_t *map;
+    int pipefd[2];
+
+    state.data          = data;
+    state.length        = sizeof(data) - 1U;
+    state.source_offset = 0;
+
+    ck_assert_int_eq(pipe(pipefd), 0);
+    map = cl_fmap_open_handle(&state, 0, state.length, offset_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+
+    /* Exercise the descriptor-facing compatibility bridge with a valid
+     * handle flag but a non-seekable descriptor. */
+    map->handle       = (void *)(ssize_t)pipefd[0];
+    map->handle_is_fd = true;
+    ck_assert_int_eq(fmap_fd(map), -1);
+
+    cl_fmap_close(map);
+    close(pipefd[0]);
+    close(pipefd[1]);
+}
+END_TEST
+
 #ifdef ANONYMOUS_MAP
 #define TEST_FM_MASK_PAGED 0x40000000U
 #define TEST_FMAP_AGING_SCAN_BUDGET 8192U
@@ -49850,6 +49877,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_fmap_aging_is_bounded_and_wraps);
     tcase_add_test(tc_cl_scan, test_fmap_handle_accepts_tail_window_at_large_source_offset);
     tcase_add_test(tc_cl_scan, test_fmap_handle_rejects_invalid_callback_and_source_offset);
+    tcase_add_test(tc_cl_scan, test_fmap_fd_rejects_failed_rewind);
     tcase_add_test(tc_cl_scan, test_fmap_gets_releases_read_pages);
     tcase_add_test(tc_cl_scan, test_fmap_release_unlocked_evicts_whole_subject_pages);
     tcase_add_test(tc_cl_scan, test_metadata_hash_read_failure_is_fail_visible);

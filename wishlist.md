@@ -8781,3 +8781,15 @@ qualification as required evidence.
   deterministic seek-fault execution, complete OLE/VBA/PowerPoint corpus,
   sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
   final release qualification evidence.
+
+## FMap and PDF extracted-output rewind admission — 2026-08-30
+
+- Keep `fmap_fd()` fail-closed when a descriptor-backed fmap cannot rewind to
+  offset zero; callers must receive `-1` rather than a stale-position fd.
+- Keep both PDF extracted-object nested-scan and content-scan rewinds
+  fail-visible with `CL_ESEEK`, sticky incomplete state, and cleanup.
+- Retain the pipe-backed regression and source guards; the isolated current-
+  source fmap runner passes under GCC and GCC ASan/UBSan with leak detection.
+  Add current-source production-linked PDF execution, complete PDF/fmap
+  corpus, production-CVD/service, materialized-large-file, Sonic1, and final
+  release qualification evidence.

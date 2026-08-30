@@ -78,7 +78,6 @@ normal and ASan/UBSan builds. Complete HTML/MIME corpus, full C ABI execution,
 production CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
 
-
 ## Bundled YARA arena admission — 2026-08-30
 
 The bundled YARA arena layer previously allowed a zero-sized initial page,
@@ -16011,6 +16010,21 @@ AC implementation plus matcher test translation unit compile with the
 production warning-enabled GCC flags. Complete matcher corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
+
+## FMap and PDF extracted-output rewind admission — 2026-08-30
+
+The descriptor bridge `fmap_fd()` previously ignored a failed rewind and
+returned a descriptor whose position was not the contractually required start
+of the fmap. It now returns `-1` on rewind failure. PDF extracted-object
+nested scans also previously ignored both temporary-output rewinds, allowing
+an output-position fault to enter child scanning at an undefined position;
+each rewind now marks the PDF layer incomplete and returns `CL_ESEEK`. The
+pipe-backed public fmap regression and source guards cover the handoff. An
+isolated current-source fmap runner passes under GCC and matching GCC
+AddressSanitizer/UndefinedBehaviorSanitizer with leak detection; current-source
+production-linked PDF execution, complete PDF/fmap corpus, production-CVD/
+service, materialized-large-file, Sonic1, and final release qualification
+remain open.
 
 ## Legacy VBA and PowerPoint seek-result admission — 2026-08-30
 

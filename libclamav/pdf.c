@@ -2464,7 +2464,11 @@ scan_extracted_objects:
          */
 
         /* TODO: invoke bytecode on this pdf obj with metainformation associated */
-        lseek(fout, 0, SEEK_SET);
+        if (lseek(fout, 0, SEEK_SET) == (off_t)-1) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object could not be rewound before nested scanning");
+            status = CL_ESEEK;
+            goto done;
+        }
         ret = cli_magic_scan_desc_type_reserved(fout, fullname, pdf->ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
         if (ret != CL_SUCCESS) {
             status = ret;
@@ -2480,7 +2484,11 @@ scan_extracted_objects:
         }
 
         if (((status == CL_CLEAN) || (status == CL_VIRUS)) && (obj->flags & (1 << OBJ_CONTENTS))) {
-            lseek(fout, 0, SEEK_SET);
+            if (lseek(fout, 0, SEEK_SET) == (off_t)-1) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object could not be rewound before content scanning");
+                status = CL_ESEEK;
+                goto done;
+            }
             cli_dbgmsg("pdf_extract_obj: dumping contents from obj %u %u\n", obj->id >> 8, obj->id & 0xff);
 
             ret = pdf_scan_contents(fout, pdf, obj);

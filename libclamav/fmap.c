@@ -1464,7 +1464,8 @@ int fmap_fd(fmap_t *m)
         return -1;
     }
     fd = (int)(ptrdiff_t)m->handle;
-    lseek(fd, 0, SEEK_SET);
+    if (lseek(fd, 0, SEEK_SET) == (off_t)-1)
+        return -1;
     return fd;
 }
 
