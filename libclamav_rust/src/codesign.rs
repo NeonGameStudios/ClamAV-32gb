@@ -605,7 +605,7 @@ impl Signer {
         let mut cert_stack: Stack<X509> = Stack::new()?;
 
         for cert_path in cert_paths {
-            let cert_bytes = std::fs::read(cert_path)?;
+            let cert_bytes = read_bounded_file(cert_path.as_ref())?;
             let certs = X509::stack_from_pem(&cert_bytes)?;
 
             for cert in certs {
@@ -627,7 +627,7 @@ impl Signer {
             ));
         };
 
-        let signing_key_bytes = std::fs::read(key_path)?;
+        let signing_key_bytes = read_bounded_file(key_path)?;
         let key = PKey::private_key_from_pem(&signing_key_bytes)?;
         debug!("Signing key: {:?}", key);
 
@@ -671,7 +671,7 @@ impl Verifier {
             if path.is_file() {
                 let ext = path.extension();
                 if matches!(ext, Some(ext) if ext == "pem" || ext == "crt") {
-                    let cert_bytes = match std::fs::read(&path) {
+                    let cert_bytes = match read_bounded_file(&path) {
                         Ok(cert_bytes) => cert_bytes,
                         Err(e) => {
                             debug!("Error reading certificate file '{:?}': {}", path, e);

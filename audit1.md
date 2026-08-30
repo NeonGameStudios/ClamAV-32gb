@@ -16206,7 +16206,9 @@ The Rust signing and detached-verification helpers previously used unbounded
 operations now pass through a metadata-preflighted helper capped at the 1 GiB
 individual-allocation boundary, with `try_reserve_exact()` and a fixed 64 KiB
 read buffer; a file that grows beyond its admitted size becomes an explicit
-verification failure. The sparse oversized-file regression and source guards
-cover the boundary, and the cached Rust 1.97.1 Docker check passes. Full
+verification failure. Certificate and signing-key reads now use the same
+helper, so no code-signing file input bypasses the bound. The sparse
+oversized-file regression and source guards cover the boundary, and the cached
+Rust 1.97.1 Docker check passes. Full
 Rust/C ABI execution, production-CVD/service, sanitizer, materialized-large-
 file, Sonic1, and final release qualification remain open.
