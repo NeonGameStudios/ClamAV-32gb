@@ -28482,6 +28482,11 @@ START_TEST(test_7z_dynbuf_growth_overflow_is_fail_visible)
     uint8_t byte = 0;
 
     DynBuf_Construct(&buffer);
+    ck_assert_int_eq(DynBuf_Write(&buffer, NULL, 0, &alloc), 1);
+    ck_assert_uint_eq(buffer.size, 0);
+    ck_assert_uint_eq(buffer.pos, 0);
+    ck_assert_ptr_null(buffer.data);
+
     buffer.size = SIZE_MAX;
     buffer.pos  = SIZE_MAX;
 

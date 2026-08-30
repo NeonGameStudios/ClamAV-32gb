@@ -16066,3 +16066,17 @@ descriptor-backed maps; source guards pin the zero-length handoffs.
 Current-source production-GCC, sanitizer, complete fmap/line-oriented parser
 corpus, production-CVD/service, materialized-large-file, Sonic1, and final
 release qualification remain open.
+
+## 7-Zip zero-length dynamic-buffer write admission — 2026-08-30
+
+`DynBuf_Write()` already accepted a zero-length write with a null source, but
+the empty-buffer tail still evaluated `p->data + p->pos` and passed the null
+buffer to `memcpy()` with a zero count. The helper now returns a successful
+no-op before pointer formation for this valid boundary, while retaining the
+non-empty argument and growth-overflow checks. The registered dynamic-buffer
+regression covers the empty zero-length write and the existing `SIZE_MAX`
+growth rejection, and the source guard pins the no-op handoff. Current-source
+warning-enabled GCC and matching GCC ASan/UBSan direct helper runners pass
+both boundaries. Production-linked execution, complete 7-Zip/BCJ2 corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, and final parser-family/release qualification remain open.

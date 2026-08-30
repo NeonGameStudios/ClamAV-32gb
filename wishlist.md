@@ -8813,4 +8813,15 @@ qualification as required evidence.
 - Retain the existing fmap API regression and source guards; add current-source
   production-GCC, sanitizer, complete fmap/line-oriented parser corpus,
   production-CVD/service, materialized-large-file, Sonic1, and final release
-  qualification evidence.
+qualification evidence.
+
+## 7-Zip zero-length dynamic-buffer write admission — 2026-08-30
+
+- Keep `DynBuf_Write()` a successful no-op for a zero-length write, including
+  a null source and an empty destination buffer; do not form `p->data + p->pos`
+  or call `memcpy()` on a null buffer at that boundary.
+- Retain the expanded dynamic-buffer regression and source guard; the direct
+  current-source warning-enabled GCC and GCC ASan/UBSan runners pass. Add
+  production-linked 7-Zip execution, complete 7-Zip/BCJ2 corpus, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
+  final parser-family/release qualification evidence.

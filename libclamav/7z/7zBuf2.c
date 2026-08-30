@@ -30,6 +30,10 @@ int DynBuf_Write(CDynBuf *p, const Byte *buf, size_t size, ISzAlloc *alloc)
   if (p == 0 || alloc == 0 || p->pos > p->size || (size != 0 && buf == 0))
     return 0;
 
+  /* A zero-length append is a valid no-op, including for an empty buffer. */
+  if (size == 0)
+    return 1;
+
   if (size > p->size - p->pos)
   {
     if (size > (size_t)-1 - p->pos)

@@ -4533,6 +4533,7 @@ contains unit_tests/check_clamav.c 'test_cli_codepage_to_utf8_rejects_output_siz
 contains libclamav/7z/XzIn.c 'numBlocks > (size_t)-1 / sizeof(CXzBlockSizes)'
 contains libclamav/7z/XzIn.c 'p->num > (size_t)-1 - growth'
 contains libclamav/7z/7zBuf2.c 'p->pos > p->size'
+contains libclamav/7z/7zBuf2.c 'if (size == 0)'
 contains libclamav/7z/7zBuf2.c 'size > (size_t)-1 - p->pos'
 contains libclamav/7z/7zBuf2.c 'newSize > (size_t)-1 - newSize / 4'
 contains unit_tests/check_clamav.c 'test_7z_dynbuf_growth_overflow_is_fail_visible'
