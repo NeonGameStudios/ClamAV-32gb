@@ -1114,6 +1114,10 @@ static const void *handle_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
         return NULL;
 
     len = MIN(max_len - 1, m->len - *at);
+    if (len == 0) {
+        dst[0] = '\0';
+        return dst;
+    }
     if (!fmap_range_contained(m->nested_offset, m->len, real_start, len, false))
         return NULL;
 
@@ -1283,6 +1287,10 @@ static const void *mem_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
         return NULL;
 
     len = MIN(max_len - 1, m->len - *at);
+    if (len == 0) {
+        dst[0] = '\0';
+        return dst;
+    }
     if (!fmap_range_contained(m->nested_offset, m->len, real_start, len, false))
         return NULL;
 

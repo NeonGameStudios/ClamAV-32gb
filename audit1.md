@@ -16051,3 +16051,18 @@ current-source VBA object compiles under the production GCC flags and source
 guards pin the handoffs; complete OLE/VBA/PowerPoint corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
+
+## Handle-backed fmap_gets one-byte destination admission — 2026-08-30
+
+Both `handle_gets()` and `mem_gets()` allowed `max_len == 1`, correctly
+indicating an empty output buffer, but the handle-backed implementation then
+formed `real_start + (len - 1)` with `len == 0` while selecting the final page.
+A handle-backed line read could therefore index outside the fmap page table,
+while the memory-backed implementation returned a different result for the
+same valid boundary. Both implementations now write only the required
+terminator, leave the input offset unchanged, and return success for this
+fgets-style boundary. The existing fmap API regression covers both memory- and
+descriptor-backed maps; source guards pin the zero-length handoffs.
+Current-source production-GCC, sanitizer, complete fmap/line-oriented parser
+corpus, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.

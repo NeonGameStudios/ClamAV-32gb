@@ -12602,6 +12602,13 @@ static void fmap_api_tests(cl_fmap_t *map, const char *map_data, size_t map_data
     offset_after_newline = (size_t)ptr_after_newline - (size_t)map_data + 1;
 
     // This API will stop after newline or EOF, but not a NULL byte.
+    memset(tmp, 0xff, map_data_len + 1);
+    at  = 3;
+    ptr = fmap_gets(map, tmp, &at, 1);
+    ck_assert_msg(ptr == tmp, "%s: fmap_gets with a one-byte destination should succeed", msg);
+    ck_assert_msg(at == 3, "%s: one-byte fmap_gets should not consume input", msg);
+    ck_assert_msg(tmp[0] == '\0', "%s: one-byte fmap_gets should only write its terminator", msg);
+
     memset(tmp, 0xff, map_data_len + 1); // pre-load `tmp` with 0xff so our NULL check later is guaranteed to be meaningful.
     at  = 3;                             // start at offset 3
     ptr = fmap_gets(map, tmp, &at, map_data_len + 1);

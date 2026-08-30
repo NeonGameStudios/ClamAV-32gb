@@ -8803,3 +8803,14 @@ qualification as required evidence.
   current-source production-GCC, sanitizer, complete PE/resource corpus,
   production-CVD/service, materialized-large-file, Sonic1, and final release
   qualification evidence.
+
+## fmap_gets one-byte destination admission — 2026-08-30
+
+- Keep both fmap-backed `fmap_gets()` implementations successful for
+  `max_len == 1` by writing only the terminator and leaving the source offset
+  unchanged; never form a final-page coordinate from `len - 1` until a nonzero
+  payload is proven.
+- Retain the existing fmap API regression and source guards; add current-source
+  production-GCC, sanitizer, complete fmap/line-oriented parser corpus,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification evidence.
