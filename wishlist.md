@@ -1,5 +1,15 @@
 # Wishlist
 
+## Descriptor ingress native-size admission — 2026-08-30
+
+- Keep known-size descriptor roots fail-visible when `st_size` cannot be
+  represented by the native fmap `size_t`; return `CL_ERESOURCE` before fmap
+  creation while retaining the root size in structured reports. The source
+  guard covers this boundary; the full scanner syntax check still needs a
+  source-consistent generated-header snapshot. Complete ingress parity,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final release qualification remain required.
+
 ## SIS 9.x native coordinate admission — 2026-08-30
 
 - Keep SIS 9.x nested field-end and skip coordinates in native `size_t` form.

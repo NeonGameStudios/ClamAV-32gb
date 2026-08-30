@@ -9264,6 +9264,12 @@ cl_error_t cli_scandesc_ex2_with_temporary_bytes(
     root_size = (uint64_t)sb.st_size;
     cli_scan_report_set_root_size(report, root_size);
 
+    if (root_size > SIZE_MAX) {
+        cli_errmsg("cl_scandesc_callback: Descriptor %d exceeds the native fmap size range\n", desc);
+        status = CL_ERESOURCE;
+        goto done;
+    }
+
     /* Reject a known-size root before fmap_new() allocates its page bitmap or
      * reserves address space. Use the normal scan path with a metadata-only
      * fmap so AlertExceedsMax, callbacks, reports, and the legacy result
