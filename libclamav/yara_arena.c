@@ -77,6 +77,9 @@ YR_ARENA_PAGE* _yr_arena_new_page(
 {
   YR_ARENA_PAGE* new_page;
 
+  if (size == 0)
+    return NULL;
+
   new_page = (YR_ARENA_PAGE*) yr_malloc(sizeof(YR_ARENA_PAGE));
 
   if (new_page == NULL)
@@ -120,6 +123,9 @@ YR_ARENA_PAGE* _yr_arena_page_for_address(
     void* address)
 {
   YR_ARENA_PAGE* page;
+
+  if (arena == NULL || address == NULL)
+    return NULL;
 
   // Most of the times this function is called with an address within
   // the current page, let's check the current page first to avoid
@@ -175,14 +181,18 @@ int _yr_arena_make_relocatable(
 
   page = _yr_arena_page_for_address(arena, base);
 
-  assert(page != NULL);
+  if (page == NULL)
+    return ERROR_INVALID_ARGUMENT;
 
   base_offset = (uint8_t*) base - page->address;
   offset = va_arg(offsets, size_t);
 
   while (offset != EOL)
   {
-    assert(base_offset + offset <= page->used - sizeof(int64_t));
+    if (base_offset > page->used || page->used - base_offset < sizeof(int64_t) ||
+        offset > page->used - base_offset - sizeof(int64_t) ||
+        base_offset > INT32_MAX || offset > (size_t)INT32_MAX - base_offset)
+      return ERROR_INVALID_FORMAT;
 
     reloc = yr_malloc(sizeof(YR_RELOC));
 
@@ -229,7 +239,12 @@ int yr_arena_create(
   YR_ARENA* new_arena;
   YR_ARENA_PAGE* new_page;
 
+  if (arena == NULL)
+    return ERROR_INVALID_ARGUMENT;
   *arena = NULL;
+  if (initial_size == 0)
+    return ERROR_INVALID_ARGUMENT;
+
   new_arena = (YR_ARENA*) yr_malloc(sizeof(YR_ARENA));
 
   if (new_arena == NULL)
@@ -272,6 +287,9 @@ void yr_arena_destroy(
   YR_ARENA_PAGE* page;
   YR_ARENA_PAGE* next_page;
 
+  if (arena == NULL)
+    return;
+
   page = arena->page_list_head;
 
   while(page != NULL)
@@ -311,6 +329,9 @@ void yr_arena_destroy(
 void* yr_arena_base_address(
   YR_ARENA* arena)
 {
+  if (arena == NULL || arena->page_list_head == NULL)
+    return NULL;
+
   return arena->page_list_head->address;
 }
 
@@ -343,7 +364,8 @@ void* yr_arena_next_address(
 
   page = _yr_arena_page_for_address(arena, address);
 
-  assert(page != NULL);
+  if (page == NULL)
+    return NULL;
 
   if ((uint8_t*) address + offset >= page->address &&
       (uint8_t*) address + offset < page->address + page->used)
@@ -407,14 +429,37 @@ int yr_arena_coalesce(
 
   uint8_t** reloc_address;
   uint8_t* reloc_target;
-  int total_size = 0;
+  size_t total_size = 0;
+  size_t page_offset = 0;
+
+  if (arena == NULL || arena->page_list_head == NULL)
+    return ERROR_INVALID_ARGUMENT;
 
   page = arena->page_list_head;
 
   while(page != NULL)
   {
+    if (page->used > page->size || page->used > SIZE_MAX - total_size)
+      return ERROR_INVALID_FORMAT;
+
+    reloc = page->reloc_list_head;
+    while (reloc != NULL)
+    {
+      if (reloc->offset < 0 || page_offset > (size_t)INT32_MAX ||
+          (size_t)reloc->offset > (size_t)INT32_MAX - page_offset)
+        return ERROR_INVALID_FORMAT;
+      reloc = reloc->next;
+    }
+
     total_size += page->used;
+    page_offset = total_size;
     page = page->next;
+  }
+
+  if (total_size == 0)
+  {
+    arena->flags |= ARENA_FLAGS_COALESCED;
+    return ERROR_SUCCESS;
   }
 
   // Create a new page that will contain the entire arena.
@@ -435,7 +480,7 @@ int yr_arena_coalesce(
 
     while(reloc != NULL)
     {
-      reloc->offset += big_page->used;
+      reloc->offset += (int32_t)big_page->used;
       reloc = reloc->next;
     }
 
@@ -512,6 +557,11 @@ int yr_arena_reserve_memory(
   size_t new_page_size;
   void* new_page_address;
 
+  if (arena == NULL || arena->current_page == NULL)
+    return ERROR_INVALID_ARGUMENT;
+  if (arena->current_page->used > arena->current_page->size)
+    return ERROR_INVALID_FORMAT;
+
   if (size > free_space(arena->current_page))
   {
     if (arena->flags & ARENA_FLAGS_FIXED_SIZE)
@@ -520,10 +570,19 @@ int yr_arena_reserve_memory(
     // Requested space is bigger than current page's empty space,
     // lets calculate the size for a new page.
 
-    new_page_size = arena->current_page->size * 2;
+    new_page_size = arena->current_page->size;
+    if (new_page_size == 0)
+      new_page_size = 1;
 
     while (new_page_size < size)
+    {
+      if (new_page_size > SIZE_MAX / 2)
+      {
+        new_page_size = size;
+        break;
+      }
       new_page_size *= 2;
+    }
 
     if (arena->current_page->used == 0)
     {
@@ -576,7 +635,15 @@ int yr_arena_allocate_memory(
     size_t size,
     void** allocated_memory)
 {
-  FAIL_ON_ERROR(yr_arena_reserve_memory(arena, size));
+  int result;
+
+  if (allocated_memory == NULL)
+    return ERROR_INVALID_ARGUMENT;
+
+  *allocated_memory = NULL;
+  result = yr_arena_reserve_memory(arena, size);
+  if (result != ERROR_SUCCESS)
+    return result;
 
   *allocated_memory = arena->current_page->address + \
                       arena->current_page->used;
@@ -627,13 +694,22 @@ int yr_arena_allocate_struct(
 {
   int result;
 
+  if (allocated_memory == NULL)
+    return ERROR_INVALID_ARGUMENT;
+
+  *allocated_memory = NULL;
   va_list offsets;
   va_start(offsets, allocated_memory);
 
   result = yr_arena_allocate_memory(arena, size, allocated_memory);
 
-  if (result == ERROR_SUCCESS)
-    result = _yr_arena_make_relocatable(arena, *allocated_memory, offsets);
+  if (result != ERROR_SUCCESS)
+  {
+    va_end(offsets);
+    return result;
+  }
+
+  result = _yr_arena_make_relocatable(arena, *allocated_memory, offsets);
 
   va_end(offsets);
 
@@ -700,6 +776,13 @@ int yr_arena_write_data(
 {
   void* output;
   int result;
+
+  if (arena == NULL || arena->current_page == NULL || (size != 0 && data == NULL))
+    return ERROR_INVALID_ARGUMENT;
+  if (written_data != NULL)
+    *written_data = NULL;
+  if (arena->current_page->used > arena->current_page->size)
+    return ERROR_INVALID_FORMAT;
 
   if (size > free_space(arena->current_page))
   {

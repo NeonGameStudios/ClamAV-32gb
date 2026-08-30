@@ -42,6 +42,8 @@
 #include "default.h"
 #include "clamav_rust.h"
 #include "yara_exec.h"
+#include "yara_arena.h"
+#include "yara_clam.h"
 #include "bytecode.h"
 
 #include "checks.h"
@@ -1758,6 +1760,27 @@ START_TEST(test_yara_missing_matcher_state_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_yara_arena_struct_failure_is_fail_visible)
+{
+    YR_ARENA *arena = NULL;
+    unsigned char sentinel[2] = {0xa5, 0x5a};
+    void *allocated = sentinel;
+
+    ck_assert_int_eq(yr_arena_create(0, 0, &arena), ERROR_INVALID_ARGUMENT);
+    ck_assert_ptr_null(arena);
+
+    ck_assert_int_eq(yr_arena_create(1, ARENA_FLAGS_FIXED_SIZE, &arena), ERROR_SUCCESS);
+    ck_assert_ptr_nonnull(arena);
+    ck_assert_int_eq(yr_arena_allocate_struct(arena, sizeof(sentinel), &allocated, EOL),
+                      ERROR_INSUFICIENT_MEMORY);
+    ck_assert_ptr_null(allocated);
+    ck_assert_int_eq(sentinel[0], 0xa5);
+    ck_assert_int_eq(sentinel[1], 0x5a);
+
+    yr_arena_destroy(arena);
+}
+END_TEST
+
 START_TEST(test_yara_evaluation_accounts_matcher_work)
 {
 #ifdef HAVE_YARA
@@ -2765,6 +2788,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_yara_jump_target_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_unaligned_jump_target_is_defined);
     tcase_add_test(tc_matchers, test_yara_missing_matcher_state_is_fail_visible);
+    tcase_add_test(tc_matchers, test_yara_arena_struct_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
     tcase_add_test(tc_matchers, test_yara_execution_error_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_division_by_zero_is_fail_visible);
