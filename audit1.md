@@ -29,6 +29,21 @@ production-GCC syntax check; complete NSIS/SFX corpus, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
 final parser/release qualification remain open.
 
+## Codepage conversion output ceiling — 2026-08-29
+
+The codepage-to-UTF-8 converter formed `in_size * 2 * attempt` and then added
+space for a NUL terminator before the bounded allocator. A large input could
+therefore wrap the retry capacity on a narrower native width, and even a
+representable output above the shared 1 GiB individual-allocation ceiling was
+not rejected until after the size expression had been formed. A common size
+helper now checks the terminator addition, native multiplication, and 1 GiB
+ceiling before the UTF-8 or iconv allocation. The invalid-pointer `SIZE_MAX`
+iconv regression is registered for iconv builds, proving no input access occurs
+on the rejected shape; source guards and current-source GCC syntax evidence
+cover the common and retry paths. Full encoding/converter corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## Scan recursion-stack admission — 2026-08-29
 
 The top-level scan setup formed the recursion-layer table with a raw

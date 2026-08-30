@@ -2156,23 +2156,23 @@ fixed-width-integer	libclamav/elf.h	93	    uint32_t p_flags;
 fixed-width-integer	libclamav/elf.h	94	    uint32_t p_align;
 fixed-width-integer	libclamav/elf.h	98	    uint32_t p_type;
 fixed-width-integer	libclamav/elf.h	99	    uint32_t p_flags;
-fixed-width-integer	libclamav/entconv.c	1042	            uint32_t attempt, i;
+fixed-width-integer	libclamav/entconv.c	1055	            uint32_t attempt, i;
 fixed-width-integer	libclamav/entconv.c	117	unsigned char* u16_normalize_tobuffer(uint16_t u16, unsigned char* dst, size_t dst_size)
-fixed-width-integer	libclamav/entconv.c	1178	    uint64_t output_size;
-fixed-width-integer	libclamav/entconv.c	1198	    if ((uint64_t)data_size > UINT64_MAX - stream->output_size)
-fixed-width-integer	libclamav/entconv.c	1205	    stream->output_size += (uint64_t)data_size;
+fixed-width-integer	libclamav/entconv.c	1195	    uint64_t output_size;
+fixed-width-integer	libclamav/entconv.c	1215	    if ((uint64_t)data_size > UINT64_MAX - stream->output_size)
+fixed-width-integer	libclamav/entconv.c	1222	    stream->output_size += (uint64_t)data_size;
 fixed-width-integer	libclamav/entconv.c	131	        unsigned char* out = u16_normalize((uint16_t)e->data, conv->entity_buff, sizeof(conv->entity_buff) - 1);
-fixed-width-integer	libclamav/entconv.c	1322	cl_error_t cli_codepage_utf8_stream_open(uint16_t codepage, cli_codepage_utf8_write_cb write_cb,
-fixed-width-integer	libclamav/entconv.c	1422	cl_error_t cli_codepage_utf8_stream_finish(cli_codepage_utf8_stream_t *stream, uint64_t *output_size)
-fixed-width-integer	libclamav/entconv.c	1545	        uint16_t c = cli_readint16(&utf16[i]);
-fixed-width-integer	libclamav/entconv.c	1560	            uint16_t c2;
+fixed-width-integer	libclamav/entconv.c	1339	cl_error_t cli_codepage_utf8_stream_open(uint16_t codepage, cli_codepage_utf8_write_cb write_cb,
+fixed-width-integer	libclamav/entconv.c	1439	cl_error_t cli_codepage_utf8_stream_finish(cli_codepage_utf8_stream_t *stream, uint64_t *output_size)
+fixed-width-integer	libclamav/entconv.c	1562	        uint16_t c = cli_readint16(&utf16[i]);
+fixed-width-integer	libclamav/entconv.c	1577	            uint16_t c2;
 fixed-width-integer	libclamav/entconv.c	224	            const uint16_t* in = (const uint16_t*)input; /*UCS4_4321, and UTF16_BE have same endianness, no need for byteswap here*/
 fixed-width-integer	libclamav/entconv.c	225	            uint16_t* out      = (uint16_t*)output;
 fixed-width-integer	libclamav/entconv.c	236	            const uint16_t* in = (const uint16_t*)input;
 fixed-width-integer	libclamav/entconv.c	237	            uint16_t* out      = (uint16_t*)output;
 fixed-width-integer	libclamav/entconv.c	80	static inline unsigned char* u16_normalize(uint16_t u16, unsigned char* out, const ssize_t limit)
-fixed-width-integer	libclamav/entconv.c	853	cl_error_t cli_codepage_to_utf8(char* in, size_t in_size, uint16_t codepage, char** out, size_t* out_size)
-fixed-width-integer	libclamav/entconv.c	940	                    uint16_t* pCodeUnits = (uint16_t*)in;
+fixed-width-integer	libclamav/entconv.c	862	cl_error_t cli_codepage_to_utf8(char* in, size_t in_size, uint16_t codepage, char** out, size_t* out_size)
+fixed-width-integer	libclamav/entconv.c	953	                    uint16_t* pCodeUnits = (uint16_t*)in;
 fixed-width-integer	libclamav/entconv.h	245	unsigned char* u16_normalize_tobuffer(uint16_t u16, unsigned char* dst, size_t dst_size);
 fixed-width-integer	libclamav/entconv.h	260	cl_error_t cli_codepage_to_utf8(char* in, size_t in_size, uint16_t codepage, char** out, size_t* out_size);
 fixed-width-integer	libclamav/entconv.h	272	cl_error_t cli_codepage_utf8_stream_open(uint16_t codepage, cli_codepage_utf8_write_cb write_cb,
@@ -6898,7 +6898,7 @@ fixed-width-integer	unit_tests/check_clamav.c	48036	static int32_t le_expected[4
 fixed-width-integer	unit_tests/check_clamav.c	48070	    int16_t value;
 fixed-width-integer	unit_tests/check_clamav.c	48088	    int32_t value = le_expected[_i & 3];
 fixed-width-integer	unit_tests/check_clamav.c	4819	    uint64_t scanned;
-fixed-width-integer	unit_tests/check_clamav.c	48654	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
+fixed-width-integer	unit_tests/check_clamav.c	48673	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
 fixed-width-integer	unit_tests/check_clamav.c	5079	    uint32_t security_offset;
 fixed-width-integer	unit_tests/check_clamav.c	5080	    uint32_t security_size;
 fixed-width-integer	unit_tests/check_clamav.c	5178	    peinfo.dirs[4].VirtualAddress = (uint32_t)(map->len - (sizeof(struct pe_certificate_hdr) - 1U));
@@ -10657,46 +10657,47 @@ native-width-integer	libclamav/elf.c	690	static int cli_elf_sh64(cli_ctx *ctx, f
 native-width-integer	libclamav/elf.c	71	    return fmap_readn(map, dst, (size_t)at, len);
 native-width-integer	libclamav/elf.c	74	static cl_error_t cli_elf_read_status(cli_ctx *ctx, size_t bytes_read, size_t expected, const char *reason)
 native-width-integer	libclamav/elf.c	78	    if (bytes_read == (size_t)-1) {
-native-width-integer	libclamav/entconv.c	1004	                (int)in_size / sizeof(WCHAR),
-native-width-integer	libclamav/entconv.c	1026	                (int)in_size / sizeof(WCHAR),
-native-width-integer	libclamav/entconv.c	1028	                (int)out_utf8_size,
-native-width-integer	libclamav/entconv.c	1061	                size_t inbufsize    = in_size;
-native-width-integer	libclamav/entconv.c	1062	                size_t iconvRet     = -1;
-native-width-integer	libclamav/entconv.c	1063	                size_t outbytesleft = 0;
-native-width-integer	libclamav/entconv.c	1096	                if ((size_t)-1 == iconvRet) {
+native-width-integer	libclamav/entconv.c	1017	                (int)in_size / sizeof(WCHAR),
+native-width-integer	libclamav/entconv.c	1039	                (int)in_size / sizeof(WCHAR),
+native-width-integer	libclamav/entconv.c	1041	                (int)out_utf8_size,
+native-width-integer	libclamav/entconv.c	1074	                size_t inbufsize    = in_size;
+native-width-integer	libclamav/entconv.c	1075	                size_t iconvRet     = -1;
+native-width-integer	libclamav/entconv.c	1076	                size_t outbytesleft = 0;
+native-width-integer	libclamav/entconv.c	1083	                if (!cli_codepage_output_size(in_size, (size_t)2 * attempt, &out_utf8_size)) {
+native-width-integer	libclamav/entconv.c	1113	                if ((size_t)-1 == iconvRet) {
 native-width-integer	libclamav/entconv.c	117	unsigned char* u16_normalize_tobuffer(uint16_t u16, unsigned char* dst, size_t dst_size)
-native-width-integer	libclamav/entconv.c	1182	    size_t input_size;
-native-width-integer	libclamav/entconv.c	1184	    size_t utf8_sequence_size;
-native-width-integer	libclamav/entconv.c	1185	    size_t utf8_sequence_expected;
-native-width-integer	libclamav/entconv.c	1192	                                       const unsigned char *data, size_t data_size)
-native-width-integer	libclamav/entconv.c	1210	                                               const unsigned char *data, size_t data_size)
-native-width-integer	libclamav/entconv.c	1213	    size_t output_size = 0;
-native-width-integer	libclamav/entconv.c	1214	    size_t i;
-native-width-integer	libclamav/entconv.c	1279	        size_t input_left  = stream->input_size;
-native-width-integer	libclamav/entconv.c	1280	        size_t output_left = sizeof(output);
-native-width-integer	libclamav/entconv.c	1281	        size_t converted;
-native-width-integer	libclamav/entconv.c	1282	        size_t consumed;
-native-width-integer	libclamav/entconv.c	1283	        size_t produced;
-native-width-integer	libclamav/entconv.c	1300	        if (converted != (size_t)-1) {
-native-width-integer	libclamav/entconv.c	1345	        size_t i;
-native-width-integer	libclamav/entconv.c	1379	                                            const unsigned char *data, size_t data_size)
-native-width-integer	libclamav/entconv.c	1393	        size_t available = sizeof(stream->input) - stream->input_size;
-native-width-integer	libclamav/entconv.c	1394	        size_t take;
+native-width-integer	libclamav/entconv.c	1199	    size_t input_size;
+native-width-integer	libclamav/entconv.c	1201	    size_t utf8_sequence_size;
+native-width-integer	libclamav/entconv.c	1202	    size_t utf8_sequence_expected;
+native-width-integer	libclamav/entconv.c	1209	                                       const unsigned char *data, size_t data_size)
+native-width-integer	libclamav/entconv.c	1227	                                               const unsigned char *data, size_t data_size)
+native-width-integer	libclamav/entconv.c	1230	    size_t output_size = 0;
+native-width-integer	libclamav/entconv.c	1231	    size_t i;
+native-width-integer	libclamav/entconv.c	1296	        size_t input_left  = stream->input_size;
+native-width-integer	libclamav/entconv.c	1297	        size_t output_left = sizeof(output);
+native-width-integer	libclamav/entconv.c	1298	        size_t converted;
+native-width-integer	libclamav/entconv.c	1299	        size_t consumed;
+native-width-integer	libclamav/entconv.c	1300	        size_t produced;
+native-width-integer	libclamav/entconv.c	1317	        if (converted != (size_t)-1) {
+native-width-integer	libclamav/entconv.c	1362	        size_t i;
+native-width-integer	libclamav/entconv.c	1396	                                            const unsigned char *data, size_t data_size)
 native-width-integer	libclamav/entconv.c	141	static size_t encoding_bytes(const char* fromcode, enum encodings* encoding)
-native-width-integer	libclamav/entconv.c	1437	                size_t output_left = sizeof(output);
-native-width-integer	libclamav/entconv.c	1438	                size_t converted;
-native-width-integer	libclamav/entconv.c	1439	                size_t produced;
-native-width-integer	libclamav/entconv.c	1445	                if (status != CL_SUCCESS || converted != (size_t)-1)
-native-width-integer	libclamav/entconv.c	1477	char* cli_utf16toascii(const char* str, unsigned int length)
-native-width-integer	libclamav/entconv.c	1480	    unsigned int i, j;
-native-width-integer	libclamav/entconv.c	1501	char* cli_utf16_to_utf8(const char* utf16, size_t length, encoding_t type)
-native-width-integer	libclamav/entconv.c	1506	    size_t i, j;
-native-width-integer	libclamav/entconv.c	1507	    size_t needed;
-native-width-integer	libclamav/entconv.c	1513	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
-native-width-integer	libclamav/entconv.c	1523	        length / 2 > ((size_t)CLI_MAX_ALLOCATION - 2) / 3) {
-native-width-integer	libclamav/entconv.c	1585	int cli_isutf8(const char* buf, unsigned int len)
-native-width-integer	libclamav/entconv.c	1587	    unsigned int i, j;
-native-width-integer	libclamav/entconv.c	1595	            unsigned int following;
+native-width-integer	libclamav/entconv.c	1410	        size_t available = sizeof(stream->input) - stream->input_size;
+native-width-integer	libclamav/entconv.c	1411	        size_t take;
+native-width-integer	libclamav/entconv.c	1454	                size_t output_left = sizeof(output);
+native-width-integer	libclamav/entconv.c	1455	                size_t converted;
+native-width-integer	libclamav/entconv.c	1456	                size_t produced;
+native-width-integer	libclamav/entconv.c	1462	                if (status != CL_SUCCESS || converted != (size_t)-1)
+native-width-integer	libclamav/entconv.c	1494	char* cli_utf16toascii(const char* str, unsigned int length)
+native-width-integer	libclamav/entconv.c	1497	    unsigned int i, j;
+native-width-integer	libclamav/entconv.c	1518	char* cli_utf16_to_utf8(const char* utf16, size_t length, encoding_t type)
+native-width-integer	libclamav/entconv.c	1523	    size_t i, j;
+native-width-integer	libclamav/entconv.c	1524	    size_t needed;
+native-width-integer	libclamav/entconv.c	1530	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
+native-width-integer	libclamav/entconv.c	1540	        length / 2 > ((size_t)CLI_MAX_ALLOCATION - 2) / 3) {
+native-width-integer	libclamav/entconv.c	1602	int cli_isutf8(const char* buf, unsigned int len)
+native-width-integer	libclamav/entconv.c	1604	    unsigned int i, j;
+native-width-integer	libclamav/entconv.c	1612	            unsigned int following;
 native-width-integer	libclamav/entconv.c	186	static int iconv_close(iconv_t cd)
 native-width-integer	libclamav/entconv.c	193	static int iconv(iconv_t iconv_struct, char** inbuf, size_t* inbytesleft,
 native-width-integer	libclamav/entconv.c	194	                 char** outbuf, size_t* outbytesleft)
@@ -10711,42 +10712,43 @@ native-width-integer	libclamav/entconv.c	314	                        /* 4 bytes 
 native-width-integer	libclamav/entconv.c	366	    int has_bom          = 0;
 native-width-integer	libclamav/entconv.c	465	const char* encoding_detect_bom(const unsigned char* bom, const size_t length)
 native-width-integer	libclamav/entconv.c	501	    size_t i, len;
-native-width-integer	libclamav/entconv.c	526	    size_t len;
-native-width-integer	libclamav/entconv.c	527	    size_t last;
-native-width-integer	libclamav/entconv.c	542	    size_t i;
-native-width-integer	libclamav/entconv.c	563	static int cache_atexit_registered = 0;
+native-width-integer	libclamav/entconv.c	521	static bool cli_codepage_output_size(size_t input_size, size_t multiplier, size_t *output_size)
+native-width-integer	libclamav/entconv.c	535	    size_t len;
+native-width-integer	libclamav/entconv.c	536	    size_t last;
+native-width-integer	libclamav/entconv.c	551	    size_t i;
 native-width-integer	libclamav/entconv.c	57	cl_error_t cli_iconv_cache_table_size(size_t count, size_t element_size, size_t *bytes)
-native-width-integer	libclamav/entconv.c	617	static int iconv_global_inited                = 0;
+native-width-integer	libclamav/entconv.c	572	static int cache_atexit_registered = 0;
+native-width-integer	libclamav/entconv.c	626	static int iconv_global_inited                = 0;
 native-width-integer	libclamav/entconv.c	63	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
-native-width-integer	libclamav/entconv.c	646	    size_t idx, next_len, table_size;
-native-width-integer	libclamav/entconv.c	648	    const size_t fromcode_len = strlen((const char*)fromcode);
-native-width-integer	libclamav/entconv.c	661	    if (e && ((size_t)e->data == (size_t)-1 || (size_t)e->data > cache->len)) {
-native-width-integer	libclamav/entconv.c	665	        size_t dummy_in, dummy_out;
-native-width-integer	libclamav/entconv.c	667	        iconv(cache->tab[(size_t)e->data], NULL, &dummy_in, NULL, &dummy_out);
-native-width-integer	libclamav/entconv.c	668	        return cache->tab[(size_t)e->data];
-native-width-integer	libclamav/entconv.c	715	static int in_iconv_u16(const m_area_t* in_m_area, iconv_t* iconv_struct, m_area_t* out_m_area)
-native-width-integer	libclamav/entconv.c	718	    size_t inleft = in_m_area->length - in_m_area->offset;
-native-width-integer	libclamav/entconv.c	719	    size_t rc, alignfix;
-native-width-integer	libclamav/entconv.c	721	    size_t outleft = out_m_area->length > 0 ? out_m_area->length : 0;
+native-width-integer	libclamav/entconv.c	655	    size_t idx, next_len, table_size;
+native-width-integer	libclamav/entconv.c	657	    const size_t fromcode_len = strlen((const char*)fromcode);
+native-width-integer	libclamav/entconv.c	670	    if (e && ((size_t)e->data == (size_t)-1 || (size_t)e->data > cache->len)) {
+native-width-integer	libclamav/entconv.c	674	        size_t dummy_in, dummy_out;
+native-width-integer	libclamav/entconv.c	676	        iconv(cache->tab[(size_t)e->data], NULL, &dummy_in, NULL, &dummy_out);
+native-width-integer	libclamav/entconv.c	677	        return cache->tab[(size_t)e->data];
+native-width-integer	libclamav/entconv.c	724	static int in_iconv_u16(const m_area_t* in_m_area, iconv_t* iconv_struct, m_area_t* out_m_area)
+native-width-integer	libclamav/entconv.c	727	    size_t inleft = in_m_area->length - in_m_area->offset;
+native-width-integer	libclamav/entconv.c	728	    size_t rc, alignfix;
 native-width-integer	libclamav/entconv.c	73	    size_t size;
-native-width-integer	libclamav/entconv.c	757	        const size_t outleft_last = outleft;
-native-width-integer	libclamav/entconv.c	760	        if (rc == (size_t)-1) {
+native-width-integer	libclamav/entconv.c	730	    size_t outleft = out_m_area->length > 0 ? out_m_area->length : 0;
+native-width-integer	libclamav/entconv.c	766	        const size_t outleft_last = outleft;
+native-width-integer	libclamav/entconv.c	769	        if (rc == (size_t)-1) {
 native-width-integer	libclamav/entconv.c	80	static inline unsigned char* u16_normalize(uint16_t u16, unsigned char* out, const ssize_t limit)
-native-width-integer	libclamav/entconv.c	806	    cli_dbgmsg("in_iconv_u16: unprocessed bytes: %lu\n", (unsigned long)inleft);
-native-width-integer	libclamav/entconv.c	808	    if (out_m_area->length >= 0 && out_m_area->length >= (off_t)outleft) {
-native-width-integer	libclamav/entconv.c	809	        out_m_area->length -= (off_t)outleft;
-native-width-integer	libclamav/entconv.c	818	int encoding_normalize_toascii(const m_area_t* in_m_area, const char* initial_encoding, m_area_t* out_m_area)
-native-width-integer	libclamav/entconv.c	821	    off_t i, j;
-native-width-integer	libclamav/entconv.c	853	cl_error_t cli_codepage_to_utf8(char* in, size_t in_size, uint16_t codepage, char** out, size_t* out_size)
-native-width-integer	libclamav/entconv.c	858	    size_t out_utf8_size = 0;
-native-width-integer	libclamav/entconv.c	864	    int cchWideChar      = 0;
-native-width-integer	libclamav/entconv.c	880	            int byte_count, sigbit_count;
-native-width-integer	libclamav/entconv.c	904	                for (sigbit_count = 0; sigbit_count < (int)(sizeof(uint8_t) * 8); sigbit_count++) {
-native-width-integer	libclamav/entconv.c	938	                    int i = 0;
-native-width-integer	libclamav/entconv.c	941	                    cchWideChar          = (int)in_size / 2;
+native-width-integer	libclamav/entconv.c	815	    cli_dbgmsg("in_iconv_u16: unprocessed bytes: %lu\n", (unsigned long)inleft);
+native-width-integer	libclamav/entconv.c	817	    if (out_m_area->length >= 0 && out_m_area->length >= (off_t)outleft) {
+native-width-integer	libclamav/entconv.c	818	        out_m_area->length -= (off_t)outleft;
+native-width-integer	libclamav/entconv.c	827	int encoding_normalize_toascii(const m_area_t* in_m_area, const char* initial_encoding, m_area_t* out_m_area)
+native-width-integer	libclamav/entconv.c	830	    off_t i, j;
+native-width-integer	libclamav/entconv.c	862	cl_error_t cli_codepage_to_utf8(char* in, size_t in_size, uint16_t codepage, char** out, size_t* out_size)
+native-width-integer	libclamav/entconv.c	867	    size_t out_utf8_size = 0;
+native-width-integer	libclamav/entconv.c	873	    int cchWideChar      = 0;
+native-width-integer	libclamav/entconv.c	889	            int byte_count, sigbit_count;
+native-width-integer	libclamav/entconv.c	917	                for (sigbit_count = 0; sigbit_count < (int)(sizeof(uint8_t) * 8); sigbit_count++) {
 native-width-integer	libclamav/entconv.c	95	        size_t i;
-native-width-integer	libclamav/entconv.c	962	                        (int)in_size,
-native-width-integer	libclamav/entconv.c	983	                        (int)in_size,
+native-width-integer	libclamav/entconv.c	951	                    int i = 0;
+native-width-integer	libclamav/entconv.c	954	                    cchWideChar          = (int)in_size / 2;
+native-width-integer	libclamav/entconv.c	975	                        (int)in_size,
+native-width-integer	libclamav/entconv.c	996	                        (int)in_size,
 native-width-integer	libclamav/entconv.h	245	unsigned char* u16_normalize_tobuffer(uint16_t u16, unsigned char* dst, size_t dst_size);
 native-width-integer	libclamav/entconv.h	247	const char* encoding_detect_bom(const unsigned char* bom, const size_t length);
 native-width-integer	libclamav/entconv.h	248	int encoding_normalize_toascii(const m_area_t* in_m_area, const char* initial_encoding, m_area_t* out_m_area);
@@ -20145,24 +20147,25 @@ native-width-integer	unit_tests/check_clamav.c	48538	    size_t utf8_size = 0;
 native-width-integer	unit_tests/check_clamav.c	48556	    size_t utf8_size = 0;
 native-width-integer	unit_tests/check_clamav.c	4856	    size_t data_length;
 native-width-integer	unit_tests/check_clamav.c	4857	    size_t fail_at;
+native-width-integer	unit_tests/check_clamav.c	48575	    size_t utf8_size = SIZE_MAX;
 native-width-integer	unit_tests/check_clamav.c	4858	    size_t fail_offset;
 native-width-integer	unit_tests/check_clamav.c	4859	    size_t fail_length;
 native-width-integer	unit_tests/check_clamav.c	4860	    size_t calls;
-native-width-integer	unit_tests/check_clamav.c	48605	int open_testfile(const char *name, int flags)
-native-width-integer	unit_tests/check_clamav.c	48607	    int fd;
 native-width-integer	unit_tests/check_clamav.c	4861	    size_t max_request;
 native-width-integer	unit_tests/check_clamav.c	4862	    size_t last_offset;
-native-width-integer	unit_tests/check_clamav.c	48620	void diff_file_mem(int fd, const char *ref, size_t len)
-native-width-integer	unit_tests/check_clamav.c	48623	    size_t p, reflen = len;
-native-width-integer	unit_tests/check_clamav.c	48646	void diff_files(int fd, int ref_fd)
-native-width-integer	unit_tests/check_clamav.c	48649	    ssize_t nread;
-native-width-integer	unit_tests/check_clamav.c	48650	    off_t siz = lseek(ref_fd, 0, SEEK_END);
+native-width-integer	unit_tests/check_clamav.c	48624	int open_testfile(const char *name, int flags)
+native-width-integer	unit_tests/check_clamav.c	48626	    int fd;
+native-width-integer	unit_tests/check_clamav.c	48639	void diff_file_mem(int fd, const char *ref, size_t len)
+native-width-integer	unit_tests/check_clamav.c	48642	    size_t p, reflen = len;
+native-width-integer	unit_tests/check_clamav.c	48665	void diff_files(int fd, int ref_fd)
+native-width-integer	unit_tests/check_clamav.c	48668	    ssize_t nread;
+native-width-integer	unit_tests/check_clamav.c	48669	    off_t siz = lseek(ref_fd, 0, SEEK_END);
 native-width-integer	unit_tests/check_clamav.c	4867	static const void *authenticode_hash_test_need(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_clamav.c	48716	int main(int argc, char **argv)
-native-width-integer	unit_tests/check_clamav.c	48718	    int nf;
-native-width-integer	unit_tests/check_clamav.c	48852	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
-native-width-integer	unit_tests/check_clamav.c	48853	static size_t jpeg_entropy_largest_read;
-native-width-integer	unit_tests/check_clamav.c	48857	static const void *jpeg_entropy_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+native-width-integer	unit_tests/check_clamav.c	48735	int main(int argc, char **argv)
+native-width-integer	unit_tests/check_clamav.c	48737	    int nf;
+native-width-integer	unit_tests/check_clamav.c	48871	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
+native-width-integer	unit_tests/check_clamav.c	48872	static size_t jpeg_entropy_largest_read;
+native-width-integer	unit_tests/check_clamav.c	48876	static const void *jpeg_entropy_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 native-width-integer	unit_tests/check_clamav.c	4893	    size_t length = (size_t)CLI_AUTHENTICODE_HASH_CHUNK_SIZE + 257;
 native-width-integer	unit_tests/check_clamav.c	4903	    size_t i;
 native-width-integer	unit_tests/check_clamav.c	4942	    map.len           = (size_t)UINT32_MAX + 4096;
@@ -21110,9 +21113,10 @@ boundary-constant	libclamav/egg.c	3090	    if (compressed_size > CLI_MAX_ALLOCAT
 boundary-constant	libclamav/elf.c	428	        if (fentry <= UINT32_MAX) {
 boundary-constant	libclamav/elf.c	551	        if (fentry <= UINT32_MAX) {
 boundary-constant	libclamav/elf.c	807	            if (section_addr > UINT32_MAX || section_offset > UINT32_MAX || section_size > UINT32_MAX) {
-boundary-constant	libclamav/entconv.c	1522	    if (length / 2 > (SIZE_MAX - 2) / 3 ||
+boundary-constant	libclamav/entconv.c	1539	    if (length / 2 > (SIZE_MAX - 2) / 3 ||
+boundary-constant	libclamav/entconv.c	523	    if (!output_size || multiplier == 0 || input_size > (SIZE_MAX - 1) / multiplier)
 boundary-constant	libclamav/entconv.c	62	    if (count > SIZE_MAX / element_size ||
-boundary-constant	libclamav/entconv.c	675	            if (cache->len > SIZE_MAX - 16) {
+boundary-constant	libclamav/entconv.c	684	            if (cache->len > SIZE_MAX - 16) {
 boundary-constant	libclamav/fmap.c	1351	    if (end_offset == SIZE_MAX)
 boundary-constant	libclamav/fmap.c	265	    if (NULL == result || right > SIZE_MAX - left)
 boundary-constant	libclamav/fmap.c	281	    if (extent == 0 || sub < base || base > SIZE_MAX - extent)
@@ -21693,8 +21697,10 @@ boundary-constant	unit_tests/check_clamav.c	47780	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	47835	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	47847	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	47882	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	48852	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	48992	    jpeg_entropy_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	48575	    size_t utf8_size = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	48577	    ret = cli_codepage_to_utf8((char *)(uintptr_t)1, SIZE_MAX, CODEPAGE_ISO8859_1,
+boundary-constant	unit_tests/check_clamav.c	48871	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	49011	    jpeg_entropy_failure_offset = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	4914	    state.fail_at     = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	4938	    state.fail_at     = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	4942	    map.len           = (size_t)UINT32_MAX + 4096;
@@ -21918,7 +21924,7 @@ narrowing-cast	libclamav/bytecode_api.c	2252	        cli_dbgmsg("cli_bcapi_get_e
 narrowing-cast	libclamav/bytecode_api.c	2420	    return size > UINT32_MAX ? 0 : (uint32_t)size;
 narrowing-cast	libclamav/bytecode_api.c	357	    write_len = (uint64_t)(uint32_t)len;
 narrowing-cast	libclamav/egg.c	2571	        stream.avail_out = (unsigned int)sizeof(decoded);
-narrowing-cast	libclamav/entconv.c	1513	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
+narrowing-cast	libclamav/entconv.c	1530	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
 narrowing-cast	libclamav/iso9660.c	320	            name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
 narrowing-cast	libclamav/jsparse/js-norm.c	675	               (unsigned long)end, (unsigned long)len);
 narrowing-cast	libclamav/matcher-ac.c	2308	                                            cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
@@ -22796,13 +22802,13 @@ format-width	libclamav/elf.c	674	            cli_dbgmsg("ELF: Section offset: %u
 format-width	libclamav/elf.c	675	            cli_dbgmsg("ELF: Section size: %u\n", EC32(section_hdr[i].sh_size, conv));
 format-width	libclamav/elf.c	699	    cli_dbgmsg("ELF: Number of sections: %d\n", shnum);
 format-width	libclamav/elf.c	957	            cli_dbgmsg("ELF: File type: Unknown (%d)\n", file_hdr.hdr64.e_type);
-format-width	libclamav/entconv.c	1110	                            cli_warnmsg("cli_codepage_to_utf8: iconv error: Unexpected error code %d.\n", errno);
-format-width	libclamav/entconv.c	1513	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
-format-width	libclamav/entconv.c	784	        /*cli_dbgmsg(MODULE_NAME "resuming (inleft:%lu, outleft:%lu, inpos:%ld, %ld)\n",
-format-width	libclamav/entconv.c	806	    cli_dbgmsg("in_iconv_u16: unprocessed bytes: %lu\n", (unsigned long)inleft);
-format-width	libclamav/entconv.c	910	                    cli_dbgmsg("cli_codepage_to_utf8: cleaning out %d bytes from incomplete "
-format-width	libclamav/entconv.c	911	                               "utf-8 character length %d\n",
-format-width	libclamav/entconv.c	967	                        cli_dbgmsg("cli_codepage_to_utf8: failed to determine string size needed for ansi to widechar conversion: %d.\n", error);
+format-width	libclamav/entconv.c	1127	                            cli_warnmsg("cli_codepage_to_utf8: iconv error: Unexpected error code %d.\n", errno);
+format-width	libclamav/entconv.c	1530	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
+format-width	libclamav/entconv.c	793	        /*cli_dbgmsg(MODULE_NAME "resuming (inleft:%lu, outleft:%lu, inpos:%ld, %ld)\n",
+format-width	libclamav/entconv.c	815	    cli_dbgmsg("in_iconv_u16: unprocessed bytes: %lu\n", (unsigned long)inleft);
+format-width	libclamav/entconv.c	923	                    cli_dbgmsg("cli_codepage_to_utf8: cleaning out %d bytes from incomplete "
+format-width	libclamav/entconv.c	924	                               "utf-8 character length %d\n",
+format-width	libclamav/entconv.c	980	                        cli_dbgmsg("cli_codepage_to_utf8: failed to determine string size needed for ansi to widechar conversion: %d.\n", error);
 format-width	libclamav/events.c	357	            cli_dbgmsg("\t(%u): %s\n", count, val->v_string);
 format-width	libclamav/events.c	361	            cli_dbgmsg("\t%d bytes\n", count);
 format-width	libclamav/events.c	367	            cli_dbgmsg("\t%08x checksum, %u bytes\n", (uint32_t)val->v_int, count);
@@ -24423,14 +24429,14 @@ format-width	unit_tests/check_clamav.c	4731	                          "wrapped a
 format-width	unit_tests/check_clamav.c	4738	                  "fmap retained %llu pages during a sequential scan", (unsigned long long)max_paged);
 format-width	unit_tests/check_clamav.c	4773	    ck_assert_msg(max_paged <= 2, "fmap_gets retained %llu pages", (unsigned long long)max_paged);
 format-width	unit_tests/check_clamav.c	48028	        printf("Using test case timeout of %d seconds set by user\n", timeout);
-format-width	unit_tests/check_clamav.c	48626	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
-format-width	unit_tests/check_clamav.c	48628	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
-format-width	unit_tests/check_clamav.c	48639	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
-format-width	unit_tests/check_clamav.c	48642	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
-format-width	unit_tests/check_clamav.c	48658	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
-format-width	unit_tests/check_clamav.c	48702	                        "\tVersion from header: %u.%u.%u\n"
-format-width	unit_tests/check_clamav.c	48703	                        "\tVersion from library: %u.%u.%u\n"
-format-width	unit_tests/check_clamav.c	48930	                  "JPEG entropy traversal requested %zu bytes in one fmap read",
+format-width	unit_tests/check_clamav.c	48645	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
+format-width	unit_tests/check_clamav.c	48647	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
+format-width	unit_tests/check_clamav.c	48658	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
+format-width	unit_tests/check_clamav.c	48661	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
+format-width	unit_tests/check_clamav.c	48677	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
+format-width	unit_tests/check_clamav.c	48721	                        "\tVersion from header: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	48722	                        "\tVersion from library: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	48949	                  "JPEG entropy traversal requested %zu bytes in one fmap read",
 format-width	unit_tests/check_clamav.c	4928	    ck_assert_msg(state.calls == 2, "expected two bounded hash reads, got %zu", state.calls);
 format-width	unit_tests/check_clamav.c	4930	                  "AuthentiCode hash requested %zu bytes at once", state.max_request);
 format-width	unit_tests/check_clamav.c	4954	                  "native-width hash offset was narrowed from %zu to %zu", region.offset, state.last_offset);
@@ -27458,56 +27464,57 @@ offset-size-arithmetic	libclamav/elf.c	791	        shoff += sizeof(struct elf_se
 offset-size-arithmetic	libclamav/elf.c	810	                memset(&elfinfo->sections[i], 0, sizeof(elfinfo->sections[i]));
 offset-size-arithmetic	libclamav/elf.c	930	    /* Load header to determine size and class */
 offset-size-arithmetic	libclamav/elf.h	144	/* Exposed functions */
-offset-size-arithmetic	libclamav/entconv.c	1004	                (int)in_size / sizeof(WCHAR),
-offset-size-arithmetic	libclamav/entconv.c	1015	            out_utf8 = cli_max_malloc(out_utf8_size + 1); /* Add a null terminator to this string */
-offset-size-arithmetic	libclamav/entconv.c	1026	                (int)in_size / sizeof(WCHAR),
-offset-size-arithmetic	libclamav/entconv.c	1037	            /* Set a null byte, since null-terminator is not provided when in_size is provided */
-offset-size-arithmetic	libclamav/entconv.c	1062	                size_t iconvRet     = -1;
-offset-size-arithmetic	libclamav/entconv.c	1068	                /* Charset to UTF-8 should never exceed in_size * 6;
-offset-size-arithmetic	libclamav/entconv.c	1070	                out_utf8_size = (in_size * 2) * attempt;
-offset-size-arithmetic	libclamav/entconv.c	1074	                out_utf8 = cli_max_calloc(1, out_utf8_size + 1);
-offset-size-arithmetic	libclamav/entconv.c	1096	                if ((size_t)-1 == iconvRet) {
-offset-size-arithmetic	libclamav/entconv.c	1117	                out_utf8_tmp = cli_max_realloc(out_utf8, out_utf8_size - outbytesleft + 1);
-offset-size-arithmetic	libclamav/entconv.c	1124	                out_utf8_size = out_utf8_size - outbytesleft;
+offset-size-arithmetic	libclamav/entconv.c	1006	                    in_size = cchWideChar * sizeof(WCHAR);
+offset-size-arithmetic	libclamav/entconv.c	1017	                (int)in_size / sizeof(WCHAR),
+offset-size-arithmetic	libclamav/entconv.c	1028	            out_utf8 = cli_max_malloc(out_utf8_size + 1); /* Add a null terminator to this string */
+offset-size-arithmetic	libclamav/entconv.c	1039	                (int)in_size / sizeof(WCHAR),
+offset-size-arithmetic	libclamav/entconv.c	1050	            /* Set a null byte, since null-terminator is not provided when in_size is provided */
+offset-size-arithmetic	libclamav/entconv.c	1075	                size_t iconvRet     = -1;
+offset-size-arithmetic	libclamav/entconv.c	1081	                /* Charset to UTF-8 should never exceed in_size * 6;
+offset-size-arithmetic	libclamav/entconv.c	1083	                if (!cli_codepage_output_size(in_size, (size_t)2 * attempt, &out_utf8_size)) {
+offset-size-arithmetic	libclamav/entconv.c	1091	                out_utf8 = cli_max_calloc(1, out_utf8_size + 1);
+offset-size-arithmetic	libclamav/entconv.c	1113	                if ((size_t)-1 == iconvRet) {
+offset-size-arithmetic	libclamav/entconv.c	1134	                out_utf8_tmp = cli_max_realloc(out_utf8, out_utf8_size - outbytesleft + 1);
+offset-size-arithmetic	libclamav/entconv.c	1141	                out_utf8_size = out_utf8_size - outbytesleft;
 offset-size-arithmetic	libclamav/entconv.c	116	/* buffer must be at least 2 bytes in size */
 offset-size-arithmetic	libclamav/entconv.c	119	    unsigned char* out = u16_normalize(u16, dst, dst_size - 1);
-offset-size-arithmetic	libclamav/entconv.c	1198	    if ((uint64_t)data_size > UINT64_MAX - stream->output_size)
-offset-size-arithmetic	libclamav/entconv.c	1201	    status = stream->write_cb(data, data_size, stream->write_context);
-offset-size-arithmetic	libclamav/entconv.c	1205	    stream->output_size += (uint64_t)data_size;
-offset-size-arithmetic	libclamav/entconv.c	1221	                output[output_size++] = byte;
-offset-size-arithmetic	libclamav/entconv.c	1224	                stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
-offset-size-arithmetic	libclamav/entconv.c	1227	                stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
-offset-size-arithmetic	libclamav/entconv.c	1230	                stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
-offset-size-arithmetic	libclamav/entconv.c	1246	            stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
-offset-size-arithmetic	libclamav/entconv.c	1247	            if (stream->utf8_sequence_size == stream->utf8_sequence_expected) {
-offset-size-arithmetic	libclamav/entconv.c	1248	                if (sizeof(output) - output_size < stream->utf8_sequence_size) {
-offset-size-arithmetic	libclamav/entconv.c	1254	                memcpy(output + output_size, stream->utf8_sequence, stream->utf8_sequence_size);
-offset-size-arithmetic	libclamav/entconv.c	1255	                output_size += stream->utf8_sequence_size;
-offset-size-arithmetic	libclamav/entconv.c	1273	static cl_error_t codepage_stream_convert_pending(cli_codepage_utf8_stream_t *stream, bool finishing)
-offset-size-arithmetic	libclamav/entconv.c	1279	        size_t input_left  = stream->input_size;
-offset-size-arithmetic	libclamav/entconv.c	1288	        consumed  = stream->input_size - input_left;
-offset-size-arithmetic	libclamav/entconv.c	1289	        produced  = sizeof(output) - output_left;
+offset-size-arithmetic	libclamav/entconv.c	1215	    if ((uint64_t)data_size > UINT64_MAX - stream->output_size)
+offset-size-arithmetic	libclamav/entconv.c	1218	    status = stream->write_cb(data, data_size, stream->write_context);
+offset-size-arithmetic	libclamav/entconv.c	1222	    stream->output_size += (uint64_t)data_size;
+offset-size-arithmetic	libclamav/entconv.c	1238	                output[output_size++] = byte;
+offset-size-arithmetic	libclamav/entconv.c	1241	                stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
+offset-size-arithmetic	libclamav/entconv.c	1244	                stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
+offset-size-arithmetic	libclamav/entconv.c	1247	                stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
+offset-size-arithmetic	libclamav/entconv.c	1263	            stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
+offset-size-arithmetic	libclamav/entconv.c	1264	            if (stream->utf8_sequence_size == stream->utf8_sequence_expected) {
+offset-size-arithmetic	libclamav/entconv.c	1265	                if (sizeof(output) - output_size < stream->utf8_sequence_size) {
+offset-size-arithmetic	libclamav/entconv.c	1271	                memcpy(output + output_size, stream->utf8_sequence, stream->utf8_sequence_size);
+offset-size-arithmetic	libclamav/entconv.c	1272	                output_size += stream->utf8_sequence_size;
 offset-size-arithmetic	libclamav/entconv.c	129	    struct cli_element* e = cli_hashtab_find(&entities_htable, (const char*)entity, strlen((const char*)entity));
-offset-size-arithmetic	libclamav/entconv.c	1300	        if (converted != (size_t)-1) {
+offset-size-arithmetic	libclamav/entconv.c	1290	static cl_error_t codepage_stream_convert_pending(cli_codepage_utf8_stream_t *stream, bool finishing)
+offset-size-arithmetic	libclamav/entconv.c	1296	        size_t input_left  = stream->input_size;
+offset-size-arithmetic	libclamav/entconv.c	1305	        consumed  = stream->input_size - input_left;
+offset-size-arithmetic	libclamav/entconv.c	1306	        produced  = sizeof(output) - output_left;
 offset-size-arithmetic	libclamav/entconv.c	131	        unsigned char* out = u16_normalize((uint16_t)e->data, conv->entity_buff, sizeof(conv->entity_buff) - 1);
-offset-size-arithmetic	libclamav/entconv.c	1331	    stream = cli_max_calloc(1, sizeof(*stream));
-offset-size-arithmetic	libclamav/entconv.c	1381	    if (stream == NULL || (data == NULL && data_size != 0) || stream->finished)
-offset-size-arithmetic	libclamav/entconv.c	1393	        size_t available = sizeof(stream->input) - stream->input_size;
-offset-size-arithmetic	libclamav/entconv.c	1401	            available = sizeof(stream->input) - stream->input_size;
-offset-size-arithmetic	libclamav/entconv.c	1408	        stream->input_size += take;
+offset-size-arithmetic	libclamav/entconv.c	1317	        if (converted != (size_t)-1) {
+offset-size-arithmetic	libclamav/entconv.c	1348	    stream = cli_max_calloc(1, sizeof(*stream));
+offset-size-arithmetic	libclamav/entconv.c	1398	    if (stream == NULL || (data == NULL && data_size != 0) || stream->finished)
 offset-size-arithmetic	libclamav/entconv.c	141	static size_t encoding_bytes(const char* fromcode, enum encodings* encoding)
-offset-size-arithmetic	libclamav/entconv.c	1410	        data_size -= take;
-offset-size-arithmetic	libclamav/entconv.c	1443	                produced  = sizeof(output) - output_left;
-offset-size-arithmetic	libclamav/entconv.c	1445	                if (status != CL_SUCCESS || converted != (size_t)-1)
-offset-size-arithmetic	libclamav/entconv.c	1462	        *output_size = stream->output_size;
-offset-size-arithmetic	libclamav/entconv.c	1488	        length--;
-offset-size-arithmetic	libclamav/entconv.c	1490	    if (!(decoded = cli_max_calloc(length / 2 + 1, sizeof(char))))
-offset-size-arithmetic	libclamav/entconv.c	1514	        length--;
-offset-size-arithmetic	libclamav/entconv.c	1519	     * length cannot wrap the allocation-size expression into a small buffer.
-offset-size-arithmetic	libclamav/entconv.c	1522	    if (length / 2 > (SIZE_MAX - 2) / 3 ||
-offset-size-arithmetic	libclamav/entconv.c	1523	        length / 2 > ((size_t)CLI_MAX_ALLOCATION - 2) / 3) {
-offset-size-arithmetic	libclamav/entconv.c	1527	    needed = (length / 2) * 3 + 2;
-offset-size-arithmetic	libclamav/entconv.c	1563	            c2 = i + 3 < length ? cli_readint16(&utf16[i + 2]) : 0;
+offset-size-arithmetic	libclamav/entconv.c	1410	        size_t available = sizeof(stream->input) - stream->input_size;
+offset-size-arithmetic	libclamav/entconv.c	1418	            available = sizeof(stream->input) - stream->input_size;
+offset-size-arithmetic	libclamav/entconv.c	1425	        stream->input_size += take;
+offset-size-arithmetic	libclamav/entconv.c	1427	        data_size -= take;
+offset-size-arithmetic	libclamav/entconv.c	1460	                produced  = sizeof(output) - output_left;
+offset-size-arithmetic	libclamav/entconv.c	1462	                if (status != CL_SUCCESS || converted != (size_t)-1)
+offset-size-arithmetic	libclamav/entconv.c	1479	        *output_size = stream->output_size;
+offset-size-arithmetic	libclamav/entconv.c	1505	        length--;
+offset-size-arithmetic	libclamav/entconv.c	1507	    if (!(decoded = cli_max_calloc(length / 2 + 1, sizeof(char))))
+offset-size-arithmetic	libclamav/entconv.c	1531	        length--;
+offset-size-arithmetic	libclamav/entconv.c	1536	     * length cannot wrap the allocation-size expression into a small buffer.
+offset-size-arithmetic	libclamav/entconv.c	1539	    if (length / 2 > (SIZE_MAX - 2) / 3 ||
+offset-size-arithmetic	libclamav/entconv.c	1540	        length / 2 > ((size_t)CLI_MAX_ALLOCATION - 2) / 3) {
+offset-size-arithmetic	libclamav/entconv.c	1544	    needed = (length / 2) * 3 + 2;
+offset-size-arithmetic	libclamav/entconv.c	1580	            c2 = i + 3 < length ? cli_readint16(&utf16[i + 2]) : 0;
 offset-size-arithmetic	libclamav/entconv.c	174	    iconv_t iconv = malloc(sizeof(*iconv));
 offset-size-arithmetic	libclamav/entconv.c	181	    iconv->size = encoding_bytes(fromcode, &iconv->encoding);
 offset-size-arithmetic	libclamav/entconv.c	193	static int iconv(iconv_t iconv_struct, char** inbuf, size_t* inbytesleft,
@@ -27521,35 +27528,37 @@ offset-size-arithmetic	libclamav/entconv.c	286	            const size_t maxwrite
 offset-size-arithmetic	libclamav/entconv.c	374	                    encoding  = UCS4_1234; /* UCS-4 big-endian*/
 offset-size-arithmetic	libclamav/entconv.c	505	    len = strlen((const char*)enc);
 offset-size-arithmetic	libclamav/entconv.c	512	    norm = cli_max_malloc(len + 1);
+offset-size-arithmetic	libclamav/entconv.c	521	static bool cli_codepage_output_size(size_t input_size, size_t multiplier, size_t *output_size)
+offset-size-arithmetic	libclamav/entconv.c	523	    if (!output_size || multiplier == 0 || input_size > (SIZE_MAX - 1) / multiplier)
+offset-size-arithmetic	libclamav/entconv.c	526	    *output_size = input_size * multiplier;
 offset-size-arithmetic	libclamav/entconv.c	57	cl_error_t cli_iconv_cache_table_size(size_t count, size_t element_size, size_t *bytes)
-offset-size-arithmetic	libclamav/entconv.c	603	        cache = calloc(1, sizeof(*cache));
-offset-size-arithmetic	libclamav/entconv.c	627	        global_iconv_cache = calloc(1, sizeof(*global_iconv_cache));
+offset-size-arithmetic	libclamav/entconv.c	612	        cache = calloc(1, sizeof(*cache));
 offset-size-arithmetic	libclamav/entconv.c	63	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
-offset-size-arithmetic	libclamav/entconv.c	648	    const size_t fromcode_len = strlen((const char*)fromcode);
-offset-size-arithmetic	libclamav/entconv.c	661	    if (e && ((size_t)e->data == (size_t)-1 || (size_t)e->data > cache->len)) {
-offset-size-arithmetic	libclamav/entconv.c	667	        iconv(cache->tab[(size_t)e->data], NULL, &dummy_in, NULL, &dummy_out);
-offset-size-arithmetic	libclamav/entconv.c	668	        return cache->tab[(size_t)e->data];
-offset-size-arithmetic	libclamav/entconv.c	675	            if (cache->len > SIZE_MAX - 16) {
-offset-size-arithmetic	libclamav/entconv.c	681	            next_len = cache->len + 16;
-offset-size-arithmetic	libclamav/entconv.c	682	            if (cli_iconv_cache_table_size(next_len, sizeof(cache->tab[0]), &table_size) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/entconv.c	718	    size_t inleft = in_m_area->length - in_m_area->offset;
-offset-size-arithmetic	libclamav/entconv.c	721	    size_t outleft = out_m_area->length > 0 ? out_m_area->length : 0;
-offset-size-arithmetic	libclamav/entconv.c	744	         * Copy the unaligned bytes from the end of the input.*/
-offset-size-arithmetic	libclamav/entconv.c	760	        if (rc == (size_t)-1) {
-offset-size-arithmetic	libclamav/entconv.c	787	        /* output raw byte, and resume at next byte */
+offset-size-arithmetic	libclamav/entconv.c	636	        global_iconv_cache = calloc(1, sizeof(*global_iconv_cache));
+offset-size-arithmetic	libclamav/entconv.c	657	    const size_t fromcode_len = strlen((const char*)fromcode);
+offset-size-arithmetic	libclamav/entconv.c	670	    if (e && ((size_t)e->data == (size_t)-1 || (size_t)e->data > cache->len)) {
+offset-size-arithmetic	libclamav/entconv.c	676	        iconv(cache->tab[(size_t)e->data], NULL, &dummy_in, NULL, &dummy_out);
+offset-size-arithmetic	libclamav/entconv.c	677	        return cache->tab[(size_t)e->data];
+offset-size-arithmetic	libclamav/entconv.c	684	            if (cache->len > SIZE_MAX - 16) {
+offset-size-arithmetic	libclamav/entconv.c	690	            next_len = cache->len + 16;
+offset-size-arithmetic	libclamav/entconv.c	691	            if (cli_iconv_cache_table_size(next_len, sizeof(cache->tab[0]), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/entconv.c	727	    size_t inleft = in_m_area->length - in_m_area->offset;
+offset-size-arithmetic	libclamav/entconv.c	730	    size_t outleft = out_m_area->length > 0 ? out_m_area->length : 0;
+offset-size-arithmetic	libclamav/entconv.c	753	         * Copy the unaligned bytes from the end of the input.*/
+offset-size-arithmetic	libclamav/entconv.c	769	        if (rc == (size_t)-1) {
 offset-size-arithmetic	libclamav/entconv.c	79	/* TODO: gcc refuses to inline because it consider call unlikely and code size grows */
-offset-size-arithmetic	libclamav/entconv.c	808	    if (out_m_area->length >= 0 && out_m_area->length >= (off_t)outleft) {
-offset-size-arithmetic	libclamav/entconv.c	809	        out_m_area->length -= (off_t)outleft;
-offset-size-arithmetic	libclamav/entconv.c	853	cl_error_t cli_codepage_to_utf8(char* in, size_t in_size, uint16_t codepage, char** out, size_t* out_size)
-offset-size-arithmetic	libclamav/entconv.c	883	            out_utf8      = cli_max_calloc(1, out_utf8_size + 1);
-offset-size-arithmetic	libclamav/entconv.c	891	            track = out_utf8 + in_size - 1;
-offset-size-arithmetic	libclamav/entconv.c	897	                /* locate the start of the last character */
-offset-size-arithmetic	libclamav/entconv.c	904	                for (sigbit_count = 0; sigbit_count < (int)(sizeof(uint8_t) * 8); sigbit_count++) {
-offset-size-arithmetic	libclamav/entconv.c	941	                    cchWideChar          = (int)in_size / 2;
-offset-size-arithmetic	libclamav/entconv.c	943	                    lpWideCharStr = cli_max_malloc((cchWideChar) * sizeof(WCHAR)); /* No need for a null terminator here, we'll deal with the exact size */
-offset-size-arithmetic	libclamav/entconv.c	955	                    /* in_size didn't change */
-offset-size-arithmetic	libclamav/entconv.c	972	                    lpWideCharStr = cli_max_malloc((cchWideChar) * sizeof(WCHAR)); /* No need for a null terminator here, we'll deal with the exact size */
-offset-size-arithmetic	libclamav/entconv.c	993	                    in_size = cchWideChar * sizeof(WCHAR);
+offset-size-arithmetic	libclamav/entconv.c	796	        /* output raw byte, and resume at next byte */
+offset-size-arithmetic	libclamav/entconv.c	817	    if (out_m_area->length >= 0 && out_m_area->length >= (off_t)outleft) {
+offset-size-arithmetic	libclamav/entconv.c	818	        out_m_area->length -= (off_t)outleft;
+offset-size-arithmetic	libclamav/entconv.c	862	cl_error_t cli_codepage_to_utf8(char* in, size_t in_size, uint16_t codepage, char** out, size_t* out_size)
+offset-size-arithmetic	libclamav/entconv.c	896	            out_utf8      = cli_max_calloc(1, out_utf8_size + 1);
+offset-size-arithmetic	libclamav/entconv.c	904	            track = out_utf8 + in_size - 1;
+offset-size-arithmetic	libclamav/entconv.c	910	                /* locate the start of the last character */
+offset-size-arithmetic	libclamav/entconv.c	917	                for (sigbit_count = 0; sigbit_count < (int)(sizeof(uint8_t) * 8); sigbit_count++) {
+offset-size-arithmetic	libclamav/entconv.c	954	                    cchWideChar          = (int)in_size / 2;
+offset-size-arithmetic	libclamav/entconv.c	956	                    lpWideCharStr = cli_max_malloc((cchWideChar) * sizeof(WCHAR)); /* No need for a null terminator here, we'll deal with the exact size */
+offset-size-arithmetic	libclamav/entconv.c	968	                    /* in_size didn't change */
+offset-size-arithmetic	libclamav/entconv.c	985	                    lpWideCharStr = cli_max_malloc((cchWideChar) * sizeof(WCHAR)); /* No need for a null terminator here, we'll deal with the exact size */
 offset-size-arithmetic	libclamav/entconv.h	161	    {20290, "IBM290"},        /* IBM EBCDIC Japanese Katakana Extended */
 offset-size-arithmetic	libclamav/entconv.h	166	    {20833, NULL},            /* IBM EBCDIC Korean Extended */
 offset-size-arithmetic	libclamav/entconv.h	198	    {50930, NULL},            /* EBCDIC Japanese (Katakana) Extended */
@@ -38586,15 +38595,15 @@ offset-size-arithmetic	unit_tests/check_clamav.c	4824	    state.length  = hash_w
 offset-size-arithmetic	unit_tests/check_clamav.c	48378	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
 offset-size-arithmetic	unit_tests/check_clamav.c	48385	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
 offset-size-arithmetic	unit_tests/check_clamav.c	4852	#endif /* ANONYMOUS_MAP */
-offset-size-arithmetic	unit_tests/check_clamav.c	48610	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
-offset-size-arithmetic	unit_tests/check_clamav.c	48636	        len--;
+offset-size-arithmetic	unit_tests/check_clamav.c	48629	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
+offset-size-arithmetic	unit_tests/check_clamav.c	48655	        len--;
 offset-size-arithmetic	unit_tests/check_clamav.c	4874	    if (len > state->max_request)
 offset-size-arithmetic	unit_tests/check_clamav.c	4877	    if (state->fail_exact && at == state->fail_offset && len == state->fail_length)
 offset-size-arithmetic	unit_tests/check_clamav.c	4884	        return len <= state->data_length ? state->data : NULL;
 offset-size-arithmetic	unit_tests/check_clamav.c	4886	    if (at > state->data_length || len > state->data_length - at)
-offset-size-arithmetic	unit_tests/check_clamav.c	48871	    if (len == 0 || at > map->len || len > map->len - at)
-offset-size-arithmetic	unit_tests/check_clamav.c	48908	    chunk_boundary[sizeof(chunk_boundary) - 2U] = 0xff;
-offset-size-arithmetic	unit_tests/check_clamav.c	48909	    chunk_boundary[sizeof(chunk_boundary) - 1U] = 0xd9;
+offset-size-arithmetic	unit_tests/check_clamav.c	48890	    if (len == 0 || at > map->len || len > map->len - at)
+offset-size-arithmetic	unit_tests/check_clamav.c	48927	    chunk_boundary[sizeof(chunk_boundary) - 2U] = 0xff;
+offset-size-arithmetic	unit_tests/check_clamav.c	48928	    chunk_boundary[sizeof(chunk_boundary) - 1U] = 0xd9;
 offset-size-arithmetic	unit_tests/check_clamav.c	4893	    size_t length = (size_t)CLI_AUTHENTICODE_HASH_CHUNK_SIZE + 257;
 offset-size-arithmetic	unit_tests/check_clamav.c	4942	    map.len           = (size_t)UINT32_MAX + 4096;
 offset-size-arithmetic	unit_tests/check_clamav.c	4943	    region.offset     = (size_t)UINT32_MAX + 128;

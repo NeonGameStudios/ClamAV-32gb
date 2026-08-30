@@ -518,6 +518,15 @@ static char* normalize_encoding(const unsigned char* enc)
     return norm;
 }
 
+static bool cli_codepage_output_size(size_t input_size, size_t multiplier, size_t *output_size)
+{
+    if (!output_size || multiplier == 0 || input_size > (SIZE_MAX - 1) / multiplier)
+        return false;
+
+    *output_size = input_size * multiplier;
+    return *output_size < CLI_MAX_ALLOCATION;
+}
+
 /* sarge leaks on iconv_open/iconv_close, so lets not open/close so many times,
  * just keep on each thread its own pool of iconvs*/
 
@@ -879,7 +888,11 @@ cl_error_t cli_codepage_to_utf8(char* in, size_t in_size, uint16_t codepage, cha
             char* track;
             int byte_count, sigbit_count;
 
-            out_utf8_size = in_size;
+            if (!cli_codepage_output_size(in_size, 1, &out_utf8_size)) {
+                cli_errmsg("cli_codepage_to_utf8: UTF-8 output exceeds the allocation limit.\n");
+                status = CL_EMEM;
+                goto done;
+            }
             out_utf8      = cli_max_calloc(1, out_utf8_size + 1);
             if (NULL == out_utf8) {
                 cli_errmsg("cli_codepage_to_utf8: Failure allocating buffer for utf8 filename.\n");
@@ -1067,7 +1080,11 @@ cl_error_t cli_codepage_to_utf8(char* in, size_t in_size, uint16_t codepage, cha
 
                 /* Charset to UTF-8 should never exceed in_size * 6;
                  * We can shrink final buffer after the conversion, if needed. */
-                out_utf8_size = (in_size * 2) * attempt;
+                if (!cli_codepage_output_size(in_size, (size_t)2 * attempt, &out_utf8_size)) {
+                    cli_errmsg("cli_codepage_to_utf8: converted output exceeds the allocation limit.\n");
+                    status = CL_EMEM;
+                    goto done;
+                }
 
                 outbytesleft = out_utf8_size;
 

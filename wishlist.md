@@ -22,6 +22,16 @@
   materialized-large-file, Sonic1, and final parser/release qualification
   remain open.
 
+## Codepage conversion output ceiling — 2026-08-29
+
+- Keep codepage-to-UTF-8 output sizing behind checked NUL-terminator addition,
+  native-width multiplication, and the shared 1 GiB individual-allocation
+  ceiling for both direct and iconv retry buffers.
+- Retain the invalid-pointer `SIZE_MAX` iconv regression where available,
+  source guards, and current-source GCC syntax evidence. Full converter corpus,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final parser/release qualification remain open.
+
 ## Generic hash-table capacity and rehash failure visibility — 2026-08-29
 
 - Keep string/u32 hash-table and hashset capacities behind

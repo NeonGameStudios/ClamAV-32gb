@@ -48567,6 +48567,22 @@ START_TEST(test_cli_codepage_to_utf8_utf16le)
 }
 END_TEST
 
+#ifdef HAVE_ICONV
+START_TEST(test_cli_codepage_to_utf8_rejects_output_size_overflow)
+{
+    cl_error_t ret;
+    char *utf8       = (char *)(uintptr_t)1;
+    size_t utf8_size = SIZE_MAX;
+
+    ret = cli_codepage_to_utf8((char *)(uintptr_t)1, SIZE_MAX, CODEPAGE_ISO8859_1,
+                               &utf8, &utf8_size);
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_ptr_null(utf8);
+    ck_assert_uint_eq(utf8_size, 0);
+}
+END_TEST
+#endif
+
 static Suite *test_cli_suite(void)
 {
     Suite *s               = suite_create("cli");
@@ -48593,6 +48609,9 @@ static Suite *test_cli_suite(void)
     tcase_add_test(tc_cli_assorted, test_cli_codepage_to_utf8_utf16be_null_term);
     tcase_add_test(tc_cli_assorted, test_cli_codepage_to_utf8_utf16be_no_null_term);
     tcase_add_test(tc_cli_assorted, test_cli_codepage_to_utf8_utf16le);
+#ifdef HAVE_ICONV
+    tcase_add_test(tc_cli_assorted, test_cli_codepage_to_utf8_rejects_output_size_overflow);
+#endif
 
     return s;
 }
