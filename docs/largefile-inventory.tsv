@@ -35614,10 +35614,12 @@ offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1393	fn signature_footer_offs
 offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1774	        assert_eq!(offset, b"ClamAV-Diff:1:0:".len());
 offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1784	            signature_footer_offset(SIG_SIZE + 1, SIG_SIZE).expect("footer offset"),
 offset-size-arithmetic	libclamav_rust/src/cdiff.rs	630	    let verifier = ManuallyDrop::new(Box::from_raw(verifier_ptr as *mut Verifier));
-offset-size-arithmetic	libclamav_rust/src/codesign.rs	326	    let verifier = ManuallyDrop::new(Box::from_raw(verifier_ptr as *mut Verifier));
-offset-size-arithmetic	libclamav_rust/src/codesign.rs	395	            *verifier = Box::into_raw(Box::new(new_verifier)) as *mut c_void;
-offset-size-arithmetic	libclamav_rust/src/codesign.rs	414	        let _ = unsafe { Box::from_raw(verifier as *mut Verifier) };
-offset-size-arithmetic	libclamav_rust/src/codesign.rs	448	                    "Unsupported signature file format, expected first line start with '#clamsign-1.0'".to_string(),
+offset-size-arithmetic	libclamav_rust/src/codesign.rs	365	    let verifier = ManuallyDrop::new(Box::from_raw(verifier_ptr as *mut Verifier));
+offset-size-arithmetic	libclamav_rust/src/codesign.rs	434	            *verifier = Box::into_raw(Box::new(new_verifier)) as *mut c_void;
+offset-size-arithmetic	libclamav_rust/src/codesign.rs	453	        let _ = unsafe { Box::from_raw(verifier as *mut Verifier) };
+offset-size-arithmetic	libclamav_rust/src/codesign.rs	487	                    "Unsupported signature file format, expected first line start with '#clamsign-1.0'".to_string(),
+offset-size-arithmetic	libclamav_rust/src/codesign.rs	757	            .set_len(SIGNED_FILE_MAX_SIZE + 1)
+offset-size-arithmetic	libclamav_rust/src/codesign.rs	77	        if count > expected_size || data.len() > expected_size - count {
 offset-size-arithmetic	libclamav_rust/src/css_image_extract.rs	174	                if let Some((_, rest)) = url_parameter.split_at_checked(pos + ";".len()) {
 offset-size-arithmetic	libclamav_rust/src/css_image_extract.rs	189	                    if let Some((_, rest)) = url_parameter.split_at_checked(pos + 1) {
 offset-size-arithmetic	libclamav_rust/src/css_image_extract.rs	223	                    if let Some((_, rest)) = url_parameter.split_at_checked(pos + 1) {

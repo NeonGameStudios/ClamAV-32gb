@@ -8893,3 +8893,13 @@ qualification evidence.
 - Retain current Rust 1.97.1 offline-build and source-guard evidence, then add
   full Rust/C ABI execution, production-CVD/service, sanitizer,
   materialized-large-file, Sonic1, and final release qualification evidence.
+
+## Rust code-signing file-bound admission — 2026-08-30
+
+- Keep signing and detached verification behind the fallible 1 GiB
+  individual-file bound and preserve explicit failure when a target grows
+  after metadata admission.
+- Retain the oversized sparse-file regression, current Rust 1.97.1 build, and
+  source guards; add full Rust/C ABI execution, production-CVD/service,
+  sanitizer, materialized-large-file, Sonic1, and final release qualification
+  evidence.

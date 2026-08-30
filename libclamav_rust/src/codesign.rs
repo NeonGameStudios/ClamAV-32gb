@@ -47,6 +47,45 @@ use log::{debug, warn};
 
 use crate::{ffi_error, ffi_util::FFIError, sys::cl_retflevel, validate_str_param};
 
+const SIGNED_FILE_MAX_SIZE: u64 = 1024 * 1024 * 1024;
+
+fn read_bounded_file(path: &Path) -> Result<Vec<u8>, Error> {
+    let mut file = File::open(path)?;
+    let file_size = file.metadata()?.len();
+    if file_size > SIGNED_FILE_MAX_SIZE || file_size > usize::MAX as u64 {
+        return Err(Error::CannotVerify(format!(
+            "File {:?} exceeds the individual allocation boundary",
+            path
+        )));
+    }
+
+    let expected_size = file_size as usize;
+    let mut data = Vec::new();
+    data.try_reserve_exact(expected_size).map_err(|_| {
+        Error::CannotVerify(format!(
+            "Unable to allocate the signed file {:?}",
+            path
+        ))
+    })?;
+
+    let mut buffer = [0u8; 64 * 1024];
+    loop {
+        let count = file.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        if count > expected_size || data.len() > expected_size - count {
+            return Err(Error::CannotVerify(format!(
+                "File {:?} changed beyond the individual allocation boundary",
+                path
+            )));
+        }
+        data.extend_from_slice(&buffer[..count]);
+    }
+
+    Ok(data)
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Can't verify: {0}")]
@@ -214,7 +253,7 @@ where
 {
     let signer = Signer::new(signing_key_path, cert_paths)?;
 
-    let data = std::fs::read(target_file_path)?;
+    let data = read_bounded_file(&target_file_path)?;
     let pkcs7 = signer.sign(&data)?;
 
     // Now convert the pkcs7 to a DigitalSig struct which may be converted to a .sign file signature line.
@@ -426,16 +465,16 @@ pub fn verify_signed_file(
 ) -> Result<String, Error> {
     let signature_file: File = File::open(signature_file_path)?;
 
-    let mut signed_file: File = File::open(signed_file_path)?;
-
-    let mut file_data = Vec::<u8>::new();
-    let read_result = signed_file.read_to_end(&mut file_data);
-    if let Err(e) = read_result {
-        return Err(Error::CannotVerify(format!(
-            "Error reading file '{:?}': {}",
-            signed_file_path, e
-        )));
-    }
+    let file_data = match read_bounded_file(signed_file_path) {
+        Ok(file_data) => file_data,
+        Err(Error::IoError(e)) => {
+            return Err(Error::CannotVerify(format!(
+                "Error reading file '{:?}': {}",
+                signed_file_path, e
+            )));
+        }
+        Err(error) => return Err(error),
+    };
 
     let reader = BufReader::new(signature_file);
 
@@ -710,6 +749,21 @@ impl Verifier {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bounded_file_rejects_individual_allocation_overflow() {
+        let file = tempfile::NamedTempFile::new().unwrap();
+        file.as_file()
+            .set_len(SIGNED_FILE_MAX_SIZE + 1)
+            .unwrap();
+
+        let result = read_bounded_file(file.path());
+        assert!(matches!(
+            result,
+            Err(Error::CannotVerify(message))
+                if message.contains("individual allocation boundary")
+        ));
+    }
 
     #[test]
     fn malformed_signature_header_is_fail_visible() {

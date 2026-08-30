@@ -16172,3 +16172,15 @@ copy while preserving seek, read, archive-entry, and digest error propagation.
 The cached current-source Rust 1.97.1 Docker check and CVD source checks pass;
 current Rust/C ABI execution, production-CVD/service, sanitizer,
 materialized-large-file, Sonic1, and final release qualification remain open.
+
+## Rust code-signing file-bound admission — 2026-08-30
+
+The Rust signing and detached-verification helpers previously used unbounded
+`std::fs::read()`/`read_to_end()` materialization for their target file. Both
+operations now pass through a metadata-preflighted helper capped at the 1 GiB
+individual-allocation boundary, with `try_reserve_exact()` and a fixed 64 KiB
+read buffer; a file that grows beyond its admitted size becomes an explicit
+verification failure. The sparse oversized-file regression and source guards
+cover the boundary, and the cached Rust 1.97.1 Docker check passes. Full
+Rust/C ABI execution, production-CVD/service, sanitizer, materialized-large-
+file, Sonic1, and final release qualification remain open.
