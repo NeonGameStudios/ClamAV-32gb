@@ -12,6 +12,16 @@
   materialized-large-file, Sonic1, and final parser/release qualification
   remain open.
 
+## NSIS bundled bzip2 allocation admission — 2026-08-29
+
+- Keep the bundled NSIS bzip2 allocator fail-closed for non-positive signed
+  callback arguments, native-size multiplication overflow, and products above
+  the shared 1 GiB individual-allocation ceiling.
+- Retain the source guard and Docker production-GCC syntax evidence. Complete
+  NSIS/SFX corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, and final parser/release qualification
+  remain open.
+
 ## Generic hash-table capacity and rehash failure visibility — 2026-08-29
 
 - Keep string/u32 hash-table and hashset capacities behind

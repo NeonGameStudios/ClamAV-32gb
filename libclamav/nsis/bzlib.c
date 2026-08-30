@@ -990,7 +990,19 @@ int bz_config_ok ( void )
 static
 void* default_bzalloc ( void* opaque, Int32 items, Int32 size )
 {
-    void* v = cli_max_malloc ( (size_t)items * (size_t)size );
+    size_t item_count, item_size;
+    void* v;
+
+    if (items <= 0 || size <= 0)
+        return NULL;
+
+    item_count = (size_t)items;
+    item_size  = (size_t)size;
+    if (item_count > SIZE_MAX / item_size ||
+        item_count > (size_t)CLI_MAX_ALLOCATION / item_size)
+        return NULL;
+
+    v = cli_max_malloc(item_count * item_size);
     UNUSEDPARAM(opaque);
     return v;
 }

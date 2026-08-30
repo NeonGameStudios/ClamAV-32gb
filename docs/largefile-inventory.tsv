@@ -12655,16 +12655,19 @@ native-width-integer	libclamav/msxml_parser.h	79	typedef cl_error_t (*msxml_scan
 native-width-integer	libclamav/msxml_parser.h	80	typedef cl_error_t (*msxml_decoded_cb)(int fd, const char *filepath, cli_ctx *ctx, void *cbdata);
 native-width-integer	libclamav/msxml_parser.h	93	cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx);
 native-width-integer	libclamav/msxml_parser.h	99	cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const struct key_entry *keys, size_t num_keys,
-native-width-integer	libclamav/nsis/bzlib.c	1006	int BZ_API(nsis_BZ2_bzDecompressInit)
-native-width-integer	libclamav/nsis/bzlib.c	1008	                       int        verbosity,
-native-width-integer	libclamav/nsis/bzlib.c	1009	                       int        small )
-native-width-integer	libclamav/nsis/bzlib.c	1045	int BZ_API(nsis_BZ2_bzDecompress) ( nsis_bzstream *strm )
-native-width-integer	libclamav/nsis/bzlib.c	1102	int BZ_API(nsis_BZ2_bzDecompressEnd)  ( nsis_bzstream *strm )
+native-width-integer	libclamav/nsis/bzlib.c	1000	    item_size  = (size_t)size;
+native-width-integer	libclamav/nsis/bzlib.c	1002	        item_count > (size_t)CLI_MAX_ALLOCATION / item_size)
+native-width-integer	libclamav/nsis/bzlib.c	1018	int BZ_API(nsis_BZ2_bzDecompressInit)
+native-width-integer	libclamav/nsis/bzlib.c	1020	                       int        verbosity,
+native-width-integer	libclamav/nsis/bzlib.c	1021	                       int        small )
+native-width-integer	libclamav/nsis/bzlib.c	1057	int BZ_API(nsis_BZ2_bzDecompress) ( nsis_bzstream *strm )
+native-width-integer	libclamav/nsis/bzlib.c	1114	int BZ_API(nsis_BZ2_bzDecompressEnd)  ( nsis_bzstream *strm )
 native-width-integer	libclamav/nsis/bzlib.c	203	      unsigned int  cs_avail_out         = s->strm->avail_out;
 native-width-integer	libclamav/nsis/bzlib.c	209	      unsigned int total_out_lo32_old;
 native-width-integer	libclamav/nsis/bzlib.c	980	int bz_config_ok ( void )
 native-width-integer	libclamav/nsis/bzlib.c	982	   if (sizeof(int)   != 4) return 0;
-native-width-integer	libclamav/nsis/bzlib.c	993	    void* v = cli_max_malloc ( (size_t)items * (size_t)size );
+native-width-integer	libclamav/nsis/bzlib.c	993	    size_t item_count, item_size;
+native-width-integer	libclamav/nsis/bzlib.c	999	    item_count = (size_t)items;
 native-width-integer	libclamav/nsis/bzlib_private.h	46	typedef int             Int32;
 native-width-integer	libclamav/nsis/bzlib_private.h	47	typedef unsigned int    UInt32;
 native-width-integer	libclamav/nsis/bzlib_private.h	61	/* extern void BZ2_bz__AssertH__fail ( int errcode ); */
@@ -21209,6 +21212,7 @@ boundary-constant	libclamav/mpool.c	627	    if (!size || size > SIZE_MAX - FRAG_
 boundary-constant	libclamav/mpool.c	628	        size + FRAG_OVERHEAD > SIZE_MAX - (align - 1)) {
 boundary-constant	libclamav/mpool.c	734	    if (!nmemb || !size || nmemb > SIZE_MAX / size)
 boundary-constant	libclamav/msdoc.c	485	            if (strsize > UINT32_MAX / 2) {
+boundary-constant	libclamav/nsis/bzlib.c	1001	    if (item_count > SIZE_MAX / item_size ||
 boundary-constant	libclamav/nsis/nulsft.c	371	        if ((size_t)size > SIZE_MAX - n->curpos) {
 boundary-constant	libclamav/nsis/nulsft.c	779	        if (ctx->fmap->offset > SIZE_MAX - ctx->fmap->nested_offset ||
 boundary-constant	libclamav/nsis/nulsft.c	780	            ctx->fmap->offset + ctx->fmap->nested_offset > SIZE_MAX - (size_t)offset)
@@ -30419,7 +30423,8 @@ offset-size-arithmetic	libclamav/msxml_parser.c	944	        offset += chunk;
 offset-size-arithmetic	libclamav/msxml_parser.c	989	        if (frame->b64_used != sizeof(frame->b64_quartet))
 offset-size-arithmetic	libclamav/msxml_parser.h	102	#endif /* __MSXML_PARSER_H */
 offset-size-arithmetic	libclamav/msxml_parser.h	93	cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx);
-offset-size-arithmetic	libclamav/nsis/bzlib.c	1121	/*--- end                                           bzlib.c ---*/
+offset-size-arithmetic	libclamav/nsis/bzlib.c	1002	        item_count > (size_t)CLI_MAX_ALLOCATION / item_size)
+offset-size-arithmetic	libclamav/nsis/bzlib.c	1133	/*--- end                                           bzlib.c ---*/
 offset-size-arithmetic	libclamav/nsis/bzlib.c	149	/*             s->state_out_len--; */
 offset-size-arithmetic	libclamav/nsis/bzlib.c	156	/*          /\* can a new run be started? *\/ */
 offset-size-arithmetic	libclamav/nsis/bzlib.c	187	/*          s->state_out_len = ((Int32)k1) + 4; */
@@ -30444,7 +30449,6 @@ offset-size-arithmetic	libclamav/nsis/bzlib.c	701	      /*-- end MTF init --*/
 offset-size-arithmetic	libclamav/nsis/bzlib.c	806	            /*-- end uc = MTF ( nextSym-1 ) --*/
 offset-size-arithmetic	libclamav/nsis/bzlib.c	841	      /* Check: cftab entries non-descending. */
 offset-size-arithmetic	libclamav/nsis/bzlib.c	94	      gMinlen = s->minLens[gSel];                 \
-offset-size-arithmetic	libclamav/nsis/bzlib.c	993	    void* v = cli_max_malloc ( (size_t)items * (size_t)size );
 offset-size-arithmetic	libclamav/nsis/bzlib_private.h	102	/* #endif */
 offset-size-arithmetic	libclamav/nsis/bzlib_private.h	115	/*-- Constants for the back end. --*/
 offset-size-arithmetic	libclamav/nsis/bzlib_private.h	224	      /* run-length-encoding of the input */

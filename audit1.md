@@ -16,6 +16,19 @@ and the source guards pass. Full 7-Zip/BCJ2 corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## NSIS bundled bzip2 allocation admission — 2026-08-29
+
+The bundled NSIS bzip2 callback formed its signed `Int32` item-count and
+element-size product before calling the bounded allocator. On a narrower
+`size_t` target, a positive product could wrap to an undersized request, and
+non-positive callback arguments were not rejected explicitly. The callback
+now requires positive values, checks native-size multiplication, and applies
+the shared 1 GiB individual-allocation ceiling before multiplying. The
+modified source is covered by the canonical source guard and Docker
+production-GCC syntax check; complete NSIS/SFX corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
+final parser/release qualification remain open.
+
 ## Scan recursion-stack admission — 2026-08-29
 
 The top-level scan setup formed the recursion-layer table with a raw
