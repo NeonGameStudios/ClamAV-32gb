@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## 7-Zip stream callback result admission — 2026-08-30
+
+The vendored 7-Zip stream adapters now reject callback byte counts larger than
+the requested destination and invalid buffered lookahead state before pointer
+advancement, copying, or fixed-buffer publication. Public sequential and
+look-based wrappers, buffered lookahead refill/direct-read paths, and the
+section-reader bridge are covered by
+`test_7z_stream_rejects_overreported_callback_results` and source guards. The
+current-source Docker production-GCC object check passes; full Check
+execution, complete 7-Zip/BCJ2 corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## Rust signed-database parser panic paths — 2026-08-30
 
 Signed-database verification now requires the exact `#clamsign-1.0` header

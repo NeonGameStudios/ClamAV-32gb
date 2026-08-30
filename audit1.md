@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip stream callback result admission — 2026-08-30
+
+The vendored 7-Zip stream adapters previously trusted callback-reported byte
+counts. A callback that reported more bytes than requested could advance a
+caller buffer beyond its end, or publish a count larger than the fixed
+`LookToRead` lookahead buffer for later out-of-bounds access. Sequential,
+look-based, buffered, and section-reader adapters now reject null callback
+state, over-reported counts, invalid look-buffer results, and impossible
+buffered position/skip state before copying or publishing the result. The
+`test_7z_stream_rejects_overreported_callback_results` regression covers the
+public wrappers and both buffered refill modes; the current-source Docker
+production-GCC `7zStream.c` object check passes. Full Check execution, complete
+7-Zip/BCJ2 corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## Rust signed-database parser panic paths — 2026-08-30
 
 The signed-database boundary still had two input-driven panic paths. A

@@ -1,5 +1,16 @@
 # Wishlist
 
+## 7-Zip stream callback result admission — 2026-08-30
+
+- Keep all vendored 7-Zip stream adapters fail-visible when callbacks return
+  more bytes than requested or when lookahead position/skip state is invalid.
+  Sequential, look-based, buffered refill, direct buffered-read, and section
+  reader paths now reject the boundary before pointer advancement or fixed
+  buffer publication. The focused regression and source guards are registered;
+  full Check execution, complete 7-Zip/BCJ2 corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification remain required.
+
 ## Rust signed-database parser panic paths — 2026-08-30
 
 - Keep signed-database verification fail-visible for malformed `.sign` header

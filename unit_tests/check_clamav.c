@@ -27042,6 +27042,127 @@ static void bcj2_test_temp_init(bcj2_test_temp_provider *provider)
     provider->checkpoint_result = SZ_OK;
 }
 
+typedef struct {
+    ISeqInStream s;
+} sevenz_overreport_seq_input;
+
+static SRes sevenz_overreport_seq_read(void *opaque, void *buffer, size_t *size)
+{
+    UNUSEDPARAM(opaque);
+    UNUSEDPARAM(buffer);
+    if (size == NULL)
+        return SZ_ERROR_PARAM;
+    if (*size != SIZE_MAX)
+        (*size)++;
+    return SZ_OK;
+}
+
+typedef struct {
+    ISeekInStream s;
+} sevenz_overreport_seek_input;
+
+static SRes sevenz_overreport_seek_read(void *opaque, void *buffer, size_t *size)
+{
+    UNUSEDPARAM(opaque);
+    UNUSEDPARAM(buffer);
+    if (size == NULL)
+        return SZ_ERROR_PARAM;
+    if (*size != SIZE_MAX)
+        (*size)++;
+    return SZ_OK;
+}
+
+static SRes sevenz_overreport_seek_seek(void *opaque, Int64 *pos, ESzSeek origin)
+{
+    UNUSEDPARAM(opaque);
+    UNUSEDPARAM(origin);
+    if (pos == NULL)
+        return SZ_ERROR_PARAM;
+    return SZ_OK;
+}
+
+typedef struct {
+    ILookInStream s;
+} sevenz_overreport_look_input;
+
+static SRes sevenz_overreport_look_read(void *opaque, void *buffer, size_t *size)
+{
+    UNUSEDPARAM(opaque);
+    UNUSEDPARAM(buffer);
+    if (size == NULL)
+        return SZ_ERROR_PARAM;
+    if (*size != SIZE_MAX)
+        (*size)++;
+    return SZ_OK;
+}
+
+static SRes sevenz_overreport_look_look(void *opaque, const void **buffer, size_t *size)
+{
+    static const uint8_t data[] = {0};
+
+    UNUSEDPARAM(opaque);
+    if (buffer == NULL || size == NULL)
+        return SZ_ERROR_PARAM;
+    *buffer = data;
+    if (*size != SIZE_MAX)
+        (*size)++;
+    return SZ_OK;
+}
+
+static SRes sevenz_overreport_look_skip(void *opaque, size_t offset)
+{
+    UNUSEDPARAM(opaque);
+    UNUSEDPARAM(offset);
+    return SZ_OK;
+}
+
+START_TEST(test_7z_stream_rejects_overreported_callback_results)
+{
+    uint8_t output[1] = {0};
+    size_t look_size = 1;
+    sevenz_overreport_seq_input seq = {{sevenz_overreport_seq_read}};
+    sevenz_overreport_look_input look = {{NULL,
+                                          sevenz_overreport_look_skip,
+                                          sevenz_overreport_look_read,
+                                          NULL}};
+
+    ck_assert_int_eq(SeqInStream_Read2(&seq.s, output, sizeof(output), SZ_ERROR_INPUT_EOF),
+                     SZ_ERROR_FAIL);
+    ck_assert_int_eq(SeqInStream_ReadByte(&seq.s, output), SZ_ERROR_FAIL);
+
+    ck_assert_int_eq(LookInStream_Read2(&look.s, output, sizeof(output), SZ_ERROR_INPUT_EOF),
+                     SZ_ERROR_FAIL);
+    look.s.Look = sevenz_overreport_look_look;
+    ck_assert_int_eq(LookInStream_LookRead(&look.s, output, &look_size), SZ_ERROR_FAIL);
+
+    {
+        const void *look_buffer = NULL;
+        size_t adapter_size = 1;
+        sevenz_overreport_seek_input source = {{sevenz_overreport_seek_read,
+                                                sevenz_overreport_seek_seek,
+                                                0}};
+        CLookToRead adapter;
+
+        LookToRead_CreateVTable(&adapter, False);
+        adapter.realStream = &source.s;
+        LookToRead_Init(&adapter);
+        ck_assert_int_eq(adapter.s.Look(&adapter.s, &look_buffer, &adapter_size),
+                         SZ_ERROR_FAIL);
+
+        LookToRead_CreateVTable(&adapter, True);
+        LookToRead_Init(&adapter);
+        adapter_size = 1;
+        ck_assert_int_eq(adapter.s.Look(&adapter.s, &look_buffer, &adapter_size),
+                         SZ_ERROR_FAIL);
+
+        LookToRead_CreateVTable(&adapter, False);
+        LookToRead_Init(&adapter);
+        adapter_size = 1;
+        ck_assert_int_eq(adapter.s.Read(&adapter.s, output, &adapter_size), SZ_ERROR_FAIL);
+    }
+}
+END_TEST
+
 static void bcj2_test_stream_vector(const uint8_t *main_data, size_t main_size,
                                     const uint8_t *call_data, size_t call_size,
                                     const uint8_t *jump_data, size_t jump_size,
@@ -48131,6 +48252,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_substream_size_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_input_time_limit_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_stream_rejects_overreported_callback_results);
     tcase_add_test(tc_7z, test_7z_seek_position_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_legacy_pack_position_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_corpus_scans_embedded_mz_child);
