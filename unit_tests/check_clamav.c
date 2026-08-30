@@ -3015,6 +3015,11 @@ START_TEST(test_signature_database_and_hash_stream_failures)
     ck_assert_int_eq(ret, CL_SUCCESS);
     ck_assert_uint_eq(sigs, 2);
 
+    sigs = UINT_MAX;
+    ret  = cl_countsigs(file_path, CL_COUNTSIGS_UNOFFICIAL, &sigs);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert_uint_eq(sigs, UINT_MAX);
+
     memset(digest, 0, sizeof(digest));
     clamav_test_fail_fread = 1;
     hashstr = cli_hashfile(file_path, digest, CLI_HASH_MD5);
@@ -3045,6 +3050,11 @@ START_TEST(test_signature_database_and_hash_stream_failures)
     clamav_test_fail_closedir = 0;
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert_uint_eq(sigs, 0);
+
+    sigs = UINT_MAX - 1U;
+    ret  = cl_countsigs(dir_path, CL_COUNTSIGS_UNOFFICIAL, &sigs);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert_uint_eq(sigs, UINT_MAX - 1U);
 
     unlink(dir_file_path);
     rmdir(dir_path);

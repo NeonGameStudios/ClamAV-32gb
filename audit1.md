@@ -14904,3 +14904,20 @@ requires a complete octal field, checks the uint64 accumulator at each digit,
 and rejects values above `UINT_MAX` before assigning `dbio->size`. Malformed and
 oversized archive-fixture execution remains open with the generated Rust bridge
 and production CVD/service evidence.
+
+## Public signature-count overflow audit — 2026-08-29
+
+The public `cl_countsigs()` API accumulates counts into an `unsigned int`.
+The line-entry, CVD/CUD, and CBC paths now preflight each addition against
+`UINT_MAX`; an over-limit result returns `CL_ERESOURCE`, preserves the caller's
+existing count, and does not publish a wrapped total. The line-entry loop also
+rejects a database containing more than `UINT_MAX` counted entries before the
+internal counter can wrap. The
+`test_signature_database_and_hash_stream_failures` regression covers file and
+directory totals already at or near the public limit, and source guards pin
+the checked helper and failure message.
+
+Current-source syntax/production-GCC execution remains constrained by the
+existing Docker image's missing generated `clamav_rust.h`/`version.h` bridge;
+complete CVD/service parity, sanitizer, materialized-large-file, Sonic1, and
+final release qualification remain open.

@@ -7998,3 +7998,13 @@ final qualification as open.
   current-source production-GCC, production-CVD/service, sanitizer,
   materialized-large-file, Sonic1, and final release qualification as required
   evidence.
+
+## Public signature-count overflow — 2026-08-29
+
+- Keep `cl_countsigs()` additions checked for the public `unsigned int` range
+  across line-based files, CVD/CUD totals, and CBC entries; return
+  `CL_ERESOURCE` and preserve the prior count instead of exposing wraparound.
+- Retain the near-limit file/directory regression and source guards; current
+  source execution with the generated Rust bridge, complete CVD/service parity,
+  sanitizer, materialized-large-file, Sonic1, and final release qualification
+  remain required.

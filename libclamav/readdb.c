@@ -6424,11 +6424,17 @@ static int countentries(const char *dbname, unsigned int *sigs)
     while (fgets(buffer, sizeof(buffer), fs)) {
         if (buffer[0] == '#')
             continue;
+        if (entry == UINT_MAX) {
+            cli_errmsg("countentries: Signature count exceeds the public counter range for %s\n", dbname);
+            status = CL_ERESOURCE;
+            break;
+        }
         entry++;
     }
     if (ferror(fs)) {
         cli_errmsg("countentries: Can't read file %s\n", dbname);
-        status = CL_EREAD;
+        if (status == CL_SUCCESS)
+            status = CL_EREAD;
     }
     if (fclose(fs) != 0) {
         cli_errmsg("countentries: Can't close file %s\n", dbname);
@@ -6438,7 +6444,22 @@ static int countentries(const char *dbname, unsigned int *sigs)
     if (status != CL_SUCCESS)
         return status;
 
+    if (entry > UINT_MAX - *sigs) {
+        cli_errmsg("countentries: Signature count exceeds the public counter range for %s\n", dbname);
+        return CL_ERESOURCE;
+    }
     *sigs += entry;
+    return CL_SUCCESS;
+}
+
+static cl_error_t count_add_sigs(unsigned int *sigs, unsigned int count, const char *dbname)
+{
+    if (count > UINT_MAX - *sigs) {
+        cli_errmsg("countsigs: Signature count exceeds the public counter range for %s\n", dbname);
+        return CL_ERESOURCE;
+    }
+
+    *sigs += count;
     return CL_SUCCESS;
 }
 
@@ -6451,7 +6472,10 @@ static int countsigs(const char *dbname, unsigned int options, unsigned int *sig
                 cli_errmsg("countsigs: Can't parse %s\n", dbname);
                 return CL_ECVD;
             }
-            *sigs += cvd->sigs;
+            if (count_add_sigs(sigs, cvd->sigs, dbname) != CL_SUCCESS) {
+                cl_cvdfree(cvd);
+                return CL_ERESOURCE;
+            }
             cl_cvdfree(cvd);
         }
     } else if ((cli_strbcasestr(dbname, ".cud"))) {
@@ -6461,12 +6485,15 @@ static int countsigs(const char *dbname, unsigned int options, unsigned int *sig
                 cli_errmsg("countsigs: Can't parse %s\n", dbname);
                 return CL_ECVD;
             }
-            *sigs += cvd->sigs;
+            if (count_add_sigs(sigs, cvd->sigs, dbname) != CL_SUCCESS) {
+                cl_cvdfree(cvd);
+                return CL_ERESOURCE;
+            }
             cl_cvdfree(cvd);
         }
     } else if (cli_strbcasestr(dbname, ".cbc")) {
         if (options & CL_COUNTSIGS_UNOFFICIAL)
-            (*sigs)++;
+            return count_add_sigs(sigs, 1, dbname);
 
     } else if (cli_strbcasestr(dbname, ".wdb") || cli_strbcasestr(dbname, ".fp") || cli_strbcasestr(dbname, ".sfp") || cli_strbcasestr(dbname, ".ign") || cli_strbcasestr(dbname, ".ign2") || cli_strbcasestr(dbname, ".ftm") || cli_strbcasestr(dbname, ".cfg") || cli_strbcasestr(dbname, ".cat")) {
         /* ignore allow list/FP signatures and metadata files */
