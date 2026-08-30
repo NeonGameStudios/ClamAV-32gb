@@ -4858,6 +4858,18 @@ failure. Focused public-report and recursion-stack regressions are registered;
 compiled fault injection, sanitizer, production-corpus, and Sonic1 qualification
 remain open.
 
+## Byte-compare normalizer admission — 2026-08-29
+
+- Keep byte-compare signature lengths behind the bounded unsigned parser and
+  retain `size_t` through comparison and normalization; reject negative or
+  overflowing metadata before storage.
+- Keep whitespace and odd-length hex NUL-terminated representations behind
+  the individual allocation ceiling and checked size arithmetic. Retain
+  `test_byte_compare_normalization_ceiling_is_fail_visible` and its source
+  guards. Complete byte-compare corpus, production-linked unit execution,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final matcher/release qualification remain open.
+
 ## INSTREAM client partial-stream boundary — 2026-08-22
 
 - clamdscan INSTREAM submission now has one strict path: reject bytes beyond
