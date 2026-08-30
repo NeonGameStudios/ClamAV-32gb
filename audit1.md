@@ -16123,3 +16123,15 @@ constructor-atomicity checks. Current-source production-GCC compilation,
 focused production-linked execution, sanitizer, complete bytecode execution/
 JIT, production-CVD/service, materialized-large-file, Sonic1, and final
 release qualification remain open.
+
+## Bytecode resource-constructor null-context admission — 2026-08-30
+
+The same public bytecode resource family also dereferenced a null context in
+hashset, buffer-pipe, inflate, LZMA, BZip2, and JavaScript-normalizer
+constructors, while shared resource accessors could reach context fields before
+rejecting invalid IDs. Constructors and accessors now return their documented
+failure or empty results before table, event, decoder, or normalization state
+access. The registered regression covers all constructor and lifecycle entry
+points, and the focused current-source production-linked GCC and ASan/UBSan
+runners pass. Complete bytecode execution/JIT, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.

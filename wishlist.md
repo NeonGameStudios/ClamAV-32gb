@@ -8782,6 +8782,14 @@ qualification as required evidence.
   sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
   final release qualification evidence.
 
+## Bytecode resource-constructor null-context admission — 2026-08-30
+
+- Keep hashset, buffer-pipe, inflate, LZMA, BZip2, and JavaScript-normalizer
+  constructors and shared accessors fail-closed for null bytecode contexts.
+- Retain the registered lifecycle regression and source guards; add complete
+  bytecode execution/JIT, production-CVD/service, materialized-large-file,
+  Sonic1, and final release qualification evidence.
+
 ## FMap and PDF extracted-output rewind admission — 2026-08-30
 
 - Keep `fmap_fd()` fail-closed when a descriptor-backed fmap cannot rewind to

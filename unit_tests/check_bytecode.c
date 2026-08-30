@@ -2038,6 +2038,33 @@ START_TEST(test_bytecode_map_rejects_null_key_and_value)
 }
 END_TEST
 
+START_TEST(test_bytecode_resource_constructors_reject_null_context)
+{
+    ck_assert_int_eq(cli_bcapi_hashset_new(NULL), -1);
+    ck_assert_int_eq(cli_bcapi_hashset_add(NULL, 0, 0), -1);
+    ck_assert_int_eq(cli_bcapi_hashset_contains(NULL, 0, 0), -1);
+    ck_assert_int_eq(cli_bcapi_hashset_done(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_new(NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_new_fromfile(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_new_fromfile64(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_read_avail64(NULL, 0), 0);
+    ck_assert_ptr_null(cli_bcapi_buffer_pipe_read_get(NULL, 0, 1));
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_done(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_inflate_init(NULL, 0, 0, 15), -1);
+    ck_assert_int_eq(cli_bcapi_inflate_process(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_inflate_done(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_lzma_init(NULL, 0, 0), -1);
+    ck_assert_int_eq(cli_bcapi_lzma_process(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_lzma_done(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_bzip2_init(NULL, 0, 0), -1);
+    ck_assert_int_eq(cli_bcapi_bzip2_process(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_bzip2_done(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_jsnorm_init(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_jsnorm_process(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_jsnorm_done(NULL, 0), -1);
+}
+END_TEST
+
 START_TEST(test_hashtab_capacity_admission_is_fail_visible)
 {
     struct cli_hashtable table;
@@ -2194,6 +2221,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_loader, test_bytecode_json_api_admission_is_fail_visible);
     tcase_add_test(tc_cli_loader, test_bytecode_resource_constructors_publish_only_initialized_slots);
     tcase_add_test(tc_cli_loader, test_bytecode_map_rejects_null_key_and_value);
+    tcase_add_test(tc_cli_loader, test_bytecode_resource_constructors_reject_null_context);
     tcase_add_test(tc_cli_loader, test_hashtab_capacity_admission_is_fail_visible);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);

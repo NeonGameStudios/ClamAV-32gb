@@ -896,6 +896,9 @@ int32_t cli_bcapi_hashset_new(struct cli_bc_ctx *ctx)
     size_t table_size;
     struct cli_hashset *s;
 
+    if (!ctx)
+        return -1;
+
     if (cli_bcapi_table_size(ctx->nhashsets, sizeof(*ctx->hashsets), &n, &table_size) != 0) {
         cli_event_error_oom(EV, 0);
         return -1;
@@ -917,6 +920,8 @@ int32_t cli_bcapi_hashset_new(struct cli_bc_ctx *ctx)
 
 static struct cli_hashset *get_hashset(struct cli_bc_ctx *ctx, int32_t id)
 {
+    if (!ctx)
+        return NULL;
     if (id < 0 || (unsigned int)id >= ctx->nhashsets || !ctx->hashsets) {
         API_MISUSE();
         return NULL;
@@ -981,6 +986,9 @@ int32_t cli_bcapi_buffer_pipe_new(struct cli_bc_ctx *ctx, uint32_t size)
     unsigned n;
     size_t table_size;
 
+    if (!ctx)
+        return -1;
+
     if (cli_bcapi_table_size(ctx->nbuffers, sizeof(*ctx->buffers), &n, &table_size) != 0) {
         cli_event_error_oom(EV, 0);
         return -1;
@@ -1009,6 +1017,9 @@ int32_t cli_bcapi_buffer_pipe_new_fromfile(struct cli_bc_ctx *ctx, uint32_t at)
     struct bc_buffer *b;
     unsigned n;
     size_t table_size;
+
+    if (!ctx)
+        return -1;
 
     if (cli_bcapi_table_size(ctx->nbuffers, sizeof(*ctx->buffers), &n, &table_size) != 0) {
         cli_event_error_oom(EV, 0);
@@ -1040,6 +1051,9 @@ int32_t cli_bcapi_buffer_pipe_new_fromfile64(struct cli_bc_ctx *ctx, uint64_t at
     unsigned n;
     size_t table_size;
 
+    if (!ctx)
+        return -1;
+
     if (cli_bcapi_table_size(ctx->nbuffers, sizeof(*ctx->buffers), &n, &table_size) != 0) {
         cli_event_error_oom(EV, 0);
         return -1;
@@ -1063,7 +1077,7 @@ int32_t cli_bcapi_buffer_pipe_new_fromfile64(struct cli_bc_ctx *ctx, uint64_t at
 
 static struct bc_buffer *get_buffer(struct cli_bc_ctx *ctx, int32_t id)
 {
-    if (!ctx->buffers || id < 0 || (unsigned int)id >= ctx->nbuffers) {
+    if (!ctx || !ctx->buffers || id < 0 || (unsigned int)id >= ctx->nbuffers) {
         cli_dbgmsg("bytecode api: invalid buffer id %u\n", id);
         return NULL;
     }
@@ -1226,6 +1240,9 @@ int32_t cli_bcapi_inflate_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to,
     unsigned n;
     size_t table_size;
 
+    if (!ctx)
+        return -1;
+
     if (cli_bcapi_table_size(ctx->ninflates, sizeof(*ctx->inflates), &n, &table_size) != 0) {
         cli_event_error_oom(EV, 0);
         return -1;
@@ -1273,7 +1290,7 @@ int32_t cli_bcapi_inflate_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to,
 
 static struct bc_inflate *get_inflate(struct cli_bc_ctx *ctx, int32_t id)
 {
-    if (id < 0 || (unsigned int)id >= ctx->ninflates || !ctx->inflates)
+    if (!ctx || id < 0 || (unsigned int)id >= ctx->ninflates || !ctx->inflates)
         return NULL;
     return &ctx->inflates[id];
 }
@@ -1359,6 +1376,9 @@ int32_t cli_bcapi_lzma_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
     size_t table_size;
     unsigned avail_in_orig;
 
+    if (!ctx)
+        return -1;
+
     if (cli_bcapi_table_size(ctx->nlzmas, sizeof(*ctx->lzmas), &n, &table_size) != 0) {
         cli_event_error_oom(EV, 0);
         return -1;
@@ -1412,7 +1432,7 @@ int32_t cli_bcapi_lzma_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
 
 static struct bc_lzma *get_lzma(struct cli_bc_ctx *ctx, int32_t id)
 {
-    if (id < 0 || (unsigned int)id >= ctx->nlzmas || !ctx->lzmas)
+    if (!ctx || id < 0 || (unsigned int)id >= ctx->nlzmas || !ctx->lzmas)
         return NULL;
     return &ctx->lzmas[id];
 }
@@ -1468,6 +1488,9 @@ int32_t cli_bcapi_bzip2_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
     unsigned n;
     size_t table_size;
 
+    if (!ctx)
+        return -1;
+
     if (cli_bcapi_table_size(ctx->nbzip2s, sizeof(*ctx->bzip2s), &n, &table_size) != 0) {
         cli_event_error_oom(EV, 0);
         return -1;
@@ -1514,7 +1537,7 @@ int32_t cli_bcapi_bzip2_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
 
 static struct bc_bzip2 *get_bzip2(struct cli_bc_ctx *ctx, int32_t id)
 {
-    if (id < 0 || (unsigned int)id >= ctx->nbzip2s || !ctx->bzip2s)
+    if (!ctx || id < 0 || (unsigned int)id >= ctx->nbzip2s || !ctx->bzip2s)
         return NULL;
     return &ctx->bzip2s[id];
 }
@@ -1581,6 +1604,9 @@ int32_t cli_bcapi_jsnorm_init(struct cli_bc_ctx *ctx, int32_t from)
     unsigned n;
     size_t table_size;
 
+    if (!ctx)
+        return -1;
+
     if (cli_bcapi_table_size(ctx->njsnorms, sizeof(*ctx->jsnorms), &n, &table_size) != 0) {
         cli_event_error_oom(EV, 0);
         return -1;
@@ -1626,7 +1652,7 @@ int32_t cli_bcapi_jsnorm_init(struct cli_bc_ctx *ctx, int32_t from)
 
 static struct bc_jsnorm *get_jsnorm(struct cli_bc_ctx *ctx, int32_t id)
 {
-    if (id < 0 || (unsigned int)id >= ctx->njsnorms || !ctx->jsnorms)
+    if (!ctx || id < 0 || (unsigned int)id >= ctx->njsnorms || !ctx->jsnorms)
         return NULL;
     return &ctx->jsnorms[id];
 }
@@ -1635,8 +1661,13 @@ int32_t cli_bcapi_jsnorm_process(struct cli_bc_ctx *ctx, int32_t id)
 {
     unsigned avail;
     const unsigned char *in;
-    cli_ctx *cctx       = ctx->ctx;
-    struct bc_jsnorm *b = get_jsnorm(ctx, id);
+    cli_ctx *cctx;
+    struct bc_jsnorm *b;
+
+    if (!ctx)
+        return -1;
+    cctx = ctx->ctx;
+    b    = get_jsnorm(ctx, id);
     if (!b || b->from == -1 || !b->state)
         return -1;
 
