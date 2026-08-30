@@ -15954,3 +15954,17 @@ regression require the manifest, loader records, hash binding, and immutability
 markers. This closes the evidence-binding gap; real production-CVD/service,
 sanitizer, materialized-large-file, Sonic1, and final release qualification
 remain open.
+
+## HFS+ resource-map seek-coordinate admission — 2026-08-30
+
+The compressed-resource helper validated the resource map extent against the
+temporary file but passed the format's 32-bit `mapOffset` directly to
+`lseek()`. On a build with a narrower signed `off_t`, an unrepresentable
+offset could be implementation-defined before the existing seek-result check,
+including an unsigned comparison corner case. The map offset now makes the
+same explicit `off_t` round-trip check used by the later type, reference, and
+data seeks, returning a sticky incomplete format result before the seek when
+the coordinate cannot be represented. The source guard pins the new admission
+boundary; current-source production-linked HFS+ execution, complete corpus,
+sanitizer, materialized-large-file, Sonic1, and final release qualification
+remain open.

@@ -1106,11 +1106,20 @@ cl_error_t cli_hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
         goto done;
     }
 
-    if (lseek(fd, resourceHeader.mapOffset, SEEK_SET) != resourceHeader.mapOffset) {
-        cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to map in temporary file\n");
-        cli_mark_scan_incomplete(ctx, "HFS+ resource map could not be located completely");
-        status = CL_ESEEK;
-        goto done;
+    {
+        off_t map_offset = (off_t)(uint64_t)resourceHeader.mapOffset;
+        if (map_offset < 0 || (uint64_t)map_offset != (uint64_t)resourceHeader.mapOffset) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource map offset is not representable\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ resource map offset is not representable");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if (lseek(fd, map_offset, SEEK_SET) != map_offset) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to map in temporary file\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ resource map could not be located completely");
+            status = CL_ESEEK;
+            goto done;
+        }
     }
 
     if (cli_readn(fd, &resourceMap, sizeof(resourceMap)) != sizeof(resourceMap)) {

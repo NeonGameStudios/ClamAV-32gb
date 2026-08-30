@@ -8731,3 +8731,12 @@ qualification as required evidence.
 - Retain the verifier regression and source guards; real production-CVD/
   service, sanitizer, materialized-large-file, Sonic1, and final release
   qualification remain required.
+
+## HFS+ resource-map seek-coordinate admission — 2026-08-30
+
+- Keep the compressed-resource map offset behind an explicit `off_t`
+  round-trip check before `lseek()`; an unrepresentable coordinate must remain
+  fail-visible and non-cacheable.
+- Retain the source guard and add current-source production-linked HFS+,
+  complete corpus, sanitizer, materialized-large-file, Sonic1, and final
+  release qualification evidence.
