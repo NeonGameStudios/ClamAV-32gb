@@ -244,12 +244,21 @@ cl_error_t __wrap_cli_magic_scan_desc_type_reserved(int desc, const char *filepa
 #ifdef CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
 extern struct cli_bc_ctx *__real_cli_bytecode_context_alloc(void);
 static int elf_test_fail_bytecode_context_alloc;
+static unsigned int pe_test_fail_bytecode_context_alloc_call;
+static unsigned int pe_test_bytecode_context_alloc_calls;
 
 struct cli_bc_ctx *__wrap_cli_bytecode_context_alloc(void)
 {
     if (elf_test_fail_bytecode_context_alloc) {
         elf_test_fail_bytecode_context_alloc = 0;
         return NULL;
+    }
+    if (pe_test_fail_bytecode_context_alloc_call != 0U) {
+        pe_test_bytecode_context_alloc_calls++;
+        if (pe_test_bytecode_context_alloc_calls == pe_test_fail_bytecode_context_alloc_call) {
+            pe_test_fail_bytecode_context_alloc_call = 0U;
+            return NULL;
+        }
     }
     return __real_cli_bytecode_context_alloc();
 }
@@ -35963,6 +35972,51 @@ START_TEST(test_pe_short_entrypoint_skips_legacy_path_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
+START_TEST(test_pe_unpack_context_allocation_failure_is_fail_visible)
+{
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    uint8_t data[PE32_SHORT_ENTRY_TEST_FILE_SIZE];
+
+    build_pe32_short_entry_fixture(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    pe_test_bytecode_context_alloc_calls     = 0U;
+    pe_test_fail_bytecode_context_alloc_call = 2U;
+    ret                                      = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_uint_eq(pe_test_bytecode_context_alloc_calls, 2U);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+#endif
+
 #define PE32PLUS_TEST_FILE_SIZE 0x600U
 #define PE32PLUS_TEST_PE_OFFSET 0x80U
 #define PE32PLUS_TEST_SECTION_RAW 0x200U
@@ -47159,6 +47213,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_pe);
     tcase_add_checked_fixture(tc_pe, cl_setup, cl_teardown);
     tcase_add_test(tc_pe, test_pe_short_entrypoint_skips_legacy_path_fail_visible);
+#ifdef CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
+    tcase_add_test(tc_pe, test_pe_unpack_context_allocation_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_pe, test_pe_missing_map_is_fail_visible);
     tcase_add_test(tc_pe, test_pe_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_pe_corpus);

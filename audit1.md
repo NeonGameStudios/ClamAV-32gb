@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## PE bytecode-unpacker metadata cleanup — 2026-08-30
+
+The second PE bytecode hook allocation failure returned `CL_EMEM` after
+marking the layer incomplete but did not destroy the populated `cli_exe_info`,
+leaving PE section and metadata allocations live on a confirmed executable
+path. The failure branch now destroys that metadata before returning. The
+source guard covers the cleanup boundary; current-source production-GCC
+execution, sanitizer/leak evidence, complete PE unpacker/corpus,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.
+
 ## Bytecode preparation context cleanup — 2026-08-30
 
 `cli_bytecode_prepare2()` destroyed its startup context only on the ordinary

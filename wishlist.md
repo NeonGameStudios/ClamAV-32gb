@@ -1,5 +1,14 @@
 # Wishlist
 
+## PE bytecode-unpacker metadata cleanup — 2026-08-30
+
+- Keep the second `cli_scanpe()` bytecode-context allocation failure fail
+  visible and destroy the populated PE metadata before returning `CL_EMEM`.
+  Retain the source guard, add a current-source fault-injected PE execution
+  and sanitizer/leak evidence, then complete the PE unpacker/corpus,
+  production-CVD/service, materialized-large-file, Sonic1, and release
+  qualification.
+
 ## Bytecode preparation context cleanup — 2026-08-30
 
 - Keep `cli_bytecode_prepare2()`'s startup context on one cleanup path when

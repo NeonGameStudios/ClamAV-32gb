@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PE bytecode-unpacker metadata cleanup — 2026-08-30
+
+The second PE bytecode hook allocation failure now destroys the populated
+`cli_exe_info` metadata before returning `CL_EMEM`, while retaining the sticky
+incomplete state and non-cacheable result. A source guard covers this cleanup
+boundary; current-source execution, sanitizer/leak evidence, complete PE
+unpacker/corpus, production-CVD/service, materialized-large-file, Sonic1, and
+final release qualification remain required.
+
 ## Bytecode preparation context cleanup — 2026-08-30
 
 `cli_bytecode_prepare2()` now routes startup-context failures after allocation
