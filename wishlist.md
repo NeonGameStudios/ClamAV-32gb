@@ -1,5 +1,13 @@
 # Wishlist
 
+## MSPack filename-backed read callback contract — 2026-08-30
+
+- Keep the custom MSPack `read()` callback byte-count correct for complete and
+  short filename-backed reads, and return zero for zero-byte requests. The
+  current-source GCC callback harness and its GCC ASan/UBSan leak-enabled
+  variant pass; complete CAB/CHM corpus, production-CVD/service,
+  materialized-large-file, Sonic1, and release qualification remain open.
+
 ## MBR zero-length partition admission — 2026-08-30
 
 - Keep non-empty primary and extended MBR entries with zero sectors fail-visible

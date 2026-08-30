@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MSPack filename-backed read callback contract — 2026-08-30
+
+The custom MSPack callback now follows the library's byte-count contract for
+filename-backed handles: zero-byte requests return zero, complete reads return
+the requested byte count, and short reads return the actual number of bytes
+read. The focused current-source GCC callback harness passes complete, short,
+EOF, and zero-byte cases, and its GCC ASan/UBSan leak-enabled variant is clean.
+Full CAB/CHM corpus, production-CVD/service, materialized-large-file, Sonic1,
+and final release qualification remain required.
+
 ## MBR zero-length partition admission — 2026-08-30
 
 Non-empty primary and extended MBR entries with `numLBA == 0` are now rejected

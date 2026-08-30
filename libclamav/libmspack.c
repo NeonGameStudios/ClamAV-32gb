@@ -200,7 +200,6 @@ static int mspack_fmap_read(struct mspack_file *file, void *buffer, int bytes)
     struct mspack_handle *mspack_handle = (struct mspack_handle *)file;
     size_t offset;
     size_t count;
-    int ret;
 
     if (bytes < 0) {
         cli_dbgmsg("%s() %d\n", __func__, __LINE__);
@@ -210,6 +209,8 @@ static int mspack_fmap_read(struct mspack_file *file, void *buffer, int bytes)
         cli_dbgmsg("%s() %d\n", __func__, __LINE__);
         return -1;
     }
+    if (!bytes)
+        return 0;
     if (!mspack_deadline_ok(mspack_handle->system_ex))
         return -1;
 
@@ -242,15 +243,13 @@ static int mspack_fmap_read(struct mspack_file *file, void *buffer, int bytes)
         return (int)count;
     } else {
         /* Use file descriptor */
-        count = fread(buffer, (size_t)bytes, 1, mspack_handle->f);
-        if (count < 1) {
+        count = fread(buffer, 1, (size_t)bytes, mspack_handle->f);
+        if (count == 0) {
             cli_dbgmsg("%s() %d requested %d bytes, read failed (%zu)\n", __func__, __LINE__, bytes, count);
             return -1;
         }
 
-        ret = (int)count;
-
-        return ret;
+        return (int)count;
     }
 }
 

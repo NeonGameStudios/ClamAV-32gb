@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## MSPack filename-backed read callback contract — 2026-08-30
+
+The custom MSPack `read()` callback used a successful `fread(buffer, bytes,
+1, ...)` call and returned the item count, so every nonzero filename-backed
+read reported one byte regardless of the requested size. It also reported an
+error for a zero-byte request. The callback now uses byte-oriented `fread`,
+returns its actual byte count, preserves short-read/EOF behavior, and accepts
+zero-byte reads. A disposable current-source GCC harness passes complete,
+short, EOF, and zero-byte cases; the same harness passes under GCC
+AddressSanitizer/UndefinedBehaviorSanitizer with leak detection. Full
+MSPack corpus, production-CVD/service, materialized-large-file, Sonic1, and
+final release qualification remain open.
+
 ## MBR zero-length partition admission — 2026-08-30
 
 The MBR parser accepted a non-empty partition entry whose declared sector count
