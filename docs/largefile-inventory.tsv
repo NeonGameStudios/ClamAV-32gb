@@ -35601,19 +35601,19 @@ offset-size-arithmetic	libclamav_rust/src/alz.rs	753	    fn last_size(&self) -> 
 offset-size-arithmetic	libclamav_rust/src/alz.rs	786	    fn last_size(&self) -> u64 {
 offset-size-arithmetic	libclamav_rust/src/alz.rs	837	    fn last_size(&self) -> u64 {
 offset-size-arithmetic	libclamav_rust/src/alz.rs	903	        let metadata_filepos = *filepos;
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1259	                decompressed_bytes = decompressed_bytes + n_read + 1;
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1287	    file.seek(SeekFrom::End(-(SIG_SIZE as i64)))?;
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1295	    let offset: usize = SIG_SIZE + 1;
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1311	fn read_size(file: &mut File) -> Result<(u32, usize), HeaderError> {
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1315	    // File should always start with "ClamAV-Diff".
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1334	            file_size_vec.push(*value);
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1354	fn get_hash(file: &mut File, len: usize) -> Result<[u8; 32], Error> {
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1378	            // update with len - sum
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1379	            hasher.update(&buf[..(len - sum)]);
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1393	fn signature_footer_offset(file_len: usize, dsig_len: usize) -> Result<usize, SignatureError> {
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1774	        assert_eq!(offset, b"ClamAV-Diff:1:0:".len());
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1784	            signature_footer_offset(SIG_SIZE + 1, SIG_SIZE).expect("footer offset"),
-offset-size-arithmetic	libclamav_rust/src/cdiff.rs	630	    let verifier = ManuallyDrop::new(Box::from_raw(verifier_ptr as *mut Verifier));
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1256	                decompressed_bytes = decompressed_bytes + n_read + 1;
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1284	    file.seek(SeekFrom::End(-(SIG_SIZE as i64)))?;
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1292	    let offset: usize = SIG_SIZE + 1;
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1308	fn read_size(file: &mut File) -> Result<(u32, usize), HeaderError> {
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1312	    // File should always start with "ClamAV-Diff".
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1331	            file_size_vec.push(*value);
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1351	fn get_hash(file: &mut File, len: usize) -> Result<[u8; 32], Error> {
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1375	            // update with len - sum
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1376	            hasher.update(&buf[..(len - sum)]);
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1405	fn signature_footer_offset(file_len: usize, dsig_len: usize) -> Result<usize, SignatureError> {
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1786	        assert_eq!(offset, b"ClamAV-Diff:1:0:".len());
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	1796	            signature_footer_offset(SIG_SIZE + 1, SIG_SIZE).expect("footer offset"),
+offset-size-arithmetic	libclamav_rust/src/cdiff.rs	627	    let verifier = ManuallyDrop::new(Box::from_raw(verifier_ptr as *mut Verifier));
 offset-size-arithmetic	libclamav_rust/src/codesign.rs	365	    let verifier = ManuallyDrop::new(Box::from_raw(verifier_ptr as *mut Verifier));
 offset-size-arithmetic	libclamav_rust/src/codesign.rs	434	            *verifier = Box::into_raw(Box::new(new_verifier)) as *mut c_void;
 offset-size-arithmetic	libclamav_rust/src/codesign.rs	453	        let _ = unsafe { Box::from_raw(verifier as *mut Verifier) };

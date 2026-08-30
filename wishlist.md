@@ -8903,3 +8903,11 @@ qualification evidence.
   source guards; add full Rust/C ABI execution, production-CVD/service,
   sanitizer, materialized-large-file, Sonic1, and final release qualification
   evidence.
+
+## CDIFF generated-diff hashing admission — 2026-08-30
+
+- Keep `script2cdiff()` hashing the generated diff through a fixed-size reader;
+  do not restore a second whole-diff `Vec<u8>`.
+- Retain the cross-buffer SHA-256 regression and source guards, then add full
+  Rust/C ABI execution, CDIFF corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification evidence.

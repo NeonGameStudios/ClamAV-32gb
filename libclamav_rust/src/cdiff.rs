@@ -545,15 +545,12 @@ pub fn script2cdiff(script_file_name: &str, builder: &str, server: &str) -> Resu
         cdiff_file_len, cdiff_file_name
     );
 
-    // Calculate SHA2-256 to get the signature
-    // TODO: Do this while the file is being written
-    let bytes = std::fs::read(&cdiff_file_name)
+    // Calculate SHA2-256 to get the signature without materializing the
+    // generated diff in a second unbounded buffer.
+    let mut hash_file = File::open(&cdiff_file_name)
         .map_err(|e| Error::FileRead(cdiff_file_name.to_owned(), e))?;
-    let sha2_256 = {
-        let mut hasher = Sha256::new();
-        hasher.update(&bytes);
-        hasher.finalize()
-    };
+    let sha2_256 = hash_reader(&mut hash_file)
+        .map_err(|e| Error::FileRead(cdiff_file_name.to_owned(), e))?;
 
     let dsig = unsafe {
         let server = CString::new(server)?;
@@ -582,7 +579,7 @@ pub fn script2cdiff(script_file_name: &str, builder: &str, server: &str) -> Resu
 
     // Write dsig to cdiff footer
     cdiff_file
-        .write_all(dsig.to_bytes())
+        .write_all(&dsig)
         .map_err(|e| Error::FileWrite(cdiff_file_name, e))?;
 
     // Exit success
@@ -1390,6 +1387,21 @@ fn get_hash(file: &mut File, len: usize) -> Result<[u8; 32], Error> {
     }
 }
 
+fn hash_reader<R: Read>(reader: &mut R) -> std::io::Result<[u8; 32]> {
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; READ_SIZE];
+
+    loop {
+        let count = reader.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        hasher.update(&buffer[..count]);
+    }
+
+    Ok(hasher.finalize().into())
+}
+
 fn signature_footer_offset(file_len: usize, dsig_len: usize) -> Result<usize, SignatureError> {
     let footer_len = dsig_len
         .checked_add(1)
@@ -1795,6 +1807,17 @@ mod tests {
             get_hash(file.as_file_mut(), 2),
             Err(Error::Signature(SignatureError::FooterOutOfBounds))
         ));
+    }
+
+    #[test]
+    fn hash_reader_matches_sha256_without_whole_input_storage() {
+        let input = vec![b'x'; READ_SIZE * 2 + 17];
+        let expected: [u8; 32] = Sha256::digest(&input).into();
+
+        assert_eq!(
+            hash_reader(&mut std::io::Cursor::new(input)).expect("hash input"),
+            expected
+        );
     }
 
     #[test]

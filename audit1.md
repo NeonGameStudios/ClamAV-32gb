@@ -165,6 +165,32 @@ AddressSanitizer/UndefinedBehaviorSanitizer when `readdir()` is injected with
 `EIO`. Current-object execution, production-CVD/service, materialized-large-
 file, Sonic1, and final release qualification remain open.
 
+The same current-source check also caught a stale CDIFF footer call that
+invoked a `SigBytes`-only method on the signing-service `Vec<u8>` result; the
+footer now writes the returned bytes directly.
+
+## CDIFF generated-diff hashing admission — 2026-08-30
+
+`script2cdiff()` previously reopened its generated compressed diff with
+`std::fs::read()` to calculate the detached-signature digest, creating a second
+unbounded resident copy. The generated file is now hashed through a fixed
+8 KiB reader buffer, while the existing bounded footer and prefix/hash readers
+remain unchanged. A cross-buffer SHA-256 regression and source guards cover
+the helper, and the cached Rust 1.97.1 Docker check passes. Full Rust/C ABI
+execution, CDIFF corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
+## CDIFF generated-diff hashing admission — 2026-08-30
+
+`script2cdiff()` previously reopened its generated compressed diff with
+`std::fs::read()` to calculate the detached-signature digest, creating a second
+unbounded resident copy. The generated file is now hashed through a fixed
+8 KiB reader buffer, while the existing bounded footer and prefix/hash readers
+remain unchanged. A cross-buffer SHA-256 regression and source guards cover
+the helper, and the cached Rust 1.97.1 Docker check passes. Full Rust/C ABI
+execution, CDIFF corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## Descriptor ingress native-size admission — 2026-08-30
 
 The shared descriptor scan paths converted `stat.st_size` to their 64-bit scan
