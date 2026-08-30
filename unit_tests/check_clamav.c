@@ -209,6 +209,8 @@ static bool pdf_test_fail_output_window_allocation;
 static unsigned int pdf_test_output_window_allocation_failures;
 static bool scan_report_test_fail_allocation;
 static unsigned int scan_report_test_allocation_failures;
+int htmlnorm_test_fail_next_malloc;
+int htmlnorm_test_fail_next_realloc;
 #endif
 
 #ifdef CLAMAV_TEST_JSON_WRAP
@@ -39059,9 +39061,14 @@ END_TEST
 #ifdef CLAMAV_TEST_MALLOC_WRAP
 extern void *__real_malloc(size_t size);
 extern void *__real_calloc(size_t nmemb, size_t size);
+extern void *__real_realloc(void *ptr, size_t size);
 
 void *__wrap_malloc(size_t size)
 {
+    if (htmlnorm_test_fail_next_malloc) {
+        htmlnorm_test_fail_next_malloc = 0;
+        return NULL;
+    }
     if (pdf_test_output_window_allocation_active &&
         pdf_test_fail_output_window_allocation &&
         size == PDF_TEST_OUTPUT_WINDOW_SIZE) {
@@ -39081,6 +39088,15 @@ void *__wrap_calloc(size_t nmemb, size_t size)
         return NULL;
     }
     return __real_calloc(nmemb, size);
+}
+
+void *__wrap_realloc(void *ptr, size_t size)
+{
+    if (htmlnorm_test_fail_next_realloc) {
+        htmlnorm_test_fail_next_realloc = 0;
+        return NULL;
+    }
+    return __real_realloc(ptr, size);
 }
 #endif
 

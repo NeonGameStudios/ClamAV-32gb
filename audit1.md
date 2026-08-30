@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## HTML normalization read and growth failure audit — 2026-08-30
+
+The HTML normalizer previously allowed a failed `cli_readchunk()` allocation to
+look like ordinary EOF, so the memory-backed normalization entry could return
+success without producing a complete normalized view. The stream-backed helper
+also ignored `fread()` errors and failed rewind seeks. The helper now reports
+processing failure separately from EOF, validates its map cursor before
+subtraction, preserves mapped read errors, and makes stream read/seek failures
+fail-visible to the normalizer. Public tag-argument growth also previously
+freed all published state after a later table allocation failed; it now leaves
+the published arrays and count intact, clears only the uncommitted slot, and
+retains any safely moved table for cleanup or retry. The current-source
+production-GCC syntax check passes, and an isolated production-linked GCC
+boundary runner passes the allocation and later-realloc failure contracts under
+normal and ASan/UBSan builds. Complete HTML/MIME corpus, full C ABI execution,
+production CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.
+
 ## Bundled YARA arena admission — 2026-08-30
 
 The bundled YARA arena layer previously allowed a zero-sized initial page,

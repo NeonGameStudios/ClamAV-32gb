@@ -184,19 +184,37 @@ static inline unsigned int rewind_tospace(const unsigned char *chunk, unsigned i
 
 /* read at most @max_len of data from @m_area or @stream, skipping NULL chars.
  * This used to be called cli_readline, but we don't stop at end-of-line anymore */
-static unsigned char *cli_readchunk(FILE *stream, m_area_t *m_area, unsigned int max_len)
+static unsigned char *cli_readchunk(FILE *stream, m_area_t *m_area, unsigned int max_len, bool *failed)
 {
     unsigned char *chunk, *start, *ptr, *end;
     unsigned int chunk_len, count;
 
+    if (max_len < 2) {
+        if (failed)
+            *failed = true;
+        if (m_area)
+            m_area->read_error = true;
+        return NULL;
+    }
+
     chunk = (unsigned char *)cli_max_malloc(max_len);
     if (!chunk) {
         cli_errmsg("readchunk: Unable to allocate memory for chunk\n");
+        if (failed)
+            *failed = true;
         return NULL;
     }
 
     /* Try to use the memory buffer first */
     if (m_area) {
+        if (m_area->length < 0 || m_area->offset < 0 || m_area->offset > m_area->length) {
+            m_area->read_error = true;
+            if (failed)
+                *failed = true;
+            free(chunk);
+            return NULL;
+        }
+
         /* maximum we can copy into the buffer,
          * we could have less than max_len bytes available */
         chunk_len = MIN(m_area->length - m_area->offset, max_len - 1);
@@ -210,6 +228,8 @@ static unsigned char *cli_readchunk(FILE *stream, m_area_t *m_area, unsigned int
             ptr = m_area->buffer + m_area->offset;
         if (m_area->map && !ptr) {
             m_area->read_error = true;
+            if (failed)
+                *failed = true;
             free(chunk);
             return NULL;
         }
@@ -245,6 +265,8 @@ static unsigned char *cli_readchunk(FILE *stream, m_area_t *m_area, unsigned int
             if (!ptr) {
                 if (m_area->map)
                     m_area->read_error = true;
+                if (failed)
+                    *failed = true;
                 cli_warnmsg("fmap inconsistency\n");
                 ptr = end;
             }
@@ -276,6 +298,8 @@ static unsigned char *cli_readchunk(FILE *stream, m_area_t *m_area, unsigned int
             return NULL;
         }
         chunk_len = fread(chunk, 1, max_len - 1, stream);
+        if (ferror(stream) && failed)
+            *failed = true;
         if (!chunk_len || chunk_len > max_len - 1) {
             /* EOF, or prevent overflow */
             free(chunk);
@@ -313,7 +337,12 @@ static unsigned char *cli_readchunk(FILE *stream, m_area_t *m_area, unsigned int
             if (count < chunk_len) {
                 chunk[count] = '\0';
                 /* seek-back to space */
-                fseek(stream, -(long)(chunk_len - count), SEEK_CUR);
+                if (fseek(stream, -(long)(chunk_len - count), SEEK_CUR) != 0) {
+                    if (failed)
+                        *failed = true;
+                    free(chunk);
+                    return NULL;
+                }
             }
         }
     }
@@ -495,7 +524,7 @@ cl_error_t cli_html_tag_table_size(size_t count, size_t element_size, size_t *by
 bool html_tag_arg_add(tag_arguments_t *tags,
                       const char *tag, char *value)
 {
-    int len, i;
+    size_t value_len;
     size_t next_count;
     size_t tag_table_size;
     size_t value_table_size;
@@ -511,6 +540,12 @@ bool html_tag_arg_add(tag_arguments_t *tags,
     if (tags->count < 0 || tags->count == INT_MAX)
         return false;
 
+    if (tags->count > 0 && (!tags->tag || !tags->value ||
+                             (tags->scanContents && !tags->contents)))
+        return false;
+    if (!tags->scanContents && tags->contents)
+        return false;
+
     next_count = (size_t)tags->count + 1U;
     if (cli_html_tag_table_size(next_count, sizeof(char *), &tag_table_size) != CL_SUCCESS ||
         cli_html_tag_table_size(next_count, sizeof(char *), &value_table_size) != CL_SUCCESS ||
@@ -519,26 +554,23 @@ bool html_tag_arg_add(tag_arguments_t *tags,
         return false;
 
     tmp = (unsigned char **)cli_max_realloc(tags->tag, tag_table_size);
-    if (!tmp) {
+    if (!tmp)
         goto done;
-    }
     tags->tag = tmp;
     tags->tag[tags->count] = NULL;
-    tag_grown             = true;
+    tag_grown = true;
 
     tmp = (unsigned char **)cli_max_realloc(tags->value, value_table_size);
-    if (!tmp) {
+    if (!tmp)
         goto done;
-    }
     tags->value = tmp;
     tags->value[tags->count] = NULL;
-    value_grown               = true;
+    value_grown = true;
 
     if (tags->scanContents) {
-        tmp        = (unsigned char **)cli_max_realloc(tags->contents, content_table_size);
-        if (!tmp) {
+        tmp = (unsigned char **)cli_max_realloc(tags->contents, content_table_size);
+        if (!tmp)
             goto done;
-        }
         tags->contents = tmp;
         tags->contents[tags->count] = NULL;
         content_grown = true;
@@ -553,60 +585,35 @@ bool html_tag_arg_add(tag_arguments_t *tags,
             if (NULL == tags->value[tags->count]) {
                 goto done;
             }
-            len = strlen((const char *)value + 1);
-            if (len > 0) {
-                tags->value[tags->count][len - 1] = '\0';
+            value_len = strlen((const char *)value + 1);
+            if (value_len > 0) {
+                tags->value[tags->count][value_len - 1] = '\0';
             }
         } else {
             tags->value[tags->count] = (unsigned char *)cli_safer_strdup(value);
             if (!tags->value[tags->count])
                 goto done;
         }
-    } else {
-        tags->value[tags->count] = NULL;
     }
 
     tags->count++;
     return true;
 
 done:
-    /* Keep cleanup bounded to the entries that were published before this
-     * attempted append. Newly grown slots are explicitly initialized above,
-     * and are freed separately only when their corresponding realloc
-     * succeeded. */
-    for (i = 0; i < tags->count; i++) {
-        if (tags->tag) {
-            free(tags->tag[i]);
-        }
-    }
-    if (tag_grown && tags->tag)
+    /* A successful realloc may have moved a table. Leave every grown table
+     * installed and preserve the old count, but release only the uncommitted
+     * entry. This keeps the published state valid for callers that choose to
+     * recover after a rejected append. */
+    if (tag_grown && tags->tag) {
         free(tags->tag[tags->count]);
-    for (i = 0; i < tags->count; i++) {
-        if (tags->value) {
-            free(tags->value[i]);
-        }
+        tags->tag[tags->count] = NULL;
     }
-    if (value_grown && tags->value)
+    if (value_grown && tags->value) {
         free(tags->value[tags->count]);
-    for (i = 0; i < tags->count; i++) {
-        if (tags->contents) {
-            if (tags->contents[i])
-                free(tags->contents[i]);
-        }
+        tags->value[tags->count] = NULL;
     }
     if (content_grown && tags->contents)
-        free(tags->contents[tags->count]);
-    if (tags->tag) {
-        free(tags->tag);
-    }
-    if (tags->value) {
-        free(tags->value);
-    }
-    if (tags->contents)
-        free(tags->contents);
-    tags->contents = NULL;
-    tags->tag = tags->value = NULL;
-    tags->count             = 0;
+        tags->contents[tags->count] = NULL;
     return false;
 }
 
@@ -634,6 +641,9 @@ static void html_output_tag(file_buff_t *fbuff, char *tag, tag_arguments_t *tags
 void html_tag_arg_free(tag_arguments_t *tags)
 {
     int i;
+
+    if (!tags)
+        return;
 
     for (i = 0; i < tags->count; i++) {
         free(tags->tag[i]);
@@ -664,7 +674,7 @@ static inline void html_tag_contents_append(struct tag_contents *cont, const uns
 {
     size_t i;
     uint32_t mbchar = 0;
-    if (!begin || !end)
+    if (!cont || !begin || !end)
         return;
     for (i = cont->pos; i < MAX_TAG_CONTENTS_LENGTH && (begin < end); i++) {
         uint8_t c = *begin++;
@@ -868,6 +878,10 @@ bool html_insert_form_data(const char *const value, form_data_t *tags)
 void html_form_data_tag_free(form_data_t *tags)
 {
     size_t i;
+
+    if (!tags)
+        return;
+
     for (i = 0; i < tags->count; i++) {
         CLI_FREE_AND_SET_NULL(tags->urls[i]);
     }
@@ -891,6 +905,7 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
     bool binary, retval = false, escape = false, hex = false;
     int64_t value = 0, tag_val_length = 0;
     bool look_for_screnc = false, in_screnc = false, text_space_written = false;
+    bool input_failed = false;
     tag_type in_tag  = TAG_DONT_EXTRACT;
     FILE *stream_in  = NULL;
     html_state state = HTML_NORM, next_state = HTML_BAD_STATE, saved_next_state = HTML_BAD_STATE;
@@ -939,7 +954,10 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
             cli_dbgmsg("Invalid HTML fd\n");
             return false;
         }
-        lseek(fd, 0, SEEK_SET);
+        if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+            cli_mark_scan_incomplete(ctx, "HTML normalization input could not be positioned");
+            return false;
+        }
         fd_tmp = dup(fd);
         if (fd_tmp < 0) {
             return false;
@@ -947,6 +965,7 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
         stream_in = fdopen(fd_tmp, "r");
         if (!stream_in) {
             close(fd_tmp);
+            cli_mark_scan_incomplete(ctx, "HTML normalization input stream could not be opened");
             return false;
         }
     }
@@ -1012,7 +1031,7 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
     if (!htmlnorm_checktimelimit(ctx, "HTML normalization reached the configured time limit"))
         goto done;
 
-    ptr = line = cli_readchunk(stream_in, m_area, 8192);
+    ptr = line = cli_readchunk(stream_in, m_area, 8192, &input_failed);
 
     while (line) {
         if (!htmlnorm_checktimelimit(ctx, "HTML normalization reached the configured time limit"))
@@ -2281,7 +2300,7 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
             continue;
         }
         free(line);
-        ptr = line = cli_readchunk(stream_in, m_area, 8192);
+        ptr = line = cli_readchunk(stream_in, m_area, 8192, &input_failed);
 
         if (in_tag == TAG_STYLE) {
             // reset style_begin to start of the next line
@@ -2339,8 +2358,10 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
     retval = true;
 
 done:
-    if (m_area && m_area->read_error) {
-        cli_mark_scan_incomplete(ctx, "HTML normalization could not read the complete input map");
+    if (input_failed || (m_area && m_area->read_error)) {
+        cli_mark_scan_incomplete(ctx, m_area && m_area->read_error
+                                         ? "HTML normalization could not read the complete input map"
+                                         : "HTML normalization input could not be read completely");
         retval = false;
     }
     if (line) /* only needed for done case */
@@ -2585,7 +2606,7 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
         if (!htmlnorm_checktimelimit(ctx, "HTML script-encoded inspection reached the configured time limit"))
             goto done;
 
-        line = cli_readchunk(NULL, &m_area, 8192);
+        line = cli_readchunk(NULL, &m_area, 8192, NULL);
         if (line == NULL)
             break;
 
@@ -2609,7 +2630,7 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
                 goto done;
 
             free(line);
-            ptr = line = cli_readchunk(NULL, &m_area, 8192);
+            ptr = line = cli_readchunk(NULL, &m_area, 8192, NULL);
             if (!line) {
                 goto done;
             }
@@ -2641,7 +2662,7 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
         free(line);
         line = NULL;
         if (screnc_state.length) {
-            ptr = line = cli_readchunk(NULL, &m_area, 8192);
+            ptr = line = cli_readchunk(NULL, &m_area, 8192, NULL);
         }
     }
     if (screnc_state.length) {

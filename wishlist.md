@@ -1,5 +1,18 @@
 # Wishlist
 
+## HTML normalization read and growth failure audit — 2026-08-30
+
+- Keep `cli_readchunk()` distinct between EOF and processing failure: chunk
+  allocation failure, malformed map cursors, mapped fetch failure, stream
+  `fread()` failure, and failed rewind must make normalization incomplete.
+- Keep `html_tag_arg_add()` bounded and recoverable on later realloc failure:
+  preserve the published arrays, entries, and count, clear only the attempted
+  slot, and avoid quadratic copy-on-append behavior.
+- Retain the current-source production-GCC and ASan/UBSan boundary runner and
+  source guards. Complete HTML/MIME corpus, full-C ABI, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification remain
+  required.
+
 ## Bundled YARA arena admission — 2026-08-30
 
 - Keep bundled YARA arena creation fail-visible for zero-sized pages, native

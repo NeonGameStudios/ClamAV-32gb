@@ -48,6 +48,11 @@
 
 static char *dir;
 
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+extern int htmlnorm_test_fail_next_malloc;
+extern int htmlnorm_test_fail_next_realloc;
+#endif
+
 static off_t htmlnorm_failing_pread(void *handle, void *buf, size_t count, off_t offset)
 {
     (void)handle;
@@ -241,6 +246,31 @@ START_TEST(test_html_normalization_table_size_rejects_overflow)
     free(existing_urls);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+START_TEST(test_html_normalization_allocation_failures_are_fail_visible)
+{
+    static unsigned char input[] = "<html>allocation failure</html>";
+    tag_arguments_t args;
+    cli_ctx ctx;
+
+    memset(&args, 0, sizeof(args));
+    ck_assert(html_tag_arg_add(&args, "href", "https://keep.example/"));
+    htmlnorm_test_fail_next_realloc = 1;
+    ck_assert(!html_tag_arg_add(&args, "src", "https://new.example/"));
+    ck_assert_int_eq(args.count, 1);
+    ck_assert_str_eq((const char *)args.tag[0], "href");
+    ck_assert_str_eq((const char *)args.value[0], "https://keep.example/");
+    html_tag_arg_free(&args);
+
+    memset(&ctx, 0, sizeof(ctx));
+    htmlnorm_test_fail_next_malloc = 1;
+    ck_assert(!html_normalise_mem(&ctx, input, sizeof(input) - 1U, NULL, NULL, NULL));
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HTML normalization input could not be read completely");
+}
+END_TEST
+#endif
 
 START_TEST(test_htmlnorm_mapped_read_failure_is_fail_visible)
 {
@@ -450,6 +480,9 @@ Suite *test_htmlnorm_suite(void)
                                 htmlnorm_setup, htmlnorm_teardown);
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_invalid_input_is_fail_visible);
     tcase_add_test(tc_htmlnorm_api, test_html_normalization_table_size_rejects_overflow);
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+    tcase_add_test(tc_htmlnorm_api, test_html_normalization_allocation_failures_are_fail_visible);
+#endif
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_mapped_read_failure_is_fail_visible);
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_temporary_limit_is_fail_visible);
 #ifndef _WIN32

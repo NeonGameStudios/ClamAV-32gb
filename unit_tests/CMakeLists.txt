@@ -177,6 +177,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=cli_jsonstr"
         "-Wl,--wrap=malloc"
         "-Wl,--wrap=calloc"
+        "-Wl,--wrap=realloc"
         "-Wl,--wrap=cli_writen"
         "-Wl,--wrap=close"
         "-Wl,--wrap=fclose"
