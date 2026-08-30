@@ -8720,3 +8720,14 @@ qualification as required evidence.
   production-linked execution, complete ARJ/ARJ-SFX corpus, sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final release
   qualification remain required.
+
+## Service runtime loader binding — 2026-08-30
+
+- Materialize the service build's resolved shared libraries into an
+  evidence-owned runtime directory and bind each artifact to its source hash.
+- Require loader records for clamscan, clamd, clamdscan, and clamav-milter to
+  select only those copied artifacts; inherit the same `LD_LIBRARY_PATH` for
+  the workload and prove the component hashes are unchanged afterward.
+- Retain the verifier regression and source guards; real production-CVD/
+  service, sanitizer, materialized-large-file, Sonic1, and final release
+  qualification remain required.

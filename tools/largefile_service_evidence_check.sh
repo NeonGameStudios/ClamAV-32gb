@@ -56,15 +56,23 @@ interpreter_records=$out/provenance/service-interpreter-records-before.txt
 interpreter_records_after=$out/provenance/service-interpreter-records-after.txt
 dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
 dependency_hashes_after=$out/provenance/service-runtime-dependency-hashes-after.txt
+runtime_component_dir=$out/artifacts/service-runtime-components
+runtime_component_artifacts=$out/provenance/service-runtime-component-artifacts.txt
+runtime_component_hashes=$out/provenance/service-runtime-component-hashes-before.txt
+runtime_component_hashes_after=$out/provenance/service-runtime-component-hashes-after.txt
+loaded_dependencies=$out/provenance/service-loaded-dependencies.txt
 checksum_manifest=$out/SHA256SUMS
 
 for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_results" \
     "$identity" "$config" "$source_manifest" "$cmake_cache" \
     "$compile_commands" "$binary_before" "$binary_after" \
     "$interpreter_records" "$interpreter_records_after" \
-    "$dependency_hashes" "$dependency_hashes_after" "$checksum_manifest"; do
+    "$dependency_hashes" "$dependency_hashes_after" \
+    "$runtime_component_artifacts" "$runtime_component_hashes" \
+    "$runtime_component_hashes_after" "$loaded_dependencies" "$checksum_manifest"; do
     [ -s "$required" ] || fail "missing service evidence: $required"
 done
+[ -d "$runtime_component_dir" ] || fail 'service runtime component directory is missing'
 
 (
     cd "$out"
@@ -83,6 +91,10 @@ grep -Fx 'service_resource_measurement_failed=0' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no clean resource-measurement marker'
 grep -Fx 'service_runtime_dependencies_unchanged=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no runtime-dependency immutability marker'
+grep -Fx 'service_runtime_loader_binding=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no runtime-loader binding marker'
+grep -Fx 'service_runtime_components_unchanged=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no runtime-component immutability marker'
 grep -Fx 'service_interpreters_unchanged=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no ELF-interpreter immutability marker'
 
@@ -122,6 +134,16 @@ dependency_reference=$(identity_field service_runtime_dependency_hashes)
 dependency_hashes_sha256=$(identity_field service_runtime_dependency_hashes_sha256)
 dependency_after_reference=$(identity_field service_runtime_dependency_hashes_after)
 dependency_after_hashes_sha256=$(identity_field service_runtime_dependency_hashes_after_sha256)
+runtime_component_dir_reference=$(identity_field service_runtime_component_dir)
+runtime_component_artifacts_reference=$(identity_field service_runtime_component_artifacts)
+runtime_component_artifacts_sha256=$(identity_field service_runtime_component_artifacts_sha256)
+runtime_component_hashes_reference=$(identity_field service_runtime_component_hashes)
+runtime_component_hashes_sha256=$(identity_field service_runtime_component_hashes_sha256)
+runtime_component_hashes_after_reference=$(identity_field service_runtime_component_hashes_after)
+runtime_component_hashes_after_sha256=$(identity_field service_runtime_component_hashes_after_sha256)
+loaded_dependencies_reference=$(identity_field service_loaded_dependencies)
+loaded_dependencies_sha256=$(identity_field service_loaded_dependencies_sha256)
+service_loader_path=$(identity_field service_loader_path)
 interpreter_reference=$(identity_field service_interpreter_records)
 interpreter_hashes_sha256=$(identity_field service_interpreter_records_sha256)
 interpreter_after_reference=$(identity_field service_interpreter_records_after)
@@ -163,12 +185,28 @@ is_hash "$binary_hashes_sha256" || fail 'service binary-list hash is invalid'
 is_hash "$interpreter_hashes_sha256" || fail 'service interpreter-list hash is invalid'
 is_hash "$interpreter_after_hashes_sha256" || fail 'service after interpreter-list hash is invalid'
 is_hash "$dependency_hashes_sha256" || fail 'service dependency-list hash is invalid'
+is_hash "$runtime_component_artifacts_sha256" || fail 'service runtime-component manifest hash is invalid'
+is_hash "$runtime_component_hashes_sha256" || fail 'service runtime-component hash-list hash is invalid'
+is_hash "$runtime_component_hashes_after_sha256" || fail 'service after runtime-component hash-list hash is invalid'
+is_hash "$loaded_dependencies_sha256" || fail 'service loaded-dependency evidence hash is invalid'
 [ "$binary_reference" = provenance/service-binary-hashes-before.txt ] ||
     fail 'service build identity references the wrong binary hash list'
 [ "$dependency_reference" = provenance/service-runtime-dependency-hashes.txt ] ||
     fail 'service build identity references the wrong dependency hash list'
 [ "$dependency_after_reference" = provenance/service-runtime-dependency-hashes-after.txt ] ||
     fail 'service build identity references the wrong after dependency hash list'
+[ "$runtime_component_dir_reference" = artifacts/service-runtime-components ] ||
+    fail 'service build identity references the wrong runtime component directory'
+[ "$runtime_component_artifacts_reference" = provenance/service-runtime-component-artifacts.txt ] ||
+    fail 'service build identity references the wrong runtime component manifest'
+[ "$runtime_component_hashes_reference" = provenance/service-runtime-component-hashes-before.txt ] ||
+    fail 'service build identity references the wrong runtime component hash list'
+[ "$runtime_component_hashes_after_reference" = provenance/service-runtime-component-hashes-after.txt ] ||
+    fail 'service build identity references the wrong after runtime component hash list'
+[ "$loaded_dependencies_reference" = provenance/service-loaded-dependencies.txt ] ||
+    fail 'service build identity references the wrong loaded-dependency evidence'
+[ "$service_loader_path" = artifacts/service-runtime-components ] ||
+    fail 'service build identity references the wrong service loader path'
 [ "$interpreter_reference" = provenance/service-interpreter-records-before.txt ] ||
     fail 'service build identity references the wrong interpreter record list'
 [ "$interpreter_after_reference" = provenance/service-interpreter-records-after.txt ] ||
@@ -196,6 +234,10 @@ actual_interpreter_hashes_sha256=$(sha256sum "$interpreter_records" | awk '{ pri
 actual_interpreter_after_hashes_sha256=$(sha256sum "$interpreter_records_after" | awk '{ print $1 }')
 actual_dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
 actual_dependency_after_hashes_sha256=$(sha256sum "$dependency_hashes_after" | awk '{ print $1 }')
+actual_runtime_component_artifacts_sha256=$(sha256sum "$runtime_component_artifacts" | awk '{ print $1 }')
+actual_runtime_component_hashes_sha256=$(sha256sum "$runtime_component_hashes" | awk '{ print $1 }')
+actual_runtime_component_hashes_after_sha256=$(sha256sum "$runtime_component_hashes_after" | awk '{ print $1 }')
+actual_loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 }')
 [ "$actual_binary_hashes_sha256" = "$binary_hashes_sha256" ] ||
     fail 'service binary-list hash does not verify'
 [ "$actual_interpreter_hashes_sha256" = "$interpreter_hashes_sha256" ] ||
@@ -206,6 +248,14 @@ actual_dependency_after_hashes_sha256=$(sha256sum "$dependency_hashes_after" | a
     fail 'service dependency-list hash does not verify'
 [ "$actual_dependency_after_hashes_sha256" = "$dependency_after_hashes_sha256" ] ||
     fail 'service after dependency-list hash does not verify'
+[ "$actual_runtime_component_artifacts_sha256" = "$runtime_component_artifacts_sha256" ] ||
+    fail 'service runtime-component manifest hash does not verify'
+[ "$actual_runtime_component_hashes_sha256" = "$runtime_component_hashes_sha256" ] ||
+    fail 'service runtime-component hash-list hash does not verify'
+[ "$actual_runtime_component_hashes_after_sha256" = "$runtime_component_hashes_after_sha256" ] ||
+    fail 'service after runtime-component hash-list hash does not verify'
+[ "$actual_loaded_dependencies_sha256" = "$loaded_dependencies_sha256" ] ||
+    fail 'service loaded-dependency evidence hash does not verify'
 
 cmp -s "$binary_before" "$binary_after" ||
     fail 'service executable hashes changed during qualification'
@@ -213,6 +263,100 @@ cmp -s "$dependency_hashes" "$dependency_hashes_after" ||
     fail 'service runtime dependency hashes changed during qualification'
 cmp -s "$interpreter_records" "$interpreter_records_after" ||
     fail 'service ELF interpreter records changed during qualification'
+cmp -s "$runtime_component_hashes" "$runtime_component_hashes_after" ||
+    fail 'service copied runtime components changed during qualification'
+
+python3 - "$dependency_hashes" "$runtime_component_artifacts" "$runtime_component_hashes" \
+    "$loaded_dependencies" "$out" "$runtime_component_dir" <<'PY' ||
+import hashlib
+import sys
+from pathlib import Path, PurePosixPath
+
+dependency_file, artifact_file, hash_file, loaded_file, out_name, component_name = sys.argv[1:]
+out = Path(out_name)
+component_dir = Path(component_name)
+
+def digest(path):
+    value = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            value.update(chunk)
+    return value.hexdigest()
+
+def rows(path, columns):
+    result = []
+    for line_number, raw in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
+        fields = raw.split("\t")
+        if len(fields) != columns or any(field == "" for field in fields):
+            raise SystemExit(f"malformed service runtime evidence row: {path}:{line_number}")
+        result.append(fields)
+    return result
+
+dependencies = rows(dependency_file, 2)
+dependency_map = {}
+for source, expected in dependencies:
+    if source in dependency_map:
+        raise SystemExit(f"duplicate service dependency: {source}")
+    dependency_map[source] = expected
+    source_path = Path(source)
+    if not source_path.is_file() or digest(source_path) != expected:
+        raise SystemExit(f"service dependency hash does not verify: {source}")
+
+artifacts = rows(artifact_file, 3)
+artifact_map = {}
+artifact_relatives = set()
+for source, relative, expected in artifacts:
+    if source in artifact_map or relative in artifact_relatives:
+        raise SystemExit(f"duplicate service runtime component mapping: {source}")
+    if source not in dependency_map or dependency_map[source] != expected:
+        raise SystemExit(f"runtime component is not bound to dependency evidence: {source}")
+    relative_path = PurePosixPath(relative)
+    if relative_path.is_absolute() or ".." in relative_path.parts or not relative.startswith("artifacts/service-runtime-components/"):
+        raise SystemExit(f"unsafe service runtime component path: {relative}")
+    artifact_path = out / relative
+    if not artifact_path.is_file() or artifact_path.is_symlink() or digest(artifact_path) != expected:
+        raise SystemExit(f"service runtime component hash does not verify: {relative}")
+    artifact_map[source] = relative
+    artifact_relatives.add(relative)
+if set(artifact_map) != set(dependency_map):
+    raise SystemExit("service runtime component mapping does not cover every dependency")
+
+component_files = {
+    path.relative_to(out).as_posix(): digest(path)
+    for path in component_dir.rglob("*")
+    if path.is_file() and not path.is_symlink()
+}
+hash_rows = rows(hash_file, 2)
+hash_map = {}
+for relative, expected in hash_rows:
+    if relative in hash_map:
+        raise SystemExit(f"duplicate service runtime component hash: {relative}")
+    if relative not in component_files or component_files[relative] != expected:
+        raise SystemExit(f"service runtime component hash list does not verify: {relative}")
+    hash_map[relative] = expected
+if hash_map != component_files:
+    raise SystemExit("service runtime component hash list does not cover the component directory")
+
+loaded = Path(loaded_file).read_text(encoding="utf-8")
+loaded_absolute_paths = set()
+for line in loaded.splitlines():
+    if "=>" not in line:
+        continue
+    for token in line.split():
+        if token.startswith("/"):
+            resolved = str(Path(token).resolve())
+            loaded_absolute_paths.add(resolved)
+            if not resolved.startswith(str(component_dir.resolve()) + "/"):
+                raise SystemExit(f"loaded-dependency evidence selects an external component: {token}")
+for relative_binary in ("clamscan/clamscan", "clamd/clamd", "clamdscan/clamdscan", "clamav-milter/clamav-milter"):
+    if f"service={relative_binary}\n" not in loaded:
+        raise SystemExit(f"loaded-dependency evidence is missing: {relative_binary}")
+for relative in component_files:
+    selected = str((out / relative).resolve())
+    if selected not in loaded_absolute_paths:
+        raise SystemExit(f"loaded-dependency evidence does not select copied component: {relative}")
+PY
+    fail 'service runtime component or loader evidence is invalid'
 
 expected_binaries='clamscan/clamscan
 clamd/clamd

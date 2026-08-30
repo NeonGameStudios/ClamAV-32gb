@@ -116,6 +116,11 @@ service_interpreter_records_before=$out/provenance/service-interpreter-records-b
 service_interpreter_records_after=$out/provenance/service-interpreter-records-after.txt
 service_dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
 service_dependency_hashes_after=$out/provenance/service-runtime-dependency-hashes-after.txt
+service_runtime_component_dir=$out/artifacts/service-runtime-components
+service_runtime_component_artifacts=$out/provenance/service-runtime-component-artifacts.txt
+service_runtime_component_hashes_before=$out/provenance/service-runtime-component-hashes-before.txt
+service_runtime_component_hashes_after=$out/provenance/service-runtime-component-hashes-after.txt
+service_loaded_dependencies=$out/provenance/service-loaded-dependencies.txt
 service_build_identity=$out/provenance/service-build-identity.txt
 
 if [ ! -s "$service_cmake_cache" ] || [ ! -s "$service_compile_commands" ]; then
@@ -269,7 +274,13 @@ record_service_dependency_hashes()
         service_binary="$build_dir/$relative_binary"
         service_ldd="$out/provenance/ldd-${phase}-${relative_binary%%/*}.txt"
         service_dependency_paths="$out/provenance/service-dependency-paths-${phase}-${relative_binary%%/*}.txt"
-        ldd "$service_binary" > "$service_ldd" 2>&1
+        # The before/after dependency manifests describe the build tree, not
+        # the copied runtime directory used by the workload.  Keep this
+        # probe independent of the workload's intentional LD_LIBRARY_PATH.
+        (
+            unset LD_LIBRARY_PATH
+            ldd "$service_binary"
+        ) > "$service_ldd" 2>&1
         if grep -F 'not found' "$service_ldd" >/dev/null 2>&1; then
             echo "service executable has unresolved runtime dependencies: $service_binary" >&2
             return 1
@@ -290,6 +301,101 @@ record_service_dependency_hashes()
 
 record_service_dependency_hashes "$service_dependency_hashes" before
 service_dependency_hashes_sha256=$(sha256sum "$service_dependency_hashes" | awk '{ print $1 }')
+
+materialize_service_runtime_components()
+{
+    mkdir -p "$service_runtime_component_dir"
+    : > "$service_runtime_component_artifacts"
+    while IFS="$(printf '\t')" read -r dependency expected_hash; do
+        [ -n "$dependency" ] || continue
+        dependency_name=$(basename "$dependency")
+        case "$dependency_name" in
+            ''|.|..)
+                echo "service runtime dependency has no safe basename: $dependency" >&2
+                return 1
+                ;;
+        esac
+        artifact_rel="artifacts/service-runtime-components/$dependency_name"
+        artifact="$out/$artifact_rel"
+        if [ -e "$artifact" ]; then
+            artifact_hash=$(sha256sum "$artifact" | awk '{ print $1 }')
+            if [ "$artifact_hash" != "$expected_hash" ]; then
+                echo "service runtime dependency basename collision: $dependency" >&2
+                return 1
+            fi
+        else
+            cp -L "$dependency" "$artifact"
+        fi
+        artifact_hash=$(sha256sum "$artifact" | awk '{ print $1 }')
+        if [ "$artifact_hash" != "$expected_hash" ]; then
+            echo "copied service runtime dependency hash mismatch: $dependency" >&2
+            return 1
+        fi
+        printf '%s\t%s\t%s\n' "$dependency" "$artifact_rel" "$expected_hash" >> \
+            "$service_runtime_component_artifacts"
+    done < "$service_dependency_hashes"
+    LC_ALL=C sort -u "$service_runtime_component_artifacts" -o "$service_runtime_component_artifacts"
+}
+
+record_service_runtime_component_hashes()
+{
+    destination=$1
+    : > "$destination"
+    find "$service_runtime_component_dir" -type f -print |
+        LC_ALL=C sort |
+        while IFS= read -r artifact; do
+            artifact_rel=${artifact#"$out/"}
+            printf '%s\t%s\n' "$artifact_rel" "$(sha256sum "$artifact" | awk '{ print $1 }')"
+        done > "$destination"
+}
+
+record_service_loaded_dependencies()
+{
+    destination=$1
+    : > "$destination"
+    for relative_binary in $service_binaries; do
+        service_binary="$build_dir/$relative_binary"
+        service_ldd="$out/provenance/loaded-dependencies-${relative_binary%%/*}.txt"
+        printf 'service=%s\n' "$relative_binary" >> "$destination"
+        LD_LIBRARY_PATH="$service_runtime_component_dir" ldd "$service_binary" > \
+            "$service_ldd" 2>&1
+        cat "$service_ldd" >> "$destination"
+        if grep -F 'not found' "$service_ldd" >/dev/null 2>&1; then
+            echo "service executable has unresolved copied runtime dependencies: $service_binary" >&2
+            return 1
+        fi
+        if ! awk -v component_dir="$service_runtime_component_dir/" '
+            $0 ~ /=>/ {
+                for (i = 1; i <= NF; i++)
+                    if ($i ~ /^\// && index($i, component_dir) != 1)
+                        bad = 1
+            }
+            END { exit bad }
+        ' "$service_ldd"; then
+            echo "service loader selected a dependency outside the copied runtime directory: $service_binary" >&2
+            return 1
+        fi
+        while IFS= read -r dependency; do
+            [ -n "$dependency" ] || continue
+            dependency_name=$(basename "$dependency")
+            grep -F "$service_runtime_component_dir/$dependency_name" "$service_ldd" >/dev/null 2>&1 || {
+                echo "service loader did not select the copied dependency: $dependency" >&2
+                return 1
+            }
+        done < "$out/provenance/service-dependency-paths-before-${relative_binary%%/*}.txt"
+    done
+}
+
+materialize_service_runtime_components
+record_service_runtime_component_hashes "$service_runtime_component_hashes_before"
+record_service_loaded_dependencies "$service_loaded_dependencies"
+service_runtime_component_artifacts_sha256=$(sha256sum "$service_runtime_component_artifacts" | awk '{ print $1 }')
+service_runtime_component_hashes_before_sha256=$(sha256sum "$service_runtime_component_hashes_before" | awk '{ print $1 }')
+service_loaded_dependencies_sha256=$(sha256sum "$service_loaded_dependencies" | awk '{ print $1 }')
+# Every daemon, frontend, and milter process started below inherits this exact
+# directory.  The ldd records above prove that the selected files, rather than
+# merely the build-tree files, satisfy the runtime links.
+export LD_LIBRARY_PATH="$service_runtime_component_dir"
 {
     printf 'source_commit=%s\n' "$service_source_commit"
     printf 'source_tree=%s\n' "$service_source_tree"
@@ -302,6 +408,14 @@ service_dependency_hashes_sha256=$(sha256sum "$service_dependency_hashes" | awk 
     printf 'service_interpreter_records_sha256=%s\n' "$(sha256sum "$service_interpreter_records_before" | awk '{ print $1 }')"
     printf 'service_runtime_dependency_hashes=provenance/service-runtime-dependency-hashes.txt\n'
     printf 'service_runtime_dependency_hashes_sha256=%s\n' "$service_dependency_hashes_sha256"
+    printf 'service_runtime_component_dir=artifacts/service-runtime-components\n'
+    printf 'service_runtime_component_artifacts=provenance/service-runtime-component-artifacts.txt\n'
+    printf 'service_runtime_component_artifacts_sha256=%s\n' "$service_runtime_component_artifacts_sha256"
+    printf 'service_runtime_component_hashes=provenance/service-runtime-component-hashes-before.txt\n'
+    printf 'service_runtime_component_hashes_sha256=%s\n' "$service_runtime_component_hashes_before_sha256"
+    printf 'service_loaded_dependencies=provenance/service-loaded-dependencies.txt\n'
+    printf 'service_loaded_dependencies_sha256=%s\n' "$service_loaded_dependencies_sha256"
+    printf 'service_loader_path=artifacts/service-runtime-components\n'
     printf 'loader_injection=disabled\n'
 } > "$service_build_identity"
 
@@ -1283,10 +1397,20 @@ fi
 printf 'service_runtime_dependency_hashes_after=provenance/service-runtime-dependency-hashes-after.txt\n' >> "$service_build_identity"
 printf 'service_runtime_dependency_hashes_after_sha256=%s\n' \
     "$(sha256sum "$service_dependency_hashes_after" | awk '{ print $1 }')" >> "$service_build_identity"
+record_service_runtime_component_hashes "$service_runtime_component_hashes_after"
+if ! cmp -s "$service_runtime_component_hashes_before" "$service_runtime_component_hashes_after"; then
+    echo 'service copied runtime components changed during qualification' >&2
+    exit 1
+fi
+printf 'service_runtime_component_hashes_after=provenance/service-runtime-component-hashes-after.txt\n' >> "$service_build_identity"
+printf 'service_runtime_component_hashes_after_sha256=%s\n' \
+    "$(sha256sum "$service_runtime_component_hashes_after" | awk '{ print $1 }')" >> "$service_build_identity"
 printf 'service_interpreter_records_after=provenance/service-interpreter-records-after.txt\n' >> "$service_build_identity"
 printf 'service_interpreter_records_after_sha256=%s\n' \
     "$(sha256sum "$service_interpreter_records_after" | awk '{ print $1 }')" >> "$service_build_identity"
 printf 'service_runtime_dependencies_unchanged=pass\n' >> "$out/service-summary.txt"
+printf 'service_runtime_loader_binding=pass\n' >> "$out/service-summary.txt"
+printf 'service_runtime_components_unchanged=pass\n' >> "$out/service-summary.txt"
 printf 'service_interpreters_unchanged=pass\n' >> "$out/service-summary.txt"
 printf 'service_build_identity=pass\n' >> "$out/service-summary.txt"
 printf 'service_qualification=pass\n' >> "$out/service-summary.txt"

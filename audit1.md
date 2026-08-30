@@ -15938,3 +15938,19 @@ regression and source guards cover the missing-map boundary; current-source
 production-linked execution, complete ARJ/ARJ-SFX corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
+
+## Service runtime loader binding — 2026-08-30
+
+The service qualification gate previously hashed the build-tree ELF
+dependencies and ran build-tree service binaries, but it did not prove that
+the workload's dynamic loader selected those exact dependency artifacts. The
+gate now materializes every resolved dependency into an evidence-owned runtime
+directory, records source-to-artifact hashes, probes each service with
+`LD_LIBRARY_PATH` restricted to that directory, and rejects any `ldd`
+resolution outside it. The workload inherits the same directory, while
+before/after component hashes prove that the selected runtime artifacts did
+not change during qualification. The service evidence verifier and synthetic
+regression require the manifest, loader records, hash binding, and immutability
+markers. This closes the evidence-binding gap; real production-CVD/service,
+sanitizer, materialized-large-file, Sonic1, and final release qualification
+remain open.

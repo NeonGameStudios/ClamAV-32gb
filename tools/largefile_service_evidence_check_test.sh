@@ -12,7 +12,8 @@ trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 out=$tmp/service
 build=$tmp/build
 mkdir -p "$out/provenance" "$build/clamscan" "$build/clamd" \
-    "$build/clamdscan" "$build/clamav-milter" "$out/logs" "$out/reports"
+    "$build/clamdscan" "$build/clamav-milter" "$out/logs" "$out/reports" \
+    "$out/artifacts/service-runtime-components"
 
 interpreter=$(CDPATH= cd -- "$tmp" && pwd)/ld-linux-synthetic.so
 printf 'synthetic ELF interpreter\n' > "$interpreter"
@@ -73,6 +74,24 @@ printf '%s\t%s\n' "$tmp/libclamav.so" \
     "$(sha256sum "$tmp/libclamav.so" | awk '{ print $1 }')" > "$dependency_hashes"
 dependency_hashes_after=$out/provenance/service-runtime-dependency-hashes-after.txt
 cp "$dependency_hashes" "$dependency_hashes_after"
+runtime_component_dir=$out/artifacts/service-runtime-components
+runtime_component_artifacts=$out/provenance/service-runtime-component-artifacts.txt
+runtime_component_hashes=$out/provenance/service-runtime-component-hashes-before.txt
+runtime_component_hashes_after=$out/provenance/service-runtime-component-hashes-after.txt
+loaded_dependencies=$out/provenance/service-loaded-dependencies.txt
+cp "$tmp/libclamav.so" "$runtime_component_dir/libclamav.so"
+runtime_component_hash=$(sha256sum "$runtime_component_dir/libclamav.so" | awk '{ print $1 }')
+printf '%s\tartifacts/service-runtime-components/libclamav.so\t%s\n' \
+    "$tmp/libclamav.so" "$runtime_component_hash" > "$runtime_component_artifacts"
+printf 'artifacts/service-runtime-components/libclamav.so\t%s\n' "$runtime_component_hash" > \
+    "$runtime_component_hashes"
+cp "$runtime_component_hashes" "$runtime_component_hashes_after"
+: > "$loaded_dependencies"
+for relative_binary in \
+    clamscan/clamscan clamd/clamd clamdscan/clamdscan clamav-milter/clamav-milter; do
+    printf 'service=%s\n' "$relative_binary" >> "$loaded_dependencies"
+    printf 'libclamav.so => %s (0x0)\n' "$runtime_component_dir/libclamav.so" >> "$loaded_dependencies"
+done
 
 workload_input=$tmp/workload-input.bin
 printf 'synthetic workload input\n' > "$workload_input"
@@ -164,6 +183,9 @@ compile_commands_sha256=$(sha256sum "$out/provenance/compile_commands.json" | aw
 binary_hashes_sha256=$(sha256sum "$binary_list" | awk '{ print $1 }')
 interpreter_hashes_sha256=$(sha256sum "$interpreter_records" | awk '{ print $1 }')
 dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
+runtime_component_artifacts_sha256=$(sha256sum "$runtime_component_artifacts" | awk '{ print $1 }')
+runtime_component_hashes_sha256=$(sha256sum "$runtime_component_hashes" | awk '{ print $1 }')
+loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 }')
 {
     printf 'source_commit=%s\n' "$source_commit"
     printf 'source_tree=%s\n' "$source_tree"
@@ -178,6 +200,16 @@ dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
     printf 'service_runtime_dependency_hashes_sha256=%s\n' "$dependency_hashes_sha256"
     printf 'service_runtime_dependency_hashes_after=provenance/service-runtime-dependency-hashes-after.txt\n'
     printf 'service_runtime_dependency_hashes_after_sha256=%s\n' "$(sha256sum "$dependency_hashes_after" | awk '{ print $1 }')"
+    printf 'service_runtime_component_dir=artifacts/service-runtime-components\n'
+    printf 'service_runtime_component_artifacts=provenance/service-runtime-component-artifacts.txt\n'
+    printf 'service_runtime_component_artifacts_sha256=%s\n' "$runtime_component_artifacts_sha256"
+    printf 'service_runtime_component_hashes=provenance/service-runtime-component-hashes-before.txt\n'
+    printf 'service_runtime_component_hashes_sha256=%s\n' "$runtime_component_hashes_sha256"
+    printf 'service_runtime_component_hashes_after=provenance/service-runtime-component-hashes-after.txt\n'
+    printf 'service_runtime_component_hashes_after_sha256=%s\n' "$(sha256sum "$runtime_component_hashes_after" | awk '{ print $1 }')"
+    printf 'service_loaded_dependencies=provenance/service-loaded-dependencies.txt\n'
+    printf 'service_loaded_dependencies_sha256=%s\n' "$loaded_dependencies_sha256"
+    printf 'service_loader_path=artifacts/service-runtime-components\n'
     printf 'service_interpreter_records_after=provenance/service-interpreter-records-after.txt\n'
     printf 'service_interpreter_records_after_sha256=%s\n' "$(sha256sum "$interpreter_records_after" | awk '{ print $1 }')"
     printf 'loader_injection=disabled\n'
@@ -187,6 +219,8 @@ dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
 {
     printf 'service_resource_measurement_failed=0\n'
     printf 'service_runtime_dependencies_unchanged=pass\n'
+    printf 'service_runtime_loader_binding=pass\n'
+    printf 'service_runtime_components_unchanged=pass\n'
     printf 'service_interpreters_unchanged=pass\n'
     printf 'service_build_identity=pass\n'
     printf 'service_qualification=pass\n'
@@ -219,6 +253,33 @@ write_checksum_manifest()
             done
     ) > "$out/SHA256SUMS"
 }
+
+cp "$loaded_dependencies" "$tmp/loaded-dependencies.good"
+cp "$out/provenance/service-build-identity.txt" "$tmp/service-build-identity.loader-good"
+python3 - "$loaded_dependencies" "$tmp/loaded-dependencies.external" <<'PY'
+from pathlib import Path
+import sys
+
+source, destination = map(Path, sys.argv[1:])
+contents = source.read_text(encoding="utf-8")
+contents = contents.replace(
+    "artifacts/service-runtime-components/libclamav.so",
+    "external/libclamav.so",
+)
+destination.write_text(contents, encoding="utf-8")
+PY
+mv "$tmp/loaded-dependencies.external" "$loaded_dependencies"
+new_loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 }')
+sed "s#^service_loaded_dependencies_sha256=.*#service_loaded_dependencies_sha256=$new_loaded_dependencies_sha256#" \
+    "$tmp/service-build-identity.loader-good" > "$out/provenance/service-build-identity.txt"
+write_checksum_manifest
+if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted a loader record outside the copied runtime directory' >&2
+    exit 1
+fi
+mv "$tmp/loaded-dependencies.good" "$loaded_dependencies"
+mv "$tmp/service-build-identity.loader-good" "$out/provenance/service-build-identity.txt"
+write_checksum_manifest
 
 wrong_interpreter=$(CDPATH= cd -- "$tmp" && pwd)/ld-linux-other-synthetic.so
 printf 'other synthetic ELF interpreter\n' > "$wrong_interpreter"
