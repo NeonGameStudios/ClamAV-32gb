@@ -746,6 +746,15 @@ void cli_targetinfo(struct cli_target_info *info, cli_target_t target, cli_ctx *
     cl_error_t (*einfo)(cli_ctx *, struct cli_exe_info *) = NULL;
     cl_error_t ret;
 
+    if (info == NULL)
+        return;
+    if (ctx == NULL || ctx->fmap == NULL) {
+        info->status = -1;
+        if (ctx != NULL)
+            cli_mark_scan_incomplete(ctx, "Executable metadata context is unavailable");
+        return;
+    }
+
     info->fsize = ctx->fmap->len;
 
     switch (target) {

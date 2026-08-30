@@ -36171,6 +36171,27 @@ START_TEST(test_executable_metadata_targetinfo_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_targetinfo_rejects_missing_context)
+{
+    struct cli_target_info info;
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    cli_targetinfo_init(&info);
+
+    cli_targetinfo(NULL, TARGET_PE, NULL);
+    cli_targetinfo(&info, TARGET_PE, NULL);
+    ck_assert_int_eq(info.status, -1);
+
+    cli_targetinfo(&info, TARGET_PE, &ctx);
+    ck_assert_int_eq(info.status, -1);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Executable metadata context is unavailable");
+
+    cli_targetinfo_destroy(&info);
+}
+END_TEST
+
 START_TEST(test_pe_version_resource_read_failure_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -47848,6 +47869,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_header_nested_fmap_accepts_native_offset);
 #endif
     tcase_add_test(tc_cl, test_executable_metadata_targetinfo_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_targetinfo_rejects_missing_context);
     tcase_add_test(tc_cl, test_pe_version_resource_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_swizzor_resource_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_import_thunk_read_failure_is_fail_visible);

@@ -14921,3 +14921,16 @@ Current-source syntax/production-GCC execution remains constrained by the
 existing Docker image's missing generated `clamav_rust.h`/`version.h` bridge;
 complete CVD/service parity, sanitizer, materialized-large-file, Sonic1, and
 final release qualification remain open.
+
+## Matcher target-info context audit — 2026-08-29
+
+`cli_targetinfo()` now checks its output object, scan context, and current fmap
+before reading the map length or dispatching an executable parser. A missing
+context reports status `-1`; an available context without a fmap also marks
+the scan incomplete, so metadata-dependent matching cannot silently proceed
+with an uninitialized target description. The focused
+`test_targetinfo_rejects_missing_context` regression covers null output and
+missing-context/map calls, and source guards pin the boundary message.
+
+Full matcher TCase, production signatures/CVDs, sanitizer, materialized-large-
+file, Sonic1, and final release qualification remain open.

@@ -8008,3 +8008,12 @@ final qualification as open.
   source execution with the generated Rust bridge, complete CVD/service parity,
   sanitizer, materialized-large-file, Sonic1, and final release qualification
   remain required.
+
+## Matcher target-info context — 2026-08-29
+
+- Keep `cli_targetinfo()` fail-visible for null output, null scan context, and
+  context-without-fmap calls; missing map state must not be dereferenced or
+  treated as usable executable metadata.
+- Retain `test_targetinfo_rejects_missing_context` and its source guard; full
+  matcher signatures/CVDs, sanitizer, materialized-large-file, Sonic1, and
+  final release qualification remain required.
