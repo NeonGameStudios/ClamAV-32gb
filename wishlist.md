@@ -1,5 +1,15 @@
 # Wishlist
 
+## HWP raw-deflate decoder initialization cleanup — 2026-08-30
+
+- Keep the shared HWP/HWP5/HWPML raw-deflate cleanup conditional on successful
+  `inflateInit2()` initialization, and preserve the explicit incomplete
+  `CL_EUNPACK` result. The existing HWP3 regression and isolated current-source
+  production-linked GCC plus GCC ASan/UBSan leak-enabled runners pass the
+  injected initialization failure; complete HWP/HWPML corpus,
+  production-CVD/service, materialized-large-file, Sonic1, and release
+  qualification remain.
+
 ## InstallShield CAB decoder initialization cleanup — 2026-08-30
 
 - Keep legacy InstallShield CAB teardown conditional on successful

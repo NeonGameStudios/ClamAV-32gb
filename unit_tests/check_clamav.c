@@ -134,9 +134,14 @@ int __wrap_inflateInit_(z_streamp strm, const char *version, int stream_size)
 
 int clamav_test_force_gzip_legacy_fallback;
 int clamav_test_force_ishield_cab_decoder_init;
+int clamav_test_force_hwp_decoder_init;
 
 int __wrap_inflateInit2_(z_streamp strm, int windowBits, const char *version, int stream_size)
 {
+    if (clamav_test_force_hwp_decoder_init) {
+        clamav_test_force_hwp_decoder_init = 0;
+        return Z_MEM_ERROR;
+    }
     if (clamav_test_force_ishield_cab_decoder_init) {
         clamav_test_force_ishield_cab_decoder_init = 0;
         return Z_MEM_ERROR;
@@ -26425,6 +26430,19 @@ START_TEST(test_hwp3_truncated_raw_deflate_is_fail_visible)
     ctx.options           = &options;
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    clamav_test_force_hwp_decoder_init = 1;
+    ret = cli_scanhwp3(&ctx);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWP decompressor could not be initialized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_hwp_decoder_init, 0);
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag       = false;
+#endif
 
     ret = cli_scanhwp3(&ctx);
     ck_assert_int_eq(ret, CL_EUNPACK);

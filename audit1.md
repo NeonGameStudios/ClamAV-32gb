@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## HWP raw-deflate decoder initialization cleanup — 2026-08-30
+
+The shared HWP/HWP5/HWPML raw-deflate helper previously jumped to temporary
+file cleanup after `inflateInit2()` failed and unconditionally called
+`inflateEnd()` on the uninitialized stream. It now records the explicit
+incomplete `CL_EUNPACK` reason, tracks successful initialization, and only
+finalizes an initialized stream. The existing HWP3 truncated-deflate
+regression injects initialization failure; isolated current-source
+production-linked GCC and GCC ASan/UBSan leak-enabled runners pass with sticky
+incomplete state and cache taint. Complete HWP/HWPML corpus, production-CVD/
+service, materialized-large-file, Sonic1, and final release qualification
+remain open.
+
 ## InstallShield CAB decoder initialization cleanup — 2026-08-30
 
 The legacy InstallShield CAB extractor unconditionally called `inflateEnd()`

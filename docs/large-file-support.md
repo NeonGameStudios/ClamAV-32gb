@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HWP raw-deflate decoder initialization cleanup — 2026-08-30
+
+The shared HWP/HWP5/HWPML raw-deflate helper now records an explicit
+incomplete `CL_EUNPACK` result when `inflateInit2()` fails and calls
+`inflateEnd()` only after successful initialization. The existing HWP3
+truncated-deflate regression injects decoder initialization failure; isolated
+current-source production-linked GCC and GCC ASan/UBSan leak-enabled runners
+pass with sticky incomplete state and cache taint. Complete HWP/HWPML corpus,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## InstallShield CAB decoder initialization cleanup — 2026-08-30
 
 The legacy InstallShield CAB extractor now tracks whether `inflateInit2()`

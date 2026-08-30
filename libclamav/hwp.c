@@ -81,6 +81,7 @@ static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at
     size_t count, remain = 1, outsize = 0;
     uint64_t temporary_reserved = 0;
     z_stream zstrm;
+    bool z_initialized = false;
     char *tmpname;
     unsigned char inbuf[FILEBUFF], outbuf[FILEBUFF];
 
@@ -110,9 +111,11 @@ static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at
     zret = inflateInit2(&zstrm, -15);
     if (zret != Z_OK) {
         cli_errmsg("%s: Can't initialize zlib inflation stream\n", parent);
+        cli_mark_scan_incomplete(ctx, "HWP decompressor could not be initialized");
         ret = CL_EUNPACK;
         goto dc_end;
     }
+    z_initialized = true;
 
     /* inflation loop */
     do {
@@ -214,11 +217,13 @@ static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at
 
     /* clean-up */
 dc_end:
-    zret = inflateEnd(&zstrm);
-    if (zret != Z_OK) {
-        cli_errmsg("%s: Error closing zlib inflation stream\n", parent);
-        if (ret == CL_SUCCESS)
-            ret = CL_EUNPACK;
+    if (z_initialized) {
+        zret = inflateEnd(&zstrm);
+        if (zret != Z_OK) {
+            cli_errmsg("%s: Error closing zlib inflation stream\n", parent);
+            if (ret == CL_SUCCESS)
+                ret = CL_EUNPACK;
+        }
     }
     if (close(ofd) != 0) {
         cli_mark_scan_incomplete(ctx, "HWP decompressed temporary output could not be closed");
