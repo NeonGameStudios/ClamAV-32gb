@@ -7951,3 +7951,28 @@ final qualification as open.
 - Retain `test_ac_match_offset_growth_rejects_product_wrap` and add complete
   production-signature, sanitizer, production-CVD/service, materialized-large-file,
   Sonic1, and final matcher qualification evidence.
+
+## Milter configuration and recipient allocation admission — 2026-08-29
+
+- Keep `RejectMsg` expansion behind checked native-size and shared 1-GiB
+  allocation admission, and keep recipient-array growth behind checked count
+  products before `cli_max_realloc()`.
+- Publish recipient strings only after their bounded copy succeeds, and free
+  an allocated zero-count recipient array during cleanup so allocation failure
+  cannot expose an uninitialized slot to `nullify()`.
+- Retain the current-source GCC quota regression; full milter translation-unit,
+  runtime, sanitizer, service, materialized-large-file, Sonic1, and final
+  release qualification remain open because the existing Docker image lacks
+  `libmilter` headers.
+
+## HTML normalized metadata transactional growth — 2026-08-29
+
+- Keep HTML tag/value/content table growth slots initialized before later
+  allocation or duplication can fail, and free only entries whose table growth
+  actually succeeded.
+- Allocate tag replacements and form-data URLs before releasing or publishing
+  prior state so allocation failure preserves the existing metadata table.
+- Retain the expanded over-limit URL-table regression and add injected
+  allocator-failure execution; complete HTML/MIME corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  qualification remain required.

@@ -14853,3 +14853,25 @@ source guards pin both branches; focused current-source GCC execution,
 sanitizer, complete PDF filter corpus, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification remain
 open.
+
+## HTML normalized metadata transactional-growth audit — 2026-08-29
+
+The HTML normalizer’s bounded table arithmetic prevented oversized pointer
+tables, but its failure cleanup still assumed that every `realloc()` in a
+multi-table append had succeeded. If tag-table growth succeeded and a later
+value/content-table growth or metadata duplication failed, cleanup could free
+an uninitialized newly exposed slot. Form-data insertion also grew the URL
+table before duplicating the new URL; a duplication failure then zeroed the
+whole structure and leaked the previously published table.
+
+The normalizer now initializes every newly exposed tag/value/content slot and
+tracks which table growths succeeded, so cleanup only frees valid published or
+initialized entries. Tag replacement and form-data insertion allocate their
+replacement values before releasing or publishing prior state, preserving the
+old metadata on failure. The expanded
+`test_html_normalization_table_size_rejects_overflow` regression proves that a
+rejected URL-table growth preserves the existing table without a large
+allocation. Current-source GCC execution, injected allocator-failure
+coverage, complete HTML/MIME corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.

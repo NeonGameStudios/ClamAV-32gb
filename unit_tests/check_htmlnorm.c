@@ -190,6 +190,8 @@ START_TEST(test_html_normalization_table_size_rejects_overflow)
     size_t bytes = 0;
     tag_arguments_t args;
     form_data_t form;
+    char *existing_url;
+    char **existing_urls;
 
     ck_assert_int_eq(cli_html_tag_table_size(0, sizeof(char *), &bytes), CL_SUCCESS);
     ck_assert_uint_eq(bytes, 0);
@@ -219,6 +221,24 @@ START_TEST(test_html_normalization_table_size_rejects_overflow)
     form.count = SIZE_MAX;
     ck_assert(!html_insert_form_data("https://example.test/", &form));
     ck_assert_uint_eq(form.count, SIZE_MAX);
+
+    /* A rejected growth request must not discard the already published URL
+     * table. Keep the count intentionally beyond the individual allocation
+     * ceiling so this exercises the preflight without allocating a large
+     * table. */
+    existing_url  = cli_safer_strdup("https://keep.example/");
+    existing_urls = cli_max_realloc(NULL, sizeof(*existing_urls));
+    ck_assert_ptr_nonnull(existing_url);
+    ck_assert_ptr_nonnull(existing_urls);
+    existing_urls[0] = existing_url;
+    form.urls         = existing_urls;
+    form.count        = CLI_MAX_ALLOCATION / sizeof(*existing_urls) + 1U;
+    ck_assert(!html_insert_form_data("https://new.example/", &form));
+    ck_assert_ptr_eq(form.urls, existing_urls);
+    ck_assert_ptr_eq(form.urls[0], existing_url);
+    ck_assert_uint_eq(form.count, CLI_MAX_ALLOCATION / sizeof(*existing_urls) + 1U);
+    free(existing_url);
+    free(existing_urls);
 }
 END_TEST
 

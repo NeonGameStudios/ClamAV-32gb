@@ -463,9 +463,17 @@ static bool html_tag_arg_set(tag_arguments_t *tags, const char *tag, const char 
 
     for (i = 0; i < tags->count; i++) {
         if (strcmp((const char *)tags->tag[i], tag) == 0) {
+            unsigned char *replacement = (unsigned char *)cli_safer_strdup(value);
+
+            /* Do not discard the previously published value until its
+             * replacement has been allocated. Callers can then abort the
+             * current normalized view without leaving partially updated
+             * metadata state behind. */
+            if (replacement == NULL)
+                return false;
             free(tags->value[i]);
-            tags->value[i] = (unsigned char *)cli_safer_strdup(value);
-            return tags->value[i] != NULL;
+            tags->value[i] = replacement;
+            return true;
         }
     }
     return true;
@@ -488,14 +496,14 @@ bool html_tag_arg_add(tag_arguments_t *tags,
                       const char *tag, char *value)
 {
     int len, i;
-    int tagCnt;
-    int valueCnt;
-    int contentCnt;
     size_t next_count;
     size_t tag_table_size;
     size_t value_table_size;
     size_t content_table_size;
     unsigned char **tmp = NULL;
+    bool tag_grown = false;
+    bool value_grown = false;
+    bool content_grown = false;
 
     if (!tags || !tag)
         return false;
@@ -510,33 +518,30 @@ bool html_tag_arg_add(tag_arguments_t *tags,
          cli_html_tag_table_size(next_count, sizeof(*tags->contents), &content_table_size) != CL_SUCCESS))
         return false;
 
-    tagCnt     = tags->count;
-    valueCnt   = tags->count;
-    contentCnt = tags->scanContents ? tags->count : 0;
-
     tmp = (unsigned char **)cli_max_realloc(tags->tag, tag_table_size);
     if (!tmp) {
         goto done;
     }
     tags->tag = tmp;
-    tagCnt++;
+    tags->tag[tags->count] = NULL;
+    tag_grown             = true;
 
     tmp = (unsigned char **)cli_max_realloc(tags->value, value_table_size);
     if (!tmp) {
         goto done;
     }
     tags->value = tmp;
-    valueCnt++;
+    tags->value[tags->count] = NULL;
+    value_grown               = true;
 
     if (tags->scanContents) {
-        contentCnt = tags->count;
         tmp        = (unsigned char **)cli_max_realloc(tags->contents, content_table_size);
         if (!tmp) {
             goto done;
         }
-        tags->contents             = tmp;
-        tags->contents[contentCnt] = NULL;
-        contentCnt++;
+        tags->contents = tmp;
+        tags->contents[tags->count] = NULL;
+        content_grown = true;
     }
 
     tags->tag[tags->count] = (unsigned char *)cli_safer_strdup(tag);
@@ -565,23 +570,32 @@ bool html_tag_arg_add(tag_arguments_t *tags,
     return true;
 
 done:
-    /* Bad error - can't do 100% recovery */
-    for (i = 0; i < tagCnt; i++) {
+    /* Keep cleanup bounded to the entries that were published before this
+     * attempted append. Newly grown slots are explicitly initialized above,
+     * and are freed separately only when their corresponding realloc
+     * succeeded. */
+    for (i = 0; i < tags->count; i++) {
         if (tags->tag) {
             free(tags->tag[i]);
         }
     }
-    for (i = 0; i < valueCnt; i++) {
+    if (tag_grown && tags->tag)
+        free(tags->tag[tags->count]);
+    for (i = 0; i < tags->count; i++) {
         if (tags->value) {
             free(tags->value[i]);
         }
     }
-    for (i = 0; i < contentCnt; i++) {
+    if (value_grown && tags->value)
+        free(tags->value[tags->count]);
+    for (i = 0; i < tags->count; i++) {
         if (tags->contents) {
             if (tags->contents[i])
                 free(tags->contents[i]);
         }
     }
+    if (content_grown && tags->contents)
+        free(tags->contents[tags->count]);
     if (tags->tag) {
         free(tags->tag);
     }
@@ -822,9 +836,9 @@ static cl_error_t js_process(cli_ctx *ctx, struct parser_state *js_state, const 
 
 bool html_insert_form_data(const char *const value, form_data_t *tags)
 {
-    bool bRet  = false;
     size_t cnt;
     size_t table_size;
+    char *new_url;
     char **tmp = NULL;
 
     if (!value || !tags || tags->count == SIZE_MAX)
@@ -832,30 +846,23 @@ bool html_insert_form_data(const char *const value, form_data_t *tags)
 
     cnt = tags->count + 1;
     if (cli_html_tag_table_size(cnt, sizeof(unsigned char *), &table_size) != CL_SUCCESS)
-        goto done;
+        return false;
 
-    /*
-     * Do NOT use cli_max_realloc_or_free because all the previously malloc'd tag
-     * values will be leaked when tag is free'd in the case where realloc fails.
-     */
+    /* Allocate the new value first. If table growth fails, the old form-data
+     * table remains valid and ownership is unambiguous. */
+    new_url = cli_safer_strdup(value);
+    if (new_url == NULL)
+        return false;
+
     tmp = cli_max_realloc(tags->urls, table_size);
     if (!tmp) {
-        goto done;
+        free(new_url);
+        return false;
     }
     tags->urls = tmp;
-
-    tags->urls[tags->count] = cli_safer_strdup(value);
-    if (tags->urls[tags->count]) {
-        tags->count = cnt;
-    }
-
-    bRet = true;
-done:
-    if (!bRet) {
-        memset(tags, 0, sizeof(*tags));
-    }
-
-    return bRet;
+    tags->urls[tags->count] = new_url;
+    tags->count              = cnt;
+    return true;
 }
 
 void html_form_data_tag_free(form_data_t *tags)
