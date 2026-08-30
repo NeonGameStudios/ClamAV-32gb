@@ -35384,11 +35384,13 @@ offset-size-arithmetic	libclamav_rust/src/fmap.rs	416	        let map = FMap::tr
 offset-size-arithmetic	libclamav_rust/src/fmap.rs	434	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
 offset-size-arithmetic	libclamav_rust/src/fmap.rs	449	        raw.data = data.as_ptr() as *const std::os::raw::c_void;
 offset-size-arithmetic	libclamav_rust/src/fmap.rs	452	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	471	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	474	        assert!(reader.seek(SeekFrom::Current(-1)).is_err());
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	483	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	486	        assert_eq!(reader.seek(SeekFrom::End(-2)).expect("tail seek"), 6);
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	487	        assert!(reader.seek(SeekFrom::End(-9)).is_err());
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	472	        raw.data = data.as_ptr() as *const std::os::raw::c_void;
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	474	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	488	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	491	        assert!(reader.seek(SeekFrom::Current(-1)).is_err());
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	500	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	503	        assert_eq!(reader.seek(SeekFrom::End(-2)).expect("tail seek"), 6);
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	504	        assert!(reader.seek(SeekFrom::End(-9)).is_err());
 offset-size-arithmetic	libclamav_rust/src/fmap.rs	76	    const MAX_READ_CHUNK: usize = 1024 * 1024;
 offset-size-arithmetic	libclamav_rust/src/fmap.rs	88	    /// fmap read and seek. The context-free constructor remains available for
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	136	        let _ = unsafe { Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap) };

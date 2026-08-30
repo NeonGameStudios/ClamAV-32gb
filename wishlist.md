@@ -1,5 +1,16 @@
 # Wishlist
 
+## Rust fmap reader destination admission — 2026-08-30
+
+- Keep `FMapReader::read()` bounded by both the remaining map range and the
+  caller-provided destination slice; a short destination must never cause a
+  slice-overrun panic at the Rust/C parser boundary.
+- Retain `reader_never_requests_more_than_the_destination_buffer` and its
+  source guards. Rust execution remains pending on the existing OpenSSL/Cargo
+  environment, followed by full Rust/C ABI, sanitizer, parser corpus,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification.
+
 ## SIS wrapper error-status type preservation — 2026-08-30
 
 - Keep `cli_scansis()` parser and cleanup results in `cl_error_t` storage all

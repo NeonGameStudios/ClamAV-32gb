@@ -196,7 +196,7 @@ impl Read for FMapReader<'_> {
 
         let remaining = len - self.position;
         let requested = if remaining < Self::MAX_READ_CHUNK as u64 {
-            usize::try_from(remaining).map_err(|_| {
+            usize::try_from(remaining.min(dst.len() as u64)).map_err(|_| {
                 io::Error::new(
                     ErrorKind::InvalidInput,
                     "fmap read length is not representable on this platform",
@@ -461,6 +461,23 @@ mod tests {
         assert_eq!(tail, data[40..]);
         assert_eq!(reader.read(&mut [0u8; 1]).expect("eof read"), 0);
         assert_eq!(UNNEED_CALLS.load(Ordering::Relaxed), 2);
+    }
+
+    #[test]
+    fn reader_never_requests_more_than_the_destination_buffer() {
+        let _guard = NEED_TEST_LOCK.lock().expect("need test lock");
+        let data: Vec<u8> = (0..4096).map(|value| value as u8).collect();
+        let mut raw: sys::cl_fmap_t = unsafe { std::mem::zeroed() };
+        raw.len = data.len();
+        raw.data = data.as_ptr() as *const std::os::raw::c_void;
+        raw.need = Some(memory_need);
+        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+
+        let mut reader = FMapReader::new(&map);
+        let mut output = [0u8; 1];
+        assert_eq!(reader.read(&mut output).expect("read one byte"), 1);
+        assert_eq!(output[0], data[0]);
+        assert_eq!(reader.stream_position().expect("position"), 1);
     }
 
     #[test]

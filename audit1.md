@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## Rust fmap reader destination admission — 2026-08-30
+
+`FMapReader::read()` correctly limits normal reads to its 1 MiB window, but its
+short-map branch previously used the entire remaining map length without also
+clamping it to the caller's destination slice. A parser requesting a small
+buffer near the end of a shorter-than-window map could therefore panic while
+forming `&mut dst[..requested]`, crossing the Rust/C parser boundary instead of
+returning a bounded read.
+
+The reader now takes the minimum of the remaining map length and
+`dst.len()` before converting the request to a native size. The focused Rust
+regression `reader_never_requests_more_than_the_destination_buffer` exercises
+the short-buffer case and source guards pin both the calculation and test.
+Host Rust execution is currently blocked by the existing missing OpenSSL
+development discovery; the Docker image's older Cargo also cannot parse the
+repository lockfile version. Current-source production-GCC C checks, full
+Rust/C ABI, sanitizer, parser corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## SIS wrapper error-status type preservation — 2026-08-30
 
 The SIS wrapper stored the result of `real_scansis()` or `real_scansis9x()` in

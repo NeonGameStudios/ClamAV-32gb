@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Rust fmap reader destination admission — 2026-08-30
+
+The bounded Rust `FMapReader` now caps each short-map read by the caller's
+destination length as well as the remaining fmap range. This prevents a
+small parser buffer from being sliced with a larger request when the remaining
+map is below the 1 MiB reader window. The focused regression and source guards
+are registered; Rust execution is pending the existing OpenSSL/Cargo build
+environment, followed by full Rust/C ABI, sanitizer, parser corpus,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification.
+
 ## SIS wrapper error-status type preservation — 2026-08-30
 
 The SIS wrapper now retains old-format and 9.x parser results in `cl_error_t`
