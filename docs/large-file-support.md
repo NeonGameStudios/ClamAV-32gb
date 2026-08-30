@@ -10387,6 +10387,29 @@ warning-enabled GCC syntax checks, including the UnRAR-enabled test gate. The
 reusable production container has `ENABLE_UNRAR=OFF`; backend execution,
 complete RAR corpus, sanitizer, production-CVD/service, materialized large-file,
 Sonic1, and parser-family qualification remain open.
+
+## RAR archive-close status and decoder ownership — 2026-08-30
+
+The optional UnRAR finalization path no longer drops `RARCloseArchive()`
+failures. `unrar_close_ex()` returns the normalized backend status, the legacy
+void close export delegates to it, and both linked and dynamic loader paths
+publish the new entry point. The scanner maps archive-close failure through
+the existing UnRAR operational-status table, marks the layer incomplete and
+non-cacheable, and merges cleanup status without hiding a detection or earlier
+parser failure. If the vendored decoder throws while closing, it now releases
+the owning `DataSet` after retaining the error code; the underlying file handle
+has already been invalidated by `File::Close()`.
+
+Current decoder/interface/loader/scanner sources and the complete
+UnRAR-enabled unit object compile with the existing GCC/G++ environment. A
+version-script DSO check exports both close symbols, and a current-source,
+production-linked public-API runner injects `UNRAR_ECLOSE` after normal archive
+termination and passes with `CL_EWRITE`, no verdict or alert, and a tainted
+fmap. The reusable ARM64 production build remains `ENABLE_UNRAR=OFF`, so real
+decoder close-fault execution, complete RAR/RAR-SFX corpus, sanitizer/leak
+evidence, Linux x86-64, production-CVD/service, materialized large-file,
+Sonic1, and final qualification remain required.
+
 ## ISO9660 Joliet identifier admission
 
 Joliet directory identifiers are UTF-16BE/UCS-2 byte sequences and therefore

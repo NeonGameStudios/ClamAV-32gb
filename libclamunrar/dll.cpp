@@ -176,7 +176,10 @@ int PASCAL RARCloseArchive(HANDLE hArcData)
   }
   catch (RAR_EXIT ErrCode)
   {
-    return Data->Cmd.DllError!=0 ? Data->Cmd.DllError : RarErrorToDll(ErrCode);
+    int Result=Data!=NULL && Data->Cmd.DllError!=0 ?
+               Data->Cmd.DllError:RarErrorToDll(ErrCode);
+    delete Data;
+    return Result;
   }
 }
 

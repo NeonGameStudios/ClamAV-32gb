@@ -494,9 +494,14 @@ cl_unrar_error_t unrar_skip_file(void* hArchive)
     return unrar_skip_file_ex(hArchive, NULL, NULL);
 }
 
+cl_unrar_error_t unrar_close_ex(void* hArchive)
+{
+    return unrar_retcode(RARCloseArchive(hArchive));
+}
+
 void unrar_close(void* hArchive)
 {
-    RARCloseArchive(hArchive);
+    (void)unrar_close_ex(hArchive);
 }
 
 int CALLBACK CallbackProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2)

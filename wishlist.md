@@ -8917,5 +8917,24 @@ qualification evidence.
 - Keep CDIFF body accounting exact against the declared decompressed size;
   truncated and overlong bodies must return structured header failures.
 - Keep the 8 MiB command-line bound, focused regressions, and source guards;
-  add full Rust/C ABI execution, CDIFF corpus, sanitizer, production-CVD/service,
+  the production-linked Rust 1.97.1 unit executable now passes 2/2. Add full
+  Rust/C ABI execution, CDIFF corpus, sanitizer, production-CVD/service,
   materialized-large-file, Sonic1, and final release qualification evidence.
+
+## RAR archive-close status and ownership cleanup — 2026-08-30
+
+- Keep the compatibility `unrar_close()` wrapper delegating to the
+  status-returning `unrar_close_ex()` export, and require the latter in both
+  static and dynamic loader paths.
+- Preserve a failed archive close as a sticky incomplete/non-cacheable
+  operational result without replacing detections or stronger earlier errors;
+  keep deletion of the decoder `DataSet` on the throwing close path.
+- Retain the registered close-failure regression, version-script symbol check,
+  warning-enabled current-source GCC/G++ builds, complete UnRAR-gated unit
+  object, and the production-linked public-API runner that passes with exact
+  `CL_EWRITE` and prints `rar_archive_close_failure_passed`.
+- Complete real backend close-fault injection, RAR/RAR-SFX corpus, sanitizer
+  and leak evidence, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, and final parser-family/release
+  qualification. The reusable ARM64 production build remains
+  `ENABLE_UNRAR=OFF`.

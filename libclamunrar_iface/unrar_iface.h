@@ -45,6 +45,7 @@
 #define unrar_skip_file libclamunrar_iface_LTX_unrar_skip_file
 #define unrar_extract_file_ex libclamunrar_iface_LTX_unrar_extract_file_ex
 #define unrar_skip_file_ex libclamunrar_iface_LTX_unrar_skip_file_ex
+#define unrar_close_ex libclamunrar_iface_LTX_unrar_close_ex
 #define unrar_close libclamunrar_iface_LTX_unrar_close
 
 typedef enum cl_unrar_error_tag {
@@ -83,6 +84,7 @@ cl_unrar_error_t unrar_extract_file_ex(void *hArchive, const char *destPath, cha
                                        uint64_t output_limit);
 cl_unrar_error_t unrar_skip_file_ex(void *hArchive, cl_unrar_progress_callback_t progress,
                                     void *progress_context);
+cl_unrar_error_t unrar_close_ex(void *hArchive);
 void unrar_close(void *hArchive);
 
 #endif

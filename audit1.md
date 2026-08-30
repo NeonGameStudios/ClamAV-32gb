@@ -16209,6 +16209,36 @@ not enforce, the declared decompressed body size. It now counts bytes exactly,
 rejects overflow and overlong command lines through an 8 MiB bounded line
 assembler, and returns a header size-mismatch error for truncation or trailing
 decompressed data. Focused source compilation/test registration and source
-guards cover the contract; current Rust/C ABI execution, CDIFF corpus,
+guards cover the contract. The incremental Rust 1.97.1 unit executable linked
+against the production libclamav and a minimal current incomplete-state helper
+passes both focused regressions (2/2). Full Rust/C ABI execution, CDIFF corpus,
 sanitizer, production-CVD/service, materialized-large-file, Sonic1, and final
 release qualification remain open.
+
+## RAR archive-close status and ownership cleanup — 2026-08-30
+
+The optional UnRAR bridge previously discarded the return from
+`RARCloseArchive()`, so a source/archive close failure could follow otherwise
+successful parsing and still be reported as clean. A new, exported
+`unrar_close_ex()` preserves the normalized backend status while the legacy
+void close entry point delegates to it for compatibility. The dynamic and
+static loaders require the new symbol, and `cli_scanrar_file()` maps a failed
+archive close through the existing operational-status mapping, records a
+specific incomplete reason, taints caching, and merges it without replacing a
+detection or stronger earlier failure. The vendored decoder now also deletes
+its `DataSet` after a throwing close path; `File::Close()` invalidates the file
+handle before throwing, so final destruction does not retry the failed close.
+
+Current-source GCC/G++ compilation passes for the decoder, interface, loader,
+scanner, and complete `HAVE_UNRAR=1` unit object (with only pre-existing
+warnings). A version-script symbol-check DSO exports both the legacy close and
+`unrar_close_ex`. The isolated current-source, production-linked public-API
+runner injects `UNRAR_ECLOSE` after an otherwise successful end-of-archive and
+prints `rar_archive_close_failure_passed`, with exact `CL_EWRITE`, cleared
+verdict/alert state, and non-cacheability. Building that unit object exposed
+and corrected a stale PDF test call that still used the removed fifth
+`pdf_finalize_string()` argument and the obsolete tagged context spelling.
+The reusable ARM64 production build still has `ENABLE_UNRAR=OFF`; real backend
+close-fault execution, complete RAR/RAR-SFX corpus, sanitizer/leak evidence,
+certified Linux x86-64, production-CVD/service, materialized large-file,
+Sonic1, and final parser-family/release qualification remain open.

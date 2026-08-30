@@ -316,9 +316,9 @@ static cl_error_t cli_rar_error_to_scan_result(cl_unrar_error_t unrar_ret)
         case UNRAR_ECREATE:
             return CL_ECREAT;
         case UNRAR_ECLOSE:
-            /* RARProcessFile closes the extracted output as part of the
-             * operation. There is no public CL_ECLOSE, so preserve this as
-             * an output write failure rather than a generic format error. */
+            /* The backend uses one close status for extracted output and the
+             * archive handle. There is no public CL_ECLOSE, so preserve it as
+             * an explicit I/O failure rather than a generic format error. */
             return CL_EWRITE;
         case UNRAR_EREAD:
             return CL_EREAD;
@@ -816,7 +816,12 @@ done:
     }
 
     if (NULL != hArchive) {
-        cli_unrar_close(hArchive);
+        cl_error_t close_status = cli_rar_error_to_scan_result(cli_unrar_close_ex(hArchive));
+
+        if (close_status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "RAR decoder archive could not be closed");
+            status = cli_merge_cleanup_status(status, close_status);
+        }
         hArchive = NULL;
     }
 
