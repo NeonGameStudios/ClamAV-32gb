@@ -78,6 +78,7 @@ normal and ASan/UBSan builds. Complete HTML/MIME corpus, full C ABI execution,
 production CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
 
+
 ## Bundled YARA arena admission — 2026-08-30
 
 The bundled YARA arena layer previously allowed a zero-sized initial page,
@@ -15923,3 +15924,17 @@ coordinate separately, and returns `CL_ESEEK` before advancing when either
 coordinate is unrepresentable. Current-source CVD compilation, large-member
 fixtures, production-CVD/service, sanitizer, materialized-large-file, Sonic1,
 and final release qualification remain open.
+
+## ARJ direct parser entry admission — 2026-08-30
+
+The ARJ signature probe returned `CL_EREAD` for an in-range fmap callback
+failure without marking the owning scan incomplete when reached through
+`cli_unarj_open()`. The direct `cli_unarj_prepare_file()` and
+`cli_unarj_extract_file()` helpers also assumed that their metadata carried a
+valid input fmap. The probe now records the required incomplete state before
+returning `CL_EREAD`, and both helpers reject a missing map with `CL_EPARSE`
+and the same explicit reason before dereferencing it. The new direct-entry
+regression and source guards cover the missing-map boundary; current-source
+production-linked execution, complete ARJ/ARJ-SFX corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.

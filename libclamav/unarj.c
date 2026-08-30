@@ -1027,6 +1027,7 @@ static cl_error_t is_arj_archive(arj_metadata_t *metadata)
     mark = fmap_need_off_once(metadata->map, metadata->offset, 2);
     if (!mark) {
         cli_dbgmsg("is_arj_archive: Failed to read the two-byte ARJ header ID at offset %zu\n", metadata->offset);
+        cli_mark_scan_incomplete(metadata->ctx, "ARJ signature could not be read completely");
         return CL_EREAD;
     }
     metadata->offset += 2;
@@ -1577,6 +1578,10 @@ cl_error_t cli_unarj_prepare_file(arj_metadata_t *metadata)
         cli_dbgmsg("cli_unarj_prepare_file: invalid NULL arguments\n");
         return CL_ENULLARG;
     }
+    if (metadata->map == NULL) {
+        cli_mark_scan_incomplete(metadata->ctx, "ARJ input map is unavailable");
+        return CL_EPARSE;
+    }
 
     ret = arj_checktimelimit(metadata->ctx, "ARJ member-header inspection reached the configured time limit");
     if (ret != CL_SUCCESS)
@@ -1600,6 +1605,10 @@ cl_error_t cli_unarj_extract_file(const char *dirname, arj_metadata_t *metadata)
     cli_dbgmsg("in cli_unarj_extract_file\n");
     if (!metadata || !dirname) {
         return CL_ENULLARG;
+    }
+    if (metadata->map == NULL) {
+        cli_mark_scan_incomplete(metadata->ctx, "ARJ input map is unavailable");
+        return CL_EPARSE;
     }
 
     ret = arj_checktimelimit(metadata->ctx, "ARJ member extraction reached the configured time limit");

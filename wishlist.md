@@ -8711,3 +8711,12 @@ qualification as required evidence.
   current-source CVD compilation, large-member fixtures, production-CVD/
   service, sanitizer, materialized-large-file, Sonic1, and final release
   qualification evidence.
+
+## ARJ direct parser entry admission — 2026-08-30
+
+- Keep ARJ direct parser helpers fail-visible when the input fmap is missing,
+  and mark in-range signature callback failures incomplete before returning
+  `CL_EREAD`. Retain the direct-entry regression and source guards; current
+  production-linked execution, complete ARJ/ARJ-SFX corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification remain required.
