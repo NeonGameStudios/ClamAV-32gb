@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Matcher pattern-length admission — 2026-08-30
+
+The AC and BM matcher records store pattern lengths in 16-bit fields, but
+database loading previously converted longer body signatures and silently
+truncated their lengths after allocating the pattern. That could make the
+loaded matcher inspect only a prefix and also corrupt the AC expanded-length
+accounting. AC now rejects oversized base and expanded patterns before
+publishing matcher state; BM rejects oversized simple body patterns before
+allocation. The registered regression verifies that an oversized body pattern
+is rejected without changing the matcher maximum. Complete production
+signature-database, sanitizer, materialized-large-file, Sonic1, and final
+release qualification remain open.
+
 ## RIFF 4-GiB end-coordinate promotion — 2026-08-30
 
 RIFF stores its container size in a 32-bit field, but the parser’s logical

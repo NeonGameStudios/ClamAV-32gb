@@ -955,6 +955,11 @@ cl_error_t cli_add_content_match_pattern(struct cli_matcher *root, const char *v
         /*
          * format seems like it can be handled with the Boyer-Moore (BM) pattern matcher.
          */
+        if (hexlen > (size_t)UINT16_MAX * 2U) {
+            cli_errmsg("cli_add_content_match_pattern: Signature for %s exceeds the 16-bit pattern length limit\n", virname);
+            return CL_EMALFDB;
+        }
+
         bm_new = (struct cli_bm_patt *)MPOOL_CALLOC(root->mempool, 1, sizeof(struct cli_bm_patt));
         if (!bm_new)
             return CL_EMEM;

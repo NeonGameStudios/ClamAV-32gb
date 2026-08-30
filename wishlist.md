@@ -1,5 +1,14 @@
 # Wishlist
 
+## Matcher pattern-length admission — 2026-08-30
+
+- Reject AC and BM body signatures whose base or expanded lengths cannot be
+  represented by the matcher’s 16-bit pattern fields; never publish a
+  silently truncated matcher record.
+- Retain the oversized-body regression and source guards. Complete production
+  signature-database, sanitizer, materialized-large-file, Sonic1, and final
+  release qualification remain required.
+
 ## RIFF 4-GiB end-coordinate promotion — 2026-08-30
 
 - Promote the 32-bit RIFF size field before adding the fixed eight-byte header

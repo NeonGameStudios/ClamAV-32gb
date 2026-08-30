@@ -6533,6 +6533,10 @@ contains libclamav/matcher-ac.c 'new_matches = cli_max_realloc(ss_matches, match
 not_contains libclamav/matcher-ac.c 'sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2'
 contains unit_tests/check_matchers.c 'test_ac_match_offset_growth_rejects_product_wrap'
 contains docs/largefile-capabilities.tsv 'ac-match-offset-growth-admission'
+contains libclamav/matcher-ac.c 'exceeds the 16-bit pattern length limit'
+contains libclamav/readdb.c 'exceeds the 16-bit pattern length limit'
+contains unit_tests/check_matchers.c 'test_matcher_rejects_oversized_body_patterns'
+contains docs/largefile-capabilities.tsv 'matcher-pattern-length-admission'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2

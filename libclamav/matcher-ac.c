@@ -2963,14 +2963,24 @@ cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const ch
     struct cli_ac_special *newspecial, **newtable;
     int ret, error = CL_SUCCESS;
     char *virname_copy = NULL;
+    size_t initial_hex_length;
 
     if (!root) {
         cli_errmsg("cli_ac_addsig: root == NULL\n");
         return CL_ENULLARG;
     }
+    if (!hexsig) {
+        cli_errmsg("cli_ac_addsig: hexsig == NULL\n");
+        return CL_ENULLARG;
+    }
 
-    if (strlen(hexsig) / 2 < root->ac_mindepth) {
+    initial_hex_length = strlen(hexsig);
+    if (initial_hex_length / 2 < root->ac_mindepth) {
         cli_errmsg("cli_ac_addsig: Signature for %s is too short\n", virname);
+        return CL_EMALFDB;
+    }
+    if (initial_hex_length > (size_t)UINT16_MAX * 2U) {
+        cli_errmsg("cli_ac_addsig: Signature for %s exceeds the 16-bit pattern length limit\n", virname);
         return CL_EMALFDB;
     }
 
@@ -3245,7 +3255,24 @@ cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const ch
     /*
      * Convert the hex string pattern to a uint16_t* pattern (flags + byte) patterns.
      */
-    new->pattern = CLI_MPOOL_HEX2UI(root->mempool, hex ? hex : hexsig);
+    {
+        const char *pattern_hex = hex ? hex : hexsig;
+        size_t pattern_hex_length = strlen(pattern_hex);
+
+        /* Pattern lengths are stored in uint16_t fields throughout the AC
+         * matcher ABI. Reject a longer pattern before hex conversion can
+         * allocate a representation that would later be silently truncated. */
+        if (pattern_hex_length > (size_t)UINT16_MAX * 2U) {
+            cli_errmsg("cli_ac_addsig: Signature for %s exceeds the 16-bit pattern length limit\n", virname);
+            if (new->special)
+                mpool_ac_free_special(root->mempool, new);
+            MPOOL_FREE(root->mempool, new);
+            free(hex);
+            return CL_EMALFDB;
+        }
+
+        new->pattern = CLI_MPOOL_HEX2UI(root->mempool, pattern_hex);
+    }
     if (new->pattern == NULL) {
         if (new->special)
             mpool_ac_free_special(root->mempool, new);
@@ -3267,15 +3294,39 @@ cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const ch
         return CL_EMALFDB;
     }
 
-    for (i = 0, j = 0; i < new->length[0]; i++) {
-        if ((new->pattern[i] & CLI_MATCH_METADATA) == CLI_MATCH_SPECIAL) {
-            new->length[1] += new->special_table[j]->len[0];
-            new->length[2] += new->special_table[j]->len[1];
-            j++;
-        } else {
-            new->length[1]++;
-            new->length[2]++;
+    {
+        uint32_t expanded_min = 0;
+        uint32_t expanded_max = 0;
+
+        for (i = 0, j = 0; i < new->length[0]; i++) {
+            uint32_t min_length;
+            uint32_t max_length;
+
+            if ((new->pattern[i] & CLI_MATCH_METADATA) == CLI_MATCH_SPECIAL) {
+                min_length = new->special_table[j]->len[0];
+                max_length = new->special_table[j]->len[1];
+                j++;
+            } else {
+                min_length = 1;
+                max_length = 1;
+            }
+
+            expanded_min += min_length;
+            expanded_max += max_length;
         }
+
+        if (expanded_min > UINT16_MAX || expanded_max > UINT16_MAX) {
+            cli_errmsg("cli_ac_addsig: Expanded signature for %s exceeds the 16-bit pattern length limit\n", virname);
+            if (new->special)
+                mpool_ac_free_special(root->mempool, new);
+            MPOOL_FREE(root->mempool, new->pattern);
+            MPOOL_FREE(root->mempool, new);
+            free(hex);
+            return CL_EMALFDB;
+        }
+
+        new->length[1] = (uint16_t)expanded_min;
+        new->length[2] = (uint16_t)expanded_max;
     }
 
     free(hex);

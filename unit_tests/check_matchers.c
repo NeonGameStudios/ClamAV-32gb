@@ -935,6 +935,25 @@ START_TEST(test_pcre_full_map_range_arithmetic)
 }
 END_TEST
 
+START_TEST(test_matcher_rejects_oversized_body_patterns)
+{
+    struct cli_matcher *root = ctx.engine->root[0];
+    char *hexsig;
+    size_t hex_length = ((size_t)UINT16_MAX + 1U) * 2U;
+
+    ck_assert_ptr_nonnull(root);
+    hexsig = malloc(hex_length + 1U);
+    ck_assert_ptr_nonnull(hexsig);
+    memset(hexsig, 'a', hex_length);
+    hexsig[hex_length] = '\0';
+
+    ck_assert_int_eq(cli_add_content_match_pattern(root, "OversizedBodyPattern", hexsig, 0, 0, 0, "*", NULL, 0),
+                     CL_EMALFDB);
+    ck_assert_uint_eq(root->maxpatlen, 0);
+    free(hexsig);
+}
+END_TEST
+
 START_TEST(test_bytecode_offset_compatibility)
 {
     uint64_t offsets[64];
@@ -2763,6 +2782,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_ac_pattern_table_rejects_saturated_count);
     tcase_add_test(tc_matchers, test_mpool_allocation_size_wrap_is_fail_visible);
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
+    tcase_add_test(tc_matchers, test_matcher_rejects_oversized_body_patterns);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
     tcase_add_test(tc_matchers, test_exact_hash_at_large_size);
     tcase_add_test(tc_matchers, test_fp_hash_read_failure_is_fail_visible);

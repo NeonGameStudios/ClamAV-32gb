@@ -3187,11 +3187,18 @@ fixed-width-integer	libclamav/matcher-ac.c	2705	    newnode->len    = (uint16_t)
 fixed-width-integer	libclamav/matcher-ac.c	2748	static int ac_special_altexpand(char *hexpr, char *subexpr, uint16_t maxlen, int lvl, int maxlvl, uint8_t sigopts, struct cli_ac_special *special, struct cli_matcher *root)
 fixed-width-integer	libclamav/matcher-ac.c	2957	cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const char *hexsig, uint8_t sigopts, uint32_t sigid, uint16_t parts, uint16_t partno, uint16_t rtype, uint16_t type, uint32_t mindist, uint32_t maxdist, const char *offset, const uint32_t *lsigid, unsigned int options)
 fixed-width-integer	libclamav/matcher-ac.c	2961	    uint16_t i, j, ppos = 0, pend, *dec, nzpos = 0;
-fixed-width-integer	libclamav/matcher-ac.c	2992	        memcpy(&new->lsigid[1], lsigid, 2 * sizeof(uint32_t));
-fixed-width-integer	libclamav/matcher-ac.c	3246	     * Convert the hex string pattern to a uint16_t* pattern (flags + byte) patterns.
-fixed-width-integer	libclamav/matcher-ac.c	3258	    new->length[0] = (uint16_t)strlen(hex ? hex : hexsig) / 2;
-fixed-width-integer	libclamav/matcher-ac.c	3470	        uint32_t next_count;
-fixed-width-integer	libclamav/matcher-ac.c	3487	        new->offset_min                      = (uint64_t)root->ac_reloff_num * 2;
+fixed-width-integer	libclamav/matcher-ac.c	3002	        memcpy(&new->lsigid[1], lsigid, 2 * sizeof(uint32_t));
+fixed-width-integer	libclamav/matcher-ac.c	3256	     * Convert the hex string pattern to a uint16_t* pattern (flags + byte) patterns.
+fixed-width-integer	libclamav/matcher-ac.c	3262	        /* Pattern lengths are stored in uint16_t fields throughout the AC
+fixed-width-integer	libclamav/matcher-ac.c	3285	    new->length[0] = (uint16_t)strlen(hex ? hex : hexsig) / 2;
+fixed-width-integer	libclamav/matcher-ac.c	3298	        uint32_t expanded_min = 0;
+fixed-width-integer	libclamav/matcher-ac.c	3299	        uint32_t expanded_max = 0;
+fixed-width-integer	libclamav/matcher-ac.c	3302	            uint32_t min_length;
+fixed-width-integer	libclamav/matcher-ac.c	3303	            uint32_t max_length;
+fixed-width-integer	libclamav/matcher-ac.c	3328	        new->length[1] = (uint16_t)expanded_min;
+fixed-width-integer	libclamav/matcher-ac.c	3329	        new->length[2] = (uint16_t)expanded_max;
+fixed-width-integer	libclamav/matcher-ac.c	3521	        uint32_t next_count;
+fixed-width-integer	libclamav/matcher-ac.c	3538	        new->offset_min                      = (uint64_t)root->ac_reloff_num * 2;
 fixed-width-integer	libclamav/matcher-ac.c	372	    uint32_t i = 0;
 fixed-width-integer	libclamav/matcher-ac.c	384	static inline struct cli_ac_node *add_new_node(struct cli_matcher *root, uint16_t i, uint16_t len)
 fixed-width-integer	libclamav/matcher-ac.c	389	    uint32_t next_count;
@@ -4547,41 +4554,41 @@ fixed-width-integer	libclamav/png.c	98	static size_t png_readn(fmap_t *map, void
 fixed-width-integer	libclamav/qsort.c	85	#define CMP1(a, b) ((int)(*((uint32_t *)(a)) - *((uint32_t *)(b))))
 fixed-width-integer	libclamav/readdb.c	143	                               uint8_t sigopts, uint16_t rtype, uint16_t type,
 fixed-width-integer	libclamav/readdb.c	144	                               const char *offset, const uint32_t *lsigid, unsigned int options)
-fixed-width-integer	libclamav/readdb.c	1608	                uint32_t j;
-fixed-width-integer	libclamav/readdb.c	1618	                uint32_t j;
-fixed-width-integer	libclamav/readdb.c	1809	static int lsig_parse_uint64(const char *text, uint64_t *value)
-fixed-width-integer	libclamav/readdb.c	1828	    *value = (uint64_t)parsed;
-fixed-width-integer	libclamav/readdb.c	1870	    uint32_t cnt, off[ATTRIB_TOKENS];
-fixed-width-integer	libclamav/readdb.c	1917	                tdb->val = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, table_size);
-fixed-width-integer	libclamav/readdb.c	1938	                tdb->val = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, table_size);
-fixed-width-integer	libclamav/readdb.c	1965	                tdb->val = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, table_size);
-fixed-width-integer	libclamav/readdb.c	1990	                    uint64_t min_size, max_size;
-fixed-width-integer	libclamav/readdb.c	1997	                    tdb->filesize_range = (uint64_t *)MPOOL_REALLOC2(tdb->mempool, NULL, 2 * sizeof(uint64_t));
-fixed-width-integer	libclamav/readdb.c	2016	                tdb->range = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->range, table_size);
-fixed-width-integer	libclamav/readdb.c	2046	                tdb->range = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->range, table_size);
-fixed-width-integer	libclamav/readdb.c	2057	                tdb->range[cnt]     = (uint32_t)v1;
-fixed-width-integer	libclamav/readdb.c	2058	                tdb->range[cnt + 1] = (uint32_t)v2;
-fixed-width-integer	libclamav/readdb.c	2059	                tdb->range[cnt + 2] = (uint32_t)v3;
-fixed-width-integer	libclamav/readdb.c	2109	                *apt->pt = (uint32_t *)&tdb->val[off[i]];
-fixed-width-integer	libclamav/readdb.c	2117	                    *apt->pt = (uint32_t *)&tdb->range[off[i]];
-fixed-width-integer	libclamav/readdb.c	2233	    uint32_t lsigid[2];
-fixed-width-integer	libclamav/readdb.c	2599	                                        bc0->id, (uint32_t)bc0->metadata.timestamp,
-fixed-width-integer	libclamav/readdb.c	2602	                                        bc->id, (uint32_t)bc->metadata.timestamp,
-fixed-width-integer	libclamav/readdb.c	2715	            new->length = (uint16_t)strlen(tokens[2]) / 2;
-fixed-width-integer	libclamav/readdb.c	2984	    uint64_t size;
+fixed-width-integer	libclamav/readdb.c	1613	                uint32_t j;
+fixed-width-integer	libclamav/readdb.c	1623	                uint32_t j;
+fixed-width-integer	libclamav/readdb.c	1814	static int lsig_parse_uint64(const char *text, uint64_t *value)
+fixed-width-integer	libclamav/readdb.c	1833	    *value = (uint64_t)parsed;
+fixed-width-integer	libclamav/readdb.c	1875	    uint32_t cnt, off[ATTRIB_TOKENS];
+fixed-width-integer	libclamav/readdb.c	1922	                tdb->val = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, table_size);
+fixed-width-integer	libclamav/readdb.c	1943	                tdb->val = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, table_size);
+fixed-width-integer	libclamav/readdb.c	1970	                tdb->val = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->val, table_size);
+fixed-width-integer	libclamav/readdb.c	1995	                    uint64_t min_size, max_size;
+fixed-width-integer	libclamav/readdb.c	2002	                    tdb->filesize_range = (uint64_t *)MPOOL_REALLOC2(tdb->mempool, NULL, 2 * sizeof(uint64_t));
+fixed-width-integer	libclamav/readdb.c	2021	                tdb->range = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->range, table_size);
+fixed-width-integer	libclamav/readdb.c	2051	                tdb->range = (uint32_t *)MPOOL_REALLOC2(tdb->mempool, tdb->range, table_size);
+fixed-width-integer	libclamav/readdb.c	2062	                tdb->range[cnt]     = (uint32_t)v1;
+fixed-width-integer	libclamav/readdb.c	2063	                tdb->range[cnt + 1] = (uint32_t)v2;
+fixed-width-integer	libclamav/readdb.c	2064	                tdb->range[cnt + 2] = (uint32_t)v3;
+fixed-width-integer	libclamav/readdb.c	2114	                *apt->pt = (uint32_t *)&tdb->val[off[i]];
+fixed-width-integer	libclamav/readdb.c	2122	                    *apt->pt = (uint32_t *)&tdb->range[off[i]];
+fixed-width-integer	libclamav/readdb.c	2238	    uint32_t lsigid[2];
+fixed-width-integer	libclamav/readdb.c	2604	                                        bc0->id, (uint32_t)bc0->metadata.timestamp,
+fixed-width-integer	libclamav/readdb.c	2607	                                        bc->id, (uint32_t)bc->metadata.timestamp,
+fixed-width-integer	libclamav/readdb.c	2720	            new->length = (uint16_t)strlen(tokens[2]) / 2;
+fixed-width-integer	libclamav/readdb.c	2989	    uint64_t size;
 fixed-width-integer	libclamav/readdb.c	343	 * @param lsigid    An array of 2 uint32_t numbers: lsig_id and subsig_id. May be NULL for testing.
-fixed-width-integer	libclamav/readdb.c	3447	                           const char *const varname, uint32_t line)
+fixed-width-integer	libclamav/readdb.c	3452	                           const char *const varname, uint32_t line)
 fixed-width-integer	libclamav/readdb.c	348	                                                 const char *offset, const uint32_t *lsigid, unsigned int options)
-fixed-width-integer	libclamav/readdb.c	3825	    int32_t tbl_cnt;
-fixed-width-integer	libclamav/readdb.c	3828	static int32_t ytable_lookup(const char *hexsig)
-fixed-width-integer	libclamav/readdb.c	3837	    int32_t lookup;
-fixed-width-integer	libclamav/readdb.c	3930	    ytable->tbl_cnt              = (int32_t)next_count;
-fixed-width-integer	libclamav/readdb.c	3947	    int32_t i;
-fixed-width-integer	libclamav/readdb.c	3962	static int yara_hexstr_verify(YR_STRING *string, const char *hexstr, uint32_t *lsigid, struct cl_engine *engine, unsigned int options)
-fixed-width-integer	libclamav/readdb.c	4005	    uint32_t lsigid[2];
+fixed-width-integer	libclamav/readdb.c	3830	    int32_t tbl_cnt;
+fixed-width-integer	libclamav/readdb.c	3833	static int32_t ytable_lookup(const char *hexsig)
+fixed-width-integer	libclamav/readdb.c	3842	    int32_t lookup;
+fixed-width-integer	libclamav/readdb.c	3935	    ytable->tbl_cnt              = (int32_t)next_count;
+fixed-width-integer	libclamav/readdb.c	3952	    int32_t i;
+fixed-width-integer	libclamav/readdb.c	3967	static int yara_hexstr_verify(YR_STRING *string, const char *hexstr, uint32_t *lsigid, struct cl_engine *engine, unsigned int options)
+fixed-width-integer	libclamav/readdb.c	4010	    uint32_t lsigid[2];
 fixed-width-integer	libclamav/readdb.c	443	                                         const char *offset, const uint32_t *lsigid, unsigned int options,
-fixed-width-integer	libclamav/readdb.c	4865	                new->length = (uint16_t)strlen(tokens[3]);
-fixed-width-integer	libclamav/readdb.c	4868	                new->length = (uint16_t)strlen(tokens[3]) / 2;
+fixed-width-integer	libclamav/readdb.c	4870	                new->length = (uint16_t)strlen(tokens[3]);
+fixed-width-integer	libclamav/readdb.c	4873	                new->length = (uint16_t)strlen(tokens[3]) / 2;
 fixed-width-integer	libclamav/readdb.c	664	 * @param lsigid    An array of 2 uint32_t numbers: lsig_id and subsig_id. May be NULL for testing.
 fixed-width-integer	libclamav/readdb.c	669	                                           const char *offset, const uint32_t *lsigid, unsigned int options)
 fixed-width-integer	libclamav/readdb.c	716	 * @param lsigid    An array of 2 uint32_t numbers: lsig_id and subsig_id. May be NULL for testing.
@@ -7136,41 +7143,41 @@ fixed-width-integer	unit_tests/check_htmlnorm.c	413	    uint64_t temporary_reser
 fixed-width-integer	unit_tests/check_htmlnorm.c	448	    uint64_t temporary_reserved = 0;
 fixed-width-integer	unit_tests/check_jsnorm.c	122	    struct scope *sc = (struct scope *)(uint64_t)0xdeadbeef;
 fixed-width-integer	unit_tests/check_matchers.c	100	    const uint16_t sigopts;
-fixed-width-integer	unit_tests/check_matchers.c	1415	    uint32_t expected;
-fixed-width-integer	unit_tests/check_matchers.c	1421	    ck_assert_int_eq(read_uint32_t(map, 0), (int64_t)expected);
-fixed-width-integer	unit_tests/check_matchers.c	1430	    uint32_t expected;
-fixed-width-integer	unit_tests/check_matchers.c	1436	    ck_assert_int_eq(read_uint32_t(map, 1), (int64_t)expected);
-fixed-width-integer	unit_tests/check_matchers.c	1445	    uint8_t code[1 + sizeof(uint64_t) + 1 + 1 + 1];
-fixed-width-integer	unit_tests/check_matchers.c	1446	    uint64_t offset = 1;
+fixed-width-integer	unit_tests/check_matchers.c	1434	    uint32_t expected;
+fixed-width-integer	unit_tests/check_matchers.c	1440	    ck_assert_int_eq(read_uint32_t(map, 0), (int64_t)expected);
+fixed-width-integer	unit_tests/check_matchers.c	1449	    uint32_t expected;
 fixed-width-integer	unit_tests/check_matchers.c	145	    const uint16_t sigopts;
-fixed-width-integer	unit_tests/check_matchers.c	1456	    code[1 + sizeof(uint64_t)] = OP_UINT32;
-fixed-width-integer	unit_tests/check_matchers.c	1457	    code[1 + sizeof(uint64_t) + 1] = OP_POP;
-fixed-width-integer	unit_tests/check_matchers.c	1458	    code[1 + sizeof(uint64_t) + 1 + 1] = OP_HALT;
-fixed-width-integer	unit_tests/check_matchers.c	1492	    if (at == 0 && len == sizeof(uint32_t))
-fixed-width-integer	unit_tests/check_matchers.c	1499	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
-fixed-width-integer	unit_tests/check_matchers.c	1511	    uint64_t offset = 0;
-fixed-width-integer	unit_tests/check_matchers.c	1629	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-fixed-width-integer	unit_tests/check_matchers.c	1630	    uint64_t target;
-fixed-width-integer	unit_tests/check_matchers.c	1675	    uint8_t code[3 * (1 + sizeof(uint64_t)) + 3];
-fixed-width-integer	unit_tests/check_matchers.c	1676	    uint64_t target;
-fixed-width-integer	unit_tests/check_matchers.c	1832	    enum { YARA_STACK_CAPACITY = 16384, YARA_PUSH_BYTES = 1 + sizeof(uint64_t) };
-fixed-width-integer	unit_tests/check_matchers.c	1881	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-fixed-width-integer	unit_tests/check_matchers.c	1927	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-fixed-width-integer	unit_tests/check_matchers.c	2049	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-fixed-width-integer	unit_tests/check_matchers.c	2050	    const uint64_t invalid_index = MAX_LOOP_NESTING * LOOP_LOCAL_VARS;
-fixed-width-integer	unit_tests/check_matchers.c	2091	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-fixed-width-integer	unit_tests/check_matchers.c	2092	    const uint64_t argument_count = MAX_FUNCTION_ARGS + 1;
-fixed-width-integer	unit_tests/check_matchers.c	2137	    uint64_t target = PTR_TO_UINT64(code);
-fixed-width-integer	unit_tests/check_matchers.c	2228	    const uint64_t reference_offset = 5000000000ULL;
-fixed-width-integer	unit_tests/check_matchers.c	2370	    static const uint64_t sizes[] = {
-fixed-width-integer	unit_tests/check_matchers.c	2473	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
-fixed-width-integer	unit_tests/check_matchers.c	2673	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
-fixed-width-integer	unit_tests/check_matchers.c	2674	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2677	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
-fixed-width-integer	unit_tests/check_matchers.c	2678	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2706	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2708	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
-fixed-width-integer	unit_tests/check_matchers.c	2715	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+fixed-width-integer	unit_tests/check_matchers.c	1455	    ck_assert_int_eq(read_uint32_t(map, 1), (int64_t)expected);
+fixed-width-integer	unit_tests/check_matchers.c	1464	    uint8_t code[1 + sizeof(uint64_t) + 1 + 1 + 1];
+fixed-width-integer	unit_tests/check_matchers.c	1465	    uint64_t offset = 1;
+fixed-width-integer	unit_tests/check_matchers.c	1475	    code[1 + sizeof(uint64_t)] = OP_UINT32;
+fixed-width-integer	unit_tests/check_matchers.c	1476	    code[1 + sizeof(uint64_t) + 1] = OP_POP;
+fixed-width-integer	unit_tests/check_matchers.c	1477	    code[1 + sizeof(uint64_t) + 1 + 1] = OP_HALT;
+fixed-width-integer	unit_tests/check_matchers.c	1511	    if (at == 0 && len == sizeof(uint32_t))
+fixed-width-integer	unit_tests/check_matchers.c	1518	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
+fixed-width-integer	unit_tests/check_matchers.c	1530	    uint64_t offset = 0;
+fixed-width-integer	unit_tests/check_matchers.c	1648	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+fixed-width-integer	unit_tests/check_matchers.c	1649	    uint64_t target;
+fixed-width-integer	unit_tests/check_matchers.c	1694	    uint8_t code[3 * (1 + sizeof(uint64_t)) + 3];
+fixed-width-integer	unit_tests/check_matchers.c	1695	    uint64_t target;
+fixed-width-integer	unit_tests/check_matchers.c	1851	    enum { YARA_STACK_CAPACITY = 16384, YARA_PUSH_BYTES = 1 + sizeof(uint64_t) };
+fixed-width-integer	unit_tests/check_matchers.c	1900	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+fixed-width-integer	unit_tests/check_matchers.c	1946	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+fixed-width-integer	unit_tests/check_matchers.c	2068	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+fixed-width-integer	unit_tests/check_matchers.c	2069	    const uint64_t invalid_index = MAX_LOOP_NESTING * LOOP_LOCAL_VARS;
+fixed-width-integer	unit_tests/check_matchers.c	2110	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+fixed-width-integer	unit_tests/check_matchers.c	2111	    const uint64_t argument_count = MAX_FUNCTION_ARGS + 1;
+fixed-width-integer	unit_tests/check_matchers.c	2156	    uint64_t target = PTR_TO_UINT64(code);
+fixed-width-integer	unit_tests/check_matchers.c	2247	    const uint64_t reference_offset = 5000000000ULL;
+fixed-width-integer	unit_tests/check_matchers.c	2389	    static const uint64_t sizes[] = {
+fixed-width-integer	unit_tests/check_matchers.c	2492	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
+fixed-width-integer	unit_tests/check_matchers.c	2692	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
+fixed-width-integer	unit_tests/check_matchers.c	2693	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2696	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
+fixed-width-integer	unit_tests/check_matchers.c	2697	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2725	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2727	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+fixed-width-integer	unit_tests/check_matchers.c	2734	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
 fixed-width-integer	unit_tests/check_matchers.c	51	extern int64_t read_uint32_t(fmap_t *fmap, size_t offset);
 fixed-width-integer	unit_tests/check_matchers.c	53	#define TEST_YARA_UNDEFINED ((int64_t)0xFFFABADAFABADAFF)
 fixed-width-integer	unit_tests/check_matchers.c	641	    uint64_t offdata[4] = {0};
@@ -7188,8 +7195,8 @@ fixed-width-integer	unit_tests/check_matchers.c	884	    ck_assert_uint_eq(bytes,
 fixed-width-integer	unit_tests/check_matchers.c	886	    ck_assert_int_eq(cli_ac_match_offset_table_size((uint32_t)max_last, &bytes, &new_last), CL_SUCCESS);
 fixed-width-integer	unit_tests/check_matchers.c	887	    ck_assert_int_eq(cli_ac_match_offset_table_size((uint32_t)(max_last + 1U), &bytes, &new_last), CL_ERESOURCE);
 fixed-width-integer	unit_tests/check_matchers.c	898	    uint16_t pattern_word = 0;
-fixed-width-integer	unit_tests/check_matchers.c	940	    uint64_t offsets[64];
-fixed-width-integer	unit_tests/check_matchers.c	941	    uint32_t legacy_offsets[64];
+fixed-width-integer	unit_tests/check_matchers.c	959	    uint64_t offsets[64];
+fixed-width-integer	unit_tests/check_matchers.c	960	    uint32_t legacy_offsets[64];
 fixed-width-integer	unit_tests/check_matchers.c	97	    uint32_t dlength;
 fixed-width-integer	unit_tests/check_uniq.c	57	    uint32_t u;
 fixed-width-integer	unit_tests/check_uniq.c	60	        const uint32_t key_len;
@@ -11934,14 +11941,18 @@ native-width-integer	libclamav/matcher-ac.c	2864	inline static int ac_special_al
 native-width-integer	libclamav/matcher-ac.c	2867	    int i, ret, num, fixed, slen;
 native-width-integer	libclamav/matcher-ac.c	2957	cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const char *hexsig, uint8_t sigopts, uint32_t sigid, uint16_t parts, uint16_t partno, uint16_t rtype, uint16_t type, uint32_t mindist, uint32_t maxdist, const char *offset, const uint32_t *lsigid, unsigned int options)
 native-width-integer	libclamav/matcher-ac.c	2964	    int ret, error = CL_SUCCESS;
+native-width-integer	libclamav/matcher-ac.c	2966	    size_t initial_hex_length;
 native-width-integer	libclamav/matcher-ac.c	298	    unsigned int i, grouplen;
-native-width-integer	libclamav/matcher-ac.c	3003	            unsigned int n, n1, n2;
-native-width-integer	libclamav/matcher-ac.c	3090	        size_t nest;
-native-width-integer	libclamav/matcher-ac.c	3091	        size_t hexnewsz;
+native-width-integer	libclamav/matcher-ac.c	2982	    if (initial_hex_length > (size_t)UINT16_MAX * 2U) {
+native-width-integer	libclamav/matcher-ac.c	3013	            unsigned int n, n1, n2;
+native-width-integer	libclamav/matcher-ac.c	3100	        size_t nest;
+native-width-integer	libclamav/matcher-ac.c	3101	        size_t hexnewsz;
+native-width-integer	libclamav/matcher-ac.c	3260	        size_t pattern_hex_length = strlen(pattern_hex);
+native-width-integer	libclamav/matcher-ac.c	3265	        if (pattern_hex_length > (size_t)UINT16_MAX * 2U) {
 native-width-integer	libclamav/matcher-ac.c	337	        size_t newCapacity;
 native-width-integer	libclamav/matcher-ac.c	338	        size_t table_size;
-native-width-integer	libclamav/matcher-ac.c	3469	        size_t table_size;
-native-width-integer	libclamav/matcher-ac.c	3473	            cli_readdb_table_size((size_t)root->ac_reloff_num + 1,
+native-width-integer	libclamav/matcher-ac.c	3520	        size_t table_size;
+native-width-integer	libclamav/matcher-ac.c	3524	            cli_readdb_table_size((size_t)root->ac_reloff_num + 1,
 native-width-integer	libclamav/matcher-ac.c	388	    size_t table_size;
 native-width-integer	libclamav/matcher-ac.c	414	        cli_readdb_table_size((size_t)root->ac_nodes + 1, sizeof(*newtable), &table_size) != CL_SUCCESS) {
 native-width-integer	libclamav/matcher-ac.c	445	static int cli_ac_addpatt_recursive(struct cli_matcher *root, struct cli_ac_patt *pattern, struct cli_ac_node *pt, uint16_t i, uint16_t len)
@@ -14295,223 +14306,224 @@ native-width-integer	libclamav/qsort.c	85	#define CMP1(a, b) ((int)(*((uint32_t 
 native-width-integer	libclamav/qsort.c	93	int (*cmp)(const void *, const void *);
 native-width-integer	libclamav/queue.h	114		unsigned long	 lastline;
 native-width-integer	libclamav/queue.h	115		unsigned long	 prevline;
-native-width-integer	libclamav/readdb.c	1034	char *cli_dbgets(char *buff, unsigned int size, FILE *fs, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	1039	char *cli_dbgets(char *buff, unsigned int size, FILE *fs, struct cli_dbio *dbio)
 native-width-integer	libclamav/readdb.c	104	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
-native-width-integer	libclamav/readdb.c	1040	        int bread;
-native-width-integer	libclamav/readdb.c	1078	                    cli_errmsg("cli_dbgets: Line too long for provided buffer\n");
-native-width-integer	libclamav/readdb.c	1092	                unsigned int remain = dbio->buf + dbio->bufsize - 1 - dbio->bufpt;
-native-width-integer	libclamav/readdb.c	1107	        unsigned int bs;
-native-width-integer	libclamav/readdb.c	1134	    size_t pad        = 0;
-native-width-integer	libclamav/readdb.c	1135	    size_t nsz;
+native-width-integer	libclamav/readdb.c	1045	        int bread;
+native-width-integer	libclamav/readdb.c	1083	                    cli_errmsg("cli_dbgets: Line too long for provided buffer\n");
+native-width-integer	libclamav/readdb.c	1097	                unsigned int remain = dbio->buf + dbio->bufsize - 1 - dbio->bufpt;
+native-width-integer	libclamav/readdb.c	1112	        unsigned int bs;
+native-width-integer	libclamav/readdb.c	1139	    size_t pad        = 0;
+native-width-integer	libclamav/readdb.c	1140	    size_t nsz;
 native-width-integer	libclamav/readdb.c	115	char *cli_virname(const char *virname, unsigned int official)
-native-width-integer	libclamav/readdb.c	1174	static int cli_chkign(const struct cli_matcher *ignored, const char *signame, const char *entry)
-native-width-integer	libclamav/readdb.c	1180	    int ret = 0;
-native-width-integer	libclamav/readdb.c	1206	static int cli_chkpua(const char *signame, const char *pua_cats, unsigned int options)
-native-width-integer	libclamav/readdb.c	1210	    size_t catlen;
-native-width-integer	libclamav/readdb.c	1211	    int ret;
-native-width-integer	libclamav/readdb.c	1227	    if ((unsigned int)(pt1 - sig + 2) > sizeof(cat)) {
-native-width-integer	libclamav/readdb.c	1228	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt1 - sig + 2));
-native-width-integer	libclamav/readdb.c	1231	    if ((unsigned int)(pt2 - sig + 2) > sizeof(cat)) {
-native-width-integer	libclamav/readdb.c	1232	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt2 - sig + 2));
-native-width-integer	libclamav/readdb.c	1258	static cl_error_t cli_loaddb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, const char *dbname)
-native-width-integer	libclamav/readdb.c	1261	    unsigned int line = 0, sigs = 0;
-native-width-integer	libclamav/readdb.c	1262	    int ret = 0;
-native-width-integer	libclamav/readdb.c	1334	static cl_error_t cli_loadidb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio)
-native-width-integer	libclamav/readdb.c	1341	    unsigned int line = 0, sigs = 0, tokens_count, i, size, enginesize;
-native-width-integer	libclamav/readdb.c	1344	    size_t table_size;
-native-width-integer	libclamav/readdb.c	1418	            cli_readdb_table_size((size_t)matcher->icon_counts[enginesize] + 1,
+native-width-integer	libclamav/readdb.c	1179	static int cli_chkign(const struct cli_matcher *ignored, const char *signame, const char *entry)
+native-width-integer	libclamav/readdb.c	1185	    int ret = 0;
+native-width-integer	libclamav/readdb.c	1211	static int cli_chkpua(const char *signame, const char *pua_cats, unsigned int options)
+native-width-integer	libclamav/readdb.c	1215	    size_t catlen;
+native-width-integer	libclamav/readdb.c	1216	    int ret;
+native-width-integer	libclamav/readdb.c	1232	    if ((unsigned int)(pt1 - sig + 2) > sizeof(cat)) {
+native-width-integer	libclamav/readdb.c	1233	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt1 - sig + 2));
+native-width-integer	libclamav/readdb.c	1236	    if ((unsigned int)(pt2 - sig + 2) > sizeof(cat)) {
+native-width-integer	libclamav/readdb.c	1237	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt2 - sig + 2));
+native-width-integer	libclamav/readdb.c	1263	static cl_error_t cli_loaddb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, const char *dbname)
+native-width-integer	libclamav/readdb.c	1266	    unsigned int line = 0, sigs = 0;
+native-width-integer	libclamav/readdb.c	1267	    int ret = 0;
+native-width-integer	libclamav/readdb.c	1339	static cl_error_t cli_loadidb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	1346	    unsigned int line = 0, sigs = 0, tokens_count, i, size, enginesize;
+native-width-integer	libclamav/readdb.c	1349	    size_t table_size;
+native-width-integer	libclamav/readdb.c	1423	            cli_readdb_table_size((size_t)matcher->icon_counts[enginesize] + 1,
 native-width-integer	libclamav/readdb.c	144	                               const char *offset, const uint32_t *lsigid, unsigned int options)
 native-width-integer	libclamav/readdb.c	147	    unsigned int i;
 native-width-integer	libclamav/readdb.c	148	    int ret = CL_SUCCESS;
-native-width-integer	libclamav/readdb.c	1548	                cli_readdb_table_size((size_t)i + 1, sizeof(*matcher->group_names[0]), &table_size) != CL_SUCCESS ||
-native-width-integer	libclamav/readdb.c	1569	                cli_readdb_table_size((size_t)i + 1, sizeof(*matcher->group_names[1]), &table_size) != CL_SUCCESS ||
-native-width-integer	libclamav/readdb.c	1631	static int cli_loadwdb(FILE *fs, struct cl_engine *engine, unsigned int options, struct cli_dbio *dbio)
-native-width-integer	libclamav/readdb.c	1633	    int ret = 0;
-native-width-integer	libclamav/readdb.c	1651	static int cli_loadpdb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio)
-native-width-integer	libclamav/readdb.c	1653	    int ret = 0;
-native-width-integer	libclamav/readdb.c	1672	static int cli_loadndb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned short sdb, unsigned int options, struct cli_dbio *dbio, const char *dbname)
-native-width-integer	libclamav/readdb.c	1678	    int line = 0, sigs = 0, ret = 0, tokens_count;
-native-width-integer	libclamav/readdb.c	1680	    unsigned int phish = options & CL_DB_PHISHING;
+native-width-integer	libclamav/readdb.c	1553	                cli_readdb_table_size((size_t)i + 1, sizeof(*matcher->group_names[0]), &table_size) != CL_SUCCESS ||
+native-width-integer	libclamav/readdb.c	1574	                cli_readdb_table_size((size_t)i + 1, sizeof(*matcher->group_names[1]), &table_size) != CL_SUCCESS ||
+native-width-integer	libclamav/readdb.c	1636	static int cli_loadwdb(FILE *fs, struct cl_engine *engine, unsigned int options, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	1638	    int ret = 0;
+native-width-integer	libclamav/readdb.c	1656	static int cli_loadpdb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	1658	    int ret = 0;
+native-width-integer	libclamav/readdb.c	1677	static int cli_loadndb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned short sdb, unsigned int options, struct cli_dbio *dbio, const char *dbname)
+native-width-integer	libclamav/readdb.c	1683	    int line = 0, sigs = 0, ret = 0, tokens_count;
+native-width-integer	libclamav/readdb.c	1685	    unsigned int phish = options & CL_DB_PHISHING;
 native-width-integer	libclamav/readdb.c	172	            size_t ovrlen = strlen(hexcpy) + 21;
-native-width-integer	libclamav/readdb.c	1734	            if ((unsigned int)atoi(pt) > cl_retflevel()) {
-native-width-integer	libclamav/readdb.c	1746	                if ((unsigned int)atoi(pt) < cl_retflevel()) {
-native-width-integer	libclamav/readdb.c	1759	            cli_dbgmsg("Not supported target type (%d) in signature for %s\n", (int)target, virname);
-native-width-integer	libclamav/readdb.c	1763	        root = engine->root[(size_t)target];
-native-width-integer	libclamav/readdb.c	1805	    unsigned int type;
-native-width-integer	libclamav/readdb.c	1809	static int lsig_parse_uint64(const char *text, uint64_t *value)
-native-width-integer	libclamav/readdb.c	1812	    unsigned long long parsed;
-native-width-integer	libclamav/readdb.c	1833	static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
-native-width-integer	libclamav/readdb.c	1869	    unsigned int v1, v2, v3, i, j, tokens_count, have_newext = 0;
-native-width-integer	libclamav/readdb.c	1871	    size_t next_count, table_size, string_len;
+native-width-integer	libclamav/readdb.c	1739	            if ((unsigned int)atoi(pt) > cl_retflevel()) {
+native-width-integer	libclamav/readdb.c	1751	                if ((unsigned int)atoi(pt) < cl_retflevel()) {
+native-width-integer	libclamav/readdb.c	1764	            cli_dbgmsg("Not supported target type (%d) in signature for %s\n", (int)target, virname);
+native-width-integer	libclamav/readdb.c	1768	        root = engine->root[(size_t)target];
+native-width-integer	libclamav/readdb.c	1810	    unsigned int type;
+native-width-integer	libclamav/readdb.c	1814	static int lsig_parse_uint64(const char *text, uint64_t *value)
+native-width-integer	libclamav/readdb.c	1817	    unsigned long long parsed;
+native-width-integer	libclamav/readdb.c	1838	static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
+native-width-integer	libclamav/readdb.c	1874	    unsigned int v1, v2, v3, i, j, tokens_count, have_newext = 0;
+native-width-integer	libclamav/readdb.c	1876	    size_t next_count, table_size, string_len;
 native-width-integer	libclamav/readdb.c	189	            size_t ovrlen = strlen(hexcpy) + 2;
-native-width-integer	libclamav/readdb.c	1912	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + 1,
-native-width-integer	libclamav/readdb.c	1933	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + 1,
-native-width-integer	libclamav/readdb.c	1949	                unsigned int ftypes_count;
-native-width-integer	libclamav/readdb.c	1958	                    (size_t)tdb->cnt[CLI_TDB_UINT] > (size_t)INT_MAX - ((size_t)ftypes_count + 1) ||
-native-width-integer	libclamav/readdb.c	1959	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + ftypes_count + 1,
-native-width-integer	libclamav/readdb.c	1963	                next_count            = (size_t)tdb->cnt[CLI_TDB_UINT] + ftypes_count + 1;
-native-width-integer	libclamav/readdb.c	2009	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 2 ||
-native-width-integer	libclamav/readdb.c	2010	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_RANGE] + 2,
-native-width-integer	libclamav/readdb.c	2014	                next_count             = (size_t)tdb->cnt[CLI_TDB_RANGE] + 2;
-native-width-integer	libclamav/readdb.c	2039	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 3 ||
-native-width-integer	libclamav/readdb.c	2040	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_RANGE] + 3,
-native-width-integer	libclamav/readdb.c	2044	                next_count             = (size_t)tdb->cnt[CLI_TDB_RANGE] + 3;
-native-width-integer	libclamav/readdb.c	2065	                if (string_len >= (size_t)INT_MAX || tdb->cnt[CLI_TDB_STR] < 0 ||
-native-width-integer	libclamav/readdb.c	2066	                    (size_t)tdb->cnt[CLI_TDB_STR] > (size_t)INT_MAX - (string_len + 1) ||
-native-width-integer	libclamav/readdb.c	2067	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_STR] + string_len + 1,
-native-width-integer	libclamav/readdb.c	2071	                next_count             = (size_t)tdb->cnt[CLI_TDB_STR] + string_len + 1;
-native-width-integer	libclamav/readdb.c	2162	static inline int init_tdb(struct cli_lsig_tdb *tdb, struct cl_engine *engine, char *target, const char *virname)
-native-width-integer	libclamav/readdb.c	2164	    int ret;
-native-width-integer	libclamav/readdb.c	2222	static cl_error_t load_oneldb(char *buffer, int chkpua, struct cl_engine *engine, unsigned int options, const char *dbname, unsigned int line, unsigned int *sigs, unsigned bc_idx, const char *buffer_cpy, int *skip)
-native-width-integer	libclamav/readdb.c	2230	    int i, subsigs, tokens_count;
-native-width-integer	libclamav/readdb.c	2235	    size_t lsig_table_size;
+native-width-integer	libclamav/readdb.c	1917	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + 1,
+native-width-integer	libclamav/readdb.c	1938	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + 1,
+native-width-integer	libclamav/readdb.c	1954	                unsigned int ftypes_count;
+native-width-integer	libclamav/readdb.c	1963	                    (size_t)tdb->cnt[CLI_TDB_UINT] > (size_t)INT_MAX - ((size_t)ftypes_count + 1) ||
+native-width-integer	libclamav/readdb.c	1964	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + ftypes_count + 1,
+native-width-integer	libclamav/readdb.c	1968	                next_count            = (size_t)tdb->cnt[CLI_TDB_UINT] + ftypes_count + 1;
+native-width-integer	libclamav/readdb.c	2014	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 2 ||
+native-width-integer	libclamav/readdb.c	2015	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_RANGE] + 2,
+native-width-integer	libclamav/readdb.c	2019	                next_count             = (size_t)tdb->cnt[CLI_TDB_RANGE] + 2;
+native-width-integer	libclamav/readdb.c	2044	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 3 ||
+native-width-integer	libclamav/readdb.c	2045	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_RANGE] + 3,
+native-width-integer	libclamav/readdb.c	2049	                next_count             = (size_t)tdb->cnt[CLI_TDB_RANGE] + 3;
+native-width-integer	libclamav/readdb.c	2070	                if (string_len >= (size_t)INT_MAX || tdb->cnt[CLI_TDB_STR] < 0 ||
+native-width-integer	libclamav/readdb.c	2071	                    (size_t)tdb->cnt[CLI_TDB_STR] > (size_t)INT_MAX - (string_len + 1) ||
+native-width-integer	libclamav/readdb.c	2072	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_STR] + string_len + 1,
+native-width-integer	libclamav/readdb.c	2076	                next_count             = (size_t)tdb->cnt[CLI_TDB_STR] + string_len + 1;
+native-width-integer	libclamav/readdb.c	2167	static inline int init_tdb(struct cli_lsig_tdb *tdb, struct cl_engine *engine, char *target, const char *virname)
+native-width-integer	libclamav/readdb.c	2169	    int ret;
+native-width-integer	libclamav/readdb.c	2227	static cl_error_t load_oneldb(char *buffer, int chkpua, struct cl_engine *engine, unsigned int options, const char *dbname, unsigned int line, unsigned int *sigs, unsigned bc_idx, const char *buffer_cpy, int *skip)
+native-width-integer	libclamav/readdb.c	2235	    int i, subsigs, tokens_count;
+native-width-integer	libclamav/readdb.c	2240	    size_t lsig_table_size;
 native-width-integer	libclamav/readdb.c	229	        size_t ovrlen = strlen(hexcpy) + 7;
-native-width-integer	libclamav/readdb.c	2331	        cli_readdb_table_size((size_t)root->ac_lsigs + 1,
-native-width-integer	libclamav/readdb.c	2412	static int cli_loadldb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, const char *dbname)
-native-width-integer	libclamav/readdb.c	2415	    unsigned int line = 0, sigs = 0;
-native-width-integer	libclamav/readdb.c	2416	    int ret;
-native-width-integer	libclamav/readdb.c	2469	static int cli_loadcbc(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, const char *dbname)
-native-width-integer	libclamav/readdb.c	2472	    int rc, skip = 0;
-native-width-integer	libclamav/readdb.c	2478	    size_t table_size;
-native-width-integer	libclamav/readdb.c	2500	        cli_readdb_table_size((size_t)bcs->count + 1, sizeof(*bcs->all_bcs), &table_size) != CL_SUCCESS) {
-native-width-integer	libclamav/readdb.c	2578	                cli_readdb_table_size((size_t)engine->hooks_cnt[hook] + 1,
+native-width-integer	libclamav/readdb.c	2336	        cli_readdb_table_size((size_t)root->ac_lsigs + 1,
+native-width-integer	libclamav/readdb.c	2417	static int cli_loadldb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, const char *dbname)
+native-width-integer	libclamav/readdb.c	2420	    unsigned int line = 0, sigs = 0;
+native-width-integer	libclamav/readdb.c	2421	    int ret;
+native-width-integer	libclamav/readdb.c	2474	static int cli_loadcbc(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, const char *dbname)
+native-width-integer	libclamav/readdb.c	2477	    int rc, skip = 0;
+native-width-integer	libclamav/readdb.c	2483	    size_t table_size;
+native-width-integer	libclamav/readdb.c	2505	        cli_readdb_table_size((size_t)bcs->count + 1, sizeof(*bcs->all_bcs), &table_size) != CL_SUCCESS) {
+native-width-integer	libclamav/readdb.c	2583	                cli_readdb_table_size((size_t)engine->hooks_cnt[hook] + 1,
 native-width-integer	libclamav/readdb.c	260	        size_t hexcpylen = strlen(hexcpy);
 native-width-integer	libclamav/readdb.c	261	        size_t ovrlen    = 2 * hexcpylen + 1;
-native-width-integer	libclamav/readdb.c	2621	static int cli_loadftm(FILE *fs, struct cl_engine *engine, unsigned int options, unsigned int internal, struct cli_dbio *dbio)
-native-width-integer	libclamav/readdb.c	2625	    unsigned int line = 0, sigs = 0, tokens_count;
-native-width-integer	libclamav/readdb.c	2628	    int ret;
-native-width-integer	libclamav/readdb.c	2629	    int magictype;
-native-width-integer	libclamav/readdb.c	2662	            if ((unsigned int)atoi(pt) > cl_retflevel()) {
-native-width-integer	libclamav/readdb.c	2672	                if ((unsigned int)atoi(pt) < cl_retflevel())
+native-width-integer	libclamav/readdb.c	2626	static int cli_loadftm(FILE *fs, struct cl_engine *engine, unsigned int options, unsigned int internal, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	2630	    unsigned int line = 0, sigs = 0, tokens_count;
+native-width-integer	libclamav/readdb.c	2633	    int ret;
+native-width-integer	libclamav/readdb.c	2634	    int magictype;
+native-width-integer	libclamav/readdb.c	2667	            if ((unsigned int)atoi(pt) > cl_retflevel()) {
+native-width-integer	libclamav/readdb.c	2677	                if ((unsigned int)atoi(pt) < cl_retflevel())
 native-width-integer	libclamav/readdb.c	270	            size_t len = strlen(hexovr);
-native-width-integer	libclamav/readdb.c	2755	static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options, struct cli_dbio *dbio)
-native-width-integer	libclamav/readdb.c	2759	    unsigned int line = 0, tokens_count, len;
-native-width-integer	libclamav/readdb.c	2762	    int ret = CL_SUCCESS, dsig = 0;
-native-width-integer	libclamav/readdb.c	2874	static int cli_loadign(FILE *fs, struct cl_engine *engine, unsigned int options, struct cli_dbio *dbio)
-native-width-integer	libclamav/readdb.c	2878	    unsigned int line = 0, tokens_count, len;
-native-width-integer	libclamav/readdb.c	2880	    int ret = CL_SUCCESS;
-native-width-integer	libclamav/readdb.c	2923	            int pad = 3 - len;
-native-width-integer	libclamav/readdb.c	2976	static int cli_loadhash(FILE *fs, struct cl_engine *engine, unsigned int *signo, hash_purpose_t purpose, unsigned int options, struct cli_dbio *dbio, const char *dbname)
-native-width-integer	libclamav/readdb.c	2981	    int ret                 = CL_SUCCESS;
-native-width-integer	libclamav/readdb.c	2982	    unsigned int size_field = 1, hash_field = 0, line = 0, sigs = 0, tokens_count;
-native-width-integer	libclamav/readdb.c	2983	    unsigned int req_fl = 0;
-native-width-integer	libclamav/readdb.c	3021	                int max_fl = atoi(tokens[HASH_DB_TOKENS - 1]);
-native-width-integer	libclamav/readdb.c	3022	                if (cl_retflevel() > (unsigned int)max_fl)
-native-width-integer	libclamav/readdb.c	3110	static int cli_loadmd(FILE *fs, struct cl_engine *engine, unsigned int *signo, int type, unsigned int options, struct cli_dbio *dbio, const char *dbname)
-native-width-integer	libclamav/readdb.c	3114	    unsigned int line = 0, sigs = 0, tokens_count;
-native-width-integer	libclamav/readdb.c	3115	    int ret = CL_SUCCESS;
-native-width-integer	libclamav/readdb.c	3234	        new->filepos[0] = new->filepos[1] = strcmp(tokens[7], "*") ? (unsigned int)atoi(tokens[7]) : (unsigned int)CLI_OFF_ANY;
-native-width-integer	libclamav/readdb.c	3266	static int cli_loadcdb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio)
-native-width-integer	libclamav/readdb.c	3270	    unsigned int line = 0, sigs = 0, tokens_count, n0, n1;
-native-width-integer	libclamav/readdb.c	3271	    int ret = CL_SUCCESS;
-native-width-integer	libclamav/readdb.c	3300	            if ((unsigned int)atoi(tokens[10]) > cl_retflevel()) {
-native-width-integer	libclamav/readdb.c	3309	                if ((unsigned int)atoi(tokens[11]) < cl_retflevel())
-native-width-integer	libclamav/readdb.c	3371	                dest[0] = dest[1] = (unsigned int)atoi(token_str);            \
-native-width-integer	libclamav/readdb.c	3454	        cli_errmsg("cli_loadcrt: line %u: %s is not the appropriate length for a SHA1 Hash\n", (unsigned int)line, varname);
-native-width-integer	libclamav/readdb.c	3460	        cli_errmsg("cli_loadcrt: line %u: Cannot convert %s to binary string\n", (unsigned int)line, varname);
-native-width-integer	libclamav/readdb.c	3476	static int cli_loadcrt(FILE *fs, struct cl_engine *engine, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	2760	static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	2764	    unsigned int line = 0, tokens_count, len;
+native-width-integer	libclamav/readdb.c	2767	    int ret = CL_SUCCESS, dsig = 0;
+native-width-integer	libclamav/readdb.c	2879	static int cli_loadign(FILE *fs, struct cl_engine *engine, unsigned int options, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	2883	    unsigned int line = 0, tokens_count, len;
+native-width-integer	libclamav/readdb.c	2885	    int ret = CL_SUCCESS;
+native-width-integer	libclamav/readdb.c	2928	            int pad = 3 - len;
+native-width-integer	libclamav/readdb.c	2981	static int cli_loadhash(FILE *fs, struct cl_engine *engine, unsigned int *signo, hash_purpose_t purpose, unsigned int options, struct cli_dbio *dbio, const char *dbname)
+native-width-integer	libclamav/readdb.c	2986	    int ret                 = CL_SUCCESS;
+native-width-integer	libclamav/readdb.c	2987	    unsigned int size_field = 1, hash_field = 0, line = 0, sigs = 0, tokens_count;
+native-width-integer	libclamav/readdb.c	2988	    unsigned int req_fl = 0;
+native-width-integer	libclamav/readdb.c	3026	                int max_fl = atoi(tokens[HASH_DB_TOKENS - 1]);
+native-width-integer	libclamav/readdb.c	3027	                if (cl_retflevel() > (unsigned int)max_fl)
+native-width-integer	libclamav/readdb.c	3115	static int cli_loadmd(FILE *fs, struct cl_engine *engine, unsigned int *signo, int type, unsigned int options, struct cli_dbio *dbio, const char *dbname)
+native-width-integer	libclamav/readdb.c	3119	    unsigned int line = 0, sigs = 0, tokens_count;
+native-width-integer	libclamav/readdb.c	3120	    int ret = CL_SUCCESS;
+native-width-integer	libclamav/readdb.c	3239	        new->filepos[0] = new->filepos[1] = strcmp(tokens[7], "*") ? (unsigned int)atoi(tokens[7]) : (unsigned int)CLI_OFF_ANY;
+native-width-integer	libclamav/readdb.c	3271	static int cli_loadcdb(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	3275	    unsigned int line = 0, sigs = 0, tokens_count, n0, n1;
+native-width-integer	libclamav/readdb.c	3276	    int ret = CL_SUCCESS;
+native-width-integer	libclamav/readdb.c	3305	            if ((unsigned int)atoi(tokens[10]) > cl_retflevel()) {
+native-width-integer	libclamav/readdb.c	3314	                if ((unsigned int)atoi(tokens[11]) < cl_retflevel())
+native-width-integer	libclamav/readdb.c	3376	                dest[0] = dest[1] = (unsigned int)atoi(token_str);            \
+native-width-integer	libclamav/readdb.c	3459	        cli_errmsg("cli_loadcrt: line %u: %s is not the appropriate length for a SHA1 Hash\n", (unsigned int)line, varname);
+native-width-integer	libclamav/readdb.c	3465	        cli_errmsg("cli_loadcrt: line %u: Cannot convert %s to binary string\n", (unsigned int)line, varname);
 native-width-integer	libclamav/readdb.c	348	                                                 const char *offset, const uint32_t *lsigid, unsigned int options)
-native-width-integer	libclamav/readdb.c	3480	    size_t line = 0, tokens_count;
-native-width-integer	libclamav/readdb.c	3482	    int ret = CL_SUCCESS;
-native-width-integer	libclamav/readdb.c	3512	            cli_errmsg("cli_loadcrt: line %u: Invalid number of tokens: %u\n", (unsigned int)line, (unsigned int)tokens_count);
-native-width-integer	libclamav/readdb.c	3519	                cli_errmsg("cli_loadcrt: line %u: Invalid minimum feature level\n", (unsigned int)line);
-native-width-integer	libclamav/readdb.c	3523	            if ((unsigned int)atoi(tokens[CRT_TOKENS - 2]) > cl_retflevel()) {
-native-width-integer	libclamav/readdb.c	3530	                    cli_errmsg("cli_loadcrt: line %u: Invalid maximum feature level\n", (unsigned int)line);
-native-width-integer	libclamav/readdb.c	3535	                if ((unsigned int)atoi(tokens[CRT_TOKENS - 1]) < cl_retflevel()) {
-native-width-integer	libclamav/readdb.c	3550	                cli_errmsg("cli_loadcrt: line %u: Invalid trust specification. Expected 0 or 1\n", (unsigned int)line);
-native-width-integer	libclamav/readdb.c	3576	            cli_errmsg("cli_loadcrt: line %u: Cannot convert public key to binary string\n", (unsigned int)line);
-native-width-integer	libclamav/readdb.c	3594	                cli_errmsg("cli_loadcrt: line %u: Invalid code sign specification. Expected 0 or 1\n", (unsigned int)line);
-native-width-integer	libclamav/readdb.c	3607	                cli_errmsg("cli_loadcrt: line %u: Invalid time sign specification. Expected 0 or 1\n", (unsigned int)line);
-native-width-integer	libclamav/readdb.c	3620	                cli_errmsg("cli_loadcrt: line %u: Invalid cert sign specification. Expected 0 or 1\n", (unsigned int)line);
-native-width-integer	libclamav/readdb.c	3644	static int cli_loadmscat(FILE *fs, const char *dbname, struct cl_engine *engine, unsigned int options, struct cli_dbio *dbio)
-native-width-integer	libclamav/readdb.c	3677	static int cli_loadopenioc(FILE *fs, const char *dbname, struct cl_engine *engine, unsigned int options)
-native-width-integer	libclamav/readdb.c	3679	    int rc;
-native-width-integer	libclamav/readdb.c	3696	static char *parse_yara_hex_string(YR_STRING *string, int *ret);
-native-width-integer	libclamav/readdb.c	3698	static char *parse_yara_hex_string(YR_STRING *string, int *ret)
-native-width-integer	libclamav/readdb.c	3701	    size_t slen, reslen = 0, i, j;
+native-width-integer	libclamav/readdb.c	3481	static int cli_loadcrt(FILE *fs, struct cl_engine *engine, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	3485	    size_t line = 0, tokens_count;
+native-width-integer	libclamav/readdb.c	3487	    int ret = CL_SUCCESS;
+native-width-integer	libclamav/readdb.c	3517	            cli_errmsg("cli_loadcrt: line %u: Invalid number of tokens: %u\n", (unsigned int)line, (unsigned int)tokens_count);
+native-width-integer	libclamav/readdb.c	3524	                cli_errmsg("cli_loadcrt: line %u: Invalid minimum feature level\n", (unsigned int)line);
+native-width-integer	libclamav/readdb.c	3528	            if ((unsigned int)atoi(tokens[CRT_TOKENS - 2]) > cl_retflevel()) {
+native-width-integer	libclamav/readdb.c	3535	                    cli_errmsg("cli_loadcrt: line %u: Invalid maximum feature level\n", (unsigned int)line);
+native-width-integer	libclamav/readdb.c	3540	                if ((unsigned int)atoi(tokens[CRT_TOKENS - 1]) < cl_retflevel()) {
+native-width-integer	libclamav/readdb.c	3555	                cli_errmsg("cli_loadcrt: line %u: Invalid trust specification. Expected 0 or 1\n", (unsigned int)line);
+native-width-integer	libclamav/readdb.c	3581	            cli_errmsg("cli_loadcrt: line %u: Cannot convert public key to binary string\n", (unsigned int)line);
+native-width-integer	libclamav/readdb.c	3599	                cli_errmsg("cli_loadcrt: line %u: Invalid code sign specification. Expected 0 or 1\n", (unsigned int)line);
+native-width-integer	libclamav/readdb.c	3612	                cli_errmsg("cli_loadcrt: line %u: Invalid time sign specification. Expected 0 or 1\n", (unsigned int)line);
+native-width-integer	libclamav/readdb.c	3625	                cli_errmsg("cli_loadcrt: line %u: Invalid cert sign specification. Expected 0 or 1\n", (unsigned int)line);
+native-width-integer	libclamav/readdb.c	3649	static int cli_loadmscat(FILE *fs, const char *dbname, struct cl_engine *engine, unsigned int options, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	3682	static int cli_loadopenioc(FILE *fs, const char *dbname, struct cl_engine *engine, unsigned int options)
+native-width-integer	libclamav/readdb.c	3684	    int rc;
+native-width-integer	libclamav/readdb.c	3701	static char *parse_yara_hex_string(YR_STRING *string, int *ret);
+native-width-integer	libclamav/readdb.c	3703	static char *parse_yara_hex_string(YR_STRING *string, int *ret)
+native-width-integer	libclamav/readdb.c	3706	    size_t slen, reslen = 0, i, j;
 native-width-integer	libclamav/readdb.c	373	        size_t subtokens_count = cli_ldbtokenize(hexsig, ':', MAX_REGEX_SUB_TOKENS + 1, (const char **)subtokens, 0);
-native-width-integer	libclamav/readdb.c	3835	static cl_error_t ytable_add_attrib(struct cli_ytable *ytable, const char *hexsig, const char *value, int type)
-native-width-integer	libclamav/readdb.c	3888	static int ytable_add_string(struct cli_ytable *ytable, const char *hexsig)
-native-width-integer	libclamav/readdb.c	3892	    size_t next_count;
-native-width-integer	libclamav/readdb.c	3893	    size_t table_size;
-native-width-integer	libclamav/readdb.c	3894	    int ret;
-native-width-integer	libclamav/readdb.c	3913	        cli_readdb_table_size((size_t)ytable->tbl_cnt + 1,
-native-width-integer	libclamav/readdb.c	3921	    next_count = (size_t)ytable->tbl_cnt + 1;
-native-width-integer	libclamav/readdb.c	3962	static int yara_hexstr_verify(YR_STRING *string, const char *hexstr, uint32_t *lsigid, struct cl_engine *engine, unsigned int options)
-native-width-integer	libclamav/readdb.c	3964	    int ret = CL_SUCCESS;
-native-width-integer	libclamav/readdb.c	3991	static unsigned int yara_total, yara_loaded, yara_malform, yara_empty, yara_complex;
-native-width-integer	libclamav/readdb.c	3998	static int load_oneyara(YR_RULE *rule, int chkpua, struct cl_engine *engine, unsigned int options, unsigned int *sigs)
-native-width-integer	libclamav/readdb.c	4002	    size_t i;
-native-width-integer	libclamav/readdb.c	4003	    int str_error = 0, ret = CL_SUCCESS;
-native-width-integer	libclamav/readdb.c	4010	    size_t lsig_table_size;
-native-width-integer	libclamav/readdb.c	4011	    /* size_t lsize; */       // only used in commented out code
-native-width-integer	libclamav/readdb.c	4164	                    cli_readdb_table_size((size_t)root->ac_lsigs + 1,
-native-width-integer	libclamav/readdb.c	4210	            size_t length = strlen(PCRE_BYPASS) + string->length + 3;
-native-width-integer	libclamav/readdb.c	4234	            size_t length  = string->length;
-native-width-integer	libclamav/readdb.c	4235	            size_t totsize = 2 * length + 1;
-native-width-integer	libclamav/readdb.c	4252	                size_t len = strlen(substr);
-native-width-integer	libclamav/readdb.c	4396	            size_t len=strlen(logic);
+native-width-integer	libclamav/readdb.c	3840	static cl_error_t ytable_add_attrib(struct cli_ytable *ytable, const char *hexsig, const char *value, int type)
+native-width-integer	libclamav/readdb.c	3893	static int ytable_add_string(struct cli_ytable *ytable, const char *hexsig)
+native-width-integer	libclamav/readdb.c	3897	    size_t next_count;
+native-width-integer	libclamav/readdb.c	3898	    size_t table_size;
+native-width-integer	libclamav/readdb.c	3899	    int ret;
+native-width-integer	libclamav/readdb.c	3918	        cli_readdb_table_size((size_t)ytable->tbl_cnt + 1,
+native-width-integer	libclamav/readdb.c	3926	    next_count = (size_t)ytable->tbl_cnt + 1;
+native-width-integer	libclamav/readdb.c	3967	static int yara_hexstr_verify(YR_STRING *string, const char *hexstr, uint32_t *lsigid, struct cl_engine *engine, unsigned int options)
+native-width-integer	libclamav/readdb.c	3969	    int ret = CL_SUCCESS;
+native-width-integer	libclamav/readdb.c	3996	static unsigned int yara_total, yara_loaded, yara_malform, yara_empty, yara_complex;
+native-width-integer	libclamav/readdb.c	4003	static int load_oneyara(YR_RULE *rule, int chkpua, struct cl_engine *engine, unsigned int options, unsigned int *sigs)
+native-width-integer	libclamav/readdb.c	4007	    size_t i;
+native-width-integer	libclamav/readdb.c	4008	    int str_error = 0, ret = CL_SUCCESS;
+native-width-integer	libclamav/readdb.c	4015	    size_t lsig_table_size;
+native-width-integer	libclamav/readdb.c	4016	    /* size_t lsize; */       // only used in commented out code
+native-width-integer	libclamav/readdb.c	4169	                    cli_readdb_table_size((size_t)root->ac_lsigs + 1,
+native-width-integer	libclamav/readdb.c	4215	            size_t length = strlen(PCRE_BYPASS) + string->length + 3;
+native-width-integer	libclamav/readdb.c	4239	            size_t length  = string->length;
+native-width-integer	libclamav/readdb.c	4240	            size_t totsize = 2 * length + 1;
+native-width-integer	libclamav/readdb.c	4257	                size_t len = strlen(substr);
+native-width-integer	libclamav/readdb.c	4401	            size_t len=strlen(logic);
 native-width-integer	libclamav/readdb.c	443	                                         const char *offset, const uint32_t *lsigid, unsigned int options,
 native-width-integer	libclamav/readdb.c	444	                                         int current_subsig_index, int num_subsigs, struct cli_lsig_tdb *tdb)
-native-width-integer	libclamav/readdb.c	4480	        cli_readdb_table_size((size_t)root->ac_lsigs + 1,
-native-width-integer	libclamav/readdb.c	4509	    for (i = 0; i < (size_t)ytable.tbl_cnt; ++i) {
+native-width-integer	libclamav/readdb.c	4485	        cli_readdb_table_size((size_t)root->ac_lsigs + 1,
+native-width-integer	libclamav/readdb.c	4514	    for (i = 0; i < (size_t)ytable.tbl_cnt; ++i) {
 native-width-integer	libclamav/readdb.c	458	        size_t hexlen;
 native-width-integer	libclamav/readdb.c	459	        unsigned int smin, smax, tid;
-native-width-integer	libclamav/readdb.c	4622	static int cli_loadyara(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, const char *filename)
-native-width-integer	libclamav/readdb.c	4627	    unsigned int sigs = 0, rules = 0, rule_errors = 0;
-native-width-integer	libclamav/readdb.c	4628	    int rc;
-native-width-integer	libclamav/readdb.c	4743	static int cli_loadpwdb(FILE *fs, struct cl_engine *engine, unsigned int options, unsigned int internal, struct cli_dbio *dbio)
-native-width-integer	libclamav/readdb.c	4748	    unsigned int line = 0, skip = 0, pwcnt = 0, tokens_count;
-native-width-integer	libclamav/readdb.c	4752	    int ret = CL_SUCCESS, pwstype;
-native-width-integer	libclamav/readdb.c	4797	            size_t attlen = strlen(tokens[1]) + 10;
-native-width-integer	libclamav/readdb.c	4907	static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, unsigned int *signo, unsigned int options, void *sign_verifier);
-native-width-integer	libclamav/readdb.c	4909	cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, void *sign_verifier)
-native-width-integer	libclamav/readdb.c	5088	    unsigned int load_priority;
-native-width-integer	libclamav/readdb.c	5123	 * @return size_t
-native-width-integer	libclamav/readdb.c	5125	static cl_error_t count_line_based_signatures(const char *filepath, size_t *sig_count)
-native-width-integer	libclamav/readdb.c	5128	    int current_character = 0;
-native-width-integer	libclamav/readdb.c	5129	    size_t count           = 0;
-native-width-integer	libclamav/readdb.c	5188	 * @return size_t   The number of signatures.
-native-width-integer	libclamav/readdb.c	5190	static cl_error_t count_signatures(const char *filepath, struct cl_engine *engine, unsigned int options,
-native-width-integer	libclamav/readdb.c	5191	                                   size_t *num_signatures)
-native-width-integer	libclamav/readdb.c	5194	    size_t counted                   = 0;
-native-width-integer	libclamav/readdb.c	5262	static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, unsigned int *signo, unsigned int options, void *sign_verifier)
-native-width-integer	libclamav/readdb.c	5269	    int ends_with_sep = 0;
-native-width-integer	libclamav/readdb.c	5270	    size_t dirname_len;
-native-width-integer	libclamav/readdb.c	5276	    size_t counted;
-native-width-integer	libclamav/readdb.c	5298	        unsigned int load_priority;
-native-width-integer	libclamav/readdb.c	5518	cl_error_t cl_load(const char *path, struct cl_engine *engine, unsigned int *signo, unsigned int dboptions)
-native-width-integer	libclamav/readdb.c	5522	    size_t counted;
-native-width-integer	libclamav/readdb.c	5649	    int have_ddir       = 0;
-native-width-integer	libclamav/readdb.c	5718	                size_t stat_table_size;
-native-width-integer	libclamav/readdb.c	5721	                    cli_readdb_table_size((size_t)dbstat->entries + 1,
-native-width-integer	libclamav/readdb.c	5735	                if (cli_readdb_table_size((size_t)dbstat->entries,
-native-width-integer	libclamav/readdb.c	5789	int cl_statchkdir(const struct cl_stat *dbstat)
-native-width-integer	libclamav/readdb.c	5794	    unsigned int i, found;
-native-width-integer	libclamav/readdb.c	5796	    int ret = CL_SUCCESS;
+native-width-integer	libclamav/readdb.c	4627	static int cli_loadyara(FILE *fs, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, const char *filename)
+native-width-integer	libclamav/readdb.c	4632	    unsigned int sigs = 0, rules = 0, rule_errors = 0;
+native-width-integer	libclamav/readdb.c	4633	    int rc;
+native-width-integer	libclamav/readdb.c	4748	static int cli_loadpwdb(FILE *fs, struct cl_engine *engine, unsigned int options, unsigned int internal, struct cli_dbio *dbio)
+native-width-integer	libclamav/readdb.c	4753	    unsigned int line = 0, skip = 0, pwcnt = 0, tokens_count;
+native-width-integer	libclamav/readdb.c	4757	    int ret = CL_SUCCESS, pwstype;
+native-width-integer	libclamav/readdb.c	4802	            size_t attlen = strlen(tokens[1]) + 10;
+native-width-integer	libclamav/readdb.c	4912	static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, unsigned int *signo, unsigned int options, void *sign_verifier);
+native-width-integer	libclamav/readdb.c	4914	cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, void *sign_verifier)
+native-width-integer	libclamav/readdb.c	5093	    unsigned int load_priority;
+native-width-integer	libclamav/readdb.c	5128	 * @return size_t
+native-width-integer	libclamav/readdb.c	5130	static cl_error_t count_line_based_signatures(const char *filepath, size_t *sig_count)
+native-width-integer	libclamav/readdb.c	5133	    int current_character = 0;
+native-width-integer	libclamav/readdb.c	5134	    size_t count           = 0;
+native-width-integer	libclamav/readdb.c	5193	 * @return size_t   The number of signatures.
+native-width-integer	libclamav/readdb.c	5195	static cl_error_t count_signatures(const char *filepath, struct cl_engine *engine, unsigned int options,
+native-width-integer	libclamav/readdb.c	5196	                                   size_t *num_signatures)
+native-width-integer	libclamav/readdb.c	5199	    size_t counted                   = 0;
+native-width-integer	libclamav/readdb.c	5267	static cl_error_t cli_loaddbdir(const char *dirname, struct cl_engine *engine, unsigned int *signo, unsigned int options, void *sign_verifier)
+native-width-integer	libclamav/readdb.c	5274	    int ends_with_sep = 0;
+native-width-integer	libclamav/readdb.c	5275	    size_t dirname_len;
+native-width-integer	libclamav/readdb.c	5281	    size_t counted;
+native-width-integer	libclamav/readdb.c	5303	        unsigned int load_priority;
+native-width-integer	libclamav/readdb.c	5523	cl_error_t cl_load(const char *path, struct cl_engine *engine, unsigned int *signo, unsigned int dboptions)
+native-width-integer	libclamav/readdb.c	5527	    size_t counted;
+native-width-integer	libclamav/readdb.c	5654	    int have_ddir       = 0;
+native-width-integer	libclamav/readdb.c	5723	                size_t stat_table_size;
+native-width-integer	libclamav/readdb.c	5726	                    cli_readdb_table_size((size_t)dbstat->entries + 1,
+native-width-integer	libclamav/readdb.c	5740	                if (cli_readdb_table_size((size_t)dbstat->entries,
+native-width-integer	libclamav/readdb.c	5794	int cl_statchkdir(const struct cl_stat *dbstat)
+native-width-integer	libclamav/readdb.c	5799	    unsigned int i, found;
+native-width-integer	libclamav/readdb.c	5801	    int ret = CL_SUCCESS;
 native-width-integer	libclamav/readdb.c	585	        int subtokens_count;
-native-width-integer	libclamav/readdb.c	5895	        int i;
-native-width-integer	libclamav/readdb.c	5928	    unsigned int i, j;
-native-width-integer	libclamav/readdb.c	5931	    size_t tasks_to_do    = 0;
-native-width-integer	libclamav/readdb.c	5932	    size_t tasks_complete = 0;
+native-width-integer	libclamav/readdb.c	5900	        int i;
+native-width-integer	libclamav/readdb.c	5933	    unsigned int i, j;
+native-width-integer	libclamav/readdb.c	5936	    size_t tasks_to_do    = 0;
+native-width-integer	libclamav/readdb.c	5937	    size_t tasks_complete = 0;
 native-width-integer	libclamav/readdb.c	607	            size_t j;
-native-width-integer	libclamav/readdb.c	6271	    unsigned int i;
-native-width-integer	libclamav/readdb.c	6275	    size_t tasks_to_do    = 0;
-native-width-integer	libclamav/readdb.c	6276	    size_t tasks_complete = 0;
-native-width-integer	libclamav/readdb.c	6455	static int countentries(const char *dbname, unsigned int *sigs)
-native-width-integer	libclamav/readdb.c	6459	    unsigned int entry = 0;
-native-width-integer	libclamav/readdb.c	6460	    int status = CL_SUCCESS;
-native-width-integer	libclamav/readdb.c	6498	static cl_error_t count_add_sigs(unsigned int *sigs, unsigned int count, const char *dbname)
-native-width-integer	libclamav/readdb.c	6509	static int countsigs(const char *dbname, unsigned int options, unsigned int *sigs)
-native-width-integer	libclamav/readdb.c	6558	cl_error_t cl_countsigs(const char *path, unsigned int countoptions, unsigned int *sigs)
-native-width-integer	libclamav/readdb.c	6565	    unsigned int original_sigs;
+native-width-integer	libclamav/readdb.c	6276	    unsigned int i;
+native-width-integer	libclamav/readdb.c	6280	    size_t tasks_to_do    = 0;
+native-width-integer	libclamav/readdb.c	6281	    size_t tasks_complete = 0;
+native-width-integer	libclamav/readdb.c	6460	static int countentries(const char *dbname, unsigned int *sigs)
+native-width-integer	libclamav/readdb.c	6464	    unsigned int entry = 0;
+native-width-integer	libclamav/readdb.c	6465	    int status = CL_SUCCESS;
+native-width-integer	libclamav/readdb.c	6503	static cl_error_t count_add_sigs(unsigned int *sigs, unsigned int count, const char *dbname)
+native-width-integer	libclamav/readdb.c	6514	static int countsigs(const char *dbname, unsigned int options, unsigned int *sigs)
+native-width-integer	libclamav/readdb.c	6563	cl_error_t cl_countsigs(const char *path, unsigned int countoptions, unsigned int *sigs)
+native-width-integer	libclamav/readdb.c	6570	    unsigned int original_sigs;
 native-width-integer	libclamav/readdb.c	669	                                           const char *offset, const uint32_t *lsigid, unsigned int options)
 native-width-integer	libclamav/readdb.c	722	                                         const char *offset, const uint32_t *lsigid, unsigned int options)
 native-width-integer	libclamav/readdb.c	729	    size_t range, i, j, hexlen, nest;
 native-width-integer	libclamav/readdb.c	730	    int mindist = 0, maxdist = 0, error = 0;
+native-width-integer	libclamav/readdb.c	958	        if (hexlen > (size_t)UINT16_MAX * 2U) {
 native-width-integer	libclamav/readdb.c	98	cl_error_t cli_readdb_table_size(size_t count, size_t element_size, size_t *bytes)
-native-width-integer	libclamav/readdb.c	992	cl_error_t cli_initroots(struct cl_engine *engine, unsigned int options)
-native-width-integer	libclamav/readdb.c	994	    int i, ret;
+native-width-integer	libclamav/readdb.c	997	cl_error_t cli_initroots(struct cl_engine *engine, unsigned int options)
+native-width-integer	libclamav/readdb.c	999	    int i, ret;
 native-width-integer	libclamav/readdb.h	136	char *cli_virname(const char *virname, unsigned int official);
 native-width-integer	libclamav/readdb.h	160	                               const char *offset, const uint32_t *lsigid, unsigned int options);
 native-width-integer	libclamav/readdb.h	181	                                         const char *offset, const uint32_t *lsigid, unsigned int options);
@@ -20978,35 +20990,35 @@ native-width-integer	unit_tests/check_jsnorm.c	57	    int is;
 native-width-integer	unit_tests/check_jsnorm.c	579	    const size_t len   = 512 * 1024;
 native-width-integer	unit_tests/check_jsnorm.c	586	    const size_t explen = len + sizeof(s_exp) + sizeof(e_exp) - 2;
 native-width-integer	unit_tests/check_jsnorm.c	611	    size_t p;
-native-width-integer	unit_tests/check_matchers.c	1387	    thefmap.len         = (size_t)UINT32_MAX + 1U;
-native-width-integer	unit_tests/check_matchers.c	1489	static const void *yara_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_matchers.c	1499	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
-native-width-integer	unit_tests/check_matchers.c	1677	    size_t offset = 0;
-native-width-integer	unit_tests/check_matchers.c	1833	    const size_t push_count = YARA_STACK_CAPACITY + 1;
-native-width-integer	unit_tests/check_matchers.c	1834	    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
-native-width-integer	unit_tests/check_matchers.c	1840	    size_t i;
+native-width-integer	unit_tests/check_matchers.c	1406	    thefmap.len         = (size_t)UINT32_MAX + 1U;
+native-width-integer	unit_tests/check_matchers.c	1508	static const void *yara_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+native-width-integer	unit_tests/check_matchers.c	1518	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
+native-width-integer	unit_tests/check_matchers.c	1696	    size_t offset = 0;
 native-width-integer	unit_tests/check_matchers.c	185	static const void *matcher_test_fmap_need(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_matchers.c	1882	    size_t offset = 0;
-native-width-integer	unit_tests/check_matchers.c	1928	    size_t offset = 0;
+native-width-integer	unit_tests/check_matchers.c	1852	    const size_t push_count = YARA_STACK_CAPACITY + 1;
+native-width-integer	unit_tests/check_matchers.c	1853	    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
+native-width-integer	unit_tests/check_matchers.c	1859	    size_t i;
+native-width-integer	unit_tests/check_matchers.c	1901	    size_t offset = 0;
+native-width-integer	unit_tests/check_matchers.c	1947	    size_t offset = 0;
 native-width-integer	unit_tests/check_matchers.c	196	static const void *matcher_test_fmap_read_failure(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_matchers.c	2376	    size_t i, j;
-native-width-integer	unit_tests/check_matchers.c	2463	    size_t length;
-native-width-integer	unit_tests/check_matchers.c	2464	    size_t fail_at;
-native-width-integer	unit_tests/check_matchers.c	2465	    unsigned int reads;
-native-width-integer	unit_tests/check_matchers.c	2468	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
-native-width-integer	unit_tests/check_matchers.c	2477	    if (count > state->fail_at - (size_t)offset)
-native-width-integer	unit_tests/check_matchers.c	2478	        count = state->fail_at - (size_t)offset;
-native-width-integer	unit_tests/check_matchers.c	2479	    if (count > state->length - (size_t)offset)
-native-width-integer	unit_tests/check_matchers.c	2480	        count = state->length - (size_t)offset;
-native-width-integer	unit_tests/check_matchers.c	2482	    return (off_t)count;
-native-width-integer	unit_tests/check_matchers.c	2492	    state.length  = (size_t)SCANBUFF + 1;
-native-width-integer	unit_tests/check_matchers.c	2493	    state.fail_at = (size_t)SCANBUFF;
-native-width-integer	unit_tests/check_matchers.c	2504	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
-native-width-integer	unit_tests/check_matchers.c	2514	static const void *matcher_pcre_full_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+native-width-integer	unit_tests/check_matchers.c	2395	    size_t i, j;
+native-width-integer	unit_tests/check_matchers.c	2482	    size_t length;
+native-width-integer	unit_tests/check_matchers.c	2483	    size_t fail_at;
+native-width-integer	unit_tests/check_matchers.c	2484	    unsigned int reads;
+native-width-integer	unit_tests/check_matchers.c	2487	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
+native-width-integer	unit_tests/check_matchers.c	2496	    if (count > state->fail_at - (size_t)offset)
+native-width-integer	unit_tests/check_matchers.c	2497	        count = state->fail_at - (size_t)offset;
+native-width-integer	unit_tests/check_matchers.c	2498	    if (count > state->length - (size_t)offset)
+native-width-integer	unit_tests/check_matchers.c	2499	        count = state->length - (size_t)offset;
+native-width-integer	unit_tests/check_matchers.c	2501	    return (off_t)count;
+native-width-integer	unit_tests/check_matchers.c	2511	    state.length  = (size_t)SCANBUFF + 1;
+native-width-integer	unit_tests/check_matchers.c	2512	    state.fail_at = (size_t)SCANBUFF;
+native-width-integer	unit_tests/check_matchers.c	2523	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
+native-width-integer	unit_tests/check_matchers.c	2533	static const void *matcher_pcre_full_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 native-width-integer	unit_tests/check_matchers.c	260	    unsigned int i;
 native-width-integer	unit_tests/check_matchers.c	261	    int ret;
-native-width-integer	unit_tests/check_matchers.c	2669	    int get_status;
-native-width-integer	unit_tests/check_matchers.c	2676	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, (long long)CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
+native-width-integer	unit_tests/check_matchers.c	2688	    int get_status;
+native-width-integer	unit_tests/check_matchers.c	2695	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, (long long)CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
 native-width-integer	unit_tests/check_matchers.c	303	    unsigned int i;
 native-width-integer	unit_tests/check_matchers.c	304	    int ret;
 native-width-integer	unit_tests/check_matchers.c	357	    unsigned int i;
@@ -21028,7 +21040,8 @@ native-width-integer	unit_tests/check_matchers.c	793	    size_t bytes;
 native-width-integer	unit_tests/check_matchers.c	809	    size_t bytes;
 native-width-integer	unit_tests/check_matchers.c	878	    size_t bytes;
 native-width-integer	unit_tests/check_matchers.c	880	    const size_t max_last = (CLI_MAX_ALLOCATION - sizeof(struct cli_subsig_matches)) /
-native-width-integer	unit_tests/check_matchers.c	942	    unsigned int i;
+native-width-integer	unit_tests/check_matchers.c	942	    size_t hex_length = ((size_t)UINT16_MAX + 1U) * 2U;
+native-width-integer	unit_tests/check_matchers.c	961	    unsigned int i;
 native-width-integer	unit_tests/check_regex.c	118	static cl_error_t cb_expect_multi(void *cbdata, const char *suffix, size_t len, const struct regex_list *r)
 native-width-integer	unit_tests/check_regex.c	140	    size_t n            = 0;
 native-width-integer	unit_tests/check_regex.c	305	static int loaded_2 = 0;
@@ -21390,7 +21403,7 @@ boundary-constant	libclamav/matcher-ac.c	1667	    if (extra_slots > (size_t)UINT
 boundary-constant	libclamav/matcher-ac.c	2106	                            if (realoff > UINT32_MAX) {
 boundary-constant	libclamav/matcher-ac.c	331	    if (root->trans_cnt == SIZE_MAX) {
 boundary-constant	libclamav/matcher-ac.c	341	        if (root->trans_capacity > SIZE_MAX - 1024 ||
-boundary-constant	libclamav/matcher-ac.c	3472	        if (root->ac_reloff_num == UINT32_MAX ||
+boundary-constant	libclamav/matcher-ac.c	3523	        if (root->ac_reloff_num == UINT32_MAX ||
 boundary-constant	libclamav/matcher-ac.c	413	    if (root->ac_nodes == UINT32_MAX ||
 boundary-constant	libclamav/matcher-ac.c	519	    if (root->ac_patterns == UINT32_MAX ||
 boundary-constant	libclamav/matcher-ac.c	841	        if (parsed > (UINT_MAX - digit) / 10U)
@@ -21515,25 +21528,25 @@ boundary-constant	libclamav/petite.c	297	            if (bottom > UINT32_MAX - 4
 boundary-constant	libclamav/petite.c	447	                        if (backbytes >= INT_MAX / 2) {
 boundary-constant	libclamav/petite.c	468	                            if (backbytes >= INT_MAX / 2) {
 boundary-constant	libclamav/readdb.c	103	    if (count > SIZE_MAX / element_size ||
-boundary-constant	libclamav/readdb.c	1417	        if (matcher->icon_counts[enginesize] == UINT32_MAX ||
-boundary-constant	libclamav/readdb.c	1547	            if (i == UINT_MAX ||
-boundary-constant	libclamav/readdb.c	1568	            if (i == UINT_MAX ||
-boundary-constant	libclamav/readdb.c	1911	                if (tdb->cnt[CLI_TDB_UINT] < 0 || tdb->cnt[CLI_TDB_UINT] == INT_MAX ||
-boundary-constant	libclamav/readdb.c	1932	                if (tdb->cnt[CLI_TDB_UINT] < 0 || tdb->cnt[CLI_TDB_UINT] == INT_MAX ||
-boundary-constant	libclamav/readdb.c	1958	                    (size_t)tdb->cnt[CLI_TDB_UINT] > (size_t)INT_MAX - ((size_t)ftypes_count + 1) ||
-boundary-constant	libclamav/readdb.c	2009	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 2 ||
-boundary-constant	libclamav/readdb.c	2039	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 3 ||
-boundary-constant	libclamav/readdb.c	2065	                if (string_len >= (size_t)INT_MAX || tdb->cnt[CLI_TDB_STR] < 0 ||
-boundary-constant	libclamav/readdb.c	2066	                    (size_t)tdb->cnt[CLI_TDB_STR] > (size_t)INT_MAX - (string_len + 1) ||
-boundary-constant	libclamav/readdb.c	2330	    if (root->ac_lsigs == UINT32_MAX ||
-boundary-constant	libclamav/readdb.c	2499	    if (bcs->count == UINT_MAX ||
-boundary-constant	libclamav/readdb.c	2577	            if (engine->hooks_cnt[hook] == UINT_MAX ||
-boundary-constant	libclamav/readdb.c	4163	                if (root->ac_lsigs == UINT32_MAX ||
-boundary-constant	libclamav/readdb.c	4479	    if (root->ac_lsigs == UINT32_MAX ||
-boundary-constant	libclamav/readdb.c	5720	                if (dbstat->entries == UINT_MAX ||
-boundary-constant	libclamav/readdb.c	6470	        if (entry == UINT_MAX) {
-boundary-constant	libclamav/readdb.c	6490	    if (entry > UINT_MAX - *sigs) {
-boundary-constant	libclamav/readdb.c	6500	    if (count > UINT_MAX - *sigs) {
+boundary-constant	libclamav/readdb.c	1422	        if (matcher->icon_counts[enginesize] == UINT32_MAX ||
+boundary-constant	libclamav/readdb.c	1552	            if (i == UINT_MAX ||
+boundary-constant	libclamav/readdb.c	1573	            if (i == UINT_MAX ||
+boundary-constant	libclamav/readdb.c	1916	                if (tdb->cnt[CLI_TDB_UINT] < 0 || tdb->cnt[CLI_TDB_UINT] == INT_MAX ||
+boundary-constant	libclamav/readdb.c	1937	                if (tdb->cnt[CLI_TDB_UINT] < 0 || tdb->cnt[CLI_TDB_UINT] == INT_MAX ||
+boundary-constant	libclamav/readdb.c	1963	                    (size_t)tdb->cnt[CLI_TDB_UINT] > (size_t)INT_MAX - ((size_t)ftypes_count + 1) ||
+boundary-constant	libclamav/readdb.c	2014	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 2 ||
+boundary-constant	libclamav/readdb.c	2044	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 3 ||
+boundary-constant	libclamav/readdb.c	2070	                if (string_len >= (size_t)INT_MAX || tdb->cnt[CLI_TDB_STR] < 0 ||
+boundary-constant	libclamav/readdb.c	2071	                    (size_t)tdb->cnt[CLI_TDB_STR] > (size_t)INT_MAX - (string_len + 1) ||
+boundary-constant	libclamav/readdb.c	2335	    if (root->ac_lsigs == UINT32_MAX ||
+boundary-constant	libclamav/readdb.c	2504	    if (bcs->count == UINT_MAX ||
+boundary-constant	libclamav/readdb.c	2582	            if (engine->hooks_cnt[hook] == UINT_MAX ||
+boundary-constant	libclamav/readdb.c	4168	                if (root->ac_lsigs == UINT32_MAX ||
+boundary-constant	libclamav/readdb.c	4484	    if (root->ac_lsigs == UINT32_MAX ||
+boundary-constant	libclamav/readdb.c	5725	                if (dbstat->entries == UINT_MAX ||
+boundary-constant	libclamav/readdb.c	6475	        if (entry == UINT_MAX) {
+boundary-constant	libclamav/readdb.c	6495	    if (entry > UINT_MAX - *sigs) {
+boundary-constant	libclamav/readdb.c	6505	    if (count > UINT_MAX - *sigs) {
 boundary-constant	libclamav/regex_list.c	379	            max = INT_MAX;
 boundary-constant	libclamav/regex_list.c	75	    if (count > SIZE_MAX / element_size ||
 boundary-constant	libclamav/regex_list.c	830	        if (n == SIZE_MAX ||
@@ -22004,16 +22017,16 @@ boundary-constant	unit_tests/check_htmlnorm.c	211	    args.count = INT_MAX;
 boundary-constant	unit_tests/check_htmlnorm.c	213	    ck_assert_int_eq(args.count, INT_MAX);
 boundary-constant	unit_tests/check_htmlnorm.c	226	    form.count = SIZE_MAX;
 boundary-constant	unit_tests/check_htmlnorm.c	228	    ck_assert_uint_eq(form.count, SIZE_MAX);
-boundary-constant	unit_tests/check_matchers.c	1363	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_matchers.c	1387	    thefmap.len         = (size_t)UINT32_MAX + 1U;
-boundary-constant	unit_tests/check_matchers.c	2227	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_matchers.c	2317	    ck_assert_int_eq(cli_bcomp_compare_check(sentinel, SIZE_MAX, 0, &bcomp), CL_EMEM);
-boundary-constant	unit_tests/check_matchers.c	2338	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, second, CLI_HASH_MD5, UINT32_MAX, second_name), CL_SUCCESS);
-boundary-constant	unit_tests/check_matchers.c	2339	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, first, CLI_HASH_MD5, UINT32_MAX, first_name), CL_SUCCESS);
-boundary-constant	unit_tests/check_matchers.c	2342	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
-boundary-constant	unit_tests/check_matchers.c	2343	    ck_assert_int_eq(cli_hm_scan(first, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
-boundary-constant	unit_tests/check_matchers.c	2346	    ck_assert_int_eq(cli_hm_scan(second, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
-boundary-constant	unit_tests/check_matchers.c	2353	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_matchers.c	1382	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_matchers.c	1406	    thefmap.len         = (size_t)UINT32_MAX + 1U;
+boundary-constant	unit_tests/check_matchers.c	2246	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_matchers.c	2336	    ck_assert_int_eq(cli_bcomp_compare_check(sentinel, SIZE_MAX, 0, &bcomp), CL_EMEM);
+boundary-constant	unit_tests/check_matchers.c	2357	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, second, CLI_HASH_MD5, UINT32_MAX, second_name), CL_SUCCESS);
+boundary-constant	unit_tests/check_matchers.c	2358	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, first, CLI_HASH_MD5, UINT32_MAX, first_name), CL_SUCCESS);
+boundary-constant	unit_tests/check_matchers.c	2361	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
+boundary-constant	unit_tests/check_matchers.c	2362	    ck_assert_int_eq(cli_hm_scan(first, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
+boundary-constant	unit_tests/check_matchers.c	2365	    ck_assert_int_eq(cli_hm_scan(second, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
+boundary-constant	unit_tests/check_matchers.c	2372	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_matchers.c	694	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_matchers.c	785	    ck_assert_int_eq(cli_bm_pattern_table_size(UINT32_MAX, sizeof(uint64_t), &bytes), CL_ERESOURCE);
 boundary-constant	unit_tests/check_matchers.c	800	    ck_assert_int_eq(cli_hm_table_size(SIZE_MAX, sizeof(uint8_t), &bytes), CL_ERESOURCE);
@@ -22028,9 +22041,9 @@ boundary-constant	unit_tests/check_matchers.c	904	    root.ac_patterns  = UINT32
 boundary-constant	unit_tests/check_matchers.c	919	    ck_assert_ptr_null(mpool_malloc(pool, SIZE_MAX));
 boundary-constant	unit_tests/check_matchers.c	920	    ck_assert_ptr_null(mpool_calloc(pool, SIZE_MAX, 2));
 boundary-constant	unit_tests/check_matchers.c	932	    ck_assert(cli_matcher_window_reaches_map_end(UINT64_MAX, UINT32_MAX, 32));
-boundary-constant	unit_tests/check_matchers.c	948	    ck_assert(cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
-boundary-constant	unit_tests/check_matchers.c	953	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
-boundary-constant	unit_tests/check_matchers.c	955	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
+boundary-constant	unit_tests/check_matchers.c	967	    ck_assert(cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
+boundary-constant	unit_tests/check_matchers.c	972	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
+boundary-constant	unit_tests/check_matchers.c	974	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
 boundary-constant	unit_tests/check_regex.c	648	    ck_assert_int_eq(cli_url_canon("http://example.com/", SIZE_MAX, urlbuff, 2,
 boundary-constant	unit_tests/check_regex.c	651	    ck_assert_int_eq(cli_url_canon("http://example.com/", SIZE_MAX, urlbuff, sizeof(urlbuff),
 boundary-constant	unit_tests/check_regex.c	737	    ck_assert_int_eq(cli_regex_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
@@ -22082,36 +22095,36 @@ quantity-parser	libclamav/pdfng.c	265	    n = strtoul(p1, &p2, 10);
 quantity-parser	libclamav/pdfng.c	288	    /* Ensure strtoul() is going to go past our buffer */
 quantity-parser	libclamav/pdfng.c	302	    n = strtoul(p1, &p2, 10);
 quantity-parser	libclamav/pdfng.c	463	                    value = (char)strtoul(octal, &check, 8);
-quantity-parser	libclamav/readdb.c	1734	            if ((unsigned int)atoi(pt) > cl_retflevel()) {
-quantity-parser	libclamav/readdb.c	1735	                cli_dbgmsg("Signature for %s not loaded (required f-level: %d)\n", virname, atoi(pt));
-quantity-parser	libclamav/readdb.c	1746	                if ((unsigned int)atoi(pt) < cl_retflevel()) {
-quantity-parser	libclamav/readdb.c	1756	        target = (cli_target_t)atoi(pt);
-quantity-parser	libclamav/readdb.c	1824	    parsed = strtoull(text, &end, 10);
-quantity-parser	libclamav/readdb.c	1923	                tdb->val[cnt] = atoi(pt);
-quantity-parser	libclamav/readdb.c	2027	                tdb->range[cnt]     = atoi(pt);
-quantity-parser	libclamav/readdb.c	2028	                tdb->range[cnt + 1] = atoi(pt2);
-quantity-parser	libclamav/readdb.c	2662	            if ((unsigned int)atoi(pt) > cl_retflevel()) {
-quantity-parser	libclamav/readdb.c	2663	                cli_dbgmsg("cli_loadftm: File type signature for %s not loaded (required f-level: %u)\n", tokens[3], atoi(pt));
-quantity-parser	libclamav/readdb.c	2672	                if ((unsigned int)atoi(pt) < cl_retflevel())
-quantity-parser	libclamav/readdb.c	2690	        magictype = atoi(tokens[0]);
-quantity-parser	libclamav/readdb.c	2707	            new->offset = atoi(tokens[1]);
-quantity-parser	libclamav/readdb.c	2732	            cli_dbgmsg("cli_loadftm: Unsupported mode %u\n", atoi(tokens[0]));
-quantity-parser	libclamav/readdb.c	2847	        new->size = atoi(tokens[1]);
-quantity-parser	libclamav/readdb.c	3011	            req_fl = atoi(tokens[HASH_DB_TOKENS - 2]);
-quantity-parser	libclamav/readdb.c	3021	                int max_fl = atoi(tokens[HASH_DB_TOKENS - 1]);
-quantity-parser	libclamav/readdb.c	3029	            size  = strtoull(tokens[size_field], (char **)&pt, 10);
-quantity-parser	libclamav/readdb.c	3199	        new->encrypted = strcmp(tokens[1], "*") ? atoi(tokens[1]) : 2;
-quantity-parser	libclamav/readdb.c	3213	            new->fsizer[0] = new->fsizer[1] = atoi(tokens[3]);
-quantity-parser	libclamav/readdb.c	3218	            new->fsizec[0] = new->fsizec[1] = atoi(tokens[4]);
-quantity-parser	libclamav/readdb.c	3234	        new->filepos[0] = new->filepos[1] = strcmp(tokens[7], "*") ? (unsigned int)atoi(tokens[7]) : (unsigned int)CLI_OFF_ANY;
-quantity-parser	libclamav/readdb.c	3300	            if ((unsigned int)atoi(tokens[10]) > cl_retflevel()) {
-quantity-parser	libclamav/readdb.c	3301	                cli_dbgmsg("cli_loadcdb: Container signature for %s not loaded (required f-level: %u)\n", tokens[0], atoi(tokens[10]));
-quantity-parser	libclamav/readdb.c	3309	                if ((unsigned int)atoi(tokens[11]) < cl_retflevel())
-quantity-parser	libclamav/readdb.c	3371	                dest[0] = dest[1] = (unsigned int)atoi(token_str);            \
-quantity-parser	libclamav/readdb.c	3523	            if ((unsigned int)atoi(tokens[CRT_TOKENS - 2]) > cl_retflevel()) {
-quantity-parser	libclamav/readdb.c	3535	                if ((unsigned int)atoi(tokens[CRT_TOKENS - 1]) < cl_retflevel()) {
-quantity-parser	libclamav/readdb.c	3631	            ca.not_before = atoi(tokens[9]);
-quantity-parser	libclamav/readdb.c	4847	        pwstype = atoi(tokens[2]);
+quantity-parser	libclamav/readdb.c	1739	            if ((unsigned int)atoi(pt) > cl_retflevel()) {
+quantity-parser	libclamav/readdb.c	1740	                cli_dbgmsg("Signature for %s not loaded (required f-level: %d)\n", virname, atoi(pt));
+quantity-parser	libclamav/readdb.c	1751	                if ((unsigned int)atoi(pt) < cl_retflevel()) {
+quantity-parser	libclamav/readdb.c	1761	        target = (cli_target_t)atoi(pt);
+quantity-parser	libclamav/readdb.c	1829	    parsed = strtoull(text, &end, 10);
+quantity-parser	libclamav/readdb.c	1928	                tdb->val[cnt] = atoi(pt);
+quantity-parser	libclamav/readdb.c	2032	                tdb->range[cnt]     = atoi(pt);
+quantity-parser	libclamav/readdb.c	2033	                tdb->range[cnt + 1] = atoi(pt2);
+quantity-parser	libclamav/readdb.c	2667	            if ((unsigned int)atoi(pt) > cl_retflevel()) {
+quantity-parser	libclamav/readdb.c	2668	                cli_dbgmsg("cli_loadftm: File type signature for %s not loaded (required f-level: %u)\n", tokens[3], atoi(pt));
+quantity-parser	libclamav/readdb.c	2677	                if ((unsigned int)atoi(pt) < cl_retflevel())
+quantity-parser	libclamav/readdb.c	2695	        magictype = atoi(tokens[0]);
+quantity-parser	libclamav/readdb.c	2712	            new->offset = atoi(tokens[1]);
+quantity-parser	libclamav/readdb.c	2737	            cli_dbgmsg("cli_loadftm: Unsupported mode %u\n", atoi(tokens[0]));
+quantity-parser	libclamav/readdb.c	2852	        new->size = atoi(tokens[1]);
+quantity-parser	libclamav/readdb.c	3016	            req_fl = atoi(tokens[HASH_DB_TOKENS - 2]);
+quantity-parser	libclamav/readdb.c	3026	                int max_fl = atoi(tokens[HASH_DB_TOKENS - 1]);
+quantity-parser	libclamav/readdb.c	3034	            size  = strtoull(tokens[size_field], (char **)&pt, 10);
+quantity-parser	libclamav/readdb.c	3204	        new->encrypted = strcmp(tokens[1], "*") ? atoi(tokens[1]) : 2;
+quantity-parser	libclamav/readdb.c	3218	            new->fsizer[0] = new->fsizer[1] = atoi(tokens[3]);
+quantity-parser	libclamav/readdb.c	3223	            new->fsizec[0] = new->fsizec[1] = atoi(tokens[4]);
+quantity-parser	libclamav/readdb.c	3239	        new->filepos[0] = new->filepos[1] = strcmp(tokens[7], "*") ? (unsigned int)atoi(tokens[7]) : (unsigned int)CLI_OFF_ANY;
+quantity-parser	libclamav/readdb.c	3305	            if ((unsigned int)atoi(tokens[10]) > cl_retflevel()) {
+quantity-parser	libclamav/readdb.c	3306	                cli_dbgmsg("cli_loadcdb: Container signature for %s not loaded (required f-level: %u)\n", tokens[0], atoi(tokens[10]));
+quantity-parser	libclamav/readdb.c	3314	                if ((unsigned int)atoi(tokens[11]) < cl_retflevel())
+quantity-parser	libclamav/readdb.c	3376	                dest[0] = dest[1] = (unsigned int)atoi(token_str);            \
+quantity-parser	libclamav/readdb.c	3528	            if ((unsigned int)atoi(tokens[CRT_TOKENS - 2]) > cl_retflevel()) {
+quantity-parser	libclamav/readdb.c	3540	                if ((unsigned int)atoi(tokens[CRT_TOKENS - 1]) < cl_retflevel()) {
+quantity-parser	libclamav/readdb.c	3636	            ca.not_before = atoi(tokens[9]);
+quantity-parser	libclamav/readdb.c	4852	        pwstype = atoi(tokens[2]);
 quantity-parser	libclamav/readdb.c	867	                if (!cli_isnumber(pt) || (mindist = maxdist = atoi(pt)) < 0) {
 quantity-parser	libclamav/readdb.c	874	                    if (!cli_isnumber(n) || (mindist = atoi(n)) < 0) {
 quantity-parser	libclamav/readdb.c	884	                    if (!cli_isnumber(n) || (maxdist = atoi(n)) < 0) {
@@ -23372,9 +23385,9 @@ format-width	libclamav/matcher-ac.c	2308	                                       
 format-width	libclamav/matcher-ac.c	2378	                                                        cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached maxfiles limit of %u\n", cli_ftname(type), (*ftoffset)->offset, ctx->engine->maxfiles);
 format-width	libclamav/matcher-ac.c	2386	                                                        cli_dbgmsg("ac_addtype: Can't add %s type at offset " STDu64 " to list of embedded type matches. Reached MAX_EMBEDDED_OBJ limit of %u\n", cli_ftname(type), (*ftoffset)->offset, MAX_EMBEDDED_OBJ);
 format-width	libclamav/matcher-ac.c	2425	                                        cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
-format-width	libclamav/matcher-ac.c	3018	            n = sscanf(pt, "%u-%u", &n1, &n2);
-format-width	libclamav/matcher-ac.c	3260	        cli_errmsg("cli_ac_addsig: Subpattern in signature is shorter than the minimum depth of the AC trie. (%u < %u)\n", new->length[0], root->ac_mindepth);
-format-width	libclamav/matcher-ac.c	3389	            cli_errmsg("cli_ac_addsig: Can't find a static subpattern of length %u\n", root->ac_mindepth);
+format-width	libclamav/matcher-ac.c	3028	            n = sscanf(pt, "%u-%u", &n1, &n2);
+format-width	libclamav/matcher-ac.c	3287	        cli_errmsg("cli_ac_addsig: Subpattern in signature is shorter than the minimum depth of the AC trie. (%u < %u)\n", new->length[0], root->ac_mindepth);
+format-width	libclamav/matcher-ac.c	3440	            cli_errmsg("cli_ac_addsig: Can't find a static subpattern of length %u\n", root->ac_mindepth);
 format-width	libclamav/matcher-ac.c	691	        cli_dbgmsg("Using filter for trie %d\n", root->type);
 format-width	libclamav/matcher-ac.c	947	            cli_errmsg("cli_ac_chklsig: Subsignature id %u exceeds MAX_LDB_SUBSIGS\n", id);
 format-width	libclamav/matcher-byte-comp.c	149	        cli_errmsg("cli_bcomp_addpatt: %zu (or more) params provided, 3 expected\n", toks);
@@ -23897,85 +23910,85 @@ format-width	libclamav/png.c	283	                        cli_dbgmsg("PNG: invali
 format-width	libclamav/png.c	291	                        cli_dbgmsg("PNG: invalid sample depth (%u)\n", bit_depth);
 format-width	libclamav/png.c	296	                    cli_dbgmsg("PNG: invalid sample depth (%u)\n", bit_depth);
 format-width	libclamav/png.c	313	                    cli_dbgmsg("PNG: invalid color type (%u)\n", color_type);
-format-width	libclamav/readdb.c	1228	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt1 - sig + 2));
-format-width	libclamav/readdb.c	1232	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt2 - sig + 2));
-format-width	libclamav/readdb.c	1288	            cli_errmsg("Malformed pattern line %d\n", line);
-format-width	libclamav/readdb.c	1307	            cli_dbgmsg("cli_loaddb: cli_add_content_match_pattern failed on line %d\n", line);
-format-width	libclamav/readdb.c	1323	        cli_errmsg("Problem parsing database at line %d\n", line);
-format-width	libclamav/readdb.c	1382	            cli_errmsg("cli_loadidb: Malformed hash at line %u (wrong token count)\n", line);
-format-width	libclamav/readdb.c	1388	            cli_errmsg("cli_loadidb: Malformed hash at line %u (wrong length)\n", line);
-format-width	libclamav/readdb.c	1404	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad chars)\n", line);
-format-width	libclamav/readdb.c	1410	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad size)\n", line);
-format-width	libclamav/readdb.c	1446	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad color data)\n", line);
-format-width	libclamav/readdb.c	1461	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad gray data)\n", line);
-format-width	libclamav/readdb.c	1475	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad bright data)\n", line);
-format-width	libclamav/readdb.c	1489	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad dark data)\n", line);
-format-width	libclamav/readdb.c	1503	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad edge data)\n", line);
-format-width	libclamav/readdb.c	1517	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad noedge data)\n", line);
-format-width	libclamav/readdb.c	1527	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad spread data)\n", line);
-format-width	libclamav/readdb.c	1591	        cli_dbgmsg("cli_loadidb: %u signatures loaded\n", sigs);
-format-width	libclamav/readdb.c	1735	                cli_dbgmsg("Signature for %s not loaded (required f-level: %d)\n", virname, atoi(pt));
-format-width	libclamav/readdb.c	1759	            cli_dbgmsg("Not supported target type (%d) in signature for %s\n", (int)target, virname);
-format-width	libclamav/readdb.c	1788	        cli_errmsg("Problem parsing database at line %d\n", line);
-format-width	libclamav/readdb.c	2052	                if (sscanf(pt, "%u.%u-%u", &v1, &v2, &v3) != 3) {
-format-width	libclamav/readdb.c	2084	                cli_dbgmsg("lsigattribs: Unknown attribute type '%u'\n", apt->type);
-format-width	libclamav/readdb.c	2183	            cli_dbgmsg("init_tdb: Signature for %s not loaded (required f-level: %u)\n", virname, tdb->engine[0]);
-format-width	libclamav/readdb.c	2281	            cli_errmsg("load_oneldb: Too many subsignatures: %u (max %u)\n",
-format-width	libclamav/readdb.c	2287	        cli_errmsg("cli_loadldb: The number of subsignatures (== %u) doesn't match the IDs in the logical expression (== %u)\n", tokens_count - 3, subsigs);
-format-width	libclamav/readdb.c	2369	            cli_errmsg("cli_loadldb: failed to parse subsignature %d in %s\n", i, virname);
-format-width	libclamav/readdb.c	2459	        cli_errmsg("Problem parsing database at line %u\n", line);
-format-width	libclamav/readdb.c	2539	        cli_infomsg(NULL, "bytecode %u -> %s\n", bc->id, dbname);
-format-width	libclamav/readdb.c	2546	        cli_dbgmsg("Bytecode %s(%u) has logical signature: %s\n", dbname, bc->id, bc->lsig);
-format-width	libclamav/readdb.c	2580	                cli_errmsg("Out of memory allocating memory for hook %u\n", hook);
-format-width	libclamav/readdb.c	2587	                cli_errmsg("Out of memory allocating memory for hook %u", hook);
-format-width	libclamav/readdb.c	2598	                            cli_warnmsg("Previous BC_STARTUP: %d %d by %s\n",
-format-width	libclamav/readdb.c	2601	                            cli_warnmsg("Conflicting BC_STARTUP: %d %d by %s\n",
-format-width	libclamav/readdb.c	2608	                    cli_errmsg("Bytecode: unhandled bytecode kind %u\n", bc->kind);
-format-width	libclamav/readdb.c	2663	                cli_dbgmsg("cli_loadftm: File type signature for %s not loaded (required f-level: %u)\n", tokens[3], atoi(pt));
-format-width	libclamav/readdb.c	2732	            cli_dbgmsg("cli_loadftm: Unsupported mode %u\n", atoi(tokens[0]));
-format-width	libclamav/readdb.c	2739	        cli_errmsg("Problem parsing %s filetype database at line %u\n", internal ? "built-in" : "external", line);
-format-width	libclamav/readdb.c	2748	    cli_dbgmsg("Loaded %u filetype definitions\n", sigs);
-format-width	libclamav/readdb.c	2850	            cli_errmsg("cli_loadinfo: Malformed SHA2-256 string at line %u\n", line);
-format-width	libclamav/readdb.c	2866	        cli_errmsg("cli_loadinfo: Problem parsing database at line %u\n", line);
-format-width	libclamav/readdb.c	2948	                cli_errmsg("cli_loadign: Malformed MD5 string at line %u\n", line);
-format-width	libclamav/readdb.c	2968	        cli_errmsg("cli_loadign: Problem parsing database at line %u\n", line);
-format-width	libclamav/readdb.c	3044	                           " For reference, running FLEVEL is %d\n",
-format-width	libclamav/readdb.c	3078	            cli_errmsg("cli_loadhash: Malformed hash string at line %u\n", line);
-format-width	libclamav/readdb.c	3099	        cli_errmsg("cli_loadhash: Problem parsing database at line %u\n", line);
-format-width	libclamav/readdb.c	3251	        cli_errmsg("Problem parsing database at line %d\n", line);
-format-width	libclamav/readdb.c	3301	                cli_dbgmsg("cli_loadcdb: Container signature for %s not loaded (required f-level: %u)\n", tokens[0], atoi(tokens[10]));
-format-width	libclamav/readdb.c	3361	            if (sscanf(token_str, "%u-%u", &n0, &n1) != 2) {                  \
-format-width	libclamav/readdb.c	3433	        cli_errmsg("Problem parsing database at line %u\n", line);
-format-width	libclamav/readdb.c	3454	        cli_errmsg("cli_loadcrt: line %u: %s is not the appropriate length for a SHA1 Hash\n", (unsigned int)line, varname);
-format-width	libclamav/readdb.c	3460	        cli_errmsg("cli_loadcrt: line %u: Cannot convert %s to binary string\n", (unsigned int)line, varname);
-format-width	libclamav/readdb.c	3512	            cli_errmsg("cli_loadcrt: line %u: Invalid number of tokens: %u\n", (unsigned int)line, (unsigned int)tokens_count);
-format-width	libclamav/readdb.c	3519	                cli_errmsg("cli_loadcrt: line %u: Invalid minimum feature level\n", (unsigned int)line);
-format-width	libclamav/readdb.c	3524	                cli_dbgmsg("cli_loadcrt: Cert %s not loaded (required f-level: %u)\n", tokens[0], cl_retflevel());
-format-width	libclamav/readdb.c	3530	                    cli_errmsg("cli_loadcrt: line %u: Invalid maximum feature level\n", (unsigned int)line);
-format-width	libclamav/readdb.c	3550	                cli_errmsg("cli_loadcrt: line %u: Invalid trust specification. Expected 0 or 1\n", (unsigned int)line);
-format-width	libclamav/readdb.c	3576	            cli_errmsg("cli_loadcrt: line %u: Cannot convert public key to binary string\n", (unsigned int)line);
-format-width	libclamav/readdb.c	3594	                cli_errmsg("cli_loadcrt: line %u: Invalid code sign specification. Expected 0 or 1\n", (unsigned int)line);
-format-width	libclamav/readdb.c	3607	                cli_errmsg("cli_loadcrt: line %u: Invalid time sign specification. Expected 0 or 1\n", (unsigned int)line);
-format-width	libclamav/readdb.c	3620	                cli_errmsg("cli_loadcrt: line %u: Invalid cert sign specification. Expected 0 or 1\n", (unsigned int)line);
-format-width	libclamav/readdb.c	3639	    cli_dbgmsg("Number of certs: %d\n", engine->cmgr.items);
-format-width	libclamav/readdb.c	4352	        cli_warnmsg("load_oneyara: clamav cannot support %d input strings, skipping %s\n", str_error, newident);
-format-width	libclamav/readdb.c	4366	        cli_warnmsg("load_oneyara: yara rule contains too many subsigs (%d, max: %d), skipping %s\n", ytable.tbl_cnt, MAX_LDB_SUBSIGS, newident);
-format-width	libclamav/readdb.c	4397	            snprintf(logic+len, lsize-len, "%u%s", i, (i+1 == ytable.tbl_cnt) ? "" : exp_op);
-format-width	libclamav/readdb.c	4512	        cli_yaramsg("%zu: [%s] [%s] [%s%s%s%s]\n", i, ytable.table[i]->hexstr, ytable.table[i]->offset,
-format-width	libclamav/readdb.c	4665	        cli_errmsg("cli_loadyara: failed to parse rules file %s, error count %i\n", filename, rc);
-format-width	libclamav/readdb.c	4703	        cli_warnmsg("cli_loadyara: failed to parse or load %u yara rules from file %s, successfully loaded %u rules.\n", rule_errors + rules - sigs, filename, sigs);
-format-width	libclamav/readdb.c	4733	    cli_yaramsg("cli_loadyara: loaded %u of %u yara signatures from %s\n", sigs, rules, filename);
+format-width	libclamav/readdb.c	1233	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt1 - sig + 2));
+format-width	libclamav/readdb.c	1237	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt2 - sig + 2));
+format-width	libclamav/readdb.c	1293	            cli_errmsg("Malformed pattern line %d\n", line);
+format-width	libclamav/readdb.c	1312	            cli_dbgmsg("cli_loaddb: cli_add_content_match_pattern failed on line %d\n", line);
+format-width	libclamav/readdb.c	1328	        cli_errmsg("Problem parsing database at line %d\n", line);
+format-width	libclamav/readdb.c	1387	            cli_errmsg("cli_loadidb: Malformed hash at line %u (wrong token count)\n", line);
+format-width	libclamav/readdb.c	1393	            cli_errmsg("cli_loadidb: Malformed hash at line %u (wrong length)\n", line);
+format-width	libclamav/readdb.c	1409	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad chars)\n", line);
+format-width	libclamav/readdb.c	1415	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad size)\n", line);
+format-width	libclamav/readdb.c	1451	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad color data)\n", line);
+format-width	libclamav/readdb.c	1466	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad gray data)\n", line);
+format-width	libclamav/readdb.c	1480	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad bright data)\n", line);
+format-width	libclamav/readdb.c	1494	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad dark data)\n", line);
+format-width	libclamav/readdb.c	1508	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad edge data)\n", line);
+format-width	libclamav/readdb.c	1522	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad noedge data)\n", line);
+format-width	libclamav/readdb.c	1532	            cli_errmsg("cli_loadidb: Malformed hash at line %u (bad spread data)\n", line);
+format-width	libclamav/readdb.c	1596	        cli_dbgmsg("cli_loadidb: %u signatures loaded\n", sigs);
+format-width	libclamav/readdb.c	1740	                cli_dbgmsg("Signature for %s not loaded (required f-level: %d)\n", virname, atoi(pt));
+format-width	libclamav/readdb.c	1764	            cli_dbgmsg("Not supported target type (%d) in signature for %s\n", (int)target, virname);
+format-width	libclamav/readdb.c	1793	        cli_errmsg("Problem parsing database at line %d\n", line);
+format-width	libclamav/readdb.c	2057	                if (sscanf(pt, "%u.%u-%u", &v1, &v2, &v3) != 3) {
+format-width	libclamav/readdb.c	2089	                cli_dbgmsg("lsigattribs: Unknown attribute type '%u'\n", apt->type);
+format-width	libclamav/readdb.c	2188	            cli_dbgmsg("init_tdb: Signature for %s not loaded (required f-level: %u)\n", virname, tdb->engine[0]);
+format-width	libclamav/readdb.c	2286	            cli_errmsg("load_oneldb: Too many subsignatures: %u (max %u)\n",
+format-width	libclamav/readdb.c	2292	        cli_errmsg("cli_loadldb: The number of subsignatures (== %u) doesn't match the IDs in the logical expression (== %u)\n", tokens_count - 3, subsigs);
+format-width	libclamav/readdb.c	2374	            cli_errmsg("cli_loadldb: failed to parse subsignature %d in %s\n", i, virname);
+format-width	libclamav/readdb.c	2464	        cli_errmsg("Problem parsing database at line %u\n", line);
+format-width	libclamav/readdb.c	2544	        cli_infomsg(NULL, "bytecode %u -> %s\n", bc->id, dbname);
+format-width	libclamav/readdb.c	2551	        cli_dbgmsg("Bytecode %s(%u) has logical signature: %s\n", dbname, bc->id, bc->lsig);
+format-width	libclamav/readdb.c	2585	                cli_errmsg("Out of memory allocating memory for hook %u\n", hook);
+format-width	libclamav/readdb.c	2592	                cli_errmsg("Out of memory allocating memory for hook %u", hook);
+format-width	libclamav/readdb.c	2603	                            cli_warnmsg("Previous BC_STARTUP: %d %d by %s\n",
+format-width	libclamav/readdb.c	2606	                            cli_warnmsg("Conflicting BC_STARTUP: %d %d by %s\n",
+format-width	libclamav/readdb.c	2613	                    cli_errmsg("Bytecode: unhandled bytecode kind %u\n", bc->kind);
+format-width	libclamav/readdb.c	2668	                cli_dbgmsg("cli_loadftm: File type signature for %s not loaded (required f-level: %u)\n", tokens[3], atoi(pt));
+format-width	libclamav/readdb.c	2737	            cli_dbgmsg("cli_loadftm: Unsupported mode %u\n", atoi(tokens[0]));
+format-width	libclamav/readdb.c	2744	        cli_errmsg("Problem parsing %s filetype database at line %u\n", internal ? "built-in" : "external", line);
+format-width	libclamav/readdb.c	2753	    cli_dbgmsg("Loaded %u filetype definitions\n", sigs);
+format-width	libclamav/readdb.c	2855	            cli_errmsg("cli_loadinfo: Malformed SHA2-256 string at line %u\n", line);
+format-width	libclamav/readdb.c	2871	        cli_errmsg("cli_loadinfo: Problem parsing database at line %u\n", line);
+format-width	libclamav/readdb.c	2953	                cli_errmsg("cli_loadign: Malformed MD5 string at line %u\n", line);
+format-width	libclamav/readdb.c	2973	        cli_errmsg("cli_loadign: Problem parsing database at line %u\n", line);
+format-width	libclamav/readdb.c	3049	                           " For reference, running FLEVEL is %d\n",
+format-width	libclamav/readdb.c	3083	            cli_errmsg("cli_loadhash: Malformed hash string at line %u\n", line);
+format-width	libclamav/readdb.c	3104	        cli_errmsg("cli_loadhash: Problem parsing database at line %u\n", line);
+format-width	libclamav/readdb.c	3256	        cli_errmsg("Problem parsing database at line %d\n", line);
+format-width	libclamav/readdb.c	3306	                cli_dbgmsg("cli_loadcdb: Container signature for %s not loaded (required f-level: %u)\n", tokens[0], atoi(tokens[10]));
+format-width	libclamav/readdb.c	3366	            if (sscanf(token_str, "%u-%u", &n0, &n1) != 2) {                  \
+format-width	libclamav/readdb.c	3438	        cli_errmsg("Problem parsing database at line %u\n", line);
+format-width	libclamav/readdb.c	3459	        cli_errmsg("cli_loadcrt: line %u: %s is not the appropriate length for a SHA1 Hash\n", (unsigned int)line, varname);
+format-width	libclamav/readdb.c	3465	        cli_errmsg("cli_loadcrt: line %u: Cannot convert %s to binary string\n", (unsigned int)line, varname);
+format-width	libclamav/readdb.c	3517	            cli_errmsg("cli_loadcrt: line %u: Invalid number of tokens: %u\n", (unsigned int)line, (unsigned int)tokens_count);
+format-width	libclamav/readdb.c	3524	                cli_errmsg("cli_loadcrt: line %u: Invalid minimum feature level\n", (unsigned int)line);
+format-width	libclamav/readdb.c	3529	                cli_dbgmsg("cli_loadcrt: Cert %s not loaded (required f-level: %u)\n", tokens[0], cl_retflevel());
+format-width	libclamav/readdb.c	3535	                    cli_errmsg("cli_loadcrt: line %u: Invalid maximum feature level\n", (unsigned int)line);
+format-width	libclamav/readdb.c	3555	                cli_errmsg("cli_loadcrt: line %u: Invalid trust specification. Expected 0 or 1\n", (unsigned int)line);
+format-width	libclamav/readdb.c	3581	            cli_errmsg("cli_loadcrt: line %u: Cannot convert public key to binary string\n", (unsigned int)line);
+format-width	libclamav/readdb.c	3599	                cli_errmsg("cli_loadcrt: line %u: Invalid code sign specification. Expected 0 or 1\n", (unsigned int)line);
+format-width	libclamav/readdb.c	3612	                cli_errmsg("cli_loadcrt: line %u: Invalid time sign specification. Expected 0 or 1\n", (unsigned int)line);
+format-width	libclamav/readdb.c	3625	                cli_errmsg("cli_loadcrt: line %u: Invalid cert sign specification. Expected 0 or 1\n", (unsigned int)line);
+format-width	libclamav/readdb.c	3644	    cli_dbgmsg("Number of certs: %d\n", engine->cmgr.items);
+format-width	libclamav/readdb.c	4357	        cli_warnmsg("load_oneyara: clamav cannot support %d input strings, skipping %s\n", str_error, newident);
+format-width	libclamav/readdb.c	4371	        cli_warnmsg("load_oneyara: yara rule contains too many subsigs (%d, max: %d), skipping %s\n", ytable.tbl_cnt, MAX_LDB_SUBSIGS, newident);
+format-width	libclamav/readdb.c	4402	            snprintf(logic+len, lsize-len, "%u%s", i, (i+1 == ytable.tbl_cnt) ? "" : exp_op);
+format-width	libclamav/readdb.c	4517	        cli_yaramsg("%zu: [%s] [%s] [%s%s%s%s]\n", i, ytable.table[i]->hexstr, ytable.table[i]->offset,
+format-width	libclamav/readdb.c	4670	        cli_errmsg("cli_loadyara: failed to parse rules file %s, error count %i\n", filename, rc);
+format-width	libclamav/readdb.c	4708	        cli_warnmsg("cli_loadyara: failed to parse or load %u yara rules from file %s, successfully loaded %u rules.\n", rule_errors + rules - sigs, filename, sigs);
+format-width	libclamav/readdb.c	4738	    cli_yaramsg("cli_loadyara: loaded %u of %u yara signatures from %s\n", sigs, rules, filename);
 format-width	libclamav/readdb.c	476	        if (sscanf(hexsig, "${%u-%u}%u$", &smin, &smax, &tid) != 3) {
 format-width	libclamav/readdb.c	483	            cli_errmsg("Invalid logical subsignature: only 32 macro groups are supported. %u macro groups found.\n", tid);
-format-width	libclamav/readdb.c	4885	            cli_dbgmsg("cli_loadpwdb: Unsupported PWStorageType %u\n", pwstype);
-format-width	libclamav/readdb.c	4894	        cli_errmsg("Problem processing %s password database at line %u\n", internal ? "built-in" : "external", line);
-format-width	libclamav/readdb.c	4903	    cli_dbgmsg("Loaded %u (%u skipped) password entries\n", pwcnt, skip);
-format-width	libclamav/readdb.c	5635	        cli_yaramsg("\tTotal Rules: %u\n", yara_total);
-format-width	libclamav/readdb.c	5636	        cli_yaramsg("\tRules Loaded: %u\n", yara_loaded);
-format-width	libclamav/readdb.c	5637	        cli_yaramsg("\tComplex Conditions: %u\n", yara_complex);
-format-width	libclamav/readdb.c	5638	        cli_yaramsg("\tMalformed/Unsupported Rules: %u\n", yara_malform);
-format-width	libclamav/readdb.c	5639	        cli_yaramsg("\tEmpty Rules: %u\n", yara_empty);
-format-width	libclamav/readdb.c	6360	            cli_dbgmsg("Matcher[%u]: %s: AC sigs: %u (reloff: %u, absoff: %u) BM sigs: %u (reloff: %u, absoff: %u) PCREs: %u (reloff: %u, absoff: %u) maxpatlen %u %s\n", i, cli_mtargets[i].name, root->ac_patterns, root->ac_reloff_num, root->ac_absoff_num, root->bm_patterns, root->bm_reloff_num, root->bm_absoff_num, root->pcre_metas, root->pcre_reloff_num, root->pcre_absoff_num, root->maxpatlen, root->ac_only ? "(ac_only mode)" : "");
+format-width	libclamav/readdb.c	4890	            cli_dbgmsg("cli_loadpwdb: Unsupported PWStorageType %u\n", pwstype);
+format-width	libclamav/readdb.c	4899	        cli_errmsg("Problem processing %s password database at line %u\n", internal ? "built-in" : "external", line);
+format-width	libclamav/readdb.c	4908	    cli_dbgmsg("Loaded %u (%u skipped) password entries\n", pwcnt, skip);
+format-width	libclamav/readdb.c	5640	        cli_yaramsg("\tTotal Rules: %u\n", yara_total);
+format-width	libclamav/readdb.c	5641	        cli_yaramsg("\tRules Loaded: %u\n", yara_loaded);
+format-width	libclamav/readdb.c	5642	        cli_yaramsg("\tComplex Conditions: %u\n", yara_complex);
+format-width	libclamav/readdb.c	5643	        cli_yaramsg("\tMalformed/Unsupported Rules: %u\n", yara_malform);
+format-width	libclamav/readdb.c	5644	        cli_yaramsg("\tEmpty Rules: %u\n", yara_empty);
+format-width	libclamav/readdb.c	6365	            cli_dbgmsg("Matcher[%u]: %s: AC sigs: %u (reloff: %u, absoff: %u) BM sigs: %u (reloff: %u, absoff: %u) PCREs: %u (reloff: %u, absoff: %u) maxpatlen %u %s\n", i, cli_mtargets[i].name, root->ac_patterns, root->ac_reloff_num, root->ac_absoff_num, root->bm_patterns, root->bm_reloff_num, root->bm_absoff_num, root->pcre_metas, root->pcre_reloff_num, root->pcre_absoff_num, root->maxpatlen, root->ac_only ? "(ac_only mode)" : "");
 format-width	libclamav/readdb.c	741	        if (sscanf(wild, "%c%zu%c", &l, &range, &r) == 3 && l == '{' && r == '}' && range > 0 && range < 128) {
 format-width	libclamav/readdb.c	932	                cli_errmsg("cli_add_content_match_pattern: Can't extract part %zu of partial signature.\n", i);
 format-width	libclamav/rebuildpe.c	211	            cli_dbgmsg("More sections than expect (%d). The section number in the rebuilt pe section name was truncated.\n", i);
@@ -24719,7 +24732,7 @@ format-width	unit_tests/check_clamd.c	795	    ck_assert_msg(headroom == 750, "hy
 format-width	unit_tests/check_clamd.c	812	    ck_assert_msg(headroom == 750, "hybrid cgroup without matching v2 mount ignored v1 memory headroom: %llu", (unsigned long long)headroom);
 format-width	unit_tests/check_disasm.c	226	    ck_assert_msg(size == st.st_size, "disasm size mismatch(value %zd, expected: %zd)", size, (ssize_t)st.st_size);
 format-width	unit_tests/check_disasm.c	229	    ck_assert_msg(d != NULL, "disasm malloc(%zd) failed", size * 2);
-format-width	unit_tests/check_matchers.c	2383	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
+format-width	unit_tests/check_matchers.c	2402	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
 format-width	unit_tests/check_matchers.c	288	        ck_assert_msg(!strncmp(virname, ac_testdata[i].virname, strlen(ac_testdata[i].virname)), "Dataset %u matched with %s", i, virname);
 format-width	unit_tests/check_matchers.c	292	        ck_assert_msg(!strncmp(virname, ac_testdata[i].virname, strlen(ac_testdata[i].virname)), "Dataset %u matched with %s", i, virname);
 format-width	unit_tests/check_matchers.c	331	        ck_assert_msg(!strncmp(virname, ac_testdata[i].virname, strlen(ac_testdata[i].virname)), "Dataset %u matched with %s", i, virname);
@@ -29700,56 +29713,57 @@ offset-size-arithmetic	libclamav/matcher-ac.c	2939	        if (!(subexpr = callo
 offset-size-arithmetic	libclamav/matcher-ac.c	2945	        ret = ac_special_altexpand(hexprcpy, subexpr, slen + 1, 0, 0, sigopts, special, root);
 offset-size-arithmetic	libclamav/matcher-ac.c	2957	cl_error_t cli_ac_addsig(struct cli_matcher *root, const char *virname, const char *hexsig, uint8_t sigopts, uint32_t sigid, uint16_t parts, uint16_t partno, uint16_t rtype, uint16_t type, uint32_t mindist, uint32_t maxdist, const char *offset, const uint32_t *lsigid, unsigned int options)
 offset-size-arithmetic	libclamav/matcher-ac.c	2961	    uint16_t i, j, ppos = 0, pend, *dec, nzpos = 0;
-offset-size-arithmetic	libclamav/matcher-ac.c	2972	    if (strlen(hexsig) / 2 < root->ac_mindepth) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2978	    if (initial_hex_length / 2 < root->ac_mindepth) {
+offset-size-arithmetic	libclamav/matcher-ac.c	2982	    if (initial_hex_length > (size_t)UINT16_MAX * 2U) {
 offset-size-arithmetic	libclamav/matcher-ac.c	304	    cli_qsort(root->ac_listtable, root->ac_lists, sizeof(root->ac_listtable[0]), sort_list_fn);
 offset-size-arithmetic	libclamav/matcher-ac.c	307	    for (i = 1, grouplen = 1; i <= root->ac_lists; i++, grouplen++) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3100	        hexnewsz = strlen(hexsig) + 1;
-offset-size-arithmetic	libclamav/matcher-ac.c	3136	            *start++ = 0;
-offset-size-arithmetic	libclamav/matcher-ac.c	3204	            newtable = (struct cli_ac_special **)MPOOL_REALLOC(root->mempool, new->special_table, new->special * sizeof(struct cli_ac_special *));
-offset-size-arithmetic	libclamav/matcher-ac.c	3258	    new->length[0] = (uint16_t)strlen(hex ? hex : hexsig) / 2;
-offset-size-arithmetic	libclamav/matcher-ac.c	3259	    if (new->length[0] < root->ac_mindepth) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3260	        cli_errmsg("cli_ac_addsig: Subpattern in signature is shorter than the minimum depth of the AC trie. (%u < %u)\n", new->length[0], root->ac_mindepth);
-offset-size-arithmetic	libclamav/matcher-ac.c	3272	            new->length[1] += new->special_table[j]->len[0];
-offset-size-arithmetic	libclamav/matcher-ac.c	3273	            new->length[2] += new->special_table[j]->len[1];
-offset-size-arithmetic	libclamav/matcher-ac.c	3276	            new->length[1]++;
-offset-size-arithmetic	libclamav/matcher-ac.c	3277	            new->length[2]++;
-offset-size-arithmetic	libclamav/matcher-ac.c	3304	        /* TODO: should this affect maxpatlen? */
-offset-size-arithmetic	libclamav/matcher-ac.c	3330	         * We'll try to shift the start of the pattern right a bit to find a static subpattern to use for the bytes that go in the A-C trie.
-offset-size-arithmetic	libclamav/matcher-ac.c	3333	        // If needed, we can shift the start of the pattern that goes in the A-C Trie right up to the pattern length minus min-depth bytes
-offset-size-arithmetic	libclamav/matcher-ac.c	3334	        // The original starting bytes will become a "prefix" that gets backward-matched.
-offset-size-arithmetic	libclamav/matcher-ac.c	3335	        pend = new->length[0] - root->ac_mindepth + 1;
-offset-size-arithmetic	libclamav/matcher-ac.c	3337	        // Search for static bytes to start the pattern in the A-C trie that starts within original min-depth, and of a length up to max-depth.
-offset-size-arithmetic	libclamav/matcher-ac.c	3346	                // Record the start + length of the shifted prefix.
-offset-size-arithmetic	libclamav/matcher-ac.c	3348	                    plen = j - i + 1;
-offset-size-arithmetic	libclamav/matcher-ac.c	3352	                // Check if the starting bytes at this offset are both non-zero.  If they are, then that's even better.
-offset-size-arithmetic	libclamav/matcher-ac.c	3354	                    ((new->length[0] > ppos + 1) && (0 != new->pattern[ppos + 1]))) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3357	                    if (plen >= root->ac_maxdepth) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3363	                    if (plen >= root->ac_mindepth && plen > nzplen) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3365	                        // Store off the length and position of this starting position with the non-zero bytes, in case we want to roll back to it.
-offset-size-arithmetic	libclamav/matcher-ac.c	3372	            if (plen >= root->ac_maxdepth && (0 != new->pattern[ppos] || 0 != new->pattern[ppos + 1])) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3378	            (new->length[0] > ppos + 1) &&
-offset-size-arithmetic	libclamav/matcher-ac.c	3380	            (0 == new->pattern[ppos + 1])) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3388	        if (plen < root->ac_mindepth) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3389	            cli_errmsg("cli_ac_addsig: Can't find a static subpattern of length %u\n", root->ac_mindepth);
-offset-size-arithmetic	libclamav/matcher-ac.c	3405	                new->prefix_length[1] += new->special_table[j]->len[0];
-offset-size-arithmetic	libclamav/matcher-ac.c	3406	                new->prefix_length[2] += new->special_table[j]->len[1];
-offset-size-arithmetic	libclamav/matcher-ac.c	3409	                new->prefix_length[1]++;
-offset-size-arithmetic	libclamav/matcher-ac.c	3410	                new->prefix_length[2]++;
-offset-size-arithmetic	libclamav/matcher-ac.c	3417	        new->length[0] -= new->prefix_length[0];
-offset-size-arithmetic	libclamav/matcher-ac.c	3418	        new->length[1] -= new->prefix_length[1];
-offset-size-arithmetic	libclamav/matcher-ac.c	3419	        new->length[2] -= new->prefix_length[2];
+offset-size-arithmetic	libclamav/matcher-ac.c	3110	        hexnewsz = strlen(hexsig) + 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	3146	            *start++ = 0;
+offset-size-arithmetic	libclamav/matcher-ac.c	3214	            newtable = (struct cli_ac_special **)MPOOL_REALLOC(root->mempool, new->special_table, new->special * sizeof(struct cli_ac_special *));
+offset-size-arithmetic	libclamav/matcher-ac.c	3264	         * allocate a representation that would later be silently truncated. */
+offset-size-arithmetic	libclamav/matcher-ac.c	3265	        if (pattern_hex_length > (size_t)UINT16_MAX * 2U) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3285	    new->length[0] = (uint16_t)strlen(hex ? hex : hexsig) / 2;
+offset-size-arithmetic	libclamav/matcher-ac.c	3286	    if (new->length[0] < root->ac_mindepth) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3287	        cli_errmsg("cli_ac_addsig: Subpattern in signature is shorter than the minimum depth of the AC trie. (%u < %u)\n", new->length[0], root->ac_mindepth);
+offset-size-arithmetic	libclamav/matcher-ac.c	3306	                min_length = new->special_table[j]->len[0];
+offset-size-arithmetic	libclamav/matcher-ac.c	3307	                max_length = new->special_table[j]->len[1];
+offset-size-arithmetic	libclamav/matcher-ac.c	3355	        /* TODO: should this affect maxpatlen? */
+offset-size-arithmetic	libclamav/matcher-ac.c	3381	         * We'll try to shift the start of the pattern right a bit to find a static subpattern to use for the bytes that go in the A-C trie.
+offset-size-arithmetic	libclamav/matcher-ac.c	3384	        // If needed, we can shift the start of the pattern that goes in the A-C Trie right up to the pattern length minus min-depth bytes
+offset-size-arithmetic	libclamav/matcher-ac.c	3385	        // The original starting bytes will become a "prefix" that gets backward-matched.
+offset-size-arithmetic	libclamav/matcher-ac.c	3386	        pend = new->length[0] - root->ac_mindepth + 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	3388	        // Search for static bytes to start the pattern in the A-C trie that starts within original min-depth, and of a length up to max-depth.
+offset-size-arithmetic	libclamav/matcher-ac.c	3397	                // Record the start + length of the shifted prefix.
+offset-size-arithmetic	libclamav/matcher-ac.c	3399	                    plen = j - i + 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	3403	                // Check if the starting bytes at this offset are both non-zero.  If they are, then that's even better.
+offset-size-arithmetic	libclamav/matcher-ac.c	3405	                    ((new->length[0] > ppos + 1) && (0 != new->pattern[ppos + 1]))) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3408	                    if (plen >= root->ac_maxdepth) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3414	                    if (plen >= root->ac_mindepth && plen > nzplen) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3416	                        // Store off the length and position of this starting position with the non-zero bytes, in case we want to roll back to it.
 offset-size-arithmetic	libclamav/matcher-ac.c	342	            cli_readdb_table_size(root->trans_capacity + 1024,
-offset-size-arithmetic	libclamav/matcher-ac.c	3422	    if (new->length[2] + new->prefix_length[2] > root->maxpatlen) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3424	        root->maxpatlen = new->length[2] + new->prefix_length[2];
+offset-size-arithmetic	libclamav/matcher-ac.c	3423	            if (plen >= root->ac_maxdepth && (0 != new->pattern[ppos] || 0 != new->pattern[ppos + 1])) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3429	            (new->length[0] > ppos + 1) &&
 offset-size-arithmetic	libclamav/matcher-ac.c	343	                                  sizeof(*root->trans_array), &table_size) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3445	    ret = cli_caloff(offset, NULL, root->type, new->offdata, &new->offset_min, &new->offset_max);
-offset-size-arithmetic	libclamav/matcher-ac.c	3473	            cli_readdb_table_size((size_t)root->ac_reloff_num + 1,
-offset-size-arithmetic	libclamav/matcher-ac.c	3474	                                  sizeof(*root->ac_reloff), &table_size) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/matcher-ac.c	3478	        next_count = root->ac_reloff_num + 1;
-offset-size-arithmetic	libclamav/matcher-ac.c	3480	        root->ac_reloff = (struct cli_ac_patt **)MPOOL_REALLOC2(root->mempool, root->ac_reloff, table_size);
-offset-size-arithmetic	libclamav/matcher-ac.c	3486	        root->ac_reloff[root->ac_reloff_num] = new;
-offset-size-arithmetic	libclamav/matcher-ac.c	3487	        new->offset_min                      = (uint64_t)root->ac_reloff_num * 2;
-offset-size-arithmetic	libclamav/matcher-ac.c	3488	        new->offset_max                      = new->offset_min + 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	3431	            (0 == new->pattern[ppos + 1])) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3439	        if (plen < root->ac_mindepth) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3440	            cli_errmsg("cli_ac_addsig: Can't find a static subpattern of length %u\n", root->ac_mindepth);
+offset-size-arithmetic	libclamav/matcher-ac.c	3456	                new->prefix_length[1] += new->special_table[j]->len[0];
+offset-size-arithmetic	libclamav/matcher-ac.c	3457	                new->prefix_length[2] += new->special_table[j]->len[1];
+offset-size-arithmetic	libclamav/matcher-ac.c	3460	                new->prefix_length[1]++;
+offset-size-arithmetic	libclamav/matcher-ac.c	3461	                new->prefix_length[2]++;
+offset-size-arithmetic	libclamav/matcher-ac.c	3468	        new->length[0] -= new->prefix_length[0];
+offset-size-arithmetic	libclamav/matcher-ac.c	3469	        new->length[1] -= new->prefix_length[1];
+offset-size-arithmetic	libclamav/matcher-ac.c	3470	        new->length[2] -= new->prefix_length[2];
+offset-size-arithmetic	libclamav/matcher-ac.c	3473	    if (new->length[2] + new->prefix_length[2] > root->maxpatlen) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3475	        root->maxpatlen = new->length[2] + new->prefix_length[2];
+offset-size-arithmetic	libclamav/matcher-ac.c	3496	    ret = cli_caloff(offset, NULL, root->type, new->offdata, &new->offset_min, &new->offset_max);
+offset-size-arithmetic	libclamav/matcher-ac.c	3524	            cli_readdb_table_size((size_t)root->ac_reloff_num + 1,
+offset-size-arithmetic	libclamav/matcher-ac.c	3525	                                  sizeof(*root->ac_reloff), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/matcher-ac.c	3529	        next_count = root->ac_reloff_num + 1;
+offset-size-arithmetic	libclamav/matcher-ac.c	3531	        root->ac_reloff = (struct cli_ac_patt **)MPOOL_REALLOC2(root->mempool, root->ac_reloff, table_size);
+offset-size-arithmetic	libclamav/matcher-ac.c	3537	        root->ac_reloff[root->ac_reloff_num] = new;
+offset-size-arithmetic	libclamav/matcher-ac.c	3538	        new->offset_min                      = (uint64_t)root->ac_reloff_num * 2;
+offset-size-arithmetic	libclamav/matcher-ac.c	3539	        new->offset_max                      = new->offset_min + 1;
 offset-size-arithmetic	libclamav/matcher-ac.c	397	    if (i != len - 1) {
 offset-size-arithmetic	libclamav/matcher-ac.c	398	        new->trans = (struct cli_ac_node **)MPOOL_CALLOC(root->mempool, 256, sizeof(struct cli_ac_node *));
 offset-size-arithmetic	libclamav/matcher-ac.c	414	        cli_readdb_table_size((size_t)root->ac_nodes + 1, sizeof(*newtable), &table_size) != CL_SUCCESS) {
@@ -32706,195 +32720,195 @@ offset-size-arithmetic	libclamav/queue.h	422	#endif /* (_KERNEL && INVARIANTS) *
 offset-size-arithmetic	libclamav/queue.h	49	 * macro for this purpose for optimum efficiency. A singly-linked list may
 offset-size-arithmetic	libclamav/queue.h	568	#endif /* (_KERNEL && INVARIANTS) */
 offset-size-arithmetic	libclamav/queue.h	730	#endif /* !_SYS_QUEUE_CLAMAV_H_ */
-offset-size-arithmetic	libclamav/readdb.c	1030	    engine->root[1]->bm_offmode = 1; /* BM offset mode for PE files */
-offset-size-arithmetic	libclamav/readdb.c	1034	char *cli_dbgets(char *buff, unsigned int size, FILE *fs, struct cli_dbio *dbio)
+offset-size-arithmetic	libclamav/readdb.c	1035	    engine->root[1]->bm_offmode = 1; /* BM offset mode for PE files */
+offset-size-arithmetic	libclamav/readdb.c	1039	char *cli_dbgets(char *buff, unsigned int size, FILE *fs, struct cli_dbio *dbio)
 offset-size-arithmetic	libclamav/readdb.c	104	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
-offset-size-arithmetic	libclamav/readdb.c	1055	                    bread = fread(dbio->readpt, 1, dbio->readsize, dbio->fs);
-offset-size-arithmetic	libclamav/readdb.c	1065	                dbio->size -= bread;
-offset-size-arithmetic	libclamav/readdb.c	1072	                dbio->readsize = dbio->size < dbio->bufsize ? dbio->size : dbio->bufsize - 1;
-offset-size-arithmetic	libclamav/readdb.c	1088	                    dbio->readsize = dbio->size < dbio->bufsize ? dbio->size : dbio->bufsize - 1;
-offset-size-arithmetic	libclamav/readdb.c	1092	                unsigned int remain = dbio->buf + dbio->bufsize - 1 - dbio->bufpt;
-offset-size-arithmetic	libclamav/readdb.c	1100	                dbio->readsize = dbio->bufsize - remain;
-offset-size-arithmetic	libclamav/readdb.c	1101	                dbio->readsize = dbio->size < dbio->bufsize - remain ? dbio->size : dbio->bufsize - remain - 1;
-offset-size-arithmetic	libclamav/readdb.c	1112	        bs = dbio->size < size ? dbio->size + 1 : size;
-offset-size-arithmetic	libclamav/readdb.c	1123	        dbio->size -= bs;
-offset-size-arithmetic	libclamav/readdb.c	1144	        if (pt) /* strip the ".{ }" clause at the end of signame */
-offset-size-arithmetic	libclamav/readdb.c	1228	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt1 - sig + 2));
-offset-size-arithmetic	libclamav/readdb.c	1232	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt2 - sig + 2));
-offset-size-arithmetic	libclamav/readdb.c	1238	    catlen = MIN(sizeof(cat), strlen(sig) - strlen(endsig));
-offset-size-arithmetic	libclamav/readdb.c	1240	    memcpy(cat, sig, catlen + 1);
-offset-size-arithmetic	libclamav/readdb.c	1243	    cat[catlen + 1] = '\0';
-offset-size-arithmetic	libclamav/readdb.c	1299	        if (engine->cb_sigload && engine->cb_sigload("db", start, ~options & CL_DB_OFFICIAL, engine->cb_sigload_ctx)) {
-offset-size-arithmetic	libclamav/readdb.c	1306	        if (CL_SUCCESS != (ret = cli_add_content_match_pattern(root, start, pt, 0, 0, 0, "*", NULL, options))) {
+offset-size-arithmetic	libclamav/readdb.c	1060	                    bread = fread(dbio->readpt, 1, dbio->readsize, dbio->fs);
+offset-size-arithmetic	libclamav/readdb.c	1070	                dbio->size -= bread;
+offset-size-arithmetic	libclamav/readdb.c	1077	                dbio->readsize = dbio->size < dbio->bufsize ? dbio->size : dbio->bufsize - 1;
+offset-size-arithmetic	libclamav/readdb.c	1093	                    dbio->readsize = dbio->size < dbio->bufsize ? dbio->size : dbio->bufsize - 1;
+offset-size-arithmetic	libclamav/readdb.c	1097	                unsigned int remain = dbio->buf + dbio->bufsize - 1 - dbio->bufpt;
+offset-size-arithmetic	libclamav/readdb.c	1105	                dbio->readsize = dbio->bufsize - remain;
+offset-size-arithmetic	libclamav/readdb.c	1106	                dbio->readsize = dbio->size < dbio->bufsize - remain ? dbio->size : dbio->bufsize - remain - 1;
+offset-size-arithmetic	libclamav/readdb.c	1117	        bs = dbio->size < size ? dbio->size + 1 : size;
+offset-size-arithmetic	libclamav/readdb.c	1128	        dbio->size -= bs;
+offset-size-arithmetic	libclamav/readdb.c	1149	        if (pt) /* strip the ".{ }" clause at the end of signame */
+offset-size-arithmetic	libclamav/readdb.c	1233	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt1 - sig + 2));
+offset-size-arithmetic	libclamav/readdb.c	1237	        cli_dbgmsg("Skipping signature %s - too long category name, length approaching %d characters\n", signame, (unsigned int)(pt2 - sig + 2));
+offset-size-arithmetic	libclamav/readdb.c	1243	    catlen = MIN(sizeof(cat), strlen(sig) - strlen(endsig));
+offset-size-arithmetic	libclamav/readdb.c	1245	    memcpy(cat, sig, catlen + 1);
+offset-size-arithmetic	libclamav/readdb.c	1248	    cat[catlen + 1] = '\0';
+offset-size-arithmetic	libclamav/readdb.c	1304	        if (engine->cb_sigload && engine->cb_sigload("db", start, ~options & CL_DB_OFFICIAL, engine->cb_sigload_ctx)) {
+offset-size-arithmetic	libclamav/readdb.c	1311	        if (CL_SUCCESS != (ret = cli_add_content_match_pattern(root, start, pt, 0, 0, 0, "*", NULL, options))) {
 offset-size-arithmetic	libclamav/readdb.c	133	    newname = (char *)malloc(strlen(virname) + 11 + 1);
-offset-size-arithmetic	libclamav/readdb.c	1351	        matcher = (struct icon_matcher *)MPOOL_CALLOC(engine->mempool, sizeof(*matcher), 1);
-offset-size-arithmetic	libclamav/readdb.c	1408	        size = (hash[0] << 4) + hash[1];
-offset-size-arithmetic	libclamav/readdb.c	1414	        enginesize = (size >> 3) - 2;
-offset-size-arithmetic	libclamav/readdb.c	1418	            cli_readdb_table_size((size_t)matcher->icon_counts[enginesize] + 1,
-offset-size-arithmetic	libclamav/readdb.c	1419	                                  sizeof(*metric), &table_size) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/readdb.c	1434	        matcher->icon_counts[enginesize]++;
-offset-size-arithmetic	libclamav/readdb.c	1439	            if ((metric->color_x[i] = (hash[3] << 4) | hash[4]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1356	        matcher = (struct icon_matcher *)MPOOL_CALLOC(engine->mempool, sizeof(*matcher), 1);
+offset-size-arithmetic	libclamav/readdb.c	1413	        size = (hash[0] << 4) + hash[1];
+offset-size-arithmetic	libclamav/readdb.c	1419	        enginesize = (size >> 3) - 2;
+offset-size-arithmetic	libclamav/readdb.c	1423	            cli_readdb_table_size((size_t)matcher->icon_counts[enginesize] + 1,
+offset-size-arithmetic	libclamav/readdb.c	1424	                                  sizeof(*metric), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/readdb.c	1439	        matcher->icon_counts[enginesize]++;
 offset-size-arithmetic	libclamav/readdb.c	144	                               const char *offset, const uint32_t *lsigid, unsigned int options)
-offset-size-arithmetic	libclamav/readdb.c	1441	            if ((metric->color_y[i] = (hash[5] << 4) | hash[6]) > size - size / 8)
-offset-size-arithmetic	libclamav/readdb.c	1454	            if ((metric->gray_x[i] = (hash[3] << 4) | hash[4]) > size - size / 8)
-offset-size-arithmetic	libclamav/readdb.c	1456	            if ((metric->gray_y[i] = (hash[5] << 4) | hash[6]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1444	            if ((metric->color_x[i] = (hash[3] << 4) | hash[4]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1446	            if ((metric->color_y[i] = (hash[5] << 4) | hash[6]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1459	            if ((metric->gray_x[i] = (hash[3] << 4) | hash[4]) > size - size / 8)
 offset-size-arithmetic	libclamav/readdb.c	146	    char *hexcpy, *start, *end, *mid;
-offset-size-arithmetic	libclamav/readdb.c	1468	            if ((metric->bright_x[i] = (hash[2] << 4) | hash[3]) > size - size / 8)
-offset-size-arithmetic	libclamav/readdb.c	1470	            if ((metric->bright_y[i] = (hash[4] << 4) | hash[5]) > size - size / 8)
-offset-size-arithmetic	libclamav/readdb.c	1482	            if ((metric->dark_x[i] = (hash[2] << 4) | hash[3]) > size - size / 8)
-offset-size-arithmetic	libclamav/readdb.c	1484	            if ((metric->dark_y[i] = (hash[4] << 4) | hash[5]) > size - size / 8)
-offset-size-arithmetic	libclamav/readdb.c	1496	            if ((metric->edge_x[i] = (hash[2] << 4) | hash[3]) > size - size / 8)
-offset-size-arithmetic	libclamav/readdb.c	1498	            if ((metric->edge_y[i] = (hash[4] << 4) | hash[5]) > size - size / 8)
-offset-size-arithmetic	libclamav/readdb.c	1510	            if ((metric->noedge_x[i] = (hash[2] << 4) | hash[3]) > size - size / 8)
-offset-size-arithmetic	libclamav/readdb.c	1512	            if ((metric->noedge_y[i] = (hash[4] << 4) | hash[5]) > size - size / 8)
-offset-size-arithmetic	libclamav/readdb.c	1548	                cli_readdb_table_size((size_t)i + 1, sizeof(*matcher->group_names[0]), &table_size) != CL_SUCCESS ||
-offset-size-arithmetic	libclamav/readdb.c	1569	                cli_readdb_table_size((size_t)i + 1, sizeof(*matcher->group_names[1]), &table_size) != CL_SUCCESS ||
+offset-size-arithmetic	libclamav/readdb.c	1461	            if ((metric->gray_y[i] = (hash[5] << 4) | hash[6]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1473	            if ((metric->bright_x[i] = (hash[2] << 4) | hash[3]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1475	            if ((metric->bright_y[i] = (hash[4] << 4) | hash[5]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1487	            if ((metric->dark_x[i] = (hash[2] << 4) | hash[3]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1489	            if ((metric->dark_y[i] = (hash[4] << 4) | hash[5]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1501	            if ((metric->edge_x[i] = (hash[2] << 4) | hash[3]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1503	            if ((metric->edge_y[i] = (hash[4] << 4) | hash[5]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1515	            if ((metric->noedge_x[i] = (hash[2] << 4) | hash[3]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1517	            if ((metric->noedge_y[i] = (hash[4] << 4) | hash[5]) > size - size / 8)
+offset-size-arithmetic	libclamav/readdb.c	1553	                cli_readdb_table_size((size_t)i + 1, sizeof(*matcher->group_names[0]), &table_size) != CL_SUCCESS ||
+offset-size-arithmetic	libclamav/readdb.c	1574	                cli_readdb_table_size((size_t)i + 1, sizeof(*matcher->group_names[1]), &table_size) != CL_SUCCESS ||
 offset-size-arithmetic	libclamav/readdb.c	166	    start = strchr(hexcpy, '/');
 offset-size-arithmetic	libclamav/readdb.c	167	    end   = strrchr(hexcpy, '/');
-offset-size-arithmetic	libclamav/readdb.c	1676	    const char *sig, *virname, *offset, *pt;
+offset-size-arithmetic	libclamav/readdb.c	1681	    const char *sig, *virname, *offset, *pt;
 offset-size-arithmetic	libclamav/readdb.c	172	            size_t ovrlen = strlen(hexcpy) + 21;
 offset-size-arithmetic	libclamav/readdb.c	179	            *start++ = '\0';
 offset-size-arithmetic	libclamav/readdb.c	180	            *end++   = '\0';
 offset-size-arithmetic	libclamav/readdb.c	182	            snprintf(hexovr, ovrlen, "%s/([\\W_]|\\A)%s([\\W_]|\\Z)/%s", hexcpy, start, end);
-offset-size-arithmetic	libclamav/readdb.c	1825	    if (errno == ERANGE || end == text || *end != '\0')
+offset-size-arithmetic	libclamav/readdb.c	1830	    if (errno == ERANGE || end == text || *end != '\0')
 offset-size-arithmetic	libclamav/readdb.c	189	            size_t ovrlen = strlen(hexcpy) + 2;
-offset-size-arithmetic	libclamav/readdb.c	1912	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + 1,
-offset-size-arithmetic	libclamav/readdb.c	1913	                                          sizeof(*tdb->val), &table_size) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/readdb.c	1916	                off[i] = cnt = tdb->cnt[CLI_TDB_UINT]++;
-offset-size-arithmetic	libclamav/readdb.c	1933	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + 1,
-offset-size-arithmetic	libclamav/readdb.c	1934	                                          sizeof(*tdb->val), &table_size) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/readdb.c	1937	                off[i] = cnt = tdb->cnt[CLI_TDB_UINT]++;
-offset-size-arithmetic	libclamav/readdb.c	1951	                off[i] = cnt = tdb->cnt[CLI_TDB_UINT];
-offset-size-arithmetic	libclamav/readdb.c	1958	                    (size_t)tdb->cnt[CLI_TDB_UINT] > (size_t)INT_MAX - ((size_t)ftypes_count + 1) ||
-offset-size-arithmetic	libclamav/readdb.c	1959	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + ftypes_count + 1,
-offset-size-arithmetic	libclamav/readdb.c	1960	                                          sizeof(*tdb->val), &table_size) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/readdb.c	1963	                next_count            = (size_t)tdb->cnt[CLI_TDB_UINT] + ftypes_count + 1;
-offset-size-arithmetic	libclamav/readdb.c	1997	                    tdb->filesize_range = (uint64_t *)MPOOL_REALLOC2(tdb->mempool, NULL, 2 * sizeof(uint64_t));
-offset-size-arithmetic	libclamav/readdb.c	2007	                off[i] = cnt = tdb->cnt[CLI_TDB_RANGE];
-offset-size-arithmetic	libclamav/readdb.c	2009	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 2 ||
-offset-size-arithmetic	libclamav/readdb.c	2010	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_RANGE] + 2,
-offset-size-arithmetic	libclamav/readdb.c	2011	                                          sizeof(*tdb->range), &table_size) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/readdb.c	2014	                next_count             = (size_t)tdb->cnt[CLI_TDB_RANGE] + 2;
-offset-size-arithmetic	libclamav/readdb.c	2037	                off[i] = cnt = tdb->cnt[CLI_TDB_RANGE];
-offset-size-arithmetic	libclamav/readdb.c	2039	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 3 ||
-offset-size-arithmetic	libclamav/readdb.c	2040	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_RANGE] + 3,
-offset-size-arithmetic	libclamav/readdb.c	2041	                                          sizeof(*tdb->range), &table_size) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/readdb.c	2044	                next_count             = (size_t)tdb->cnt[CLI_TDB_RANGE] + 3;
-offset-size-arithmetic	libclamav/readdb.c	2063	                off[i] = cnt = tdb->cnt[CLI_TDB_STR];
-offset-size-arithmetic	libclamav/readdb.c	2065	                if (string_len >= (size_t)INT_MAX || tdb->cnt[CLI_TDB_STR] < 0 ||
-offset-size-arithmetic	libclamav/readdb.c	2066	                    (size_t)tdb->cnt[CLI_TDB_STR] > (size_t)INT_MAX - (string_len + 1) ||
-offset-size-arithmetic	libclamav/readdb.c	2067	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_STR] + string_len + 1,
-offset-size-arithmetic	libclamav/readdb.c	2068	                                          sizeof(*tdb->str), &table_size) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/readdb.c	2071	                next_count             = (size_t)tdb->cnt[CLI_TDB_STR] + string_len + 1;
+offset-size-arithmetic	libclamav/readdb.c	1917	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + 1,
+offset-size-arithmetic	libclamav/readdb.c	1918	                                          sizeof(*tdb->val), &table_size) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/readdb.c	1921	                off[i] = cnt = tdb->cnt[CLI_TDB_UINT]++;
+offset-size-arithmetic	libclamav/readdb.c	1938	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + 1,
+offset-size-arithmetic	libclamav/readdb.c	1939	                                          sizeof(*tdb->val), &table_size) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/readdb.c	1942	                off[i] = cnt = tdb->cnt[CLI_TDB_UINT]++;
+offset-size-arithmetic	libclamav/readdb.c	1956	                off[i] = cnt = tdb->cnt[CLI_TDB_UINT];
+offset-size-arithmetic	libclamav/readdb.c	1963	                    (size_t)tdb->cnt[CLI_TDB_UINT] > (size_t)INT_MAX - ((size_t)ftypes_count + 1) ||
+offset-size-arithmetic	libclamav/readdb.c	1964	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_UINT] + ftypes_count + 1,
+offset-size-arithmetic	libclamav/readdb.c	1965	                                          sizeof(*tdb->val), &table_size) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/readdb.c	1968	                next_count            = (size_t)tdb->cnt[CLI_TDB_UINT] + ftypes_count + 1;
+offset-size-arithmetic	libclamav/readdb.c	2002	                    tdb->filesize_range = (uint64_t *)MPOOL_REALLOC2(tdb->mempool, NULL, 2 * sizeof(uint64_t));
+offset-size-arithmetic	libclamav/readdb.c	2012	                off[i] = cnt = tdb->cnt[CLI_TDB_RANGE];
+offset-size-arithmetic	libclamav/readdb.c	2014	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 2 ||
+offset-size-arithmetic	libclamav/readdb.c	2015	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_RANGE] + 2,
+offset-size-arithmetic	libclamav/readdb.c	2016	                                          sizeof(*tdb->range), &table_size) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/readdb.c	2019	                next_count             = (size_t)tdb->cnt[CLI_TDB_RANGE] + 2;
+offset-size-arithmetic	libclamav/readdb.c	2042	                off[i] = cnt = tdb->cnt[CLI_TDB_RANGE];
+offset-size-arithmetic	libclamav/readdb.c	2044	                    (size_t)tdb->cnt[CLI_TDB_RANGE] > (size_t)INT_MAX - 3 ||
+offset-size-arithmetic	libclamav/readdb.c	2045	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_RANGE] + 3,
+offset-size-arithmetic	libclamav/readdb.c	2046	                                          sizeof(*tdb->range), &table_size) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/readdb.c	2049	                next_count             = (size_t)tdb->cnt[CLI_TDB_RANGE] + 3;
+offset-size-arithmetic	libclamav/readdb.c	2068	                off[i] = cnt = tdb->cnt[CLI_TDB_STR];
+offset-size-arithmetic	libclamav/readdb.c	2070	                if (string_len >= (size_t)INT_MAX || tdb->cnt[CLI_TDB_STR] < 0 ||
+offset-size-arithmetic	libclamav/readdb.c	2071	                    (size_t)tdb->cnt[CLI_TDB_STR] > (size_t)INT_MAX - (string_len + 1) ||
+offset-size-arithmetic	libclamav/readdb.c	2072	                    cli_readdb_table_size((size_t)tdb->cnt[CLI_TDB_STR] + string_len + 1,
+offset-size-arithmetic	libclamav/readdb.c	2073	                                          sizeof(*tdb->str), &table_size) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/readdb.c	2076	                next_count             = (size_t)tdb->cnt[CLI_TDB_STR] + string_len + 1;
 offset-size-arithmetic	libclamav/readdb.c	218	    if (start != end && mid && (*(++mid) == '#' || !strncmp(mid, ">>", 2) || !strncmp(mid, "<<", 2) || !strncmp(mid, "0#", 2))) {
 offset-size-arithmetic	libclamav/readdb.c	229	        size_t ovrlen = strlen(hexcpy) + 7;
-offset-size-arithmetic	libclamav/readdb.c	2331	        cli_readdb_table_size((size_t)root->ac_lsigs + 1,
-offset-size-arithmetic	libclamav/readdb.c	2332	                              sizeof(*newtable), &lsig_table_size) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/readdb.c	2500	        cli_readdb_table_size((size_t)bcs->count + 1, sizeof(*bcs->all_bcs), &table_size) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/readdb.c	2578	                cli_readdb_table_size((size_t)engine->hooks_cnt[hook] + 1,
-offset-size-arithmetic	libclamav/readdb.c	2579	                                      sizeof(*engine->hooks[0]), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/readdb.c	2336	        cli_readdb_table_size((size_t)root->ac_lsigs + 1,
+offset-size-arithmetic	libclamav/readdb.c	2337	                              sizeof(*newtable), &lsig_table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/readdb.c	2505	        cli_readdb_table_size((size_t)bcs->count + 1, sizeof(*bcs->all_bcs), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/readdb.c	2583	                cli_readdb_table_size((size_t)engine->hooks_cnt[hook] + 1,
+offset-size-arithmetic	libclamav/readdb.c	2584	                                      sizeof(*engine->hooks[0]), &table_size) != CL_SUCCESS) {
 offset-size-arithmetic	libclamav/readdb.c	261	        size_t ovrlen    = 2 * hexcpylen + 1;
-offset-size-arithmetic	libclamav/readdb.c	2640	            buffer[sizeof(buffer) - 1] = '\0';
-offset-size-arithmetic	libclamav/readdb.c	2715	            new->length = (uint16_t)strlen(tokens[2]) / 2;
+offset-size-arithmetic	libclamav/readdb.c	2645	            buffer[sizeof(buffer) - 1] = '\0';
+offset-size-arithmetic	libclamav/readdb.c	2720	            new->length = (uint16_t)strlen(tokens[2]) / 2;
 offset-size-arithmetic	libclamav/readdb.c	276	                hexovr[len++] = '{';
-offset-size-arithmetic	libclamav/readdb.c	2788	            buffer[len + 1] = 0;
 offset-size-arithmetic	libclamav/readdb.c	279	                    hexovr[len++] = hexcpy[i++];
-offset-size-arithmetic	libclamav/readdb.c	2790	            if (dbio->usebuf && buffer[len - 1] != '\n' && len + 1 < FILEBUFF) {
-offset-size-arithmetic	libclamav/readdb.c	2793	                buffer[len + 1] = 0;
+offset-size-arithmetic	libclamav/readdb.c	2793	            buffer[len + 1] = 0;
+offset-size-arithmetic	libclamav/readdb.c	2795	            if (dbio->usebuf && buffer[len - 1] != '\n' && len + 1 < FILEBUFF) {
+offset-size-arithmetic	libclamav/readdb.c	2798	                buffer[len + 1] = 0;
 offset-size-arithmetic	libclamav/readdb.c	284	                    hexovr[len++] = hexcpy[i++];
-offset-size-arithmetic	libclamav/readdb.c	2849	        if (strlen(tokens[2]) != 64 || !(new->hash = CLI_MPOOL_HEX2STR(engine->mempool, tokens[2]))) {
+offset-size-arithmetic	libclamav/readdb.c	2854	        if (strlen(tokens[2]) != 64 || !(new->hash = CLI_MPOOL_HEX2STR(engine->mempool, tokens[2]))) {
 offset-size-arithmetic	libclamav/readdb.c	289	                    hexovr[len++] = hexcpy[i++];
-offset-size-arithmetic	libclamav/readdb.c	2924	            /* patch-up for Boyer-Moore minimum length of 3: pad with spaces */
-offset-size-arithmetic	libclamav/readdb.c	2947	            if (strlen(hash) != 32 || !(new->virname = CLI_MPOOL_HEX2STR(engine->mempool, hash))) {
-offset-size-arithmetic	libclamav/readdb.c	2976	static int cli_loadhash(FILE *fs, struct cl_engine *engine, unsigned int *signo, hash_purpose_t purpose, unsigned int options, struct cli_dbio *dbio, const char *dbname)
+offset-size-arithmetic	libclamav/readdb.c	2929	            /* patch-up for Boyer-Moore minimum length of 3: pad with spaces */
+offset-size-arithmetic	libclamav/readdb.c	2952	            if (strlen(hash) != 32 || !(new->virname = CLI_MPOOL_HEX2STR(engine->mempool, hash))) {
+offset-size-arithmetic	libclamav/readdb.c	2981	static int cli_loadhash(FILE *fs, struct cl_engine *engine, unsigned int *signo, hash_purpose_t purpose, unsigned int options, struct cli_dbio *dbio, const char *dbname)
 offset-size-arithmetic	libclamav/readdb.c	301	                    hexovr[len++] = hexcpy[i++];
-offset-size-arithmetic	libclamav/readdb.c	3027	        if (strcmp(tokens[size_field], "*")) {
-offset-size-arithmetic	libclamav/readdb.c	3029	            size  = strtoull(tokens[size_field], (char **)&pt, 10);
-offset-size-arithmetic	libclamav/readdb.c	3042	            if (purpose != HASH_PURPOSE_PE_IMPORT_DETECT && ((tokens_count < HASH_DB_TOKENS - 1) || (req_fl < 73))) {
+offset-size-arithmetic	libclamav/readdb.c	3032	        if (strcmp(tokens[size_field], "*")) {
+offset-size-arithmetic	libclamav/readdb.c	3034	            size  = strtoull(tokens[size_field], (char **)&pt, 10);
+offset-size-arithmetic	libclamav/readdb.c	3047	            if (purpose != HASH_PURPOSE_PE_IMPORT_DETECT && ((tokens_count < HASH_DB_TOKENS - 1) || (req_fl < 73))) {
 offset-size-arithmetic	libclamav/readdb.c	310	                // snprintf(hexovr+len, ovrlen-len, "%02x%c%c", 0, hexcpy[i], hexcpy[i+1]);
 offset-size-arithmetic	libclamav/readdb.c	311	                snprintf(hexovr + len, ovrlen - len, "%c%c%02x", hexcpy[i], hexcpy[i + 1], 0);
-offset-size-arithmetic	libclamav/readdb.c	3208	        new->csize[0] = new->csize[1] = CLI_OFF_ANY;
-offset-size-arithmetic	libclamav/readdb.c	3211	            new->fsizer[0] = new->fsizer[1] = CLI_OFF_ANY;
-offset-size-arithmetic	libclamav/readdb.c	3213	            new->fsizer[0] = new->fsizer[1] = atoi(tokens[3]);
-offset-size-arithmetic	libclamav/readdb.c	3216	            new->fsizec[0] = new->fsizec[1] = CLI_OFF_ANY;
-offset-size-arithmetic	libclamav/readdb.c	3218	            new->fsizec[0] = new->fsizec[1] = atoi(tokens[4]);
-offset-size-arithmetic	libclamav/readdb.c	3234	        new->filepos[0] = new->filepos[1] = strcmp(tokens[7], "*") ? (unsigned int)atoi(tokens[7]) : (unsigned int)CLI_OFF_ANY;
+offset-size-arithmetic	libclamav/readdb.c	3213	        new->csize[0] = new->csize[1] = CLI_OFF_ANY;
+offset-size-arithmetic	libclamav/readdb.c	3216	            new->fsizer[0] = new->fsizer[1] = CLI_OFF_ANY;
+offset-size-arithmetic	libclamav/readdb.c	3218	            new->fsizer[0] = new->fsizer[1] = atoi(tokens[3]);
+offset-size-arithmetic	libclamav/readdb.c	3221	            new->fsizec[0] = new->fsizec[1] = CLI_OFF_ANY;
+offset-size-arithmetic	libclamav/readdb.c	3223	            new->fsizec[0] = new->fsizec[1] = atoi(tokens[4]);
+offset-size-arithmetic	libclamav/readdb.c	3239	        new->filepos[0] = new->filepos[1] = strcmp(tokens[7], "*") ? (unsigned int)atoi(tokens[7]) : (unsigned int)CLI_OFF_ANY;
 offset-size-arithmetic	libclamav/readdb.c	337	 * expected format => ^offset:trigger/regex/[cflags]$
 offset-size-arithmetic	libclamav/readdb.c	348	                                                 const char *offset, const uint32_t *lsigid, unsigned int options)
-offset-size-arithmetic	libclamav/readdb.c	3715	    if ((slen = string->length) == 0) {
-offset-size-arithmetic	libclamav/readdb.c	3722	    for (i = 0; i < slen - 1; i++) {
-offset-size-arithmetic	libclamav/readdb.c	3728	            case '}': /* end of hex string */
+offset-size-arithmetic	libclamav/readdb.c	3720	    if ((slen = string->length) == 0) {
+offset-size-arithmetic	libclamav/readdb.c	3727	    for (i = 0; i < slen - 1; i++) {
 offset-size-arithmetic	libclamav/readdb.c	373	        size_t subtokens_count = cli_ldbtokenize(hexsig, ':', MAX_REGEX_SUB_TOKENS + 1, (const char **)subtokens, 0);
-offset-size-arithmetic	libclamav/readdb.c	3731	                reslen++;
-offset-size-arithmetic	libclamav/readdb.c	3736	    reslen++;
-offset-size-arithmetic	libclamav/readdb.c	3743	    for (i = 0, j = 0; i < slen - 1 && j < reslen; i++) {
-offset-size-arithmetic	libclamav/readdb.c	3753	                if ((i + 2 < slen - 1) && (str[i + 1] == '-') && (str[i + 2] == ']')) {
-offset-size-arithmetic	libclamav/readdb.c	3872	        /* overwrite the previous offset */
-offset-size-arithmetic	libclamav/readdb.c	3913	        cli_readdb_table_size((size_t)ytable->tbl_cnt + 1,
-offset-size-arithmetic	libclamav/readdb.c	3914	                              sizeof(*newtable), &table_size) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/readdb.c	3921	    next_count = (size_t)ytable->tbl_cnt + 1;
+offset-size-arithmetic	libclamav/readdb.c	3733	            case '}': /* end of hex string */
+offset-size-arithmetic	libclamav/readdb.c	3736	                reslen++;
+offset-size-arithmetic	libclamav/readdb.c	3741	    reslen++;
+offset-size-arithmetic	libclamav/readdb.c	3748	    for (i = 0, j = 0; i < slen - 1 && j < reslen; i++) {
+offset-size-arithmetic	libclamav/readdb.c	3758	                if ((i + 2 < slen - 1) && (str[i + 1] == '-') && (str[i + 2] == ']')) {
+offset-size-arithmetic	libclamav/readdb.c	3877	        /* overwrite the previous offset */
+offset-size-arithmetic	libclamav/readdb.c	3918	        cli_readdb_table_size((size_t)ytable->tbl_cnt + 1,
+offset-size-arithmetic	libclamav/readdb.c	3919	                              sizeof(*newtable), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/readdb.c	3926	    next_count = (size_t)ytable->tbl_cnt + 1;
 offset-size-arithmetic	libclamav/readdb.c	397	    start = strchr(hexcpy, '/');
-offset-size-arithmetic	libclamav/readdb.c	3973	    if (strlen(hexstr) / 2 < CLI_DEFAULT_AC_MINDEPTH) {
+offset-size-arithmetic	libclamav/readdb.c	3978	    if (strlen(hexstr) / 2 < CLI_DEFAULT_AC_MINDEPTH) {
 offset-size-arithmetic	libclamav/readdb.c	398	    end   = strrchr(hexcpy, '/');
-offset-size-arithmetic	libclamav/readdb.c	3997	/* function base off load_oneldb */
-offset-size-arithmetic	libclamav/readdb.c	4029	    newident = malloc(strlen(rule->identifier) + 5 + 1);
-offset-size-arithmetic	libclamav/readdb.c	4035	    snprintf(newident, strlen(rule->identifier) + 5 + 1, "YARA.%s", rule->identifier);
-offset-size-arithmetic	libclamav/readdb.c	4164	                    cli_readdb_table_size((size_t)root->ac_lsigs + 1,
-offset-size-arithmetic	libclamav/readdb.c	4165	                                          sizeof(*newtable), &lsig_table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/readdb.c	4002	/* function base off load_oneldb */
+offset-size-arithmetic	libclamav/readdb.c	4034	    newident = malloc(strlen(rule->identifier) + 5 + 1);
+offset-size-arithmetic	libclamav/readdb.c	4040	    snprintf(newident, strlen(rule->identifier) + 5 + 1, "YARA.%s", rule->identifier);
+offset-size-arithmetic	libclamav/readdb.c	4169	                    cli_readdb_table_size((size_t)root->ac_lsigs + 1,
+offset-size-arithmetic	libclamav/readdb.c	4170	                                          sizeof(*newtable), &lsig_table_size) != CL_SUCCESS) {
 offset-size-arithmetic	libclamav/readdb.c	420	    pattern = start + 1;
-offset-size-arithmetic	libclamav/readdb.c	4200	            cli_yaramsg("load_oneyara: hex string: [%.*s] => [%s]\n", string->length, string->string, substr);
+offset-size-arithmetic	libclamav/readdb.c	4205	            cli_yaramsg("load_oneyara: hex string: [%.*s] => [%s]\n", string->length, string->string, substr);
 offset-size-arithmetic	libclamav/readdb.c	421	    cflags  = end + 1;
-offset-size-arithmetic	libclamav/readdb.c	4210	            size_t length = strlen(PCRE_BYPASS) + string->length + 3;
-offset-size-arithmetic	libclamav/readdb.c	4220	            snprintf(substr, length, "%s/%.*s/", PCRE_BYPASS, string->length, string->string);
-offset-size-arithmetic	libclamav/readdb.c	4222	            cli_yaramsg("load_oneyara: regex string: [%.*s] => [%s]\n", string->length, string->string, substr);
-offset-size-arithmetic	libclamav/readdb.c	4231	            /* TODO - extract the string length to handle NULL hex-escaped characters
-offset-size-arithmetic	libclamav/readdb.c	4234	            size_t length  = string->length;
-offset-size-arithmetic	libclamav/readdb.c	4235	            size_t totsize = 2 * length + 1;
-offset-size-arithmetic	libclamav/readdb.c	4253	                snprintf(substr + len, totsize - len, "%02x", string->string[i]);
-offset-size-arithmetic	libclamav/readdb.c	4256	            cli_yaramsg("load_oneyara: generic string: [%.*s] => [%s]\n", string->length, string->string, substr);
-offset-size-arithmetic	libclamav/readdb.c	4375	    /*** additional string table population (ex. offsets), second translation table pass ***/
-offset-size-arithmetic	libclamav/readdb.c	4378	        lsize = 3*ytable.tbl_cnt;
-offset-size-arithmetic	libclamav/readdb.c	4397	            snprintf(logic+len, lsize-len, "%u%s", i, (i+1 == ytable.tbl_cnt) ? "" : exp_op);
+offset-size-arithmetic	libclamav/readdb.c	4215	            size_t length = strlen(PCRE_BYPASS) + string->length + 3;
+offset-size-arithmetic	libclamav/readdb.c	4225	            snprintf(substr, length, "%s/%.*s/", PCRE_BYPASS, string->length, string->string);
+offset-size-arithmetic	libclamav/readdb.c	4227	            cli_yaramsg("load_oneyara: regex string: [%.*s] => [%s]\n", string->length, string->string, substr);
+offset-size-arithmetic	libclamav/readdb.c	4236	            /* TODO - extract the string length to handle NULL hex-escaped characters
+offset-size-arithmetic	libclamav/readdb.c	4239	            size_t length  = string->length;
+offset-size-arithmetic	libclamav/readdb.c	4240	            size_t totsize = 2 * length + 1;
+offset-size-arithmetic	libclamav/readdb.c	4258	                snprintf(substr + len, totsize - len, "%02x", string->string[i]);
+offset-size-arithmetic	libclamav/readdb.c	4261	            cli_yaramsg("load_oneyara: generic string: [%.*s] => [%s]\n", string->length, string->string, substr);
+offset-size-arithmetic	libclamav/readdb.c	4380	    /*** additional string table population (ex. offsets), second translation table pass ***/
+offset-size-arithmetic	libclamav/readdb.c	4383	        lsize = 3*ytable.tbl_cnt;
+offset-size-arithmetic	libclamav/readdb.c	4402	            snprintf(logic+len, lsize-len, "%u%s", i, (i+1 == ytable.tbl_cnt) ? "" : exp_op);
 offset-size-arithmetic	libclamav/readdb.c	443	                                         const char *offset, const uint32_t *lsigid, unsigned int options,
-offset-size-arithmetic	libclamav/readdb.c	4451	        if (NULL != (lsig->u.code_start = rule->code_start)) {
-offset-size-arithmetic	libclamav/readdb.c	4452	            lsig->code_size = rule->code_size;
-offset-size-arithmetic	libclamav/readdb.c	4480	        cli_readdb_table_size((size_t)root->ac_lsigs + 1,
-offset-size-arithmetic	libclamav/readdb.c	4481	                              sizeof(*newtable), &lsig_table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/readdb.c	4456	        if (NULL != (lsig->u.code_start = rule->code_start)) {
+offset-size-arithmetic	libclamav/readdb.c	4457	            lsig->code_size = rule->code_size;
+offset-size-arithmetic	libclamav/readdb.c	4485	        cli_readdb_table_size((size_t)root->ac_lsigs + 1,
+offset-size-arithmetic	libclamav/readdb.c	4486	                              sizeof(*newtable), &lsig_table_size) != CL_SUCCESS) {
 offset-size-arithmetic	libclamav/readdb.c	450	    char *start = NULL, *mid = NULL, *end = NULL;
 offset-size-arithmetic	libclamav/readdb.c	464	        if (hexsig[hexlen - 1] != '$') {
-offset-size-arithmetic	libclamav/readdb.c	4652	    compiler.loop_for_of_mem_offset = -1;
-offset-size-arithmetic	libclamav/readdb.c	4697	            cli_warnmsg("cli_loadyara: problem parsing yara file %s, yara rule %s\n", filename, rule->identifier);
-offset-size-arithmetic	libclamav/readdb.c	4705	    yr_arena_append(engine->yara_global->the_arena, compiler.sz_arena);
-offset-size-arithmetic	libclamav/readdb.c	4706	    yr_arena_append(engine->yara_global->the_arena, compiler.rules_arena);
-offset-size-arithmetic	libclamav/readdb.c	4707	    yr_arena_append(engine->yara_global->the_arena, compiler.strings_arena);
-offset-size-arithmetic	libclamav/readdb.c	4788	        /* append target type 0 to tdb string if needed */
-offset-size-arithmetic	libclamav/readdb.c	4797	            size_t attlen = strlen(tokens[1]) + 10;
-offset-size-arithmetic	libclamav/readdb.c	4868	                new->length = (uint16_t)strlen(tokens[3]) / 2;
+offset-size-arithmetic	libclamav/readdb.c	4657	    compiler.loop_for_of_mem_offset = -1;
+offset-size-arithmetic	libclamav/readdb.c	4702	            cli_warnmsg("cli_loadyara: problem parsing yara file %s, yara rule %s\n", filename, rule->identifier);
+offset-size-arithmetic	libclamav/readdb.c	4710	    yr_arena_append(engine->yara_global->the_arena, compiler.sz_arena);
+offset-size-arithmetic	libclamav/readdb.c	4711	    yr_arena_append(engine->yara_global->the_arena, compiler.rules_arena);
+offset-size-arithmetic	libclamav/readdb.c	4712	    yr_arena_append(engine->yara_global->the_arena, compiler.strings_arena);
+offset-size-arithmetic	libclamav/readdb.c	4793	        /* append target type 0 to tdb string if needed */
+offset-size-arithmetic	libclamav/readdb.c	4802	            size_t attlen = strlen(tokens[1]) + 10;
+offset-size-arithmetic	libclamav/readdb.c	4873	                new->length = (uint16_t)strlen(tokens[3]) / 2;
 offset-size-arithmetic	libclamav/readdb.c	488	        patt = MPOOL_CALLOC(root->mempool, 1, sizeof(*patt));
-offset-size-arithmetic	libclamav/readdb.c	4909	cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, void *sign_verifier)
-offset-size-arithmetic	libclamav/readdb.c	4936	    if ((dbname = strrchr(filename, *PATHSEP)))
+offset-size-arithmetic	libclamav/readdb.c	4914	cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, void *sign_verifier)
+offset-size-arithmetic	libclamav/readdb.c	4941	    if ((dbname = strrchr(filename, *PATHSEP)))
 offset-size-arithmetic	libclamav/readdb.c	500	        patt->length[0]     = root->ac_mindepth;
 offset-size-arithmetic	libclamav/readdb.c	503	        patt->pattern = MPOOL_CALLOC(root->mempool, patt->length[0], sizeof(*patt->pattern));
-offset-size-arithmetic	libclamav/readdb.c	5125	static cl_error_t count_line_based_signatures(const char *filepath, size_t *sig_count)
-offset-size-arithmetic	libclamav/readdb.c	5191	                                   size_t *num_signatures)
+offset-size-arithmetic	libclamav/readdb.c	5130	static cl_error_t count_line_based_signatures(const char *filepath, size_t *sig_count)
+offset-size-arithmetic	libclamav/readdb.c	5196	                                   size_t *num_signatures)
 offset-size-arithmetic	libclamav/readdb.c	520	                tdb->macro_ptids = MPOOL_CALLOC(root->mempool, num_subsigs, sizeof(*tdb->macro_ptids));
-offset-size-arithmetic	libclamav/readdb.c	5289	        if (strcmp(dirname + dirname_len - strlen(PATHSEP), PATHSEP) == 0) {
-offset-size-arithmetic	libclamav/readdb.c	5310	        dbfile = (char *)malloc(strlen(dent->d_name) + dirname_len + 2);
-offset-size-arithmetic	libclamav/readdb.c	5407	            cli_dbgmsg("Skipping unofficial database %s\n", dent->d_name);
-offset-size-arithmetic	libclamav/readdb.c	5436	        entry = malloc(sizeof(*entry));
-offset-size-arithmetic	libclamav/readdb.c	5664	        path[sizeof(path) - 1] = '\0';
-offset-size-arithmetic	libclamav/readdb.c	5668	    DATABASE_DIRECTORY[sizeof(DATABASE_DIRECTORY) - 1] = '\0';
-offset-size-arithmetic	libclamav/readdb.c	5721	                    cli_readdb_table_size((size_t)dbstat->entries + 1,
-offset-size-arithmetic	libclamav/readdb.c	5722	                                          sizeof(*dbstat->stattab), &stat_table_size) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/readdb.c	5735	                if (cli_readdb_table_size((size_t)dbstat->entries,
-offset-size-arithmetic	libclamav/readdb.c	5736	                                          sizeof(*dbstat->statdname), &stat_table_size) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/readdb.c	5749	                fname = malloc(strlen(dirname) + strlen(dent->d_name) + 32);
-offset-size-arithmetic	libclamav/readdb.c	5757	                dbstat->statdname[dbstat->entries - 1] = (char *)malloc(strlen(dent->d_name) + 1);
-offset-size-arithmetic	libclamav/readdb.c	5803	    if ((dd = opendir(dbstat->dir)) == NULL) {
-offset-size-arithmetic	libclamav/readdb.c	5823	                fname = malloc(strlen(dbstat->dir) + strlen(dent->d_name) + 32);
-offset-size-arithmetic	libclamav/readdb.c	6360	            cli_dbgmsg("Matcher[%u]: %s: AC sigs: %u (reloff: %u, absoff: %u) BM sigs: %u (reloff: %u, absoff: %u) PCREs: %u (reloff: %u, absoff: %u) maxpatlen %u %s\n", i, cli_mtargets[i].name, root->ac_patterns, root->ac_reloff_num, root->ac_absoff_num, root->bm_patterns, root->bm_reloff_num, root->bm_absoff_num, root->pcre_metas, root->pcre_reloff_num, root->pcre_absoff_num, root->maxpatlen, root->ac_only ? "(ac_only mode)" : "");
-offset-size-arithmetic	libclamav/readdb.c	6588	                    snprintf(fname, sizeof(fname), "%s" PATHSEP "%s", path, dent->d_name);
-offset-size-arithmetic	libclamav/readdb.c	6589	                    fname[sizeof(fname) - 1] = 0;
+offset-size-arithmetic	libclamav/readdb.c	5294	        if (strcmp(dirname + dirname_len - strlen(PATHSEP), PATHSEP) == 0) {
+offset-size-arithmetic	libclamav/readdb.c	5315	        dbfile = (char *)malloc(strlen(dent->d_name) + dirname_len + 2);
+offset-size-arithmetic	libclamav/readdb.c	5412	            cli_dbgmsg("Skipping unofficial database %s\n", dent->d_name);
+offset-size-arithmetic	libclamav/readdb.c	5441	        entry = malloc(sizeof(*entry));
+offset-size-arithmetic	libclamav/readdb.c	5669	        path[sizeof(path) - 1] = '\0';
+offset-size-arithmetic	libclamav/readdb.c	5673	    DATABASE_DIRECTORY[sizeof(DATABASE_DIRECTORY) - 1] = '\0';
+offset-size-arithmetic	libclamav/readdb.c	5726	                    cli_readdb_table_size((size_t)dbstat->entries + 1,
+offset-size-arithmetic	libclamav/readdb.c	5727	                                          sizeof(*dbstat->stattab), &stat_table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/readdb.c	5740	                if (cli_readdb_table_size((size_t)dbstat->entries,
+offset-size-arithmetic	libclamav/readdb.c	5741	                                          sizeof(*dbstat->statdname), &stat_table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/readdb.c	5754	                fname = malloc(strlen(dirname) + strlen(dent->d_name) + 32);
+offset-size-arithmetic	libclamav/readdb.c	5762	                dbstat->statdname[dbstat->entries - 1] = (char *)malloc(strlen(dent->d_name) + 1);
+offset-size-arithmetic	libclamav/readdb.c	5808	    if ((dd = opendir(dbstat->dir)) == NULL) {
+offset-size-arithmetic	libclamav/readdb.c	5828	                fname = malloc(strlen(dbstat->dir) + strlen(dent->d_name) + 32);
+offset-size-arithmetic	libclamav/readdb.c	6365	            cli_dbgmsg("Matcher[%u]: %s: AC sigs: %u (reloff: %u, absoff: %u) BM sigs: %u (reloff: %u, absoff: %u) PCREs: %u (reloff: %u, absoff: %u) maxpatlen %u %s\n", i, cli_mtargets[i].name, root->ac_patterns, root->ac_reloff_num, root->ac_absoff_num, root->bm_patterns, root->bm_reloff_num, root->bm_absoff_num, root->pcre_metas, root->pcre_reloff_num, root->pcre_absoff_num, root->maxpatlen, root->ac_only ? "(ac_only mode)" : "");
+offset-size-arithmetic	libclamav/readdb.c	6593	                    snprintf(fname, sizeof(fname), "%s" PATHSEP "%s", path, dent->d_name);
+offset-size-arithmetic	libclamav/readdb.c	6594	                    fname[sizeof(fname) - 1] = 0;
 offset-size-arithmetic	libclamav/readdb.c	669	                                           const char *offset, const uint32_t *lsigid, unsigned int options)
 offset-size-arithmetic	libclamav/readdb.c	722	                                         const char *offset, const uint32_t *lsigid, unsigned int options)
 offset-size-arithmetic	libclamav/readdb.c	746	            hexcpy = calloc(hexlen + 2 * range, sizeof(char));
@@ -32904,10 +32918,11 @@ offset-size-arithmetic	libclamav/readdb.c	827	                        pt       =
 offset-size-arithmetic	libclamav/readdb.c	835	            if (CL_SUCCESS != (ret = cli_ac_addsig(root, virname, start, sigopts, root->ac_partsigs, parts, i, rtype, type, mindist, maxdist, offset, lsigid, options))) {
 offset-size-arithmetic	libclamav/readdb.c	858	            *start++ = 0;
 offset-size-arithmetic	libclamav/readdb.c	945	    } else if (root->ac_only || type || lsigid || sigopts || strpbrk(hexsig, "?([") || (root->bm_offmode && (!strcmp(offset, "*") || strchr(offset, ','))) || strstr(offset, "VI") || strchr(offset, '$')) {
-offset-size-arithmetic	libclamav/readdb.c	968	        bm_new->length = hexlen / 2;
-offset-size-arithmetic	libclamav/readdb.c	977	        if (bm_new->length > root->maxpatlen)
-offset-size-arithmetic	libclamav/readdb.c	978	            root->maxpatlen = bm_new->length;
+offset-size-arithmetic	libclamav/readdb.c	958	        if (hexlen > (size_t)UINT16_MAX * 2U) {
+offset-size-arithmetic	libclamav/readdb.c	973	        bm_new->length = hexlen / 2;
 offset-size-arithmetic	libclamav/readdb.c	98	cl_error_t cli_readdb_table_size(size_t count, size_t element_size, size_t *bytes)
+offset-size-arithmetic	libclamav/readdb.c	982	        if (bm_new->length > root->maxpatlen)
+offset-size-arithmetic	libclamav/readdb.c	983	            root->maxpatlen = bm_new->length;
 offset-size-arithmetic	libclamav/readdb.h	160	                               const char *offset, const uint32_t *lsigid, unsigned int options);
 offset-size-arithmetic	libclamav/readdb.h	181	                                         const char *offset, const uint32_t *lsigid, unsigned int options);
 offset-size-arithmetic	libclamav/readdb.h	208	                                         const char *offset, const uint32_t *lsigid, unsigned int options,
@@ -39479,58 +39494,58 @@ offset-size-arithmetic	unit_tests/check_matchers.c	119	    {"slllll", 6, "(W)6c6
 offset-size-arithmetic	unit_tests/check_matchers.c	120	    {"mmmmme", 6, "6d6d6d6d6d(W)", "*", ACPATT_OPTION_NOOPTS, "AC_Sigopts_Test_13", CL_CLEAN}, /* fullword class end */
 offset-size-arithmetic	unit_tests/check_matchers.c	123	    {"soOoOo", 6, "6f6f6f6f6f", "*", ACPATT_OPTION_NOCASE | ACPATT_OPTION_FULLWORD, "AC_Sigopts_Test_15", CL_CLEAN}, /* nocase fullword start fail */
 offset-size-arithmetic	unit_tests/check_matchers.c	124	    {"pPpPpe", 6, "7070707070", "*", ACPATT_OPTION_NOCASE | ACPATT_OPTION_FULLWORD, "AC_Sigopts_Test_16", CL_CLEAN}, /* nocase fullword end fail */
-offset-size-arithmetic	unit_tests/check_matchers.c	1387	    thefmap.len         = (size_t)UINT32_MAX + 1U;
-offset-size-arithmetic	unit_tests/check_matchers.c	1392	    engine->bcs.all_bcs = calloc(1, sizeof(*engine->bcs.all_bcs));
-offset-size-arithmetic	unit_tests/check_matchers.c	1445	    uint8_t code[1 + sizeof(uint64_t) + 1 + 1 + 1];
-offset-size-arithmetic	unit_tests/check_matchers.c	1457	    code[1 + sizeof(uint64_t) + 1] = OP_POP;
-offset-size-arithmetic	unit_tests/check_matchers.c	1458	    code[1 + sizeof(uint64_t) + 1 + 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	1494	    if (at > map->len || len > map->len - at)
-offset-size-arithmetic	unit_tests/check_matchers.c	1499	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
-offset-size-arithmetic	unit_tests/check_matchers.c	1501	    code[offset++] = OP_PUSH;
-offset-size-arithmetic	unit_tests/check_matchers.c	1503	    return offset + sizeof(value);
-offset-size-arithmetic	unit_tests/check_matchers.c	1629	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-offset-size-arithmetic	unit_tests/check_matchers.c	1640	    code[sizeof(code) - 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	1675	    uint8_t code[3 * (1 + sizeof(uint64_t)) + 3];
-offset-size-arithmetic	unit_tests/check_matchers.c	1686	    code[offset++] = OP_JLE;
-offset-size-arithmetic	unit_tests/check_matchers.c	1687	    target = PTR_TO_UINT64(code + offset + sizeof(target));
-offset-size-arithmetic	unit_tests/check_matchers.c	1689	    offset += sizeof(target);
-offset-size-arithmetic	unit_tests/check_matchers.c	1690	    code[offset++] = OP_POP;
-offset-size-arithmetic	unit_tests/check_matchers.c	1691	    code[offset++] = OP_POP;
-offset-size-arithmetic	unit_tests/check_matchers.c	1815	    ck_assert_int_eq(cl_engine_set_num((struct cl_engine *)ctx.engine, CL_ENGINE_MAX_MATCHER_WORK, sizeof(bytes) - 1), CL_SUCCESS);
-offset-size-arithmetic	unit_tests/check_matchers.c	1833	    const size_t push_count = YARA_STACK_CAPACITY + 1;
-offset-size-arithmetic	unit_tests/check_matchers.c	1834	    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
-offset-size-arithmetic	unit_tests/check_matchers.c	1843	    code = calloc(code_length, sizeof(*code));
-offset-size-arithmetic	unit_tests/check_matchers.c	1847	    code[code_length - 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	1881	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+offset-size-arithmetic	unit_tests/check_matchers.c	1406	    thefmap.len         = (size_t)UINT32_MAX + 1U;
+offset-size-arithmetic	unit_tests/check_matchers.c	1411	    engine->bcs.all_bcs = calloc(1, sizeof(*engine->bcs.all_bcs));
+offset-size-arithmetic	unit_tests/check_matchers.c	1464	    uint8_t code[1 + sizeof(uint64_t) + 1 + 1 + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	1476	    code[1 + sizeof(uint64_t) + 1] = OP_POP;
+offset-size-arithmetic	unit_tests/check_matchers.c	1477	    code[1 + sizeof(uint64_t) + 1 + 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	1513	    if (at > map->len || len > map->len - at)
+offset-size-arithmetic	unit_tests/check_matchers.c	1518	static size_t yara_emit_push(uint8_t *code, size_t offset, int64_t value)
+offset-size-arithmetic	unit_tests/check_matchers.c	1520	    code[offset++] = OP_PUSH;
+offset-size-arithmetic	unit_tests/check_matchers.c	1522	    return offset + sizeof(value);
+offset-size-arithmetic	unit_tests/check_matchers.c	1648	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	1659	    code[sizeof(code) - 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	1694	    uint8_t code[3 * (1 + sizeof(uint64_t)) + 3];
+offset-size-arithmetic	unit_tests/check_matchers.c	1705	    code[offset++] = OP_JLE;
+offset-size-arithmetic	unit_tests/check_matchers.c	1706	    target = PTR_TO_UINT64(code + offset + sizeof(target));
+offset-size-arithmetic	unit_tests/check_matchers.c	1708	    offset += sizeof(target);
+offset-size-arithmetic	unit_tests/check_matchers.c	1709	    code[offset++] = OP_POP;
+offset-size-arithmetic	unit_tests/check_matchers.c	1710	    code[offset++] = OP_POP;
+offset-size-arithmetic	unit_tests/check_matchers.c	1834	    ck_assert_int_eq(cl_engine_set_num((struct cl_engine *)ctx.engine, CL_ENGINE_MAX_MATCHER_WORK, sizeof(bytes) - 1), CL_SUCCESS);
+offset-size-arithmetic	unit_tests/check_matchers.c	1852	    const size_t push_count = YARA_STACK_CAPACITY + 1;
+offset-size-arithmetic	unit_tests/check_matchers.c	1853	    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
+offset-size-arithmetic	unit_tests/check_matchers.c	1862	    code = calloc(code_length, sizeof(*code));
+offset-size-arithmetic	unit_tests/check_matchers.c	1866	    code[code_length - 1] = OP_HALT;
 offset-size-arithmetic	unit_tests/check_matchers.c	189	    if (map == NULL || len == 0 || at > map->len || len > map->len - at ||
-offset-size-arithmetic	unit_tests/check_matchers.c	1891	    code[offset++] = OP_DIV;
-offset-size-arithmetic	unit_tests/check_matchers.c	1927	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-offset-size-arithmetic	unit_tests/check_matchers.c	1937	    code[offset++] = OP_SHL;
-offset-size-arithmetic	unit_tests/check_matchers.c	2049	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-offset-size-arithmetic	unit_tests/check_matchers.c	2059	    code[sizeof(code) - 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	2091	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-offset-size-arithmetic	unit_tests/check_matchers.c	2101	    code[sizeof(code) - 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	1900	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+offset-size-arithmetic	unit_tests/check_matchers.c	1910	    code[offset++] = OP_DIV;
+offset-size-arithmetic	unit_tests/check_matchers.c	1946	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+offset-size-arithmetic	unit_tests/check_matchers.c	1956	    code[offset++] = OP_SHL;
+offset-size-arithmetic	unit_tests/check_matchers.c	2068	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	2078	    code[sizeof(code) - 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	2110	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	2120	    code[sizeof(code) - 1] = OP_HALT;
 offset-size-arithmetic	unit_tests/check_matchers.c	226	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
-offset-size-arithmetic	unit_tests/check_matchers.c	2276	    ck_assert_uint_eq(mdata.lsigsuboff_last[0][1], reference_offset + 4);
-offset-size-arithmetic	unit_tests/check_matchers.c	2332	    first_name  = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundaryFirst") + 1, 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2333	    second_name = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundarySecond") + 1, 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2342	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
-offset-size-arithmetic	unit_tests/check_matchers.c	2378	    for (i = 0; i < sizeof(labels) / sizeof(labels[0]); i++) {
-offset-size-arithmetic	unit_tests/check_matchers.c	2379	        for (j = 0; j < sizeof(sizes) / sizeof(sizes[0]); j++) {
-offset-size-arithmetic	unit_tests/check_matchers.c	2383	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
-offset-size-arithmetic	unit_tests/check_matchers.c	2384	            name = MPOOL_CALLOC(ctx.engine->mempool, strlen(label) + 1, 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2395	            ck_assert(cli_hm_have_size(*roots[i], CLI_HASH_MD5, sizes[j]));
-offset-size-arithmetic	unit_tests/check_matchers.c	2396	            ck_assert_int_eq(cli_hm_scan(digest, sizes[j], &matched, *roots[i], CLI_HASH_MD5),
-offset-size-arithmetic	unit_tests/check_matchers.c	2468	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
-offset-size-arithmetic	unit_tests/check_matchers.c	2473	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
-offset-size-arithmetic	unit_tests/check_matchers.c	2479	    if (count > state->length - (size_t)offset)
-offset-size-arithmetic	unit_tests/check_matchers.c	2480	        count = state->length - (size_t)offset;
-offset-size-arithmetic	unit_tests/check_matchers.c	2492	    state.length  = (size_t)SCANBUFF + 1;
-offset-size-arithmetic	unit_tests/check_matchers.c	2504	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
-offset-size-arithmetic	unit_tests/check_matchers.c	2517	    if ((at == 0) && (len == map->len))
-offset-size-arithmetic	unit_tests/check_matchers.c	2519	    if ((len == 0) || (at > map->len) || (len > map->len - at))
-offset-size-arithmetic	unit_tests/check_matchers.c	2708	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2715	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2295	    ck_assert_uint_eq(mdata.lsigsuboff_last[0][1], reference_offset + 4);
+offset-size-arithmetic	unit_tests/check_matchers.c	2351	    first_name  = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundaryFirst") + 1, 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2352	    second_name = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundarySecond") + 1, 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2361	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
+offset-size-arithmetic	unit_tests/check_matchers.c	2397	    for (i = 0; i < sizeof(labels) / sizeof(labels[0]); i++) {
+offset-size-arithmetic	unit_tests/check_matchers.c	2398	        for (j = 0; j < sizeof(sizes) / sizeof(sizes[0]); j++) {
+offset-size-arithmetic	unit_tests/check_matchers.c	2402	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
+offset-size-arithmetic	unit_tests/check_matchers.c	2403	            name = MPOOL_CALLOC(ctx.engine->mempool, strlen(label) + 1, 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2414	            ck_assert(cli_hm_have_size(*roots[i], CLI_HASH_MD5, sizes[j]));
+offset-size-arithmetic	unit_tests/check_matchers.c	2415	            ck_assert_int_eq(cli_hm_scan(digest, sizes[j], &matched, *roots[i], CLI_HASH_MD5),
+offset-size-arithmetic	unit_tests/check_matchers.c	2487	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
+offset-size-arithmetic	unit_tests/check_matchers.c	2492	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
+offset-size-arithmetic	unit_tests/check_matchers.c	2498	    if (count > state->length - (size_t)offset)
+offset-size-arithmetic	unit_tests/check_matchers.c	2499	        count = state->length - (size_t)offset;
+offset-size-arithmetic	unit_tests/check_matchers.c	2511	    state.length  = (size_t)SCANBUFF + 1;
+offset-size-arithmetic	unit_tests/check_matchers.c	2523	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
+offset-size-arithmetic	unit_tests/check_matchers.c	2536	    if ((at == 0) && (len == map->len))
+offset-size-arithmetic	unit_tests/check_matchers.c	2538	    if ((len == 0) || (at > map->len) || (len > map->len - at))
+offset-size-arithmetic	unit_tests/check_matchers.c	2727	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2734	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
 offset-size-arithmetic	unit_tests/check_matchers.c	529	        hexlen = strlen(PCRE_BYPASS) + strlen(pcre_testdata[i].hexsig) + 1;
 offset-size-arithmetic	unit_tests/check_matchers.c	532	        ck_assert_msg(hexsig != NULL, "[pcre] failed to prepend bypass (out-of-memory)");
 offset-size-arithmetic	unit_tests/check_matchers.c	581	        hexlen = strlen(PCRE_BYPASS) + strlen(pcre_testdata[i].hexsig) + 1;
@@ -39553,6 +39568,9 @@ offset-size-arithmetic	unit_tests/check_matchers.c	880	    const size_t max_last
 offset-size-arithmetic	unit_tests/check_matchers.c	881	                            (sizeof(uint64_t) * 2U);
 offset-size-arithmetic	unit_tests/check_matchers.c	884	    ck_assert_uint_eq(bytes, sizeof(struct cli_subsig_matches) + 15U * 2U * sizeof(uint64_t));
 offset-size-arithmetic	unit_tests/check_matchers.c	887	    ck_assert_int_eq(cli_ac_match_offset_table_size((uint32_t)(max_last + 1U), &bytes, &new_last), CL_ERESOURCE);
+offset-size-arithmetic	unit_tests/check_matchers.c	942	    size_t hex_length = ((size_t)UINT16_MAX + 1U) * 2U;
+offset-size-arithmetic	unit_tests/check_matchers.c	945	    hexsig = malloc(hex_length + 1U);
+offset-size-arithmetic	unit_tests/check_matchers.c	950	    ck_assert_int_eq(cli_add_content_match_pattern(root, "OversizedBodyPattern", hexsig, 0, 0, 0, "*", NULL, 0),
 offset-size-arithmetic	unit_tests/check_regex.c	118	static cl_error_t cb_expect_multi(void *cbdata, const char *suffix, size_t len, const struct regex_list *r)
 offset-size-arithmetic	unit_tests/check_regex.c	144	    preg = malloc(sizeof(*regex.preg));
 offset-size-arithmetic	unit_tests/check_regex.c	209	    /* entry taken from .wdb with a / appended */
