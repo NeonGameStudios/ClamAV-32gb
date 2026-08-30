@@ -37,6 +37,7 @@
 #include "others.h"
 
 cl_error_t cli_scanswf(cli_ctx *ctx);
+cl_error_t cli_swf_output_size_add(size_t current, size_t amount, size_t *next);
 
 typedef enum {
     TAG_END                 = 0,

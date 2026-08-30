@@ -100,6 +100,16 @@ static cl_error_t swf_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+cl_error_t cli_swf_output_size_add(size_t current, size_t amount, size_t *next)
+{
+    if (next == NULL)
+        return CL_EARG;
+    if (amount > SIZE_MAX - current)
+        return CL_ERESOURCE;
+    *next = current + amount;
+    return CL_SUCCESS;
+}
+
 static cl_error_t swf_scan_overlay(cli_ctx *ctx, fmap_t *map, size_t offset)
 {
     if (map->len <= offset)
@@ -271,6 +281,7 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     cl_error_t decode_status = CL_SUCCESS;
     int lret;
     size_t count;
+    size_t next_outsize;
     char *tmpname;
     int fd;
     size_t n_read;
@@ -368,7 +379,11 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         lret  = cli_LzmaDecode(&lz);
         count = FILEBUFF - lz.avail_out;
         if (count) {
-            if ((decode_status = cli_checklimits("SWF", ctx, outsize + count, 0, 0)) != CL_SUCCESS)
+            if ((decode_status = cli_swf_output_size_add(outsize, count, &next_outsize)) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "SWF decompressed output size overflowed");
+                break;
+            }
+            if ((decode_status = cli_checklimits("SWF", ctx, next_outsize, 0, 0)) != CL_SUCCESS)
                 break;
             if ((decode_status = swf_write_output(ctx, fd, outbuff, count, &temporary_reserved,
                                                   "SWF LZMA output could not be written completely")) != CL_SUCCESS) {
@@ -376,7 +391,7 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
                 cli_LzmaShutdown(&lz);
                 return swf_cleanup_temp(ctx, fd, tmpname, decode_status, temporary_reserved);
             }
-            outsize += count;
+            outsize = next_outsize;
         }
         lz.next_out  = outbuff;
         lz.avail_out = FILEBUFF;
@@ -421,6 +436,7 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     cl_error_t decode_status = CL_SUCCESS;
     size_t outsize           = 8;
     size_t count;
+    size_t next_outsize;
     size_t n_read;
     char *tmpname;
     int fd;
@@ -478,7 +494,11 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         zret  = inflate(&stream, Z_SYNC_FLUSH);
         count = FILEBUFF - stream.avail_out;
         if (count) {
-            if ((decode_status = cli_checklimits("SWF", ctx, outsize + count, 0, 0)) != CL_SUCCESS)
+            if ((decode_status = cli_swf_output_size_add(outsize, count, &next_outsize)) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "SWF decompressed output size overflowed");
+                break;
+            }
+            if ((decode_status = cli_checklimits("SWF", ctx, next_outsize, 0, 0)) != CL_SUCCESS)
                 break;
             if ((decode_status = swf_write_output(ctx, fd, outbuff, count, &temporary_reserved,
                                                   "SWF zlib output could not be written completely")) != CL_SUCCESS) {
@@ -486,7 +506,7 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
                 inflateEnd(&stream);
                 return swf_cleanup_temp(ctx, fd, tmpname, decode_status, temporary_reserved);
             }
-            outsize += count;
+            outsize = next_outsize;
         }
         stream.next_out  = (Bytef *)outbuff;
         stream.avail_out = FILEBUFF;

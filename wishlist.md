@@ -8657,3 +8657,13 @@ qualification as required evidence.
   add current-object execution, complete OLE2/VBA/XLM corpus, sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final
   parser/release qualification before marking the capability complete.
+
+## SWF compressed-output size admission — 2026-08-30
+
+- Keep CWS/ZWS decompressed-output accounting behind checked native-size
+  addition before shared-limit admission; overflow must remain `CL_ERESOURCE`,
+  sticky incomplete, and non-cacheable rather than wrapping the output counter.
+- Retain `test_swf_output_size_add_rejects_native_overflow` and its source
+  guards; complete SWF corpus, production-linked execution, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, and final parser/release qualification remain required.

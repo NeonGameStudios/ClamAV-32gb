@@ -10635,6 +10635,18 @@ START_TEST(test_swf_zlib_truncated_stream_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_swf_output_size_add_rejects_native_overflow)
+{
+    size_t next = 0;
+
+    ck_assert_int_eq(cli_swf_output_size_add(8, FILEBUFF, &next), CL_SUCCESS);
+    ck_assert_uint_eq(next, 8U + FILEBUFF);
+    ck_assert_int_eq(cli_swf_output_size_add(SIZE_MAX, 1, &next), CL_ERESOURCE);
+    ck_assert_uint_eq(next, 8U + FILEBUFF);
+    ck_assert_int_eq(cli_swf_output_size_add(0, 0, NULL), CL_EARG);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_swf_zlib_decoder_init_failure_is_fail_visible)
 {
@@ -48932,6 +48944,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_swf);
     tcase_add_checked_fixture(tc_swf, cl_setup, cl_teardown);
     tcase_add_test(tc_swf, test_swf_zlib_truncated_stream_is_fail_visible);
+    tcase_add_test(tc_swf, test_swf_output_size_add_rejects_native_overflow);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_swf, test_swf_zlib_decoder_init_failure_is_fail_visible);
 #endif

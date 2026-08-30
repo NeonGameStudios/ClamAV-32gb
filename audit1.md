@@ -15845,3 +15845,16 @@ initialized` before cleanup and return. Source guards cover the failure
 contract. Allocator-fault execution, complete RTF corpus, sanitizer,
 production-CVD/service, materialized large-file, Sonic1, and parser-family
 qualification remain open.
+
+## SWF compressed-output size admission — 2026-08-30
+
+The CWS and ZWS decoders passed `outsize + count` to shared scan-limit
+admission before proving that the native `size_t` addition was representable.
+That could wrap the output counter on a narrow build near the 32-bit SWF
+declared-size boundary. `cli_swf_output_size_add()` now rejects the overflow
+as `CL_ERESOURCE`; both decoders mark the layer incomplete before cleanup, and
+the direct boundary regression covers success, overflow, and invalid-output
+arguments. Source guards and the current-source GCC syntax check are required
+evidence; full SWF corpus, production-linked execution, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.
