@@ -1,5 +1,12 @@
 # Wishlist
 
+## GPT partition-name diagnostic fallback — 2026-08-30
+
+- Keep the GPT partition-name diagnostic on an explicit empty-string fallback
+  when UTF-16 conversion returns `NULL`; full GPT/partition-image corpus,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final release qualification remain open.
+
 ## EGG LZMA stream initialization teardown — 2026-08-30
 
 - Keep EGG streaming LZMA cleanup conditional on a decoder that actually

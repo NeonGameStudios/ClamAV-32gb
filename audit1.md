@@ -1,5 +1,14 @@
 # Independent read-only audit of audit.md
 
+## GPT partition-name diagnostic fallback — 2026-08-30
+
+GPT partition names are converted from fixed-width UTF-16 metadata for
+diagnostics. The conversion can legitimately return `NULL` on a short input
+or allocation failure; the debug logger now receives an explicit empty-string
+fallback instead of a null `%s` argument. This is a diagnostic-only safety
+hardening; GPT parser corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## EGG LZMA stream initialization teardown — 2026-08-30
 
 The EGG streaming LZMA path unconditionally called `cli_LzmaShutdown()` on

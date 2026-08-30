@@ -3,6 +3,14 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## GPT partition-name diagnostic fallback — 2026-08-30
+
+GPT partition-name conversion can return `NULL` for a short or unallocatable
+fixed-width UTF-16 name. The diagnostic path now substitutes an explicit
+empty string before passing the value to `%s`, keeping debug-enabled parser
+execution defined. GPT corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## EGG LZMA stream initialization teardown — 2026-08-30
 
 The EGG streaming LZMA member path now records decoder initialization before

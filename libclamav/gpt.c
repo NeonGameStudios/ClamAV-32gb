@@ -461,7 +461,7 @@ static cl_error_t gpt_scan_partitions(cli_ctx *ctx, struct gpt_header hdr, size_
 
             /* print partition entry data for debug */
             cli_dbgmsg("GPT Partition Entry %u:\n", i);
-            cli_dbgmsg("Name: %s\n", namestr);
+            cli_dbgmsg("Name: %s\n", namestr ? namestr : "");
             gpt_printGUID(gpe.typeGUID, "Type GUID");
             gpt_printGUID(gpe.uniqueGUID, "Unique GUID");
             cli_dbgmsg("Attributes: %llx\n", (long long unsigned)gpe.attributes);
