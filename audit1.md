@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## HFS+ compressed-resource map admission — 2026-08-30
+
+HFS+ decmpfs resource discovery previously ignored the resource map's declared
+type-list and per-type reference-list offsets, then derived the `cmpf`
+reference from a global instance count. That could miss valid compressed
+resources or read unrelated map bytes as a resource entry. It now validates
+the resource data/map extents against the materialized fork, walks the bounded
+declared type and reference lists, resolves the `cmpf` reference from its
+declared list, validates the compressed resource extent, and rejects block
+table entries outside that extent. Decoder cleanup now finalizes initialized
+zlib streams on read, decode, timeout, output, and truncation failures. The
+current HFS+ source compiles with Docker production-GCC flags and source
+disposable current-source resource-map oracle passes under production GCC and
+GCC ASan/UBSan; the registered unit regression and source guards cover the
+same declared-offset boundary. Focused compressed-resource corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.
+
 ## SWF decoder initialization evidence — 2026-08-30
 
 The SWF CWS and ZWS paths previously returned `CL_EUNPACK` when the zlib or

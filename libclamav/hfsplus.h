@@ -383,6 +383,7 @@ typedef struct hfsPlusResourceBlockTable hfsPlusResourceBlockTable;
 cl_error_t cli_hfsplus_inflate_inline(cli_ctx *ctx, const uint8_t *input,
                                       size_t input_size, uint64_t expected_size,
                                       int output_fd, uint64_t *written);
+cl_error_t cli_hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size);
 cl_error_t cli_scanhfsplus(cli_ctx *ctx);
 
 #endif

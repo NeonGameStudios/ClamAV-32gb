@@ -3,6 +3,22 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HFS+ compressed-resource map admission — 2026-08-30
+
+HFS+ decmpfs resource discovery now honors the resource map's declared
+type-list and per-type reference-list offsets instead of deriving the `cmpf`
+reference from a global instance count. The materialized resource fork's map
+and data extents, bounded type/reference lists, compressed-resource extent,
+and every block-table range are validated before seeking or decoding.
+Initialized zlib streams are finalized on read, decode, timeout, output, and
+truncation failures. The current HFS+ source compiles with Docker
+production-GCC flags, and the disposable current-source resource-map oracle
+passes under production GCC and GCC ASan/UBSan; the registered unit regression
+and source guards cover the declared-offset boundary. Focused
+compressed-resource corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## clamd dispatch-failure resource ownership — 2026-08-30
 
 The clamd receive and dispatch boundary now transfers INSTREAM descriptor and

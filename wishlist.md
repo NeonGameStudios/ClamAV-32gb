@@ -1,5 +1,16 @@
 # Wishlist
 
+## HFS+ compressed-resource map admission — 2026-08-30
+
+- Keep HFS+ decmpfs resource discovery aligned with the resource map's
+  declared type-list and per-type reference-list offsets. Validate map/data
+  extents and every compressed-resource block table range before seeking or
+  decoding, and finalize initialized zlib streams on all failure exits. The
+  current-source declared-offset oracle passes under production GCC and GCC
+  ASan/UBSan; keep focused compressed-resource corpus and sanitizer/fault-
+  injection coverage open, then complete production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification.
+
 ## SWF decoder initialization evidence — 2026-08-30
 
 - Keep CWS and ZWS decoder-initialization failures sticky and non-cacheable

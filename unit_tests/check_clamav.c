@@ -42730,6 +42730,61 @@ START_TEST(test_hfsplus_resource_block_offset_overflow_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hfsplus_resource_map_uses_declared_offsets)
+{
+    uint8_t data[128];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    char *path = NULL;
+    size_t resource_size = 0;
+    int fd = -1;
+
+    memset(data, 0, sizeof(data));
+    /* Resource header: data at 16, map at 64, with room for one cmpf item. */
+    test_hfsplus_put_be32(data + 0, 16);
+    test_hfsplus_put_be32(data + 4, 64);
+    test_hfsplus_put_be32(data + 8, 16);
+    test_hfsplus_put_be32(data + 12, 50);
+    test_hfsplus_put_be16(data + 64 + offsetof(hfsPlusResourceMap, typeListOffset), 28);
+    test_hfsplus_put_be16(data + 64 + offsetof(hfsPlusResourceMap, nameListOffset), 40);
+    test_hfsplus_put_be16(data + 64 + offsetof(hfsPlusResourceMap, typeCount), 0);
+    memcpy(data + 64 + 30, "cmpf", 4);
+    test_hfsplus_put_be16(data + 64 + 34, 0);
+    test_hfsplus_put_be16(data + 64 + 36, 10);
+    test_hfsplus_put_be16(data + 64 + 38, 1);
+    test_hfsplus_put_be16(data + 64 + 40, UINT16_MAX);
+    data[64 + 42] = 0;
+    data[64 + 43] = 0;
+    data[64 + 44] = 0;
+    test_hfsplus_put_be32(data + 16, 8);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_int_eq(write(fd, data, sizeof(data)), (ssize_t)sizeof(data));
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    ck_assert_int_eq(cli_hfsplus_seek_to_cmpf_resource(&ctx, fd, &resource_size), CL_SUCCESS);
+    ck_assert_uint_eq(resource_size, 8);
+
+    /* A reference offset outside the bounded map must not fall through to a
+     * cursor-relative read or expose unrelated bytes as a resource entry. */
+    test_hfsplus_put_be16(data + 64 + 36, 46);
+    ck_assert_int_eq(lseek(fd, 64 + 36, SEEK_SET), 64 + 36);
+    ck_assert_int_eq(write(fd, data + 64 + 36, sizeof(uint16_t)), (ssize_t)sizeof(uint16_t));
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ck_assert_int_eq(cli_hfsplus_seek_to_cmpf_resource(&ctx, fd, &resource_size), CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+}
+END_TEST
+
 START_TEST(test_hfsplus_declared_volume_boundary_is_fail_visible)
 {
     uint8_t data[1024 + (32 * 512)];
@@ -47208,6 +47263,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hfs_map, test_hfsplus_missing_engine_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_resource_reference_index_overflow_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_resource_block_offset_overflow_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_resource_map_uses_declared_offsets);
     tcase_add_test(tc_hfs_map, test_hfsplus_declared_volume_boundary_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_catalog_key_length_padding_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_declared_attributes_failure_is_fail_visible);

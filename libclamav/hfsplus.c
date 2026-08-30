@@ -1053,20 +1053,24 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     return CL_CLEAN;
 }
 
-static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
+cl_error_t cli_hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
 {
     cl_error_t status = CL_SUCCESS;
     hfsPlusResourceHeader resourceHeader;
     hfsPlusResourceMap resourceMap;
     hfsPlusResourceType resourceType;
     hfsPlusReferenceEntry entry;
-    int i;
-    uint64_t cmpfInstanceIdx = UINT64_MAX;
-    uint64_t curInstanceIdx  = 0;
-    size_t dataOffset;
+    STATBUF resource_stat;
+    uint64_t file_size;
+    uint64_t type_list_offset;
+    uint64_t type_table_size;
+    uint64_t cmpf_reference_offset = UINT64_MAX;
+    uint16_t type_count_raw;
+    uint32_t type_count;
+    uint32_t i;
     uint32_t dataLength;
 
-    if (!size) {
+    if (!ctx || !size) {
         status = CL_ENULLARG;
         goto done;
     }
@@ -1083,7 +1087,24 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
     resourceHeader.dataLength = be32_to_host(resourceHeader.dataLength);
     resourceHeader.mapLength  = be32_to_host(resourceHeader.mapLength);
 
-    // TODO: Need to get offset of cmpf resource in data stream
+    if (FSTAT(fd, &resource_stat) != 0 || resource_stat.st_size < 0) {
+        cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to determine resource fork size\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ resource fork size could not be determined");
+        status = CL_EREAD;
+        goto done;
+    }
+    file_size = (uint64_t)resource_stat.st_size;
+
+    if ((uint64_t)resourceHeader.mapOffset > file_size ||
+        (uint64_t)resourceHeader.mapLength > file_size - resourceHeader.mapOffset ||
+        resourceHeader.mapLength < sizeof(resourceMap) ||
+        (uint64_t)resourceHeader.dataOffset > file_size ||
+        (uint64_t)resourceHeader.dataLength > file_size - resourceHeader.dataOffset) {
+        cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource data or map is outside the fork\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ resource data or map is outside the fork");
+        status = CL_EFORMAT;
+        goto done;
+    }
 
     if (lseek(fd, resourceHeader.mapOffset, SEEK_SET) != resourceHeader.mapOffset) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to map in temporary file\n");
@@ -1102,9 +1123,52 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
     resourceMap.resourceForkAttributes = be16_to_host(resourceMap.resourceForkAttributes);
     resourceMap.typeListOffset         = be16_to_host(resourceMap.typeListOffset);
     resourceMap.nameListOffset         = be16_to_host(resourceMap.nameListOffset);
-    resourceMap.typeCount              = be16_to_host(resourceMap.typeCount);
 
-    for (i = 0; i < resourceMap.typeCount + 1; ++i) {
+    memcpy(&type_count_raw, &resourceMap.typeCount, sizeof(type_count_raw));
+    type_count_raw = be16_to_host(type_count_raw);
+    if (type_count_raw == UINT16_MAX) {
+        cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource type list is empty\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type is missing");
+        status = CL_EFORMAT;
+        goto done;
+    }
+    type_count = (uint32_t)type_count_raw + 1U;
+    type_list_offset = resourceMap.typeListOffset;
+    if (type_list_offset < offsetof(hfsPlusResourceMap, typeCount) ||
+        type_list_offset > resourceHeader.mapLength ||
+        sizeof(uint16_t) > resourceHeader.mapLength - type_list_offset) {
+        cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource type list is outside the map\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type list is outside the map");
+        status = CL_EFORMAT;
+        goto done;
+    }
+    type_table_size = sizeof(uint16_t) + (uint64_t)type_count * sizeof(resourceType);
+    if (type_table_size > resourceHeader.mapLength - type_list_offset) {
+        cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource type list is truncated\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type list is truncated");
+        status = CL_EFORMAT;
+        goto done;
+    }
+
+    {
+        uint64_t type_entries_offset = (uint64_t)resourceHeader.mapOffset + type_list_offset + sizeof(uint16_t);
+        off_t type_entries_seek = (off_t)type_entries_offset;
+
+        if (type_entries_seek < 0 || (uint64_t)type_entries_seek != type_entries_offset ||
+            lseek(fd, type_entries_seek, SEEK_SET) != type_entries_seek) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to type list in temporary file\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type list could not be located completely");
+            status = CL_ESEEK;
+            goto done;
+        }
+    }
+
+    for (i = 0; i < type_count; ++i) {
+        uint64_t reference_list_offset;
+        uint64_t reference_count;
+        uint64_t reference_bytes;
+        uint64_t reference_relative;
+
         if (cli_readn(fd, &resourceType, sizeof(resourceType)) != sizeof(resourceType)) {
             cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to read resource type from temporary file\n");
             cli_mark_scan_incomplete(ctx, "HFS+ resource type table could not be read completely");
@@ -1114,28 +1178,33 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
         resourceType.instanceCount       = be16_to_host(resourceType.instanceCount);
         resourceType.referenceListOffset = be16_to_host(resourceType.referenceListOffset);
 
+        reference_relative = resourceType.referenceListOffset;
+        reference_count    = (uint64_t)resourceType.instanceCount + 1U;
+        reference_bytes    = reference_count * sizeof(hfsPlusReferenceEntry);
+        if (type_list_offset > resourceHeader.mapLength ||
+            reference_relative > resourceHeader.mapLength - type_list_offset ||
+            reference_bytes > resourceHeader.mapLength - type_list_offset - reference_relative) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource reference list is outside the map\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource reference list is outside the map");
+            status = CL_EFORMAT;
+            goto done;
+        }
+
         if (memcmp(resourceType.type, "cmpf", 4) == 0) {
-            if (cmpfInstanceIdx != UINT64_MAX) {
+            if (cmpf_reference_offset != UINT64_MAX) {
                 cli_dbgmsg("hfsplus_seek_to_cmpf_resource: There are several cmpf resource types in the file\n");
                 cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type table is ambiguous");
                 status = CL_EFORMAT;
                 goto done;
             }
 
-            cmpfInstanceIdx = curInstanceIdx;
+            reference_list_offset = (uint64_t)resourceHeader.mapOffset + type_list_offset + reference_relative;
+            cmpf_reference_offset = reference_list_offset;
             cli_dbgmsg("Found compressed resource type!\n");
         }
-
-        if (curInstanceIdx > UINT64_MAX - ((uint64_t)resourceType.instanceCount + 1U)) {
-            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource instance index overflowed\n");
-            cli_mark_scan_incomplete(ctx, "HFS+ resource instance index overflowed");
-            status = CL_EFORMAT;
-            goto done;
-        }
-        curInstanceIdx += (uint64_t)resourceType.instanceCount + 1U;
     }
 
-    if (cmpfInstanceIdx == UINT64_MAX) {
+    if (cmpf_reference_offset == UINT64_MAX) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Didn't find cmpf resource type\n");
         cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type is missing");
         status = CL_EFORMAT;
@@ -1143,23 +1212,15 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
     }
 
     {
-        uint64_t reference_offset64 = 0;
-        off_t reference_offset;
+        off_t reference_offset = (off_t)cmpf_reference_offset;
 
-        if (cli_hfsplus_resource_reference_offset(cmpfInstanceIdx, &reference_offset64) != CL_SUCCESS) {
-            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource reference index overflowed\n");
-            cli_mark_scan_incomplete(ctx, "HFS+ resource reference index overflowed");
-            status = CL_EFORMAT;
-            goto done;
-        }
-        reference_offset     = (off_t)reference_offset64;
-        if (reference_offset < 0 || (uint64_t)reference_offset != reference_offset64) {
+        if (reference_offset < 0 || (uint64_t)reference_offset != cmpf_reference_offset) {
             cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource reference index is not representable\n");
             cli_mark_scan_incomplete(ctx, "HFS+ resource reference index is not representable");
             status = CL_EFORMAT;
             goto done;
         }
-        if (lseek(fd, reference_offset, SEEK_CUR) < 0) {
+        if (lseek(fd, reference_offset, SEEK_SET) < 0) {
             cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to instance index\n");
             cli_mark_scan_incomplete(ctx, "HFS+ compressed resource index could not be located completely");
             status = CL_ESEEK;
@@ -1174,21 +1235,30 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
         goto done;
     }
 
-    dataOffset = (entry.resourceDataOffset[0] << 16) | (entry.resourceDataOffset[1] << 8) | entry.resourceDataOffset[2];
-
     {
+        uint64_t data_offset_in_fork = ((uint64_t)entry.resourceDataOffset[0] << 16) |
+                                       ((uint64_t)entry.resourceDataOffset[1] << 8) |
+                                       (uint64_t)entry.resourceDataOffset[2];
         uint64_t data_offset64;
         off_t data_offset;
 
-        if ((uint64_t)dataOffset > UINT64_MAX - (uint64_t)resourceHeader.dataOffset) {
-            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource data offset overflowed\n");
-            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource data offset overflowed");
+        if (data_offset_in_fork > resourceHeader.dataLength ||
+            sizeof(dataLength) > resourceHeader.dataLength - data_offset_in_fork) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource data entry is outside the data area\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource data entry is outside the data area");
             status = CL_EFORMAT;
             goto done;
         }
-        data_offset64 = (uint64_t)resourceHeader.dataOffset + (uint64_t)dataOffset;
-        data_offset    = (off_t)data_offset64;
+        data_offset64 = (uint64_t)resourceHeader.dataOffset + data_offset_in_fork;
+        if (data_offset64 > file_size || sizeof(dataLength) > file_size - data_offset64) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource data entry is outside the fork\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource data entry is outside the fork");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        data_offset = (off_t)data_offset64;
         if (data_offset < 0 || (uint64_t)data_offset != data_offset64) {
+            cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource data offset overflowed\n");
             cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Resource data offset is not representable\n");
             cli_mark_scan_incomplete(ctx, "HFS+ compressed resource data offset is not representable");
             status = CL_EFORMAT;
@@ -1210,6 +1280,16 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
     }
 
     *size = be32_to_host(dataLength);
+    if (*size > resourceHeader.dataLength -
+                  (((uint64_t)entry.resourceDataOffset[0] << 16) |
+                   ((uint64_t)entry.resourceDataOffset[1] << 8) |
+                   (uint64_t)entry.resourceDataOffset[2]) -
+                  sizeof(dataLength)) {
+        cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Compressed resource exceeds the data area\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource exceeds the data area");
+        status = CL_EFORMAT;
+        goto done;
+    }
 
 done:
     return status;
@@ -1609,7 +1689,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                 goto done;
                             } else {
                                 size_t resourceLen;
-                                if (CL_SUCCESS != (status = hfsplus_seek_to_cmpf_resource(ctx, ifd, &resourceLen))) {
+                                if (CL_SUCCESS != (status = cli_hfsplus_seek_to_cmpf_resource(ctx, ifd, &resourceLen))) {
                                     cli_dbgmsg("hfsplus_walk_catalog: Failed to find cmpf resource in resource fork\n");
                                 } else {
                                     uint32_t numBlocks;
@@ -1656,6 +1736,14 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                 status = CL_EFORMAT;
                                                 goto done;
                                             }
+                                            if ((uint64_t)table[curBlock].offset > resourceLen ||
+                                                (uint64_t)table[curBlock].length >
+                                                    resourceLen - (uint64_t)table[curBlock].offset) {
+                                                cli_dbgmsg("hfsplus_walk_catalog: compressed resource block exceeds its declared resource size\n");
+                                                cli_mark_scan_incomplete(ctx, "HFS+ compressed resource block exceeds its declared resource size");
+                                                status = CL_EFORMAT;
+                                                goto done;
+                                            }
                                             blockOffset = (off_t)blockOffset64;
                                             if (blockOffset < 0 || (uint64_t)blockOffset != blockOffset64) {
                                                 cli_dbgmsg("hfsplus_walk_catalog: compressed resource block offset is not representable\n");
@@ -1683,7 +1771,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                     cli_dbgmsg("hfsplus_walk_catalog: Failed to read block from temporary file\n");
                                                     cli_mark_scan_incomplete(ctx, "HFS+ compressed resource block could not be read completely");
                                                     status = CL_EREAD;
-                                                    goto done;
+                                                    goto resource_block_done;
                                                 }
 
                                                 if (streamBeginning) {
@@ -1703,7 +1791,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                             cli_dbgmsg("hfsplus_walk_catalog: inflateInit2 failed (%d)\n", z_ret);
                                                             cli_mark_scan_incomplete(ctx, "HFS+ compressed resource decoder could not be initialized");
                                                             status = CL_EFORMAT;
-                                                            goto done;
+                                                            goto resource_block_done;
                                                         }
                                                         stream_initialized = true;
                                                     }
@@ -1721,7 +1809,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                             cli_dbgmsg("hfsplus_walk_catalog: Failed to extract (%d)\n", z_ret);
                                                             cli_mark_scan_incomplete(ctx, "HFS+ compressed resource decoder failed before completion");
                                                             status = CL_EFORMAT;
-                                                            goto done;
+                                                            goto resource_block_done;
                                                         }
                                                         if (z_ret == Z_STREAM_END)
                                                             stream_complete = true;
@@ -1730,14 +1818,14 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                         status = cli_checktimelimit(ctx);
                                                         if (status != CL_SUCCESS) {
                                                             cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource output reached the configured time limit");
-                                                            goto done;
+                                                            goto resource_block_done;
                                                         }
                                                         if ((uint64_t)produced > header.fileSize - written ||
                                                             cli_writen(ofd, uncompressed_block, produced) != produced) {
                                                             cli_dbgmsg("hfsplus_walk_catalog: Failed to write to temporary file\n");
                                                             cli_mark_scan_incomplete(ctx, "HFS+ compressed output exceeded its declared size");
                                                             status = CL_EWRITE;
-                                                            goto done;
+                                                            goto resource_block_done;
                                                         }
                                                         written += produced;
                                                         stream.avail_out = sizeof(uncompressed_block);
@@ -1748,7 +1836,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                         if (stream.avail_in > 0 && Z_STREAM_END == z_ret) {
                                                             cli_mark_scan_incomplete(ctx, "HFS+ compressed resource contains trailing data");
                                                             status = CL_EFORMAT;
-                                                            goto done;
+                                                            goto resource_block_done;
                                                         }
                                                     }
                                                 } else {
@@ -1756,14 +1844,14 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                     status = cli_checktimelimit(ctx);
                                                     if (status != CL_SUCCESS) {
                                                         cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource output reached the configured time limit");
-                                                        goto done;
+                                                        goto resource_block_done;
                                                     }
                                                     if ((uint64_t)produced > header.fileSize - written ||
                                                         cli_writen(ofd, &block[streamBeginning ? 1 : 0], produced) != produced) {
                                                         cli_dbgmsg("hfsplus_walk_catalog: Failed to write to temporary file\n");
                                                         cli_mark_scan_incomplete(ctx, "HFS+ compressed output exceeded its declared size");
                                                         status = CL_EWRITE;
-                                                        goto done;
+                                                        goto resource_block_done;
                                                     }
                                                     written += produced;
 
@@ -1778,15 +1866,22 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                 if (!stream_complete) {
                                                     cli_mark_scan_incomplete(ctx, "HFS+ compressed resource ended before the decoder completed");
                                                     status = CL_EFORMAT;
-                                                    goto done;
-                                                }
-                                                if (stream_initialized && Z_OK != (z_ret = inflateEnd(&stream))) {
-                                                    cli_dbgmsg("hfsplus_walk_catalog: inflateEnd failed (%d)\n", z_ret);
-                                                    cli_mark_scan_incomplete(ctx, "HFS+ compressed resource decoder could not be finalized");
-                                                    status = CL_EFORMAT;
-                                                    goto done;
+                                                    goto resource_block_done;
                                                 }
                                             }
+
+resource_block_done:
+                                            if (stream_initialized) {
+                                                if (Z_OK != (z_ret = inflateEnd(&stream))) {
+                                                    cli_dbgmsg("hfsplus_walk_catalog: inflateEnd failed (%d)\n", z_ret);
+                                                    cli_mark_scan_incomplete(ctx, "HFS+ compressed resource decoder could not be finalized");
+                                                    if (status == CL_SUCCESS)
+                                                        status = CL_EFORMAT;
+                                                }
+                                                stream_initialized = false;
+                                            }
+                                            if (status != CL_SUCCESS)
+                                                goto done;
                                         }
 
                                         if (written != header.fileSize) {
