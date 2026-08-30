@@ -452,6 +452,16 @@ START_TEST(test_utf16_to_utf8_rejects_length_overflow)
 }
 END_TEST
 
+START_TEST(test_utf16_helpers_reject_invalid_empty_boundaries)
+{
+    unsigned char output = 0;
+
+    ck_assert_ptr_null(u16_normalize_tobuffer('A', NULL, 0));
+    ck_assert_ptr_null(u16_normalize_tobuffer('A', &output, 0));
+    ck_assert_ptr_null(cli_utf16_to_utf8(NULL, 2, E_UTF16_LE));
+}
+END_TEST
+
 Suite *test_str_suite(void)
 {
     Suite *s = suite_create("str");
@@ -478,6 +488,7 @@ Suite *test_str_suite(void)
     tcase_add_test(tc_str, test_str2hex_rejects_output_size_wrap);
     tcase_add_test(tc_str, test_base64_decode_rejects_length_overflow);
     tcase_add_test(tc_str, test_utf16_to_utf8_rejects_length_overflow);
+    tcase_add_test(tc_str, test_utf16_helpers_reject_invalid_empty_boundaries);
 
     tcase_add_loop_test(tc_str, test_u16_u8, 0, sizeof(u16_tests) / sizeof(u16_tests[0]));
 

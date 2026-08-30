@@ -116,6 +116,9 @@ static inline unsigned char* u16_normalize(uint16_t u16, unsigned char* out, con
 /* buffer must be at least 2 bytes in size */
 unsigned char* u16_normalize_tobuffer(uint16_t u16, unsigned char* dst, size_t dst_size)
 {
+    if (dst == NULL || dst_size < 2)
+        return NULL;
+
     unsigned char* out = u16_normalize(u16, dst, dst_size - 1);
     if (out) {
         *out++ = '\0';
@@ -1526,6 +1529,8 @@ char* cli_utf16_to_utf8(const char* utf16, size_t length, encoding_t type)
 
     if (length < 2)
         return cli_safer_strdup("");
+    if (utf16 == NULL)
+        return NULL;
     if (length % 2) {
         cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
         length--;

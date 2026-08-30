@@ -8836,3 +8836,14 @@ qualification evidence.
   production-linked execution, complete Base64 call-site/corpus, certified
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
   final parser-family/release qualification evidence.
+
+## UTF-16 normalization empty-boundary admission — 2026-08-30
+
+- Keep `u16_normalize_tobuffer()` fail-closed for null or sub-two-byte
+  destinations before `dst_size - 1`, and keep `cli_utf16_to_utf8()` fail-closed
+  for null non-empty input before BOM inspection.
+- Retain the expanded `check_str` regressions and source guards; the direct
+  current-source GCC and GCC ASan/UBSan runners pass. Add complete
+  text-normalization/ISO/HTML corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser-family/release qualification evidence.
