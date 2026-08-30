@@ -118,7 +118,19 @@ extern int clamav_test_fail_closedir;
 extern int clamav_test_fail_readdir;
 extern int clamav_test_short_write;
 extern size_t clamav_test_short_write_count;
+extern int __real_inflateInit_(z_streamp strm, const char *version, int stream_size);
 extern int __real_inflateInit2_(z_streamp strm, int windowBits, const char *version, int stream_size);
+int clamav_test_force_swf_decoder_init;
+
+int __wrap_inflateInit_(z_streamp strm, const char *version, int stream_size)
+{
+    if (clamav_test_force_swf_decoder_init) {
+        clamav_test_force_swf_decoder_init = 0;
+        return Z_MEM_ERROR;
+    }
+    return __real_inflateInit_(strm, version, stream_size);
+}
+
 int clamav_test_force_gzip_legacy_fallback;
 
 int __wrap_inflateInit2_(z_streamp strm, int windowBits, const char *version, int stream_size)
@@ -10306,6 +10318,50 @@ START_TEST(test_swf_zlib_truncated_stream_is_fail_visible)
     free(archive);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_swf_zlib_decoder_init_failure_is_fail_visible)
+{
+    static const uint8_t body[6] = {0};
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    uint8_t *archive;
+    size_t archive_length;
+    cl_error_t ret;
+
+    archive = swf_cws_stream(body, sizeof(body), &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    clamav_test_force_swf_decoder_init = 1;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_SWF", NULL);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(archive);
+}
+END_TEST
+#endif
 
 START_TEST(test_swf_lzma_declared_input_size_is_fail_visible)
 {
@@ -47640,6 +47696,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_swf);
     tcase_add_checked_fixture(tc_swf, cl_setup, cl_teardown);
     tcase_add_test(tc_swf, test_swf_zlib_truncated_stream_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_swf, test_swf_zlib_decoder_init_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_swf, test_swf_lzma_declared_input_size_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_output_temporary_limit_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_time_limit_is_fail_visible);
@@ -48353,6 +48412,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_compressed_input_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_compressed_output_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_zlib_truncated_stream_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_swf_zlib_decoder_init_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_swf_lzma_declared_input_size_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_output_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_time_limit_is_fail_visible);

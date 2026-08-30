@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## SWF decoder initialization evidence — 2026-08-30
+
+The SWF CWS and ZWS paths now mark the compressed layer incomplete and
+non-cacheable before returning `CL_EUNPACK` when zlib or LZMA decoder
+initialization fails. The current-source production-linked static unit test
+injects the zlib initialization failure and verifies the operational result,
+empty verdict, and cache taint; the LZMA branch is source-guarded and remains
+open for equivalent fault injection. Full SWF corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## InstallShield MSI decompressor cleanup status — 2026-08-30
 
 Confirmed InstallShield MSI extraction now merges temporary-member close and

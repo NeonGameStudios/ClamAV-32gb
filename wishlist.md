@@ -1,5 +1,14 @@
 # Wishlist
 
+## SWF decoder initialization evidence — 2026-08-30
+
+- Keep CWS and ZWS decoder-initialization failures sticky and non-cacheable
+  before temporary cleanup, preserving `CL_EUNPACK`; retain the current-source
+  zlib fault-injection regression and source guards, and add equivalent LZMA
+  fault injection when the release harness is extended. Complete SWF corpus,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final release qualification.
+
 ## InstallShield MSI decompressor cleanup status — 2026-08-30
 
 - Keep `inflateInit()` failure cleanup fail-visible in confirmed InstallShield

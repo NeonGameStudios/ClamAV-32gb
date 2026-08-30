@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## SWF decoder initialization evidence — 2026-08-30
+
+The SWF CWS and ZWS paths previously returned `CL_EUNPACK` when the zlib or
+LZMA decoder could not be initialized without marking the compressed layer
+incomplete. They now record a sticky non-cacheable reason before temporary
+cleanup. The current-source production-linked static test injects a zlib
+initialization failure and verifies `CL_EUNPACK`, an empty verdict, and cache
+taint; the LZMA branch is source-guarded. Full SWF corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.
+
 ## InstallShield MSI decompressor cleanup status — 2026-08-30
 
 The confirmed InstallShield MSI path previously discarded close and unlink

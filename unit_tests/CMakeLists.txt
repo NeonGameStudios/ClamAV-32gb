@@ -177,6 +177,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=ferror"
         "-Wl,--wrap=fgets"
         "-Wl,--wrap=fread"
+        "-Wl,--wrap=inflateInit_"
         "-Wl,--wrap=inflateInit2_"
         "-Wl,--wrap=closedir"
         "-Wl,--wrap=readdir"

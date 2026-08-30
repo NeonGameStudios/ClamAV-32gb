@@ -338,6 +338,7 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     lret = cli_LzmaInit(&lz, hdr->filesize);
     if (lret != LZMA_RESULT_OK) {
         cli_errmsg("scanzws: LzmaInit() failed\n");
+        cli_mark_scan_incomplete(ctx, "SWF LZMA decoder could not be initialized");
         return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK, temporary_reserved);
     }
 
@@ -448,6 +449,7 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     zret = inflateInit(&stream);
     if (zret != Z_OK) {
         cli_errmsg("scancws: inflateInit() failed\n");
+        cli_mark_scan_incomplete(ctx, "SWF zlib decoder could not be initialized");
         return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK, temporary_reserved);
     }
 
