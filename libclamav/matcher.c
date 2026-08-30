@@ -157,14 +157,14 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
     if (root->filter) {
         if (filter_search_ext(root->filter, buffer, length, &info) == -1) {
             /*  for safety always scan last maxpatlen bytes */
-            pos = length - root->maxpatlen - 1;
-            if (pos < 0) pos = 0;
+            if (length > (uint32_t)root->maxpatlen + 1U)
+                pos = (int32_t)(length - (uint32_t)root->maxpatlen - 1U);
             perf_log_filter(pos, length, root->type);
         } else {
             /* must not cut buffer for 64[4-4]6161, because we must be able to check
              * 64! */
-            pos = info.first_match - root->maxpatlen - 1;
-            if (pos < 0) pos = 0;
+            if (info.first_match > (unsigned long)root->maxpatlen + 1UL)
+                pos = (int32_t)(info.first_match - (unsigned long)root->maxpatlen - 1UL);
             perf_log_filter(pos, length, root->type);
         }
     } else {

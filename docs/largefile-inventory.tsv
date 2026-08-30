@@ -3421,7 +3421,10 @@ fixed-width-integer	libclamav/matcher.c	1535	            uint64_t target_value;
 fixed-width-integer	libclamav/matcher.c	154	    uint64_t orig_offset;
 fixed-width-integer	libclamav/matcher.c	1540	            if (target_value > (uint64_t)UINTPTR_MAX) {
 fixed-width-integer	libclamav/matcher.c	1582	static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_data *acdata, struct cli_target_info *target_info, uint32_t lsid)
+fixed-width-integer	libclamav/matcher.c	160	            if (length > (uint32_t)root->maxpatlen + 1U)
+fixed-width-integer	libclamav/matcher.c	161	                pos = (int32_t)(length - (uint32_t)root->maxpatlen - 1U);
 fixed-width-integer	libclamav/matcher.c	1645	    uint32_t i;
+fixed-width-integer	libclamav/matcher.c	167	                pos = (int32_t)(info.first_match - (unsigned long)root->maxpatlen - 1UL);
 fixed-width-integer	libclamav/matcher.c	1682	                    current = cli_scan_account_matcher_work(ctx, (uint64_t)ctx->fmap->len);
 fixed-width-integer	libclamav/matcher.c	1735	    uint32_t maxpatlen, bytes;
 fixed-width-integer	libclamav/matcher.c	1736	    uint64_t offset = 0;
@@ -12141,6 +12144,8 @@ native-width-integer	libclamav/matcher.c	1520	        size_t operand_size;
 native-width-integer	libclamav/matcher.c	1537	            size_t target_offset;
 native-width-integer	libclamav/matcher.c	1549	            target_offset = (size_t)(target - code_start);
 native-width-integer	libclamav/matcher.c	1586	    int execution_result;
+native-width-integer	libclamav/matcher.c	166	            if (info.first_match > (unsigned long)root->maxpatlen + 1UL)
+native-width-integer	libclamav/matcher.c	167	                pos = (int32_t)(info.first_match - (unsigned long)root->maxpatlen - 1UL);
 native-width-integer	libclamav/matcher.c	1722	cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, struct cli_matched_type **ftoffset, unsigned int acmode, struct cli_ac_result **acres)
 native-width-integer	libclamav/matcher.c	1734	    unsigned int i = 0, j = 0;
 native-width-integer	libclamav/matcher.c	2238	cl_error_t cli_matchmeta(cli_ctx *ctx, const char *fname, size_t fsizec, size_t fsizer, int encrypted, unsigned int filepos, int res1)
@@ -30211,11 +30216,13 @@ offset-size-arithmetic	libclamav/matcher.c	1529	        if (operand_size > ac_ls
 offset-size-arithmetic	libclamav/matcher.c	1549	            target_offset = (size_t)(target - code_start);
 offset-size-arithmetic	libclamav/matcher.c	158	        if (filter_search_ext(root->filter, buffer, length, &info) == -1) {
 offset-size-arithmetic	libclamav/matcher.c	159	            /*  for safety always scan last maxpatlen bytes */
-offset-size-arithmetic	libclamav/matcher.c	160	            pos = length - root->maxpatlen - 1;
+offset-size-arithmetic	libclamav/matcher.c	160	            if (length > (uint32_t)root->maxpatlen + 1U)
 offset-size-arithmetic	libclamav/matcher.c	1609	    context.file_size = ctx->fmap->len;
+offset-size-arithmetic	libclamav/matcher.c	161	                pos = (int32_t)(length - (uint32_t)root->maxpatlen - 1U);
 offset-size-arithmetic	libclamav/matcher.c	162	            perf_log_filter(pos, length, root->type);
 offset-size-arithmetic	libclamav/matcher.c	1623	            rc = cli_append_virus(ctx, ac_lsig->virname);
-offset-size-arithmetic	libclamav/matcher.c	166	            pos = info.first_match - root->maxpatlen - 1;
+offset-size-arithmetic	libclamav/matcher.c	166	            if (info.first_match > (unsigned long)root->maxpatlen + 1UL)
+offset-size-arithmetic	libclamav/matcher.c	167	                pos = (int32_t)(info.first_match - (unsigned long)root->maxpatlen - 1UL);
 offset-size-arithmetic	libclamav/matcher.c	168	            perf_log_filter(pos, length, root->type);
 offset-size-arithmetic	libclamav/matcher.c	171	        perf_log_filter(0, length, root->type);
 offset-size-arithmetic	libclamav/matcher.c	1722	cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, struct cli_matched_type **ftoffset, unsigned int acmode, struct cli_ac_result **acres)

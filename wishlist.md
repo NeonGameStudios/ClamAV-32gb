@@ -8751,3 +8751,12 @@ qualification as required evidence.
   arena runners pass, while complete YARA corpus, production-CVD/service,
   materialized-large-file, Sonic1, and final release qualification remain
   required.
+
+## Raw matcher prefilter offset admission — 2026-08-30
+
+- Keep the raw matcher prefilter's no-hit and first-hit scan starts at zero
+  when the chunk is shorter than the required overlap; only narrow a proven
+  non-negative subtraction to `int32_t`. Retain the source guards and
+  current-source production GCC compilation, then add complete signature
+  corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  and final release qualification evidence.

@@ -15971,6 +15971,19 @@ remain open. The current-source focused GCC runner and its matching
 AddressSanitizer/UndefinedBehaviorSanitizer runner both pass the existing
 declared-offset resource-map checks.
 
+## Raw matcher prefilter offset admission — 2026-08-30
+
+The raw matcher prefilter derived its scan start with unsigned subtraction and
+then narrowed the result to `int32_t`. When a chunk was shorter than the
+prefilter's required overlap, that relied on implementation-defined conversion
+to obtain the intended zero start. Both the no-filter-hit and first-filter-hit
+paths now prove the lower bound before subtracting and narrowing, leaving the
+start at zero for short chunks and preserving the existing overlap for larger
+chunks. The source guards pin both branches; current-source production GCC
+compilation and the existing matcher-focused tests remain required evidence,
+along with complete signature corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification.
+
 ## YARA arena next-address admission — 2026-08-30
 
 The YARA arena traversal helper formed `address + offset` before checking
