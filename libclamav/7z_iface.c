@@ -101,8 +101,14 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
     next_header_size   = cli_7z_header_u64(header + 20);
     if (next_header_offset == 0 && next_header_size == 0)
     {
-        if (start_header_crc != 0 || next_header_crc != 0)
+        if (next_header_crc != 0)
             return CL_EPARSE;
+
+        if (start_header_crc != 0) {
+            /* A valid empty archive has no next header, but still carries
+             * the checksum of the zero-valued next-header fields. */
+            return CrcCalc(header + 12, 20) == start_header_crc ? CL_SUCCESS : CL_EPARSE;
+        }
 
         {
             size_t recovery_start = offset + k7zStartHeaderSize;

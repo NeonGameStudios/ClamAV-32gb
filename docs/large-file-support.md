@@ -9,12 +9,12 @@ pending
 tail contains a recoverable header marker, validates the start-header CRC for
 ordinary headers, and preserves in-range tail read failures as `CL_EREAD`.
 The admission probe uses bytewise fixed-width reads, keeping odd-offset SFX
-candidates free of packed-union alignment undefined behavior. An isolated
-current-source Docker GCC oracle passes 4/4 and the matching GCC ASan/UBSan
-runner is clean. The public weak-candidate regression is registered and
-source-guarded. Current-object execution, production-CVD/service, complete SFX
-corpus, materialized-large-file, Sonic1, and final release qualification remain
-required.
+candidates free of packed-union alignment undefined behavior. Valid empty and
+recovery-mode archives remain admitted. An isolated current-source Docker GCC
+oracle passes 5/5 and the matching GCC ASan/UBSan runner is clean. The public
+weak-candidate regression is registered and source-guarded. Current-object
+execution, production-CVD/service, complete SFX corpus, materialized-large-file,
+Sonic1, and final release qualification remain required.
 
 ## 7-Zip zero-length FilesInfo Name — 2026-08-30
 

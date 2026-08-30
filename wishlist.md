@@ -6,7 +6,8 @@
   recoverable tail header, and preserve ordinary start-header CRC validation
   plus `CL_EREAD` for in-range tail read failures.
 - Keep the bytewise fixed-width reads and the weak-candidate regression so
-  odd-offset SFX matches remain sanitizer-clean. Complete current-object,
+  odd-offset SFX matches remain sanitizer-clean; preserve valid empty archives
+  and recovery-mode archives. Complete current-object,
   production-CVD/service, full SFX corpus, materialized-large-file, Sonic1,
   and final release qualification.
 

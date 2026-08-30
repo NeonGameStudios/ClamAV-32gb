@@ -9,12 +9,13 @@ incomplete. The probe now requires a recovery marker in the bounded tail,
 validates the start-header CRC for ordinary non-recovery headers, and keeps
 in-range tail read failures as `CL_EREAD`. Its fixed-width header reads are
 bytewise, so odd-offset SFX candidates do not trigger packed-union alignment
-undefined behavior. The isolated current-source Docker GCC oracle passes 4/4
-for weak rejection, valid recovery admission, valid checksummed admission, and
-bad-checksum rejection; the same runner passes under GCC ASan/UBSan. The public
-weak-candidate regression is registered and source-guarded. Current-object
-execution, production-CVD/service, complete SFX corpus, materialized-large-file,
-Sonic1, and final release qualification remain open.
+undefined behavior. The isolated current-source Docker GCC oracle passes 5/5
+for weak rejection, valid recovery admission, valid checksummed admission,
+bad-checksum rejection, and a valid empty archive; the same runner passes under
+GCC ASan/UBSan. The public weak-candidate regression is registered and
+source-guarded. Current-object execution, production-CVD/service, complete SFX
+corpus, materialized-large-file, Sonic1, and final release qualification remain
+open.
 
 ## 7-Zip zero-length FilesInfo Name — 2026-08-30
 
