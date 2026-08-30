@@ -1,5 +1,14 @@
 # Wishlist
 
+## OLE2 MSO decoder initialization cleanup — 2026-08-30
+
+- Keep the OLE2 MSO stream teardown conditional on successful `inflateInit()`
+  initialization and preserve the explicit incomplete `CL_EUNPACK` result.
+  The isolated current-source production-linked GCC and GCC ASan/UBSan
+  leak-enabled runners pass the injected initialization failure; complete
+  OLE2/MSO corpus, production-CVD/service, materialized-large-file, Sonic1,
+  and release qualification remain.
+
 ## HWP raw-deflate decoder initialization cleanup — 2026-08-30
 
 - Keep the shared HWP/HWP5/HWPML raw-deflate cleanup conditional on successful

@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## OLE2 MSO decoder initialization cleanup — 2026-08-30
+
+The OLE2 MSO stream helper previously jumped to common cleanup when
+`inflateInit()` failed and unconditionally called `inflateEnd()` on the
+uninitialized stream. It now records the explicit incomplete `CL_EUNPACK`
+reason, tracks successful initialization, and finalizes the zlib stream only
+when initialization succeeded. A direct isolated current-source
+production-linked GCC runner for the static MSO helper and a GCC
+ASan/UBSan leak-enabled runner pass the forced initialization failure with
+sticky incomplete state and cache taint. Complete OLE2/MSO corpus,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.
+
 ## HWP raw-deflate decoder initialization cleanup — 2026-08-30
 
 The shared HWP/HWP5/HWPML raw-deflate helper previously jumped to temporary

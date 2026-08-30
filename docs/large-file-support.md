@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OLE2 MSO decoder initialization cleanup — 2026-08-30
+
+The OLE2 MSO stream helper now records an explicit incomplete `CL_EUNPACK`
+result when `inflateInit()` fails and calls `inflateEnd()` only after
+successful initialization. The isolated current-source production-linked
+GCC runner for the static MSO helper and the GCC ASan/UBSan leak-enabled
+runner pass the forced initialization failure with sticky incomplete state
+and cache taint. Complete OLE2/MSO corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain
+required.
+
 ## HWP raw-deflate decoder initialization cleanup — 2026-08-30
 
 The shared HWP/HWP5/HWPML raw-deflate helper now records an explicit

@@ -2045,6 +2045,7 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
     off_t off_in = 0;
     size_t count, outsize = 0;
     z_stream zstrm;
+    bool z_initialized = false;
     char *tmpname;
     uint32_t prefix;
     unsigned char inbuf[FILEBUFF], outbuf[FILEBUFF];
@@ -2090,9 +2091,11 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
     zret = inflateInit(&zstrm);
     if (zret != Z_OK) {
         cli_dbgmsg("scan_mso_stream: Can't initialize zlib inflation stream\n");
+        cli_mark_scan_incomplete(ctx, "MSO zlib decompressor could not be initialized");
         ret = CL_EUNPACK;
         goto mso_end;
     }
+    z_initialized = true;
 
     /* extract 32-bit prefix */
     ret = cli_ole2_read_mso_prefix(input, &prefix, ctx);
@@ -2194,9 +2197,11 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
 
     /* clean-up */
 mso_end:
-    zret = inflateEnd(&zstrm);
-    if (zret != Z_OK)
-        ole2_note_cleanup_failure(ctx, &ret, CL_EUNPACK, "MSO zlib stream could not be closed");
+    if (z_initialized) {
+        zret = inflateEnd(&zstrm);
+        if (zret != Z_OK)
+            ole2_note_cleanup_failure(ctx, &ret, CL_EUNPACK, "MSO zlib stream could not be closed");
+    }
     if (close(ofd) == -1)
         ole2_note_cleanup_failure(ctx, &ret, CL_EWRITE, "MSO temporary output could not be closed");
     if (!ctx->engine->keeptmp)
