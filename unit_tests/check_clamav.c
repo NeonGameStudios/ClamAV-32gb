@@ -24103,6 +24103,48 @@ START_TEST(test_mbr_partition_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbr_zero_length_partition_is_fail_visible)
+{
+    uint8_t data[1024] = {0};
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* A typed MBR entry with no sectors must not be admitted as a
+     * zero-length nested scan. */
+    data[446 + 4] = 0x83; /* Linux partition type. */
+    cli_writeint32(data + 446 + 8, 1); /* first LBA */
+    data[510] = 0x55;
+    data[511] = 0xaa;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(&engine, 0, sizeof(engine));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_MBR;
+    layer.size               = sizeof(data);
+    layer.fmap               = map;
+
+    ret = cli_scanmbr(&ctx, 512);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbr_corpus_detects_embedded_mz)
 {
     enum { SECTOR_SIZE = 512, PARTITION_LBA = 1, DISK_SECTORS = 2 };
@@ -47989,6 +48031,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mbr, test_mbr_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_type_confirmation_read_failure_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_partition_limit_is_fail_visible);
+    tcase_add_test(tc_mbr, test_mbr_zero_length_partition_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_missing_map_entry_points_are_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_mbr, test_mbr_partition_coordinate_overflow_is_fail_visible);

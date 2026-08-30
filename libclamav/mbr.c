@@ -107,6 +107,16 @@ static bool mbr_partition_range(uint64_t lba, uint64_t count, size_t sectorsize,
            mbr_scale_lba(count, sectorsize, length);
 }
 
+static bool mbr_partition_extent_is_valid(const struct mbr_partition_entry *entry)
+{
+    /* A typed partition with no sectors cannot describe content.  Letting it
+     * through would create a zero-length nested scan and could make a
+     * structurally confirmed MBR appear complete without inspecting a real
+     * partition. Empty entries may retain stale coordinates and are allowed
+     * to follow the format's compatibility rules. */
+    return entry != NULL && (entry->type == MBR_EMPTY || entry->numLBA != 0);
+}
+
 static cl_error_t mbr_read(cli_ctx *ctx, void *dst, size_t at, size_t len, const char *reason)
 {
     size_t got;
@@ -569,6 +579,12 @@ static cl_error_t mbr_check_mbr(struct mbr_boot_record *record, size_t maplen, s
             goto done;
         }
 
+        if (!mbr_partition_extent_is_valid(&record->entries[i])) {
+            cli_dbgmsg("cli_scanmbr: Non-empty partition has zero length\n");
+            status = CL_EFORMAT;
+            goto done;
+        }
+
         if (!mbr_partition_range(record->entries[i].firstLBA, record->entries[i].numLBA,
                                  sectorsize, &partoff, &partsize) ||
             partoff > maplen || partsize > maplen - partoff) {
@@ -607,6 +623,14 @@ static cl_error_t mbr_check_ebr(struct mbr_boot_record *record)
         if ((record->entries[i].status != MBR_STATUS_INACTIVE) &&
             (record->entries[i].status != MBR_STATUS_ACTIVE)) {
             cli_dbgmsg("cli_scanmbr: Invalid boot record status\n");
+            status = CL_EFORMAT;
+            goto done;
+        }
+    }
+
+    for (i = 0; i < MBR_MAX_PARTITION_ENTRIES; ++i) {
+        if (!mbr_partition_extent_is_valid(&record->entries[i])) {
+            cli_dbgmsg("cli_scanmbr: Non-empty logical partition has zero length\n");
             status = CL_EFORMAT;
             goto done;
         }

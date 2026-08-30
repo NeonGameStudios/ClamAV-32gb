@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## MBR zero-length partition admission — 2026-08-30
+
+The MBR parser accepted a non-empty partition entry whose declared sector count
+was zero. Its checked coordinate arithmetic therefore produced a zero-length
+child range, allowing a structurally confirmed MBR to continue without
+inspecting a real partition. Primary and EBR validation now reject typed
+zero-sector entries before nested dispatch while retaining compatibility for
+empty entries with stale coordinates. The new
+`test_mbr_zero_length_partition_is_fail_visible` regression requires
+`CL_EFORMAT`, sticky incomplete state, and cache taint; the current MBR source
+and unit source still require the focused production-linked execution, full
+partition corpus, sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, and final release qualification.
+
 ## clamd structured report for empty directory walks — 2026-08-30
 
 Structured path and `MULTISCAN` requests previously had no report object when

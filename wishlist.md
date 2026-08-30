@@ -1,5 +1,14 @@
 # Wishlist
 
+## MBR zero-length partition admission — 2026-08-30
+
+- Keep non-empty primary and extended MBR entries with zero sectors fail-visible
+  before nested scanning; empty entries may retain format-compatible stale
+  coordinates. The focused primary-entry regression and source guards cover
+  the new boundary. Complete partition corpus, sanitizer, production-CVD/
+  service, materialized-large-file, Sonic1, and release qualification remain
+  open.
+
 ## clamd structured report for empty directory walks — 2026-08-30
 
 - Keep successful structured path and `MULTISCAN` walks that contain no

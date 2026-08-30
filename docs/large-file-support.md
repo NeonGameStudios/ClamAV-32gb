@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MBR zero-length partition admission — 2026-08-30
+
+Non-empty primary and extended MBR entries with `numLBA == 0` are now rejected
+before nested dispatch. A typed zero-sector entry cannot identify content to
+scan; admitting it as a zero-length child could make a confirmed MBR appear
+complete. The focused primary-entry regression and source guards cover this
+boundary. Complete partition corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## clamd structured report for empty directory walks — 2026-08-30
 
 Successful structured `SCANREPORT`, `CONTSCANREPORT`, and one-worker
