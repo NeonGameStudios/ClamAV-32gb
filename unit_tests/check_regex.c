@@ -637,6 +637,25 @@ START_TEST(test_url_canon)
 }
 END_TEST
 
+START_TEST(test_url_canon_rejects_invalid_destination_and_bounds_input)
+{
+    char urlbuff[8] = {0};
+    char *host = NULL;
+    const char *path = NULL;
+    size_t host_len = 0;
+    size_t path_len = 0;
+
+    ck_assert_int_eq(cli_url_canon("http://example.com/", SIZE_MAX, urlbuff, 2,
+                                  &host, &host_len, &path, &path_len),
+                     CL_PHISH_CLEAN);
+    ck_assert_int_eq(cli_url_canon("http://example.com/", SIZE_MAX, urlbuff, sizeof(urlbuff),
+                                  &host, &host_len, &path, &path_len),
+                     CL_PHISH_NODECISION);
+    ck_assert_ptr_nonnull(host);
+    ck_assert_ptr_nonnull(path);
+}
+END_TEST
+
 static struct regex_test {
     const char *regex;
     const char *text;
@@ -750,6 +769,7 @@ Suite *test_regex_suite(void)
 
     tcase_add_test(tc_phish, phishing_fake_test);
     tcase_add_test(tc_phish, phishing_fake_test_allscan);
+    tcase_add_test(tc_phish, test_url_canon_rejects_invalid_destination_and_bounds_input);
 
     tc_phish2 = tcase_create("phishingScan with 2 dbs");
     suite_add_tcase(s, tc_phish2);

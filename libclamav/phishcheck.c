@@ -1235,11 +1235,20 @@ enum phish_status cli_url_canon(const char* inurl, size_t len, char* urlbuff, si
 {
     char *url, *p, *last;
     char *host_begin, *path_begin;
-    const char* urlend = urlbuff + len;
+    const char* urlend;
     size_t host_len, path_len;
 
+    if (!inurl || !urlbuff || !host || !hostlen || !path || !pathlen || dest_len < 3) {
+        return CL_PHISH_CLEAN;
+    }
+
     dest_len -= 3;
-    strncpy(urlbuff, inurl, dest_len);
+    if (len > dest_len) {
+        len = dest_len;
+    }
+    urlend = urlbuff + len;
+    memcpy(urlbuff, inurl, len);
+    urlbuff[len] = '\0';
     urlbuff[dest_len] = urlbuff[dest_len + 1] = urlbuff[dest_len + 2] = '\0';
     url                                                               = urlbuff;
 

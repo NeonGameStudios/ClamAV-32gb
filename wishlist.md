@@ -110,6 +110,16 @@
   service, materialized-large-file, Sonic1, and release qualification remain
   open.
 
+## Phishing URL canonicalizer boundary — 2026-08-29
+
+- Keep `cli_url_canon()` behind null-pointer and three-byte destination-reserve
+  validation; cap the internal URL coordinate before pointer formation and
+  copy exactly the bounded input length.
+- Retain `test_url_canon_rejects_invalid_destination_and_bounds_input` and its
+  source guards. Complete phishing corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final matcher/release qualification
+  remain open.
+
 ## Iconv cache table admission — 2026-08-29
 
 - Keep process/thread-local iconv handle-table growth behind

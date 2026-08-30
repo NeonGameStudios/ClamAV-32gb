@@ -304,6 +304,21 @@ with the production-linked unit relink/execution, complete byte-compare corpus,
 sanitizer, service, materialized-large-file, Sonic1, and final matcher/release
 qualification still required.
 
+## Phishing URL canonicalizer boundary — 2026-08-29
+
+`cli_url_canon()` formed `urlbuff + len` before enforcing its three-byte
+terminator reserve and used `strncpy()` with the destination capacity rather
+than the caller-supplied length. A malformed public-API call could therefore
+form an out-of-range scan coordinate or read beyond a bounded input buffer;
+`dest_len -= 3` also underflowed for undersized destinations. The canonicalizer
+now validates all input/output pointers and the reserve, caps `len` before
+forming `urlend`, and copies exactly the bounded input range. The registered
+`test_url_canon_rejects_invalid_destination_and_bounds_input` regression covers
+both invalid destination admission and a `SIZE_MAX` length. Current-source
+production-GCC compilation, the complete phishing corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final
+matcher/release qualification remain required.
+
 ## Regex matcher table admission — 2026-08-29
 
 The phishing/allow-list matcher grew suffix-bucket and compiled-regex pointer

@@ -14103,14 +14103,14 @@ native-width-integer	libclamav/phishcheck.c	1161	                             si
 native-width-integer	libclamav/phishcheck.c	1162	                             int* prefix_matched,
 native-width-integer	libclamav/phishcheck.c	1234	enum phish_status cli_url_canon(const char* inurl, size_t len, char* urlbuff, size_t dest_len, char** host, size_t* hostlen, const char** path, size_t* pathlen)
 native-width-integer	libclamav/phishcheck.c	1239	    size_t host_len, path_len;
-native-width-integer	libclamav/phishcheck.c	1341	    size_t len,
-native-width-integer	libclamav/phishcheck.c	1345	    size_t j, k, ji, ki;
-native-width-integer	libclamav/phishcheck.c	1349	    size_t path_len;
-native-width-integer	libclamav/phishcheck.c	1350	    size_t host_len;
-native-width-integer	libclamav/phishcheck.c	1354	    int prefix_matched = 0;
-native-width-integer	libclamav/phishcheck.c	1356	    size_t pp[COMPONENTS + 2];
-native-width-integer	libclamav/phishcheck.c	1418	            int need_prefixmatch = (count < 2 && !prefix_matched) &&
-native-width-integer	libclamav/phishcheck.c	1470	    int phishy                         = 0;
+native-width-integer	libclamav/phishcheck.c	1350	    size_t len,
+native-width-integer	libclamav/phishcheck.c	1354	    size_t j, k, ji, ki;
+native-width-integer	libclamav/phishcheck.c	1358	    size_t path_len;
+native-width-integer	libclamav/phishcheck.c	1359	    size_t host_len;
+native-width-integer	libclamav/phishcheck.c	1363	    int prefix_matched = 0;
+native-width-integer	libclamav/phishcheck.c	1365	    size_t pp[COMPONENTS + 2];
+native-width-integer	libclamav/phishcheck.c	1427	            int need_prefixmatch = (count < 2 && !prefix_matched) &&
+native-width-integer	libclamav/phishcheck.c	1479	    int phishy                         = 0;
 native-width-integer	libclamav/phishcheck.c	151	static const size_t href_text_len    = sizeof(href_text);
 native-width-integer	libclamav/phishcheck.c	152	static const size_t src_text_len     = sizeof(src_text);
 native-width-integer	libclamav/phishcheck.c	153	static const size_t dotnet_len       = sizeof(dotnet) - 1;
@@ -20824,9 +20824,11 @@ native-width-integer	unit_tests/check_regex.c	50	static size_t cb_called = 0;
 native-width-integer	unit_tests/check_regex.c	52	static cl_error_t cb_fail(void *cbdata, const char *suffix, size_t len, const struct regex_list *regex)
 native-width-integer	unit_tests/check_regex.c	63	static cl_error_t cb_expect_single(void *cbdata, const char *suffix, size_t len, const struct regex_list *regex)
 native-width-integer	unit_tests/check_regex.c	630	    size_t host_len, path_len;
-native-width-integer	unit_tests/check_regex.c	643	    int match;
-native-width-integer	unit_tests/check_regex.c	654	    int match;
-native-width-integer	unit_tests/check_regex.c	707	    size_t bytes;
+native-width-integer	unit_tests/check_regex.c	645	    size_t host_len = 0;
+native-width-integer	unit_tests/check_regex.c	646	    size_t path_len = 0;
+native-width-integer	unit_tests/check_regex.c	662	    int match;
+native-width-integer	unit_tests/check_regex.c	673	    int match;
+native-width-integer	unit_tests/check_regex.c	726	    size_t bytes;
 native-width-integer	unit_tests/check_str.c	145	    buf.pos      = (size_t)-1;
 native-width-integer	unit_tests/check_str.c	146	    buf.capacity = (size_t)-1;
 native-width-integer	unit_tests/check_str.c	157	    int rc;
@@ -21779,7 +21781,9 @@ boundary-constant	unit_tests/check_matchers.c	930	    ck_assert(cli_matcher_wind
 boundary-constant	unit_tests/check_matchers.c	946	    ck_assert(cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
 boundary-constant	unit_tests/check_matchers.c	951	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
 boundary-constant	unit_tests/check_matchers.c	953	    ck_assert(!cli_lsig_bytecode_compatible(UINT32_MAX, offsets, legacy_offsets));
-boundary-constant	unit_tests/check_regex.c	718	    ck_assert_int_eq(cli_regex_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
+boundary-constant	unit_tests/check_regex.c	648	    ck_assert_int_eq(cli_url_canon("http://example.com/", SIZE_MAX, urlbuff, 2,
+boundary-constant	unit_tests/check_regex.c	651	    ck_assert_int_eq(cli_url_canon("http://example.com/", SIZE_MAX, urlbuff, sizeof(urlbuff),
+boundary-constant	unit_tests/check_regex.c	737	    ck_assert_int_eq(cli_regex_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
 boundary-constant	unit_tests/check_str.c	189	    size_t native_wrap_len = (size_t)(UINT_MAX / 2U) + 1U;
 boundary-constant	unit_tests/check_str.c	198	    ck_assert_ptr_null(cli_str2hex(input, UINT_MAX));
 boundary-constant	unit_tests/check_str.c	364	    ck_assert_int_eq(cli_message_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
@@ -32234,33 +32238,33 @@ offset-size-arithmetic	libclamav/phishcheck.c	1128	        url->pre_fixup.host_s
 offset-size-arithmetic	libclamav/phishcheck.c	1129	        url->pre_fixup.host_end                                      = end - URL;
 offset-size-arithmetic	libclamav/phishcheck.c	1170		s[hlen+plen] = '\0';
 offset-size-arithmetic	libclamav/phishcheck.c	1234	enum phish_status cli_url_canon(const char* inurl, size_t len, char* urlbuff, size_t dest_len, char** host, size_t* hostlen, const char** path, size_t* pathlen)
-offset-size-arithmetic	libclamav/phishcheck.c	1238	    const char* urlend = urlbuff + len;
-offset-size-arithmetic	libclamav/phishcheck.c	1241	    dest_len -= 3;
-offset-size-arithmetic	libclamav/phishcheck.c	1243	    urlbuff[dest_len] = urlbuff[dest_len + 1] = urlbuff[dest_len + 2] = '\0';
-offset-size-arithmetic	libclamav/phishcheck.c	1253	    while ((host_begin < urlend) && *host_begin == '/') ++host_begin;
-offset-size-arithmetic	libclamav/phishcheck.c	1254	    host_len = strcspn(host_begin, ":/?");
-offset-size-arithmetic	libclamav/phishcheck.c	1262	    len        = urlend - url;
-offset-size-arithmetic	libclamav/phishcheck.c	1264	    while ((host_begin < urlend) && *host_begin == '/') ++host_begin;
-offset-size-arithmetic	libclamav/phishcheck.c	1265	    while (*host_begin == '.' && host_begin < urlend) ++host_begin;
-offset-size-arithmetic	libclamav/phishcheck.c	1270	        if (p + 2 < urlend && *p == '/' && p[1] == '.') {
-offset-size-arithmetic	libclamav/phishcheck.c	1274	                    memmove(p + 1, p + 3, urlend - p - 3);
-offset-size-arithmetic	libclamav/phishcheck.c	1275	                urlend -= 2;
-offset-size-arithmetic	libclamav/phishcheck.c	1279	                    memmove(last + 1, p + 4, urlend - p - 4);
-offset-size-arithmetic	libclamav/phishcheck.c	1280	                urlend -= 3 + (p - last);
-offset-size-arithmetic	libclamav/phishcheck.c	1287	    p  = &url[urlend - url];
-offset-size-arithmetic	libclamav/phishcheck.c	1291	    while (p < urlend && p + 2 < url + dest_len && urlend < urlbuff + dest_len) {
-offset-size-arithmetic	libclamav/phishcheck.c	1296	            memmove(p + 3, p + 1, urlend - p - 1);
-offset-size-arithmetic	libclamav/phishcheck.c	1300	            urlend += 2;
-offset-size-arithmetic	libclamav/phishcheck.c	1306	    len    = urlend - url;
-offset-size-arithmetic	libclamav/phishcheck.c	1307	    /* determine end of hostname */
-offset-size-arithmetic	libclamav/phishcheck.c	1308	    host_len   = strcspn(host_begin, ":/?");
-offset-size-arithmetic	libclamav/phishcheck.c	1312	        memmove(path_begin + 2, path_begin + 1, len - host_len);
-offset-size-arithmetic	libclamav/phishcheck.c	1318	        path_len = url + len - path_begin + 1;
-offset-size-arithmetic	libclamav/phishcheck.c	1323	            path_len = p - path_begin;
-offset-size-arithmetic	libclamav/phishcheck.c	1356	    size_t pp[COMPONENTS + 2];
-offset-size-arithmetic	libclamav/phishcheck.c	1357	    char urlbuff[URL_MAX_LEN + 3]; /* htmlnorm truncates at 1024 bytes + terminating null + slash + host end null */
-offset-size-arithmetic	libclamav/phishcheck.c	1425	                            host_begin + host_len - lp[ji] + 1,
-offset-size-arithmetic	libclamav/phishcheck.c	1495	                                               strlen(urls->realLink.data),
+offset-size-arithmetic	libclamav/phishcheck.c	1245	    dest_len -= 3;
+offset-size-arithmetic	libclamav/phishcheck.c	1249	    urlend = urlbuff + len;
+offset-size-arithmetic	libclamav/phishcheck.c	1252	    urlbuff[dest_len] = urlbuff[dest_len + 1] = urlbuff[dest_len + 2] = '\0';
+offset-size-arithmetic	libclamav/phishcheck.c	1262	    while ((host_begin < urlend) && *host_begin == '/') ++host_begin;
+offset-size-arithmetic	libclamav/phishcheck.c	1263	    host_len = strcspn(host_begin, ":/?");
+offset-size-arithmetic	libclamav/phishcheck.c	1271	    len        = urlend - url;
+offset-size-arithmetic	libclamav/phishcheck.c	1273	    while ((host_begin < urlend) && *host_begin == '/') ++host_begin;
+offset-size-arithmetic	libclamav/phishcheck.c	1274	    while (*host_begin == '.' && host_begin < urlend) ++host_begin;
+offset-size-arithmetic	libclamav/phishcheck.c	1279	        if (p + 2 < urlend && *p == '/' && p[1] == '.') {
+offset-size-arithmetic	libclamav/phishcheck.c	1283	                    memmove(p + 1, p + 3, urlend - p - 3);
+offset-size-arithmetic	libclamav/phishcheck.c	1284	                urlend -= 2;
+offset-size-arithmetic	libclamav/phishcheck.c	1288	                    memmove(last + 1, p + 4, urlend - p - 4);
+offset-size-arithmetic	libclamav/phishcheck.c	1289	                urlend -= 3 + (p - last);
+offset-size-arithmetic	libclamav/phishcheck.c	1296	    p  = &url[urlend - url];
+offset-size-arithmetic	libclamav/phishcheck.c	1300	    while (p < urlend && p + 2 < url + dest_len && urlend < urlbuff + dest_len) {
+offset-size-arithmetic	libclamav/phishcheck.c	1305	            memmove(p + 3, p + 1, urlend - p - 1);
+offset-size-arithmetic	libclamav/phishcheck.c	1309	            urlend += 2;
+offset-size-arithmetic	libclamav/phishcheck.c	1315	    len    = urlend - url;
+offset-size-arithmetic	libclamav/phishcheck.c	1316	    /* determine end of hostname */
+offset-size-arithmetic	libclamav/phishcheck.c	1317	    host_len   = strcspn(host_begin, ":/?");
+offset-size-arithmetic	libclamav/phishcheck.c	1321	        memmove(path_begin + 2, path_begin + 1, len - host_len);
+offset-size-arithmetic	libclamav/phishcheck.c	1327	        path_len = url + len - path_begin + 1;
+offset-size-arithmetic	libclamav/phishcheck.c	1332	            path_len = p - path_begin;
+offset-size-arithmetic	libclamav/phishcheck.c	1365	    size_t pp[COMPONENTS + 2];
+offset-size-arithmetic	libclamav/phishcheck.c	1366	    char urlbuff[URL_MAX_LEN + 3]; /* htmlnorm truncates at 1024 bytes + terminating null + slash + host end null */
+offset-size-arithmetic	libclamav/phishcheck.c	1434	                            host_begin + host_len - lp[ji] + 1,
+offset-size-arithmetic	libclamav/phishcheck.c	1504	                                               strlen(urls->realLink.data),
 offset-size-arithmetic	libclamav/phishcheck.c	153	static const size_t dotnet_len       = sizeof(dotnet) - 1;
 offset-size-arithmetic	libclamav/phishcheck.c	154	static const size_t adonet_len       = sizeof(adonet) - 1;
 offset-size-arithmetic	libclamav/phishcheck.c	155	static const size_t aspnet_len       = sizeof(aspnet) - 1;
@@ -39171,21 +39175,21 @@ offset-size-arithmetic	unit_tests/check_regex.c	507	    ctx.recursion_stack_size
 offset-size-arithmetic	unit_tests/check_regex.c	52	static cl_error_t cb_fail(void *cbdata, const char *suffix, size_t len, const struct regex_list *regex)
 offset-size-arithmetic	unit_tests/check_regex.c	63	static cl_error_t cb_expect_single(void *cbdata, const char *suffix, size_t len, const struct regex_list *regex)
 offset-size-arithmetic	unit_tests/check_regex.c	633	    cli_url_canon(u->in, strlen(u->in), urlbuff, sizeof(urlbuff), &host, &host_len, &path, &path_len);
-offset-size-arithmetic	unit_tests/check_regex.c	709	    ck_assert_int_eq(cli_regex_table_size(0, sizeof(void *), &bytes), CL_SUCCESS);
-offset-size-arithmetic	unit_tests/check_regex.c	711	    ck_assert_int_eq(cli_regex_table_size(CLI_MAX_ALLOCATION / sizeof(void *),
-offset-size-arithmetic	unit_tests/check_regex.c	712	                                          sizeof(void *), &bytes),
-offset-size-arithmetic	unit_tests/check_regex.c	715	    ck_assert_int_eq(cli_regex_table_size(CLI_MAX_ALLOCATION / sizeof(void *) + 1,
-offset-size-arithmetic	unit_tests/check_regex.c	716	                                          sizeof(void *), &bytes),
-offset-size-arithmetic	unit_tests/check_regex.c	718	    ck_assert_int_eq(cli_regex_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
-offset-size-arithmetic	unit_tests/check_regex.c	720	    ck_assert_int_eq(cli_regex_table_size(1, sizeof(void *), NULL), CL_EARG);
-offset-size-arithmetic	unit_tests/check_regex.c	736	    tcase_add_loop_test(tc_api, test_suffix, 0, sizeof(tests) / sizeof(tests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	742	    tcase_add_loop_test(tc_matching, regex_list_match_test, 0, sizeof(rtests) / sizeof(rtests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	748	    tcase_add_loop_test(tc_phish, phishingScan_test, 0, sizeof(rtests) / sizeof(rtests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	749	    tcase_add_loop_test(tc_phish, phishingScan_test_allscan, 0, sizeof(rtests) / sizeof(rtests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	758	    tcase_add_loop_test(tc_phish2, phishingScan_test, 0, sizeof(rtests) / sizeof(rtests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	759	    tcase_add_loop_test(tc_phish2, phishingScan_test_allscan, 0, sizeof(rtests) / sizeof(rtests[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	764	    tcase_add_loop_test(tc_phish, test_url_canon, 0, sizeof(uc) / sizeof(uc[0]));
-offset-size-arithmetic	unit_tests/check_regex.c	769	    tcase_add_loop_test(tc_regex, test_regexes, 0, sizeof(rg) / sizeof(rg[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	728	    ck_assert_int_eq(cli_regex_table_size(0, sizeof(void *), &bytes), CL_SUCCESS);
+offset-size-arithmetic	unit_tests/check_regex.c	730	    ck_assert_int_eq(cli_regex_table_size(CLI_MAX_ALLOCATION / sizeof(void *),
+offset-size-arithmetic	unit_tests/check_regex.c	731	                                          sizeof(void *), &bytes),
+offset-size-arithmetic	unit_tests/check_regex.c	734	    ck_assert_int_eq(cli_regex_table_size(CLI_MAX_ALLOCATION / sizeof(void *) + 1,
+offset-size-arithmetic	unit_tests/check_regex.c	735	                                          sizeof(void *), &bytes),
+offset-size-arithmetic	unit_tests/check_regex.c	737	    ck_assert_int_eq(cli_regex_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
+offset-size-arithmetic	unit_tests/check_regex.c	739	    ck_assert_int_eq(cli_regex_table_size(1, sizeof(void *), NULL), CL_EARG);
+offset-size-arithmetic	unit_tests/check_regex.c	755	    tcase_add_loop_test(tc_api, test_suffix, 0, sizeof(tests) / sizeof(tests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	761	    tcase_add_loop_test(tc_matching, regex_list_match_test, 0, sizeof(rtests) / sizeof(rtests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	767	    tcase_add_loop_test(tc_phish, phishingScan_test, 0, sizeof(rtests) / sizeof(rtests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	768	    tcase_add_loop_test(tc_phish, phishingScan_test_allscan, 0, sizeof(rtests) / sizeof(rtests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	778	    tcase_add_loop_test(tc_phish2, phishingScan_test, 0, sizeof(rtests) / sizeof(rtests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	779	    tcase_add_loop_test(tc_phish2, phishingScan_test_allscan, 0, sizeof(rtests) / sizeof(rtests[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	784	    tcase_add_loop_test(tc_phish, test_url_canon, 0, sizeof(uc) / sizeof(uc[0]));
+offset-size-arithmetic	unit_tests/check_regex.c	789	    tcase_add_loop_test(tc_regex, test_regexes, 0, sizeof(rg) / sizeof(rg[0]));
 offset-size-arithmetic	unit_tests/check_regex.c	84	    preg = malloc(sizeof(*regex.preg));
 offset-size-arithmetic	unit_tests/check_regex.c	99	    preg = malloc(sizeof(*regex.preg));
 offset-size-arithmetic	unit_tests/check_str.c	120	    ck_assert_msg(textbuffer_append_len(&buf, "test", 3) != -1, "tbuf append");
