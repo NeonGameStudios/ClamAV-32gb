@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ELF bytecode-context allocation cleanup — 2026-08-30
+
+`cli_unpackelf()` now initializes its bytecode context pointer before the
+allocation branch, so a failed context allocation cannot send indeterminate
+state through common cleanup. The static Linux fault-injected unit regression
+verifies `CL_EMEM`, the exact sticky incomplete reason, and non-cacheability;
+current-source GCC and GCC ASan/UBSan runner evidence, complete ELF
+unpacker/corpus, production-CVD/service, materialized-large-file, Sonic1, and
+final release qualification remain required.
+
 ## HFS+ compressed-resource map admission — 2026-08-30
 
 HFS+ decmpfs resource discovery now honors the resource map's declared

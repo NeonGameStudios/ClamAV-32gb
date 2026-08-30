@@ -1,5 +1,14 @@
 # Wishlist
 
+## ELF bytecode-context allocation cleanup — 2026-08-30
+
+- Keep `cli_unpackelf()`'s bytecode context cleanup initialized before the
+  allocation branch. The current static-Linux fault-injected regression
+  verifies `CL_EMEM`, sticky incomplete state, the exact diagnostic, and
+  non-cacheability; add current-source GCC and ASan/UBSan runner evidence,
+  then complete ELF unpacker/corpus, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification.
+
 ## HFS+ compressed-resource map admission — 2026-08-30
 
 - Keep HFS+ decmpfs resource discovery aligned with the resource map's

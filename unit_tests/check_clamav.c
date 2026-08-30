@@ -104,6 +104,7 @@
 #include "scan_report.h"
 #include "clamav_rust.h"
 #include "cvd.h"
+#include "bytecode.h"
 
 #include "checks.h"
 
@@ -237,6 +238,20 @@ cl_error_t __wrap_cli_magic_scan_desc_type_reserved(int desc, const char *filepa
     }
 
     return __real_cli_magic_scan_desc_type_reserved(desc, filepath, ctx, type, name, attributes);
+}
+#endif
+
+#ifdef CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
+extern struct cli_bc_ctx *__real_cli_bytecode_context_alloc(void);
+static int elf_test_fail_bytecode_context_alloc;
+
+struct cli_bc_ctx *__wrap_cli_bytecode_context_alloc(void)
+{
+    if (elf_test_fail_bytecode_context_alloc) {
+        elf_test_fail_bytecode_context_alloc = 0;
+        return NULL;
+    }
+    return __real_cli_bytecode_context_alloc();
 }
 #endif
 
@@ -39660,6 +39675,33 @@ START_TEST(test_elf_missing_map_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
+START_TEST(test_elf_unpack_context_allocation_failure_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    elf_test_fail_bytecode_context_alloc = 1;
+    ck_assert_int_eq(cli_unpackelf(&ctx), CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ELF bytecode unpacker context could not be allocated");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_elf_unknown_data_encoding_is_fail_visible)
 {
     uint8_t data[sizeof(struct elf_file_hdr32)] = {0};
@@ -47006,6 +47048,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_elf_map);
     tcase_add_checked_fixture(tc_elf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_map, test_elf_missing_map_is_fail_visible);
+#ifdef CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
+    tcase_add_test(tc_elf_map, test_elf_unpack_context_allocation_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_elf_map, test_executable_parsers_require_engine);
     tcase_add_test(tc_pe_map, test_pe_requires_engine);
     tcase_add_test(tc_autoit_map, test_autoit_requires_engine);

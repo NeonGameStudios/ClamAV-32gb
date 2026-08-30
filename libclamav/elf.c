@@ -1134,7 +1134,7 @@ cl_error_t cli_unpackelf(cli_ctx *ctx)
     char *tempfile = NULL;
     int ndesc      = -1;
     uint64_t temporary_reserved = 0;
-    struct cli_bc_ctx *bc_ctx;
+    struct cli_bc_ctx *bc_ctx = NULL;
 
     if (ctx == NULL)
         return CL_ENULLARG;

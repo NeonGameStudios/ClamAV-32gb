@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## ELF bytecode-context allocation cleanup — 2026-08-30
+
+`cli_unpackelf()` declared its bytecode context pointer without an initial
+value, then jumped to common cleanup when context allocation failed. The
+cleanup test could therefore read indeterminate state and attempt an invalid
+destruction. The pointer is now initialized to `NULL`; the static Linux unit
+test wraps the allocator, verifies `CL_EMEM`, the exact sticky incomplete
+reason, and non-cacheability, and source guards cover the initialization,
+wrapper, and linker hook. Current-source production-GCC and GCC ASan/UBSan
+runner evidence, complete ELF unpacker/corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## HFS+ compressed-resource map admission — 2026-08-30
 
 HFS+ decmpfs resource discovery previously ignored the resource map's declared
