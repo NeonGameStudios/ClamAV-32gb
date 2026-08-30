@@ -1,5 +1,15 @@
 # Wishlist
 
+## 7-Zip zero-length FilesInfo Name — 2026-08-30
+
+- Keep `FilesInfo/Name` property admission fail-closed: reject a declared
+  zero-length property before reading its external flag or forming `size - 1`.
+- Retain the CRC-valid malformed-header regression and source guard; the
+  isolated current-source SDK oracle passes 1/1 under production GCC and
+  Docker ASan/UBSan. Complete current-object, production-CVD/service,
+  sanitizer, materialized-large-file, Sonic1, and final 7-Zip release
+  qualification.
+
 ## Structured scan report allocation output — 2026-08-30
 
 - Keep `cl_scanmap_ex2()` and `cl_scandesc_ex2_with_temporary_bytes()` clear

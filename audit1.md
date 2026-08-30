@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip zero-length FilesInfo Name — 2026-08-30
+
+The vendored 7-Zip reader accepted a zero-length `Name` property far enough
+to consume the next header byte as its external flag, then formed
+`(size_t)size - 1`; depending on the remaining bytes this could report an
+allocation failure for malformed metadata instead of a parse failure. The
+reader now rejects `size == 0` before consuming property data. The registered
+CRC-valid `test_7z_files_info_zero_length_name_is_parse_error` regression
+requires `CL_EPARSE`, sticky incomplete state, and a non-cacheable fmap;
+the isolated current-source SDK oracle passes 1/1 under both production GCC
+and Docker ASan/UBSan, and source guards pin the admission and test. Current-
+object execution, production-CVD/service, sanitizer, materialized-large-file,
+Sonic1, and final release qualification remain open.
+
 ## Structured scan report allocation output — 2026-08-30
 
 `cl_scanmap_ex2()` and `cli_scandesc_ex2_with_temporary_bytes()` attempted to

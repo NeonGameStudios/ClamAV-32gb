@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## 7-Zip zero-length FilesInfo Name — 2026-08-30
+
+The 7-Zip FilesInfo reader now rejects a declared zero-length `Name` property
+before consuming the following header byte as an external flag or forming a
+wrapped `size - 1` allocation size. A CRC-valid malformed-header regression
+requires `CL_EPARSE`, sticky incomplete state, and a non-cacheable fmap. The
+isolated current-source SDK oracle passes 1/1 under production GCC and Docker
+ASan/UBSan. Current-object execution, production-CVD/service, sanitizer,
+materialized-large-file, Sonic1, and final 7-Zip release qualification remain
+required.
+
 ## Structured scan report allocation output — 2026-08-30
 
 The public map and descriptor scan APIs now clear a caller-provided structured

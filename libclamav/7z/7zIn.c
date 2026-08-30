@@ -1095,6 +1095,9 @@ static SRes SzReadHeader2(
       case k7zIdName:
       {
         size_t namesSize;
+        /* The external flag is part of a nonempty Name property. */
+        if (size == 0)
+          return SZ_ERROR_ARCHIVE;
         RINOK(SzReadSwitch(sd));
         namesSize = (size_t)size - 1;
         if ((namesSize & 1) != 0)
