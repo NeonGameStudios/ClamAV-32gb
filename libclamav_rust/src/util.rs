@@ -121,6 +121,10 @@ pub const HEURISTICS_LIMITS_EXCEEDED_MAX_SCAN_SIZE: &[u8] =
     b"Heuristics.Limits.Exceeded.MaxScanSize\0";
 pub const HEURISTICS_LIMITS_EXCEEDED_MAX_FILES: &[u8] = b"Heuristics.Limits.Exceeded.MaxFiles\0";
 
+fn archive_metadata_filepos(filepos: usize) -> Option<u32> {
+    u32::try_from(filepos).ok()
+}
+
 /// Append an exceeds-max heuristic alert or metadata entry.
 ///
 /// The C evidence store retains the original `virname` pointer, so the alert
@@ -162,6 +166,23 @@ pub unsafe fn scan_archive_metadata(
     filepos: usize,
     res1: i32,
 ) -> sys::cl_error_t {
+    let filepos = match archive_metadata_filepos(filepos) {
+        Some(filepos) => filepos,
+        None => {
+            /* The legacy metadata callback exposes the member index as a
+             * 32-bit value. Do not silently wrap a large Rust-side index and
+             * publish metadata for the wrong member. */
+            unsafe {
+                sys::cli_mark_scan_incomplete(
+                    ctx,
+                    b"archive metadata member index exceeds the 32-bit callback range\0"
+                        .as_ptr()
+                        .cast(),
+                );
+            }
+            return sys::cl_error_t_CL_ERESOURCE;
+        }
+    };
     let module_name = match std::ffi::CString::new(filename) {
         Ok(name) => name,
         Err(_) => {
@@ -177,9 +198,22 @@ pub unsafe fn scan_archive_metadata(
             filesize_compressed,
             filesize_original,
             i32::from(is_encrypted),
-            filepos as u32,
+            filepos,
             res1,
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::archive_metadata_filepos;
+
+    #[test]
+    fn archive_metadata_filepos_rejects_narrowing() {
+        assert_eq!(archive_metadata_filepos(0), Some(0));
+        assert_eq!(archive_metadata_filepos(u32::MAX as usize), Some(u32::MAX));
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(archive_metadata_filepos(u32::MAX as usize + 1), None);
     }
 }
 

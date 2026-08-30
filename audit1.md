@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Rust archive metadata file-index ABI boundary — 2026-08-30
+
+The Rust ALZ/LHA archive paths pass member indices through the legacy C
+metadata callback, whose `filepos` field is 32-bit. The bridge previously used
+a lossy `usize as u32` conversion, so an archive with an unrepresentable
+member index could publish metadata for the wrong member. The bridge now
+checks the conversion, marks the scan incomplete, and returns `CL_ERESOURCE`
+before invoking the callback. A focused Rust unit regression covers the
+representable and rejected ranges, and the source guard pins both the check
+and its fail-visible reason. Current Rust/C-ABI execution, full archive
+corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+and final release qualification remain open.
+
 ## 7-Zip SFX recovery admission and unaligned header reads — 2026-08-30
 
 The 7-Zip SFX admission probe previously accepted a complete signature-plus-zero

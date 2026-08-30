@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Rust archive metadata file-index ABI boundary — 2026-08-30
+
+The ALZ/LHA Rust archive bridge now checks the `usize` member index before
+passing it to the legacy 32-bit C metadata callback. An unrepresentable index
+marks the scan incomplete and returns `CL_ERESOURCE` instead of silently
+wrapping to a different member position; the focused Rust narrowing
+regression and source guard cover the boundary. Current Rust/C-ABI execution,
+complete archive corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## 7-Zip SFX recovery admission and unaligned header reads — 2026-08-30
 
 7-Zip SFX admission now rejects an all-zero recovery tuple unless the bounded

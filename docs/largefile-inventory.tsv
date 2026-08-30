@@ -35373,7 +35373,10 @@ offset-size-arithmetic	libclamav_rust/src/sys.rs	969	    pub offmatrix: *mut *mu
 offset-size-arithmetic	libclamav_rust/src/sys.rs	974	    pub lsigsuboff_last: *mut *mut u64,
 offset-size-arithmetic	libclamav_rust/src/sys.rs	975	    pub lsigsuboff_first: *mut *mut u64,
 offset-size-arithmetic	libclamav_rust/src/sys.rs	978	    pub offset: *mut u64,
-offset-size-arithmetic	libclamav_rust/src/util.rs	124	/// Append an exceeds-max heuristic alert or metadata entry.
+offset-size-arithmetic	libclamav_rust/src/util.rs	124	fn archive_metadata_filepos(filepos: usize) -> Option<u32> {
+offset-size-arithmetic	libclamav_rust/src/util.rs	128	/// Append an exceeds-max heuristic alert or metadata entry.
+offset-size-arithmetic	libclamav_rust/src/util.rs	173	             * 32-bit value. Do not silently wrap a large Rust-side index and
+offset-size-arithmetic	libclamav_rust/src/util.rs	216	        assert_eq!(archive_metadata_filepos(u32::MAX as usize + 1), None);
 offset-size-arithmetic	libclammspack/examples/cabd_memory.c	100	  (off_t (*)(struct mspack_file *)) &mem_tell,
 offset-size-arithmetic	libclammspack/examples/cabd_memory.c	12	/* use a pointer to a mem_buf structure as "filenames" */
 offset-size-arithmetic	libclammspack/examples/cabd_memory.c	151	        /* fill out our "filename" (memory pointer and length) */

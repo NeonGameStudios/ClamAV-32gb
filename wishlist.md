@@ -1,5 +1,14 @@
 # Wishlist
 
+## Rust archive metadata file-index ABI boundary — 2026-08-30
+
+- Keep the ALZ/LHA Rust-to-C archive metadata bridge fail-visible when a
+  `usize` member index cannot be represented by the callback's 32-bit
+  `filepos`; never wrap the index and match metadata against the wrong member.
+  Retain the focused narrowing regression and source guard, then complete
+  current Rust/C-ABI, archive corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification.
+
 ## 7-Zip SFX recovery admission and unaligned header reads — 2026-08-30
 
 - Keep 7-Zip SFX admission fail-closed for zero recovery tuples without a
