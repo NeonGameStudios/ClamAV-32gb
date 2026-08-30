@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## clamd structured report for empty directory walks — 2026-08-30
+
+Successful structured `SCANREPORT`, `CONTSCANREPORT`, and one-worker
+`MULTISCANREPORT` walks that contain no scannable files now receive an explicit
+clean, complete zero-file report. Previously those walks had no library report
+object and were incorrectly emitted as the bounded `RESOURCE_FAILURE`
+“report unavailable” fallback. The registered daemon regression validates the
+JSON frame and zero terminator; full command-family parity, production-CVD/
+service, materialized-large-file, Sonic1, and final release qualification
+remain required.
+
 ## GPT partition-name diagnostic fallback — 2026-08-30
 
 GPT partition-name conversion can return `NULL` for a short or unallocatable

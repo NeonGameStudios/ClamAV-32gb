@@ -1,5 +1,14 @@
 # Wishlist
 
+## clamd structured report for empty directory walks — 2026-08-30
+
+- Keep successful structured path and `MULTISCAN` walks that contain no
+  scannable files represented by an explicit clean, complete zero-file report;
+  do not classify the absence of a per-file report as `RESOURCE_FAILURE`.
+  The registered empty-directory daemon regression covers the JSON frame and
+  terminator; full command-family parity, production-CVD/service,
+  materialized-large-file, Sonic1, and release qualification remain open.
+
 ## GPT partition-name diagnostic fallback — 2026-08-30
 
 - Keep the GPT partition-name diagnostic on an explicit empty-string fallback

@@ -1609,6 +1609,47 @@ START_TEST(test_instream_report)
 END_TEST
 
 #ifndef _WIN32
+START_TEST(test_scan_report_empty_directory_is_complete)
+{
+    char dirname[] = "/tmp/clamd-empty-report-XXXXXX";
+    char command[sizeof(dirname) + sizeof("zSCANREPORT ")];
+    char *json       = NULL;
+    uint32_t length  = 0;
+    int terminator   = 0;
+    int frame;
+    int infected     = -1;
+    int incomplete   = -1;
+    cl_error_t status = CL_ERROR;
+
+    ck_assert_ptr_nonnull(mkdtemp(dirname));
+    ck_assert_int_lt(snprintf(command, sizeof(command), "zSCANREPORT %s", dirname), (int)sizeof(command));
+
+    conn_setup();
+    ck_assert_int_eq(send(sockd, command, strlen(command) + 1, 0), (ssize_t)(strlen(command) + 1));
+    frame = recv_scan_report_frame(sockd, &json, &length, &terminator);
+    ck_assert_int_eq(frame, 1);
+    ck_assert_int_eq(terminator, 0);
+    ck_assert_int_eq(scan_report_json_status(json, length, &infected, &incomplete, &status), 0);
+    ck_assert_int_eq(infected, 0);
+    ck_assert_int_eq(incomplete, 0);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_ptr_nonnull(CLI_STRNSTR(json, "\"completion\":\"COMPLETE\"", length));
+    ck_assert_ptr_nonnull(CLI_STRNSTR(json, "\"files_scanned\":0", length));
+    free(json);
+    json = NULL;
+    length = 0;
+    terminator = 0;
+    frame = recv_scan_report_frame(sockd, &json, &length, &terminator);
+    ck_assert_int_eq(frame, 0);
+    ck_assert_int_eq(terminator, 1);
+    ck_assert_ptr_null(json);
+    conn_teardown();
+    ck_assert_int_eq(rmdir(dirname), 0);
+}
+END_TEST
+#endif
+
+#ifndef _WIN32
 static int sendmsg_fd(int sockd, const char *mesg, size_t msg_len, int fd, int singlemsg)
 {
     struct msghdr msg;
@@ -2100,6 +2141,9 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_commands, test_stats);
     tcase_add_test(tc_commands, test_instream);
     tcase_add_test(tc_commands, test_instream_report);
+#ifndef _WIN32
+    tcase_add_test(tc_commands, test_scan_report_empty_directory_is_complete);
+#endif
     tcase_add_test(tc_commands, test_idsession);
 
 #ifndef _WIN32 // Disabled because fd-passing not supported on Windows

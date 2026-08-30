@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## clamd structured report for empty directory walks — 2026-08-30
+
+Structured path and `MULTISCAN` requests previously had no report object when
+the directory walker visited only the root directory (or otherwise found no
+scannable files). The daemon then serialized its bounded “report unavailable”
+fallback as `RESOURCE_FAILURE`, even though the walk completed without an
+error. `command()` now asks the scanner layer to publish an explicit clean
+zero-file report after a successful, error-free walk with no per-file report;
+nonempty, skipped-with-error, and failed walks retain their existing status
+paths. The registered daemon regression sends `zSCANREPORT` for a materialized
+empty directory, requires a `COMPLETE` report with zero files, and verifies the
+zero terminator. Current-object service execution, full command-family parity,
+sanitizer, production-CVD, materialized large-file, Sonic1, and final release
+qualification remain open.
+
 ## GPT partition-name diagnostic fallback — 2026-08-30
 
 GPT partition names are converted from fixed-width UTF-16 metadata for

@@ -69,6 +69,7 @@ struct cb_context {
 cl_error_t scanfd(client_conn_t *conn, unsigned long int *scanned, const struct cl_engine *engine, struct cl_scan_options *options, const struct optstruct *opts, int odesc, int stream);
 int scanstream(int odesc, unsigned long int *scanned, const struct cl_engine *engine, struct cl_scan_options *options, const struct optstruct *opts, char term);
 cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_ftw_reason reason, struct cli_ftw_cbdata *data);
+void clamd_record_structured_empty_scan(struct scan_cb_data *scandata, const char *target);
 int scan_pathchk(const char *path, struct cli_ftw_cbdata *data);
 void hash_callback(int fd, unsigned long long size, const char *md5, const char *virname, void *ctx);
 void msg_callback(enum cl_msg severity, const char *fullmsg, const char *msg, void *ctx);

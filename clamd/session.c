@@ -573,6 +573,14 @@ int command(client_conn_t *conn, int *virus)
         total = scandata.total;
         ok    = total - error - scandata.infected_files;
     }
+    /* A directory containing no scannable files has no per-file callback to
+     * create a library report.  Wait for MULTISCAN children before deciding
+     * this, otherwise a still-running child would be mistaken for an empty
+     * walk. Give a successful zero-file walk an explicit clean report instead
+     * of the report-unavailable resource fallback. */
+    if (ret == CL_SUCCESS && error == 0 && conn->structured_report &&
+        conn->structured_scan_report == NULL)
+        clamd_record_structured_empty_scan(&scandata, conn->filename);
 
     if (ok + error == total && (error != total)) {
         if (conn_reply_single(conn, conn->filename, "OK") == -1)

@@ -212,8 +212,8 @@ static void record_structured_scan_skip(struct scan_cb_data *scandata,
         scandata->conn->structured_status = CL_EMEM;
 }
 
-static void record_structured_empty_scan(struct scan_cb_data *scandata,
-                                         const char *target)
+void clamd_record_structured_empty_scan(struct scan_cb_data *scandata,
+                                        const char *target)
 {
     cl_scan_report_t *report = NULL;
 
@@ -396,7 +396,7 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
     if (sb && sb->st_size == 0) { /* empty file */
         if (msg == scandata->toplevel_path)
             conn_reply_single(scandata->conn, filename, "Empty file");
-        record_structured_empty_scan(scandata, filename);
+        clamd_record_structured_empty_scan(scandata, filename);
         free(filename);
         return CL_SUCCESS;
     }
