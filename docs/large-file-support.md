@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Rust CDIFF update and FFI admission — 2026-08-30
+
+The enabled freshclam/sigtool CDIFF path now rejects null verifier handles
+before raw ownership conversion, reports malformed short signed files instead
+of underflowing footer coordinates, bounds hash requests by the file length,
+and turns missing command remainders and temporary-file flush failures into
+structured errors. Signing-service failure is returned as an error rather than
+an assertion, and the C-owned signature buffer is released after copying.
+Focused Rust tests and source guards cover the new boundaries. Rust/C ABI,
+sanitizer, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain required.
+
 ## Rust signed-database and logger FFI safety — 2026-08-30
 
 Signed-database FFI now rejects null certificate arrays and verifier handles

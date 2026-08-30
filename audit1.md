@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Rust CDIFF update and FFI admission — 2026-08-30
+
+The enabled freshclam/sigtool CDIFF path had several fail-visible gaps. The
+Rust FFI accepted a null verifier before `Box::from_raw()`, and malformed
+short signed files could underflow the footer coordinate. The bounded hash
+helper also had no EOF guard, while malformed command lines used `unwrap()`
+for required remainders. The signing-service path asserted on a null result
+and leaked the C-owned signature buffer. These paths now return structured
+errors, use checked footer/hash coordinates, free the returned signature, and
+convert missing command parameters and temporary-file flush failures into
+CDIFF errors. Focused Rust tests cover the short header, footer bounds, hash
+EOF, malformed command, and null-verifier boundaries; current Rust/C ABI,
+sanitizer, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.
+
 ## Rust signed-database and logger FFI safety — 2026-08-30
 
 The signed-database Rust FFI could form a raw slice from a null certificate

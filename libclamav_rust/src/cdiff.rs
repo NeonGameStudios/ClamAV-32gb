@@ -273,6 +273,9 @@ pub enum SignatureError {
 
     #[error("Digital signature larger than {SIG_SIZE} bytes")]
     TooLarge,
+
+    #[error("Digital-signature footer is outside the file bounds")]
+    FooterOutOfBounds,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -471,7 +474,6 @@ pub extern "C" fn _script2cdiff(
 /// This function makes a single C call to cli_getdsig to obtain a signed
 /// signature from the sha2-256 of the contents written.
 ///
-/// This function will panic if any of the &str parameters contain interior NUL bytes
 pub fn script2cdiff(script_file_name: &str, builder: &str, server: &str) -> Result<(), Error> {
     // Make a copy of the script file name to use for the cdiff file
     let cdiff_file_name_string = script_file_name.to_string();
@@ -554,9 +556,8 @@ pub fn script2cdiff(script_file_name: &str, builder: &str, server: &str) -> Resu
     };
 
     let dsig = unsafe {
-        // These strings should not contain interior NULs
-        let server = CString::new(server).unwrap();
-        let builder = CString::new(builder).unwrap();
+        let server = CString::new(server)?;
+        let builder = CString::new(builder)?;
         let dsig_ptr = sys::cli_getdsig(
             server.as_c_str().as_ptr() as *const c_char,
             builder.as_c_str().as_ptr() as *const c_char,
@@ -564,8 +565,14 @@ pub fn script2cdiff(script_file_name: &str, builder: &str, server: &str) -> Resu
             32,
             2,
         );
-        assert!(!dsig_ptr.is_null());
-        CStr::from_ptr(dsig_ptr)
+        if dsig_ptr.is_null() {
+            return Err(Error::CannotVerify(
+                "Signing service returned no digital signature".to_string(),
+            ));
+        }
+        let dsig = CStr::from_ptr(dsig_ptr).to_bytes().to_vec();
+        libc::free(dsig_ptr.cast());
+        dsig
     };
 
     // Write cdiff footer delimiter
@@ -595,7 +602,18 @@ pub unsafe extern "C" fn _cdiff_apply(
     mode: u16,
     err: *mut *mut FFIError,
 ) -> bool {
-    let cdiff_file_path_str = validate_str_param!(cdiff_file_path_str);
+    if err.is_null() {
+        error!("err is NULL");
+        return false;
+    }
+    if verifier_ptr.is_null() {
+        return ffi_error!(
+            err = err,
+            Error::CannotVerify("verifier pointer is NULL".to_string())
+        );
+    }
+
+    let cdiff_file_path_str = validate_str_param!(cdiff_file_path_str, err = err);
     let cdiff_file_path = match Path::new(cdiff_file_path_str).canonicalize() {
         Ok(p) => p,
         Err(e) => {
@@ -643,9 +661,10 @@ pub fn cdiff_apply(
     verifier: &Verifier,
     mode: ApplyMode,
 ) -> Result<(), Error> {
-    let path = std::env::current_dir().unwrap();
     debug!("cdiff_apply: applying {}", cdiff_file_path.display());
-    debug!("cdiff_apply: current directory is {}", path.display());
+    if let Ok(path) = std::env::current_dir() {
+        debug!("cdiff_apply: current directory is {}", path.display());
+    }
 
     // Open cdiff file for reading
     let mut file = File::open(cdiff_file_path).map_err(Error::IoError)?;
@@ -655,7 +674,8 @@ pub fn cdiff_apply(
         ApplyMode::Script => 0,
         ApplyMode::Cdiff => {
             // Get file length
-            let file_len = file.metadata()?.len() as usize;
+            let file_len = usize::try_from(file.metadata()?.len())
+                .map_err(|_| Error::Signature(SignatureError::FooterOutOfBounds))?;
 
             // Check if there is an external digital signature
             // The filename would be the same as the cdiff file with an extra .sign extension
@@ -691,7 +711,8 @@ pub fn cdiff_apply(
                     print_file_data(dsig.clone(), dsig.len());
                 }
 
-                let footer_offset = file_len - dsig.len() - 1;
+                let footer_offset = signature_footer_offset(file_len, dsig.len())
+                    .map_err(Error::Signature)?;
 
                 // The SHA is calculated from the contents of the beginning of the file
                 // up until the ':' before the dsig at the end of the file.
@@ -703,8 +724,8 @@ pub fn cdiff_apply(
                 let dsig_cstring = CString::new(dsig)?;
 
                 // Verify cdiff
-                let n = CString::new(PUBLIC_KEY_MODULUS).unwrap();
-                let e = CString::new(PUBLIC_KEY_EXPONENT).unwrap();
+                let n = CString::new(PUBLIC_KEY_MODULUS)?;
+                let e = CString::new(PUBLIC_KEY_EXPONENT)?;
                 let versig_result = unsafe {
                     sys::cli_versig2(
                         sha2_256.to_vec().as_ptr(),
@@ -1082,7 +1103,12 @@ fn cmd_close(ctx: &mut Context) -> Result<(), InputError> {
         // Flush and close the temporary file.
         // On Windows, it must be closed before it can be renamed.
         let tmpfile_path = {
-            let _ = tmp_file.into_inner().unwrap();
+            tmp_file.into_inner().map_err(|e| {
+                InputError::ProcessingString(format!(
+                    "Failed to flush temporary file {:?} for CLOSE command: {}",
+                    tmp_named_file.path(), e
+                ))
+            })?;
             let (_, path) = tmp_named_file.into_parts();
             path
         };
@@ -1172,22 +1198,38 @@ fn process_line(ctx: &mut Context, line: &[u8]) -> Result<(), InputError> {
     // Call the appropriate command function
     match cmd {
         b"OPEN" => cmd_open(ctx, remainder),
-        b"ADD" => cmd_add(ctx, remainder_with_nl.unwrap()),
+        b"ADD" => {
+            if remainder.is_none() {
+                return Err(InputError::MissingParameter("ADD", "signature"));
+            }
+            cmd_add(
+                ctx,
+                remainder_with_nl.ok_or(InputError::MissingParameter("ADD", "signature"))?,
+            )
+        }
         b"DEL" => {
-            let del_op = DelOp::new(remainder.unwrap())?;
+            let del_op = DelOp::new(
+                remainder.ok_or(InputError::MissingParameter("DEL", "remainder"))?,
+            )?;
             cmd_del(ctx, del_op)
         }
         b"XCHG" => {
-            let xchg_op = XchgOp::new(remainder.unwrap())?;
+            let xchg_op = XchgOp::new(
+                remainder.ok_or(InputError::MissingParameter("XCHG", "remainder"))?,
+            )?;
             cmd_xchg(ctx, xchg_op)
         }
         b"MOVE" => {
-            let move_op = MoveOp::new(remainder.unwrap())?;
+            let move_op = MoveOp::new(
+                remainder.ok_or(InputError::MissingParameter("MOVE", "remainder"))?,
+            )?;
             cmd_move(ctx, move_op)
         }
         b"CLOSE" => cmd_close(ctx),
         b"UNLINK" => {
-            let unlink_op = UnlinkOp::new(remainder.unwrap())?;
+            let unlink_op = UnlinkOp::new(
+                remainder.ok_or(InputError::MissingParameter("UNLINK", "remainder"))?,
+            )?;
             cmd_unlink(ctx, unlink_op)
         }
         _ => Err(InputError::UnknownCommand(
@@ -1279,10 +1321,10 @@ fn read_size(file: &mut File) -> Result<(u32, usize), HeaderError> {
     }
 
     // Read up to READ_SIZE to parse out the file size.
-    let n = file.take(READ_SIZE as u64).read_to_end(&mut buf)?;
+    file.take(READ_SIZE as u64).read_to_end(&mut buf)?;
     let mut colons = 0;
     let mut file_size_vec = Vec::new();
-    for (i, value) in buf.iter().enumerate().take(n + 1) {
+    for (i, value) in buf.iter().enumerate() {
         // Colon found, increment count.
         if *value == b':' {
             colons += 1;
@@ -1312,6 +1354,12 @@ fn read_size(file: &mut File) -> Result<(u32, usize), HeaderError> {
 fn get_hash(file: &mut File, len: usize) -> Result<[u8; 32], Error> {
     let mut hasher = Sha256::new();
 
+    let file_len = usize::try_from(file.metadata()?.len())
+        .map_err(|_| Error::Signature(SignatureError::FooterOutOfBounds))?;
+    if len > file_len {
+        return Err(Error::Signature(SignatureError::FooterOutOfBounds));
+    }
+
     // Seek to beginning of file
     file.rewind()?;
 
@@ -1323,7 +1371,10 @@ fn get_hash(file: &mut File, len: usize) -> Result<[u8; 32], Error> {
     loop {
         let mut buf = Vec::with_capacity(READ_SIZE);
         let n = file.take(READ_SIZE as u64).read_to_end(&mut buf)?;
-        if sum + n >= len {
+        let next_sum = sum
+            .checked_add(n)
+            .ok_or(Error::Signature(SignatureError::FooterOutOfBounds))?;
+        if next_sum >= len {
             // update with len - sum
             hasher.update(&buf[..(len - sum)]);
             let hash = hasher.finalize();
@@ -1332,8 +1383,20 @@ fn get_hash(file: &mut File, len: usize) -> Result<[u8; 32], Error> {
             // update with n
             hasher.update(&buf);
         }
-        sum += n;
+        if n == 0 {
+            return Err(Error::Signature(SignatureError::FooterOutOfBounds));
+        }
+        sum = next_sum;
     }
+}
+
+fn signature_footer_offset(file_len: usize, dsig_len: usize) -> Result<usize, SignatureError> {
+    let footer_len = dsig_len
+        .checked_add(1)
+        .ok_or(SignatureError::FooterOutOfBounds)?;
+    file_len
+        .checked_sub(footer_len)
+        .ok_or(SignatureError::FooterOutOfBounds)
 }
 
 fn print_file_data(buf: Vec<u8>, len: usize) {
@@ -1698,6 +1761,65 @@ mod tests {
 
         compare_file_with_expected(src_file_path, &mut expected_src_data);
         compare_file_with_expected(dst_file_path, &mut expected_dst_data);
+    }
+
+    #[test]
+    fn read_size_accepts_a_short_valid_header() {
+        let mut file = tempfile::NamedTempFile::new().expect("temporary cdiff file");
+        file.write_all(b"ClamAV-Diff:1:0:")
+            .expect("write cdiff header");
+
+        let (size, offset) = read_size(file.as_file_mut()).expect("parse cdiff header");
+        assert_eq!(size, 0);
+        assert_eq!(offset, b"ClamAV-Diff:1:0:".len());
+    }
+
+    #[test]
+    fn signature_footer_offset_rejects_a_short_file() {
+        assert!(matches!(
+            signature_footer_offset(SIG_SIZE, SIG_SIZE),
+            Err(SignatureError::FooterOutOfBounds)
+        ));
+        assert_eq!(
+            signature_footer_offset(SIG_SIZE + 1, SIG_SIZE).expect("footer offset"),
+            0
+        );
+    }
+
+    #[test]
+    fn get_hash_rejects_a_length_past_eof() {
+        let mut file = tempfile::NamedTempFile::new().expect("temporary cdiff file");
+        file.write_all(b"x").expect("write cdiff data");
+
+        assert!(matches!(
+            get_hash(file.as_file_mut(), 2),
+            Err(Error::Signature(SignatureError::FooterOutOfBounds))
+        ));
+    }
+
+    #[test]
+    fn malformed_command_remainder_is_fail_visible() {
+        let mut ctx = Context::default();
+
+        assert!(matches!(
+            process_line(&mut ctx, b"DEL\n"),
+            Err(InputError::MissingParameter("DEL", "remainder"))
+        ));
+        assert!(matches!(
+            process_line(&mut ctx, b"ADD\n"),
+            Err(InputError::MissingParameter("ADD", "signature"))
+        ));
+    }
+
+    #[test]
+    fn cdiff_ffi_rejects_a_null_verifier() {
+        let path = CString::new("missing.cdiff").expect("C string");
+        let mut error: *mut FFIError = std::ptr::null_mut();
+
+        let result = unsafe { _cdiff_apply(path.as_ptr(), std::ptr::null(), 1, &mut error) };
+        assert!(!result);
+        assert!(!error.is_null());
+        unsafe { crate::ffi_util::ffierror_free(error) };
     }
 
     #[test]

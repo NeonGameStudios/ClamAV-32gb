@@ -1,5 +1,16 @@
 # Wishlist
 
+## Rust CDIFF update and FFI admission — 2026-08-30
+
+- Keep the freshclam/sigtool CDIFF path fail-visible for null verifier
+  handles, malformed short signed files, EOF-beyond hash requests, missing
+  command remainders, temporary-file flush failures, and signing-service
+  failures. The Rust signing path now frees the C-owned signature result and
+  no longer asserts on a null service response; focused unit tests and source
+  guards cover these boundaries. Current Rust/C ABI, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification remain required.
+
 ## Rust signed-database and logger FFI safety — 2026-08-30
 
 - Keep signed-database FFI boundaries fail-visible: reject null certificate
