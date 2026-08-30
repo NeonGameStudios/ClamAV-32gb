@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## RIFF 4-GiB end-coordinate promotion — 2026-08-30
+
+RIFF stores its container size in a 32-bit field, but the parser’s logical
+fmap and chunk coordinates are native-width. The old `8U + size` expression
+performed the addition in 32-bit arithmetic before assignment, so a declared
+end at exactly 4 GiB wrapped to zero and was rejected before the terminal
+chunk could be inspected. The addition now promotes before arithmetic. A
+sparse current-source production-linked GCC regression reaches a terminal
+chunk on a logical 4-GiB map without wrapping, and the matching GCC ASan/UBSan
+runner is clean. Complete RIFF corpus, current-object, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## ISO-9660 descriptor-boundary admission — 2026-08-30
 
 The ISO parser used to search for the next `CD001` identifier anywhere after

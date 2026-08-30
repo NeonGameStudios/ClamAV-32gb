@@ -30085,6 +30085,29 @@ static const void *riff_chunk_read_failure(fmap_t *map, size_t at, size_t len, i
     return (const uint8_t *)map->data + at;
 }
 
+struct riff_large_size_state {
+    uint8_t prefix[20];
+};
+
+static off_t riff_large_size_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct riff_large_size_state *state = handle;
+    size_t copy_start;
+    size_t copy_length;
+
+    if (offset < 0 || count > (size_t)INT64_MAX)
+        return -1;
+
+    memset(buf, 0, count);
+    if ((uint64_t)offset >= sizeof(state->prefix))
+        return (off_t)count;
+
+    copy_start  = (size_t)offset;
+    copy_length = MIN(count, sizeof(state->prefix) - copy_start);
+    memcpy(buf, state->prefix + copy_start, copy_length);
+    return (off_t)count;
+}
+
 static const void *hfsplus_catalog_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -31138,6 +31161,47 @@ START_TEST(test_riff_accepts_unaligned_nested_input)
     map = cl_fmap_open_memory(storage + 1U, sizeof(input));
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
+
+    ck_assert_int_eq(cli_check_riff_exploit(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_riff_four_gib_boundary_does_not_wrap)
+{
+    struct riff_large_size_state state;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    if (sizeof(size_t) <= 4 || sizeof(off_t) <= 4)
+        return;
+
+    memcpy(state.prefix, "RIFF", 4);
+    state.prefix[4]  = 0xf8;
+    state.prefix[5]  = 0xff;
+    state.prefix[6]  = 0xff;
+    state.prefix[7]  = 0xff;
+    memcpy(state.prefix + 8, "ACONJUNK", 8);
+    state.prefix[16] = 0xec;
+    state.prefix[17] = 0xff;
+    state.prefix[18] = 0xff;
+    state.prefix[19] = 0xff;
+
+    /* Keep the fixture sparse: the production fmap constructor correctly
+     * rejects a materialized 4-GiB allocation under the scan ceiling. The
+     * parser only needs the fixed prefix, so expose the boundary logically
+     * after opening a one-page backing map. */
+    map = cl_fmap_open_handle(&state, 0, 4096, riff_large_size_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    map->len = UINT64_C(0x100000000);
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ctx.fmap   = map;
 
     ck_assert_int_eq(cli_check_riff_exploit(&ctx), CL_SUCCESS);
     ck_assert(!ctx.scan_incomplete);
@@ -48121,6 +48185,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_riff, test_riff_null_context_is_fail_visible);
     tcase_add_test(tc_riff, test_riff_chunk_read_failure_is_fail_visible);
     tcase_add_test(tc_riff, test_riff_accepts_unaligned_nested_input);
+    tcase_add_test(tc_riff, test_riff_four_gib_boundary_does_not_wrap);
     tcase_add_test(tc_riff, test_riff_truncated_chunk_is_fail_visible);
     tcase_add_test(tc_riff, test_riff_list_respects_declared_boundary);
 #ifndef _WIN32

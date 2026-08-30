@@ -319,7 +319,10 @@ int cli_check_riff_exploit(cli_ctx *ctx)
     }
 
     memcpy(&riff_size_raw, buf + sizeof(uint32_t), sizeof(riff_size_raw));
-    riff_end = 8U + riff_endian_convert_32(riff_size_raw, big_endian);
+    /* Promote before adding the fixed RIFF header size.  The format field is
+     * 32-bit, but a 64-bit fmap can represent the resulting end coordinate
+     * at the 4-GiB boundary without wrapping it back to zero. */
+    riff_end = (uint64_t)8U + riff_endian_convert_32(riff_size_raw, big_endian);
     if (riff_end < 12U || riff_end > map->len) {
         cli_mark_scan_incomplete(ctx, "RIFF container range was truncated");
         return CL_EPARSE;

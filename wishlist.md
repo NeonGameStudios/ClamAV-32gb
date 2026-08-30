@@ -1,5 +1,15 @@
 # Wishlist
 
+## RIFF 4-GiB end-coordinate promotion — 2026-08-30
+
+- Promote the 32-bit RIFF size field before adding the fixed eight-byte header
+  so a valid 4-GiB logical end coordinate cannot wrap to zero on a 64-bit
+  fmap.
+- Retain the sparse boundary regression, source guards, and current-source GCC
+  plus ASan/UBSan evidence. Complete RIFF corpus, current-object,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification remain required.
+
 ## ISO-9660 descriptor-boundary admission — 2026-08-30
 
 - Require the next ISO-9660 `CD001` identifier at the fixed 2048-byte
