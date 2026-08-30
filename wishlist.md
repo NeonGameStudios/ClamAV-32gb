@@ -251,6 +251,17 @@
   production-CVD/service, materialized-large-file, Sonic1, and final release
   qualification remain required.
 
+## MSPack filename-backed large-file positioning — 2026-08-30
+
+- Keep filename-backed MSPack seek/tell callbacks on the configured `off_t`
+  width by using `fseeko()`/`ftello()` where available and checking the
+  `long` range before the portable fallback. Reject null callback buffers and
+  missing filename streams for nonzero operations.
+- Retain the source guards and production-GCC syntax evidence. Add runtime
+  large-file positioning, complete CAB/CHM corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification before marking this capability complete.
+
 ## Rust fmap reader destination admission — 2026-08-30
 
 - Keep `FMapReader::read()` bounded by both the remaining map range and the

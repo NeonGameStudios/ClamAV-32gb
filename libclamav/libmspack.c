@@ -205,7 +205,7 @@ static int mspack_fmap_read(struct mspack_file *file, void *buffer, int bytes)
         cli_dbgmsg("%s() %d\n", __func__, __LINE__);
         return -1;
     }
-    if (!mspack_handle) {
+    if (!mspack_handle || (bytes > 0 && buffer == NULL)) {
         cli_dbgmsg("%s() %d\n", __func__, __LINE__);
         return -1;
     }
@@ -243,6 +243,9 @@ static int mspack_fmap_read(struct mspack_file *file, void *buffer, int bytes)
         return (int)count;
     } else {
         /* Use file descriptor */
+        if (mspack_handle->f == NULL)
+            return -1;
+
         count = fread(buffer, 1, (size_t)bytes, mspack_handle->f);
         if (ferror(mspack_handle->f)) {
             if (mspack_handle->system_ex != NULL)
@@ -266,7 +269,7 @@ static int mspack_fmap_write(struct mspack_file *file, void *buffer, int bytes)
     size_t count;
     uint64_t max_size;
 
-    if (bytes < 0 || !mspack_handle) {
+    if (bytes < 0 || !mspack_handle || (bytes > 0 && buffer == NULL)) {
         cli_dbgmsg("%s() err %d\n", __func__, __LINE__);
         return -1;
     }
@@ -374,6 +377,9 @@ static int mspack_fmap_seek(struct mspack_file *file, off_t offset, int mode)
         return 0;
     }
 
+    if (mspack_handle->f == NULL)
+        return -1;
+
     switch (mode) {
         case MSPACK_SYS_SEEK_START:
             mode = SEEK_SET;
@@ -389,7 +395,13 @@ static int mspack_fmap_seek(struct mspack_file *file, off_t offset, int mode)
             return -1;
     }
 
-    return fseek(mspack_handle->f, offset, mode);
+#if HAVE_FSEEKO
+    return fseeko(mspack_handle->f, offset, mode);
+#else
+    if (offset > (off_t)LONG_MAX || offset < (off_t)LONG_MIN)
+        return -1;
+    return fseek(mspack_handle->f, (long)offset, mode);
+#endif
 }
 
 static off_t mspack_fmap_tell(struct mspack_file *file)
@@ -402,7 +414,14 @@ static off_t mspack_fmap_tell(struct mspack_file *file)
     if (mspack_handle->type == FILETYPE_FMAP)
         return mspack_handle->offset;
 
+    if (mspack_handle->f == NULL)
+        return (off_t)-1;
+
+#if HAVE_FSEEKO
+    return ftello(mspack_handle->f);
+#else
     return (off_t)ftell(mspack_handle->f);
+#endif
 }
 
 static void mspack_fmap_message(struct mspack_file *file, const char *fmt, ...)

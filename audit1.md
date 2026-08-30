@@ -15770,6 +15770,32 @@ by the existing mixed source/generated-header snapshot (unrelated mmap/PDF
 ABI failures), so current-object execution, duplicate/missing-member archive
 fixtures, complete CVD corpus, production-CVD/service, sanitizer,
 materialized-large-file, Sonic1, and final release qualification remain open.
+
+## MSPack filename-backed large-file positioning — 2026-08-30
+
+The custom MSPack filename-backed callbacks accepted the library’s `off_t`
+seek/tell interface but called `fseek()` and `ftell()` unconditionally. On a
+platform where `off_t` is wider than `long`, a decoder seek beyond the `long`
+range could be truncated or fail without an explicit representability
+decision, undermining the large-file admission contract.
+
+The callbacks now select `fseeko()` and `ftello()` when the configured build
+defines `HAVE_FSEEKO`. The fallback path checks `LONG_MIN`/`LONG_MAX` before
+converting to `long`, so unsupported positions fail closed. Read and write
+callbacks also reject a null buffer for nonzero requests, and the filename
+read path rejects a missing stream handle before calling `fread()`.
+
+Evidence collected for this slice:
+
+- The canonical source guard now pins the native-positioning branches, the
+  fallback range check, and the null-buffer admissions.
+- The current `libmspack.c` compiles with the production warning-enabled GCC
+  command and matching generated headers in the existing `clamav-poc-build`
+  Docker environment; `HAVE_FSEEKO=1` was confirmed by that generated
+  configuration.
+- Runtime large-file positioning, full CAB/CHM corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification remain required.
 ## XAR checksum-value allocation admission — 2026-08-30
 
 The XAR TOC checksum parser duplicated valid-length archived and extracted
