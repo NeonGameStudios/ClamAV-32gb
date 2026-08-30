@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## Rust image-fuzzy FFI admission — 2026-08-30
+
+The deliberately unsupported image-fuzzy matcher still formed a raw
+`FuzzyHashMap` handle without checking the hashmap or matcher-data pointers,
+and its loading/calculation paths could enter the panic-on-null error macro.
+The exported entries now reject null matcher state and error outputs before
+raw conversion, returning safe false results or an explicit `FFIError`.
+Focused null-state regressions and source guards cover check, load, and
+calculation entry points; image-fuzzy execution remains outside the release
+capability claim.
+
 ## Rust evidence FFI admission — 2026-08-30
 
 Several public Rust evidence query and mutation entries formed

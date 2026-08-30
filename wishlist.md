@@ -1,5 +1,13 @@
 # Wishlist
 
+## Rust image-fuzzy FFI admission — 2026-08-30
+
+- Keep the deliberately unsupported image-fuzzy matcher fail-closed when
+  hashmap, matcher-data, or error-output pointers are null. Focused
+  null-state regressions and source guards cover check, load, and calculation
+  entry points; image-fuzzy execution remains outside the release capability
+  claim.
+
 ## Rust evidence FFI admission — 2026-08-30
 
 - Keep Rust evidence query and mutation entry points fail-visible for null

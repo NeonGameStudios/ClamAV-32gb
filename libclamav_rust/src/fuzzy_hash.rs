@@ -149,6 +149,9 @@ pub unsafe extern "C" fn _fuzzy_hash_check(
     mdata: *mut sys::cli_ac_data,
     image_fuzzy_hash: sys::image_fuzzy_hash_t,
 ) -> bool {
+    if fuzzy_hashmap.is_null() || mdata.is_null() {
+        return false;
+    }
     let hash_bytes = image_fuzzy_hash.hash;
 
     let hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
@@ -181,6 +184,13 @@ pub unsafe extern "C" fn _fuzzy_hash_load_subsignature(
     subsig_id: u32,
     err: *mut *mut FFIError,
 ) -> bool {
+    if err.is_null() {
+        error!("err is NULL");
+        return false;
+    }
+    if fuzzy_hashmap.is_null() {
+        return ffi_error!(err = err, Error::NullParam("fuzzy_hashmap"));
+    }
     let hexsig = validate_str_param!(hexsig, err = err);
 
     let mut hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
@@ -205,6 +215,10 @@ pub unsafe extern "C" fn _fuzzy_hash_calculate_image(
     hash_out_len: usize,
     err: *mut *mut FFIError,
 ) -> bool {
+    if err.is_null() {
+        error!("err is NULL");
+        return false;
+    }
     if hash_out.is_null() {
         return ffi_error!(err = err, Error::NullParam("hash_out"));
     }
@@ -557,4 +571,46 @@ fn grayscale(image: &ImageBuffer<Rgb<u8>, Vec<u8>>) -> ImageBuffer<Luma<u8>, Vec
     }
 
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::CString;
+
+    #[test]
+    fn fuzzy_hash_check_rejects_null_state() {
+        let hash = sys::image_fuzzy_hash { hash: [0; 8] };
+
+        assert!(!_fuzzy_hash_check(std::ptr::null_mut(), std::ptr::null_mut(), hash));
+    }
+
+    #[test]
+    fn fuzzy_hash_load_rejects_null_map_with_error() {
+        let signature = CString::new("fuzzy_img#0000000000000000#0").expect("C string");
+        let mut error: *mut FFIError = std::ptr::null_mut();
+
+        assert!(!_fuzzy_hash_load_subsignature(
+            std::ptr::null_mut(),
+            signature.as_ptr(),
+            0,
+            0,
+            &mut error,
+        ));
+        assert!(!error.is_null());
+        unsafe { crate::ffi_util::ffierror_free(error) };
+    }
+
+    #[test]
+    fn fuzzy_hash_calculation_rejects_null_error_output() {
+        let mut output = [0u8; 8];
+
+        assert!(!_fuzzy_hash_calculate_image(
+            std::ptr::null(),
+            0,
+            output.as_mut_ptr(),
+            output.len(),
+            std::ptr::null_mut(),
+        ));
+    }
 }

@@ -3,6 +3,14 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Rust image-fuzzy FFI admission — 2026-08-30
+
+The deliberately unsupported image-fuzzy matcher now rejects null hashmap,
+matcher-data, and error-output pointers before raw conversion or panic-on-null
+error reporting. Focused null-state regressions and source guards cover its
+check, load, and calculation entries; image-fuzzy execution remains outside
+the release capability claim.
+
 ## Rust evidence FFI admission — 2026-08-30
 
 Rust evidence query and mutation FFI now handles null evidence safely. Query

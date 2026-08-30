@@ -35398,9 +35398,9 @@ offset-size-arithmetic	libclamav_rust/src/fmap.rs	504	        assert!(reader.see
 offset-size-arithmetic	libclamav_rust/src/fmap.rs	76	    const MAX_READ_CHUNK: usize = 1024 * 1024;
 offset-size-arithmetic	libclamav_rust/src/fmap.rs	88	    /// fmap read and seek. The context-free constructor remains available for
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	136	        let _ = unsafe { Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap) };
-offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	154	    let hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
-offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	186	    let mut hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
-offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	355	/// appears to be slightly different and values are sometimes off-by-one.
+offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	157	    let hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
+offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	196	    let mut hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
+offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	369	/// appears to be slightly different and values are sometimes off-by-one.
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	157	            data[header_start + 16..data_length_end]
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	180	pub fn scan_legacy_reader<R, S>(reader: &mut R, file_len: u64, sink: &mut S) -> Result<(), Error>
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	200	    const CHUNK: usize = 1024 * 1024;
