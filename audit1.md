@@ -14875,3 +14875,21 @@ allocation. Current-source GCC execution, injected allocator-failure
 coverage, complete HTML/MIME corpus, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification remain
 open.
+
+## CVD numeric-header API audit — 2026-08-29
+
+The public CVD header parser previously converted the version, signature count,
+functionality level, and optional creation-seconds fields with `atoi()`. That
+accepted malformed or negative text as zero and made out-of-range values
+undefined, allowing a malformed production database header to expose fabricated
+metadata or reach later comparisons with a wrapped value.
+
+`cl_cvdparse()` now accepts digits only and accumulates each unsigned field with
+an explicit `UINT_MAX` preflight before multiplication. Invalid numeric fields
+release the partially parsed header and return `NULL`. The new
+`test_cl_cvdparse_rejects_invalid_numeric_fields` regression covers valid
+values, negative and nonnumeric input, a value above `UINT_MAX`, and invalid
+creation seconds; source guards pin the checked parser and removal of the four
+direct `atoi()` assignments. Current-source production-GCC execution, complete
+CVD corpus, production-CVD/service, sanitizer, materialized-large-file, Sonic1,
+and final release qualification remain open.

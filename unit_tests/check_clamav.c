@@ -517,6 +517,25 @@ START_TEST(test_cl_cvdparse)
 }
 END_TEST
 
+START_TEST(test_cl_cvdparse_rejects_invalid_numeric_fields)
+{
+    struct cl_cvd *cvd;
+
+    cvd = cl_cvdparse("ClamAV-VDB:time:12:34:56:md5:dsig:builder:78");
+    ck_assert_ptr_nonnull(cvd);
+    ck_assert_uint_eq(cvd->version, 12);
+    ck_assert_uint_eq(cvd->sigs, 34);
+    ck_assert_uint_eq(cvd->fl, 56);
+    ck_assert_uint_eq(cvd->stime, 78);
+    cl_cvdfree(cvd);
+
+    ck_assert_ptr_null(cl_cvdparse("ClamAV-VDB:time:-1:34:56:md5:dsig:builder:78"));
+    ck_assert_ptr_null(cl_cvdparse("ClamAV-VDB:time:12:three:56:md5:dsig:builder:78"));
+    ck_assert_ptr_null(cl_cvdparse("ClamAV-VDB:time:12:34:4294967296:md5:dsig:builder:78"));
+    ck_assert_ptr_null(cl_cvdparse("ClamAV-VDB:time:12:34:56:md5:dsig:builder:-1"));
+}
+END_TEST
+
 START_TEST(test_cvd_api_rejects_null_arguments)
 {
     unsigned int sigs = 0;
@@ -46434,6 +46453,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cvd, test_cl_cvdfree);
     tcase_add_test(tc_cvd, test_cl_cvdhead);
     tcase_add_test(tc_cvd, test_cl_cvdparse);
+    tcase_add_test(tc_cvd, test_cl_cvdparse_rejects_invalid_numeric_fields);
     tcase_add_test(tc_cvd, test_cvd_api_rejects_null_arguments);
     tcase_add_test(tc_cvd, test_cl_load);
     tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);
@@ -47361,6 +47381,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_retflevel);
     tcase_add_test(tc_cl, test_cl_cvdhead);
     tcase_add_test(tc_cl, test_cl_cvdparse);
+    tcase_add_test(tc_cl, test_cl_cvdparse_rejects_invalid_numeric_fields);
     tcase_add_test(tc_cl, test_cl_load);
     tcase_add_test(tc_cl, test_cl_cvdverify);
     tcase_add_test(tc_cl, test_cl_statinidir);

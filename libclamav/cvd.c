@@ -364,6 +364,29 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
     return cli_tgzload_cleanup(compr, dbio, fdd);
 }
 
+static int cli_cvd_parse_uint(const char *text, unsigned int *value)
+{
+    const unsigned char *cursor;
+    unsigned int parsed = 0;
+
+    if (!text || !*text || !value)
+        return 0;
+
+    for (cursor = (const unsigned char *)text; *cursor; cursor++) {
+        unsigned int digit;
+
+        if (*cursor < '0' || *cursor > '9')
+            return 0;
+        digit = (unsigned int)(*cursor - '0');
+        if (parsed > (UINT_MAX - digit) / 10U)
+            return 0;
+        parsed = parsed * 10U + digit;
+    }
+
+    *value = parsed;
+    return 1;
+}
+
 struct cl_cvd *cl_cvdparse(const char *head)
 {
     struct cl_cvd *cvd;
@@ -391,7 +414,13 @@ struct cl_cvd *cl_cvdparse(const char *head)
         free(cvd);
         return NULL;
     }
-    cvd->version = atoi(pt);
+    if (!cli_cvd_parse_uint(pt, &cvd->version)) {
+        cli_errmsg("cli_cvdparse: Invalid version number\n");
+        free(pt);
+        free(cvd->time);
+        free(cvd);
+        return NULL;
+    }
     free(pt);
 
     if (!(pt = cli_strtok(head, 3, ":"))) {
@@ -400,7 +429,13 @@ struct cl_cvd *cl_cvdparse(const char *head)
         free(cvd);
         return NULL;
     }
-    cvd->sigs = atoi(pt);
+    if (!cli_cvd_parse_uint(pt, &cvd->sigs)) {
+        cli_errmsg("cli_cvdparse: Invalid number of signatures\n");
+        free(pt);
+        free(cvd->time);
+        free(cvd);
+        return NULL;
+    }
     free(pt);
 
     if (!(pt = cli_strtok(head, 4, ":"))) {
@@ -409,7 +444,13 @@ struct cl_cvd *cl_cvdparse(const char *head)
         free(cvd);
         return NULL;
     }
-    cvd->fl = atoi(pt);
+    if (!cli_cvd_parse_uint(pt, &cvd->fl)) {
+        cli_errmsg("cli_cvdparse: Invalid functionality level\n");
+        free(pt);
+        free(cvd->time);
+        free(cvd);
+        return NULL;
+    }
     free(pt);
 
     if (!(cvd->md5 = cli_strtok(head, 5, ":"))) {
@@ -437,7 +478,16 @@ struct cl_cvd *cl_cvdparse(const char *head)
     }
 
     if ((pt = cli_strtok(head, 8, ":"))) {
-        cvd->stime = atoi(pt);
+        if (!cli_cvd_parse_uint(pt, &cvd->stime)) {
+            cli_errmsg("cli_cvdparse: Invalid creation time in seconds\n");
+            free(pt);
+            free(cvd->time);
+            free(cvd->md5);
+            free(cvd->dsig);
+            free(cvd->builder);
+            free(cvd);
+            return NULL;
+        }
         free(pt);
     } else {
         cli_dbgmsg("cli_cvdparse: No creation time in seconds (old file format)\n");

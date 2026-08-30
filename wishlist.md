@@ -7976,3 +7976,13 @@ final qualification as open.
   allocator-failure execution; complete HTML/MIME corpus, sanitizer,
   production-CVD/service, materialized-large-file, Sonic1, and final
   qualification remain required.
+
+## CVD numeric-header parsing — 2026-08-29
+
+- Keep CVD version, signature-count, functionality-level, and creation-seconds
+  fields digit-only with checked unsigned accumulation; malformed, negative, or
+  out-of-range values must fail closed before database metadata is published.
+- Retain `test_cl_cvdparse_rejects_invalid_numeric_fields` and the source guards;
+  current-source production-GCC execution, complete CVD corpus,
+  production-CVD/service, sanitizer, materialized-large-file, Sonic1, and final
+  release qualification remain required.
