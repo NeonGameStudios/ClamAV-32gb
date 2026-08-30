@@ -1,5 +1,17 @@
 # Wishlist
 
+## Certificate trust-store directory admission — 2026-08-30
+
+- Keep `cl_validate_certificate_chain_ts_dir()` fail-visible for null paths,
+  trust-store `readdir()` errors, path/authority-array arithmetic overflow,
+  allocation failure, and `closedir()` failure; release every authority path
+  on all exits.
+- Retain the registered clean, read-failure, and close-failure regression and
+  source guards. The current-source production-GCC and ASan/UBSan focused
+  runners pass; valid certificate-chain corpus, current-object,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification remain.
+
 ## Signature-directory stat admission — 2026-08-30
 
 - Keep `cl_statinidir()` and `cl_statchkdir()` fail-visible for directory

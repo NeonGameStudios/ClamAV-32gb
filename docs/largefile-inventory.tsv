@@ -6955,7 +6955,7 @@ fixed-width-integer	unit_tests/check_clamav.c	4974	static uint64_t synthetic_cou
 fixed-width-integer	unit_tests/check_clamav.c	4976	    uint64_t count = 0;
 fixed-width-integer	unit_tests/check_clamav.c	4977	    uint64_t page;
 fixed-width-integer	unit_tests/check_clamav.c	4992	    uint64_t max_paged = 0;
-fixed-width-integer	unit_tests/check_clamav.c	50075	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
+fixed-width-integer	unit_tests/check_clamav.c	50101	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
 fixed-width-integer	unit_tests/check_clamav.c	5073	    uint64_t max_paged = 0;
 fixed-width-integer	unit_tests/check_clamav.c	5138	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	5398	    uint32_t security_offset;
@@ -7197,17 +7197,6 @@ fixed-width-integer	win32/compat/resolv.h	117	        var = ((uint32_t)(*(uint8_
 fixed-width-integer	win32/compat/strptime.c	721	                                    match     = (delta >= 0 && delta < (((int64_t)era->stop_date[0] - (int64_t)era->start_date[0]) * era->absolute_direction));
 fixed-width-integer	win32/compat/strptime.c	736	                                    if (delta >= 0 && delta < (((int64_t)era->stop_date[0] - (int64_t)era->start_date[0]) * era->absolute_direction)) {
 fixed-width-integer	win32/compat/w32_stat.c	208	    buf->st_size  = ((uint64_t)attrs.nFileSizeHigh << (sizeof(attrs.nFileSizeLow) * 8)) | attrs.nFileSizeLow;
-native-width-integer	.codex-readdb-directory-runner.c	15	extern int cl_statchkdir(const struct cl_stat *dbstat);
-native-width-integer	.codex-readdb-directory-runner.c	18	extern int __real_closedir(DIR *dirp);
-native-width-integer	.codex-readdb-directory-runner.c	20	static int fail_readdir;
-native-width-integer	.codex-readdb-directory-runner.c	21	static int fail_closedir;
-native-width-integer	.codex-readdb-directory-runner.c	28	void *cli_safer_realloc_or_free(void *ptr, size_t size)
-native-width-integer	.codex-readdb-directory-runner.c	71	int __wrap_closedir(DIR *dirp)
-native-width-integer	.codex-readdb-directory-runner.c	73	    int result = __real_closedir(dirp);
-native-width-integer	.codex-readdb-directory-runner.c	79	static int require(int condition, const char *message)
-native-width-integer	.codex-readdb-directory-runner.c	86	int main(void)
-native-width-integer	.codex-readdb-directory-runner.c	91	    int fd;
-native-width-integer	.codex-readdb-directory-runner.c	92	    int failures = 0;
 native-width-integer	clamav-milter/allow_list.c	116	int allowed(const char *addr, int from)
 native-width-integer	clamav-milter/allow_list.c	133	int smtpauth_init(const char *r)
 native-width-integer	clamav-milter/allow_list.c	140	        int rxsize = 0, rxavail = 0, rxused = 0;
@@ -10310,16 +10299,20 @@ native-width-integer	libclamav/crypto.c	1508	unsigned char *cl_sign_file_fp(FILE
 native-width-integer	libclamav/crypto.c	1535	X509 *cl_get_x509_from_mem(void *data, unsigned int len)
 native-width-integer	libclamav/crypto.c	1550	int cl_validate_certificate_chain_ts_dir(char *tsdir, char *certpath)
 native-width-integer	libclamav/crypto.c	1553	    size_t nauths      = 0;
-native-width-integer	libclamav/crypto.c	1554	    int res;
-native-width-integer	libclamav/crypto.c	1625	int cl_validate_certificate_chain(char **authorities, char *crlpath, char *certpath)
-native-width-integer	libclamav/crypto.c	1633	    unsigned long i;
-native-width-integer	libclamav/crypto.c	1634	    int res;
+native-width-integer	libclamav/crypto.c	1554	    size_t tsdir_len;
+native-width-integer	libclamav/crypto.c	1555	    size_t path_sep_len;
+native-width-integer	libclamav/crypto.c	1556	    int res = -1;
+native-width-integer	libclamav/crypto.c	1571	        size_t entry_len;
+native-width-integer	libclamav/crypto.c	1572	        size_t path_len;
+native-width-integer	libclamav/crypto.c	1654	int cl_validate_certificate_chain(char **authorities, char *crlpath, char *certpath)
+native-width-integer	libclamav/crypto.c	1662	    unsigned long i;
+native-width-integer	libclamav/crypto.c	1663	    int res;
 native-width-integer	libclamav/crypto.c	178	 * @param[inout] hash_len   A pointer that stores how long the generated hash is.
 native-width-integer	libclamav/crypto.c	189	    size_t data_len,
 native-width-integer	libclamav/crypto.c	191	    size_t *hash_len,
-native-width-integer	libclamav/crypto.c	1920	int cl_update_hash(void *ctx, const void *data, size_t sz)
-native-width-integer	libclamav/crypto.c	1943	int cl_finish_hash(void *ctx, void *buf)
-native-width-integer	libclamav/crypto.c	1945	    int res = 0;
+native-width-integer	libclamav/crypto.c	1949	int cl_update_hash(void *ctx, const void *data, size_t sz)
+native-width-integer	libclamav/crypto.c	1972	int cl_finish_hash(void *ctx, void *buf)
+native-width-integer	libclamav/crypto.c	1974	    int res = 0;
 native-width-integer	libclamav/crypto.c	205	    size_t required_hash_len;
 native-width-integer	libclamav/crypto.c	207	    unsigned int hash_len_final;
 native-width-integer	libclamav/crypto.c	209	    size_t cur;
@@ -20315,35 +20308,36 @@ native-width-integer	unit_tests/check_clamav.c	49527	    int result;
 native-width-integer	unit_tests/check_clamav.c	49550	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
 native-width-integer	unit_tests/check_clamav.c	49565	    unsigned int signature_length        = 0;
 native-width-integer	unit_tests/check_clamav.c	4959	    if (count > state->length - (size_t)offset)
+native-width-integer	unit_tests/check_clamav.c	49594	    int ret;
 native-width-integer	unit_tests/check_clamav.c	4960	        count = state->length - (size_t)offset;
-native-width-integer	unit_tests/check_clamav.c	49620	    int i;
 native-width-integer	unit_tests/check_clamav.c	4963	    position       = (size_t)offset;
+native-width-integer	unit_tests/check_clamav.c	49645	    int i;
 native-width-integer	unit_tests/check_clamav.c	4971	    return (off_t)original_count;
-native-width-integer	unit_tests/check_clamav.c	49904	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	49922	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	49929	    size_t utf8_size = 0;
 native-width-integer	unit_tests/check_clamav.c	4993	    unsigned int reads_before;
 native-width-integer	unit_tests/check_clamav.c	4994	    int wrapped     = 0;
-native-width-integer	unit_tests/check_clamav.c	49940	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	49947	    size_t utf8_size = 0;
 native-width-integer	unit_tests/check_clamav.c	4995	    int saw_release = 0;
-native-width-integer	unit_tests/check_clamav.c	49958	    size_t utf8_size = 0;
 native-width-integer	unit_tests/check_clamav.c	4996	    size_t offset;
+native-width-integer	unit_tests/check_clamav.c	49965	    size_t utf8_size = 0;
 native-width-integer	unit_tests/check_clamav.c	4997	    size_t request;
-native-width-integer	unit_tests/check_clamav.c	49977	    size_t utf8_size = SIZE_MAX;
 native-width-integer	unit_tests/check_clamav.c	4998	    size_t length = 40 * 1024 * 1024;
-native-width-integer	unit_tests/check_clamav.c	50026	int open_testfile(const char *name, int flags)
-native-width-integer	unit_tests/check_clamav.c	50028	    int fd;
-native-width-integer	unit_tests/check_clamav.c	50041	void diff_file_mem(int fd, const char *ref, size_t len)
-native-width-integer	unit_tests/check_clamav.c	50044	    size_t p, reflen = len;
-native-width-integer	unit_tests/check_clamav.c	50067	void diff_files(int fd, int ref_fd)
-native-width-integer	unit_tests/check_clamav.c	50070	    ssize_t nread;
-native-width-integer	unit_tests/check_clamav.c	50071	    off_t siz = lseek(ref_fd, 0, SEEK_END);
-native-width-integer	unit_tests/check_clamav.c	50137	int main(int argc, char **argv)
-native-width-integer	unit_tests/check_clamav.c	50139	    int nf;
+native-width-integer	unit_tests/check_clamav.c	49983	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	50002	    size_t utf8_size = SIZE_MAX;
+native-width-integer	unit_tests/check_clamav.c	50052	int open_testfile(const char *name, int flags)
+native-width-integer	unit_tests/check_clamav.c	50054	    int fd;
+native-width-integer	unit_tests/check_clamav.c	50067	void diff_file_mem(int fd, const char *ref, size_t len)
+native-width-integer	unit_tests/check_clamav.c	50070	    size_t p, reflen = len;
+native-width-integer	unit_tests/check_clamav.c	50093	void diff_files(int fd, int ref_fd)
+native-width-integer	unit_tests/check_clamav.c	50096	    ssize_t nread;
+native-width-integer	unit_tests/check_clamav.c	50097	    off_t siz = lseek(ref_fd, 0, SEEK_END);
+native-width-integer	unit_tests/check_clamav.c	50163	int main(int argc, char **argv)
+native-width-integer	unit_tests/check_clamav.c	50165	    int nf;
 native-width-integer	unit_tests/check_clamav.c	5023	        request = MIN(length - offset, (size_t)(10 * 1024 * 1024));
-native-width-integer	unit_tests/check_clamav.c	50273	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
-native-width-integer	unit_tests/check_clamav.c	50274	static size_t jpeg_entropy_largest_read;
-native-width-integer	unit_tests/check_clamav.c	50278	static const void *jpeg_entropy_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 native-width-integer	unit_tests/check_clamav.c	5029	                      "fmap aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
+native-width-integer	unit_tests/check_clamav.c	50299	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
+native-width-integer	unit_tests/check_clamav.c	50300	static size_t jpeg_entropy_largest_read;
+native-width-integer	unit_tests/check_clamav.c	50304	static const void *jpeg_entropy_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 native-width-integer	unit_tests/check_clamav.c	5031	                      "fmap aging released %llu pages", (unsigned long long)map->aging_released_last);
 native-width-integer	unit_tests/check_clamav.c	5048	                          "wrapped aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
 native-width-integer	unit_tests/check_clamav.c	5050	                          "wrapped aging released %llu pages", (unsigned long long)map->aging_released_last);
@@ -21280,6 +21274,11 @@ boundary-constant	libclamav/cpio.c	108	    if (value > SIZE_MAX - padding)
 boundary-constant	libclamav/cpio.c	116	    if (NULL == position || amount > SIZE_MAX - *position)
 boundary-constant	libclamav/cpio.c	213	        if (parsed > (UINT32_MAX - digit) / 8U)
 boundary-constant	libclamav/cpio.c	650	        if (hdr_namesize > SIZE_MAX - sizeof(hdr_newc)) {
+boundary-constant	libclamav/crypto.c	1589	        if (tsdir_len > SIZE_MAX - path_sep_len)
+boundary-constant	libclamav/crypto.c	1593	        if (entry_len > SIZE_MAX - path_len)
+boundary-constant	libclamav/crypto.c	1597	        if (path_len == SIZE_MAX || nauths == SIZE_MAX ||
+boundary-constant	libclamav/crypto.c	1598	            nauths + 1 > SIZE_MAX / sizeof(*authorities))
+boundary-constant	libclamav/crypto.c	1626	    if (nauths == SIZE_MAX || nauths + 1 > SIZE_MAX / sizeof(*authorities))
 boundary-constant	libclamav/crypto.c	728	        if (SIZE_MAX - (size_t)nread < byte_read) {
 boundary-constant	libclamav/cvd.c	383	        if (parsed > (UINT_MAX - digit) / 10U)
 boundary-constant	libclamav/cvd.c	415	    if (!saw_digit || *cursor != '\0' || parsed > UINT_MAX)
@@ -21903,10 +21902,10 @@ boundary-constant	unit_tests/check_clamav.c	49178	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	49234	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	49246	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	49281	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	49977	    size_t utf8_size = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	49979	    ret = cli_codepage_to_utf8((char *)(uintptr_t)1, SIZE_MAX, CODEPAGE_ISO8859_1,
-boundary-constant	unit_tests/check_clamav.c	50273	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	50413	    jpeg_entropy_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	50002	    size_t utf8_size = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	50004	    ret = cli_codepage_to_utf8((char *)(uintptr_t)1, SIZE_MAX, CODEPAGE_ISO8859_1,
+boundary-constant	unit_tests/check_clamav.c	50299	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	50439	    jpeg_entropy_failure_offset = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	5233	    state.fail_at     = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	5257	    state.fail_at     = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	5261	    map.len           = (size_t)UINT32_MAX + 4096;
@@ -22928,8 +22927,8 @@ format-width	libclamav/cpio.c	613	        cli_dbgmsg("CPIO: -- File %u --\n", ++
 format-width	libclamav/cpio.c	682	        cli_dbgmsg("CPIO: Filesize: %zu\n", filesize);
 format-width	libclamav/crtmgr.c	467	        cli_errmsg("crtmgr_rsa_verify: Unsupported hashtype: %d\n", hashtype);
 format-width	libclamav/crtmgr.c	634	        cli_dbgmsg("crtmgr_verify_pkcs7: unsupported sig len: %u\n", signature_len);
-format-width	libclamav/crypto.c	1789	        fmt = "%y%m%d%H%M%S";
-format-width	libclamav/crypto.c	1798	        fmt = "%Y%m%d%H%M%S";
+format-width	libclamav/crypto.c	1818	        fmt = "%y%m%d%H%M%S";
+format-width	libclamav/crypto.c	1827	        fmt = "%Y%m%d%H%M%S";
 format-width	libclamav/crypto.c	255	            cli_errmsg("cl_hash_data_ex: Provided hash buffer for '%s' is too small. Provided bytes: %zu, Required bytes: %zu\n", alg, *hash_len, required_hash_len);
 format-width	libclamav/crypto.c	522	            cli_errmsg("cl_hash_data_ex: Provided hash buffer is too small. Provided bytes: %zu, Required bytes: %zu\n", *hash_len, required_hash_len);
 format-width	libclamav/crypto.c	628	        cli_errmsg("cl_hash_data_ex: Failed to stat file descriptor %d: %s\n", fd, cl_strerror(CL_ESTAT));
@@ -24631,16 +24630,16 @@ format-width	unit_tests/check_clamav.c	4688	    ck_assert_msg(testfiles_n == exp
 format-width	unit_tests/check_clamav.c	47303	    snprintf(output_dir, sizeof(output_dir), "%s/tar-open-failure-%ld", tmpdir, (long)getpid());
 format-width	unit_tests/check_clamav.c	4867	    ck_assert_msg(i < testfiles_n, "%i < %i %s", i, testfiles_n, file);
 format-width	unit_tests/check_clamav.c	49430	        printf("Using test case timeout of %d seconds set by user\n", timeout);
-format-width	unit_tests/check_clamav.c	50047	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
-format-width	unit_tests/check_clamav.c	50049	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
-format-width	unit_tests/check_clamav.c	50060	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
-format-width	unit_tests/check_clamav.c	50063	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
-format-width	unit_tests/check_clamav.c	50079	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
-format-width	unit_tests/check_clamav.c	50123	                        "\tVersion from header: %u.%u.%u\n"
-format-width	unit_tests/check_clamav.c	50124	                        "\tVersion from library: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	50073	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
+format-width	unit_tests/check_clamav.c	50075	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
+format-width	unit_tests/check_clamav.c	50086	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
+format-width	unit_tests/check_clamav.c	50089	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
+format-width	unit_tests/check_clamav.c	50105	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
+format-width	unit_tests/check_clamav.c	50149	                        "\tVersion from header: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	50150	                        "\tVersion from library: %u.%u.%u\n"
 format-width	unit_tests/check_clamav.c	5029	                      "fmap aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
 format-width	unit_tests/check_clamav.c	5031	                      "fmap aging released %llu pages", (unsigned long long)map->aging_released_last);
-format-width	unit_tests/check_clamav.c	50351	                  "JPEG entropy traversal requested %zu bytes in one fmap read",
+format-width	unit_tests/check_clamav.c	50377	                  "JPEG entropy traversal requested %zu bytes in one fmap read",
 format-width	unit_tests/check_clamav.c	5048	                          "wrapped aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
 format-width	unit_tests/check_clamav.c	5050	                          "wrapped aging released %llu pages", (unsigned long long)map->aging_released_last);
 format-width	unit_tests/check_clamav.c	5057	                  "fmap retained %llu pages during a sequential scan", (unsigned long long)max_paged);
@@ -24723,7 +24722,6 @@ format-width	unit_tests/input/pe_allmatch/test-exe-src/extract.h	102	        pri
 format-width	unit_tests/input/pe_allmatch/test-exe-src/test.c	62	    printf("Listing current time\n - %d\n", (int)time(NULL));
 format-width	win32/compat/strptime.c	141	#define HERE_D_FMT "%m/%d/%y"
 format-width	win32/compat/strptime.c	382	                if (!recursive("%Y-%m-%d"))
-offset-size-arithmetic	.codex-readdb-directory-runner.c	124	    snprintf(file_path, sizeof(file_path), "%s/entry.hdb", path);
 offset-size-arithmetic	clamav-milter/allow_list.c	152	            len = strlen(buf) - 1;
 offset-size-arithmetic	clamav-milter/allow_list.c	153	            for (; len >= 0; len--) {
 offset-size-arithmetic	clamav-milter/allow_list.c	158	            if (len * 3 + 1 > rxavail) {
@@ -27248,9 +27246,17 @@ offset-size-arithmetic	libclamav/crypto.c	1329	int cl_verify_signature_x509_keyf
 offset-size-arithmetic	libclamav/crypto.c	1358	int cl_verify_signature_hash_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *digest)
 offset-size-arithmetic	libclamav/crypto.c	1390	int cl_verify_signature_x509(X509 *x509, const char *alg, unsigned char *sig, unsigned int siglen, unsigned char *data, size_t datalen, int decode)
 offset-size-arithmetic	libclamav/crypto.c	1484	        siglen = (unsigned int)strlen((const char *)newsig);
-offset-size-arithmetic	libclamav/crypto.c	1569	        t = (char **)realloc(authorities, sizeof(char **) * (nauths + 1));
-offset-size-arithmetic	libclamav/crypto.c	1582	        authorities[nauths] = (char *)malloc(strlen(tsdir) + strlen(dirent->d_name) + 2);
-offset-size-arithmetic	libclamav/crypto.c	1601	    t = (char **)realloc(authorities, sizeof(char **) * (nauths + 1));
+offset-size-arithmetic	libclamav/crypto.c	1588	        entry_len = strlen(dirent->d_name);
+offset-size-arithmetic	libclamav/crypto.c	1589	        if (tsdir_len > SIZE_MAX - path_sep_len)
+offset-size-arithmetic	libclamav/crypto.c	1592	        path_len = tsdir_len + path_sep_len;
+offset-size-arithmetic	libclamav/crypto.c	1593	        if (entry_len > SIZE_MAX - path_len)
+offset-size-arithmetic	libclamav/crypto.c	1596	        path_len += entry_len;
+offset-size-arithmetic	libclamav/crypto.c	1598	            nauths + 1 > SIZE_MAX / sizeof(*authorities))
+offset-size-arithmetic	libclamav/crypto.c	1601	        t = (char **)realloc(authorities, sizeof(*authorities) * (nauths + 1));
+offset-size-arithmetic	libclamav/crypto.c	1607	        authorities[nauths] = (char *)malloc(path_len + 1);
+offset-size-arithmetic	libclamav/crypto.c	1614	        memcpy(authorities[nauths] + tsdir_len + path_sep_len, dirent->d_name, entry_len + 1);
+offset-size-arithmetic	libclamav/crypto.c	1626	    if (nauths == SIZE_MAX || nauths + 1 > SIZE_MAX / sizeof(*authorities))
+offset-size-arithmetic	libclamav/crypto.c	1629	    t = (char **)realloc(authorities, sizeof(*authorities) * (nauths + 1));
 offset-size-arithmetic	libclamav/crypto.c	175	 * @param data_len          The length of the to-be-hashed data.
 offset-size-arithmetic	libclamav/crypto.c	191	    size_t *hash_len,
 offset-size-arithmetic	libclamav/crypto.c	286	            data_len - cur);
@@ -38898,23 +38904,24 @@ offset-size-arithmetic	unit_tests/check_clamav.c	49550	static const size_t dsig_
 offset-size-arithmetic	unit_tests/check_clamav.c	49568	    ck_assert_int_gt(snprintf(keypath, sizeof(keypath), "%s/input/signing/sign/signing-test.key", OBJDIR), 0);
 offset-size-arithmetic	unit_tests/check_clamav.c	4957	    if (offset < 0 || (uint64_t)offset >= state->length)
 offset-size-arithmetic	unit_tests/check_clamav.c	4959	    if (count > state->length - (size_t)offset)
+offset-size-arithmetic	unit_tests/check_clamav.c	49596	    ck_assert_int_gt(snprintf(certdir, sizeof(certdir), "%s/cert-chain", tmpdir), 0);
 offset-size-arithmetic	unit_tests/check_clamav.c	4960	        count = state->length - (size_t)offset;
-offset-size-arithmetic	unit_tests/check_clamav.c	49625	    ck_assert_msg(!memcmp(h_sha2_256, res256[0], sizeof(h_sha2_256)), "sha2-256 test vector #1 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	49628	    ck_assert_msg(!memcmp(h_sha2_256, res256[1], sizeof(h_sha2_256)), "sha2-256 test vector #2 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	49636	    ck_assert_msg(!memcmp(h_sha2_256, res256[2], sizeof(h_sha2_256)), "sha2-256 test vector #3 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	49650	    ck_assert_msg(!memcmp(h_sha2_256, res256[0], sizeof(h_sha2_256)), "sha2-256 test vector #1 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	49653	    ck_assert_msg(!memcmp(h_sha2_256, res256[1], sizeof(h_sha2_256)), "sha2-256 test vector #2 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	49661	    ck_assert_msg(!memcmp(h_sha2_256, res256[2], sizeof(h_sha2_256)), "sha2-256 test vector #3 failed");
 offset-size-arithmetic	unit_tests/check_clamav.c	4968	        position += chunk;
-offset-size-arithmetic	unit_tests/check_clamav.c	49780	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
-offset-size-arithmetic	unit_tests/check_clamav.c	49787	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
+offset-size-arithmetic	unit_tests/check_clamav.c	49805	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
+offset-size-arithmetic	unit_tests/check_clamav.c	49812	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
 offset-size-arithmetic	unit_tests/check_clamav.c	4998	    size_t length = 40 * 1024 * 1024;
-offset-size-arithmetic	unit_tests/check_clamav.c	50031	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
-offset-size-arithmetic	unit_tests/check_clamav.c	50057	        len--;
+offset-size-arithmetic	unit_tests/check_clamav.c	50057	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
+offset-size-arithmetic	unit_tests/check_clamav.c	50083	        len--;
 offset-size-arithmetic	unit_tests/check_clamav.c	5011	    data = fmap_need_off_once(map, length - 4096, 4096);
 offset-size-arithmetic	unit_tests/check_clamav.c	5013	    ck_assert_uint_eq(data[0], synthetic_byte_at(length - 4096));
 offset-size-arithmetic	unit_tests/check_clamav.c	5022	    for (offset = 0; offset < length; offset += 10 * 1024 * 1024) {
 offset-size-arithmetic	unit_tests/check_clamav.c	5023	        request = MIN(length - offset, (size_t)(10 * 1024 * 1024));
-offset-size-arithmetic	unit_tests/check_clamav.c	50292	    if (len == 0 || at > map->len || len > map->len - at)
-offset-size-arithmetic	unit_tests/check_clamav.c	50329	    chunk_boundary[sizeof(chunk_boundary) - 2U] = 0xff;
-offset-size-arithmetic	unit_tests/check_clamav.c	50330	    chunk_boundary[sizeof(chunk_boundary) - 1U] = 0xd9;
+offset-size-arithmetic	unit_tests/check_clamav.c	50318	    if (len == 0 || at > map->len || len > map->len - at)
+offset-size-arithmetic	unit_tests/check_clamav.c	50355	    chunk_boundary[sizeof(chunk_boundary) - 2U] = 0xff;
+offset-size-arithmetic	unit_tests/check_clamav.c	50356	    chunk_boundary[sizeof(chunk_boundary) - 1U] = 0xd9;
 offset-size-arithmetic	unit_tests/check_clamav.c	5042	            data              = fmap_need_off_once(duplicate, length - 4096, 4096);
 offset-size-arithmetic	unit_tests/check_clamav.c	5044	            ck_assert_uint_eq(data[0], synthetic_byte_at(length - 4096));
 offset-size-arithmetic	unit_tests/check_clamav.c	5072	    size_t length = 40 * 1024 * 1024;

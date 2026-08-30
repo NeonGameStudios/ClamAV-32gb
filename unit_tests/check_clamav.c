@@ -49587,6 +49587,31 @@ START_TEST(test_crypto_keyfile_close_failure_is_fail_visible)
     free(signature);
 }
 END_TEST
+
+START_TEST(test_crypto_certificate_directory_failures_are_fail_visible)
+{
+    char certdir[PATH_MAX];
+    int ret;
+
+    ck_assert_int_gt(snprintf(certdir, sizeof(certdir), "%s/cert-chain", tmpdir), 0);
+    ck_assert_int_eq(mkdir(certdir, 0700), 0);
+
+    ck_assert_int_eq(cl_validate_certificate_chain_ts_dir(NULL, "missing-cert.pem"), -1);
+    ck_assert_int_eq(cl_validate_certificate_chain_ts_dir(certdir, NULL), -1);
+
+    clamav_test_fail_readdir = 1;
+    ret                       = cl_validate_certificate_chain_ts_dir(certdir, "missing-cert.pem");
+    clamav_test_fail_readdir = 0;
+    ck_assert_int_eq(ret, -1);
+
+    clamav_test_fail_closedir = 1;
+    ret                        = cl_validate_certificate_chain_ts_dir(certdir, "missing-cert.pem");
+    clamav_test_fail_closedir = 0;
+    ck_assert_int_eq(ret, -1);
+
+    ck_assert_int_eq(rmdir(certdir), 0);
+}
+END_TEST
 #endif
 
 static uint8_t tv1[3] = {
@@ -50003,6 +50028,7 @@ static Suite *test_cli_suite(void)
     tcase_add_test(tc_cli_dsig, test_sha2_256);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cli_dsig, test_crypto_keyfile_close_failure_is_fail_visible);
+    tcase_add_test(tc_cli_dsig, test_crypto_certificate_directory_failures_are_fail_visible);
 #endif
 
     suite_add_tcase(s, tc_cli_assorted);

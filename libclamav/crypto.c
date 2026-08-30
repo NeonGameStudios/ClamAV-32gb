@@ -1551,68 +1551,97 @@ int cl_validate_certificate_chain_ts_dir(char *tsdir, char *certpath)
 {
     char **authorities = NULL, **t;
     size_t nauths      = 0;
-    int res;
+    size_t tsdir_len;
+    size_t path_sep_len;
+    int res = -1;
     DIR *dp;
     struct dirent *dirent;
+
+    if (!tsdir || !certpath)
+        return -1;
+
+    tsdir_len    = strlen(tsdir);
+    path_sep_len = strlen(PATHSEP);
 
     dp = opendir(tsdir);
     if (!(dp))
         return CL_EOPEN;
 
-    while ((dirent = readdir(dp))) {
+    for (;;) {
+        size_t entry_len;
+        size_t path_len;
+
+        errno  = 0;
+        dirent = readdir(dp);
+        if (!dirent) {
+            if (errno != 0)
+                goto done;
+            break;
+        }
+
         if (dirent->d_name[0] == '.')
             continue;
 
         if (!cli_strbcasestr(dirent->d_name, ".crt"))
             continue;
 
-        t = (char **)realloc(authorities, sizeof(char **) * (nauths + 1));
-        if (!(t)) {
-            if (nauths) {
-                while (nauths > 0)
-                    free(authorities[--nauths]);
-                free(authorities);
-            }
+        entry_len = strlen(dirent->d_name);
+        if (tsdir_len > SIZE_MAX - path_sep_len)
+            goto done;
 
-            closedir(dp);
-            return -1;
+        path_len = tsdir_len + path_sep_len;
+        if (entry_len > SIZE_MAX - path_len)
+            goto done;
+
+        path_len += entry_len;
+        if (path_len == SIZE_MAX || nauths == SIZE_MAX ||
+            nauths + 1 > SIZE_MAX / sizeof(*authorities))
+            goto done;
+
+        t = (char **)realloc(authorities, sizeof(*authorities) * (nauths + 1));
+        if (!(t)) {
+            goto done;
         }
 
         authorities         = t;
-        authorities[nauths] = (char *)malloc(strlen(tsdir) + strlen(dirent->d_name) + 2);
+        authorities[nauths] = (char *)malloc(path_len + 1);
         if (!authorities[nauths]) {
-            if (nauths) {
-                while (nauths > 0)
-                    free(authorities[nauths--]);
-                free(authorities[0]);
-            }
-
-            free(authorities);
-            closedir(dp);
-            return -1;
+            goto done;
         }
 
-        sprintf(authorities[nauths], "%s" PATHSEP "%s", tsdir, dirent->d_name);
+        memcpy(authorities[nauths], tsdir, tsdir_len);
+        memcpy(authorities[nauths] + tsdir_len, PATHSEP, path_sep_len);
+        memcpy(authorities[nauths] + tsdir_len + path_sep_len, dirent->d_name, entry_len + 1);
         nauths++;
     }
 
-    closedir(dp);
+    res = closedir(dp);
+    dp  = NULL;
+    if (res != 0) {
+        res = -1;
+        goto done;
+    }
+    res = 0;
 
-    t = (char **)realloc(authorities, sizeof(char **) * (nauths + 1));
+    if (nauths == SIZE_MAX || nauths + 1 > SIZE_MAX / sizeof(*authorities))
+        goto done;
+
+    t = (char **)realloc(authorities, sizeof(*authorities) * (nauths + 1));
     if (!(t)) {
-        if (nauths) {
-            while (nauths > 0)
-                free(authorities[--nauths]);
-            free(authorities);
-        }
-
-        return -1;
+        goto done;
     }
 
     authorities         = t;
     authorities[nauths] = NULL;
 
     res = cl_validate_certificate_chain(authorities, NULL, certpath);
+
+done:
+    if (dp != NULL) {
+        if (closedir(dp) != 0)
+            res = -1;
+        dp = NULL;
+    }
 
     while (nauths > 0)
         free(authorities[--nauths]);

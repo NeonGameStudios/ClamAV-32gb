@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Certificate trust-store directory admission — 2026-08-30
+
+The public `cl_validate_certificate_chain_ts_dir()` helper previously treated
+an I/O error from `readdir()` as ordinary end-of-directory and ignored a
+`closedir()` failure after collecting trust-store authorities. It also formed
+authority-array and path-size products without explicit native-size checks and
+accepted null paths until the underlying directory call. The helper now
+clears `errno` before each read, preserves actual enumeration failure as an
+invalid result, checks path and pointer-array arithmetic before allocation,
+copies the constructed paths only after those checks, and makes directory
+close failure fail-visible while freeing every collected authority. The
+registered regression covers null paths, clean empty-directory admission,
+injected `readdir()` failure, and injected `closedir()` failure. The current
+source passes the production-GCC syntax check and an isolated GCC oracle under
+both normal and AddressSanitizer/UndefinedBehaviorSanitizer builds. Valid
+certificate-chain corpus, current-object, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## Signature-directory stat admission — 2026-08-30
 
 The public signature-directory bookkeeping APIs `cl_statinidir()` and
