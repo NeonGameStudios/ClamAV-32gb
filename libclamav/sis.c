@@ -302,7 +302,6 @@ done:
 cl_error_t cli_scansis(cli_ctx *ctx)
 {
     char *tmpd;
-    unsigned int i;
     cl_error_t status;
     uint32_t uid[4];
     fmap_t *map;
@@ -355,19 +354,19 @@ cl_error_t cli_scansis(cli_ctx *ctx)
 
     cli_dbgmsg("SIS: UIDS %x %x %x - %x\n", EC32(uid[0]), EC32(uid[1]), EC32(uid[2]), EC32(uid[3]));
     if (uid[2] == le32_to_host(0x10000419)) {
-        i = real_scansis(ctx, tmpd);
+        status = real_scansis(ctx, tmpd);
     } else if (uid[0] == le32_to_host(0x10201a7a)) {
-        i = real_scansis9x(ctx, tmpd);
+        status = real_scansis9x(ctx, tmpd);
     } else {
         cli_dbgmsg("SIS: UIDs failed to match\n");
-        i = sis_incomplete(ctx, "SIS package identifiers were invalid");
+        status = sis_incomplete(ctx, "SIS package identifiers were invalid");
     }
 
-    sis_note_cleanup_failure(ctx, &i, !ctx->engine->keeptmp && cli_rmdirs(tmpd) != 0,
+    sis_note_cleanup_failure(ctx, &status, !ctx->engine->keeptmp && cli_rmdirs(tmpd) != 0,
                              CL_EUNLINK, "SIS temporary directory could not be removed");
 
     free(tmpd);
-    return i;
+    return status;
 }
 
 /*************************************************

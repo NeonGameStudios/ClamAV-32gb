@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## SIS wrapper error-status type preservation — 2026-08-30
+
+The SIS wrapper stored the result of `real_scansis()` or `real_scansis9x()` in
+an `unsigned int` and then passed that object to `sis_note_cleanup_failure()`,
+which accepts a `cl_error_t *`. Negative parser results could therefore be
+converted and reinterpreted while cleanup status was merged. The wrapper now
+keeps the result in its existing `cl_error_t status` variable through cleanup
+and return. The source guard pins the typed call; production-GCC compilation,
+complete SIS corpus, sanitizer, Sonic1, and final release qualification remain
+required.
+
 ## MSPack filename-backed read callback contract — 2026-08-30
 
 The custom MSPack `read()` callback used a successful `fread(buffer, bytes,

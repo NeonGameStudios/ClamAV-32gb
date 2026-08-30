@@ -1,5 +1,13 @@
 # Wishlist
 
+## SIS wrapper error-status type preservation — 2026-08-30
+
+- Keep `cli_scansis()` parser and cleanup results in `cl_error_t` storage all
+  the way through temporary-directory cleanup. The source guard pins the
+  typed call; production-GCC compilation, complete SIS corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification remain open.
+
 ## MSPack filename-backed read callback contract — 2026-08-30
 
 - Keep the custom MSPack `read()` callback byte-count correct for complete and

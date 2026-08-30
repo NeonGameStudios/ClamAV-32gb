@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## SIS wrapper error-status type preservation — 2026-08-30
+
+The SIS wrapper now retains old-format and 9.x parser results in `cl_error_t`
+storage through temporary-directory cleanup. This avoids converting negative
+parser errors through an `unsigned int` before the cleanup-status precedence
+helper merges removal failures. The source guard pins the typed cleanup call;
+production-GCC compilation, complete SIS corpus, sanitizer, production-CVD/
+service, materialized-large-file, Sonic1, and final release qualification
+remain required.
+
 ## MSPack filename-backed read callback contract — 2026-08-30
 
 The custom MSPack callback now follows the library's byte-count contract for
