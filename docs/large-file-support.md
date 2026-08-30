@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Structured scan report allocation output — 2026-08-30
+
+The public map and descriptor scan APIs now clear a caller-provided structured
+report output before attempting report allocation. A report-allocation
+failure therefore returns `CL_EMEM` without leaving a stale report pointer
+published. The static Linux test wrapper injects the allocation failure and
+the registered regression exercises both APIs. Current-object execution,
+production-CVD/service, sanitizer, materialized-large-file, Sonic1, and final
+release qualification remain required.
+
 ## CVD age-directory close status — 2026-08-30
 
 `cl_cvdgetage()` now preserves `closedir()` failure as `CL_EREAD` instead of

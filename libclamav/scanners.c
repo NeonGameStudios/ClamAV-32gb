@@ -9220,6 +9220,9 @@ cl_error_t cli_scandesc_ex2_with_temporary_bytes(
     cl_scan_report_t *report = NULL;
     uint64_t root_size;
 
+    if (NULL != report_out)
+        *report_out = NULL;
+
     if (NULL != report_out) {
         status = cli_scan_report_create(&report, engine);
         if (status != CL_SUCCESS)
@@ -9468,6 +9471,9 @@ cl_error_t cl_scanmap_ex2(
 {
     cl_error_t status;
     cl_scan_report_t *report = NULL;
+
+    if (NULL != report_out)
+        *report_out = NULL;
 
     if (NULL != report_out) {
         status = cli_scan_report_create(&report, engine);

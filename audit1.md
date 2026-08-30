@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Structured scan report allocation output — 2026-08-30
+
+`cl_scanmap_ex2()` and `cli_scandesc_ex2_with_temporary_bytes()` attempted to
+create a structured report before assigning the caller's `report_out`. If
+the report allocation failed, a caller-provided stale pointer remained
+published even though the API returned `CL_EMEM`; the file-scan convenience
+path already initialized this output. Both public map/descriptor paths now
+clear `*report_out` before allocation. The injected calloc regression
+`test_scan_report_allocation_failure_clears_output` covers both APIs, and the
+static guard pins the reset, wrapper, link option, and test. Current-object
+execution, production-CVD/service, sanitizer, materialized-large-file,
+Sonic1, and final release qualification remain open.
+
 ## CVD age-directory close status — 2026-08-30
 
 `cl_cvdgetage()` closed a signature directory but discarded a `closedir()`

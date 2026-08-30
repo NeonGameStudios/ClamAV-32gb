@@ -135,6 +135,8 @@ int __wrap_inflateInit2_(z_streamp strm, int windowBits, const char *version, in
 static bool pdf_test_output_window_allocation_active;
 static bool pdf_test_fail_output_window_allocation;
 static unsigned int pdf_test_output_window_allocation_failures;
+static bool scan_report_test_fail_allocation;
+static unsigned int scan_report_test_allocation_failures;
 #endif
 
 #ifdef CLAMAV_TEST_JSON_WRAP
@@ -1704,6 +1706,59 @@ START_TEST(test_scan_report_complete_and_json)
     free(path);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+START_TEST(test_scan_report_allocation_failure_clears_output)
+{
+    static const uint8_t input[] = "scan report allocation failure";
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_scan_report_t *report;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    int fd;
+
+    memset(&options, 0, sizeof(options));
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    report     = (cl_scan_report_t *)(uintptr_t)1U;
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    scan_report_test_allocation_failures = 0;
+    scan_report_test_fail_allocation     = true;
+    ret = cl_scanmap_ex2(map, "scan-report-map", &verdict, &last_alert, &scanned,
+                         g_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL,
+                         &report);
+    scan_report_test_fail_allocation = false;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_uint_eq(scan_report_test_allocation_failures, 1U);
+    ck_assert_ptr_null(report);
+
+    fd = open("/dev/null", O_RDONLY | O_BINARY);
+    ck_assert_int_ge(fd, 0);
+    report     = (cl_scan_report_t *)(uintptr_t)1U;
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    scan_report_test_allocation_failures = 0;
+    scan_report_test_fail_allocation     = true;
+    ret = cl_scandesc_ex2(fd, "scan-report-desc", &verdict, &last_alert, &scanned,
+                          g_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL,
+                          &report);
+    scan_report_test_fail_allocation = false;
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_uint_eq(scan_report_test_allocation_failures, 1U);
+    ck_assert_ptr_null(report);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
 
 START_TEST(test_scan_report_last_alert_offset_contract)
 {
@@ -38084,6 +38139,7 @@ END_TEST
 
 #ifdef CLAMAV_TEST_MALLOC_WRAP
 extern void *__real_malloc(size_t size);
+extern void *__real_calloc(size_t nmemb, size_t size);
 
 void *__wrap_malloc(size_t size)
 {
@@ -38095,6 +38151,17 @@ void *__wrap_malloc(size_t size)
         return NULL;
     }
     return __real_malloc(size);
+}
+
+void *__wrap_calloc(size_t nmemb, size_t size)
+{
+    if (scan_report_test_fail_allocation &&
+        nmemb == 1U && size == sizeof(cl_scan_report_t)) {
+        scan_report_test_fail_allocation = false;
+        scan_report_test_allocation_failures++;
+        return NULL;
+    }
+    return __real_calloc(nmemb, size);
 }
 #endif
 
@@ -47625,6 +47692,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_maxfiles_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+    tcase_add_test(tc_cl, test_scan_report_allocation_failure_clears_output);
+#endif
     tcase_add_test(tc_cl, test_scan_report_last_alert_offset_contract);
     tcase_add_test(tc_cl, test_scan_report_json_preserves_unsigned_boundaries);
     tcase_add_test(tc_cl, test_scan_report_counters_saturate);

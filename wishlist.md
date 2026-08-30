@@ -1,5 +1,15 @@
 # Wishlist
 
+## Structured scan report allocation output — 2026-08-30
+
+- Keep `cl_scanmap_ex2()` and `cl_scandesc_ex2_with_temporary_bytes()` clear
+  caller-provided report outputs before allocation, so a report-allocation
+  `CL_EMEM` cannot leave stale ownership published.
+- Retain the injected calloc regression for both public APIs, the static
+  source guard, and the Linux static-test link wrapper. Complete current
+  object, production-CVD/service, sanitizer, materialized-large-file,
+  Sonic1, and final release qualification.
+
 ## CVD age-directory close status — 2026-08-30
 
 - Keep `cl_cvdgetage()` fail-visible when the signature directory cannot be
