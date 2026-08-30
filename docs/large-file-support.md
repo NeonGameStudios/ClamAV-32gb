@@ -598,6 +598,17 @@ gate for the next clean full-binary relink. Complete RTF object corpus,
 sanitizer, production-CVD/service, materialized large-file, Sonic1, and release
 qualification remain required.
 
+## RTF action-table initialization admission — 2026-08-30
+
+RTF action-table setup now treats table creation, action insertion, and
+post-insert key lookup failures as `CL_EMEM`, marks the recognized layer
+incomplete, and cleans up without entering the parser with a partially
+initialized control-word table. This also catches a failed key copy that
+would otherwise look like a successful insertion. Source guards cover the
+finite-table admission and initialization reason; allocator-fault execution,
+complete RTF corpus, sanitizer, production-CVD/service, materialized
+large-file, Sonic1, and parser-family qualification remain required.
+
 ## OLE2 BIFF terminal-field admission — 2026-08-28
 
 The OLE2 WorkBook encryption probe now accepts a valid 16-bit FilePass field

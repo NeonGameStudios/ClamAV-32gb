@@ -14998,3 +14998,16 @@ the confirmed layer incomplete with an explicit reason before the member is
 admitted. Source guards cover the helper and both callers. Allocator-fault
 execution, complete XAR corpus, sanitizer, production-CVD/service,
 materialized large-file, Sonic1, and parser-family qualification remain open.
+
+## RTF action-table initialization admission — 2026-08-30
+
+RTF action-table setup previously returned raw `-1` from a failed
+`tableInsert()`, and `tableCreate()` failure returned `CL_EMEM` without
+marking the recognized layer incomplete. A failed control-word key copy could
+therefore leave an apparently initialized table whose actions were silently
+unavailable. `load_actions()` now returns `CL_EMEM` for insertion or lookup
+failure, and the direct parser marks `RTF action table could not be
+initialized` before cleanup and return. Source guards cover the failure
+contract. Allocator-fault execution, complete RTF corpus, sanitizer,
+production-CVD/service, materialized large-file, Sonic1, and parser-family
+qualification remain open.

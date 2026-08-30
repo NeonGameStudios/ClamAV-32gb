@@ -216,10 +216,15 @@ static int pop_state(struct stack* stack, struct rtf_state* state)
 static int load_actions(table_t* t)
 {
     size_t i;
+
+    if (t == NULL)
+        return CL_EFORMAT;
+
     for (i = 0; i < rtf_action_mapping_cnt; i++)
-        if (tableInsert(t, rtf_action_mapping[i].controlword, rtf_action_mapping[i].action) == -1)
-            return -1;
-    return 0;
+        if (tableInsert(t, rtf_action_mapping[i].controlword, rtf_action_mapping[i].action) == -1 ||
+            tableFind(t, rtf_action_mapping[i].controlword) != (int)rtf_action_mapping[i].action)
+            return CL_EMEM;
+    return CL_SUCCESS;
 }
 
 static int rtf_object_begin(struct rtf_state* state, cli_ctx* ctx, const char* tmpdir)
@@ -705,6 +710,7 @@ int cli_scanrtf(cli_ctx* ctx)
         ret = load_actions(actiontable);
     if (ret != CL_SUCCESS) {
         cli_dbgmsg("RTF: Unable to load rtf action table\n");
+        cli_mark_scan_incomplete(ctx, "RTF action table could not be initialized");
         free(stack.states);
         rtf_note_cleanup_failure(ctx, &ret, !ctx->engine->keeptmp && cli_rmdirs(tempname) != 0,
                                  CL_EUNLINK, "RTF temporary directory could not be removed");

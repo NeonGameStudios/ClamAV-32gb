@@ -8058,3 +8058,13 @@ qualification as required evidence.
   execution when the current test/build environment supports it, and keep
   complete XAR corpus, sanitizer, production-CVD/service, materialized
   large-file, Sonic1, and final parser-family/release qualification open.
+
+## RTF action-table initialization admission — 2026-08-30
+
+- Keep RTF action-table creation, insertion, and post-insert key lookup
+  failures fail-visible as `CL_EMEM` with sticky incomplete state; a failed
+  control-word key copy must not silently disable RTF actions.
+- Retain the source guards and add allocator-fault execution when the current
+  test/build environment supports it. Keep complete RTF corpus, sanitizer,
+  production-CVD/service, materialized large-file, Sonic1, and final
+  parser-family qualification open.
