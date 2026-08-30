@@ -1,5 +1,15 @@
 # Wishlist
 
+## Rust cleanup-helper FFI errors — 2026-08-30
+
+- Keep `glob_rm()` fail-visible for invalid glob patterns instead of allowing
+  `glob(...).expect()` to panic across the C ABI. Route null or invalid UTF-8
+  strings through the caller-provided `FFIError` output for both `glob_rm()`
+  and `mkdir_w32()`. The focused Rust regressions and source guards cover the
+  boundaries; current Rust/C ABI execution, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification remain
+  required.
+
 ## MSPack filename-backed ferror propagation — 2026-08-30
 
 - Keep filename-backed MSPack reads fail-visible when `fread()` sets the

@@ -33,6 +33,9 @@ extern "C" {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("Glob pattern error: {0}")]
+    GlobPatternError(#[from] glob::PatternError),
+
     #[error("Glob error: {0}")]
     GlobError(#[from] glob::GlobError),
 
@@ -206,7 +209,8 @@ pub unsafe fn scan_archive_metadata(
 
 #[cfg(test)]
 mod tests {
-    use super::archive_metadata_filepos;
+    use super::{archive_metadata_filepos, glob_rm, mkdir_w32, FFIError};
+    use std::ffi::CString;
 
     #[test]
     fn archive_metadata_filepos_rejects_narrowing() {
@@ -214,6 +218,29 @@ mod tests {
         assert_eq!(archive_metadata_filepos(u32::MAX as usize), Some(u32::MAX));
         #[cfg(target_pointer_width = "64")]
         assert_eq!(archive_metadata_filepos(u32::MAX as usize + 1), None);
+    }
+
+    #[test]
+    fn glob_pattern_errors_are_fail_visible() {
+        let pattern = CString::new("[unterminated").unwrap();
+        let mut error: *mut FFIError = std::ptr::null_mut();
+
+        let result = unsafe { glob_rm(pattern.as_ptr(), &mut error) };
+
+        assert!(!result);
+        assert!(!error.is_null());
+        unsafe { crate::ffi_util::ffierror_free(error) };
+    }
+
+    #[test]
+    fn mkdir_null_path_is_fail_visible() {
+        let mut error: *mut FFIError = std::ptr::null_mut();
+
+        let result = unsafe { mkdir_w32(std::ptr::null(), &mut error) };
+
+        assert!(!result);
+        assert!(!error.is_null());
+        unsafe { crate::ffi_util::ffierror_free(error) };
     }
 }
 
@@ -224,9 +251,14 @@ mod tests {
 /// No parameters may be NULL.
 #[export_name = "glob_rm"]
 pub unsafe extern "C" fn glob_rm(glob_str: *const c_char, err: *mut *mut FFIError) -> bool {
-    let glob_str = validate_str_param!(glob_str);
+    let glob_str = validate_str_param!(glob_str, err = err);
 
-    for entry in glob(glob_str).expect("Failed to read glob pattern") {
+    let paths = match glob(glob_str) {
+        Ok(paths) => paths,
+        Err(e) => return ffi_error!(err = err, e),
+    };
+
+    for entry in paths {
         match entry {
             Ok(path) => {
                 debug!("Deleting: {path:?}");
@@ -251,7 +283,7 @@ pub unsafe extern "C" fn glob_rm(glob_str: *const c_char, err: *mut *mut FFIErro
 /// No parameters may be NULL.
 #[export_name = "mkdir_w32"]
 pub unsafe extern "C" fn mkdir_w32(path: *const c_char, err: *mut *mut FFIError) -> bool {
-    let path = validate_str_param!(path);
+    let path = validate_str_param!(path, err = err);
 
     if let Err(e) = std::fs::create_dir_all(&path) {
         warn!("Failed to create directory: {path:?}");

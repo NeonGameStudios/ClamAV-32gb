@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Rust cleanup-helper FFI errors — 2026-08-30
+
+The Rust cleanup helpers now keep invalid input fail-visible across the C ABI.
+`glob_rm()` converts invalid glob syntax into an `FFIError` instead of
+panicking, and both `glob_rm()` and `mkdir_w32()` report null or invalid
+UTF-8 strings through the supplied error output. Focused Rust regressions and
+source guards are registered; current Rust/C ABI execution, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## MSPack filename-backed ferror propagation — 2026-08-30
 
 Filename-backed MSPack reads now check `ferror()` after `fread()`. A positive

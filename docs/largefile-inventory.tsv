@@ -35471,10 +35471,10 @@ offset-size-arithmetic	libclamav_rust/src/sys.rs	969	    pub offmatrix: *mut *mu
 offset-size-arithmetic	libclamav_rust/src/sys.rs	974	    pub lsigsuboff_last: *mut *mut u64,
 offset-size-arithmetic	libclamav_rust/src/sys.rs	975	    pub lsigsuboff_first: *mut *mut u64,
 offset-size-arithmetic	libclamav_rust/src/sys.rs	978	    pub offset: *mut u64,
-offset-size-arithmetic	libclamav_rust/src/util.rs	124	fn archive_metadata_filepos(filepos: usize) -> Option<u32> {
-offset-size-arithmetic	libclamav_rust/src/util.rs	128	/// Append an exceeds-max heuristic alert or metadata entry.
-offset-size-arithmetic	libclamav_rust/src/util.rs	173	             * 32-bit value. Do not silently wrap a large Rust-side index and
-offset-size-arithmetic	libclamav_rust/src/util.rs	216	        assert_eq!(archive_metadata_filepos(u32::MAX as usize + 1), None);
+offset-size-arithmetic	libclamav_rust/src/util.rs	127	fn archive_metadata_filepos(filepos: usize) -> Option<u32> {
+offset-size-arithmetic	libclamav_rust/src/util.rs	131	/// Append an exceeds-max heuristic alert or metadata entry.
+offset-size-arithmetic	libclamav_rust/src/util.rs	176	             * 32-bit value. Do not silently wrap a large Rust-side index and
+offset-size-arithmetic	libclamav_rust/src/util.rs	220	        assert_eq!(archive_metadata_filepos(u32::MAX as usize + 1), None);
 offset-size-arithmetic	libclammspack/examples/cabd_memory.c	100	  (off_t (*)(struct mspack_file *)) &mem_tell,
 offset-size-arithmetic	libclammspack/examples/cabd_memory.c	12	/* use a pointer to a mem_buf structure as "filenames" */
 offset-size-arithmetic	libclammspack/examples/cabd_memory.c	151	        /* fill out our "filename" (memory pointer and length) */
@@ -39729,7 +39729,7 @@ large-file-option	libclamav/scan_report.c	287	    report_get_engine_limit(engine
 large-file-option	libclamav/scanners.c	1510	            cli_mark_scan_incomplete(ctx, "EGG archive inspection reached MaxScanSize");
 large-file-option	libclamav/scanners.c	7196	     * MaxScanSize/MaxFiles accounting here. */
 large-file-option	libclamav/spin.c	174	                cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFileSize", CL_EMAXSIZE);
-large-file-option	libclamav_rust/src/util.rs	121	    b"Heuristics.Limits.Exceeded.MaxScanSize\0";
+large-file-option	libclamav_rust/src/util.rs	124	    b"Heuristics.Limits.Exceeded.MaxScanSize\0";
 large-file-option	sigtool/sigtool.c	2196	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL))
 large-file-option	sigtool/sigtool.c	2198	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL))
 large-file-option	unit_tests/check_clamav.c	12796	    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_SCANSIZE, 4), CL_SUCCESS);

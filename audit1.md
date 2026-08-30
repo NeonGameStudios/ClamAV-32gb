@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Rust cleanup-helper FFI errors — 2026-08-30
+
+The Rust `glob_rm()` cleanup entry used `glob(glob_str).expect(...)`, so an
+invalid pattern could panic across the C ABI. It also used the no-error-output
+form of string validation even though C callers supplied an `FFIError` slot;
+null or invalid UTF-8 input could therefore return false with no diagnostic,
+and the caller could dereference a null error object. The helper now converts
+`glob::PatternError` into `FFIError` and both cleanup helpers use the
+error-reporting validation form. Focused Rust regressions and source guards
+cover invalid glob syntax and a null directory path. Rust/C ABI, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain open.
+
 ## MSPack filename-backed ferror propagation — 2026-08-30
 
 The custom MSPack callback already returned byte counts correctly, but the
