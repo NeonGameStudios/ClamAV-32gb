@@ -3,6 +3,26 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UDF descriptor-tag integrity admission — 2026-08-30
+
+Recognized UDF descriptors are now integrity-checked before their fields are
+trusted. The bounded validator accepts descriptor versions 2 and 3, requires
+the reserved tag byte to be zero, verifies the modulo-256 tag checksum,
+validates the declared CRC-ITU-T span/value, preserves the legal
+zero-length/zero-value CRC form, and correlates fixed volume-sequence tag
+locations with their sectors. FID and FE checks occur after their variable
+record sizes have passed overflow and block-boundary admission. The registered
+corpus independently constructs valid tags and checks ECMA-167's published
+`70 6a 77 -> 3299` CRC example. Every malformed case reaches the exact child
+signature on the prior committed UDF object; the current production-linked
+object instead returns `CL_EPARSE` with the precise sticky reason, no alert,
+and cache taint. A valid omitted CRC still reaches the exact child signature.
+Full current unit-source compilation and matching GCC ASan/UBSan with leak
+detection pass. Anchor-driven main/reserve sequence traversal, FSD/FID
+location validation, authoritative directories, complete corpus, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
+final parser/release qualification remain required.
+
 ## UDF directory traversal admission — 2026-08-30
 
 Confirmed UDF directory FIDs are no longer accepted as successful skipped
@@ -14,7 +34,7 @@ fixture; the current production-linked object records no child alert and
 returns the explicit unsupported result. The matching GCC ASan/UBSan run with
 leak detection passes. This is fail-visible admission evidence, not directory
 support: bounded root/descendant traversal, cycle and duplicate control,
-descriptor integrity, full corpus, certified Linux x86-64,
+full descriptor/sequence coverage, full corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
@@ -29,8 +49,9 @@ focused production-linked oracle, the exact committed pre-fix object reaches
 the exact `Udf.File.Marker.UNOFFICIAL` child signature through mode 4 and
 retains two locked pages; the current UDF object records no child alert and a
 clean handle-backed scan retains zero locks. The matching GCC ASan/UBSan run
-with leak detection passes. Authoritative UDF directory traversal, descriptor
-tag/checksum/CRC validation, complete corpus, certified Linux x86-64,
+with leak detection passes. Authoritative UDF directory traversal,
+anchor-driven descriptor sequencing/location coverage, complete corpus,
+certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 

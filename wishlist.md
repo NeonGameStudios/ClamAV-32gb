@@ -1,5 +1,20 @@
 # Wishlist
 
+## UDF descriptor-tag integrity admission — 2026-08-30
+
+- Validate every consumed UDF Descriptor Tag before trusting descriptor
+  content: retain version/reserved-byte checks, modulo-256 tag checksum,
+  CRC-ITU-T span/value validation, legal omitted-CRC handling, and
+  fixed-volume-sequence location correlation.
+- Retain independently encoded fixtures, the published `70 6a 77 -> 3299`
+  CRC oracle, the valid omitted-CRC child detection, every malformed-tag
+  no-child-alert case, exact prior-object controls, and production-linked GCC
+  ASan/UBSan with leak detection.
+- Complete anchor-driven main/reserve descriptor sequences, FSD/FID location
+  validation, authoritative directory traversal, complete UDF corpus,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, and final parser/release qualification.
+
 ## UDF directory traversal admission — 2026-08-30
 
 - Never report a confirmed UDF directory FID as a successful skipped member.
@@ -9,7 +24,8 @@
   regression, source guards, and production-linked GCC ASan/UBSan oracle.
 - Implement bounded traversal from the file-set root ICB through every
   descendant FID/FE, with cycle/duplicate detection, shared limits and
-  deadlines, descriptor validation, complete corpus, certified Linux x86-64,
+  deadlines, full descriptor/sequence coverage, complete corpus,
+  certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, and final
   parser/release qualification.
 
@@ -21,8 +37,9 @@
 - Release each copied FID/FE descriptor window before advancing to the next
   volume block. Retain the exact child-signature and handle-map lock
   regressions plus the production-linked GCC ASan/UBSan oracle.
-- Complete authoritative UDF directory traversal, descriptor tag/checksum/CRC
-  validation, full corpus, certified Linux x86-64, production-CVD/service,
+- Complete authoritative UDF directory traversal, anchor-driven descriptor
+  sequencing/location coverage, full corpus, certified Linux x86-64,
+  production-CVD/service,
   materialized-large-file, Sonic1, and final parser/release qualification.
 
 ## ISO-9660 directory-record name boundary — 2026-08-30

@@ -2260,6 +2260,26 @@ not_contains libclamav/udf.c 'extractFile: Skipping directory'
 contains unit_tests/check_clamav.c 'A directory FID is an authoritative traversal request'
 contains unit_tests/check_clamav.c 'unsupported UDF directory reached child alert'
 contains docs/largefile-capabilities.tsv 'udf-directory-admission'
+contains libclamav/udf.c 'static uint16_t udf_descriptor_crc16'
+contains libclamav/udf.c 'UINT16_C(0x1021)'
+contains libclamav/udf.c 'version != 2U && version != 3U'
+contains libclamav/udf.c 'UDF descriptor tag reserved byte is invalid'
+contains libclamav/udf.c 'UDF descriptor tag checksum is invalid'
+contains libclamav/udf.c 'crc_length > descriptor_size - sizeof(*tag)'
+contains libclamav/udf.c 'UDF descriptor CRC range is invalid'
+contains libclamav/udf.c 'UDF zero-length descriptor CRC is invalid'
+contains libclamav/udf.c 'UDF descriptor CRC is invalid'
+contains libclamav/udf.c 'UDF descriptor tag location does not match its sector'
+contains unit_tests/check_clamav.c 'ECMA-167 1/7.2.6 publishes this CRC-ITU-T example'
+contains unit_tests/check_clamav.c 'test_udf_descriptor_crc16((const uint8_t *)"\x70\x6a\x77", 3), 0x3299'
+contains unit_tests/check_clamav.c 'ECMA-167 permits omitting the descriptor CRC'
+contains unit_tests/check_clamav.c 'bad UDF tag checksum reached child alert'
+contains docs/largefile-capabilities.tsv 'udf-descriptor-tag-integrity'
+udf_descriptor_tag_validation_count=$(grep -F -c -- 'udf_validate_descriptor_tag(ctx' "$root/libclamav/udf.c" || true)
+if [ "$udf_descriptor_tag_validation_count" -ne 12 ]; then
+    echo 'large-file source guard failed: every consumed UDF descriptor family must retain tag validation' >&2
+    exit 1
+fi
 contains libclamav/hfsplus.c 'HFS+ volume header is incomplete'
 contains libclamav/hfsplus.c 'HFS+ volume header could not be read completely'
 contains libclamav/hfsplus.c 'HFS+ input map is unavailable'

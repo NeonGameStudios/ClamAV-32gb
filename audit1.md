@@ -1,5 +1,31 @@
 # Independent read-only audit of audit.md
 
+## UDF descriptor-tag integrity admission — 2026-08-30
+
+The UDF parser previously trusted every recognized descriptor tag without
+checking its descriptor version, reserved byte, tag checksum, optional
+CRC-ITU-T value/span, or physical location. A malformed File Entry could
+therefore reach and alert on its referenced child as though its descriptor
+were intact. The parser now validates versions 2 and 3, the zero reserved byte,
+the modulo-256 tag checksum, the ECMA-167 CRC polynomial and declared span,
+the standard zero-length/zero-value CRC form, and fixed volume-sequence tag
+locations. FID and FE validation is performed only after their checked
+variable record sizes are known. The registered corpus uses independently
+encoded valid tags and pins ECMA-167's `70 6a 77 -> 3299` CRC example. Against
+the exact prior committed UDF object, bad checksum, version, reserved byte,
+CRC, CRC span, zero-length CRC value, and fixed-sequence location cases all
+reach `Udf.File.Marker.UNOFFICIAL` with no incomplete state. A
+production-static archive with only the current UDF object returns
+fail-visible `CL_EPARSE`, retains the exact first reason, records no alert, and
+taints the map for every malformed case; a valid omitted CRC still reaches the
+exact child signature. Full current unit-source compilation and the focused
+production-linked GCC ASan/UBSan run with leak detection pass. This is bounded
+integrity admission, not complete UDF qualification: anchor-driven main and
+reserve sequences, FSD/FID location validation, authoritative directory
+traversal, complete corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.
+
 ## UDF directory traversal admission — 2026-08-30
 
 The UDF extractor treated every directory File Identifier Descriptor as a
@@ -14,8 +40,8 @@ reason and a cacheable map; a production-static archive with only the current
 UDF object returns the explicit unsupported result with no child alert. The
 matching GCC ASan/UBSan run with leak detection is clean. This closes the
 silent-clean result but does not qualify UDF directories: authoritative root
-and descendant traversal, cycle/duplicate control, descriptor integrity,
-complete corpus, certified Linux x86-64, production-CVD/service,
+and descendant traversal, cycle/duplicate control, full descriptor/sequence
+coverage, complete corpus, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification remain
 open.
 

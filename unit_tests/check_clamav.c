@@ -42859,6 +42859,9 @@ static void test_udf_set_generic_identifiers(uint8_t *data, size_t base)
     }
 }
 
+static void test_udf_finalize_descriptor_tags(uint8_t *data, size_t base,
+                                              size_t volume_blocks);
+
 START_TEST(test_udf_unknown_generic_descriptor_is_fail_visible)
 {
     enum {
@@ -42946,6 +42949,7 @@ START_TEST(test_udf_mismatched_file_lists_are_fail_visible)
     data[base + (13 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_FILE_IDENTIFIER >> 8;
     data[base + (14 * VOLUME_DESCRIPTOR_SIZE)]      = 0xff;
     data[base + (14 * VOLUME_DESCRIPTOR_SIZE) + 1]  = 0x03;
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
 
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
@@ -43013,6 +43017,7 @@ START_TEST(test_udf_missing_file_set_descriptor_is_fail_visible)
     data[base + (11 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_ANCHOR >> 8;
     data[base + (12 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_FILE_IDENTIFIER & 0xff;
     data[base + (12 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_FILE_IDENTIFIER >> 8;
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
 
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
@@ -43050,6 +43055,142 @@ static void test_udf_put_le64(uint8_t *dst, uint64_t value)
 {
     test_udf_put_le32(dst, (uint32_t)value);
     test_udf_put_le32(dst + sizeof(uint32_t), (uint32_t)(value >> 32));
+}
+
+static uint16_t test_udf_get_le16(const uint8_t *src)
+{
+    return (uint16_t)src[0] | ((uint16_t)src[1] << 8);
+}
+
+static uint16_t test_udf_descriptor_crc16(const uint8_t *data, size_t length)
+{
+    uint16_t crc = 0;
+    size_t i;
+
+    for (i = 0; i < length; i++) {
+        unsigned int bit;
+
+        crc ^= (uint16_t)data[i] << 8;
+        for (bit = 0; bit < 8; bit++) {
+            if (crc & UINT16_C(0x8000))
+                crc = (uint16_t)((crc << 1) ^ UINT16_C(0x1021));
+            else
+                crc = (uint16_t)(crc << 1);
+        }
+    }
+
+    return crc;
+}
+
+static void test_udf_refresh_tag_checksum(uint8_t *descriptor)
+{
+    size_t i;
+    uint8_t checksum = 0;
+
+    descriptor[offsetof(DescriptorTag, checksum)] = 0;
+    for (i = 0; i < sizeof(DescriptorTag); i++) {
+        if (i != offsetof(DescriptorTag, checksum))
+            checksum = (uint8_t)(checksum + descriptor[i]);
+    }
+    descriptor[offsetof(DescriptorTag, checksum)] = checksum;
+}
+
+static void test_udf_finalize_tag(uint8_t *descriptor, size_t descriptor_size,
+                                  uint32_t tag_location)
+{
+    size_t crc_length;
+
+    ck_assert_msg(descriptor_size >= sizeof(DescriptorTag),
+                  "UDF test descriptor is shorter than its tag");
+    crc_length = descriptor_size - sizeof(DescriptorTag);
+    ck_assert_msg(crc_length <= UINT16_MAX,
+                  "UDF test descriptor CRC span exceeds its field");
+
+    test_udf_put_le16(descriptor + offsetof(DescriptorTag, descriptorVersion), 2);
+    descriptor[offsetof(DescriptorTag, reserved)] = 0;
+    test_udf_put_le16(descriptor + offsetof(DescriptorTag, descriptorCRCLength),
+                      (uint16_t)crc_length);
+    test_udf_put_le32(descriptor + offsetof(DescriptorTag, tagLocation), tag_location);
+    test_udf_put_le16(descriptor + offsetof(DescriptorTag, descriptorCRC),
+                      test_udf_descriptor_crc16(descriptor + sizeof(DescriptorTag), crc_length));
+    test_udf_refresh_tag_checksum(descriptor);
+}
+
+static void test_udf_finalize_descriptor_tags(uint8_t *data, size_t base,
+                                              size_t volume_blocks)
+{
+    size_t block;
+
+    ck_assert_uint_eq(base % VOLUME_DESCRIPTOR_SIZE, 0);
+    for (block = 3; block < volume_blocks; block++) {
+        uint8_t *descriptor = data + base + (block * VOLUME_DESCRIPTOR_SIZE);
+        uint16_t tag_id = test_udf_get_le16(descriptor);
+        uint32_t tag_location = 0;
+        size_t descriptor_size = 0;
+
+        switch (tag_id) {
+            case 1:
+                descriptor_size = sizeof(PrimaryVolumeDescriptor);
+                break;
+            case 2:
+                descriptor_size = sizeof(AnchorVolumeDescriptorPointer);
+                break;
+            case 4:
+                descriptor_size = sizeof(ImplementationUseVolumeDescriptor);
+                break;
+            case 5:
+                descriptor_size = sizeof(PartitionDescriptor);
+                break;
+            case 6:
+                descriptor_size = sizeof(LogicalVolumeDescriptor);
+                break;
+            case 7:
+                descriptor_size = sizeof(UnallocatedSpaceDescriptor);
+                break;
+            case 8:
+                descriptor_size = sizeof(TerminatingDescriptor);
+                break;
+            case 9:
+                descriptor_size = sizeof(LogicalVolumeIntegrityDescriptor);
+                break;
+            case 256:
+                descriptor_size = sizeof(FileSetDescriptor);
+                break;
+            case 257:
+                ck_assert(getFileIdentifierDescriptorSize(
+                    (const FileIdentifierDescriptor *)descriptor, &descriptor_size));
+                break;
+            case 261:
+                ck_assert(getFileEntryDescriptorSize(
+                    (const FileEntryDescriptor *)descriptor, &descriptor_size));
+                break;
+            default:
+                continue;
+        }
+
+        if (block <= 11)
+            tag_location = (uint32_t)(base / VOLUME_DESCRIPTOR_SIZE + block);
+        test_udf_finalize_tag(descriptor, descriptor_size, tag_location);
+    }
+}
+
+static void test_udf_prepare_scan_context(cli_ctx *ctx, cli_scan_layer_t layers[2],
+                                          fmap_t *map, struct cl_engine *engine,
+                                          struct cl_scan_options *options)
+{
+    memset(ctx, 0, sizeof(*ctx));
+    memset(layers, 0, sizeof(cli_scan_layer_t) * 2U);
+    map->dont_cache_flag      = false;
+    ctx->engine               = engine;
+    ctx->dconf                = engine->dconf;
+    ctx->options              = options;
+    ctx->fmap                 = map;
+    ctx->this_layer_tmpdir    = tmpdir;
+    ctx->recursion_stack      = layers;
+    ctx->recursion_stack_size = 2;
+    layers[0].type            = CL_TYPE_UDF;
+    layers[0].size            = map->len;
+    layers[0].fmap            = map;
 }
 
 START_TEST(test_udf_declared_information_length_is_fail_visible)
@@ -43128,6 +43269,7 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
 
     data[base + (15 * VOLUME_DESCRIPTOR_SIZE)]     = 0xff;
     data[base + (15 * VOLUME_DESCRIPTOR_SIZE) + 1] = 0x03;
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
 
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
@@ -43146,6 +43288,7 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
      * later mapped region merely because the fmap itself is large enough. */
     test_udf_put_le64(data + fed_offset + offsetof(FileEntryDescriptor, infoLength), UDF_TEST_ALLOCATED_LENGTH);
     test_udf_put_le32(data + allocation_offset + offsetof(short_ad, position), UDF_TEST_ALLOCATED_LENGTH);
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
     memset(&ctx, 0, sizeof(ctx));
     map->dont_cache_flag = false;
     ctx.engine           = &engine;
@@ -43166,6 +43309,7 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
     test_udf_put_le32(data + allocation_offset + offsetof(ext_ad, extentLen), UDF_TEST_ALLOCATED_LENGTH);
     test_udf_put_le32(data + allocation_offset + offsetof(ext_ad, recordedLen), 512);
     test_udf_put_le32(data + allocation_offset + offsetof(ext_ad, infoLen), UDF_TEST_ALLOCATED_LENGTH);
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
 
     memset(&ctx, 0, sizeof(ctx));
     map->dont_cache_flag = false;
@@ -43212,6 +43356,7 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     size_t fed_offset;
     size_t lvd_offset;
     size_t pd_offset;
+    size_t pvd_offset;
     size_t fid_offset;
     size_t allocation_offset;
     const char *last_virus;
@@ -43280,6 +43425,7 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     pd_offset = base + (6 * VOLUME_DESCRIPTOR_SIZE);
     test_udf_put_le32(data + pd_offset + offsetof(PartitionDescriptor, partitionStartingLocation), 32);
     test_udf_put_le32(data + pd_offset + offsetof(PartitionDescriptor, partitionLength), 1);
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
 
     memset(&options, 0, sizeof(options));
     memset(layers, 0, sizeof(layers));
@@ -43315,11 +43461,16 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     ck_assert_str_eq(last_virus, "Udf.File.Marker.UNOFFICIAL");
     ck_assert_msg(!ctx.scan_incomplete, "UDF corpus unexpectedly incomplete: %s",
                   ctx.scan_incomplete_reason ? ctx.scan_incomplete_reason : "(no reason)");
+    if (layers[0].evidence != NULL) {
+        evidence_free(layers[0].evidence);
+        layers[0].evidence = NULL;
+    }
 
     /* A valid clean volume must complete after its descriptor run. The
      * parser historically kept indexing payload blocks as descriptors until
      * the fmap ended, converting this clean case into CL_EPARSE. */
     memset(data + base + (16 * VOLUME_DESCRIPTOR_SIZE), 0, UDF_TEST_PAYLOAD_LENGTH);
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
     memset(&ctx, 0, sizeof(ctx));
     memset(layers, 0, sizeof(layers));
     map->dont_cache_flag = false;
@@ -43345,6 +43496,7 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     test_udf_put_le32(data + fid_offset + offsetof(FileIdentifierDescriptor, icb) +
                           offsetof(long_ad, extentLocation) + offsetof(lb_addr, blockNumber),
                       1);
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
     memset(&ctx, 0, sizeof(ctx));
     memset(layers, 0, sizeof(layers));
     map->dont_cache_flag = false;
@@ -43373,6 +43525,7 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
                       0);
     test_udf_put_le16(data + fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, flags), 4);
     memcpy(data + base + (16 * VOLUME_DESCRIPTOR_SIZE), "UDF", UDF_TEST_PAYLOAD_LENGTH);
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
     memset(&ctx, 0, sizeof(ctx));
     memset(layers, 0, sizeof(layers));
     map->dont_cache_flag = false;
@@ -43401,6 +43554,7 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
      * the uninspected subtree explicitly unsupported and non-cacheable. */
     test_udf_put_le16(data + fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, flags), 0);
     data[fid_offset + offsetof(FileIdentifierDescriptor, characteristics)] = 2;
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
     memset(&ctx, 0, sizeof(ctx));
     memset(layers, 0, sizeof(layers));
     map->dont_cache_flag = false;
@@ -43433,6 +43587,7 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     data[fid_offset + offsetof(FileIdentifierDescriptor, characteristics)] = 0;
     test_udf_put_le16(data + fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, flags), 0);
     memset(data + base + (16 * VOLUME_DESCRIPTOR_SIZE), 0, UDF_TEST_PAYLOAD_LENGTH);
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
     handle_state.data        = data;
     handle_state.length      = UDF_TEST_SIZE;
     handle_state.fail_offset = (off_t)UDF_TEST_SIZE;
@@ -43461,6 +43616,134 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     }
     cl_fmap_close(map);
 #endif
+
+    /* ECMA-167 1/7.2.6 publishes this CRC-ITU-T example. Keep the
+     * independently implemented fixture encoder pinned to that value. */
+    ck_assert_uint_eq(test_udf_descriptor_crc16((const uint8_t *)"\x70\x6a\x77", 3), 0x3299);
+
+    data[fid_offset + offsetof(FileIdentifierDescriptor, characteristics)] = 0;
+    test_udf_put_le32(data + fid_offset + offsetof(FileIdentifierDescriptor, icb) +
+                          offsetof(long_ad, extentLocation) + offsetof(lb_addr, blockNumber),
+                      0);
+    test_udf_put_le16(data + fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, flags), 0);
+    memcpy(data + base + (16 * VOLUME_DESCRIPTOR_SIZE), "UDF", UDF_TEST_PAYLOAD_LENGTH);
+    pvd_offset = base + (3 * VOLUME_DESCRIPTOR_SIZE);
+
+    /* ECMA-167 permits omitting the descriptor CRC by setting both its span
+     * and value to zero. The mandatory tag checksum still applies. */
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    test_udf_put_le16(data + fed_offset + offsetof(DescriptorTag, descriptorCRCLength), 0);
+    test_udf_put_le16(data + fed_offset + offsetof(DescriptorTag, descriptorCRC), 0);
+    test_udf_refresh_tag_checksum(data + fed_offset);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    last_virus = cli_get_last_virus_str(&ctx);
+    ck_assert_str_eq(last_virus, "Udf.File.Marker.UNOFFICIAL");
+    ck_assert(!ctx.scan_incomplete);
+    if (layers[0].evidence != NULL) {
+        evidence_free(layers[0].evidence);
+        layers[0].evidence = NULL;
+    }
+    cl_fmap_close(map);
+
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    data[fed_offset + offsetof(DescriptorTag, checksum)] ^= 1U;
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor tag checksum is invalid");
+    ck_assert(map->dont_cache_flag);
+    last_virus = cli_get_last_virus_str(&ctx);
+    ck_assert_msg(last_virus == NULL || last_virus[0] == '\0',
+                  "bad UDF tag checksum reached child alert: %s", last_virus ? last_virus : "(null)");
+    cl_fmap_close(map);
+
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    test_udf_put_le16(data + fed_offset + offsetof(DescriptorTag, descriptorVersion), 1);
+    test_udf_refresh_tag_checksum(data + fed_offset);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor tag version is unsupported");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    data[fed_offset + offsetof(DescriptorTag, reserved)] = 1;
+    test_udf_refresh_tag_checksum(data + fed_offset);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor tag reserved byte is invalid");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    data[fed_offset + offsetof(FileEntryDescriptor, uid)] ^= 1U;
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor CRC is invalid");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+    data[fed_offset + offsetof(FileEntryDescriptor, uid)] ^= 1U;
+
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    test_udf_put_le16(data + fed_offset + offsetof(DescriptorTag, descriptorCRCLength),
+                      VOLUME_DESCRIPTOR_SIZE);
+    test_udf_refresh_tag_checksum(data + fed_offset);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor CRC range is invalid");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    test_udf_put_le16(data + fed_offset + offsetof(DescriptorTag, descriptorCRCLength), 0);
+    test_udf_put_le16(data + fed_offset + offsetof(DescriptorTag, descriptorCRC), 1);
+    test_udf_refresh_tag_checksum(data + fed_offset);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF zero-length descriptor CRC is invalid");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    test_udf_put_le32(data + pvd_offset + offsetof(DescriptorTag, tagLocation),
+                      (uint32_t)(pvd_offset / VOLUME_DESCRIPTOR_SIZE + 1U));
+    test_udf_refresh_tag_checksum(data + pvd_offset);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor tag location does not match its sector");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
 
     cl_engine_free(scan_engine);
     free(data);
@@ -43528,6 +43811,7 @@ START_TEST(test_udf_allocation_descriptor_alignment_is_fail_visible)
     data[fed_offset + offsetof(FileEntryDescriptor, allocationDescLen) + 1] = 0;
     data[base + (15 * VOLUME_DESCRIPTOR_SIZE)] = 0xff;
     data[base + (15 * VOLUME_DESCRIPTOR_SIZE) + 1] = 0x03;
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
 
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));

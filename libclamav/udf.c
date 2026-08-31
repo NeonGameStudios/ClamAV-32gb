@@ -49,6 +49,94 @@ static tag_identifier getDescriptorTagId(DescriptorTag *tag)
     return le16_to_host(tag->tagId);
 }
 
+static uint16_t udf_descriptor_crc16(const uint8_t *data, size_t length)
+{
+    uint16_t crc = 0;
+    size_t i;
+
+    for (i = 0; i < length; i++) {
+        unsigned int bit;
+
+        crc ^= (uint16_t)data[i] << 8;
+        for (bit = 0; bit < 8; bit++) {
+            if (crc & UINT16_C(0x8000))
+                crc = (uint16_t)((crc << 1) ^ UINT16_C(0x1021));
+            else
+                crc = (uint16_t)(crc << 1);
+        }
+    }
+
+    return crc;
+}
+
+static cl_error_t udf_validate_descriptor_tag(cli_ctx *ctx, const DescriptorTag *tag,
+                                              size_t descriptor_size, size_t descriptor_offset,
+                                              bool validate_location)
+{
+    const uint8_t *tag_bytes = (const uint8_t *)tag;
+    uint16_t version;
+    uint16_t declared_crc;
+    uint16_t crc_length;
+    uint8_t checksum = 0;
+    size_t i;
+
+    if (tag == NULL || descriptor_size < sizeof(*tag)) {
+        cli_mark_scan_incomplete(ctx, "UDF descriptor tag is incomplete");
+        return CL_EPARSE;
+    }
+
+    version = le16_to_host(tag->descriptorVersion);
+    if (version != 2U && version != 3U) {
+        cli_mark_scan_incomplete(ctx, "UDF descriptor tag version is unsupported");
+        return CL_EPARSE;
+    }
+    if (tag->reserved != 0) {
+        cli_mark_scan_incomplete(ctx, "UDF descriptor tag reserved byte is invalid");
+        return CL_EPARSE;
+    }
+
+    for (i = 0; i < sizeof(*tag); i++) {
+        if (i != offsetof(DescriptorTag, checksum))
+            checksum = (uint8_t)(checksum + tag_bytes[i]);
+    }
+    if (checksum != tag->checksum) {
+        cli_mark_scan_incomplete(ctx, "UDF descriptor tag checksum is invalid");
+        return CL_EPARSE;
+    }
+
+    crc_length   = le16_to_host(tag->descriptorCRCLength);
+    declared_crc = le16_to_host(tag->descriptorCRC);
+    if (crc_length > descriptor_size - sizeof(*tag)) {
+        cli_mark_scan_incomplete(ctx, "UDF descriptor CRC range is invalid");
+        return CL_EPARSE;
+    }
+    if (crc_length == 0) {
+        if (declared_crc != 0) {
+            cli_mark_scan_incomplete(ctx, "UDF zero-length descriptor CRC is invalid");
+            return CL_EPARSE;
+        }
+    } else if (udf_descriptor_crc16(tag_bytes + sizeof(*tag), crc_length) != declared_crc) {
+        cli_mark_scan_incomplete(ctx, "UDF descriptor CRC is invalid");
+        return CL_EPARSE;
+    }
+
+    if (validate_location) {
+        size_t logical_sector;
+
+        if (descriptor_offset % VOLUME_DESCRIPTOR_SIZE != 0) {
+            cli_mark_scan_incomplete(ctx, "UDF descriptor tag location is invalid");
+            return CL_EPARSE;
+        }
+        logical_sector = descriptor_offset / VOLUME_DESCRIPTOR_SIZE;
+        if (logical_sector > UINT32_MAX || le32_to_host(tag->tagLocation) != logical_sector) {
+            cli_mark_scan_incomplete(ctx, "UDF descriptor tag location does not match its sector");
+            return CL_EPARSE;
+        }
+    }
+
+    return CL_SUCCESS;
+}
+
 static bool isDirectory(FileIdentifierDescriptor *fid)
 {
     return (0 != (fid->characteristics & 2));
@@ -603,7 +691,8 @@ static PrimaryVolumeDescriptor *getPrimaryVolumeDescriptor(cli_ctx *ctx, size_t 
     }
     lastOffset = idx;
 
-    if (PRIMARY_VOLUME_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+    if (PRIMARY_VOLUME_DESCRIPTOR != getDescriptorTagId(&test->tag) ||
+        CL_SUCCESS != udf_validate_descriptor_tag(ctx, &test->tag, VOLUME_DESCRIPTOR_SIZE, idx, true)) {
         fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
@@ -642,7 +731,8 @@ static ImplementationUseVolumeDescriptor *getImplementationUseVolumeDescriptor(c
     }
     lastOffset = idx;
 
-    if (IMPLEMENTATION_USE_VOLUME_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+    if (IMPLEMENTATION_USE_VOLUME_DESCRIPTOR != getDescriptorTagId(&test->tag) ||
+        CL_SUCCESS != udf_validate_descriptor_tag(ctx, &test->tag, VOLUME_DESCRIPTOR_SIZE, idx, true)) {
         fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
@@ -680,7 +770,8 @@ static LogicalVolumeDescriptor *getLogicalVolumeDescriptor(cli_ctx *ctx, size_t 
     }
     lastOffset = idx;
 
-    if (LOGICAL_VOLUME_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+    if (LOGICAL_VOLUME_DESCRIPTOR != getDescriptorTagId(&test->tag) ||
+        CL_SUCCESS != udf_validate_descriptor_tag(ctx, &test->tag, VOLUME_DESCRIPTOR_SIZE, idx, true)) {
         fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
@@ -718,7 +809,8 @@ static PartitionDescriptor *getPartitionDescriptor(cli_ctx *ctx, size_t *idxp, s
     }
     lastOffset = idx;
 
-    if (PARTITION_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+    if (PARTITION_DESCRIPTOR != getDescriptorTagId(&test->tag) ||
+        CL_SUCCESS != udf_validate_descriptor_tag(ctx, &test->tag, VOLUME_DESCRIPTOR_SIZE, idx, true)) {
         fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
@@ -756,7 +848,8 @@ static UnallocatedSpaceDescriptor *getUnallocatedSpaceDescriptor(cli_ctx *ctx, s
     }
     lastOffset = idx;
 
-    if (UNALLOCATED_SPACE_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+    if (UNALLOCATED_SPACE_DESCRIPTOR != getDescriptorTagId(&test->tag) ||
+        CL_SUCCESS != udf_validate_descriptor_tag(ctx, &test->tag, VOLUME_DESCRIPTOR_SIZE, idx, true)) {
         fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
@@ -794,7 +887,8 @@ static TerminatingDescriptor *getTerminatingDescriptor(cli_ctx *ctx, size_t *idx
     }
     lastOffset = idx;
 
-    if (TERMINATING_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+    if (TERMINATING_DESCRIPTOR != getDescriptorTagId(&test->tag) ||
+        CL_SUCCESS != udf_validate_descriptor_tag(ctx, &test->tag, VOLUME_DESCRIPTOR_SIZE, idx, true)) {
         fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
@@ -833,7 +927,8 @@ static LogicalVolumeIntegrityDescriptor *getLogicalVolumeIntegrityDescriptor(cli
     }
     lastOffset = idx;
 
-    if (LOGICAL_VOLUME_INTEGRITY_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+    if (LOGICAL_VOLUME_INTEGRITY_DESCRIPTOR != getDescriptorTagId(&test->tag) ||
+        CL_SUCCESS != udf_validate_descriptor_tag(ctx, &test->tag, VOLUME_DESCRIPTOR_SIZE, idx, true)) {
         fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
@@ -871,7 +966,8 @@ static AnchorVolumeDescriptorPointer *getAnchorVolumeDescriptorPointer(cli_ctx *
     }
     lastOffset = idx;
 
-    if (ANCHOR_VOLUME_DESCRIPTOR_DESCRIPTOR_POINTER != getDescriptorTagId(&test->tag)) {
+    if (ANCHOR_VOLUME_DESCRIPTOR_DESCRIPTOR_POINTER != getDescriptorTagId(&test->tag) ||
+        CL_SUCCESS != udf_validate_descriptor_tag(ctx, &test->tag, VOLUME_DESCRIPTOR_SIZE, idx, true)) {
         fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
@@ -908,7 +1004,8 @@ static FileSetDescriptor *getFileSetDescriptor(cli_ctx *ctx, size_t *idxp, size_
     }
     lastOffset = idx;
 
-    if (FILE_SET_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+    if (FILE_SET_DESCRIPTOR != getDescriptorTagId(&test->tag) ||
+        CL_SUCCESS != udf_validate_descriptor_tag(ctx, &test->tag, VOLUME_DESCRIPTOR_SIZE, idx, false)) {
         fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
@@ -1022,6 +1119,10 @@ static cl_error_t findFileIdentifiers(cli_ctx *ctx, const uint8_t *const input, 
             ret = CL_EPARSE;
             break;
         }
+        ret = udf_validate_descriptor_tag(ctx, (const DescriptorTag *)buffer,
+                                          fidDescSize, 0, false);
+        if (ret != CL_SUCCESS)
+            break;
 
         /* Add the buffer to the list of file identifier pointers */
         if (CL_SUCCESS != (ret = insertPointer(pfil, buffer, fidDescSize))) {
@@ -1072,6 +1173,10 @@ static cl_error_t findFileEntries(cli_ctx *ctx, const uint8_t *const input, Poin
             ret = CL_EPARSE;
             break;
         }
+        ret = udf_validate_descriptor_tag(ctx, (const DescriptorTag *)buffer,
+                                          fedDescSize, 0, false);
+        if (ret != CL_SUCCESS)
+            break;
 
         /* Add the buffer to the list of file entry pointers */
         if (CL_SUCCESS != (ret = insertPointer(pfil, buffer, fedDescSize))) {
@@ -1421,6 +1526,13 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
         tag_identifier tagId = getDescriptorTagId(file_volume_tag);
 
         cli_dbgmsg("UDF Descriptor Tag ID: %d\n", tagId);
+
+        if ((tagId == EXTENDED_FILE_ENTRY_DESCRIPTOR || tagId == TERMINATING_DESCRIPTOR) &&
+            CL_SUCCESS != udf_validate_descriptor_tag(ctx, file_volume_tag,
+                                                      VOLUME_DESCRIPTOR_SIZE, 0, false)) {
+            ret = CL_EPARSE;
+            goto done;
+        }
 
         switch (tagId) {
             case FILE_IDENTIFIER_DESCRIPTOR: {
