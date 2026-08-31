@@ -1173,6 +1173,39 @@ static char *create_streaming_nested_message_fixture(void)
     return path;
 }
 
+static char *create_streaming_multipart_part_limit_fixture(void)
+{
+    static const char header[] =
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "Content-Type: multipart/mixed; boundary=part-limit\n"
+        "\n";
+    static const char part[] =
+        "Content-Type: application/octet-stream\n"
+        "\n"
+        "part\n";
+    static const char boundary[] = "--part-limit\n";
+    static const char trailer[] = "--part-limit--\n";
+    char *path = NULL;
+    int fd     = -1;
+    size_t i;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, header, sizeof(header) - 1),
+                     (ssize_t)(sizeof(header) - 1));
+    for (i = 0; i < 1024U; i++) {
+        ck_assert_int_eq(write(fd, boundary, sizeof(boundary) - 1),
+                         (ssize_t)(sizeof(boundary) - 1));
+        ck_assert_int_eq(write(fd, part, sizeof(part) - 1),
+                         (ssize_t)(sizeof(part) - 1));
+    }
+    ck_assert_int_eq(write(fd, trailer, sizeof(trailer) - 1),
+                     (ssize_t)(sizeof(trailer) - 1));
+    ck_assert_int_eq(close(fd), 0);
+
+    return path;
+}
+
 static void assert_large_mail_body_streams(const char *path, int alert_limits,
                                            uint64_t minimum_scanned)
 {
@@ -2853,6 +2886,49 @@ START_TEST(test_nested_rfc822_body_uses_streaming_spool)
     char *path = create_streaming_nested_message_fixture();
 
     assert_large_mail_body_streams(path, 0, 64U * 1024U * 1024U);
+    free(path);
+}
+END_TEST
+
+START_TEST(test_streaming_multipart_part_limit_is_fail_visible)
+{
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    cl_error_t report_status;
+    cl_verdict_t verdict   = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    const char *reason     = NULL;
+    uint64_t scanned       = UINT64_MAX;
+    char *path             = create_streaming_multipart_part_limit_fixture();
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    engine->dconf->mail |= MAIL_CONF_MBOX;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    ret = cl_scanfile_ex2(path, &verdict, &last_alert, &scanned,
+                          engine, &options, NULL, NULL, NULL, NULL,
+                          NULL, NULL, &report);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_EFORMAT);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_UNSUPPORTED);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "MIME parser exceeded the configured MIME-part limit");
+
+    cl_scan_report_free(report);
+    cl_engine_free(engine);
     free(path);
 }
 END_TEST
@@ -49970,6 +50046,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mail, test_mbox_oversized_line_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_header_budget_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_failed_header_does_not_consume_following_header);
+    tcase_add_test(tc_mail, test_streaming_multipart_part_limit_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_truncated_uuencode_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_truncated_binhex_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_corpus_detects_embedded_mz);

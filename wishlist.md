@@ -9430,6 +9430,18 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## Streaming MIME multipart part-limit parity — 2026-08-31
+
+- Keep the disk-backed multipart walker applying the existing 1,024-part
+  per-message bound before queueing or scanning each child, with native-width
+  count overflow rejected as incomplete.
+- Retain the exact current-source production-linked GCC regression: `mail`
+  passes 13/13 and the 1,024-part case returns `CL_EFORMAT` with a structured
+  incomplete report and no clean verdict/cache result.
+- Complete MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
+  materialized-large-file, production-CVD/service, Sonic1 resource, and
+  final parser/release qualification.
+
 ## TIFF sparse >4-GiB callback-map rerun — 2026-08-31
 
 - Keep the three sparse TIFF large-coordinate tests on aging-backed fmaps;

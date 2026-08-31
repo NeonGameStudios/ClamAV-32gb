@@ -3,6 +3,21 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Streaming MIME multipart part-limit parity — 2026-08-31
+
+The disk-backed multipart parser now counts each boundary with a native
+`size_t` counter and applies the existing per-message 1,024-part admission
+limit before queueing or scanning the part. This keeps the streaming and
+legacy MIME paths aligned; the limit returns `CL_EFORMAT`, marks the confirmed
+mail layer incomplete, and prevents a `multipart/related` message from
+queueing unbounded child spools. The current-source production-linked GCC
+`mail` TCase passes 13/13, including the exact streaming 1,024-part
+fail-visible regression and its structured incomplete report.
+
+Complete MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain required.
+
 ## Production-linked unit harness stat64 wrapper — 2026-08-31
 
 The Linux static `check_clamav` target now adds `--wrap=stat64` only when

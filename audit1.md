@@ -16873,6 +16873,23 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## Streaming MIME multipart part-limit parity — 2026-08-31
+
+The disk-backed multipart parser now counts each boundary with a native
+`size_t` counter and applies the existing per-message 1,024-part admission
+limit before queueing or scanning the part. This keeps streaming and legacy
+MIME behavior aligned and prevents `multipart/related` input from queuing an
+unbounded number of child spools. Reaching the limit returns `CL_EFORMAT`,
+marks the confirmed mail layer incomplete, and prevents clean caching. The
+canonical source was relinked in the existing production-linked GCC harness;
+the focused `mail` TCase passes 13/13, including the exact boundary regression
+and structured incomplete report assertions.
+
+This is parser-path evidence, not final release certification. Complete
+MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1 resource evidence,
+and the final requirement-by-requirement release audit remain open.
+
 ## TIFF sparse >4-GiB callback-map rerun — 2026-08-31
 
 The three TIFF large-coordinate tests previously failed before parser entry

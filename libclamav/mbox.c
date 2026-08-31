@@ -2167,6 +2167,7 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
     mbox_status result = OK;
     bool saw_boundary  = false;
     bool closed        = false;
+    size_t mime_part_count = 0;
     const char *main_subtype;
     bool is_related;
     char line[4096];
@@ -2257,6 +2258,21 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
 
         if (boundaryStart(line, boundary)) {
             mbox_status part_rc;
+
+            /* Keep the streaming multipart path subject to the same
+             * per-message part bound as the legacy line-list path. Without
+             * this check a related message could queue an arbitrary number
+             * of disk-backed child spools before MaxFiles or the shared
+             * temporary quota had a chance to stop it. */
+            if (mime_part_count == SIZE_MAX) {
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "MIME multipart part count exceeded its native representation");
+                result = FAIL;
+                break;
+            }
+            mime_part_count++;
+            if (haveTooManyMIMEPartsPerMessage(mime_part_count, mctx->ctx, &result))
+                break;
 
             if (is_related) {
                 if (queueStreamedMimePart(&parts_head, &parts_tail, &part, mctx->ctx) < 0) {
