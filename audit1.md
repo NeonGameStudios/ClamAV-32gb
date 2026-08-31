@@ -219,6 +219,20 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release evidence
 remain open.
 
+## Generic graphics dispatch current-source refresh — 2026-08-31
+
+The canonical scanner and unit-test sources were transferred into the existing
+Docker production-linked GCC harness and their SHA-256 hashes matched exactly.
+The focused cases pass `graphics_map` 2/2, `graphics_api` 1/1, and
+`graphics_corpus` 1/1, covering generic graphics map/API admission and the
+materialized nested-child path while preserving the mandatory outer raw
+matcher.
+
+This is generic graphics dispatch evidence, not complete graphics/image-family
+qualification. Full corpora, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## Current media/image production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `graphics_map` 2/2,

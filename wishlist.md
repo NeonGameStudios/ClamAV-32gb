@@ -181,6 +181,18 @@ Sonic1, resource, and final qualification remain required.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification open.
 
+## Generic graphics dispatch current-source refresh — 2026-08-31
+
+- Retain canonical-source SHA-256 equality for `scanners.c` and
+  `check_clamav.c` before relinking the existing Docker production-linked GCC
+  harness.
+- Retain focused results at `graphics_map` 2/2, `graphics_api` 1/1, and
+  `graphics_corpus` 1/1 for generic graphics map/API admission and the
+  materialized nested-child path, including the mandatory outer raw matcher.
+- Keep complete graphics/image corpora, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification open.
+
 ## Current media/image production-linked rerun — 2026-08-31
 
 - Retain current-source production-linked GCC evidence at `graphics_map` 2/2,
