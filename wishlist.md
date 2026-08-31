@@ -3440,7 +3440,7 @@ open.
 
 ## GPT partition-image corpus qualification — 2026-08-26
 
-- The current-source production-linked GCC gpt case passes 5/5, and the
+- The current-source production-linked GCC gpt case passes 7/7, and the
   isolated gpt_corpus case passes 1/1 over a valid six-sector GPT image with
   CRC-validated primary and backup headers, one usable partition, and an
   exact child matcher reached through partition traversal.
@@ -3546,8 +3546,8 @@ open.
 
 ## PE packer corpus qualification — 2026-08-25
 
-- The current-source production-linked GCC `pe` case passes 11/11 and
-  `pe_map` passes 2/2. The isolated `pe_corpus` case passes 1/1 across
+- The current-source production-linked GCC `pe` case passes 13/13 and
+  `pe_map` passes 4/4. The isolated `pe_corpus` case passes 1/1 across
   materialized FSG and UPX fixtures; exact offset-0 `MZP` matching is reached
   only after their unpacking handoff.
 - Keep complete PE packer/heuristic/resource corpus, fault injection,
@@ -7346,8 +7346,8 @@ and Sonic1 qualification as release gates.
 
 ## PE focused parser qualification — 2026-08-25
 
-- The focused current-source production-linked GCC `pe` TCase passes 11/11,
-  and `pe_map` passes 2/2 across missing-map admission, public-API and direct
+- The focused current-source production-linked GCC `pe` TCase passes 13/13,
+  and `pe_map` passes 4/4 across missing-map admission, public-API and direct
   header read/truncation boundaries, native-width PE coordinates, version
   resources, and icon-resource truncation/range/tree failures. Required
   failures remain incomplete and non-cacheable; in-range callback failures
@@ -7422,7 +7422,7 @@ and Sonic1 qualification as release gates.
 
 ## PE public API read-failure audit — 2026-08-25
 
-- The isolated current-source production-linked `pe_map` TCase passes 2/2 for
+- The isolated current-source production-linked `pe_map` TCase passes 4/4 for
   missing-map admission and a public `CL_TYPE_MSEXE` DOS-header callback
   failure, preserving `CL_EREAD`, a clean verdict, and non-cacheability.
 - Complete PE-specific corpus and full-C ABI-consistent execution, then add

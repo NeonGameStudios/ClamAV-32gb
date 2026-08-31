@@ -121,6 +121,16 @@ PDF/filter/FMap corpus, sanitizer scanner fault injection, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
 and final parser/release qualification remain required.
 
+## Current PE/GPT production-linked rerun — 2026-08-31
+
+The current-source production-linked GCC harness passes `pe` 13/13,
+`pe_map` 4/4, and materialized `pe_corpus` 1/1 across FSG and UPX unpacking,
+with exact offset-0 nested MZP matching after reconstruction. The GPT cases
+pass `gpt` 7/7 and `gpt_corpus` 1/1. Complete PE unpacker/resource and
+GPT/partition corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## Current HFS+ production-linked rerun — 2026-08-31
 
 The HFS+ fork regression now retains its valid fmap read callback across all
@@ -2922,7 +2932,7 @@ open.
 
 ## GPT partition-image corpus qualification — 2026-08-26
 
-The current-source production-linked GCC gpt case passes 4/4, and the
+The current-source production-linked GCC gpt case passes 7/7, and the
 isolated gpt_corpus case passes 1/1. It uses a valid six-sector GPT image with
 a protective MBR, CRC-validated primary and backup headers, one usable
 partition, and bounded child payload; the GPT root does not begin with MZP,
@@ -3067,8 +3077,8 @@ production-CVD/service, Sonic1, and release qualification remain open.
 
 ## PE packer corpus qualification — 2026-08-25
 
-The current-source production-linked GCC `pe` case passes 11/11 and `pe_map`
-passes 2/2. The isolated `pe_corpus` case passes 1/1 across materialized
+The current-source production-linked GCC `pe` case passes 13/13 and `pe_map`
+passes 4/4. The isolated `pe_corpus` case passes 1/1 across materialized
 `clam-fsg.exe` and `clam-upx.exe`; neither outer PE root begins with `MZP`,
 while the exact offset-0 child matcher reports `Pe.Member.MZ.UNOFFICIAL`
 after unpacking. Full PE packer/resource corpus, sanitizer, certified Linux

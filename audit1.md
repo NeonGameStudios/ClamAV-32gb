@@ -4814,7 +4814,7 @@ remain open.
 
 ## GPT partition-image corpus qualification — 2026-08-26
 
-The authoritative current-source production-linked GCC gpt case passes 5/5,
+The authoritative current-source production-linked GCC gpt case passes 7/7,
 and the isolated gpt_corpus case passes 1/1. The corpus is a valid
 six-sector GPT image with a protective MBR, CRC-validated primary and backup
 headers, one usable partition, and a bounded child payload; the GPT root does
@@ -4971,7 +4971,7 @@ production-CVD/service, Sonic1, and release evidence remain open.
 ## PE packer corpus qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `pe` case passes
-11/11, `pe_map` passes 2/2, and the isolated `pe_corpus` case passes 1/1 for
+13/13, `pe_map` passes 4/4, and the isolated `pe_corpus` case passes 1/1 for
 materialized `clam-fsg.exe` and `clam-upx.exe`. Their outer PE roots do not
 begin with `MZP`; the exact offset-0 child matcher reports
 `Pe.Member.MZ.UNOFFICIAL` only after the FSG/UPX unpacking handoff. This is
@@ -14221,8 +14221,8 @@ open.
 
 ## PE focused parser qualification — 2026-08-25
 
-The focused current-source production-linked GCC `pe` TCase passes 11/11,
-and `pe_map` passes 2/2. The matrix covers missing-map admission, public-API
+The focused current-source production-linked GCC `pe` TCase passes 13/13,
+and `pe_map` passes 4/4. The matrix covers missing-map admission, public-API
 in-range DOS-header read failure, truncated and callback-failed PE headers,
 native-width raw-address and unsigned section-field handling, nested fmap
 admission above the 32-bit coordinate boundary, version-resource failure, and
@@ -14240,7 +14240,7 @@ qualification remain open, so `CL_TYPE_MSEXE` stays pending.
 
 ## PE public API read-failure audit — 2026-08-25
 
-The isolated current-source production-linked `pe_map` TCase passes 2/2.
+The isolated current-source production-linked `pe_map` TCase passes 4/4.
 Alongside the existing direct missing-map boundary, a public
 `cl_scanmap_ex(..., "CL_TYPE_MSEXE", ...)` scan with an in-range DOS-header
 callback failure returns `CL_EREAD`, leaves the verdict clean with no alert,
