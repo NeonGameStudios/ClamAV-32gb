@@ -16890,6 +16890,21 @@ MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1 resource evidence,
 and the final requirement-by-requirement release audit remain open.
 
+## 7-Zip focused current-source corpus refresh — 2026-08-31
+
+The canonical 7-Zip interface, SDK sources, and unit-test source were
+transferred into the existing Docker GCC harness and their SHA-256 hashes
+matched exactly. The repository CMake target materialized `clam.7z` from its
+checked-in XOR fixture. The refreshed production-linked GCC cases pass `7z`
+20/20, `7z_map` 3/3, `7z_sfx` 2/2, and `7z_sfx_corpus` 1/1, including the exact
+embedded-child marker through SFX admission.
+
+This refresh is evidence for the next pending parser family, not final
+certification. Production BCJ2/archive corpus breadth, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-folder, Sonic1
+resource evidence, and the final requirement-by-requirement release audit
+remain open.
+
 ## TIFF sparse >4-GiB callback-map rerun — 2026-08-31
 
 The three TIFF large-coordinate tests previously failed before parser entry

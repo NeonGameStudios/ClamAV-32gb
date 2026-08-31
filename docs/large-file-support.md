@@ -18,6 +18,20 @@ Complete MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
+## 7-Zip focused current-source corpus refresh — 2026-08-31
+
+The canonical 7-Zip interface, SDK sources, and unit-test source were
+transferred into the existing Docker GCC harness and their SHA-256 hashes
+matched exactly. The repository CMake target materialized `clam.7z` from its
+checked-in XOR fixture. The refreshed production-linked cases pass `7z` 20/20,
+`7z_map` 3/3, `7z_sfx` 2/2, and `7z_sfx_corpus` 1/1, including the exact
+embedded-child marker through SFX admission.
+
+This refresh confirms current-source corpus and focused boundary evidence, not
+final 7-Zip qualification. Production BCJ2/archive corpus breadth, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-folder,
+Sonic1, and final parser/release qualification remain required.
+
 ## Production-linked unit harness stat64 wrapper — 2026-08-31
 
 The Linux static `check_clamav` target now adds `--wrap=stat64` only when

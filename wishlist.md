@@ -9442,6 +9442,18 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1 resource, and
   final parser/release qualification.
 
+## 7-Zip focused current-source corpus refresh — 2026-08-31
+
+- Retain canonical/container SHA-256 equality for the 7-Zip interface, SDK,
+  and unit-test sources, and materialize `clam.7z` only through the existing
+  repository CMake XOR-fixture target.
+- Retain the refreshed production-linked GCC evidence: `7z` passes 20/20,
+  `7z_map` 3/3, `7z_sfx` 2/2, and `7z_sfx_corpus` 1/1 with the exact nested
+  child marker.
+- Complete BCJ2/archive corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-folder, Sonic1 resource, and
+  final parser/release qualification.
+
 ## TIFF sparse >4-GiB callback-map rerun — 2026-08-31
 
 - Keep the three sparse TIFF large-coordinate tests on aging-backed fmaps;
