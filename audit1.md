@@ -313,8 +313,9 @@ promoting the 32-bit length to `size_t`. A zero-length resource therefore
 underflowed the bound and read two bytes beyond the confirmed resource window.
 The helper now rejects null input/statistics and lengths below two before any
 pair access. `test_swizz_string_rejects_empty_input` covers empty, one-byte,
-and null-statistics calls; source guards pin the boundary. Current-source
-production-GCC, sanitizer, complete PE/resource corpus, production-CVD/service,
+and null-statistics calls; source guards pin the boundary. The isolated
+current-source production-linked GCC `swizz` TCase passes 1/1. Complete
+sanitizer, PE/resource corpus, production-CVD/service,
 materialized-large-file, Sonic1, and final release qualification remain open.
 
 ## Bundled YARA arena admission — 2026-08-30

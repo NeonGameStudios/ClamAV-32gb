@@ -8967,8 +8967,9 @@ qualification as required evidence.
 - Keep `cli_detect_swizz_str()` fail-closed for null input/statistics and
   lengths below one complete UTF-16 pair; do not evaluate `len - 1` before
   proving the length is nonzero and pair-readable.
-- Retain `test_swizz_string_rejects_empty_input` and the source guards; add
-  current-source production-GCC, sanitizer, complete PE/resource corpus,
+- Retain `test_swizz_string_rejects_empty_input` and the source guards; the
+  isolated current-source production-linked GCC `swizz` TCase passes 1/1.
+  Add sanitizer, complete PE/resource corpus,
   production-CVD/service, materialized-large-file, Sonic1, and final release
   qualification evidence.
 

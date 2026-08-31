@@ -2854,9 +2854,13 @@ Suite *test_matchers_suite(void)
 {
     Suite *s = suite_create("matchers");
     TCase *tc_matchers;
+    TCase *tc_swizz;
     tc_matchers = tcase_create("matchers");
+    tc_swizz    = tcase_create("swizz");
     suite_add_tcase(s, tc_matchers);
+    suite_add_tcase(s, tc_swizz);
     tcase_add_checked_fixture(tc_matchers, setup, teardown);
+    tcase_add_checked_fixture(tc_swizz, setup, teardown);
     tcase_add_test(tc_matchers, test_ac_scanbuff);
     tcase_add_test(tc_matchers, test_ac_scanbuff_rejects_missing_context);
     tcase_add_test(tc_matchers, test_ac_scanbuff_ex);
@@ -2868,6 +2872,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_pcre_scanbuff_allscan);
     tcase_add_test(tc_matchers, test_large_file_offset_values);
     tcase_add_test(tc_matchers, test_swizz_string_rejects_empty_input);
+    tcase_add_test(tc_swizz, test_swizz_string_rejects_empty_input);
     tcase_add_test(tc_matchers, test_bm_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_bm_initoff_rejects_coordinate_wrap);
     tcase_add_test(tc_matchers, test_bm_pattern_table_size_rejects_product_wrap);

@@ -6527,6 +6527,8 @@ contains libclamav/special.c 'if (ctx == NULL)'
 contains libclamav/special.c 'if (ctx->fmap == NULL)'
 contains libclamav/special.c 'if (str == NULL || stats == NULL || len < 2)'
 contains unit_tests/check_matchers.c 'test_swizz_string_rejects_empty_input'
+contains unit_tests/check_matchers.c 'TCase *tc_swizz'
+contains unit_tests/check_matchers.c 'tcase_add_test(tc_swizz, test_swizz_string_rejects_empty_input)'
 contains libclamav/fmap.c "if (len == 0) {"
 contains unit_tests/check_clamav.c 'one-byte fmap_gets should not consume input'
 contains unit_tests/check_clamav.c 'TCase *tc_fmap_api = tcase_create("fmap_api")'

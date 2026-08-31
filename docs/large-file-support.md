@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PE Swizzor empty resource-string admission — 2026-08-31
+
+`cli_detect_swizz_str()` rejects null input/statistics and lengths below one
+complete UTF-16 pair before evaluating its pair loop. The isolated
+current-source production-linked GCC `swizz` TCase passes 1/1 for empty,
+one-byte, and null-statistics inputs. Complete sanitizer, PE/resource corpus,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain required.
+
 ## fmap_gets one-byte destination admission — 2026-08-31
 
 Both memory- and descriptor-backed `fmap_gets()` implementations treat
