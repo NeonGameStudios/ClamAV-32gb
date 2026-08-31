@@ -186,6 +186,20 @@ Sonic1, resource, and final qualification remain required.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final qualification remain required.
 
+## Current MSEXPAND production-linked refresh — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for `msexpand.c`,
+  `msexpand.h`, `scanners.c`, and `check_clamav.c` before relinking the
+  existing Docker production-linked GCC harness.
+- Retain the CMake-materialized `clam.exe.szdd` fixture hash
+  `29a6a08fa2effe9ab4ee9fd7d7e72f13f621ad7d41fd980843e5005130c0fa8e` and
+  current-source evidence at `msexpand` 8/8 and `msexpand_map` 2/2 for
+  fixed-header, admission, timeout, limit, decompression, and nested-match
+  boundaries.
+- Keep complete SZDD corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## Current archive/compression production-linked rerun — 2026-08-31
 
 - Retain current-source production-linked GCC evidence at `tar` 8/8,

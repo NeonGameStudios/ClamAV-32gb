@@ -397,6 +397,25 @@ rather than being preempted by an unsupported-number parse result. Full
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## Current MSEXPAND production-linked refresh — 2026-08-31
+
+The canonical `msexpand.c`, `msexpand.h`, `scanners.c`, and `check_clamav.c`
+sources were transferred into the existing Docker production-linked GCC
+harness with exact SHA-256 equality (`msexpand.c`
+`85e304a8f235c6a44bebbcbe21d8bc6c86906d8a13ffb33c0d7734007823fc8f`,
+`msexpand.h` `b4e2a52d04883c6f4106024f44543a1b9f8465e41519e1d3ad1cbdef91beae52`,
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+and `check_clamav.c`
+`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
+repository CMake target materialized `clam.exe.szdd`
+(`29a6a08fa2effe9ab4ee9fd7d7e72f13f621ad7d41fd980843e5005130c0fa8e`), and
+the current-source cases pass `msexpand` 8/8 and `msexpand_map` 2/2, including
+fixed-header classification, null/missing-map/engine admission, timeout,
+limits, decompression, and exact nested matching. Complete SZDD corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Current archive/compression production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `tar` 8/8,
