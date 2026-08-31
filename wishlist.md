@@ -40,6 +40,15 @@ Sonic1, resource, and final qualification remain required.
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification open.
 
+## Current ISO-9660 production-linked rerun — 2026-08-31
+
+- Retain current-source production-linked GCC evidence at `iso_map` 17/17 and
+  `iso` 1/1, including the boundary matrix and nested PNG detection through
+  the materialized standard and no-Joliet logo ISO fixtures.
+- Keep full ISO/Joliet corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 
 - Keep every BIFF encryption-probe skip inside the declared bounded probe;

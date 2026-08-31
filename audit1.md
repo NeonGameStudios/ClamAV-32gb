@@ -46,6 +46,17 @@ metadata/VAT/sparable/mapped-partition translation, complete UDF corpus,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release evidence remain open.
 
+## Current ISO-9660 production-linked rerun — 2026-08-31
+
+The authoritative current-source production-linked GCC harness passes
+`iso_map` 17/17 and `iso` 1/1. The map case covers entry-state, descriptor,
+directory-record, callback-read, timeout, Joliet-name, coordinate, and
+declared-volume boundaries; the materialized standard and no-Joliet logo ISO
+fixtures both reach their nested PNG marker. Full ISO/Joliet corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release evidence
+remain open.
+
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 
 The WorkBook encryption probe now checks a BIFF record's declared body

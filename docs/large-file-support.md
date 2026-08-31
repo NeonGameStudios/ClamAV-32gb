@@ -47,6 +47,17 @@ metadata/VAT/sparable/mapped-partition translation, complete UDF corpus,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.
 
+## Current ISO-9660 production-linked rerun — 2026-08-31
+
+The authoritative current-source production-linked GCC harness passes
+`iso_map` 17/17 and `iso` 1/1. The map case covers entry-state, descriptor,
+directory-record, callback-read, timeout, Joliet-name, coordinate, and
+declared-volume boundaries; the materialized standard and no-Joliet logo ISO
+fixtures both reach their nested PNG marker. Full ISO/Joliet corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## PE Swizzor empty resource-string admission — 2026-08-31
 
 `cli_detect_swizz_str()` rejects null input/statistics and lengths below one
