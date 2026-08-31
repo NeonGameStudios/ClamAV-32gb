@@ -111,6 +111,16 @@ Complete OLE/VBA/PowerPoint corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## Current PDF/FMap production-linked rerun — 2026-08-31
+
+The current-source production-linked GCC harness passes `pdf` 17/17,
+`pdf_map` 4/4, and the materialized `pdf_corpus` case 1/1, including exact
+offset-0 nested MZP matching after PDF extraction. The pipe-backed `fmap_fd()`
+rewind regression and GCC ASan/UBSan fmap runner also remain green. Complete
+PDF/filter/FMap corpus, sanitizer scanner fault injection, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## Current HFS+ production-linked rerun — 2026-08-31
 
 The HFS+ fork regression now retains its valid fmap read callback across all
@@ -3087,7 +3097,7 @@ The streaming Flate and LZW resynchronization paths now preserve the original
 decode `CL_EPARSE` when a successful fallback-line search reaches EOF without
 finding another compressed stream. This prevents malformed filtered data from
 being reported as clean. The current-source production-linked GCC `pdf` TCase
-passes 14/14, and the isolated `pdf_corpus` TCase passes 1/1 for materialized
+passes 17/17, and the isolated `pdf_corpus` TCase passes 1/1 for materialized
 `clam.pdf`; its exact offset-0 child `MZP` alert is reached after extraction,
 not by the PDF root. Full PDF corpus, encrypted large-stream, sanitizer,
 certified Linux x86-64, production-CVD/service, Sonic1, and release

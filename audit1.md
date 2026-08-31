@@ -3436,9 +3436,10 @@ materialized-large-file, Sonic1, and parser-family qualification remain open.
 The public PDF parser already returned `CL_ENULLARG` for a null context, but
 the focused `pdf_map` TCase only protected its callback-read regression. A
 dedicated null-context check is now registered beside that public API test.
-The current-source production-linked GCC `pdf_map` case passes 2/2 for both
-entry-state/error paths, and the existing `pdf` parser case passes 14/14;
-complete PDF corpus, sanitizer, certified Linux
+The current-source production-linked GCC `pdf_map` case passes 4/4 for both
+entry-state/error and public read-failure paths, the `pdf` parser case passes
+17/17, and the materialized `pdf_corpus` case passes 1/1; complete PDF corpus,
+sanitizer, certified Linux
 x86-64, materialized large-file, production-CVD/service, Sonic1, and
 parser-family qualification remain open.
 
@@ -4981,7 +4982,7 @@ remain open.
 
 ## PDF decoder and corpus qualification — 2026-08-25
 
-The current-source production-linked GCC `pdf` TCase now passes 14/14 after
+The current-source production-linked GCC `pdf` TCase now passes 17/17 after
 fixing a fail-open resynchronization path in both streaming Flate and LZW
 decoders: a successful search that reaches EOF without finding an alternate
 line no longer overwrites the original decode `CL_EPARSE`. The materialized
@@ -16416,8 +16417,10 @@ of the fmap. It now returns `-1` on rewind failure. PDF extracted-object
 nested scans also previously ignored both temporary-output rewinds, allowing
 an output-position fault to enter child scanning at an undefined position;
 each rewind now marks the PDF layer incomplete and returns `CL_ESEEK`. The
-pipe-backed public fmap regression and source guards cover the handoff. An
-isolated current-source fmap runner passes under GCC and matching GCC
+pipe-backed public fmap regression and source guards cover the handoff. The
+current-source production-linked GCC harness passes `pdf` 17/17, `pdf_map`
+4/4, and materialized `pdf_corpus` 1/1. An isolated current-source fmap
+runner passes under GCC and matching GCC
 AddressSanitizer/UndefinedBehaviorSanitizer with leak detection; current-source
 production-linked PDF execution, complete PDF/fmap corpus, production-CVD/
 service, materialized-large-file, Sonic1, and final release qualification

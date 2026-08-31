@@ -31262,15 +31262,18 @@ START_TEST(test_pdf_parser_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "%PDF-1.7\n";
     struct cl_engine engine;
+    struct cli_dconf dconf;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.dconf             = &dconf;
     ctx.options           = &options;
     ctx.this_layer_tmpdir = tmpdir;
 
@@ -31407,15 +31410,18 @@ START_TEST(test_pdf_trailer_xref_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "%PDF-1.7\nstartxref\n10\n%%EOF\n";
     struct cl_engine engine;
+    struct cli_dconf dconf;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.dconf             = &dconf;
     ctx.options           = &options;
     ctx.this_layer_tmpdir = tmpdir;
 

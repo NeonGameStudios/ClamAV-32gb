@@ -2316,8 +2316,9 @@ parser-family qualification open.
 
 - Add and register a direct null-context regression alongside the existing
   public PDF map/read-failure test. The current-source production-linked GCC
-  `pdf_map` case passes 2/2 for both entry-state/error paths and the existing
-  `pdf` parser case passes 14/14; complete PDF corpus,
+  `pdf_map` case passes 4/4 for entry-state/error and public read-failure paths,
+  the `pdf` parser case passes 17/17, and `pdf_corpus` passes 1/1;
+  complete PDF corpus,
   sanitizer, certified Linux x86-64, materialized large-file,
  production-CVD/service, Sonic1, and parser-family qualification remain
   open.
@@ -3015,7 +3016,7 @@ open.
   groups, but a partial trailing group now returns `CL_EPARSE`, rolls back
   decoded output, performs exact raw fallback, and remains incomplete and
   non-cacheable.
-- The focused PDF TCase passes 14/14, including the partial-tail and raw
+- The focused PDF TCase passes 17/17, including the partial-tail and raw
   rollback regression. Keep full PDF corpus, sanitizer, production-CVD/service,
   Sonic1, and release gates open.
 
@@ -3558,7 +3559,8 @@ open.
 - Preserve `CL_EPARSE` in streaming Flate and LZW decoders when fallback-line
   resynchronization reaches EOF without finding an alternate stream; a helper
   `CL_SUCCESS` must not overwrite the original decode failure. The current
-  production-linked GCC `pdf` case passes 14/14 after this fix.
+  production-linked GCC `pdf` case passes 17/17 after this fix, and the
+  materialized `pdf_corpus` case passes 1/1.
 - The isolated `pdf_corpus` case passes 1/1 for materialized `clam.pdf`, with
   an exact offset-0 child `MZP` matcher reached through PDF extraction. Keep
   full PDF corpus, encrypted large-stream, sanitizer, certified Linux x86-64,
@@ -9104,9 +9106,10 @@ qualification as required evidence.
   fail-visible with `CL_ESEEK`, sticky incomplete state, and cleanup.
 - Retain the pipe-backed regression and source guards; the isolated current-
   source fmap runner passes under GCC and GCC ASan/UBSan with leak detection.
-  Add current-source production-linked PDF execution, complete PDF/fmap
-  corpus, production-CVD/service, materialized-large-file, Sonic1, and final
-  release qualification evidence.
+  The current-source production-linked GCC harness passes `pdf` 17/17,
+  `pdf_map` 4/4, and `pdf_corpus` 1/1. Complete PDF/fmap corpus,
+  production-CVD/service, materialized-large-file, Sonic1, and final release
+  qualification evidence remain required.
 
 ## PE Swizzor empty resource-string admission — 2026-08-30
 
