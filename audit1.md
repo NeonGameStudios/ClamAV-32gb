@@ -16804,3 +16804,20 @@ control suites pass. This closes the inherited-library-path evidence gap at
 source and control-test level; actual production-CVD/service execution,
 sanitizer, certified Linux x86-64, materialized-large-file, Sonic1, and final
 release qualification remain open.
+
+## Rust utility FFI error-sink admission — 2026-08-31
+
+The Rust cleanup FFI entry points `glob_rm()` and `mkdir_w32()` now reject a
+null error-output pointer before invoking the shared validation macro. This
+prevents a malformed C caller from reaching an error-reporting path that would
+write through null, and preserves the existing `FFIError` result contract for
+null or invalid UTF-8 path arguments. The new null-sink regressions are pinned
+by source guards, and the complete Rust test target compiles with the matching
+bundled Rust 1.97.1 toolchain using `cargo check --locked --offline --tests`.
+
+Standalone `cargo test` linking remains unavailable in the isolated crate
+because the test binary requires production C engine symbols that are not
+provided by that harness. Production Rust/C ABI execution, sanitizer, complete
+utility corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.

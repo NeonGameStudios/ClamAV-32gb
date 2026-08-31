@@ -9378,3 +9378,15 @@ qualification as required evidence.
   control-test evidence, then add actual production-CVD/service, sanitizer,
   certified Linux x86-64, materialized-large-file, Sonic1, and final release
   qualification.
+
+## Rust utility FFI error-sink admission — 2026-08-31
+
+- Keep `glob_rm()` and `mkdir_w32()` rejecting a null error-output pointer
+  before shared validation can report through it; preserve `FFIError` results
+  for null and invalid UTF-8 paths.
+- Retain the null-sink regressions, source guards, and matching Rust 1.97.1
+  `cargo check --locked --offline --tests` evidence. Standalone Rust test
+  linking still needs the production C engine symbols; complete Rust/C ABI,
+  sanitizer, utility corpus, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, and final release qualification remain
+  required.

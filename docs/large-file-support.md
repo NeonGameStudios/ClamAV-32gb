@@ -11014,3 +11014,19 @@ exact nested matching, and the section-count ABI edge.
 Mach-O remains pending sanitizer/leak, native-width certified Linux x86-64,
 complete Mach-O/FAT/Java corpus, materialized-large-file/resource,
 production-CVD/service, Sonic1, and final parser/release evidence.
+
+## Rust utility FFI error-sink admission — 2026-08-31
+
+The Rust cleanup FFI entry points `glob_rm()` and `mkdir_w32()` reject a null
+error-output pointer before shared validation can write an `FFIError`. Null and
+invalid UTF-8 path arguments continue to return structured FFI errors through a
+valid output sink, while null-sink regressions make the no-write contract
+explicit. Source guards pin both the implementation and tests, and the full
+Rust test target passes compile checking with the matching bundled Rust 1.97.1
+toolchain using `cargo check --locked --offline --tests`.
+
+Standalone Rust test linking remains a harness limitation because the isolated
+crate does not provide the production C engine symbols. Complete Rust/C ABI
+execution, utility corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain required.

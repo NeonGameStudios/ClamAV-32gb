@@ -233,6 +233,15 @@ mod tests {
     }
 
     #[test]
+    fn glob_null_error_output_is_fail_visible() {
+        let pattern = CString::new("[unterminated").unwrap();
+
+        let result = unsafe { glob_rm(pattern.as_ptr(), std::ptr::null_mut()) };
+
+        assert!(!result);
+    }
+
+    #[test]
     fn mkdir_null_path_is_fail_visible() {
         let mut error: *mut FFIError = std::ptr::null_mut();
 
@@ -241,6 +250,13 @@ mod tests {
         assert!(!result);
         assert!(!error.is_null());
         unsafe { crate::ffi_util::ffierror_free(error) };
+    }
+
+    #[test]
+    fn mkdir_null_error_output_is_fail_visible() {
+        let result = unsafe { mkdir_w32(std::ptr::null(), std::ptr::null_mut()) };
+
+        assert!(!result);
     }
 }
 
@@ -251,6 +267,11 @@ mod tests {
 /// No parameters may be NULL.
 #[export_name = "glob_rm"]
 pub unsafe extern "C" fn glob_rm(glob_str: *const c_char, err: *mut *mut FFIError) -> bool {
+    if err.is_null() {
+        warn!("err is NULL");
+        return false;
+    }
+
     let glob_str = validate_str_param!(glob_str, err = err);
 
     let paths = match glob(glob_str) {
@@ -283,6 +304,11 @@ pub unsafe extern "C" fn glob_rm(glob_str: *const c_char, err: *mut *mut FFIErro
 /// No parameters may be NULL.
 #[export_name = "mkdir_w32"]
 pub unsafe extern "C" fn mkdir_w32(path: *const c_char, err: *mut *mut FFIError) -> bool {
+    if err.is_null() {
+        warn!("err is NULL");
+        return false;
+    }
+
     let path = validate_str_param!(path, err = err);
 
     if let Err(e) = std::fs::create_dir_all(&path) {

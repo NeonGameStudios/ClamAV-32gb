@@ -582,7 +582,7 @@ mod tests {
     fn fuzzy_hash_check_rejects_null_state() {
         let hash = sys::image_fuzzy_hash { hash: [0; 8] };
 
-        assert!(!_fuzzy_hash_check(std::ptr::null_mut(), std::ptr::null_mut(), hash));
+        assert!(!unsafe { _fuzzy_hash_check(std::ptr::null_mut(), std::ptr::null_mut(), hash) });
     }
 
     #[test]
@@ -590,13 +590,15 @@ mod tests {
         let signature = CString::new("fuzzy_img#0000000000000000#0").expect("C string");
         let mut error: *mut FFIError = std::ptr::null_mut();
 
-        assert!(!_fuzzy_hash_load_subsignature(
-            std::ptr::null_mut(),
-            signature.as_ptr(),
-            0,
-            0,
-            &mut error,
-        ));
+        assert!(!unsafe {
+            _fuzzy_hash_load_subsignature(
+                std::ptr::null_mut(),
+                signature.as_ptr(),
+                0,
+                0,
+                &mut error,
+            )
+        });
         assert!(!error.is_null());
         unsafe { crate::ffi_util::ffierror_free(error) };
     }
@@ -605,12 +607,14 @@ mod tests {
     fn fuzzy_hash_calculation_rejects_null_error_output() {
         let mut output = [0u8; 8];
 
-        assert!(!_fuzzy_hash_calculate_image(
-            std::ptr::null(),
-            0,
-            output.as_mut_ptr(),
-            output.len(),
-            std::ptr::null_mut(),
-        ));
+        assert!(!unsafe {
+            _fuzzy_hash_calculate_image(
+                std::ptr::null(),
+                0,
+                output.as_mut_ptr(),
+                output.len(),
+                std::ptr::null_mut(),
+            )
+        });
     }
 }

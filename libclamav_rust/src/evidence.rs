@@ -605,16 +605,18 @@ mod tests {
 
     #[test]
     fn evidence_queries_reject_null_handles() {
-        assert!(!_evidence_render_verdict(std::ptr::null_mut()));
-        assert!(_evidence_get_last_alert(std::ptr::null_mut()).is_null());
-        assert!(_evidence_get_indicator(
-            std::ptr::null_mut(),
-            IndicatorType::Strong,
-            0,
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-        )
-        .is_null());
+        unsafe {
+            assert!(!_evidence_render_verdict(std::ptr::null_mut()));
+            assert!(_evidence_get_last_alert(std::ptr::null_mut()).is_null());
+            assert!(_evidence_get_indicator(
+                std::ptr::null_mut(),
+                IndicatorType::Strong,
+                0,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+            .is_null());
+        }
     }
 
     #[test]
@@ -624,33 +626,39 @@ mod tests {
         let mut remove_error: *mut FFIError = std::ptr::null_mut();
         let mut child_error: *mut FFIError = std::ptr::null_mut();
 
-        assert!(!_evidence_new_from_child(
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-            false,
-            &mut child_error,
-        ));
+        assert!(!unsafe {
+            _evidence_new_from_child(
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                false,
+                &mut child_error,
+            )
+        });
         assert!(!child_error.is_null());
         unsafe { crate::ffi_util::ffierror_free(child_error) };
 
-        assert!(!_evidence_add_indicator(
-            std::ptr::null_mut(),
-            name.as_ptr(),
-            IndicatorType::Strong,
-            0,
-            false,
-            0,
-            &mut add_error,
-        ));
+        assert!(!unsafe {
+            _evidence_add_indicator(
+                std::ptr::null_mut(),
+                name.as_ptr(),
+                IndicatorType::Strong,
+                0,
+                false,
+                0,
+                &mut add_error,
+            )
+        });
         assert!(!add_error.is_null());
         unsafe { crate::ffi_util::ffierror_free(add_error) };
 
-        assert!(!_evidence_remove_indicator(
-            std::ptr::null_mut(),
-            name.as_ptr(),
-            IndicatorType::Strong,
-            &mut remove_error,
-        ));
+        assert!(!unsafe {
+            _evidence_remove_indicator(
+                std::ptr::null_mut(),
+                name.as_ptr(),
+                IndicatorType::Strong,
+                &mut remove_error,
+            )
+        });
         assert!(!remove_error.is_null());
         unsafe { crate::ffi_util::ffierror_free(remove_error) };
     }
