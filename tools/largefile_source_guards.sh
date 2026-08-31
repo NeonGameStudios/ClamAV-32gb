@@ -6042,10 +6042,10 @@ contains libclamav/pdf.c 'PDF dictionary-name search reached the configured time
 contains libclamav/pdf.c 'PDF JavaScript delimiter search reached the configured time limit'
 contains libclamav/pdf.c 'if (!nextobj)'
 contains libclamav/pdf.c 'bytesleft = -1;'
-contains tools/largefile_runtime_gate.sh 'unset LD_PRELOAD LD_AUDIT'
+contains tools/largefile_runtime_gate.sh 'unset LD_PRELOAD LD_AUDIT LD_LIBRARY_PATH'
 contains tools/largefile_runtime_gate.sh "printf 'loader_injection=disabled\\n'"
 contains tools/largefile_runtime_evidence_check.sh "grep -Fx 'loader_injection=disabled'"
-contains tools/largefile_service_qualification.sh 'unset LD_PRELOAD LD_AUDIT'
+contains tools/largefile_service_qualification.sh 'unset LD_PRELOAD LD_AUDIT LD_LIBRARY_PATH'
 contains tools/largefile_service_qualification.sh "printf 'loader_injection=disabled\\n'"
 contains tools/largefile_service_qualification.sh 'materialize_service_runtime_components'
 contains tools/largefile_service_qualification.sh 'service_runtime_component_artifacts=provenance/service-runtime-component-artifacts.txt'

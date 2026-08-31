@@ -51,6 +51,23 @@ the all-match reset and socket API checks. Full PE corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 release qualification remain open.
 
+## Mach-O parser qualification refresh — 2026-08-31
+
+The established production-linked GCC harness was checked against byte-identical
+authoritative `macho.c`, `macho.h`, and Mach-O unit-test sources before the
+focused rerun. The current cases pass `macho` 11/11, `macho_timeout` 2/2,
+`macho_fat` 2/2, `macho_corpus` 2/2, `macho_unsupported` 2/2, `macho_map` 1/1,
+`macho_boundary` 2/2, and `macho_sections` 1/1. Together these cover thin and
+universal admission, in-range read failures, command and section boundaries,
+alignment, timeout, unsupported/empty FAT tables, native-width section
+metadata, exact member child matching, and the 65,535/65,536 section-count
+boundary. Existing source guards continue to pin these contracts.
+
+This is a focused current-source refresh, not final Mach-O qualification.
+Sanitizer/leak, native-width certified Linux x86-64, complete Mach-O/FAT/Java
+corpus, materialized-large-file/resource, production-CVD/service, Sonic1, and
+final parser/release evidence remain open.
+
 ## Bundled YARA code-page ceiling — 2026-08-31
 
 Bundled YARA compilation now rejects a rule whose contiguous instruction
@@ -16767,3 +16784,23 @@ The one-byte destination boundary remains covered for both memory- and
 descriptor-backed maps. Sanitizer evidence, complete line-oriented corpus,
 production-CVD/service parity, materialized-large-file, Sonic1 resource
 measurements, and final release qualification remain open.
+
+## Runtime and service loader-environment isolation — 2026-08-31
+
+The runtime and service qualification gates cleared inherited `LD_PRELOAD` and
+`LD_AUDIT`, but still admitted an inherited `LD_LIBRARY_PATH` into the loader
+path assembled for evidence collection. That allowed an untracked same-name
+library directory to influence `ldd`, `--version`, or the scanner/service
+workload while the copied source and dependency hashes remained unchanged.
+
+Both gates now clear all three inherited loader controls before collecting
+provenance or launching a workload. The runtime gate no longer appends the
+caller environment's library path; it constructs the path solely from the
+evidence-owned runtime components, scanner directory, and audited build
+directories. The service gate applies the same pre-capture isolation before
+starting clamd or any frontend. Source guards require the exact isolation
+contract, and the runtime-evidence, service-evidence, and release-readiness
+control suites pass. This closes the inherited-library-path evidence gap at
+source and control-test level; actual production-CVD/service execution,
+sanitizer, certified Linux x86-64, materialized-large-file, Sonic1, and final
+release qualification remain open.

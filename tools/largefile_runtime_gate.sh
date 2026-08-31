@@ -25,9 +25,10 @@
 set -eu
 
 # Keep dynamic-loader evidence bound to the copied build artifacts. Inherited
-# preload/audit hooks could otherwise inject untracked code into ldd, --version,
-# or the scanner workload while leaving the source and dependency hashes intact.
-unset LD_PRELOAD LD_AUDIT
+# preload/audit/library-path hooks could otherwise inject untracked code into
+# ldd, --version, or the scanner workload while leaving the source and
+# dependency hashes intact.
+unset LD_PRELOAD LD_AUDIT LD_LIBRARY_PATH
 
 verify_native_sanitizer_compile_graph()
 {
@@ -533,9 +534,6 @@ if [ -n "$unrar_component_dir" ]; then
     runtime_library_path="$runtime_library_path:$unrar_component_dir"
 fi
 runtime_library_path="$runtime_library_path:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
-if [ -n "${LD_LIBRARY_PATH:-}" ]; then
-    runtime_library_path="$runtime_library_path:$LD_LIBRARY_PATH"
-fi
 export LD_LIBRARY_PATH=$runtime_library_path
 
 ldd "$runtime_clamscan" > "$provenance/ldd-clamscan.txt" 2>&1

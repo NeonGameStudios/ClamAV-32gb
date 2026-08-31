@@ -5906,6 +5906,16 @@ qualification remain open.
   failures. Add compiled scanner, sanitizer, production ELF-corpus, and Sonic1
 qualification.
 
+## Mach-O parser qualification refresh — 2026-08-31
+
+- Retain the authoritative-source hash check and current production-linked GCC
+  evidence: `macho` 11/11, `macho_timeout` 2/2, `macho_fat` 2/2,
+  `macho_corpus` 2/2, `macho_unsupported` 2/2, `macho_map` 1/1,
+  `macho_boundary` 2/2, and `macho_sections` 1/1.
+- Complete sanitizer/leak, native-width certified Linux x86-64, full
+  Mach-O/FAT/Java corpus, materialized-large-file/resource,
+  production-CVD/service, Sonic1, and final parser/release qualification.
+
 ## Fixed-range parser truncation classification — 2026-08-22
 
 - Preflight fixed-size Mach-O, TIFF, and TNEF metadata reads before callback
@@ -9357,3 +9367,14 @@ qualification as required evidence.
   passes 2/2.
 - Complete sanitizer/leak, line-oriented parser corpus, production-CVD/service,
   materialized-large-file, Sonic1 resource, and final release qualification.
+
+## Runtime and service loader-environment isolation — 2026-08-31
+
+- Keep the runtime and service qualification gates clearing inherited
+  `LD_PRELOAD`, `LD_AUDIT`, and `LD_LIBRARY_PATH` before provenance capture or
+  workload startup.
+- Keep runtime loader paths evidence-owned; do not append the caller's library
+  path after isolation. Retain the source guards and runtime/service/release
+  control-test evidence, then add actual production-CVD/service, sanitizer,
+  certified Linux x86-64, materialized-large-file, Sonic1, and final release
+  qualification.

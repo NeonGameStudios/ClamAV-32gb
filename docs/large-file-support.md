@@ -10988,3 +10988,29 @@ The shared fmap capability remains pending sanitizer/leak evidence, complete
 line-oriented parser corpus coverage, production-CVD/service parity,
 materialized large-file cases, Sonic1 measurements, and final release
 qualification.
+
+## Runtime and service loader-environment isolation — 2026-08-31
+
+The runtime and service qualification gates clear inherited `LD_PRELOAD`,
+`LD_AUDIT`, and `LD_LIBRARY_PATH` before collecting loader provenance or
+starting a scanner/service workload. The runtime gate constructs its library
+path only from evidence-owned runtime components and audited build directories;
+the service gate applies the same isolation before clamd/front-end startup.
+Source guards and the runtime-evidence, service-evidence, and release-readiness
+control suites pass. This is source/control evidence for loader integrity, not
+production-CVD/service, sanitizer, certified Linux x86-64,
+materialized-large-file, Sonic1, or final release qualification.
+
+## Mach-O parser qualification refresh — 2026-08-31
+
+After verifying byte-identical authoritative Mach-O and unit-test sources, the
+production-linked GCC harness passes `macho` 11/11, `macho_timeout` 2/2,
+`macho_fat` 2/2, `macho_corpus` 2/2, `macho_unsupported` 2/2, `macho_map` 1/1,
+`macho_boundary` 2/2, and `macho_sections` 1/1. The focused coverage includes
+thin/universal map admission, fixed read failures, command/section boundaries
+and alignment, timeout, FAT-table and member validation, native-width metadata,
+exact nested matching, and the section-count ABI edge.
+
+Mach-O remains pending sanitizer/leak, native-width certified Linux x86-64,
+complete Mach-O/FAT/Java corpus, materialized-large-file/resource,
+production-CVD/service, Sonic1, and final parser/release evidence.

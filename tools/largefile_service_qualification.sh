@@ -14,7 +14,7 @@ set -eu
 
 # Keep service binaries and dependency evidence bound to the qualified build;
 # inherited loader hooks could inject code into clamd or any frontend.
-unset LD_PRELOAD LD_AUDIT
+unset LD_PRELOAD LD_AUDIT LD_LIBRARY_PATH
 
 root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 
