@@ -1,5 +1,19 @@
 # Wishlist
 
+## Current JPEG production-linked refresh — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for `jpeg.c`, `jpeg.h`,
+  `scanners.c`, and `check_clamav.c` before relinking the existing Docker
+  production-linked GCC harness.
+- Retain current-source production-linked GCC evidence at `jpeg_map` 13/13
+  for header/segment admission, callback-read classification, entropy
+  completion and boundary splits, timeout, Photoshop resource bounds, and
+  public/direct API paths; retain `jpeg_corpus` 1/1 for the APP13 Photoshop
+  8BIM thumbnail fixture and exact nested `JPEG.Member.MZ.UNOFFICIAL` alert.
+- Keep full JPEG/image corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## Production-linked unit harness stat64 wrapper — 2026-08-31
 
 - Keep the Linux static unit target's `stat64` linker wrapper conditional on

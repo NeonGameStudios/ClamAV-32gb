@@ -496,6 +496,19 @@ or image-family qualification. Complete graphics/image corpora, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, and final parser/release qualification remain required.
 
+## Current JPEG production-linked refresh — 2026-08-31
+
+The canonical `jpeg.c`, `jpeg.h`, `scanners.c`, and `check_clamav.c` sources
+were transferred into the existing Docker production-linked GCC harness with
+exact SHA-256 equality. The current-source harness passes `jpeg_map` 13/13
+across header/segment admission, callback-read classification, entropy
+completion and boundary splits, timeout, Photoshop resource bounds, and
+public/direct API paths. `jpeg_corpus` passes 1/1 for a complete outer JPEG
+with an APP13 Photoshop 8BIM thumbnail and exact nested
+`JPEG.Member.MZ.UNOFFICIAL` detection. Full JPEG/image corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## Current media/image production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `graphics_map` 2/2,
