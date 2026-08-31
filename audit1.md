@@ -16906,6 +16906,22 @@ sanitizer gaps. Complete ALZ corpus breadth, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1 resource
 evidence, and the final requirement-by-requirement release audit remain open.
 
+## AutoIt focused current-source fixture refresh — 2026-08-31
+
+The canonical AutoIt parser, header, scanner, fixture generator, and unit-test
+sources were transferred into the existing Docker production-linked GCC
+harness and their SHA-256 hashes matched exactly. The repository targets
+materialized the encrypted EA05/EA06 corpus and generated stored, compressed,
+and script fixtures. The focused cases pass `autoit_map` 7/7, `autoit_sfx` 1/1,
+and `autoit_corpus` 1/1, including exact nested-child matching and the
+65,557-byte EA06 script oracle.
+
+This refresh confirms current-source parser and generated-fixture evidence,
+not final AutoIt certification. The EA05 format-defined 4 GiB boundary,
+complete AutoIt corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1 resource evidence,
+and the final requirement-by-requirement release audit remain open.
+
 ## ARJ focused current-source corpus refresh — 2026-08-31
 
 The canonical ARJ parser, header, scanner, and unit-test sources were

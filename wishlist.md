@@ -9455,6 +9455,19 @@ qualification as required evidence.
   materialized-large-file, Sonic1 resource, and final parser/release
   qualification.
 
+## AutoIt focused current-source fixture refresh — 2026-08-31
+
+- Retain canonical/container SHA-256 equality for the AutoIt parser, header,
+  scanner, fixture generator, and unit-test source, and materialize the
+  encrypted/generated fixtures only through repository targets.
+- Retain the refreshed production-linked GCC evidence: `autoit_map` passes
+  7/7, `autoit_sfx` 1/1, and `autoit_corpus` 1/1 with exact nested-child and
+  65,557-byte EA06 script coverage.
+- Keep the EA05 format-defined 4 GiB boundary explicit; complete AutoIt
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1 resource, and final parser/release
+  qualification.
+
 ## ARJ focused current-source corpus refresh — 2026-08-31
 
 - Retain canonical/container SHA-256 equality for the ARJ parser, header,
