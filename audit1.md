@@ -83,6 +83,19 @@ boundaries, and the oversized-stream regression. Full YARA corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## InstallShield focused current-source admission refresh — 2026-08-31
+
+The canonical scanner and unit-test sources were transferred into the existing
+Docker production-linked GCC harness and their SHA-256 hashes matched exactly.
+The focused cases pass `ishield_map` 2/2 for confirmed-entry null-context and
+missing-map admission and `ishield_sfx` 1/1 for a valid PE-backed SFX whose
+encrypted/compressed member reaches an exact nested child marker.
+
+This is bounded InstallShield admission and SFX handoff evidence, not complete
+InstallShield qualification. Full MSI/legacy/CAB corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
+release evidence remain open.
+
 ## HWPOLE2 focused current-source corpus refresh — 2026-08-31
 
 The canonical HWP parser, header, scanner, and unit-test sources were

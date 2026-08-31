@@ -69,6 +69,19 @@
   21/21 and source guards. Full YARA corpus, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final qualification remain required.
 
+## InstallShield focused current-source admission refresh — 2026-08-31
+
+- Retain canonical-source SHA-256 equality for `scanners.c` and
+  `check_clamav.c` before relinking the existing Docker production-linked GCC
+  harness.
+- Retain focused results at `ishield_map` 2/2 for confirmed-entry
+  null-context and missing-map admission, and `ishield_sfx` 1/1 for a valid
+  PE-backed SFX whose encrypted/compressed member reaches an exact nested child
+  marker.
+- Keep complete MSI/legacy/CAB corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification open.
+
 ## HWPOLE2 focused current-source corpus refresh — 2026-08-31
 
 - Retain canonical-source SHA-256 equality for `hwp.c`, `hwp.h`, `scanners.c`,
