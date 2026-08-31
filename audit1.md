@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Production-linked unit harness stat64 wrapper — 2026-08-31
+
+The Linux static unit target now adds the `stat64` linker wrapper only when
+configuration provides `HAVE_STAT64`, matching the conditional wrapper in
+`check_jsnorm.c`. This removes the AArch64 link failure caused by Rust's libc
+reference to `__wrap_stat64` when the configured C target has no `stat64`
+symbol. After transferring the current harness file into the existing Docker
+build environment and reconfiguring, the production-linked unit binary built
+successfully; its isolated `ole2` 18/18, `ole2_xlm` 3/3, `ole2_map` 6/6,
+`ppt_entry` 4/4, `mail` 12/12, `mail_api` 2/2, `mail_partial` 1/1, and `mhtml`
+4/4 cases passed. Full-suite execution remains a separate qualification gate
+because the container fixture/CVD set is not the final release evidence.
+
 ## Embedded PE malformed-header admission and service parity — 2026-08-31
 
 `cli_peheader()` now preserves a malformed-but-fully-read DOS/PE header as

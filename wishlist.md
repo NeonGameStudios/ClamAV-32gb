@@ -1,5 +1,16 @@
 # Wishlist
 
+## Production-linked unit harness stat64 wrapper — 2026-08-31
+
+- Keep the Linux static unit target's `stat64` linker wrapper conditional on
+  `HAVE_STAT64`, because `check_jsnorm.c` conditionally supplies the wrapper
+  and AArch64 configurations without that symbol otherwise fail to link the
+  current Rust archive.
+- Retain the successful current-source Docker relink and isolated
+  `ole2`/`ole2_xlm`/`ole2_map`/`ppt_entry`/mail TCase evidence. Full-suite,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
+  final release qualification remain required.
+
 ## PowerPoint compressed-atom boundary admission — 2026-08-31
 
 - Advance the descriptor over all bytes remaining in a declared compressed

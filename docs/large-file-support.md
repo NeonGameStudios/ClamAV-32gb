@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Production-linked unit harness stat64 wrapper — 2026-08-31
+
+The Linux static `check_clamav` target now adds `--wrap=stat64` only when
+`HAVE_STAT64` is configured. This matches the conditional `__wrap_stat64`
+implementation in `check_jsnorm.c` and prevents Rust's AArch64 libc call from
+creating an unresolved `__wrap_stat64` symbol on builds that do not expose a C
+`stat64` configuration symbol. The current-source Docker relink succeeded, and
+the isolated production-linked cases passed: `ole2` 18/18, `ole2_xlm` 3/3,
+`ole2_map` 6/6, `ppt_entry` 4/4, `mail` 12/12, `mail_api` 2/2,
+`mail_partial` 1/1, and `mhtml` 4/4. This repairs the harness link gate; full
+suite, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+and final release qualification remain pending.
+
 ## Embedded PE malformed-header admission and service parity — 2026-08-31
 
 `cli_peheader()` now returns `CL_EFORMAT` for a fully read but invalid DOS

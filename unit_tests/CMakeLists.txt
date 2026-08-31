@@ -194,13 +194,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=closedir"
         "-Wl,--wrap=readdir"
         "-Wl,--wrap=stat"
-        "-Wl,--wrap=stat64"
         "-Wl,--wrap=lseek"
         "-Wl,--wrap=SzArEx_ExtractToStreamEx"
         "-Wl,--wrap=cli_magic_scan_desc_type_reserved"
         "-Wl,--wrap=cli_bytecode_context_alloc"
         "-Wl,--wrap=cli_bytecode_run"
         "-Wl,--wrap=cli_bytecode_context_destroy")
+    if(HAVE_STAT64)
+        target_link_options(check_clamav PRIVATE "-Wl,--wrap=stat64")
+    endif()
 endif()
 ADD_CUSTOM_COMMAND(TARGET check_clamav POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/input/clamav.hdb ${CMAKE_CURRENT_BINARY_DIR}/input/.)
