@@ -5347,6 +5347,36 @@ START_TEST(test_fmap_gets_releases_read_pages)
 }
 END_TEST
 
+START_TEST(test_fmap_gets_read_failure_releases_pages)
+{
+#ifdef ANONYMOUS_MAP
+    struct synthetic_pread_state state;
+    cl_fmap_t *map;
+    char *buffer;
+    size_t at = 0;
+
+    memset(&state, 0, sizeof(state));
+    state.length  = 16 * 1024 * 1024;
+    state.fail_at = -1;
+    map           = cl_fmap_open_handle(&state, 0, state.length, synthetic_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+    ck_assert(map->aging);
+
+    buffer = malloc(map->pgsz * 2);
+    ck_assert_ptr_nonnull(buffer);
+    state.fail_at = (off_t)map->pgsz;
+
+    ck_assert_ptr_null(fmap_gets(map, buffer, &at, map->pgsz * 2));
+    ck_assert_uint_eq(at, 0);
+    ck_assert_uint_eq(map->paged, 0);
+    ck_assert_uint_eq(synthetic_count_paged(map), 0);
+
+    free(buffer);
+    cl_fmap_close(map);
+#endif
+}
+END_TEST
+
 START_TEST(test_fmap_release_unlocked_evicts_whole_subject_pages)
 {
     struct synthetic_pread_state state;
@@ -51439,6 +51469,7 @@ static Suite *test_cl_suite(void)
 
     suite_add_tcase(s, tc_fmap_api);
     tcase_add_test(tc_fmap_api, test_fmap_assorted_api);
+    tcase_add_test(tc_fmap_api, test_fmap_gets_read_failure_releases_pages);
 
     suite_add_tcase(s, tc_metadata_json);
     tcase_add_checked_fixture(tc_metadata_json, mhtml_engine_setup, mhtml_engine_teardown);

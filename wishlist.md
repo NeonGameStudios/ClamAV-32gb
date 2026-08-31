@@ -9285,3 +9285,14 @@ qualification as required evidence.
 - Complete the HFS+ corpus including ExtentOverflow/resource variants, sanitizer
   and leak evidence, certified Linux x86-64, materialized-large-file cases,
   production-CVD/service parity, Sonic1 measurements, and final release evidence.
+
+## fmap_gets failure-path residency audit — 2026-08-31
+
+- Keep descriptor-backed `fmap_gets()` failure cleanup paired with the existing
+  successful-copy page release so a failed multi-page line cannot retain
+  resident pages outside normal aging.
+- Retain the synthetic second-page read-failure regression and the one-byte
+  no-consume checks; the current-source production-linked GCC `fmap_api` TCase
+  passes 2/2.
+- Complete sanitizer/leak, line-oriented parser corpus, production-CVD/service,
+  materialized-large-file, Sonic1 resource, and final release qualification.

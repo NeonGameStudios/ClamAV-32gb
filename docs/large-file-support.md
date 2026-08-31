@@ -10907,3 +10907,18 @@ attribute, resource, and ExtentOverflow corpus coverage; sanitizer/leak evidence
 certified Linux x86-64; materialized large-file edge cases; production-CVD/service
 parity; Sonic1 resource measurements; and release-default evidence are still
 required.
+
+## fmap_gets failure-path residency audit — 2026-08-31
+
+Descriptor-backed `fmap_gets()` now releases every page touched by a failed
+multi-page read before returning `NULL`; successful copies retain the existing
+immediate release behavior. A synthetic two-page production-linked GCC
+regression injects a second-page read failure, verifies that the input offset is
+unchanged, and asserts zero resident pages and bitmap entries. The dedicated
+`fmap_api` TCase passes 2/2, and the one-byte destination no-consume behavior
+remains covered for memory- and descriptor-backed maps.
+
+The shared fmap capability remains pending sanitizer/leak evidence, complete
+line-oriented parser corpus coverage, production-CVD/service parity,
+materialized large-file cases, Sonic1 measurements, and final release
+qualification.

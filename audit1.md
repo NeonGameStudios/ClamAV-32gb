@@ -16684,3 +16684,18 @@ HFS+ catalog/attribute/resource and ExtentOverflow corpus coverage, sanitizer/le
 evidence, certified Linux x86-64, materialized large-file edges, production-CVD/
 service parity, Sonic1 resource measurements, and release-default qualification
 remain open.
+
+## fmap_gets failure-path residency audit — 2026-08-31
+
+Descriptor-backed `fmap_gets()` released pages after successful copies, but a
+later page read failure could leave pages from the same line resident until
+normal aging. The failure path now releases every page touched by the request
+before returning `NULL`. A synthetic two-page current-source production-linked
+GCC regression injects failure at the second page and asserts unchanged input
+position plus zero resident pages and bitmap entries; the dedicated `fmap_api`
+TCase passes 2/2.
+
+The one-byte destination boundary remains covered for both memory- and
+descriptor-backed maps. Sanitizer evidence, complete line-oriented corpus,
+production-CVD/service parity, materialized-large-file, Sonic1 resource
+measurements, and final release qualification remain open.

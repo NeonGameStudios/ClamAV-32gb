@@ -1134,8 +1134,13 @@ static const void *handle_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
         char *thispage = (char *)m->data + i * m->pgsz;
         uint64_t scanat, scansz;
 
-        if (fmap_readpage(m, i, 1, 0))
+        if (fmap_readpage(m, i, 1, 0)) {
+#ifdef ANONYMOUS_MAP
+            if (m->aging)
+                fmap_release_gets_pages(m, first_page, i);
+#endif
             return NULL;
+        }
 
         if (i == first_page) {
             scanat = real_start % m->pgsz;
