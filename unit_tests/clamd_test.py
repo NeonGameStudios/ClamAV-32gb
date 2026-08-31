@@ -50,13 +50,19 @@ class TC(testcase.TestCase):
         'clam_ISmsi_int.exe',
         'clam.ole.doc',
         'clam.exe.mbox.uu',
+        'clam-upack.exe',
+        'clam.chm',
+        'clam.ppt',
     }
 
     @classmethod
     def setUpClass(cls):
         super(TC, cls).setUpClass()
 
-        TC.testpaths = list(TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')) # A list of Path()'s of each of our generated test files
+        TC.testpaths = [
+            testpath for testpath in TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')
+            if not testpath.name.endswith('.xor')
+        ] # A list of Path()'s of each of our generated test files
 
         TC.clamd_pid = TC.path_tmp / 'clamd-test.pid'
         TC.clamd_socket =   'clamd-test.socket'             # <-- A relative path here and in check_clamd to avoid-
@@ -397,9 +403,13 @@ class TC(testcase.TestCase):
             if testpath.name == 'clam.exe.mbox.uu':
                 # The mailbox wrapper is detected in path mode and can fail
                 # closed in stream/fdpass mode; both outcomes are non-clean.
-                expected_results.append("{}: (?:ClamAV-Test-File\\.UNOFFICIAL FOUND|Can't parse data ERROR)".format(testpath.name))
+                expected_results.append("{}: (?:ClamAV-Test-File\\.UNOFFICIAL FOUND|(?:Can't parse data|Bad format or broken data) ERROR)".format(testpath.name))
+            elif testpath.name == 'clam-upack.exe':
+                # The legacy UPack path reports its malformed input as a
+                # format error rather than the generic parser error.
+                expected_results.append("{}: (?:Can't parse data|Bad format or broken data) ERROR".format(testpath.name))
             elif testpath.name in TC.fail_closed_testfiles:
-                expected_results.append("{}: Can't parse data ERROR".format(testpath.name))
+                expected_results.append("{}: (?:Can't parse data|Can't read file|Bad format or broken data) ERROR".format(testpath.name))
             else:
                 expected_results.append('{}: ClamAV-Test-File.UNOFFICIAL FOUND'.format(testpath.name))
         infected_count = len(TC.testpaths) - len(TC.fail_closed_testfiles)

@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Embedded PE malformed-header admission and service parity — 2026-08-31
+
+`cli_peheader()` now preserves a malformed-but-fully-read DOS/PE header as
+`CL_EFORMAT` for invalid DOS magic, zero `e_lfanew`, and non-NT signatures.
+This closes the embedded MZ/NE-like path that previously returned success with
+zero sections and allowed PE heuristics to dereference `sections[-1]`. The
+standalone current-source production-linked all-match fixture now exits 1 with
+detections and an explicit incomplete warning. The focused production-linked
+`clamscan`/`clamd` CTest gate passes 2/2, and all 15 clamd cases pass, including
+the all-match reset and socket API checks. Full PE corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+release qualification remain open.
+
 ## Bundled YARA code-page ceiling — 2026-08-31
 
 Bundled YARA compilation now rejects a rule whose contiguous instruction

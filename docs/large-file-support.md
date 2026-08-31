@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Embedded PE malformed-header admission and service parity — 2026-08-31
+
+`cli_peheader()` now returns `CL_EFORMAT` for a fully read but invalid DOS
+signature, zero `e_lfanew`, or non-NT signature. This prevents an MZ/NE-like
+embedded candidate from entering PE heuristics with an empty section table;
+the standalone current-source production-linked all-match regression exits
+with the expected detection and an explicit incomplete warning instead of
+crashing. The production-linked `clamscan`/`clamd` service gate passes 2/2
+CTest targets, including the 15-case clamd matrix, all-match reset behavior,
+socket API coverage, and the materialized fixture set. Full PE corpus,
+sanitizer, certified Linux x86-64, materialized-large-file, Sonic1, resource,
+and final release qualification remain required.
+
 ## Bundled YARA code-page ceiling — 2026-08-31
 
 Bundled YARA rule compilation now rejects a contiguous instruction stream

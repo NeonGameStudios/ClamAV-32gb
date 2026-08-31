@@ -5571,7 +5571,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
     cl_error_t ret = CL_SUCCESS, nret = CL_SUCCESS;
     bool invalid_embedded_match = false;
     struct cli_matched_type *ftoffset = NULL, *fpt;
-    unsigned int acmode               = (typercg == SCANRAW_TYPE_RECOGNITION_ONLY) ? AC_SCAN_FT : AC_SCAN_VIR;
+    unsigned int acmode               = AC_SCAN_VIR;
 
     cli_file_t found_type;
 
@@ -5599,8 +5599,14 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
         (type != CL_TYPE_TNEF)) {
         /*
          * Enable file type recognition scan mode if requested, except for some problematic types (above).
+         * Recognition-only passes are used for non-embedded layers after an
+         * SDB scan. Embedded layers must stay virus-only: allowing their
+         * recognition results to dispatch children would recurse through
+         * every false-positive embedded signature in the child buffer.
          */
-        acmode |= AC_SCAN_FT;
+        acmode = (typercg == SCANRAW_TYPE_RECOGNITION_ONLY)
+                     ? AC_SCAN_FT
+                     : AC_SCAN_VIR | AC_SCAN_FT;
     } else {
         cli_dbgmsg("scanraw: embedded type recognition disabled or not applicable for type %s %s\n",
                    cli_ftname(type),

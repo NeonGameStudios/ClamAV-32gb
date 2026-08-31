@@ -228,7 +228,6 @@ void clamd_record_structured_empty_scan(struct scan_cb_data *scandata,
 
     cli_scan_report_set_target(report, target ? target : scandata->toplevel_path);
     cli_scan_report_set_root_size(report, 0);
-    cli_scan_report_note_logical(report, 0, 0);
     cli_scan_report_finish(report, NULL, CL_SUCCESS,
                            CL_VERDICT_NOTHING_FOUND, NULL);
 

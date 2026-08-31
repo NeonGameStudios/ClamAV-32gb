@@ -373,10 +373,15 @@ CLAMAV_PRIVATE {
     cli_scan_result_should_halt;
     cli_scan_report_create;
     cli_scan_report_finish;
+    cli_scan_report_set_root_size;
     cli_scan_report_set_target;
+    cli_scan_report_note_post_scan_failure;
     cli_scan_report_merge;
     cli_scan_reserve_temporary;
     cli_scan_release_temporary;
+    cli_scan_reserve_contiguous;
+    cli_scan_release_contiguous;
+    cli_mark_scan_incomplete;
     cli_magic_scan_desc_type_reserved;
     cli_scanfile_ex2_with_temporary_bytes;
     cli_scandesc_ex2_with_temporary_bytes;

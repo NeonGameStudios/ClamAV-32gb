@@ -5266,6 +5266,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
 
     if (EC16(e_magic) != PE_IMAGE_DOS_SIGNATURE && EC16(e_magic) != PE_IMAGE_DOS_SIGNATURE_OLD) {
         cli_dbgmsg("cli_peheader: Invalid DOS signature\n");
+        ret = CL_EFORMAT;
         goto done;
     }
 
@@ -5286,6 +5287,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     }
     if (!peinfo->e_lfanew) {
         cli_dbgmsg("cli_peheader: Not a PE file - e_lfanew == 0\n");
+        ret = CL_EFORMAT;
         goto done;
     }
 
@@ -5303,6 +5305,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
 
     if (EC32(file_hdr->Magic) != PE_IMAGE_NT_SIGNATURE) {
         cli_dbgmsg("cli_peheader: Invalid PE signature (probably NE file)\n");
+        ret = CL_EFORMAT;
         goto done;
     }
 

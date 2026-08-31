@@ -1,5 +1,17 @@
 # Wishlist
 
+## Embedded PE malformed-header admission and service parity — 2026-08-31
+
+- Keep fully read but invalid DOS/PE headers fail-visible as `CL_EFORMAT` for
+  invalid DOS magic, zero `e_lfanew`, and non-NT signatures; malformed
+  MZ/NE-like embedded candidates must not reach PE heuristics with an empty
+  section table.
+- Retain the standalone current-source production-linked all-match regression
+  with its detection plus explicit incomplete warning, and the `clamscan`/
+  `clamd` service gate at 2/2 CTest targets with all 15 clamd cases passing.
+  Full PE corpus, sanitizer, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final qualification remain required.
+
 ## Bundled YARA code-page ceiling — 2026-08-31
 
 - Keep compiler and matcher admission aligned to the contiguous 64 KiB YARA

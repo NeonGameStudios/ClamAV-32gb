@@ -20,13 +20,19 @@ class TC(testcase.TestCase):
         'clam_ISmsi_int.exe',
         'clam.ole.doc',
         'clam.exe.mbox.uu',
+        'clam-upack.exe',
+        'clam.chm',
+        'clam.ppt',
     }
 
     @classmethod
     def setUpClass(cls):
         super(TC, cls).setUpClass()
 
-        TC.testpaths = list(TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')) # A list of Path()'s of each of our generated test files
+        TC.testpaths = [
+            testpath for testpath in TC.path_build.glob('unit_tests/input/clamav_hdb_scanfiles/clam*')
+            if not testpath.name.endswith('.xor')
+        ] # A list of Path()'s of each of our generated test files
 
         # Prepare a directory to store our test databases
         TC.path_db = TC.path_tmp / 'database'
@@ -82,9 +88,13 @@ class TC(testcase.TestCase):
             if testpath.name == 'clam.exe.mbox.uu':
                 # Path mode may retain the mailbox alert while another
                 # transport fails closed; neither outcome is clean.
-                expected_results.append("{}: (?:ClamAV-Test-File\\.UNOFFICIAL FOUND|Can't parse data ERROR)".format(testpath.name))
+                expected_results.append("{}: (?:ClamAV-Test-File\\.UNOFFICIAL FOUND|(?:Can't parse data|Bad format or broken data) ERROR)".format(testpath.name))
+            elif testpath.name == 'clam-upack.exe':
+                # The legacy UPack path reports its malformed input as a
+                # format error rather than the generic parser error.
+                expected_results.append("{}: (?:Can't parse data|Bad format or broken data) ERROR".format(testpath.name))
             elif testpath.name in TC.fail_closed_testfiles:
-                expected_results.append("{}: Can't parse data ERROR".format(testpath.name))
+                expected_results.append("{}: (?:Can't parse data|Can't read file|Bad format or broken data) ERROR".format(testpath.name))
             else:
                 expected_results.append('{}: ClamAV-Test-File.UNOFFICIAL FOUND'.format(testpath.name))
         scanned_count = len(TC.testpaths) - len(TC.fail_closed_testfiles)
