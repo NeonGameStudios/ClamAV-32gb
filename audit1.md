@@ -232,6 +232,20 @@ decoder, and nested-marker paths. Complete media/image corpora, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release evidence remain open.
 
+## GIF focused current-source refresh — 2026-08-31
+
+The canonical GIF parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. The focused cases pass `gif` 12/12,
+`gif_api` 1/1, and `gif_corpus` 1/1, covering valid image completion, LZW
+code-size and fixed-extension admission, trailer and callback read failures,
+deadline handling, and exact nested overlay matching.
+
+This is focused GIF parser and corpus evidence, not complete image-family
+qualification. Full GIF/image corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## Current partition/container production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `apm_map` 3/3,

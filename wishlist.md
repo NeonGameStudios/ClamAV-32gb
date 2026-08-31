@@ -193,6 +193,19 @@ Sonic1, resource, and final qualification remain required.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification open.
 
+## GIF focused current-source refresh — 2026-08-31
+
+- Retain canonical-source SHA-256 equality for `gif.c`, `gif.h`, `scanners.c`,
+  and `check_clamav.c` before relinking the existing Docker production-linked
+  GCC harness.
+- Retain focused results at `gif` 12/12, `gif_api` 1/1, and `gif_corpus` 1/1
+  for valid image completion, LZW code-size and fixed-extension admission,
+  trailer and callback read failures, deadline handling, and exact nested
+  overlay matching.
+- Keep complete GIF/image corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## Current partition/container production-linked rerun — 2026-08-31
 
 - Retain current-source production-linked GCC evidence at `apm_map` 3/3,
