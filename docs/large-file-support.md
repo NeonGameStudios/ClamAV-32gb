@@ -553,6 +553,19 @@ qualification. Complete GPT/partition-image corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
+## Current MBR production-linked refresh — 2026-08-31
+
+The canonical `mbr.c`, `mbr.h`, `gpt.c`, `gpt.h`, `apm.c`, `apm.h`,
+`scanners.c`, and `check_clamav.c` sources were transferred into the existing
+Docker production-linked GCC harness with exact SHA-256 equality. The current
+focused cases pass `mbr` 7/7, `mbr_corpus` 1/1, and `partition_map` 4/4; the
+cross-family refresh also passes `gpt` 7/7, `gpt_corpus` 1/1, `apm` 6/6,
+`apm_map` 3/3, and `apm_corpus` 1/1. The MBR corpus uses a valid two-sector
+image whose in-range partition reaches the exact `Mbr.Partition.MZ.UNOFFICIAL`
+child marker. Complete partition-image corpora, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## Current partition/container production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `apm_map` 3/3,

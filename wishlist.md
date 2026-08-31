@@ -3603,6 +3603,18 @@ open.
 - Keep full ELF corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, Sonic1, and release gates open.
 
+## Current MBR production-linked refresh — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for `mbr.c`, `mbr.h`,
+  `gpt.c`, `gpt.h`, `apm.c`, `apm.h`, `scanners.c`, and `check_clamav.c`
+  before relinking the existing Docker production-linked GCC harness.
+- Retain current-source evidence at `mbr` 7/7, `mbr_corpus` 1/1, and
+  `partition_map` 4/4; the cross-family `gpt`/`gpt_corpus` cases pass 7/7 and
+  1/1, and `apm`/`apm_map`/`apm_corpus` pass 6/6, 3/3, and 1/1.
+- Keep complete partition-image corpora, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## MBR partition corpus qualification — 2026-08-26
 
 - The current-source production-linked GCC mbr case passes 5/5,
