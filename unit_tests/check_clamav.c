@@ -26426,10 +26426,33 @@ static const void *hwp3_compressed_read_failure(fmap_t *map, size_t at, size_t l
     return (const uint8_t *)map->data + at;
 }
 
+static struct cl_engine hwp3_test_default_engine;
+static struct cl_scan_options hwp3_test_default_options;
+
+static void hwp3_test_attach_root_layer(cli_ctx *ctx, cli_scan_layer_t *layer, fmap_t *map)
+{
+    if (!ctx->engine) {
+        memset(&hwp3_test_default_engine, 0, sizeof(hwp3_test_default_engine));
+        hwp3_test_default_engine.maxrechwp3 = 100;
+        ctx->engine = &hwp3_test_default_engine;
+    }
+    if (!ctx->options) {
+        memset(&hwp3_test_default_options, 0, sizeof(hwp3_test_default_options));
+        ctx->options = &hwp3_test_default_options;
+    }
+    memset(layer, 0, sizeof(*layer));
+    layer->fmap = map;
+    layer->type = CL_TYPE_HWP3;
+    layer->size = map->len;
+    ctx->recursion_stack = layer;
+    ctx->recursion_stack_size = 1;
+}
+
 START_TEST(test_hwp3_parser_errors_are_fail_visible)
 {
     uint8_t data[1000] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
     cl_error_t ret;
@@ -26440,6 +26463,7 @@ START_TEST(test_hwp3_parser_errors_are_fail_visible)
     memset(&options, 0, sizeof(options));
     ctx.fmap = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     /* The HWP3 identity and document-info sections fit, but the required
      * 1008-byte document-summary section is truncated. */
@@ -26497,6 +26521,7 @@ START_TEST(test_hwp3_font_metadata_allocation_failure_is_fail_visible)
     struct cl_engine engine;
     struct cl_scan_options options;
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     fmap_t *map;
     json_object *metadata;
     cl_error_t ret;
@@ -26513,6 +26538,7 @@ START_TEST(test_hwp3_font_metadata_allocation_failure_is_fail_visible)
     ctx.engine = &engine;
     ctx.options = &options;
     ctx.fmap = map;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
     ctx.this_layer_metadata_json = metadata;
     hwp3_test_fail_font_counts = 1;
 
@@ -26535,6 +26561,7 @@ START_TEST(test_hwp3_document_info_metadata_record_failure_is_fail_visible)
     struct cl_engine engine;
     struct cl_scan_options options;
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     fmap_t *map;
     json_object *metadata;
     cl_error_t ret;
@@ -26550,6 +26577,7 @@ START_TEST(test_hwp3_document_info_metadata_record_failure_is_fail_visible)
     ctx.engine = &engine;
     ctx.options = &options;
     ctx.fmap = map;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
     ctx.this_layer_metadata_json = metadata;
     hwp3_test_fail_print_name = 1;
 
@@ -26682,6 +26710,7 @@ START_TEST(test_hwp3_truncated_font_table_is_parse_error)
     enum { HWP3_CONTENT_OFFSET = 30 + 128 + 1008 };
     uint8_t data[HWP3_CONTENT_OFFSET + 1] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
 
@@ -26693,6 +26722,7 @@ START_TEST(test_hwp3_truncated_font_table_is_parse_error)
     memset(&options, 0, sizeof(options));
     ctx.fmap   = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -26712,6 +26742,7 @@ START_TEST(test_hwp3_truncated_paragraph_header_is_parse_error)
     };
     uint8_t data[HWP3_PARAGRAPH_OFFSET + 2] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
 
@@ -26723,6 +26754,7 @@ START_TEST(test_hwp3_truncated_paragraph_header_is_parse_error)
     memset(&options, 0, sizeof(options));
     ctx.fmap   = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -26743,6 +26775,7 @@ START_TEST(test_hwp3_truncated_paragraph_content_is_parse_error)
     };
     uint8_t data[HWP3_CONTENT_START + 1] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
 
@@ -26755,6 +26788,7 @@ START_TEST(test_hwp3_truncated_paragraph_content_is_parse_error)
     memset(&options, 0, sizeof(options));
     ctx.fmap   = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -26775,6 +26809,7 @@ START_TEST(test_hwp3_paragraph_content_read_failure_is_fail_visible)
     };
     uint8_t data[HWP3_CONTENT_START + 2] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
 
@@ -26787,6 +26822,7 @@ START_TEST(test_hwp3_paragraph_content_read_failure_is_fail_visible)
     memset(&options, 0, sizeof(options));
     ctx.fmap   = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EREAD);
     ck_assert(ctx.scan_incomplete);
@@ -26807,6 +26843,7 @@ START_TEST(test_hwp3_character_style_read_failure_is_fail_visible)
     };
     uint8_t data[HWP3_CONTENT_START + 2] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
 
@@ -26820,6 +26857,7 @@ START_TEST(test_hwp3_character_style_read_failure_is_fail_visible)
     memset(&options, 0, sizeof(options));
     ctx.fmap   = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EREAD);
     ck_assert(ctx.scan_incomplete);
@@ -26836,6 +26874,7 @@ START_TEST(test_hwp3_truncated_information_header_is_parse_error)
     enum { HWP3_INFO_OFFSET = 30 + 128 + 1008 + (7 * 2) + 2 + 43 };
     uint8_t data[HWP3_INFO_OFFSET + 2] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
 
@@ -26847,6 +26886,7 @@ START_TEST(test_hwp3_truncated_information_header_is_parse_error)
     memset(&options, 0, sizeof(options));
     ctx.fmap   = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -26863,6 +26903,7 @@ START_TEST(test_hwp3_information_header_read_failure_is_fail_visible)
     enum { HWP3_INFO_OFFSET = 30 + 128 + 1008 + (7 * 2) + 2 + 43 };
     uint8_t data[HWP3_INFO_OFFSET + 4] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
 
@@ -26874,6 +26915,7 @@ START_TEST(test_hwp3_information_header_read_failure_is_fail_visible)
     memset(&options, 0, sizeof(options));
     ctx.fmap   = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EREAD);
     ck_assert(ctx.scan_incomplete);
@@ -26889,6 +26931,7 @@ START_TEST(test_hwp3_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
     struct cl_engine engine;
+    cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -26899,13 +26942,14 @@ START_TEST(test_hwp3_time_limit_is_fail_visible)
     ck_assert_ptr_nonnull(map);
     ctx.engine = &engine;
     ctx.fmap   = map;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
     ret = cli_scanhwp3(&ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWP3 inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -26924,6 +26968,7 @@ START_TEST(test_hwp3_information_block_length_is_fail_visible)
     uint8_t data[HWP3_INFO_OFFSET + 8 + HWP3_BACKGROUND_INFO_LENGTH] = {0};
     struct cl_engine engine;
     struct cl_scan_options options;
+    cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -26948,6 +26993,7 @@ START_TEST(test_hwp3_information_block_length_is_fail_visible)
         ctx.engine  = &engine;
         ctx.options = &options;
         ctx.fmap = map;
+        hwp3_test_attach_root_layer(&ctx, &layer, map);
 
         ret = cli_scanhwp3(&ctx);
         ck_assert_int_eq(ret, CL_EFORMAT);
@@ -26968,6 +27014,7 @@ START_TEST(test_hwp3_information_block_length_is_fail_visible)
     ctx.engine  = &engine;
     ctx.options = &options;
     ctx.fmap    = map;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ret = cli_scanhwp3(&ctx);
     ck_assert_int_eq(ret, CL_EPARSE);
@@ -26984,6 +27031,7 @@ START_TEST(test_hwp3_document_info_block_boundary_is_fail_visible)
     uint8_t data[30 + 128 + 1008] = {0};
     struct cl_engine engine;
     struct cl_scan_options options;
+    cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
 
@@ -27002,6 +27050,7 @@ START_TEST(test_hwp3_document_info_block_boundary_is_fail_visible)
     ctx.engine  = &engine;
     ctx.options = &options;
     ctx.fmap    = map;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -27025,6 +27074,7 @@ START_TEST(test_hwp3_variable_length_native_addition_is_fail_visible)
     uint8_t data[HWP3_SYNTHETIC_END] = {0};
     struct cl_engine engine;
     struct cl_scan_options options;
+    cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
     size_t i;
@@ -27053,6 +27103,7 @@ START_TEST(test_hwp3_variable_length_native_addition_is_fail_visible)
         ctx.engine  = &engine;
         ctx.options = &options;
         ctx.fmap    = map;
+        hwp3_test_attach_root_layer(&ctx, &layer, map);
 
         /* A UINT32_MAX length/size wrapped the old 32-bit expression. The
          * bytes at the wrapped position form a synthetic paragraph and
@@ -27072,6 +27123,7 @@ START_TEST(test_hwp3_document_info_read_failure_is_fail_visible)
 {
     uint8_t data[30 + 128 + 1008] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
     cl_error_t ret;
@@ -27083,6 +27135,7 @@ START_TEST(test_hwp3_document_info_read_failure_is_fail_visible)
     memset(&options, 0, sizeof(options));
     ctx.fmap = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ret = cli_scanhwp3(&ctx);
     ck_assert_int_eq(ret, CL_EREAD);
@@ -27098,6 +27151,7 @@ START_TEST(test_hwp3_truncated_document_info_is_parse_error)
 {
     uint8_t data[31] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
 
@@ -27108,6 +27162,7 @@ START_TEST(test_hwp3_truncated_document_info_is_parse_error)
     memset(&options, 0, sizeof(options));
     ctx.fmap   = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -27290,6 +27345,7 @@ START_TEST(test_hwp3_truncated_raw_deflate_is_fail_visible)
     size_t data_length;
     struct cl_engine engine;
     struct cl_scan_options options;
+    cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -27308,12 +27364,14 @@ START_TEST(test_hwp3_truncated_raw_deflate_is_fail_visible)
     memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
+    engine.maxrechwp3 = 100;
     map = cl_fmap_open_memory(data, data_length);
     ck_assert_ptr_nonnull(map);
     ctx.engine            = &engine;
     ctx.options           = &options;
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     clamav_test_force_hwp_decoder_init = 1;
@@ -27348,10 +27406,12 @@ START_TEST(test_hwp3_raw_deflate_read_failure_is_fail_visible)
     uint8_t content[CONTENT_LENGTH];
     uint8_t *compressed;
     size_t compressed_length;
+    size_t compressed_storage;
     uint8_t *data;
     size_t data_length;
     struct cl_engine engine;
     struct cl_scan_options options;
+    cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -27363,7 +27423,10 @@ START_TEST(test_hwp3_raw_deflate_read_failure_is_fail_visible)
     ck_assert_msg(compressed_length > 1U, "HWP raw-deflate fixture unexpectedly short");
     /* Keep a complete FILEBUFF window after the stream so the injected
      * callback failure is an in-range fault rather than an EOF condition. */
-    data_length = HWP3_CONTENT_OFFSET + FILEBUFF;
+    compressed_storage = compressed_length > (size_t)FILEBUFF ? compressed_length : (size_t)FILEBUFF;
+    ck_assert_msg(HWP3_CONTENT_OFFSET <= SIZE_MAX - compressed_storage,
+                  "HWP raw-deflate fixture size overflow");
+    data_length = HWP3_CONTENT_OFFSET + compressed_storage;
     data        = calloc(1, data_length);
     ck_assert_ptr_nonnull(data);
     data[30 + 124] = 1U; /* HWP3 document-info compression flag. */
@@ -27372,6 +27435,7 @@ START_TEST(test_hwp3_raw_deflate_read_failure_is_fail_visible)
     memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
+    engine.maxrechwp3 = 100;
     map = cl_fmap_open_memory(data, data_length);
     ck_assert_ptr_nonnull(map);
     hwp3_compressed_read_failure_offset = HWP3_CONTENT_OFFSET;
@@ -27380,6 +27444,7 @@ START_TEST(test_hwp3_raw_deflate_read_failure_is_fail_visible)
     ctx.options                          = &options;
     ctx.fmap                             = map;
     ctx.this_layer_tmpdir                = tmpdir;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ret = cli_scanhwp3(&ctx);
     ck_assert_int_eq(ret, CL_EREAD);
@@ -27399,6 +27464,7 @@ START_TEST(test_hwp3_password_protection_is_fail_visible)
 {
     uint8_t data[30 + 128 + 1008] = {0};
     cli_ctx ctx;
+    cli_scan_layer_t layer;
     struct cl_scan_options options;
     fmap_t *map;
     cl_error_t ret;
@@ -27414,6 +27480,7 @@ START_TEST(test_hwp3_password_protection_is_fail_visible)
     memset(&options, 0, sizeof(options));
     ctx.fmap = map;
     ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
 
     ret = cli_scanhwp3(&ctx);
     ck_assert_int_eq(ret, CL_EPARSE);

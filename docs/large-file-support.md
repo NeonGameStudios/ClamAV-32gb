@@ -16,6 +16,20 @@ admission. Full YARA corpus, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final release qualification remain
 required.
 
+## Current HWP3 production-linked rerun — 2026-08-31
+
+The current-source production-linked GCC harness passes the isolated `hwp3`
+TCase 22/22 with 0 failures and 0 errors, after direct fixtures were given a
+valid engine, scan-options object, and root recursion layer. The companion
+`hwp3_map`, `hwp3_api`, and `hwp3_corpus` cases pass 3/3, 1/1, and 1/1. The
+direct suite covers fixed-section truncation, in-range callback failures,
+metadata allocation/record failures, deadline handling, checked variable
+length arithmetic, raw-deflate truncation/read failures, and password
+protection; the raw-deflate callback fault remains CL_EREAD with sticky
+incomplete/non-cacheable state. Full HWP3/HWPML/OLE corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## Current EGG production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `egg_map` 7/7,

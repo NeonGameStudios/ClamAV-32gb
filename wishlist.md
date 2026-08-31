@@ -10,6 +10,18 @@
   21/21 and source guards. Full YARA corpus, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final qualification remain required.
 
+## Current HWP3 production-linked rerun — 2026-08-31
+
+- Retain the current-source production-linked GCC HWP3 evidence: `hwp3`
+  passes 22/22 with 0 failures and 0 errors, while `hwp3_map`, `hwp3_api`,
+  and `hwp3_corpus` pass 3/3, 1/1, and 1/1. Direct fixtures now provide the
+  engine, scan options, and root recursion layer required by the parser.
+- Keep raw-deflate truncation and in-range callback failures fail-visible,
+  including CL_EREAD, sticky incomplete state, and non-cacheability for the
+  injected callback fault. Full HWP3/HWPML/OLE corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final qualification remain required.
+
 ## Current EGG production-linked rerun — 2026-08-31
 
 - Retain current-source production-linked GCC evidence at `egg_map` 7/7,

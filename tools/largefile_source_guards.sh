@@ -154,6 +154,8 @@ contains unit_tests/check_clamav.c 'tcase_add_checked_fixture(tc_xar, cl_setup, 
 contains unit_tests/check_clamav.c 'ctx.dconf             = scan_engine->dconf'
 contains unit_tests/check_clamav.c 'ctx.recursion_stack_size = 2'
 contains unit_tests/check_clamav.c 'Heuristics.Limits.Exceeded.MaxScanTime'
+contains unit_tests/check_clamav.c 'hwp3_test_attach_root_layer'
+contains unit_tests/check_clamav.c 'compressed_storage = compressed_length > (size_t)FILEBUFF ? compressed_length : (size_t)FILEBUFF'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_hwpml, test_hwpml_base64_decoder_is_bounded_and_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_msxml, test_msxml_read_failure_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_xz, test_xz_truncated_stream_is_fail_visible)'
