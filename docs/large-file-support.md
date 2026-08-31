@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OLE2 workbook encryption-probe bounds — 2026-08-31
+
+The WorkBook encryption probe checks each BIFF record length against the
+remaining bounded 512-byte probe before advancing. A confirmed BOF with an
+out-of-range skip now returns `CL_EPARSE` with sticky incomplete/cache-taint
+and cannot inspect bytes beyond the probe. The current-source production-
+linked GCC `ole2_map` TCase passes 6/6, including the fixture-backed
+out-of-range-skip regression. Full OLE/VBA/XLM corpus, sanitizer,
+production-CVD/service, materialized-large-file, Linux x86-64, Sonic1, and
+final parser/release qualification remain required.
+
 ## OLE2 encrypted plaintext-length admission — 2026-08-31
 
 Encrypted OLE2 output now uses checked remaining-length subtraction when

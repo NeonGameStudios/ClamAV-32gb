@@ -954,6 +954,10 @@ static cl_error_t test_for_xls_encryption(const property_t *word_block, ole2_hea
     if (sizeof(uint16_t) != read_uint16(ptr, block_size, &idx, &tmp16)) {
         return CL_SUCCESS;
     }
+    if (idx > block_size || tmp16 > block_size - idx) {
+        cli_mark_scan_incomplete(hdr->ctx, "OLE2 WorkBook encryption record is truncated");
+        return CL_EPARSE;
+    }
     idx += tmp16;
 
     if (!find_file_pass(ptr, block_size, &idx)) {

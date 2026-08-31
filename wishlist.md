@@ -1,5 +1,15 @@
 # Wishlist
 
+## OLE2 workbook encryption-probe bounds — 2026-08-31
+
+- Keep every BIFF encryption-probe skip inside the declared bounded probe;
+  an oversized record length must return an incomplete, non-cacheable parse
+  result before the next field is read.
+- Retain the fixture-backed out-of-range-skip regression and current-source
+  production-linked GCC `ole2_map` evidence at 6/6. Complete OLE/VBA/XLM
+  corpus, sanitizer, production-CVD/service, materialized-large-file,
+  Linux x86-64, Sonic1, and final qualification remain required.
+
 ## OLE2 encrypted plaintext-length admission — 2026-08-31
 
 - Keep encrypted OLE2 plaintext writes behind subtraction-based remaining

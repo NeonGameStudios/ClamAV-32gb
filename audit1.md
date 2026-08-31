@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## OLE2 workbook encryption-probe bounds — 2026-08-31
+
+The WorkBook encryption probe now checks a BIFF record's declared body
+length against the remaining bounded 512-byte probe before advancing its
+cursor. A confirmed BOF with an out-of-range skip returns `CL_EPARSE`, marks
+the layer incomplete and non-cacheable, and cannot manufacture a FilePass
+record from bytes outside the probe. The current-source production-linked
+GCC `ole2_map` TCase passes 6/6, including the fixture-backed out-of-range
+skip regression. Full OLE/VBA/XLM corpus, sanitizer, production-CVD/service,
+materialized-large-file, Linux x86-64, Sonic1, and final parser/release
+qualification remain open.
+
 ## OLE2 encrypted plaintext-length admission — 2026-08-31
 
 The encrypted OLE2 stream handler now clamps each decrypted block with a
