@@ -6032,8 +6032,16 @@ qualification.
 
 ## Mach-O parser qualification refresh — 2026-08-31
 
-- Retain the authoritative-source hash check and current production-linked GCC
-  evidence: `macho` 11/11, `macho_timeout` 2/2, `macho_fat` 2/2,
+- Retain exact canonical/container SHA-256 equality for `macho.c`, `macho.h`,
+  `matcher.c`, `scanners.c`, and `check_clamav.c` before relinking the
+  production-linked GCC harness (`macho.c`
+  `7246891b57bc2c92fe04f08d9dc2863f0bc15e549c766e8baf6ca3e6d60a76b8`,
+  `macho.h` `9f4bba627fa4bcb01e0c2f7eb9661f273cb55db7f1ff192bd057d5b76b03ff3c`,
+  `matcher.c` `24fb9daa6dc63f11db81b3b89f97553f152b243bfcb351c694060cbd37a6afd0`,
+  `scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+  and `check_clamav.c`
+  `d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`).
+- Retain current production-linked GCC evidence: `macho` 11/11, `macho_timeout` 2/2, `macho_fat` 2/2,
   `macho_corpus` 2/2, `macho_unsupported` 2/2, `macho_map` 1/1,
   `macho_boundary` 2/2, and `macho_sections` 1/1.
 - Complete sanitizer/leak, native-width certified Linux x86-64, full
