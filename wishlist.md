@@ -1,5 +1,20 @@
 # Wishlist
 
+## HFS+ leaf-chain admission — 2026-08-31
+
+- Reconcile HFS+ B-tree header leaf metadata before walking a declared tree;
+  preserve valid empty-tree handling but reject inconsistent first/last leaf
+  and record-count fields as incomplete and non-cacheable.
+- Require catalog and attributes forward-link chains to terminate at the
+  declared `lastLeafNode` and reconcile the declared leaf-record count;
+  reject early termination, links beyond the declared tail, and count
+  mismatches instead of allowing later files or `decmpfs` metadata to be
+  silently skipped. Retain the exact catalog regression, source guards, and
+  production-linked GCC plus ASan/UBSan evidence.
+- Complete ExtentOverflow lookup, full HFS+ catalog/attribute/resource corpus,
+  production-CVD/service, certified Linux x86-64, materialized large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## UDF anchored root-ICB traversal — 2026-08-31
 
 - Keep the Anchor Volume Descriptor Pointer at logical sector 256 as the

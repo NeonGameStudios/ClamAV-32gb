@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HFS+ leaf-chain admission — 2026-08-31
+
+HFS+ B-tree headers now have explicit leaf-chain admission. Inconsistent
+empty/non-empty first/last leaf metadata is rejected, and catalog and
+attributes traversal must reach the header-declared `lastLeafNode` and
+reconcile its declared leaf-record count rather than treating a zero forward
+link as sufficient proof of completion. Early termination, a link beyond the
+declared tail, or a count mismatch returns a sticky incomplete, non-cacheable
+result. The exact catalog regression passes in a
+production-linked GCC runner and in the matching GCC ASan/UBSan runner with
+leak detection. Full HFS+ corpus, ExtentOverflow support,
+production-CVD/service, certified Linux x86-64, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## UDF anchored root-ICB traversal — 2026-08-31
 
 The UDF ingress uses the fixed VRS signature to probe the standards-defined

@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## HFS+ leaf-chain admission — 2026-08-31
+
+The HFS+ B-tree walker previously treated a zero forward link as the end of
+the catalog or attributes tree without reconciling it with the header's
+declared last leaf. A truncated chain could therefore leave later files or
+`decmpfs` metadata uninspected while returning a clean, cacheable result. Tree
+header admission now rejects inconsistent empty/non-empty leaf metadata, and
+catalog and attribute walks require the forward-link chain to terminate at the
+declared last leaf with the declared leaf-record count. A chain that ends
+early, extends beyond that leaf, or reports the wrong count is marked
+incomplete and non-cacheable. The registered catalog regression,
+current-source production-linked GCC runner, and GCC ASan/UBSan runner with
+leak detection all pass with the exact early-chain reason.
+
+This is bounded HFS+ chain-integrity admission, not complete HFS+
+qualification. Extent-overflow lookup, full catalog/attribute/resource
+corpus, production CVD/service, certified Linux x86-64, materialized
+large-file, Sonic1, resource, and final parser/release qualification remain
+open.
+
 ## UDF anchored root-ICB traversal — 2026-08-31
 
 The UDF scanner now follows a validated Anchor Volume Descriptor Pointer main

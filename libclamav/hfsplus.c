@@ -172,6 +172,35 @@ static void headerrecord_print(const char *pfx, hfsHeaderRecord *hdr)
                hdr->btreeType, hdr->attributes);
 }
 
+/* The header record identifies the complete leaf chain. A non-empty tree
+ * with no declared last leaf is not an empty tree: accepting it lets a
+ * truncated forward-link chain look like a complete scan. */
+static cl_error_t hfsplus_validate_leaf_chain_header(cli_ctx *ctx, hfsHeaderRecord *header, const char *name)
+{
+    if (header->totalNodes == 0) {
+        cli_dbgmsg("hfsplus_readheader: %s: tree declares no nodes\n", name);
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree leaf chain header is malformed");
+        return CL_EFORMAT;
+    }
+
+    if (header->firstLeafNode == 0) {
+        if (header->lastLeafNode != 0 || header->leafRecords != 0) {
+            cli_dbgmsg("hfsplus_readheader: %s: empty leaf chain has non-empty metadata\n", name);
+            cli_mark_scan_incomplete(ctx, "HFS+ file-tree leaf chain header is malformed");
+            return CL_EFORMAT;
+        }
+    } else if (header->firstLeafNode >= header->totalNodes ||
+               header->lastLeafNode == 0 ||
+               header->lastLeafNode >= header->totalNodes ||
+               header->leafRecords == 0) {
+        cli_dbgmsg("hfsplus_readheader: %s: leaf chain metadata is inconsistent\n", name);
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree leaf chain header is malformed");
+        return CL_EFORMAT;
+    }
+
+    return CL_CLEAN;
+}
+
 /* Node Descriptor : fix endianness for useful fields */
 static void nodedescriptor_to_host(hfsNodeDescriptor *node)
 {
@@ -428,6 +457,9 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
             return CL_EFORMAT;
         }
     }
+
+    if (hfsplus_validate_leaf_chain_header(ctx, headerRec, name) != CL_SUCCESS)
+        return CL_EFORMAT;
 
     /* hdr->treeDepth = rootnode->height */
     return CL_CLEAN;
@@ -726,7 +758,9 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
     uint16_t recordStart, nextDist, nextStart;
     uint8_t *nodeBuf = NULL;
     uint32_t thisNode, nodeLimit, nodesScanned = 0;
+    uint64_t leafRecordsScanned = 0;
     bool foundAttr = false;
+    bool reachedLastLeaf;
 
     if (found) {
         *found = 0;
@@ -739,6 +773,7 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
     nodeLimit = MIN(attrHeader->totalNodes, HFSPLUS_NODE_LIMIT);
     thisNode  = attrHeader->firstLeafNode;
     nodeSize  = attrHeader->nodeSize;
+    reachedLastLeaf = (thisNode == 0);
 
     /* Need to buffer current node, map will keep moving */
     nodeBuf = cli_max_malloc(nodeSize);
@@ -764,6 +799,11 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
 
         if (thisNode == 0) {
             cli_dbgmsg("hfsplus_check_attribute: reached end of leaf nodes.\n");
+            if (!reachedLastLeaf) {
+                cli_mark_scan_incomplete(ctx, "HFS+ attributes leaf chain ended before its declared last leaf");
+                status = CL_EFORMAT;
+                goto done;
+            }
             break;
         }
         if (nodesScanned >= nodeLimit) {
@@ -794,6 +834,12 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
         if ((nodeSize / 4) < nodeDesc.numRecords) {
             cli_dbgmsg("hfsplus_check_attribute: too many leaf records for one node!\n");
             cli_mark_scan_incomplete(ctx, "HFS+ attributes tree node is malformed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        leafRecordsScanned += (uint64_t)nodeDesc.numRecords;
+        if (leafRecordsScanned > attrHeader->leafRecords) {
+            cli_mark_scan_incomplete(ctx, "HFS+ attributes leaf record count is inconsistent");
             status = CL_EFORMAT;
             goto done;
         }
@@ -894,6 +940,34 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
                 foundAttr = true;
                 break;
             }
+        }
+
+        if (foundAttr)
+            break;
+
+        if (thisNode == attrHeader->lastLeafNode) {
+            if (nodeDesc.fLink != 0) {
+                cli_mark_scan_incomplete(ctx, "HFS+ attributes leaf chain exceeds its declared last leaf");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            if (leafRecordsScanned != attrHeader->leafRecords) {
+                cli_mark_scan_incomplete(ctx, "HFS+ attributes leaf record count is inconsistent");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            reachedLastLeaf = true;
+            thisNode = 0;
+        } else if (nodeDesc.fLink == 0) {
+            cli_mark_scan_incomplete(ctx, "HFS+ attributes leaf chain ended before its declared last leaf");
+            status = CL_EFORMAT;
+            goto done;
+        } else if (thisNode == nodeDesc.fLink) {
+            cli_mark_scan_incomplete(ctx, "HFS+ attributes traversal contains a cycle");
+            status = CL_EFORMAT;
+            goto done;
+        } else {
+            thisNode = nodeDesc.fLink;
         }
     }
 
@@ -1383,6 +1457,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 {
     cl_error_t status = CL_SUCCESS;
     uint32_t thisNode, nodeLimit, nodesScanned = 0;
+    uint64_t leafRecordsScanned = 0;
     uint16_t nodeSize, recordNum, topOfOffsets;
     uint16_t recordStart, nextDist, nextStart;
     uint8_t *nodeBuf                = NULL;
@@ -1402,6 +1477,9 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
     nodeLimit = MIN(catHeader->totalNodes, HFSPLUS_NODE_LIMIT);
     thisNode  = catHeader->firstLeafNode;
     nodeSize  = catHeader->nodeSize;
+
+    if (thisNode == 0)
+        return CL_SUCCESS;
 
     /* Need to buffer current node, map will keep moving */
     nodeBuf = cli_max_malloc(nodeSize);
@@ -1456,6 +1534,12 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
         if ((nodeSize / 4) < nodeDesc.numRecords) {
             cli_dbgmsg("hfsplus_walk_catalog: too many leaf records for one node!\n");
             cli_mark_scan_incomplete(ctx, "HFS+ catalog leaf node is malformed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        leafRecordsScanned += (uint64_t)nodeDesc.numRecords;
+        if (leafRecordsScanned > catHeader->leafRecords) {
+            cli_mark_scan_incomplete(ctx, "HFS+ catalog leaf record count is inconsistent");
             status = CL_EFORMAT;
             goto done;
         }
@@ -2010,7 +2094,23 @@ resource_block_done:
         }
 
         /* After that, proceed to next node */
-        if (thisNode == nodeDesc.fLink) {
+        if (thisNode == catHeader->lastLeafNode) {
+            if (nodeDesc.fLink != 0) {
+                cli_mark_scan_incomplete(ctx, "HFS+ catalog leaf chain exceeds its declared last leaf");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            if (leafRecordsScanned != catHeader->leafRecords) {
+                cli_mark_scan_incomplete(ctx, "HFS+ catalog leaf record count is inconsistent");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            thisNode = 0;
+        } else if (nodeDesc.fLink == 0) {
+            cli_mark_scan_incomplete(ctx, "HFS+ catalog leaf chain ended before its declared last leaf");
+            status = CL_EFORMAT;
+            goto done;
+        } else if (thisNode == nodeDesc.fLink) {
             /* TODO: Add heuristic alert? */
             cli_warnmsg("hfsplus_walk_catalog: simple cycle detected!\n");
             cli_mark_scan_incomplete(ctx, "HFS+ catalog traversal contains a cycle");
