@@ -1,5 +1,17 @@
 # Wishlist
 
+## MIME folded-header state reset — 2026-08-31
+
+- Keep failed or heuristic assembled MIME headers fail-closed: release and
+  reset the folded-header buffer before the next physical header is read, so
+  stale state cannot consume valid following headers or leak on an error path.
+- Retain the exact-child regression, source guards, clean canonical-source
+  production-linked mail evidence (mail 12/12, mail_map 2/2, mail_api 2/2,
+  mail_partial 1/1, and mhtml 4/4), and the GCC ASan/UBSan leak-enabled
+  runner. Complete MIME/mbox/MHTML corpus, Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification remain required.
+
 ## XAR gzip decoder finalization — 2026-08-31
 
 - Keep initialized XAR gzip decoders fail-visible when `inflateEnd()` fails;

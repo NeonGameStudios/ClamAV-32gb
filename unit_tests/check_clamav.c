@@ -32475,14 +32475,17 @@ START_TEST(test_mbox_uuencode_attachment_read_failure_is_fail_visible)
         "begin 644 payload\n"
         "#0V%T\n";
     struct cl_engine engine;
+    struct cli_dconf dconf;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.dconf             = &dconf;
     ctx.options           = &options;
     ctx.this_layer_tmpdir = tmpdir;
 
@@ -32504,14 +32507,17 @@ START_TEST(test_mbox_initial_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "nonempty MIME input";
     struct cl_engine engine;
+    struct cli_dconf dconf;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine = &engine;
+    ctx.dconf  = &dconf;
     ctx.options = &options;
 
     map = cl_fmap_open_memory(input, sizeof(input) - 1U);
@@ -32661,14 +32667,17 @@ START_TEST(test_mbox_time_limit_is_fail_visible)
         "\n"
         "body\n";
     struct cl_engine engine;
+    struct cli_dconf dconf;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine = &engine;
+    ctx.dconf  = &dconf;
     ctx.options = &options;
 
     map = cl_fmap_open_memory(input, sizeof(input) - 1U);
@@ -32692,14 +32701,17 @@ START_TEST(test_mbox_line_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "P I legacy message\n\nbody";
     struct cl_engine engine;
+    struct cli_dconf dconf;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine = &engine;
+    ctx.dconf  = &dconf;
     ctx.options = &options;
 
     map = cl_fmap_open_memory(input, sizeof(input) - 1U);
@@ -32725,14 +32737,17 @@ START_TEST(test_mbox_header_lookahead_read_failure_is_fail_visible)
         "\n"
         "body\n";
     struct cl_engine engine;
+    struct cli_dconf dconf;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine = &engine;
+    ctx.dconf  = &dconf;
     ctx.options = &options;
 
     map = cl_fmap_open_memory(input, sizeof(input) - 1U);
@@ -32759,6 +32774,7 @@ START_TEST(test_mbox_oversized_line_is_fail_visible)
     static const uint8_t prefix[] = "Content-Type: text/plain\nSubject: ";
     uint8_t input[2048];
     struct cl_engine engine;
+    struct cli_dconf dconf;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
@@ -32771,9 +32787,11 @@ START_TEST(test_mbox_oversized_line_is_fail_visible)
     input[input_len++] = '\n';
 
     memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.dconf             = &dconf;
     ctx.options           = &options;
     ctx.this_layer_tmpdir = tmpdir;
 
@@ -32800,6 +32818,7 @@ START_TEST(test_mbox_header_budget_is_fail_visible)
                                   (folded_lines * (folded_line_len + 1U)) + 1U;
     uint8_t *input = (uint8_t *)malloc(input_capacity);
     struct cl_engine engine;
+    struct cli_dconf dconf;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
@@ -32819,9 +32838,11 @@ START_TEST(test_mbox_header_budget_is_fail_visible)
     input[input_len++] = '\n';
 
     memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.dconf             = &dconf;
     ctx.options           = &options;
     ctx.this_layer_tmpdir = tmpdir;
 
@@ -32837,6 +32858,47 @@ START_TEST(test_mbox_header_budget_is_fail_visible)
 
     cl_fmap_close(map);
     free(input);
+}
+END_TEST
+
+START_TEST(test_mbox_failed_header_does_not_consume_following_header)
+{
+    static const uint8_t input[] =
+        "From sender@example.com Sat Jan  1 00:00:00 2022\n"
+        "Content-Type:\n"
+        "Content-Transfer-Encoding: base64\n"
+        "\n"
+        "TVpQ\n";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_MAIL;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Mbox.HeaderReset.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_MAIL", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_str_eq(last_alert, "Mbox.HeaderReset.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 
@@ -49437,6 +49499,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mail, test_mbox_header_lookahead_read_failure_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_oversized_line_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_header_budget_is_fail_visible);
+    tcase_add_test(tc_mail, test_mbox_failed_header_does_not_consume_following_header);
     tcase_add_test(tc_mail, test_mbox_truncated_uuencode_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_truncated_binhex_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_corpus_detects_embedded_mz);
@@ -50565,6 +50628,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbox_header_lookahead_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_oversized_line_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_header_budget_is_fail_visible);
+    tcase_add_test(tc_cl, test_mbox_failed_header_does_not_consume_following_header);
 #if HAVE_UNRAR
     tcase_add_test(tc_cl, test_rar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_rar_declared_output_limit_is_fail_visible);

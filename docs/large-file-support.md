@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MIME folded-header state reset — 2026-08-31
+
+Failed recognized MIME headers no longer leave their assembled folded-header
+buffer active for the next physical header. `parseEmailHeaders()` now frees
+and resets that temporary state before continuing after a parse failure or
+stopping on a heuristic result, preventing stale-header consumption and an
+error-path leak. The exact-child regression reaches
+`Mbox.HeaderReset.MZ.UNOFFICIAL`; the clean canonical-source production-linked
+mail TCase passes 12/12, mail_map 2/2, mail_api 2/2, mail_partial 1/1, and
+mhtml 4/4 pass, and the isolated GCC ASan/UBSan runner with leak detection
+passes 1/1. Complete MIME/mbox/MHTML corpus, Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain required.
+
 ## XAR gzip decoder finalization — 2026-08-31
 
 Initialized XAR gzip members now treat a failing `inflateEnd()` as a sticky

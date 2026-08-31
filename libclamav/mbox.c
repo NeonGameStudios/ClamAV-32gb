@@ -1610,15 +1610,24 @@ parseEmailHeaders(message *m, const table_t *rfc821, bool *heuristicFound)
                 if (haveTooManyEmailHeaders(totalHeaderCnt, m->ctx, heuristicFound)) {
                     break;
                 }
-                if (parseEmailHeader(ret, fullline, rfc821, m->ctx, heuristicFound) < 0) {
-                    continue;
-                }
-                if (*heuristicFound) {
-                    break;
-                }
+                {
+                    const int header_status =
+                        parseEmailHeader(ret, fullline, rfc821, m->ctx, heuristicFound);
 
-                free(fullline);
-                fullline = NULL;
+                    /* A failed or heuristic header is terminal for this
+                     * assembled header, but neither outcome owns the
+                     * temporary buffer. Reset it before continuing so the
+                     * next physical header cannot be appended to stale
+                     * state, and so an error path cannot leak the buffer. */
+                    free(fullline);
+                    fullline       = NULL;
+                    fulllinelength = 0;
+
+                    if (header_status < 0)
+                        continue;
+                    if (*heuristicFound)
+                        break;
+                }
             }
         } else {
             if (bodyIsEmpty) {

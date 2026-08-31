@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## MIME folded-header state reset — 2026-08-31
+
+`parseEmailHeaders()` previously continued after `parseEmailHeader()` failed
+without releasing or resetting the assembled folded-header buffer. A failed
+recognized header could therefore leave stale state for the next physical
+header, and the error path leaked that temporary buffer. The parser now frees
+the assembled header and resets its length before either continuing after a
+failure or stopping on a heuristic result. The registered
+`test_mbox_failed_header_does_not_consume_following_header` regression proves
+that a malformed `Content-Type` line cannot consume the following
+`Content-Transfer-Encoding` header: the decoded child reaches the exact
+`Mbox.HeaderReset.MZ.UNOFFICIAL` signature. The clean canonical-source
+production-linked mail TCase passes 12/12; mail_map 2/2, mail_api 2/2,
+mail_partial 1/1, and mhtml 4/4 also pass, and the isolated GCC ASan/UBSan
+runner with leak detection passes 1/1. Complete MIME/mbox/MHTML corpus,
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
+final parser/release qualification remain open.
+
 ## XAR gzip decoder finalization — 2026-08-31
 
 The XAR gzip-member path ignored a non-success return from `inflateEnd()`
