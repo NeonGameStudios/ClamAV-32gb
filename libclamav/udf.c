@@ -396,6 +396,221 @@ static cl_error_t getUDFExtentRange(cli_ctx *ctx, PartitionDescriptor *pPartitio
     return CL_SUCCESS;
 }
 
+#define UDF_MAX_PARTITION_MAPS 64U
+#define UDF_MAX_VISITED_ICBS 4096U
+#define UDF_MAX_DIRECTORY_DEPTH 128U
+#define UDF_MAX_ALLOCATION_EXTENTS 4096U
+
+typedef struct {
+    PartitionDescriptor descriptor;
+    uint16_t actual_partition_number;
+} udf_anchor_partition;
+
+typedef struct {
+    uint8_t logical_volume_descriptor[VOLUME_DESCRIPTOR_SIZE];
+    udf_anchor_partition partitions[UDF_MAX_PARTITION_MAPS];
+    size_t partition_count;
+} udf_anchor_volume;
+
+typedef struct {
+    PartitionDescriptor descriptor;
+    uint16_t map_index;
+} udf_runtime_partition;
+
+typedef struct {
+    uint16_t map_index;
+    uint32_t block_number;
+} udf_visited_icb;
+
+typedef struct {
+    cli_ctx *ctx;
+    LogicalVolumeDescriptor *logical_volume_descriptor;
+    udf_runtime_partition partitions[UDF_MAX_PARTITION_MAPS];
+    size_t partition_count;
+    udf_visited_icb visited[UDF_MAX_VISITED_ICBS];
+    size_t visited_count;
+} udf_tree_context;
+
+static const void *udf_need_off(cli_ctx *ctx, size_t offset, size_t length,
+                                cl_error_t *read_status);
+
+static cl_error_t udf_validate_partition_tag(cli_ctx *ctx, const DescriptorTag *tag,
+                                             size_t descriptor_size, uint32_t block_number)
+{
+    cl_error_t ret;
+
+    ret = udf_validate_descriptor_tag(ctx, tag, descriptor_size, 0, false);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    if (le32_to_host(tag->tagLocation) != block_number) {
+        cli_mark_scan_incomplete(ctx, "UDF partition descriptor tag location does not match its block");
+        return CL_EPARSE;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t udf_copy_partition_block(udf_tree_context *tree,
+                                            const udf_runtime_partition *partition,
+                                            uint32_t block_number, uint8_t *block,
+                                            const char *read_reason)
+{
+    uint32_t partition_start;
+    uint32_t partition_length;
+    uint64_t logical_block_offset;
+    const uint8_t *view;
+    cl_error_t read_status;
+
+    if (tree == NULL || tree->ctx == NULL || tree->ctx->fmap == NULL ||
+        tree->logical_volume_descriptor == NULL || partition == NULL || block == NULL)
+        return CL_EARG;
+
+    partition_start  = le32_to_host(partition->descriptor.partitionStartingLocation);
+    partition_length = le32_to_host(partition->descriptor.partitionLength);
+    if (block_number >= partition_length) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF partition block is outside the declared partition");
+        return CL_EPARSE;
+    }
+    if (partition_start > UINT32_MAX - block_number) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF partition block offset overflowed");
+        return CL_EFORMAT;
+    }
+
+    logical_block_offset = (uint64_t)(partition_start + block_number) *
+                           le32_to_host(tree->logical_volume_descriptor->logicalBlockSize);
+    if (logical_block_offset > SIZE_MAX ||
+        logical_block_offset > tree->ctx->fmap->len ||
+        VOLUME_DESCRIPTOR_SIZE > tree->ctx->fmap->len - (size_t)logical_block_offset) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF partition block is outside the input map");
+        return CL_EPARSE;
+    }
+
+    view = (const uint8_t *)udf_need_off(tree->ctx, (size_t)logical_block_offset,
+                                         VOLUME_DESCRIPTOR_SIZE, &read_status);
+    if (view == NULL) {
+        if (read_status == CL_EREAD)
+            cli_mark_scan_incomplete(tree->ctx, read_reason);
+        else
+            cli_mark_scan_incomplete(tree->ctx, "UDF partition block is incomplete");
+        return read_status;
+    }
+
+    memcpy(block, view, VOLUME_DESCRIPTOR_SIZE);
+    fmap_unneed_ptr(tree->ctx->fmap, view, VOLUME_DESCRIPTOR_SIZE);
+    return CL_SUCCESS;
+}
+
+static cl_error_t udf_collect_file_extents(cli_ctx *ctx, PartitionDescriptor *partition,
+                                           LogicalVolumeDescriptor *logical_volume,
+                                           const void *allocation_descriptor,
+                                           size_t allocation_descriptor_len, uint16_t icb_flags,
+                                           uint64_t information_length, udf_extent **extents_out,
+                                           size_t *extent_count_out)
+{
+    size_t descriptor_size;
+    size_t extent_count;
+    size_t i;
+    udf_extent *extents = NULL;
+    uint64_t total_length = 0;
+    cl_error_t ret;
+
+    if (extents_out == NULL || extent_count_out == NULL)
+        return CL_EARG;
+    *extents_out       = NULL;
+    *extent_count_out  = 0;
+
+    switch (icb_flags & 7U) {
+        case 0:
+            descriptor_size = sizeof(short_ad);
+            break;
+        case 1:
+            descriptor_size = sizeof(long_ad);
+            break;
+        case 2:
+            descriptor_size = sizeof(ext_ad);
+            break;
+        default:
+            cli_mark_scan_incomplete(ctx, "UDF allocation descriptor type is unsupported");
+            return CL_EUNPACK;
+    }
+
+    if (allocation_descriptor_len == 0) {
+        if (information_length != 0) {
+            cli_mark_scan_incomplete(ctx, "UDF allocation extents do not match declared information length");
+            return CL_EPARSE;
+        }
+        return CL_SUCCESS;
+    }
+
+    if (allocation_descriptor == NULL ||
+        allocation_descriptor_len % descriptor_size != 0) {
+        cli_mark_scan_incomplete(ctx, "UDF allocation descriptor length is not aligned");
+        return CL_EPARSE;
+    }
+
+    extent_count = allocation_descriptor_len / descriptor_size;
+    if (extent_count > UDF_MAX_ALLOCATION_EXTENTS ||
+        extent_count > SIZE_MAX / sizeof(*extents)) {
+        cli_mark_scan_incomplete(ctx, "UDF allocation descriptor list is too large");
+        return CL_EUNPACK;
+    }
+
+    extents = cli_max_calloc(extent_count, sizeof(*extents));
+    if (extents == NULL) {
+        cli_mark_scan_incomplete(ctx, "UDF allocation descriptor list could not be allocated");
+        return CL_EMEM;
+    }
+
+    for (i = 0; i < extent_count; i++) {
+        const uint8_t *descriptor = (const uint8_t *)allocation_descriptor + (i * descriptor_size);
+
+        ret = udf_checktimelimit(ctx, "UDF allocation-descriptor traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            goto done;
+
+        if ((icb_flags & 7U) == 1U &&
+            le16_to_host(((const long_ad *)descriptor)->extentLocation.partitionReferenceNumber) !=
+                le16_to_host(partition->partitionNumber)) {
+            cli_mark_scan_incomplete(ctx, "UDF cross-partition allocation descriptor is unsupported");
+            ret = CL_EUNPACK;
+            goto done;
+        }
+        if ((icb_flags & 7U) == 2U &&
+            le16_to_host(((const ext_ad *)descriptor)->extentLocation.partitionReferenceNumber) !=
+                le16_to_host(partition->partitionNumber)) {
+            cli_mark_scan_incomplete(ctx, "UDF cross-partition allocation descriptor is unsupported");
+            ret = CL_EUNPACK;
+            goto done;
+        }
+
+        ret = getUDFExtentRange(ctx, partition, logical_volume,
+                                descriptor, icb_flags, &extents[i]);
+        if (ret != CL_SUCCESS)
+            goto done;
+        if (total_length > UINT64_MAX - extents[i].length) {
+            cli_mark_scan_incomplete(ctx, "UDF aggregate extent length overflowed");
+            ret = CL_EPARSE;
+            goto done;
+        }
+        total_length += extents[i].length;
+    }
+
+    if (total_length != information_length) {
+        cli_mark_scan_incomplete(ctx, "UDF allocation extents do not match declared information length");
+        ret = CL_EPARSE;
+        goto done;
+    }
+
+    *extents_out      = extents;
+    *extent_count_out = extent_count;
+    return CL_SUCCESS;
+
+done:
+    CLI_FREE_AND_SET_NULL(extents);
+    return ret;
+}
+
 static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescriptor, LogicalVolumeDescriptor *pLogicalVolumeDescriptor,
                               void *allocation_descriptor,
                               size_t allocation_descriptor_len,
@@ -507,6 +722,495 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
 done:
     CLI_FREE_AND_SET_NULL(extents);
     return ret;
+}
+
+static cl_error_t udf_mark_icb_visited(udf_tree_context *tree, uint16_t map_index,
+                                       uint32_t block_number, bool *already_visited)
+{
+    size_t i;
+
+    if (tree == NULL || already_visited == NULL)
+        return CL_EARG;
+    *already_visited = false;
+
+    for (i = 0; i < tree->visited_count; i++) {
+        if (tree->visited[i].map_index == map_index &&
+            tree->visited[i].block_number == block_number) {
+            *already_visited = true;
+            return CL_SUCCESS;
+        }
+    }
+    if (tree->visited_count >= UDF_MAX_VISITED_ICBS) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF ICB traversal limit was exceeded");
+        return CL_EUNPACK;
+    }
+
+    tree->visited[tree->visited_count].map_index    = map_index;
+    tree->visited[tree->visited_count].block_number = block_number;
+    tree->visited_count++;
+    return CL_SUCCESS;
+}
+
+static cl_error_t udf_scan_icb(udf_tree_context *tree, uint16_t map_index,
+                               uint32_t block_number, bool directory_hint,
+                               FileIdentifierDescriptor *fid, size_t depth);
+
+static cl_error_t udf_validate_icb_extent(udf_tree_context *tree,
+                                          const long_ad *icb)
+{
+    uint32_t raw_length;
+    uint32_t extent_type;
+    uint32_t extent_length;
+    uint16_t map_index;
+
+    if (tree == NULL || icb == NULL)
+        return CL_EARG;
+
+    raw_length   = le32_to_host(icb->length);
+    extent_type  = raw_length >> 30;
+    extent_length = raw_length & UINT32_C(0x3fffffff);
+    map_index     = le16_to_host(icb->extentLocation.partitionReferenceNumber);
+    if (extent_type != 0) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF file identifier ICB extent type is unsupported");
+        return CL_EUNPACK;
+    }
+    if (extent_length != VOLUME_DESCRIPTOR_SIZE) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF file identifier ICB extent length is unsupported");
+        return CL_EUNPACK;
+    }
+    if (map_index >= tree->partition_count) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF file identifier ICB partition reference is invalid");
+        return CL_EPARSE;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t udf_scan_directory_block(udf_tree_context *tree,
+                                           uint32_t block_number, const uint8_t *block,
+                                           size_t block_length, size_t depth,
+                                           size_t *parent_count)
+{
+    size_t offset = 0;
+    cl_error_t ret;
+
+    while (offset < block_length) {
+        const FileIdentifierDescriptor *fid;
+        size_t fid_size;
+        tag_identifier tag_id;
+        uint8_t characteristics;
+        size_t remaining = block_length - offset;
+
+        ret = udf_checktimelimit(tree->ctx, "UDF directory traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            return ret;
+
+        if (remaining < sizeof(DescriptorTag)) {
+            while (offset < block_length) {
+                if (block[offset++] != 0) {
+                    cli_mark_scan_incomplete(tree->ctx, "UDF directory descriptor tail is malformed");
+                    return CL_EPARSE;
+                }
+            }
+            break;
+        }
+
+        fid = (const FileIdentifierDescriptor *)(block + offset);
+        tag_id = getDescriptorTagId((DescriptorTag *)fid);
+        if (tag_id == INVALID_DESCRIPTOR) {
+            while (offset < block_length) {
+                if (block[offset++] != 0) {
+                    cli_mark_scan_incomplete(tree->ctx, "UDF directory descriptor tail is malformed");
+                    return CL_EPARSE;
+                }
+            }
+            break;
+        }
+        if (tag_id != FILE_IDENTIFIER_DESCRIPTOR) {
+            cli_mark_scan_incomplete(tree->ctx, "UDF directory contains an unsupported descriptor");
+            return CL_EUNPACK;
+        }
+
+        if (!getFileIdentifierDescriptorSize(fid, &fid_size) ||
+            fid_size > remaining) {
+            cli_mark_scan_incomplete(tree->ctx, "UDF file-identifier descriptor exceeds its directory block");
+            return CL_EPARSE;
+        }
+        ret = udf_validate_partition_tag(tree->ctx, &fid->tag, fid_size, block_number);
+        if (ret != CL_SUCCESS)
+            return ret;
+        ret = udf_validate_icb_extent(tree, &fid->icb);
+        if (ret != CL_SUCCESS)
+            return ret;
+
+        characteristics = fid->characteristics;
+        if ((characteristics & 4U) != 0) {
+            if (parent_count != NULL)
+                (*parent_count)++;
+        } else {
+            if (fid->fileIdentifierLength == 0) {
+                cli_mark_scan_incomplete(tree->ctx, "UDF component file identifier is empty");
+                return CL_EPARSE;
+            }
+            ret = udf_scan_icb(tree, le16_to_host(fid->icb.extentLocation.partitionReferenceNumber),
+                               le32_to_host(fid->icb.extentLocation.blockNumber),
+                               isDirectory((FileIdentifierDescriptor *)fid),
+                               (FileIdentifierDescriptor *)fid, depth + 1);
+            if (ret != CL_SUCCESS)
+                return ret;
+        }
+
+        offset += fid_size;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t udf_scan_directory(udf_tree_context *tree,
+                                     const udf_runtime_partition *partition,
+                                     void *allocation_descriptor,
+                                     size_t allocation_descriptor_len, uint16_t icb_flags,
+                                     uint64_t information_length, size_t depth)
+{
+    udf_extent *extents = NULL;
+    size_t extent_count = 0;
+    size_t i;
+    uint8_t block[VOLUME_DESCRIPTOR_SIZE];
+    size_t parent_count = 0;
+    cl_error_t ret;
+
+    if (depth > UDF_MAX_DIRECTORY_DEPTH) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF directory traversal depth limit was exceeded");
+        return CL_EUNPACK;
+    }
+
+    ret = udf_collect_file_extents(tree->ctx, (PartitionDescriptor *)&partition->descriptor,
+                                   tree->logical_volume_descriptor, allocation_descriptor,
+                                   allocation_descriptor_len, icb_flags, information_length,
+                                   &extents, &extent_count);
+    if (ret != CL_SUCCESS)
+        return ret;
+    if (information_length == 0) {
+        CLI_FREE_AND_SET_NULL(extents);
+        return CL_SUCCESS;
+    }
+
+    ret = cli_checklimits("UDF", tree->ctx, information_length, 0, 0);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF directory extent exceeds configured scan limits");
+        goto done;
+    }
+
+    for (i = 0; i < extent_count; i++) {
+        size_t extent_offset = 0;
+        uint32_t partition_start = le32_to_host(partition->descriptor.partitionStartingLocation);
+        uint32_t logical_block_size = le32_to_host(tree->logical_volume_descriptor->logicalBlockSize);
+        uint64_t partition_offset = (uint64_t)partition_start * logical_block_size;
+        uint64_t relative_offset;
+
+        if (extents[i].offset < partition_offset ||
+            (uint64_t)extents[i].offset - partition_offset > UINT32_MAX * (uint64_t)logical_block_size) {
+            cli_mark_scan_incomplete(tree->ctx, "UDF directory extent location is invalid");
+            ret = CL_EPARSE;
+            goto done;
+        }
+        relative_offset = (uint64_t)extents[i].offset - partition_offset;
+        if (relative_offset % logical_block_size != 0) {
+            cli_mark_scan_incomplete(tree->ctx, "UDF directory extent is not logically aligned");
+            ret = CL_EPARSE;
+            goto done;
+        }
+        if (extents[i].length % logical_block_size != 0) {
+            cli_mark_scan_incomplete(tree->ctx, "UDF directory extent is not logically aligned");
+            ret = CL_EPARSE;
+            goto done;
+        }
+
+        while (extent_offset < extents[i].length) {
+            size_t block_length = MIN((size_t)logical_block_size, extents[i].length - extent_offset);
+            uint64_t block_number64 = relative_offset / logical_block_size +
+                                      (extent_offset / logical_block_size);
+
+            if (block_number64 > UINT32_MAX) {
+                cli_mark_scan_incomplete(tree->ctx, "UDF directory block number overflowed");
+                ret = CL_EFORMAT;
+                goto done;
+            }
+            memset(block, 0, sizeof(block));
+            if (block_length > sizeof(block) ||
+                fmap_readn_full(tree->ctx->fmap, block, extents[i].offset + extent_offset,
+                                block_length) != block_length) {
+                cli_mark_scan_incomplete(tree->ctx, "UDF directory extent could not be read completely");
+                ret = CL_EREAD;
+                goto done;
+            }
+            ret = udf_scan_directory_block(tree, (uint32_t)block_number64,
+                                           block, block_length, depth, &parent_count);
+            if (ret != CL_SUCCESS)
+                goto done;
+            extent_offset += block_length;
+        }
+    }
+
+    if (parent_count == 0) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF directory has no parent identifier");
+        ret = CL_EPARSE;
+        goto done;
+    }
+    if (parent_count != 1) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF directory has multiple parent identifiers");
+        ret = CL_EPARSE;
+        goto done;
+    }
+    ret = CL_SUCCESS;
+
+done:
+    CLI_FREE_AND_SET_NULL(extents);
+    return ret;
+}
+
+static cl_error_t udf_scan_icb(udf_tree_context *tree, uint16_t map_index,
+                               uint32_t block_number, bool directory_hint,
+                               FileIdentifierDescriptor *fid, size_t depth)
+{
+    uint8_t block[VOLUME_DESCRIPTOR_SIZE];
+    const FileEntryDescriptor *fed;
+    const udf_runtime_partition *partition;
+    void *allocation_descriptor;
+    size_t descriptor_size;
+    uint32_t allocation_descriptor_length;
+    uint16_t icb_flags;
+    bool already_visited;
+    tag_identifier tag_id;
+    cl_error_t ret;
+
+    if (tree == NULL || tree->ctx == NULL ||
+        map_index >= tree->partition_count)
+        return CL_EARG;
+    if (depth > UDF_MAX_DIRECTORY_DEPTH) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF directory traversal depth limit was exceeded");
+        return CL_EUNPACK;
+    }
+
+    ret = udf_mark_icb_visited(tree, map_index, block_number, &already_visited);
+    if (ret != CL_SUCCESS || already_visited)
+        return ret;
+    ret = udf_checktimelimit(tree->ctx, "UDF ICB traversal reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    partition = &tree->partitions[map_index];
+    ret = udf_copy_partition_block(tree, partition, block_number, block,
+                                   "UDF ICB could not be read completely");
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    tag_id = getDescriptorTagId((DescriptorTag *)block);
+    if (tag_id == EXTENDED_FILE_ENTRY_DESCRIPTOR) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF extended file entries are unsupported");
+        return CL_EUNPACK;
+    }
+    if (tag_id != FILE_ENTRY_DESCRIPTOR) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF ICB does not contain a file entry");
+        return CL_EPARSE;
+    }
+
+    fed = (const FileEntryDescriptor *)block;
+    if (!getFileEntryDescriptorSize(fed, &descriptor_size) ||
+        descriptor_size > VOLUME_DESCRIPTOR_SIZE) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF file-entry descriptor exceeds its logical block");
+        return CL_EPARSE;
+    }
+    ret = udf_validate_partition_tag(tree->ctx, &fed->tag, descriptor_size, block_number);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    if (directory_hint != (fed->icbTag.fileType == 4U)) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF file identifier directory type disagrees with its file entry");
+        return CL_EPARSE;
+    }
+    if (!directory_hint && fed->icbTag.fileType != 5U) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF ICB file type is unsupported");
+        return CL_EUNPACK;
+    }
+    allocation_descriptor_length = le32_to_host(fed->allocationDescLen);
+    if (allocation_descriptor_length > descriptor_size) {
+        cli_mark_scan_incomplete(tree->ctx, "UDF file-entry allocation descriptor length is invalid");
+        return CL_EPARSE;
+    }
+    allocation_descriptor = (uint8_t *)block + descriptor_size - allocation_descriptor_length;
+    icb_flags = le16_to_host(fed->icbTag.flags);
+
+    if (directory_hint) {
+        return udf_scan_directory(tree, partition,
+                                  allocation_descriptor, allocation_descriptor_length,
+                                  icb_flags, le64_to_host(fed->infoLength), depth);
+    }
+    ret = extractFile(tree->ctx, (PartitionDescriptor *)&partition->descriptor,
+                      tree->logical_volume_descriptor, allocation_descriptor,
+                      allocation_descriptor_length, icb_flags,
+                      le64_to_host(fed->infoLength), fid);
+    return ret;
+}
+
+static const udf_anchor_partition *udf_find_anchor_partition(const udf_anchor_volume *volume,
+                                                             uint16_t partition_number)
+{
+    size_t i;
+
+    for (i = 0; i < volume->partition_count; i++) {
+        if (volume->partitions[i].actual_partition_number == partition_number)
+            return &volume->partitions[i];
+    }
+    return NULL;
+}
+
+static cl_error_t udf_scan_anchor_tree(cli_ctx *ctx, const udf_anchor_volume *volume)
+{
+    udf_tree_context tree;
+    const LogicalVolumeDescriptor *lvd;
+    const uint8_t *map_data;
+    size_t map_table_length;
+    size_t map_count;
+    size_t map_offset;
+    size_t i;
+    long_ad fsd_extent;
+    uint32_t fsd_extent_type;
+    uint32_t fsd_extent_length;
+    uint16_t fsd_map_index;
+    uint32_t fsd_block;
+    uint8_t block[VOLUME_DESCRIPTOR_SIZE];
+    const FileSetDescriptor *fsd;
+    size_t fsd_descriptor_size = sizeof(FileSetDescriptor);
+    cl_error_t ret;
+
+    if (ctx == NULL || volume == NULL)
+        return CL_EARG;
+    lvd = (const LogicalVolumeDescriptor *)volume->logical_volume_descriptor;
+    if (le32_to_host(lvd->logicalBlockSize) != VOLUME_DESCRIPTOR_SIZE) {
+        cli_mark_scan_incomplete(ctx, "UDF logical block size is unsupported");
+        return CL_EUNPACK;
+    }
+
+    map_table_length = le32_to_host(lvd->mapTableLength);
+    map_count        = le32_to_host(lvd->numPartitionMaps);
+    map_offset       = offsetof(LogicalVolumeDescriptor, partitionMaps);
+    if (map_count == 0 || map_count > UDF_MAX_PARTITION_MAPS ||
+        map_table_length == 0 || map_table_length > VOLUME_DESCRIPTOR_SIZE - map_offset) {
+        cli_mark_scan_incomplete(ctx, "UDF partition map table is invalid");
+        return CL_EPARSE;
+    }
+    if (map_count > map_table_length / 2U) {
+        cli_mark_scan_incomplete(ctx, "UDF partition map count is invalid");
+        return CL_EPARSE;
+    }
+
+    memset(&tree, 0, sizeof(tree));
+    tree.ctx = ctx;
+    tree.logical_volume_descriptor = (LogicalVolumeDescriptor *)lvd;
+    map_data = (const uint8_t *)lvd + map_offset;
+    for (i = 0; i < map_count; i++) {
+        uint8_t map_type;
+        uint8_t map_length;
+        uint16_t map_volume_sequence;
+        uint16_t partition_number;
+        const udf_anchor_partition *source_partition;
+
+        if (map_table_length < 2) {
+            cli_mark_scan_incomplete(ctx, "UDF partition map table is truncated");
+            return CL_EPARSE;
+        }
+        map_type   = map_data[0];
+        map_length = map_data[1];
+        if (map_length < 2 || map_length > map_table_length) {
+            cli_mark_scan_incomplete(ctx, "UDF partition map length is invalid");
+            return CL_EPARSE;
+        }
+        if (map_type != 1 || map_length != 6) {
+            cli_mark_scan_incomplete(ctx, "UDF partition map type is unsupported");
+            return CL_EUNPACK;
+        }
+        if (map_length > map_table_length || map_data + map_length > (const uint8_t *)lvd + map_offset + map_table_length) {
+            cli_mark_scan_incomplete(ctx, "UDF partition map exceeds its table");
+            return CL_EPARSE;
+        }
+
+        partition_number = (uint16_t)map_data[4] | ((uint16_t)map_data[5] << 8);
+        map_volume_sequence = (uint16_t)map_data[2] | ((uint16_t)map_data[3] << 8);
+        source_partition = udf_find_anchor_partition(volume, partition_number);
+        if (source_partition == NULL) {
+            cli_mark_scan_incomplete(ctx, "UDF partition map has no matching partition descriptor");
+            return CL_EPARSE;
+        }
+        if (map_volume_sequence !=
+            (uint16_t)le32_to_host(source_partition->descriptor.volumeDescriptorSequenceNumber)) {
+            cli_mark_scan_incomplete(ctx, "UDF partition map volume sequence does not match its descriptor");
+            return CL_EPARSE;
+        }
+        memcpy(&tree.partitions[tree.partition_count].descriptor,
+               &source_partition->descriptor, sizeof(PartitionDescriptor));
+        tree.partitions[tree.partition_count].map_index =
+            (uint16_t)tree.partition_count;
+        tree.partitions[tree.partition_count].descriptor.partitionNumber =
+            (uint16_t)tree.partition_count;
+        tree.partition_count++;
+
+        map_data += map_length;
+        map_table_length -= map_length;
+    }
+    if (map_table_length != 0) {
+        cli_mark_scan_incomplete(ctx, "UDF partition map table has trailing bytes");
+        return CL_EPARSE;
+    }
+
+    memcpy(&fsd_extent, lvd->logicalVolumeContentsUse, sizeof(fsd_extent));
+    fsd_extent_type   = le32_to_host(fsd_extent.length) >> 30;
+    fsd_extent_length = le32_to_host(fsd_extent.length) & UINT32_C(0x3fffffff);
+    fsd_map_index     = le16_to_host(fsd_extent.extentLocation.partitionReferenceNumber);
+    fsd_block         = le32_to_host(fsd_extent.extentLocation.blockNumber);
+    if (fsd_extent_type != 0) {
+        cli_mark_scan_incomplete(ctx, "UDF file-set descriptor extent type is unsupported");
+        return CL_EUNPACK;
+    }
+    if (fsd_extent_length != VOLUME_DESCRIPTOR_SIZE ||
+        fsd_map_index >= tree.partition_count) {
+        cli_mark_scan_incomplete(ctx, "UDF fragmented file-set descriptor sequence is unsupported");
+        return CL_EPARSE;
+    }
+
+    ret = udf_copy_partition_block(&tree, &tree.partitions[fsd_map_index], fsd_block, block,
+                                   "UDF file-set descriptor could not be read completely");
+    if (ret != CL_SUCCESS)
+        return ret;
+    fsd = (const FileSetDescriptor *)block;
+    if (getDescriptorTagId((DescriptorTag *)block) != FILE_SET_DESCRIPTOR) {
+        cli_mark_scan_incomplete(ctx, "UDF file-set descriptor is missing or malformed");
+        return CL_EPARSE;
+    }
+    ret = udf_validate_partition_tag(ctx, &fsd->tag, fsd_descriptor_size, fsd_block);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    if ((le32_to_host(fsd->rootDirectoryICB.length) >> 30) != 0 ||
+        (le32_to_host(fsd->rootDirectoryICB.length) & UINT32_C(0x3fffffff)) != VOLUME_DESCRIPTOR_SIZE) {
+        cli_mark_scan_incomplete(ctx, "UDF root directory ICB extent is invalid");
+        return CL_EPARSE;
+    }
+    if (le32_to_host(fsd->nextExtent.length) != 0 ||
+        le32_to_host(fsd->nextExtent.extentLocation.blockNumber) != 0 ||
+        le16_to_host(fsd->nextExtent.extentLocation.partitionReferenceNumber) != 0) {
+        cli_mark_scan_incomplete(ctx, "UDF fragmented file-set descriptor sequence is unsupported");
+        return CL_EUNPACK;
+    }
+    if (le16_to_host(fsd->rootDirectoryICB.extentLocation.partitionReferenceNumber) >= tree.partition_count) {
+        cli_mark_scan_incomplete(ctx, "UDF root directory ICB partition reference is invalid");
+        return CL_EPARSE;
+    }
+
+    return udf_scan_icb(&tree,
+                        le16_to_host(fsd->rootDirectoryICB.extentLocation.partitionReferenceNumber),
+                        le32_to_host(fsd->rootDirectoryICB.extentLocation.blockNumber),
+                        true, NULL, 0);
 }
 
 static cl_error_t parseFileEntryDescriptor(cli_ctx *ctx, FileEntryDescriptor *fed, PartitionDescriptor *pPartitionDescriptor, LogicalVolumeDescriptor *pLogicalVolumeDescriptor, FileIdentifierDescriptor *fileIdentifierDescriptor)
@@ -644,17 +1348,16 @@ static cl_error_t udf_copy_descriptor_block(cli_ctx *ctx, size_t offset, uint8_t
     return CL_SUCCESS;
 }
 
-/* Walk an Anchor Volume Descriptor Pointer's main sequence. This is the
- * standards-based admission path for real UDF media. The existing linear
- * scanner remains below for the historical compact fixtures until the root
- * ICB/file-tree traversal is complete. */
+static cl_error_t udf_scan_anchor_tree(cli_ctx *ctx, const udf_anchor_volume *volume);
+
+/* Walk an Anchor Volume Descriptor Pointer's main sequence and, after
+ * validating its required metadata, scan the bounded root ICB tree. The
+ * historical linear scanner remains below for compact legacy fixtures. */
 static cl_error_t udf_scan_anchor_volume(cli_ctx *ctx, const size_t offset)
 {
     const size_t anchor_offset = 256U * VOLUME_DESCRIPTOR_SIZE;
     uint8_t block[VOLUME_DESCRIPTOR_SIZE];
-    PrimaryVolumeDescriptor pvd;
-    PartitionDescriptor pd;
-    LogicalVolumeDescriptor lvd;
+    udf_anchor_volume volume;
     size_t sequence_offset;
     size_t sequence_length;
     uint64_t sequence_offset64;
@@ -665,10 +1368,13 @@ static cl_error_t udf_scan_anchor_volume(cli_ctx *ctx, const size_t offset)
     bool have_pd  = false;
     bool have_lvd = false;
     bool have_terminator = false;
+    uint32_t lvd_sequence_number = 0;
     uint32_t main_extent_type;
     size_t cursor;
     size_t end;
     cl_error_t ret;
+
+    memset(&volume, 0, sizeof(volume));
 
     /* The file-type signature is defined at sector 16. If the caller found a
      * signature elsewhere, this path cannot safely reinterpret tag locations
@@ -734,21 +1440,45 @@ static cl_error_t udf_scan_anchor_volume(cli_ctx *ctx, const size_t offset)
         switch (tag_id) {
             case PRIMARY_VOLUME_DESCRIPTOR:
                 if (!have_pvd) {
-                    memcpy(&pvd, block, sizeof(pvd));
                     have_pvd = true;
                 }
                 break;
 
             case PARTITION_DESCRIPTOR:
-                if (!have_pd) {
-                    memcpy(&pd, block, sizeof(pd));
+                {
+                    uint16_t actual_partition_number = le16_to_host(((PartitionDescriptor *)block)->partitionNumber);
+                    uint32_t sequence_number = le32_to_host(((PartitionDescriptor *)block)->volumeDescriptorSequenceNumber);
+                    size_t partition_index;
+                    bool replaced = false;
+
+                    for (partition_index = 0; partition_index < volume.partition_count; partition_index++) {
+                        if (volume.partitions[partition_index].actual_partition_number == actual_partition_number) {
+                            if (sequence_number >= le32_to_host(volume.partitions[partition_index].descriptor.volumeDescriptorSequenceNumber))
+                                memcpy(&volume.partitions[partition_index].descriptor, block, sizeof(PartitionDescriptor));
+                            replaced = true;
+                            break;
+                        }
+                    }
+                    if (!replaced) {
+                        if (volume.partition_count >= UDF_MAX_PARTITION_MAPS) {
+                            cli_mark_scan_incomplete(ctx, "UDF partition descriptor table is too large");
+                            return CL_EUNPACK;
+                        }
+                        memcpy(&volume.partitions[volume.partition_count].descriptor, block,
+                               sizeof(PartitionDescriptor));
+                        volume.partitions[volume.partition_count].actual_partition_number = actual_partition_number;
+                        volume.partition_count++;
+                    }
                     have_pd = true;
                 }
                 break;
 
             case LOGICAL_VOLUME_DESCRIPTOR:
-                if (!have_lvd) {
-                    memcpy(&lvd, block, sizeof(lvd));
+                if (!have_lvd ||
+                    le32_to_host(((LogicalVolumeDescriptor *)block)->volumeDescriptorSequenceNumber) >=
+                        lvd_sequence_number) {
+                    memcpy(volume.logical_volume_descriptor, block, VOLUME_DESCRIPTOR_SIZE);
+                    lvd_sequence_number = le32_to_host(((LogicalVolumeDescriptor *)block)->volumeDescriptorSequenceNumber);
                     have_lvd = true;
                 }
                 break;
@@ -781,11 +1511,7 @@ static cl_error_t udf_scan_anchor_volume(cli_ctx *ctx, const size_t offset)
         return CL_EPARSE;
     }
 
-    (void)pvd;
-    (void)pd;
-    (void)lvd;
-    cli_mark_scan_incomplete(ctx, "UDF anchor-driven directory traversal is unsupported");
-    return CL_EUNPACK;
+    return udf_scan_anchor_tree(ctx, &volume);
 }
 
 /* If this function fails, idx will not be updated */

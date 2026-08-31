@@ -2227,15 +2227,27 @@ contains libclamav/udf.c 'UDF file extent is outside the declared partition'
 contains libclamav/udf.c 'UDF extended allocation descriptor transformation is unsupported'
 contains libclamav/udf.c 'writeWholeFile: UDF extent lengths did not match the aggregate length'
 contains libclamav/udf.c 'static cl_error_t udf_scan_anchor_volume'
+contains libclamav/udf.c 'static cl_error_t udf_scan_anchor_tree'
+contains libclamav/udf.c 'static cl_error_t udf_scan_icb'
+contains libclamav/udf.c 'static cl_error_t udf_scan_directory'
+contains libclamav/udf.c 'static cl_error_t udf_validate_icb_extent'
 contains libclamav/udf.c 'VOLUME_DESCRIPTOR_POINTER'
 contains libclamav/udf.c 'UDF main descriptor sequence extent type is unsupported'
 contains libclamav/udf.c 'UDF descriptor sequence pointers are unsupported'
 contains libclamav/udf.c 'UDF main descriptor sequence has no terminator'
-contains libclamav/udf.c 'UDF anchor-driven directory traversal is unsupported'
+contains libclamav/udf.c 'UDF file identifier ICB extent type is unsupported'
+contains libclamav/udf.c 'UDF file identifier ICB extent length is unsupported'
+contains libclamav/udf.c 'UDF cross-partition allocation descriptor is unsupported'
+contains libclamav/udf.c 'UDF partition map volume sequence does not match its descriptor'
+contains libclamav/udf.c 'UDF fragmented file-set descriptor sequence is unsupported'
+contains libclamav/udf.c 'fmap_readn_full(tree->ctx->fmap'
 contains unit_tests/check_clamav.c 'test_udf_put_le32(data + anchor_offset'
 contains unit_tests/check_clamav.c 'UDF main descriptor sequence extent type is unsupported'
 contains unit_tests/check_clamav.c 'UDF descriptor sequence pointers are unsupported'
+contains unit_tests/check_clamav.c 'incomplete tree metadata explicitly'
+contains unit_tests/check_clamav.c 'characteristics)] = 1'
 contains docs/largefile-capabilities.tsv 'udf-anchor-sequence-admission'
+contains docs/largefile-capabilities.tsv 'udf-root-icb-directory-traversal'
 contains docs/large-file-support.md 'UDF extended file-entry descriptors are a separate intentional unsupported'
 contains docs/large-file-support.md 'UDF fragmented-file extraction'
 contains docs/large-file-support.md 'UDF logical information-length accounting'
@@ -2286,7 +2298,7 @@ contains unit_tests/check_clamav.c 'ECMA-167 permits omitting the descriptor CRC
 contains unit_tests/check_clamav.c 'bad UDF tag checksum reached child alert'
 contains docs/largefile-capabilities.tsv 'udf-descriptor-tag-integrity'
 udf_descriptor_tag_validation_count=$(grep -F -c -- 'udf_validate_descriptor_tag(ctx' "$root/libclamav/udf.c" || true)
-if [ "$udf_descriptor_tag_validation_count" -ne 14 ]; then
+if [ "$udf_descriptor_tag_validation_count" -ne 15 ]; then
     echo 'large-file source guard failed: every consumed UDF descriptor family must retain tag validation' >&2
     exit 1
 fi

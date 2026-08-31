@@ -3,23 +3,28 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
-## UDF anchored descriptor-sequence admission — 2026-08-31
+## UDF anchored root-ICB traversal — 2026-08-31
 
-The UDF ingress now uses the fixed VRS signature to probe the
-standards-defined Anchor Volume Descriptor Pointer at logical sector 256. A
-confirmed anchor is copied through a bounded read, its tag and extent status
-are validated, and each block in the declared main descriptor sequence is
-validated for tag integrity and physical location. The walker accepts the
-defined PVD/PD/LVD/IUVD/USD classes, requires a terminator and the required
-volume descriptors, and returns explicit unsupported state for descriptor
-sequence pointers. A production-linked GCC runner with the current UDF object
-and a registered unit fixture cover a valid anchored sequence plus malformed
-extent-status and pointer cases. The current path returns sticky
-CL_EUNPACK/non-cacheable state until root-ICB traversal is available;
-reserve-sequence selection, FSD/FID resolution, authoritative directory
-traversal, complete corpus, certified Linux x86-64, production-CVD/service,
-materialized-large-file, Sonic1, and final release qualification remain
-required.
+The UDF ingress uses the fixed VRS signature to probe the standards-defined
+Anchor Volume Descriptor Pointer at logical sector 256. A confirmed anchor is
+copied through bounded reads; its tag, extent status, main sequence, selected
+LVD/PD metadata, type-1 partition map, FSD, root ICB, and partition-relative
+descriptor locations are validated. The bounded tree walker follows parent
+and descendant FIDs, scans hidden files, detects repeated ICBs, applies shared
+limits and deadlines, and extracts regular child files through the existing
+nested scanner. A production-linked GCC runner and a UDF-sanitized ASan/UBSan
+runner with leak detection reach the exact child marker; malformed main
+extent, descriptor-pointer, map, descriptor-integrity, and read states remain
+sticky, fail-visible, and non-cacheable.
+
+The bounded path currently supports the fixed VRS/sector-256 anchor, the main
+sequence, type-1 maps, 2,048-byte logical blocks, one contiguous FSD, one FE
+root block, one-block FEs, and same-partition allocation descriptors. Reserve
+sequence/VDP continuation, continued or variable FSDs, EFE, symbolic links,
+metadata/VAT/sparable/mapped partitions, cross-partition allocation
+translation, complete UDF corpus, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
 
 ## UDF descriptor-tag integrity admission — 2026-08-30
 

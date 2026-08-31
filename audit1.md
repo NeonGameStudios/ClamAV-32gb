@@ -1,25 +1,31 @@
 # Independent read-only audit of audit.md
 
-## UDF anchored descriptor-sequence admission — 2026-08-31
+## UDF anchored root-ICB traversal — 2026-08-31
 
-The UDF scanner previously entered only a compact linear fixture path after
-the fixed VRS signature and had no authoritative relationship to the Anchor
-Volume Descriptor Pointer. It now probes the standards-defined anchor at
-logical sector 256, validates the anchor and every descriptor in its declared
-main sequence, checks extent status bits and map bounds, recognizes repeated
-PVD/PD/LVD/IUVD/USD records, requires a terminating descriptor and the
-required PVD/PD/LVD set, and makes unsupported Volume Descriptor Pointers
-fail-visible instead of falling through to the legacy scanner. The registered
-standards-shaped fixture is linked against the production static archive with
-the current UDF object and returns CL_EUNPACK with the exact
-UDF anchor-driven directory traversal is unsupported reason and cache taint;
-the malformed main-extent-type and sequence-pointer cases return their exact
-unsupported reasons. Current UDF and full unit-source GCC compilation pass.
-This is bounded anchor/sequence admission, not complete UDF qualification:
-reserve-sequence selection, FSD/FID location, root-ICB and descendant
-directory traversal, complete corpus, certified Linux x86-64,
-production-CVD/service, materialized-large-file, Sonic1, and final
-parser/release qualification remain open.
+The UDF scanner now follows a validated Anchor Volume Descriptor Pointer main
+sequence into the Logical Volume Descriptor's type-1 partition map, resolves
+the File Set Descriptor, and traverses the root directory ICB through parent
+and descendant File Identifier Descriptors. File Entry and FID descriptor tags,
+partition-relative locations, allocation lengths, logical alignment, declared
+information lengths, ICB references, hidden-file characteristics, cycle/visit
+limits, directory-depth limits, shared scan limits, and read failures are
+checked before content extraction. Regular child files continue through the
+existing nested scanner, so the registered standards-shaped fixture reaches
+the exact `Udf.File.Marker.UNOFFICIAL` child even when its FID is hidden; the
+production-linked GCC runner and UDF-sanitized ASan/UBSan runner with leak
+detection both pass. The fixture also retains exact fail-visible cases for a
+non-recorded main extent, a Volume Descriptor Pointer, malformed map metadata,
+and descriptor integrity failures.
+
+This is bounded UDF tree qualification, not complete UDF qualification. The
+current path intentionally limits itself to the fixed VRS/sector-256 anchor,
+the main sequence, one selected type-1 partition map per referenced partition,
+2,048-byte logical blocks, one contiguous FSD descriptor, one FE root block,
+one-block FEs, same-partition allocation descriptors, and no FSD continuation,
+EFE, symbolic-link, metadata-partition, VAT, sparable, or mapped-partition
+translation. Reserve-sequence/VDP handling, full descriptor and filesystem
+corpus, certified Linux x86-64, production-CVD/service, materialized-large-
+file, Sonic1, resource, and final parser/release qualification remain open.
 
 ## UDF descriptor-tag integrity admission — 2026-08-30
 

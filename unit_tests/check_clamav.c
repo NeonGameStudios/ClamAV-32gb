@@ -43173,6 +43173,8 @@ static void test_udf_finalize_descriptor_tags(uint8_t *data, size_t base,
 
         if (base / VOLUME_DESCRIPTOR_SIZE + block == 256U)
             tag_location = 256U;
+        else if (tag_id >= 256 && block >= 16)
+            tag_location = (uint32_t)(block - 16);
         else if (block <= 11)
             tag_location = (uint32_t)(base / VOLUME_DESCRIPTOR_SIZE + block);
         test_udf_finalize_tag(descriptor, descriptor_size, tag_location);
@@ -43754,8 +43756,8 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
 
     /* A standards-shaped volume descriptor sequence is identified by an
      * anchor at logical sector 256, not by the compact fixture's linear
-     * descriptor run. The sequence walker must admit and classify it before
-     * the not-yet-implemented root-ICB traversal. */
+     * descriptor run. The sequence walker must admit it and then report the
+     * incomplete tree metadata explicitly. */
     anchor_offset = base + ((256U - (base / VOLUME_DESCRIPTOR_SIZE)) * VOLUME_DESCRIPTOR_SIZE);
     memset(data + anchor_offset, 0, VOLUME_DESCRIPTOR_SIZE);
     test_udf_put_le16(data + anchor_offset + offsetof(DescriptorTag, tagId), UDF_TEST_ANCHOR);
@@ -43772,9 +43774,9 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     ck_assert_ptr_nonnull(map);
     test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
-    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF anchor-driven directory traversal is unsupported");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF partition map table is invalid");
     ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
 
@@ -43815,6 +43817,137 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor sequence pointers are unsupported");
     ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    /* Resolve the LVD's type-1 partition map and File Set Descriptor, then
+     * walk the root directory's parent and child FIDs to an exact marker. */
+    memset(data, 0, UDF_TEST_SIZE);
+    test_udf_set_generic_identifiers(data, base);
+    data[base + (3 * VOLUME_DESCRIPTOR_SIZE)] = UDF_TEST_PRIMARY & 0xff;
+    data[base + (3 * VOLUME_DESCRIPTOR_SIZE) + 1] = UDF_TEST_PRIMARY >> 8;
+    data[base + (4 * VOLUME_DESCRIPTOR_SIZE)] = UDF_TEST_IMPLEMENTATION_USE & 0xff;
+    data[base + (4 * VOLUME_DESCRIPTOR_SIZE) + 1] = UDF_TEST_IMPLEMENTATION_USE >> 8;
+    data[base + (5 * VOLUME_DESCRIPTOR_SIZE)] = UDF_TEST_LOGICAL & 0xff;
+    data[base + (5 * VOLUME_DESCRIPTOR_SIZE) + 1] = UDF_TEST_LOGICAL >> 8;
+    data[base + (6 * VOLUME_DESCRIPTOR_SIZE)] = UDF_TEST_PARTITION & 0xff;
+    data[base + (6 * VOLUME_DESCRIPTOR_SIZE) + 1] = UDF_TEST_PARTITION >> 8;
+    data[base + (7 * VOLUME_DESCRIPTOR_SIZE)] = UDF_TEST_UNALLOCATED & 0xff;
+    data[base + (7 * VOLUME_DESCRIPTOR_SIZE) + 1] = UDF_TEST_UNALLOCATED >> 8;
+    data[base + (8 * VOLUME_DESCRIPTOR_SIZE)] = UDF_TEST_TERMINATING & 0xff;
+    data[base + (8 * VOLUME_DESCRIPTOR_SIZE) + 1] = UDF_TEST_TERMINATING >> 8;
+
+    lvd_offset = base + (5 * VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + lvd_offset + offsetof(LogicalVolumeDescriptor, volumeDescriptorSequenceNumber), 1);
+    test_udf_put_le32(data + lvd_offset + offsetof(LogicalVolumeDescriptor, logicalBlockSize),
+                      VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + lvd_offset + offsetof(LogicalVolumeDescriptor, logicalVolumeContentsUse) +
+                          offsetof(long_ad, length), VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + lvd_offset + offsetof(LogicalVolumeDescriptor, logicalVolumeContentsUse) +
+                          offsetof(long_ad, extentLocation) + offsetof(lb_addr, blockNumber), 1);
+    test_udf_put_le16(data + lvd_offset + offsetof(LogicalVolumeDescriptor, logicalVolumeContentsUse) +
+                          offsetof(long_ad, extentLocation) + offsetof(lb_addr, partitionReferenceNumber), 0);
+    test_udf_put_le32(data + lvd_offset + offsetof(LogicalVolumeDescriptor, mapTableLength), 6);
+    test_udf_put_le32(data + lvd_offset + offsetof(LogicalVolumeDescriptor, numPartitionMaps), 1);
+    data[lvd_offset + offsetof(LogicalVolumeDescriptor, partitionMaps)] = 1;
+    data[lvd_offset + offsetof(LogicalVolumeDescriptor, partitionMaps) + 1] = 6;
+    test_udf_put_le16(data + lvd_offset + offsetof(LogicalVolumeDescriptor, partitionMaps) + 2, 1);
+    test_udf_put_le16(data + lvd_offset + offsetof(LogicalVolumeDescriptor, partitionMaps) + 4, 0);
+
+    pd_offset = base + (6 * VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + pd_offset + offsetof(PartitionDescriptor, volumeDescriptorSequenceNumber), 1);
+    test_udf_put_le16(data + pd_offset + offsetof(PartitionDescriptor, partitionNumber), 0);
+    test_udf_put_le32(data + pd_offset + offsetof(PartitionDescriptor, partitionStartingLocation), 32);
+    test_udf_put_le32(data + pd_offset + offsetof(PartitionDescriptor, partitionLength), 10);
+
+    anchor_offset = base + ((256U - (base / VOLUME_DESCRIPTOR_SIZE)) * VOLUME_DESCRIPTOR_SIZE);
+    memset(data + anchor_offset, 0, VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le16(data + anchor_offset + offsetof(DescriptorTag, tagId), UDF_TEST_ANCHOR);
+    test_udf_put_le32(data + anchor_offset +
+                          offsetof(AnchorVolumeDescriptorPointer, mainVolumeDescriptorSequence) +
+                          offsetof(extent_ad, extentLength),
+                      6U * VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + anchor_offset +
+                          offsetof(AnchorVolumeDescriptorPointer, mainVolumeDescriptorSequence) +
+                          offsetof(extent_ad, extentLocation),
+                      19);
+
+    {
+        size_t fsd_offset = base + (17 * VOLUME_DESCRIPTOR_SIZE);
+        size_t root_fed_offset = base + (18 * VOLUME_DESCRIPTOR_SIZE);
+        size_t directory_offset = base + (19 * VOLUME_DESCRIPTOR_SIZE);
+        size_t child_fed_offset = base + (20 * VOLUME_DESCRIPTOR_SIZE);
+        size_t child_payload_offset = base + (21 * VOLUME_DESCRIPTOR_SIZE);
+        size_t child_fid_offset = directory_offset + (FILE_IDENTIFIER_DESCRIPTOR_SIZE_KNOWN + 2);
+        size_t allocation_descriptor_offset;
+
+        test_udf_put_le16(data + fsd_offset + offsetof(DescriptorTag, tagId), UDF_TEST_FILE_SET);
+        test_udf_put_le32(data + fsd_offset + offsetof(FileSetDescriptor, rootDirectoryICB) +
+                              offsetof(long_ad, length), VOLUME_DESCRIPTOR_SIZE);
+        test_udf_put_le32(data + fsd_offset + offsetof(FileSetDescriptor, rootDirectoryICB) +
+                              offsetof(long_ad, extentLocation) + offsetof(lb_addr, blockNumber), 2);
+        test_udf_put_le16(data + fsd_offset + offsetof(FileSetDescriptor, rootDirectoryICB) +
+                              offsetof(long_ad, extentLocation) + offsetof(lb_addr, partitionReferenceNumber), 0);
+
+        test_udf_put_le16(data + root_fed_offset + offsetof(DescriptorTag, tagId), UDF_TEST_FILE_ENTRY);
+        test_udf_put_le32(data + root_fed_offset + offsetof(DescriptorTag, tagLocation), 2);
+        data[root_fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, fileType)] = 4;
+        test_udf_put_le64(data + root_fed_offset + offsetof(FileEntryDescriptor, infoLength),
+                          VOLUME_DESCRIPTOR_SIZE);
+        test_udf_put_le32(data + root_fed_offset + offsetof(FileEntryDescriptor, allocationDescLen),
+                          sizeof(short_ad));
+        allocation_descriptor_offset = root_fed_offset + offsetof(FileEntryDescriptor, rest);
+        test_udf_put_le32(data + allocation_descriptor_offset + offsetof(short_ad, length),
+                          VOLUME_DESCRIPTOR_SIZE);
+        test_udf_put_le32(data + allocation_descriptor_offset + offsetof(short_ad, position), 3);
+
+        test_udf_put_le16(data + directory_offset + offsetof(DescriptorTag, tagId), UDF_TEST_FILE_IDENTIFIER);
+        data[directory_offset + offsetof(FileIdentifierDescriptor, characteristics)] = 4;
+        test_udf_put_le32(data + directory_offset + offsetof(FileIdentifierDescriptor, icb) +
+                              offsetof(long_ad, length), VOLUME_DESCRIPTOR_SIZE);
+        test_udf_put_le32(data + directory_offset + offsetof(FileIdentifierDescriptor, icb) +
+                              offsetof(long_ad, extentLocation) + offsetof(lb_addr, blockNumber), 2);
+        test_udf_put_le16(data + directory_offset + offsetof(FileIdentifierDescriptor, icb) +
+                              offsetof(long_ad, extentLocation) + offsetof(lb_addr, partitionReferenceNumber), 0);
+        test_udf_put_le16(data + directory_offset + offsetof(FileIdentifierDescriptor, implementationLength), 0);
+
+        test_udf_put_le16(data + child_fid_offset + offsetof(DescriptorTag, tagId), UDF_TEST_FILE_IDENTIFIER);
+        data[child_fid_offset + offsetof(FileIdentifierDescriptor, characteristics)] = 1;
+        data[child_fid_offset + offsetof(FileIdentifierDescriptor, fileIdentifierLength)] = 1;
+        test_udf_put_le32(data + child_fid_offset + offsetof(FileIdentifierDescriptor, icb) +
+                              offsetof(long_ad, length), VOLUME_DESCRIPTOR_SIZE);
+        test_udf_put_le32(data + child_fid_offset + offsetof(FileIdentifierDescriptor, icb) +
+                              offsetof(long_ad, extentLocation) + offsetof(lb_addr, blockNumber), 4);
+        test_udf_put_le16(data + child_fid_offset + offsetof(FileIdentifierDescriptor, icb) +
+                              offsetof(long_ad, extentLocation) + offsetof(lb_addr, partitionReferenceNumber), 0);
+        test_udf_put_le16(data + child_fid_offset + offsetof(FileIdentifierDescriptor, implementationLength), 0);
+        data[child_fid_offset + offsetof(FileIdentifierDescriptor, rest)] = 'x';
+
+        test_udf_put_le16(data + child_fed_offset + offsetof(DescriptorTag, tagId), UDF_TEST_FILE_ENTRY);
+        test_udf_put_le32(data + child_fed_offset + offsetof(DescriptorTag, tagLocation), 4);
+        data[child_fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, fileType)] = 5;
+        test_udf_put_le64(data + child_fed_offset + offsetof(FileEntryDescriptor, infoLength), 3);
+        test_udf_put_le32(data + child_fed_offset + offsetof(FileEntryDescriptor, allocationDescLen),
+                          sizeof(short_ad));
+        allocation_descriptor_offset = child_fed_offset + offsetof(FileEntryDescriptor, rest);
+        test_udf_put_le32(data + allocation_descriptor_offset + offsetof(short_ad, length), 3);
+        test_udf_put_le32(data + allocation_descriptor_offset + offsetof(short_ad, position), 5);
+        memcpy(data + child_payload_offset, "UDF", 3);
+    }
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    test_udf_finalize_tag(data + anchor_offset, sizeof(AnchorVolumeDescriptorPointer), 256);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    last_virus = cli_get_last_virus_str(&ctx);
+    ck_assert_str_eq(last_virus, "Udf.File.Marker.UNOFFICIAL");
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    if (layers[0].evidence != NULL) {
+        evidence_free(layers[0].evidence);
+        layers[0].evidence = NULL;
+    }
     cl_fmap_close(map);
 
     cl_engine_free(scan_engine);
