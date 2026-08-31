@@ -34,6 +34,21 @@ installed. Complete Rust-module sanitizer evidence, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
+## BinHex focused current-source corpus refresh — 2026-08-31
+
+The canonical BinHex parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. The repository CMake target materialized
+`clam.exe.binhex` from its checked-in XOR fixture. The focused `binhex_map`
+TCase passes 13/13, covering malformed header/data/resource boundaries,
+timeouts, temporary quota, cleanup, encoded-input read failure, and the
+materialized nested-child corpus; the embedded `mail` TCase also passes 13/13.
+
+This refresh confirms current-source direct and embedded BinHex evidence, not
+final BinHex qualification. Complete encoded-document corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, and final parser/release qualification remain required.
+
 ## Binary-data dispatch raw-matcher refresh — 2026-08-31
 
 The canonical scanner and unit-test sources were transferred into the existing

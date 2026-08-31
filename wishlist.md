@@ -9455,6 +9455,18 @@ qualification as required evidence.
   materialized-large-file, Sonic1 resource, and final parser/release
   qualification.
 
+## BinHex focused current-source corpus refresh — 2026-08-31
+
+- Retain canonical/container SHA-256 equality for the BinHex parser, header,
+  scanner, and unit-test source, and materialize `clam.exe.binhex` only
+  through the repository CMake XOR-fixture target.
+- Retain the refreshed production-linked GCC evidence: `binhex_map` passes
+  13/13 across direct failure/limit/cleanup and corpus cases; embedded `mail`
+  passes 13/13.
+- Complete encoded-document corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and final
+  parser/release qualification.
+
 ## Binary-data dispatch raw-matcher refresh — 2026-08-31
 
 - Retain canonical/container SHA-256 equality for the scanner and unit-test
