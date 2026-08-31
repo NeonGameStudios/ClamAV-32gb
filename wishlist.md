@@ -70,6 +70,18 @@ Sonic1, resource, and final qualification remain required.
   x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
   and final parser/release qualification remain required.
 
+## Current ARJ production-linked rerun — 2026-08-31
+
+- Retain current-source production-linked GCC evidence at `arj` 11/11,
+  `arj_compressed` 2/2, `arj_map` 7/7, and `arjsfx` 4/4, including the
+  materialized `clam.arj` nested-MZP corpus detection.
+- Keep compressed terminal padding bounded to one 16-bit decoder window and
+  require the in-map four-byte member CRC trailer; missing trailers and
+  further refills must remain fail-visible `CL_EFORMAT`. Full ARJ/ARJ-SFX
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final qualification remain
+  required.
+
 ## Current OLE2/XLM production-linked rerun — 2026-08-31
 
 - Keep the sector-bound and timeout fixtures aligned with the entry

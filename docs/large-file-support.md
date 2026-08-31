@@ -80,6 +80,18 @@ unqualified. Sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release evidence
 remain open.
 
+## Current ARJ production-linked rerun — 2026-08-31
+
+The ARJ compressed decoder now permits at most one 16-bit decoder-window of
+synthetic zero padding after the declared compressed payload, and only when
+the in-map four-byte member CRC trailer is present; a missing trailer or a
+third refill remains `CL_EFORMAT`. The current-source production-linked GCC
+harness passes `arj` 11/11, `arj_compressed` 2/2, `arj_map` 7/7, and `arjsfx`
+4/4, including the materialized `clam.arj` nested-MZP corpus detection and
+truncated compressed-member regression. Full ARJ/ARJ-SFX corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain open.
+
 ## Current OLE2/XLM production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness now passes `ole2` 18/18,

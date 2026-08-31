@@ -5401,53 +5401,54 @@ fixed-width-integer	libclamav/udf.h	96	    uint16_t serialNumber;
 fixed-width-integer	libclamav/udf.h	97	    uint16_t descriptorCRC;
 fixed-width-integer	libclamav/udf.h	98	    uint16_t descriptorCRCLength;
 fixed-width-integer	libclamav/udf.h	99	    uint32_t tagLocation;
-fixed-width-integer	libclamav/unarj.c	1043	    uint16_t header_size, count;
-fixed-width-integer	libclamav/unarj.c	1044	    uint16_t count_wire;
-fixed-width-integer	libclamav/unarj.c	117	    uint16_t header_size;
-fixed-width-integer	libclamav/unarj.c	1218	    uint16_t header_size, count;
-fixed-width-integer	libclamav/unarj.c	1219	    uint16_t count_wire;
-fixed-width-integer	libclamav/unarj.c	200	    uint32_t time_created __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	201	    uint32_t time_modified __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	202	    uint32_t archive_size __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	203	    uint32_t sec_env_file_position __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	204	    uint16_t entryname_pos __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	205	    uint16_t sec_trail_size __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	206	    uint16_t host_data __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	218	    uint32_t time_modified __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	219	    uint32_t comp_size __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	220	    uint32_t orig_size __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	221	    uint32_t orig_crc __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	222	    uint16_t entryname_pos __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	223	    uint16_t file_mode __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	224	    uint16_t host_data __attribute__((packed));
-fixed-width-integer	libclamav/unarj.c	242	    uint16_t blocksize;
-fixed-width-integer	libclamav/unarj.c	243	    uint16_t bit_buf;
-fixed-width-integer	libclamav/unarj.c	245	    uint32_t comp_size;
-fixed-width-integer	libclamav/unarj.c	246	    int16_t getlen, getbuf;
-fixed-width-integer	libclamav/unarj.c	247	    uint16_t left[2 * NC - 1];
-fixed-width-integer	libclamav/unarj.c	248	    uint16_t right[2 * NC - 1];
-fixed-width-integer	libclamav/unarj.c	250	    uint16_t c_table[CTABLESIZE];
-fixed-width-integer	libclamav/unarj.c	253	    uint16_t pt_table[PTABLESIZE];
-fixed-width-integer	libclamav/unarj.c	268	    if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX) {
-fixed-width-integer	libclamav/unarj.c	272	    decode_data->bit_buf = (((uint64_t)decode_data->bit_buf) << n) & 0xFFFF;
-fixed-width-integer	libclamav/unarj.c	351	    metadata->crc = (uint32_t)crc32(metadata->crc, data, (uInt)length);
-fixed-width-integer	libclamav/unarj.c	616	static uint16_t decode_c(arj_decode_t *decode_data)
-fixed-width-integer	libclamav/unarj.c	618	    uint16_t j, mask;
-fixed-width-integer	libclamav/unarj.c	655	static uint16_t decode_p(arj_decode_t *decode_data)
-fixed-width-integer	libclamav/unarj.c	696	    uint32_t count = 0, out_ptr = 0;
-fixed-width-integer	libclamav/unarj.c	697	    int16_t chr, i, j;
-fixed-width-integer	libclamav/unarj.c	738	            if (j < 0 || (uint32_t)j > metadata->orig_size - count) {
-fixed-width-integer	libclamav/unarj.c	753	            if (out_ptr > (uint32_t)i && out_ptr < DDICSIZ - MAXMATCH - 1) {
-fixed-width-integer	libclamav/unarj.c	822	        c = (uint16_t)dd->getbuf >> (CODE_BIT - l); \
-fixed-width-integer	libclamav/unarj.c	826	static uint16_t decode_ptr(arj_decode_t *decode_data)
-fixed-width-integer	libclamav/unarj.c	828	    uint16_t c, width, plus, pwr;
-fixed-width-integer	libclamav/unarj.c	847	static uint16_t decode_len(arj_decode_t *decode_data)
-fixed-width-integer	libclamav/unarj.c	849	    uint16_t c, width, plus, pwr;
-fixed-width-integer	libclamav/unarj.c	873	    uint32_t count = 0, out_ptr = 0;
-fixed-width-integer	libclamav/unarj.c	874	    int16_t chr, i, j, pos;
-fixed-width-integer	libclamav/unarj.c	929	            if (j < 0 || (uint32_t)j > metadata->orig_size - count) {
-fixed-width-integer	libclamav/unarj.c	982	static cl_error_t arj_unstore(arj_metadata_t *metadata, int ofd, uint32_t len)
-fixed-width-integer	libclamav/unarj.c	985	    uint32_t rem;
+fixed-width-integer	libclamav/unarj.c	1051	    uint16_t header_size, count;
+fixed-width-integer	libclamav/unarj.c	1052	    uint16_t count_wire;
+fixed-width-integer	libclamav/unarj.c	118	    uint16_t header_size;
+fixed-width-integer	libclamav/unarj.c	1226	    uint16_t header_size, count;
+fixed-width-integer	libclamav/unarj.c	1227	    uint16_t count_wire;
+fixed-width-integer	libclamav/unarj.c	201	    uint32_t time_created __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	202	    uint32_t time_modified __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	203	    uint32_t archive_size __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	204	    uint32_t sec_env_file_position __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	205	    uint16_t entryname_pos __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	206	    uint16_t sec_trail_size __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	207	    uint16_t host_data __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	219	    uint32_t time_modified __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	220	    uint32_t comp_size __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	221	    uint32_t orig_size __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	222	    uint32_t orig_crc __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	223	    uint16_t entryname_pos __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	224	    uint16_t file_mode __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	225	    uint16_t host_data __attribute__((packed));
+fixed-width-integer	libclamav/unarj.c	243	    uint16_t blocksize;
+fixed-width-integer	libclamav/unarj.c	244	    uint16_t bit_buf;
+fixed-width-integer	libclamav/unarj.c	246	    uint32_t comp_size;
+fixed-width-integer	libclamav/unarj.c	247	    int16_t getlen, getbuf;
+fixed-width-integer	libclamav/unarj.c	248	    uint16_t left[2 * NC - 1];
+fixed-width-integer	libclamav/unarj.c	249	    uint16_t right[2 * NC - 1];
+fixed-width-integer	libclamav/unarj.c	251	    uint16_t c_table[CTABLESIZE];
+fixed-width-integer	libclamav/unarj.c	254	    uint16_t pt_table[PTABLESIZE];
+fixed-width-integer	libclamav/unarj.c	270	    if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX) {
+fixed-width-integer	libclamav/unarj.c	274	    decode_data->bit_buf = (((uint64_t)decode_data->bit_buf) << n) & 0xFFFF;
+fixed-width-integer	libclamav/unarj.c	306	                decode_data->map->len - decode_data->offset < sizeof(uint32_t) ||
+fixed-width-integer	libclamav/unarj.c	359	    metadata->crc = (uint32_t)crc32(metadata->crc, data, (uInt)length);
+fixed-width-integer	libclamav/unarj.c	624	static uint16_t decode_c(arj_decode_t *decode_data)
+fixed-width-integer	libclamav/unarj.c	626	    uint16_t j, mask;
+fixed-width-integer	libclamav/unarj.c	663	static uint16_t decode_p(arj_decode_t *decode_data)
+fixed-width-integer	libclamav/unarj.c	704	    uint32_t count = 0, out_ptr = 0;
+fixed-width-integer	libclamav/unarj.c	705	    int16_t chr, i, j;
+fixed-width-integer	libclamav/unarj.c	746	            if (j < 0 || (uint32_t)j > metadata->orig_size - count) {
+fixed-width-integer	libclamav/unarj.c	761	            if (out_ptr > (uint32_t)i && out_ptr < DDICSIZ - MAXMATCH - 1) {
+fixed-width-integer	libclamav/unarj.c	830	        c = (uint16_t)dd->getbuf >> (CODE_BIT - l); \
+fixed-width-integer	libclamav/unarj.c	834	static uint16_t decode_ptr(arj_decode_t *decode_data)
+fixed-width-integer	libclamav/unarj.c	836	    uint16_t c, width, plus, pwr;
+fixed-width-integer	libclamav/unarj.c	855	static uint16_t decode_len(arj_decode_t *decode_data)
+fixed-width-integer	libclamav/unarj.c	857	    uint16_t c, width, plus, pwr;
+fixed-width-integer	libclamav/unarj.c	881	    uint32_t count = 0, out_ptr = 0;
+fixed-width-integer	libclamav/unarj.c	882	    int16_t chr, i, j, pos;
+fixed-width-integer	libclamav/unarj.c	937	            if (j < 0 || (uint32_t)j > metadata->orig_size - count) {
+fixed-width-integer	libclamav/unarj.c	990	static cl_error_t arj_unstore(arj_metadata_t *metadata, int ofd, uint32_t len)
+fixed-width-integer	libclamav/unarj.c	993	    uint32_t rem;
 fixed-width-integer	libclamav/unarj.h	33	    uint32_t comp_size;
 fixed-width-integer	libclamav/unarj.h	34	    uint32_t orig_size;
 fixed-width-integer	libclamav/unarj.h	35	    uint32_t orig_crc;
@@ -15870,61 +15871,62 @@ native-width-integer	libclamav/udf.h	222	    size_t total;
 native-width-integer	libclamav/udf.h	281	static inline bool getFileEntryDescriptorSize(const FileEntryDescriptor *fed, size_t *size)
 native-width-integer	libclamav/udf.h	283	    size_t total;
 native-width-integer	libclamav/udf.h	561	cl_error_t cli_scanudf(cli_ctx* ctx, size_t offset);
-native-width-integer	libclamav/unarj.c	100	    if (bytes_read == (size_t)-1)
-native-width-integer	libclamav/unarj.c	105	static bool arj_advance_offset(arj_metadata_t *metadata, size_t amount)
-native-width-integer	libclamav/unarj.c	1054	    size_t filename_max_len = 0;
-native-width-integer	libclamav/unarj.c	1055	    size_t filename_len     = 0;
-native-width-integer	libclamav/unarj.c	1056	    size_t comment_max_len  = 0;
-native-width-integer	libclamav/unarj.c	1057	    size_t comment_len      = 0;
-native-width-integer	libclamav/unarj.c	1058	    size_t orig_offset      = metadata->offset;
-native-width-integer	libclamav/unarj.c	1078	                              sizeof(header_size) + (size_t)header_size)) {
-native-width-integer	libclamav/unarj.c	115	cl_error_t cli_unarj_sfx_header_check(cli_ctx *ctx, size_t offset)
-native-width-integer	libclamav/unarj.c	1196	        if (!arj_advance_offset(metadata, (size_t)count + 4U)) {
-native-width-integer	libclamav/unarj.c	1228	    size_t filename_max_len = 0;
-native-width-integer	libclamav/unarj.c	1229	    size_t filename_len     = 0;
-native-width-integer	libclamav/unarj.c	1230	    size_t comment_max_len  = 0;
-native-width-integer	libclamav/unarj.c	1231	    size_t comment_len      = 0;
-native-width-integer	libclamav/unarj.c	1232	    size_t orig_offset      = metadata->offset;
-native-width-integer	libclamav/unarj.c	1252	                              sizeof(header_size) + (size_t)header_size)) {
-native-width-integer	libclamav/unarj.c	1398	        if (!arj_advance_offset(metadata, (size_t)count + 4U)) {
-native-width-integer	libclamav/unarj.c	1461	    size_t offset,
-native-width-integer	libclamav/unarj.c	1462	    size_t *size)
-native-width-integer	libclamav/unarj.c	1467	    int files_found         = 0;
-native-width-integer	libclamav/unarj.c	151	static const void *unarj_need_off_once_len(fmap_t *map, size_t offset, size_t length, size_t *length_out,
-native-width-integer	libclamav/unarj.c	1624	        cli_dbgmsg("Target offset: %lu\n", (unsigned long int)metadata->offset);
-native-width-integer	libclamav/unarj.c	239	    size_t offset;
-native-width-integer	libclamav/unarj.c	244	    int bit_count;
-native-width-integer	libclamav/unarj.c	254	    int status;
-native-width-integer	libclamav/unarj.c	257	static cl_error_t fill_buf(arj_decode_t *decode_data, int n)
-native-width-integer	libclamav/unarj.c	283	                size_t len;
-native-width-integer	libclamav/unarj.c	320	static unsigned short arj_getbits(arj_decode_t *decode_data, int n)
-native-width-integer	libclamav/unarj.c	335	static cl_error_t arj_write_text(arj_metadata_t *metadata, int ofd, const unsigned char *data, size_t length,
-native-width-integer	libclamav/unarj.c	338	    size_t count;
-native-width-integer	libclamav/unarj.c	355	static cl_error_t make_table(arj_decode_t *decode_data, int nchar, unsigned char *bitlen, int tablebits,
-native-width-integer	libclamav/unarj.c	356	                             unsigned short *table, int tablesize)
-native-width-integer	libclamav/unarj.c	359	    unsigned int i, k, len, ch, jutbits, avail, nextcode, mask;
-native-width-integer	libclamav/unarj.c	364	    for (i = 0; (int)i < nchar; i++) {
-native-width-integer	libclamav/unarj.c	388	    for (i = 1; (int)i <= tablebits; i++) {
-native-width-integer	libclamav/unarj.c	401	            if (i >= (unsigned int)tablesize) {
-native-width-integer	libclamav/unarj.c	412	    for (ch = 0; (int)ch < nchar; ch++) {
-native-width-integer	libclamav/unarj.c	423	        if ((int)len <= tablebits) {
-native-width-integer	libclamav/unarj.c	424	            if (nextcode > (unsigned int)tablesize) {
-native-width-integer	libclamav/unarj.c	464	static cl_error_t read_pt_len(arj_decode_t *decode_data, int nn, int nbit, int i_special)
-native-width-integer	libclamav/unarj.c	466	    int i, n;
-native-width-integer	libclamav/unarj.c	504	            fill_buf(decode_data, (c < 7) ? 3 : (int)(c - 3));
-native-width-integer	libclamav/unarj.c	574	            fill_buf(decode_data, (int)(decode_data->pt_len[c]));
-native-width-integer	libclamav/unarj.c	649	    fill_buf(decode_data, (int)(decode_data->c_len[j]));
-native-width-integer	libclamav/unarj.c	679	    fill_buf(decode_data, (int)(decode_data->pt_len[j]));
-native-width-integer	libclamav/unarj.c	684	        j = (1 << j) + arj_getbits(decode_data, (int)j);
-native-width-integer	libclamav/unarj.c	812	        int i;                    \
-native-width-integer	libclamav/unarj.c	813	        int j = l;                \
-native-width-integer	libclamav/unarj.c	85	static bool arj_range_within_map(const fmap_t *map, size_t offset, size_t length)
-native-width-integer	libclamav/unarj.c	90	static cl_error_t arj_read_fixed_range(fmap_t *map, void *dst, size_t offset, size_t length)
-native-width-integer	libclamav/unarj.c	92	    size_t bytes_read;
-native-width-integer	libclamav/unarj.c	982	static cl_error_t arj_unstore(arj_metadata_t *metadata, int ofd, uint32_t len)
-native-width-integer	libclamav/unarj.c	986	    unsigned int todo;
-native-width-integer	libclamav/unarj.c	987	    size_t count;
-native-width-integer	libclamav/unarj.c	993	        todo = (unsigned int)MIN(8192, rem);
+native-width-integer	libclamav/unarj.c	1001	        todo = (unsigned int)MIN(8192, rem);
+native-width-integer	libclamav/unarj.c	101	    if (bytes_read == (size_t)-1)
+native-width-integer	libclamav/unarj.c	106	static bool arj_advance_offset(arj_metadata_t *metadata, size_t amount)
+native-width-integer	libclamav/unarj.c	1062	    size_t filename_max_len = 0;
+native-width-integer	libclamav/unarj.c	1063	    size_t filename_len     = 0;
+native-width-integer	libclamav/unarj.c	1064	    size_t comment_max_len  = 0;
+native-width-integer	libclamav/unarj.c	1065	    size_t comment_len      = 0;
+native-width-integer	libclamav/unarj.c	1066	    size_t orig_offset      = metadata->offset;
+native-width-integer	libclamav/unarj.c	1086	                              sizeof(header_size) + (size_t)header_size)) {
+native-width-integer	libclamav/unarj.c	116	cl_error_t cli_unarj_sfx_header_check(cli_ctx *ctx, size_t offset)
+native-width-integer	libclamav/unarj.c	1204	        if (!arj_advance_offset(metadata, (size_t)count + 4U)) {
+native-width-integer	libclamav/unarj.c	1236	    size_t filename_max_len = 0;
+native-width-integer	libclamav/unarj.c	1237	    size_t filename_len     = 0;
+native-width-integer	libclamav/unarj.c	1238	    size_t comment_max_len  = 0;
+native-width-integer	libclamav/unarj.c	1239	    size_t comment_len      = 0;
+native-width-integer	libclamav/unarj.c	1240	    size_t orig_offset      = metadata->offset;
+native-width-integer	libclamav/unarj.c	1260	                              sizeof(header_size) + (size_t)header_size)) {
+native-width-integer	libclamav/unarj.c	1406	        if (!arj_advance_offset(metadata, (size_t)count + 4U)) {
+native-width-integer	libclamav/unarj.c	1469	    size_t offset,
+native-width-integer	libclamav/unarj.c	1470	    size_t *size)
+native-width-integer	libclamav/unarj.c	1475	    int files_found         = 0;
+native-width-integer	libclamav/unarj.c	152	static const void *unarj_need_off_once_len(fmap_t *map, size_t offset, size_t length, size_t *length_out,
+native-width-integer	libclamav/unarj.c	1632	        cli_dbgmsg("Target offset: %lu\n", (unsigned long int)metadata->offset);
+native-width-integer	libclamav/unarj.c	240	    size_t offset;
+native-width-integer	libclamav/unarj.c	245	    int bit_count;
+native-width-integer	libclamav/unarj.c	255	    unsigned int terminal_padding_bytes;
+native-width-integer	libclamav/unarj.c	256	    int status;
+native-width-integer	libclamav/unarj.c	259	static cl_error_t fill_buf(arj_decode_t *decode_data, int n)
+native-width-integer	libclamav/unarj.c	285	                size_t len;
+native-width-integer	libclamav/unarj.c	328	static unsigned short arj_getbits(arj_decode_t *decode_data, int n)
+native-width-integer	libclamav/unarj.c	343	static cl_error_t arj_write_text(arj_metadata_t *metadata, int ofd, const unsigned char *data, size_t length,
+native-width-integer	libclamav/unarj.c	346	    size_t count;
+native-width-integer	libclamav/unarj.c	363	static cl_error_t make_table(arj_decode_t *decode_data, int nchar, unsigned char *bitlen, int tablebits,
+native-width-integer	libclamav/unarj.c	364	                             unsigned short *table, int tablesize)
+native-width-integer	libclamav/unarj.c	367	    unsigned int i, k, len, ch, jutbits, avail, nextcode, mask;
+native-width-integer	libclamav/unarj.c	372	    for (i = 0; (int)i < nchar; i++) {
+native-width-integer	libclamav/unarj.c	396	    for (i = 1; (int)i <= tablebits; i++) {
+native-width-integer	libclamav/unarj.c	409	            if (i >= (unsigned int)tablesize) {
+native-width-integer	libclamav/unarj.c	420	    for (ch = 0; (int)ch < nchar; ch++) {
+native-width-integer	libclamav/unarj.c	431	        if ((int)len <= tablebits) {
+native-width-integer	libclamav/unarj.c	432	            if (nextcode > (unsigned int)tablesize) {
+native-width-integer	libclamav/unarj.c	472	static cl_error_t read_pt_len(arj_decode_t *decode_data, int nn, int nbit, int i_special)
+native-width-integer	libclamav/unarj.c	474	    int i, n;
+native-width-integer	libclamav/unarj.c	512	            fill_buf(decode_data, (c < 7) ? 3 : (int)(c - 3));
+native-width-integer	libclamav/unarj.c	582	            fill_buf(decode_data, (int)(decode_data->pt_len[c]));
+native-width-integer	libclamav/unarj.c	657	    fill_buf(decode_data, (int)(decode_data->c_len[j]));
+native-width-integer	libclamav/unarj.c	687	    fill_buf(decode_data, (int)(decode_data->pt_len[j]));
+native-width-integer	libclamav/unarj.c	692	        j = (1 << j) + arj_getbits(decode_data, (int)j);
+native-width-integer	libclamav/unarj.c	820	        int i;                    \
+native-width-integer	libclamav/unarj.c	821	        int j = l;                \
+native-width-integer	libclamav/unarj.c	86	static bool arj_range_within_map(const fmap_t *map, size_t offset, size_t length)
+native-width-integer	libclamav/unarj.c	91	static cl_error_t arj_read_fixed_range(fmap_t *map, void *dst, size_t offset, size_t length)
+native-width-integer	libclamav/unarj.c	93	    size_t bytes_read;
+native-width-integer	libclamav/unarj.c	990	static cl_error_t arj_unstore(arj_metadata_t *metadata, int ofd, uint32_t len)
+native-width-integer	libclamav/unarj.c	994	    unsigned int todo;
+native-width-integer	libclamav/unarj.c	995	    size_t count;
 native-width-integer	libclamav/unarj.h	37	    int encrypted;
 native-width-integer	libclamav/unarj.h	38	    int ofd;
 native-width-integer	libclamav/unarj.h	41	    size_t offset;
@@ -21926,7 +21928,7 @@ boundary-constant	libclamav/udf.c	669	    if (extent_count > SIZE_MAX / sizeof(*
 boundary-constant	libclamav/udf.c	912	            (uint64_t)extents[i].offset - partition_offset > UINT32_MAX * (uint64_t)logical_block_size) {
 boundary-constant	libclamav/udf.c	934	            if (block_number64 > UINT32_MAX) {
 boundary-constant	libclamav/udf.h	213	    if (result == NULL || left > SIZE_MAX - right)
-boundary-constant	libclamav/unarj.c	268	    if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX) {
+boundary-constant	libclamav/unarj.c	270	    if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX) {
 boundary-constant	libclamav/uniq.c	46	        (sizeof(size_t) < sizeof(required) && required > (uint64_t)SIZE_MAX))
 boundary-constant	libclamav/untar.c	137	    if (!octal(ochecksum, &checksum) || checksum > INT_MAX)
 boundary-constant	libclamav/untar.c	170	        size_t space      = SIZE_MAX;
@@ -22546,7 +22548,7 @@ narrowing-cast	libclamav/tnef.c	177	                        (int)length);
 narrowing-cast	libclamav/tnef.c	335	               (int)length);
 narrowing-cast	libclamav/tnef.c	414	               (int)length);
 narrowing-cast	libclamav/tnef.c	511	                       tag, type, (int)length);
-narrowing-cast	libclamav/unarj.c	423	        if ((int)len <= tablebits) {
+narrowing-cast	libclamav/unarj.c	431	        if ((int)len <= tablebits) {
 narrowing-cast	libclamav/untar.c	363	        cli_dbgmsg("cli_untar: pos = %lu\n", (unsigned long)pos);
 narrowing-cast	libclamav/vba_extract.c	2820	            cli_dbgmsg("length: %d\n", (int)length);
 narrowing-cast	libclamav/vba_extract.c	306	        cli_dbgmsg("offset: %lu\n", (unsigned long)offset);
@@ -24542,32 +24544,32 @@ format-width	libclamav/udf.c	1296	    fprintf(stderr, "Tag Location = %d (0x%x)\
 format-width	libclamav/udf.c	2426	        cli_dbgmsg("UDF Descriptor Tag ID: %d\n", tagId);
 format-width	libclamav/udf.c	2474	                cli_dbgmsg("cli_scanudf: Parsing %d file entries.\n", fileEntryList.cnt);
 format-width	libclamav/udf.c	2517	                        cli_dbgmsg("cli_scanudf: Failed to extract or scan file %zu: %s\n", i, cl_strerror(ret));
-format-width	libclamav/unarj.c	1029	        cli_dbgmsg("is_arj_archive: Failed to read the two-byte ARJ header ID at offset %zu\n", metadata->offset);
-format-width	libclamav/unarj.c	1066	    cli_dbgmsg("Header Size: %d\n", header_size);
-format-width	libclamav/unarj.c	1073	        cli_dbgmsg("arj_read_header: invalid header_size: %u\n", header_size);
-format-width	libclamav/unarj.c	1079	        cli_dbgmsg("arj_read_header: invalid header_size: %u, exceeds length of file.\n", header_size);
-format-width	libclamav/unarj.c	1089	    cli_dbgmsg("First Header Size: %d\n", main_hdr.first_hdr_size);
-format-width	libclamav/unarj.c	1090	    cli_dbgmsg("Version: %d\n", main_hdr.version);
-format-width	libclamav/unarj.c	1091	    cli_dbgmsg("Min version: %d\n", main_hdr.min_version);
-format-width	libclamav/unarj.c	1092	    cli_dbgmsg("Host OS: %d\n", main_hdr.host_os);
-format-width	libclamav/unarj.c	1094	    cli_dbgmsg("Security version: %d\n", main_hdr.security_version);
-format-width	libclamav/unarj.c	1095	    cli_dbgmsg("File type: %d\n", main_hdr.file_type);
-format-width	libclamav/unarj.c	1191	        cli_dbgmsg("Extended header size: %d\n", count);
-format-width	libclamav/unarj.c	1240	    cli_dbgmsg("Header Size: %d\n", header_size);
-format-width	libclamav/unarj.c	1247	        cli_dbgmsg("arj_read_file_header: invalid header_size: %u\n ", header_size);
-format-width	libclamav/unarj.c	1253	        cli_dbgmsg("arj_read_file_header: invalid header_size: %u, exceeds length of file.\n", header_size);
-format-width	libclamav/unarj.c	1266	    cli_dbgmsg("First Header Size: %d\n", file_hdr.first_hdr_size);
-format-width	libclamav/unarj.c	1267	    cli_dbgmsg("Version: %d\n", file_hdr.version);
-format-width	libclamav/unarj.c	1268	    cli_dbgmsg("Min version: %d\n", file_hdr.min_version);
-format-width	libclamav/unarj.c	1269	    cli_dbgmsg("Host OS: %d\n", file_hdr.host_os);
-format-width	libclamav/unarj.c	1271	    cli_dbgmsg("Method: %d\n", file_hdr.method);
-format-width	libclamav/unarj.c	1272	    cli_dbgmsg("File type: %d\n", file_hdr.file_type);
-format-width	libclamav/unarj.c	1273	    cli_dbgmsg("File type: %d\n", file_hdr.password_mod);
-format-width	libclamav/unarj.c	1274	    cli_dbgmsg("Compressed size: %u\n", file_hdr.comp_size);
-format-width	libclamav/unarj.c	1275	    cli_dbgmsg("Original size: %u\n", file_hdr.orig_size);
-format-width	libclamav/unarj.c	1393	        cli_dbgmsg("Extended header size: %d\n", count);
-format-width	libclamav/unarj.c	1553	        cli_dbgmsg("cli_unarj_header_check: Successfully found %d files in valid ARJ archive of %zu bytes\n", files_found, *size);
-format-width	libclamav/unarj.c	1624	        cli_dbgmsg("Target offset: %lu\n", (unsigned long int)metadata->offset);
+format-width	libclamav/unarj.c	1037	        cli_dbgmsg("is_arj_archive: Failed to read the two-byte ARJ header ID at offset %zu\n", metadata->offset);
+format-width	libclamav/unarj.c	1074	    cli_dbgmsg("Header Size: %d\n", header_size);
+format-width	libclamav/unarj.c	1081	        cli_dbgmsg("arj_read_header: invalid header_size: %u\n", header_size);
+format-width	libclamav/unarj.c	1087	        cli_dbgmsg("arj_read_header: invalid header_size: %u, exceeds length of file.\n", header_size);
+format-width	libclamav/unarj.c	1097	    cli_dbgmsg("First Header Size: %d\n", main_hdr.first_hdr_size);
+format-width	libclamav/unarj.c	1098	    cli_dbgmsg("Version: %d\n", main_hdr.version);
+format-width	libclamav/unarj.c	1099	    cli_dbgmsg("Min version: %d\n", main_hdr.min_version);
+format-width	libclamav/unarj.c	1100	    cli_dbgmsg("Host OS: %d\n", main_hdr.host_os);
+format-width	libclamav/unarj.c	1102	    cli_dbgmsg("Security version: %d\n", main_hdr.security_version);
+format-width	libclamav/unarj.c	1103	    cli_dbgmsg("File type: %d\n", main_hdr.file_type);
+format-width	libclamav/unarj.c	1199	        cli_dbgmsg("Extended header size: %d\n", count);
+format-width	libclamav/unarj.c	1248	    cli_dbgmsg("Header Size: %d\n", header_size);
+format-width	libclamav/unarj.c	1255	        cli_dbgmsg("arj_read_file_header: invalid header_size: %u\n ", header_size);
+format-width	libclamav/unarj.c	1261	        cli_dbgmsg("arj_read_file_header: invalid header_size: %u, exceeds length of file.\n", header_size);
+format-width	libclamav/unarj.c	1274	    cli_dbgmsg("First Header Size: %d\n", file_hdr.first_hdr_size);
+format-width	libclamav/unarj.c	1275	    cli_dbgmsg("Version: %d\n", file_hdr.version);
+format-width	libclamav/unarj.c	1276	    cli_dbgmsg("Min version: %d\n", file_hdr.min_version);
+format-width	libclamav/unarj.c	1277	    cli_dbgmsg("Host OS: %d\n", file_hdr.host_os);
+format-width	libclamav/unarj.c	1279	    cli_dbgmsg("Method: %d\n", file_hdr.method);
+format-width	libclamav/unarj.c	1280	    cli_dbgmsg("File type: %d\n", file_hdr.file_type);
+format-width	libclamav/unarj.c	1281	    cli_dbgmsg("File type: %d\n", file_hdr.password_mod);
+format-width	libclamav/unarj.c	1282	    cli_dbgmsg("Compressed size: %u\n", file_hdr.comp_size);
+format-width	libclamav/unarj.c	1283	    cli_dbgmsg("Original size: %u\n", file_hdr.orig_size);
+format-width	libclamav/unarj.c	1401	        cli_dbgmsg("Extended header size: %d\n", count);
+format-width	libclamav/unarj.c	1561	        cli_dbgmsg("cli_unarj_header_check: Successfully found %d files in valid ARJ archive of %zu bytes\n", files_found, *size);
+format-width	libclamav/unarj.c	1632	        cli_dbgmsg("Target offset: %lu\n", (unsigned long int)metadata->offset);
 format-width	libclamav/unsp.c	157	    cli_dbgmsg("unsp: table size = %d\n", tablesz);
 format-width	libclamav/untar.c	363	        cli_dbgmsg("cli_untar: pos = %lu\n", (unsigned long)pos);
 format-width	libclamav/untar.c	465	            cli_dbgmsg("cli_untar: Candidate checksum = %d, [%o in octal]\n", checksum, checksum);
@@ -34455,103 +34457,105 @@ offset-size-arithmetic	libclamav/udf.h	280	#define FILE_ENTRY_DESCRIPTOR_SIZE_KN
 offset-size-arithmetic	libclamav/udf.h	281	static inline bool getFileEntryDescriptorSize(const FileEntryDescriptor *fed, size_t *size)
 offset-size-arithmetic	libclamav/udf.h	288	        !cli_udf_size_add(total, le32_to_host(fed->allocationDescLen), size))
 offset-size-arithmetic	libclamav/udf.h	563	#endif /* _UDF_H_ */
-offset-size-arithmetic	libclamav/unarj.c	100	    if (bytes_read == (size_t)-1)
-offset-size-arithmetic	libclamav/unarj.c	1000	        data = unarj_need_off_once_len(metadata->map, metadata->offset, todo, &count, &read_status);
-offset-size-arithmetic	libclamav/unarj.c	1004	        metadata->offset += count;
-offset-size-arithmetic	libclamav/unarj.c	1027	    mark = fmap_need_off_once(metadata->map, metadata->offset, 2);
-offset-size-arithmetic	libclamav/unarj.c	1029	        cli_dbgmsg("is_arj_archive: Failed to read the two-byte ARJ header ID at offset %zu\n", metadata->offset);
-offset-size-arithmetic	libclamav/unarj.c	1033	    metadata->offset += 2;
-offset-size-arithmetic	libclamav/unarj.c	105	static bool arj_advance_offset(arj_metadata_t *metadata, size_t amount)
-offset-size-arithmetic	libclamav/unarj.c	1058	    size_t orig_offset      = metadata->offset;
-offset-size-arithmetic	libclamav/unarj.c	1060	    ret = arj_read_fixed_range(metadata->map, &header_size, metadata->offset, sizeof(header_size));
-offset-size-arithmetic	libclamav/unarj.c	1064	    metadata->offset += 2;
-offset-size-arithmetic	libclamav/unarj.c	107	    if (metadata == NULL || metadata->map == NULL || metadata->offset > metadata->map->len ||
-offset-size-arithmetic	libclamav/unarj.c	1078	                              sizeof(header_size) + (size_t)header_size)) {
-offset-size-arithmetic	libclamav/unarj.c	108	        amount > metadata->map->len - metadata->offset)
-offset-size-arithmetic	libclamav/unarj.c	1086	    metadata->offset += 30;
-offset-size-arithmetic	libclamav/unarj.c	1103	        if (!arj_advance_offset(metadata, main_hdr.first_hdr_size - 30)) {
-offset-size-arithmetic	libclamav/unarj.c	1109	    filename_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
-offset-size-arithmetic	libclamav/unarj.c	111	    metadata->offset += amount;
-offset-size-arithmetic	libclamav/unarj.c	1116	        fnnorm   = cli_max_calloc(sizeof(unsigned char), filename_max_len + 1);
-offset-size-arithmetic	libclamav/unarj.c	1122	        filename = fmap_need_offstr_once_status(metadata->map, metadata->offset,
-offset-size-arithmetic	libclamav/unarj.c	1131	    if (!arj_advance_offset(metadata, filename_len + 1)) {
-offset-size-arithmetic	libclamav/unarj.c	1136	    comment_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
-offset-size-arithmetic	libclamav/unarj.c	1143	        comnorm = cli_max_calloc(sizeof(unsigned char), comment_max_len + 1);
-offset-size-arithmetic	libclamav/unarj.c	1149	        comment = fmap_need_offstr_once_status(metadata->map, metadata->offset,
-offset-size-arithmetic	libclamav/unarj.c	1158	    if (!arj_advance_offset(metadata, comment_len + 1)) {
-offset-size-arithmetic	libclamav/unarj.c	1169	    cli_dbgmsg("Filename: %s\n", fnnorm ? (char *)fnnorm : "");
-offset-size-arithmetic	libclamav/unarj.c	1176	    /* Skip past any extended header data */
-offset-size-arithmetic	libclamav/unarj.c	1195	        /* Skip extended header + 4byte CRC */
-offset-size-arithmetic	libclamav/unarj.c	1196	        if (!arj_advance_offset(metadata, (size_t)count + 4U)) {
-offset-size-arithmetic	libclamav/unarj.c	1220	    const char *filename = NULL, *comment = NULL;
-offset-size-arithmetic	libclamav/unarj.c	1232	    size_t orig_offset      = metadata->offset;
-offset-size-arithmetic	libclamav/unarj.c	1234	    ret = arj_read_fixed_range(metadata->map, &header_size, metadata->offset, sizeof(header_size));
-offset-size-arithmetic	libclamav/unarj.c	1238	    metadata->offset += 2;
-offset-size-arithmetic	libclamav/unarj.c	1252	                              sizeof(header_size) + (size_t)header_size)) {
-offset-size-arithmetic	libclamav/unarj.c	1260	    metadata->offset += 30;
-offset-size-arithmetic	libclamav/unarj.c	1283	    /* Note: this skips past any extended file start position data (multi-volume) */
-offset-size-arithmetic	libclamav/unarj.c	1285	        if (!arj_advance_offset(metadata, file_hdr.first_hdr_size - 30)) {
-offset-size-arithmetic	libclamav/unarj.c	129	     * but not its declared size or first-header length.  Reject impossible
-offset-size-arithmetic	libclamav/unarj.c	1291	    filename_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
-offset-size-arithmetic	libclamav/unarj.c	1298	        fnnorm = cli_max_calloc(sizeof(unsigned char), filename_max_len + 1);
-offset-size-arithmetic	libclamav/unarj.c	1304	        filename = fmap_need_offstr_once_status(metadata->map, metadata->offset,
-offset-size-arithmetic	libclamav/unarj.c	131	     * Keep a valid-sized but truncated header on the confirmed error path. */
-offset-size-arithmetic	libclamav/unarj.c	1313	    if (!arj_advance_offset(metadata, filename_len + 1)) {
-offset-size-arithmetic	libclamav/unarj.c	1318	    comment_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
-offset-size-arithmetic	libclamav/unarj.c	1325	        comnorm = cli_max_calloc(sizeof(unsigned char), comment_max_len + 1);
-offset-size-arithmetic	libclamav/unarj.c	1331	        comment = fmap_need_offstr_once_status(metadata->map, metadata->offset,
-offset-size-arithmetic	libclamav/unarj.c	1338	        comment_len += CLI_STRNLEN(comment, comment_max_len);
-offset-size-arithmetic	libclamav/unarj.c	1340	    if (!arj_advance_offset(metadata, comment_len + 1)) {
-offset-size-arithmetic	libclamav/unarj.c	135	    ret = arj_read_fixed_range(ctx->fmap, &header_size, offset + 2U, sizeof(header_size));
-offset-size-arithmetic	libclamav/unarj.c	1351	    cli_dbgmsg("Filename: %s\n", fnnorm ? (char *)fnnorm : "");
-offset-size-arithmetic	libclamav/unarj.c	1365	    /* Skip past any extended header data */
-offset-size-arithmetic	libclamav/unarj.c	1397	        /* Skip extended header + 4byte CRC */
-offset-size-arithmetic	libclamav/unarj.c	1398	        if (!arj_advance_offset(metadata, (size_t)count + 4U)) {
-offset-size-arithmetic	libclamav/unarj.c	142	    ret = arj_read_fixed_range(ctx->fmap, &first_header_size, offset + 4U, sizeof(first_header_size));
-offset-size-arithmetic	libclamav/unarj.c	1462	    size_t *size)
-offset-size-arithmetic	libclamav/unarj.c	151	static const void *unarj_need_off_once_len(fmap_t *map, size_t offset, size_t length, size_t *length_out,
-offset-size-arithmetic	libclamav/unarj.c	1531	            if (metadata.offset > metadata.map->len ||
-offset-size-arithmetic	libclamav/unarj.c	1532	                metadata.comp_size > metadata.map->len - metadata.offset) {
-offset-size-arithmetic	libclamav/unarj.c	1538	            metadata.offset += metadata.comp_size;
-offset-size-arithmetic	libclamav/unarj.c	1552	        *size  = metadata.offset - offset;
-offset-size-arithmetic	libclamav/unarj.c	158	    } else if (offset < map->len) {
-offset-size-arithmetic	libclamav/unarj.c	1620	        if (!arj_advance_offset(metadata, metadata->comp_size)) {
-offset-size-arithmetic	libclamav/unarj.c	1624	        cli_dbgmsg("Target offset: %lu\n", (unsigned long int)metadata->offset);
-offset-size-arithmetic	libclamav/unarj.c	281	            decode_data->comp_size--;
-offset-size-arithmetic	libclamav/unarj.c	286	                decode_data->buf = unarj_need_off_once_len(decode_data->map, decode_data->offset, 8192, &len,
-offset-size-arithmetic	libclamav/unarj.c	292	                decode_data->bufend = decode_data->buf + len;
-offset-size-arithmetic	libclamav/unarj.c	295	            decode_data->offset++;
-offset-size-arithmetic	libclamav/unarj.c	329	static cl_error_t decode_start(arj_decode_t *decode_data)
-offset-size-arithmetic	libclamav/unarj.c	358	    unsigned short count[17], weight[17], start[18], *p;
-offset-size-arithmetic	libclamav/unarj.c	370	        count[bitlen[i]]++;
-offset-size-arithmetic	libclamav/unarj.c	375	        start[i + 1] = start[i] + (count[i] << (16 - i));
-offset-size-arithmetic	libclamav/unarj.c	377	    if (start[17] != (unsigned short)(1 << 16)) {
-offset-size-arithmetic	libclamav/unarj.c	389	        start[i] >>= jutbits;
-offset-size-arithmetic	libclamav/unarj.c	397	    i = start[tablebits + 1] >> jutbits;
-offset-size-arithmetic	libclamav/unarj.c	433	            i = len - tablebits;
-offset-size-arithmetic	libclamav/unarj.c	464	static cl_error_t read_pt_len(arj_decode_t *decode_data, int nn, int nbit, int i_special)
-offset-size-arithmetic	libclamav/unarj.c	508	            decode_data->pt_len[i++] = (unsigned char)c;
-offset-size-arithmetic	libclamav/unarj.c	515	                    decode_data->pt_len[i++] = 0;
-offset-size-arithmetic	libclamav/unarj.c	520	            decode_data->pt_len[i++] = 0;
-offset-size-arithmetic	libclamav/unarj.c	522	        if (make_table(decode_data, nn, decode_data->pt_len, 8, decode_data->pt_table, PTABLESIZE) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/unarj.c	529	static cl_error_t read_c_len(arj_decode_t *decode_data)
-offset-size-arithmetic	libclamav/unarj.c	595	                    decode_data->c_len[i++] = 0;
-offset-size-arithmetic	libclamav/unarj.c	603	                decode_data->c_len[i++] = (unsigned char)(c - 2);
-offset-size-arithmetic	libclamav/unarj.c	607	            decode_data->c_len[i++] = 0;
-offset-size-arithmetic	libclamav/unarj.c	609	        if (make_table(decode_data, NC, decode_data->c_len, 12, decode_data->c_table, CTABLESIZE) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/unarj.c	628	        if (read_pt_len(decode_data, NT, PBIT, -1) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/unarj.c	631	    decode_data->blocksize--;
-offset-size-arithmetic	libclamav/unarj.c	707	    decode_data.offset    = metadata->offset;
-offset-size-arithmetic	libclamav/unarj.c	708	    decode_data.comp_size = metadata->comp_size;
-offset-size-arithmetic	libclamav/unarj.c	738	            if (j < 0 || (uint32_t)j > metadata->orig_size - count) {
-offset-size-arithmetic	libclamav/unarj.c	808	        dd->getlen--;                     \
-offset-size-arithmetic	libclamav/unarj.c	817	        dd->getlen -= l;          \
-offset-size-arithmetic	libclamav/unarj.c	847	static uint16_t decode_len(arj_decode_t *decode_data)
-offset-size-arithmetic	libclamav/unarj.c	87	    return map != NULL && offset <= map->len && length <= map->len - offset;
-offset-size-arithmetic	libclamav/unarj.c	885	    decode_data.offset    = metadata->offset;
-offset-size-arithmetic	libclamav/unarj.c	886	    decode_data.comp_size = metadata->comp_size;
-offset-size-arithmetic	libclamav/unarj.c	929	            if (j < 0 || (uint32_t)j > metadata->orig_size - count) {
-offset-size-arithmetic	libclamav/unarj.c	941	            if ((i = out_ptr - pos - 1) < 0) {
+offset-size-arithmetic	libclamav/unarj.c	1008	        data = unarj_need_off_once_len(metadata->map, metadata->offset, todo, &count, &read_status);
+offset-size-arithmetic	libclamav/unarj.c	101	    if (bytes_read == (size_t)-1)
+offset-size-arithmetic	libclamav/unarj.c	1012	        metadata->offset += count;
+offset-size-arithmetic	libclamav/unarj.c	1035	    mark = fmap_need_off_once(metadata->map, metadata->offset, 2);
+offset-size-arithmetic	libclamav/unarj.c	1037	        cli_dbgmsg("is_arj_archive: Failed to read the two-byte ARJ header ID at offset %zu\n", metadata->offset);
+offset-size-arithmetic	libclamav/unarj.c	1041	    metadata->offset += 2;
+offset-size-arithmetic	libclamav/unarj.c	106	static bool arj_advance_offset(arj_metadata_t *metadata, size_t amount)
+offset-size-arithmetic	libclamav/unarj.c	1066	    size_t orig_offset      = metadata->offset;
+offset-size-arithmetic	libclamav/unarj.c	1068	    ret = arj_read_fixed_range(metadata->map, &header_size, metadata->offset, sizeof(header_size));
+offset-size-arithmetic	libclamav/unarj.c	1072	    metadata->offset += 2;
+offset-size-arithmetic	libclamav/unarj.c	108	    if (metadata == NULL || metadata->map == NULL || metadata->offset > metadata->map->len ||
+offset-size-arithmetic	libclamav/unarj.c	1086	                              sizeof(header_size) + (size_t)header_size)) {
+offset-size-arithmetic	libclamav/unarj.c	109	        amount > metadata->map->len - metadata->offset)
+offset-size-arithmetic	libclamav/unarj.c	1094	    metadata->offset += 30;
+offset-size-arithmetic	libclamav/unarj.c	1111	        if (!arj_advance_offset(metadata, main_hdr.first_hdr_size - 30)) {
+offset-size-arithmetic	libclamav/unarj.c	1117	    filename_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
+offset-size-arithmetic	libclamav/unarj.c	112	    metadata->offset += amount;
+offset-size-arithmetic	libclamav/unarj.c	1124	        fnnorm   = cli_max_calloc(sizeof(unsigned char), filename_max_len + 1);
+offset-size-arithmetic	libclamav/unarj.c	1130	        filename = fmap_need_offstr_once_status(metadata->map, metadata->offset,
+offset-size-arithmetic	libclamav/unarj.c	1139	    if (!arj_advance_offset(metadata, filename_len + 1)) {
+offset-size-arithmetic	libclamav/unarj.c	1144	    comment_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
+offset-size-arithmetic	libclamav/unarj.c	1151	        comnorm = cli_max_calloc(sizeof(unsigned char), comment_max_len + 1);
+offset-size-arithmetic	libclamav/unarj.c	1157	        comment = fmap_need_offstr_once_status(metadata->map, metadata->offset,
+offset-size-arithmetic	libclamav/unarj.c	1166	    if (!arj_advance_offset(metadata, comment_len + 1)) {
+offset-size-arithmetic	libclamav/unarj.c	1177	    cli_dbgmsg("Filename: %s\n", fnnorm ? (char *)fnnorm : "");
+offset-size-arithmetic	libclamav/unarj.c	1184	    /* Skip past any extended header data */
+offset-size-arithmetic	libclamav/unarj.c	1203	        /* Skip extended header + 4byte CRC */
+offset-size-arithmetic	libclamav/unarj.c	1204	        if (!arj_advance_offset(metadata, (size_t)count + 4U)) {
+offset-size-arithmetic	libclamav/unarj.c	1228	    const char *filename = NULL, *comment = NULL;
+offset-size-arithmetic	libclamav/unarj.c	1240	    size_t orig_offset      = metadata->offset;
+offset-size-arithmetic	libclamav/unarj.c	1242	    ret = arj_read_fixed_range(metadata->map, &header_size, metadata->offset, sizeof(header_size));
+offset-size-arithmetic	libclamav/unarj.c	1246	    metadata->offset += 2;
+offset-size-arithmetic	libclamav/unarj.c	1260	                              sizeof(header_size) + (size_t)header_size)) {
+offset-size-arithmetic	libclamav/unarj.c	1268	    metadata->offset += 30;
+offset-size-arithmetic	libclamav/unarj.c	1291	    /* Note: this skips past any extended file start position data (multi-volume) */
+offset-size-arithmetic	libclamav/unarj.c	1293	        if (!arj_advance_offset(metadata, file_hdr.first_hdr_size - 30)) {
+offset-size-arithmetic	libclamav/unarj.c	1299	    filename_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
+offset-size-arithmetic	libclamav/unarj.c	130	     * but not its declared size or first-header length.  Reject impossible
+offset-size-arithmetic	libclamav/unarj.c	1306	        fnnorm = cli_max_calloc(sizeof(unsigned char), filename_max_len + 1);
+offset-size-arithmetic	libclamav/unarj.c	1312	        filename = fmap_need_offstr_once_status(metadata->map, metadata->offset,
+offset-size-arithmetic	libclamav/unarj.c	132	     * Keep a valid-sized but truncated header on the confirmed error path. */
+offset-size-arithmetic	libclamav/unarj.c	1321	    if (!arj_advance_offset(metadata, filename_len + 1)) {
+offset-size-arithmetic	libclamav/unarj.c	1326	    comment_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
+offset-size-arithmetic	libclamav/unarj.c	1333	        comnorm = cli_max_calloc(sizeof(unsigned char), comment_max_len + 1);
+offset-size-arithmetic	libclamav/unarj.c	1339	        comment = fmap_need_offstr_once_status(metadata->map, metadata->offset,
+offset-size-arithmetic	libclamav/unarj.c	1346	        comment_len += CLI_STRNLEN(comment, comment_max_len);
+offset-size-arithmetic	libclamav/unarj.c	1348	    if (!arj_advance_offset(metadata, comment_len + 1)) {
+offset-size-arithmetic	libclamav/unarj.c	1359	    cli_dbgmsg("Filename: %s\n", fnnorm ? (char *)fnnorm : "");
+offset-size-arithmetic	libclamav/unarj.c	136	    ret = arj_read_fixed_range(ctx->fmap, &header_size, offset + 2U, sizeof(header_size));
+offset-size-arithmetic	libclamav/unarj.c	1373	    /* Skip past any extended header data */
+offset-size-arithmetic	libclamav/unarj.c	1405	        /* Skip extended header + 4byte CRC */
+offset-size-arithmetic	libclamav/unarj.c	1406	        if (!arj_advance_offset(metadata, (size_t)count + 4U)) {
+offset-size-arithmetic	libclamav/unarj.c	143	    ret = arj_read_fixed_range(ctx->fmap, &first_header_size, offset + 4U, sizeof(first_header_size));
+offset-size-arithmetic	libclamav/unarj.c	1470	    size_t *size)
+offset-size-arithmetic	libclamav/unarj.c	152	static const void *unarj_need_off_once_len(fmap_t *map, size_t offset, size_t length, size_t *length_out,
+offset-size-arithmetic	libclamav/unarj.c	1539	            if (metadata.offset > metadata.map->len ||
+offset-size-arithmetic	libclamav/unarj.c	1540	                metadata.comp_size > metadata.map->len - metadata.offset) {
+offset-size-arithmetic	libclamav/unarj.c	1546	            metadata.offset += metadata.comp_size;
+offset-size-arithmetic	libclamav/unarj.c	1560	        *size  = metadata.offset - offset;
+offset-size-arithmetic	libclamav/unarj.c	159	    } else if (offset < map->len) {
+offset-size-arithmetic	libclamav/unarj.c	1628	        if (!arj_advance_offset(metadata, metadata->comp_size)) {
+offset-size-arithmetic	libclamav/unarj.c	1632	        cli_dbgmsg("Target offset: %lu\n", (unsigned long int)metadata->offset);
+offset-size-arithmetic	libclamav/unarj.c	283	            decode_data->comp_size--;
+offset-size-arithmetic	libclamav/unarj.c	288	                decode_data->buf = unarj_need_off_once_len(decode_data->map, decode_data->offset, 8192, &len,
+offset-size-arithmetic	libclamav/unarj.c	294	                decode_data->bufend = decode_data->buf + len;
+offset-size-arithmetic	libclamav/unarj.c	297	            decode_data->offset++;
+offset-size-arithmetic	libclamav/unarj.c	305	            if (decode_data->map == NULL || decode_data->offset > decode_data->map->len ||
+offset-size-arithmetic	libclamav/unarj.c	306	                decode_data->map->len - decode_data->offset < sizeof(uint32_t) ||
+offset-size-arithmetic	libclamav/unarj.c	337	static cl_error_t decode_start(arj_decode_t *decode_data)
+offset-size-arithmetic	libclamav/unarj.c	366	    unsigned short count[17], weight[17], start[18], *p;
+offset-size-arithmetic	libclamav/unarj.c	378	        count[bitlen[i]]++;
+offset-size-arithmetic	libclamav/unarj.c	383	        start[i + 1] = start[i] + (count[i] << (16 - i));
+offset-size-arithmetic	libclamav/unarj.c	385	    if (start[17] != (unsigned short)(1 << 16)) {
+offset-size-arithmetic	libclamav/unarj.c	397	        start[i] >>= jutbits;
+offset-size-arithmetic	libclamav/unarj.c	405	    i = start[tablebits + 1] >> jutbits;
+offset-size-arithmetic	libclamav/unarj.c	441	            i = len - tablebits;
+offset-size-arithmetic	libclamav/unarj.c	472	static cl_error_t read_pt_len(arj_decode_t *decode_data, int nn, int nbit, int i_special)
+offset-size-arithmetic	libclamav/unarj.c	516	            decode_data->pt_len[i++] = (unsigned char)c;
+offset-size-arithmetic	libclamav/unarj.c	523	                    decode_data->pt_len[i++] = 0;
+offset-size-arithmetic	libclamav/unarj.c	528	            decode_data->pt_len[i++] = 0;
+offset-size-arithmetic	libclamav/unarj.c	530	        if (make_table(decode_data, nn, decode_data->pt_len, 8, decode_data->pt_table, PTABLESIZE) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/unarj.c	537	static cl_error_t read_c_len(arj_decode_t *decode_data)
+offset-size-arithmetic	libclamav/unarj.c	603	                    decode_data->c_len[i++] = 0;
+offset-size-arithmetic	libclamav/unarj.c	611	                decode_data->c_len[i++] = (unsigned char)(c - 2);
+offset-size-arithmetic	libclamav/unarj.c	615	            decode_data->c_len[i++] = 0;
+offset-size-arithmetic	libclamav/unarj.c	617	        if (make_table(decode_data, NC, decode_data->c_len, 12, decode_data->c_table, CTABLESIZE) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/unarj.c	636	        if (read_pt_len(decode_data, NT, PBIT, -1) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/unarj.c	639	    decode_data->blocksize--;
+offset-size-arithmetic	libclamav/unarj.c	715	    decode_data.offset    = metadata->offset;
+offset-size-arithmetic	libclamav/unarj.c	716	    decode_data.comp_size = metadata->comp_size;
+offset-size-arithmetic	libclamav/unarj.c	746	            if (j < 0 || (uint32_t)j > metadata->orig_size - count) {
+offset-size-arithmetic	libclamav/unarj.c	816	        dd->getlen--;                     \
+offset-size-arithmetic	libclamav/unarj.c	825	        dd->getlen -= l;          \
+offset-size-arithmetic	libclamav/unarj.c	855	static uint16_t decode_len(arj_decode_t *decode_data)
+offset-size-arithmetic	libclamav/unarj.c	88	    return map != NULL && offset <= map->len && length <= map->len - offset;
+offset-size-arithmetic	libclamav/unarj.c	893	    decode_data.offset    = metadata->offset;
+offset-size-arithmetic	libclamav/unarj.c	894	    decode_data.comp_size = metadata->comp_size;
+offset-size-arithmetic	libclamav/unarj.c	937	            if (j < 0 || (uint32_t)j > metadata->orig_size - count) {
+offset-size-arithmetic	libclamav/unarj.c	949	            if ((i = out_ptr - pos - 1) < 0) {
 offset-size-arithmetic	libclamav/unarj.h	52	 * @param[out] size       Will be set to the size of the file header + file data.
 offset-size-arithmetic	libclamav/unarj.h	55	cl_error_t cli_unarj_header_check(cli_ctx *ctx, size_t offset, size_t *size);
 offset-size-arithmetic	libclamav/uniq.c	154	cl_error_t uniq_get(struct uniq *U, const char *item, uint32_t item_len, char **rhash, uint32_t *count)

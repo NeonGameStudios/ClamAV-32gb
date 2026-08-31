@@ -60,6 +60,7 @@
 #define MAXMATCH 256
 
 #define CODE_BIT 16
+#define ARJ_MAX_TERMINAL_PADDING_BYTES (CODE_BIT / CHAR_BIT)
 #define NT (CODE_BIT + 3)
 #define PBIT 5
 #define TBIT 5
@@ -251,6 +252,7 @@ typedef struct arj_decode_tag {
     unsigned char pt_len[NPT];
     unsigned char sub_bit_buf;
     uint16_t pt_table[PTABLESIZE];
+    unsigned int terminal_padding_bytes;
     int status;
 } arj_decode_t;
 
@@ -294,14 +296,20 @@ static cl_error_t fill_buf(arj_decode_t *decode_data, int n)
             decode_data->sub_bit_buf = *decode_data->buf++;
             decode_data->offset++;
         } else {
-            /* Do not resume by synthesizing zero padding after a declared
-             * member ends: a truncated member must not appear to decode
-             * successfully. The remaining bits in the last byte are
-             * valid padding only when the caller does not request another
-             * byte; a request here proves that the compressed stream ended
-             * before the declared output was decoded. */
-            decode_data->status = CL_EFORMAT;
-            return CL_EFORMAT;
+            /* ARJ stores a four-byte member CRC immediately after the
+             * compressed payload. A valid terminal bitstream may need up to
+             * one decoder bit-window of zero padding to finish its final
+             * lookahead, but a missing CRC trailer proves that this is a
+             * truncated member. Bound the synthetic padding so malformed
+             * input cannot obtain an unbounded stream of fabricated bits. */
+            if (decode_data->map == NULL || decode_data->offset > decode_data->map->len ||
+                decode_data->map->len - decode_data->offset < sizeof(uint32_t) ||
+                decode_data->terminal_padding_bytes >= ARJ_MAX_TERMINAL_PADDING_BYTES) {
+                decode_data->status = CL_EFORMAT;
+                return CL_EFORMAT;
+            }
+            decode_data->terminal_padding_bytes++;
+            decode_data->sub_bit_buf = 0;
         }
         decode_data->bit_count = CHAR_BIT;
     }
