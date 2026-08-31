@@ -241,14 +241,18 @@ Sonic1, resource, and final parser/release evidence remain open.
 
 ## Current ISO-9660 production-linked rerun — 2026-08-31
 
-The authoritative current-source production-linked GCC harness passes
-`iso_map` 17/17 and `iso` 1/1. The map case covers entry-state, descriptor,
-directory-record, callback-read, timeout, Joliet-name, coordinate, and
-declared-volume boundaries; the materialized standard and no-Joliet logo ISO
-fixtures both reach their nested PNG marker. Full ISO/Joliet corpus,
-sanitizer, certified Linux x86-64, production-CVD/service,
-materialized-large-file, Sonic1, resource, and final parser/release evidence
-remain open.
+The canonical `iso9660.c`, `iso9660.h`, `scanners.c`, and `check_clamav.c`
+sources were transferred into the existing Docker production-linked GCC
+harness with exact SHA-256 equality. The authoritative current-source harness
+passes `iso_map` 17/17 and `iso` 1/1. The map case covers entry-state,
+descriptor, directory-record, callback-read, timeout, Joliet-name, coordinate,
+and declared-volume boundaries; the materialized `iso_normal.logo.iso`
+(`547b0b0fc0e7bbb3f49ed1e87f72ccfc4293abe582048f68dee8ec35e5544db3`) and
+`iso_no_joliet.logo.iso`
+(`88f77d6a154f7f8b0ebffae6953cf654ee7c0461bfc89e73420c27165991dfcc`) fixtures
+both reach their nested PNG marker. Full ISO/Joliet corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release evidence remain open.
 
 ## Generic graphics dispatch current-source refresh — 2026-08-31
 

@@ -202,9 +202,16 @@ Sonic1, resource, and final qualification remain required.
 
 ## Current ISO-9660 production-linked rerun — 2026-08-31
 
+- Retain exact canonical/container SHA-256 equality for `iso9660.c`,
+  `iso9660.h`, `scanners.c`, and `check_clamav.c` before relinking the existing
+  Docker production-linked GCC harness.
 - Retain current-source production-linked GCC evidence at `iso_map` 17/17 and
   `iso` 1/1, including the boundary matrix and nested PNG detection through
-  the materialized standard and no-Joliet logo ISO fixtures.
+  the materialized standard (`iso_normal.logo.iso`, SHA-256
+  `547b0b0fc0e7bbb3f49ed1e87f72ccfc4293abe582048f68dee8ec35e5544db3`) and
+  no-Joliet (`iso_no_joliet.logo.iso`, SHA-256
+  `88f77d6a154f7f8b0ebffae6953cf654ee7c0461bfc89e73420c27165991dfcc`) ISO
+  fixtures.
 - Keep full ISO/Joliet corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification open.
