@@ -1,5 +1,26 @@
 # Independent read-only audit of audit.md
 
+## UDF anchored descriptor-sequence admission — 2026-08-31
+
+The UDF scanner previously entered only a compact linear fixture path after
+the fixed VRS signature and had no authoritative relationship to the Anchor
+Volume Descriptor Pointer. It now probes the standards-defined anchor at
+logical sector 256, validates the anchor and every descriptor in its declared
+main sequence, checks extent status bits and map bounds, recognizes repeated
+PVD/PD/LVD/IUVD/USD records, requires a terminating descriptor and the
+required PVD/PD/LVD set, and makes unsupported Volume Descriptor Pointers
+fail-visible instead of falling through to the legacy scanner. The registered
+standards-shaped fixture is linked against the production static archive with
+the current UDF object and returns CL_EUNPACK with the exact
+UDF anchor-driven directory traversal is unsupported reason and cache taint;
+the malformed main-extent-type and sequence-pointer cases return their exact
+unsupported reasons. Current UDF and full unit-source GCC compilation pass.
+This is bounded anchor/sequence admission, not complete UDF qualification:
+reserve-sequence selection, FSD/FID location, root-ICB and descendant
+directory traversal, complete corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## UDF descriptor-tag integrity admission — 2026-08-30
 
 The UDF parser previously trusted every recognized descriptor tag without

@@ -3,6 +3,24 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UDF anchored descriptor-sequence admission — 2026-08-31
+
+The UDF ingress now uses the fixed VRS signature to probe the
+standards-defined Anchor Volume Descriptor Pointer at logical sector 256. A
+confirmed anchor is copied through a bounded read, its tag and extent status
+are validated, and each block in the declared main descriptor sequence is
+validated for tag integrity and physical location. The walker accepts the
+defined PVD/PD/LVD/IUVD/USD classes, requires a terminator and the required
+volume descriptors, and returns explicit unsupported state for descriptor
+sequence pointers. A production-linked GCC runner with the current UDF object
+and a registered unit fixture cover a valid anchored sequence plus malformed
+extent-status and pointer cases. The current path returns sticky
+CL_EUNPACK/non-cacheable state until root-ICB traversal is available;
+reserve-sequence selection, FSD/FID resolution, authoritative directory
+traversal, complete corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain
+required.
+
 ## UDF descriptor-tag integrity admission — 2026-08-30
 
 Recognized UDF descriptors are now integrity-checked before their fields are

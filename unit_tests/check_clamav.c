@@ -43135,6 +43135,9 @@ static void test_udf_finalize_descriptor_tags(uint8_t *data, size_t base,
             case 2:
                 descriptor_size = sizeof(AnchorVolumeDescriptorPointer);
                 break;
+            case 3:
+                descriptor_size = sizeof(VolumeDescriptorPointer);
+                break;
             case 4:
                 descriptor_size = sizeof(ImplementationUseVolumeDescriptor);
                 break;
@@ -43168,7 +43171,9 @@ static void test_udf_finalize_descriptor_tags(uint8_t *data, size_t base,
                 continue;
         }
 
-        if (block <= 11)
+        if (base / VOLUME_DESCRIPTOR_SIZE + block == 256U)
+            tag_location = 256U;
+        else if (block <= 11)
             tag_location = (uint32_t)(base / VOLUME_DESCRIPTOR_SIZE + block);
         test_udf_finalize_tag(descriptor, descriptor_size, tag_location);
     }
@@ -43330,10 +43335,11 @@ END_TEST
 START_TEST(test_udf_corpus_detects_embedded_mz)
 {
     enum {
-        UDF_TEST_VOLUME_BLOCKS   = 17,
+        UDF_TEST_VOLUME_BLOCKS   = 241,
         UDF_TEST_SIZE            = UDF_EMPTY_LEN + (UDF_TEST_VOLUME_BLOCKS * VOLUME_DESCRIPTOR_SIZE),
         UDF_TEST_PRIMARY         = 1,
         UDF_TEST_IMPLEMENTATION_USE = 4,
+        UDF_TEST_POINTER         = 3,
         UDF_TEST_LOGICAL         = 6,
         UDF_TEST_PARTITION       = 5,
         UDF_TEST_UNALLOCATED     = 7,
@@ -43357,6 +43363,7 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     size_t lvd_offset;
     size_t pd_offset;
     size_t pvd_offset;
+    size_t anchor_offset;
     size_t fid_offset;
     size_t allocation_offset;
     const char *last_virus;
@@ -43742,6 +43749,71 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor tag location does not match its sector");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    /* A standards-shaped volume descriptor sequence is identified by an
+     * anchor at logical sector 256, not by the compact fixture's linear
+     * descriptor run. The sequence walker must admit and classify it before
+     * the not-yet-implemented root-ICB traversal. */
+    anchor_offset = base + ((256U - (base / VOLUME_DESCRIPTOR_SIZE)) * VOLUME_DESCRIPTOR_SIZE);
+    memset(data + anchor_offset, 0, VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le16(data + anchor_offset + offsetof(DescriptorTag, tagId), UDF_TEST_ANCHOR);
+    test_udf_put_le32(data + anchor_offset +
+                          offsetof(AnchorVolumeDescriptorPointer, mainVolumeDescriptorSequence) +
+                          offsetof(extent_ad, extentLength),
+                      6U * VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + anchor_offset +
+                          offsetof(AnchorVolumeDescriptorPointer, mainVolumeDescriptorSequence) +
+                          offsetof(extent_ad, extentLocation),
+                      19);
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF anchor-driven directory traversal is unsupported");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    /* The two extent-status bits are part of the extent descriptor and must
+     * not be discarded while the byte length is decoded. */
+    test_udf_put_le32(data + anchor_offset +
+                          offsetof(AnchorVolumeDescriptorPointer, mainVolumeDescriptorSequence) +
+                          offsetof(extent_ad, extentLength),
+                      UINT32_C(0x40000000) + (6U * VOLUME_DESCRIPTOR_SIZE));
+    test_udf_finalize_tag(data + anchor_offset, sizeof(AnchorVolumeDescriptorPointer), 256);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF main descriptor sequence extent type is unsupported");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    /* Volume Descriptor Pointers are a standards-defined way to continue a
+     * sequence. They are not a reason to fall through to the legacy linear
+     * scanner; keep the unsupported continuation explicit. */
+    test_udf_put_le32(data + anchor_offset +
+                          offsetof(AnchorVolumeDescriptorPointer, mainVolumeDescriptorSequence) +
+                          offsetof(extent_ad, extentLength),
+                      6U * VOLUME_DESCRIPTOR_SIZE);
+    memset(data + base + (3 * VOLUME_DESCRIPTOR_SIZE), 0, VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le16(data + base + (3 * VOLUME_DESCRIPTOR_SIZE) +
+                          offsetof(DescriptorTag, tagId), UDF_TEST_POINTER);
+    test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
+    test_udf_finalize_tag(data + anchor_offset, sizeof(AnchorVolumeDescriptorPointer), 256);
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    test_udf_prepare_scan_context(&ctx, layers, map, scan_engine, &options);
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF descriptor sequence pointers are unsupported");
     ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
 

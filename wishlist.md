@@ -1,5 +1,20 @@
 # Wishlist
 
+## UDF anchored descriptor-sequence admission — 2026-08-31
+
+- Keep the Anchor Volume Descriptor Pointer at logical sector 256 as the
+  authoritative entry to a real UDF volume; validate its main descriptor
+  sequence extent status, bounds, tags, terminator, required PVD/PD/LVD set,
+  and explicit Volume Descriptor Pointer handling.
+- Retain the registered standards-shaped anchor fixture, exact unsupported
+  results for a non-recorded main extent and descriptor-sequence pointer, and
+  production-linked GCC source/runner evidence.
+- Complete reserve-sequence selection, File Set Descriptor Sequence resolution
+  from Logical Volume Contents Use, partition-map/index validation, root-ICB
+  and descendant directory traversal, complete corpus, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification.
+
 ## UDF descriptor-tag integrity admission — 2026-08-30
 
 - Validate every consumed UDF Descriptor Tag before trusting descriptor

@@ -31,6 +31,7 @@
 typedef enum {
     INVALID_DESCRIPTOR                          = 0,
     PRIMARY_VOLUME_DESCRIPTOR                   = 1,
+    VOLUME_DESCRIPTOR_POINTER                   = 3,
     IMPLEMENTATION_USE_VOLUME_DESCRIPTOR        = 4,
     LOGICAL_VOLUME_DESCRIPTOR                   = 6,
     PARTITION_DESCRIPTOR                        = 5,
@@ -618,6 +619,173 @@ static const void *udf_need_off(cli_ctx *ctx, size_t offset, size_t length, cl_e
     }
 
     return ptr;
+}
+
+/* Copy one complete logical sector while keeping fmap ownership local to the
+ * read. The caller can therefore validate and retain descriptor metadata
+ * without pinning the source page through later traversal. */
+static cl_error_t udf_copy_descriptor_block(cli_ctx *ctx, size_t offset, uint8_t *block,
+                                            const char *read_reason)
+{
+    const uint8_t *view;
+    cl_error_t read_status;
+
+    view = (const uint8_t *)udf_need_off(ctx, offset, VOLUME_DESCRIPTOR_SIZE, &read_status);
+    if (view == NULL) {
+        if (read_status == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, read_reason);
+        else
+            cli_mark_scan_incomplete(ctx, "UDF descriptor block is incomplete");
+        return read_status;
+    }
+
+    memcpy(block, view, VOLUME_DESCRIPTOR_SIZE);
+    fmap_unneed_ptr(ctx->fmap, view, VOLUME_DESCRIPTOR_SIZE);
+    return CL_SUCCESS;
+}
+
+/* Walk an Anchor Volume Descriptor Pointer's main sequence. This is the
+ * standards-based admission path for real UDF media. The existing linear
+ * scanner remains below for the historical compact fixtures until the root
+ * ICB/file-tree traversal is complete. */
+static cl_error_t udf_scan_anchor_volume(cli_ctx *ctx, const size_t offset)
+{
+    const size_t anchor_offset = 256U * VOLUME_DESCRIPTOR_SIZE;
+    uint8_t block[VOLUME_DESCRIPTOR_SIZE];
+    PrimaryVolumeDescriptor pvd;
+    PartitionDescriptor pd;
+    LogicalVolumeDescriptor lvd;
+    size_t sequence_offset;
+    size_t sequence_length;
+    uint64_t sequence_offset64;
+    uint64_t sequence_length64;
+    uint32_t main_location;
+    uint32_t main_length;
+    bool have_pvd = false;
+    bool have_pd  = false;
+    bool have_lvd = false;
+    bool have_terminator = false;
+    uint32_t main_extent_type;
+    size_t cursor;
+    size_t end;
+    cl_error_t ret;
+
+    /* The file-type signature is defined at sector 16. If the caller found a
+     * signature elsewhere, this path cannot safely reinterpret tag locations
+     * in the volume's sector namespace. Leave that old admission path to its
+     * established explicit result. */
+    if (offset != UDF_EMPTY_LEN || ctx == NULL || ctx->fmap == NULL ||
+        anchor_offset > ctx->fmap->len ||
+        VOLUME_DESCRIPTOR_SIZE > ctx->fmap->len - anchor_offset)
+        return CL_BREAK;
+
+    ret = udf_copy_descriptor_block(ctx, anchor_offset, block,
+                                    "UDF anchor descriptor could not be read completely");
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    if (getDescriptorTagId((DescriptorTag *)block) != ANCHOR_VOLUME_DESCRIPTOR_DESCRIPTOR_POINTER)
+        return CL_BREAK;
+
+    ret = udf_validate_descriptor_tag(ctx, (const DescriptorTag *)block,
+                                      VOLUME_DESCRIPTOR_SIZE, anchor_offset, true);
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    main_length   = le32_to_host(((AnchorVolumeDescriptorPointer *)block)->mainVolumeDescriptorSequence.extentLength);
+    main_location = le32_to_host(((AnchorVolumeDescriptorPointer *)block)->mainVolumeDescriptorSequence.extentLocation);
+    main_extent_type = main_length >> 30;
+    main_length &= UINT32_C(0x3fffffff);
+    if (main_extent_type != 0) {
+        cli_mark_scan_incomplete(ctx, "UDF main descriptor sequence extent type is unsupported");
+        return CL_EUNPACK;
+    }
+    if (main_length == 0 || main_length % VOLUME_DESCRIPTOR_SIZE != 0) {
+        cli_mark_scan_incomplete(ctx, "UDF main descriptor sequence extent is invalid");
+        return CL_EPARSE;
+    }
+
+    sequence_offset64 = (uint64_t)main_location * VOLUME_DESCRIPTOR_SIZE;
+    sequence_length64 = main_length;
+    if (sequence_offset64 > SIZE_MAX || sequence_length64 > SIZE_MAX ||
+        sequence_offset64 > ctx->fmap->len ||
+        sequence_length64 > (uint64_t)ctx->fmap->len - sequence_offset64) {
+        cli_mark_scan_incomplete(ctx, "UDF main descriptor sequence is outside the input map");
+        return CL_EPARSE;
+    }
+    sequence_offset = (size_t)sequence_offset64;
+    sequence_length = (size_t)sequence_length64;
+    end             = sequence_offset + sequence_length;
+
+    for (cursor = sequence_offset; cursor < end; cursor += VOLUME_DESCRIPTOR_SIZE) {
+        tag_identifier tag_id;
+
+        ret = udf_copy_descriptor_block(ctx, cursor, block,
+                                        "UDF main descriptor sequence could not be read completely");
+        if (ret != CL_SUCCESS)
+            return ret;
+
+        ret = udf_validate_descriptor_tag(ctx, (const DescriptorTag *)block,
+                                          VOLUME_DESCRIPTOR_SIZE, cursor, true);
+        if (ret != CL_SUCCESS)
+            return ret;
+
+        tag_id = getDescriptorTagId((DescriptorTag *)block);
+        switch (tag_id) {
+            case PRIMARY_VOLUME_DESCRIPTOR:
+                if (!have_pvd) {
+                    memcpy(&pvd, block, sizeof(pvd));
+                    have_pvd = true;
+                }
+                break;
+
+            case PARTITION_DESCRIPTOR:
+                if (!have_pd) {
+                    memcpy(&pd, block, sizeof(pd));
+                    have_pd = true;
+                }
+                break;
+
+            case LOGICAL_VOLUME_DESCRIPTOR:
+                if (!have_lvd) {
+                    memcpy(&lvd, block, sizeof(lvd));
+                    have_lvd = true;
+                }
+                break;
+
+            case IMPLEMENTATION_USE_VOLUME_DESCRIPTOR:
+            case UNALLOCATED_SPACE_DESCRIPTOR:
+                break;
+
+            case TERMINATING_DESCRIPTOR:
+                have_terminator = true;
+                cursor = end - VOLUME_DESCRIPTOR_SIZE;
+                break;
+
+            case VOLUME_DESCRIPTOR_POINTER:
+                cli_mark_scan_incomplete(ctx, "UDF descriptor sequence pointers are unsupported");
+                return CL_EUNPACK;
+
+            default:
+                cli_mark_scan_incomplete(ctx, "UDF main descriptor sequence contains an unsupported descriptor");
+                return CL_EUNPACK;
+        }
+    }
+
+    if (!have_terminator) {
+        cli_mark_scan_incomplete(ctx, "UDF main descriptor sequence has no terminator");
+        return CL_EPARSE;
+    }
+    if (!have_pvd || !have_pd || !have_lvd) {
+        cli_mark_scan_incomplete(ctx, "UDF main descriptor sequence is missing a required descriptor");
+        return CL_EPARSE;
+    }
+
+    (void)pvd;
+    (void)pd;
+    (void)lvd;
+    cli_mark_scan_incomplete(ctx, "UDF anchor-driven directory traversal is unsupported");
+    return CL_EUNPACK;
 }
 
 /* If this function fails, idx will not be updated */
@@ -1239,6 +1407,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
     ret = udf_checktimelimit(ctx, "UDF inspection reached the configured time limit");
     if (ret != CL_SUCCESS)
         goto done;
+
+    ret = udf_scan_anchor_volume(ctx, offset);
+    if (ret != CL_BREAK)
+        return ret;
 
     cli_dbgmsg("Scanning UDF file\n");
 
