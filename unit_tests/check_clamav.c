@@ -20887,6 +20887,8 @@ START_TEST(test_tar_eof_releases_member_resources)
 {
     uint8_t data[1024] = {0};
     struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
     char tempfile[PATH_MAX];
@@ -20895,12 +20897,20 @@ START_TEST(test_tar_eof_releases_member_resources)
     tar_test_make_posix_header(data, "payload", 3, '0');
     memcpy(data + 512, "MZP", 3);
     memset(&ctx, 0, sizeof(ctx));
+    memset(&options, 0, sizeof(options));
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
+    memset(&layer, 0, sizeof(layer));
     ctx.engine = scan_engine;
+    ctx.options = &options;
     ctx.fmap   = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap                = map;
+    layer.type                = CL_TYPE_POSIX_TAR;
+    layer.size                = map->len;
 
     ret = cli_untar(tmpdir, 1, &ctx);
     ck_assert_int_eq(ret, CL_EPARSE);

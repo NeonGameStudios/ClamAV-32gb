@@ -50,6 +50,22 @@ rather than being preempted by an unsupported-number parse result. Full
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## Current archive/compression production-linked rerun — 2026-08-31
+
+The current-source production-linked GCC harness passes `tar` 8/8,
+`tar_map` 3/3, `tar_corpus` 1/1, and `tar_member` 8/8 after the direct TAR
+member test was given a valid root recursion layer. CPIO passes `cpio` 1/1
+across all four materialized formats, `cpio_crc` 4/4, `cpio_numeric` 4/4,
+and `cpio_map` 6/6. SIS passes `sis` 1/1, `sis_structure` 2/2,
+`sis_member` 1/1, and `sis_map` 2/2. XZ passes `xz` 2/2, `xz_corpus` 1/1,
+and `xz_trailing` 1/1; Nullsoft passes `nulsft` 5/5, `nulsft_corpus` 1/1,
+and `nulsft_map` 2/2; and MSExpand passes `msexpand` 8/8 and
+`msexpand_map` 2/2. The current build's `rar` case passes 2/2 for explicit
+unavailable-backend behavior only; optional UnRAR extraction remains
+unqualified. Sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release evidence
+remain open.
+
 ## Current OLE2/XLM production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness now passes `ole2` 18/18,

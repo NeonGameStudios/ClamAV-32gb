@@ -42,6 +42,22 @@ Sonic1, resource, and final qualification remain required.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final qualification remain required.
 
+## Current archive/compression production-linked rerun — 2026-08-31
+
+- Retain current-source production-linked GCC evidence at `tar` 8/8,
+  `tar_map` 3/3, `tar_corpus` 1/1, and `tar_member` 8/8 after supplying the
+  direct TAR member test with a valid root recursion layer. CPIO passes
+  `cpio` 1/1 across all four materialized formats, `cpio_crc` 4/4,
+  `cpio_numeric` 4/4, and `cpio_map` 6/6; SIS passes `sis` 1/1,
+  `sis_structure` 2/2, `sis_member` 1/1, and `sis_map` 2/2.
+- Retain XZ evidence at `xz` 2/2, `xz_corpus` 1/1, and `xz_trailing` 1/1;
+  Nullsoft at `nulsft` 5/5, `nulsft_corpus` 1/1, and `nulsft_map` 2/2; and
+  MSExpand at `msexpand` 8/8 and `msexpand_map` 2/2. The current `rar` case
+  is limited to 2/2 explicit unavailable-backend checks; optional UnRAR
+  extraction remains open. Complete corpora, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification remain required.
+
 ## Current OLE2/XLM production-linked rerun — 2026-08-31
 
 - Keep the sector-bound and timeout fixtures aligned with the entry
