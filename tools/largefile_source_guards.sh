@@ -6623,6 +6623,7 @@ contains libclamav/readdb.c 'if (parsed > (uint64_t)UINT_MAX || parsed > (uint64
 contains libclamav/readdb.c 'last = engine->dbinfo = (struct cli_dbinfo *)MPOOL_CALLOC(engine->mempool, 1, sizeof(struct cli_dbinfo))'
 not_contains libclamav/readdb.c 'new->size = atoi(tokens[1])'
 contains libclamav/readdb.c 'cl_hash_destroy(ctx);'
+contains libclamav/readdb.c 'cl_cvdfree(pt->cvd);'
 contains libclamav/cvd.c 'if (db->loaded)'
 contains libclamav/cvd.c 'db->loaded = true;'
 contains libclamav/cvd.c 'File %s listed in .info was not found'

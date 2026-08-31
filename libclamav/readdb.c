@@ -6171,7 +6171,7 @@ cl_error_t cl_engine_free(struct cl_engine *engine)
         MPOOL_FREE(engine->mempool, pt->name);
         MPOOL_FREE(engine->mempool, pt->hash);
         if (pt->cvd)
-            cvd_free(pt->cvd);
+            cl_cvdfree(pt->cvd);
         MPOOL_FREE(engine->mempool, pt);
     }
     TASK_COMPLETE();

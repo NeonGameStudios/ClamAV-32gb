@@ -3291,7 +3291,7 @@ open.
   passes 1/1 through public `CL_TYPE_HWPOLE2` dispatch over a materialized
   `clam.ppt` OLE2 payload with a matching 32-bit size prefix; bounded nested
   scanning reaches an exact child marker, and the public map-boundary TCase
-  passes 2/2.
+  passes 3/3.
 - Keep full HWPOLE2/OLE2 corpus, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, Sonic1, and release gates
   open.
@@ -7411,7 +7411,7 @@ and Sonic1 qualification as release gates.
 
 ## HWPOLE2 current-source qualification audit — 2026-08-25
 
-- The current-source production-linked `hwpole2_map` TCase passes 2/2 for
+- The current-source production-linked `hwpole2_map` TCase passes 3/3 for
   missing-map admission and a public-API fixed-prefix read failure, preserving
   `CL_EREAD`, clean verdict, and non-cacheability; direct tests retain
   truncation, declared-size, and 32-bit-width coverage.
@@ -9250,3 +9250,14 @@ qualification as required evidence.
   materialized-large-file, Sonic1, and final parser-family/release
   qualification. The reusable ARM64 production build remains
   `ENABLE_UNRAR=OFF`.
+
+## CVD legacy metadata ownership — 2026-08-31
+
+- Keep legacy `struct cl_cvd` metadata allocated by `cli_loadinfo()` paired
+  with `cl_cvdfree()` during engine teardown; reserve Rust `cvd_free()` for
+  Rust-owned `cvd_open()` objects.
+- Retain the ownership source guard and current-source production-linked GCC
+  `cvd_info` evidence (1/1 across malformed, oversized, and valid metadata
+  sizes, including teardown). Add production-CVD/service parity, complete
+  CVD corpus, sanitizer, materialized-large-file, Linux x86-64, Sonic1, and
+  final release qualification evidence.

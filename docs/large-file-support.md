@@ -1215,6 +1215,20 @@ the existing Rust 1.97.1 environment. Full OneNote corpus, current full-C ABI,
 sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
 parser-family qualification remain release gates.
 
+## CVD legacy metadata ownership audit — 2026-08-31
+
+The legacy `.info` loader allocates `struct cl_cvd` metadata with the C
+allocator. Engine teardown now releases those headers through `cl_cvdfree()`
+instead of the Rust `cvd_free()` ABI, which owns a different Rust `CVD` object
+layout. The Rust deallocator remains in use for objects returned by the Rust
+`cvd_open()` path.
+
+The current-source production-linked GCC `cvd_info` TCase passes 1/1 across
+empty, malformed, oversized, and valid member-size fields, including teardown;
+the ownership source guard and generated-header GCC build pass. Production
+CVD/service parity, complete CVD corpus, sanitizer, materialized-large-file,
+Linux x86-64, Sonic1, and final release qualification remain open.
+
 ## OLE2 allocation-table and extraction-output admission
 
 OLE2 BAT/XBAT traversal now rejects a missing or out-of-range allocation-table
@@ -2771,7 +2785,7 @@ The isolated current-source production-linked GCC `hwpole2_corpus` case passes
 1/1 through public `CL_TYPE_HWPOLE2` dispatch over a materialized `clam.ppt`
 OLE2 payload wrapped by a matching 32-bit uncompressed-size prefix. The
 bounded embedded OLE2 scan reaches the exact `HWPOLE2.Member.MZ.UNOFFICIAL`
-matcher, and the existing public HWPOLE2 map-boundary TCase passes 2/2. Full
+matcher, and the existing public HWPOLE2 map-boundary TCase passes 3/3. Full
 HWPOLE2/OLE2 corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, Sonic1, and release qualification remain
 open.

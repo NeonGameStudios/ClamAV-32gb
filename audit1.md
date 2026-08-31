@@ -4634,7 +4634,7 @@ The isolated authoritative current-source production-linked GCC
 a materialized `clam.ppt` OLE2 payload wrapped by a matching 32-bit
 uncompressed-size prefix. The bounded embedded OLE2 scan reaches the exact
 `HWPOLE2.Member.MZ.UNOFFICIAL` matcher, and the existing public HWPOLE2
-map-boundary TCase passes 2/2. This is bounded HWPOLE2/OLE2 wrapper evidence,
+map-boundary TCase passes 3/3. This is bounded HWPOLE2/OLE2 wrapper evidence,
 not complete HWPOLE2 qualification; sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, Sonic1, and release evidence
 remain open.
@@ -14132,7 +14132,7 @@ qualification remain open, so `CL_TYPE_HWP3` stays pending.
 
 ## HWPOLE2 current-source qualification audit — 2026-08-25
 
-The current-source production-linked `hwpole2_map` TCase passes 2/2 through
+The current-source production-linked `hwpole2_map` TCase passes 3/3 through
 the public API: recognized input with no map remains an explicit incomplete
 parse, and an in-range callback failure while reading the fixed 32-bit size
 prefix returns `CL_EREAD` with a clean verdict and non-cacheable map state.
@@ -16636,3 +16636,19 @@ The reusable ARM64 production build still has `ENABLE_UNRAR=OFF`; real backend
 close-fault execution, complete RAR/RAR-SFX corpus, sanitizer/leak evidence,
 certified Linux x86-64, production-CVD/service, materialized large-file,
 Sonic1, and final parser-family/release qualification remain open.
+
+## CVD legacy metadata ownership audit — 2026-08-31
+
+The malformed `.info` regression exposed a teardown mismatch: `cli_loadinfo()`
+allocates its legacy `struct cl_cvd` with the C allocator, while
+`cl_engine_free()` passed that pointer to the Rust `cvd_free()` ABI, which
+interprets its argument as a Rust `Box<CVD>`. Engine teardown now calls
+`cl_cvdfree()` for legacy metadata headers; Rust `cvd_free()` remains reserved
+for objects returned by the Rust `cvd_open()` path.
+
+The current-source production-linked GCC `cvd_info` TCase passes 1/1 across
+empty, malformed, oversized, and valid member-size fields and exercises engine
+teardown after each parse. The ownership source guard and current generated-
+header GCC build pass. Production CVD/service parity, complete CVD corpus,
+sanitizer, materialized-large-file, Linux x86-64, Sonic1, and final release
+qualification remain open.

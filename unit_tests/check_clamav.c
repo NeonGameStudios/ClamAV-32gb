@@ -3079,6 +3079,7 @@ START_TEST(test_cvd_info_member_size_is_checked)
     char oversized[32];
     char file_path[PATH_MAX];
     char contents[256];
+    char db_buffer[FILEBUFF];
     struct cl_engine *engine;
     struct cli_dbio dbio;
     unsigned int sigs;
@@ -3088,6 +3089,8 @@ START_TEST(test_cvd_info_member_size_is_checked)
     int fd;
     int written;
     cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
 
     snprintf(oversized, sizeof(oversized), "%llu", (unsigned long long)UINT_MAX + 1ULL);
 
@@ -3110,6 +3113,12 @@ START_TEST(test_cvd_info_member_size_is_checked)
         memset(&dbio, 0, sizeof(dbio));
         dbio.fs = fs;
         dbio.size = (unsigned int)written;
+        dbio.buf = db_buffer;
+        dbio.bufpt = NULL;
+        dbio.readpt = db_buffer;
+        dbio.bufsize = sizeof(db_buffer);
+        dbio.readsize = dbio.size < dbio.bufsize ? dbio.size : dbio.bufsize - 1U;
+        dbio.usebuf = 1;
         engine = cl_engine_new();
         ck_assert_ptr_nonnull(engine);
         sigs = 0;
@@ -3135,6 +3144,12 @@ START_TEST(test_cvd_info_member_size_is_checked)
     memset(&dbio, 0, sizeof(dbio));
     dbio.fs = fs;
     dbio.size = (unsigned int)contents_size;
+    dbio.buf = db_buffer;
+    dbio.bufpt = NULL;
+    dbio.readpt = db_buffer;
+    dbio.bufsize = sizeof(db_buffer);
+    dbio.readsize = dbio.size < dbio.bufsize ? dbio.size : dbio.bufsize - 1U;
+    dbio.usebuf = 1;
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
     sigs = 0;
@@ -49572,6 +49587,7 @@ static Suite *test_cl_suite(void)
     Suite *s           = suite_create("cl_suite");
     TCase *tc_cl       = tcase_create("cl_api");
     TCase *tc_cvd      = tcase_create("cvd_api");
+    TCase *tc_cvd_info = tcase_create("cvd_info");
     TCase *tc_cryptff  = tcase_create("cryptff");
     TCase *tc_cryptff_api = tcase_create("cryptff_api");
     TCase *tc_elf_map  = tcase_create("elf_map");
@@ -49754,8 +49770,10 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cvd, test_cl_load);
     tcase_add_test(tc_cvd, test_cl_load_rejects_null_arguments);
-    tcase_add_test(tc_cvd, test_cvd_info_member_size_is_checked);
     tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);
+    suite_add_tcase(s, tc_cvd_info);
+    tcase_add_checked_fixture(tc_cvd_info, cl_setup, cl_teardown);
+    tcase_add_test(tc_cvd_info, test_cvd_info_member_size_is_checked);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_cryptff);
     tcase_add_checked_fixture(tc_cryptff, cl_setup, cl_teardown);
