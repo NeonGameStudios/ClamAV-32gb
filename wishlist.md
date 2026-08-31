@@ -3756,6 +3756,24 @@ open.
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, Sonic1, and release gates open.
 
+## PE parser qualification refresh — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for `matcher.c`,
+  `scanners.c`, and `check_clamav.c` before relinking the production-linked
+  GCC harness (`matcher.c`
+  `24fb9daa6dc63f11db81b3b89f97553f152b243bfcb351c694060cbd37a6afd0`,
+  `scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+  and `check_clamav.c`
+  `d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`).
+- Retain current-source evidence at `pe32plus_common` 1/1, `pe` 13/13,
+  `pe_map` 4/4, and `pe_corpus` 1/1 after CMake materializes the FSG and UPX
+  fixtures (SHA-256
+  `13f8764444fb9a0ffc9bfe2120e1ad163779846b747163bf14b71519504cb9ae` and
+  `d1973ca87229f403ef214905c4a9c2f2a4cca73e1b5b0217eb3f7595e706e16f`).
+- Keep complete PE unpacker/resource corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification open.
+
 ## PE packer corpus qualification — 2026-08-25
 
 - The current-source production-linked GCC `pe` case passes 13/13 and

@@ -468,9 +468,19 @@ and final parser/release qualification remain required.
 
 ## Current PE/GPT production-linked rerun — 2026-08-31
 
-The current-source production-linked GCC harness passes `pe` 13/13,
-`pe_map` 4/4, and materialized `pe_corpus` 1/1 across FSG and UPX unpacking,
-with exact offset-0 nested MZP matching after reconstruction. The GPT cases
+The canonical `matcher.c`, `scanners.c`, and `check_clamav.c` sources were
+transferred into the existing Docker production-linked GCC harness with exact
+SHA-256 equality (`matcher.c`
+`24fb9daa6dc63f11db81b3b89f97553f152b243bfcb351c694060cbd37a6afd0`,
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+and `check_clamav.c`
+`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
+current-source production-linked GCC harness passes `pe32plus_common` 1/1,
+`pe` 13/13, `pe_map` 4/4, and materialized `pe_corpus` 1/1 across FSG and UPX
+unpacking. The CMake-materialized FSG and UPX fixtures have hashes
+`13f8764444fb9a0ffc9bfe2120e1ad163779846b747163bf14b71519504cb9ae` and
+`d1973ca87229f403ef214905c4a9c2f2a4cca73e1b5b0217eb3f7595e706e16f`, with
+exact offset-0 nested MZP matching after reconstruction. The GPT cases
 pass `gpt` 7/7 and `gpt_corpus` 1/1. Complete PE unpacker/resource and
 GPT/partition corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
