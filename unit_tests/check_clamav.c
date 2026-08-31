@@ -29396,7 +29396,11 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     uint64_t output_length = 0;
     size_t legacy_length = 0;
     size_t offset = 0;
+    size_t block_algorithm_offset;
+    size_t block_size_offset;
+    size_t block_data_offset;
     size_t crc_offset;
+    size_t store_archive_length;
     struct cl_engine engine;
     cli_ctx ctx;
 
@@ -29430,8 +29434,10 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
 
     zip_stream_write_u32(archive + offset, 0x02B50C13U);
     offset += 4;
+    block_algorithm_offset = offset;
     archive[offset++] = 4;
     archive[offset++] = 0;
+    block_size_offset = offset;
     zip_stream_write_u32(archive + offset, sizeof(expected) - 1U);
     offset += 4;
     zip_stream_write_u32(archive + offset, sizeof(lzma_data));
@@ -29442,6 +29448,7 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     offset += 4;
     zip_stream_write_u32(archive + offset, 0x08E28222U);
     offset += 4;
+    block_data_offset = offset;
     memcpy(archive + offset, lzma_data, sizeof(lzma_data));
     offset += sizeof(lzma_data);
     zip_stream_write_u32(archive + offset, 0x08E28222U);
@@ -29497,14 +29504,22 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     ncomments = 0;
     ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_SUCCESS);
     ck_assert_int_eq(cli_egg_extract_file(handle, &legacy_filename, &legacy_buffer,
-                                          &legacy_length), CL_SUCCESS);
-    ck_assert_str_eq(legacy_filename, "test.txt");
-    ck_assert_uint_eq(legacy_length, sizeof(expected) - 1U);
-    ck_assert_mem_eq(legacy_buffer, expected, sizeof(expected) - 1U);
-    free((void *)legacy_filename);
-    free((void *)legacy_buffer);
+                                          &legacy_length), CL_EUNPACK);
+    ck_assert_ptr_null(legacy_filename);
+    ck_assert_ptr_null(legacy_buffer);
+    ck_assert_uint_eq(legacy_length, 0);
     cli_egg_close(handle);
     cl_fmap_close(map);
+
+    /* Exercise the legacy contiguous CRC path with a supported stored block;
+     * the LZMA member above is intentionally unsupported by that API. */
+    archive[block_algorithm_offset] = 0;
+    zip_stream_write_u32(archive + block_size_offset, sizeof(expected) - 1U);
+    zip_stream_write_u32(archive + block_size_offset + 4, sizeof(expected) - 1U);
+    memcpy(archive + block_data_offset, expected, sizeof(expected) - 1U);
+    zip_stream_write_u32(archive + block_data_offset + sizeof(expected) - 1U,
+                         0x08E28222U);
+    store_archive_length = block_data_offset + sizeof(expected) - 1U + 4U;
 
     zip_stream_write_u32(archive + crc_offset,
                          (uint32_t)crc32(0L, expected, (uInt)(sizeof(expected) - 1U)) ^ 1U);
@@ -29514,7 +29529,7 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     memset(&engine, 0, sizeof(engine));
     engine.maxcontiguoussize = CLI_DEFAULT_MAX_CONTIGUOUS_SIZE;
     memset(&ctx, 0, sizeof(ctx));
-    map = cl_fmap_open_memory(archive, offset);
+    map = cl_fmap_open_memory(archive, store_archive_length);
     ck_assert_ptr_nonnull(map);
     ctx.engine = &engine;
     ctx.fmap   = map;
@@ -29532,7 +29547,7 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
     cl_fmap_close(map);
 
     memset(&ctx, 0, sizeof(ctx));
-    map = cl_fmap_open_memory(archive, offset);
+    map = cl_fmap_open_memory(archive, store_archive_length);
     ck_assert_ptr_nonnull(map);
     ctx.engine = &engine;
     ctx.fmap   = map;

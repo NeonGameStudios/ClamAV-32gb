@@ -3264,11 +3264,19 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
         status = CL_EUNPACK;
         goto done;
     } else {
-        if (le64_to_host(currFile->file->file_length) > CLI_MAX_ALLOCATION) {
+        const uint64_t file_length = le64_to_host(currFile->file->file_length);
+
+        if (file_length > CLI_MAX_ALLOCATION) {
             status = CL_EMAXSIZE;
             goto done;
         }
-        if (currFile->nBlocks == 0 || currFile->blocks == NULL) {
+        if ((currFile->nBlocks == 0 && file_length != 0) ||
+            (currFile->nBlocks != 0 && currFile->blocks == NULL)) {
+            cli_warnmsg("cli_egg_extract_file: file block table is inconsistent with file length\n");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if (currFile->nBlocks == 0) {
             cli_dbgmsg("cli_egg_extract_file: Empty file!\n");
         }
 
@@ -3281,9 +3289,10 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
             if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
                 goto done;
 
-            if (NULL == currBlock->blockHeader) {
+            if (NULL == currBlock || NULL == currBlock->blockHeader) {
                 cli_errmsg("cli_egg_extract_file: current egg_block missing header!\n");
-                break;
+                status = CL_EFORMAT;
+                goto done;
             }
             if (decompressed_size > CLI_MAX_ALLOCATION || currBlock->compressedSize == 0) {
                 status = (decompressed_size > CLI_MAX_ALLOCATION) ? CL_EMAXSIZE : CL_EFORMAT;
@@ -3438,11 +3447,13 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
                 }
                 case BLOCK_HEADER_COMPRESS_ALGORITHM_AZO: {
                     cli_warnmsg("cli_egg_extract_file: AZO decompression not yet supported.\n");
+                    status = CL_EUNPACK;
                     goto done;
                     // break;
                 }
                 case BLOCK_HEADER_COMPRESS_ALGORITHM_LZMA: {
                     cli_warnmsg("cli_egg_extract_file: LZMA decompression not yet supported.\n");
+                    status = CL_EUNPACK;
                     goto done;
                     // char* decompressed_block       = NULL;
                     // size_t decompressed_block_size = 0;
@@ -3474,6 +3485,7 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
                 default: {
                     cli_errmsg("cli_egg_extract_file: unknown compression algorithm: %d!\n",
                                currBlock->compressionAlgorithm);
+                    status = CL_EFORMAT;
                     goto done;
                 }
             }
@@ -3484,9 +3496,9 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
             }
 
             if ((i == currFile->nBlocks - 1) &&                                     // last block ?
-                (decompressed_size != le64_to_host(currFile->file->file_length))) { // right amount of data ?
+                (decompressed_size != file_length)) {                               // right amount of data ?
                 cli_warnmsg("cli_egg_extract_file: alleged filesize (%" PRIu64 ") != actual filesize (%" PRIu64 ")!\n",
-                            le64_to_host(currFile->file->file_length),
+                            file_length,
                             decompressed_size);
                 status = CL_EFORMAT;
                 goto done;

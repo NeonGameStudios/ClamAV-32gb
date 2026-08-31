@@ -8,7 +8,28 @@
   non-cacheable.
 - Retain the isolated current-source production-linked GCC `yara` TCase at
   21/21 and source guards. Full YARA corpus, sanitizer, production-CVD/service,
-  materialized-large-file, Sonic1, and final qualification remain required.
+materialized-large-file, Sonic1, and final qualification remain required.
+
+## Current EGG production-linked rerun — 2026-08-31
+
+- Retain current-source production-linked GCC evidence at `egg_map` 7/7,
+  `egg_metadata` 1/1, and `egg_sfx` 2/2.
+- Keep legacy contiguous extraction fail-visible for unsupported LZMA, null
+  block entries, and inconsistent block tables; retain the stored-block CRC
+  mismatch evidence with no partial output and sticky non-cacheability.
+  Complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+final qualification remain required.
+
+## Current Rust/MSPack production-linked rerun — 2026-08-31
+
+- Retain current-source production-linked GCC evidence at `rust_map` 1/1,
+  `rust_lha` 9/9, `rust_alz` 2/2, `rust_onenote` 2/2, `mspack_map` 6/6,
+  `onenote` 2/2, and `mspack` 7/7.
+- Keep all materialized CAB/CHM and generated OneNote fixtures in the corpus
+  qualification path. Full Rust/C ABI, CAB/CHM/OneNote corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final qualification remain required.
 
 ## Current OLE2/XLM production-linked rerun — 2026-08-31
 

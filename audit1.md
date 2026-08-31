@@ -12,6 +12,28 @@ boundaries, and the oversized-stream regression. Full YARA corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## Current EGG production-linked rerun — 2026-08-31
+
+The current-source production-linked GCC harness passes `egg_map` 7/7,
+`egg_metadata` 1/1, and `egg_sfx` 2/2. The legacy contiguous extraction
+regression now returns `CL_EUNPACK` without publishing output for unsupported
+LZMA, rejects inconsistent block tables and null block entries, and preserves
+sticky incomplete/non-cacheable state for a supported stored-block CRC
+mismatch. Complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
+## Current Rust/MSPack production-linked rerun — 2026-08-31
+
+The current-source production-linked GCC harness passes `rust_map` 1/1,
+`rust_lha` 9/9, `rust_alz` 2/2, `rust_onenote` 2/2, `mspack_map` 6/6,
+`onenote` 2/2, and `mspack` 7/7. The mspack corpus now includes all
+materialized CAB/CHM decoder fixtures, while the OneNote corpus reaches its
+exact nested marker through the generated `.one` fixtures. Full Rust/C ABI,
+CAB/CHM/OneNote corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## Current OLE2/XLM production-linked rerun — 2026-08-31
 
 The stale sector-bound and timeout fixtures were corrected: the former now
