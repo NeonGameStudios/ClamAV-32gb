@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## fmap_gets one-byte destination admission — 2026-08-31
+
+Both memory- and descriptor-backed `fmap_gets()` implementations treat
+`max_len == 1` as a successful empty read, write only the terminator, and
+leave the source offset unchanged. The isolated current-source
+production-linked GCC `fmap_api` TCase passes 1/1 across memory-, descriptor-,
+nested-, and dumped-map variants. Complete fmap/line-oriented parser corpus,
+sanitizer, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain required.
+
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 
 The WorkBook encryption probe checks each BIFF record length against the

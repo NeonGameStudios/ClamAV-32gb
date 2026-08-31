@@ -16291,7 +16291,9 @@ same valid boundary. Both implementations now write only the required
 terminator, leave the input offset unchanged, and return success for this
 fgets-style boundary. The existing fmap API regression covers both memory- and
 descriptor-backed maps; source guards pin the zero-length handoffs.
-Current-source production-GCC, sanitizer, complete fmap/line-oriented parser
+The isolated current-source production-linked GCC `fmap_api` TCase passes 1/1,
+covering the memory-, descriptor-, nested-, and dumped-map variants. Complete
+fmap/line-oriented parser
 corpus, production-CVD/service, materialized-large-file, Sonic1, and final
 release qualification remain open.
 

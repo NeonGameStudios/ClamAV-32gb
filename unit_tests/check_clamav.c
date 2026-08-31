@@ -49376,6 +49376,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_largefile;
 #endif
     TCase *tc_cl_scan  = tcase_create("cl_scan_api");
+    TCase *tc_fmap_api = tcase_create("fmap_api");
     TCase *tc_metadata_json = tcase_create("metadata_json");
     TCase *tc_dmg      = tcase_create("dmg");
     TCase *tc_gif      = tcase_create("gif");
@@ -51188,6 +51189,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_authenticode_post_container_parse_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_fmap_hash_read_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_pe_overlay_range_preserves_native_size);
+
+    suite_add_tcase(s, tc_fmap_api);
+    tcase_add_test(tc_fmap_api, test_fmap_assorted_api);
 
     suite_add_tcase(s, tc_metadata_json);
     tcase_add_checked_fixture(tc_metadata_json, mhtml_engine_setup, mhtml_engine_teardown);
