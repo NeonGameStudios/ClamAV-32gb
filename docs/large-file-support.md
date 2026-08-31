@@ -34,6 +34,20 @@ installed. Complete Rust-module sanitizer evidence, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
+## CAB SFX focused current-source admission refresh — 2026-08-31
+
+The canonical scanner and unit-test sources were transferred into the existing
+Docker production-linked GCC harness and their SHA-256 hashes matched exactly.
+The focused `cabsfx` TCase passes 3/3: a valid prefixed CAB reaches an exact
+offset-0 child matcher, while confirmed out-of-range and in-range fixed-header
+read-failure cases return fail-visible errors with clean verdicts and
+non-cacheable maps.
+
+This refresh confirms the embedded CAB-SFX admission boundary, not final CAB
+qualification. Complete CAB/SFX corpus, sanitizer, certified Linux x86-64,
+materialized-large-file, production-CVD/service, Sonic1, and final
+parser/release qualification remain required.
+
 ## BinHex focused current-source corpus refresh — 2026-08-31
 
 The canonical BinHex parser, header, scanner, and unit-test sources were

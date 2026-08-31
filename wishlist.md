@@ -9455,6 +9455,17 @@ qualification as required evidence.
   materialized-large-file, Sonic1 resource, and final parser/release
   qualification.
 
+## CAB SFX focused current-source admission refresh — 2026-08-31
+
+- Retain canonical/container SHA-256 equality for the scanner and unit-test
+  source.
+- Retain the focused production-linked GCC evidence: `cabsfx` passes 3/3 for
+  valid prefixed admission and confirmed out-of-range/in-range read-failure
+  cases, with non-cacheable maps on failures.
+- Complete CAB/SFX corpus, sanitizer, certified Linux x86-64,
+  materialized-large-file, production-CVD/service, Sonic1 resource, and final
+  parser/release qualification.
+
 ## BinHex focused current-source corpus refresh — 2026-08-31
 
 - Retain canonical/container SHA-256 equality for the BinHex parser, header,
