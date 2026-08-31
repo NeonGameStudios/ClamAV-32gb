@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## OLE2 stream-chain read-status preservation — 2026-08-31
+
+The OLE2 VBA, ordinary embedded-stream, and encrypted-stream handlers could
+finish a data block and then lose the operational status from the BAT/SBAT
+lookup used to find the next block. An in-range fmap callback failure was
+therefore converted by the partial-materialization cleanup path into a
+generic parse result. Each handler now checks `hdr->read_status` immediately
+after every next-block lookup and returns the recorded `CL_EREAD` or
+structural status while retaining sticky incomplete and non-cacheable state.
+
+The registered `test_ole2_stream_chain_read_failure_preserves_status` fixture
+renames the workbook stream so the enum pass does not consume the injected
+fault, then fails the BAT read after valid property admission. The current
+source compiles with the production warning-enabled GCC flags, the complete
+current unit-test translation unit compiles, and a production-static focused
+runner plus matching GCC ASan/UBSan runner both return `CL_EREAD` with the
+exact sector-read reason. Full OLE/VBA/XLM corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.
+
 ## HFS+ leaf-chain admission — 2026-08-31
 
 The HFS+ B-tree walker previously treated a zero forward link as the end of

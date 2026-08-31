@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OLE2 stream-chain read-status preservation — 2026-08-31
+
+OLE2 VBA, ordinary embedded-stream, and encrypted-stream handlers now inspect
+the sticky sector-read status immediately after each BAT/SBAT next-block
+lookup. An in-range fmap callback failure therefore remains `CL_EREAD`
+instead of being collapsed into a generic parse result after a partial stream
+materialization. The registered stream-chain regression, current-source
+production GCC compilation, and matching production-static GCC and GCC
+ASan/UBSan focused runners pass with the exact incomplete reason and a
+non-cacheable fmap. Full OLE/VBA/XLM corpus, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+required.
+
 ## HFS+ leaf-chain admission — 2026-08-31
 
 HFS+ B-tree headers now have explicit leaf-chain admission. Inconsistent

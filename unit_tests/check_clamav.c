@@ -33890,6 +33890,87 @@ START_TEST(test_ole2_sector_range_classes_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole2_stream_chain_read_failure_preserves_status)
+{
+    const uint8_t replacement_name[] = {'O', 0, 't', 0, 'h', 0, 'e', 0, 'r', 0, 0, 0};
+    char file_path[PATH_MAX];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    struct stat sb;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    size_t directory_offset;
+    size_t entry_offset;
+    size_t bat_offset;
+    uint16_t sector_shift;
+    uint32_t directory_sector;
+    uint32_t bat_sector;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/has_png_and_jpeg.xls", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sb), 0);
+    ck_assert_msg(sb.st_size > 0 && (uintmax_t)sb.st_size <= SIZE_MAX,
+                  "invalid OLE2 fixture size");
+    data_size = (size_t)sb.st_size;
+    data      = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_int_eq(read(fd, data, data_size), (ssize_t)data_size);
+    ck_assert_int_eq(close(fd), 0);
+
+    sector_shift    = cli_readint16(data + 30U);
+    directory_sector = cli_readint32(data + 48U);
+    bat_sector       = cli_readint32(data + 76U);
+    ck_assert_msg(sector_shift < sizeof(size_t) * CHAR_BIT, "invalid OLE2 sector shift");
+    ck_assert_msg((size_t)directory_sector <= (SIZE_MAX / ((size_t)1 << sector_shift)) - 1U,
+                  "directory sector coordinate overflow");
+    ck_assert_msg((size_t)bat_sector <= (SIZE_MAX / ((size_t)1 << sector_shift)) - 1U,
+                  "BAT sector coordinate overflow");
+    directory_offset = ((size_t)directory_sector + 1U) * ((size_t)1 << sector_shift);
+    entry_offset     = directory_offset + 128U;
+    bat_offset       = ((size_t)bat_sector + 1U) * ((size_t)1 << sector_shift);
+    ck_assert_msg(entry_offset <= data_size - 128U, "OLE2 workbook entry is truncated");
+    ck_assert_msg(bat_offset <= data_size - 512U, "OLE2 BAT entry is truncated");
+
+    /* Keep the CFB structure valid but prevent the enum pass from probing the
+     * WorkBook BIFF chain. The OTF pass must then report the BAT read failure
+     * encountered while following the first embedded stream. */
+    memset(data + entry_offset, 0, 64U);
+    memcpy(data + entry_offset, replacement_name, sizeof(replacement_name));
+    data[entry_offset + 64U] = (uint8_t)sizeof(replacement_name);
+    data[entry_offset + 65U] = 0;
+
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    map->need = ole2_block_read_failure;
+    ole2_block_failure_offset = bat_offset;
+    ole2_block_failure_length = 512U;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE2 sector block could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    ole2_block_failure_offset = SIZE_MAX;
+    ole2_block_failure_length = SIZE_MAX;
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_ole2_mso_prefix_range_classes_are_fail_visible)
 {
     static const uint8_t truncated_prefix[sizeof(uint32_t) - 1U] = {0};
@@ -49919,6 +50000,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2, test_ole2_truncated_header_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_header_read_failure_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_truncated_property_tree_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_stream_chain_read_failure_preserves_status);
     tcase_add_test(tc_ole2, test_ole2_mso_prefix_range_classes_are_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_invalid_block_geometry_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_extracted_output_requires_directory);
@@ -50401,6 +50483,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ole2_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_sector_range_classes_are_fail_visible);
+    tcase_add_test(tc_cl, test_ole2_stream_chain_read_failure_preserves_status);
     tcase_add_test(tc_cl, test_ole2_mso_prefix_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_vba_project_directory_requires_context_and_engine);
     tcase_add_test(tc_cl, test_ole2_property_name_rejects_invalid_arguments);

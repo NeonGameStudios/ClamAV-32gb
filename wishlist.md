@@ -1,5 +1,18 @@
 # Wishlist
 
+## OLE2 stream-chain read-status preservation — 2026-08-31
+
+- Keep OLE2 VBA, ordinary embedded-stream, and encrypted-stream handlers
+  checking `hdr->read_status` immediately after each BAT/SBAT next-block
+  lookup; an in-range callback failure must remain `CL_EREAD`, incomplete,
+  and non-cacheable after a partial data-block write.
+- Retain the registered stream-chain fault fixture, source guards, current
+  production-GCC compilation, and production-static GCC plus ASan/UBSan
+  focused runner evidence.
+- Complete OLE/VBA/XLM corpus, sanitizer/leak, production-CVD/service,
+  materialized-large-file, certified Linux x86-64, Sonic1, and final
+  parser/release qualification.
+
 ## HFS+ leaf-chain admission — 2026-08-31
 
 - Reconcile HFS+ B-tree header leaf metadata before walking a declared tree;

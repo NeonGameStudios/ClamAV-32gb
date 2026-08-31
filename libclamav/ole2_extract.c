@@ -1469,6 +1469,10 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
 
             len -= MIN(len, 1 << hdr->log2_small_block_size);
             current_block = ole2_get_next_sbat_block(hdr, current_block);
+            if (hdr->read_status != CL_SUCCESS) {
+                ret = hdr->read_status;
+                break;
+            }
         } else {
             /* Big block file */
             if (!ole2_read_block(hdr, buff, 1 << hdr->log2_big_block_size, current_block)) {
@@ -1488,6 +1492,10 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
             }
 
             current_block = ole2_get_next_block_number(hdr, current_block);
+            if (hdr->read_status != CL_SUCCESS) {
+                ret = hdr->read_status;
+                break;
+            }
             len -= MIN(len, (1 << hdr->log2_big_block_size));
         }
     }
@@ -2326,6 +2334,10 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
 
             len -= MIN(len, 1 << hdr->log2_small_block_size);
             current_block = ole2_get_next_sbat_block(hdr, current_block);
+            if (hdr->read_status != CL_SUCCESS) {
+                ret = hdr->read_status;
+                break;
+            }
         } else {
             /* Big block file */
             if (!ole2_read_block(hdr, buff, 1 << hdr->log2_big_block_size, current_block)) {
@@ -2344,6 +2356,10 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
             }
 
             current_block = ole2_get_next_block_number(hdr, current_block);
+            if (hdr->read_status != CL_SUCCESS) {
+                ret = hdr->read_status;
+                break;
+            }
             len -= MIN(len, (1 << hdr->log2_big_block_size));
         }
     }
@@ -2596,6 +2612,10 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
             stream_bytes_read += MIN(len, 1 << hdr->log2_small_block_size);
             len -= MIN(len, 1 << hdr->log2_small_block_size);
             current_block = ole2_get_next_sbat_block(hdr, current_block);
+            if (hdr->read_status != CL_SUCCESS) {
+                ret = hdr->read_status;
+                break;
+            }
 
             // These small block files don't seem to be encrypted.
         } else {
@@ -2649,6 +2669,10 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
             readIdx = leftover;
 
             current_block = ole2_get_next_block_number(hdr, current_block);
+            if (hdr->read_status != CL_SUCCESS) {
+                ret = hdr->read_status;
+                break;
+            }
             stream_bytes_read += blockSize;
         }
     }
