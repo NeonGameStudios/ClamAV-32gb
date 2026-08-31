@@ -3,6 +3,21 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UDF directory traversal admission — 2026-08-30
+
+Confirmed UDF directory FIDs are no longer accepted as successful skipped
+members. Until authoritative traversal from the file-set root ICB is
+implemented, they return `CL_EUNPACK`, set the sticky `UDF directory traversal
+is unsupported` reason, and make the volume non-cacheable. The exact prior
+committed UDF object returns clean/cacheable on the registered directory
+fixture; the current production-linked object records no child alert and
+returns the explicit unsupported result. The matching GCC ASan/UBSan run with
+leak detection passes. This is fail-visible admission evidence, not directory
+support: bounded root/descendant traversal, cycle and duplicate control,
+descriptor integrity, full corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain required.
+
 ## UDF allocation-mode and descriptor-window admission — 2026-08-30
 
 UDF file-entry allocation dispatch now reads all three format-defined ICB type

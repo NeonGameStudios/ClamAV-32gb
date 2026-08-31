@@ -2255,6 +2255,11 @@ if [ "$udf_icb_mask_count" -ne 2 ]; then
     echo 'large-file source guard failed: both UDF allocation dispatches must preserve all three type bits' >&2
     exit 1
 fi
+contains libclamav/udf.c 'UDF directory traversal is unsupported'
+not_contains libclamav/udf.c 'extractFile: Skipping directory'
+contains unit_tests/check_clamav.c 'A directory FID is an authoritative traversal request'
+contains unit_tests/check_clamav.c 'unsupported UDF directory reached child alert'
+contains docs/largefile-capabilities.tsv 'udf-directory-admission'
 contains libclamav/hfsplus.c 'HFS+ volume header is incomplete'
 contains libclamav/hfsplus.c 'HFS+ volume header could not be read completely'
 contains libclamav/hfsplus.c 'HFS+ input map is unavailable'

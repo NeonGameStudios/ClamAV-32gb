@@ -321,8 +321,9 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
     uint64_t total_length = 0;
 
     if (isDirectory(fileIdentifierDescriptor)) {
-        cli_dbgmsg("extractFile: Skipping directory\n");
-        ret = CL_SUCCESS;
+        cli_warnmsg("extractFile: UDF directory traversal is unsupported.\n");
+        cli_mark_scan_incomplete(ctx, "UDF directory traversal is unsupported");
+        ret = CL_EUNPACK;
         goto done;
     }
 

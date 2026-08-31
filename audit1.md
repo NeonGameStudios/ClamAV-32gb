@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## UDF directory traversal admission — 2026-08-30
+
+The UDF extractor treated every directory File Identifier Descriptor as a
+successful no-op. A confirmed directory subtree could therefore remain wholly
+uninspected while the volume returned a clean, cacheable result. Until the
+parser implements authoritative traversal from the file-set root ICB, a
+directory FID now returns `CL_EUNPACK`, records `UDF directory traversal is
+unsupported`, and makes the containing map non-cacheable. The registered
+exact-child fixture proves the path cannot reach its referenced marker. The
+exact prior committed UDF object returns `CL_SUCCESS` with no incomplete
+reason and a cacheable map; a production-static archive with only the current
+UDF object returns the explicit unsupported result with no child alert. The
+matching GCC ASan/UBSan run with leak detection is clean. This closes the
+silent-clean result but does not qualify UDF directories: authoritative root
+and descendant traversal, cycle/duplicate control, descriptor integrity,
+complete corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+open.
+
 ## UDF allocation-mode and descriptor-window admission — 2026-08-30
 
 The UDF file-entry path masked only two bits of the ICB allocation-descriptor

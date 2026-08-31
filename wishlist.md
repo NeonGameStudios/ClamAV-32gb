@@ -1,5 +1,18 @@
 # Wishlist
 
+## UDF directory traversal admission — 2026-08-30
+
+- Never report a confirmed UDF directory FID as a successful skipped member.
+  Keep directory content explicitly `CL_EUNPACK`, incomplete, and
+  non-cacheable until its authoritative subtree has been inspected.
+- Retain the exact prior-object clean-skip control, registered no-child-alert
+  regression, source guards, and production-linked GCC ASan/UBSan oracle.
+- Implement bounded traversal from the file-set root ICB through every
+  descendant FID/FE, with cycle/duplicate detection, shared limits and
+  deadlines, descriptor validation, complete corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification.
+
 ## UDF allocation-mode and descriptor-window admission — 2026-08-30
 
 - Preserve all three low ICB allocation-descriptor type bits and keep reserved
