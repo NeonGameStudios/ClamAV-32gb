@@ -18,6 +18,22 @@ Complete MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
+## CPIO focused current-source corpus refresh — 2026-08-31
+
+The canonical CPIO parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. The repository CMake targets materialized the
+four encrypted fixtures: old-binary big-endian, old-binary little-endian,
+NEWC, and ODC. The focused cases pass `cpio` 1/1 across all four formats,
+`cpio_crc` 4/4, `cpio_numeric` 4/4, and `cpio_map` 6/6, including exact nested
+member matching and fail-visible range, callback, deadline, and malformed-field
+boundaries.
+
+This refresh confirms current-source CPIO parser and corpus evidence, not final
+CPIO qualification. Complete CPIO parser-family corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
+final parser/release qualification remain required.
+
 ## ALZ focused current-source corpus refresh — 2026-08-31
 
 The canonical ALZ Rust parser, Rust scanner bridge, reader support, Cargo

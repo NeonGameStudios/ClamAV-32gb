@@ -8696,21 +8696,23 @@ qualification gates.
 - Complete the remaining parser-family, sanitizer, production-CVD/service,
   materialized-large-file, certified Linux x86-64, Sonic1, and release gates.
 
-## CPIO parser qualification recheck — 2026-08-29
+## CPIO focused current-source corpus refresh — 2026-08-31
 
-- Retain the fresh current-source production-linked CPIO boundary evidence:
-  15/15 across checksum/member matching, checksum mismatch/read failure,
-  64 KiB-window tail matching, malformed and unterminated names and numeric
-  fields, timeout, missing-map/engine admission, header/member ranges, and
-  read failures; timeout uses the canonical
-  `Heuristics.Limits.Exceeded.MaxScanTime` reason.
-- Keep the legacy four-file materialized corpus open. Each original 1 KiB
-  old-binary (both endian), NEWC, and ODC fixture returns fail-visible
-  `CL_EPARSE` after downstream InstallShield/PE admission without the expected
-  `Cpio.Member.MZ` alert, while controlled known-valid replacements pass
-  16/16. Do not count that corpus as complete CPIO nested-detection evidence.
-- Complete CPIO parser-family, sanitizer, production-CVD/service,
-  materialized-large-file, certified Linux x86-64, Sonic1, and release gates.
+- Retain the canonical-source SHA-256 equality evidence for `cpio.c`,
+  `cpio.h`, `scanners.c`, and `check_clamav.c` before relinking the existing
+  Docker production-linked GCC harness.
+- Retain successful CMake materialization of all four encrypted fixtures and
+  the focused results: `cpio` 1/1 across old-binary big-endian, old-binary
+  little-endian, NEWC, and ODC; `cpio_crc` 4/4; `cpio_numeric` 4/4; and
+  `cpio_map` 6/6. The 15/15 boundary set covers checksum/member matching,
+  checksum mismatch/read failure, multi-window tail matching, malformed and
+  unterminated names and numeric fields, timeout, missing-map/engine
+  admission, header/member ranges, and callback read failures.
+- Correct the stale corpus note: the current-source run reaches the exact
+  `Cpio.Member.MZ.UNOFFICIAL` child alert for each materialized fixture.
+  Complete CPIO parser-family, sanitizer, production-CVD/service,
+  materialized-large-file, certified Linux x86-64, Sonic1, and release gates
+  remain open.
 
 ## DMG parser qualification recheck — 2026-08-29
 

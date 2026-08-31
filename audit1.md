@@ -2476,20 +2476,25 @@ does not contain all current internal helpers. Full OneNote corpus, current
 full-C ABI, sanitizer, production-CVD/service, materialized-large-file,
 Sonic1, and parser-family qualification remain open.
 
-## CPIO parser qualification recheck — 2026-08-29
+## CPIO focused current-source corpus refresh — 2026-08-31
 
-A coherent current-source production-linked GCC CPIO boundary runner passes
-15/15 across CRC checksum/member matching, checksum mismatch/read failure,
-64 KiB-window tail matching, malformed and unterminated names and numeric
-fields, timeout, missing-map/engine admission, header/member range failures,
-and read failures. The timeout regression now asserts the canonical sticky
-`Heuristics.Limits.Exceeded.MaxScanTime` reason. The legacy four-file
-materialized corpus is not accepted as a CPIO nested-detection pass: each
-original 1 KiB old-binary (both endian), NEWC, and ODC fixture reaches
-fail-visible `CL_EPARSE` after downstream InstallShield/PE admission without
-the expected `Cpio.Member.MZ` alert; controlled known-valid replacement
-containers pass 16/16. Full CPIO parser-family, sanitizer, production-CVD/
-service, materialized-large-file, certified Linux x86-64, Sonic1, and release
+The canonical CPIO parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. The four encrypted CMake fixtures materialized
+successfully: old-binary big-endian, old-binary little-endian, NEWC, and ODC.
+The focused production-linked cases pass `cpio` 1/1 across all four formats,
+`cpio_crc` 4/4, `cpio_numeric` 4/4, and `cpio_map` 6/6. The 15/15 boundary
+coverage includes checksum/member matching, checksum mismatch and read
+failure, a tail marker beyond two 64 KiB checksum windows, malformed and
+unterminated names and numeric fields, timeout, missing-map/engine admission,
+header/member ranges, and callback read failures. The earlier note that these
+four materialized fixtures fail after downstream InstallShield/PE admission is
+stale: this current-source run reaches the exact `Cpio.Member.MZ.UNOFFICIAL`
+child alert for each fixture.
+
+This is focused parser and corpus evidence, not final CPIO qualification.
+Complete CPIO parser-family, sanitizer, production-CVD/service,
+materialized-large-file, certified Linux x86-64, Sonic1, and release
 qualification remain open.
 
 ## DMG parser qualification recheck — 2026-08-29
