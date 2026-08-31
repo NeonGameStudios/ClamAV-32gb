@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## Bundled YARA code-page ceiling — 2026-08-31
+
+Bundled YARA compilation now rejects a rule whose contiguous instruction
+stream exceeds the 64 KiB evaluator contract immediately after emitting its
+terminal `OP_HALT`; the matcher retains the same fail-visible admission for
+manually supplied oversized streams. The isolated current-source
+production-linked GCC `yara` TCase passes 21/21, including valid execution,
+read/status propagation, resource/deadline behavior, VM faults, arena
+boundaries, and the oversized-stream regression. Full YARA corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 
 The WorkBook encryption probe now checks a BIFF record's declared body

@@ -773,6 +773,10 @@ YR_STRING* yr_parser_reduce_string_declaration(
         compiler->last_result = ERROR_INVALID_FORMAT;
         return compiler->last_result;
     }
+    if (compiler->code_arena->current_page->used > YARA_MAX_INSTRUCTION_STREAM_SIZE) {
+        compiler->last_result = ERROR_INVALID_FORMAT;
+        return compiler->last_result;
+    }
     // TBD: seems like we will need the following yr_arena_coalesce, but it is not working.
     // Yara condition code will work OK as long as it is less than 64K.
     // FAIL_ON_COMPILER_ERROR(yr_arena_coalesce(compiler->code_arena));

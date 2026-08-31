@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Bundled YARA code-page ceiling — 2026-08-31
+
+Bundled YARA rule compilation now rejects a contiguous instruction stream
+larger than the evaluator's 64 KiB code-page contract before the rule is
+appended to the engine. Matcher admission retains the same limit for any
+manually supplied stream and marks an oversized stream incomplete and
+non-cacheable. The isolated current-source production-linked GCC `yara` TCase
+passes 21/21 across valid execution, read/status propagation,
+resource/deadline behavior, VM faults, arena boundaries, and oversized-stream
+admission. Full YARA corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain
+required.
+
 ## PE Swizzor empty resource-string admission — 2026-08-31
 
 `cli_detect_swizz_str()` rejects null input/statistics and lengths below one

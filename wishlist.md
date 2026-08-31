@@ -1,5 +1,15 @@
 # Wishlist
 
+## Bundled YARA code-page ceiling — 2026-08-31
+
+- Keep compiler and matcher admission aligned to the contiguous 64 KiB YARA
+  instruction-stream contract; reject an oversized rule before it is appended
+  to the engine and keep malformed manually supplied streams incomplete and
+  non-cacheable.
+- Retain the isolated current-source production-linked GCC `yara` TCase at
+  21/21 and source guards. Full YARA corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final qualification remain required.
+
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 
 - Keep every BIFF encryption-probe skip inside the declared bounded probe;

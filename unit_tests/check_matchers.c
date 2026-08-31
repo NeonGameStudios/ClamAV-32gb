@@ -1940,24 +1940,20 @@ START_TEST(test_yara_evaluation_accounts_matcher_work)
 }
 END_TEST
 
-START_TEST(test_yara_execution_error_is_fail_visible)
+START_TEST(test_yara_oversized_instruction_stream_is_fail_visible)
 {
 #ifdef HAVE_YARA
-    enum { YARA_STACK_CAPACITY = 16384, YARA_PUSH_BYTES = 1 + sizeof(uint64_t) };
-    const size_t push_count = YARA_STACK_CAPACITY + 1;
-    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
+    const size_t code_length = YARA_MAX_INSTRUCTION_STREAM_SIZE + 1;
     struct cli_ac_lsig lsig;
     struct cli_ac_lsig *lsigtable[1];
     struct cli_matcher root;
     fmap_t *map;
     uint8_t *code;
-    size_t i;
     cl_error_t ret;
 
     code = calloc(code_length, sizeof(*code));
     ck_assert_ptr_nonnull(code);
-    for (i = 0; i < push_count; i++)
-        code[i * YARA_PUSH_BYTES] = OP_PUSH;
+    code[0]              = OP_HALT;
     code[code_length - 1] = OP_HALT;
 
     memset(&lsig, 0, sizeof(lsig));
@@ -1966,7 +1962,7 @@ START_TEST(test_yara_execution_error_is_fail_visible)
     lsig.type         = CLI_YARA_NORMAL;
     lsig.u.code_start = code;
     lsig.code_size    = code_length;
-    lsig.virname      = (char *)"YaraExecutionFailure";
+    lsig.virname      = (char *)"YaraOversizedInstructionStream";
     lsigtable[0]      = &lsig;
     root.ac_lsigs     = 1;
     root.ac_lsigtable = lsigtable;
@@ -1979,6 +1975,8 @@ START_TEST(test_yara_execution_error_is_fail_visible)
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "YARA matcher instruction stream exceeds the bounded code size");
 
     free(code);
     cl_fmap_close(map);
@@ -2855,12 +2853,16 @@ Suite *test_matchers_suite(void)
     Suite *s = suite_create("matchers");
     TCase *tc_matchers;
     TCase *tc_swizz;
+    TCase *tc_yara;
     tc_matchers = tcase_create("matchers");
     tc_swizz    = tcase_create("swizz");
+    tc_yara     = tcase_create("yara");
     suite_add_tcase(s, tc_matchers);
     suite_add_tcase(s, tc_swizz);
+    suite_add_tcase(s, tc_yara);
     tcase_add_checked_fixture(tc_matchers, setup, teardown);
     tcase_add_checked_fixture(tc_swizz, setup, teardown);
+    tcase_add_checked_fixture(tc_yara, setup, teardown);
     tcase_add_test(tc_matchers, test_ac_scanbuff);
     tcase_add_test(tc_matchers, test_ac_scanbuff_rejects_missing_context);
     tcase_add_test(tc_matchers, test_ac_scanbuff_ex);
@@ -2901,27 +2903,27 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_logical_oversized_definition_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_failure_does_not_suppress_later_detection);
     tcase_add_test(tc_matchers, test_logical_bytecode_v1_large_file_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
-    tcase_add_test(tc_matchers, test_yara_unaligned_integer_read_is_defined);
-    tcase_add_test(tc_matchers, test_yara_unaligned_context_read_is_defined);
-    tcase_add_test(tc_matchers, test_yara_map_read_failure_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_missing_code_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_truncated_instruction_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_jump_target_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_unaligned_jump_target_is_defined);
-    tcase_add_test(tc_matchers, test_yara_missing_matcher_state_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_arena_struct_failure_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_arena_argument_and_relocation_failures_are_visible);
-    tcase_add_test(tc_matchers, test_yara_arena_next_address_rejects_unrepresentable_offset);
-    tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
-    tcase_add_test(tc_matchers, test_yara_execution_error_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_division_by_zero_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_shift_count_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_unknown_opcode_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_stack_underflow_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_invalid_memory_index_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_call_operand_count_is_fail_visible);
-    tcase_add_test(tc_matchers, test_yara_execution_honors_scan_time_limit);
+    tcase_add_test(tc_yara, test_yara_uint32_read_accepts_exact_tail);
+    tcase_add_test(tc_yara, test_yara_unaligned_integer_read_is_defined);
+    tcase_add_test(tc_yara, test_yara_unaligned_context_read_is_defined);
+    tcase_add_test(tc_yara, test_yara_map_read_failure_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_missing_code_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_truncated_instruction_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_jump_target_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_unaligned_jump_target_is_defined);
+    tcase_add_test(tc_yara, test_yara_missing_matcher_state_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_arena_struct_failure_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_arena_argument_and_relocation_failures_are_visible);
+    tcase_add_test(tc_yara, test_yara_arena_next_address_rejects_unrepresentable_offset);
+    tcase_add_test(tc_yara, test_yara_evaluation_accounts_matcher_work);
+    tcase_add_test(tc_yara, test_yara_oversized_instruction_stream_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_division_by_zero_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_shift_count_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_unknown_opcode_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_stack_underflow_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_invalid_memory_index_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_call_operand_count_is_fail_visible);
+    tcase_add_test(tc_yara, test_yara_execution_honors_scan_time_limit);
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);
     tcase_add_test(tc_matchers, test_byte_compare_offset_above_uint32);
     tcase_add_test(tc_matchers, test_byte_compare_unaligned_binary_read_is_defined);

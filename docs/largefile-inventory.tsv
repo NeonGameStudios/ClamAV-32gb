@@ -6305,8 +6305,8 @@ fixed-width-integer	libclamav/yara_parser.c	474	    int32_t min_gap;
 fixed-width-integer	libclamav/yara_parser.c	475	    int32_t max_gap;
 fixed-width-integer	libclamav/yara_parser.c	651	        int32_t flags,
 fixed-width-integer	libclamav/yara_parser.c	80	    int64_t argument,
-fixed-width-integer	libclamav/yara_parser.c	843	        int32_t type,
-fixed-width-integer	libclamav/yara_parser.c	846	        int32_t integer)
+fixed-width-integer	libclamav/yara_parser.c	847	        int32_t type,
+fixed-width-integer	libclamav/yara_parser.c	850	        int32_t integer)
 fixed-width-integer	libclamav/yara_parser.c	93	            sizeof(int64_t),
 fixed-width-integer	libclamav/yara_parser.h	30	    int64_t argument,
 fixed-width-integer	libclamav/yara_parser.h	37	    int64_t argument,
@@ -7278,24 +7278,23 @@ fixed-width-integer	unit_tests/check_matchers.c	1686	    static uint8_t code[1 +
 fixed-width-integer	unit_tests/check_matchers.c	1687	    uint64_t target;
 fixed-width-integer	unit_tests/check_matchers.c	1732	    uint8_t code[3 * (1 + sizeof(uint64_t)) + 3];
 fixed-width-integer	unit_tests/check_matchers.c	1733	    uint64_t target;
-fixed-width-integer	unit_tests/check_matchers.c	1946	    enum { YARA_STACK_CAPACITY = 16384, YARA_PUSH_BYTES = 1 + sizeof(uint64_t) };
-fixed-width-integer	unit_tests/check_matchers.c	1995	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-fixed-width-integer	unit_tests/check_matchers.c	2041	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-fixed-width-integer	unit_tests/check_matchers.c	2163	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-fixed-width-integer	unit_tests/check_matchers.c	2164	    const uint64_t invalid_index = MAX_LOOP_NESTING * LOOP_LOCAL_VARS;
-fixed-width-integer	unit_tests/check_matchers.c	2205	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-fixed-width-integer	unit_tests/check_matchers.c	2206	    const uint64_t argument_count = MAX_FUNCTION_ARGS + 1;
-fixed-width-integer	unit_tests/check_matchers.c	2251	    uint64_t target = PTR_TO_UINT64(code);
-fixed-width-integer	unit_tests/check_matchers.c	2342	    const uint64_t reference_offset = 5000000000ULL;
-fixed-width-integer	unit_tests/check_matchers.c	2484	    static const uint64_t sizes[] = {
-fixed-width-integer	unit_tests/check_matchers.c	2587	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
-fixed-width-integer	unit_tests/check_matchers.c	2787	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
-fixed-width-integer	unit_tests/check_matchers.c	2788	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2791	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
-fixed-width-integer	unit_tests/check_matchers.c	2792	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2820	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2822	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
-fixed-width-integer	unit_tests/check_matchers.c	2829	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+fixed-width-integer	unit_tests/check_matchers.c	1993	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+fixed-width-integer	unit_tests/check_matchers.c	2039	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+fixed-width-integer	unit_tests/check_matchers.c	2161	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+fixed-width-integer	unit_tests/check_matchers.c	2162	    const uint64_t invalid_index = MAX_LOOP_NESTING * LOOP_LOCAL_VARS;
+fixed-width-integer	unit_tests/check_matchers.c	2203	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+fixed-width-integer	unit_tests/check_matchers.c	2204	    const uint64_t argument_count = MAX_FUNCTION_ARGS + 1;
+fixed-width-integer	unit_tests/check_matchers.c	2249	    uint64_t target = PTR_TO_UINT64(code);
+fixed-width-integer	unit_tests/check_matchers.c	2340	    const uint64_t reference_offset = 5000000000ULL;
+fixed-width-integer	unit_tests/check_matchers.c	2482	    static const uint64_t sizes[] = {
+fixed-width-integer	unit_tests/check_matchers.c	2585	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
+fixed-width-integer	unit_tests/check_matchers.c	2785	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
+fixed-width-integer	unit_tests/check_matchers.c	2786	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2789	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
+fixed-width-integer	unit_tests/check_matchers.c	2790	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2818	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2820	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+fixed-width-integer	unit_tests/check_matchers.c	2827	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
 fixed-width-integer	unit_tests/check_matchers.c	52	extern int64_t read_uint32_t(fmap_t *fmap, size_t offset);
 fixed-width-integer	unit_tests/check_matchers.c	54	#define TEST_YARA_UNDEFINED ((int64_t)0xFFFABADAFABADAFF)
 fixed-width-integer	unit_tests/check_matchers.c	663	    uint64_t offdata[4] = {0};
@@ -16936,10 +16935,10 @@ native-width-integer	libclamav/yara_parser.c	472	    int min_atom_length_aux;
 native-width-integer	libclamav/yara_parser.c	649	    int yr_parser_reduce_rule_declaration(
 native-width-integer	libclamav/yara_parser.c	65	int yr_parser_emit(
 native-width-integer	libclamav/yara_parser.c	77	int yr_parser_emit_with_arg(
-native-width-integer	libclamav/yara_parser.c	777	    // Yara condition code will work OK as long as it is less than 64K.
-native-width-integer	libclamav/yara_parser.c	788	    int yr_parser_reduce_string_identifier(
+native-width-integer	libclamav/yara_parser.c	781	    // Yara condition code will work OK as long as it is less than 64K.
+native-width-integer	libclamav/yara_parser.c	792	    int yr_parser_reduce_string_identifier(
 native-width-integer	libclamav/yara_parser.c	83	    int result = yr_arena_write_data(
-native-width-integer	libclamav/yara_parser.c	917	    int yr_parser_reduce_import(
+native-width-integer	libclamav/yara_parser.c	921	    int yr_parser_reduce_import(
 native-width-integer	libclamav/yara_parser.c	99	int yr_parser_emit_with_arg_reloc(
 native-width-integer	libclamav/yara_parser.h	21	int yr_parser_emit(
 native-width-integer	libclamav/yara_parser.h	27	int yr_parser_emit_with_arg(
@@ -21309,30 +21308,28 @@ native-width-integer	unit_tests/check_matchers.c	1556	static size_t yara_emit_pu
 native-width-integer	unit_tests/check_matchers.c	1734	    size_t offset = 0;
 native-width-integer	unit_tests/check_matchers.c	186	static const void *matcher_test_fmap_need(fmap_t *map, size_t at, size_t len, int lock)
 native-width-integer	unit_tests/check_matchers.c	1860	                                               (size_t)0, (size_t)9, EOL),
-native-width-integer	unit_tests/check_matchers.c	1947	    const size_t push_count = YARA_STACK_CAPACITY + 1;
-native-width-integer	unit_tests/check_matchers.c	1948	    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
-native-width-integer	unit_tests/check_matchers.c	1954	    size_t i;
+native-width-integer	unit_tests/check_matchers.c	1946	    const size_t code_length = YARA_MAX_INSTRUCTION_STREAM_SIZE + 1;
 native-width-integer	unit_tests/check_matchers.c	197	static const void *matcher_test_fmap_read_failure(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_matchers.c	1996	    size_t offset = 0;
-native-width-integer	unit_tests/check_matchers.c	2042	    size_t offset = 0;
-native-width-integer	unit_tests/check_matchers.c	2490	    size_t i, j;
-native-width-integer	unit_tests/check_matchers.c	2577	    size_t length;
-native-width-integer	unit_tests/check_matchers.c	2578	    size_t fail_at;
-native-width-integer	unit_tests/check_matchers.c	2579	    unsigned int reads;
-native-width-integer	unit_tests/check_matchers.c	2582	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
-native-width-integer	unit_tests/check_matchers.c	2591	    if (count > state->fail_at - (size_t)offset)
-native-width-integer	unit_tests/check_matchers.c	2592	        count = state->fail_at - (size_t)offset;
-native-width-integer	unit_tests/check_matchers.c	2593	    if (count > state->length - (size_t)offset)
-native-width-integer	unit_tests/check_matchers.c	2594	        count = state->length - (size_t)offset;
-native-width-integer	unit_tests/check_matchers.c	2596	    return (off_t)count;
-native-width-integer	unit_tests/check_matchers.c	2606	    state.length  = (size_t)SCANBUFF + 1;
-native-width-integer	unit_tests/check_matchers.c	2607	    state.fail_at = (size_t)SCANBUFF;
+native-width-integer	unit_tests/check_matchers.c	1994	    size_t offset = 0;
+native-width-integer	unit_tests/check_matchers.c	2040	    size_t offset = 0;
+native-width-integer	unit_tests/check_matchers.c	2488	    size_t i, j;
+native-width-integer	unit_tests/check_matchers.c	2575	    size_t length;
+native-width-integer	unit_tests/check_matchers.c	2576	    size_t fail_at;
+native-width-integer	unit_tests/check_matchers.c	2577	    unsigned int reads;
+native-width-integer	unit_tests/check_matchers.c	2580	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
+native-width-integer	unit_tests/check_matchers.c	2589	    if (count > state->fail_at - (size_t)offset)
+native-width-integer	unit_tests/check_matchers.c	2590	        count = state->fail_at - (size_t)offset;
+native-width-integer	unit_tests/check_matchers.c	2591	    if (count > state->length - (size_t)offset)
+native-width-integer	unit_tests/check_matchers.c	2592	        count = state->length - (size_t)offset;
+native-width-integer	unit_tests/check_matchers.c	2594	    return (off_t)count;
+native-width-integer	unit_tests/check_matchers.c	2604	    state.length  = (size_t)SCANBUFF + 1;
+native-width-integer	unit_tests/check_matchers.c	2605	    state.fail_at = (size_t)SCANBUFF;
 native-width-integer	unit_tests/check_matchers.c	261	    unsigned int i;
-native-width-integer	unit_tests/check_matchers.c	2618	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
+native-width-integer	unit_tests/check_matchers.c	2616	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
 native-width-integer	unit_tests/check_matchers.c	262	    int ret;
-native-width-integer	unit_tests/check_matchers.c	2628	static const void *matcher_pcre_full_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_matchers.c	2783	    int get_status;
-native-width-integer	unit_tests/check_matchers.c	2790	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, (long long)CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
+native-width-integer	unit_tests/check_matchers.c	2626	static const void *matcher_pcre_full_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+native-width-integer	unit_tests/check_matchers.c	2781	    int get_status;
+native-width-integer	unit_tests/check_matchers.c	2788	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, (long long)CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
 native-width-integer	unit_tests/check_matchers.c	304	    int ret;
 native-width-integer	unit_tests/check_matchers.c	325	    unsigned int i;
 native-width-integer	unit_tests/check_matchers.c	326	    int ret;
@@ -22360,14 +22357,14 @@ boundary-constant	unit_tests/check_matchers.c	1012	    ck_assert(!cli_lsig_bytec
 boundary-constant	unit_tests/check_matchers.c	1420	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_matchers.c	1444	    thefmap.len         = (size_t)UINT32_MAX + 1U;
 boundary-constant	unit_tests/check_matchers.c	1892	    ck_assert_ptr_null(yr_arena_next_address(arena, first_address, SIZE_MAX));
-boundary-constant	unit_tests/check_matchers.c	2341	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_matchers.c	2431	    ck_assert_int_eq(cli_bcomp_compare_check(sentinel, SIZE_MAX, 0, &bcomp), CL_EMEM);
-boundary-constant	unit_tests/check_matchers.c	2452	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, second, CLI_HASH_MD5, UINT32_MAX, second_name), CL_SUCCESS);
-boundary-constant	unit_tests/check_matchers.c	2453	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, first, CLI_HASH_MD5, UINT32_MAX, first_name), CL_SUCCESS);
-boundary-constant	unit_tests/check_matchers.c	2456	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
-boundary-constant	unit_tests/check_matchers.c	2457	    ck_assert_int_eq(cli_hm_scan(first, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
-boundary-constant	unit_tests/check_matchers.c	2460	    ck_assert_int_eq(cli_hm_scan(second, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
-boundary-constant	unit_tests/check_matchers.c	2467	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_matchers.c	2339	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_matchers.c	2429	    ck_assert_int_eq(cli_bcomp_compare_check(sentinel, SIZE_MAX, 0, &bcomp), CL_EMEM);
+boundary-constant	unit_tests/check_matchers.c	2450	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, second, CLI_HASH_MD5, UINT32_MAX, second_name), CL_SUCCESS);
+boundary-constant	unit_tests/check_matchers.c	2451	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, first, CLI_HASH_MD5, UINT32_MAX, first_name), CL_SUCCESS);
+boundary-constant	unit_tests/check_matchers.c	2454	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
+boundary-constant	unit_tests/check_matchers.c	2455	    ck_assert_int_eq(cli_hm_scan(first, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
+boundary-constant	unit_tests/check_matchers.c	2458	    ck_assert_int_eq(cli_hm_scan(second, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
+boundary-constant	unit_tests/check_matchers.c	2465	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_matchers.c	732	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_matchers.c	823	    ck_assert_int_eq(cli_bm_pattern_table_size(UINT32_MAX, sizeof(uint64_t), &bytes), CL_ERESOURCE);
 boundary-constant	unit_tests/check_matchers.c	838	    ck_assert_int_eq(cli_hm_table_size(SIZE_MAX, sizeof(uint8_t), &bytes), CL_ERESOURCE);
@@ -25079,7 +25076,7 @@ format-width	unit_tests/check_clamd.c	795	    ck_assert_msg(headroom == 750, "hy
 format-width	unit_tests/check_clamd.c	812	    ck_assert_msg(headroom == 750, "hybrid cgroup without matching v2 mount ignored v1 memory headroom: %llu", (unsigned long long)headroom);
 format-width	unit_tests/check_disasm.c	226	    ck_assert_msg(size == st.st_size, "disasm size mismatch(value %zd, expected: %zd)", size, (ssize_t)st.st_size);
 format-width	unit_tests/check_disasm.c	229	    ck_assert_msg(d != NULL, "disasm malloc(%zd) failed", size * 2);
-format-width	unit_tests/check_matchers.c	2497	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
+format-width	unit_tests/check_matchers.c	2495	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
 format-width	unit_tests/check_matchers.c	289	        ck_assert_msg(!strncmp(virname, ac_testdata[i].virname, strlen(ac_testdata[i].virname)), "Dataset %u matched with %s", i, virname);
 format-width	unit_tests/check_matchers.c	293	        ck_assert_msg(!strncmp(virname, ac_testdata[i].virname, strlen(ac_testdata[i].virname)), "Dataset %u matched with %s", i, virname);
 format-width	unit_tests/check_matchers.c	353	        ck_assert_msg(!strncmp(virname, ac_testdata[i].virname, strlen(ac_testdata[i].virname)), "Dataset %u matched with %s", i, virname);
@@ -35698,9 +35695,9 @@ offset-size-arithmetic	libclamav/yara_parser.c	715	            //      offsetof(
 offset-size-arithmetic	libclamav/yara_parser.c	717	            //      offsetof(YR_RULE, metas), ClamAV - later
 offset-size-arithmetic	libclamav/yara_parser.c	718	            //      offsetof(YR_RULE, ns), ClamAV - later
 offset-size-arithmetic	libclamav/yara_parser.c	771	     * the VM a length that would cross a non-contiguous allocation. */
-offset-size-arithmetic	libclamav/yara_parser.c	779	    rule->code_start = yr_arena_base_address(compiler->code_arena);
-offset-size-arithmetic	libclamav/yara_parser.c	780	    rule->code_size  = compiler->code_arena->current_page->used;
-offset-size-arithmetic	libclamav/yara_parser.c	781	    yr_arena_append(compiler->the_arena, compiler->code_arena);
+offset-size-arithmetic	libclamav/yara_parser.c	783	    rule->code_start = yr_arena_base_address(compiler->code_arena);
+offset-size-arithmetic	libclamav/yara_parser.c	784	    rule->code_size  = compiler->code_arena->current_page->used;
+offset-size-arithmetic	libclamav/yara_parser.c	785	    yr_arena_append(compiler->the_arena, compiler->code_arena);
 offset-size-arithmetic	libclamav/yc.c	184	                    if (decryptor_offset[j] == '\xC0') /* ROL AL,num */
 offset-size-arithmetic	libclamav/yc.c	206	                    if (decryptor_offset[j] == '\xC8') /* ROR AL,CL */
 offset-size-arithmetic	libclamav/yc.c	241	int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_section *sections, unsigned int sectcount, uint32_t peoffset, int desc, uint32_t ecx, int16_t offset)
@@ -40154,39 +40151,38 @@ offset-size-arithmetic	unit_tests/check_matchers.c	1747	    code[offset++] = OP_
 offset-size-arithmetic	unit_tests/check_matchers.c	1748	    code[offset++] = OP_POP;
 offset-size-arithmetic	unit_tests/check_matchers.c	190	    if (map == NULL || len == 0 || at > map->len || len > map->len - at ||
 offset-size-arithmetic	unit_tests/check_matchers.c	1929	    ck_assert_int_eq(cl_engine_set_num((struct cl_engine *)ctx.engine, CL_ENGINE_MAX_MATCHER_WORK, sizeof(bytes) - 1), CL_SUCCESS);
-offset-size-arithmetic	unit_tests/check_matchers.c	1947	    const size_t push_count = YARA_STACK_CAPACITY + 1;
-offset-size-arithmetic	unit_tests/check_matchers.c	1948	    const size_t code_length = push_count * YARA_PUSH_BYTES + 1;
-offset-size-arithmetic	unit_tests/check_matchers.c	1957	    code = calloc(code_length, sizeof(*code));
-offset-size-arithmetic	unit_tests/check_matchers.c	1961	    code[code_length - 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	1995	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-offset-size-arithmetic	unit_tests/check_matchers.c	2005	    code[offset++] = OP_DIV;
-offset-size-arithmetic	unit_tests/check_matchers.c	2041	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
-offset-size-arithmetic	unit_tests/check_matchers.c	2051	    code[offset++] = OP_SHL;
-offset-size-arithmetic	unit_tests/check_matchers.c	2163	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-offset-size-arithmetic	unit_tests/check_matchers.c	2173	    code[sizeof(code) - 1] = OP_HALT;
-offset-size-arithmetic	unit_tests/check_matchers.c	2205	    static uint8_t code[1 + sizeof(uint64_t) + 1];
-offset-size-arithmetic	unit_tests/check_matchers.c	2215	    code[sizeof(code) - 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	1946	    const size_t code_length = YARA_MAX_INSTRUCTION_STREAM_SIZE + 1;
+offset-size-arithmetic	unit_tests/check_matchers.c	1954	    code = calloc(code_length, sizeof(*code));
+offset-size-arithmetic	unit_tests/check_matchers.c	1957	    code[code_length - 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	1993	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+offset-size-arithmetic	unit_tests/check_matchers.c	2003	    code[offset++] = OP_DIV;
+offset-size-arithmetic	unit_tests/check_matchers.c	2039	    uint8_t code[2 * (1 + sizeof(int64_t)) + 2];
+offset-size-arithmetic	unit_tests/check_matchers.c	2049	    code[offset++] = OP_SHL;
+offset-size-arithmetic	unit_tests/check_matchers.c	2161	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	2171	    code[sizeof(code) - 1] = OP_HALT;
+offset-size-arithmetic	unit_tests/check_matchers.c	2203	    static uint8_t code[1 + sizeof(uint64_t) + 1];
+offset-size-arithmetic	unit_tests/check_matchers.c	2213	    code[sizeof(code) - 1] = OP_HALT;
 offset-size-arithmetic	unit_tests/check_matchers.c	227	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
-offset-size-arithmetic	unit_tests/check_matchers.c	2390	    ck_assert_uint_eq(mdata.lsigsuboff_last[0][1], reference_offset + 4);
-offset-size-arithmetic	unit_tests/check_matchers.c	2446	    first_name  = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundaryFirst") + 1, 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2447	    second_name = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundarySecond") + 1, 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2456	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
-offset-size-arithmetic	unit_tests/check_matchers.c	2492	    for (i = 0; i < sizeof(labels) / sizeof(labels[0]); i++) {
-offset-size-arithmetic	unit_tests/check_matchers.c	2493	        for (j = 0; j < sizeof(sizes) / sizeof(sizes[0]); j++) {
-offset-size-arithmetic	unit_tests/check_matchers.c	2497	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
-offset-size-arithmetic	unit_tests/check_matchers.c	2498	            name = MPOOL_CALLOC(ctx.engine->mempool, strlen(label) + 1, 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2509	            ck_assert(cli_hm_have_size(*roots[i], CLI_HASH_MD5, sizes[j]));
-offset-size-arithmetic	unit_tests/check_matchers.c	2510	            ck_assert_int_eq(cli_hm_scan(digest, sizes[j], &matched, *roots[i], CLI_HASH_MD5),
-offset-size-arithmetic	unit_tests/check_matchers.c	2582	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
-offset-size-arithmetic	unit_tests/check_matchers.c	2587	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
-offset-size-arithmetic	unit_tests/check_matchers.c	2593	    if (count > state->length - (size_t)offset)
-offset-size-arithmetic	unit_tests/check_matchers.c	2594	        count = state->length - (size_t)offset;
-offset-size-arithmetic	unit_tests/check_matchers.c	2606	    state.length  = (size_t)SCANBUFF + 1;
-offset-size-arithmetic	unit_tests/check_matchers.c	2618	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
-offset-size-arithmetic	unit_tests/check_matchers.c	2631	    if ((at == 0) && (len == map->len))
-offset-size-arithmetic	unit_tests/check_matchers.c	2633	    if ((len == 0) || (at > map->len) || (len > map->len - at))
-offset-size-arithmetic	unit_tests/check_matchers.c	2822	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2829	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2388	    ck_assert_uint_eq(mdata.lsigsuboff_last[0][1], reference_offset + 4);
+offset-size-arithmetic	unit_tests/check_matchers.c	2444	    first_name  = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundaryFirst") + 1, 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2445	    second_name = MPOOL_CALLOC(ctx.engine->mempool, strlen("HashBoundarySecond") + 1, 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2454	    ck_assert(cli_hm_have_size(ctx.engine->hm_hdb, CLI_HASH_MD5, UINT32_MAX));
+offset-size-arithmetic	unit_tests/check_matchers.c	2490	    for (i = 0; i < sizeof(labels) / sizeof(labels[0]); i++) {
+offset-size-arithmetic	unit_tests/check_matchers.c	2491	        for (j = 0; j < sizeof(sizes) / sizeof(sizes[0]); j++) {
+offset-size-arithmetic	unit_tests/check_matchers.c	2495	            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
+offset-size-arithmetic	unit_tests/check_matchers.c	2496	            name = MPOOL_CALLOC(ctx.engine->mempool, strlen(label) + 1, 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2507	            ck_assert(cli_hm_have_size(*roots[i], CLI_HASH_MD5, sizes[j]));
+offset-size-arithmetic	unit_tests/check_matchers.c	2508	            ck_assert_int_eq(cli_hm_scan(digest, sizes[j], &matched, *roots[i], CLI_HASH_MD5),
+offset-size-arithmetic	unit_tests/check_matchers.c	2580	static off_t matcher_failing_pread(void *handle, void *buf, size_t count, off_t offset)
+offset-size-arithmetic	unit_tests/check_matchers.c	2585	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
+offset-size-arithmetic	unit_tests/check_matchers.c	2591	    if (count > state->length - (size_t)offset)
+offset-size-arithmetic	unit_tests/check_matchers.c	2592	        count = state->length - (size_t)offset;
+offset-size-arithmetic	unit_tests/check_matchers.c	2604	    state.length  = (size_t)SCANBUFF + 1;
+offset-size-arithmetic	unit_tests/check_matchers.c	2616	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
+offset-size-arithmetic	unit_tests/check_matchers.c	2629	    if ((at == 0) && (len == map->len))
+offset-size-arithmetic	unit_tests/check_matchers.c	2631	    if ((len == 0) || (at > map->len) || (len > map->len - at))
+offset-size-arithmetic	unit_tests/check_matchers.c	2820	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2827	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
 offset-size-arithmetic	unit_tests/check_matchers.c	551	        hexlen = strlen(PCRE_BYPASS) + strlen(pcre_testdata[i].hexsig) + 1;
 offset-size-arithmetic	unit_tests/check_matchers.c	554	        ck_assert_msg(hexsig != NULL, "[pcre] failed to prepend bypass (out-of-memory)");
 offset-size-arithmetic	unit_tests/check_matchers.c	603	        hexlen = strlen(PCRE_BYPASS) + strlen(pcre_testdata[i].hexsig) + 1;
