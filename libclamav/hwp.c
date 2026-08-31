@@ -2238,9 +2238,11 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
         }
 
         hwp3_debug("HWP3.x: Font Entry %d with %u entries @ offset %zu\n", i + 1, nfonts, offset);
-        new_offset = offset + (2 + nfonts * 40);
-        if ((new_offset <= offset) || (new_offset >= map->len)) {
+        if (!hwp3_checked_add(offset, 2U, &new_offset) ||
+            !hwp3_checked_add(new_offset, (size_t)nfonts * 40U, &new_offset) ||
+            (new_offset <= offset) || (new_offset >= map->len)) {
             cli_errmsg("HWP3.x: Font Entry: number of fonts is too high, invalid. %u\n", nfonts);
+            cli_mark_scan_incomplete(ctx, "HWP3 font table extends beyond the input map");
             if (dmap)
                 fmap_free(dmap);
             return CL_EPARSE;
@@ -2273,14 +2275,16 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
     }
 
     hwp3_debug("HWP3.x: %u Styles @ offset %zu\n", nstyles, offset);
-    new_offset = offset + (2 + nstyles * 238);
-    if ((new_offset <= offset) || (new_offset >= map->len)) {
+    if (!hwp3_checked_add(offset, 2U, &new_offset) ||
+        !hwp3_checked_add(new_offset, (size_t)nstyles * 238U, &new_offset) ||
+        (new_offset <= offset) || (new_offset >= map->len)) {
         cli_errmsg("HWP3.x: Font Entry: number of font styles is too high, invalid. %u\n", nstyles);
+        cli_mark_scan_incomplete(ctx, "HWP3 style table extends beyond the input map");
         if (dmap)
             fmap_free(dmap);
         return CL_EPARSE;
     }
-    offset += (2 + nstyles * 238);
+    offset = new_offset;
 
     last = 0;
     /* Paragraphs - variable */
@@ -2370,9 +2374,10 @@ cl_error_t cli_scanhwp3(cli_ctx *ctx)
 
     if (docinfo.di_infoblksize) {
         /* OPTIONAL TODO: HANDLE OPTIONAL INFORMATION BLOCK #0's FOR PRECLASS */
-        new_offset = offset + docinfo.di_infoblksize;
-        if ((new_offset <= offset) || (new_offset >= map->len)) {
+        if (!hwp3_checked_add(offset, (size_t)docinfo.di_infoblksize, &new_offset) ||
+            (new_offset <= offset) || (new_offset >= map->len)) {
             cli_errmsg("HWP3.x: Doc info block size is too high, invalid. %u\n", docinfo.di_infoblksize);
+            cli_mark_scan_incomplete(ctx, "HWP3 document info block extends beyond the input map");
             ret = CL_EPARSE;
             goto done;
         }

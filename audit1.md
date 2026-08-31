@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## HWP3 checked table and document-info advances — 2026-08-31
+
+HWP3 font/style table sizes and the optional document-info block offset now
+advance through the shared checked native-width helper. Font/style boundary
+failures record specific sticky incomplete reasons, and a document-info block
+that cannot fit in the input map is rejected before content traversal with
+`CL_EPARSE`, cache taint, and the exact `HWP3 document info block extends
+beyond the input map` reason. The registered boundary regression is added to
+the HWP3 TCase; full current-source production-linked and sanitizer evidence
+still remains to be collected.
+
 ## OLE2 stream-chain read-status preservation — 2026-08-31
 
 The OLE2 VBA, ordinary embedded-stream, and encrypted-stream handlers could

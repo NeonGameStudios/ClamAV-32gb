@@ -1,5 +1,14 @@
 # Wishlist
 
+## HWP3 checked table and document-info advances — 2026-08-31
+
+- Keep HWP3 font/style table sizes and the optional document-info block
+  offset behind checked native-width additions, with exact sticky boundary
+  reasons and non-cacheability.
+- Retain the registered document-info boundary regression and source guards;
+  complete current production-linked, sanitizer, corpus, materialized
+  large-file, production-CVD/service, Sonic1, and final qualification.
+
 ## OLE2 stream-chain read-status preservation — 2026-08-31
 
 - Keep OLE2 VBA, ordinary embedded-stream, and encrypted-stream handlers

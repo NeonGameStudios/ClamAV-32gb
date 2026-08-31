@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## HWP3 checked table and document-info advances — 2026-08-31
+
+HWP3 font/style table extents and the optional document-info block offset now
+use checked native-width addition before advancing. Out-of-map table and
+document-info extents are sticky `CL_EPARSE` results with cache taint and
+specific reasons; the new document-info boundary regression is registered in
+the HWP3 TCase. Full current-source production-linked and sanitizer evidence,
+corpus, materialized-large-file, production-CVD/service, Sonic1, and final
+qualification remain required.
+
 ## OLE2 stream-chain read-status preservation — 2026-08-31
 
 OLE2 VBA, ordinary embedded-stream, and encrypted-stream handlers now inspect
