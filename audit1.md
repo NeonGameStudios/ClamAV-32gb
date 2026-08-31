@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## XAR gzip decoder finalization — 2026-08-31
+
+The XAR gzip-member path ignored a non-success return from `inflateEnd()`
+after decoding and size validation. It now records a sticky incomplete result,
+returns `CL_EUNPACK` unless an earlier status is stronger, and exits before
+nested scanning. A linker-injected regression fails only the member
+finalization after a successful TOC finalization; production-linked GCC and
+GCC ASan/UBSan with leak detection both pass. Full XAR corpus,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain open.
+
 ## HWP3 checked table and document-info advances — 2026-08-31
 
 HWP3 font/style table sizes and the optional document-info block offset now

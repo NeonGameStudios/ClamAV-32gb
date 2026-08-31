@@ -1284,8 +1284,12 @@ int cli_scanxar(cli_ctx *ctx)
                     }
                 }
 
-                if (stream_initialized)
-                    inflateEnd(&strm);
+                if (stream_initialized && inflateEnd(&strm) != Z_OK) {
+                    cli_mark_scan_incomplete(ctx, "XAR gzip member decoder could not be finalized");
+                    rc = cli_merge_cleanup_status(rc, CL_EUNPACK);
+                }
+                if (rc != CL_SUCCESS)
+                    goto exit_tmpfile;
                 if (rc == CL_SUCCESS && !stream_complete) {
                     cli_mark_scan_incomplete(ctx, "XAR gzip member ended before the decoder reached stream end");
                     rc = CL_EFORMAT;

@@ -123,11 +123,13 @@ extern int clamav_test_short_write;
 extern size_t clamav_test_short_write_count;
 extern int __real_inflateInit_(z_streamp strm, const char *version, int stream_size);
 extern int __real_inflateInit2_(z_streamp strm, int windowBits, const char *version, int stream_size);
+extern int __real_inflateEnd(z_streamp strm);
 extern int __real_BZ2_bzDecompressInit(bz_stream *strm, int blockSize100k, int verbosity);
 extern int __real_cli_LzmaInit(struct CLI_LZMA *lz, uint64_t usize);
 extern void __real_cli_LzmaShutdown(struct CLI_LZMA *lz);
 int clamav_test_force_swf_decoder_init;
 int clamav_test_force_xar_member_decoder_init;
+int clamav_test_force_xar_member_decoder_end;
 int clamav_test_force_bzip_concat_decoder_init;
 int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
@@ -146,6 +148,18 @@ int __wrap_inflateInit_(z_streamp strm, const char *version, int stream_size)
             return Z_MEM_ERROR;
     }
     return __real_inflateInit_(strm, version, stream_size);
+}
+
+int __wrap_inflateEnd(z_streamp strm)
+{
+    int ret = __real_inflateEnd(strm);
+
+    if (clamav_test_force_xar_member_decoder_end > 0) {
+        clamav_test_force_xar_member_decoder_end--;
+        if (clamav_test_force_xar_member_decoder_end == 0)
+            return Z_STREAM_ERROR;
+    }
+    return ret;
 }
 
 int __wrap_BZ2_bzDecompressInit(bz_stream *strm, int blockSize100k, int verbosity)
@@ -23266,6 +23280,69 @@ START_TEST(test_xar_lzma_member_decoder_init_failure_is_fail_visible)
     ck_assert_str_eq(ctx.scan_incomplete_reason, "XAR LZMA member decoder could not be initialized");
     ck_assert(map->dont_cache_flag);
     ck_assert_int_eq(clamav_test_force_xar_lzma_decoder_init, 0);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
+START_TEST(test_xar_member_decoder_finalize_failure_is_fail_visible)
+{
+    static const uint8_t toc[] =
+        "<?xml version=\"1.0\"?><xar><toc><file><data>"
+        "<offset>0</offset><length>23</length><size>2</size>"
+        "<encoding style=\"application/x-gzip\"/>"
+        "</data></file></toc></xar>";
+    static const uint8_t gzip_member[] = {
+        0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x02, 0x13, 0xf3, 0x8d, 0x0a, 0x00, 0x00, 0xab,
+        0x23, 0x3c, 0xac, 0x03, 0x00, 0x00, 0x00};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_ctx ctx;
+    cli_scan_layer_t layers[2];
+    uint8_t *data;
+    size_t data_length;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    data = realloc(data, data_length + sizeof(gzip_member));
+    ck_assert_ptr_nonnull(data);
+    memcpy(data + data_length, gzip_member, sizeof(gzip_member));
+    data_length += sizeof(gzip_member);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    memset(layers, 0, sizeof(layers));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_XAR;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
+
+    /* The first inflateEnd is for the XAR TOC; fail the member finalization. */
+    clamav_test_force_xar_member_decoder_end = 2;
+    ret = cli_scanxar(&ctx);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "XAR gzip member decoder could not be finalized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_xar_member_decoder_end, 0);
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
@@ -49518,6 +49595,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_xar, cl_setup, cl_teardown);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_xar, test_xar_member_decoder_init_failure_is_fail_visible);
+    tcase_add_test(tc_xar, test_xar_member_decoder_finalize_failure_is_fail_visible);
 #endif
     suite_add_tcase(s, tc_xar_metadata);
     suite_add_tcase(s, tc_xar_map);

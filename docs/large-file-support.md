@@ -3,6 +3,15 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## XAR gzip decoder finalization — 2026-08-31
+
+Initialized XAR gzip members now treat a failing `inflateEnd()` as a sticky
+incomplete `CL_EUNPACK` result before nested scanning, while preserving any
+earlier error status. The member-only fault-injected regression passes with
+current production-linked GCC and GCC ASan/UBSan leak detection. Full XAR
+corpus, production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain required.
+
 ## HWP3 checked table and document-info advances — 2026-08-31
 
 HWP3 font/style table extents and the optional document-info block offset now
