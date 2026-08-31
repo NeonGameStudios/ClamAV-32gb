@@ -16855,3 +16855,37 @@ This updates the older 9/9 focused count; it does not constitute final GIF
 qualification. Complete GIF/image corpus coverage, sanitizer, certified Linux
 x86-64, materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
+
+## TIFF sparse >4-GiB callback-map rerun — 2026-08-31
+
+The three TIFF large-coordinate tests previously failed before parser entry
+because their synthetic maps requested non-aging allocation of more than 4 GiB,
+exceeding the shared 1-GiB contiguous-allocation ceiling. The tests now use
+the intended aging-backed fmap mode, which keeps the sparse logical extent
+without materializing it contiguously. After transferring the canonical
+`tiff.c` and unit-test source into Docker and relinking, the current-source
+production-linked GCC `tiff_large` TCase passes 3/3. The cases prove classic
+IFD traversal above 4 GiB, BigTIFF IFD traversal above 4 GiB, and rejection of
+an external BigTIFF value without mapping its payload.
+
+This removes a test-admission blocker, not a final release gate. Complete
+TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
+materialized-large-file, production-CVD/service, Sonic1, and final
+parser/release qualification remain open.
+
+## TIFF sparse >4-GiB callback-map rerun — 2026-08-31
+
+The three TIFF large-coordinate tests previously failed before parser entry
+because their synthetic maps requested non-aging allocation of more than 4 GiB,
+exceeding the shared 1-GiB contiguous-allocation ceiling. The tests now use
+the intended aging-backed fmap mode, which keeps the sparse logical extent
+without materializing it contiguously. After transferring the canonical
+`tiff.c` and unit-test source into Docker and relinking, the current-source
+production-linked GCC `tiff_large` TCase passes 3/3. The cases prove classic
+IFD traversal above 4 GiB, BigTIFF IFD traversal above 4 GiB, and rejection of
+an external BigTIFF value without mapping its payload.
+
+This removes a test-admission blocker, not a final release gate. Complete
+TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
+materialized-large-file, production-CVD/service, Sonic1, and final
+parser/release qualification remain open.

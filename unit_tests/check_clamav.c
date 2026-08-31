@@ -47967,7 +47967,7 @@ START_TEST(test_tiff_ifd_cursor_does_not_wrap_above_uint32)
     state.prefix_length = sizeof(prefix);
     memset(&ctx, 0, sizeof(ctx));
 
-    map = cl_fmap_open_handle(&state, 0, state.length, tiff_large_cursor_pread_cb, 0);
+    map = cl_fmap_open_handle(&state, 0, state.length, tiff_large_cursor_pread_cb, 1);
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
 
@@ -47996,7 +47996,7 @@ START_TEST(test_tiff_bigtiff_ifd_cursor_reaches_above_uint32)
     state.prefix_length = sizeof(prefix);
     memset(&ctx, 0, sizeof(ctx));
 
-    map = cl_fmap_open_handle(&state, 0, state.length, tiff_large_cursor_pread_cb, 0);
+    map = cl_fmap_open_handle(&state, 0, state.length, tiff_large_cursor_pread_cb, 1);
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
 
@@ -48031,7 +48031,7 @@ START_TEST(test_tiff_bigtiff_external_value_above_uint32_is_not_mapped)
     state.prefix_length = sizeof(prefix);
     memset(&ctx, 0, sizeof(ctx));
 
-    map = cl_fmap_open_handle(&state, 0, state.length, tiff_large_cursor_pread_cb, 0);
+    map = cl_fmap_open_handle(&state, 0, state.length, tiff_large_cursor_pread_cb, 1);
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
 

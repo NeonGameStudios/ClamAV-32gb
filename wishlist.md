@@ -9417,3 +9417,27 @@ qualification as required evidence.
   not final GIF qualification. Complete GIF/image corpus, sanitizer, certified
   Linux x86-64, materialized-large-file, production-CVD/service, Sonic1, and
   final parser/release qualification remain required.
+
+## TIFF sparse >4-GiB callback-map rerun — 2026-08-31
+
+- Keep the three sparse TIFF large-coordinate tests on aging-backed fmaps;
+  non-aging mode correctly enforces the shared 1-GiB contiguous-allocation
+  ceiling and prevents parser admission for these logical-only fixtures.
+- Retain canonical-source Docker relink evidence: `tiff_large` passes 3/3 for
+  classic IFD traversal above 4 GiB, BigTIFF IFD traversal above 4 GiB, and
+  no mapping of an external BigTIFF value payload.
+- Complete TIFF/image corpus, sanitizer, certified Linux x86-64,
+  materialized-large-file, production-CVD/service, Sonic1, and final
+  parser/release qualification.
+
+## TIFF sparse >4-GiB callback-map rerun — 2026-08-31
+
+- Keep the three sparse TIFF large-coordinate tests on aging-backed fmaps;
+  non-aging mode correctly enforces the shared 1-GiB contiguous-allocation
+  ceiling and prevents parser admission for these logical-only fixtures.
+- Retain canonical-source Docker relink evidence: `tiff_large` passes 3/3 for
+  classic IFD traversal above 4 GiB, BigTIFF IFD traversal above 4 GiB, and
+  no mapping of an external BigTIFF value payload.
+- Complete TIFF/image corpus, sanitizer, certified Linux x86-64,
+  materialized-large-file, production-CVD/service, Sonic1, and final
+  parser/release qualification.
