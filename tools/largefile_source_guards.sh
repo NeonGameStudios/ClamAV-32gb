@@ -237,7 +237,7 @@ not_contains libclamav/matcher-pcre.c 'pcre_count * sizeof(struct cli_pcre_meta 
 not_contains libclamav/matcher-pcre.c 'cli_max_calloc(root->pcre_metas, sizeof(uint64_t))'
 contains libclamav/matcher.c 'expression_status = cli_ac_chklsig(exp, exp_end, NULL, NULL, NULL, 1);'
 contains libclamav/matcher.c 'logical signature expression is malformed'
-contains unit_tests/check_matchers.c 'test_logical_malformed_expression_is_fail_visible'
+contains unit_tests/check_matchers.c 'test_logical_out_of_range_expression_is_fail_visible'
 contains unit_tests/check_matchers.c 'test_logical_expression_trailing_data_is_fail_visible'
 contains unit_tests/check_matchers.c 'test_logical_expression_chained_modifier_is_fail_visible'
 contains unit_tests/check_matchers.c 'test_logical_subsignature_bounds_are_fail_visible'

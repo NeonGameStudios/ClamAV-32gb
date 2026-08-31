@@ -1184,7 +1184,7 @@ START_TEST(test_logical_malformed_definition_is_fail_visible)
 }
 END_TEST
 
-START_TEST(test_logical_malformed_expression_is_fail_visible)
+START_TEST(test_logical_out_of_range_expression_is_fail_visible)
 {
     static char logic[] = "64";
     struct cli_ac_lsig lsig;
@@ -1214,7 +1214,7 @@ START_TEST(test_logical_malformed_expression_is_fail_visible)
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert(thefmap.dont_cache_flag);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "logical signature expression is malformed");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "logical signature definition is malformed");
 
     cli_ac_freedata(&mdata);
 }
@@ -2896,7 +2896,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_logical_root_status_merge_preserves_incomplete_result);
     tcase_add_test(tc_matchers, test_logical_unknown_type_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_malformed_definition_is_fail_visible);
-    tcase_add_test(tc_matchers, test_logical_malformed_expression_is_fail_visible);
+    tcase_add_test(tc_matchers, test_logical_out_of_range_expression_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_expression_trailing_data_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_expression_chained_modifier_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_subsignature_bounds_are_fail_visible);
