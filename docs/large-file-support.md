@@ -91,6 +91,26 @@ mismatch. Complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## BZip2/GZip materialized corpus refresh — 2026-08-31
+
+The earlier reused-harness BZip2/GZip result was incomplete because the
+encrypted repository test inputs had not been materialized in the Docker build
+directory. The existing CMake test-data targets now materialize
+`clam.exe.bz2`, `clam.tar.gz`, and `clam.exe_and_mail.tar.gz`, and the
+standalone `bzip2 -t` check accepts the BZip2 fixture. With those inputs
+present, the unchanged current-source production-linked GCC harness passes
+`bz_core` 7/7 and `bz_map` 5/5. The core case includes both BZip2/GZip
+nested-marker corpus checks, concatenated BZip2 stream coverage,
+decoder-initialization failure, and the legacy GZip fallback staging
+regression.
+
+This corrects the evidence gap rather than changing parser behavior: the
+previous two corpus failures were missing-file setup failures and were not
+reproduced after materialization. Complete compressed-format corpus coverage,
+sanitizer, certified Linux x86-64, materialized-large-file,
+production-CVD/service, Sonic1, and final parser/release qualification remain
+open.
+
 ## Current Rust/MSPack production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `rust_map` 1/1,

@@ -374,6 +374,21 @@ Sonic1, resource, and final qualification remain required.
   materialized-large-file, Sonic1, and final release qualification remain
   required.
 
+## BZip2/GZip materialized corpus refresh — 2026-08-31
+
+- Materialize `clam.exe.bz2`, `clam.tar.gz`, and
+  `clam.exe_and_mail.tar.gz` through the existing CMake test-data targets
+  before running the compressed corpus cases; `bzip2 -t` accepts the BZip2
+  fixture.
+- Retain the unchanged current-source production-linked GCC evidence:
+  `bz_core` passes 7/7 and `bz_map` passes 5/5, including both nested-marker
+  corpus cases, concatenated BZip2, decoder-init failure, and GZip fallback
+  staging. The earlier two corpus failures were missing materialized files,
+  not parser failures.
+- Complete compressed-format corpus breadth, sanitizer, certified Linux
+  x86-64, materialized-large-file, production-CVD/service, Sonic1, and final
+  parser/release qualification.
+
 ## Signature database loader API admission — 2026-08-30
 
 - Reject null `cl_load()` path, engine, and signature-count output arguments
