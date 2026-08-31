@@ -10893,3 +10893,17 @@ wording. The capability remains pending until complete corpus coverage, sanitize
 and leak evidence, certified Linux x86-64, materialized large-file edge tests,
 production-CVD/service parity, Sonic1 resource measurements, and final
 parser-family/release qualification are complete.
+
+## HFS+ focused-suite refresh — 2026-08-31
+
+The authoritative current-source production-linked GCC harness passes `hfs_map`
+20/20, `hfs_inline` 2/2, and `hfs_fork` 1/1. The refreshed evidence covers HFS+
+map admission, declared-volume and tree boundaries, catalog and attribute chains,
+compressed-resource map offsets and decoder initialization, inline multi-window
+output, and fork materialization callbacks.
+
+The HFS+ capability remains pending final qualification. Complete catalog,
+attribute, resource, and ExtentOverflow corpus coverage; sanitizer/leak evidence;
+certified Linux x86-64; materialized large-file edge cases; production-CVD/service
+parity; Sonic1 resource measurements; and release-default evidence are still
+required.

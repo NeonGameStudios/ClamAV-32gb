@@ -16669,3 +16669,18 @@ fixture reaches the embedded MZ detection path. RTF remains pending final parser
 qualification: complete corpus breadth, sanitizer/leak evidence, certified Linux
 x86-64, materialized large-file edge cases, production-CVD/service parity, Sonic1
 resource measurements, and release-default evidence remain open.
+
+## HFS+ focused-suite refresh — 2026-08-31
+
+The current-source HFS+ executable was verified against the authoritative source
+hashes before the focused runs. The established production-linked GCC harness
+passes `hfs_map` 20/20, `hfs_inline` 2/2, and `hfs_fork` 1/1. This confirms the
+current map admission, declared-volume/catalog/attribute boundaries, compressed
+resource-map offsets, inline multi-window output, decoder-init failure, and fork
+materialization callback cases without the earlier mixed-harness gate.
+
+This is a focused qualification refresh, not final parser completion. Complete
+HFS+ catalog/attribute/resource and ExtentOverflow corpus coverage, sanitizer/leak
+evidence, certified Linux x86-64, materialized large-file edges, production-CVD/
+service parity, Sonic1 resource measurements, and release-default qualification
+remain open.

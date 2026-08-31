@@ -9274,3 +9274,14 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1 resource, and final
   parser-family/release qualification before changing the capability row from
   pending.
+
+## HFS+ focused-suite refresh — 2026-08-31
+
+- Retain the current-source production-linked GCC evidence: `hfs_map` passes
+  20/20, `hfs_inline` passes 2/2, and `hfs_fork` passes 1/1 after authoritative
+  source-hash verification.
+- Keep the declared-volume, catalog/attribute-chain, compressed-resource offset,
+  inline decoder, and fork materialization regressions registered and guarded.
+- Complete the HFS+ corpus including ExtentOverflow/resource variants, sanitizer
+  and leak evidence, certified Linux x86-64, materialized-large-file cases,
+  production-CVD/service parity, Sonic1 measurements, and final release evidence.
