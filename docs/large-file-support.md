@@ -263,6 +263,9 @@ required.
 
 ## Current HWP3 production-linked rerun — 2026-08-31
 
+The canonical HWP3 parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly.
 The current-source production-linked GCC harness passes the isolated `hwp3`
 TCase 22/22 with 0 failures and 0 errors, after direct fixtures were given a
 valid engine, scan-options object, and root recursion layer. The companion
