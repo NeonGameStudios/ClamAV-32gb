@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## VBA empty Unicode module stream admission — 2026-08-31
+
+`cli_vba_readdir_new()` now rejects a confirmed `MODULESTREAMNAMEUNICODE`
+record with a zero-byte payload before passing a pointer beyond that record to
+the OLE property-name helper. The malformed project returns `CL_EFORMAT`,
+marks the scan incomplete and non-cacheable, closes its partial output, and
+releases its temporary reservation. The registered `vba` TCase passes 1/1 in
+the current-source production-linked GCC harness. Complete OLE/VBA/XLM
+corpus, sanitizer/leak, production-CVD/service, materialized-large-file,
+Linux x86-64, Sonic1, and final parser/release qualification remain open.
+
 ## MIME folded-header state reset — 2026-08-31
 
 `parseEmailHeaders()` previously continued after `parseEmailHeader()` failed

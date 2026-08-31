@@ -1,5 +1,17 @@
 # Wishlist
 
+## VBA empty Unicode module stream admission — 2026-08-31
+
+- Reject an empty confirmed `MODULESTREAMNAMEUNICODE` payload before the
+  following directory record can be consumed as a name; preserve
+  `CL_EFORMAT`, sticky incomplete/non-cacheable state, partial-output cleanup,
+  and temporary-quota release.
+- Retain the malformed-directory regression, source guards, and current-source
+  production-linked GCC `vba` TCase evidence (1/1). Complete OLE/VBA/XLM
+  corpus, sanitizer/leak, production-CVD/service, materialized-large-file,
+  Linux x86-64, Sonic1, and final parser/release qualification remain
+  required.
+
 ## MIME folded-header state reset — 2026-08-31
 
 - Keep failed or heuristic assembled MIME headers fail-closed: release and

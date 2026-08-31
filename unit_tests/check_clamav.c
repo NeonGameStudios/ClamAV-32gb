@@ -34206,6 +34206,72 @@ START_TEST(test_vba_project_directory_requires_context_and_engine)
 }
 END_TEST
 
+START_TEST(test_vba_empty_unicode_module_stream_name_is_fail_visible)
+{
+    /* A compressed VBA directory containing one malformed, nameless module. */
+    static const unsigned char compressed_directory[] = {
+        0x01, 0x00, 0x00, 0x00, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x47, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x48, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0x00, 0x04,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1e, 0x00, 0x00,
+        0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x02,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x2b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    static const unsigned char map_data[] = {0};
+    const char *hash = "vba-empty-unicode-stream-name";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    char input_path[PATH_MAX];
+    char *output_path = NULL;
+    uint64_t output_reserved = 0;
+    int output_fd = -1;
+    int has_macros = 0;
+    int input_fd;
+    cl_error_t status;
+
+    snprintf(input_path, sizeof(input_path), "%s/%s_1", tmpdir, hash);
+    input_fd = open(input_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(input_fd, -1);
+    ck_assert_uint_eq(cli_writen(input_fd, compressed_directory, sizeof(compressed_directory)),
+                      sizeof(compressed_directory));
+    close(input_fd);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(map_data, sizeof(map_data));
+    ck_assert_ptr_nonnull(map);
+    engine.maxfilesize      = 1024U * 1024U;
+    engine.maxtemporarysize = 1024U * 1024U;
+    ctx.engine              = &engine;
+    ctx.options             = &options;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    status = cli_vba_readdir_new(&ctx, tmpdir, NULL, hash, 1,
+                                 &output_fd, &has_macros, &output_path,
+                                 &output_reserved);
+    ck_assert_int_eq(status, CL_EFORMAT);
+    ck_assert_int_eq(output_fd, -1);
+    ck_assert_ptr_nonnull(output_path);
+    ck_assert_int_eq(unlink(output_path), 0);
+    free(output_path);
+    output_path = NULL;
+    ck_assert_uint_eq(output_reserved, 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "VBA Unicode module stream name is empty");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    unlink(input_path);
+}
+END_TEST
+
 START_TEST(test_ole2_property_name_rejects_invalid_arguments)
 {
     static const char one_byte_name[] = {'A'};
@@ -49359,6 +49425,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ole2 = tcase_create("ole2");
     TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
     TCase *tc_ole2_map = tcase_create("ole2_map");
+    TCase *tc_vba = tcase_create("vba");
     TCase *tc_nulsft = tcase_create("nulsft");
     TCase *tc_nulsft_corpus = tcase_create("nulsft_corpus");
     TCase *tc_nulsft_map = tcase_create("nulsft_map");
@@ -50195,6 +50262,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2, test_ole2_output_write_failure_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_output_close_failure_is_fail_visible);
 #endif
+    suite_add_tcase(s, tc_vba);
+    tcase_add_checked_fixture(tc_vba, cl_setup, cl_teardown);
+    tcase_add_test(tc_vba, test_vba_empty_unicode_module_stream_name_is_fail_visible);
     suite_add_tcase(s, tc_ole2_xlm);
     tcase_add_checked_fixture(tc_ole2_xlm, cl_setup, cl_teardown);
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX

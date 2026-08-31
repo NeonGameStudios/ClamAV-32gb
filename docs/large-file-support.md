@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## VBA empty Unicode module stream admission — 2026-08-31
+
+Confirmed VBA project directories now reject an empty
+`MODULESTREAMNAMEUNICODE` record before the following directory bytes can be
+interpreted as a stream name. The malformed directory returns `CL_EFORMAT`,
+marks the layer incomplete and non-cacheable, closes its partial output, and
+releases temporary quota. The current-source production-linked GCC `vba`
+TCase passes 1/1. Complete OLE/VBA/XLM corpus, sanitizer/leak,
+production-CVD/service, materialized-large-file, Linux x86-64, Sonic1, and
+final parser/release qualification remain required.
+
 ## MIME folded-header state reset — 2026-08-31
 
 Failed recognized MIME headers no longer leave their assembled folded-header

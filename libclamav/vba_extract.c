@@ -1435,6 +1435,11 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                     ret = CL_EREAD;
                     goto done;
                 }
+                if (module_stream_name_size == 0) {
+                    cli_mark_scan_incomplete(ctx, "VBA Unicode module stream name is empty");
+                    ret = CL_EFORMAT;
+                    goto done;
+                }
                 if (module_stream_name_size > VBA_OLE_STREAM_NAME_LIMIT || module_stream_name_size % 2 != 0) {
                     cli_mark_scan_incomplete(ctx, "VBA Unicode module stream name exceeds the bounded OLE metadata limit");
                     ret = CL_EFORMAT;
