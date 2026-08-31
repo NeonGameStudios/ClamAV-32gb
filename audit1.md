@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## ISO-9660 directory-record name boundary — 2026-08-30
+
+The ISO directory walker validated a record's filename length against the
+bytes remaining in the whole directory sector rather than against that
+record's declared length. A malformed 34-byte record could therefore declare
+a multi-byte identifier, consume bytes belonging to the following
+record/padding area, and still complete the confirmed ISO layer cleanly. Name
+admission is now bounded by `entrysz - 33` before conversion or metadata
+matching. The registered public-API regression supplies a complete descriptor
+sequence and root directory whose two-byte identifier crosses a 34-byte record
+boundary. The same oracle against the unchanged production ISO object
+reproduces the defect as `CL_SUCCESS` with a cacheable fmap. A disposable
+production-static archive with only the current ISO object substituted returns
+`CL_EPARSE`, a nothing-found verdict, a null alert, and a non-cacheable fmap;
+both materialized logo ISOs still produce their exact nested PNG detection,
+and the matching current-parser GCC ASan/UBSan run is clean across all three
+cases. Complete ISO/Joliet corpus, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, and final parser/release
+qualification remain open.
+
 ## Hash file-length and short-read admission — 2026-08-30
 
 `cl_hash_file_fd_ex()` documented a zero length as “hash the entire file” but

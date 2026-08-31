@@ -306,9 +306,9 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
                 continue;
             }
 
-            if (filesz + 33 > dirsz) {
-                cli_dbgmsg("iso_parse_dir: Directory entry name overflow\n");
-                ret = iso_incomplete(ctx, "ISO directory entry name was truncated");
+            if ((unsigned int)filesz > entrysz - 33U) {
+                cli_dbgmsg("iso_parse_dir: Directory entry name exceeded its record\n");
+                ret = iso_incomplete(ctx, "ISO directory entry name exceeded its record");
                 break;
             }
             if (iso->joliet && (filesz & 1U)) {

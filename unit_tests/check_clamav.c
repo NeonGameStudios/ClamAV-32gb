@@ -22156,6 +22156,77 @@ START_TEST(test_iso_truncated_directory_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_iso_directory_name_stays_within_record)
+{
+    enum {
+        ISO_OFFSET  = 32768,
+        ROOT_BLOCK  = 32,
+        ROOT_OFFSET = ROOT_BLOCK * 2048,
+        ISO_BLOCKS  = ROOT_BLOCK + 1,
+        ISO_LENGTH  = ISO_BLOCKS * 2048
+    };
+    uint8_t data[ISO_LENGTH] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    /* Build a complete primary descriptor, terminator, and root directory.
+     * The directory record claims to be 34 bytes long but declares a two-byte
+     * identifier starting at byte 33. The second identifier byte therefore
+     * belongs to the following record/padding area. Checking only the bytes
+     * left in the sector used to admit this malformed record and return clean. */
+    data[ISO_OFFSET] = 1;
+    memcpy(data + ISO_OFFSET + 1, "CD001", 5);
+    data[ISO_OFFSET + 80] = ISO_BLOCKS;
+    data[ISO_OFFSET + 87] = ISO_BLOCKS;
+    data[ISO_OFFSET + 128] = 0x00;
+    data[ISO_OFFSET + 129] = 0x08;
+    data[ISO_OFFSET + 156] = 34;
+    data[ISO_OFFSET + 158] = ROOT_BLOCK;
+    data[ISO_OFFSET + 166] = 0x00;
+    data[ISO_OFFSET + 167] = 0x08;
+
+    data[ISO_OFFSET + 2048] = 0xff;
+    memcpy(data + ISO_OFFSET + 2049, "CD001", 5);
+
+    data[ROOT_OFFSET]      = 34;
+    data[ROOT_OFFSET + 2]  = ROOT_BLOCK;
+    data[ROOT_OFFSET + 10] = 0x00;
+    data[ROOT_OFFSET + 11] = 0x08;
+    data[ROOT_OFFSET + 25] = 0x02;
+    data[ROOT_OFFSET + 32] = 2;
+    data[ROOT_OFFSET + 33] = 'x';
+    data[ROOT_OFFSET + 34] = 0;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ISO9660", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_iso_missing_volume_descriptor_terminator_is_fail_visible)
 {
     enum {
@@ -48749,6 +48820,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_iso_map, cl_setup, cl_teardown);
     tcase_add_test(tc_iso_map, test_iso_missing_map_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_truncated_directory_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_directory_name_stays_within_record);
     tcase_add_test(tc_iso_map, test_iso_missing_volume_descriptor_terminator_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_descriptor_alignment_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_descriptor_terminator_after_sector_31_is_supported);

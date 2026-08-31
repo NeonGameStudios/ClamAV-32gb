@@ -3,6 +3,21 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ISO-9660 directory-record name boundary — 2026-08-30
+
+ISO directory identifiers are now bounded by the declaring record rather than
+the bytes remaining in the full directory sector. A malformed short record can
+no longer consume the next record or padding as filename bytes and complete
+cleanly. The registered public-API fixture returns `CL_EPARSE` with a
+nothing-found verdict and non-cacheable fmap when linked against the
+production static engine with the current ISO object. The unchanged production
+ISO object reproduces the prior clean/cacheable result, both materialized logo
+ISOs retain exact nested PNG detection with the current object, and the
+matching current-parser GCC ASan/UBSan run is clean across all three cases.
+Complete ISO/Joliet corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+required.
+
 ## Hash file-length and short-read admission — 2026-08-30
 
 `cl_hash_file_fd_ex()` now honors its documented zero-length whole-file mode,

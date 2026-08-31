@@ -1,5 +1,16 @@
 # Wishlist
 
+## ISO-9660 directory-record name boundary — 2026-08-30
+
+- Bound each ISO directory identifier by its own declared directory-record
+  length, not by the bytes remaining in the containing sector; never consume
+  the following record or padding as filename data.
+- Retain the complete malformed-record public-API regression, source guards,
+  disposable production-static current-object evidence, and matching GCC
+  ASan/UBSan oracle. Complete ISO/Joliet corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification remain required.
+
 ## Hash file-length and short-read admission — 2026-08-30
 
 - Make `cl_hash_file_fd_ex()` honor its documented zero-length whole-file
