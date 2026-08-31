@@ -1,5 +1,17 @@
 # Wishlist
 
+## UDF allocation-mode and descriptor-window admission — 2026-08-30
+
+- Preserve all three low ICB allocation-descriptor type bits and keep reserved
+  modes 3 through 7 fail-visible as unsupported; never reinterpret modes 4
+  through 6 as short, long, or extended extents.
+- Release each copied FID/FE descriptor window before advancing to the next
+  volume block. Retain the exact child-signature and handle-map lock
+  regressions plus the production-linked GCC ASan/UBSan oracle.
+- Complete authoritative UDF directory traversal, descriptor tag/checksum/CRC
+  validation, full corpus, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, and final parser/release qualification.
+
 ## ISO-9660 directory-record name boundary — 2026-08-30
 
 - Bound each ISO directory identifier by its own declared directory-record

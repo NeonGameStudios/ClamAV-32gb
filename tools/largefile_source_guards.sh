@@ -2243,6 +2243,18 @@ contains unit_tests/check_clamav.c 'test_udf_corpus_detects_embedded_mz'
 contains unit_tests/check_clamav.c 'The FID ICB is the authoritative address of its File Entry'
 contains unit_tests/check_clamav.c 'valid clean UDF unexpectedly incomplete'
 contains unit_tests/check_clamav.c 'test_udf_descriptor_size_arithmetic_is_fail_visible'
+contains libclamav/udf.c 'switch (icbFlags & 7U)'
+not_contains libclamav/udf.c 'switch (icbFlags & 3)'
+contains libclamav/udf.c 'release this window before advancing to the next one'
+contains unit_tests/check_clamav.c 'Reserved value 4 must not alias short_ad'
+contains unit_tests/check_clamav.c 'reserved UDF allocation mode reached child alert'
+contains unit_tests/check_clamav.c 'UDF scan retained fmap lock on page'
+contains docs/largefile-capabilities.tsv 'udf-allocation-window-admission'
+udf_icb_mask_count=$(grep -F -c -- 'switch (icbFlags & 7U)' "$root/libclamav/udf.c" || true)
+if [ "$udf_icb_mask_count" -ne 2 ]; then
+    echo 'large-file source guard failed: both UDF allocation dispatches must preserve all three type bits' >&2
+    exit 1
+fi
 contains libclamav/hfsplus.c 'HFS+ volume header is incomplete'
 contains libclamav/hfsplus.c 'HFS+ volume header could not be read completely'
 contains libclamav/hfsplus.c 'HFS+ input map is unavailable'

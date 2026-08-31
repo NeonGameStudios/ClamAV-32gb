@@ -3,6 +3,22 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UDF allocation-mode and descriptor-window admission — 2026-08-30
+
+UDF file-entry allocation dispatch now reads all three format-defined ICB type
+bits. Reserved modes 3 through 7 return `CL_EUNPACK` with sticky incomplete
+state and cache taint instead of allowing modes 4 through 6 to alias supported
+extent layouts. FID and FE records are copied into owned lists, and their
+source fmap views are now released before the descriptor loop advances. In the
+focused production-linked oracle, the exact committed pre-fix object reaches
+the exact `Udf.File.Marker.UNOFFICIAL` child signature through mode 4 and
+retains two locked pages; the current UDF object records no child alert and a
+clean handle-backed scan retains zero locks. The matching GCC ASan/UBSan run
+with leak detection passes. Authoritative UDF directory traversal, descriptor
+tag/checksum/CRC validation, complete corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain required.
+
 ## ISO-9660 directory-record name boundary — 2026-08-30
 
 ISO directory identifiers are now bounded by the declaring record rather than

@@ -208,7 +208,7 @@ static cl_error_t getUDFExtentRange(cli_ctx *ctx, PartitionDescriptor *pPartitio
     partitionLength           = le32_to_host(pPartitionDescriptor->partitionLength);
     logicalBlockSize           = le32_to_host(pLogicalVolumeDescriptor->logicalBlockSize);
 
-    switch (icbFlags & 3) {
+    switch (icbFlags & 7U) {
         case 0: {
             const short_ad *shortDesc = (const short_ad *)allocation_descriptor;
 
@@ -326,7 +326,7 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
         goto done;
     }
 
-    switch (icbFlags & 3) {
+    switch (icbFlags & 7U) {
         case 0:
             descriptor_size = sizeof(short_ad);
             break;
@@ -1397,7 +1397,8 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
          * Find all of the file identifier descriptors and file entry descriptors.
          */
 
-        // Need the entire volume descriptor. We'll un-need it at the end.
+        // Need the entire volume descriptor. Each dispatch copies any state
+        // it retains, so release this window before advancing to the next one.
         file_volume_tag = (DescriptorTag *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, &read_status);
         if (NULL == file_volume_tag) {
             cli_dbgmsg("Failed to get File Volume Tag\n");
@@ -1513,14 +1514,14 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                  */
                 freePointerList(&fileIdentifierList);
                 freePointerList(&fileEntryList);
-                fmap_unneed_ptr(ctx->fmap, file_volume_tag, VOLUME_DESCRIPTOR_SIZE);
-                file_volume_tag = NULL;
-
                 isInitialized = false;
                 completed_volume = true;
                 break;
             }
         }
+
+        fmap_unneed_ptr(ctx->fmap, file_volume_tag, VOLUME_DESCRIPTOR_SIZE);
+        file_volume_tag = NULL;
 
         if (idx > SIZE_MAX - VOLUME_DESCRIPTOR_SIZE) {
             cli_mark_scan_incomplete(ctx, "UDF descriptor offset overflowed");

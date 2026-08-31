@@ -5130,6 +5130,7 @@ END_TEST
 
 #ifdef ANONYMOUS_MAP
 #define TEST_FM_MASK_PAGED 0x40000000U
+#define TEST_FM_MASK_LOCKED 0x80000000U
 #define TEST_FMAP_AGING_SCAN_BUDGET 8192U
 #define TEST_FMAP_AGING_FREE_BUDGET 4096U
 
@@ -43215,6 +43216,10 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     size_t allocation_offset;
     const char *last_virus;
     cl_error_t ret;
+#ifdef ANONYMOUS_MAP
+    struct udf_descriptor_read_failure_state handle_state;
+    uint64_t page;
+#endif
 
     data = calloc(1, UDF_TEST_SIZE);
     ck_assert_ptr_nonnull(data);
@@ -43360,7 +43365,74 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
     ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF file identifier ICB does not match a file entry");
     ck_assert(map->dont_cache_flag);
 
+    /* Allocation descriptor type occupies the low three ICB flag bits.
+     * Reserved value 4 must not alias short_ad and expose its referenced
+     * bytes to the child scanner. */
+    test_udf_put_le32(data + fid_offset + offsetof(FileIdentifierDescriptor, icb) +
+                          offsetof(long_ad, extentLocation) + offsetof(lb_addr, blockNumber),
+                      0);
+    test_udf_put_le16(data + fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, flags), 4);
+    memcpy(data + base + (16 * VOLUME_DESCRIPTOR_SIZE), "UDF", UDF_TEST_PAYLOAD_LENGTH);
+    memset(&ctx, 0, sizeof(ctx));
+    memset(layers, 0, sizeof(layers));
+    map->dont_cache_flag = false;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_UDF;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF allocation descriptor type is unsupported");
+    ck_assert(map->dont_cache_flag);
+    last_virus = cli_get_last_virus_str(&ctx);
+    ck_assert_msg(last_virus == NULL || last_virus[0] == '\0',
+                  "reserved UDF allocation mode reached child alert: %s", last_virus ? last_virus : "(null)");
+
     cl_fmap_close(map);
+
+#ifdef ANONYMOUS_MAP
+    /* FID and FE blocks are copied into owned lists. A clean handle-backed
+     * scan must therefore release every source descriptor window instead of
+     * retaining one lock per loop iteration. */
+    test_udf_put_le16(data + fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, flags), 0);
+    memset(data + base + (16 * VOLUME_DESCRIPTOR_SIZE), 0, UDF_TEST_PAYLOAD_LENGTH);
+    handle_state.data        = data;
+    handle_state.length      = UDF_TEST_SIZE;
+    handle_state.fail_offset = (off_t)UDF_TEST_SIZE;
+    map = cl_fmap_open_handle(&handle_state, 0, UDF_TEST_SIZE, udf_descriptor_read_failure_cb, 1);
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    memset(layers, 0, sizeof(layers));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_UDF;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_msg(!ctx.scan_incomplete, "handle-backed clean UDF unexpectedly incomplete: %s",
+                  ctx.scan_incomplete_reason ? ctx.scan_incomplete_reason : "(no reason)");
+    for (page = 0; page < map->pages; page++) {
+        ck_assert_msg(!(map->bitmap[page] & TEST_FM_MASK_LOCKED),
+                      "UDF scan retained fmap lock on page %llu", (unsigned long long)page);
+    }
+    cl_fmap_close(map);
+#endif
+
     cl_engine_free(scan_engine);
     free(data);
 }

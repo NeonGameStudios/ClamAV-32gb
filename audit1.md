@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## UDF allocation-mode and descriptor-window admission — 2026-08-30
+
+The UDF file-entry path masked only two bits of the ICB allocation-descriptor
+type. Reserved modes 4 through 6 therefore aliased the supported short, long,
+and extended descriptor forms instead of reaching the existing unsupported
+result. Both descriptor dispatches now retain all three type bits, so modes 3
+through 7 return `CL_EUNPACK`, record the sticky unsupported reason, and make
+the containing map non-cacheable. The descriptor loop also now releases every
+FID/FE fmap view after copying its retained record; previously each iteration
+overwrote the pointer and left source pages locked. The registered corpus
+regression uses an exact child signature: the exact committed pre-fix object
+returns `CL_VIRUS` through reserved mode 4 and leaves two handle-map pages
+locked, while a production-static archive with only the current UDF object
+returns fail-visible `CL_EUNPACK`, records no child alert, and leaves zero
+locked pages on the clean control. The matching GCC ASan/UBSan run with leak
+detection is clean. Authoritative directory traversal, descriptor tag/CRC
+validation, complete UDF corpus, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, and final parser/release
+qualification remain open.
+
 ## ISO-9660 directory-record name boundary — 2026-08-30
 
 The ISO directory walker validated a record's filename length against the
