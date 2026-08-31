@@ -111,6 +111,18 @@ GCC harness passes `ole2` 18/18, `ole2_xlm` 3/3, and `ole2_map` 6/6. Full
 OLE/VBA/XLM corpus, sanitizer, production-CVD/service, materialized-large-file,
 Sonic1, and final parser/release qualification remain open.
 
+## PowerPoint compressed-atom boundary admission — 2026-08-31
+
+PowerPoint compressed atoms now advance the descriptor over any unread bytes
+remaining in the declared atom payload after zlib reaches `Z_STREAM_END`.
+This prevents an atom larger than the 8 KiB input window from shifting the
+next-atom parser onto padding or compressed data. The focused current-source
+production-linked GCC oracle passes a valid compressed atom with an 8 KiB
+tail, and the registered `ppt_entry` regression covers the same boundary with
+temporary-accounting cleanup. Full OLE/VBA/PowerPoint corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+release qualification remain open.
+
 ## Current HFS+ production-linked rerun — 2026-08-31
 
 The HFS+ fork regression was corrected so its final no-allocation-blocks

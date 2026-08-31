@@ -124,6 +124,18 @@ Complete OLE/VBA/PowerPoint corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## PowerPoint compressed-atom boundary admission — 2026-08-31
+
+PowerPoint compressed atoms now advance over unread bytes remaining in their
+declared payload after zlib reaches `Z_STREAM_END`, keeping the next atom at
+the correct descriptor position even when the payload exceeds the fixed 8 KiB
+input window. The focused current-source production-linked GCC oracle passes
+a valid compressed atom with an 8 KiB tail, and the registered `ppt_entry`
+regression verifies temporary-accounting cleanup. Full OLE/VBA/PowerPoint
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final release qualification
+remain required.
+
 ## Current PDF/FMap production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `pdf` 17/17,

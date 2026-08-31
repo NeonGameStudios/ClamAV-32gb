@@ -10012,6 +10012,65 @@ START_TEST(test_ppt_vba_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ppt_vba_consumes_compressed_atom_tail)
+{
+    const unsigned char source[] = {'P', 'P', 'T', ' ', 'V', 'B', 'A'};
+    const size_t padding_size = 8192U;
+    uLongf compressed_size    = compressBound(sizeof(source));
+    unsigned char *compressed = malloc(compressed_size);
+    unsigned char *input;
+    size_t atom_payload_size;
+    size_t input_size;
+    char path[PATH_MAX];
+    char *dir;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    uint64_t temporary_reserved = 0;
+    int fd;
+
+    ck_assert_ptr_nonnull(compressed);
+    ck_assert_int_eq(compress2(compressed, &compressed_size, source, sizeof(source), Z_BEST_COMPRESSION), Z_OK);
+
+    atom_payload_size = sizeof(uint32_t) + (size_t)compressed_size + padding_size;
+    input_size        = sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t) + atom_payload_size;
+    input             = calloc(1, input_size);
+    ck_assert_ptr_nonnull(input);
+    input[2] = 0x11;
+    input[3] = 0x10;
+    cli_writeint32(input + 4, (uint32_t)atom_payload_size);
+    memcpy(input + 8 + sizeof(uint32_t), compressed, compressed_size);
+    free(compressed);
+
+    snprintf(path, sizeof(path), "%s/ppt-compressed-atom-tail", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, input, input_size), input_size);
+    free(input);
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxtemporarysize = 1024U * 1024U;
+    ctx.engine              = &engine;
+    ctx.options             = &options;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    dir = cli_ppt_vba_read_ex(fd, &ctx, &temporary_reserved);
+    ck_assert_ptr_nonnull(dir);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert_uint_gt(temporary_reserved, 0);
+
+    ck_assert_int_eq(cli_rmdirs(dir), 0);
+    free(dir);
+    cli_scan_release_temporary(&ctx, temporary_reserved);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert_int_eq(close(fd), 0);
+    unlink(path);
+}
+END_TEST
+
 START_TEST(test_ooxml_null_context_is_fail_visible)
 {
     static const int types[] = {
@@ -50636,11 +50695,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole10_entry, test_ole10_null_context_is_fail_visible);
     tcase_add_test(tc_ole10_entry, test_ole10_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_ppt_entry);
-#ifdef CLAMAV_TEST_LSEEK_WRAP
     tcase_add_checked_fixture(tc_ppt_entry, cl_setup, cl_teardown);
-#endif
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_missing_engine_is_fail_visible);
+    tcase_add_test(tc_ppt_entry, test_ppt_vba_consumes_compressed_atom_tail);
 #ifdef CLAMAV_TEST_LSEEK_WRAP
     tcase_add_test(tc_ppt_entry, test_ppt_vba_lseek_failure_is_fail_visible);
 #endif

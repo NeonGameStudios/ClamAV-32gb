@@ -1,5 +1,16 @@
 # Wishlist
 
+## PowerPoint compressed-atom boundary admission — 2026-08-31
+
+- Advance the descriptor over all bytes remaining in a declared compressed
+  PowerPoint atom after zlib reaches `Z_STREAM_END`; large padded atoms must
+  not shift or hide following atoms.
+- Retain the focused current-source production-linked GCC oracle, the
+  registered `ppt_entry` regression, temporary-accounting cleanup, and the
+  source guard. Full OLE/VBA/PowerPoint corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final qualification remain required.
+
 ## Embedded PE malformed-header admission and service parity — 2026-08-31
 
 - Keep fully read but invalid DOS/PE headers fail-visible as `CL_EFORMAT` for

@@ -2742,6 +2742,25 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
         return FALSE;
     }
 
+    /* inflate() may reach the end of its zlib stream before the declared
+     * compressed atom payload is exhausted. The bytes already buffered in
+     * stream.next_in have advanced fd, but the bytes still in the atom have
+     * not. Advance the descriptor to the atom boundary before the caller
+     * attempts to read the next atom; otherwise a large padded atom can make
+     * the following valid atom look malformed or disappear from inspection. */
+    if (length > 0) {
+        off_t skip = (off_t)length;
+
+        if ((uint64_t)skip != (uint64_t)length || lseek(fd, skip, SEEK_CUR) == (off_t)-1) {
+            ppt_close_output(ctx, ofd);
+            inflateEnd(&stream);
+            ppt_remove_output(ctx, fullname);
+            cli_mark_scan_incomplete(ctx, "PowerPoint compressed atom could not be advanced to its declared boundary");
+            return FALSE;
+        }
+        length = 0;
+    }
+
     if (!ppt_write_output(ctx, temporary_reserved, ofd, outbuff,
                           PPT_LZW_BUFFSIZE - stream.avail_out)) {
         ppt_close_output(ctx, ofd);
