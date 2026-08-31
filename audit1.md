@@ -16423,7 +16423,7 @@ production-linked PDF execution, complete PDF/fmap corpus, production-CVD/
 service, materialized-large-file, Sonic1, and final release qualification
 remain open.
 
-## Legacy VBA and PowerPoint seek-result admission — 2026-08-30
+## Legacy VBA and PowerPoint seek-result admission — 2026-08-31
 
 The legacy `cli_vba_readdir()` path previously ignored the return values of
 the project-description, extended-project-metadata, module-metadata, and
@@ -16434,7 +16434,10 @@ breaks the project parse so the scanner's existing caller marks the layer
 incomplete. The PowerPoint LZW helper also records and validates its current
 input offset before using it to construct a temporary output filename. The
 current-source VBA object compiles under the production GCC flags and source
-guards pin the handoffs; complete OLE/VBA/PowerPoint corpus, sanitizer,
+guards pin the handoffs. The Linux static production-linked harness now passes
+the focused `vba` case 2/2 and `ppt_entry` case 3/3, including deterministic
+descriptor-seek fault injection for both legacy project parsing and the
+PowerPoint atom iterator. Complete OLE/VBA/PowerPoint corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain open.
 

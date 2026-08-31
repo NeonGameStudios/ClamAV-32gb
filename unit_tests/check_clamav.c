@@ -217,6 +217,24 @@ int __wrap_inflateInit2_(z_streamp strm, int windowBits, const char *version, in
 }
 #endif
 
+#ifdef CLAMAV_TEST_LSEEK_WRAP
+extern off_t __real_lseek(int fd, off_t offset, int whence);
+static unsigned int clamav_test_lseek_fail_call;
+static unsigned int clamav_test_lseek_calls;
+
+off_t __wrap_lseek(int fd, off_t offset, int whence)
+{
+    clamav_test_lseek_calls++;
+    if (clamav_test_lseek_fail_call != 0U &&
+        clamav_test_lseek_calls == clamav_test_lseek_fail_call) {
+        clamav_test_lseek_fail_call = 0U;
+        errno                         = ESPIPE;
+        return (off_t)-1;
+    }
+    return __real_lseek(fd, offset, whence);
+}
+#endif
+
 #ifdef CLAMAV_TEST_MALLOC_WRAP
 static bool pdf_test_output_window_allocation_active;
 static bool pdf_test_fail_output_window_allocation;
@@ -35400,6 +35418,88 @@ START_TEST(test_vba_inflate_seek_failure_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_LSEEK_WRAP
+START_TEST(test_vba_legacy_project_directory_seek_failure_is_fail_visible)
+{
+    static const unsigned char project_name[] = {'*', '\\', 'g', 'x', 'x', 'x'};
+    unsigned char data[32 + 2 + sizeof(project_name) + 2 + 10 + 20] = {0};
+    char *hash;
+    char path[PATH_MAX];
+    struct uniq *U;
+    vba_project_t *project;
+    uint32_t count = 0;
+    int fd;
+
+    data[0]  = 0xcc;
+    data[1]  = 0x61;
+    data[32] = 0;
+    data[33] = (unsigned char)sizeof(project_name);
+    memcpy(&data[34], project_name, sizeof(project_name));
+    data[34 + sizeof(project_name)] = 0xff;
+    data[35 + sizeof(project_name)] = 0xff;
+
+    U = uniq_init(1);
+    ck_assert_ptr_nonnull(U);
+    ck_assert_int_eq(uniq_add(U, "_vba_project", 12, &hash, &count), CL_SUCCESS);
+    ck_assert_uint_eq(count, 1);
+
+    snprintf(path, sizeof(path), "%s/%s_1", tmpdir, hash);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, data, sizeof(data)), sizeof(data));
+    ck_assert_int_eq(close(fd), 0);
+
+    /* The first legacy parser seek is forced to fail; no project may escape. */
+    clamav_test_lseek_calls     = 0U;
+    clamav_test_lseek_fail_call = 1U;
+    project                     = cli_vba_readdir(tmpdir, U, 1);
+    clamav_test_lseek_fail_call = 0U;
+    ck_assert_uint_ge(clamav_test_lseek_calls, 1U);
+    ck_assert_ptr_null(project);
+
+    unlink(path);
+    uniq_free(U);
+}
+END_TEST
+#endif
+
+#ifdef CLAMAV_TEST_LSEEK_WRAP
+START_TEST(test_ppt_vba_lseek_failure_is_fail_visible)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    uint64_t temporary_reserved = UINT64_MAX;
+    char *dir;
+    int pipefd[2];
+
+    ck_assert_int_eq(pipe(pipefd), 0);
+    close(pipefd[1]);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxfilesize      = 1024U * 1024U;
+    engine.maxtemporarysize = 1024U * 1024U;
+    ctx.engine              = &engine;
+    ctx.options             = &options;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    clamav_test_lseek_calls     = 0U;
+    clamav_test_lseek_fail_call = 1U;
+    dir                         = cli_ppt_vba_read_ex(pipefd[0], &ctx, &temporary_reserved);
+    clamav_test_lseek_fail_call = 0U;
+
+    ck_assert_uint_ge(clamav_test_lseek_calls, 1U);
+    ck_assert_ptr_null(dir);
+    ck_assert_uint_eq(temporary_reserved, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PowerPoint atom header could not be positioned");
+    close(pipefd[0]);
+}
+END_TEST
+#endif
+
 START_TEST(test_word_macro_directory_truncation_is_fail_visible)
 {
     char path[PATH_MAX];
@@ -50446,6 +50546,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_vba);
     tcase_add_checked_fixture(tc_vba, cl_setup, cl_teardown);
     tcase_add_test(tc_vba, test_vba_empty_unicode_module_stream_name_is_fail_visible);
+#ifdef CLAMAV_TEST_LSEEK_WRAP
+    tcase_add_test(tc_vba, test_vba_legacy_project_directory_seek_failure_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_ole2_xlm);
     tcase_add_checked_fixture(tc_ole2_xlm, cl_setup, cl_teardown);
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
@@ -50479,8 +50582,14 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole10_entry, test_ole10_null_context_is_fail_visible);
     tcase_add_test(tc_ole10_entry, test_ole10_missing_engine_is_fail_visible);
     suite_add_tcase(s, tc_ppt_entry);
+#ifdef CLAMAV_TEST_LSEEK_WRAP
+    tcase_add_checked_fixture(tc_ppt_entry, cl_setup, cl_teardown);
+#endif
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_missing_engine_is_fail_visible);
+#ifdef CLAMAV_TEST_LSEEK_WRAP
+    tcase_add_test(tc_ppt_entry, test_ppt_vba_lseek_failure_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_ooxml_entry);
     tcase_add_checked_fixture(tc_ooxml_entry, cl_setup, cl_teardown);
     tcase_add_test(tc_ooxml_entry, test_ooxml_null_context_is_fail_visible);

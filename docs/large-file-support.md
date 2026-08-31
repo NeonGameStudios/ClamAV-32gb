@@ -101,6 +101,16 @@ the parser's explicit admission contract. Full OLE/VBA/XLM corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final parser/
 release qualification remain required.
 
+## Current legacy VBA/PowerPoint seek-fault rerun — 2026-08-31
+
+The Linux static production-linked GCC harness passes the focused `vba` case
+2/2 and `ppt_entry` case 3/3. Deterministic lseek fault injection covers the
+legacy VBA project-directory parser and the PowerPoint atom iterator; both
+return no project/output and preserve the expected fail-visible boundary.
+Complete OLE/VBA/PowerPoint corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## Current HFS+ production-linked rerun — 2026-08-31
 
 The HFS+ fork regression now retains its valid fmap read callback across all

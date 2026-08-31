@@ -165,6 +165,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         CLAMAV_TEST_MALLOC_WRAP
         CLAMAV_TEST_JSON_WRAP
         CLAMAV_TEST_JS_IO_WRAP
+        CLAMAV_TEST_LSEEK_WRAP
         CLAMAV_TEST_7Z_EXTRACT_WRAP
         CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
         CLAMAV_TEST_BYTECODE_PREPARE_WRAP)
@@ -194,6 +195,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=readdir"
         "-Wl,--wrap=stat"
         "-Wl,--wrap=stat64"
+        "-Wl,--wrap=lseek"
         "-Wl,--wrap=SzArEx_ExtractToStreamEx"
         "-Wl,--wrap=cli_magic_scan_desc_type_reserved"
         "-Wl,--wrap=cli_bytecode_context_alloc"
