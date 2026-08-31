@@ -16652,3 +16652,20 @@ teardown after each parse. The ownership source guard and current generated-
 header GCC build pass. Production CVD/service parity, complete CVD corpus,
 sanitizer, materialized-large-file, Linux x86-64, Sonic1, and final release
 qualification remain open.
+
+## RTF materialized corpus and boundary-suite refresh — 2026-08-31
+
+The authoritative encrypted fixture `unit_tests/input/clamav_hdb_scanfiles/clam.exe.rtf.xor`
+was decrypted by the existing CMake test-data target into the production build's
+`clamav_hdb_scanfiles` directory. With byte-identical current source files in the
+established production-linked GCC harness, the RTF corpus case passes `rtf` 1/1
+and the direct boundary suite passes `rtf_map` 13/13. The map count includes the
+missing-engine, null-context, missing-map, in-range read-failure, timeout,
+truncation, split-header, invalid-magic, description, zero-field, implicit-close,
+empty-object, and partial-magic regressions.
+
+This refresh replaces stale 11/11 capability text and confirms that the materialized
+fixture reaches the embedded MZ detection path. RTF remains pending final parser-family
+qualification: complete corpus breadth, sanitizer/leak evidence, certified Linux
+x86-64, materialized large-file edge cases, production-CVD/service parity, Sonic1
+resource measurements, and release-default evidence remain open.

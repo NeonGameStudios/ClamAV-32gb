@@ -10876,3 +10876,20 @@ complete-stream and trailing-byte regressions pass in the current-source
 disposable offline Rust 1.97.1 ALZ harness (40 ALZ tests). Full current-C ABI,
 sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
 parser-family qualification remain release gates.
+
+## RTF materialized corpus and boundary-suite refresh — 2026-08-31
+
+The authoritative `clam.exe.rtf.xor` fixture is now materialized in the existing
+production build through the repository's CMake encrypted-testfile target before
+execution. The current-source production-linked GCC harness passes the RTF corpus
+case `rtf` 1/1 and the direct RTF boundary case `rtf_map` 13/13. The refreshed map
+suite covers null and missing-engine admission, missing maps, in-range fmap read
+failure, timeout, truncation, split object headers and reserved fields, invalid
+OLE10 magic, long descriptions, empty and partial object data, implicit object
+close status, and the exact materialized embedded-MZ child path.
+
+This is current evidence for the RTF parser and replaces stale 11/11 capability
+wording. The capability remains pending until complete corpus coverage, sanitizer
+and leak evidence, certified Linux x86-64, materialized large-file edge tests,
+production-CVD/service parity, Sonic1 resource measurements, and final
+parser-family/release qualification are complete.

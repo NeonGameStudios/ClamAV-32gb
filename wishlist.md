@@ -9261,3 +9261,16 @@ qualification as required evidence.
   sizes, including teardown). Add production-CVD/service parity, complete
   CVD corpus, sanitizer, materialized-large-file, Linux x86-64, Sonic1, and
   final release qualification evidence.
+
+## RTF materialized corpus and boundary-suite refresh — 2026-08-31
+
+- Materialize `clam.exe.rtf` from the authoritative `.xor` fixture through the
+  existing CMake test-data target before running the production-linked harness.
+- Retain the current-source GCC evidence: `rtf` passes 1/1 over the materialized
+  embedded-MZ corpus fixture and `rtf_map` passes 13/13 across admission,
+  truncation, timeout, in-range read failure, split-field, OLE10 magic,
+  description, object-completion, and cleanup-status boundaries.
+- Complete RTF corpus breadth, sanitizer/leak, certified Linux x86-64,
+  materialized-large-file, production-CVD/service, Sonic1 resource, and final
+  parser-family/release qualification before changing the capability row from
+  pending.
