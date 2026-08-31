@@ -9455,6 +9455,18 @@ qualification as required evidence.
   materialized-large-file, Sonic1 resource, and final parser/release
   qualification.
 
+## ARJ focused current-source corpus refresh — 2026-08-31
+
+- Retain canonical/container SHA-256 equality for the ARJ parser, header,
+  scanner, and unit-test source, and materialize `clam.arj` only through the
+  repository CMake XOR-fixture target.
+- Retain the refreshed production-linked GCC evidence: `arj` passes 11/11,
+  `arj_map` 7/7, `arj_compressed` 2/2, and `arjsfx` 4/4, including nested-MZP
+  detection and confirmed SFX failure boundaries.
+- Complete ARJ/ARJ-SFX corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and final
+  parser/release qualification.
+
 ## APM focused current-source corpus refresh — 2026-08-31
 
 - Retain canonical/container SHA-256 equality for the APM parser, header, and

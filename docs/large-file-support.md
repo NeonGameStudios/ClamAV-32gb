@@ -34,6 +34,20 @@ installed. Complete Rust-module sanitizer evidence, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
+## ARJ focused current-source corpus refresh — 2026-08-31
+
+The canonical ARJ parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. The repository CMake target materialized
+`clam.arj` from its checked-in XOR fixture. The focused cases pass `arj` 11/11,
+`arj_map` 7/7, `arj_compressed` 2/2, and `arjsfx` 4/4, including the
+materialized nested-MZP detection and confirmed SFX failure boundaries.
+
+This refresh confirms current-source parser and corpus evidence, not final ARJ
+qualification. Complete ARJ/ARJ-SFX corpus breadth, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
+final parser/release qualification remain required.
+
 ## APM focused current-source corpus refresh — 2026-08-31
 
 The canonical APM parser, header, and unit-test source were transferred into
