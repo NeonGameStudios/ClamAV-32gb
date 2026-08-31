@@ -164,6 +164,21 @@ Complete variant corpus, sanitizer, certified Linux x86-64,
 materialized-large-file/resource measurements, production-CVD/service, Sonic1,
 and final parser/release evidence remain open.
 
+## Current CAB/CHM production-linked refresh — 2026-08-31
+
+The canonical `libmspack.c`, `libmspack.h`, `scanners.c`, and `check_clamav.c`
+sources were transferred into the existing Docker production-linked GCC
+harness with exact SHA-256 equality. The repository CMake targets materialized
+`clam.cab` (`489ffd1f819cf09d742de715a20f4e0cc6b8d50bc837452b59f5b09304e961a5`)
+and `clam.chm`
+(`f22f10a9fa67f984589d85db753b83e1e3dd6780aa9f425d0fa27fd545d9bd7e`). The
+current-source focused cases pass `mspack_map` 6/6 and `mspack` 7/7, including
+callback and constructor failures, timeout, declared-output-size checks, and
+exact nested MZP detection through both materialized CAB and CHM members.
+Complete CAB/CHM corpus, sanitizer, certified Linux x86-64,
+materialized-large-file, production-CVD/service, Sonic1, resource, and final
+parser/release evidence remain open.
+
 ## Current Rust/MSPack production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `rust_map` 1/1,
