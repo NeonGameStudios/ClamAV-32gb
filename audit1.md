@@ -34,6 +34,18 @@ map boundaries; ExtentOverflow, full HFS+ corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain open.
 
+## Current UDF production-linked rerun — 2026-08-31
+
+The authoritative current-source production-linked GCC harness now passes
+`udf_map` 12/12 and the isolated `udf_corpus` case 1/1. The corpus fixture
+encoder was corrected to finalize every variable-sized FID in a directory
+block; the prior failure was a test-only zeroed child-FID tag, not a parser
+crash. This refreshes bounded UDF admission and anchored root/descendant
+evidence. Reserve/VDP continuation, EFE, symbolic links,
+metadata/VAT/sparable/mapped-partition translation, complete UDF corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release evidence remain open.
+
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 
 The WorkBook encryption probe now checks a BIFF record's declared body

@@ -43567,6 +43567,26 @@ static void test_udf_finalize_descriptor_tags(uint8_t *data, size_t base,
         else if (block <= 11)
             tag_location = (uint32_t)(base / VOLUME_DESCRIPTOR_SIZE + block);
         test_udf_finalize_tag(descriptor, descriptor_size, tag_location);
+
+        /* A directory block may contain multiple variable-sized FIDs. Keep
+         * the fixture encoder in step with the parser's descriptor walk. */
+        if (tag_id == 257) {
+            size_t next_offset = descriptor_size;
+
+            while (next_offset + sizeof(DescriptorTag) <= VOLUME_DESCRIPTOR_SIZE) {
+                uint8_t *next_descriptor = descriptor + next_offset;
+                size_t next_size;
+
+                if (test_udf_get_le16(next_descriptor) != 257)
+                    break;
+                ck_assert(getFileIdentifierDescriptorSize(
+                    (const FileIdentifierDescriptor *)next_descriptor, &next_size));
+                ck_assert_msg(next_size <= VOLUME_DESCRIPTOR_SIZE - next_offset,
+                              "UDF test file-identifier descriptor exceeds its volume block");
+                test_udf_finalize_tag(next_descriptor, next_size, tag_location);
+                next_offset += next_size;
+            }
+        }
     }
 }
 

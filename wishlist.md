@@ -26,8 +26,19 @@
   rather than crash before admission.
 - Retain current-source production-linked GCC evidence at `hfs_map` 20/20,
   `hfs_inline` 2/2, and `hfs_fork` 1/1. ExtentOverflow, full HFS+ corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final qualification remain required.
+
+## Current UDF production-linked rerun — 2026-08-31
+
+- Retain current-source production-linked GCC evidence at `udf_map` 12/12 and
+  isolated `udf_corpus` 1/1. The fixture encoder now finalizes every
+  variable-sized FID in a directory block, keeping anchored child traversal
+  evidence valid and deterministic.
+- Keep reserve/VDP continuation, EFE, symbolic links,
+  metadata/VAT/sparable/mapped-partition translation, complete UDF corpus,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
-  Sonic1, resource, and final qualification remain required.
+  Sonic1, resource, and final parser/release qualification open.
 
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 

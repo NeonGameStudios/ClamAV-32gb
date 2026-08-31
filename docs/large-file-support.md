@@ -35,6 +35,18 @@ production-linked GCC harness passes `hfs_map` 20/20, `hfs_inline` 2/2, and
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## Current UDF production-linked rerun — 2026-08-31
+
+The authoritative current-source production-linked GCC harness now passes
+`udf_map` 12/12 and the isolated `udf_corpus` case 1/1. The corpus fixture
+encoder now finalizes every variable-sized FID in a directory block, so the
+anchored parent/child traversal evidence exercises valid descriptor tags
+through the exact child marker. This refreshes bounded current-source UDF
+evidence; reserve/VDP continuation, EFE, symbolic links,
+metadata/VAT/sparable/mapped-partition translation, complete UDF corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## PE Swizzor empty resource-string admission — 2026-08-31
 
 `cli_detect_swizz_str()` rejects null input/statistics and lengths below one
