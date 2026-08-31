@@ -81,8 +81,9 @@ materialized-large-file, Sonic1, and final qualification remain required.
 
 ## Current EGG production-linked rerun — 2026-08-31
 
-- Retain current-source production-linked GCC evidence at `egg_map` 7/7,
-  `egg_metadata` 1/1, and `egg_sfx` 2/2.
+- Retain canonical-source SHA-256 equality for `scanners.c`, `filetypes_int.h`,
+  and `check_clamav.c` before relinking the existing Docker production-linked
+  GCC harness, with `egg_map` 7/7, `egg_metadata` 1/1, and `egg_sfx` 2/2.
 - Keep legacy contiguous extraction fail-visible for unsupported LZMA, null
   block entries, and inconsistent block tables; retain the stored-block CRC
   mismatch evidence with no partial output and sticky non-cacheability.

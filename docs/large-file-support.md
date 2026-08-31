@@ -260,7 +260,10 @@ Sonic1, resource, and final parser/release qualification remain required.
 
 ## Current EGG production-linked rerun — 2026-08-31
 
-The current-source production-linked GCC harness passes `egg_map` 7/7,
+The canonical scanner, file-type, and unit-test sources were transferred into
+the existing Docker production-linked GCC harness and their SHA-256 hashes
+matched exactly. The current-source production-linked GCC harness passes
+`egg_map` 7/7,
 `egg_metadata` 1/1, and `egg_sfx` 2/2. The legacy contiguous extraction
 regression now returns `CL_EUNPACK` without publishing output for unsupported
 LZMA, rejects inconsistent block tables and null block entries, and preserves
