@@ -14,6 +14,21 @@
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification open.
 
+## Current LHA/LZH production-linked refresh — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for
+  `libclamav_rust/src/scanners.rs`, `Cargo.toml`, and `check_clamav.c` before
+  relinking the existing Docker production-linked GCC/Rust harness:
+  `scanners.rs` `561a4d1ca3b830a6a9b33411d90a05e8e64a07806c42c6ba06bdb3ce33c628f9`,
+  `Cargo.toml` `e98ba61b2c835cc94191dfc10214c576be7b09552572e96c541bbdd9e60e9b2a`,
+  and `check_clamav.c` `d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`.
+- Retain current-source production-linked GCC evidence at `rust_lha` 9/9 and
+  `rust_map` 1/1, including exact nested PNG detection across all 13
+  materialized LHA/LZH fixtures and the bounded/error matrix.
+- Keep complete variant corpus, sanitizer, certified Linux x86-64,
+  materialized-large-file/resource measurements, production-CVD/service,
+  Sonic1, and final parser/release qualification open.
+
 ## Production-linked unit harness stat64 wrapper — 2026-08-31
 
 - Keep the Linux static unit target's `stat64` linker wrapper conditional on

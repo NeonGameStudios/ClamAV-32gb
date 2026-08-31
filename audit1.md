@@ -142,6 +142,22 @@ mismatch. Complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain open.
 
+## Current LHA/LZH production-linked refresh — 2026-08-31
+
+The canonical `libclamav_rust/src/scanners.rs`, `Cargo.toml`, and
+`check_clamav.c` sources were transferred into the existing Docker
+production-linked GCC/Rust harness with exact SHA-256 equality
+(`scanners.rs` `561a4d1ca3b830a6a9b33411d90a05e8e64a07806c42c6ba06bdb3ce33c628f9`,
+`Cargo.toml` `e98ba61b2c835cc94191dfc10214c576be7b09552572e96c541bbdd9e60e9b2a`,
+and `check_clamav.c` `d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`).
+The current-source production-linked cases pass `rust_lha` 9/9 and `rust_map`
+1/1, including exact nested PNG detection across all 13 materialized LHA/LZH
+fixtures, zero-byte member accounting, zero-terminator enforcement,
+unsupported-method reporting, callback faults, and bounded level-3 headers.
+Complete variant corpus, sanitizer, certified Linux x86-64,
+materialized-large-file/resource measurements, production-CVD/service, Sonic1,
+and final parser/release evidence remain open.
+
 ## Current Rust/MSPack production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `rust_map` 1/1,
