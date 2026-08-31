@@ -160,6 +160,7 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_xz, test_xz_truncated_stre
 contains libclamav/7z/7zIn.c 'RINOK(SzSkeepData(sd));'
 contains unit_tests/check_clamav.c 'test_7z_archive_property_truncation_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_7z_files_info_property_boundary_is_fail_visible'
+contains unit_tests/check_clamav.c 'data[34] = 0xf0; /* Four-byte encoded 0x7fffffff file count. */'
 contains libclamav/7z/7zIn.c 'sizeIndex >= numUnpackStreams'
 contains libclamav/7z/7zIn.c 'if (sizeIndex != numUnpackStreams)'
 contains unit_tests/check_clamav.c 'test_7z_files_info_stream_count_is_fail_visible'

@@ -28430,7 +28430,7 @@ START_TEST(test_7z_files_info_allocation_ceiling_is_fail_visible)
     zip_stream_write_u64(data + 20, 8U);
     data[32] = 0x01; /* Header. */
     data[33] = 0x05; /* FilesInfo. */
-    data[34] = 0xf7; /* Five-byte encoded 0x7fffffff file count. */
+    data[34] = 0xf0; /* Four-byte encoded 0x7fffffff file count. */
     data[35] = 0xff;
     data[36] = 0xff;
     data[37] = 0xff;

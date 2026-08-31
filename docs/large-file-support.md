@@ -38,6 +38,18 @@ CAB/CHM/OneNote corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## Current 7-Zip production-linked rerun — 2026-08-31
+
+The current-source production-linked GCC harness passes `7z` 20/20,
+`7z_map` 3/3, `7z_cleanup` 1/1, `7z_sfx` 2/2, and the materialized
+`7z_sfx_corpus` case 1/1. The allocation-ceiling fixture now uses the
+decoder's valid four-byte encoding for the maximum sub-`0x80000000` file
+count, so the shared individual-allocation guard is exercised as `CL_EMEM`
+rather than being preempted by an unsupported-number parse result. Full
+7-Zip/BCJ2/SFX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## Current OLE2/XLM production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness now passes `ole2` 18/18,

@@ -29,7 +29,18 @@ final qualification remain required.
 - Keep all materialized CAB/CHM and generated OneNote fixtures in the corpus
   qualification path. Full Rust/C ABI, CAB/CHM/OneNote corpus, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
-  Sonic1, resource, and final qualification remain required.
+Sonic1, resource, and final qualification remain required.
+
+## Current 7-Zip production-linked rerun — 2026-08-31
+
+- Retain current-source production-linked GCC evidence at `7z` 20/20,
+  `7z_map` 3/3, `7z_cleanup` 1/1, `7z_sfx` 2/2, and
+  `7z_sfx_corpus` 1/1 with materialized `clam.7z`.
+- Keep the FilesInfo allocation-ceiling fixture's valid four-byte number
+  encoding so the intended `CL_EMEM` boundary remains covered. Full
+  7-Zip/BCJ2/SFX corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final qualification remain required.
 
 ## Current OLE2/XLM production-linked rerun — 2026-08-31
 
