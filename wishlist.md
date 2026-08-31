@@ -9405,3 +9405,15 @@ qualification as required evidence.
   sanitizer, utility corpus, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, and final release qualification remain
   required.
+
+## GIF focused current-source rerun — 2026-08-31
+
+- Retain the canonical-source hash check and production-linked GCC results:
+  `gif` passes 12/12, `gif_api` 1/1, and `gif_corpus` 1/1 across valid image
+  completion, version and Graphic Control Extension admission, LZW code-size
+  bounds, fixed-read failure, missing-trailer handling, public propagation,
+  and exact nested overlay matching.
+- Treat this as the corrected replacement for the older 9/9 focused count,
+  not final GIF qualification. Complete GIF/image corpus, sanitizer, certified
+  Linux x86-64, materialized-large-file, production-CVD/service, Sonic1, and
+  final parser/release qualification remain required.

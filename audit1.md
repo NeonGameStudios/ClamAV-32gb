@@ -16840,3 +16840,18 @@ provided by that harness. Production Rust/C ABI execution, sanitizer, complete
 utility corpus, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification remain
 open.
+
+## GIF focused current-source rerun — 2026-08-31
+
+The canonical `libclamav/gif.c` hash was transferred into the existing Docker
+harness and matched before relinking the production-linked test executable.
+The focused current-source GCC cases pass `gif` 12/12, `gif_api` 1/1, and
+`gif_corpus` 1/1. This refresh covers valid image completion, version and
+Graphic Control Extension admission, LZW code-size bounds, fixed-read failure,
+missing-trailer handling, public API propagation, and exact nested overlay
+matching.
+
+This updates the older 9/9 focused count; it does not constitute final GIF
+qualification. Complete GIF/image corpus coverage, sanitizer, certified Linux
+x86-64, materialized-large-file, production-CVD/service, Sonic1, and final
+parser/release qualification remain open.
