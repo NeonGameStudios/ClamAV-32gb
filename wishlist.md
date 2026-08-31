@@ -1,5 +1,14 @@
 # Wishlist
 
+## XAR gzip decoder finalization — 2026-08-31
+
+- Keep initialized XAR gzip decoders fail-visible when `inflateEnd()` fails;
+  preserve earlier statuses, retain cleanup, and do not hand partial output to
+  nested scanning.
+- Retain the member-only finalization injector, source guards, and normal plus
+  leak-enabled sanitizer evidence; complete XAR corpus, production-CVD/
+  service, materialized-large-file, Sonic1, and final qualification.
+
 ## HWP3 checked table and document-info advances — 2026-08-31
 
 - Keep HWP3 font/style table sizes and the optional document-info block
