@@ -3595,7 +3595,7 @@ contains libclamav/ole2_extract.c 'data_block_count = (hdr.map->len - data_start
 contains libclamav/ole2_extract.c 'Sector IDs address whole big blocks'
 contains libclamav/ole2_extract.c 'hdr.max_block_no = data_block_count ? (uint32_t)(data_block_count - 1U) : 0U;'
 contains unit_tests/check_clamav.c 'test_ole2_sector_bound_uses_big_block_size'
-contains unit_tests/check_clamav.c 'OLE2 property tree index is outside the input map'
+contains unit_tests/check_clamav.c 'OLE2 sector block is truncated'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_ole2_xlm, test_ole2_sector_bound_uses_big_block_size)'
 contains libclamav/ole2_extract.c 'OLE2 extracted-file tracking could not be initialized'
 contains libclamav/ole2_extract.c 'OLE2 stream could not be materialized completely'

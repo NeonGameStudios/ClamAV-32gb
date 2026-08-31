@@ -12,6 +12,16 @@ boundaries, and the oversized-stream regression. Full YARA corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## Current OLE2/XLM production-linked rerun — 2026-08-31
+
+The stale sector-bound and timeout fixtures were corrected: the former now
+expects the parser's earlier truncated-sector result, and the latter supplies
+the required scan options before testing the expired deadline. With the
+materialized `clam.ppt` corpus fixture, the current-source production-linked
+GCC harness passes `ole2` 18/18, `ole2_xlm` 3/3, and `ole2_map` 6/6. Full
+OLE/VBA/XLM corpus, sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, and final parser/release qualification remain open.
+
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 
 The WorkBook encryption probe now checks a BIFF record's declared body

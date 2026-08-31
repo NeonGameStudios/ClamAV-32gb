@@ -10,6 +10,15 @@
   21/21 and source guards. Full YARA corpus, sanitizer, production-CVD/service,
   materialized-large-file, Sonic1, and final qualification remain required.
 
+## Current OLE2/XLM production-linked rerun — 2026-08-31
+
+- Keep the sector-bound and timeout fixtures aligned with the entry
+  contract; preserve explicit truncation and expired-deadline outcomes.
+- Retain current-source production-linked GCC evidence at `ole2` 18/18,
+  `ole2_xlm` 3/3, and `ole2_map` 6/6, including materialized `clam.ppt`.
+  Full OLE/VBA/XLM corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final qualification remain required.
+
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 
 - Keep every BIFF encryption-probe skip inside the declared bounded probe;

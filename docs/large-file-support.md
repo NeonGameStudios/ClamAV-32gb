@@ -16,6 +16,15 @@ admission. Full YARA corpus, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final release qualification remain
 required.
 
+## Current OLE2/XLM production-linked rerun — 2026-08-31
+
+The current-source production-linked GCC harness now passes `ole2` 18/18,
+`ole2_xlm` 3/3, and `ole2_map` 6/6 after refreshing the materialized
+`clam.ppt` corpus fixture and aligning the sector-bound/timeout fixtures with
+the parser's explicit admission contract. Full OLE/VBA/XLM corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final parser/
+release qualification remain required.
+
 ## PE Swizzor empty resource-string admission — 2026-08-31
 
 `cli_detect_swizz_str()` rejects null input/statistics and lengths below one
