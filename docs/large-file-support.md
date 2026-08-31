@@ -58,6 +58,30 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## Current media/image production-linked rerun — 2026-08-31
+
+The current-source production-linked GCC harness passes `graphics_map` 2/2,
+`graphics_api` 1/1, `graphics_corpus` 1/1, `png` 8/8, `png_corpus` 1/1,
+`jpeg_map` 13/13, `jpeg_corpus` 1/1, `gif` 12/12, `gif_api` 1/1,
+`gif_corpus` 1/1, `tiff` 9/9, `tiff_map` 2/2, `tiff_corpus` 1/1,
+`riff` 8/8, `riff_map` 1/1, `riff_corpus` 1/1, `swf` 13/13,
+`swf_map` 3/3, `swf_api` 1/1, and `swf_corpus` 2/2. These focused cases cover the
+current bounded image/media admission, callback, structural, timeout,
+decoder, and nested-marker paths. Complete media/image corpora, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
+## Current partition/container production-linked rerun — 2026-08-31
+
+The current-source production-linked GCC harness passes `apm_map` 3/3,
+`apm` 6/6, `apm_corpus` 1/1, `partition_map` 4/4, `gpt` 7/7,
+`gpt_corpus` 1/1, `mbr` 7/7, `mbr_corpus` 1/1, `dmg_map` 10/10, and
+`dmg` 7/7. These focused cases cover partition/container entry, coordinate,
+header, table, callback, timeout, cleanup, and nested-member boundaries.
+Complete partition/container corpora, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## PE Swizzor empty resource-string admission — 2026-08-31
 
 `cli_detect_swizz_str()` rejects null input/statistics and lengths below one
