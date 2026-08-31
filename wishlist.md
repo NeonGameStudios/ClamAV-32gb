@@ -418,6 +418,9 @@ Sonic1, resource, and final qualification remain required.
 
 ## BZip2/GZip materialized corpus refresh — 2026-08-31
 
+- Retain canonical-source SHA-256 equality for `scanners.c` and
+  `check_clamav.c` before relinking the existing Docker production-linked GCC
+  harness.
 - Materialize `clam.exe.bz2`, `clam.tar.gz`, and
   `clam.exe_and_mail.tar.gz` through the existing CMake test-data targets
   before running the compressed corpus cases; `bzip2 -t` accepts the BZip2

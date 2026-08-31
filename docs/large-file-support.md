@@ -291,6 +291,9 @@ parser/release qualification remain required.
 
 ## BZip2/GZip materialized corpus refresh — 2026-08-31
 
+The canonical compressed scanner and unit-test sources were transferred into
+the existing Docker production-linked GCC harness and their SHA-256 hashes
+matched exactly.
 The earlier reused-harness BZip2/GZip result was incomplete because the
 encrypted repository test inputs had not been materialized in the Docker build
 directory. The existing CMake test-data targets now materialize
