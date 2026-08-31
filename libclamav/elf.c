@@ -104,8 +104,19 @@ static cl_error_t cli_elf_checktimelimit(cli_ctx *ctx, const char *reason)
 {
     cl_error_t ret = cli_checktimelimit(ctx);
 
-    if (ret != CL_SUCCESS && ctx)
+    if (ret != CL_SUCCESS && ctx) {
         cli_mark_scan_incomplete(ctx, reason);
+
+        /* The common deadline helper records the generic limit name first so
+         * public scans remain fail-visible even when optional heuristics are
+         * disabled. Metadata callers also need the parser-specific cause for
+         * direct diagnostics, but do not replace an earlier non-timeout cause. */
+        if (ret == CL_ETIMEOUT && reason != NULL &&
+            strncmp(reason, "ELF metadata ", strlen("ELF metadata ")) == 0 &&
+            ctx->scan_incomplete_reason != NULL &&
+            strcmp(ctx->scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime") == 0)
+            ctx->scan_incomplete_reason = reason;
+    }
 
     return ret;
 }

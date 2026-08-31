@@ -1181,7 +1181,7 @@ int cli_scanxar(cli_ctx *ctx)
                 cl_error_t read_status;
                 /* inflate gzip directly because file segments do not contain magic */
                 memset(&strm, 0, sizeof(strm));
-                if ((rc = inflateInit(&strm)) != Z_OK) {
+                if ((rc = inflateInit2(&strm, 15 + 16)) != Z_OK) {
                     cli_dbgmsg("cli_scanxar: InflateInit failed: %d\n", rc);
                     cli_mark_scan_incomplete(ctx, "XAR gzip member decoder could not be initialized");
                     rc = CL_EFORMAT;
@@ -1214,6 +1214,7 @@ int cli_scanxar(cli_ctx *ctx)
                     strm.avail_in = avail_in = bytes;
                     do {
                         int inf;
+                        unsigned int input_before;
                         size_t produced;
                         cl_error_t limit_status;
                         unsigned char buff[FILEBUFF];
@@ -1224,6 +1225,7 @@ int cli_scanxar(cli_ctx *ctx)
 
                         strm.avail_out = sizeof(buff);
                         strm.next_out  = buff;
+                        input_before   = strm.avail_in;
                         inf            = inflate(&strm, Z_SYNC_FLUSH);
                         if (inf != Z_OK && inf != Z_STREAM_END && inf != Z_BUF_ERROR) {
                             cli_dbgmsg("cli_scanxar: inflate error %i %s.\n", inf, strm.msg ? strm.msg : "");
@@ -1233,6 +1235,13 @@ int cli_scanxar(cli_ctx *ctx)
                         }
 
                         produced = sizeof(buff) - strm.avail_out;
+
+                        if (strm.avail_in == input_before && produced == 0) {
+                            cli_mark_scan_incomplete(ctx, "XAR gzip decoder made no progress");
+                            rc = CL_EFORMAT;
+                            extract_errors++;
+                            break;
+                        }
 
                         if (produced > UINT64_MAX - total_out) {
                             cli_mark_scan_incomplete(ctx, "XAR gzip output size overflowed");
@@ -1262,7 +1271,7 @@ int cli_scanxar(cli_ctx *ctx)
                             stream_complete = true;
                             break;
                         }
-                    } while (strm.avail_out == 0);
+                    } while (strm.avail_in != 0 || strm.avail_out == 0);
 
                     avail_in -= strm.avail_in;
                     if (a_hash_ctx != NULL)

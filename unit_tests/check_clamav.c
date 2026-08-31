@@ -209,6 +209,11 @@ int __wrap_inflateInit2_(z_streamp strm, int windowBits, const char *version, in
         clamav_test_force_hfsplus_decoder_init = 0;
         return Z_MEM_ERROR;
     }
+    if (clamav_test_force_xar_member_decoder_init > 0) {
+        clamav_test_force_xar_member_decoder_init--;
+        if (clamav_test_force_xar_member_decoder_init == 0)
+            return Z_MEM_ERROR;
+    }
     if (clamav_test_force_gzip_legacy_fallback) {
         clamav_test_force_gzip_legacy_fallback = 0;
         return Z_MEM_ERROR;
@@ -23423,13 +23428,13 @@ START_TEST(test_xar_member_decoder_finalize_failure_is_fail_visible)
 {
     static const uint8_t toc[] =
         "<?xml version=\"1.0\"?><xar><toc><file><data>"
-        "<offset>0</offset><length>23</length><size>2</size>"
+        "<offset>0</offset><length>23</length><size>3</size>"
         "<encoding style=\"application/x-gzip\"/>"
         "</data></file></toc></xar>";
     static const uint8_t gzip_member[] = {
         0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x02, 0x13, 0xf3, 0x8d, 0x0a, 0x00, 0x00, 0xab,
-        0x23, 0x3c, 0xac, 0x03, 0x00, 0x00, 0x00};
+        0x00, 0x03, 0x4b, 0x4c, 0x4a, 0x06, 0x00, 0xc2,
+        0x41, 0x24, 0x35, 0x03, 0x00, 0x00, 0x00};
     struct cl_scan_options options;
     struct cl_engine *scan_engine;
     cli_ctx ctx;
@@ -23900,7 +23905,7 @@ START_TEST(test_xar_lzma_trailing_data_is_fail_visible)
 
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_XAR", NULL);
-    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
@@ -32627,7 +32632,7 @@ START_TEST(test_uuencode_empty_attachment_output_failure_is_fail_visible)
     ck_assert_int_eq(cli_uuencode(&ctx, missing_dir, map), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "UUencoded attachment output blob could not be initialized");
+                     "fileblob temporary spool could not be created");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -41802,6 +41807,7 @@ START_TEST(test_elf_header_size_is_fail_visible)
             data[4] = elf_class;
             data[5] = 1; /* ELFDATA2LSB. */
             data[6] = 1;
+            zip_stream_write_u32(data + 20, 1); /* e_version = EV_CURRENT. */
             if (elf_class == 2) {
                 header_size      = sizeof(struct elf_file_hdr64);
                 ehsize_offset    = offsetof(struct elf_file_hdr64, e_ehsize);
@@ -42311,6 +42317,7 @@ END_TEST
 START_TEST(test_elf64_entry_offset_overflow_is_fail_visible)
 {
     struct elf_large_metadata_state state;
+    struct cl_engine engine;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
@@ -42320,12 +42327,14 @@ START_TEST(test_elf64_entry_offset_overflow_is_fail_visible)
         return;
 
     elf_large_metadata_fixture_init(&state, 1);
+    memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_handle(&state, 0, state.length, elf_large_metadata_pread_cb, 1);
     ck_assert_ptr_nonnull(map);
+    ctx.engine  = &engine;
     ctx.options = &options;
-    ctx.fmap = map;
+    ctx.fmap    = map;
 
     ret = cli_scanelf(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);

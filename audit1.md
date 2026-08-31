@@ -13,6 +13,31 @@ successfully; its isolated `ole2` 18/18, `ole2_xlm` 3/3, `ole2_map` 6/6,
 4/4 cases passed. Full-suite execution remains a separate qualification gate
 because the container fixture/CVD set is not the final release evidence.
 
+## ELF metadata deadline and test-context admission — 2026-08-31
+
+ELF metadata timeout callers now retain their parser-specific incomplete
+reason when the common deadline helper has already recorded the generic
+max-scan-time indicator. The override is limited to the generic timeout cause
+and does not replace an earlier parser or I/O failure. The entry-offset
+regression also supplies the owning engine required by the production parser,
+and the header-size fixture sets `e_version` so the targeted boundary is the
+first failing condition. Current-source production-linked GCC `elf` passes
+4/4 and `elf_map` passes 14/14; sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
+## UUEncode status and zero-length block admission — 2026-08-31
+
+The direct UUEncode entry now keeps the private negative result from
+`uudecodeFile()` in an `int`, rather than a non-negative `cl_error_t` enum that
+optimizing GCC may use to eliminate the failure branch. A standard zero-length
+data line is accepted only as the block terminator immediately followed by an
+`end` line; any other continuation remains incomplete. Current-source
+production-linked GCC `uuencode_map` passes 4/4 and `uuencode_corpus` passes
+1/1; the clean `mail` TCase passes 12/12, with `mail_api` 2/2,
+`mail_partial` 1/1, and `mhtml` 4/4. Sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification
+remain open.
+
 ## Embedded PE malformed-header admission and service parity — 2026-08-31
 
 `cli_peheader()` now preserves a malformed-but-fully-read DOS/PE header as
@@ -254,9 +279,14 @@ final parser/release qualification remain open.
 The XAR gzip-member path ignored a non-success return from `inflateEnd()`
 after decoding and size validation. It now records a sticky incomplete result,
 returns `CL_EUNPACK` unless an earlier status is stronger, and exits before
-nested scanning. A linker-injected regression fails only the member
-finalization after a successful TOC finalization; production-linked GCC and
-GCC ASan/UBSan with leak detection both pass. Full XAR corpus,
+nested scanning. The member path now also initializes the decoder for actual
+gzip framing and drains all input remaining in each bounded fmap chunk before
+validating the declared compressed extent. The linker-injected regression
+uses a valid three-byte benign member, fails only the member finalization after
+a successful TOC finalization, and passes with the current-source
+production-linked GCC `xar` 12/12, `xar_corpus` 3/3, `xar_metadata` 3/3,
+`xar_map` 2/2, and `xar_subdoc` 1/1 cases. The LZMA trailing-data case now
+authoritatively expects `CL_EFORMAT`. GCC ASan/UBSan, full XAR corpus,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 

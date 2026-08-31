@@ -16,6 +16,30 @@ the isolated production-linked cases passed: `ole2` 18/18, `ole2_xlm` 3/3,
 suite, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
 and final release qualification remain pending.
 
+## ELF metadata deadline and test-context admission — 2026-08-31
+
+ELF metadata timeout callers preserve their parser-specific incomplete reason
+when the common deadline helper has already recorded the generic
+max-scan-time indicator. The override applies only to that generic timeout
+cause and never replaces an earlier parser or I/O failure. Direct boundary
+fixtures now provide the owning engine required by the production parser and
+set `e_version` before testing header size. Current-source production-linked
+GCC `elf` passes 4/4 and `elf_map` passes 14/14. Sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, and final release
+qualification remain pending.
+
+## UUEncode status and zero-length block admission — 2026-08-31
+
+The direct UUEncode entry keeps the private negative result from
+`uudecodeFile()` in an `int`, preventing optimizing GCC from treating the
+failure branch as unreachable through `cl_error_t` enum-range assumptions. A
+standard zero-length data line is accepted only when the following line is
+`end`; other continuations remain incomplete. Current-source production-linked
+GCC `uuencode_map` passes 4/4 and `uuencode_corpus` passes 1/1. The clean
+`mail` TCase passes 12/12, with `mail_api` 2/2, `mail_partial` 1/1, and
+`mhtml` 4/4. Sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, and final parser/release qualification remain pending.
+
 ## Embedded PE malformed-header admission and service parity — 2026-08-31
 
 `cli_peheader()` now returns `CL_EFORMAT` for a fully read but invalid DOS
@@ -295,9 +319,13 @@ parser/release qualification remain required.
 
 Initialized XAR gzip members now treat a failing `inflateEnd()` as a sticky
 incomplete `CL_EUNPACK` result before nested scanning, while preserving any
-earlier error status. The member-only fault-injected regression passes with
-current production-linked GCC and GCC ASan/UBSan leak detection. Full XAR
-corpus, production-CVD/service, materialized-large-file, Sonic1, and final
+earlier error status. The member path also initializes actual gzip framing and
+drains every bounded input chunk before accepting stream completion. The
+member-only fault-injected regression uses a valid three-byte benign member;
+current-source production-linked GCC passes `xar` 12/12, `xar_corpus` 3/3,
+`xar_metadata` 3/3, `xar_map` 2/2, and `xar_subdoc` 1/1. The LZMA
+trailing-data result is `CL_EFORMAT`. GCC ASan/UBSan, full XAR corpus,
+production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
 ## HWP3 checked table and document-info advances — 2026-08-31

@@ -11,6 +11,29 @@
   sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
   final release qualification remain required.
 
+## ELF metadata deadline and test-context admission — 2026-08-31
+
+- Preserve parser-specific ELF metadata timeout reasons when the common
+  deadline helper has already recorded the generic max-scan-time indicator;
+  do not replace an earlier parser or I/O cause. Keep direct boundary
+  fixtures valid by supplying the required engine and setting `e_version`
+  before testing header size.
+- Retain current-source production-linked GCC evidence at `elf` 4/4 and
+  `elf_map` 14/14. Sanitizer, production-CVD/service, materialized-large-
+  file, Sonic1, and final parser/release qualification remain required.
+
+## UUEncode status and zero-length block admission — 2026-08-31
+
+- Keep `uudecodeFile()`'s private negative result in an integer at the direct
+  entry boundary; an optimizing compiler must not normalize a failed
+  materialization to clean through enum-range assumptions. Accept a standard
+  zero-length data line only when the following line is `end`.
+- Retain current-source production-linked GCC evidence at `uuencode_map`
+  4/4, `uuencode_corpus` 1/1, `mail` 12/12, `mail_api` 2/2,
+  `mail_partial` 1/1, and `mhtml` 4/4. Sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, and final parser/release qualification
+  remain required.
+
 ## PowerPoint compressed-atom boundary admission — 2026-08-31
 
 - Advance the descriptor over all bytes remaining in a declared compressed
@@ -226,10 +249,14 @@ Sonic1, resource, and final qualification remain required.
 
 - Keep initialized XAR gzip decoders fail-visible when `inflateEnd()` fails;
   preserve earlier statuses, retain cleanup, and do not hand partial output to
-  nested scanning.
-- Retain the member-only finalization injector, source guards, and normal plus
-  leak-enabled sanitizer evidence; complete XAR corpus, production-CVD/
-  service, materialized-large-file, Sonic1, and final qualification.
+  nested scanning. Initialize member streams for actual gzip framing and drain
+  every bounded input chunk before accepting stream completion.
+- Retain the member-only finalization injector, source guards, and
+  current-source production-linked GCC evidence at `xar` 12/12,
+  `xar_corpus` 3/3, `xar_metadata` 3/3, `xar_map` 2/2, and `xar_subdoc` 1/1.
+  The LZMA trailing-data result is `CL_EFORMAT`. GCC ASan/UBSan, complete XAR
+  corpus, production-CVD/service, materialized-large-file, Sonic1, and final
+  qualification remain required.
 
 ## HWP3 checked table and document-info advances — 2026-08-31
 

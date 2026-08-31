@@ -58,6 +58,7 @@ static cl_error_t uuencode_checktimelimit(cli_ctx *ctx, const char *reason)
 int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
 {
     cl_error_t status;
+    int decode_status;
     message *m;
     char buffer[RFC2821LENGTH + 1];
     size_t at = 0;
@@ -104,12 +105,15 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
 
     cli_dbgmsg("found uuencode file\n");
 
-    status = uudecodeFile(m, buffer, dir, map, &at);
-    if (status < 0) {
+    /* uudecodeFile() retains private negative statuses for read failures and
+     * incomplete materialization. Keep that result in an int; storing it in
+     * cl_error_t lets optimizing compilers assume the enum is non-negative. */
+    decode_status = uudecodeFile(m, buffer, dir, map, &at);
+    if (decode_status < 0) {
         messageDestroy(m);
         if (ctx->scan_timed_out)
             return CL_ETIMEOUT;
-        if (status == UUDECODE_READ_ERROR)
+        if (decode_status == UUDECODE_READ_ERROR)
             return CL_EREAD;
         cli_dbgmsg("UUencoded attachment ended before its terminator or contained invalid data\n");
         cli_mark_scan_incomplete(ctx, "UUencoded attachment was not terminated or decoded completely");
@@ -131,6 +135,7 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
     char buffer[RFC2821LENGTH + 1];
     char *filename = cli_strtok(firstline, 2, " ");
     bool saw_end                = false;
+    bool data_block_ended       = false;
     bool materialization_failed = false;
     bool read_failed            = false;
 
@@ -174,6 +179,15 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
         }
 
         cli_chomp(buffer);
+        if (data_block_ended) {
+            if (strcasecmp(buffer, "end") == 0) {
+                saw_end = true;
+                break;
+            }
+            cli_mark_scan_incomplete(m->ctx, "UUencoded attachment was not terminated or decoded completely");
+            materialization_failed = true;
+            break;
+        }
         if (strcasecmp(buffer, "end") == 0) {
             saw_end = true;
             break;
@@ -186,6 +200,10 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
             break;
 
         len = (size_t)(uptr - data);
+        if (len == 0 && ((buffer[0] & 0x3F) == ' ')) {
+            data_block_ended = true;
+            continue;
+        }
         if ((len > 62) || (len == 0))
             break;
 
