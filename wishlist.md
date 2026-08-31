@@ -69,6 +69,19 @@
   21/21 and source guards. Full YARA corpus, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final qualification remain required.
 
+## HWPOLE2 focused current-source corpus refresh — 2026-08-31
+
+- Retain canonical-source SHA-256 equality for `hwp.c`, `hwp.h`, `scanners.c`,
+  and `check_clamav.c` before relinking the existing Docker production-linked
+  GCC harness.
+- Retain post-materialization evidence from the repository CMake target for
+  `clam.ppt`: `hwpole2_map` 3/3 covers null-context, missing-map, and in-range
+  fixed-prefix callback admission, while `hwpole2_corpus` 1/1 reaches an
+  exact nested child marker through the matching 32-bit size wrapper.
+- Keep complete HWPOLE2/OLE2 corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification open.
+
 ## Current HWP3 production-linked rerun — 2026-08-31
 
 - Retain canonical-source SHA-256 equality for `hwp.c`, `hwp.h`, `scanners.c`,

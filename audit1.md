@@ -83,6 +83,21 @@ boundaries, and the oversized-stream regression. Full YARA corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## HWPOLE2 focused current-source corpus refresh — 2026-08-31
+
+The canonical HWP parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. After materializing `clam.ppt` through the
+repository CMake test-data target, the focused cases pass `hwpole2_map` 3/3
+and `hwpole2_corpus` 1/1. The map case covers null-context, missing-map, and
+in-range fixed-prefix callback admission; the corpus case reaches an exact
+nested child marker through the matching 32-bit size wrapper.
+
+This is bounded HWPOLE2/OLE2 wrapper evidence, not complete HWPOLE2
+qualification. Full corpus, sanitizer, production-CVD/service,
+materialized-large-file, certified Linux x86-64, Sonic1, and release evidence
+remain open.
+
 ## Current HWP3 production-linked rerun — 2026-08-31
 
 The canonical HWP3 parser, header, scanner, and unit-test sources were
