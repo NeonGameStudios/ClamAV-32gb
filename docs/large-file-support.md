@@ -196,13 +196,16 @@ and final release qualification remain pending.
 
 ## ELF metadata deadline and test-context admission — 2026-08-31
 
+The canonical ELF parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. The current-source production-linked
+GCC cases pass `elf` 4/4, `elf_map` 14/14, and `elf_corpus` 1/1.
 ELF metadata timeout callers preserve their parser-specific incomplete reason
 when the common deadline helper has already recorded the generic
 max-scan-time indicator. The override applies only to that generic timeout
 cause and never replaces an earlier parser or I/O failure. Direct boundary
 fixtures now provide the owning engine required by the production parser and
-set `e_version` before testing header size. Current-source production-linked
-GCC `elf` passes 4/4 and `elf_map` passes 14/14. Sanitizer,
+set `e_version` before testing header size. Sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final release
 qualification remain pending.
 

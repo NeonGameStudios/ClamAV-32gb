@@ -15,14 +15,17 @@ because the container fixture/CVD set is not the final release evidence.
 
 ## ELF metadata deadline and test-context admission — 2026-08-31
 
+The canonical ELF parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. The current-source production-linked GCC
+cases pass `elf` 4/4, `elf_map` 14/14, and `elf_corpus` 1/1.
 ELF metadata timeout callers now retain their parser-specific incomplete
 reason when the common deadline helper has already recorded the generic
 max-scan-time indicator. The override is limited to the generic timeout cause
 and does not replace an earlier parser or I/O failure. The entry-offset
 regression also supplies the owning engine required by the production parser,
 and the header-size fixture sets `e_version` so the targeted boundary is the
-first failing condition. Current-source production-linked GCC `elf` passes
-4/4 and `elf_map` passes 14/14; sanitizer, production-CVD/service,
+first failing condition. Sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, and final release qualification remain open.
 
 ## UUEncode status and zero-length block admission — 2026-08-31

@@ -18,9 +18,11 @@
   do not replace an earlier parser or I/O cause. Keep direct boundary
   fixtures valid by supplying the required engine and setting `e_version`
   before testing header size.
-- Retain current-source production-linked GCC evidence at `elf` 4/4 and
-  `elf_map` 14/14. Sanitizer, production-CVD/service, materialized-large-
-  file, Sonic1, and final parser/release qualification remain required.
+- Retain canonical-source SHA-256 equality for `elf.c`, `elf.h`, `scanners.c`,
+  and `check_clamav.c`, plus current-source production-linked GCC evidence at
+  `elf` 4/4, `elf_map` 14/14, and `elf_corpus` 1/1. Sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification remain required.
 
 ## UUEncode status and zero-length block admission — 2026-08-31
 
