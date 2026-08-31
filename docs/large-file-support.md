@@ -457,6 +457,21 @@ decoder, and nested-marker paths. Complete media/image corpora, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.
 
+## GPT focused current-source corpus refresh — 2026-08-31
+
+The canonical GPT parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. The focused cases pass `gpt` 7/7 and
+`gpt_corpus` 1/1, covering null/map/engine admission, sector-size and
+partition-table callback failures, primary/secondary validation, invalid
+partition bounds, timeout and physical-header location checks, plus a
+CRC-validated six-sector GPT image with exact nested child matching.
+
+This refresh confirms bounded GPT parser and corpus evidence, not final GPT
+qualification. Complete GPT/partition-image corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain required.
+
 ## Current partition/container production-linked rerun — 2026-08-31
 
 The current-source production-linked GCC harness passes `apm_map` 3/3,

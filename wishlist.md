@@ -206,6 +206,20 @@ Sonic1, resource, and final qualification remain required.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification open.
 
+## GPT focused current-source corpus refresh — 2026-08-31
+
+- Retain canonical-source SHA-256 equality for `gpt.c`, `gpt.h`, `scanners.c`,
+  and `check_clamav.c` before relinking the existing Docker production-linked
+  GCC harness.
+- Retain focused results at `gpt` 7/7 and `gpt_corpus` 1/1, covering
+  null/map/engine admission, sector-size and partition-table callback
+  failures, primary/secondary validation, invalid partition bounds, timeout
+  and physical-header location checks, plus a CRC-validated six-sector GPT
+  image with exact nested child matching.
+- Keep complete GPT/partition-image corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, and final
+  parser/release qualification open.
+
 ## Current partition/container production-linked rerun — 2026-08-31
 
 - Retain current-source production-linked GCC evidence at `apm_map` 3/3,
