@@ -9455,6 +9455,17 @@ qualification as required evidence.
   materialized-large-file, Sonic1 resource, and final parser/release
   qualification.
 
+## APM focused current-source corpus refresh — 2026-08-31
+
+- Retain canonical/container SHA-256 equality for the APM parser, header, and
+  unit-test source.
+- Retain the refreshed production-linked GCC evidence: `apm` passes 6/6,
+  `apm_map` 3/3, `apm_corpus` 1/1, and `partition_map` 4/4, including exact
+  nested-child matching and shared partition-admission boundaries.
+- Complete partition corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and final
+  parser/release qualification.
+
 ## 7-Zip focused current-source corpus refresh — 2026-08-31
 
 - Retain canonical/container SHA-256 equality for the 7-Zip interface, SDK,

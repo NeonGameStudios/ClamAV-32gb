@@ -34,6 +34,20 @@ installed. Complete Rust-module sanitizer evidence, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
+## APM focused current-source corpus refresh — 2026-08-31
+
+The canonical APM parser, header, and unit-test source were transferred into
+the existing Docker production-linked GCC harness and their SHA-256 hashes
+matched exactly. The focused cases pass `apm` 6/6, `apm_map` 3/3,
+`apm_corpus` 1/1, and `partition_map` 4/4, including the valid four-block APM
+payload with exact nested-child matching and the shared MBR/GPT/APM admission
+boundaries.
+
+This refresh confirms current-source parser and corpus evidence, not final APM
+qualification. Complete partition corpus breadth, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain required.
+
 ## 7-Zip focused current-source corpus refresh — 2026-08-31
 
 The canonical 7-Zip interface, SDK sources, and unit-test source were
