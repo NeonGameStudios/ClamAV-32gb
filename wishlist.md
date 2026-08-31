@@ -9455,6 +9455,17 @@ qualification as required evidence.
   materialized-large-file, Sonic1 resource, and final parser/release
   qualification.
 
+## Binary-data dispatch raw-matcher refresh — 2026-08-31
+
+- Retain canonical/container SHA-256 equality for the scanner and unit-test
+  source.
+- Retain the focused production-linked GCC evidence: `binary_data` passes 1/1
+  on the 65,556-byte exact-tail marker through public `CL_TYPE_BINARY_DATA`
+  dispatch, with the outer raw matcher preserved.
+- Complete broader raw-signature families, ingress parity, sanitizer, certified
+  Linux x86-64, materialized-large-file, production-CVD/service, Sonic1
+  resource, and final parser/release qualification.
+
 ## AutoIt focused current-source fixture refresh — 2026-08-31
 
 - Retain canonical/container SHA-256 equality for the AutoIt parser, header,

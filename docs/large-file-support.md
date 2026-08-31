@@ -34,6 +34,20 @@ installed. Complete Rust-module sanitizer evidence, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain required.
 
+## Binary-data dispatch raw-matcher refresh — 2026-08-31
+
+The canonical scanner and unit-test sources were transferred into the existing
+Docker production-linked GCC harness and their SHA-256 hashes matched exactly.
+The focused `binary_data` TCase passes 1/1 over a 65,556-byte synthetic binary
+payload whose exact tail marker is reached through public `CL_TYPE_BINARY_DATA`
+dispatch, confirming that the generic no-parser path preserves the mandatory
+outer raw matcher.
+
+This is dispatch evidence, not final binary-data qualification. Broader raw
+signature families, ingress parity, sanitizer, certified Linux x86-64,
+materialized-large-file, production-CVD/service, Sonic1, and final
+parser/release qualification remain required.
+
 ## AutoIt focused current-source fixture refresh — 2026-08-31
 
 The canonical AutoIt parser, header, scanner, fixture generator, and unit-test
