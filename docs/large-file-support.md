@@ -25,6 +25,16 @@ the parser's explicit admission contract. Full OLE/VBA/XLM corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final parser/
 release qualification remain required.
 
+## Current HFS+ production-linked rerun — 2026-08-31
+
+The HFS+ fork regression now retains its valid fmap read callback across all
+subcases; its previous `map->need = NULL` assignment caused a test-only null
+callback crash before the final malformed-fork assertion. The current-source
+production-linked GCC harness passes `hfs_map` 20/20, `hfs_inline` 2/2, and
+`hfs_fork` 1/1. ExtentOverflow, full HFS+ corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## PE Swizzor empty resource-string admission — 2026-08-31
 
 `cli_detect_swizz_str()` rejects null input/statistics and lengths below one

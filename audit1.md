@@ -22,6 +22,18 @@ GCC harness passes `ole2` 18/18, `ole2_xlm` 3/3, and `ole2_map` 6/6. Full
 OLE/VBA/XLM corpus, sanitizer, production-CVD/service, materialized-large-file,
 Sonic1, and final parser/release qualification remain open.
 
+## Current HFS+ production-linked rerun — 2026-08-31
+
+The HFS+ fork regression was corrected so its final no-allocation-blocks
+subcase retains the fmap's valid read callback instead of assigning
+`map->need = NULL` and crashing before parser admission. The current-source
+production-linked GCC harness now passes `hfs_map` 20/20, `hfs_inline` 2/2,
+and `hfs_fork` 1/1. This validates the existing volume-header read-status,
+catalog/attribute leaf-chain, fork-size, inline-decoder, and compressed-resource
+map boundaries; ExtentOverflow, full HFS+ corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 
 The WorkBook encryption probe now checks a BIFF record's declared body

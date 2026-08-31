@@ -19,6 +19,16 @@
   Full OLE/VBA/XLM corpus, sanitizer, production-CVD/service,
   materialized-large-file, Sonic1, and final qualification remain required.
 
+## Current HFS+ production-linked rerun — 2026-08-31
+
+- Keep the HFS+ fork regression's valid fmap callback intact across its
+  multiple subcases; malformed forks must return explicit incomplete results
+  rather than crash before admission.
+- Retain current-source production-linked GCC evidence at `hfs_map` 20/20,
+  `hfs_inline` 2/2, and `hfs_fork` 1/1. ExtentOverflow, full HFS+ corpus,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final qualification remain required.
+
 ## OLE2 workbook encryption-probe bounds — 2026-08-31
 
 - Keep every BIFF encryption-probe skip inside the declared bounded probe;

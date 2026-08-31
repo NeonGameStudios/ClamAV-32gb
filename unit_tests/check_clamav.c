@@ -45882,7 +45882,6 @@ START_TEST(test_hfsplus_fork_read_failure_is_fail_visible)
      * empty child and skipped. */
     test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 512);
     test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 0);
-    map->need             = NULL;
     map->dont_cache_flag  = false;
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine             = &engine;
