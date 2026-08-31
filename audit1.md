@@ -16890,6 +16890,22 @@ MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1 resource evidence,
 and the final requirement-by-requirement release audit remain open.
 
+## ALZ focused current-source corpus refresh — 2026-08-31
+
+The canonical ALZ Rust parser, Rust scanner bridge, reader support, Cargo
+metadata, lockfile, and unit-test source were transferred into the existing
+Docker harness and their SHA-256 hashes matched exactly. The refreshed
+production-linked GCC cases pass `rust_alz` 2/2 over the malformed member-CRC
+regression and the five stored, deflate, and BZip2 materialized ALZ archives;
+the shared `rust_map` admission case passes 1/1.
+
+The host offline Rust-only attempt stopped before tests at the pre-existing
+macOS OpenSSL discovery requirement; no software was installed. Existing
+offline Rust-module evidence remains bounded by the documented C-ABI and
+sanitizer gaps. Complete ALZ corpus breadth, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1 resource
+evidence, and the final requirement-by-requirement release audit remain open.
+
 ## 7-Zip focused current-source corpus refresh — 2026-08-31
 
 The canonical 7-Zip interface, SDK sources, and unit-test source were

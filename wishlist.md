@@ -9442,6 +9442,19 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1 resource, and
   final parser/release qualification.
 
+## ALZ focused current-source corpus refresh — 2026-08-31
+
+- Retain canonical/container SHA-256 equality for the ALZ Rust parser, scanner
+  bridge, reader support, Cargo metadata, lockfile, and unit-test source.
+- Retain the refreshed production-linked GCC evidence: `rust_alz` passes 2/2
+  across the malformed CRC and five materialized stored/deflate/BZip2 ALZ
+  archives, and `rust_map` passes 1/1.
+- The host offline Rust-only check still requires the pre-existing macOS
+  OpenSSL discovery setup; no software was installed. Complete Rust-module
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1 resource, and final parser/release
+  qualification.
+
 ## 7-Zip focused current-source corpus refresh — 2026-08-31
 
 - Retain canonical/container SHA-256 equality for the 7-Zip interface, SDK,
