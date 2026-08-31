@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## OLE2 encrypted plaintext-length admission — 2026-08-31
+
+The encrypted OLE2 stream handler now clamps each decrypted block with a
+subtraction-based remaining-length calculation, so a malformed plaintext
+length cannot underflow an unsigned write count after the declared end. After
+the complete encrypted stream has been materialized, the handler also requires
+the produced plaintext length to equal the stream's declared length before any
+nested scan. The focused `ole2_map` TCase passes 5/5 in the current-source
+production-linked GCC harness, including the zero, exact, overrun, and
+near-`UINT64_MAX` clamp boundaries. Full encrypted OLE2 corpus, sanitizer,
+production-CVD/service, materialized-large-file, Linux x86-64, Sonic1, and
+final parser/release qualification remain open.
+
 ## VBA empty Unicode module stream admission — 2026-08-31
 
 `cli_vba_readdir_new()` now rejects a confirmed `MODULESTREAMNAMEUNICODE`

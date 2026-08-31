@@ -1,5 +1,16 @@
 # Wishlist
 
+## OLE2 encrypted plaintext-length admission — 2026-08-31
+
+- Keep encrypted OLE2 plaintext writes behind subtraction-based remaining
+  length checks; malformed declared lengths must never underflow the write
+  count or publish a partial decrypted stream to nested scanning.
+- Retain the focused `ole2_map` regression covering zero, exact, overrun, and
+  near-`UINT64_MAX` boundaries, with current-source production-linked GCC
+  evidence at 5/5. Complete encrypted OLE2 corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Linux x86-64, Sonic1, and
+  final qualification remain required.
+
 ## VBA empty Unicode module stream admission — 2026-08-31
 
 - Reject an empty confirmed `MODULESTREAMNAMEUNICODE` payload before the

@@ -32,5 +32,6 @@
 cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **files, int *has_vba, int *has_xlm, int *has_image);
 cl_error_t cli_ole2_read_mso_prefix(fmap_t *input, uint32_t *prefix, cli_ctx *ctx);
 char *cli_ole2_get_property_name2(const char *name, int size);
+uint32_t cli_ole2_clamp_decrypted_output(uint32_t requested, uint64_t written, uint64_t declared);
 
 #endif

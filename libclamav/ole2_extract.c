@@ -2045,6 +2045,17 @@ cl_error_t cli_ole2_read_mso_prefix(fmap_t *input, uint32_t *prefix, cli_ctx *ct
     return CL_EPARSE;
 }
 
+uint32_t cli_ole2_clamp_decrypted_output(uint32_t requested, uint64_t written, uint64_t declared)
+{
+    uint64_t remaining;
+
+    if (written >= declared)
+        return 0;
+
+    remaining = declared - written;
+    return remaining < requested ? (uint32_t)remaining : requested;
+}
+
 static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
 {
     int zret, ofd;
@@ -2487,8 +2498,9 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
     encryption_key_t *key = (encryption_key_t *)handler_ctx;
     uint32_t *rk          = NULL;
     uint64_t bytesRead    = 0;
-    uint64_t actualFileLength;
+    uint64_t actualFileLength = 0;
     uint64_t bytesWritten    = 0;
+    bool actual_file_length_valid = false;
     size_t stream_bytes_read = 0;
     uint32_t leftover        = 0;
     uint32_t readIdx         = 0;
@@ -2633,6 +2645,7 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
                 writeIdx += sizeof(uint64_t);
                 memcpy(&actualFileLength, buff, sizeof(actualFileLength));
                 actualFileLength = ole2_endian_convert_64(actualFileLength);
+                actual_file_length_valid = true;
             }
             bytesRead += blockSize;
 
@@ -2648,9 +2661,7 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
             }
 
             /*Make sure we don't write more data than the file is actually supposed to be.*/
-            if ((decryptDstIdx + bytesWritten) > actualFileLength) {
-                decryptDstIdx = actualFileLength - bytesWritten;
-            }
+            decryptDstIdx = cli_ole2_clamp_decrypted_output(decryptDstIdx, bytesWritten, actualFileLength);
             if (ole2_checktimelimit(ctx, "OLE2 encrypted stream output reached the configured time limit") != CL_SUCCESS) {
                 ret = CL_ETIMEOUT;
                 goto done;
@@ -2682,6 +2693,12 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
         if (ret == CL_BREAK) {
             ret = CL_EPARSE;
         }
+        goto done;
+    }
+
+    if (actual_file_length_valid && bytesWritten != actualFileLength) {
+        cli_mark_scan_incomplete(ctx, "OLE2 encrypted stream output disagreed with its declared plaintext size");
+        ret = CL_EFORMAT;
         goto done;
     }
 

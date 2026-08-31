@@ -34284,6 +34284,17 @@ START_TEST(test_ole2_property_name_rejects_invalid_arguments)
 }
 END_TEST
 
+START_TEST(test_ole2_encrypted_output_length_is_bounded)
+{
+    ck_assert_uint_eq(cli_ole2_clamp_decrypted_output(4096, 0, 123), 123);
+    ck_assert_uint_eq(cli_ole2_clamp_decrypted_output(4096, 100, 123), 23);
+    ck_assert_uint_eq(cli_ole2_clamp_decrypted_output(4096, 123, 123), 0);
+    ck_assert_uint_eq(cli_ole2_clamp_decrypted_output(4096, 124, 123), 0);
+    ck_assert_uint_eq(cli_ole2_clamp_decrypted_output(4096, UINT64_MAX - 1U, UINT64_MAX), 1);
+    ck_assert_uint_eq(cli_ole2_clamp_decrypted_output(4096, UINT64_MAX, UINT64_MAX), 0);
+}
+END_TEST
+
 START_TEST(test_ole2_invalid_block_geometry_is_fail_visible)
 {
     static const uint8_t magic[] = {0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1};
@@ -50278,6 +50289,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2_map, test_ole2_missing_engine_is_fail_visible);
     tcase_add_test(tc_ole2_map, test_ole2_missing_options_is_fail_visible);
     tcase_add_test(tc_ole2_map, test_ole2_public_api_read_failure_is_fail_visible);
+    tcase_add_test(tc_ole2_map, test_ole2_encrypted_output_length_is_bounded);
     suite_add_tcase(s, tc_nulsft);
     tcase_add_checked_fixture(tc_nulsft, cl_setup, cl_teardown);
     tcase_add_test(tc_nulsft, test_nsis_header_range_classes_are_fail_visible);

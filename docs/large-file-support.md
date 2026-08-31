@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## OLE2 encrypted plaintext-length admission — 2026-08-31
+
+Encrypted OLE2 output now uses checked remaining-length subtraction when
+clamping each decrypted block and requires the fully materialized plaintext
+length to equal the declared length before nested scanning. The focused
+current-source production-linked GCC `ole2_map` TCase passes 5/5 across zero,
+exact, overrun, and near-`UINT64_MAX` helper boundaries. Full encrypted OLE2
+corpus, sanitizer, production-CVD/service, materialized-large-file, Linux
+x86-64, Sonic1, and final parser/release qualification remain required.
+
 ## VBA empty Unicode module stream admission — 2026-08-31
 
 Confirmed VBA project directories now reject an empty
