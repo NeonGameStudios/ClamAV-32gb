@@ -34,6 +34,21 @@ CPIO qualification. Complete CPIO parser-family corpus, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, Sonic1, and
 final parser/release qualification remain required.
 
+## CryptFF focused current-source refresh — 2026-08-31
+
+The canonical scanner and unit-test sources were transferred into the existing
+Docker production-linked GCC harness and their SHA-256 hashes matched exactly.
+The focused cases pass `cryptff` 3/3 for temporary-output write/close,
+temporary-quota, and expired-deadline boundaries; `cryptff_api` passes 1/1 for
+an in-range source-window callback failure that returns `CL_EREAD`, resets the
+public verdict and alert outputs, and marks the fmap non-cacheable.
+
+This refresh confirms bounded CryptFF staging and public read-failure evidence,
+not final CryptFF qualification. Complete CryptFF corpus, full C ABI-consistent
+execution, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification remain
+required.
+
 ## ALZ focused current-source corpus refresh — 2026-08-31
 
 The canonical ALZ Rust parser, Rust scanner bridge, reader support, Cargo

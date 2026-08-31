@@ -14605,19 +14605,22 @@ sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
 service parity, and Sonic1 evidence remain release gates; all four CPIO
 capability rows therefore stay pending.
 
-## CryptFF public API read-failure audit — 2026-08-25
+## CryptFF focused current-source refresh — 2026-08-31
 
-The current-source production-linked `cryptff` TCase passes 3/3 for
-temporary-output write/close failures, temporary quota exhaustion, and
-expired scan time. The isolated `cryptff_api` TCase passes 1/1 for a public
+The canonical scanner and unit-test sources were transferred into the existing
+Docker production-linked GCC harness and their SHA-256 hashes matched exactly.
+The focused `cryptff` TCase passes 3/3 for temporary-output write/close
+failures, temporary quota exhaustion, and an expired scan deadline. The
+isolated `cryptff_api` TCase passes 1/1 for a public
 `cl_scanmap_ex(..., "CL_TYPE_CRYPTFF", ...)` scan whose in-range decrypted
-source window callback failure returns `CL_EREAD`, resets the verdict and
+source-window callback failure returns `CL_EREAD`, resets the verdict and
 alert outputs, and marks the fmap non-cacheable.
 
-This is public source-window dispatch evidence only. Complete CryptFF corpus,
-full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
-materialized large-file, production-CVD/service parity, and Sonic1
-qualification remain open, so `CL_TYPE_CRYPTFF` stays pending.
+This is focused bounded-staging and public-dispatch evidence, not final
+CryptFF qualification. Complete CryptFF corpus, full C ABI-consistent
+execution, sanitizer, certified Linux x86-64, materialized-large-file,
+production-CVD/service parity, Sonic1, and final parser/release qualification
+remain open, so `CL_TYPE_CRYPTFF` stays pending.
 
 ## CAB SFX nested admission audit — 2026-08-25
 
