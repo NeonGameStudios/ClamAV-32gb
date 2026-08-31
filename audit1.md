@@ -2497,18 +2497,20 @@ Complete CPIO parser-family, sanitizer, production-CVD/service,
 materialized-large-file, certified Linux x86-64, Sonic1, and release
 qualification remain open.
 
-## DMG parser qualification recheck — 2026-08-29
+## DMG focused current-source refresh — 2026-08-31
 
-The current-source production-linked GCC DMG TCase was relinked against the
-authoritative `dmg.c`, with the existing production scanner stack retained for
-the remaining integration path. It passes 9/9 across null-context, missing-map
-and missing-engine admission, strict Base64 and terminal-END validation,
-host-order retained stripes, bounded external sorting, malformed metadata,
-trailer read failure, and invalid trailer handling. The run preserves the
-existing distinction between incomplete parse results and in-range callback
-read failures. Full DMG corpus, sanitizer, production-CVD/service,
-materialized-large-file, certified Linux x86-64, Sonic1, and parser-family
-qualification remain open.
+The canonical DMG parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. The focused production-linked cases pass
+`dmg` 7/7 and `dmg_map` 10/10, covering bounded metadata streaming and
+external sorting, strict Base64 and terminal-END validation, host-order
+retained stripes, malformed metadata, trailer/range versus callback read
+failures, deadline handling, cleanup precedence, and null-map/engine admission.
+
+This confirms bounded DMG parser and admission evidence, not complete
+parser-family qualification. Full DMG corpus, sanitizer, production-CVD/
+service, materialized-large-file, certified Linux x86-64, Sonic1, and release
+evidence remain gates.
 
 ## EGG metadata-index resource accounting — 2026-08-29
 

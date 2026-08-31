@@ -49,6 +49,21 @@ execution, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification remain
 required.
 
+## DMG focused current-source refresh — 2026-08-31
+
+The canonical DMG parser, header, scanner, and unit-test sources were
+transferred into the existing Docker production-linked GCC harness and their
+SHA-256 hashes matched exactly. The focused cases pass `dmg` 7/7 and
+`dmg_map` 10/10, covering bounded metadata streaming and external sorting,
+strict Base64 and terminal-END validation, host-order retained stripes,
+malformed metadata, trailer/range versus callback read failures, deadline
+handling, cleanup precedence, and null-map/engine admission.
+
+This refresh confirms bounded DMG parser and admission evidence, not final DMG
+qualification. Complete DMG corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, and final
+parser/release qualification remain required.
+
 ## ALZ focused current-source corpus refresh — 2026-08-31
 
 The canonical ALZ Rust parser, Rust scanner bridge, reader support, Cargo

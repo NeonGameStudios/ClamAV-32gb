@@ -8717,13 +8717,16 @@ qualification gates.
   materialized-large-file, certified Linux x86-64, Sonic1, and release gates
   remain open.
 
-## DMG parser qualification recheck — 2026-08-29
+## DMG focused current-source refresh — 2026-08-31
 
-- Retain the relinked current-source production-linked GCC DMG result: the
-  isolated `dmg` TCase passes 9/9 across context/map/engine admission, strict
-  Base64 and terminal-END validation, host-order retained stripes, bounded
-  external sorting, malformed metadata, trailer read failure, and invalid
-  trailer handling.
+- Retain the canonical-source SHA-256 equality evidence for `dmg.c`, `dmg.h`,
+  `scanners.c`, and `check_clamav.c` before relinking the existing Docker
+  production-linked GCC harness.
+- Retain the focused results: `dmg` 7/7 and `dmg_map` 10/10 across bounded
+  metadata streaming and external sorting, strict Base64 and terminal-END
+  validation, host-order retained stripes, malformed metadata, trailer/range
+  versus callback read failures, deadline handling, cleanup precedence, and
+  null-map/engine admission.
 - Keep full DMG corpus, sanitizer, production-CVD/service,
   materialized-large-file, certified Linux x86-64, Sonic1, parser-family, and
   release qualification open.
