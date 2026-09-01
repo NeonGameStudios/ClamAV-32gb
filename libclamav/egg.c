@@ -1918,6 +1918,10 @@ cl_error_t cli_egg_sfx_header_check(cli_ctx *ctx, size_t offset)
     }
 
     status = cli_egg_header_check(ctx->fmap, offset);
+    if (status == CL_EREAD) {
+        cli_mark_scan_incomplete(ctx, "EGG SFX header could not be read completely");
+        return status;
+    }
     if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
         return CL_EPARSE;
 

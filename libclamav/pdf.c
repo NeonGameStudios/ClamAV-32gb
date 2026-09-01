@@ -500,6 +500,10 @@ cl_error_t cli_pdf_embedded_header_check(cli_ctx *ctx, off_t offset)
     }
 
     status = cli_pdf_header_check(ctx->fmap, offset);
+    if (status == CL_EREAD) {
+        cli_mark_scan_incomplete(ctx, "embedded PDF header could not be read completely");
+        return status;
+    }
     if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
         return CL_EPARSE;
 

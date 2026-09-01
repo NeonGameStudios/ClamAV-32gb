@@ -33332,6 +33332,10 @@ START_TEST(test_embedded_header_read_failures_are_fail_visible)
 {
     static const uint8_t pdf[] = "%PDF-1.7";
     static const uint8_t arj[] = {0x60, 0xea, 0x22, 0x00};
+    static const uint8_t sevenzip[32] = {0};
+    static const uint8_t rar[14]      = {0};
+    static const uint8_t arj_sfx[12]  = {0};
+    static const uint8_t egg[14]      = {0};
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
@@ -33355,6 +33359,68 @@ START_TEST(test_embedded_header_read_failures_are_fail_visible)
     ret      = cli_unarj_header_check(&ctx, 0, &archive_size);
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    /* Context-aware embedded admission helpers must also taint the
+     * recognized layer when a fully in-range header read fails. */
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(sevenzip, sizeof(sevenzip));
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap  = map;
+    ret       = cli_7z_header_check(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "7-Zip SFX header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(rar, sizeof(rar));
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap  = map;
+    ret       = cli_rar_sfx_header_check(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "RAR SFX header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(arj_sfx, sizeof(arj_sfx));
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap  = map;
+    ret       = cli_unarj_sfx_header_check(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ SFX header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(egg, sizeof(egg));
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap  = map;
+    ret       = cli_egg_sfx_header_check(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG SFX header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(pdf, sizeof(pdf) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap  = map;
+    ret       = cli_pdf_embedded_header_check(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "embedded PDF header could not be read completely");
     ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
 }

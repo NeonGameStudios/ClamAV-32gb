@@ -94,8 +94,10 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
         return CL_EFORMAT;
 
     header = (const unsigned char *)fmap_need_off_once(ctx->fmap, offset, k7zStartHeaderSize);
-    if (header == NULL)
+    if (header == NULL) {
+        cli_mark_scan_incomplete(ctx, "7-Zip SFX header could not be read completely");
         return CL_EREAD;
+    }
     if (memcmp(header, k7zSignature, k7zSignatureSize) != 0)
         return CL_EFORMAT;
 
@@ -136,8 +138,10 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
 
             recovery = (const unsigned char *)fmap_need_off_once(
                 ctx->fmap, ctx->fmap->len - recovery_size, recovery_size);
-            if (recovery == NULL)
+            if (recovery == NULL) {
+                cli_mark_scan_incomplete(ctx, "7-Zip SFX recovery header could not be read completely");
                 return CL_EREAD;
+            }
 
             for (i = recovery_size - 2;; i--) {
                 if ((recovery[i] == 0x17 && recovery[i + 1] == 0x06) ||

@@ -1,5 +1,19 @@
 # Wishlist
 
+## Embedded SFX/header read-admission cache taint — 2026-09-01
+
+- Keep the context-aware 7-Zip, RAR4, ARJ-SFX, EGG-SFX, and embedded PDF
+  header probes fail-visible when a fully in-range fmap read fails: return
+  `CL_EREAD`, record an exact sticky incomplete reason, and mark the map
+  non-cacheable.
+- Retain the five-probe coverage in
+  `test_embedded_header_read_failures_are_fail_visible` and its source guards;
+  standalone map-only helpers may retain their existing contracts.
+- Complete current-source production-GCC compilation and production-linked
+  execution, sanitizer, complete embedded/SFX corpora, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## Embedded PDF header context admission — 2026-09-01
 
 - Keep embedded PDF header admission context-aware while retaining the

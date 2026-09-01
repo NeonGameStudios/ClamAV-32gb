@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## Embedded SFX/header read-admission cache taint — 2026-09-01
+
+The context-aware embedded header probes returned `CL_EREAD` for fully
+in-range fmap callback failures, but several of them did not mark the
+recognized layer incomplete or non-cacheable unless the outer raw dispatcher
+added that state later.  7-Zip, RAR4, ARJ-SFX, EGG-SFX, and embedded PDF
+admission now record an exact sticky read-failure reason before returning
+`CL_EREAD`; clean, malformed, and unsupported outcomes retain their existing
+precedence.  The expanded `test_embedded_header_read_failures_are_fail_visible`
+regression directly exercises all five context-aware probes, and source guards
+pin the diagnostics and registration.  Current-source production-GCC
+compilation, production-linked execution, sanitizer, complete embedded/SFX
+corpora, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Embedded PDF header context admission — 2026-09-01
 
 The embedded-PDF raw dispatch path previously called the map-only

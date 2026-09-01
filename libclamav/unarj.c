@@ -134,15 +134,21 @@ cl_error_t cli_unarj_sfx_header_check(cli_ctx *ctx, size_t offset)
         return CL_EFORMAT;
 
     ret = arj_read_fixed_range(ctx->fmap, &header_size, offset + 2U, sizeof(header_size));
-    if (ret != CL_SUCCESS)
+    if (ret != CL_SUCCESS) {
+        if (ret == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, "ARJ SFX header could not be read completely");
         return ret;
+    }
     header_size = le16_to_host(header_size);
     if (header_size < FIRST_HDR_SIZE || header_size > HEADERSIZE_MAX)
         return CL_EFORMAT;
 
     ret = arj_read_fixed_range(ctx->fmap, &first_header_size, offset + 4U, sizeof(first_header_size));
-    if (ret != CL_SUCCESS)
+    if (ret != CL_SUCCESS) {
+        if (ret == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, "ARJ SFX header could not be read completely");
         return ret;
+    }
     if (first_header_size < FIRST_HDR_SIZE)
         return CL_EFORMAT;
 
