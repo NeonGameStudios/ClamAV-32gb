@@ -155,6 +155,30 @@ qualification. Complete hash/signature corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1 resource, and
 requirement-by-requirement release evidence remain open.
 
+## Archive/compression current-source verification — 2026-09-01
+
+The canonical archive sources used by the existing Docker production-linked GCC
+harness matched byte-for-byte before this rerun: `scanners.c`
+`be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+`untar.c` `498996bc46fb571eba6fa0a7c4a7b0efa2e29c8a352b80132aa4c4c895d951a6`,
+`cpio.c` `bd954f3a91a61c73660198c6120a38d761643df8931f54ef2340e0b0e1fd3cf3`,
+`sis.c` `7833212547d3a8048e44e10c75a5089604d53c41d0674877b0ed90c96483013c`,
+`msexpand.c` `85e304a8f235c6a44bebbcbe21d8bc6c86906d8a13ffb33c0d7734007823fc8f`,
+`nulsft.c` `14ff006b3e87d482c89840ab1c7a53b543898a800d035360d28d875fb8b96222`,
+`xz_iface.c` `7126e77475e841057c7303f615502368261d0c71878db39520707b4fa62072de`,
+and the current `check_clamav.c`
+`71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`.
+The current-source production-linked GCC cases pass `tar` 8/8, `tar_map` 3/3,
+`tar_corpus` 1/1, `tar_member` 8/8, `cpio` 1/1, `cpio_crc` 4/4,
+`cpio_numeric` 4/4, `cpio_map` 6/6, `sis` 1/1, `sis_structure` 2/2,
+`sis_member` 1/1, `sis_map` 2/2, `xz` 2/2, `xz_corpus` 1/1,
+`xz_trailing` 1/1, `nulsft` 5/5, `nulsft_corpus` 1/1, `nulsft_map` 2/2,
+`msexpand` 8/8, `msexpand_map` 2/2, and `rar` 2/2 for explicit unavailable-
+backend behavior. The Docker target is AArch64, so optional UnRAR extraction,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1 resource, and final parser/release evidence
+remain open.
+
 ## Bytecode normalizer cleanup and core matcher rerun — 2026-08-31
 
 Bytecode context teardown previously removed and freed the normalized-

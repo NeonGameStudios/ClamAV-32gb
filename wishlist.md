@@ -578,6 +578,22 @@ final parser/release qualification.
   production-CVD/service, materialized-large-file/resource, Sonic1, and final
   parser/release qualification open.
 
+## Archive/compression current-source verification — 2026-09-01
+
+- Verify byte-for-byte canonical/container source equality before each rerun;
+  the current check covered `scanners.c`, TAR/CPIO/SIS/MSEXPAND/Nullsoft/XZ
+  parser sources, and the current `check_clamav.c` (`71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`).
+- Retain current production-linked GCC evidence at `tar` 8/8, `tar_map` 3/3,
+  `tar_corpus` 1/1, `tar_member` 8/8, `cpio` 1/1, `cpio_crc` 4/4,
+  `cpio_numeric` 4/4, `cpio_map` 6/6, `sis` 1/1, `sis_structure` 2/2,
+  `sis_member` 1/1, `sis_map` 2/2, `xz` 2/2, `xz_corpus` 1/1,
+  `xz_trailing` 1/1, `nulsft` 5/5, `nulsft_corpus` 1/1, `nulsft_map` 2/2,
+  `msexpand` 8/8, `msexpand_map` 2/2, and `rar` 2/2 for explicit
+  unavailable-backend behavior.
+- Keep optional UnRAR extraction, complete corpora, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file/resource, Sonic1,
+  and final parser/release qualification open.
+
 ## UDF descriptor-tag integrity admission — 2026-08-30
 
 - Validate every consumed UDF Descriptor Tag before trusting descriptor
