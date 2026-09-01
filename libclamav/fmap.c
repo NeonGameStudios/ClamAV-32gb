@@ -1195,6 +1195,11 @@ fmap_t *fmap_open_memory(const void *start, size_t len, const char *name)
 {
     cl_error_t status = CL_ERROR;
 
+    if (start == NULL && len != 0) {
+        cli_warnmsg("fmap: attempted non-empty mapping without backing memory\n");
+        return NULL;
+    }
+
     int pgsz     = cli_getpagesize();
     cl_fmap_t *m = calloc(1, sizeof(*m));
     if (!m) {

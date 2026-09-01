@@ -3,6 +3,16 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Public memory-fmap backing admission — 2026-09-01
+
+The public memory-backed fmap constructor now rejects a null backing pointer
+when the requested length is nonzero, before creating a map that could later
+form invalid read pointers. A zero-length `(NULL, 0)` map remains supported
+for empty-stream parser tests. The focused regression and source guards cover
+this boundary; current-source production-linked execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final release qualification remain required.
+
 ## Exported scan-ingress admission refresh — 2026-09-01
 
 The exported magic-scan boundaries now reject malformed caller state before

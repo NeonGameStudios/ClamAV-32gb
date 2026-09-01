@@ -1,5 +1,16 @@
 # Wishlist
 
+## Public memory-fmap backing admission — 2026-09-01
+
+- Keep `cl_fmap_open_memory()` fail-visible for a null backing pointer with a
+  nonzero length before constructing a non-empty fmap.
+- Preserve `(NULL, 0)` as the supported empty-map representation used by
+  direct parser tests.
+- Retain `test_cl_fmap_open_memory_rejects_missing_backing_memory` and its
+  source guards; complete production-linked execution, sanitizer, certified
+  Linux x86-64, service/CVD, materialized-large-file, Sonic1, resource, and
+  final release qualification.
+
 ## Exported magic-scan recursion-state admission — 2026-09-01
 
 - Keep exported `cli_magic_scan()` fail-visible when a caller supplies a valid

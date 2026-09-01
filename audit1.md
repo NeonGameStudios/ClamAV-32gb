@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Public memory-fmap backing admission — 2026-09-01
+
+`cl_fmap_open_memory()` previously accepted a null backing pointer with a
+nonzero length. The resulting non-empty fmap could pass parser admission and
+only fail later through undefined pointer arithmetic or a null dereference.
+The constructor now rejects that combination before allocating a map, while
+preserving `(NULL, 0)` for supported empty-stream parser tests.
+`test_cl_fmap_open_memory_rejects_missing_backing_memory` covers both cases,
+and source guards pin the early rejection and registration. Production-linked
+execution, sanitizer, certified Linux x86-64, service/CVD,
+materialized-large-file, Sonic1, resource, and final release qualification
+remain open.
+
 ## Exported magic-scan recursion-state admission — 2026-09-01
 
 The exported `cli_magic_scan()` entry validated its engine and input fmap but

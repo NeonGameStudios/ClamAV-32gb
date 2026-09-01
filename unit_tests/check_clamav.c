@@ -512,6 +512,20 @@ START_TEST(test_cl_fmap_get_data_clamps_wrapped_length)
 }
 END_TEST
 
+START_TEST(test_cl_fmap_open_memory_rejects_missing_backing_memory)
+{
+    cl_fmap_t *map;
+
+    map = cl_fmap_open_memory(NULL, 1);
+    ck_assert_ptr_null(map);
+
+    /* Empty maps are a supported representation for direct parser tests. */
+    map = cl_fmap_open_memory(NULL, 0);
+    ck_assert_ptr_nonnull(map);
+    cl_fmap_close(map);
+}
+END_TEST
+
 static const void *fmap_readn_full_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -53943,6 +53957,7 @@ static Suite *test_cl_suite(void)
 
     suite_add_tcase(s, tc_fmap_api);
     tcase_add_test(tc_fmap_api, test_fmap_assorted_api);
+    tcase_add_test(tc_fmap_api, test_cl_fmap_open_memory_rejects_missing_backing_memory);
     tcase_add_test(tc_fmap_api, test_fmap_gets_read_failure_releases_pages);
 
     suite_add_tcase(s, tc_metadata_json);
