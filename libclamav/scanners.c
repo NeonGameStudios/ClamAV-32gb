@@ -1661,7 +1661,15 @@ static cl_error_t cli_arj_cleanup_dir(cli_ctx *ctx, char **dir, cl_error_t statu
     return status;
 }
 
-static cl_error_t cli_scanarj(cli_ctx *ctx)
+static cl_error_t cli_arj_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
+cl_error_t cli_scanarj(cli_ctx *ctx)
 {
     cl_error_t ret            = CL_SUCCESS;
     cl_error_t deferred_limit = CL_SUCCESS;
@@ -1671,6 +1679,15 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
     uint64_t temporary_reserved = 0;
 
     cli_dbgmsg("in cli_scanarj()\n");
+
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "ARJ input map is unavailable");
+        return CL_EPARSE;
+    }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
 
     memset(&metadata, 0, sizeof(arj_metadata_t));
     metadata.ctx = ctx;
@@ -1856,7 +1873,7 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
     if (ret == CL_SUCCESS && deferred_limit != CL_SUCCESS)
         ret = deferred_limit;
 
-    return ret;
+    return cli_arj_reconcile_status(ctx, ret);
 }
 
 static cl_error_t cli_cleanup_compressed_temp(cli_ctx *ctx, int *fd, char *tempfile, cl_error_t status,

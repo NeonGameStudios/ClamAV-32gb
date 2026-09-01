@@ -11846,3 +11846,21 @@ This removes a test-admission blocker, not a final release gate. Complete
 TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
+
+## ARJ scanner entry boundaries — 2026-09-01
+
+The internal ARJ extraction entry now validates its direct context before
+temporary staging: null contexts return `CL_ENULLARG`, missing maps return
+`CL_EPARSE` with sticky incomplete state, and missing engines return
+`CL_ENULLARG`. A header-only empty archive may complete with `CL_SUCCESS` only
+when the layer is otherwise complete; if an earlier required scan step marked
+the layer incomplete, clean completion is reconciled to `CL_EPARSE` and the
+original diagnostic and fmap non-cacheability are preserved. Detections and
+stronger parser, decoder, read, timeout, resource, extraction, and cleanup
+statuses retain precedence.
+
+`test_arj_scan_entry_boundaries_are_fail_visible` covers the direct entry and
+is pinned by source guards and the capability manifest. Current-source
+production-linked execution, complete ARJ/ARJ-SFX corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final release qualification remain required.

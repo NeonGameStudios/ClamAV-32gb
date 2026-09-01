@@ -19056,3 +19056,26 @@ guard covers the early reset paths. Current-source production-linked execution,
 sanitizer, full ingress/service parity, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 release qualification remain required.
+
+## ARJ scanner entry boundaries — 2026-09-01
+
+The internal `cli_scanarj()` extraction entry previously relied on its caller
+to provide a valid context, fmap, and engine, and normalized the end-of-archive
+`CL_BREAK` path to `CL_SUCCESS` without reconciling a pre-existing sticky
+incomplete state. It now rejects null contexts with `CL_ENULLARG`, reports a
+missing input map as `CL_EPARSE` with sticky non-cacheable state, rejects a
+missing engine before temporary staging, and reconciles clean completion to
+`CL_EPARSE` when the confirmed ARJ layer was already incomplete. Detections and
+stronger extraction, decoder, read, timeout, resource, and cleanup statuses
+remain authoritative.
+
+`test_arj_scan_entry_boundaries_are_fail_visible` directly exercises null,
+missing-map, missing-engine, untainted header-only archive, and pre-tainted
+header-only archive paths. The internal entry is now declared in
+`libclamav/scanners.h` so this boundary is testable independently of the outer
+dispatcher. Source guards and the capability manifest record the contract.
+The focused current-source production-linked test still needs relinking and
+execution after the existing Docker overlay is repaired; complete ARJ/ARJ-SFX
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

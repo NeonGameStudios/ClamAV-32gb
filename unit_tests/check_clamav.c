@@ -39066,6 +39066,60 @@ static void arj_test_build_sfx_prefix(uint8_t *data, size_t length)
     data[11] = 2;
 }
 
+START_TEST(test_arj_scan_entry_boundaries_are_fail_visible)
+{
+    uint8_t data[47] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    data[0] = 0x60;
+    data[1] = 0xea;
+    arj_test_write_u16(data + 2, 34);
+    data[4] = 30;
+    data[34] = 'a';
+    data[43] = 0x60;
+    data[44] = 0xea;
+
+    ck_assert_int_eq(cli_scanarj(NULL), CL_ENULLARG);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ck_assert_int_eq(cli_scanarj(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ input map is unavailable");
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanarj(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ck_assert_int_eq(cli_scanarj(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cli_mark_scan_incomplete(&ctx, "pre-existing ARJ scanner incomplete state");
+    ck_assert_int_eq(cli_scanarj(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing ARJ scanner incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_arj_header_check_sticky_incomplete_result_is_fail_visible)
 {
     uint8_t data[93] = {0};
@@ -53454,6 +53508,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_swf_api, test_swf_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_arj);
     tcase_add_checked_fixture(tc_arj, cl_setup, cl_teardown);
+    tcase_add_test(tc_arj, test_arj_scan_entry_boundaries_are_fail_visible);
     tcase_add_test(tc_arj, test_arj_truncated_main_header_is_fail_visible);
     tcase_add_test(tc_arj, test_arj_truncated_signature_is_parse_error);
     tcase_add_test(tc_arj, test_arj_time_limit_is_fail_visible);
