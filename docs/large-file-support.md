@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## EGG SFX header context admission — 2026-09-01
+
+Embedded EGG SFX dispatch now uses a context-aware header wrapper. It retains
+the standalone map-only validation API, but distinguishes null context from
+missing input (`CL_ENULLARG` versus sticky `CL_EPARSE`) and converts confirmed
+clean success to `CL_EPARSE` when the owning layer is already incomplete.
+The direct regression and source guards cover the admission boundary.
+Current-source production-GCC compilation, production-linked execution,
+sanitizer, complete EGG/EGG-SFX corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## SFX header map admission — 2026-09-01
 
 Confirmed 7-Zip, RAR4, and InstallShield MSI SFX header probes now distinguish

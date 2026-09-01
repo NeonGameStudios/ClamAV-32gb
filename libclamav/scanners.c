@@ -5991,7 +5991,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         case CL_TYPE_EGGSFX:
                             if ((SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_EGG)) &&
                                 (type != CL_TYPE_EGG)) {
-                                ret = cli_egg_header_check(ctx->fmap, fpt->offset);
+                                ret = cli_egg_sfx_header_check(ctx, fpt->offset);
                                 if (ret == CL_EFORMAT) {
                                     cli_dbgmsg("EGG SFX candidate rejected before layer admission\n");
                                     break;

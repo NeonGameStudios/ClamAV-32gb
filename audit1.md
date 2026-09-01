@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## EGG SFX header context admission — 2026-09-01
+
+The EGG SFX path previously used the map-only `cli_egg_header_check()` from
+raw embedded-type dispatch, so confirmed success could not reconcile a
+pre-existing sticky incomplete context and a missing context fmap was not
+classified at that admission boundary. The new internal
+`cli_egg_sfx_header_check()` wrapper preserves the standalone map-only API,
+distinguishes null context from missing input (`CL_ENULLARG` versus
+`CL_EPARSE` with sticky non-cacheable state), and converts clean confirmed
+success to `CL_EPARSE` when the owning context is already incomplete. The
+direct regression is registered and source-guarded. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+EGG/EGG-SFX corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## SFX header map admission — 2026-09-01
 
 The confirmed 7-Zip, RAR4, and InstallShield MSI SFX header probes previously

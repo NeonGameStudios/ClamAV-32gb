@@ -1,5 +1,18 @@
 # Wishlist
 
+## EGG SFX header context admission — 2026-09-01
+
+- Keep the internal EGG SFX header admission wrapper context-aware while
+  retaining the standalone map-only header API: reserve `CL_ENULLARG` for a
+  null context, return sticky `CL_EPARSE` for missing input, and preserve
+  fail-visible pre-existing incomplete state.
+- Retain `test_egg_sfx_header_context_admission_is_fail_visible` and its source
+  guards.
+- Complete current-source production-GCC compilation and production-linked
+  execution, sanitizer, complete EGG/EGG-SFX corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## SFX header map admission — 2026-09-01
 
 - Keep 7-Zip, RAR4, and InstallShield MSI SFX header probes fail-visible for a

@@ -1906,6 +1906,24 @@ cl_error_t cli_egg_header_check(fmap_t* map, size_t offset)
     return CL_SUCCESS;
 }
 
+cl_error_t cli_egg_sfx_header_check(cli_ctx *ctx, size_t offset)
+{
+    cl_error_t status;
+
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "EGG SFX header input map is unavailable");
+        return CL_EPARSE;
+    }
+
+    status = cli_egg_header_check(ctx->fmap, offset);
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint32_t* nComments, cli_ctx* ctx)
 {
     cl_error_t status = CL_EPARSE;

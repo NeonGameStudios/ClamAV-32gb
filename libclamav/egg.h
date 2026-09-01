@@ -109,6 +109,14 @@ cl_error_t cli_egg_metadata_range(
 cl_error_t cli_egg_header_check(fmap_t* map, size_t offset);
 
 /**
+ * @brief Validate an embedded EGG SFX header against scan context state.
+ *
+ * This internal admission probe preserves the map-only header semantics while
+ * making missing input and pre-existing incomplete state fail-visible.
+ */
+cl_error_t cli_egg_sfx_header_check(cli_ctx *ctx, size_t offset);
+
+/**
  * @brief Peek at the next file in the archive, without incremented the current file index.
  *
  * @param hArchive          An open EGG archive handle from cli_egg_open()

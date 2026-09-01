@@ -30965,6 +30965,37 @@ START_TEST(test_egg_sfx_header_admission)
 }
 END_TEST
 
+START_TEST(test_egg_sfx_header_context_admission_is_fail_visible)
+{
+    static const uint8_t valid_header[] = {
+        0x45, 0x47, 0x47, 0x41, /* EGG_HEADER_MAGIC */
+        0x00, 0x01,             /* EGG_HEADER_VERSION */
+        0x01, 0x00, 0x00, 0x00, /* nonzero header id */
+        0x00, 0x00, 0x00, 0x00  /* reserved */
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_egg_sfx_header_check(NULL, 0), CL_ENULLARG);
+    ck_assert_int_eq(cli_egg_sfx_header_check(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG SFX header input map is unavailable");
+
+    map = cl_fmap_open_memory(valid_header, sizeof(valid_header));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap              = map;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing EGG SFX incomplete state";
+    map->dont_cache_flag  = true;
+    ck_assert_int_eq(cli_egg_sfx_header_check(&ctx, 0), CL_EPARSE);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing EGG SFX incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_egg_scan_entry_boundaries_are_fail_visible)
 {
     static const uint8_t empty_egg[] = {
@@ -53119,6 +53150,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_egg_sfx);
     tcase_add_checked_fixture(tc_egg_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_egg_sfx, test_egg_sfx_header_admission);
+    tcase_add_test(tc_egg_sfx, test_egg_sfx_header_context_admission_is_fail_visible);
     tcase_add_test(tc_egg_sfx, test_egg_sfx_admission_reaches_nested_matcher);
     suite_add_tcase(s, tc_hfs_inline);
     tcase_add_checked_fixture(tc_hfs_inline, cl_setup, cl_teardown);
