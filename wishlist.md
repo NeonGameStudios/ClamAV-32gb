@@ -9841,6 +9841,17 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## XAR current-source production-linked rerun — 2026-08-31
+
+- Retain canonical-source equality for `scanners.c` and `check_clamav.c` in
+  the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: `xar` passes 12/12,
+  `xar_metadata` 3/3, `xar_map` 2/2, `xar_corpus` 3/3, and `xar_subdoc` 1/1,
+  including exact nested-child detection and cleanup/decoder boundaries.
+- Complete XAR corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## UUEncode and embedded-mail current-source rerun — 2026-08-31
 
 - Retain canonical-source equality for `uuencode.c`, `scanners.c`, and

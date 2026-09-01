@@ -17334,6 +17334,20 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## XAR current-source production-linked rerun — 2026-08-31
+
+The canonical `scanners.c` and `check_clamav.c` sources were verified
+byte-identical to the copies used by the existing Docker GCC harness. The
+focused production-linked cases pass `xar` 12/12, `xar_metadata` 3/3,
+`xar_map` 2/2, `xar_corpus` 3/3, and `xar_subdoc` 1/1. The run covers XAR
+header and XML/metadata validation, gzip/LZMA member failures, map and engine
+admission, exact nested MZ detection, and subdocument serialization/cleanup.
+
+This is refreshed XAR evidence, not final release certification. Complete XAR
+corpus breadth, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1 resource evidence, and the final
+requirement-by-requirement parser/release audit remain open.
+
 ## UUEncode and embedded-mail current-source rerun — 2026-08-31
 
 The canonical `uuencode.c`, `scanners.c`, and `check_clamav.c` sources were
