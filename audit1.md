@@ -17327,6 +17327,29 @@ current signed production CVD/CLD/CUD corpus, clean current-head sanitizer
 matrix, service parity, materialized-large-file, certified Linux x86-64,
 Sonic1, and the final requirement-by-requirement release audit remain open.
 
+## Archive/compression focused current-source rerun — 2026-08-31
+
+The next pending archive/compression capability was rerun against the current
+authoritative source in the production-linked GCC harness. After materializing
+all missing encrypted fixtures through their repository CMake targets, TAR
+passes 8/8, `tar_map` 3/3, `tar_corpus` 1/1, and `tar_member` 8/8; CPIO passes
+1/1, `cpio_crc` 4/4, `cpio_numeric` 4/4, and `cpio_map` 6/6; SIS passes
+1/1, `sis_structure` 2/2, `sis_member` 1/1, and `sis_map` 2/2; XZ passes
+2/2, `xz_corpus` 1/1, and `xz_trailing` 1/1; Nullsoft SFX passes 5/5,
+`nulsft_corpus` 1/1, and `nulsft_map` 2/2; SZDD passes 8/8 and
+`msexpand_map` 2/2. The RAR case passes 2/2 for the explicitly unavailable
+backend behavior in this build.
+
+The initial corpus attempts found absent generated fixtures rather than parser
+failures; `clam.tar.gz`, `clam.exe_and_mail.tar.gz`, all four CPIO files,
+`clam.sis`, and `clam.exe.szdd` were then materialized using the existing
+repository targets. No software was installed and no source was changed for
+this rerun. This is refreshed focused parser evidence, not final
+archive/compression qualification: complete corpus breadth, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource measurements, and the final requirement-by-requirement
+release audit remain open.
+
 ## Streaming MIME multipart part-limit parity — 2026-08-31
 
 The disk-backed multipart parser now counts each boundary with a native

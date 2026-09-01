@@ -9845,6 +9845,22 @@ qualification as required evidence.
   service parity, certified Linux x86-64, materialized-large-file, Sonic1, and
   final parser/release qualification.
 
+## Archive/compression focused current-source rerun — 2026-08-31
+
+- Retain the refreshed production-linked GCC evidence: TAR 8/8, `tar_map` 3/3,
+  `tar_corpus` 1/1, `tar_member` 8/8; CPIO 1/1, `cpio_crc` 4/4,
+  `cpio_numeric` 4/4, `cpio_map` 6/6; SIS 1/1, `sis_structure` 2/2,
+  `sis_member` 1/1, `sis_map` 2/2; XZ 2/2, `xz_corpus` 1/1,
+  `xz_trailing` 1/1; Nullsoft 5/5, `nulsft_corpus` 1/1,
+  `nulsft_map` 2/2; and SZDD 8/8, `msexpand_map` 2/2.
+- Keep RAR’s 2/2 result scoped to explicit unavailable-backend behavior.
+  Materialize encrypted corpus files only through the existing repository CMake
+  targets; missing generated fixtures are harness setup state, not parser
+  qualification.
+- Complete archive/compression corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  parser/release qualification.
+
 ## Streaming MIME multipart part-limit parity — 2026-08-31
 
 - Keep the disk-backed multipart walker applying the existing 1,024-part
