@@ -17334,6 +17334,21 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## HWP3/HWPOLE2 current-source production-linked rerun — 2026-08-31
+
+The canonical `hwp.c`, `hwp.h`, `scanners.c`, and `check_clamav.c` sources
+were verified byte-identical to the copies used by the existing Docker GCC
+harness. The focused production-linked cases pass `hwp3` 22/22, `hwp3_map`
+3/3, `hwp3_api` 1/1, `hwp3_corpus` 1/1, `hwpole2_map` 3/3, and
+`hwpole2_corpus` 1/1. The run covers HWP3 metadata, paragraph, font,
+information-block, deflate, timeout, and admission boundaries, plus exact
+nested OLE-data and materialized PowerPoint child matching.
+
+This is refreshed HWP evidence, not final release certification. Complete
+HWP/HWPOLE2 corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1 resource evidence,
+and the final requirement-by-requirement parser/release audit remain open.
+
 ## XML container parser current-source rerun — 2026-08-31
 
 The canonical `scanners.c` and `check_clamav.c` sources were verified

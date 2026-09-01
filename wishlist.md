@@ -9841,6 +9841,18 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## HWP3/HWPOLE2 current-source production-linked rerun — 2026-08-31
+
+- Retain canonical-source equality for `hwp.c`, `hwp.h`, `scanners.c`, and
+  `check_clamav.c` in the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: `hwp3` 22/22,
+  `hwp3_map` 3/3, `hwp3_api` 1/1, `hwp3_corpus` 1/1, `hwpole2_map` 3/3, and
+  `hwpole2_corpus` 1/1, including exact nested OLE-data and PowerPoint child
+  matching.
+- Complete HWP/HWPOLE2 corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## XML container parser current-source rerun — 2026-08-31
 
 - Retain canonical-source equality for `scanners.c` and `check_clamav.c` in
