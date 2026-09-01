@@ -45572,6 +45572,61 @@ START_TEST(test_hfsplus_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hfsplus_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[1024 + (40 * 512)];
+    uint8_t *volume;
+    uint8_t *fork;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    volume = data + 1024;
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, signature), 0x482b);
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, version), 4);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, blockSize), 512);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, totalBlocks), 40);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, extentsFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 1);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 4);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, catalogFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 4096);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 8);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 8);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 8);
+
+    /* Both trees are valid empty trees, so the parser can complete without
+     * touching a catalog leaf. */
+    test_hfsplus_tree_header(data, 4 * 512, 512, 10);
+    test_hfsplus_tree_header(data, 8 * 512, 4096, 6);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine                 = &engine;
+    ctx.fmap                   = map;
+    ctx.this_layer_tmpdir      = tmpdir;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing HFS+ incomplete state";
+    map->dont_cache_flag       = true;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing HFS+ incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hfsplus_resource_reference_index_overflow_is_fail_visible)
 {
     uint64_t offset = 0;
@@ -50404,6 +50459,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hfs_map, test_hfsplus_null_context_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_missing_map_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_missing_engine_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_resource_reference_index_overflow_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_resource_block_offset_overflow_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_resource_map_uses_declared_offsets);

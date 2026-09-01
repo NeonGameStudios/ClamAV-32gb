@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## HFS+ direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scanhfsplus()` could return `CL_SUCCESS` to a direct parser caller after
+the scan context had already become sticky-incomplete. The final status now
+converts only clean/`CL_SUCCESS` results with sticky incomplete state to
+`CL_EPARSE`, preserving detections and stronger parser errors. The valid empty
+HFS+ volume regression `test_hfsplus_sticky_incomplete_result_is_fail_visible`
+asserts direct `CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `hfsplus.c` (`92c39066aa6f1bbb8f8ad49d018bd6e8f7e7c7d29236b95ad2fc436d160f80d0`)
+and `check_clamav.c`
+(`47ed706e2e5312a6edefc4992baf3860bbc09dcbd73349b14dc86dcc161ece53`). The
+current-source production-linked GCC harness passes `hfs_map` 21/21,
+`hfs_inline` 2/2, and `hfs_fork` 1/1. This closes direct status
+reconciliation only; ExtentOverflow, complete HFS+ corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final release qualification remain open.
+
 ## UDF direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scanudf()` returned immediately from the anchor-based path and the

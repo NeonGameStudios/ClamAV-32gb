@@ -1,5 +1,19 @@
 # Wishlist
 
+## HFS+ direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scanhfsplus()` fail-visible for direct callers when a valid clean
+  volume completes with a pre-existing sticky incomplete state. Clean/direct
+  results now return `CL_EPARSE`, while detections and stronger parser errors
+  remain preserved.
+- Retain the valid empty-volume regression
+  `test_hfsplus_sticky_incomplete_result_is_fail_visible`, canonical/container
+  hash equality for the current `hfsplus.c` and `check_clamav.c`, and current
+  production-linked GCC results at `hfs_map` 21/21, `hfs_inline` 2/2, and
+  `hfs_fork` 1/1. Keep ExtentOverflow, complete HFS+ corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification open.
+
 ## UDF direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep both UDF parser paths fail-visible for direct callers when the context

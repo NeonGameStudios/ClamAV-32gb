@@ -2282,6 +2282,9 @@ cli_dbgmsg("sizeof(hfsNodeDescriptor) is %lu\n", sizeof(hfsNodeDescriptor));
     }
 
 done:
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        status = CL_EPARSE;
+
     if (status != CL_SUCCESS && status != CL_VIRUS && !ctx->scan_incomplete)
         cli_mark_scan_incomplete(ctx, "HFS+ inspection ended before completion");
 
