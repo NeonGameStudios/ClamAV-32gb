@@ -9841,6 +9841,18 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## TNEF current-source production-linked rerun — 2026-08-31
+
+- Retain canonical-source equality for `tnef.c`, `scanners.c`, and
+  `check_clamav.c`, and materialize `clam.tnef` through the repository CMake
+  XOR-fixture target.
+- Retain the refreshed production-linked GCC evidence: `tnef` passes 17/17,
+  `tnef_map` 2/2, and `tnef_debug` 2/2, including exact nested-child corpus
+  detection and the fail-visible boundary regressions.
+- Complete TNEF corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## TIFF full focused current-source rerun — 2026-08-31
 
 - Retain canonical-source equality for `tiff.c`, `scanners.c`, and

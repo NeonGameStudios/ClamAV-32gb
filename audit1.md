@@ -17334,6 +17334,21 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## TNEF current-source production-linked rerun — 2026-08-31
+
+The canonical `tnef.c`, `scanners.c`, and `check_clamav.c` sources were
+verified byte-identical to the copies used by the existing Docker GCC
+harness. After materializing the checked-in `clam.tnef` XOR fixture through
+the repository CMake target, the focused production-linked cases pass `tnef`
+17/17, `tnef_map` 2/2, and `tnef_debug` 2/2. The 17-test TCase includes the
+exact nested-child corpus detection and the checksum, callback-failure,
+negative-length, timeout, and admission regressions.
+
+This is refreshed TNEF evidence, not final release certification. Complete
+TNEF corpus breadth, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1 resource evidence, and the final
+requirement-by-requirement parser/release audit remain open.
+
 ## TIFF full focused current-source rerun — 2026-08-31
 
 The canonical `tiff.c`, `scanners.c`, and `check_clamav.c` sources were
