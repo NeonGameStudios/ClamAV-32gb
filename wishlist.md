@@ -168,10 +168,16 @@
   production-CVD/service, materialized-large-file, Sonic1, and final
   parser/release qualification open.
 
-## Current HWP3 production-linked rerun — 2026-08-31
+## Current HWP3 production-linked rerun — 2026-09-01
 
 - Retain canonical-source SHA-256 equality for `hwp.c`, `hwp.h`, `scanners.c`,
-  and `check_clamav.c`, plus current-source production-linked GCC HWP3 evidence:
+  and `check_clamav.c`; the current hashes are `hwp.c`
+  `e5e230a016cab34928e6e1d14b03c91a0fc30b8dfd2771a9127891ea15f5f7f1`,
+  `hwp.h` `7c6903cecbd4754b1065cd21159d603b8fed8b58b73c52272ea653a5028e80ad`,
+  `scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+  and `check_clamav.c`
+  `71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`.
+  Retain current-source production-linked GCC HWP3 evidence:
   `hwp3` passes 22/22 with 0 failures and 0 errors, while `hwp3_map`,
   `hwp3_api`, and `hwp3_corpus` pass 3/3, 1/1, and 1/1. Direct fixtures now
   provide the engine, scan options, and root recursion layer required by the

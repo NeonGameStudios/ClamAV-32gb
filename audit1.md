@@ -240,11 +240,16 @@ qualification. Full corpus, sanitizer, production-CVD/service,
 materialized-large-file, certified Linux x86-64, Sonic1, and release evidence
 remain open.
 
-## Current HWP3 production-linked rerun — 2026-08-31
+## Current HWP3 production-linked rerun — 2026-09-01
 
 The canonical HWP3 parser, header, scanner, and unit-test sources were
 transferred into the existing Docker production-linked GCC harness and their
-SHA-256 hashes matched exactly.
+SHA-256 hashes matched exactly: `hwp.c`
+`e5e230a016cab34928e6e1d14b03c91a0fc30b8dfd2771a9127891ea15f5f7f1`,
+`hwp.h` `7c6903cecbd4754b1065cd21159d603b8fed8b58b73c52272ea653a5028e80ad`,
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+and `check_clamav.c`
+`71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`.
 The current-source production-linked GCC harness passes the isolated `hwp3`
 TCase 22/22 with 0 failures and 0 errors, after direct fixtures were given a
 valid engine, scan-options object, and root recursion layer. The companion
