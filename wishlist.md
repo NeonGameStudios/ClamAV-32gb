@@ -1,5 +1,22 @@
 # Wishlist
 
+## ARJ direct header sticky completion — 2026-09-01
+
+- Keep `cli_unarj_header_check()` fail-visible for direct callers when a
+  confirmed valid ARJ header walk completes with a pre-existing sticky
+  incomplete state. The clean untainted result remains clean, while the
+  pre-tainted clean completion now returns `CL_EPARSE` and preserves the exact
+  prior reason plus fmap non-cacheability.
+- Retain the synthetic one-member regression and the current-source
+  production-linked GCC isolation oracle: current results are clean/`CL_EPARSE`
+  for untainted/sticky cases, while the exact pre-change object is
+  clean/clean. Keep lower-level member-loop helpers able to continue after
+  deferred per-member limits. The focused Check TCase could not be relinked
+  after the container overlay ran out of temporary space; complete ARJ/ARJ-SFX
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
+
 ## NSIS direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scannulsft()` fail-visible for direct callers when a complete

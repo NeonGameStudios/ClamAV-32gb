@@ -38330,6 +38330,58 @@ static void arj_test_build_sfx_prefix(uint8_t *data, size_t length)
     data[11] = 2;
 }
 
+START_TEST(test_arj_header_check_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[93] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t archive_size = 0;
+
+    data[0] = 0x60;
+    data[1] = 0xea;
+    arj_test_write_u16(data + 2, 34);
+    data[4] = 30;
+    data[34] = 'a';
+
+    data[43] = 0x60;
+    data[44] = 0xea;
+    arj_test_write_u16(data + 45, 35);
+    data[47] = 30;
+    arj_test_write_u32(data + 59, 1);
+    arj_test_write_u32(data + 63, 1);
+    data[77] = 'f';
+    data[86] = 'x';
+    data[89] = 0x60;
+    data[90] = 0xea;
+    arj_test_write_u16(data + 91, 0);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_unarj_header_check(&ctx, 0, &archive_size), CL_SUCCESS);
+    ck_assert_uint_eq(archive_size, sizeof(data));
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    cli_mark_scan_incomplete(&ctx, "pre-existing ARJ incomplete state");
+
+    ck_assert_int_eq(cli_unarj_header_check(&ctx, 0, &archive_size), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing ARJ incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static size_t arj_read_failure_offset = SIZE_MAX;
 
 static const void *arj_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
@@ -52575,6 +52627,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_arj_map, test_arj_main_header_strings_stay_within_declared_header);
     tcase_add_test(tc_arj_map, test_arj_empty_comment_diagnostic_is_null_safe);
     tcase_add_test(tc_arj_map, test_arj_direct_entries_reject_missing_map);
+    tcase_add_test(tc_arj_map, test_arj_header_check_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_binhex_map);
     tcase_add_checked_fixture(tc_binhex_map, cl_setup, cl_teardown);
     tcase_add_test(tc_binhex_map, test_binhex_missing_map_is_fail_visible);

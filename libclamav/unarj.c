@@ -177,6 +177,18 @@ static cl_error_t arj_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+/* A confirmed ARJ header walk must not turn an already incomplete scan into
+ * a clean direct-entry result.  Keep this reconciliation at the confirmation
+ * boundary; member-loop helpers intentionally use sticky state to continue
+ * after deferred per-member limits. */
+static cl_error_t arj_reconcile_header_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && status == CL_SUCCESS && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 #ifndef HAVE_ATTRIB_PACKED
 #define __attribute__(x)
 #endif
@@ -1573,7 +1585,7 @@ cl_error_t cli_unarj_header_check(
 done:
     CLI_FREE_AND_SET_NULL(metadata.filename);
 
-    return status;
+    return arj_reconcile_header_status(ctx, status);
 }
 
 cl_error_t cli_unarj_prepare_file(arj_metadata_t *metadata)

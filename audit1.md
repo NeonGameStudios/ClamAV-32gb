@@ -18693,3 +18693,25 @@ This removes a test-admission blocker, not a final release gate. Complete
 TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
+## ARJ direct header completion — 2026-09-01
+
+`cli_unarj_header_check()` is a confirmed ARJ admission walk and must not
+return a clean result after an earlier required scan step has marked the
+context incomplete. A complete synthetic one-member ARJ archive previously
+returned `CL_SUCCESS` in both the untainted and pre-tainted cases; the current
+source now preserves the untainted clean result and converts only the
+pre-tainted clean completion to `CL_EPARSE`, retaining the exact prior reason
+and fmap non-cacheability. Lower-level ARJ member-loop helpers intentionally
+remain unchanged because `cli_scanarj()` uses them to continue after deferred
+per-member limits.
+
+The current-source `unarj.c` and `check_clamav.c` translation unit compile with
+the established warning-enabled production GCC flags. A production-linked
+GCC isolation oracle over the valid archive reports current results
+`sticky=0 ret=0` and `sticky=1 ret=27`, while the exact pre-change ARJ object
+reports `sticky=0 ret=0` and `sticky=1 ret=0`. The focused Check TCase was not
+relinked because the existing container overlay exhausted its temporary
+space; the standalone current-source oracle is the executed regression
+evidence. Complete ARJ/ARJ-SFX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
