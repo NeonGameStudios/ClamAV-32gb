@@ -225,7 +225,7 @@ cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset)
         return CL_EREAD;
     }
 
-    return CL_SUCCESS;
+    return ishield_reconcile_status(ctx, CL_SUCCESS);
 }
 
 /* Extracts the content of MSI based IS */

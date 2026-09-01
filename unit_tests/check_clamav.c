@@ -26454,6 +26454,7 @@ END_TEST
 
 START_TEST(test_ishield_sticky_incomplete_result_is_fail_visible)
 {
+    uint8_t header_data[14 + 0x20] = {0};
     uint8_t msi_data[0x20] = {0};
     uint8_t legacy_data[1] = {0};
     struct cl_engine engine;
@@ -26475,6 +26476,22 @@ START_TEST(test_ishield_sticky_incomplete_result_is_fail_visible)
     ctx.scan_incomplete        = true;
     ctx.scan_incomplete_reason = "pre-existing InstallShield incomplete state";
 
+    memcpy(header_data, "InstallShield\0", 14);
+    map = cl_fmap_open_memory(header_data, sizeof(header_data));
+    ck_assert_ptr_nonnull(map);
+    layers[0].fmap = map;
+    layers[0].type = CL_TYPE_ISHIELD_MSI;
+    layers[0].size = map->len;
+    ctx.fmap       = map;
+    map->dont_cache_flag = true;
+    ck_assert_int_eq(cli_ishield_msi_header_check(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing InstallShield incomplete state");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(layers, 0, sizeof(layers));
+    ctx.fmap = NULL;
     map = cl_fmap_open_memory(msi_data, sizeof(msi_data));
     ck_assert_ptr_nonnull(map);
     layers[0].fmap = map;

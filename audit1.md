@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## InstallShield MSI header sticky completion — 2026-09-01
+
+`cli_ishield_msi_header_check()` validated a confirmed InstallShield MSI SFX
+fixed/control header but returned `CL_SUCCESS` even when the owning context
+already carried sticky incomplete state. The full MSI scanner reconciled only
+at its own completion boundary, so SFX admission could proceed from a
+non-complete context. The confirmed header success now passes through the
+existing InstallShield reconciliation helper, converting only clean
+completion to `CL_EPARSE` while preserving stronger statuses. The existing
+`test_ishield_sticky_incomplete_result_is_fail_visible` regression now probes
+the valid header directly before the full scanner and preserves the exact
+prior diagnostic and fmap non-cacheability. Current-source production-GCC
+compilation, production-linked execution, sanitizer, complete
+InstallShield/CAB corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## AutoIt SFX header sticky completion — 2026-09-01
 
 `cli_autoit_header_check()` validated a confirmed AutoIt SFX header but
