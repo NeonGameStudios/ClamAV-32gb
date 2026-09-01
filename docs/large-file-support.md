@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Exported child-ingress recursion-state admission — 2026-09-01
+
+Descriptor, file, directory, nested-map, and buffer scan entrypoints now share a
+recursion-state check before empty inputs can complete without a usable scan
+layer. The helper preserves the sticky incomplete reason and cache taint, and
+the focused regression covers the descriptor, file, directory, nested-map,
+and buffer empty-ingress paths. Source guards
+cover the helper and call sites; current-source production-linked execution,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final release qualification
+remain required.
+
 ## Public memory-fmap backing admission — 2026-09-01
 
 The public memory-backed fmap constructor now rejects a null backing pointer

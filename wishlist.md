@@ -1,5 +1,16 @@
 # Wishlist
 
+## Exported child-ingress recursion-state admission — 2026-09-01
+
+- Keep descriptor, file, directory, nested-map, and buffer scan entrypoints behind
+  shared recursion-state admission, including empty inputs that otherwise
+  bypass `cli_recursion_stack_push()`.
+- Retain `test_cli_magic_scan_ingress_rejects_missing_recursion_state` and
+  source guards for all exported child-ingress call sites.
+- Complete production-linked execution, sanitizer, certified Linux x86-64,
+  service/CVD, materialized-large-file, Sonic1, resource, and final release
+  qualification.
+
 ## Public memory-fmap backing admission — 2026-09-01
 
 - Keep `cl_fmap_open_memory()` fail-visible for a null backing pointer with a

@@ -148,6 +148,21 @@ static cl_error_t cli_write_temp_output(cli_ctx *ctx, int fd, const void *data, 
 static cl_error_t cli_magic_scan_dir_internal(const char *dir, cli_ctx *ctx, uint32_t attributes,
                                               bool temporary_already_reserved);
 
+static cl_error_t cli_magic_scan_validate_recursion_state(cli_ctx *ctx, const char *who)
+{
+    if (ctx == NULL)
+        return CL_ENULLARG;
+
+    if (ctx->recursion_stack == NULL || ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        cli_mark_scan_incomplete(ctx, "scan recursion state is unavailable");
+        cli_dbgmsg("%s: scan recursion state is unavailable\n", who);
+        return CL_ENULLARG;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t cli_magic_scan_file_reserved(const char *filename, cli_ctx *ctx,
                                                 const char *original_name, uint32_t attributes)
 {
@@ -189,6 +204,10 @@ static cl_error_t cli_magic_scan_dir_internal(const char *dir, cli_ctx *ctx, uin
 
     if (dir == NULL || ctx == NULL || ctx->engine == NULL)
         return CL_ENULLARG;
+
+    status = cli_magic_scan_validate_recursion_state(ctx, "cli_magic_scan_dir");
+    if (status != CL_SUCCESS)
+        goto done;
 
     if ((dd = opendir(dir)) != NULL) {
         while (1) {
@@ -7209,10 +7228,8 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
      * dispatch reads the current layer before any parser-specific admission.
      * Do not let a caller with a valid engine/map but no usable recursion
      * state turn malformed scan state into an out-of-bounds dereference. */
-    if (ctx->recursion_stack == NULL || ctx->recursion_stack_size == 0 ||
-        ctx->recursion_level >= ctx->recursion_stack_size) {
-        cli_mark_scan_incomplete(ctx, "scan recursion state is unavailable");
-        status = CL_ENULLARG;
+    status = cli_magic_scan_validate_recursion_state(ctx, "cli_magic_scan");
+    if (status != CL_SUCCESS) {
         goto early_ret;
     }
 
@@ -8263,6 +8280,10 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
         return CL_ENULLARG;
     }
 
+    status = cli_magic_scan_validate_recursion_state(ctx, "cli_magic_scan_desc_type");
+    if (status != CL_SUCCESS)
+        goto done;
+
     cli_dbgmsg("in cli_magic_scan_desc_type (recursion_level: %u/%u)\n", ctx->recursion_level, ctx->engine->max_recursion_level);
 
     if (FSTAT(desc, &sb) == -1) {
@@ -8429,6 +8450,10 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
     if (NULL == map || NULL == ctx || NULL == ctx->engine) {
         return CL_ENULLARG;
     }
+
+    ret = cli_magic_scan_validate_recursion_state(ctx, "cli_magic_scan_nested_fmap_type");
+    if (ret != CL_SUCCESS)
+        return ret;
 
     cli_dbgmsg("cli_magic_scan_nested_fmap_type: [%zu, +%zu)\n", offset, length);
 

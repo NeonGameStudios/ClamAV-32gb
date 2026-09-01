@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Exported child-ingress recursion-state admission — 2026-09-01
+
+The descriptor, file, directory, and nested-map scan entrypoints could bypass
+`cli_recursion_stack_push()` for empty inputs. With an engine but no usable
+recursion stack, those paths could therefore return `CL_SUCCESS` without a
+valid scan layer. A shared recursion-state admission helper now runs before
+descriptor inspection, file opening, directory walking, nested-map range
+handling, and the main magic-scan dispatch. The regression
+`test_cli_magic_scan_ingress_rejects_missing_recursion_state` covers empty
+descriptor, file, directory, buffer, and nested-map paths, including the
+sticky reason and cache taint; source guards pin all call sites.
+Production-linked execution, sanitizer, certified Linux x86-64, service/CVD,
+materialized-large-file, Sonic1, resource, and final release qualification
+remain open.
+
 ## Public memory-fmap backing admission — 2026-09-01
 
 `cl_fmap_open_memory()` previously accepted a null backing pointer with a
