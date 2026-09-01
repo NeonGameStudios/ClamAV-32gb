@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## XDP direct sticky-incomplete reconciliation — 2026-09-01
+
+The confirmed XDP parser returned the streaming MSXML status directly, so a
+clean parser completion could hide sticky incomplete state already recorded on
+the owning layer. `cli_scanxdp()` now reconciles only `CL_SUCCESS`/`CL_CLEAN`
+to `CL_EPARSE` in that case, preserving stronger XML, read, timeout, resource,
+detection, and temporary-output statuses. The regression
+`test_xdp_sticky_incomplete_result_is_fail_visible` checks a valid
+`<xdp><chunk>QUJD</chunk></xdp>` baseline and a pre-tainted scan with the exact
+prior reason and fmap non-cacheability. Current XDP source and Check
+translation-unit compilation, production-linked execution, sanitizer,
+complete XDP corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## PE icon direct sticky-incomplete reconciliation — 2026-09-01
 
 The confirmed PE icon parser could return `CL_CLEAN` after a successful

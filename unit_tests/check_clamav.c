@@ -25881,6 +25881,51 @@ START_TEST(test_xdp_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_xdp_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t data[] = "<xdp><chunk>QUJD</chunk></xdp>";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine                 = engine;
+    ctx.options                = &options;
+    ctx.fmap                   = map;
+    ctx.this_layer_tmpdir      = tmpdir;
+    ctx.recursion_stack        = layers;
+    ctx.recursion_stack_size   = 2;
+    layers[0].type             = CL_TYPE_XDP;
+    layers[0].size             = sizeof(data) - 1U;
+    layers[0].fmap             = map;
+
+    ck_assert_int_eq(cli_scanxdp(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing XDP incomplete state";
+    map->dont_cache_flag       = true;
+    ck_assert_int_eq(cli_scanxdp(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing XDP incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_autoit_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -52476,6 +52521,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xdp_map, test_xdp_null_context_is_fail_visible);
     tcase_add_test(tc_xdp_map, test_xdp_missing_map_is_fail_visible);
     tcase_add_test(tc_xdp_map, test_xdp_missing_engine_is_fail_visible);
+    tcase_add_test(tc_xdp_map, test_xdp_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_xdp_corpus);
     tcase_add_checked_fixture(tc_xdp_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_xdp_corpus, test_xdp_corpus_detects_embedded_marker);

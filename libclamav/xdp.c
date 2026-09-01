@@ -64,6 +64,14 @@ static cl_error_t dump_xdp(cli_ctx *ctx, fmap_t *map, char **filename,
 static const struct key_entry xdp_keys[] = {
     {"chunk", "XDPChunk", MSXML_SCAN_B64}};
 
+static cl_error_t xdp_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 static cl_error_t dump_xdp(cli_ctx *ctx, fmap_t *map, char **filename,
                            uint64_t *temporary_reserved)
 {
@@ -151,7 +159,7 @@ fail:
         cli_scan_release_temporary(ctx, *temporary_reserved);
         *temporary_reserved = 0;
     }
-    return ret;
+    return xdp_reconcile_status(ctx, ret);
 }
 
 cl_error_t cli_scanxdp(cli_ctx *ctx)

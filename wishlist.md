@@ -1,5 +1,19 @@
 # Wishlist
 
+## XDP direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scanxdp()` fail-visible when the bounded XML/base64 parser returns
+  clean after a required operation has already marked the owning layer
+  incomplete. Clean completion must return `CL_EPARSE` and preserve the prior
+  reason and fmap non-cacheability; stronger XML, read, timeout, resource,
+  detection, and temporary-output statuses remain unchanged.
+- Retain `test_xdp_sticky_incomplete_result_is_fail_visible` over the valid
+  `<xdp><chunk>QUJD</chunk></xdp>` document. Current XDP source and Check
+  translation-unit compilation, production-linked execution, sanitizer,
+  complete XDP corpus, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification
+  remain required.
+
 ## PE icon direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scanicon()` fail-visible when a confirmed PE icon-resource walk
