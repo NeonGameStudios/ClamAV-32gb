@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## PE icon direct sticky-incomplete reconciliation — 2026-09-01
+
+The confirmed PE icon parser could return `CL_CLEAN` after a successful
+resource walk even when the owning scan context already carried sticky
+incomplete state. Its final clean completion now reconciles that state to
+`CL_EPARSE`, preserving stronger icon parser, read, limit, detection, and
+cleanup results. `test_pe_icon_sticky_incomplete_result_is_fail_visible`
+asserts the untainted empty-resource baseline and the pre-tainted exact reason
+plus fmap non-cacheability; the existing invalid-context recovery test now
+clears the intentionally injected failure state before expecting clean.
+Current PE-icon source and Check translation-unit compilation pass with
+production GCC flags. Full current-object production-linked execution,
+sanitizer, complete PE/icon corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## DMG direct sticky-incomplete reconciliation — 2026-09-01
 
 The confirmed DMG parser could reach its shared temporary-directory cleanup

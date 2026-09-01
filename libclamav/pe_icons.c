@@ -63,6 +63,14 @@ struct ICON_ENV {
 
 int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva);
 
+static int pe_icon_reconcile_status(cli_ctx *ctx, int status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 static int icon_parse_error(struct ICON_ENV *icon_env, uint32_t *counter, const char *reason)
 {
     if (counter != NULL)
@@ -215,7 +223,7 @@ int cli_scanicon(icon_groupset *set, cli_ctx *ctx, struct cli_exe_info *peinfo)
     if (icon_env.result != CL_CLEAN)
         return icon_env.result;
 
-    return CL_CLEAN;
+    return pe_icon_reconcile_status(ctx, CL_CLEAN);
 }
 
 int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)

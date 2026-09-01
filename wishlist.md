@@ -1,5 +1,20 @@
 # Wishlist
 
+## PE icon direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scanicon()` fail-visible when a confirmed PE icon-resource walk
+  reaches a clean completion after an earlier required operation has already
+  marked the owning layer incomplete. Clean completion must return `CL_EPARSE`
+  and preserve the prior reason and fmap non-cacheability; stronger icon
+  parser, read, limit, detection, and cleanup statuses remain unchanged.
+- Retain `test_pe_icon_sticky_incomplete_result_is_fail_visible` and reset the
+  existing invalid-context test before its intentional recovery call. Current
+  PE-icon source and Check translation-unit compilation pass with production
+  GCC flags; full current-object production-linked execution, sanitizer,
+  complete PE/icon corpus, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification
+  remain required.
+
 ## DMG direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep the confirmed DMG parser fail-visible when a required operation has

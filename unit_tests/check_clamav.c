@@ -50623,7 +50623,52 @@ START_TEST(test_pe_icon_entry_rejects_invalid_contexts)
     ctx.fmap = &map;
     ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_ENULLARG);
     ctx.engine = &engine;
+    ctx.scan_incomplete = false;
+    ctx.scan_incomplete_reason = NULL;
     ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_CLEAN);
+}
+END_TEST
+
+START_TEST(test_pe_icon_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[256] = {0};
+    struct cl_engine engine;
+    struct cli_exe_section section;
+    struct cli_exe_info peinfo;
+    icon_groupset iconset;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&section, 0, sizeof(section));
+    memset(&peinfo, 0, sizeof(peinfo));
+    memset(&ctx, 0, sizeof(ctx));
+    section.rsz                   = sizeof(data);
+    peinfo.sections               = &section;
+    peinfo.nsections              = 1;
+    peinfo.ndatadirs              = 3;
+    peinfo.dirs[2].VirtualAddress = 0;
+    peinfo.hdr_size               = 0;
+    engine.maxiconspe             = 100;
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    cli_icongroupset_init(&iconset);
+
+    ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_CLEAN);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing PE icon incomplete state";
+    map->dont_cache_flag       = true;
+    ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing PE icon incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -53315,6 +53360,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_petite_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_group_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_entry_rejects_invalid_contexts);
+    tcase_add_test(tc_cl, test_pe_icon_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_bitmap_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_bitmap_header_range_is_fail_visible);
