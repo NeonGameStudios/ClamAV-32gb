@@ -81,6 +81,13 @@ static cl_error_t mspack_decoder_failure(const struct mspack_system_ex *system_e
     return fallback;
 }
 
+static cl_error_t mspack_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+    return status;
+}
+
 static int mspack_fmap_length(const fmap_t *map, off_t *length)
 {
     off_t map_length;
@@ -840,7 +847,7 @@ done:
         mspack_destroy_cab_decompressor(cab_d);
     }
 
-    return ret;
+    return mspack_reconcile_status(ctx, ret);
 }
 
 cl_error_t cli_scanmschm(cli_ctx *ctx)
@@ -1038,5 +1045,5 @@ done:
         mspack_destroy_chm_decompressor(mschm_d);
     }
 
-    return ret;
+    return mspack_reconcile_status(ctx, ret);
 }

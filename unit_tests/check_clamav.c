@@ -42597,6 +42597,88 @@ START_TEST(test_mspack_output_size_mismatch_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mspack_sticky_incomplete_result_is_fail_visible)
+{
+    static const char *const corpus[] = {"clam.cab", "clam.chm"};
+    static const enum cli_file types[] = {CL_TYPE_MSCAB, CL_TYPE_MSCHM};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    unsigned int i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(corpus) / sizeof(corpus[0]); i++) {
+        char file_path[PATH_MAX];
+        struct stat st;
+        uint8_t *data;
+        size_t data_size;
+        size_t offset = 0;
+        fmap_t *map;
+        int fd;
+        cl_error_t ret;
+
+        snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/%s", OBJDIR, corpus[i]);
+        fd = open(file_path, O_RDONLY | O_BINARY);
+        ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+        ck_assert_int_eq(FSTAT(fd, &st), 0);
+        ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                      "invalid MSPack corpus size");
+        data_size = (size_t)st.st_size;
+        data      = malloc(data_size);
+        ck_assert_ptr_nonnull(data);
+        while (offset < data_size) {
+            ssize_t nread = read(fd, data + offset, data_size - offset);
+            ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+            offset += (size_t)nread;
+        }
+        ck_assert_int_eq(close(fd), 0);
+
+        map = fmap_open_memory(data, data_size, file_path);
+        ck_assert_ptr_nonnull(map);
+        memset(&layers, 0, sizeof(layers));
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine                 = scan_engine;
+        ctx.dconf                  = scan_engine->dconf;
+        ctx.options                = &options;
+        ctx.fmap                   = map;
+        ctx.this_layer_tmpdir      = tmpdir;
+        ctx.recursion_stack        = layers;
+        ctx.recursion_stack_size   = sizeof(layers) / sizeof(layers[0]);
+        ctx.scan_incomplete        = true;
+        ctx.scan_incomplete_reason = "pre-existing MSPack incomplete state";
+        layers[0].fmap             = map;
+        layers[0].type             = types[i];
+        layers[0].size             = data_size;
+        layers[0].tmpdir           = tmpdir;
+        map->dont_cache_flag       = true;
+
+        if (types[i] == CL_TYPE_MSCAB)
+            ret = cli_scanmscab(&ctx, 0);
+        else
+            ret = cli_scanmschm(&ctx);
+
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing MSPack incomplete state");
+        ck_assert(map->dont_cache_flag);
+
+        fmap_free(map);
+        free(data);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_mspack_time_limit_is_fail_visible)
 {
     uint8_t data[36] = {0};
@@ -52260,6 +52342,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_mspack, test_mspack_scan_limit_is_fail_visible);
     tcase_add_test(tc_mspack, test_mspack_output_size_mismatch_is_fail_visible);
+    tcase_add_test(tc_mspack, test_mspack_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_mspack, test_mspack_time_limit_is_fail_visible);
     tcase_add_test(tc_mspack, test_mscab_truncated_fixed_header_is_fail_visible);
     tcase_add_test(tc_mspack, test_mschm_corpus_detects_embedded_mz);

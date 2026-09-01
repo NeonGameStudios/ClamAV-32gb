@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## MSPack direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scanmscab()` and `cli_scanmschm()` could return clean after valid CAB or
+CHM member walks when the recognized layer already carried sticky incomplete
+state. Their final returns now reconcile clean completion to `CL_EPARSE`,
+preserving detections and stronger decoder, I/O, timeout, limit, and cleanup
+results. The regression `test_mspack_sticky_incomplete_result_is_fail_visible`
+uses the materialized `clam.cab` and `clam.chm` fixtures with an initialized
+production engine, and asserts the exact prior diagnostic plus
+non-cacheability for both direct entries. The current-source production-linked
+GCC isolation runner passes clean untainted baselines and `CL_EPARSE` for both
+sticky cases, while the exact pre-change objects return clean for both.
+Current MSPack source and unit translation unit compile with production GCC
+flags; full current MSPack TCase relink/execution, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
+final parser/release qualification remain open.
+
 ## Mach-O universal-binary sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scanmacho_unibin()` could return the last child’s clean result after a
