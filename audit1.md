@@ -19547,3 +19547,21 @@ boundary. Current-source production-linked execution, sanitizer, complete
 HTML corpus, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+
+## OLE2 VBA metadata completion — 2026-09-01
+
+Both OLE2 VBA project paths previously discarded failures while reporting the
+required `HasMacros` flag and `MacroLanguages: VBA` value. The modern
+directory path and legacy path now share one helper that checks each JSON
+operation, marks the confirmed layer incomplete, and preserves critical
+`CL_EMEM` status for the caller.
+
+`test_ole2_vba_metadata_record_failure_is_fail_visible` uses the materialized
+`clam.ole.doc` CMake test fixture, confirms the baseline does not fail with
+`CL_EMEM`, then injects the `MacroLanguages` allocation failure and requires
+`CL_EMEM`, cleared public outputs, and a non-cacheable fmap. Source guards and
+the capability manifest record the boundary. Current-source production-linked
+execution, complete OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.

@@ -11557,3 +11557,15 @@ final parser/release qualification remain open.
   corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification remain open.
+
+
+## OLE2 VBA metadata completion — 2026-09-01
+
+- Keep `HasMacros` and `MacroLanguages: VBA` report failures fail-visible
+  in both modern and legacy OLE2 VBA paths; mark the confirmed layer
+  incomplete and preserve critical `CL_EMEM` status.
+- Retain `test_ole2_vba_metadata_record_failure_is_fail_visible` and its
+  source guards. Current-source production-linked execution, complete
+  OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.

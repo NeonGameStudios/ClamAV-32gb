@@ -2787,6 +2787,33 @@ static void cli_ole2_note_vba_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
     *status = cli_merge_cleanup_status(*status, cleanup_status);
 }
 
+static cl_error_t cli_ole2_record_vba_metadata(cli_ctx *ctx)
+{
+    cl_error_t status;
+    json_object *macro_languages;
+
+    if (!SCAN_COLLECT_METADATA || ctx->this_layer_metadata_json == NULL)
+        return CL_SUCCESS;
+
+    status = cli_jsonbool(ctx->this_layer_metadata_json, "HasMacros", 1);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "OLE2 VBA macro metadata could not be recorded");
+        return status;
+    }
+
+    macro_languages = cli_jsonarray(ctx->this_layer_metadata_json, "MacroLanguages");
+    if (macro_languages == NULL) {
+        cli_mark_scan_incomplete(ctx, "OLE2 VBA language metadata could not be allocated");
+        return CL_EMEM;
+    }
+
+    status = cli_jsonstr(macro_languages, NULL, "VBA");
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, "OLE2 VBA language metadata could not be recorded");
+
+    return status;
+}
+
 /**
  * Scan an OLE directory for a VBA project.
  * Contrary to cli_ole2_tempdir_scan_vba, this function uses the dir file to locate VBA modules.
@@ -2860,13 +2887,9 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
             candidate_succeeded = true;
 
             if (*has_macros && SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {
-                cli_jsonbool(ctx->this_layer_metadata_json, "HasMacros", 1);
-                json_object *macro_languages = cli_jsonarray(ctx->this_layer_metadata_json, "MacroLanguages");
-                if (macro_languages) {
-                    cli_jsonstr(macro_languages, NULL, "VBA");
-                } else {
-                    cli_dbgmsg("[cli_ole2_tempdir_scan_vba_new] Failed to add \"VBA\" entry to MacroLanguages JSON array\n");
-                }
+                ret = cli_ole2_record_vba_metadata(ctx);
+                if (ret != CL_SUCCESS)
+                    goto done;
             }
 
             if (SCAN_HEURISTIC_MACROS && *has_macros) {
@@ -3393,15 +3416,7 @@ done:
         status = deferred_failure;
 
     if (*has_macros) {
-        if (SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {
-            cli_jsonbool(ctx->this_layer_metadata_json, "HasMacros", 1);
-            json_object *macro_languages = cli_jsonarray(ctx->this_layer_metadata_json, "MacroLanguages");
-            if (macro_languages) {
-                cli_jsonstr(macro_languages, NULL, "VBA");
-            } else {
-                cli_dbgmsg("cli_ole2_tempdir_scan_vba: Failed to add \"VBA\" entry to MacroLanguages JSON array\n");
-            }
-        }
+        status = cli_merge_scan_status(status, cli_ole2_record_vba_metadata(ctx));
 
         if (SCAN_HEURISTIC_MACROS) {
             ret = cli_append_potentially_unwanted(ctx, "Heuristics.OLE2.ContainsMacros.VBA");

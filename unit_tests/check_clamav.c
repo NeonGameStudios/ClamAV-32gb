@@ -290,6 +290,7 @@ static int hwp3_test_fail_print_name;
 static int hwp5_test_fail_raw_version;
 static int ole2_test_fail_streams;
 static int ole2_test_fail_custom_properties;
+static int ole2_test_fail_vba_metadata;
 static int ooxml_test_fail_file_count;
 static int msxml_test_fail_count;
 static int msxml_test_fail_attribute;
@@ -308,6 +309,8 @@ json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
     if (hwp3_test_fail_font_counts && key && strcmp(key, "FontCounts") == 0)
         return NULL;
     if (ole2_test_fail_streams && key && strcmp(key, "Streams") == 0)
+        return NULL;
+    if (ole2_test_fail_vba_metadata && key && strcmp(key, "MacroLanguages") == 0)
         return NULL;
     if (pe_test_fail_import_table && key && strcmp(key, "ImportTable") == 0)
         return NULL;
@@ -37161,6 +37164,75 @@ START_TEST(test_ole2_custom_property_metadata_record_failure_is_fail_visible)
     ck_assert_int_eq(unlink(file_path), 0);
 }
 END_TEST
+
+START_TEST(test_ole2_vba_metadata_record_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct stat sb;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/clam.ole.doc", OBJDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sb), 0);
+    ck_assert_msg(sb.st_size > 0 && (uintmax_t)sb.st_size <= SIZE_MAX,
+                  "invalid OLE2 VBA fixture: %s", file_path);
+    data_size = (size_t)sb.st_size;
+    data      = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_int_eq(read(fd, data, data_size), (ssize_t)data_size);
+    ck_assert_int_eq(close(fd), 0);
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    options.parse   = CL_SCAN_PARSE_OLE2;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_MSOLE2", NULL);
+    ck_assert_msg(ret != CL_EMEM, "baseline OLE2 VBA scan failed with CL_EMEM");
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    ole2_test_fail_vba_metadata = 1;
+    verdict                     = CL_VERDICT_STRONG_INDICATOR;
+    last_alert                  = "stale";
+    scanned                     = UINT64_MAX;
+    ret                         = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                                                 scan_engine, &options, NULL, NULL, NULL, NULL,
+                                                 "CL_TYPE_MSOLE2", NULL);
+    ole2_test_fail_vba_metadata = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+    cl_engine_free(scan_engine);
+}
+END_TEST
 #endif
 
 START_TEST(test_ole2_xlm_biff_read_failure_is_fail_visible)
@@ -54771,6 +54843,7 @@ static Suite *test_cl_suite(void)
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_ole2, test_ole2_stream_metadata_allocation_failure_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_custom_property_metadata_record_failure_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_vba_metadata_record_failure_is_fail_visible);
 #endif
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_ole2, test_ole2_output_write_failure_is_fail_visible);
