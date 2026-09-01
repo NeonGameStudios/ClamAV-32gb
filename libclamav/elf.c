@@ -1055,6 +1055,9 @@ cl_error_t cli_scanelf(cli_ctx *ctx)
         return ret;
     }
 
+    if (ctx->scan_incomplete)
+        return CL_EPARSE;
+
     return CL_CLEAN;
 }
 

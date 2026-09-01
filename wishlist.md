@@ -1,5 +1,21 @@
 # Wishlist
 
+## Native executable direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep the ELF and thin Mach-O direct scanners fail-visible when valid
+  structural inspection completes with a pre-existing sticky incomplete
+  state. Clean/direct results now return `CL_EPARSE`, while detections and
+  stronger parser errors remain preserved.
+- Retain the valid ELF and Mach-O pre-taint regressions
+  `test_elf_sticky_incomplete_result_is_fail_visible` and
+  `test_macho_sticky_incomplete_result_is_fail_visible`, canonical/container
+  hash equality for the touched parser and unit sources, and current
+  production-linked GCC results at `elf_map` 15/15, `elf_corpus` 1/1,
+  `macho` 12/12, and `macho_corpus` 2/2. Keep complete executable corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification open.
+
 ## GPT direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scangpt()` fail-visible for direct callers when a valid

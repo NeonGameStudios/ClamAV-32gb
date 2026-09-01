@@ -823,6 +823,9 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
         free(sections64);
     }
 
+    if (!get_fileinfo && ctx->scan_incomplete)
+        return CL_EPARSE;
+
     return CL_SUCCESS;
 }
 

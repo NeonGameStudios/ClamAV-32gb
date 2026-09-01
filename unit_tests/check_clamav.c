@@ -42040,6 +42040,49 @@ START_TEST(test_elf_corpus_detects_embedded_mz)
 }
 END_TEST
 
+START_TEST(test_elf_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[sizeof(struct elf_file_hdr64)] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    data[0] = 0x7f;
+    data[1] = 'E';
+    data[2] = 'L';
+    data[3] = 'F';
+    data[4] = 2; /* ELFCLASS64. */
+    data[5] = 1; /* ELFDATA2LSB. */
+    data[6] = 1;
+    zip_stream_write_u16(data + 16, 1); /* ET_REL. */
+    zip_stream_write_u16(data + 18, 62); /* EM_X86_64. */
+    zip_stream_write_u32(data + 20, 1);
+    zip_stream_write_u16(data + 52, sizeof(struct elf_file_hdr64));
+    zip_stream_write_u16(data + 54, sizeof(struct elf_program_hdr64));
+    zip_stream_write_u16(data + 58, sizeof(struct elf_section_hdr64));
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine                 = &engine;
+    ctx.options                = &options;
+    ctx.fmap                   = map;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing ELF incomplete state";
+    map->dont_cache_flag       = true;
+
+    ck_assert_int_eq(cli_scanelf(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing ELF incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_elf_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -42886,6 +42929,45 @@ START_TEST(test_macho_truncated_header_is_fail_visible)
     ret = cli_scanmacho(&ctx, NULL);
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_macho_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[28 + 56] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    /* A complete 32-bit Mach-O header with one empty LC_SEGMENT command. */
+    data[0] = 0xce;
+    data[1] = 0xfa;
+    data[2] = 0xed;
+    data[3] = 0xfe;
+    cli_writeint32(data + 4, 7U); /* CPU_TYPE_I386. */
+    cli_writeint32(data + 12, 1U); /* MH_OBJECT. */
+    cli_writeint32(data + 16, 1U);
+    cli_writeint32(data + 20, 56U);
+    cli_writeint32(data + 28, 1U); /* LC_SEGMENT. */
+    cli_writeint32(data + 32, 56U);
+    memcpy(data + 36, "__TEXT", 6);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine                 = &engine;
+    ctx.fmap                   = map;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing Mach-O incomplete state";
+    map->dont_cache_flag       = true;
+
+    ck_assert_int_eq(cli_scanmacho(&ctx, NULL), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing Mach-O incomplete state");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -50548,6 +50630,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_elf_corpus);
     tcase_add_checked_fixture(tc_elf_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_corpus, test_elf_corpus_detects_embedded_mz);
+    tcase_add_test(tc_elf_map, test_elf_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_elf);
     tcase_add_checked_fixture(tc_elf, cl_setup, cl_teardown);
     tcase_add_test(tc_elf, test_elf_time_limit_is_fail_visible);
@@ -51048,6 +51131,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_macho_unsupported, test_macho_unibin_empty_architecture_table_is_fail_visible);
     suite_add_tcase(s, tc_macho);
     tcase_add_test(tc_macho, test_macho_truncated_header_is_fail_visible);
+    tcase_add_test(tc_macho, test_macho_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_macho, test_macho_time_limit_is_fail_visible);
     tcase_add_test(tc_macho, test_macho_unibin_time_limit_is_fail_visible);
     tcase_add_test(tc_macho, test_macho_metadata_read_failure_is_fail_visible);

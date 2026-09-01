@@ -1,5 +1,27 @@
 # Independent read-only audit of audit.md
 
+## Native executable direct sticky-incomplete reconciliation — 2026-09-01
+
+The ELF and thin Mach-O direct scanners could return their clean sentinel after
+valid structural inspection even when the recognized layer was already
+sticky-incomplete. Their final clean paths now convert that state to
+`CL_EPARSE`, preserving detections and stronger parser errors. The valid
+pre-tainted regressions `test_elf_sticky_incomplete_result_is_fail_visible`
+and `test_macho_sticky_incomplete_result_is_fail_visible` assert direct
+`CL_EPARSE`, preservation of the exact prior diagnostics, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `elf.c`
+(`e12c08e955d4129cb4a531152140adc3510c80081ddbd6c8ccac93f5f0eb7f54`),
+`macho.c`
+(`8da493a600dfbc33bc7b86ab83303486b602ad875e9ce43ca934c4f111dda4fd`), and
+`check_clamav.c`
+(`86d779c233905f18424f39192331f0769d502427b84eaabd8879a48b4bce8469`). The
+current-source production-linked GCC harness passes `elf_map` 15/15,
+`elf_corpus` 1/1, `macho` 12/12, and `macho_corpus` 2/2. This closes direct
+clean-result reconciliation only; complete executable corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain open.
+
 ## GPT direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scangpt()` could return `CL_SUCCESS` to a direct parser caller after a
