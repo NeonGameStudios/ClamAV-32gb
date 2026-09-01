@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## PDF exported metadata write visibility — 2026-09-01
+
+The confirmed PDF parser's final `pdf_export_json()` path discarded required
+JSON string, integer, boolean, and truncated-object record failures and had no
+status channel back to `cli_pdf()`. A report allocation or record failure
+could therefore leave a metadata-requested PDF layer clean and cacheable.
+The export path now records every attempted write, marks the layer incomplete,
+and returns the failure through `cli_merge_scan_status()` so detections and
+stronger parser/resource statuses retain precedence. The registered
+`test_pdf_metadata_record_failure_is_fail_visible` JSON-wrap regression
+injects a `PageCount` failure on a valid three-object PDF and requires
+`CL_EMEM`, the exact sticky reason, and a non-cacheable fmap. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+PDF corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## MSXML JSON metadata write visibility — 2026-09-01
 
 The shared MSXML reader and streaming parser discarded required JSON count and

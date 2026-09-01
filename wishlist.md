@@ -1,5 +1,17 @@
 # Wishlist
 
+## PDF exported metadata write visibility — 2026-09-01
+
+- Keep every attempted PDF exported metadata JSON write fail-visible: record
+  the exact sticky incomplete state, prevent fmap caching, and return critical
+  record failures through the parser status merge without hiding detections or
+  stronger parser/resource failures.
+- Retain `test_pdf_metadata_record_failure_is_fail_visible` and its JSON-wrap
+  source guards; complete current-source production-GCC compilation and
+  production-linked execution, sanitizer, complete PDF corpus, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification.
+
 ## MSXML JSON metadata write visibility — 2026-09-01
 
 - Keep reader-based and streaming MSXML fail-visible when required count or

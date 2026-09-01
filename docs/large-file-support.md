@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PDF exported metadata write visibility — 2026-09-01
+
+The confirmed PDF parser's final metadata export now checks every attempted
+JSON string, integer, boolean, and truncated-object record. A failed report
+allocation or record marks the PDF layer incomplete and non-cacheable, and
+the returned status is merged at the `cli_pdf()` boundary so critical
+metadata failures remain visible without replacing a virus or stronger
+parser/resource failure. The JSON-wrap regression
+`test_pdf_metadata_record_failure_is_fail_visible` injects a `PageCount`
+failure on a valid PDF and requires `CL_EMEM` plus the exact sticky reason.
+Current-source production-linked execution, sanitizer, complete PDF corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain open.
+
 ## MSXML JSON metadata write visibility — 2026-09-01
 
 The shared MSXML reader and streaming parser now check required JSON count and

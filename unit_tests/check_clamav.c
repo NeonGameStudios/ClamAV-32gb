@@ -291,6 +291,7 @@ static int ole2_test_fail_streams;
 static int ooxml_test_fail_file_count;
 static int msxml_test_fail_count;
 static int msxml_test_fail_attribute;
+static int pdf_test_fail_page_count;
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
@@ -317,6 +318,8 @@ cl_error_t __wrap_cli_jsonint(json_object *obj, const char *key, int32_t i)
     if (ooxml_test_fail_file_count && key && strcmp(key, "CorePropertiesFileCount") == 0)
         return CL_EMEM;
     if (msxml_test_fail_count && key && strcmp(key, "Count") == 0)
+        return CL_EMEM;
+    if (pdf_test_fail_page_count && key && strcmp(key, "PageCount") == 0)
         return CL_EMEM;
     return __real_cli_jsonint(obj, key, i);
 }
@@ -33800,6 +33803,64 @@ START_TEST(test_pdf_sticky_incomplete_result_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_pdf_metadata_record_failure_is_fail_visible)
+{
+    static const uint8_t document[] =
+        "%PDF-1.7\n"
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R >>\nendobj\n"
+        "xref\n0 4\n"
+        "0000000000 65535 f \n"
+        "0000000009 00000 n \n"
+        "0000000058 00000 n \n"
+        "0000000115 00000 n \n"
+        "trailer\n<< /Size 4 /Root 1 0 R >>\n"
+        "startxref\n162\n%%EOF\n";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    json_object *metadata;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    ctx.engine                  = scan_engine;
+    ctx.dconf                   = scan_engine->dconf;
+    ctx.options                 = &options;
+    ctx.fmap                    = map;
+    ctx.this_layer_tmpdir       = tmpdir;
+    ctx.this_layer_metadata_json = metadata;
+
+    pdf_test_fail_page_count = 1;
+    ret                      = cli_pdf(tmpdir, &ctx, 0);
+    pdf_test_fail_page_count = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PDF metadata JSON could not be recorded");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(metadata);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+#endif
+
 START_TEST(test_pdf_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "%PDF-1.7\n";
@@ -54828,6 +54889,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_truncated_flate_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_lzw_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_ascii85_markerless_partial_group_is_fail_visible);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_pdf, test_pdf_metadata_record_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_top_level_maxfilesize_descriptor_is_fail_visible);
     tcase_add_test(tc_cl, test_action_setup_quarantine_lock_uses_validated_directory_handle);
     tcase_add_test(tc_cl, test_action_source_open_relative_path_stores_absolute_action_path);

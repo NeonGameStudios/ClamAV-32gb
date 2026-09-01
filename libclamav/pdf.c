@@ -181,7 +181,7 @@ static cl_error_t pdf_stream_dictionary_start(struct pdf_struct *pdf,
 /* PDF statistics callbacks and related */
 struct pdfname_action;
 
-static void pdf_export_json(struct pdf_struct *);
+static cl_error_t pdf_export_json(struct pdf_struct *);
 
 static void ASCIIHexDecode_cb(struct pdf_struct *, struct pdf_obj *, struct pdfname_action *);
 static void ASCII85Decode_cb(struct pdf_struct *, struct pdf_obj *, struct pdfname_action *);
@@ -4955,7 +4955,7 @@ done:
 
 err:
 
-    pdf_export_json(&pdf);
+    rc = cli_merge_scan_status(rc, pdf_export_json(&pdf));
 
     if (pdf.objstms) {
         for (i = 0; i < pdf.nobjstms; i++) {
@@ -5905,14 +5905,25 @@ static void pdf_free_stats(struct pdf_struct *pdf)
     }
 }
 
-static void pdf_export_json(struct pdf_struct *pdf)
+static cl_error_t pdf_export_json(struct pdf_struct *pdf)
 {
     cli_ctx *ctx = NULL;
     json_object *pdfobj;
     unsigned long i;
+    cl_error_t status = CL_SUCCESS;
+
+#define PDF_RECORD_JSON(call)                                  \
+    do {                                                        \
+        cl_error_t json_status = (call);                       \
+        if (json_status != CL_SUCCESS) {                       \
+            cli_mark_scan_incomplete(ctx,                     \
+                                     "PDF metadata JSON could not be recorded"); \
+            status = cli_merge_scan_status(status, json_status); \
+        }                                                       \
+    } while (0)
 
     if (NULL == pdf)
-        return;
+        return CL_SUCCESS;
 
     if (!(pdf->ctx)) {
         goto cleanup;
@@ -5926,6 +5937,8 @@ static void pdf_export_json(struct pdf_struct *pdf)
 
     pdfobj = cli_jsonobj(pdf->ctx->this_layer_metadata_json, "PDFStats");
     if (!(pdfobj)) {
+        cli_mark_scan_incomplete(ctx, "PDF metadata JSON object could not be created");
+        status = CL_EMEM;
         goto cleanup;
     }
 
@@ -5941,14 +5954,14 @@ static void pdf_export_json(struct pdf_struct *pdf)
         }
 
         if (pdf->stats.author->meta.success && cli_isutf8(pdf->stats.author->data, pdf->stats.author->meta.length)) {
-            cli_jsonstr(pdfobj, "Author", pdf->stats.author->data);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Author", pdf->stats.author->data));
         } else if (pdf->stats.author->data && pdf->stats.author->meta.length) {
             char *b64 = cl_base64_encode(pdf->stats.author->data, pdf->stats.author->meta.length);
-            cli_jsonstr(pdfobj, "Author", b64);
-            cli_jsonbool(pdfobj, "Author_base64", 1);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Author", b64));
+            PDF_RECORD_JSON(cli_jsonbool(pdfobj, "Author_base64", 1));
             free(b64);
         } else {
-            cli_jsonstr(pdfobj, "Author", "");
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Author", ""));
         }
     }
     if (pdf->stats.creator) {
@@ -5963,14 +5976,14 @@ static void pdf_export_json(struct pdf_struct *pdf)
         }
 
         if (pdf->stats.creator->meta.success && cli_isutf8(pdf->stats.creator->data, pdf->stats.creator->meta.length)) {
-            cli_jsonstr(pdfobj, "Creator", pdf->stats.creator->data);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Creator", pdf->stats.creator->data));
         } else if (pdf->stats.creator->data && pdf->stats.creator->meta.length) {
             char *b64 = cl_base64_encode(pdf->stats.creator->data, pdf->stats.creator->meta.length);
-            cli_jsonstr(pdfobj, "Creator", b64);
-            cli_jsonbool(pdfobj, "Creator_base64", 1);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Creator", b64));
+            PDF_RECORD_JSON(cli_jsonbool(pdfobj, "Creator_base64", 1));
             free(b64);
         } else {
-            cli_jsonstr(pdfobj, "Creator", "");
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Creator", ""));
         }
     }
     if (pdf->stats.producer) {
@@ -5985,14 +5998,14 @@ static void pdf_export_json(struct pdf_struct *pdf)
         }
 
         if (pdf->stats.producer->meta.success && cli_isutf8(pdf->stats.producer->data, pdf->stats.producer->meta.length)) {
-            cli_jsonstr(pdfobj, "Producer", pdf->stats.producer->data);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Producer", pdf->stats.producer->data));
         } else if (pdf->stats.producer->data && pdf->stats.producer->meta.length) {
             char *b64 = cl_base64_encode(pdf->stats.producer->data, pdf->stats.producer->meta.length);
-            cli_jsonstr(pdfobj, "Producer", b64);
-            cli_jsonbool(pdfobj, "Producer_base64", 1);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Producer", b64));
+            PDF_RECORD_JSON(cli_jsonbool(pdfobj, "Producer_base64", 1));
             free(b64);
         } else {
-            cli_jsonstr(pdfobj, "Producer", "");
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Producer", ""));
         }
     }
     if (pdf->stats.modificationdate) {
@@ -6007,14 +6020,14 @@ static void pdf_export_json(struct pdf_struct *pdf)
         }
 
         if (pdf->stats.modificationdate->meta.success && cli_isutf8(pdf->stats.modificationdate->data, pdf->stats.modificationdate->meta.length)) {
-            cli_jsonstr(pdfobj, "ModificationDate", pdf->stats.modificationdate->data);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "ModificationDate", pdf->stats.modificationdate->data));
         } else if (pdf->stats.modificationdate->data && pdf->stats.modificationdate->meta.length) {
             char *b64 = cl_base64_encode(pdf->stats.modificationdate->data, pdf->stats.modificationdate->meta.length);
-            cli_jsonstr(pdfobj, "ModificationDate", b64);
-            cli_jsonbool(pdfobj, "ModificationDate_base64", 1);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "ModificationDate", b64));
+            PDF_RECORD_JSON(cli_jsonbool(pdfobj, "ModificationDate_base64", 1));
             free(b64);
         } else {
-            cli_jsonstr(pdfobj, "ModificationDate", "");
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "ModificationDate", ""));
         }
     }
     if (pdf->stats.creationdate) {
@@ -6029,14 +6042,14 @@ static void pdf_export_json(struct pdf_struct *pdf)
         }
 
         if (pdf->stats.creationdate->meta.success && cli_isutf8(pdf->stats.creationdate->data, pdf->stats.creationdate->meta.length)) {
-            cli_jsonstr(pdfobj, "CreationDate", pdf->stats.creationdate->data);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "CreationDate", pdf->stats.creationdate->data));
         } else if (pdf->stats.creationdate->data && pdf->stats.creationdate->meta.length) {
             char *b64 = cl_base64_encode(pdf->stats.creationdate->data, pdf->stats.creationdate->meta.length);
-            cli_jsonstr(pdfobj, "CreationDate", b64);
-            cli_jsonbool(pdfobj, "CreationDate_base64", 1);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "CreationDate", b64));
+            PDF_RECORD_JSON(cli_jsonbool(pdfobj, "CreationDate_base64", 1));
             free(b64);
         } else {
-            cli_jsonstr(pdfobj, "CreationDate", "");
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "CreationDate", ""));
         }
     }
     if (pdf->stats.title) {
@@ -6051,14 +6064,14 @@ static void pdf_export_json(struct pdf_struct *pdf)
         }
 
         if (pdf->stats.title->meta.success && cli_isutf8(pdf->stats.title->data, pdf->stats.title->meta.length)) {
-            cli_jsonstr(pdfobj, "Title", pdf->stats.title->data);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Title", pdf->stats.title->data));
         } else if (pdf->stats.title->data && pdf->stats.title->meta.length) {
             char *b64 = cl_base64_encode(pdf->stats.title->data, pdf->stats.title->meta.length);
-            cli_jsonstr(pdfobj, "Title", b64);
-            cli_jsonbool(pdfobj, "Title_base64", 1);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Title", b64));
+            PDF_RECORD_JSON(cli_jsonbool(pdfobj, "Title_base64", 1));
             free(b64);
         } else {
-            cli_jsonstr(pdfobj, "Title", "");
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Title", ""));
         }
     }
     if (pdf->stats.subject) {
@@ -6073,14 +6086,14 @@ static void pdf_export_json(struct pdf_struct *pdf)
         }
 
         if (pdf->stats.subject->meta.success && cli_isutf8(pdf->stats.subject->data, pdf->stats.subject->meta.length)) {
-            cli_jsonstr(pdfobj, "Subject", pdf->stats.subject->data);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Subject", pdf->stats.subject->data));
         } else if (pdf->stats.subject->data && pdf->stats.subject->meta.length) {
             char *b64 = cl_base64_encode(pdf->stats.subject->data, pdf->stats.subject->meta.length);
-            cli_jsonstr(pdfobj, "Subject", b64);
-            cli_jsonbool(pdfobj, "Subject_base64", 1);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Subject", b64));
+            PDF_RECORD_JSON(cli_jsonbool(pdfobj, "Subject_base64", 1));
             free(b64);
         } else {
-            cli_jsonstr(pdfobj, "Subject", "");
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Subject", ""));
         }
     }
     if (pdf->stats.keywords) {
@@ -6095,80 +6108,80 @@ static void pdf_export_json(struct pdf_struct *pdf)
         }
 
         if (pdf->stats.keywords->meta.success && cli_isutf8(pdf->stats.keywords->data, pdf->stats.keywords->meta.length)) {
-            cli_jsonstr(pdfobj, "Keywords", pdf->stats.keywords->data);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Keywords", pdf->stats.keywords->data));
         } else if (pdf->stats.keywords->data && pdf->stats.keywords->meta.length) {
             char *b64 = cl_base64_encode(pdf->stats.keywords->data, pdf->stats.keywords->meta.length);
-            cli_jsonstr(pdfobj, "Keywords", b64);
-            cli_jsonbool(pdfobj, "Keywords_base64", 1);
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Keywords", b64));
+            PDF_RECORD_JSON(cli_jsonbool(pdfobj, "Keywords_base64", 1));
             free(b64);
         } else {
-            cli_jsonstr(pdfobj, "Keywords", "");
+            PDF_RECORD_JSON(cli_jsonstr(pdfobj, "Keywords", ""));
         }
     }
     if (pdf->stats.ninvalidobjs)
-        cli_jsonint(pdfobj, "InvalidObjectCount", pdf->stats.ninvalidobjs);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "InvalidObjectCount", pdf->stats.ninvalidobjs));
     if (pdf->stats.njs)
-        cli_jsonint(pdfobj, "JavaScriptObjectCount", pdf->stats.njs);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "JavaScriptObjectCount", pdf->stats.njs));
     if (pdf->stats.nflate)
-        cli_jsonint(pdfobj, "DeflateObjectCount", pdf->stats.nflate);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "DeflateObjectCount", pdf->stats.nflate));
     if (pdf->stats.nactivex)
-        cli_jsonint(pdfobj, "ActiveXObjectCount", pdf->stats.nactivex);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "ActiveXObjectCount", pdf->stats.nactivex));
     if (pdf->stats.nflash)
-        cli_jsonint(pdfobj, "FlashObjectCount", pdf->stats.nflash);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "FlashObjectCount", pdf->stats.nflash));
     if (pdf->stats.ncolors)
-        cli_jsonint(pdfobj, "ColorCount", pdf->stats.ncolors);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "ColorCount", pdf->stats.ncolors));
     if (pdf->stats.nasciihexdecode)
-        cli_jsonint(pdfobj, "AsciiHexDecodeObjectCount", pdf->stats.nasciihexdecode);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "AsciiHexDecodeObjectCount", pdf->stats.nasciihexdecode));
     if (pdf->stats.nascii85decode)
-        cli_jsonint(pdfobj, "Ascii85DecodeObjectCount", pdf->stats.nascii85decode);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "Ascii85DecodeObjectCount", pdf->stats.nascii85decode));
     if (pdf->stats.nembeddedfile)
-        cli_jsonint(pdfobj, "EmbeddedFileCount", pdf->stats.nembeddedfile);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "EmbeddedFileCount", pdf->stats.nembeddedfile));
     if (pdf->stats.nimage)
-        cli_jsonint(pdfobj, "ImageCount", pdf->stats.nimage);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "ImageCount", pdf->stats.nimage));
     if (pdf->stats.nlzw)
-        cli_jsonint(pdfobj, "LZWCount", pdf->stats.nlzw);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "LZWCount", pdf->stats.nlzw));
     if (pdf->stats.nrunlengthdecode)
-        cli_jsonint(pdfobj, "RunLengthDecodeCount", pdf->stats.nrunlengthdecode);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "RunLengthDecodeCount", pdf->stats.nrunlengthdecode));
     if (pdf->stats.nfaxdecode)
-        cli_jsonint(pdfobj, "FaxDecodeCount", pdf->stats.nfaxdecode);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "FaxDecodeCount", pdf->stats.nfaxdecode));
     if (pdf->stats.njbig2decode)
-        cli_jsonint(pdfobj, "JBIG2DecodeCount", pdf->stats.njbig2decode);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "JBIG2DecodeCount", pdf->stats.njbig2decode));
     if (pdf->stats.ndctdecode)
-        cli_jsonint(pdfobj, "DCTDecodeCount", pdf->stats.ndctdecode);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "DCTDecodeCount", pdf->stats.ndctdecode));
     if (pdf->stats.njpxdecode)
-        cli_jsonint(pdfobj, "JPXDecodeCount", pdf->stats.njpxdecode);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "JPXDecodeCount", pdf->stats.njpxdecode));
     if (pdf->stats.ncrypt)
-        cli_jsonint(pdfobj, "CryptCount", pdf->stats.ncrypt);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "CryptCount", pdf->stats.ncrypt));
     if (pdf->stats.nstandard)
-        cli_jsonint(pdfobj, "StandardCount", pdf->stats.nstandard);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "StandardCount", pdf->stats.nstandard));
     if (pdf->stats.nsigned)
-        cli_jsonint(pdfobj, "SignedCount", pdf->stats.nsigned);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "SignedCount", pdf->stats.nsigned));
     if (pdf->stats.nopenaction)
-        cli_jsonint(pdfobj, "OpenActionCount", pdf->stats.nopenaction);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "OpenActionCount", pdf->stats.nopenaction));
     if (pdf->stats.nlaunch)
-        cli_jsonint(pdfobj, "LaunchCount", pdf->stats.nlaunch);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "LaunchCount", pdf->stats.nlaunch));
     if (pdf->stats.npage)
-        cli_jsonint(pdfobj, "PageCount", pdf->stats.npage);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "PageCount", pdf->stats.npage));
     if (pdf->stats.nrichmedia)
-        cli_jsonint(pdfobj, "RichMediaCount", pdf->stats.nrichmedia);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "RichMediaCount", pdf->stats.nrichmedia));
     if (pdf->stats.nacroform)
-        cli_jsonint(pdfobj, "AcroFormCount", pdf->stats.nacroform);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "AcroFormCount", pdf->stats.nacroform));
     if (pdf->stats.nxfa)
-        cli_jsonint(pdfobj, "XFACount", pdf->stats.nxfa);
+        PDF_RECORD_JSON(cli_jsonint(pdfobj, "XFACount", pdf->stats.nxfa));
     if (pdf->flags & (1 << BAD_PDF_VERSION))
-        cli_jsonbool(pdfobj, "BadVersion", 1);
+        PDF_RECORD_JSON(cli_jsonbool(pdfobj, "BadVersion", 1));
     if (pdf->flags & (1 << BAD_PDF_HEADERPOS))
-        cli_jsonbool(pdfobj, "BadHeaderPosition", 1);
+        PDF_RECORD_JSON(cli_jsonbool(pdfobj, "BadHeaderPosition", 1));
     if (pdf->flags & (1 << BAD_PDF_TRAILER))
-        cli_jsonbool(pdfobj, "BadTrailer", 1);
+        PDF_RECORD_JSON(cli_jsonbool(pdfobj, "BadTrailer", 1));
     if (pdf->flags & (1 << BAD_PDF_TOOMANYOBJS))
-        cli_jsonbool(pdfobj, "TooManyObjects", 1);
+        PDF_RECORD_JSON(cli_jsonbool(pdfobj, "TooManyObjects", 1));
     if (pdf->flags & (1 << ENCRYPTED_PDF)) {
-        cli_jsonbool(pdfobj, "Encrypted", 1);
+        PDF_RECORD_JSON(cli_jsonbool(pdfobj, "Encrypted", 1));
         if (pdf->flags & (1 << DECRYPTABLE_PDF))
-            cli_jsonbool(pdfobj, "Decryptable", 1);
+            PDF_RECORD_JSON(cli_jsonbool(pdfobj, "Decryptable", 1));
         else
-            cli_jsonbool(pdfobj, "Decryptable", 0);
+            PDF_RECORD_JSON(cli_jsonbool(pdfobj, "Decryptable", 0));
     }
 
     for (i = 0; i < pdf->nobjs; i++) {
@@ -6176,13 +6189,18 @@ static void pdf_export_json(struct pdf_struct *pdf)
             json_object *truncobj;
 
             truncobj = cli_jsonarray(pdfobj, "TruncatedObjects");
-            if (!(truncobj))
+            if (!(truncobj)) {
+                cli_mark_scan_incomplete(ctx, "PDF metadata JSON array could not be created");
+                status = cli_merge_scan_status(status, CL_EMEM);
                 continue;
+            }
 
-            cli_jsonint_array(truncobj, pdf->objs[i]->id >> 8);
+            PDF_RECORD_JSON(cli_jsonint_array(truncobj, pdf->objs[i]->id >> 8));
         }
     }
 
 cleanup:
     pdf_free_stats(pdf);
+#undef PDF_RECORD_JSON
+    return status;
 }
