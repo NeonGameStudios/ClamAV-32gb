@@ -11491,3 +11491,14 @@ final parser/release qualification remain open.
   corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final matcher/release
   qualification remain open.
+
+## XAR checksum mismatch visibility — 2026-09-01
+
+- Keep declared archived and extracted XAR checksum mismatches fail-visible:
+  mark the member incomplete and return `CL_EFORMAT` after nested scanning,
+  preserving detections and stronger parser errors instead of allowing a
+  mismatched member to complete cleanly.
+- Retain `test_xar_checksum_mismatch_is_fail_visible` and its source guards.
+  Current-source production-linked execution, complete XAR corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1 resource, and final parser/release qualification remain open.

@@ -19439,3 +19439,21 @@ and the capability manifest pin the boundary. Current-source production-linked
 matcher execution, complete archive-metadata/signature corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final matcher/release qualification remain required.
+
+## XAR checksum mismatch visibility — 2026-09-01
+
+The XAR member walker compared declared archived and extracted checksums but
+only incremented a debug counter when a comparison failed. A corrupt member
+could therefore be nested-scanned and allow the confirmed archive to return a
+clean result. The walker now records a sticky incomplete reason and merges
+`CL_EFORMAT` after nested scanning, preserving a nested detection or stronger
+parser/decoder status when one exists. The regression
+`test_xar_checksum_mismatch_is_fail_visible` builds a stored member with a
+declared SHA-1 value that cannot match, then requires `CL_EFORMAT`, a cleared
+public verdict, and a non-cacheable fmap. Source guards and the capability
+manifest record the contract.
+
+Current-source production-linked execution, complete XAR corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource measurements, and the final requirement-by-requirement
+parser/release audit remain open.

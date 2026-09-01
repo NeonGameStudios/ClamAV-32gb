@@ -1125,6 +1125,7 @@ int cli_scanxar(cli_ctx *ctx)
         void *a_sc, *e_sc;
         void *a_mc, *e_mc;
         char *expected;
+        bool checksum_mismatch = false;
 
         /* clean up temp file from previous loop iteration */
         if (fd > -1 && tmpname) {
@@ -1541,6 +1542,7 @@ int cli_scanxar(cli_ctx *ctx)
                 if (xar_hash_check(a_hash, a_hash_result, expected) != 0) {
                     cli_dbgmsg("cli_scanxar: archived-checksum mismatch.\n");
                     cksum_fails++;
+                    checksum_mismatch = true;
                 } else {
                     cli_dbgmsg("cli_scanxar: archived-checksum matched.\n");
                 }
@@ -1553,6 +1555,7 @@ int cli_scanxar(cli_ctx *ctx)
                     if (xar_hash_check(e_hash, e_hash_result, expected) != 0) {
                         cli_dbgmsg("cli_scanxar: extracted-checksum mismatch.\n");
                         cksum_fails++;
+                        checksum_mismatch = true;
                     } else {
                         cli_dbgmsg("cli_scanxar: extracted-checksum matched.\n");
                     }
@@ -1561,6 +1564,10 @@ int cli_scanxar(cli_ctx *ctx)
             }
 
             rc = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE); /// TODO: collect file names in xar_get_toc_data_values()
+            if (checksum_mismatch) {
+                cli_mark_scan_incomplete(ctx, "XAR member checksum did not match its declared value");
+                rc = cli_merge_scan_status(rc, CL_EFORMAT);
+            }
             if (rc != CL_SUCCESS) {
                 goto exit_tmpfile;
             }
