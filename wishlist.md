@@ -9477,6 +9477,22 @@ qualification as required evidence.
   x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
   and final parser/release qualification remain required.
 
+## Current RIFF production-linked rerun — 2026-08-31
+
+- Canonical/container SHA-256 equality was verified before relinking for
+  `special.c` (`39b2f780cb755f200ad3af684dda23023d7ede6271c33fc29d131ec286747aed`),
+  `special.h` (`f729937e4464a60df1d05fa5157d59aedf30aca4fefdb221f972cef2fabf2890`),
+  `scanners.c` (`be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`),
+  and `check_clamav.c`
+  (`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`).
+- The current-source production-linked GCC harness passes `riff` 8/8,
+  `riff_map` 1/1, and `riff_corpus` 1/1. The corpus is a valid ACON RIFF with
+  a bounded nested LIST and child chunk; direct traversal reaches the declared
+  boundary and the typed scan reaches the exact fixed-offset nested matcher.
+- Complete RIFF/member corpus, sanitizer scanner fault injection, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification remain required.
+
 ## PE Swizzor empty resource-string admission — 2026-08-30
 
 - Keep `cli_detect_swizz_str()` fail-closed for null input/statistics and
