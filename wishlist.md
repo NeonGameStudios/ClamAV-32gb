@@ -527,6 +527,18 @@ Sonic1, resource, and final qualification remain required.
   symbolic links, metadata/VAT/sparable/mapped partitions, cross-partition
   allocation translation, full UDF corpus, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
+final parser/release qualification.
+
+## Rust parser and FFI current-source rerun — 2026-09-01
+
+- Retain the offline Rust 1.97.1 `cargo check --locked --offline --tests`
+  pass and the production-linked one-job `cargo test --locked --offline`
+  pass: 139/139 unit tests.
+- Keep the production test link bound to the existing CMake-built `libclamav`
+  shared library; the first standalone Cargo link was correctly rejected for
+  missing production C symbols, not replaced with stubs.
+- Complete full C-ABI integration, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
   final parser/release qualification.
 
 ## UDF descriptor-tag integrity admission — 2026-08-30
