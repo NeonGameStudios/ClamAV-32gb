@@ -653,6 +653,23 @@ Complete SIS corpus, sanitizer scanner fault injection, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## Current SWF production-linked rerun — 2026-08-31
+
+The canonical `swf.c`, `swf.h`, `scanners.c`, and `check_clamav.c` sources were
+transferred into the existing Docker production-linked GCC harness with exact
+SHA-256 equality (`swf.c`
+`17ed0077a34018cda2433ec9b2766228d6483250d1c2058a1eb1faa989b045f0`, `swf.h`
+`ae57151d8e55fb3d8a616f606d362780d3cede7295bc87a6be3a53b90c22d94d`,
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+and `check_clamav.c`
+`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
+current-source production-linked GCC harness passes `swf` 13/13, `swf_map` 3/3,
+`swf_api` 1/1, and `swf_corpus` 2/2, including compressed and declared-boundary
+overlay matching after nested output scanning. Complete SWF corpus, sanitizer
+scanner fault injection, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Current PE/GPT production-linked rerun — 2026-08-31
 
 The canonical `matcher.c`, `scanners.c`, and `check_clamav.c` sources were
