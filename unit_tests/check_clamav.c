@@ -3127,6 +3127,11 @@ START_TEST(test_cl_load)
     engine = cl_engine_new();
     ck_assert_msg(engine != NULL, "cl_engine_new failed");
 
+    cvdcertsdir = getenv("CVD_CERTS_DIR");
+    ck_assert_msg(cvdcertsdir != NULL, "CVD_CERTS_DIR not set");
+    ret = cl_engine_set_str(engine, CL_ENGINE_CVDCERTSDIR, cvdcertsdir);
+    ck_assert_msg(ret == CL_SUCCESS, "cl_engine_set_str failed: %s", cl_strerror(ret));
+
     /* load test cvd */
     testfile = SRCDIR PATHSEP "input" PATHSEP "freshclam_testfiles" PATHSEP "test-5.cvd";
     ret      = cl_load(testfile, engine, &sigs, CL_DB_STDOPT);
@@ -3149,6 +3154,36 @@ START_TEST(test_cl_load_rejects_null_arguments)
     ck_assert_int_eq(cl_load("test.hdb", NULL, &sigs, CL_DB_STDOPT), CL_ENULLARG);
     ck_assert_int_eq(cl_load("test.hdb", engine, NULL, CL_DB_STDOPT), CL_ENULLARG);
 
+    cl_engine_free(engine);
+}
+END_TEST
+
+START_TEST(test_cvd_skipped_member_is_consumed)
+{
+    static const char skipped_data[] = "44d88612fea8a8f36de82e1278abb02f:68:Eicar-Test-Signature\n";
+    struct cl_engine *engine;
+    struct cli_dbio dbio;
+    unsigned int sigs = 0;
+    FILE *fs;
+    cl_error_t ret;
+
+    fs = tmpfile();
+    ck_assert_ptr_nonnull(fs);
+    ck_assert_int_eq(fwrite(skipped_data, 1, sizeof(skipped_data) - 1, fs), sizeof(skipped_data) - 1);
+    ck_assert_int_eq(fseek(fs, 0, SEEK_SET), 0);
+
+    memset(&dbio, 0, sizeof(dbio));
+    dbio.fs   = fs;
+    dbio.size = (unsigned int)(sizeof(skipped_data) - 1);
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ret = cli_load("test.hdu", engine, &sigs, CL_DB_STDOPT, &dbio, NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_uint_eq(dbio.size, 0);
+    ck_assert_uint_eq(dbio.bread, sizeof(skipped_data) - 1);
+
+    ck_assert_int_eq(fclose(fs), 0);
     cl_engine_free(engine);
 }
 END_TEST
@@ -49944,6 +49979,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cvd, test_cl_load);
     tcase_add_test(tc_cvd, test_cl_load_rejects_null_arguments);
+    tcase_add_test(tc_cvd, test_cvd_skipped_member_is_consumed);
     tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);
     suite_add_tcase(s, tc_cvd_info);
     tcase_add_checked_fixture(tc_cvd_info, cl_setup, cl_teardown);

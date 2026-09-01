@@ -184,6 +184,7 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
     off_t off;
     struct cli_dbinfo *db;
     char hash[32];
+    int hash_status;
     int fd = -1;
 #ifdef _WIN32
     HANDLE hFile;
@@ -382,7 +383,12 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
                     return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
                 }
                 if (dbio->bread) {
-                    cl_finish_hash(dbio->hashctx, hash);
+                    hash_status = cl_finish_hash(dbio->hashctx, hash);
+                    dbio->hashctx = NULL;
+                    if (hash_status != 0) {
+                        cli_errmsg("cli_tgzload: Could not finalize the hash for file %s\n", name);
+                        return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
+                    }
                     dbio->hashctx = cl_hash_init("sha2-256");
                     if (!(dbio->hashctx)) {
                         return cli_tgzload_fail(compr, dbio, fdd, CL_EMALFDB);
@@ -979,6 +985,11 @@ cl_error_t cl_cvdunpack_ex(const char *file, const char *dir, const char *certs_
 
     if (file == NULL || dir == NULL)
         return CL_ENULLARG;
+
+    if (!cli_strbcasestr(file, ".cvd") && !cli_strbcasestr(file, ".cld") && !cli_strbcasestr(file, ".cud")) {
+        cli_errmsg("cl_cvdunpack_ex: File is not a CVD, CLD, or CUD: %s\n", file);
+        return CL_ECVD;
+    }
 
     cvd = cvd_open(file, &cvd_open_error);
     if (!cvd) {

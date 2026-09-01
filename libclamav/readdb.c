@@ -2794,7 +2794,7 @@ static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options
     unsigned int line = 0, tokens_count, len;
     char hash[32];
     struct cli_dbinfo *last = NULL, *new;
-    int ret = CL_SUCCESS, dsig = 0;
+    int ret = CL_SUCCESS, dsig = 0, hash_status;
     void *ctx;
 
     if (!dbio) {
@@ -2810,7 +2810,13 @@ static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options
         line++;
         if (!(options & CL_DB_UNSIGNED) && !strncmp(buffer, "DSIG:", 5)) {
             dsig = 1;
-            cl_finish_hash(ctx, hash);
+            hash_status = cl_finish_hash(ctx, hash);
+            ctx         = NULL;
+            if (hash_status != 0) {
+                cli_errmsg("cli_loadinfo: Could not finalize the metadata hash\n");
+                ret = CL_EMALFDB;
+                break;
+            }
             if (cli_versig2((unsigned char *)hash, buffer + 5, INFO_NSTR, INFO_ESTR) != CL_SUCCESS) {
                 cli_errmsg("cli_loadinfo: Incorrect digital signature\n");
                 ret = CL_EMALFDB;
@@ -2900,7 +2906,8 @@ static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options
         cli_errmsg("cli_loadinfo: Problem parsing database at line %u\n", line);
     }
 
-    cl_hash_destroy(ctx);
+    if (ctx)
+        cl_hash_destroy(ctx);
     return ret;
 }
 
@@ -4951,7 +4958,7 @@ cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int
 
     if (dbio && dbio->chkonly) {
         while (cli_dbgets(buff, FILEBUFF, NULL, dbio)) continue;
-        return CL_SUCCESS;
+        return dbio->size ? CL_EREAD : CL_SUCCESS;
     }
 
     if (!dbio && (fs = fopen(filename, "rb")) == NULL) {
@@ -5092,14 +5099,24 @@ cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int
         skipped = 1;
     }
 
-    if (ret) {
-        cli_errmsg("Can't load %s: %s\n", filename, cl_strerror(ret));
-    } else {
-        if (skipped)
-            cli_dbgmsg("%s skipped\n", filename);
-        else
-            cli_dbgmsg("%s loaded\n", filename);
+    if (!ret && skipped && dbio) {
+        unsigned int chkonly = dbio->chkonly;
+
+        /* Even a disabled database family must be consumed and hashed so
+         * the enclosing CVD can validate its .info member size and hash. */
+        dbio->chkonly = 1;
+        while (cli_dbgets(buff, FILEBUFF, NULL, dbio)) continue;
+        dbio->chkonly = chkonly;
+        if (dbio->size)
+            ret = CL_EREAD;
     }
+
+    if (ret)
+        cli_errmsg("Can't load %s: %s\n", filename, cl_strerror(ret));
+    else if (skipped)
+        cli_dbgmsg("%s skipped\n", filename);
+    else
+        cli_dbgmsg("%s loaded\n", filename);
 
     if (fs && fclose(fs) != 0) {
         cli_errmsg("cli_load(): Failed to close file %s\n", filename);

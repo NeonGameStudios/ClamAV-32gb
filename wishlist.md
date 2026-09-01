@@ -9829,6 +9829,22 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## CVD skipped-member and hash-context follow-up — 2026-08-31
+
+- Keep disabled CVD database families fully consumed and SHA-256 hashed before
+  `.info` size/hash admission, so `CL_DB_STDOPT` skipping cannot create an
+  unconsumed-member false failure or bypass archive integrity validation.
+- Keep every `cl_finish_hash()` ownership transition explicit: clear the
+  context after finalization, check the return status, and make cleanup safe on
+  both success and failure. Retain the focused skipped-member regression and
+  current-source ASan-linked public CUD load evidence.
+- Keep `cl_cvdunpack_ex` returning `CL_ECVD` for non-CVD/CLD/CUD filenames.
+  Replace the legacy signed fixtures that omit the now-required TAR end
+  markers before counting `test_cl_load` as a successful production-CVD load.
+- Complete signed production CVD/CLD/CUD corpus, current-head sanitizer,
+  service parity, certified Linux x86-64, materialized-large-file, Sonic1, and
+  final parser/release qualification.
+
 ## Streaming MIME multipart part-limit parity — 2026-08-31
 
 - Keep the disk-backed multipart walker applying the existing 1,024-part

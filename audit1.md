@@ -17301,6 +17301,32 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## CVD skipped-member and hash-context follow-up — 2026-08-31
+
+The current CVD loader now consumes and hashes database members that are
+intentionally skipped by `CL_DB_STDOPT` (for example `.hdu`, `.hsu`, `.mdu`,
+`.msu`, `.ndu`, and `.ldu`) before applying the `.info` size and SHA-256
+checks. A focused `test_cvd_skipped_member_is_consumed` regression is
+registered, and the isolated current-source production-linked GCC case
+passes. Metadata and member hash finalization now clear the context ownership
+after `cl_finish_hash()` and report finalization errors without allowing the
+cleanup path to free the same OpenSSL context twice. The ASan-linked public
+probe reaches the signed test-5 CVD's member validation without a sanitizer
+finding.
+
+The existing signed `test-5.cvd` fixture verifies successfully but has no TAR
+end-marker blocks; under the earlier CVD hardening contract this is correctly
+reported as `CL_EMALFDB` rather than clean database load. A disposable
+marker-complete unsigned CUD derived from the fixture passes the public
+production-linked ASan load probe with the skipped members consumed and nine
+signatures loaded. `cl_cvdunpack_ex` now classifies a `.cdiff` input as
+`CL_ECVD` before opening it, matching `cl_cvdverify_ex`.
+
+This is current-source focused evidence, not final CVD qualification. A
+current signed production CVD/CLD/CUD corpus, clean current-head sanitizer
+matrix, service parity, materialized-large-file, certified Linux x86-64,
+Sonic1, and the final requirement-by-requirement release audit remain open.
+
 ## Streaming MIME multipart part-limit parity — 2026-08-31
 
 The disk-backed multipart parser now counts each boundary with a native
