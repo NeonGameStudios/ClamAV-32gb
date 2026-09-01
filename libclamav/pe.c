@@ -5252,6 +5252,16 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     struct json_object *pe_json = NULL;
     char jsonbuf[128];
 
+#define PE_RECORD_HEADER_JSON(call)                                                \
+    do {                                                                            \
+        cl_error_t json_status = (call);                                           \
+        if (json_status != CL_SUCCESS) {                                           \
+            cli_mark_scan_incomplete(ctx, "PE header metadata JSON could not be recorded"); \
+            ret = cli_merge_scan_status(ret, json_status);                         \
+            goto done;                                                              \
+        }                                                                           \
+    } while (0)
+
     if (ctx == NULL) {
         cli_errmsg("cli_peheader: ctx can't be NULL\n");
         ret = CL_EARG;
@@ -5277,6 +5287,11 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
 
     if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
         pe_json = get_pe_property(ctx);
+        if (!pe_json) {
+            cli_mark_scan_incomplete(ctx, "PE header metadata JSON could not be recorded");
+            ret = CL_EMEM;
+            goto done;
+        }
     }
 
     fsize = map->len - peinfo->offset;
@@ -5335,7 +5350,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     if (EC16(file_hdr->Characteristics) & 0x2000) {
 
         if (opts & CLI_PEHEADER_OPT_COLLECT_JSON)
-            cli_jsonstr(pe_json, "Type", "DLL");
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "Type", "DLL"));
 
         if (opts & CLI_PEHEADER_OPT_DBG_PRINT_INFO) {
             cli_dbgmsg("File type: DLL\n");
@@ -5345,7 +5360,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     } else if (EC16(file_hdr->Characteristics) & 0x0002) {
 
         if (opts & CLI_PEHEADER_OPT_COLLECT_JSON)
-            cli_jsonstr(pe_json, "Type", "EXE");
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "Type", "EXE"));
 
         if (opts & CLI_PEHEADER_OPT_DBG_PRINT_INFO) {
             cli_dbgmsg("File type: Executable\n");
@@ -5478,7 +5493,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
             cli_dbgmsg("Machine type: %s\n", archtype);
 
         if (opts & CLI_PEHEADER_OPT_COLLECT_JSON)
-            cli_jsonstr(pe_json, "ArchType", archtype);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "ArchType", archtype));
     }
 
     peinfo->nsections = EC16(file_hdr->NumberOfSections);
@@ -5507,10 +5522,10 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     }
 
     if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
-        cli_jsonint(pe_json, "NumberOfSections", peinfo->nsections);
+        PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "NumberOfSections", peinfo->nsections));
         /* NOTE: the TimeDateStamp value will look like "Wed Dec 31 19:00:00 1969\n" */
-        cli_jsonstr(pe_json, "TimeDateStamp", cli_ctime(&timestamp, timestr, sizeof(timestr)));
-        cli_jsonint(pe_json, "SizeOfOptionalHeader", opt_hdr_size);
+        PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "TimeDateStamp", cli_ctime(&timestamp, timestr, sizeof(timestr))));
+        PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "SizeOfOptionalHeader", opt_hdr_size));
     }
 
     // Ensure there are enough bytes to cover the full optional header,
@@ -5596,32 +5611,32 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         }
 
         if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
-            cli_jsonint(pe_json, "MajorLinkerVersion", opt64->MajorLinkerVersion);
-            cli_jsonint(pe_json, "MinorLinkerVersion", opt64->MinorLinkerVersion);
-            cli_jsonint(pe_json, "SizeOfCode", EC32(opt64->SizeOfCode));
-            cli_jsonint(pe_json, "SizeOfInitializedData", EC32(opt64->SizeOfInitializedData));
-            cli_jsonint(pe_json, "SizeOfUninitializedData", EC32(opt64->SizeOfUninitializedData));
-            cli_jsonint(pe_json, "NumberOfRvaAndSizes", EC32(opt64->NumberOfRvaAndSizes));
-            cli_jsonint(pe_json, "MajorSubsystemVersion", EC16(opt64->MajorSubsystemVersion));
-            cli_jsonint(pe_json, "MinorSubsystemVersion", EC16(opt64->MinorSubsystemVersion));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "MajorLinkerVersion", opt64->MajorLinkerVersion));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "MinorLinkerVersion", opt64->MinorLinkerVersion));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "SizeOfCode", EC32(opt64->SizeOfCode)));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "SizeOfInitializedData", EC32(opt64->SizeOfInitializedData)));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "SizeOfUninitializedData", EC32(opt64->SizeOfUninitializedData)));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "NumberOfRvaAndSizes", EC32(opt64->NumberOfRvaAndSizes)));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "MajorSubsystemVersion", EC16(opt64->MajorSubsystemVersion)));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "MinorSubsystemVersion", EC16(opt64->MinorSubsystemVersion)));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", peinfo->vep);
-            cli_jsonstr(pe_json, "EntryPoint", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "EntryPoint", jsonbuf));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", EC32(opt64->BaseOfCode));
-            cli_jsonstr(pe_json, "BaseOfCode", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "BaseOfCode", jsonbuf));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", EC32(opt64->SectionAlignment));
-            cli_jsonstr(pe_json, "SectionAlignment", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "SectionAlignment", jsonbuf));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", EC32(opt64->FileAlignment));
-            cli_jsonstr(pe_json, "FileAlignment", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "FileAlignment", jsonbuf));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", EC32(opt64->SizeOfImage));
-            cli_jsonstr(pe_json, "SizeOfImage", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "SizeOfImage", jsonbuf));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", peinfo->hdr_size);
-            cli_jsonstr(pe_json, "SizeOfHeaders", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "SizeOfHeaders", jsonbuf));
         }
 
     } else { /* PE */
@@ -5649,32 +5664,32 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         }
 
         if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
-            cli_jsonint(pe_json, "MajorLinkerVersion", opt32->MajorLinkerVersion);
-            cli_jsonint(pe_json, "MinorLinkerVersion", opt32->MinorLinkerVersion);
-            cli_jsonint(pe_json, "SizeOfCode", EC32(opt32->SizeOfCode));
-            cli_jsonint(pe_json, "SizeOfInitializedData", EC32(opt32->SizeOfInitializedData));
-            cli_jsonint(pe_json, "SizeOfUninitializedData", EC32(opt32->SizeOfUninitializedData));
-            cli_jsonint(pe_json, "NumberOfRvaAndSizes", EC32(opt32->NumberOfRvaAndSizes));
-            cli_jsonint(pe_json, "MajorSubsystemVersion", EC16(opt32->MajorSubsystemVersion));
-            cli_jsonint(pe_json, "MinorSubsystemVersion", EC16(opt32->MinorSubsystemVersion));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "MajorLinkerVersion", opt32->MajorLinkerVersion));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "MinorLinkerVersion", opt32->MinorLinkerVersion));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "SizeOfCode", EC32(opt32->SizeOfCode)));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "SizeOfInitializedData", EC32(opt32->SizeOfInitializedData)));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "SizeOfUninitializedData", EC32(opt32->SizeOfUninitializedData)));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "NumberOfRvaAndSizes", EC32(opt32->NumberOfRvaAndSizes)));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "MajorSubsystemVersion", EC16(opt32->MajorSubsystemVersion)));
+            PE_RECORD_HEADER_JSON(cli_jsonint(pe_json, "MinorSubsystemVersion", EC16(opt32->MinorSubsystemVersion)));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", peinfo->vep);
-            cli_jsonstr(pe_json, "EntryPoint", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "EntryPoint", jsonbuf));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", EC32(opt32->BaseOfCode));
-            cli_jsonstr(pe_json, "BaseOfCode", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "BaseOfCode", jsonbuf));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", EC32(opt32->SectionAlignment));
-            cli_jsonstr(pe_json, "SectionAlignment", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "SectionAlignment", jsonbuf));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", EC32(opt32->FileAlignment));
-            cli_jsonstr(pe_json, "FileAlignment", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "FileAlignment", jsonbuf));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", EC32(opt32->SizeOfImage));
-            cli_jsonstr(pe_json, "SizeOfImage", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "SizeOfImage", jsonbuf));
 
             snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", peinfo->hdr_size);
-            cli_jsonstr(pe_json, "SizeOfHeaders", jsonbuf);
+            PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "SizeOfHeaders", jsonbuf));
         }
     }
 
@@ -5735,7 +5750,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     }
 
     if (opts & CLI_PEHEADER_OPT_COLLECT_JSON)
-        cli_jsonstr(pe_json, "Subsystem", subsystem);
+        PE_RECORD_HEADER_JSON(cli_jsonstr(pe_json, "Subsystem", subsystem));
 
     if (!native && (!salign || (salign % 0x1000))) {
         cli_dbgmsg("cli_peheader: Bad section alignment\n");
@@ -6113,7 +6128,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     }
 
     if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
-        cli_jsonint64(pe_json, "EntryPointOffset", (int64_t)peinfo->ep64);
+        PE_RECORD_HEADER_JSON(cli_jsonint64(pe_json, "EntryPointOffset", (int64_t)peinfo->ep64));
 
         if (cli_json_timeout_cycle_check(ctx, &toval) != CL_SUCCESS) {
             ret = CL_ETIMEOUT;
@@ -6365,6 +6380,8 @@ done:
 
     return ret;
 }
+
+#undef PE_RECORD_HEADER_JSON
 
 // TODO We should sort based on VirtualAddress instead, since PointerToRawData
 // will be zero for sections where SizeOfRawData is zero.  This also aligns

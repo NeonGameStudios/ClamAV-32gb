@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## PE header metadata record failure — 2026-09-01
+
+The PE header metadata path discarded every `cli_json*()` result and could
+also continue with a missing PE metadata object. A report allocation or
+record failure could therefore leave a confirmed PE layer clean while header
+metadata inspection was incomplete. All required header JSON writes now use a
+single status boundary; failures record an exact sticky diagnostic, taint the
+fmap, and return the critical status. The JSON-wrap regression
+`test_pe_header_metadata_record_failure_is_fail_visible` injects the
+`NumberOfSections` write failure and requires `CL_EMEM`, the exact diagnostic,
+and non-cacheability. Current-source production-GCC compilation,
+production-linked execution, sanitizer, complete PE corpus, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## PE import metadata record failure — 2026-09-01
 
 The PE import pass previously discarded failures while creating the

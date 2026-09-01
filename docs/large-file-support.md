@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PE header metadata record failure — 2026-09-01
+
+The PE header parser now checks creation of its metadata object and every
+required JSON string, integer, boolean, and 64-bit integer record. A failure
+records the exact sticky incomplete diagnostic, prevents fmap caching, and
+returns the critical status through the header and PE scan boundaries. The
+JSON-wrap regression `test_pe_header_metadata_record_failure_is_fail_visible`
+injects a `NumberOfSections` failure. Current-source production-linked
+execution, sanitizer, complete PE corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## PE import metadata record failure — 2026-09-01
 
 The PE import pass now checks `ImportTable` allocation, import-item, and
