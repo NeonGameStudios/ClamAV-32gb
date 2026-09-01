@@ -9847,7 +9847,7 @@ qualification as required evidence.
   `check_clamav.c`, and materialize `clam.tnef` through the repository CMake
   XOR-fixture target.
 - Retain the refreshed production-linked GCC evidence: `tnef` passes 17/17,
-  `tnef_map` 2/2, and `tnef_debug` 2/2, including exact nested-child corpus
+  `tnef_map` 3/3, and `tnef_debug` 2/2, including exact nested-child corpus
   detection and the fail-visible boundary regressions.
 - Complete TNEF corpus breadth, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1 resource, and
