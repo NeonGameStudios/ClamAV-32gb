@@ -1,5 +1,27 @@
 # Independent read-only audit of audit.md
 
+## CVD filename-boundary and Rust qualification refresh — 2026-09-01
+
+The current CVD API source and test harness match the Docker snapshot exactly:
+`cvd.c` `bcca06590a722cf89d2addc5bb17eb32084533064f53472c654a09127fa0168d`,
+`check_clamav.c`
+`078f3a1700d65a04bb61b3ece7a2302620f3920deddf97a35794986319ea3f3c`, and
+`largefile_source_guards.sh`
+`25aefdd85495b39f7f6cf930e2b6ddda534b37ae77f2954a59ad042da5e6a3b4`.
+`cl_cvdverify_ex()` and `cl_cvdunpack_ex()` now classify database types only
+from the final case-insensitive `.cvd`, `.cld`, or `.cud` suffix; names such as
+`database.cvd.backup` and `database.cud.partial` return `CL_ECVD` before any
+file open or engine setup. The production-linked GCC `cvd_api` TCase passes
+11/11 with the repository certificate fixture configured, including the new
+suffix regressions. The CMake-selected Rust 1.97.1/Cargo 1.97.1 toolchain
+passes locked offline checks and the production-linked Rust suite passes
+139/139 against the current source and existing CMake-built `libclamav`.
+
+This is focused CVD/Rust evidence, not production-CVD/service certification.
+Full signed production CVDs, complete service parity, sanitizer, certified
+Linux x86-64, materialized-large-file, Sonic1, resource, and final
+requirement-by-requirement release evidence remain open.
+
 ## Production-linked unit harness stat64 wrapper — 2026-08-31
 
 The Linux static unit target now adds the `stat64` linker wrapper only when
@@ -140,16 +162,16 @@ resource, and final parser/release evidence remain open.
 
 ## Rust parser and FFI current-source rerun — 2026-09-01
 
-The existing Docker image actually provides Rust 1.63.0 and Cargo 1.65.0;
-its Cargo cannot parse this source's lockfile version 4, so no Rust Cargo
-suite result is claimed from that image. The current production-linked GCC
-binary was revalidated against the canonical snapshot: `rust_alz` passes 2/2,
-`rust_lha` 9/9, `rust_onenote` 2/2, and `rust_map` 1/1. The already-installed
-host Rust 1.97.1 was also tried with a temporary target directory; dependency
-build reached `openssl-sys` and stopped because the host lacks OpenSSL/pkg-
-config development metadata. No software was installed. Canonical
-`scanners.rs`, `alz.rs`, `onenote.rs`, and `check_clamav.c` hashes match the
-Docker snapshot.
+The default Docker `PATH` exposes Rust 1.63.0 and Cargo 1.65.0, whose Cargo
+cannot parse this source's lockfile version 4. The CMake-selected, already
+installed Rust 1.97.1/Cargo 1.97.1 toolchain was therefore invoked by absolute
+path with `RUSTC` pinned and `--locked --offline`; the production-linked
+`clamav_rust` test binary used the current source and the existing CMake-built
+`libclamav` shared library, and all 139/139 tests passed. The current
+production-linked GCC binary was also revalidated against the canonical
+snapshot: `rust_alz` passes 2/2, `rust_lha` 9/9, `rust_onenote` 2/2, and
+`rust_map` 1/1. No software was installed. Canonical Rust/C source hashes
+matched the Docker snapshot.
 
 This is current-source production-linked C/Rust integration evidence, not
 final release certification. A native Rust unit run, full C-ABI integration,

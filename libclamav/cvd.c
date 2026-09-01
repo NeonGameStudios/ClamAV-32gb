@@ -58,6 +58,27 @@
 
 static int cli_cvd_parse_octal_size(const char *text, unsigned int *value);
 
+static cvd_type cli_cvd_file_type(const char *file)
+{
+    const char *extension;
+
+    if (file == NULL)
+        return CVD_TYPE_UNKNOWN;
+
+    extension = strrchr(file, '.');
+    if (extension == NULL)
+        return CVD_TYPE_UNKNOWN;
+
+    if (!strcasecmp(extension, ".cvd"))
+        return CVD_TYPE_CVD;
+    if (!strcasecmp(extension, ".cld"))
+        return CVD_TYPE_CLD;
+    if (!strcasecmp(extension, ".cud"))
+        return CVD_TYPE_CUD;
+
+    return CVD_TYPE_UNKNOWN;
+}
+
 static int cli_tgzload_offset_from_u64(uint64_t value, off_t *offset)
 {
     off_t converted;
@@ -632,12 +653,17 @@ cl_error_t cl_cvdverify_ex(const char *file, const char *certs_directory, uint32
 {
     struct cl_engine *engine = NULL;
     cl_error_t ret;
-    cvd_type dbtype              = CVD_TYPE_UNKNOWN;
+    cvd_type dbtype              = cli_cvd_file_type(file);
     void *verifier               = NULL;
     FFIError *new_verifier_error = NULL;
 
     if (file == NULL)
         return CL_ENULLARG;
+
+    if (dbtype == CVD_TYPE_UNKNOWN) {
+        cli_errmsg("cl_cvdverify: File is not a CVD, CLD, or CUD: %s\n", file);
+        return CL_ECVD;
+    }
 
     if (!(engine = cl_engine_new())) {
         cli_errmsg("cl_cvdverify: Can't create new engine\n");
@@ -645,18 +671,6 @@ cl_error_t cl_cvdverify_ex(const char *file, const char *certs_directory, uint32
         goto done;
     }
     engine->cb_stats_submit = NULL; /* Don't submit stats if we're just verifying a CVD */
-
-    if (!!cli_strbcasestr(file, ".cvd")) {
-        dbtype = CVD_TYPE_CVD;
-    } else if (!!cli_strbcasestr(file, ".cld")) {
-        dbtype = CVD_TYPE_CLD;
-    } else if (!!cli_strbcasestr(file, ".cud")) {
-        dbtype = CVD_TYPE_CUD;
-    } else {
-        cli_errmsg("cl_cvdverify: File is not a CVD, CLD, or CUD: %s\n", file);
-        ret = CL_ECVD;
-        goto done;
-    }
 
     if (NULL != certs_directory) {
         ret = cl_engine_set_str(engine, CL_ENGINE_CVDCERTSDIR, certs_directory);
@@ -986,7 +1000,7 @@ cl_error_t cl_cvdunpack_ex(const char *file, const char *dir, const char *certs_
     if (file == NULL || dir == NULL)
         return CL_ENULLARG;
 
-    if (!cli_strbcasestr(file, ".cvd") && !cli_strbcasestr(file, ".cld") && !cli_strbcasestr(file, ".cud")) {
+    if (cli_cvd_file_type(file) == CVD_TYPE_UNKNOWN) {
         cli_errmsg("cl_cvdunpack_ex: File is not a CVD, CLD, or CUD: %s\n", file);
         return CL_ECVD;
     }

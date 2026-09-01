@@ -1,5 +1,21 @@
 # Wishlist
 
+## CVD filename-boundary and Rust qualification refresh — 2026-09-01
+
+- Keep CVD API type admission tied to the final case-insensitive `.cvd`,
+  `.cld`, or `.cud` suffix. `cl_cvdverify_ex()` and `cl_cvdunpack_ex()` now
+  reject `database.cvd.backup` and `database.cud.partial` as `CL_ECVD` before
+  opening a file or allocating an engine; retain the focused `cvd_api` result
+  at 11/11 with the repository certificate fixture configured.
+- Retain exact canonical/container hashes for `cvd.c`, `check_clamav.c`, and
+  `largefile_source_guards.sh` from the current rerun.
+- The CMake-selected Rust 1.97.1/Cargo 1.97.1 toolchain passes locked offline
+  checks, and production-linked `cargo test --locked --offline` passes 139/139
+  against the current source and existing CMake-built `libclamav` shared
+  library. Keep signed production-CVD/service parity, sanitizer, certified
+  Linux x86-64, materialized-large-file, Sonic1, resource, and final release
+  qualification open.
+
 ## Current JPEG production-linked refresh — 2026-08-31
 
 - Retain exact canonical/container SHA-256 equality for `jpeg.c`, `jpeg.h`,
@@ -567,13 +583,14 @@ final parser/release qualification.
 
 ## Rust parser and FFI current-source rerun — 2026-09-01
 
-- Correct the stale Docker toolchain claim: the existing image has Rust 1.63.0
-  and Cargo 1.65.0, which cannot parse the lockfile version 4. The current
-  production-linked GCC binary still passes `rust_alz` 2/2, `rust_lha` 9/9,
-  `rust_onenote` 2/2, and `rust_map` 1/1.
-- The already-installed host Rust 1.97.1 reached `openssl-sys` with a
-  temporary target directory but stopped because OpenSSL/pkg-config
-  development metadata is absent; no software was installed.
+- The default Docker `PATH` has Rust 1.63.0 and Cargo 1.65.0, which cannot
+  parse the lockfile version 4. Use the already-installed CMake-selected Rust
+  1.97.1/Cargo 1.97.1 by absolute path with `RUSTC` pinned and
+  `--locked --offline`; the production-linked `clamav_rust` suite passes
+  139/139 against the current source and existing CMake-built `libclamav`
+  shared library. No software was installed.
+- Retain the current production-linked GCC evidence at `rust_alz` 2/2,
+  `rust_lha` 9/9, `rust_onenote` 2/2, and `rust_map` 1/1.
 - Complete native Rust unit execution, full C-ABI integration, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1 resource, and final parser/release qualification.

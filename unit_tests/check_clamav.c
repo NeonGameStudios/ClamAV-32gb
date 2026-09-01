@@ -695,8 +695,10 @@ START_TEST(test_cvd_api_rejects_null_arguments)
     ck_assert_int_eq(cli_cvdunpack_and_verify(NULL, NULL, true, false, NULL), CL_ENULLARG);
     ck_assert_int_eq(cli_cvdunpack_and_verify("test.cvd", NULL, true, false, NULL), CL_ENULLARG);
     ck_assert_int_eq(cl_cvdverify_ex(NULL, NULL, 0), CL_ENULLARG);
+    ck_assert_int_eq(cl_cvdverify_ex("database.cvd.backup", NULL, 0), CL_ECVD);
     ck_assert_int_eq(cl_cvdunpack_ex(NULL, NULL, NULL, CL_DB_UNSIGNED), CL_ENULLARG);
     ck_assert_int_eq(cl_cvdunpack_ex("test.cvd", NULL, NULL, CL_DB_UNSIGNED), CL_ENULLARG);
+    ck_assert_int_eq(cl_cvdunpack_ex("database.cud.partial", ".", NULL, CL_DB_UNSIGNED), CL_ECVD);
     ck_assert_int_eq(cl_cvdunpack(NULL, NULL, true), CL_ENULLARG);
     ck_assert_int_eq(cl_cvdgetage(NULL, NULL), CL_ENULLARG);
     ck_assert_int_eq(cl_cvdgetage(".", NULL), CL_ENULLARG);
