@@ -46,7 +46,8 @@ use crate::{
         cl_error_t_CL_ETIMEOUT, cl_error_t_CL_ERESOURCE,
         cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EUNPACK, cl_error_t_CL_EUNLINK,
         cl_error_t_CL_EWRITE,
-        cl_error_t_CL_BREAK, cl_error_t_CL_ENULLARG, cl_error_t_CL_SUCCESS, cl_error_t_CL_VERIFIED,
+        cl_error_t_CL_BREAK, cl_error_t_CL_CLEAN, cl_error_t_CL_ENULLARG, cl_error_t_CL_SUCCESS,
+        cl_error_t_CL_VERIFIED,
         cl_error_t_CL_VIRUS,
         cli_ctx, cli_magic_scan_buff,
     },
@@ -72,6 +73,17 @@ unsafe fn parser_failure(
         b"Rust parser inspection was incomplete\0"
     };
     sys::cli_mark_scan_incomplete(ctx, reason.as_ptr().cast());
+    status
+}
+
+unsafe fn rust_reconcile_status(ctx: *mut cli_ctx, status: cl_error_t) -> cl_error_t {
+    if !ctx.is_null()
+        && (status == cl_error_t_CL_SUCCESS || status == cl_error_t_CL_CLEAN)
+        && (*ctx).scan_incomplete
+    {
+        return cl_error_t_CL_EPARSE;
+    }
+
     status
 }
 
@@ -894,7 +906,7 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         scan_onenote_inner(ctx)
     }));
 
-    match result {
+    let status = match result {
         Ok(status) => status,
         Err(_) => parser_failure(
             ctx,
@@ -902,7 +914,9 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
             cl_error_t_CL_EFORMAT,
             "parser panicked while reading the document",
         ),
-    }
+    };
+
+    rust_reconcile_status(ctx, status)
 }
 
 unsafe fn scan_onenote_inner(ctx: *mut cli_ctx) -> cl_error_t {
@@ -1070,7 +1084,7 @@ pub unsafe extern "C" fn scan_lha_lzh(ctx: *mut cli_ctx) -> cl_error_t {
         scan_lha_lzh_inner(ctx)
     }));
 
-    match result {
+    let status = match result {
         Ok(status) => status,
         Err(_) => parser_failure(
             ctx,
@@ -1078,7 +1092,9 @@ pub unsafe extern "C" fn scan_lha_lzh(ctx: *mut cli_ctx) -> cl_error_t {
             cl_error_t_CL_EFORMAT,
             "decoder panicked while scanning the archive",
         ),
-    }
+    };
+
+    rust_reconcile_status(ctx, status)
 }
 
 unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
@@ -1685,7 +1701,7 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
         );
     }
 
-    cl_error_t_CL_SUCCESS
+    rust_reconcile_status(ctx, cl_error_t_CL_SUCCESS)
 }
 #[cfg(test)]
 mod tests {
@@ -1904,6 +1920,34 @@ mod tests {
         assert_eq!(
             rust_context_error_status(&ctx::Error::Format),
             cl_error_t_CL_EPARSE
+        );
+    }
+
+    #[test]
+    fn rust_parser_status_reconciles_sticky_clean_completion() {
+        let mut ctx: cli_ctx = unsafe { std::mem::zeroed() };
+
+        assert_eq!(
+            unsafe { rust_reconcile_status(&mut ctx, cl_error_t_CL_SUCCESS) },
+            cl_error_t_CL_SUCCESS
+        );
+
+        ctx.scan_incomplete = true;
+        assert_eq!(
+            unsafe { rust_reconcile_status(&mut ctx, cl_error_t_CL_CLEAN) },
+            cl_error_t_CL_EPARSE
+        );
+        assert_eq!(
+            unsafe { rust_reconcile_status(&mut ctx, cl_error_t_CL_VIRUS) },
+            cl_error_t_CL_VIRUS
+        );
+        assert_eq!(
+            unsafe { rust_reconcile_status(&mut ctx, cl_error_t_CL_EREAD) },
+            cl_error_t_CL_EREAD
+        );
+        assert_eq!(
+            unsafe { rust_reconcile_status(null_mut(), cl_error_t_CL_SUCCESS) },
+            cl_error_t_CL_SUCCESS
         );
     }
 

@@ -26540,6 +26540,60 @@ START_TEST(test_rust_lha_requires_zero_terminator)
 }
 END_TEST
 
+START_TEST(test_rust_lha_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t archive[61];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    build_lha_level0_header(archive, "-lhd-", 0, 0);
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse            = CL_SCAN_PARSE_ARCHIVE;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_LHA_LZH;
+    layer.size               = sizeof(archive);
+
+    map = fmap_open_memory(archive, sizeof(archive), NULL);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap   = map;
+    layer.fmap = map;
+    ck_assert_int_eq(scan_lha_lzh(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    fmap_free(map);
+
+    map = fmap_open_memory(archive, sizeof(archive), NULL);
+    ck_assert_ptr_nonnull(map);
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_LHA_LZH;
+    layer.size               = sizeof(archive);
+    layer.fmap               = map;
+    cli_mark_scan_incomplete(&ctx, "pre-existing required inspection failure");
+
+    ck_assert_int_eq(scan_lha_lzh(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "pre-existing required inspection failure");
+    ck_assert(map->dont_cache_flag);
+    fmap_free(map);
+}
+END_TEST
+
 START_TEST(test_rust_lha_nonempty_directory_is_fail_visible)
 {
     uint8_t archive[62];
@@ -52736,6 +52790,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_rust_lha, test_rust_lha_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_requires_zero_terminator);
+    tcase_add_test(tc_rust_lha, test_rust_lha_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_nonempty_directory_is_fail_visible);
     tcase_add_test(tc_rust_lha, test_rust_lha_unsupported_method_is_explicit);
     tcase_add_test(tc_rust_lha, test_rust_lha_empty_member_counts_toward_maxfiles);

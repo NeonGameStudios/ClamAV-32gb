@@ -1,5 +1,21 @@
 # Wishlist
 
+## Rust parser exported-entry sticky reconciliation — 2026-09-01
+
+- Keep `scan_lha_lzh()`, `cli_scanalz()`, and `scan_onenote()` fail-visible for
+  direct callers when valid Rust parser completion follows a pre-existing
+  sticky incomplete state. Clean completion must return `CL_EPARSE`, while
+  detections and stronger parser, read, timeout, resource, decoder, and
+  cleanup statuses remain authoritative.
+- Retain the valid zero-member LHA direct regression
+  `test_rust_lha_sticky_incomplete_result_is_fail_visible` and the Rust helper
+  precedence regression. Current Check translation-unit compilation passes
+  with production GCC flags, with only the pre-existing ISO test warning.
+  Rust relink/test-binary execution is blocked by the existing Docker overlay
+  being full; complete Rust parser execution, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification remain required.
+
 ## ELF/Mach-O bytecode unpack-entry sticky reconciliation — 2026-09-01
 
 - Keep `cli_unpackelf()` and `cli_unpackmacho()` fail-visible for direct

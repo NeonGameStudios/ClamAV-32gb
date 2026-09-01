@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## Rust parser exported-entry sticky reconciliation — 2026-09-01
+
+The three enabled Rust parser exports (`scan_lha_lzh()`, `cli_scanalz()`, and
+`scan_onenote()`) could return `CL_SUCCESS` after valid parser completion even
+when the owning layer already carried sticky incomplete state. A shared Rust
+boundary helper now converts only clean completion to `CL_EPARSE` in that
+state, preserving detections and stronger parser, read, timeout, resource,
+decoder, and cleanup statuses. The valid zero-member LHA direct regression
+`test_rust_lha_sticky_incomplete_result_is_fail_visible` checks untainted clean
+completion, exact prior-reason preservation, and fmap non-cacheability; the
+Rust helper regression also covers null contexts and non-clean precedence.
+Current Check translation-unit compilation with production GCC flags passes
+with only the pre-existing ISO test warning. The existing Docker overlay has
+no free space for a Rust relink or test binary link, and `cargo fmt` is not an
+installed Cargo subcommand; direct `rustfmt` reports pre-existing formatting
+differences across this legacy file. Full Rust parser execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain open.
+
 ## ELF/Mach-O bytecode unpack-entry sticky reconciliation — 2026-09-01
 
 `cli_unpackelf()` and `cli_unpackmacho()` returned a successful no-hook
