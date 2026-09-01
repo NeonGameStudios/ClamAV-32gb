@@ -20510,6 +20510,70 @@ START_TEST(test_sis9x_short_nested_field_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_sis9x_unexpected_nested_field_is_fail_visible)
+{
+    uint8_t data[128] = {0};
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    /* The nested DATAUNIT contains a field with a valid header but the wrong
+     * type. Keep a valid trailing field after DATA so the old loop could
+     * mistake the unexpected field for an ordinary loop exit and return
+     * clean instead of observing a truncated map. */
+    data[0] = 0x7a;
+    data[1] = 0x1a;
+    data[2] = 0x20;
+    data[3] = 0x10;
+    cli_writeint32(data + 16, 12);  /* T_CONTENTS */
+    cli_writeint32(data + 20, 100);
+    cli_writeint32(data + 24, 34);  /* T_CONTROLLERCHECKSUM */
+    cli_writeint32(data + 28, 1);
+    cli_writeint32(data + 36, 35);  /* T_DATACHECKSUM */
+    cli_writeint32(data + 40, 1);
+    cli_writeint32(data + 48, 3);   /* T_COMPRESSED option */
+    cli_writeint32(data + 52, 1);
+    cli_writeint32(data + 60, 30);  /* T_DATA */
+    cli_writeint32(data + 64, 48);
+    cli_writeint32(data + 68, 2);   /* T_ARRAY */
+    cli_writeint32(data + 72, 40);
+    cli_writeint32(data + 76, 31);  /* T_DATAUNIT */
+    cli_writeint32(data + 80, 32);
+    cli_writeint32(data + 84, 2);   /* T_ARRAY */
+    cli_writeint32(data + 88, 24);
+    cli_writeint32(data + 92, 1);   /* T_STRING: unexpected in FILEDATA */
+    cli_writeint32(data + 96, 12);
+    cli_writeint32(data + 116, 36); /* T_SIGNATURE after DATA */
+    cli_writeint32(data + 120, 0);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_SIS", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_python_compiled_parser_is_explicitly_unsupported)
 {
     static const uint8_t data[] = {0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0};
@@ -53455,6 +53519,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_generic_graphics_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_sis_truncated_compressed_member_is_fail_visible);
     tcase_add_test(tc_cl, test_sis9x_short_nested_field_is_fail_visible);
+    tcase_add_test(tc_cl, test_sis9x_unexpected_nested_field_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_member_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_member_header_offset_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_truncated_header_is_fail_visible);

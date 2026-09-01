@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## SIS 9.x expected-field admission — 2026-09-01
+
+The SIS 9.x nested DATAUNIT and FILEDATA loops treated a successfully read
+field of the wrong type as an ordinary loop terminator. A malformed package
+could therefore leave the declared DATA content unconsumed and still return a
+clean result when a later valid field existed. The parser now requires the
+expected ARRAY, DATAUNIT, FILEDATA, and COMPRESSED field types and records a
+sticky incomplete `CL_EPARSE` result before unwinding. The registered
+`test_sis9x_unexpected_nested_field_is_fail_visible` regression and source
+guards cover the boundary. Current-source production-linked execution,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## SCRENC trailer completion — 2026-09-01
 
 The SCRENC decoder previously logged checksum and terminator mismatches but

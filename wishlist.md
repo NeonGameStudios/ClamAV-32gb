@@ -1,5 +1,17 @@
 # Wishlist
 
+## SIS 9.x expected-field admission — 2026-09-01
+
+- Require the SIS 9.x nested DATAUNIT and FILEDATA loops to reject a
+  successfully read but unexpected field type as malformed content; do not
+  treat leftover declared bytes as an ordinary loop terminator.
+- Retain `test_sis9x_unexpected_nested_field_is_fail_visible` and source guards
+  for the ARRAY, DATAUNIT, FILEDATA, and COMPRESSED expectations.
+- Complete current-source production-linked execution, complete SIS corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification.
+
 ## SCRENC trailer completion — 2026-09-01
 
 - Require a valid checksum and `^#~@` terminator before SCRENC or HTML

@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## SIS 9.x expected-field admission — 2026-09-01
+
+The SIS 9.x nested DATAUNIT and FILEDATA parser now rejects a successfully
+read field with the wrong structural type instead of treating it as an
+ordinary loop terminator. This prevents malformed declared DATA content from
+being silently discarded before a later valid field. The focused regression
+and source guards cover the expected ARRAY, DATAUNIT, FILEDATA, and COMPRESSED
+fields and preserve sticky incomplete `CL_EPARSE`/non-cacheable results.
+
+Current-source production-linked execution, complete SIS corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## SCRENC trailer completion — 2026-09-01
 
 SCRENC decoding now requires the encoded stream's checksum and `^#~@`
