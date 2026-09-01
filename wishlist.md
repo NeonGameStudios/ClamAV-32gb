@@ -11207,3 +11207,14 @@ final parser/release qualification remain open.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification remain open.
+
+## Matcher sticky completion — 2026-09-01
+
+- Keep direct cli_scan_fmap() and cli_scan_buff() completion fail-visible: a
+  clean matcher result after required matcher/metadata work marked the layer
+  incomplete must return CL_EPARSE and remain non-cacheable.
+- Retain the target-metadata regression plus zero-length buffer check and
+  source guards. Current-source production-linked matcher execution, complete
+  signature/ABI corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final matcher/release
+  qualification remain open.

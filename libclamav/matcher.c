@@ -329,6 +329,14 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
     return ret;
 }
 
+static cl_error_t cli_matcher_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t offset, cli_ctx *ctx, cli_file_t ftype, struct cli_ac_data **acdata)
 {
     cl_error_t ret = CL_CLEAN;
@@ -459,7 +467,7 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
         ret = CL_SUCCESS;
     }
 
-    return status;
+    return cli_matcher_reconcile_status(ctx, status);
 }
 
 /*
@@ -2223,7 +2231,8 @@ done:
         return ret;
     }
 
-    return (acmode & AC_SCAN_FT) ? type : CL_SUCCESS;
+    ret = (acmode & AC_SCAN_FT) ? type : CL_SUCCESS;
+    return cli_matcher_reconcile_status(ctx, ret);
 }
 
 #define CDBRANGE(field, val)                                              \

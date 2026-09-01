@@ -2683,10 +2683,11 @@ START_TEST(test_scan_fmap_without_generic_root_is_fail_visible)
     ctx.fmap                                   = &thefmap;
     ctx.recursion_stack[ctx.recursion_level].fmap = &thefmap;
 
-    ck_assert_int_eq(cli_scan_fmap(&ctx, CL_TYPE_MSEXE, false, NULL, AC_SCAN_VIR, NULL), CL_SUCCESS);
+    ck_assert_int_eq(cli_scan_fmap(&ctx, CL_TYPE_MSEXE, false, NULL, AC_SCAN_VIR, NULL), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "Executable metadata parsing ended before inspection completed");
+    ck_assert_int_eq(cli_scan_buff(NULL, 0, 0, &ctx, CL_TYPE_ANY, NULL), CL_EPARSE);
 
     ctx.engine->root[0] = generic_root;
 }

@@ -11864,3 +11864,19 @@ is pinned by source guards and the capability manifest. Current-source
 production-linked execution, complete ARJ/ARJ-SFX corpus, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
 resource, and final release qualification remain required.
+## Matcher sticky completion — 2026-09-01
+
+Direct `cli_scan_fmap()` and `cli_scan_buff()` matcher completion now
+reconciles a clean result against pre-existing shared scan-incomplete state as
+`CL_EPARSE`, including the target-specific path that disables executable
+metadata-dependent work. Detections and stronger matcher, read, timeout,
+resource, and setup errors remain authoritative, and file-type discovery is
+not published as a clean result after incomplete matcher work.
+
+`test_scan_fmap_without_generic_root_is_fail_visible` covers the executable-
+metadata failure and a zero-length buffer completion under the same sticky
+state; source guards and the capability manifest pin both return paths.
+Current-source production-linked matcher execution, complete signature/ABI
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final matcher/release
+qualification remain required.

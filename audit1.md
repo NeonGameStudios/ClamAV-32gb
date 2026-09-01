@@ -19079,3 +19079,21 @@ execution after the existing Docker overlay is repaired; complete ARJ/ARJ-SFX
 corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+## Matcher sticky completion — 2026-09-01
+
+The low-level `cli_scan_fmap()` matcher could disable an unavailable
+target-specific root after executable metadata parsing failed, leave the
+shared context incomplete, and still return `CL_SUCCESS`. `cli_scan_buff()`
+also had no direct completion reconciliation for a pre-tainted context.
+Both direct matcher paths now convert clean completion to `CL_EPARSE` when
+sticky incomplete state is present, while preserving detections and stronger
+matcher, read, timeout, resource, and setup failures; file-type discovery is
+not published as a clean result after incomplete matcher work.
+
+The existing `test_scan_fmap_without_generic_root_is_fail_visible` regression
+now requires `CL_EPARSE` for the executable-metadata failure and exercises a
+zero-length buffer completion under the same sticky state. Source guards and
+the capability manifest pin both return paths. Current-source production-
+linked matcher execution, complete signature/ABI corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final matcher/release qualification remain required.
