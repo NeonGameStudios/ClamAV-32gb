@@ -71,6 +71,14 @@ struct msexp_hdr {
 #pragma pack
 #endif
 
+static cl_error_t msexpand_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 #define B_SIZE 4096
 #define RW_SIZE 2048
 
@@ -101,7 +109,7 @@ struct msexp_hdr {
     }                                                                                         \
     wbytes += w;                                                                              \
     if (wbytes == fsize)                                                                      \
-        return CL_SUCCESS;                                                                    \
+        return msexpand_reconcile_status(ctx, CL_SUCCESS);                                    \
     w = 0;
 
 static cl_error_t msexpand_checktimelimit(cli_ctx *ctx, const char *reason)
@@ -249,5 +257,5 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
         return CL_EPARSE;
     }
 
-    return CL_SUCCESS;
+    return msexpand_reconcile_status(ctx, CL_SUCCESS);
 }

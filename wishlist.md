@@ -1,5 +1,20 @@
 # Wishlist
 
+## MSEXPAND direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_msexpand()` fail-visible for direct callers when valid declared
+  output completes with a pre-existing sticky incomplete state. The fast and
+  final successful exits now return `CL_EPARSE`, while stronger decoder, I/O,
+  limit, and resource errors remain authoritative.
+- Retain `test_msexpand_sticky_incomplete_result_is_fail_visible`, which uses
+  the materialized valid `clam.exe.szdd` fixture, a real temporary output
+  descriptor, and checks the exact prior reason, non-cacheability, and
+  reservation release. The current-source production-linked GCC isolation
+  runner passes 1/1 and the pre-change comparison returns clean for the same
+  fixture. Keep full current MSEXPAND TCase relink/execution, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification open.
+
 ## SIS direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scansis()` fail-visible for direct callers when a valid SIS walk

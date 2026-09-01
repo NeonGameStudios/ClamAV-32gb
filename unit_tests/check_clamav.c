@@ -18619,6 +18619,77 @@ START_TEST(test_msexpand_header_range_classes_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msexpand_sticky_incomplete_result_is_fail_visible)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_ctx ctx;
+    char file_path[PATH_MAX];
+    char *output_path = NULL;
+    struct stat st;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    size_t offset = 0;
+    uint64_t temporary_reserved = 0;
+    int input_fd;
+    int output_fd;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/clam.exe.szdd", OBJDIR);
+    input_fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(input_fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(input_fd, &st), 0);
+    ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                  "invalid SZDD corpus size");
+    data_size = (size_t)st.st_size;
+    data = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < data_size) {
+        ssize_t nread = read(input_fd, data + offset, data_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    ck_assert_int_eq(close(input_fd), 0);
+
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &output_path, &output_fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(output_path);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                = scan_engine;
+    ctx.dconf                 = scan_engine->dconf;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing MSEXPAND incomplete state";
+    map->dont_cache_flag       = true;
+
+    ret = cli_msexpand(&ctx, output_fd, &temporary_reserved);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing MSEXPAND incomplete state");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_uint_gt(temporary_reserved, 0);
+
+    ck_assert_int_eq(close(output_fd), 0);
+    cli_scan_release_temporary(&ctx, temporary_reserved);
+    free(output_path);
+    cl_fmap_close(map);
+    free(data);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_msexpand_null_context_is_fail_visible)
 {
     uint64_t temporary_reserved = 0;
@@ -52245,6 +52316,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwpml, test_hwpml_base64_decoder_is_bounded_and_fail_visible);
     tcase_add_test(tc_cl, test_legacy_parser_limit_returns_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_header_range_classes_are_fail_visible);
+    tcase_add_test(tc_cl, test_msexpand_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_null_context_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_invalid_magic_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_missing_map_is_fail_visible);

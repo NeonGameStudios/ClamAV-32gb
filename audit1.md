@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## MSEXPAND direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_msexpand()` could return clean from its declared-output fast path or its
+final completion return even when the recognized layer already carried sticky
+incomplete state. Both successful exits now reconcile that state to
+`CL_EPARSE`, preserving stronger decoder, I/O, limit, and resource errors.
+The regression `test_msexpand_sticky_incomplete_result_is_fail_visible` uses
+the materialized valid `clam.exe.szdd` fixture, a production engine, and a
+real temporary output descriptor; it asserts the exact prior diagnostic,
+non-cacheability, and release of the temporary reservation. The current-source
+production-linked GCC isolation runner passes 1/1, while the exact pre-change
+object returns clean for the same sticky fixture. Current MSEXPAND source and
+unit translation unit compile with production GCC flags; full current
+MSEXPAND TCase relink/execution, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## SIS direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scansis()` returned the status from a valid SIS walk after temporary
