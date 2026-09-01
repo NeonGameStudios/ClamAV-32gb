@@ -1,5 +1,20 @@
 # Wishlist
 
+## OLE2 direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_ole2_extract()` fail-visible for direct callers when a valid
+  property walk finishes with a pre-existing sticky incomplete state. Clean
+  and abort completion now return `CL_EPARSE`, while detections and stronger
+  parser or resource errors remain preserved.
+- Retain `test_ole2_sticky_incomplete_result_is_fail_visible`, which uses the
+  checked-in `has_png_and_jpeg.xls` corpus with a valid initialized engine and
+  pre-tainted OLE2 layer, checking the exact prior reason plus
+  non-cacheability. The current-source production-linked GCC isolation runner
+  passes 1/1 and the pre-change comparison returns clean for the same fixture.
+  Keep full current OLE2 TCase relink/execution, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification open.
+
 ## HWP5 stream direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scanhwp5_stream()` fail-visible for direct callers when a normal,

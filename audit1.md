@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## OLE2 direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_ole2_extract()` could finish a valid property walk with `CL_SUCCESS`, or
+normalize `CL_BREAK` to clean, even when the recognized OLE2 layer already
+carried sticky incomplete state. After deferred-limit handling, clean and
+abort completion now become `CL_EPARSE` in that state, while detections and
+stronger parser or resource errors remain authoritative. The regression
+`test_ole2_sticky_incomplete_result_is_fail_visible` uses the checked-in
+`has_png_and_jpeg.xls` corpus with a valid initialized engine and pre-tainted
+OLE2 layer, asserting direct `CL_EPARSE`, preservation of the exact prior
+diagnostic, and non-cacheability. The current-source production-linked GCC
+isolation runner passes 1/1, while the pre-change comparison returns clean for
+the same fixture. The current OLE2 source and unit translation unit compile
+with production GCC flags; full current OLE2 TCase relink/execution,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## HWP5 stream direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scanhwp5_stream()` could return a child scanner's clean status from a

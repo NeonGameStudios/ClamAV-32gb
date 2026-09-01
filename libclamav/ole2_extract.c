@@ -3719,5 +3719,11 @@ done:
     if ((ret == CL_SUCCESS || ret == CL_BREAK) && deferred_limit != CL_SUCCESS)
         ret = deferred_limit;
 
+    /* A valid property walk can still finish after an earlier required
+     * inspection was omitted or failed. Do not normalize that sticky state to
+     * a clean result for direct OLE2 callers. */
+    if ((ret == CL_SUCCESS || ret == CL_BREAK) && ctx->scan_incomplete)
+        ret = CL_EPARSE;
+
     return ret == CL_BREAK ? CL_CLEAN : ret;
 }

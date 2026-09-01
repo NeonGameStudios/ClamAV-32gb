@@ -34388,6 +34388,55 @@ START_TEST(test_ole2_truncated_property_tree_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole2_sticky_incomplete_result_is_fail_visible)
+{
+    const char *file = SRCDIR PATHSEP "input" PATHSEP "other_scanfiles" PATHSEP "has_png_and_jpeg.xls";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    int fd;
+
+    fd = open(file, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file, strerror(errno));
+    map = fmap_new(fd, 0, 0, file, NULL);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    layer.fmap = map;
+    layer.type = CL_TYPE_MSOLE2;
+    layer.size = map->len;
+    ctx.engine = scan_engine;
+    ctx.dconf = scan_engine->dconf;
+    ctx.options = &options;
+    ctx.fmap = map;
+    ctx.this_layer_tmpdir = tmpdir;
+    ctx.recursion_stack = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.scan_incomplete = true;
+    ctx.scan_incomplete_reason = "pre-existing OLE2 incomplete state";
+    map->dont_cache_flag = true;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing OLE2 incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ck_assert_int_eq(close(fd), 0);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_ole2_truncated_header_is_fail_visible)
 {
     static const uint8_t data[16] = {0};
@@ -51664,6 +51713,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2, test_ole2_truncated_header_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_header_read_failure_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_truncated_property_tree_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_stream_chain_read_failure_preserves_status);
     tcase_add_test(tc_ole2, test_ole2_mso_prefix_range_classes_are_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_invalid_block_geometry_is_fail_visible);
