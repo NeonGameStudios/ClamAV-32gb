@@ -11191,3 +11191,19 @@ final parser/release qualification remain open.
   execution, sanitizer, full ingress/service parity, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final release qualification remain open.
+
+## ARJ scanner entry boundaries — 2026-09-01
+
+- Keep `cli_scanarj()` explicit at its direct boundary: null contexts return
+  `CL_ENULLARG`, missing maps return `CL_EPARSE` with sticky incomplete state,
+  and missing engines return `CL_ENULLARG` before temporary staging.
+- Keep header-only end-of-archive completion fail-visible when the confirmed
+  layer was already incomplete; preserve the prior diagnostic, fmap
+  non-cacheability, detections, and stronger extraction/decoder/read/timeout/
+  resource/cleanup statuses.
+- Retain
+  `test_arj_scan_entry_boundaries_are_fail_visible` and its source guards.
+  Current-source production-linked execution, complete ARJ/ARJ-SFX corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
