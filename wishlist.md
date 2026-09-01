@@ -9865,6 +9865,18 @@ qualification as required evidence.
   production-CVD, sanitizer, materialized-large-file, Sonic1, and release
   evidence.
 
+## CVD generated-fixture completion refresh — 2026-09-01
+
+- Retain the deterministic CMake-generated `test-5-marker.cud` fixture: strip
+  only the obsolete `DSIG:` metadata line, preserve member contents, and emit
+  the strict TAR end markers under an unsigned CUD extension.
+- Retain the rebuilt current-source production-linked GCC result: `cvd_api`
+  passes 11/11 and `cvd_info` passes 1/1, while signed verification remains
+  covered by the original signed fixtures.
+- Complete signed production CVD/CLD/CUD corpus, sanitizer, service parity,
+  materialized-large-file/resource measurements, Sonic1, and final
+  parser/release qualification.
+
 ## Compressed-stream focused rerun — 2026-09-01
 
 - Retain the repository CMake materialization path for the encrypted BZip2

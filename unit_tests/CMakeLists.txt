@@ -207,6 +207,22 @@ endif()
 ADD_CUSTOM_COMMAND(TARGET check_clamav POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/input/clamav.hdb ${CMAKE_CURRENT_BINARY_DIR}/input/.)
 
+# The legacy signed CVD fixtures predate the strict TAR end-marker contract
+# and contain an obsolete DSIG metadata line.  Generate a deterministic
+# unsigned CUD for the public cl_load test while leaving signed verification
+# coverage on the original fixtures.
+set(CVD_TEST_FIXTURE ${CMAKE_CURRENT_BINARY_DIR}/input/freshclam_testfiles/test-5-marker.cud)
+add_custom_command(
+    OUTPUT ${CVD_TEST_FIXTURE}
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/input/create_cvd_test_fixture.py
+            --input ${CMAKE_CURRENT_SOURCE_DIR}/input/freshclam_testfiles/test-5.cvd
+            --output ${CVD_TEST_FIXTURE}
+    DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/input/create_cvd_test_fixture.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/input/freshclam_testfiles/test-5.cvd)
+add_custom_target(tgt_cvd_test_fixture ALL DEPENDS ${CVD_TEST_FIXTURE})
+add_dependencies(check_clamav tgt_cvd_test_fixture)
+
 # This target intentionally does not link libmilter. It exercises the exact
 # arithmetic and zero-value policy used by clamav-milter even on builders
 # where the optional sendmail development headers are unavailable.

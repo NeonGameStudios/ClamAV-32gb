@@ -3138,7 +3138,7 @@ START_TEST(test_cl_load)
     ck_assert_msg(ret == CL_SUCCESS, "cl_engine_set_str failed: %s", cl_strerror(ret));
 
     /* load test cvd */
-    testfile = SRCDIR PATHSEP "input" PATHSEP "freshclam_testfiles" PATHSEP "test-5.cvd";
+    testfile = OBJDIR PATHSEP "input" PATHSEP "freshclam_testfiles" PATHSEP "test-5-marker.cud";
     ret      = cl_load(testfile, engine, &sigs, CL_DB_STDOPT);
     ck_assert_msg(ret == CL_SUCCESS, "cl_load failed for: %s -- %s", testfile, cl_strerror(ret));
     ck_assert_msg(sigs > 0, "No signatures loaded");

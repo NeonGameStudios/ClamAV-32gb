@@ -17369,6 +17369,23 @@ Full milter translation-unit, one-request-at-a-time service, production-CVD,
 sanitizer, materialized-large-file, Sonic1, and final release qualification
 remain open.
 
+## CVD generated-fixture completion refresh — 2026-09-01
+
+The strict CVD loader correctly rejects the repository's legacy signed
+fixtures because their decompressed TAR payloads omit the required all-zero
+end blocks and include an obsolete `DSIG:` line in `test.info`. To keep that
+contract fail-visible without weakening signed verification, the unit-test
+build now deterministically derives `test-5-marker.cud`: it removes only the
+obsolete metadata line, preserves the database members, and emits a
+marker-complete gzip TAR under the CUD extension. The rebuilt current-source
+production-linked GCC `cvd_api` TCase passes 11/11 and `cvd_info` passes 1/1;
+the separate signed CVD verification cases remain on the original fixtures.
+
+This closes the local stale-fixture setup failure, not production CVD
+certification. A current signed production CVD/CLD/CUD corpus, sanitizer,
+service parity, materialized-large-file/resource measurements, Sonic1, and
+the final requirement-by-requirement release audit remain open.
+
 ## Compressed-stream focused rerun — 2026-09-01
 
 The existing current-source production-linked GCC harness now has the
