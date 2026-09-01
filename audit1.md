@@ -17334,6 +17334,29 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## PDF current-source production-linked rerun — 2026-08-31
+
+The canonical PDF production objects (`pdf.c`, `pdf.h`, `pdfdecode.c`,
+`pdfdecode.h`, and `pdfng.c`) and the current `check_clamav.c` source were
+SHA-256 identical to the copies used by the existing Docker GCC harness. The
+repository CMake target first materialized `clam.pdf` from its checked-in XOR
+fixture. The refreshed focused cases pass `pdf` 17/17, `pdf_map` 4/4, and
+`pdf_corpus` 1/1 with no failures or errors; the corpus reaches the exact
+offset-0 nested MZP marker after PDF extraction.
+
+The repository sparse exact-32-GiB library test also exposed and received two
+test-setup repairs: it now initializes libclamav before loading its temporary
+NDB and supplies the existing CVD certificate directory, and its tail marker
+uses the supported EOF-relative signature coordinate. In the current Docker
+overlay environment the test then timed out while closing the sparse 32-GiB
+fixture, so no exact-edge qualification is claimed from that run.
+
+This is refreshed PDF parser evidence, not final release certification.
+Production/sanitizer scanner fault injection, complete PDFNG/encrypted corpus,
+certified Linux x86-64, materialized multi-gigabyte streams,
+production-CVD/service parity, Sonic1 resource evidence, and the final
+requirement-by-requirement release audit remain open.
+
 ## MIME/mbox current-source production-linked rerun — 2026-08-31
 
 The canonical `mbox.c`, `mbox.h`, `scanners.c`, and `check_clamav.c` sources

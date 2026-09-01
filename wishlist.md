@@ -9841,6 +9841,21 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## PDF current-source production-linked rerun — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for the PDF production
+  objects and `check_clamav.c`.
+- Retain the materialized-corpus production-linked evidence: `pdf` passes
+  17/17, `pdf_map` 4/4, and `pdf_corpus` 1/1, with the exact nested MZP
+  marker reached after extraction.
+- The sparse exact-32-GiB library test now initializes libclamav, configures
+  the existing CVD certificate directory, and uses an EOF-relative tail
+  signature; its Docker overlay run timed out while closing the sparse
+  fixture, so exact-edge qualification remains open.
+- Complete PDFNG/encrypted corpus, current-head sanitizer, certified Linux
+  x86-64, materialized multi-gigabyte streams, production-CVD/service parity,
+  Sonic1 resource, and final parser/release qualification.
+
 ## UTF-8/script normalization current-source rerun — 2026-08-31
 
 - Retain exact canonical/container SHA-256 equality for `scanners.c`,

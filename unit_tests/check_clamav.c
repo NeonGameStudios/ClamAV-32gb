@@ -2087,7 +2087,7 @@ START_TEST(test_library_exact_32g_tail_detection)
     static const uint64_t marker_offset   = file_size - 64;
     static const char marker[]            = "CLAMAV-LF-32G-EDGE";
     static const char signature[]         =
-        "LargeFile.Library.32G:0:*:434c414d41562d4c462d3332472d4544474500\n";
+        "LargeFile.Library.32G:0:EOF-64:434c414d41562d4c462d3332472d45444745\n";
     struct cl_engine *engine;
     struct cl_scan_options options;
     cl_scan_report_t *report = NULL;
@@ -2095,6 +2095,7 @@ START_TEST(test_library_exact_32g_tail_detection)
     const char *last_alert = NULL;
     char signature_path[PATH_MAX];
     char *path = NULL;
+    const char *cvdcertsdir;
     unsigned int sigs = 0;
     cl_error_t status;
     uint64_t scanned = 0;
@@ -2104,6 +2105,7 @@ START_TEST(test_library_exact_32g_tail_detection)
 
     ck_assert_msg(getenv("CLAMAV_LARGEFILE_QUALIFY") != NULL,
                   "the exact-32-GiB test requires CLAMAV_LARGEFILE_QUALIFY=1");
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
 
     ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path), "%s/largefile-library-edge.ndb", tmpdir),
                      (int)strlen(tmpdir) + (int)strlen("/largefile-library-edge.ndb"));
@@ -2115,6 +2117,9 @@ START_TEST(test_library_exact_32g_tail_detection)
 
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
+    cvdcertsdir = getenv("CVD_CERTS_DIR");
+    ck_assert_ptr_nonnull(cvdcertsdir);
+    ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_CVDCERTSDIR, cvdcertsdir), CL_SUCCESS);
     ck_assert_int_eq(cl_load(signature_path, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
     ck_assert_uint_eq(sigs, 1);
     ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
