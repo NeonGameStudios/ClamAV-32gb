@@ -108,20 +108,22 @@ remain open.
 
 ## Rust parser and FFI current-source rerun — 2026-09-01
 
-The existing Docker image already contained Rust 1.97.1, and its CMake build
-provided the production `libclamav` shared library. With the canonical Rust
-source, lockfile, and C sources in the existing harness, offline
-`cargo check --locked --offline --tests` passes. A one-job,
-reduced-debug production-linked `cargo test --locked --offline` run passes
-all 139 Rust unit tests, including ALZ, LHA, OneNote, fmap/accounting, CVD,
-cleanup, FFI-admission, and signature-diff coverage. The test binary links
-against the existing CMake-built libclamav symbols rather than test stubs.
+The existing Docker image actually provides Rust 1.63.0 and Cargo 1.65.0;
+its Cargo cannot parse this source's lockfile version 4, so no Rust Cargo
+suite result is claimed from that image. The current production-linked GCC
+binary was revalidated against the canonical snapshot: `rust_alz` passes 2/2,
+`rust_lha` 9/9, `rust_onenote` 2/2, and `rust_map` 1/1. The already-installed
+host Rust 1.97.1 was also tried with a temporary target directory; dependency
+build reached `openssl-sys` and stopped because the host lacks OpenSSL/pkg-
+config development metadata. No software was installed. Canonical
+`scanners.rs`, `alz.rs`, `onenote.rs`, and `check_clamav.c` hashes match the
+Docker snapshot.
 
-This is current-source Rust unit and production-library link evidence, not
-final release certification. Full C-ABI integration, sanitizer, certified
-Linux x86-64, production-CVD/service, materialized-large-file, Sonic1
-resource evidence, and the final requirement-by-requirement parser/release
-audit remain open.
+This is current-source production-linked C/Rust integration evidence, not
+final release certification. A native Rust unit run, full C-ABI integration,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1 resource evidence, and the final
+requirement-by-requirement parser/release audit remain open.
 
 ## Bytecode normalizer cleanup and core matcher rerun — 2026-08-31
 

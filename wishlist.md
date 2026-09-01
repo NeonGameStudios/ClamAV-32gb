@@ -543,15 +543,16 @@ final parser/release qualification.
 
 ## Rust parser and FFI current-source rerun — 2026-09-01
 
-- Retain the offline Rust 1.97.1 `cargo check --locked --offline --tests`
-  pass and the production-linked one-job `cargo test --locked --offline`
-  pass: 139/139 unit tests.
-- Keep the production test link bound to the existing CMake-built `libclamav`
-  shared library; the first standalone Cargo link was correctly rejected for
-  missing production C symbols, not replaced with stubs.
-- Complete full C-ABI integration, sanitizer, certified Linux x86-64,
-  production-CVD/service, materialized-large-file, Sonic1 resource, and
-  final parser/release qualification.
+- Correct the stale Docker toolchain claim: the existing image has Rust 1.63.0
+  and Cargo 1.65.0, which cannot parse the lockfile version 4. The current
+  production-linked GCC binary still passes `rust_alz` 2/2, `rust_lha` 9/9,
+  `rust_onenote` 2/2, and `rust_map` 1/1.
+- The already-installed host Rust 1.97.1 reached `openssl-sys` with a
+  temporary target directory but stopped because OpenSSL/pkg-config
+  development metadata is absent; no software was installed.
+- Complete native Rust unit execution, full C-ABI integration, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1 resource, and final parser/release qualification.
 
 ## UDF descriptor-tag integrity admission — 2026-08-30
 
