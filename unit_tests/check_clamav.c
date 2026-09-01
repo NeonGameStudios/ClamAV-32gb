@@ -44372,6 +44372,18 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
                   ctx.scan_incomplete_reason ? ctx.scan_incomplete_reason : "(no reason)");
     ck_assert(!map->dont_cache_flag);
 
+    /* A direct parser call can follow another required operation in the same
+     * context. A sticky incomplete state must not be hidden by a clean UDF
+     * volume result, including when the anchor-based path returns early. */
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing UDF incomplete state";
+    map->dont_cache_flag       = true;
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing UDF incomplete state");
+    ck_assert(map->dont_cache_flag);
+
     /* The FID ICB is the authoritative address of its File Entry. A
      * list-order-only pairing must not scan a different entry's extents. */
     test_udf_put_le32(data + fid_offset + offsetof(FileIdentifierDescriptor, icb) +

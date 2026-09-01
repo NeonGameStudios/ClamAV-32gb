@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## UDF direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scanudf()` returned immediately from the anchor-based path and the
+legacy path returned its accumulated status without converting a clean result
+to an incomplete result when the scan context was already sticky-incomplete.
+The direct entry now preserves detections and stronger parser errors but
+returns `CL_EPARSE` for clean/`CL_SUCCESS` results with incomplete state. The
+valid UDF corpus regression pre-taints a valid clean volume and asserts
+`CL_EPARSE`, preservation of the original reason, and non-cacheability. The
+current-source production-linked GCC `udf_map` case passes 12/12 and
+`udf_corpus` passes 1/1. This closes direct status reconciliation only;
+complete UDF corpus, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, and final release qualification
+remain open.
+
 ## ISO9660 direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scaniso()` could return `CL_SUCCESS` to direct parser callers after

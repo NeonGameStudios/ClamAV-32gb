@@ -2135,8 +2135,11 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
         goto done;
 
     ret = udf_scan_anchor_volume(ctx, offset);
-    if (ret != CL_BREAK)
+    if (ret != CL_BREAK) {
+        if ((ret == CL_SUCCESS || ret == CL_CLEAN) && ctx->scan_incomplete)
+            ret = CL_EPARSE;
         return ret;
+    }
 
     cli_dbgmsg("Scanning UDF file\n");
 
@@ -2595,6 +2598,9 @@ done:
     if (NULL != file_volume_tag) {
         fmap_unneed_ptr(ctx->fmap, file_volume_tag, VOLUME_DESCRIPTOR_SIZE);
     }
+
+    if ((ret == CL_SUCCESS || ret == CL_CLEAN) && ctx->scan_incomplete)
+        ret = CL_EPARSE;
 
     return ret;
 }

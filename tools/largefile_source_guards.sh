@@ -4496,6 +4496,8 @@ contains unit_tests/check_clamav.c 'test_iso_truncated_directory_is_fail_visible
 contains libclamav/iso9660.c 'ISO directory entry name exceeded its record'
 contains libclamav/iso9660.c 'status == CL_SUCCESS || status == CL_CLEAN'
 contains unit_tests/check_clamav.c 'cli_scaniso(&direct_ctx, ISO_OFFSET)'
+contains libclamav/udf.c 'if ((ret == CL_SUCCESS || ret == CL_CLEAN) && ctx->scan_incomplete)'
+contains unit_tests/check_clamav.c 'pre-existing UDF incomplete state'
 contains unit_tests/check_clamav.c 'test_iso_directory_name_stays_within_record'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_iso_map, test_iso_directory_name_stays_within_record)'
 contains libclamav/iso9660.c 'ISO input map is unavailable'

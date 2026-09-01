@@ -1,5 +1,16 @@
 # Wishlist
 
+## UDF direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep both UDF parser paths fail-visible for direct callers when the context
+  already carries a required incomplete state. Clean/`CL_SUCCESS` results now
+  become `CL_EPARSE`, while detections and stronger parser errors are retained.
+- Retain the valid-volume pre-taint regression, original-reason preservation,
+  and cache-taint assertions, with current production-linked GCC results at
+  `udf_map` 12/12 and `udf_corpus` 1/1. Keep complete UDF corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification open.
+
 ## ISO9660 direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scaniso()` fail-visible for direct callers when bounded directory
