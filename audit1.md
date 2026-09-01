@@ -17334,6 +17334,20 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## TIFF full focused current-source rerun — 2026-08-31
+
+The canonical `tiff.c`, `scanners.c`, and `check_clamav.c` sources were
+verified byte-identical to the copies used by the existing Docker GCC
+harness. The focused production-linked cases pass `tiff` 9/9, `tiff_map` 2/2,
+`tiff_corpus` 1/1, and `tiff_large` 3/3. This covers the current direct-entry,
+truncation/read-failure, classic and BigTIFF boundary, valid-structure corpus,
+and sparse logical-coordinate regressions in one current-source rerun.
+
+This is refreshed TIFF evidence, not final release certification. Complete
+TIFF/image corpus breadth, sanitizer, certified Linux x86-64,
+materialized-large-file, production-CVD/service, Sonic1 resource evidence,
+and the final requirement-by-requirement parser/release audit remain open.
+
 ## PDF current-source production-linked rerun — 2026-08-31
 
 The canonical PDF production objects (`pdf.c`, `pdf.h`, `pdfdecode.c`,

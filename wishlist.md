@@ -9841,6 +9841,17 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## TIFF full focused current-source rerun — 2026-08-31
+
+- Retain canonical-source equality for `tiff.c`, `scanners.c`, and
+  `check_clamav.c` in the production-linked Docker GCC harness.
+- Retain the complete focused evidence: `tiff` 9/9, `tiff_map` 2/2,
+  `tiff_corpus` 1/1, and `tiff_large` 3/3, including valid classic/BigTIFF
+  structures and sparse logical coordinates above 4 GiB.
+- Complete TIFF/image corpus breadth, sanitizer, certified Linux x86-64,
+  materialized-large-file, production-CVD/service, Sonic1 resource, and
+  final parser/release qualification.
+
 ## PDF current-source production-linked rerun — 2026-08-31
 
 - Retain exact canonical/container SHA-256 equality for the PDF production
