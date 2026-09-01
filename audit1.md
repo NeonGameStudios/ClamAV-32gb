@@ -13,11 +13,18 @@ successfully; its isolated `ole2` 18/18, `ole2_xlm` 3/3, `ole2_map` 6/6,
 4/4 cases passed. Full-suite execution remains a separate qualification gate
 because the container fixture/CVD set is not the final release evidence.
 
-## ELF metadata deadline and test-context admission — 2026-08-31
+## ELF metadata deadline and test-context admission — 2026-09-01
 
 The canonical ELF parser, header, scanner, and unit-test sources were
 transferred into the existing Docker production-linked GCC harness and their
-SHA-256 hashes matched exactly. The current-source production-linked GCC
+SHA-256 hashes matched exactly: `elf.c`
+`29b5e4a17815e93d82df0ef03d9978a08b3b27593461f3c6a140fc619886d43a`, `elf.h`
+`caec2670576e2e770730bc588c7929f8f2b2c3aa6c418a05e9d67a872b949019`,
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+`matcher.c` `24fb9daa6dc63f11db81b3b89f97553f152b243bfcb351c694060cbd37a6afd0`,
+and `check_clamav.c`
+`71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`. The
+current-source production-linked GCC
 cases pass `elf` 4/4, `elf_map` 14/14, and `elf_corpus` 1/1.
 ELF metadata timeout callers now retain their parser-specific incomplete
 reason when the common deadline helper has already recorded the generic
@@ -54,7 +61,7 @@ the all-match reset and socket API checks. Full PE corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 release qualification remain open.
 
-## Mach-O parser qualification refresh — 2026-08-31
+## Mach-O parser qualification refresh — 2026-09-01
 
 The established production-linked GCC harness was checked against exact
 canonical/container SHA-256 equality before the focused rerun: `macho.c`
@@ -63,7 +70,7 @@ canonical/container SHA-256 equality before the focused rerun: `macho.c`
 `matcher.c` `24fb9daa6dc63f11db81b3b89f97553f152b243bfcb351c694060cbd37a6afd0`,
 `scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
 and `check_clamav.c`
-`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`. The
+`71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`. The
 current cases pass `macho` 11/11, `macho_timeout` 2/2,
 `macho_fat` 2/2, `macho_corpus` 2/2, `macho_unsupported` 2/2, `macho_map` 1/1,
 `macho_boundary` 2/2, and `macho_sections` 1/1. Together these cover thin and
