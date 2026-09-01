@@ -9861,6 +9861,19 @@ qualification as required evidence.
   production-CVD/service, materialized-large-file, Sonic1, resource, and final
   parser/release qualification.
 
+## clamd large-file admission focused rerun — 2026-08-31
+
+- Retain the current-source GCC `check_clamd` option/admission parser evidence:
+  25/25 with 0 failures and 0 errors, including cgroup/ancestor headroom,
+  close-failure, 32-GiB ceiling, RLIMIT, temporary-filesystem, worker-count,
+  and structured admission cases.
+- Keep socket-dependent command/stress tests separate until a current clamd
+  service is running; expected rejected-option diagnostics do not represent
+  test failures.
+- Complete current-object clamd service parity, production-CVD/service,
+  sanitizer, Sonic1 resource measurement, materialized-large-file, and final
+  parser/release qualification.
+
 ## Streaming MIME multipart part-limit parity — 2026-08-31
 
 - Keep the disk-backed multipart walker applying the existing 1,024-part

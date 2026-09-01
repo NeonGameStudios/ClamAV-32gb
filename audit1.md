@@ -89,6 +89,22 @@ boundaries, and the oversized-stream regression. Full YARA corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## clamd large-file admission focused rerun — 2026-08-31
+
+The current authoritative source rebuilt the `check_clamd` target in the
+existing Docker GCC environment. The isolated `clamd` / `option parser` TCase
+passes 25/25 with 0 failures and 0 errors, including cgroup membership and
+ancestor-headroom handling, close-failure injection, 32-GiB option ceilings,
+RLIMIT and temporary-filesystem policy, worker-count policy, and structured
+admission boundaries. Expected parser diagnostics for rejected values were
+emitted, but no assertion failed. Socket-dependent command and stress TCases
+were not counted because no clamd service was running.
+
+This is current-source focused daemon evidence, not service qualification.
+Full current-object clamd service parity, production-CVD/service, sanitizer,
+Sonic1 resource measurement, materialized-large-file, and final
+requirement-by-requirement release qualification remain open.
+
 ## InstallShield focused current-source admission refresh — 2026-08-31
 
 The canonical scanner and unit-test sources were transferred into the existing
