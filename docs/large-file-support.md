@@ -343,6 +343,19 @@ sanitizer, certified Linux x86-64, materialized-large-file,
 production-CVD/service, Sonic1, and final parser/release qualification remain
 open.
 
+## Current OOXML/MSXML production-linked refresh — 2026-08-31
+
+The canonical `ooxml.c`, `ooxml.h`, `msxml.c`, `msxml.h`, `msxml_parser.c`,
+`msxml_parser.h`, `scanners.c`, and `check_clamav.c` sources were transferred
+into the existing Docker production-linked GCC harness with exact SHA-256
+equality. The current-source focused cases pass `ooxml_entry` 2/2,
+`ppt_entry` 4/4, `msxml` 5/5, `msxml_map` 2/2, and `msxml_corpus` 1/1,
+covering invalid OOXML PartName handling, PowerPoint VBA helper boundaries,
+streaming XML reads, Base64/resource limits, callback faults, timeouts, and
+exact nested marker handoff. Complete OOXML/MSXML/Office corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## Current OneNote production-linked refresh — 2026-08-31
 
 The canonical `libclamav_rust/src/onenote.rs`, `scanners.c`, and

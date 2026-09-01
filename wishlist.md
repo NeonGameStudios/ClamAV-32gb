@@ -14,6 +14,20 @@
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification open.
 
+## Current OOXML/MSXML production-linked refresh — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for `ooxml.c`, `ooxml.h`,
+  `msxml.c`, `msxml.h`, `msxml_parser.c`, `msxml_parser.h`, `scanners.c`, and
+  `check_clamav.c` before relinking the existing Docker production-linked GCC
+  harness.
+- Retain current-source evidence at `ooxml_entry` 2/2, `ppt_entry` 4/4,
+  `msxml` 5/5, `msxml_map` 2/2, and `msxml_corpus` 1/1 for invalid PartName,
+  PowerPoint VBA, streaming XML, Base64/resource, callback, timeout, and
+  nested-marker boundaries.
+- Keep complete OOXML/MSXML/Office corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## Current OneNote production-linked refresh — 2026-08-31
 
 - Retain exact canonical/container SHA-256 equality for
