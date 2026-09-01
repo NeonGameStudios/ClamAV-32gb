@@ -263,6 +263,15 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
             goto done;
         }
 
+        /* The next-IFD link is an outer coordinate. Validate it before any
+         * subtraction-form bounds use; a link beyond the fmap must not turn
+         * map->len - offset into a wrapped available-size value. */
+        if (offset > map->len) {
+            cli_warnmsg("cli_parsetiff: current IFD offset exceeds the input map\n");
+            status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.IFDOffsetOutOfBounds");
+            goto done;
+        }
+
         /* Acquire the number of directory entries. BigTIFF widens this field
          * from 16 to 64 bits but still permits traversal one fixed entry at a
          * time, so an attacker-controlled count never becomes an allocation. */

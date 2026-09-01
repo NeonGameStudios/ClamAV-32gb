@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## TIFF secondary IFD offset admission — 2026-09-01
+
+The TIFF walker already rejected a first-IFD offset beyond the containing
+fmap, but a valid first IFD could point its next-IFD link beyond the map. On
+the next iteration, the directory-entry preflight evaluated
+`map->len - offset` before proving that the linked offset was in range. The
+new start-of-iteration guard rejects that coordinate with
+`Heuristics.Broken.Media.TIFF.IFDOffsetOutOfBounds`, preventing wrapped
+available-size arithmetic and keeping the recognized layer incomplete and
+non-cacheable.
+
+The new `test_tiff_next_ifd_offset_out_of_bounds_is_fail_visible` regression
+passes in the current-source production-linked GCC harness. Focused TIFF
+evidence passes `tiff` 10/10, `tiff_map` 2/2, `tiff_corpus` 1/1, and
+`tiff_large` 3/3. This closes the secondary-link arithmetic boundary only;
+complete TIFF corpus, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, and final release evidence remain
+open.
+
 ## MIME header admission failure visibility — 2026-09-01
 
 The mail header state machine now marks the owning message and scan context

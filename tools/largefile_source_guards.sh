@@ -2677,6 +2677,8 @@ contains unit_tests/check_clamav.c 'test_tiff_truncated_structures_are_fail_visi
 contains unit_tests/check_clamav.c 'test_tiff_initial_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_tiff_truncated_ifd_header_is_parse_error'
 contains unit_tests/check_clamav.c 'test_tiff_ifd_offset_out_of_bounds_is_fail_visible'
+contains libclamav/tiff.c 'current IFD offset exceeds the input map'
+contains unit_tests/check_clamav.c 'test_tiff_next_ifd_offset_out_of_bounds_is_fail_visible'
 contains libclamav/tiff.c 'len > map->len - at'
 contains libclamav/tiff.c 'size_t offset = 0;'
 contains libclamav/tiff.c 'uint64_t ifd_count = 0;'

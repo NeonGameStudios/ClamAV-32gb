@@ -1,5 +1,18 @@
 # Wishlist
 
+## TIFF secondary IFD offset admission — 2026-09-01
+
+- Keep every TIFF IFD link in range before subtraction-form directory-size
+  checks. Secondary links beyond the fmap now fail as
+  `Heuristics.Broken.Media.TIFF.IFDOffsetOutOfBounds` instead of reaching a
+  wrapped `map->len - offset` expression.
+- Retain `test_tiff_next_ifd_offset_out_of_bounds_is_fail_visible` and the
+  current-source production-linked results: `tiff` 10/10, `tiff_map` 2/2,
+  `tiff_corpus` 1/1, and `tiff_large` 3/3. Keep complete TIFF corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, and final parser/release qualification
+  open.
+
 ## MIME header admission failure visibility — 2026-09-01
 
 - Keep MIME type/subtype/disposition setters and argument/encoding table
