@@ -9841,6 +9841,16 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## RTF/OOXML entry current-source rerun — 2026-08-31
+
+- Retain canonical-source equality for the RTF, OOXML/MSXML, scanner, and
+  unit-test sources in the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: `rtf` 1/1, `rtf_map` 13/13,
+  `ooxml_entry` 2/2, and `ppt_entry` 4/4 after materializing `clam.exe.rtf`.
+- Complete RTF/OOXML corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## Legacy/container parser current-source rerun — 2026-08-31
 
 - Retain canonical-source equality for the relevant parser sources,

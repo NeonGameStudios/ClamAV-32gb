@@ -17334,6 +17334,21 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## RTF/OOXML entry current-source rerun — 2026-08-31
+
+The canonical RTF and OOXML/MSXML sources, `scanners.c`, and `check_clamav.c`
+were verified byte-identical to the copies used by the existing Docker GCC
+harness. After materializing the checked-in `clam.exe.rtf` XOR fixture, the
+focused production-linked cases pass `rtf` 1/1, `rtf_map` 13/13,
+`ooxml_entry` 2/2, and `ppt_entry` 4/4. The run covers RTF object and map
+boundaries plus Word/PowerPoint/Excel/HWP OOXML entry-context, metadata,
+compressed-atom, and seek regressions.
+
+This is refreshed RTF/OOXML entry evidence, not final release certification.
+Complete RTF/OOXML corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1 resource evidence,
+and the final requirement-by-requirement parser/release audit remain open.
+
 ## Legacy/container parser current-source rerun — 2026-08-31
 
 The relevant canonical parser sources, `scanners.c`, and `check_clamav.c`
