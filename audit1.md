@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## MSXML direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_msxml_parse_document()` and `cli_msxml_parse_document_streaming()` could
+finish a valid document with clean status while the recognized layer already
+carried sticky incomplete state. Both direct entry points now reconcile clean
+completion to `CL_EPARSE`, preserving detections and stronger parser errors.
+The valid `<root/>` regression
+`test_msxml_sticky_incomplete_result_is_fail_visible` covers both reader and
+streaming paths and asserts the exact prior diagnostic plus non-cacheability.
+The current-source production-linked GCC isolation runner passes 2/2, while
+the pre-change comparison returns clean for both paths. Current MSXML source
+and unit translation unit compile with production GCC flags; full current
+MSXML TCase relink/execution, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## OLE2 direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_ole2_extract()` could finish a valid property walk with `CL_SUCCESS`, or

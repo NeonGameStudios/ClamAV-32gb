@@ -1,5 +1,20 @@
 # Wishlist
 
+## MSXML direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_msxml_parse_document()` and
+  `cli_msxml_parse_document_streaming()` fail-visible for direct callers when
+  valid XML completes with a pre-existing sticky incomplete state. Clean
+  completion now returns `CL_EPARSE`, while detections and stronger parser
+  errors remain preserved.
+- Retain `test_msxml_sticky_incomplete_result_is_fail_visible`, which uses
+  valid `<root/>` XML for both reader and streaming paths and checks the exact
+  prior reason plus non-cacheability. The current-source production-linked GCC
+  isolation runner passes 2/2 and the pre-change comparison returns clean for
+  both paths. Keep full current MSXML TCase relink/execution, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification open.
+
 ## OLE2 direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_ole2_extract()` fail-visible for direct callers when a valid

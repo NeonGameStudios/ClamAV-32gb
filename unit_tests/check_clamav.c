@@ -9434,6 +9434,64 @@ START_TEST(test_msxml_base64_decode_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msxml_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t document[] = "<root/>";
+    static const struct key_entry keys[] = {{"root", "Root", MSXML_IGNORE}};
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    struct msxml_ctx mxctx;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    xmlTextReaderPtr reader;
+
+    memset(&options, 0, sizeof(options));
+    memset(&engine, 0, sizeof(engine));
+    memset(&mxctx, 0, sizeof(mxctx));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-sticky.xml", NULL, 0);
+    ck_assert_ptr_nonnull(reader);
+    ctx.engine                 = &engine;
+    ctx.options                = &options;
+    ctx.fmap                   = map;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing MSXML incomplete state";
+    map->dont_cache_flag       = true;
+
+    ret = cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]),
+                                   MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing MSXML incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    xmlFreeTextReader(reader);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine                 = &engine;
+    ctx.options                = &options;
+    ctx.fmap                   = map;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing MSXML incomplete state";
+    map->dont_cache_flag       = true;
+
+    ret = cli_msxml_parse_document_streaming(&ctx, map, keys, sizeof(keys) / sizeof(keys[0]),
+                                             MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing MSXML incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_msxml_stream_time_limit_is_fail_visible)
 {
     static const uint8_t document[] = "<chunk>QUJD</chunk>";
@@ -51588,6 +51646,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_msxml, test_msxml_truncated_document_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_read_failure_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_base64_decode_failure_is_fail_visible);
+    tcase_add_test(tc_msxml, test_msxml_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_attribute_limit_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_stream_time_limit_is_fail_visible);
     suite_add_tcase(s, tc_rust_map);

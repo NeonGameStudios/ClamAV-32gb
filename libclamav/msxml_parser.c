@@ -113,6 +113,14 @@ static int msxml_base64_is_valid(const unsigned char *data, size_t len)
     return 1;
 }
 
+static cl_error_t msxml_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 static cl_error_t msxml_checktimelimit(cli_ctx *ctx, const char *reason)
 {
     cl_error_t ret;
@@ -800,7 +808,7 @@ cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const
         ret = CL_SUCCESS;
     }
 
-    return ret;
+    return msxml_reconcile_status(ctx, ret);
 }
 
 /*
@@ -1480,7 +1488,7 @@ cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const s
 
     if (state.ret == CL_BREAK)
         state.ret = CL_SUCCESS;
-    return state.ret;
+    return msxml_reconcile_status(ctx, state.ret);
 }
 
 static int msxml_attribute_limit_exceeded(cli_ctx *ctx, xmlTextReaderPtr reader, int num_attribs)
