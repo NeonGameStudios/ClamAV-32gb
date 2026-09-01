@@ -134,6 +134,14 @@ static cl_error_t riff_checktimelimit(cli_ctx *ctx)
     return status;
 }
 
+static int riff_reconcile_result(cli_ctx *ctx, int result)
+{
+    if (result == 0 && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return result;
+}
+
 /* fmap_need_off_once() uses NULL for both an unavailable range and a failed
  * backing read. Keep those cases distinct while the RIFF exploit detector
  * walks a structurally confirmed file. */
@@ -297,7 +305,7 @@ int cli_check_riff_exploit(cli_ctx *ctx)
      * the complete probe range exists, a failed fmap read is an operational
      * failure and must not be reduced to a clean non-RIFF result. */
     if (map->len < 4 * 3)
-        return 0;
+        return riff_reconcile_result(ctx, 0);
     if (!(buf = riff_need_off(ctx, 0, 4 * 3, &read_status))) {
         cli_mark_scan_incomplete(ctx, "RIFF header could not be read completely");
         return (read_status == CL_EREAD) ? CL_EREAD : CL_EPARSE;
@@ -309,13 +317,13 @@ int cli_check_riff_exploit(cli_ctx *ctx)
         big_endian = TRUE;
     } else {
         /* Not a RIFF file */
-        return 0;
+        return riff_reconcile_result(ctx, 0);
     }
 
     if (memcmp(buf + (2U * sizeof(uint32_t)), "ACON", 4) != 0) {
         /* Only scan MS animated icon files */
         /* There is a *lot* of broken software out there that produces bad RIFF files */
-        return 0;
+        return riff_reconcile_result(ctx, 0);
     }
 
     memcpy(&riff_size_raw, buf + sizeof(uint32_t), sizeof(riff_size_raw));
@@ -340,7 +348,7 @@ int cli_check_riff_exploit(cli_ctx *ctx)
         retval = 0;
     }
 
-    return retval;
+    return riff_reconcile_result(ctx, retval);
 }
 
 static inline int swizz_j48(const uint16_t n[])

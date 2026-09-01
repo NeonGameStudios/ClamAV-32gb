@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## RIFF direct sticky-incomplete reconciliation — 2026-09-01
+
+The RIFF exploit detector uses `0` as its completed non-exploit sentinel, but
+that clean result previously ignored a pre-existing sticky incomplete context.
+The sentinel now converts to `CL_EPARSE` only when the context is already
+incomplete, preserving exploit detections and stronger parser/read errors. The
+valid minimal `RIFF/ACON` regression
+`test_riff_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `special.c`
+(`d24c5bf01f3527074fdcc916d7e182343c6d82abcff6ab5137e547162cbe730b`) and
+`check_clamav.c`
+(`7ea98456c46e421f7cdc9507dbc620517038219b05bad3df4ccb2f8d31f3a405`). The
+current-source production-linked GCC harness passes `riff` 9/9 and
+`riff_corpus` 1/1. This closes detector sentinel reconciliation only; complete
+RIFF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## MBR direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_mbr_check2()` could return `CL_SUCCESS` to a direct MBR admission caller

@@ -1,5 +1,19 @@
 # Wishlist
 
+## RIFF direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep the RIFF detector’s completed non-exploit sentinel fail-visible when
+  the scan context already carries sticky incomplete state. The sentinel now
+  returns `CL_EPARSE`, while exploit detections and stronger parser/read
+  errors remain preserved.
+- Retain the valid minimal `RIFF/ACON` pre-taint regression
+  `test_riff_sticky_incomplete_result_is_fail_visible`, canonical/container
+  hash equality for the current `special.c` and `check_clamav.c`, and current
+  production-linked GCC results at `riff` 9/9 and `riff_corpus` 1/1. Keep
+  complete RIFF corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## MBR direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_mbr_check2()` fail-visible for direct admission callers when a
