@@ -190,5 +190,6 @@ cl_error_t cli_scanxdp(cli_ctx *ctx)
         cli_scan_release_temporary(ctx, dump_reserved);
     free(dumpname);
 
-    return ret;
+    /* Reconcile the confirmed parser result at the owning XDP boundary. */
+    return xdp_reconcile_status(ctx, ret);
 }
