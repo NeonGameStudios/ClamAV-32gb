@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## TIFF direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_parsetiff()` could return `CL_CLEAN` to a direct parser caller after a
+valid classic or BigTIFF walk completed while the scan context was already
+sticky-incomplete. The final status now converts only clean results with
+sticky incomplete state to `CL_EPARSE`, preserving detections and stronger
+parser errors. The valid classic TIFF regression
+`test_tiff_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `tiff.c`
+(`cadf10c6f08a527c73428296ba30df1687608caa0230b34a65ae78f94344f90b`) and
+`check_clamav.c`
+(`d2c55fef766ea3f4f595c9e520b22f359668442f73f06d5de25c97a68be3f93a`). The
+current-source production-linked GCC harness passes `tiff` 11/11,
+`tiff_map` 2/2, `tiff_corpus` 1/1, and `tiff_large` 3/3. This closes direct
+status reconciliation only; complete TIFF corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain open.
+
 ## SWF direct sticky-incomplete reconciliation — 2026-09-01
 
 The uncompressed SWF path could return `CL_SUCCESS` to a direct parser caller

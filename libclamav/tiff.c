@@ -462,6 +462,8 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
     status = CL_CLEAN;
 
 done:
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        status = CL_EPARSE;
 
     return status;
 }

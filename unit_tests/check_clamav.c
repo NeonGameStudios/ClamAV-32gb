@@ -47785,6 +47785,37 @@ START_TEST(test_tiff_corpus_valid_structures_complete)
 }
 END_TEST
 
+START_TEST(test_tiff_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t valid_tiff[] = {
+        'I', 'I', 0x2a, 0x00,
+        0x08, 0x00, 0x00, 0x00,
+        0x01, 0x00,
+        0x00, 0x01, 0x03, 0x00,
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(valid_tiff, sizeof(valid_tiff));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                   = map;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing TIFF incomplete state";
+    map->dont_cache_flag       = true;
+
+    ck_assert_int_eq(cli_parsetiff(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing TIFF incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_jpeg_corpus_detects_embedded_mz)
 {
     static const uint8_t child[64] = {'M', 'Z', 'P'};
@@ -51728,6 +51759,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_png, test_png_chunk_timeout_is_fail_visible);
     tcase_add_test(tc_png, test_png_large_ancillary_chunk_uses_bounded_mapping);
     tcase_add_test(tc_tiff, test_tiff_truncated_structures_are_fail_visible);
+    tcase_add_test(tc_tiff, test_tiff_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_tiff, test_tiff_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_tiff, test_tiff_truncated_ifd_header_is_parse_error);
     tcase_add_test(tc_tiff, test_tiff_ifd_value_size_is_fail_visible);

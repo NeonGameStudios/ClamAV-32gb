@@ -1,5 +1,20 @@
 # Wishlist
 
+## TIFF direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_parsetiff()` fail-visible for direct callers when a valid
+  classic/BigTIFF walk completes with a pre-existing sticky incomplete state.
+  Clean/direct results now return `CL_EPARSE`, while detections and stronger
+  parser errors remain preserved.
+- Retain the valid classic pre-taint regression
+  `test_tiff_sticky_incomplete_result_is_fail_visible`, canonical/container
+  hash equality for the current `tiff.c` and `check_clamav.c`, and current
+  production-linked GCC results at `tiff` 11/11, `tiff_map` 2/2,
+  `tiff_corpus` 1/1, and `tiff_large` 3/3. Keep complete TIFF corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification open.
+
 ## SWF direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep the SWF uncompressed direct entry fail-visible when a valid FWS stream
