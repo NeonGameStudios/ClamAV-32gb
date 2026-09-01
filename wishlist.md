@@ -1,5 +1,19 @@
 # Wishlist
 
+## GIF direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_parsegif()` fail-visible for direct callers when a valid image
+  completes with a pre-existing sticky incomplete state. Clean/direct results
+  now return `CL_EPARSE`, while detections and stronger parser errors remain
+  preserved.
+- Retain the valid one-pixel pre-taint regression
+  `test_gif_sticky_incomplete_result_is_fail_visible`, canonical/container hash
+  equality for the current `gif.c` and `check_clamav.c`, and current
+  production-linked GCC results at `gif` 13/13, `gif_api` 1/1, and
+  `gif_corpus` 1/1. Keep complete GIF/image corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification open.
+
 ## HFS+ direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scanhfsplus()` fail-visible for direct callers when a valid clean

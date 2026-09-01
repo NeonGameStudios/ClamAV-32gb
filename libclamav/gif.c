@@ -595,6 +595,9 @@ scan_overlay:
     }
 
 done:
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        status = CL_EPARSE;
+
     if (parse_error && (status == CL_SUCCESS))
         status = CL_EPARSE;
 

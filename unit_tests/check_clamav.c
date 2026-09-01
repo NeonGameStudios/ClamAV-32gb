@@ -46982,6 +46982,36 @@ START_TEST(test_gif_image_data_completion_is_validated)
 }
 END_TEST
 
+START_TEST(test_gif_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t valid_image[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+        0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+        0x02, 0x02, 0x44, 0x01, 0x00,
+        0x3b,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(valid_image, sizeof(valid_image));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                   = map;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing GIF incomplete state";
+    map->dont_cache_flag       = true;
+
+    ck_assert_int_eq(cli_parsegif(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing GIF incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_gif_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {'G', 'I', 'F'};
@@ -51625,6 +51655,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif, test_gif_graphic_control_fields_are_validated);
     tcase_add_test(tc_gif, test_gif_fixed_extension_block_sizes_are_validated);
     tcase_add_test(tc_gif, test_gif_image_data_completion_is_validated);
+    tcase_add_test(tc_gif, test_gif_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_screen_descriptor_is_parse_error);
     tcase_add_test(tc_gif, test_gif_block_timeout_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_null_context_is_fail_visible);

@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## GIF direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_parsegif()` could return `CL_SUCCESS` to a direct parser caller after a
+valid image completed while the scan context was already sticky-incomplete.
+The final status now converts only clean/`CL_SUCCESS` results with sticky
+incomplete state to `CL_EPARSE`, preserving detections and stronger parser
+errors. The valid one-pixel GIF regression
+`test_gif_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `gif.c`
+(`f0e558781efdaf63ec3a31e454185ac4e0b763e06cc2b869ddff76e40c7c6c1f`) and
+`check_clamav.c`
+(`1f1986a8b196b261a604e85db19a20d5cf87c98c9f3be545b8316b25ded08e8f`). The
+current-source production-linked GCC harness passes `gif` 13/13,
+`gif_api` 1/1, and `gif_corpus` 1/1. This closes direct status
+reconciliation only; complete GIF/image corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain open.
+
 ## HFS+ direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scanhfsplus()` could return `CL_SUCCESS` to a direct parser caller after
