@@ -55,6 +55,14 @@ static cl_error_t uuencode_checktimelimit(cli_ctx *ctx, const char *reason)
     return ret;
 }
 
+static cl_error_t uuencode_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if ((status == CL_CLEAN || status == CL_SUCCESS) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
 {
     cl_error_t status;
@@ -88,7 +96,7 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
             cli_mark_scan_incomplete(ctx, "UUencoded input could not be read completely");
             return CL_EREAD;
         }
-        return CL_CLEAN;
+        return uuencode_reconcile_status(ctx, CL_CLEAN);
     }
     if (!isuuencodebegin(buffer)) {
         cli_dbgmsg("Message is not in uuencoded format\n");
@@ -121,7 +129,7 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
     }
     messageDestroy(m);
 
-    return CL_CLEAN;
+    return uuencode_reconcile_status(ctx, CL_CLEAN);
 }
 
 /*

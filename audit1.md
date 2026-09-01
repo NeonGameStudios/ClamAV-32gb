@@ -1,5 +1,26 @@
 # Independent read-only audit of audit.md
 
+## UUEncode direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_uuencode()` could return `CL_CLEAN` to a direct parser caller after an
+empty or successfully terminated attachment completed while the scan context
+was already sticky-incomplete. Both clean paths now pass through a status
+reconciler that converts only clean results with sticky incomplete state to
+`CL_EPARSE`, preserving detections and stronger parser errors. The valid
+terminated zero-length attachment regression
+`test_uuencode_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, explicit-map binding, preservation of the pre-existing
+diagnostic, and non-cacheability. Canonical/container SHA-256 equality was
+verified for the current `uuencode.c`
+(`ecbf91708f227645ec20ca7cdef1bf808cec27a82868e34773cc6cc56f791f97`) and
+`check_clamav.c`
+(`d92a7d8059c71733edcc4d5df626b31c6ac4786360be4f8a62d9528b1df5a8ad`). The
+current-source production-linked GCC harness passes `uuencode_map` 5/5 and
+`uuencode_corpus` 1/1. This closes direct status reconciliation only; complete
+UUEncode/mail corpus, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## RTF direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scanrtf()` could return `CL_CLEAN` to a direct parser caller after a

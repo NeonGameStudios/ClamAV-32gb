@@ -32790,6 +32790,35 @@ START_TEST(test_uuencode_explicit_map_is_cache_bound)
 }
 END_TEST
 
+START_TEST(test_uuencode_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t valid_uuencode[] =
+        "begin 644 sticky-uuencode-payload\n"
+        "`\n"
+        "end\n";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                 = &engine;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing UUEncode incomplete state";
+    map = cl_fmap_open_memory(valid_uuencode, sizeof(valid_uuencode) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->dont_cache_flag = true;
+
+    ck_assert_int_eq(cli_uuencode(&ctx, tmpdir, map), CL_EPARSE);
+    ck_assert_ptr_eq(ctx.fmap, map);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing UUEncode incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_uuencode_missing_context_or_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -50373,9 +50402,11 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tnef, test_tnef_attachment_temporary_limit_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_uuencode_map);
+    tcase_add_checked_fixture(tc_uuencode_map, cl_setup, cl_teardown);
     tcase_add_test(tc_uuencode_map, test_uuencode_missing_context_or_map_is_fail_visible);
     tcase_add_test(tc_uuencode_map, test_uuencode_missing_engine_is_fail_visible);
     tcase_add_test(tc_uuencode_map, test_uuencode_explicit_map_is_cache_bound);
+    tcase_add_test(tc_uuencode_map, test_uuencode_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_uuencode_map, test_uuencode_empty_attachment_output_failure_is_fail_visible);
     suite_add_tcase(s, tc_mail_api);
     tcase_add_checked_fixture(tc_mail_api, cl_setup, cl_teardown);
