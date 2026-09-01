@@ -9460,6 +9460,22 @@ qualification as required evidence.
   production-CVD/service, materialized-large-file, Sonic1, and final release
   qualification evidence remain required.
 
+## Current PNG production-linked rerun — 2026-08-31
+
+- Canonical/container SHA-256 equality was verified before relinking for
+  `png.c` (`701d2ab240b15aaf626e5827759303f60c3adddd9020610ea6d3c8c23c56a4c8`),
+  `png.h` (`0186105a9c97192b328aed813b598db6f370afedd65bb770c4b30f884b11a4ae`),
+  `scanners.c` (`be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`),
+  and `check_clamav.c`
+  (`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`).
+- The current-source production-linked GCC harness passes `png` 8/8 and
+  `png_corpus` 1/1, including exact offset-0 nested MZP matching after PNG
+  overlay traversal. The canonical `logo.png` fixture has SHA-256
+  `f083e9c704165003f8c065964e4ccb47da48bbad8a80521d571cbf0f1d4762c6`.
+- Complete PNG/image corpus, sanitizer scanner fault injection, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification remain required.
+
 ## PE Swizzor empty resource-string admission — 2026-08-30
 
 - Keep `cli_detect_swizz_str()` fail-closed for null input/statistics and

@@ -562,6 +562,25 @@ matching after PDF extraction. The materialized `clam.pdf` fixture has SHA-256
 `c46d28b54a8efe5821125e9002c6de29f52f5ad736625637326e47ceb49a07e7`. The
 pipe-backed `fmap_fd()` rewind regression and GCC ASan/UBSan fmap runner also
 remain green. Complete PDF/filter/FMap corpus, sanitizer scanner fault
+injection, certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource,
+and final parser/release qualification remain required.
+
+## Current PNG production-linked rerun — 2026-08-31
+
+The canonical `png.c`, `png.h`, `scanners.c`, and `check_clamav.c` sources were
+transferred into the existing Docker production-linked GCC harness with exact
+SHA-256 equality (`png.c`
+`701d2ab240b15aaf626e5827759303f60c3adddd9020610ea6d3c8c23c56a4c8`, `png.h`
+`0186105a9c97192b328aed813b598db6f370afedd65bb770c4b30f884b11a4ae`,
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+and `check_clamav.c`
+`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
+current-source production-linked GCC harness passes `png` 8/8 and materialized
+`png_corpus` 1/1, including exact offset-0 nested MZP matching after PNG
+overlay traversal. The canonical `logo.png` fixture has SHA-256
+`f083e9c704165003f8c065964e4ccb47da48bbad8a80521d571cbf0f1d4762c6`.
+Complete PNG/image corpus, sanitizer scanner fault injection, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
 and final parser/release qualification remain required.
 
