@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Mach-O metadata sticky completion — 2026-09-01
+
+`cli_machoheader()` preserved native 64-bit section metadata and marked
+`legacy_metadata_incomplete` when coordinates could not be represented by the
+legacy 32-bit metadata ABI, but returned `CL_SUCCESS` from its metadata-only
+entry. That exposed an incomplete required inspection as a clean result. Its
+final status now passes through the existing Mach-O reconciliation helper and
+returns `CL_EPARSE` after preserving the native metadata and the sticky
+diagnostic. `test_macho_native_metadata_preserves_64bit_sections` covers both
+the native output and fail-visible status. Current-source production-GCC
+compilation, production-linked execution, sanitizer, complete executable
+corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Embedded SFX/header read-admission cache taint — 2026-09-01
 
 The context-aware embedded header probes returned `CL_EREAD` for fully

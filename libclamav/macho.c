@@ -849,7 +849,7 @@ cl_error_t cli_machoheader(cli_ctx *ctx, struct cli_exe_info *fileinfo)
     else if (ret == CL_SUCCESS && fileinfo && fileinfo->legacy_metadata_incomplete)
         cli_mark_scan_incomplete(ctx, "Mach-O coordinates exceed the legacy 32-bit metadata ABI");
 
-    return ret;
+    return cli_macho_reconcile_status(ctx, ret);
 }
 
 cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)

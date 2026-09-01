@@ -1,5 +1,17 @@
 # Wishlist
 
+## Mach-O metadata sticky completion — 2026-09-01
+
+- Keep `cli_machoheader()` fail-visible when native 64-bit metadata cannot be
+  represented by the legacy 32-bit metadata ABI: preserve the native view,
+  record the exact sticky diagnostic, mark the map non-cacheable, and return
+  `CL_EPARSE` rather than `CL_SUCCESS`.
+- Retain the native-coordinate regression and source guard; complete
+  current-source production-GCC compilation and production-linked execution,
+  sanitizer, complete executable corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## Embedded SFX/header read-admission cache taint — 2026-09-01
 
 - Keep the context-aware 7-Zip, RAR4, ARJ-SFX, EGG-SFX, and embedded PDF

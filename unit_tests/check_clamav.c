@@ -45866,7 +45866,7 @@ START_TEST(test_macho_native_metadata_preserves_64bit_sections)
     ctx.fmap   = map;
 
     ret = cli_machoheader(&ctx, &info);
-    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(info.has_native_coordinates);
     ck_assert_ptr_nonnull(info.sections64);
     ck_assert_uint_eq(info.sections64[0].rva, UINT64_C(0x100000000));
