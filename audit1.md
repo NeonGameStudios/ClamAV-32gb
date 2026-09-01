@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## OLE10 direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scan_ole10()` returned the nested descriptor scan status directly, so a
+successful valid-object handoff could hide sticky incomplete state already
+recorded on the owning layer. Its clean completion now reconciles to
+`CL_EPARSE`, preserving stronger parser, read, timeout, resource, detection,
+and cleanup statuses. `test_ole10_sticky_incomplete_result_is_fail_visible`
+constructs a valid OLE10 descriptor, verifies the untainted clean baseline,
+then repeats the handoff with the exact prior reason and fmap
+non-cacheability. The current-source OLE10 object and Check translation unit
+compile with production GCC flags, and an isolated current-source GCC runner
+linked against the preserved production shared library passes both cases via
+in-memory execution. Full current Check relink/execution, complete OLE10/VBA
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## XDP direct sticky-incomplete reconciliation — 2026-09-01
 
 The confirmed XDP parser returned the streaming MSXML status directly, so a

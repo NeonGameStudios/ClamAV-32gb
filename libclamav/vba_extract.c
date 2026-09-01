@@ -2419,6 +2419,15 @@ ole10_cleanup_output(cli_ctx *ctx, int *ofd, const char *fullname, cl_error_t *s
     }
 }
 
+static cl_error_t
+ole10_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 int cli_scan_ole10(int fd, cli_ctx *ctx)
 {
     int ofd;
@@ -2560,7 +2569,7 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
     cli_scan_release_temporary(ctx, temporary_reserved);
     free(fullname);
 
-    return ret;
+    return ole10_reconcile_status(ctx, ret);
 }
 
 /*

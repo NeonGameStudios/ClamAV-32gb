@@ -115,6 +115,7 @@ static int hwp5_test_bypass_child_scan;
 static int hwpole2_test_bypass_child_scan;
 static int sis_test_bypass_child_scan;
 static int xar_test_bypass_child_scan;
+static int ole10_test_bypass_child_scan;
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 extern int clamav_test_fail_write;
@@ -343,7 +344,7 @@ cl_error_t __wrap_cli_magic_scan_desc_type_reserved(int desc, const char *filepa
 
     if (binhex_test_bypass_child_scan || hwp3_test_bypass_child_scan ||
         hwpole2_test_bypass_child_scan ||
-        sis_test_bypass_child_scan ||
+        sis_test_bypass_child_scan || ole10_test_bypass_child_scan ||
         xar_test_bypass_child_scan)
         return CL_SUCCESS;
 
@@ -10222,6 +10223,66 @@ START_TEST(test_ole10_temporary_limit_is_fail_visible)
 
     cl_fmap_close(map);
     close(fd);
+    unlink(file_path);
+}
+END_TEST
+
+START_TEST(test_ole10_sticky_incomplete_result_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    uint8_t object[22] = {0};
+    uint32_t payload_size = 1;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    int fd;
+
+    memcpy(object + 17, &payload_size, sizeof(payload_size));
+    object[21] = 'x';
+    snprintf(file_path, sizeof(file_path), "%s/ole10-sticky-incomplete", tmpdir);
+    fd = open(file_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(write(fd, object, sizeof(object)), (ssize_t)sizeof(object));
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+
+    map = fmap_new(fd, 0, 0, file_path, NULL);
+    ck_assert_ptr_nonnull(map);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine              = scan_engine;
+    ctx.dconf               = scan_engine->dconf;
+    ctx.options             = &options;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    ole10_test_bypass_child_scan = 1;
+    ret = cli_scan_ole10(fd, &ctx);
+    ole10_test_bypass_child_scan = 0;
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing OLE10 incomplete state";
+    map->dont_cache_flag       = true;
+    ole10_test_bypass_child_scan = 1;
+    ret = cli_scan_ole10(fd, &ctx);
+    ole10_test_bypass_child_scan = 0;
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing OLE10 incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ck_assert_int_eq(close(fd), 0);
+    cl_engine_free(scan_engine);
     unlink(file_path);
 }
 END_TEST
@@ -52790,8 +52851,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_nulsft_map, test_nsis_missing_map_entry_points_are_fail_visible);
     tcase_add_test(tc_nulsft_map, test_nsis_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_ole10_entry);
+    tcase_add_checked_fixture(tc_ole10_entry, cl_setup, cl_teardown);
     tcase_add_test(tc_ole10_entry, test_ole10_null_context_is_fail_visible);
     tcase_add_test(tc_ole10_entry, test_ole10_missing_engine_is_fail_visible);
+    tcase_add_test(tc_ole10_entry, test_ole10_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_ppt_entry);
     tcase_add_checked_fixture(tc_ppt_entry, cl_setup, cl_teardown);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);

@@ -1,5 +1,22 @@
 # Wishlist
 
+## OLE10 direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scan_ole10()` fail-visible for direct callers when a valid
+  embedded-object handoff completes cleanly after the owning layer already
+  carries sticky incomplete state. Clean completion must return `CL_EPARSE`
+  and preserve the exact prior reason and fmap non-cacheability; stronger
+  parser, read, timeout, resource, detection, and cleanup statuses remain
+  unchanged.
+- Retain `test_ole10_sticky_incomplete_result_is_fail_visible`, which checks a
+  valid descriptor’s clean baseline and pre-tainted result. The current-source
+  OLE10 object and Check translation unit compile with production GCC flags,
+  and an isolated current-source GCC runner linked against the preserved
+  production shared library passes both cases via in-memory execution. Keep
+  full current Check relink/execution, complete OLE10/VBA corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification open.
+
 ## XDP direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scanxdp()` fail-visible when the bounded XML/base64 parser returns
