@@ -320,7 +320,7 @@ Sonic1, resource, and final qualification remain required.
   Full OLE/VBA/XLM corpus, sanitizer, production-CVD/service,
   materialized-large-file, Sonic1, and final qualification remain required.
 
-## Current HFS+ production-linked rerun — 2026-08-31
+## Current HFS+ production-linked rerun — 2026-09-01
 
 - Keep the HFS+ fork regression's valid fmap callback intact across its
   multiple subcases; malformed forks must return explicit incomplete results
@@ -333,7 +333,7 @@ Sonic1, resource, and final qualification remain required.
   `scanners.c`
   `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`, and
   `check_clamav.c`
-  `d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`.
+  `71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`.
 - Retain current-source production-linked GCC evidence at `hfs_map` 20/20,
   `hfs_inline` 2/2, and `hfs_fork` 1/1. ExtentOverflow, full HFS+ corpus,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
