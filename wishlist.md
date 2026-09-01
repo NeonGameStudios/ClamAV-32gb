@@ -9522,6 +9522,23 @@ qualification as required evidence.
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
   resource, and final parser/release qualification remain required.
 
+## Current SIS production-linked rerun — 2026-08-31
+
+- Canonical/container SHA-256 equality was verified before relinking for
+  `sis.c` (`7833212547d3a8048e44e10c75a5089604d53c41d0674877b0ed90c96483013c`),
+  `sis.h` (`214eac48469c2140ee14439575f629a3267965369e1b4fc7494a7a29355e5668`),
+  `scanners.c` (`be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`),
+  and `check_clamav.c`
+  (`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`).
+- The current-source production-linked GCC harness passes `sis_structure` 2/2,
+  `sis_member` 1/1, `sis_map` 2/2, and `sis` 1/1, including exact nested MZP
+  matching after compressed-member extraction. The materialized `clam.sis`
+  fixture has SHA-256
+  `2e75399c9f6fa7741db9ccf506de2895b3a78a3d574fa776c65f533b717555b5`.
+- Complete SIS corpus, sanitizer scanner fault injection, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification remain required.
+
 ## PE Swizzor empty resource-string admission — 2026-08-30
 
 - Keep `cli_detect_swizz_str()` fail-closed for null input/statistics and
