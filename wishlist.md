@@ -1,5 +1,18 @@
 # Wishlist
 
+## MIME/MHTML metadata write visibility — 2026-09-01
+
+- Keep MIME and MHTML metadata object, array, string, integer, null, and
+  parser-error writes fail-visible: record an exact sticky incomplete reason,
+  prevent fmap caching, and preserve stronger detection or resource results.
+  Encode an absent MHTML root charset as JSON null instead of turning an
+  optional property into a parser failure.
+- Retain `test_mhtml_root_metadata_record_failure_is_fail_visible` and its
+  source guards; complete current-source production-GCC compilation and
+  production-linked execution, sanitizer, complete MIME/mbox/MHTML corpus,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## PE import result reconciliation — 2026-09-01
 
 - Keep every non-success `scan_pe_imp()` result fail-visible at the owning PE

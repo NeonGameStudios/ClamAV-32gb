@@ -299,6 +299,7 @@ static int pdf_test_fail_page_count;
 static int pdf_test_fail_incorrect_pages_count;
 static int pdf_test_fail_uri_metadata;
 static int html_test_fail_uri_metadata;
+static int mbox_test_fail_root_metadata;
 static int pe_test_fail_import_table;
 static int pe_test_fail_import_item;
 static int pe_test_fail_imphash;
@@ -338,6 +339,8 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
     if (pdf_test_fail_uri_metadata && key == NULL && s && strcmp(s, "https://docs.clamav.net/manual/Development.html") == 0)
         return CL_EMEM;
     if (html_test_fail_uri_metadata && key == NULL && s && strcmp(s, "https://www.clamav.net/reports/malware") == 0)
+        return CL_EMEM;
+    if (mbox_test_fail_root_metadata && key && strcmp(key, "Encoding") == 0)
         return CL_EMEM;
     if (pe_test_fail_import_item && key == NULL && s && strcmp(s, "kernel32.TestFunction") == 0)
         return CL_EMEM;
@@ -1866,6 +1869,74 @@ START_TEST(test_mbox_large_body_streams_without_alert)
     free(path);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_mhtml_root_metadata_record_failure_is_fail_visible)
+{
+    static const uint8_t input[] =
+        "From: sender@example.com\n"
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "MIME-Version: 1.0\n"
+        "Content-Type: multipart/related; boundary=mhtml-metadata\n"
+        "\n"
+        "--mhtml-metadata\n"
+        "Content-Type: text/html; charset=UTF-8\n"
+        "Content-Location: https://example.invalid/root.html\n"
+        "\n"
+        "<html><head><meta charset=\"UTF-8\"></head>"
+        "<body>mhtml metadata regression</body></html>\n"
+        "--mhtml-metadata--\n";
+    struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    cl_error_t report_status;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    const char *reason;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse   = ~0U;
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    map             = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, "mhtml-root-metadata", &verdict, &last_alert, &scanned,
+                               g_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_MHTML", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+
+    verdict                  = CL_VERDICT_STRONG_INDICATOR;
+    last_alert               = "stale";
+    scanned                  = UINT64_MAX;
+    mbox_test_fail_root_metadata = 1;
+    ret = cl_scanmap_ex2(map, "mhtml-root-metadata", &verdict, &last_alert, &scanned,
+                         g_engine, &options, NULL, NULL, NULL, NULL, NULL,
+                         "CL_TYPE_MHTML", NULL, &report);
+    mbox_test_fail_root_metadata = 0;
+
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_EFORMAT);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_ne(completion, CL_SCAN_COMPLETION_COMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "MHTML root HTML encoding metadata could not be recorded");
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_metadata_json_output_failures_are_fail_visible)
@@ -54614,6 +54685,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mhtml, test_mhtml_unterminated_comment_is_fail_visible);
     tcase_add_test(tc_mhtml, test_mhtml_oversized_comment_is_fail_visible);
     tcase_add_test(tc_mhtml, test_mhtml_large_body_uses_streaming_spool);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_mhtml, test_mhtml_root_metadata_record_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_mhtml, test_mhtml_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_dmg_map);
     tcase_add_checked_fixture(tc_dmg_map, cl_setup, cl_teardown);

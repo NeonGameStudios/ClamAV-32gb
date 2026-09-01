@@ -171,6 +171,34 @@ typedef struct mbox_ctx {
     json_object *wrkobj;
 } mbox_ctx;
 
+/* Metadata is part of the confirmed MIME-layer result contract. A report
+ * failure must therefore remain visible after the parser continues, while a
+ * stronger detection or resource result must retain precedence. */
+static void mbox_record_json_failure(mbox_ctx *mctx, mbox_status *status,
+                                     const char *reason)
+{
+    if (mctx == NULL || mctx->ctx == NULL)
+        return;
+
+    cli_mark_scan_incomplete(mctx->ctx, reason);
+    if (status != NULL && *status != VIRUS && *status != MAXREC && *status != MAXFILES)
+        *status = FAIL;
+}
+
+static void mbox_record_json_status(mbox_ctx *mctx, mbox_status *status,
+                                    cl_error_t ret, const char *reason)
+{
+    if (ret != CL_SUCCESS)
+        mbox_record_json_failure(mctx, status, reason);
+}
+
+static void mbox_merge_json_status(mbox_status *status, mbox_status metadata_status)
+{
+    if (status != NULL && metadata_status != OK && *status != VIRUS &&
+        *status != MAXREC && *status != MAXFILES)
+        *status = FAIL;
+}
+
 /* if supported by the system, use the optimized
  * version of getc, that doesn't do locking,
  * and is possibly implemented entirely as a macro */
@@ -1854,8 +1882,9 @@ static cl_error_t parseMHTMLComment(const char *comment, cli_ctx *ctx, void *wrk
 
             cli_mark_scan_incomplete(ctx, "MHTML comment XML reader could not be initialized");
 
-            if (ctx->this_layer_metadata_json != NULL)
-                (void)cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_XML_READER_MEM");
+            if (ctx->this_layer_metadata_json != NULL &&
+                cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_XML_READER_MEM") != CL_SUCCESS)
+                cli_mark_scan_incomplete(ctx, "MHTML XML-reader memory error metadata could not be recorded");
 
             return CL_EPARSE; // libxml2 failed!
         }
@@ -1896,6 +1925,7 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
     xmlTextReaderPtr reader;
     int ret        = CL_SUCCESS;
     mbox_status rc = OK;
+    mbox_status metadata_rc = OK;
     json_object *rhtml;
 
     cli_dbgmsg("in parseRootMHTML\n");
@@ -1950,8 +1980,9 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
 
         cli_mark_scan_incomplete(ctx, "MHTML root HTML document could not be parsed completely");
 
-        if (ctx->this_layer_metadata_json != NULL)
-            (void)cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_HTML_READ");
+        if (ctx->this_layer_metadata_json != NULL &&
+            cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_HTML_READ") != CL_SUCCESS)
+            cli_mark_scan_incomplete(ctx, "MHTML HTML-read error metadata could not be recorded");
 
         if (!borrowed_input)
             fileblobDestructiveDestroy(input_fb);
@@ -1960,10 +1991,25 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
 
     if (mctx->wrkobj) {
         rhtml = cli_jsonobj(mctx->wrkobj, "RootHTML");
-        if (rhtml != NULL) {
+        if (rhtml == NULL) {
+            mbox_record_json_failure(mctx, &metadata_rc,
+                                     "MHTML root HTML metadata object could not be allocated");
+        } else {
+            const char *encoding = (const char *)htmlGetMetaEncoding(htmlDoc);
+
             /* MHTML-specific properties */
-            cli_jsonstr(rhtml, "Encoding", (const char *)htmlGetMetaEncoding(htmlDoc));
-            cli_jsonint(rhtml, "CompressMode", xmlGetDocCompressMode(htmlDoc));
+            if (encoding != NULL) {
+                mbox_record_json_status(mctx, &metadata_rc,
+                                        cli_jsonstr(rhtml, "Encoding", encoding),
+                                        "MHTML root HTML encoding metadata could not be recorded");
+            } else {
+                mbox_record_json_status(mctx, &metadata_rc,
+                                        cli_jsonnull(rhtml, "Encoding"),
+                                        "MHTML root HTML encoding metadata could not be recorded");
+            }
+            mbox_record_json_status(mctx, &metadata_rc,
+                                    cli_jsonint(rhtml, "CompressMode", xmlGetDocCompressMode(htmlDoc)),
+                                    "MHTML root HTML compression metadata could not be recorded");
         }
     }
 
@@ -1973,8 +2019,9 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
 
         cli_mark_scan_incomplete(ctx, "MHTML root HTML XML reader could not be initialized");
 
-        if (ctx->this_layer_metadata_json != NULL)
-            (void)cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_XML_READER_IO");
+        if (ctx->this_layer_metadata_json != NULL &&
+            cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_XML_READER_IO") != CL_SUCCESS)
+            cli_mark_scan_incomplete(ctx, "MHTML XML-reader error metadata could not be recorded");
 
         if (!borrowed_input)
             fileblobDestructiveDestroy(input_fb);
@@ -2008,6 +2055,9 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
             cli_mark_scan_incomplete(ctx, "MHTML root HTML parser did not complete");
             rc = FAIL;
     }
+
+    if ((rc == OK || rc == OK_ATTACHMENTS_NOT_SAVED) && metadata_rc != OK)
+        rc = metadata_rc;
 
     xmlTextReaderClose(reader);
     xmlFreeTextReader(reader);
@@ -2575,17 +2625,37 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
         mimeSubtype = messageGetMimeSubtype(mainMessage);
 
         if (mctx->wrkobj != NULL) {
-            mctx->wrkobj = cli_jsonobj(mctx->wrkobj, "Body");
-            cli_jsonstr(mctx->wrkobj, "MimeType", getMimeTypeStr(mimeType));
-            cli_jsonstr(mctx->wrkobj, "MimeSubtype", mimeSubtype);
-            cli_jsonstr(mctx->wrkobj, "EncodingType", getEncTypeStr(messageGetEncoding(mainMessage)));
-            cli_jsonstr(mctx->wrkobj, "Disposition", messageGetDispositionType(mainMessage));
-            if (messageHasFilename(mainMessage)) {
-                char *filename = messageGetFilename(mainMessage);
-                cli_jsonstr(mctx->wrkobj, "Filename", filename);
-                free(filename);
+            json_object *bodyobj = cli_jsonobj(mctx->wrkobj, "Body");
+
+            if (bodyobj == NULL) {
+                mbox_record_json_failure(mctx, &rc,
+                                         "MIME body metadata object could not be allocated");
+                mctx->wrkobj = NULL;
             } else {
-                cli_jsonstr(mctx->wrkobj, "Filename", "(inline)");
+                mctx->wrkobj = bodyobj;
+                mbox_record_json_status(mctx, &rc,
+                                        cli_jsonstr(mctx->wrkobj, "MimeType", getMimeTypeStr(mimeType)),
+                                        "MIME body type metadata could not be recorded");
+                mbox_record_json_status(mctx, &rc,
+                                        cli_jsonstr(mctx->wrkobj, "MimeSubtype", mimeSubtype),
+                                        "MIME body subtype metadata could not be recorded");
+                mbox_record_json_status(mctx, &rc,
+                                        cli_jsonstr(mctx->wrkobj, "EncodingType", getEncTypeStr(messageGetEncoding(mainMessage))),
+                                        "MIME body encoding metadata could not be recorded");
+                mbox_record_json_status(mctx, &rc,
+                                        cli_jsonstr(mctx->wrkobj, "Disposition", messageGetDispositionType(mainMessage)),
+                                        "MIME body disposition metadata could not be recorded");
+                if (messageHasFilename(mainMessage)) {
+                    char *filename = messageGetFilename(mainMessage);
+                    mbox_record_json_status(mctx, &rc,
+                                            cli_jsonstr(mctx->wrkobj, "Filename", filename),
+                                            "MIME body filename metadata could not be recorded");
+                    free(filename);
+                } else {
+                    mbox_record_json_status(mctx, &rc,
+                                            cli_jsonstr(mctx->wrkobj, "Filename", "(inline)"),
+                                            "MIME body filename metadata could not be recorded");
+                }
             }
         }
 
@@ -2648,7 +2718,9 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                 boundary = messageFindArgument(mainMessage, "boundary");
 
                 if (mctx->wrkobj != NULL)
-                    cli_jsonstr(mctx->wrkobj, "Boundary", boundary);
+                    mbox_record_json_status(mctx, &rc,
+                                            cli_jsonstr(mctx->wrkobj, "Boundary", boundary),
+                                            "MIME multipart boundary metadata could not be recorded");
 
                 if (boundary == NULL) {
                     cli_dbgmsg("Multipart/%s MIME message contains no boundary header\n",
@@ -5658,26 +5730,39 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
     const int doPhishingScan = mctx->ctx->engine->dboptions & CL_DB_PHISHING_URLS && (DCONF_PHISHING & PHISHING_CONF_ENGINE);
     json_object *thisobj     = NULL;
     json_object *saveobj     = mctx->wrkobj;
+    mbox_status metadata_rc  = OK;
 
     if (mctx->wrkobj != NULL) {
         json_object *multiobj = cli_jsonarray(mctx->wrkobj, "Multipart");
         if (multiobj == NULL) {
             cli_errmsg("Cannot get multipart preclass array\n");
+            mbox_record_json_failure(mctx, &metadata_rc,
+                                     "MIME multipart metadata array could not be allocated");
         } else if (NULL == (thisobj = cli_jsonobj(NULL, NULL))) {
             cli_dbgmsg("Cannot allocate new json object for message part.\n");
-        } else {
-            json_object_array_add(multiobj, thisobj);
+            mbox_record_json_failure(mctx, &metadata_rc,
+                                     "MIME multipart message metadata object could not be allocated");
+        } else if (json_object_array_add(multiobj, thisobj) != 0) {
+            json_object_put(thisobj);
+            thisobj = NULL;
+            mbox_record_json_failure(mctx, &metadata_rc,
+                                     "MIME multipart metadata array entry could not be recorded");
         }
     }
 
     if (aMessage == NULL) {
         if (thisobj != NULL)
-            cli_jsonstr(thisobj, "MimeType", "NULL");
+            mbox_record_json_status(mctx, &metadata_rc,
+                                    cli_jsonstr(thisobj, "MimeType", "NULL"),
+                                    "MIME multipart null-part metadata could not be recorded");
+        mbox_merge_json_status(rc, metadata_rc);
         return mainMessage;
     }
 
-    if (*rc != OK)
+    if (*rc != OK) {
+        mbox_merge_json_status(rc, metadata_rc);
         return mainMessage;
+    }
 
     if (aMessage->isTruncated) {
         cli_mark_scan_incomplete(mctx->ctx,
@@ -5690,16 +5775,28 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
                i, messageGetMimeType(aMessage));
 
     if (thisobj != NULL) {
-        cli_jsonstr(thisobj, "MimeType", getMimeTypeStr(messageGetMimeType(aMessage)));
-        cli_jsonstr(thisobj, "MimeSubtype", messageGetMimeSubtype(aMessage));
-        cli_jsonstr(thisobj, "EncodingType", getEncTypeStr(messageGetEncoding(aMessage)));
-        cli_jsonstr(thisobj, "Disposition", messageGetDispositionType(aMessage));
+        mbox_record_json_status(mctx, &metadata_rc,
+                                cli_jsonstr(thisobj, "MimeType", getMimeTypeStr(messageGetMimeType(aMessage))),
+                                "MIME multipart type metadata could not be recorded");
+        mbox_record_json_status(mctx, &metadata_rc,
+                                cli_jsonstr(thisobj, "MimeSubtype", messageGetMimeSubtype(aMessage)),
+                                "MIME multipart subtype metadata could not be recorded");
+        mbox_record_json_status(mctx, &metadata_rc,
+                                cli_jsonstr(thisobj, "EncodingType", getEncTypeStr(messageGetEncoding(aMessage))),
+                                "MIME multipart encoding metadata could not be recorded");
+        mbox_record_json_status(mctx, &metadata_rc,
+                                cli_jsonstr(thisobj, "Disposition", messageGetDispositionType(aMessage)),
+                                "MIME multipart disposition metadata could not be recorded");
         if (messageHasFilename(aMessage)) {
             char *filename = messageGetFilename(aMessage);
-            cli_jsonstr(thisobj, "Filename", filename);
+            mbox_record_json_status(mctx, &metadata_rc,
+                                    cli_jsonstr(thisobj, "Filename", filename),
+                                    "MIME multipart filename metadata could not be recorded");
             free(filename);
         } else {
-            cli_jsonstr(thisobj, "Filename", "(inline)");
+            mbox_record_json_status(mctx, &metadata_rc,
+                                    cli_jsonstr(thisobj, "Filename", "(inline)"),
+                                    "MIME multipart filename metadata could not be recorded");
         }
     }
 
@@ -5784,6 +5881,7 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
                 break;
             }
             cli_dbgmsg("Text type %s is not supported\n", dtype);
+            mbox_merge_json_status(rc, metadata_rc);
             return mainMessage;
         case MESSAGE:
             /* Content-Type: message/rfc822 */
@@ -5808,6 +5906,7 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
                         cli_dbgmsg("Unencoded multipart/message will not be scanned\n");
                         messageDestroy(messages[i]);
                         messages[i] = NULL;
+                        mbox_merge_json_status(rc, metadata_rc);
                         return mainMessage;
                     }
                     /* FALLTHROUGH */
@@ -5859,6 +5958,7 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
 
             mctx->wrkobj = saveobj;
 #endif
+            mbox_merge_json_status(rc, metadata_rc);
             return mainMessage;
         case MULTIPART:
             /*
@@ -5888,6 +5988,7 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
 
             mctx->wrkobj = saveobj;
 
+            mbox_merge_json_status(rc, metadata_rc);
             return mainMessage;
         default:
             cli_dbgmsg("Only text and application attachments are fully supported, type = %d\n",
@@ -5950,8 +6051,12 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
                     dtype = json_object_get_string(entry);
                 }
             }
-            cli_jsonint(thisobj, "ContainedObjectsIndex", (int32_t)arrlen);
-            cli_jsonstr(thisobj, "ClamAVFileType", dtype ? dtype : "UNKNOWN");
+            mbox_record_json_status(mctx, &metadata_rc,
+                                    cli_jsonint(thisobj, "ContainedObjectsIndex", (int32_t)arrlen),
+                                    "MIME multipart contained-object index metadata could not be recorded");
+            mbox_record_json_status(mctx, &metadata_rc,
+                                    cli_jsonstr(thisobj, "ClamAVFileType", dtype ? dtype : "UNKNOWN"),
+                                    "MIME multipart contained-object type metadata could not be recorded");
         }
 
         if (messageContainsVirus(aMessage)) {
@@ -5961,6 +6066,7 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
     messageDestroy(aMessage);
     messages[i] = NULL;
 
+    mbox_merge_json_status(rc, metadata_rc);
     return mainMessage;
 }
 
