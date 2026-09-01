@@ -37643,6 +37643,71 @@ START_TEST(test_dmg_in_memory_stripes_keep_host_order)
 }
 END_TEST
 
+START_TEST(test_dmg_sticky_incomplete_result_is_fail_visible)
+{
+    char *base64;
+    char *xml;
+    uint8_t data[512] = {0};
+    uint8_t *image;
+    size_t base64_length;
+    size_t xml_length;
+    size_t image_length;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[4];
+    cli_ctx ctx;
+    cl_fmap_t *map;
+
+    base64 = dmg_test_stored_mish_base64();
+    ck_assert_ptr_nonnull(base64);
+    base64_length = strlen(base64);
+    xml_length = sizeof("<?xml version=\"1.0\"?><plist><dict><key>resource-fork</key><dict><key>blkx</key><array><dict><key>Data</key><data>") - 1U +
+                 base64_length + sizeof("</data></dict></array></dict></dict></plist>") - 1U;
+    xml = malloc(xml_length + 1U);
+    ck_assert_ptr_nonnull(xml);
+    ck_assert_int_eq(snprintf(xml, xml_length + 1U,
+                              "<?xml version=\"1.0\"?><plist><dict><key>resource-fork</key><dict><key>blkx</key><array><dict><key>Data</key><data>%s</data></dict></array></dict></dict></plist>",
+                              base64),
+                     (int)xml_length);
+    image = dmg_test_image_with_data(data, sizeof(data), xml, &image_length);
+    free(xml);
+    free(base64);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(image, image_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine                 = engine;
+    ctx.options                = &options;
+    ctx.fmap                   = map;
+    ctx.this_layer_tmpdir      = tmpdir;
+    ctx.recursion_stack        = layers;
+    ctx.recursion_stack_size   = 4;
+    layers[0].type             = CL_TYPE_DMG;
+    layers[0].size             = image_length;
+    layers[0].fmap             = map;
+
+    ck_assert_int_eq(cli_scandmg(&ctx), CL_CLEAN);
+    ck_assert(!ctx.scan_incomplete);
+
+    ctx.scan_incomplete       = true;
+    ctx.scan_incomplete_reason = "pre-existing DMG incomplete state";
+    ck_assert_int_eq(cli_scandmg(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing DMG incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(image);
+}
+END_TEST
+
 START_TEST(test_dmg_malformed_metadata_is_fail_visible)
 {
     static const char truncated_xml[] =
@@ -52355,6 +52420,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_dmg_map, test_dmg_missing_engine_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg_map, test_dmg_in_memory_stripes_keep_host_order);
+    tcase_add_test(tc_dmg_map, test_dmg_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_external_sort_is_bounded_and_complete);
     tcase_add_test(tc_dmg_map, test_dmg_truncated_metadata_is_parse_not_read);
     tcase_add_test(tc_dmg_map, test_dmg_malformed_metadata_is_fail_visible);
@@ -52753,6 +52819,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
     tcase_add_test(tc_dmg, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg, test_dmg_in_memory_stripes_keep_host_order);
+    tcase_add_test(tc_dmg, test_dmg_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_external_sort_is_bounded_and_complete);
     tcase_add_test(tc_dmg, test_dmg_truncated_metadata_is_parse_not_read);
     tcase_add_test(tc_dmg, test_dmg_malformed_metadata_is_fail_visible);

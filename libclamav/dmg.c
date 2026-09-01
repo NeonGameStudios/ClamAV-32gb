@@ -123,6 +123,12 @@ static int dmg_cleanup_temp_dir(cli_ctx *ctx, char **dirname, int status)
         status = cli_merge_cleanup_status(status, CL_EUNLINK);
     }
 
+    /* A required DMG operation may have preserved a sticky incomplete state
+     * while the outer parser continued far enough to reach cleanup. Direct
+     * callers must not observe a clean result after that partial inspection. */
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        status = CL_EPARSE;
+
     free(*dirname);
     *dirname = NULL;
     return status;

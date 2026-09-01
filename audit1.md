@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## DMG direct sticky-incomplete reconciliation — 2026-09-01
+
+The confirmed DMG parser could reach its shared temporary-directory cleanup
+after a required operation marked the context incomplete and still return the
+underlying clean result to a direct caller. The cleanup boundary now converts
+only `CL_SUCCESS`/`CL_CLEAN` into `CL_EPARSE` when sticky incomplete state is
+present, preserving stronger parser, read, timeout, resource, detection, and
+cleanup results. `test_dmg_sticky_incomplete_result_is_fail_visible` uses the
+existing valid stored-stripe image to assert the untainted clean baseline and
+the pre-tainted exact reason plus non-cacheability. Current DMG source and
+Check translation unit compilation, production-linked execution, sanitizer,
+complete DMG corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## PE direct sticky-incomplete reconciliation — 2026-09-01
 
 The confirmed PE scanner deliberately marks a short 32-bit entry-point window

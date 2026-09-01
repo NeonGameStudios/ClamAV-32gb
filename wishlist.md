@@ -1,5 +1,19 @@
 # Wishlist
 
+## DMG direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep the confirmed DMG parser fail-visible when a required operation has
+  already marked the scan incomplete but the outer XML/stripe walk reaches
+  temporary-directory cleanup. Clean completion must return `CL_EPARSE` and
+  preserve the prior reason and fmap non-cacheability; stronger parser, read,
+  timeout, resource, detection, and cleanup statuses remain unchanged.
+- Retain `test_dmg_sticky_incomplete_result_is_fail_visible`, which uses the
+  valid stored-stripe image for clean and pre-tainted direct scans. Current
+  source compilation, production-linked execution, sanitizer, complete DMG
+  corpus, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification
+  remain required.
+
 ## PE direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scanpe()` fail-visible when a confirmed PE skips only the fixed
