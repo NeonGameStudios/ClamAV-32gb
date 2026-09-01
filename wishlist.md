@@ -9447,8 +9447,16 @@ qualification as required evidence.
   fail-visible with `CL_ESEEK`, sticky incomplete state, and cleanup.
 - Retain the pipe-backed regression and source guards; the isolated current-
   source fmap runner passes under GCC and GCC ASan/UBSan with leak detection.
+  Canonical/container SHA-256 equality was verified before relinking for
+  `pdf.c` (`311da2bb315cf622f3b28f68051aa221b60fb011d86e2c42e1449160ef86fe73`),
+  `pdf.h` (`b673ca37ad6162bddd106a80d849da7b40088c5e1f5d4c0c11a8de920030e5c4`),
+  `scanners.c` (`be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`),
+  and `check_clamav.c`
+  (`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`).
   The current-source production-linked GCC harness passes `pdf` 17/17,
-  `pdf_map` 4/4, and `pdf_corpus` 1/1. Complete PDF/fmap corpus,
+  `pdf_map` 4/4, and `pdf_corpus` 1/1; materialized `clam.pdf` has SHA-256
+  `c46d28b54a8efe5821125e9002c6de29f52f5ad736625637326e47ceb49a07e7`.
+  Complete PDF/fmap corpus,
   production-CVD/service, materialized-large-file, Sonic1, and final release
   qualification evidence remain required.
 

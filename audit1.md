@@ -16797,8 +16797,16 @@ nested scans also previously ignored both temporary-output rewinds, allowing
 an output-position fault to enter child scanning at an undefined position;
 each rewind now marks the PDF layer incomplete and returns `CL_ESEEK`. The
 pipe-backed public fmap regression and source guards cover the handoff. The
+Canonical/container SHA-256 equality was verified before relinking for
+`pdf.c` (`311da2bb315cf622f3b28f68051aa221b60fb011d86e2c42e1449160ef86fe73`),
+`pdf.h` (`b673ca37ad6162bddd106a80d849da7b40088c5e1f5d4c0c11a8de920030e5c4`),
+`scanners.c` (`be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`),
+and `check_clamav.c`
+(`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
 current-source production-linked GCC harness passes `pdf` 17/17, `pdf_map`
-4/4, and materialized `pdf_corpus` 1/1. An isolated current-source fmap
+4/4, and materialized `pdf_corpus` 1/1. The materialized `clam.pdf` fixture
+has SHA-256 `c46d28b54a8efe5821125e9002c6de29f52f5ad736625637326e47ceb49a07e7`.
+An isolated current-source fmap
 runner passes under GCC and matching GCC
 AddressSanitizer/UndefinedBehaviorSanitizer with leak detection; current-source
 production-linked PDF execution, complete PDF/fmap corpus, production-CVD/
