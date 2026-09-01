@@ -201,8 +201,12 @@ cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset)
     const uint8_t *buf;
     size_t remaining;
 
-    if (!ctx || !ctx->fmap)
+    if (!ctx)
         return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "InstallShield MSI header input map is unavailable");
+        return CL_EPARSE;
+    }
     if (offset < 0 || (uint64_t)offset > ctx->fmap->len)
         return CL_EFORMAT;
 

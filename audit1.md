@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## SFX header map admission — 2026-09-01
+
+The confirmed 7-Zip, RAR4, and InstallShield MSI SFX header probes previously
+collapsed a valid context with no input fmap into `CL_ENULLARG`, leaving a
+recognized layer without input unclassified and without a sticky cache taint.
+Each probe now distinguishes a null context (`CL_ENULLARG`) from a valid
+context whose input map is unavailable (`CL_EPARSE` plus an exact sticky
+diagnostic and non-cacheable result). Focused 7-Zip, RAR, and InstallShield
+regressions cover the direct admission boundary; stronger sticky, format, and
+read statuses remain authoritative. Current-source production-GCC
+compilation, production-linked execution, sanitizer, complete SFX/parser
+corpora, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## RAR SFX header sticky completion — 2026-09-01
 
 The RAR4 SFX fixed-header admission helper validated a complete main-header

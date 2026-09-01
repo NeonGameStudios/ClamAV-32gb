@@ -1,5 +1,18 @@
 # Wishlist
 
+## SFX header map admission — 2026-09-01
+
+- Keep 7-Zip, RAR4, and InstallShield MSI SFX header probes fail-visible for a
+  valid context without an input fmap: return `CL_EPARSE`, preserve an exact
+  sticky diagnostic, and retain non-cacheability; reserve `CL_ENULLARG` for a
+  null context.
+- Retain the direct missing-map assertions in the 7-Zip, RAR, and
+  InstallShield regressions plus source guards.
+- Complete current-source production-GCC compilation and production-linked
+  execution, sanitizer, complete SFX/parser corpora, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## RAR SFX header sticky completion — 2026-09-01
 
 - Keep confirmed RAR4 SFX fixed-header admission fail-visible when the owning

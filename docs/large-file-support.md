@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## SFX header map admission — 2026-09-01
+
+Confirmed 7-Zip, RAR4, and InstallShield MSI SFX header probes now distinguish
+a null context (`CL_ENULLARG`) from a valid context without an input fmap
+(`CL_EPARSE` plus an exact sticky diagnostic and non-cacheable result).
+Focused direct regressions cover all three boundaries; stronger sticky,
+format, and read statuses remain authoritative. Current-source production-GCC
+compilation, production-linked execution, sanitizer, complete SFX/parser
+corpora, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## RAR SFX header sticky completion — 2026-09-01
 
 Confirmed RAR4 SFX fixed-header admission now reconciles clean completion

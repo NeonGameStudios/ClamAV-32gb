@@ -83,8 +83,12 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
     UInt32 start_header_crc;
     UInt32 next_header_crc;
 
-    if (ctx == NULL || ctx->fmap == NULL)
+    if (ctx == NULL)
         return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "7-Zip SFX header input map is unavailable");
+        return CL_EPARSE;
+    }
 
     if (offset > ctx->fmap->len || ctx->fmap->len - offset < k7zStartHeaderSize)
         return CL_EFORMAT;

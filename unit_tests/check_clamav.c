@@ -11340,6 +11340,12 @@ START_TEST(test_rar_sfx_header_sticky_incomplete_result_is_fail_visible)
     fmap_t *map;
 
     memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_rar_sfx_header_check(NULL, 0), CL_ENULLARG);
+    ck_assert_int_eq(cli_rar_sfx_header_check(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "RAR SFX header input map is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
     ctx.scan_incomplete        = true;
     ctx.scan_incomplete_reason = "pre-existing RAR SFX incomplete state";
     map                         = cl_fmap_open_memory(data, sizeof(data));
@@ -26461,6 +26467,12 @@ START_TEST(test_ishield_missing_map_confirmed_entries_are_fail_visible)
     cli_ctx ctx;
 
     memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_ishield_msi_header_check(NULL, 0), CL_ENULLARG);
+    ck_assert_int_eq(cli_ishield_msi_header_check(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield MSI header input map is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cli_scanishield_msi(&ctx, 0), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield MSI input map is unavailable");
@@ -30480,6 +30492,12 @@ START_TEST(test_7z_sfx_header_sticky_incomplete_result_is_fail_visible)
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_7z_header_check(NULL, 0), CL_ENULLARG);
+    ck_assert_int_eq(cli_7z_header_check(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "7-Zip SFX header input map is unavailable");
 
     memcpy(data, "7z\xbc\xaf'\x1c", 6);
     data[6] = 0;

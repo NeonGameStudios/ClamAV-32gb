@@ -5601,8 +5601,12 @@ cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset)
     uint16_t header_size;
     uint64_t remaining;
 
-    if (ctx == NULL || ctx->fmap == NULL)
+    if (ctx == NULL)
         return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "RAR SFX header input map is unavailable");
+        return CL_EPARSE;
+    }
 
     remaining = (offset <= ctx->fmap->len) ? (uint64_t)(ctx->fmap->len - offset) : 0;
     if (remaining < sizeof(header))
