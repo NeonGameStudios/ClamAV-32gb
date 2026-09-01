@@ -1,5 +1,18 @@
 # Wishlist
 
+## ELF metadata sticky completion — 2026-09-01
+
+- Keep `cli_elfheader()` from returning `CL_SUCCESS` after required metadata
+  inspection marks the recognized layer incomplete, including the legacy
+  32-bit metadata ABI boundary for native 64-bit coordinates.
+- Preserve the native metadata view while returning `CL_EPARSE`, retaining the
+  exact sticky diagnostic and `test_elf64_metadata_preserves_native_coordinates`
+  regression plus source guards.
+- Complete current-source production-GCC compilation and production-linked
+  execution, sanitizer, complete executable corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## MSXML reader initialization failure — 2026-09-01
 
 - Keep `cli_scanmsxml()` fail-visible when `xmlReaderForIO()` cannot be

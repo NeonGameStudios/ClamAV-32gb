@@ -44682,7 +44682,7 @@ START_TEST(test_elf64_metadata_preserves_native_coordinates)
     ctx.fmap = map;
 
     ret = cli_elfheader(&ctx, &exeinfo);
-    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(exeinfo.has_native_coordinates);
     ck_assert_ptr_nonnull(exeinfo.sections64);
     ck_assert_uint_eq(exeinfo.ep64, state.section_offset);
@@ -44690,6 +44690,7 @@ START_TEST(test_elf64_metadata_preserves_native_coordinates)
     ck_assert_uint_eq(exeinfo.sections64[0].rva, UINT64_C(0x100000000));
     ck_assert_uint_eq(exeinfo.ep, 0);
     ck_assert_uint_eq(exeinfo.sections[0].raw, 0);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF64 coordinates exceed the legacy 32-bit metadata ABI");
     ck_assert(exeinfo.legacy_metadata_incomplete);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);

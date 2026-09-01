@@ -1144,7 +1144,7 @@ done:
     if (ctx && ret != CL_SUCCESS && ret != CL_VIRUS && ret != CL_VERIFIED)
         cli_mark_scan_incomplete(ctx, "ELF metadata parsing ended before inspection completed");
 
-    return ret;
+    return cli_elf_reconcile_status(ctx, ret);
 }
 
 /*

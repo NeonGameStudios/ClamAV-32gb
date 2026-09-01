@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ELF metadata sticky completion — 2026-09-01
+
+The ELF metadata-only entry now reconciles its final status with sticky
+incomplete state. In particular, native 64-bit metadata remains available for
+callers, but a legacy 32-bit metadata ABI overflow now returns `CL_EPARSE`
+with its exact sticky diagnostic instead of `CL_SUCCESS`. The existing native
+coordinate regression and source guards cover this boundary. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+executable corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## MSXML reader initialization failure — 2026-09-01
 
 The top-level MSXML scanner now treats an `xmlReaderForIO()` construction
