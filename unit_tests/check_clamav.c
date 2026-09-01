@@ -110,6 +110,7 @@
 #include "checks.h"
 
 static int binhex_test_bypass_child_scan;
+static int hwp3_test_bypass_child_scan;
 static int xar_test_bypass_child_scan;
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
@@ -327,7 +328,8 @@ cl_error_t __wrap_cli_magic_scan_desc_type_reserved(int desc, const char *filepa
     uint8_t prefix[3];
     ssize_t nread;
 
-    if (binhex_test_bypass_child_scan || xar_test_bypass_child_scan)
+    if (binhex_test_bypass_child_scan || hwp3_test_bypass_child_scan ||
+        xar_test_bypass_child_scan)
         return CL_SUCCESS;
 
     if (type == CL_TYPE_ANY) {
@@ -27097,6 +27099,56 @@ START_TEST(test_hwp3_parser_errors_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwp3_sticky_incomplete_result_is_fail_visible)
+{
+    enum {
+        HWP3_CONTENT_OFFSET   = 30 + 128 + 1008,
+        HWP3_PARAGRAPH_OFFSET = HWP3_CONTENT_OFFSET + (7 * 2) + 2,
+        HWP3_INFO_OFFSET      = HWP3_PARAGRAPH_OFFSET + 43,
+        HWP3_MEMBER_OFFSET    = HWP3_INFO_OFFSET + 8,
+        HWP3_TERMINATOR_OFFSET = HWP3_MEMBER_OFFSET + 3,
+        HWP3_DATA_LENGTH      = HWP3_TERMINATOR_OFFSET + 8
+    };
+    static const uint8_t identity[30] = {
+        0x48, 0x57, 0x50, 0x20, 0x44, 0x6f, 0x63, 0x75, 0x6d, 0x65,
+        0x6e, 0x74, 0x20, 0x46, 0x69, 0x6c, 0x65, 0x20, 0x56, 0x33,
+        0x2e, 0x30, 0x30, 0x20, 0x1a, 0x01, 0x02, 0x03, 0x04, 0x05};
+    uint8_t data[HWP3_DATA_LENGTH] = {0};
+    cli_ctx ctx;
+    cli_scan_layer_t layer;
+    struct cl_scan_options options;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memcpy(data, identity, sizeof(identity));
+    data[HWP3_INFO_OFFSET] = 2; /* OLE2 Data information block. */
+    data[HWP3_INFO_OFFSET + 4] = 3;
+    memcpy(data + HWP3_MEMBER_OFFSET, "UDF", 3);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&options, 0, sizeof(options));
+    ctx.fmap = map;
+    ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
+    ctx.scan_incomplete = true;
+    ctx.scan_incomplete_reason = "pre-existing HWP3 incomplete state";
+    map->dont_cache_flag = true;
+
+    hwp3_test_bypass_child_scan = 1;
+    ret = cli_scanhwp3(&ctx);
+    hwp3_test_bypass_child_scan = 0;
+
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing HWP3 incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hwp3_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t data[30 + 128 + 1008] = {0};
@@ -51885,6 +51937,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_apm_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gpt_invalid_partition_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_parser_errors_are_fail_visible);
+    tcase_add_test(tc_hwp3, test_hwp3_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_font_table_is_parse_error);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_paragraph_header_is_parse_error);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_paragraph_content_is_parse_error);

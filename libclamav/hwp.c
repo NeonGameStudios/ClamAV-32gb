@@ -2397,6 +2397,8 @@ cl_error_t cli_scanhwp3(cli_ctx *ctx)
 done:
     if (ctx && ret != CL_SUCCESS && ret != CL_VIRUS && ret != CL_BREAK && !ctx->scan_incomplete)
         cli_mark_scan_incomplete(ctx, "HWP3 inspection ended before completion");
+    if (ctx && (ret == CL_SUCCESS || ret == CL_CLEAN) && ctx->scan_incomplete)
+        ret = CL_EPARSE;
 
     return ret;
 }
