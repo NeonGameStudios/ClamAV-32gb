@@ -109,6 +109,8 @@
 
 #include "checks.h"
 
+static int binhex_test_bypass_child_scan;
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 extern int clamav_test_fail_write;
 extern int clamav_test_fail_close;
@@ -323,6 +325,9 @@ cl_error_t __wrap_cli_magic_scan_desc_type_reserved(int desc, const char *filepa
 {
     uint8_t prefix[3];
     ssize_t nread;
+
+    if (binhex_test_bypass_child_scan)
+        return CL_SUCCESS;
 
     if (type == CL_TYPE_ANY) {
         if (lseek(desc, 0, SEEK_SET) == (off_t)-1) {
@@ -19293,6 +19298,76 @@ START_TEST(test_binhex_corpus_detects_embedded_mz)
         CL_VIRUS);
     ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
     ck_assert_str_eq(last_alert, "BinHex.Member.MZ.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    free(data);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_binhex_sticky_incomplete_result_is_fail_visible)
+{
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    char file_path[PATH_MAX];
+    struct stat st;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    size_t offset = 0;
+    int fd;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE | CL_SCAN_PARSE_PE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/clam.exe.binhex", OBJDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+    ck_assert_msg(st.st_size > 0 && (uintmax_t)st.st_size <= SIZE_MAX,
+                  "invalid BinHex corpus size");
+    data_size = (size_t)st.st_size;
+    data = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < data_size) {
+        ssize_t nread = read(fd, data + offset, data_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    ck_assert_int_eq(close(fd), 0);
+
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    layers[0].fmap            = map;
+    layers[0].type            = CL_TYPE_BINHEX;
+    layers[0].size            = map->len;
+    layers[0].tmpdir          = tmpdir;
+    ctx.engine                = scan_engine;
+    ctx.dconf                 = scan_engine->dconf;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack       = layers;
+    ctx.recursion_stack_size  = 2;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing BinHex incomplete state";
+    map->dont_cache_flag       = true;
+
+    binhex_test_bypass_child_scan = 1;
+    ck_assert_int_eq(cli_binhex(&ctx), CL_EPARSE);
+    binhex_test_bypass_child_scan = 0;
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing BinHex incomplete state");
+    ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
     free(data);
@@ -51515,6 +51590,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_binhex_map, test_binhex_short_resource_fork_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_output_temporary_limit_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_corpus_detects_embedded_mz);
+    tcase_add_test(tc_binhex_map, test_binhex_sticky_incomplete_result_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_binhex_map, test_binhex_cleanup_close_failure_is_fail_visible);
 #endif

@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## BinHex direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_binhex()` could finish a valid decoded document with `CL_CLEAN` while its
+recognized layer already carried sticky incomplete state. Its final result now
+converts only `CL_CLEAN` and `CL_SUCCESS` in that state to `CL_EPARSE`, while
+preserving detections and stronger parser or cleanup errors. The regression
+`test_binhex_sticky_incomplete_result_is_fail_visible` uses a valid
+materialized BinHex corpus path with nested child handoff isolated and asserts
+the exact pre-existing reason plus non-cacheability. The current-source
+production-linked GCC isolation runner passes 1/1, while the pre-change
+comparison returns clean for the same valid fixture. The full current BinHex
+TCase still needs a storage-capable relink and execution; sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain open.
+
 ## Native executable direct sticky-incomplete reconciliation — 2026-09-01
 
 The ELF and thin Mach-O direct scanners could return their clean sentinel after

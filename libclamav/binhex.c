@@ -80,6 +80,15 @@ static void binhex_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
     *status = binhex_merge_cleanup_status(*status, cleanup_status);
 }
 
+static cl_error_t binhex_reconcile_result(const cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_CLEAN || status == CL_SUCCESS) &&
+        ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 static uint32_t binhex_read_be32(const uint8_t *value)
 {
     return ((uint32_t)value[0] << 24) | ((uint32_t)value[1] << 16) |
@@ -411,5 +420,5 @@ int cli_binhex(cli_ctx *ctx)
         cli_scan_release_temporary(ctx, resource_reserved);
     free(dname);
     free(rname);
-    return ret;
+    return binhex_reconcile_result(ctx, ret);
 }
