@@ -1,5 +1,19 @@
 # Wishlist
 
+## PNG direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_parsepng()` fail-visible for direct callers when a valid PNG
+  completes with a pre-existing sticky incomplete state. Clean/direct results
+  now return `CL_EPARSE`, while detections and stronger parser errors remain
+  preserved.
+- Retain the valid minimal pre-taint regression
+  `test_png_sticky_incomplete_result_is_fail_visible`, canonical/container hash
+  equality for the current `png.c` and `check_clamav.c`, and current
+  production-linked GCC results at `png` 9/9 and `png_corpus` 1/1. Keep
+  complete PNG/image corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## GIF direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_parsegif()` fail-visible for direct callers when a valid image

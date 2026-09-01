@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## PNG direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_parsepng()` could return `CL_SUCCESS` to a direct parser caller after a
+valid PNG completed while the scan context was already sticky-incomplete. The
+final status now converts only clean/`CL_SUCCESS` results with sticky
+incomplete state to `CL_EPARSE`, preserving detections and stronger parser
+errors. The valid minimal PNG regression
+`test_png_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `png.c`
+(`dc1bee4bc26a78d09797a40556ea0b0b7df5c9c47882dde763e57f72cb0fa930`) and
+`check_clamav.c`
+(`c44a7df8e16f27657aef3195a51db8c3c869d175c4d50662e1e46169e4e96759`). The
+current-source production-linked GCC harness passes `png` 9/9 and
+`png_corpus` 1/1. This closes direct status reconciliation only; complete
+PNG/image corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## GIF direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_parsegif()` could return `CL_SUCCESS` to a direct parser caller after a
