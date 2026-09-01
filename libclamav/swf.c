@@ -125,6 +125,13 @@ static cl_error_t swf_scan_overlay(cli_ctx *ctx, fmap_t *map, size_t offset)
                                            LAYER_ATTRIBUTES_NONE);
 }
 
+static cl_error_t swf_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+    return status;
+}
+
 #define INITBITS                                                                       \
     {                                                                                  \
         cl_error_t read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c), parse_end); \
@@ -650,7 +657,7 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
 
     /* Skip Flash tag walk unless debug mode */
     if (!cli_debug_flag) {
-        return swf_scan_overlay(ctx, map, parse_end);
+        return swf_reconcile_status(ctx, swf_scan_overlay(ctx, map, parse_end));
     }
 
     while (offset < parse_end) {
@@ -724,5 +731,5 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
             offset = tag_payload_end;
     }
 
-    return swf_scan_overlay(ctx, map, parse_end);
+    return swf_reconcile_status(ctx, swf_scan_overlay(ctx, map, parse_end));
 }

@@ -1,5 +1,19 @@
 # Wishlist
 
+## SWF direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep the SWF uncompressed direct entry fail-visible when a valid FWS stream
+  completes with a pre-existing sticky incomplete state. Clean/direct results
+  now return `CL_EPARSE`, while detections and stronger parser errors remain
+  preserved.
+- Retain the valid FWS pre-taint regression
+  `test_swf_sticky_incomplete_result_is_fail_visible`, canonical/container hash
+  equality for the current `swf.c` and `check_clamav.c`, and current
+  production-linked GCC results at `swf` 14/14, `swf_map` 3/3, `swf_api` 1/1,
+  and `swf_corpus` 2/2. Keep complete SWF corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification open.
+
 ## PNG direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_parsepng()` fail-visible for direct callers when a valid PNG

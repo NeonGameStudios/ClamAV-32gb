@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## SWF direct sticky-incomplete reconciliation — 2026-09-01
+
+The uncompressed SWF path could return `CL_SUCCESS` to a direct parser caller
+after a valid FWS stream completed while the scan context was already
+sticky-incomplete. The final overlay result now passes through a status
+reconciler that converts only clean results with sticky incomplete state to
+`CL_EPARSE`, preserving detections and stronger parser errors. The valid FWS
+regression `test_swf_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `swf.c`
+(`ab58a6f4dea629a23b44d3e03c69a334c5cdb4a89a2e7467d2f3e4f821c14458`) and
+`check_clamav.c`
+(`25f5408c60de01d6f821671d26a373ad42583a2ed6f7a7ad91f716f79669e48a`). The
+current-source production-linked GCC harness passes `swf` 14/14, `swf_map`
+3/3, `swf_api` 1/1, and `swf_corpus` 2/2. This closes direct status
+reconciliation only; complete SWF corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## PNG direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_parsepng()` could return `CL_SUCCESS` to a direct parser caller after a

@@ -9134,6 +9134,33 @@ START_TEST(test_swf_uncompressed_overlay_detects_embedded_mz)
 }
 END_TEST
 
+START_TEST(test_swf_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t valid_swf[] = {
+        'F', 'W', 'S', 9U, 16U, 0U, 0U, 0U,
+        0x08U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
+        0x00U, 0x00U,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(valid_swf, sizeof(valid_swf));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                   = map;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing SWF incomplete state";
+    map->dont_cache_flag       = true;
+
+    ck_assert_int_eq(cli_scanswf(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing SWF incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_swf_uncompressed_overlay_requires_engine)
 {
     static const uint8_t archive[] = {
@@ -51046,6 +51073,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_swf, test_swf_truncated_uncompressed_header_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_truncated_frame_metadata_is_fail_visible);
+    tcase_add_test(tc_swf, test_swf_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_truncated_tag_payload_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_fixed_tag_length_is_fail_visible);
     suite_add_tcase(s, tc_swf_corpus);
