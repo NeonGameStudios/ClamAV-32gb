@@ -5827,22 +5827,28 @@ static void URI_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_a
         end++;
         bytesleft--;
     }
-    if (uri_start[end] != ')') {
+    if (bytesleft == 0) {
+        cli_mark_scan_incomplete(ctx, "PDF URI literal was not terminated");
         return;
     }
+    if (uri_start[end] != ')')
+        return;
 
     // Create a new string containing only the URI
     CLI_MAX_MALLOC_OR_GOTO_DONE(uri_heap, end + 1,
-                                cli_errmsg("cli_pdf: malloc() failed (URI)\n"));
+                                cli_errmsg("cli_pdf: malloc() failed (URI)\n");
+                                cli_mark_scan_incomplete(ctx, "PDF URI metadata could not be allocated"));
     strncpy(uri_heap, uri_start, end);
     uri_heap[end] = '\0';
 
     uriarr = cli_jsonarray(pdf->ctx->this_layer_metadata_json, "URIs");
     if (!uriarr) {
         cli_errmsg("cli_pdf: malloc() failed (URI array)\n");
+        cli_mark_scan_incomplete(ctx, "PDF URI metadata array could not be allocated");
         goto done;
     }
-    cli_jsonstr(uriarr, NULL, uri_heap);
+    if (cli_jsonstr(uriarr, NULL, uri_heap) != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, "PDF URI metadata could not be recorded");
 done:
     free(uri_heap);
 }

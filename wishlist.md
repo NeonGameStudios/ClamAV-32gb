@@ -11534,3 +11534,13 @@ final parser/release qualification remain open.
   corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final release qualification
   remain open.
+
+## PDF URI metadata completion — 2026-09-01
+
+- Keep PDF URI array/string allocation and recording failures fail-visible,
+  and reject unterminated URI literals before reading past the mapped object.
+- Retain `test_pdf_uri_metadata_record_failure_is_fail_visible` and
+  `test_pdf_unterminated_uri_is_fail_visible` with their source guards.
+  Current-source production-linked execution, complete PDF corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final release qualification remain open.

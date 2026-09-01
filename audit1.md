@@ -93,25 +93,6 @@ sanitizer, complete XML/OOXML/HWPML corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
-## PDF page-count metadata completion — 2026-09-01
-
-The PDF page-tree metadata callback attempted to record
-`IncorrectPagesCount` for malformed or inconsistent `/Kids` and `/Count`
-values, but discarded every `cli_jsonbool()` failure. A report allocation
-failure could therefore leave the confirmed PDF layer clean. The callback now
-marks the layer incomplete when that required diagnostic field cannot be
-recorded; the direct PDF completion reconciliation returns `CL_EPARSE` while
-preserving the sticky reason and cache taint.
-
-`test_pdf_page_count_metadata_record_failure_is_fail_visible` first confirms a
-three-object PDF with a mismatched page count reaches a clean baseline, then
-injects the `IncorrectPagesCount` report failure and requires `CL_EPARSE` with
-the exact reason. The source guard and capability manifest record the
-boundary. Current-source production-linked execution, sanitizer, complete PDF
-corpus, certified Linux x86-64, production-CVD/service,
-materialized-large-file, Sonic1, resource, and final parser/release
-qualification remain required.
-
 ## OOXML metadata record failure visibility — 2026-09-01
 
 The OOXML content-types callback discarded the return values from its required
@@ -19509,3 +19490,41 @@ and capability manifest record the boundary. Current-source production-linked
 execution, sanitizer, complete OLE metadata corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
+
+## PDF URI metadata completion — 2026-09-01
+
+The PDF URI metadata callback previously discarded URI-array and URI-string
+JSON failures, and it dereferenced one byte past the mapped object when a
+literal URI was unterminated. URI metadata allocation/recording failures now
+mark the confirmed PDF layer incomplete and non-cacheable. Unterminated URI
+literals are rejected before the end-of-object dereference and are also
+reported as incomplete.
+
+`test_pdf_uri_metadata_record_failure_is_fail_visible` uses the checked-in
+URI PDF fixture to prove a clean baseline and an injected URI-string
+`CL_EMEM` becomes `CL_EPARSE` with the exact sticky reason. The
+`test_pdf_unterminated_uri_is_fail_visible` regression mutates the same
+fixture’s literal terminator and requires the explicit parse failure. Source
+guards and the capability manifest record both boundaries. Current-source
+production-linked execution, sanitizer, complete PDF corpus, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
+## PDF page-count metadata completion — 2026-09-01
+
+The PDF page-tree metadata callback attempted to record
+`IncorrectPagesCount` for malformed or inconsistent `/Kids` and `/Count`
+values, but discarded every `cli_jsonbool()` failure. A report allocation
+failure could therefore leave the confirmed PDF layer clean. The callback now
+marks the layer incomplete when that required diagnostic field cannot be
+recorded; the direct PDF completion reconciliation returns `CL_EPARSE` while
+preserving the sticky reason and cache taint.
+
+`test_pdf_page_count_metadata_record_failure_is_fail_visible` first confirms a
+three-object PDF with a mismatched page count reaches a clean baseline, then
+injects the `IncorrectPagesCount` report failure and requires `CL_EPARSE` with
+the exact reason. The source guard and capability manifest record the
+boundary. Current-source production-linked execution, sanitizer, complete PDF
+corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
