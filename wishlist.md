@@ -11132,3 +11132,16 @@ qualification as required evidence.
 - Complete TIFF/image corpus, sanitizer, certified Linux x86-64,
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
+
+## SWF compressed direct completion — 2026-09-01
+
+- Keep `cli_scanswf()` fail-visible for valid CWS and ZWS streams when the
+  confirmed SWF layer carries pre-existing sticky incomplete state. Compressed
+  dispatch now reconciles clean decoder completion to `CL_EPARSE`, while
+  preserving detections and stronger decoder, parser, resource, read, timeout,
+  and cleanup statuses.
+- Retain
+  `test_swf_compressed_sticky_incomplete_result_is_fail_visible`, the exact
+  original diagnostic, fmap non-cacheability, and source guards. Current
+  production-linked relink/execution and all final SWF/release qualification
+  gates remain open while the Docker harness is unavailable.

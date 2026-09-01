@@ -18968,3 +18968,22 @@ space; the standalone current-source oracle is the executed regression
 evidence. Complete ARJ/ARJ-SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
+
+## SWF compressed direct completion — 2026-09-01
+
+`cli_scanswf()` already reconciled clean completion for the uncompressed FWS
+overlay path, but its CWS and ZWS dispatches returned the decoder status
+directly. A valid compressed SWF could therefore return clean to a direct
+caller even when the confirmed SWF layer had already been marked incomplete.
+Both compressed dispatches now pass through the same sticky-status
+reconciliation, preserving detections and stronger decoder, parser, resource,
+read, timeout, and cleanup results.
+
+The new `test_swf_compressed_sticky_incomplete_result_is_fail_visible`
+regression builds a valid CWS stream, pre-taints its root layer, and requires
+`CL_EPARSE` with the original diagnostic and a non-cacheable fmap. The test
+and source guards are registered. The Docker production-linked harness is
+currently unavailable because its stopped container cannot remount on the
+full overlay, so current-source relink/execution, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain open.

@@ -11749,6 +11749,24 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## SWF compressed direct completion — 2026-09-01
+
+The CWS and ZWS branches of `cli_scanswf()` now reconcile clean decoder
+completion against the confirmed layer's sticky incomplete state, matching the
+existing FWS overlay behavior. This prevents a valid compressed stream from
+returning clean after an earlier required step has made the SWF layer
+incomplete, while preserving detections and stronger decoder, parser, resource,
+read, timeout, and cleanup statuses.
+
+`test_swf_compressed_sticky_incomplete_result_is_fail_visible` constructs a
+valid CWS stream, pre-taints its root layer, and requires `CL_EPARSE`, the
+original incomplete reason, and fmap non-cacheability. Source guards register
+the implementation and regression. Current production-linked relink and
+execution remain open because the existing Docker container is stopped and
+cannot remount on its full overlay; sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+SWF/release qualification also remain required.
+
 ## TIFF sparse >4-GiB callback-map rerun — 2026-08-31
 
 The three TIFF large-coordinate tests previously failed before parser entry

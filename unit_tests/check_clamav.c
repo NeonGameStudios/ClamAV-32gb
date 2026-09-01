@@ -9199,6 +9199,54 @@ START_TEST(test_swf_sticky_incomplete_result_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_swf_compressed_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t body_prefix[] = {0x08, 0x00, 0x00, 0x00, 0x00, 0x00};
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    archive = swf_cws_stream(body_prefix, sizeof(body_prefix), &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    layers[0].type           = CL_TYPE_SWF;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
+    ctx.engine               = engine;
+    ctx.dconf                = engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing compressed SWF incomplete state";
+    map->dont_cache_flag       = true;
+
+    ck_assert_int_eq(cli_scanswf(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing compressed SWF incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(archive);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_swf_uncompressed_overlay_requires_engine)
 {
     static const uint8_t archive[] = {
@@ -53269,6 +53317,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_swf, test_swf_truncated_uncompressed_header_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_truncated_frame_metadata_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_sticky_incomplete_result_is_fail_visible);
+    tcase_add_test(tc_swf, test_swf_compressed_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_truncated_tag_payload_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_fixed_tag_length_is_fail_visible);
     suite_add_tcase(s, tc_swf_corpus);

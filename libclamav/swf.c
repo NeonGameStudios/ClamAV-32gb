@@ -614,7 +614,7 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "SWF compressed input requires an owning engine");
             return CL_ENULLARG;
         }
-        return scancws(ctx, &file_hdr);
+        return swf_reconcile_status(ctx, scancws(ctx, &file_hdr));
     } else if (!strncmp(file_hdr.signature, "ZWS", 3)) {
         cli_dbgmsg("SWF: LZMA compressed file\n");
         if (ctx->engine == NULL) {
@@ -622,7 +622,7 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "SWF compressed input requires an owning engine");
             return CL_ENULLARG;
         }
-        return scanzws(ctx, &file_hdr);
+        return swf_reconcile_status(ctx, scanzws(ctx, &file_hdr));
     } else if (!strncmp(file_hdr.signature, "FWS", 3)) {
         cli_dbgmsg("SWF: Uncompressed file\n");
         if (file_hdr.filesize < sizeof(file_hdr) || file_hdr.filesize > map->len) {
