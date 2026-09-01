@@ -17334,6 +17334,20 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## UUEncode and embedded-mail current-source rerun — 2026-08-31
+
+The canonical `uuencode.c`, `scanners.c`, and `check_clamav.c` sources were
+verified byte-identical to the existing Docker GCC harness. The focused
+production-linked cases pass `uuencode_map` 4/4, `uuencode_corpus` 1/1,
+`mail` 13/13, `mail_api` 2/2, and `mail_partial` 1/1. The MHTML streaming
+TCase initially hit the harness’s 60-second limit on its large-body fixture;
+an isolated rerun with the bounded 300-second test timeout passes `mhtml` 4/4.
+
+This is refreshed UUEncode/mail evidence, not final release certification.
+Complete corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1 resource evidence,
+and the final requirement-by-requirement parser/release audit remain open.
+
 ## UDF current-source production-linked rerun — 2026-08-31
 
 The canonical `udf.c`, `scanners.c`, and `check_clamav.c` sources were

@@ -9841,6 +9841,18 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## UUEncode and embedded-mail current-source rerun — 2026-08-31
+
+- Retain canonical-source equality for `uuencode.c`, `scanners.c`, and
+  `check_clamav.c` in the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: `uuencode_map` 4/4,
+  `uuencode_corpus` 1/1, `mail` 13/13, `mail_api` 2/2, `mail_partial` 1/1,
+  and isolated `mhtml` 4/4 with the bounded 300-second timeout needed by its
+  large-body streaming fixture.
+- Complete corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## UDF current-source production-linked rerun — 2026-08-31
 
 - Retain canonical-source equality for `udf.c`, `scanners.c`, and
