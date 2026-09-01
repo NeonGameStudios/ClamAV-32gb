@@ -9509,6 +9509,19 @@ qualification as required evidence.
   x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
   and final parser/release qualification remain required.
 
+## Current SCRENC and Script production-linked rerun — 2026-08-31
+
+- Canonical/container SHA-256 equality was verified before relinking for
+  `scanners.c` (`be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`)
+  and `check_clamav.c`
+  (`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`).
+- The current-source production-linked GCC harness passes `screnc` 1/1 and
+  `script` 1/1 for their public in-range callback-failure paths, preserving
+  fail-visible incomplete results.
+- Complete SCRENC/script corpora, sanitizer scanner fault injection, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification remain required.
+
 ## PE Swizzor empty resource-string admission — 2026-08-30
 
 - Keep `cli_detect_swizz_str()` fail-closed for null input/statistics and
