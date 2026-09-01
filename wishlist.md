@@ -1,5 +1,21 @@
 # Wishlist
 
+## Mach-O universal-binary sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scanmacho_unibin()` fail-visible for direct callers when a valid
+  universal-binary walk completes with a pre-existing sticky incomplete state.
+  Clean completion now returns `CL_EPARSE`, while detections and stronger
+  parser, I/O, timeout, limit, and resource errors remain authoritative.
+- Retain `test_macho_unibin_sticky_incomplete_result_is_fail_visible`, which
+  uses a valid one-member universal fixture and an isolated nested-member
+  handoff, checking the exact prior reason plus non-cacheability. The
+  current-source production-linked GCC isolation runner passes with clean
+  untainted and `CL_EPARSE` sticky results, and the pre-change comparison
+  returns clean for both. Keep full current Mach-O TCase relink/execution,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification open.
+
 ## InstallShield direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scanishield_msi()` and `cli_scanishield()` fail-visible for direct

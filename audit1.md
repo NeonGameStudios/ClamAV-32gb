@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Mach-O universal-binary sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scanmacho_unibin()` could return the last child’s clean result after a
+valid universal-binary walk when the recognized layer already carried sticky
+incomplete state. Its final result now reconciles clean completion to
+`CL_EPARSE`, preserving detections and stronger parser, I/O, timeout, limit,
+and resource results. The regression
+`test_macho_unibin_sticky_incomplete_result_is_fail_visible` uses a valid
+one-member universal fixture, an initialized production engine, and an
+isolated nested-member handoff; it asserts the exact prior diagnostic and
+non-cacheability. The current-source production-linked GCC isolation runner
+passes with clean untainted and `CL_EPARSE` sticky results, while the exact
+pre-change object returns clean for both. Current Mach-O source and unit
+translation unit compile with production GCC flags; full current Mach-O TCase
+relink/execution, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## InstallShield direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scanishield_msi()` and the legacy `cli_scanishield()` entry could return

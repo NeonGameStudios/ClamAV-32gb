@@ -208,6 +208,14 @@ static cl_error_t cli_macho_broken_result(cli_ctx *ctx, cl_error_t fallback, con
     return fallback;
 }
 
+static cl_error_t cli_macho_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 #define RETURN_BROKEN \
     return cli_macho_broken_result(ctx, CL_EPARSE, "Mach-O universal-binary parsing ended before inspection completed")
 
@@ -972,7 +980,7 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
         }
     }
 
-    return ret; /* result from the last binary */
+    return cli_macho_reconcile_status(ctx, ret); /* result from the last binary */
 }
 
 cl_error_t cli_unpackmacho(cli_ctx *ctx)
