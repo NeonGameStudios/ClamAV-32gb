@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## InstallShield direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scanishield_msi()` and the legacy `cli_scanishield()` entry could return
+clean after valid empty archive walks when the recognized layer already carried
+sticky incomplete state. Their clean completion returns now reconcile that
+state to `CL_EPARSE`, preserving detections and stronger parser, I/O, limit,
+timeout, and cleanup results. The regression
+`test_ishield_sticky_incomplete_result_is_fail_visible` covers valid empty MSI
+and legacy walks and asserts the exact prior diagnostic plus non-cacheability.
+The current-source production-linked GCC isolation runner passes clean
+untainted baselines and `CL_EPARSE` for both sticky cases, while the exact
+pre-change object returns clean for both. Current InstallShield source and unit
+translation unit compile with production GCC flags; full current InstallShield
+TCase relink/execution, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## AutoIt direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scanautoit()` could return clean after a valid EA06 script extraction when

@@ -187,6 +187,14 @@ struct IS_FILEITEM {
 static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize);
 static const uint8_t skey[] = {0xec, 0xca, 0x79, 0xf8}; /* ~0x13, ~0x35, ~0x86, ~0x07 */
 
+static cl_error_t ishield_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset)
 {
     static const uint8_t magic[] = "InstallShield\0";
@@ -258,7 +266,7 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
 
     if (!(fcount = cli_readint32(buf))) {
         cli_dbgmsg("ishield-msi: no files?\n");
-        return CL_SUCCESS;
+        return ishield_reconcile_status(ctx, CL_SUCCESS);
     }
 
     while (fcount--) {
@@ -498,7 +506,7 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
 
         scanned++;
     }
-    return CL_SUCCESS;
+    return ishield_reconcile_status(ctx, CL_SUCCESS);
 }
 
 struct IS_CABSTUFF {
@@ -699,7 +707,7 @@ cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
         free(c.cabs);
     }
 
-    return ret;
+    return ishield_reconcile_status(ctx, ret);
 }
 
 /* Utility func to scan a fd @ a given offset and size */

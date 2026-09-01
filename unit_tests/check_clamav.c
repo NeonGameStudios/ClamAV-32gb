@@ -25907,6 +25907,68 @@ START_TEST(test_ishield_null_context_confirmed_entries_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ishield_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t msi_data[0x20] = {0};
+    uint8_t legacy_data[1] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing InstallShield incomplete state";
+
+    map = cl_fmap_open_memory(msi_data, sizeof(msi_data));
+    ck_assert_ptr_nonnull(map);
+    layers[0].fmap = map;
+    layers[0].type = CL_TYPE_ISHIELD_MSI;
+    layers[0].size = map->len;
+    ctx.fmap       = map;
+    map->dont_cache_flag = true;
+    ret = cli_scanishield_msi(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing InstallShield incomplete state");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing InstallShield incomplete state";
+    map = cl_fmap_open_memory(legacy_data, sizeof(legacy_data));
+    ck_assert_ptr_nonnull(map);
+    layers[0].fmap = map;
+    layers[0].type = CL_TYPE_ISHIELD_MSI;
+    layers[0].size = map->len;
+    ctx.fmap       = map;
+    map->dont_cache_flag = true;
+    ret = cli_scanishield(&ctx, 0, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing InstallShield incomplete state");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hwpml_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -52054,6 +52116,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_ishield_map, cl_setup, cl_teardown);
     tcase_add_test(tc_ishield_map, test_ishield_null_context_confirmed_entries_are_fail_visible);
     tcase_add_test(tc_ishield_map, test_ishield_missing_map_confirmed_entries_are_fail_visible);
+    tcase_add_test(tc_ishield_map, test_ishield_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_hwpml_map);
     tcase_add_checked_fixture(tc_hwpml_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpml_map, test_hwpml_null_context_is_fail_visible);
