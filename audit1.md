@@ -89,6 +89,23 @@ boundaries, and the oversized-stream regression. Full YARA corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## fmap and 7-Zip focused current-source revalidation — 2026-09-01
+
+The canonical `fmap.c`, `check_clamav.c`, and related unit-test sources match
+the existing Docker production-linked GCC snapshot by SHA-256. The isolated
+`fmap_api` TCase passes 2/2, covering memory-, descriptor-, nested-, and
+dumped-map `fmap_gets()` behavior, including the one-byte destination contract
+and injected multi-page read-failure cleanup. The matcher `swizz` TCase passes
+1/1 for empty and short PE Swizzor resource-string input. The production-linked
+7-Zip cases pass `7z` 20/20, `7z_map` 3/3, `7z_sfx` 2/2, and `7z_sfx_corpus`
+1/1, including the exact embedded-child marker.
+
+These are focused current-source regressions, not final parser-family
+qualification. Sanitizer, complete fmap/line-oriented and 7-Zip/BCJ2 corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1 resource, and final requirement-by-requirement release audit evidence
+remain open.
+
 ## Rust parser and FFI current-source rerun — 2026-09-01
 
 The existing Docker image already contained Rust 1.97.1, and its CMake build

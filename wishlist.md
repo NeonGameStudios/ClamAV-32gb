@@ -498,6 +498,18 @@ Sonic1, resource, and final qualification remain required.
   materialized-large-file, certified Linux x86-64, Sonic1, and final
   parser/release qualification.
 
+## fmap and 7-Zip focused current-source revalidation — 2026-09-01
+
+- Retain the canonical-source Docker hash equality and production-linked GCC
+  evidence: `fmap_api` passes 2/2 across memory, descriptor, nested, and
+  dumped-map `fmap_gets()` paths; matcher `swizz` passes 1/1; and 7-Zip passes
+  `7z` 20/20, `7z_map` 3/3, `7z_sfx` 2/2, and `7z_sfx_corpus` 1/1.
+- Keep one-byte `fmap_gets()` no-consume behavior and descriptor-backed
+  multi-page failure cleanup source-guarded. Keep 7-Zip BCJ2, archive corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1 resource, and final parser/release
+  qualification open.
+
 ## HFS+ leaf-chain admission — 2026-08-31
 
 - Reconcile HFS+ B-tree header leaf metadata before walking a declared tree;
