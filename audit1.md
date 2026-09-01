@@ -2610,8 +2610,9 @@ state. A direct caller could therefore observe a required staging failure
 without non-cacheable state. The parser now records
 `TAR member temporary output could not be created` before returning. The new
 `test_tar_member_output_open_failure_is_fail_visible` regression and source
-guards cover the exact result; the focused current-source GCC runner passes
-`CL_ETMPFILE` with incomplete/non-cacheable state. Complete TAR corpus,
+guards cover the exact result; the current-source production-linked GCC
+`tar_map` case passes 3/3, including `CL_ETMPFILE` with incomplete/non-cacheable
+state. Complete TAR corpus,
 production-CVD/service, sanitizer, materialized large-file, Sonic1, and final
 parser-family/release qualification remain open.
 

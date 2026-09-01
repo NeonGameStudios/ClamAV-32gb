@@ -1823,7 +1823,8 @@ Sonic1, resource, and final qualification remain required.
 - Keep TAR member temporary-output creation failures sticky and non-cacheable;
   return `CL_ETMPFILE` only with the required incomplete state recorded.
 - Retain `test_tar_member_output_open_failure_is_fail_visible` and its source
-  guard. The focused current-source direct runner passes the expected result.
+  guard. The current-source production-linked GCC `tar_map` case passes 3/3,
+  including the expected `CL_ETMPFILE` and incomplete/non-cacheable state.
   Keep complete TAR corpus, production-CVD/service, sanitizer, materialized
   large-file, Sonic1, and final parser-family/release evidence open.
 
