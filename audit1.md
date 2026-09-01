@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## MSPack CAB header sticky completion — 2026-09-01
+
+`cli_mscab_header_check()` validated a confirmed CAB header and could return
+`CL_SUCCESS` even when the owning scan context already carried sticky
+incomplete state. A caller could therefore admit a CAB SFX layer from a
+non-complete context. The header probe now uses the existing MSPack status
+reconciliation helper, converting only clean completion to `CL_EPARSE` while
+preserving stronger decoder, read, timeout, and format statuses. The existing
+materialized `clam.cab` sticky regression now exercises the header probe before
+the full CAB scan. Current-source production-GCC compilation,
+production-linked execution, sanitizer, complete CAB/CHM corpus, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.
+
 ## ELF metadata sticky completion — 2026-09-01
 
 `cli_elfheader()` populated the native 64-bit metadata view and marked

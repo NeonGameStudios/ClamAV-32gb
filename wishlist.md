@@ -1,5 +1,17 @@
 # Wishlist
 
+## MSPack CAB header sticky completion — 2026-09-01
+
+- Keep `cli_mscab_header_check()` from admitting a confirmed CAB/SFX header as
+  clean when its owning scan context is already incomplete.
+- Preserve stronger header-probe errors, convert only clean completion to
+  `CL_EPARSE`, and retain the materialized CAB sticky regression plus source
+  guards.
+- Complete current-source production-GCC compilation and production-linked
+  execution, sanitizer, complete CAB/CHM corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## ELF metadata sticky completion — 2026-09-01
 
 - Keep `cli_elfheader()` from returning `CL_SUCCESS` after required metadata

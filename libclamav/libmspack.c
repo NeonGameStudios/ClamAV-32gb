@@ -637,7 +637,7 @@ done:
         mspack_destroy_cab_decompressor(cab_d);
     }
 
-    return status;
+    return mspack_reconcile_status(ctx, status);
 }
 
 cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)

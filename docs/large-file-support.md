@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MSPack CAB header sticky completion — 2026-09-01
+
+The confirmed CAB header probe now reconciles clean completion against the
+owning layer’s sticky incomplete state. A pre-tainted CAB/SFX context therefore
+returns `CL_EPARSE` instead of admitting a clean header, while decoder, read,
+timeout, and format failures retain their stronger statuses. The materialized
+CAB sticky regression now covers the direct header probe before full CAB
+scanning. Current-source production-GCC compilation, production-linked
+execution, sanitizer, complete CAB/CHM corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## ELF metadata sticky completion — 2026-09-01
 
 The ELF metadata-only entry now reconciles its final status with sticky

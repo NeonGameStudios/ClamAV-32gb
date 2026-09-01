@@ -43605,6 +43605,16 @@ START_TEST(test_mspack_sticky_incomplete_result_is_fail_visible)
         layers[0].tmpdir           = tmpdir;
         map->dont_cache_flag       = true;
 
+        if (types[i] == CL_TYPE_MSCAB) {
+            size_t cab_size = 0;
+
+            ret = cli_mscab_header_check(&ctx, 0, &cab_size);
+            ck_assert_int_eq(ret, CL_EPARSE);
+            ck_assert(ctx.scan_incomplete);
+            ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing MSPack incomplete state");
+            ck_assert(map->dont_cache_flag);
+        }
+
         if (types[i] == CL_TYPE_MSCAB)
             ret = cli_scanmscab(&ctx, 0);
         else
