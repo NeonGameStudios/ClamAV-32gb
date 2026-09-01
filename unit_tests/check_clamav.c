@@ -111,6 +111,7 @@
 
 static int binhex_test_bypass_child_scan;
 static int hwp3_test_bypass_child_scan;
+static int hwpole2_test_bypass_child_scan;
 static int xar_test_bypass_child_scan;
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
@@ -329,6 +330,7 @@ cl_error_t __wrap_cli_magic_scan_desc_type_reserved(int desc, const char *filepa
     ssize_t nread;
 
     if (binhex_test_bypass_child_scan || hwp3_test_bypass_child_scan ||
+        hwpole2_test_bypass_child_scan ||
         xar_test_bypass_child_scan)
         return CL_SUCCESS;
 
@@ -27371,6 +27373,47 @@ START_TEST(test_hwpole2_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwpole2_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t data[] = {1, 0, 0, 0, 0};
+    cli_ctx ctx;
+    cli_scan_layer_t layer;
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    fmap_t *map;
+    cl_error_t ret;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&layer, 0, sizeof(layer));
+    memset(&options, 0, sizeof(options));
+    memset(&engine, 0, sizeof(engine));
+    layer.fmap = map;
+    layer.type = CL_TYPE_HWPOLE2;
+    layer.size = map->len;
+    ctx.engine = &engine;
+    ctx.options = &options;
+    ctx.fmap = map;
+    ctx.recursion_stack = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.scan_incomplete = true;
+    ctx.scan_incomplete_reason = "pre-existing HWPOLE2 incomplete state";
+    map->dont_cache_flag = true;
+
+    hwpole2_test_bypass_child_scan = 1;
+    ret = cli_scanhwpole2(&ctx);
+    hwpole2_test_bypass_child_scan = 0;
+
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing HWPOLE2 incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hwpole2_null_context_is_fail_visible)
 {
     ck_assert_int_eq(cli_scanhwpole2(NULL), CL_ENULLARG);
@@ -51259,6 +51302,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_hwpole2_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_null_context_is_fail_visible);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_missing_map_is_fail_visible);
+    tcase_add_test(tc_hwpole2_map, test_hwpole2_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_partition_map);
     tcase_add_checked_fixture(tc_partition_map, cl_setup, cl_teardown);

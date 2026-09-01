@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## HWPOLE2 direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scanhwpole2()` could return the nested scanner's clean status even when
+the recognized layer already carried sticky incomplete state. Its final clean
+paths now convert only `CL_SUCCESS` and `CL_CLEAN` in that state to
+`CL_EPARSE`, preserving detections and stronger parser errors. The valid
+one-byte wrapped-payload regression
+`test_hwpole2_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the exact prior diagnostic, and non-cacheability
+while isolating the nested child handoff. The current-source
+production-linked GCC isolation runner passes 1/1, while the pre-change
+comparison returns clean for the same valid fixture. The current HWP source
+and unit translation unit compile with production GCC flags; full current
+HWPOLE2 TCase relink/execution, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## HWP3 direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scanhwp3()` could return `CL_SUCCESS` after a valid HWP3 walk even when

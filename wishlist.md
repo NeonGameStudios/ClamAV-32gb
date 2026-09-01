@@ -1,5 +1,20 @@
 # Wishlist
 
+## HWPOLE2 direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scanhwpole2()` fail-visible for direct callers when a valid wrapped
+  payload completes with a pre-existing sticky incomplete state. Clean/direct
+  results now return `CL_EPARSE`, while detections and stronger parser errors
+  remain preserved.
+- Retain the valid one-byte wrapped-payload regression
+  `test_hwpole2_sticky_incomplete_result_is_fail_visible`, which isolates the
+  nested child handoff and checks the exact prior reason plus non-cacheability.
+  The current-source production-linked GCC isolation runner passes 1/1 and the
+  pre-change comparison returns clean for the same valid fixture. Keep full
+  current HWPOLE2 TCase relink/execution, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  parser/release qualification open.
+
 ## HWP3 direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scanhwp3()` fail-visible for direct callers when a valid HWP3 walk
