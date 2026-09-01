@@ -1039,7 +1039,9 @@ int cli_ole2_summary_json(cli_ctx *ctx, int fd, int mode, const char *filepath)
 
     /* second property set (index=1) is always a custom property set (if present) */
     if (sumstub.num_propsets == 2) {
-        cli_jsonbool(ctx->this_layer_metadata_json, "HasUserDefinedProperties", 1);
+        ret = cli_jsonbool(ctx->this_layer_metadata_json, "HasUserDefinedProperties", 1);
+        if (ret != CL_SUCCESS)
+            return cli_ole2_summary_json_cleanup(&sctx, ret);
     }
 
     return cli_ole2_summary_json_cleanup(&sctx, CL_SUCCESS);

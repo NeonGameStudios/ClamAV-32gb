@@ -282,12 +282,14 @@ int htmlnorm_test_fail_next_realloc;
 
 #ifdef CLAMAV_TEST_JSON_WRAP
 extern json_object *__real_cli_jsonarray(json_object *obj, const char *key);
+extern cl_error_t __real_cli_jsonbool(json_object *obj, const char *key, int i);
 extern cl_error_t __real_cli_jsonint(json_object *obj, const char *key, int32_t i);
 extern cl_error_t __real_cli_jsonstr(json_object *obj, const char *key, const char *s);
 static int hwp3_test_fail_font_counts;
 static int hwp3_test_fail_print_name;
 static int hwp5_test_fail_raw_version;
 static int ole2_test_fail_streams;
+static int ole2_test_fail_custom_properties;
 static int ooxml_test_fail_file_count;
 static int msxml_test_fail_count;
 static int msxml_test_fail_attribute;
@@ -307,6 +309,13 @@ json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
     if (pe_test_fail_import_table && key && strcmp(key, "ImportTable") == 0)
         return NULL;
     return __real_cli_jsonarray(obj, key);
+}
+
+cl_error_t __wrap_cli_jsonbool(json_object *obj, const char *key, int i)
+{
+    if (ole2_test_fail_custom_properties && key && strcmp(key, "HasUserDefinedProperties") == 0)
+        return CL_EMEM;
+    return __real_cli_jsonbool(obj, key, i);
 }
 
 cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
@@ -36837,6 +36846,58 @@ START_TEST(test_ole2_stream_metadata_allocation_failure_is_fail_visible)
     free(data);
 }
 END_TEST
+
+static void zip_stream_write_u16(uint8_t *dst, uint16_t value);
+static void zip_stream_write_u32(uint8_t *dst, uint32_t value);
+
+START_TEST(test_ole2_custom_property_metadata_record_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    static uint8_t data[56];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    json_object *metadata;
+    cl_error_t ret;
+    int fd;
+
+    memset(data, 0, sizeof(data));
+    zip_stream_write_u16(data, 0xfffeU);
+    zip_stream_write_u32(data + 24U, 2U);
+    zip_stream_write_u32(data + 44U, 48U);
+    zip_stream_write_u32(data + 48U, 8U);
+
+    snprintf(file_path, sizeof(file_path), "%s/ole2-summary-custom-properties.bin", tmpdir);
+    fd = open(file_path, O_CREAT | O_EXCL | O_WRONLY, 0600);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(write(fd, data, sizeof(data)), (ssize_t)sizeof(data));
+    ck_assert_int_eq(close(fd), 0);
+
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_int_ge(fd, 0);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                     = &engine;
+    ctx.options                    = &options;
+    ctx.this_layer_metadata_json   = metadata;
+
+    ret = cli_ole2_summary_json(&ctx, fd, 0, file_path);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+
+    ole2_test_fail_custom_properties = 1;
+
+    ret = cli_ole2_summary_json(&ctx, fd, 0, file_path);
+
+    ole2_test_fail_custom_properties = 0;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_int_eq(close(fd), 0);
+    json_object_put(metadata);
+    ck_assert_int_eq(unlink(file_path), 0);
+}
+END_TEST
 #endif
 
 START_TEST(test_ole2_xlm_biff_read_failure_is_fail_visible)
@@ -54443,6 +54504,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2, test_ole2_workbook_encryption_probe_accepts_terminal_filepass);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_ole2, test_ole2_stream_metadata_allocation_failure_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_custom_property_metadata_record_failure_is_fail_visible);
 #endif
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_ole2, test_ole2_output_write_failure_is_fail_visible);

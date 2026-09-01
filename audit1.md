@@ -19473,3 +19473,20 @@ Current-source production-linked execution, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource
 measurements, and the final requirement-by-requirement parser/release audit
 remain open.
+
+## OLE2 custom-property metadata completion — 2026-09-01
+
+The OLE2 summary metadata helper previously discarded the `cli_jsonbool()`
+result for the required `HasUserDefinedProperties` field when a second
+property set was present. A report allocation failure could therefore return
+`CL_SUCCESS` after parsing a confirmed summary stream. The helper now returns
+the JSON failure through its cleanup path, preserving the non-clean result for
+the caller to mark incomplete and non-cacheable.
+
+`test_ole2_custom_property_metadata_record_failure_is_fail_visible` builds a
+minimal valid two-property-set summary stream and injects failure at the
+custom-property report field, requiring `CL_EMEM`. The current source guard
+and capability manifest record the boundary. Current-source production-linked
+execution, sanitizer, complete OLE metadata corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.

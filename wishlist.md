@@ -11512,3 +11512,14 @@ final parser/release qualification remain open.
   guards. Current-source production-linked execution, sanitizer, certified
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
   resource, and final nested-ingress qualification remain open.
+
+## OLE2 custom-property metadata completion — 2026-09-01
+
+- Keep `HasUserDefinedProperties` report failures fail-visible when an OLE2
+  summary stream declares a second property set; do not allow a dropped
+  required JSON field to return clean.
+- Retain `test_ole2_custom_property_metadata_record_failure_is_fail_visible`
+  and its source guard. Current-source production-linked execution, complete
+  OLE metadata corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final release
+  qualification remain open.
