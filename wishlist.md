@@ -1,5 +1,20 @@
 # Wishlist
 
+## SIS direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scansis()` fail-visible for direct callers when a valid SIS walk
+  completes with a pre-existing sticky incomplete state. Clean completion now
+  returns `CL_EPARSE`, while detections and stronger parser or resource errors
+  remain preserved.
+- Retain `test_sis_sticky_incomplete_result_is_fail_visible`, which uses the
+  materialized valid `clam.sis` fixture with nested descriptor dispatch
+  isolated and checks the exact prior reason plus non-cacheability. The
+  current-source production-linked GCC isolation runner passes 1/1, the
+  untainted baseline is clean, and the pre-change comparison returns clean for
+  the same fixture. Keep full current SIS TCase relink/execution, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification open.
+
 ## PDF direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_pdf()` fail-visible for direct callers when a valid PDF completes

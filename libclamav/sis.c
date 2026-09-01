@@ -128,6 +128,15 @@ sis_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed,
     *status = cli_merge_cleanup_status(*status, cleanup_status);
 }
 
+static cl_error_t
+sis_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 #define SIS_STREAM_CHUNK (64U * 1024U)
 
 /* Copy or inflate one SIS member into a caller-owned temporary descriptor.
@@ -366,7 +375,7 @@ cl_error_t cli_scansis(cli_ctx *ctx)
                              CL_EUNLINK, "SIS temporary directory could not be removed");
 
     free(tmpd);
-    return status;
+    return sis_reconcile_status(ctx, status);
 }
 
 /*************************************************

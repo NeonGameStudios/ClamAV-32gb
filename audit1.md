@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## SIS direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scansis()` returned the status from a valid SIS walk after temporary
+cleanup without reconciling a pre-existing sticky incomplete state. The final
+direct return now converts clean completion to `CL_EPARSE`, preserving
+detections and stronger parser or resource errors. The regression
+`test_sis_sticky_incomplete_result_is_fail_visible` uses the materialized
+valid `clam.sis` fixture with nested descriptor dispatch isolated and asserts
+direct `CL_EPARSE`, the exact prior diagnostic, and non-cacheability. The
+current-source production-linked GCC isolation runner passes 1/1, the
+untainted baseline is clean, and the exact pre-change SIS object returns clean
+for the same sticky fixture. Current SIS source and unit translation unit
+compile with production GCC flags; full current SIS TCase relink/execution,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## PDF direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_pdf()` normalized a hook-requested `CL_BREAK` to clean without checking
