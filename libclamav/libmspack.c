@@ -120,7 +120,7 @@ static struct mspack_file *mspack_fmap_open(struct mspack_system *self,
     const char *fmode;
     const struct mspack_system *mptr = self;
 
-    if (!filename) {
+    if (!self || !filename) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         return NULL;
     }
@@ -409,6 +409,11 @@ static off_t mspack_fmap_tell(struct mspack_file *file)
     struct mspack_handle *mspack_handle = (struct mspack_handle *)file;
 
     if (!mspack_handle)
+        return -1;
+
+    /* Tell is part of the decoder callback loop as well; do not let a
+     * decoder avoid the shared deadline by issuing only position queries. */
+    if (!mspack_deadline_ok(mspack_handle->system_ex))
         return -1;
 
     if (mspack_handle->type == FILETYPE_FMAP)

@@ -35,7 +35,9 @@ The current production-linked GCC harness passes `descriptor_map` 2/2,
 `mspack_map` 6/6, `mspack` 7/7, `cryptff_api` 1/1, `cryptff` 3/3, and
 `hash_stream` 1/1. These runs cover descriptor engine/size admission, CAB/CHM
 callback and output boundaries, key-file and certificate-directory cleanup,
-and the hash read/finalization/close contract.
+the hash read/finalization/close contract, and MSPack position-query deadline
+admission. The MSPack open callback now rejects a null system pointer before
+deriving its enclosing state.
 
 The descriptor narrow-size case is conditionally unavailable on this AArch64
 container, and these are focused boundary results rather than complete parser
