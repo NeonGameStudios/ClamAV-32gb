@@ -202,6 +202,24 @@ rather than being preempted by an unsupported-number parse result. Full
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain open.
 
+## Current NSIS/Nullsoft production-linked refresh — 2026-08-31
+
+The canonical `libclamav/nsis/nulsft.c`, `nulsft.h`, `scanners.c`, and
+`check_clamav.c` sources were transferred into the existing Docker
+production-linked GCC harness with exact SHA-256 equality
+(`nulsft.c` `14ff006b3e87d482c89840ab1c7a53b543898a800d035360d28d875fb8b96222`,
+`nulsft.h` `f3df6fc6674a34a39cf696fdfbdad588d612123f280affa470250aa2e632c189`,
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+and `check_clamav.c`
+`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
+repository CMake target materialized `clam-nsis.exe`
+(`652847877739943f99273c1388c56c375cb6715b01c7135f7bab882a0be3f888`), and
+the current-source focused cases pass `nulsft` 5/5, `nulsft_map` 2/2, and
+`nulsft_corpus` 1/1, including header/read/admission/timeout boundaries and
+exact offset-0 nested MZ matching. Complete NSIS/SFX corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release evidence remain open.
+
 ## Current MSEXPAND production-linked refresh — 2026-08-31
 
 The canonical `msexpand.c`, `msexpand.h`, `scanners.c`, and `check_clamav.c`

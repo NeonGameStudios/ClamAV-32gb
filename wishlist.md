@@ -186,6 +186,20 @@ Sonic1, resource, and final qualification remain required.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final qualification remain required.
 
+## Current NSIS/Nullsoft production-linked refresh — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for
+  `libclamav/nsis/nulsft.c`, `nulsft.h`, `scanners.c`, and `check_clamav.c`
+  before relinking the existing Docker production-linked GCC harness.
+- Retain the CMake-materialized `clam-nsis.exe` fixture hash
+  `652847877739943f99273c1388c56c375cb6715b01c7135f7bab882a0be3f888` and
+  current-source evidence at `nulsft` 5/5, `nulsft_map` 2/2, and
+  `nulsft_corpus` 1/1 for header/read/admission/timeout boundaries and exact
+  nested MZ matching.
+- Keep complete NSIS/SFX corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## Current MSEXPAND production-linked refresh — 2026-08-31
 
 - Retain exact canonical/container SHA-256 equality for `msexpand.c`,
