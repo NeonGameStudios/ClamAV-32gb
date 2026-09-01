@@ -17351,6 +17351,30 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## clamd current-source service integration rerun — 2026-09-01
+
+The canonical `clamd/largefile_admission.c`, `unit_tests/check_clamd.c`,
+`unit_tests/clamd_test.py`, and `unit_tests/CMakeLists.txt` were transferred to
+the existing `clamav-poc-build` Docker harness and their SHA-256 hashes matched
+the canonical repository. Target-specific production-linked GCC builds of
+`check_clamd`, `clamd`, and `clamdscan` completed successfully. After all
+repository XOR test fixtures were materialized through the existing CMake
+targets, verbose CTest `-R '^clamd$'` passed 1/1: the Python integration suite
+ran 15 tests in 26.225 seconds, and its `check_clamd` socket harness reported
+`100%: Checks: 105, Failures: 0, Errors: 0`. The exercised matrix includes
+clamdscan path, multiscan, stream, fdpass, reload, command, queue, and stress
+behavior, with no service process or socket left by the test.
+
+This is current-object clamd/clamdscan service evidence, not final release
+certification. The authoritative MCP-SSH capability enumeration was completed
+before checking Sonic1 with host `sonic1` and login profile
+`sonic1-camera-key`; policy and address resolution passed, but the TCP connect
+phase timed out after 20 seconds, so no remote command or transfer was started.
+Full resource/service parity, real production CVD service runs, milter and
+on-access coverage, sanitizer, certified Linux x86-64, materialized-large-file,
+Sonic1 resource evidence, and the final requirement-by-requirement release
+audit remain open.
+
 ## Milter quota harness build refresh — 2026-09-01
 
 The dependency-free `check_clamfi_quota` target previously failed in the

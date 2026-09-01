@@ -9853,6 +9853,26 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## clamd current-source service integration rerun — 2026-09-01
+
+- Retain canonical/container SHA-256 equality for
+  `clamd/largefile_admission.c`, `unit_tests/check_clamd.c`,
+  `unit_tests/clamd_test.py`, and `unit_tests/CMakeLists.txt`; retain the
+  target-specific production-linked GCC build of `check_clamd`, `clamd`, and
+  `clamdscan`.
+- Retain the verbose CTest evidence: `clamd` passes 1/1, the Python suite runs
+  15 tests, and the socket harness reports `100%: Checks: 105, Failures: 0,
+  Errors: 0` across path, multiscan, stream, fdpass, reload, command, queue,
+  and stress behavior after repository fixtures are materialized by CMake.
+- MCP-SSH capability enumeration and the required Sonic1 check were attempted
+  with host `sonic1` and login profile `sonic1-camera-key`; address resolution
+  passed but TCP connection timed out after 20 seconds, so remote evidence is
+  still open and no remote mutation was attempted.
+- Complete clamd resource/service parity, production CVD runs, milter and
+  on-access coverage, sanitizer, certified Linux x86-64,
+  materialized-large-file, Sonic1 resource evidence, and final
+  parser/release qualification.
+
 ## Milter quota harness build refresh — 2026-09-01
 
 - Retain the standalone `check_clamfi_quota` target's explicit JSON-C and
