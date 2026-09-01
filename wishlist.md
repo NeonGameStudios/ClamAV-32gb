@@ -14,6 +14,24 @@
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification open.
 
+## Current OneNote production-linked refresh — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for
+  `libclamav_rust/src/onenote.rs`, `scanners.c`, and `check_clamav.c` before
+  relinking the existing Docker production-linked GCC/Rust harness.
+- Retain the CMake-materialized OneNote fixture hashes:
+  `clam.exe.2007.one` `d0a9df85d9c3042263dd9c32e2b8110b7a5c3f295e222a8fa48029f8bf0a5583`,
+  `clam.exe.2010.one` `1139a72ab95778e4dcc473603bdcb126cf1d7d796eb9d6fc59d64a3d5468a2c4`,
+  and `clam.exe.webapp-export.one`
+  `f5ae4bdb59719b8b9fde153ebcaf12a5b67c214de7c4083c0e968d3c3db0e02f`.
+- Retain current-source production-linked evidence at `rust_onenote` 2/2 and
+  `onenote` 2/2 for exact nested MZ matching across all three documents and
+  the legacy/modern boundary paths. The existing container Cargo cannot parse
+  lockfile v4; do not install or upgrade it as part of this evidence refresh.
+- Keep complete OneNote corpus, sanitizer, certified Linux x86-64,
+  materialized-large-file/resource measurements, production-CVD/service,
+  Sonic1, and final parser/release qualification open.
+
 ## Current LHA/LZH production-linked refresh — 2026-08-31
 
 - Retain exact canonical/container SHA-256 equality for

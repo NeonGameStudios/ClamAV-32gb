@@ -148,6 +148,28 @@ mismatch. Complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain open.
 
+## Current OneNote production-linked refresh — 2026-08-31
+
+The canonical `libclamav_rust/src/onenote.rs`, `scanners.c`, and
+`check_clamav.c` sources were transferred into the existing Docker
+production-linked GCC/Rust harness with exact SHA-256 equality
+(`onenote.rs` `9b77eb31e98af12745ada4aeac06d7cb93517826489787e85254f7cf3c7d395d`,
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+and `check_clamav.c`
+`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
+CMake-materialized `clam.exe.2007.one`, `clam.exe.2010.one`, and
+`clam.exe.webapp-export.one` fixtures have hashes
+`d0a9df85d9c3042263dd9c32e2b8110b7a5c3f295e222a8fa48029f8bf0a5583`,
+`1139a72ab95778e4dcc473603bdcb126cf1d7d796eb9d6fc59d64a3d5468a2c4`, and
+`f5ae4bdb59719b8b9fde153ebcaf12a5b67c214de7c4083c0e968d3c3db0e02f`. The
+current-source production-linked cases pass `rust_onenote` 2/2 and `onenote`
+2/2, including exact nested MZ matching across all three documents and the
+legacy/modern boundary paths. The existing container Cargo cannot parse the
+repository lockfile v4, so no new filtered Rust-unit result was claimed here.
+Complete OneNote corpus, sanitizer, certified Linux x86-64,
+materialized-large-file/resource measurements, production-CVD/service, Sonic1,
+and final parser/release evidence remain open.
+
 ## Current LHA/LZH production-linked refresh — 2026-08-31
 
 The canonical `libclamav_rust/src/scanners.rs`, `Cargo.toml`, and
