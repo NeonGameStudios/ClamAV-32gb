@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## Embedded PDF header context admission — 2026-09-01
+
+The embedded-PDF raw dispatch path previously called the map-only
+`cli_pdf_header_check()`, so confirmed success could not reconcile a
+pre-existing sticky incomplete context and a missing context fmap had no
+fail-visible classification at that admission boundary. The new internal
+`cli_pdf_embedded_header_check()` wrapper preserves the standalone map-only
+API, distinguishes null context from missing input (`CL_ENULLARG` versus
+`CL_EPARSE` with sticky non-cacheable state), and converts clean confirmed
+success to `CL_EPARSE` when the owning context is already incomplete. The
+direct regression is registered and source-guarded. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+PDF/embedded-document corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## EGG SFX header context admission — 2026-09-01
 
 The EGG SFX path previously used the map-only `cli_egg_header_check()` from

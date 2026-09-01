@@ -488,6 +488,24 @@ cl_error_t cli_pdf_header_check(fmap_t *map, off_t offset)
     return CL_SUCCESS;
 }
 
+cl_error_t cli_pdf_embedded_header_check(cli_ctx *ctx, off_t offset)
+{
+    cl_error_t status;
+
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "embedded PDF header input map is unavailable");
+        return CL_EPARSE;
+    }
+
+    status = cli_pdf_header_check(ctx->fmap, offset);
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 /**
  * @brief   Searching BACKwards, find the next character that is not a whitespace.
  *

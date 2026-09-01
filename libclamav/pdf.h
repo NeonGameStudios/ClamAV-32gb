@@ -244,6 +244,14 @@ struct pdf_struct {
 
 cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset);
 cl_error_t cli_pdf_header_check(fmap_t *map, off_t offset);
+
+/**
+ * @brief Validate an embedded PDF header against scan context state.
+ *
+ * This internal admission probe preserves the map-only header semantics while
+ * making missing input and pre-existing incomplete state fail-visible.
+ */
+cl_error_t cli_pdf_embedded_header_check(cli_ctx *ctx, off_t offset);
 void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj);
 cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t flags);
 cl_error_t pdf_findobj(struct pdf_struct *pdf);

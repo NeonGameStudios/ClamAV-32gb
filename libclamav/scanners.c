@@ -6237,7 +6237,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         case CL_TYPE_PDF:
                             if ((SCAN_PARSE_PDF && (DCONF_DOC & DOC_CONF_PDF)) &&
                                 (type != CL_TYPE_PDF)) {
-                                ret = cli_pdf_header_check(ctx->fmap, fpt->offset);
+                                ret = cli_pdf_embedded_header_check(ctx, fpt->offset);
                                 if (ret == CL_EFORMAT) {
                                     cli_dbgmsg("embedded PDF candidate rejected before layer admission\n");
                                     break;

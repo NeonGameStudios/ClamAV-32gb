@@ -1,5 +1,18 @@
 # Wishlist
 
+## Embedded PDF header context admission — 2026-09-01
+
+- Keep embedded PDF header admission context-aware while retaining the
+  standalone map-only header API: reserve `CL_ENULLARG` for a null context,
+  return sticky `CL_EPARSE` for missing input, and preserve fail-visible
+  pre-existing incomplete state.
+- Retain `test_pdf_embedded_header_context_admission_is_fail_visible` and its
+  source guards.
+- Complete current-source production-GCC compilation and production-linked
+  execution, sanitizer, complete PDF/embedded-document corpus, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification.
+
 ## EGG SFX header context admission — 2026-09-01
 
 - Keep the internal EGG SFX header admission wrapper context-aware while
