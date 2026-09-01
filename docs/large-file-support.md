@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MSXML reader initialization failure — 2026-09-01
+
+The top-level MSXML scanner now treats an `xmlReaderForIO()` construction
+failure as a required parser failure: it records sticky incomplete state,
+returns `CL_EPARSE`, and leaves metadata error recording best-effort. A real
+fmap callback failure still returns `CL_EREAD`. The injected reader-init
+regression and source guards cover the no-metadata case. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+XML/OOXML/HWPML corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## SIS 9.x expected-field admission — 2026-09-01
 
 The SIS 9.x nested DATAUNIT and FILEDATA parser now rejects a successfully

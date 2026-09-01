@@ -117,6 +117,27 @@ static int sis_test_bypass_child_scan;
 static int xar_test_bypass_child_scan;
 static int ole10_test_bypass_child_scan;
 
+#ifdef CLAMAV_TEST_MSXML_READER_WRAP
+extern xmlTextReaderPtr __real_xmlReaderForIO(xmlInputReadCallback ioread,
+                                             xmlInputCloseCallback ioclose,
+                                             void *ioctx, const char *URL,
+                                             const char *encoding, int options);
+static int clamav_test_force_msxml_reader_init;
+
+xmlTextReaderPtr __wrap_xmlReaderForIO(xmlInputReadCallback ioread,
+                                       xmlInputCloseCallback ioclose,
+                                       void *ioctx, const char *URL,
+                                       const char *encoding, int options)
+{
+    if (clamav_test_force_msxml_reader_init) {
+        clamav_test_force_msxml_reader_init = 0;
+        return NULL;
+    }
+
+    return __real_xmlReaderForIO(ioread, ioclose, ioctx, URL, encoding, options);
+}
+#endif
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 extern int clamav_test_fail_write;
 extern int clamav_test_fail_close;
@@ -9441,6 +9462,34 @@ START_TEST(test_msxml_missing_engine_is_fail_visible)
     cl_fmap_close(map);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_MSXML_READER_WRAP
+START_TEST(test_msxml_reader_initialization_failure_is_fail_visible)
+{
+    static const uint8_t document[] = "<worddocument/>";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    clamav_test_force_msxml_reader_init = 1;
+    ret = cli_scanmsxml(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML XML reader could not be initialized");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
 
 struct msxml_read_failure_state {
     const uint8_t *data;
@@ -53270,6 +53319,9 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_msxml, cl_setup, cl_teardown);
     tcase_add_test(tc_msxml, test_msxml_truncated_document_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_read_failure_is_fail_visible);
+#ifdef CLAMAV_TEST_MSXML_READER_WRAP
+    tcase_add_test(tc_msxml, test_msxml_reader_initialization_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_msxml, test_msxml_base64_decode_failure_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_attribute_limit_is_fail_visible);

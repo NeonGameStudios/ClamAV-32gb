@@ -253,9 +253,13 @@ cl_error_t cli_scanmsxml(cli_ctx *ctx)
             return CL_EREAD;
         }
 
-        ret = cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_XML_READER_IO");
-
-        return ret; // libxml2 failed!
+        /* A reader-construction failure is a required parser failure.  The
+         * metadata helper is intentionally best-effort and returns success
+         * when metadata collection is disabled, so it cannot be the scanner
+         * status for this path. */
+        cli_mark_scan_incomplete(ctx, "MSXML XML reader could not be initialized");
+        (void)cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_XML_READER_IO");
+        return CL_EPARSE;
     }
 
     ret = cli_msxml_parse_document(ctx, reader, msxml_keys, num_msxml_keys,

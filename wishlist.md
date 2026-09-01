@@ -1,5 +1,18 @@
 # Wishlist
 
+## MSXML reader initialization failure — 2026-09-01
+
+- Keep `cli_scanmsxml()` fail-visible when `xmlReaderForIO()` cannot be
+  initialized: record sticky incomplete state and return `CL_EPARSE` instead
+  of using the best-effort metadata diagnostic status as the parser result.
+- Preserve `CL_EREAD` for an actual fmap callback failure, and retain the
+  injected `test_msxml_reader_initialization_failure_is_fail_visible`
+  regression plus source guards.
+- Complete current-source production-GCC compilation and production-linked
+  execution, sanitizer, complete XML/OOXML/HWPML corpus, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification.
+
 ## SIS 9.x expected-field admission — 2026-09-01
 
 - Require the SIS 9.x nested DATAUNIT and FILEDATA loops to reject a

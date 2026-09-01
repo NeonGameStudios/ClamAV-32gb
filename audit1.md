@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## MSXML reader initialization failure — 2026-09-01
+
+`cli_scanmsxml()` previously returned the result of
+`cli_json_parse_error()` when `xmlReaderForIO()` failed without a backing read
+fault. That helper intentionally returns `CL_SUCCESS` when metadata output is
+disabled, allowing a required XML parser initialization failure to look clean
+and leaving the recognized layer cacheable. The scanner now records a sticky
+incomplete `CL_EPARSE` result and keeps the metadata diagnostic best-effort;
+the existing `CL_EREAD` path remains reserved for an actual fmap callback
+failure. The injected `test_msxml_reader_initialization_failure_is_fail_visible`
+regression and source guards cover the no-metadata path. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+XML/OOXML/HWPML corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## SIS 9.x expected-field admission — 2026-09-01
 
 The SIS 9.x nested DATAUNIT and FILEDATA loops treated a successfully read
