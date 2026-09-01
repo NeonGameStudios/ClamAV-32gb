@@ -8319,6 +8319,14 @@ static cl_error_t cli_preflight_child_size(cli_ctx *ctx, uint64_t size, uint32_t
     return status;
 }
 
+static cl_error_t cli_reconcile_clean_scan_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
                                                     const char *name, uint32_t attributes,
                                                     bool temporary_already_reserved)
@@ -8373,7 +8381,7 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
 
     if (sb.st_size == 0) {
         cli_dbgmsg("cli_magic_scan_desc_type: Empty data has no bytes to match\n");
-        status = CL_SUCCESS;
+        status = cli_reconcile_clean_scan_status(ctx, CL_SUCCESS);
         goto done;
     }
 
@@ -8532,7 +8540,7 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
 
     if (length == 0) {
         cli_dbgmsg("cli_magic_scan_nested_fmap_type: Empty data has no bytes to match\n");
-        return CL_SUCCESS;
+        return cli_reconcile_clean_scan_status(ctx, CL_SUCCESS);
     }
 
     if (ctx->engine->engine_options & ENGINE_OPTIONS_FORCE_TO_DISK) {

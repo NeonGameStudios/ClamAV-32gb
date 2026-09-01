@@ -19457,3 +19457,19 @@ Current-source production-linked execution, complete XAR corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource measurements, and the final requirement-by-requirement
 parser/release audit remain open.
+
+## Empty nested-ingress completion — 2026-09-01
+
+The shared nested fmap and descriptor entrypoints have explicit empty-child
+fast paths that bypass `cli_magic_scan()`. Those paths returned clean even when
+the owning layer already carried a required-step failure. They now reconcile
+clean completion against the sticky incomplete state as `CL_EPARSE`, preserving
+the existing diagnostic and cache taint. The regression
+`test_empty_nested_ingress_preserves_incomplete_state` covers direct empty
+fmap dispatch, `cli_magic_scan_buff()`, and an empty descriptor child. Source
+guards and the capability manifest record the boundary.
+
+Current-source production-linked execution, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource
+measurements, and the final requirement-by-requirement parser/release audit
+remain open.

@@ -11502,3 +11502,13 @@ final parser/release qualification remain open.
   Current-source production-linked execution, complete XAR corpus, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1 resource, and final parser/release qualification remain open.
+
+## Empty nested-ingress completion — 2026-09-01
+
+- Preserve sticky incomplete state through empty fmap and descriptor nested
+  entrypoints. A zero-byte child has no bytes to match, but it must not turn a
+  prior required-step failure into clean completion or become cacheable.
+- Retain `test_empty_nested_ingress_preserves_incomplete_state` and its source
+  guards. Current-source production-linked execution, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final nested-ingress qualification remain open.

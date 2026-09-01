@@ -19971,6 +19971,66 @@ START_TEST(test_cli_magic_scan_nested_entrypoints_reject_invalid_inputs)
 }
 END_TEST
 
+START_TEST(test_empty_nested_ingress_preserves_incomplete_state)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    char *path = NULL;
+    const char *reason = "pre-existing nested incomplete state";
+    cl_error_t ret;
+    int fd = -1;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.dboptions          = CL_DB_COMPILED;
+    ctx.engine                = &engine;
+    ctx.options               = &options;
+    ctx.this_layer_tmpdir     = tmpdir;
+    ctx.recursion_stack       = &layer;
+    ctx.recursion_stack_size  = 1;
+    ctx.scan_incomplete       = true;
+    ctx.scan_incomplete_reason = reason;
+
+    map = cl_fmap_open_memory(NULL, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap   = map;
+    layer.fmap = map;
+    layer.size = map->len;
+    map->dont_cache_flag = true;
+
+    ret = cli_magic_scan_nested_fmap_type(map, 0, 0, &ctx, CL_TYPE_ANY, NULL,
+                                          LAYER_ATTRIBUTES_NONE);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, reason);
+    ck_assert(map->dont_cache_flag);
+
+    ret = cli_magic_scan_buff(NULL, 0, &ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, reason);
+    ck_assert(map->dont_cache_flag);
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ret = cli_magic_scan_desc_type(fd, path, &ctx, CL_TYPE_ANY, NULL,
+                                   LAYER_ATTRIBUTES_NONE);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, reason);
+    ck_assert(map->dont_cache_flag);
+
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_cli_magic_scan_ingress_rejects_missing_recursion_state)
 {
     static const uint8_t input[] = "missing recursion state on empty ingress";
@@ -54680,6 +54740,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_recursion_state_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_nested_entrypoints_reject_invalid_inputs);
+    tcase_add_test(tc_cl, test_empty_nested_ingress_preserves_incomplete_state);
     tcase_add_test(tc_cl, test_cli_magic_scan_ingress_rejects_missing_recursion_state);
     tcase_add_test(tc_cl, test_cli_magic_scan_dir_rejects_missing_engine);
     tcase_add_test(tc_cl, test_cli_magic_scan_file_rejects_invalid_inputs);
