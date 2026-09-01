@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## APM direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scanapm()` could return `CL_SUCCESS` to a direct parser caller after a
+valid two-block Apple Partition Map completed while the scan context was
+already sticky-incomplete. The final status now converts only clean results
+with sticky incomplete state to `CL_EPARSE`, preserving detections and
+stronger parser errors. The valid minimal APM regression
+`test_apm_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `apm.c`
+(`4ecbb619900de03804fb1786a912754f82c7703c0eee4d310c6aff30dd6003ed`) and
+`check_clamav.c`
+(`7331d995643f32a1bdf2934f964373b98b2eae43dc1206aced5c4152936eaab4`). The
+current-source production-linked GCC harness passes `apm_map` 3/3, `apm` 7/7,
+and `apm_corpus` 1/1. This closes direct status reconciliation only; complete
+APM partition corpus, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## RIFF direct sticky-incomplete reconciliation — 2026-09-01
 
 The RIFF exploit detector uses `0` as its completed non-exploit sentinel, but

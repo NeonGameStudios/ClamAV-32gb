@@ -343,6 +343,8 @@ done:
 
     if (ctx && status != CL_SUCCESS && status != CL_VIRUS && status != CL_BREAK && !ctx->scan_incomplete)
         cli_mark_scan_incomplete(ctx, "APM inspection ended before completion");
+    if (ctx && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        status = CL_EPARSE;
 
     return status;
 }

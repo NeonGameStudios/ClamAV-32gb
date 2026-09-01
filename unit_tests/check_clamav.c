@@ -25555,6 +25555,49 @@ START_TEST(test_apm_fixed_width_debug_fields_are_bounded)
 }
 END_TEST
 
+START_TEST(test_apm_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[1024] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    data[0] = 0x45;
+    data[1] = 0x52; /* DDM signature: "ER". */
+    data[2] = 0x02;
+    data[3] = 0x00; /* 512-byte blocks. */
+    data[7] = 0x02; /* two blocks in the image. */
+    data[512] = 0x50;
+    data[513] = 0x4d; /* APM signature: "PM". */
+    data[519] = 0x01; /* only the partition-map entry is declared. */
+    data[523] = 0x01; /* partition map starts at block 1. */
+    data[527] = 0x01; /* map occupies one block. */
+    memcpy(data + 512 + 48, "Apple_partition_map", 19);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxpartitions       = 1;
+    options.parse               = CL_SCAN_PARSE_ARCHIVE;
+    ctx.engine                  = &engine;
+    ctx.options                 = &options;
+    ctx.scan_incomplete         = true;
+    ctx.scan_incomplete_reason  = "pre-existing APM incomplete state";
+    map                         = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                    = map;
+    map->dont_cache_flag        = true;
+
+    ck_assert_int_eq(cli_scanapm(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing APM incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_rust_parser_admission_boundaries_are_fail_visible)
 {
     static const uint8_t data[1] = {0};
@@ -50864,6 +50907,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_apm, cl_setup, cl_teardown);
     tcase_add_test(tc_apm, test_apm_partition_limit_is_fail_visible);
     tcase_add_test(tc_apm, test_apm_fixed_width_debug_fields_are_bounded);
+    tcase_add_test(tc_apm, test_apm_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_apm, test_apm_truncated_driver_map_is_format_error);
     tcase_add_test(tc_apm, test_apm_invalid_partition_is_fail_visible);
     tcase_add_test(tc_apm, test_apm_partition_table_boundary_is_fail_visible);

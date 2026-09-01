@@ -1,5 +1,19 @@
 # Wishlist
 
+## APM direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scanapm()` fail-visible for direct callers when a valid two-block
+  Apple Partition Map completes with a pre-existing sticky incomplete state.
+  Clean/direct results now return `CL_EPARSE`, while detections and stronger
+  parser errors remain preserved.
+- Retain the valid minimal APM pre-taint regression
+  `test_apm_sticky_incomplete_result_is_fail_visible`, canonical/container
+  hash equality for the current `apm.c` and `check_clamav.c`, and current
+  production-linked GCC results at `apm_map` 3/3, `apm` 7/7, and
+  `apm_corpus` 1/1. Keep complete APM partition corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification open.
+
 ## RIFF direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep the RIFF detector’s completed non-exploit sentinel fail-visible when
