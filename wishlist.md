@@ -1,5 +1,17 @@
 # Wishlist
 
+## ISO9660 direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scaniso()` fail-visible for direct callers when bounded directory
+  name conversion or normalization has tainted the scan context. Clean/direct
+  results with sticky incomplete state now return `CL_EPARSE`, while detections
+  and stronger parser statuses remain preserved.
+- Retain the exact Joliet diagnostic and cache-taint regression, with current
+  production-linked GCC results at `iso_map` 17/17 and `iso` 1/1. Keep complete
+  ISO corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification open.
+
 ## TIFF secondary IFD offset admission — 2026-09-01
 
 - Keep every TIFF IFD link in range before subtraction-form directory-size

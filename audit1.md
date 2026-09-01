@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## ISO9660 direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scaniso()` could return `CL_SUCCESS` to direct parser callers after
+`iso_string()` had marked a long Joliet name or normalization failure
+incomplete; public API reconciliation masked this. The final ISO status now
+converts only clean/`CL_SUCCESS` results with sticky incomplete state to
+`CL_EPARSE`, preserving detections and earlier stronger statuses. The
+structurally valid Joliet fixture asserts the exact direct diagnostic
+`ISO Joliet directory entry name exceeded the parser buffer` and
+non-cacheability, then retains public API coverage. Current-source
+production-linked GCC `iso_map` passes 17/17 and `iso` passes 1/1. This is
+focused status evidence only; complete ISO corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, and final
+release qualification remain open.
+
 ## TIFF secondary IFD offset admission — 2026-09-01
 
 The TIFF walker already rejected a first-IFD offset beyond the containing

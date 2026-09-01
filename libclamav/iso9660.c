@@ -651,6 +651,8 @@ done:
     if (status == CL_BREAK) {
         status = iso_incomplete(ctx, "ISO directory traversal reached its block limit");
     }
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        status = CL_EPARSE;
 
     return status;
 }

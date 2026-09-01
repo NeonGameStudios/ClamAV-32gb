@@ -22907,17 +22907,21 @@ START_TEST(test_iso_joliet_name_conversion_truncation_is_fail_visible)
     enum {
         ISO_OFFSET       = 32768,
         SECONDARY_OFFSET = ISO_OFFSET + 2048,
+        TERMINATOR_OFFSET = ISO_OFFSET + 4096,
         ROOT_BLOCK       = 32,
         ROOT_OFFSET      = ROOT_BLOCK * 2048,
         NAME_CHARS       = 100,
         NAME_BYTES       = NAME_CHARS * 2,
         ENTRY_SIZE       = 33 + NAME_BYTES,
-        ISO_LENGTH       = ROOT_OFFSET + 2048
+        ISO_LENGTH       = ROOT_OFFSET + 2048,
+        ISO_BLOCKS       = ROOT_BLOCK + 1
     };
     uint8_t data[ISO_LENGTH] = {0};
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
+    cli_scan_layer_t direct_layer;
     fmap_t *map;
+    cli_ctx direct_ctx;
     cl_verdict_t verdict;
     const char *last_alert;
     uint64_t scanned;
@@ -22934,6 +22938,8 @@ START_TEST(test_iso_joliet_name_conversion_truncation_is_fail_visible)
     /* Primary descriptor, followed by a valid Joliet secondary descriptor. */
     data[ISO_OFFSET] = 1;
     memcpy(data + ISO_OFFSET + 1, "CD001", 5);
+    data[ISO_OFFSET + 80]     = ISO_BLOCKS;
+    data[ISO_OFFSET + 84 + 3] = ISO_BLOCKS;
     data[ISO_OFFSET + 128] = 0x00;
     data[ISO_OFFSET + 129] = 0x08; /* 2048-byte logical blocks */
     data[ISO_OFFSET + 156] = 34;
@@ -22951,6 +22957,9 @@ START_TEST(test_iso_joliet_name_conversion_truncation_is_fail_visible)
     data[SECONDARY_OFFSET + 166] = 0x00;
     data[SECONDARY_OFFSET + 167] = 0x08;
 
+    data[TERMINATOR_OFFSET] = 0xff;
+    memcpy(data + TERMINATOR_OFFSET + 1, "CD001", 5);
+
     /* A Joliet name can fit in the source field while expanding beyond the
      * fixed destination buffer after UTF-16BE to UTF-8 conversion. */
     data[ROOT_OFFSET]      = ENTRY_SIZE;
@@ -22963,6 +22972,25 @@ START_TEST(test_iso_joliet_name_conversion_truncation_is_fail_visible)
         data[ROOT_OFFSET + 33 + (i * 2)]     = 0x4e;
         data[ROOT_OFFSET + 33 + (i * 2) + 1] = 0x00; /* U+4E00 */
     }
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&direct_ctx, 0, sizeof(direct_ctx));
+    memset(&direct_layer, 0, sizeof(direct_layer));
+    direct_layer.type = CL_TYPE_ISO9660;
+    direct_layer.size = map->len;
+    direct_layer.fmap = map;
+    direct_ctx.engine            = scan_engine;
+    direct_ctx.fmap              = map;
+    direct_ctx.this_layer_tmpdir = tmpdir;
+    direct_ctx.recursion_stack   = &direct_layer;
+    direct_ctx.recursion_stack_size = 1;
+    ck_assert_int_eq(cli_scaniso(&direct_ctx, ISO_OFFSET), CL_EPARSE);
+    ck_assert(direct_ctx.scan_incomplete);
+    ck_assert_str_eq(direct_ctx.scan_incomplete_reason,
+                     "ISO Joliet directory entry name exceeded the parser buffer");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
 
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
