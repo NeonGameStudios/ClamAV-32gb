@@ -291,6 +291,7 @@ static int hwp5_test_fail_raw_version;
 static int ole2_test_fail_streams;
 static int ole2_test_fail_custom_properties;
 static int ole2_test_fail_vba_metadata;
+static int ole2_test_fail_summary_parse_errors;
 static int ooxml_test_fail_file_count;
 static int msxml_test_fail_count;
 static int msxml_test_fail_attribute;
@@ -311,6 +312,8 @@ json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
     if (ole2_test_fail_streams && key && strcmp(key, "Streams") == 0)
         return NULL;
     if (ole2_test_fail_vba_metadata && key && strcmp(key, "MacroLanguages") == 0)
+        return NULL;
+    if (ole2_test_fail_summary_parse_errors && key && strcmp(key, "ParseErrors") == 0)
         return NULL;
     if (pe_test_fail_import_table && key && strcmp(key, "ImportTable") == 0)
         return NULL;
@@ -37165,6 +37168,68 @@ START_TEST(test_ole2_custom_property_metadata_record_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole2_summary_parse_error_metadata_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    static uint8_t data[72];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    json_object *metadata;
+    cl_error_t ret;
+    int fd;
+
+    memset(data, 0, sizeof(data));
+    zip_stream_write_u16(data, 0xfffeU);
+    zip_stream_write_u32(data + 24U, 1U);
+    zip_stream_write_u32(data + 44U, 48U);
+    zip_stream_write_u32(data + 48U, 24U);
+    zip_stream_write_u32(data + 52U, 1U);
+    zip_stream_write_u32(data + 56U, 0x12345678U);
+    zip_stream_write_u32(data + 60U, 16U);
+    zip_stream_write_u16(data + 64U, 0x9999U);
+
+    snprintf(file_path, sizeof(file_path), "%s/ole2-summary-parse-errors.bin", tmpdir);
+    fd = open(file_path, O_CREAT | O_EXCL | O_WRONLY, 0600);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(write(fd, data, sizeof(data)), (ssize_t)sizeof(data));
+    ck_assert_int_eq(close(fd), 0);
+
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_int_ge(fd, 0);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                   = &engine;
+    ctx.options                  = &options;
+    ctx.fmap                     = map;
+    ctx.this_layer_metadata_json = metadata;
+
+    ret = cli_ole2_summary_json(&ctx, fd, 0, file_path);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+
+    ole2_test_fail_summary_parse_errors = 1;
+    ret                                  = cli_ole2_summary_json(&ctx, fd, 0, file_path);
+    ole2_test_fail_summary_parse_errors = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "OLE2 summary ParseErrors metadata could not be allocated");
+    ck_assert(map->dont_cache_flag);
+
+    ck_assert_int_eq(close(fd), 0);
+    json_object_put(metadata);
+    cl_fmap_close(map);
+    ck_assert_int_eq(unlink(file_path), 0);
+}
+END_TEST
+
 START_TEST(test_ole2_vba_metadata_record_failure_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -54843,6 +54908,7 @@ static Suite *test_cl_suite(void)
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_ole2, test_ole2_stream_metadata_allocation_failure_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_custom_property_metadata_record_failure_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_summary_parse_error_metadata_failure_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_vba_metadata_record_failure_is_fail_visible);
 #endif
 #ifdef CLAMAV_TEST_JS_IO_WRAP

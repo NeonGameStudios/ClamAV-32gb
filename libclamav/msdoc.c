@@ -852,6 +852,7 @@ static int ole2_summary_propset_json(summary_ctx_t *sctx, off_t offset)
 
 static int cli_ole2_summary_json_cleanup(summary_ctx_t *sctx, int retcode)
 {
+    cl_error_t status = retcode;
     json_object *jarr;
 
     cli_dbgmsg("in cli_ole2_summary_json_cleanup: %d[%x]\n", retcode, sctx->flags);
@@ -863,57 +864,61 @@ static int cli_ole2_summary_json_cleanup(summary_ctx_t *sctx, int retcode)
     if (sctx->flags) {
         jarr = cli_jsonarray(sctx->summary, "ParseErrors");
 
-        /* summary errors */
-        if (sctx->flags & OLE2_SUMMARY_ERROR_TOOSMALL) {
-            cli_jsonstr(jarr, NULL, "OLE2_SUMMARY_ERROR_TOOSMALL");
-        }
-        if (sctx->flags & OLE2_SUMMARY_ERROR_OOB) {
-            cli_jsonstr(jarr, NULL, "OLE2_SUMMARY_ERROR_OOB");
-        }
-        if (sctx->flags & OLE2_SUMMARY_ERROR_DATABUF) {
-            cli_jsonstr(jarr, NULL, "OLE2_SUMMARY_ERROR_DATABUF");
-        }
-        if (sctx->flags & OLE2_SUMMARY_ERROR_INVALID_ENTRY) {
-            cli_jsonstr(jarr, NULL, "OLE2_SUMMARY_ERROR_INVALID_ENTRY");
-        }
-        if (sctx->flags & OLE2_SUMMARY_LIMIT_PROPS) {
-            cli_jsonstr(jarr, NULL, "OLE2_SUMMARY_LIMIT_PROPS");
-        }
-        if (sctx->flags & OLE2_SUMMARY_FLAG_TIMEOUT) {
-            cli_jsonstr(jarr, NULL, "OLE2_SUMMARY_FLAG_TIMEOUT");
-        }
-        if (sctx->flags & OLE2_SUMMARY_FLAG_CODEPAGE) {
-            cli_jsonstr(jarr, NULL, "OLE2_SUMMARY_FLAG_CODEPAGE");
-        }
-        if (sctx->flags & OLE2_SUMMARY_FLAG_UNKNOWN_PROPID) {
-            cli_jsonstr(jarr, NULL, "OLE2_SUMMARY_FLAG_UNKNOWN_PROPID");
-        }
-        if (sctx->flags & OLE2_SUMMARY_FLAG_UNHANDLED_PROPTYPE) {
-            cli_jsonstr(jarr, NULL, "OLE2_SUMMARY_FLAG_UNHANDLED_PROPTYPE");
-        }
-        if (sctx->flags & OLE2_SUMMARY_FLAG_TRUNC_STR) {
-            cli_jsonstr(jarr, NULL, "OLE2_SUMMARY_FLAG_TRUNC_STR");
+        if (jarr == NULL) {
+            cli_mark_scan_incomplete(sctx->ctx, "OLE2 summary ParseErrors metadata could not be allocated");
+            status = cli_merge_scan_status(status, CL_EMEM);
         }
 
-        /* codepage translation errors */
-        if (sctx->flags & OLE2_CODEPAGE_ERROR_NOTFOUND) {
-            cli_jsonstr(jarr, NULL, "OLE2_CODEPAGE_ERROR_NOTFOUND");
-        }
-        if (sctx->flags & OLE2_CODEPAGE_ERROR_UNINITED) {
-            cli_jsonstr(jarr, NULL, "OLE2_CODEPAGE_ERROR_UNINITED");
-        }
-        if (sctx->flags & OLE2_CODEPAGE_ERROR_INVALID) {
-            cli_jsonstr(jarr, NULL, "OLE2_CODEPAGE_ERROR_INVALID");
-        }
-        if (sctx->flags & OLE2_CODEPAGE_ERROR_INCOMPLETE) {
-            cli_jsonstr(jarr, NULL, "OLE2_CODEPAGE_ERROR_INCOMPLETE");
-        }
-        if (sctx->flags & OLE2_CODEPAGE_ERROR_OUTBUFTOOSMALL) {
-            cli_jsonstr(jarr, NULL, "OLE2_CODEPAGE_ERROR_OUTBUFTOOSMALL");
+        if (jarr != NULL) {
+#define OLE2_RECORD_PARSE_ERROR(error_string)                                      \
+    do {                                                                            \
+        cl_error_t json_status = cli_jsonstr(jarr, NULL, error_string);            \
+        if (json_status != CL_SUCCESS) {                                           \
+            cli_mark_scan_incomplete(sctx->ctx,                                        \
+                                     "OLE2 summary ParseErrors metadata could not be recorded"); \
+            status = cli_merge_scan_status(status, json_status);                   \
+        }                                                                           \
+    } while (0)
+
+            /* summary errors */
+            if (sctx->flags & OLE2_SUMMARY_ERROR_TOOSMALL)
+                OLE2_RECORD_PARSE_ERROR("OLE2_SUMMARY_ERROR_TOOSMALL");
+            if (sctx->flags & OLE2_SUMMARY_ERROR_OOB)
+                OLE2_RECORD_PARSE_ERROR("OLE2_SUMMARY_ERROR_OOB");
+            if (sctx->flags & OLE2_SUMMARY_ERROR_DATABUF)
+                OLE2_RECORD_PARSE_ERROR("OLE2_SUMMARY_ERROR_DATABUF");
+            if (sctx->flags & OLE2_SUMMARY_ERROR_INVALID_ENTRY)
+                OLE2_RECORD_PARSE_ERROR("OLE2_SUMMARY_ERROR_INVALID_ENTRY");
+            if (sctx->flags & OLE2_SUMMARY_LIMIT_PROPS)
+                OLE2_RECORD_PARSE_ERROR("OLE2_SUMMARY_LIMIT_PROPS");
+            if (sctx->flags & OLE2_SUMMARY_FLAG_TIMEOUT)
+                OLE2_RECORD_PARSE_ERROR("OLE2_SUMMARY_FLAG_TIMEOUT");
+            if (sctx->flags & OLE2_SUMMARY_FLAG_CODEPAGE)
+                OLE2_RECORD_PARSE_ERROR("OLE2_SUMMARY_FLAG_CODEPAGE");
+            if (sctx->flags & OLE2_SUMMARY_FLAG_UNKNOWN_PROPID)
+                OLE2_RECORD_PARSE_ERROR("OLE2_SUMMARY_FLAG_UNKNOWN_PROPID");
+            if (sctx->flags & OLE2_SUMMARY_FLAG_UNHANDLED_PROPTYPE)
+                OLE2_RECORD_PARSE_ERROR("OLE2_SUMMARY_FLAG_UNHANDLED_PROPTYPE");
+            if (sctx->flags & OLE2_SUMMARY_FLAG_TRUNC_STR)
+                OLE2_RECORD_PARSE_ERROR("OLE2_SUMMARY_FLAG_TRUNC_STR");
+
+            /* codepage translation errors */
+            if (sctx->flags & OLE2_CODEPAGE_ERROR_NOTFOUND)
+                OLE2_RECORD_PARSE_ERROR("OLE2_CODEPAGE_ERROR_NOTFOUND");
+            if (sctx->flags & OLE2_CODEPAGE_ERROR_UNINITED)
+                OLE2_RECORD_PARSE_ERROR("OLE2_CODEPAGE_ERROR_UNINITED");
+            if (sctx->flags & OLE2_CODEPAGE_ERROR_INVALID)
+                OLE2_RECORD_PARSE_ERROR("OLE2_CODEPAGE_ERROR_INVALID");
+            if (sctx->flags & OLE2_CODEPAGE_ERROR_INCOMPLETE)
+                OLE2_RECORD_PARSE_ERROR("OLE2_CODEPAGE_ERROR_INCOMPLETE");
+            if (sctx->flags & OLE2_CODEPAGE_ERROR_OUTBUFTOOSMALL)
+                OLE2_RECORD_PARSE_ERROR("OLE2_CODEPAGE_ERROR_OUTBUFTOOSMALL");
+
+#undef OLE2_RECORD_PARSE_ERROR
         }
     }
 
-    return retcode;
+    return status;
 }
 
 int cli_ole2_summary_json(cli_ctx *ctx, int fd, int mode, const char *filepath)

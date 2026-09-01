@@ -19565,3 +19565,23 @@ the capability manifest record the boundary. Current-source production-linked
 execution, complete OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
+
+
+## OLE2 summary ParseErrors completion — 2026-09-01
+
+OLE2 summary cleanup previously ignored failure to allocate the `ParseErrors`
+array and ignored each parse-error string append. A warning flag can be set
+while property parsing otherwise returns success, so the report failure could
+be lost and the confirmed summary layer could complete clean. Cleanup now
+marks the owning layer incomplete and merges the JSON failure, preserving
+critical `CL_EMEM` status.
+
+`test_ole2_summary_parse_error_metadata_failure_is_fail_visible` builds a
+minimal valid summary with an unknown property ID, confirms the warning path
+returns clean when reporting works, then injects `ParseErrors` allocation
+failure and requires `CL_EMEM`, the exact sticky reason, and map
+non-cacheability. Source guards and the capability manifest record the
+boundary. Current-source production-linked execution, complete OLE/VBA/XLM
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

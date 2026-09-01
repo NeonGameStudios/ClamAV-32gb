@@ -11569,3 +11569,16 @@ final parser/release qualification remain open.
   OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64, production-CVD/
   service, materialized-large-file, Sonic1, resource, and final parser/release
   qualification remain open.
+
+
+## OLE2 summary ParseErrors completion — 2026-09-01
+
+- Keep `ParseErrors` array allocation and error-string recording failures
+  fail-visible in OLE2 summary cleanup; mark the owning layer incomplete and
+  preserve critical `CL_EMEM` status when the parser otherwise returns a
+  warning-only clean result.
+- Retain `test_ole2_summary_parse_error_metadata_failure_is_fail_visible`
+  and its source guards. Current-source production-linked execution, complete
+  OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
