@@ -9841,6 +9841,18 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## OLE2/VBA current-source production-linked rerun — 2026-08-31
+
+- Retain canonical-source equality for `ole2_extract.c`, `vba_extract.c`,
+  `scanners.c`, and `check_clamav.c` in the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: `ole2` 18/18,
+  `ole2_xlm` 3/3, `ole2_map` 6/6, `vba` 2/2, and `ole10_entry` 2/2,
+  including exact embedded PNG/MZP child detection and CFB/VBA boundary
+  regressions.
+- Complete OLE/VBA/XLM corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## ISO9660/HFS+ current-source production-linked rerun — 2026-08-31
 
 - Retain canonical-source equality for the ISO9660/HFS+ parser sources,

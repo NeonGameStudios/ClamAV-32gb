@@ -17334,6 +17334,21 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## OLE2/VBA current-source production-linked rerun — 2026-08-31
+
+The canonical `ole2_extract.c`, `vba_extract.c`, `scanners.c`, and
+`check_clamav.c` sources were verified byte-identical to the copies used by
+the existing Docker GCC harness. The focused production-linked cases pass
+`ole2` 18/18, `ole2_xlm` 3/3, `ole2_map` 6/6, `vba` 2/2, and `ole10_entry`
+2/2. The run covers CFB header/property/sector and encryption-window bounds,
+XLM/BIFF and high-word stream-size handling, VBA and OLE10 admission,
+materialization/cleanup failures, and exact embedded PNG/MZP child detection.
+
+This is refreshed OLE/VBA evidence, not final release certification. Complete
+OLE/VBA/XLM corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1 resource evidence,
+and the final requirement-by-requirement parser/release audit remain open.
+
 ## ISO9660/HFS+ current-source production-linked rerun — 2026-08-31
 
 The canonical ISO9660 (`iso9660.c`, `iso9660.h`) and HFS+ (`hfsplus.c`,
