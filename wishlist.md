@@ -1,5 +1,19 @@
 # Wishlist
 
+## JPEG direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_parsejpeg()` fail-visible for direct callers when a valid JPEG
+  completes with a pre-existing sticky incomplete state. Clean/direct results
+  now return `CL_EPARSE`, while detections and stronger parser errors remain
+  preserved.
+- Retain the valid minimal SOI/SOS/EOI pre-taint regression
+  `test_jpeg_sticky_incomplete_result_is_fail_visible`, canonical/container
+  hash equality for the current `jpeg.c` and `check_clamav.c`, and current
+  production-linked GCC results at `jpeg_map` 14/14 and `jpeg_corpus` 1/1.
+  Keep complete JPEG/image corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## TIFF direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_parsetiff()` fail-visible for direct callers when a valid

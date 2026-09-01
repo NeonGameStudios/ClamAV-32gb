@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## JPEG direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_parsejpeg()` could return `CL_SUCCESS` to a direct parser caller after a
+valid JPEG completed while the scan context was already sticky-incomplete. The
+final status now converts only clean results with sticky incomplete state to
+`CL_EPARSE`, preserving detections and stronger parser errors. The valid
+minimal SOI/SOS/EOI regression
+`test_jpeg_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `jpeg.c`
+(`84a14c0245ab230c6041be3e878a9ba3b3bcecd65f633b3f1e3c56089d10e386`) and
+`check_clamav.c`
+(`bda302b3312d3a320f85d358d8cc5624346afdd7e943a32b8c3572336ae7a19e`). The
+current-source production-linked GCC harness passes `jpeg_map` 14/14 and
+`jpeg_corpus` 1/1. This closes direct status reconciliation only; complete
+JPEG/image corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## TIFF direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_parsetiff()` could return `CL_CLEAN` to a direct parser caller after a

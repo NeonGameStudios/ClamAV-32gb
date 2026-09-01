@@ -47907,6 +47907,34 @@ START_TEST(test_jpeg_corpus_detects_embedded_mz)
 }
 END_TEST
 
+START_TEST(test_jpeg_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t valid_jpeg[] = {
+        0xff, 0xd8,
+        0xff, 0xda, 0x00, 0x08,
+        0x01, 0x01, 0x00, 0x00, 0x3f, 0x00,
+        0xff, 0xd9,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(valid_jpeg, sizeof(valid_jpeg));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                   = map;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing JPEG incomplete state";
+    map->dont_cache_flag       = true;
+
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing JPEG incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_tiff_truncated_structures_are_fail_visible)
 {
     static const uint8_t truncated_first_ifd_offset[] = {
@@ -50461,6 +50489,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_jpeg_corpus, test_jpeg_corpus_detects_embedded_mz);
     tcase_add_test(tc_jpeg_map, test_jpeg_missing_map_is_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_truncated_structures_are_fail_visible);
+    tcase_add_test(tc_jpeg_map, test_jpeg_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_time_limit_is_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_required_read_failure_is_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_public_api_read_failure_is_fail_visible);

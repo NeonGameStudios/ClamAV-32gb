@@ -985,5 +985,8 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
     }
 
 done:
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        status = CL_EPARSE;
+
     return status;
 }
