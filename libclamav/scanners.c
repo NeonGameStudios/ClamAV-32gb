@@ -7205,6 +7205,17 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         goto early_ret;
     }
 
+    /* cli_magic_scan() is exported for library integrations, and its parser
+     * dispatch reads the current layer before any parser-specific admission.
+     * Do not let a caller with a valid engine/map but no usable recursion
+     * state turn malformed scan state into an out-of-bounds dereference. */
+    if (ctx->recursion_stack == NULL || ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        cli_mark_scan_incomplete(ctx, "scan recursion state is unavailable");
+        status = CL_ENULLARG;
+        goto early_ret;
+    }
+
     if (!(ctx->engine->dboptions & CL_DB_COMPILED)) {
         cli_errmsg("CRITICAL: engine not compiled\n");
         status = CL_EMALFDB;

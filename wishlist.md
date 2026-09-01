@@ -1,5 +1,16 @@
 # Wishlist
 
+## Exported magic-scan recursion-state admission — 2026-09-01
+
+- Keep exported `cli_magic_scan()` fail-visible when a caller supplies a valid
+  engine and fmap but no usable recursion stack, zero stack capacity, or an
+  out-of-range recursion level; reject before any current-layer dereference.
+- Retain `test_cli_magic_scan_missing_recursion_state_is_fail_visible` and the
+  source guard for the sticky reason and fmap non-cacheability.
+- Complete production-linked execution, sanitizer, certified Linux x86-64,
+  service/CVD, materialized-large-file, Sonic1, resource, and final release
+  qualification.
+
 ## Rust parser exported-entry sticky reconciliation — 2026-09-01
 
 - Keep `scan_lha_lzh()`, `cli_scanalz()`, and `scan_onenote()` fail-visible for

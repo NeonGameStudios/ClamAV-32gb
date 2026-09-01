@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Exported magic-scan recursion-state admission — 2026-09-01
+
+The exported `cli_magic_scan()` entry validated its engine and input fmap but
+indexed the current recursion layer before validating `recursion_stack`, its
+size, or `recursion_level`. A malformed library caller could therefore turn a
+missing or out-of-range scan-state object into an out-of-bounds dereference.
+The entry now marks the available fmap incomplete and returns `CL_ENULLARG`
+before parser dispatch. `test_cli_magic_scan_missing_recursion_state_is_fail_visible`
+covers the missing-stack case, including the sticky reason and non-cacheability;
+the new source guard is present. Production-linked execution, sanitizer,
+certified Linux x86-64, service/CVD, materialized-large-file, Sonic1, resource,
+and final release qualification remain open.
+
 ## Rust parser exported-entry sticky reconciliation — 2026-09-01
 
 The three enabled Rust parser exports (`scan_lha_lzh()`, `cli_scanalz()`, and
