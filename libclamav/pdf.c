@@ -5610,6 +5610,12 @@ static void XFA_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_a
     pdf->stats.nxfa++;
 }
 
+static void pdf_record_incorrect_pages_count(cli_ctx *ctx, json_object *pdfobj)
+{
+    if (cli_jsonbool(pdfobj, "IncorrectPagesCount", 1) != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, "PDF page-count metadata could not be recorded");
+}
+
 static void Pages_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_action *act)
 {
     cli_ctx *ctx = NULL;
@@ -5653,7 +5659,7 @@ static void Pages_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname
     pdf->parse_recursion_depth--;
 
     if (!(array)) {
-        cli_jsonbool(pdfobj, "IncorrectPagesCount", 1);
+        pdf_record_incorrect_pages_count(ctx, pdfobj);
         return;
     }
 
@@ -5668,7 +5674,7 @@ static void Pages_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname
         goto cleanup;
     }
     if (!(begin)) {
-        cli_jsonbool(pdfobj, "IncorrectPagesCount", 1);
+        pdf_record_incorrect_pages_count(ctx, pdfobj);
         goto cleanup;
     }
 
@@ -5684,13 +5690,13 @@ static void Pages_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname
                               : (size_t)(obj->start + pdf->map + obj->size - begin);
 
     if (CL_SUCCESS != cli_strntol_wrap(begin, countsize, 0, 10, &temp_long)) {
-        cli_jsonbool(pdfobj, "IncorrectPagesCount", 1);
+        pdf_record_incorrect_pages_count(ctx, pdfobj);
     } else if (temp_long < 0) {
-        cli_jsonbool(pdfobj, "IncorrectPagesCount", 1);
+        pdf_record_incorrect_pages_count(ctx, pdfobj);
     } else {
         count = (unsigned long)temp_long;
         if (count != npages) {
-            cli_jsonbool(pdfobj, "IncorrectPagesCount", 1);
+            pdf_record_incorrect_pages_count(ctx, pdfobj);
         }
     }
 

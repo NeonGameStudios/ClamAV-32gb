@@ -11523,3 +11523,14 @@ final parser/release qualification remain open.
   OLE metadata corpus, sanitizer, certified Linux x86-64, production-CVD/
   service, materialized-large-file, Sonic1, resource, and final release
   qualification remain open.
+
+## PDF page-count metadata completion — 2026-09-01
+
+- Keep `IncorrectPagesCount` report failures fail-visible in the PDF page-tree
+  callback; a dropped diagnostic field must taint the confirmed layer instead
+  of allowing clean completion.
+- Retain `test_pdf_page_count_metadata_record_failure_is_fail_visible` and its
+  source guard. Current-source production-linked execution, complete PDF
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification
+  remain open.
