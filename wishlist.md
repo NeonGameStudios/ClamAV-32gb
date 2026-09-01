@@ -9841,6 +9841,17 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## ISO9660/HFS+ current-source production-linked rerun — 2026-08-31
+
+- Retain canonical-source equality for the ISO9660/HFS+ parser sources,
+  `scanners.c`, and `check_clamav.c` in the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: `iso` 1/1, `iso_map` 17/17,
+  `hfs_map` 20/20, `hfs_inline` 2/2, and `hfs_fork` 1/1, including nested-child
+  matching and filesystem boundary/cleanup regressions.
+- Complete ISO9660/HFS+ corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## HWP3/HWPOLE2 current-source production-linked rerun — 2026-08-31
 
 - Retain canonical-source equality for `hwp.c`, `hwp.h`, `scanners.c`, and

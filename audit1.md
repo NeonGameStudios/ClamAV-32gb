@@ -17334,6 +17334,22 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## ISO9660/HFS+ current-source production-linked rerun — 2026-08-31
+
+The canonical ISO9660 (`iso9660.c`, `iso9660.h`) and HFS+ (`hfsplus.c`,
+`hfsplus.h`) parser sources, together with `scanners.c` and `check_clamav.c`,
+were verified byte-identical to the existing Docker GCC harness. The focused
+production-linked cases pass `iso` 1/1, `iso_map` 17/17, `hfs_map` 20/20,
+`hfs_inline` 2/2, and `hfs_fork` 1/1. The run covers descriptor and volume
+admission, Joliet/name and coordinate bounds, catalog/attribute-chain checks,
+compressed-resource accounting, fork extraction, cleanup, and exact nested
+child matching.
+
+This is refreshed filesystem-parser evidence, not final release certification.
+Complete ISO9660/HFS+ corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1 resource evidence,
+and the final requirement-by-requirement parser/release audit remain open.
+
 ## HWP3/HWPOLE2 current-source production-linked rerun — 2026-08-31
 
 The canonical `hwp.c`, `hwp.h`, `scanners.c`, and `check_clamav.c` sources
