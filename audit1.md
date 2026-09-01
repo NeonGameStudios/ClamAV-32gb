@@ -22,6 +22,27 @@ Full signed production CVDs, complete service parity, sanitizer, certified
 Linux x86-64, materialized-large-file, Sonic1, resource, and final
 requirement-by-requirement release evidence remain open.
 
+## Descriptor, MSPack, and crypto boundary rerun — 2026-09-01
+
+The canonical and container sources matched exactly before execution:
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+`libmspack.c`
+`7a44394b2775ca72477dcbdf4dbdad3be1cf222a913292188a08c80c8850f7bf`,
+`crypto.c` `d59e4c2365eecd2f8766bd5c61e800088bf7213853fc2fd6b8a185531aa3a8ee`,
+and `check_clamav.c`
+`078f3a1700d65a04bb61b3ece7a2302620f3920deddf97a35794986319ea3f3c`.
+The current production-linked GCC harness passes `descriptor_map` 2/2,
+`mspack_map` 6/6, `mspack` 7/7, `cryptff_api` 1/1, `cryptff` 3/3, and
+`hash_stream` 1/1. These runs cover descriptor engine/size admission, CAB/CHM
+callback and output boundaries, key-file and certificate-directory cleanup,
+and the hash read/finalization/close contract.
+
+The descriptor narrow-size case is conditionally unavailable on this AArch64
+container, and these are focused boundary results rather than complete parser
+or release qualification. Complete CAB/CHM and crypto corpora, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1 resource, and final requirement-by-requirement evidence remain open.
+
 ## Production-linked unit harness stat64 wrapper — 2026-08-31
 
 The Linux static unit target now adds the `stat64` linker wrapper only when

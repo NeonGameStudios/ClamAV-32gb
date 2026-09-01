@@ -595,6 +595,19 @@ final parser/release qualification.
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1 resource, and final parser/release qualification.
 
+## Descriptor, MSPack, and crypto boundary rerun — 2026-09-01
+
+- Retain exact canonical/container hashes for `scanners.c`, `libmspack.c`,
+  `crypto.c`, and `check_clamav.c` before focused execution.
+- Retain current production-linked GCC evidence at `descriptor_map` 2/2,
+  `mspack_map` 6/6, `mspack` 7/7, `cryptff_api` 1/1, `cryptff` 3/3, and
+  `hash_stream` 1/1 for descriptor, CAB/CHM callback/output, crypto cleanup,
+  and hash read/finalization/close boundaries.
+- The descriptor narrow-size case is unavailable on the AArch64 container;
+  keep complete CAB/CHM and crypto corpora, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and final
+  requirement-by-requirement release evidence open.
+
 ## Hash-stream finalization failure — 2026-09-01
 
 - Keep `cli_hashstream()` checking the return value from `cl_finish_hash()`;
