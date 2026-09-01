@@ -1756,7 +1756,11 @@ char *cli_hashstream(FILE *fs, uint8_t *hash, cli_hash_type_t type)
         cli_errmsg("cli_hashstream: Failed to read input for %s\n", hash_alg);
         goto done;
     }
-    cl_finish_hash(ctx, digest);
+    if (cl_finish_hash(ctx, digest) != 0) {
+        cli_errmsg("cli_hashstream: Failed to finalize hash for %s\n", hash_alg);
+        ctx = NULL;
+        goto done;
+    }
     ctx = NULL;
 
     if (!(hashstr = (char *)calloc(hash_len * 2 + 1, sizeof(char)))) {

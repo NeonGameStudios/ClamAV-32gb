@@ -139,6 +139,22 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1 resource evidence, and the final
 requirement-by-requirement parser/release audit remain open.
 
+## Hash-stream finalization failure — 2026-09-01
+
+`cli_hashstream()` now checks the return status from `cl_finish_hash()` and
+refuses to allocate or publish a digest when finalization fails. The context
+is treated as consumed on both finalization outcomes, matching the ownership
+contract of `cl_finish_hash()`, so the failure path cannot double-free it. The
+current production-linked GCC `hash_stream` TCase passes 1/1 after injecting a
+finalization failure through the existing static test wrapper; the same case
+continues to cover input-read and source-close failures. The source guard also
+pins the checked finalization branch, wrapper, and registration.
+
+This closes the hash-stream finalization-status gap but is not final release
+qualification. Complete hash/signature corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1 resource, and
+requirement-by-requirement release evidence remain open.
+
 ## Bytecode normalizer cleanup and core matcher rerun — 2026-08-31
 
 Bytecode context teardown previously removed and freed the normalized-

@@ -566,6 +566,18 @@ final parser/release qualification.
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1 resource, and final parser/release qualification.
 
+## Hash-stream finalization failure — 2026-09-01
+
+- Keep `cli_hashstream()` checking the return value from `cl_finish_hash()`;
+  a finalization failure must not publish either the string or caller digest,
+  and the consumed context must not be destroyed a second time.
+- Retain the current production-linked GCC `hash_stream` TCase at 1/1,
+  including the injected finalization, input-read, and source-close failures,
+  plus the source guards for the branch, wrapper, and dedicated registration.
+- Keep complete hash/signature corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file/resource, Sonic1, and final
+  parser/release qualification open.
+
 ## UDF descriptor-tag integrity admission — 2026-08-30
 
 - Validate every consumed UDF Descriptor Tag before trusting descriptor

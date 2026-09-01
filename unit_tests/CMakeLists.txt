@@ -186,6 +186,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=ferror"
         "-Wl,--wrap=fgets"
         "-Wl,--wrap=fread"
+        "-Wl,--wrap=cl_finish_hash"
         "-Wl,--wrap=inflateInit_"
         "-Wl,--wrap=inflateInit2_"
         "-Wl,--wrap=inflateEnd"

@@ -232,6 +232,7 @@ extern int __real_fclose(FILE *stream);
 extern int __real_ferror(FILE *stream);
 extern char *__real_fgets(char *restrict s, int n, FILE *restrict stream);
 extern size_t __real_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
+extern int __real_cl_finish_hash(void *ctx, void *buf);
 extern int __real_closedir(DIR *dirp);
 extern struct dirent *__real_readdir(DIR *dirp);
 extern int __real_stat(const char *path, struct stat *buf);
@@ -247,6 +248,7 @@ int clamav_test_fail_fclose;
 int clamav_test_fail_ferror;
 int clamav_test_fail_fgets;
 int clamav_test_fail_fread;
+int clamav_test_fail_finish_hash;
 int clamav_test_fail_closedir;
 int clamav_test_fail_readdir;
 int clamav_test_fail_stat;
@@ -302,6 +304,15 @@ size_t __wrap_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restric
     if (clamav_test_fail_fread)
         return 0;
     return __real_fread(ptr, size, nmemb, stream);
+}
+
+int __wrap_cl_finish_hash(void *ctx, void *buf)
+{
+    int ret = __real_cl_finish_hash(ctx, buf);
+
+    if (clamav_test_fail_finish_hash)
+        return -1;
+    return ret;
 }
 
 int __wrap_closedir(DIR *dirp)

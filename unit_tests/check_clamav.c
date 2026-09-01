@@ -116,6 +116,7 @@ extern int clamav_test_fail_fclose;
 extern int clamav_test_fail_ferror;
 extern int clamav_test_fail_fgets;
 extern int clamav_test_fail_fread;
+extern int clamav_test_fail_finish_hash;
 extern int clamav_test_fail_closedir;
 extern int clamav_test_fail_readdir;
 extern int clamav_test_fail_stat;
@@ -3534,6 +3535,11 @@ START_TEST(test_signature_database_and_hash_stream_failures)
     clamav_test_fail_fclose = 1;
     hashstr = cli_hashfile(file_path, digest, CLI_HASH_MD5);
     clamav_test_fail_fclose = 0;
+    ck_assert_ptr_null(hashstr);
+
+    clamav_test_fail_finish_hash = 1;
+    hashstr = cli_hashfile(file_path, digest, CLI_HASH_MD5);
+    clamav_test_fail_finish_hash = 0;
     ck_assert_ptr_null(hashstr);
 
     ck_assert_int_eq(mkdir(dir_path, 0700), 0);
@@ -49800,6 +49806,7 @@ static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
     TCase *tc_cl       = tcase_create("cl_api");
+    TCase *tc_hash_stream = tcase_create("hash_stream");
     TCase *tc_cvd      = tcase_create("cvd_api");
     TCase *tc_cvd_info = tcase_create("cvd_info");
     TCase *tc_cryptff  = tcase_create("cryptff");
@@ -49971,6 +49978,9 @@ static Suite *test_cl_suite(void)
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    suite_add_tcase(s, tc_hash_stream);
+#endif
     suite_add_tcase(s, tc_cvd);
     tcase_add_checked_fixture(tc_cvd, cl_setup, cl_teardown);
     tcase_add_test(tc_cvd, test_cl_cvdfree);
@@ -49990,6 +50000,9 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_cvd_info, cl_setup, cl_teardown);
     tcase_add_test(tc_cvd_info, test_cvd_info_member_size_is_checked);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_hash_stream, test_signature_database_and_hash_stream_failures);
+#endif
     suite_add_tcase(s, tc_cryptff);
     tcase_add_checked_fixture(tc_cryptff, cl_setup, cl_teardown);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
@@ -50980,7 +50993,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_settempdir);
     tcase_add_test(tc_cl, test_cl_strerror);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
-    tcase_add_test(tc_cl, test_signature_database_and_hash_stream_failures);
     tcase_add_test(tc_cl, test_signature_directory_stat_failures_are_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_top_level_maxfilesize_is_fail_visible);
