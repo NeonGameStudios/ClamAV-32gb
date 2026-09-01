@@ -186,6 +186,22 @@ Sonic1, resource, and final qualification remain required.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final qualification remain required.
 
+## Current TAR production-linked refresh — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for `scanners.c` and
+  `check_clamav.c` before relinking the existing Docker production-linked GCC
+  harness.
+- Retain CMake-materialized fixture hashes for `clam.tar.gz`
+  (`52cfcc90cffafe62a0abe41013c01be4e1b45cc880b2d2d1db083fda6d767fc4`) and
+  `clam.exe_and_mail.tar.gz`
+  (`ab18f7b704299301c38ca5254e14c25e59f8510c26c1a6ea531eaafa80a1eea7`), plus
+  current-source evidence at `tar` 8/8, `tar_map` 3/3, `tar_corpus` 1/1, and
+  `tar_member` 8/8 for GNU base-256/PAX, nested matching, read/EOF, timeout,
+  and cleanup boundaries.
+- Keep complete TAR corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## Current NSIS/Nullsoft production-linked refresh — 2026-08-31
 
 - Retain exact canonical/container SHA-256 equality for

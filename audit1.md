@@ -202,6 +202,24 @@ rather than being preempted by an unsupported-number parse result. Full
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain open.
 
+## Current TAR production-linked refresh — 2026-08-31
+
+The canonical `scanners.c` and `check_clamav.c` sources were transferred into
+the existing Docker production-linked GCC harness with exact SHA-256 equality
+(`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`
+and `check_clamav.c`
+`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
+CMake-materialized `clam.tar.gz`
+(`52cfcc90cffafe62a0abe41013c01be4e1b45cc880b2d2d1db083fda6d767fc4`) and
+`clam.exe_and_mail.tar.gz`
+(`ab18f7b704299301c38ca5254e14c25e59f8510c26c1a6ea531eaafa80a1eea7`) corpus
+fixtures support current-source results of `tar` 8/8, `tar_map` 3/3,
+`tar_corpus` 1/1, and `tar_member` 8/8. Coverage includes bounded GNU
+base-256/PAX size and scope handling, exact nested matching, and read/EOF,
+timeout, and cleanup failures. Complete TAR corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release evidence remain open.
+
 ## Current NSIS/Nullsoft production-linked refresh — 2026-08-31
 
 The canonical `libclamav/nsis/nulsft.c`, `nulsft.h`, `scanners.c`, and
