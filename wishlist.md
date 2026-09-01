@@ -9853,6 +9853,19 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## OneNote materialized-fixture verification refresh — 2026-09-01
+
+- Retain the repository CMake materialization path for all three encrypted
+  OneNote fixtures (`clam.exe.2007.one`, `clam.exe.2010.one`, and
+  `clam.exe.webapp-export.one`).
+- Retain the refreshed current-source production-linked GCC result:
+  `onenote` passes 2/2 with zero failures and zero errors, while
+  `rust_onenote` remains 2/2 and `rust_map` remains 1/1.
+- Complete OneNote corpus breadth, full C-ABI integration, sanitizer,
+  certified Linux x86-64, materialized-large-file/resource measurements,
+  production-CVD/service parity, Sonic1, and final parser/release
+  qualification.
+
 ## RTF/OOXML entry current-source rerun — 2026-08-31
 
 - Retain canonical-source equality for the RTF, OOXML/MSXML, scanner, and

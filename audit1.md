@@ -17351,6 +17351,23 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## OneNote materialized-fixture verification refresh — 2026-09-01
+
+The existing production-linked GCC harness was restarted without changing the
+source or build inputs. Its repository CMake targets materialized all three
+encrypted OneNote fixtures (`clam.exe.2007.one`, `clam.exe.2010.one`, and
+`clam.exe.webapp-export.one`), after which the current-source `onenote` TCase
+passed 2/2 with zero failures and zero errors. This reconfirms the
+document-configuration boundary and exact nested MZP child detection through
+the OneNote attachment handoff. The production-linked Rust `rust_onenote`
+boundary remains 2/2 and the shared `rust_map` case remains 1/1.
+
+This is refreshed parser/corpus evidence, not final OneNote certification.
+Complete corpus breadth, full current-C-ABI integration, sanitizer, certified
+Linux x86-64, materialized large-file/resource measurements, production-CVD/
+service parity, Sonic1, and the final requirement-by-requirement release audit
+remain open.
+
 ## RTF/OOXML entry current-source rerun — 2026-08-31
 
 The canonical RTF and OOXML/MSXML sources, `scanners.c`, and `check_clamav.c`
