@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## ZIP direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_unzip()` and the ordinary `cli_unzip_single()` entry could return clean
+after a valid catalogue or local-record walk when the recognized layer already
+carried sticky incomplete state. Their direct completion returns now reconcile
+clean completion to `CL_EPARSE`; stronger extraction, I/O, timeout, limit,
+detection, and resource results remain authoritative. The regression
+`test_zip_sticky_incomplete_result_is_fail_visible` covers both a valid
+central-catalogue archive and a valid local-only record, asserting the exact
+prior diagnostic and non-cacheability. The current-source production-linked
+GCC isolation runner passes 2/2 in sticky mode with clean untainted baselines,
+while the exact pre-change object returns clean for both sticky cases. Current
+ZIP source and unit translation unit compile with production GCC flags; full
+current ZIP TCase relink/execution, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## MSEXPAND direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_msexpand()` could return clean from its declared-output fast path or its

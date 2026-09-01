@@ -11473,6 +11473,92 @@ START_TEST(test_zip_unsupported_flags_and_method_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_zip_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t input[] = "zip-sticky-completion";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+    cl_error_t ret;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+
+    archive = zip_stream_central_archive(input, sizeof(input) - 1U,
+                                         sizeof(input) - 1U,
+                                         ZIP_TEST_METHOD_STORED,
+                                         (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                         &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    layers[0].type           = CL_TYPE_ZIP;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
+    ctx.engine               = engine;
+    ctx.dconf                = engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing ZIP incomplete state";
+    map->dont_cache_flag       = true;
+
+    ret = cli_unzip(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing ZIP incomplete state");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+    free(archive);
+
+    archive = zip_stream_local_archive(input, sizeof(input) - 1U,
+                                       sizeof(input) - 1U,
+                                       ZIP_TEST_METHOD_STORED,
+                                       (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                       &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    layers[0].type           = CL_TYPE_ZIP;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
+    ctx.engine               = engine;
+    ctx.dconf                = engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing ZIP incomplete state";
+    map->dont_cache_flag       = true;
+
+    ret = cli_unzip_single(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing ZIP incomplete state");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+    free(archive);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_zip_central_directory_resolves_masked_local_values)
 {
     static const uint8_t input[] = "masked-central-values";
@@ -51948,6 +52034,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_zip);
     tcase_add_checked_fixture(tc_zip, cl_setup, cl_teardown);
     tcase_add_test(tc_zip, test_zip_unsupported_flags_and_method_are_fail_visible);
+    tcase_add_test(tc_zip, test_zip_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_zip, test_zip_central_directory_resolves_masked_local_values);
     tcase_add_test(tc_zip, test_zip_central_filename_read_failure_is_fail_visible);
     tcase_add_test(tc_zip, test_zip_central_header_read_failure_is_fail_visible);
@@ -52830,6 +52917,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_action_source_open_path_rejects_replaced_symlink);
     tcase_add_test(tc_cl, test_action_source_close_reports_descriptor_failure);
     tcase_add_test(tc_cl, test_zip_stream_stored_refill_bound_and_tail);
+    tcase_add_test(tc_cl, test_zip_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_stream_deflate_refill_bound_and_tail);
     tcase_add_test(tc_cl, test_zip_stream_bzip2_refill_bound_and_tail);
     tcase_add_test(tc_cl, test_zip_stream_deflate64_terminal_validation);

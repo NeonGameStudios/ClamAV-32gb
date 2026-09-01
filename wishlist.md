@@ -1,5 +1,21 @@
 # Wishlist
 
+## ZIP direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_unzip()` and `cli_unzip_single()` fail-visible for direct callers
+  when valid central-catalogue or local-only ZIP walks complete with a
+  pre-existing sticky incomplete state. Clean completion now returns
+  `CL_EPARSE`, while stronger extraction, I/O, timeout, limit, detection, and
+  resource errors remain authoritative.
+- Retain `test_zip_sticky_incomplete_result_is_fail_visible`, which covers
+  valid central-catalogue and local-only records and checks the exact prior
+  reason plus non-cacheability. The current-source production-linked GCC
+  isolation runner passes 2/2 in sticky mode with clean untainted baselines,
+  and the pre-change comparison returns clean for both sticky cases. Keep full
+  current ZIP TCase relink/execution, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  parser/release qualification open.
+
 ## MSEXPAND direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_msexpand()` fail-visible for direct callers when valid declared

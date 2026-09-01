@@ -109,6 +109,14 @@ struct zip_central_values {
     bool zip64_sizes;
 };
 
+static cl_error_t zip_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 static cl_error_t zip_masked_sfx_central_check(cli_ctx *ctx, size_t offset, size_t *size);
 
 /* fmap_need_*() uses NULL for both an out-of-range request and a failed
@@ -3592,7 +3600,7 @@ done:
         free(tmpd);
     }
 
-    return status;
+    return zip_reconcile_status(ctx, status);
 }
 
 cl_error_t unzip_single_internal(cli_ctx *ctx, size_t local_header_offset, zip_cb zcb)
@@ -3630,7 +3638,7 @@ cl_error_t unzip_single_internal(cli_ctx *ctx, size_t local_header_offset, zip_c
         NULL,  /* record */
         NULL); /* file_record_size */
 
-    return ret;
+    return zip_reconcile_status(ctx, ret);
 }
 
 cl_error_t cli_unzip_single(cli_ctx *ctx, size_t local_header_offset)
@@ -3766,7 +3774,7 @@ cl_error_t unzip_search(cli_ctx *ctx, struct zip_requests *requests)
     }
 
 done:
-    return status;
+    return zip_reconcile_status(ctx, status);
 }
 
 cl_error_t unzip_search_single(cli_ctx *ctx, const char *name, size_t nlen, size_t *loff)
