@@ -1,5 +1,19 @@
 # Wishlist
 
+## PDF direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_pdf()` fail-visible for direct callers when a valid PDF completes
+  with a pre-existing sticky incomplete state after hook break normalization.
+  Clean completion now returns `CL_EPARSE`, while detections and stronger
+  parser or resource errors remain preserved.
+- Retain `test_pdf_sticky_incomplete_result_is_fail_visible`, which uses a
+  valid minimal PDF and checks the exact prior reason plus non-cacheability.
+  The current-source production-linked GCC isolation runner passes 1/1 and the
+  pre-change comparison returns clean for the same fixture. Keep full current
+  PDF TCase relink/execution, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## CPIO direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep the old-binary, ODC, and NEWC CPIO direct entries fail-visible when a

@@ -4985,6 +4985,12 @@ err:
     /* PDF hooks may abort, don't return CL_BREAK to caller! */
     rc = (rc == CL_BREAK) ? CL_CLEAN : rc;
 
+    /* A valid PDF can finish after a required nested inspection was skipped
+     * or failed. Do not normalize that sticky state to a clean result for
+     * direct PDF callers. */
+    if ((rc == CL_SUCCESS || rc == CL_CLEAN) && ctx->scan_incomplete)
+        rc = CL_EPARSE;
+
     cli_dbgmsg("cli_pdf: returning %d\n", rc);
     return rc;
 }

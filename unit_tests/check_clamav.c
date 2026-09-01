@@ -32182,6 +32182,49 @@ START_TEST(test_pdf_parser_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t document[] =
+        "%PDF-1.3\n"
+        "1 0 obj\n<<>>\nendobj\n"
+        "xref\n0 2\n"
+        "0000000000 65535 f \n"
+        "0000000009 00000 n \n"
+        "trailer\n<< /Size 2 >>\n"
+        "startxref\n29\n"
+        "%%EOF\n";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    struct cli_dconf dconf;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&dconf, 0, sizeof(dconf));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine                 = &engine;
+    ctx.options                = &options;
+    ctx.dconf                  = &dconf;
+    ctx.fmap                   = map;
+    ctx.this_layer_tmpdir      = tmpdir;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing PDF incomplete state";
+    map->dont_cache_flag       = true;
+
+    ret = cli_pdf(tmpdir, &ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing PDF incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_pdf_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "%PDF-1.7\n";
@@ -51303,6 +51346,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf_map, test_pdf_null_context_is_fail_visible);
     tcase_add_test(tc_pdf_map, test_pdf_missing_engine_is_fail_visible);
     tcase_add_test(tc_pdf_map, test_pdf_requires_scan_state);
+    tcase_add_test(tc_pdf_map, test_pdf_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_pdf_map, test_pdf_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_hwp3);
     suite_add_tcase(s, tc_hwp3_map);

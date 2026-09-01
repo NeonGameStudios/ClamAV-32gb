@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## PDF direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_pdf()` normalized a hook-requested `CL_BREAK` to clean without checking
+whether the recognized PDF layer already carried sticky incomplete state. The
+final direct return now reconciles clean completion to `CL_EPARSE`, preserving
+detections and stronger parser or resource errors. The valid minimal PDF
+regression `test_pdf_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the exact prior diagnostic, and non-cacheability.
+The current-source production-linked GCC isolation runner passes 1/1, while
+the exact pre-change PDF object returns clean for the same fixture. Current
+PDF source and unit translation unit compile with production GCC flags; full
+current PDF TCase relink/execution, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## CPIO direct sticky-incomplete reconciliation — 2026-09-01
 
 The old-binary, ODC, and NEWC CPIO direct entries could finish a valid
