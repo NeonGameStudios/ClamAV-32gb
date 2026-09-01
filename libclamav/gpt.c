@@ -363,6 +363,8 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
 done:
     if (ctx && status != CL_SUCCESS && status != CL_VIRUS && status != CL_BREAK && !ctx->scan_incomplete)
         cli_mark_scan_incomplete(ctx, "GPT inspection ended before completion");
+    if (ctx && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        status = CL_EPARSE;
 
     return status;
 }

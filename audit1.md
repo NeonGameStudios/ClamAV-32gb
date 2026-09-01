@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## GPT direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scangpt()` could return `CL_SUCCESS` to a direct parser caller after a
+valid primary/secondary GPT walk completed while the scan context was already
+sticky-incomplete. The final status now converts only clean results with
+sticky incomplete state to `CL_EPARSE`, preserving detections and stronger
+parser errors. The valid six-sector empty-table GPT regression
+`test_gpt_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `gpt.c`
+(`ef9bb6348c607735cafcf3a9fb23645a95473c19435be275186179518cd26ea6`) and
+`check_clamav.c`
+(`1de71bc84906c5372f717daae8433407226280142b96f595b7ff69a30b03557c`). The
+current-source production-linked GCC harness passes `gpt` 8/8 and
+`gpt_corpus` 1/1. This closes direct status reconciliation only; complete
+GPT/partition-image corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## APM direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scanapm()` could return `CL_SUCCESS` to a direct parser caller after a

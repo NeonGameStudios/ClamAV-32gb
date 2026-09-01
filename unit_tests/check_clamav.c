@@ -26668,6 +26668,80 @@ START_TEST(test_gpt_invalid_partition_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gpt_sticky_incomplete_result_is_fail_visible)
+{
+    enum {
+        SECTOR_SIZE     = 512,
+        DISK_SECTORS    = 6,
+        PRIMARY_LBA     = 1,
+        PRIMARY_TABLE   = 2,
+        FIRST_USABLE    = 3,
+        SECONDARY_TABLE = 4,
+        SECONDARY_LBA   = 5
+    };
+    uint8_t data[DISK_SECTORS * SECTOR_SIZE] = {0};
+    uint8_t *primary = data + PRIMARY_LBA * SECTOR_SIZE;
+    uint8_t *secondary = data + SECONDARY_LBA * SECTOR_SIZE;
+    uint32_t table_crc;
+    uint32_t header_crc;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    data[446 + 4] = MBR_PROTECTIVE;
+    cli_writeint32(data + 446 + 8, PRIMARY_LBA);
+    cli_writeint32(data + 446 + 12, DISK_SECTORS - PRIMARY_LBA);
+    data[510] = 0x55;
+    data[511] = 0xaa;
+
+    table_crc = (uint32_t)crc32(0L, data + PRIMARY_TABLE * SECTOR_SIZE,
+                                sizeof(struct gpt_partition_entry));
+    memcpy(primary, GPT_SIGNATURE_STR, 8);
+    cli_writeint32(primary + 8, 0x00010000U);
+    cli_writeint32(primary + 12, sizeof(struct gpt_header));
+    write_test_le64(primary + 24, PRIMARY_LBA);
+    write_test_le64(primary + 32, SECONDARY_LBA);
+    write_test_le64(primary + 40, FIRST_USABLE);
+    write_test_le64(primary + 48, FIRST_USABLE);
+    write_test_le64(primary + 72, PRIMARY_TABLE);
+    cli_writeint32(primary + 80, 1);
+    cli_writeint32(primary + 84, sizeof(struct gpt_partition_entry));
+    cli_writeint32(primary + 88, table_crc);
+    header_crc = (uint32_t)crc32(0L, primary, sizeof(struct gpt_header));
+    cli_writeint32(primary + 16, header_crc);
+
+    memcpy(secondary, primary, sizeof(struct gpt_header));
+    write_test_le64(secondary + 24, SECONDARY_LBA);
+    write_test_le64(secondary + 32, PRIMARY_LBA);
+    write_test_le64(secondary + 72, SECONDARY_TABLE);
+    cli_writeint32(secondary + 16, 0);
+    header_crc = (uint32_t)crc32(0L, secondary, sizeof(struct gpt_header));
+    cli_writeint32(secondary + 16, header_crc);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxpartitions       = 1;
+    options.parse              = CL_SCAN_PARSE_ARCHIVE;
+    ctx.engine                 = &engine;
+    ctx.options                = &options;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing GPT incomplete state";
+    map                       = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                  = map;
+    map->dont_cache_flag      = true;
+
+    ck_assert_int_eq(cli_scangpt(&ctx, SECTOR_SIZE), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing GPT incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_gpt_corpus_detects_embedded_mz)
 {
     enum {
@@ -50937,6 +51011,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gpt, test_gpt_invalid_secondary_header_is_fail_visible);
     tcase_add_test(tc_gpt, test_gpt_secondary_location_is_fail_visible);
     tcase_add_test(tc_gpt, test_gpt_invalid_partition_is_fail_visible);
+    tcase_add_test(tc_gpt, test_gpt_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_gpt_corpus);
     tcase_add_checked_fixture(tc_gpt_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_gpt_corpus, test_gpt_corpus_detects_embedded_mz);

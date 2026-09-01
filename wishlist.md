@@ -1,5 +1,19 @@
 # Wishlist
 
+## GPT direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scangpt()` fail-visible for direct callers when a valid
+  primary/secondary GPT walk completes with a pre-existing sticky incomplete
+  state. Clean/direct results now return `CL_EPARSE`, while detections and
+  stronger parser errors remain preserved.
+- Retain the valid six-sector empty-table GPT pre-taint regression
+  `test_gpt_sticky_incomplete_result_is_fail_visible`, canonical/container
+  hash equality for the current `gpt.c` and `check_clamav.c`, and current
+  production-linked GCC results at `gpt` 8/8 and `gpt_corpus` 1/1. Keep
+  complete GPT/partition-image corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## APM direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scanapm()` fail-visible for direct callers when a valid two-block
