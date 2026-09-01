@@ -9841,6 +9841,19 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## Legacy/container parser current-source rerun — 2026-08-31
+
+- Retain canonical-source equality for the relevant parser sources,
+  `scanners.c`, and `check_clamav.c` in the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: ARJ `11/11 + 2/2 + 7/7`,
+  ARJ-SFX `4/4`; AutoIt `7/7 + 1/1 + 1/1`; CAB-SFX `3/3`; InstallShield
+  `2/2 + 1/1`; BinHex `13/13`; NSIS `5/5 + 2/2 + 1/1`; MSEXPAND `8/8 + 2/2`;
+  DMG `7/7 + 10/10`; CryptFF `3/3 + 1/1`; and MSPack `7/7 + 6/6` across
+  direct, map, API, SFX, and corpus cases.
+- Complete corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## ELF/PE/Mach-O current-source rerun — 2026-08-31
 
 - Retain canonical-source equality for the ELF, PE, Mach-O, matcher, scanner,

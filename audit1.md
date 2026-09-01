@@ -17334,6 +17334,25 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## Legacy/container parser current-source rerun — 2026-08-31
+
+The relevant canonical parser sources, `scanners.c`, and `check_clamav.c`
+were verified byte-identical to the copies used by the existing Docker GCC
+harness. Focused production-linked results are ARJ `arj` 11/11,
+`arj_compressed` 2/2, `arj_map` 7/7, and `arjsfx` 4/4; AutoIt `autoit_map`
+7/7, `autoit_corpus` 1/1, and `autoit_sfx` 1/1; CAB-SFX `cabsfx` 3/3;
+InstallShield `ishield_map` 2/2 and `ishield_sfx` 1/1; BinHex `binhex_map`
+13/13; NSIS `nulsft` 5/5, `nulsft_map` 2/2, and `nulsft_corpus` 1/1;
+MSEXPAND `msexpand` 8/8 and `msexpand_map` 2/2; DMG `dmg` 7/7 and
+`dmg_map` 10/10; CryptFF `cryptff` 3/3 and `cryptff_api` 1/1; and MSPack
+`mspack` 7/7 and `mspack_map` 6/6. The ARJ corpus and generated AutoIt
+fixtures were materialized through the repository’s existing build targets.
+
+This is refreshed legacy/container evidence, not final release certification.
+Complete corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1 resource evidence,
+and the final requirement-by-requirement parser/release audit remain open.
+
 ## ELF/PE/Mach-O current-source rerun — 2026-08-31
 
 The canonical ELF (`elf.c`, `elf.h`), PE (`pe.c`, `pe.h`), and Mach-O
