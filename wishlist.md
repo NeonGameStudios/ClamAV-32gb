@@ -9841,6 +9841,17 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## GIF/PNG/JPEG/RIFF/SWF current-source rerun — 2026-08-31
+
+- Retain canonical-source equality for the media/parser sources and
+  `check_clamav.c` in the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: GIF `12/12 + 1/1 + 1/1`,
+  PNG `8/8 + 1/1`, JPEG `13/13 + 1/1`, RIFF `8/8 + 1/1 + 1/1`, and SWF
+  `13/13 + 3/3 + 1/1 + 2/2` for their direct/map/API/corpus cases.
+- Complete image/SWF corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## OLE2/VBA current-source production-linked rerun — 2026-08-31
 
 - Retain canonical-source equality for `ole2_extract.c`, `vba_extract.c`,

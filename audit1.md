@@ -17334,6 +17334,23 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## GIF/PNG/JPEG/RIFF/SWF current-source rerun — 2026-08-31
+
+The canonical media/parser sources and `check_clamav.c` were verified
+byte-identical to the copies used by the existing Docker GCC harness. Focused
+production-linked results are: GIF `gif` 12/12, `gif_api` 1/1, `gif_corpus`
+1/1; PNG `png` 8/8 and `png_corpus` 1/1; JPEG `jpeg_map` 13/13 and
+`jpeg_corpus` 1/1; RIFF `riff` 8/8, `riff_map` 1/1, and `riff_corpus` 1/1;
+and SWF `swf` 13/13, `swf_map` 3/3, `swf_api` 1/1, and `swf_corpus` 2/2.
+The corpus cases cover exact nested-child matching, while the direct/map
+cases cover malformed structures, callback failures, deadlines, decoder
+boundaries, and engine admission.
+
+This is refreshed media-parser evidence, not final release certification.
+Complete image/SWF corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1 resource evidence,
+and the final requirement-by-requirement parser/release audit remain open.
+
 ## OLE2/VBA current-source production-linked rerun — 2026-08-31
 
 The canonical `ole2_extract.c`, `vba_extract.c`, `scanners.c`, and
