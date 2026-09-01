@@ -7597,6 +7597,21 @@ and Sonic1 qualification as release gates.
   production CVD/service parity, and Sonic1 qualification before
   certification.
 
+## Current-source UTF-16 text and HTML qualification refresh — 2026-08-31
+
+- Canonical/container SHA-256 equality was verified for `scanners.c`
+  (`be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`) and
+  `check_clamav.c`
+  (`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`)
+  before relinking; the current-source production-linked GCC
+  `text_encoding` TCase passes 3/3.
+- Retain the UTF-16LE/BE normalized-script, cross-window-surrogate,
+  malformed-UTF-8/UTF-16, UTF-16 HTML endian/BOM, child-match, temporary
+  accounting, and `CL_EREAD` read-failure evidence; complete corpora,
+  full-C execution, ASan/UBSan, certified Linux x86-64, materialized
+  large-file, production-CVD/service parity, and Sonic1 evidence remain gates
+  before certification.
+
 ## HWP3 current-source qualification audit — 2026-08-25
 
 - The isolated current-source production-linked `hwp3_api` TCase passes 1/1

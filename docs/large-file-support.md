@@ -10369,6 +10369,26 @@ detection, a surrogate pair split at the 4 KiB boundary, and malformed
 UTF-16/UTF-8 fail-visible oracles. Full text corpora, ASan/UBSan, Linux x86-64,
 and Sonic1 qualification remain open.
 
+## Current-source UTF-16 text and HTML qualification refresh — 2026-08-31
+
+The authoritative current source and the Docker production-linked source match
+byte-for-byte for `libclamav/scanners.c`
+(`be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`) and
+`unit_tests/check_clamav.c`
+(`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`).
+After relinking the existing GCC harness, the isolated `text_encoding` TCase
+passes 3/3. The script case detects the normalized signature through both
+UTF-16LE and UTF-16BE, including a surrogate pair split at the 4 KiB window;
+it also verifies UTF-8 validation and explicit malformed-input reasons. The
+HTML cases verify BOM and BOM-less endian admission, decoded-child matching,
+exact temporary accounting, a fully in-range initial-byte-order `CL_EREAD`,
+and fail-visible incomplete/non-cacheable results for odd code units, invalid
+surrogates, and unknown byte order. This refresh supersedes the earlier
+mixed-source count; it remains qualification evidence rather than release
+completion because production corpora, ASan/UBSan, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1 evidence
+are still required.
+
 ## Partition-intersection coordinate audit — 2026-08-26
 
 The shared APM, GPT, and MBR partition-intersection helper now compares the

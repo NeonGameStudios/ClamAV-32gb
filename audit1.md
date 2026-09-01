@@ -14492,6 +14492,25 @@ full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_HTML_UTF16` stays pending.
 
+## Current-source UTF-16 text and HTML qualification refresh — 2026-08-31
+
+The canonical and Docker source trees match for `libclamav/scanners.c` at
+SHA-256 `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`
+and `unit_tests/check_clamav.c` at
+`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`. The
+relinked current-source production-linked GCC `text_encoding` TCase passes
+3/3. Its script normalization case covers both UTF-16 endians, normalized
+matching, UTF-8 validation, and a surrogate pair crossing the 4 KiB window;
+the HTML cases cover endian/BOM admission, child matching, exact temporary
+accounting, in-range initial-probe `CL_EREAD`, and malformed-input
+incomplete/non-cacheable results.
+
+This is current-source dispatch and bounded-decoding evidence only. Complete
+UTF-16 script/HTML corpora, full-C ABI-consistent execution, ASan/UBSan,
+certified Linux x86-64, materialized large-file, production CVD/service
+parity, and Sonic1 qualification remain open, so the UTF-16 parser rows stay
+pending.
+
 ## HWP3 current-source qualification audit — 2026-08-25
 
 The isolated current-source production-linked `hwp3_api` TCase passes 1/1
