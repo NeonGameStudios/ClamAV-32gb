@@ -17334,6 +17334,22 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## XML container parser current-source rerun — 2026-08-31
+
+The canonical `scanners.c` and `check_clamav.c` sources were verified
+byte-identical to the copies used by the existing Docker GCC harness. The
+focused production-linked cases pass `xdp` 3/3, `xdp_map` 3/3,
+`xdp_corpus` 1/1, `hwpml` 2/2, `hwpml_map` 3/3, `hwpml_corpus` 1/1,
+`msxml` 5/5, `msxml_map` 2/2, and `msxml_corpus` 1/1. These runs cover
+streaming deadlines, temporary accounting, direct-entry admission, malformed
+Base64, bounded attributes, and exact decoded-child matching across the XDP,
+HWPML, and legacy MSXML dispatch paths.
+
+This is refreshed XML parser evidence, not final release certification.
+Complete production corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1 resource evidence,
+and the final requirement-by-requirement parser/release audit remain open.
+
 ## XAR current-source production-linked rerun — 2026-08-31
 
 The canonical `scanners.c` and `check_clamav.c` sources were verified

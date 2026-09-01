@@ -9841,6 +9841,18 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## XML container parser current-source rerun — 2026-08-31
+
+- Retain canonical-source equality for `scanners.c` and `check_clamav.c` in
+  the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: `xdp` 3/3, `xdp_map` 3/3,
+  `xdp_corpus` 1/1, `hwpml` 2/2, `hwpml_map` 3/3, `hwpml_corpus` 1/1,
+  `msxml` 5/5, `msxml_map` 2/2, and `msxml_corpus` 1/1, including exact
+  decoded-child matching and bounded streaming/temporary paths.
+- Complete production corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## XAR current-source production-linked rerun — 2026-08-31
 
 - Retain canonical-source equality for `scanners.c` and `check_clamav.c` in
