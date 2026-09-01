@@ -30430,6 +30430,36 @@ START_TEST(test_7z_sfx_weak_candidate_is_rejected_without_incomplete_state)
 }
 END_TEST
 
+START_TEST(test_7z_sfx_header_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[32] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memcpy(data, "7z\xbc\xaf'\x1c", 6);
+    data[6] = 0;
+    data[7] = 4;
+    zip_stream_write_u32(data + 8, (uint32_t)crc32(0L, data + 12, 20U));
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing 7-Zip SFX incomplete state";
+    map                         = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap             = map;
+    map->dont_cache_flag = true;
+
+    ret = cli_7z_header_check(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing 7-Zip SFX incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static size_t sevenzip_sfx_read_failure_offset = SIZE_MAX;
 static size_t sevenzip_sfx_read_failure_length = SIZE_MAX;
 
@@ -53302,6 +53332,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_compressed_cleanup, test_compressed_cleanup_status_is_fail_visible);
     suite_add_tcase(s, tc_7z_sfx);
     tcase_add_test(tc_7z_sfx, test_7z_sfx_weak_candidate_is_rejected_without_incomplete_state);
+    tcase_add_test(tc_7z_sfx, test_7z_sfx_header_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_7z_sfx, test_7z_sfx_header_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_7z_sfx_corpus);
     tcase_add_checked_fixture(tc_7z_sfx_corpus, cl_setup, cl_teardown);

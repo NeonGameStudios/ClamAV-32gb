@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip SFX header sticky completion — 2026-09-01
+
+`cli_7z_header_check()` could validate a complete embedded SFX start header
+and return `CL_SUCCESS` even when its owning scan context already carried
+sticky incomplete state. That left a confirmed SFX admission boundary able to
+proceed from a non-complete context. Confirmed header success paths now pass
+through a 7-Zip reconciliation helper, converting only clean completion to
+`CL_EPARSE` while preserving stronger format, read, and parser statuses. The
+direct `test_7z_sfx_header_sticky_incomplete_result_is_fail_visible`
+regression preserves the original diagnostic and fmap non-cacheability without
+requiring an engine. Current-source production-GCC compilation,
+production-linked execution, sanitizer, complete 7-Zip/SFX corpus, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.
+
 ## MSPack CAB header sticky completion — 2026-09-01
 
 `cli_mscab_header_check()` validated a confirmed CAB header and could return

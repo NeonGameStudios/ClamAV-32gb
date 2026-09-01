@@ -62,6 +62,14 @@ static uint64_t cli_7z_header_u64(const unsigned char *data)
            ((uint64_t)cli_7z_header_u32(data + 4) << 32);
 }
 
+static cl_error_t cli_7z_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 /* File-type matching only proves the six-byte 7-Zip signature.  Embedded SFX
  * candidates need the complete start header before they are allowed to become
  * a nested layer; otherwise arbitrary payload bytes can be misclassified as a
@@ -107,7 +115,8 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
         if (start_header_crc != 0) {
             /* A valid empty archive has no next header, but still carries
              * the checksum of the zero-valued next-header fields. */
-            return CrcCalc(header + 12, 20) == start_header_crc ? CL_SUCCESS : CL_EPARSE;
+            return cli_7z_reconcile_status(ctx,
+                                          CrcCalc(header + 12, 20) == start_header_crc ? CL_SUCCESS : CL_EPARSE);
         }
 
         {
@@ -131,7 +140,7 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
                     (recovery[i] == 0x01 && recovery[i + 1] == 0x04)) {
                     if (ctx->fmap->len - recovery_size + i < recovery_start)
                         return CL_EFORMAT;
-                    return CL_SUCCESS;
+                    return cli_7z_reconcile_status(ctx, CL_SUCCESS);
                 }
                 if (i == 0)
                     break;
@@ -150,7 +159,7 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
         next_header_size > archive_size - k7zStartHeaderSize - next_header_offset)
         return CL_EPARSE;
 
-    return CL_SUCCESS;
+    return cli_7z_reconcile_status(ctx, CL_SUCCESS);
 }
 
 typedef struct

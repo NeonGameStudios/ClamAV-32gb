@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## 7-Zip SFX header sticky completion — 2026-09-01
+
+Confirmed 7-Zip SFX start-header admission now reconciles clean completion
+against the owning context’s sticky incomplete state. A valid header in a
+pre-tainted context returns `CL_EPARSE` while retaining the original reason
+and fmap non-cacheability; stronger format, read, and parser statuses remain
+authoritative. The direct regression and source guards cover the boundary.
+Current-source production-GCC compilation, production-linked execution,
+sanitizer, complete 7-Zip/SFX corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## MSPack CAB header sticky completion — 2026-09-01
 
 The confirmed CAB header probe now reconciles clean completion against the

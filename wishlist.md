@@ -1,5 +1,17 @@
 # Wishlist
 
+## 7-Zip SFX header sticky completion — 2026-09-01
+
+- Keep confirmed `cli_7z_header_check()` success fail-visible when the owning
+  SFX context is already incomplete; convert only clean completion to
+  `CL_EPARSE` and preserve stronger header-probe statuses.
+- Retain `test_7z_sfx_header_sticky_incomplete_result_is_fail_visible`, the
+  exact pre-existing diagnostic, fmap non-cacheability, and source guards.
+- Complete current-source production-GCC compilation and production-linked
+  execution, sanitizer, complete 7-Zip/SFX corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## MSPack CAB header sticky completion — 2026-09-01
 
 - Keep `cli_mscab_header_check()` from admitting a confirmed CAB/SFX header as
