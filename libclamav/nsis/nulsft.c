@@ -829,7 +829,7 @@ cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
         (uint64_t)archive_size - remaining != 4)
         return CL_EPARSE;
 
-    return CL_SUCCESS;
+    return nsis_reconcile_status(ctx, CL_SUCCESS);
 }
 
 int cli_scannulsft(cli_ctx *ctx, off_t offset)

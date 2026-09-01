@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## NSIS SFX header sticky completion — 2026-09-01
+
+Confirmed NSIS SFX fixed-header admission now reconciles clean completion
+against the owning context’s sticky incomplete state. A valid header in a
+pre-tainted context returns `CL_EPARSE` while preserving the original reason
+and fmap non-cacheability; stronger format, read, and parser statuses remain
+authoritative. The existing sticky regression now exercises the direct header
+probe before full scanning. Current-source production-GCC compilation,
+production-linked execution, sanitizer, complete NSIS corpus, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## ARJ SFX header sticky completion — 2026-09-01
 
 Confirmed ARJ-SFX pre-admission now reconciles clean completion against the

@@ -1,5 +1,18 @@
 # Wishlist
 
+## NSIS SFX header sticky completion — 2026-09-01
+
+- Keep confirmed `cli_nulsft_header_check()` success fail-visible when the
+  owning SFX context is already incomplete; convert only clean completion to
+  `CL_EPARSE` and preserve stronger header-probe statuses.
+- Retain the direct header probe in
+  `test_nsis_sticky_incomplete_result_is_fail_visible`, the exact prior
+  diagnostic, fmap non-cacheability, and source guards.
+- Complete current-source production-GCC compilation and production-linked
+  execution, sanitizer, complete NSIS corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## ARJ SFX header sticky completion — 2026-09-01
 
 - Keep confirmed `cli_unarj_sfx_header_check()` success fail-visible when the
