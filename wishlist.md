@@ -22,6 +22,15 @@
   service/CVD, materialized-large-file, Sonic1, resource, and final release
   qualification.
 
+## Exported directory-scan engine admission — 2026-09-01
+
+- Keep `cli_magic_scan_dir()` fail-visible for a missing engine before an
+  empty-directory walk can report a false clean result.
+- Retain `test_cli_magic_scan_dir_rejects_missing_engine` and its source guard.
+- Complete production-linked execution, sanitizer, certified Linux x86-64,
+  service/CVD, materialized-large-file, Sonic1, resource, and final release
+  qualification.
+
 ## Rust parser exported-entry sticky reconciliation — 2026-09-01
 
 - Keep `scan_lha_lzh()`, `cli_scanalz()`, and `scan_onenote()` fail-visible for

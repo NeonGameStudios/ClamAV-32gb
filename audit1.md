@@ -27,6 +27,17 @@ present. Production-linked execution, sanitizer, certified Linux x86-64,
 service/CVD, materialized-large-file, Sonic1, resource, and final release
 qualification remain open.
 
+## Exported directory-scan engine admission — 2026-09-01
+
+`cli_magic_scan_dir()` could return clean for an empty directory even when its
+caller supplied a context with no engine; a nonempty directory would only
+discover that invalid state later through a child scan. The directory boundary
+now rejects a null engine up front with `CL_ENULLARG`. The regression
+`test_cli_magic_scan_dir_rejects_missing_engine` uses a deterministic empty
+directory, and the source guard is present. Production-linked execution,
+sanitizer, certified Linux x86-64, service/CVD, materialized-large-file,
+Sonic1, resource, and final release qualification remain open.
+
 ## Rust parser exported-entry sticky reconciliation — 2026-09-01
 
 The three enabled Rust parser exports (`scan_lha_lzh()`, `cli_scanalz()`, and

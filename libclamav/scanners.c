@@ -187,7 +187,7 @@ static cl_error_t cli_magic_scan_dir_internal(const char *dir, cli_ctx *ctx, uin
     STATBUF statbuf;
     char *fname = NULL;
 
-    if (dir == NULL || ctx == NULL)
+    if (dir == NULL || ctx == NULL || ctx->engine == NULL)
         return CL_ENULLARG;
 
     if ((dd = opendir(dir)) != NULL) {
