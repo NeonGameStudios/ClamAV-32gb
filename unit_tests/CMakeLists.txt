@@ -69,6 +69,7 @@ if(ENABLE_APP)
 
     # check_clamd is used by the clamd tests
     add_executable(check_clamd)
+    add_dependencies(check_clamd tgt_clamd_test_inputs)
     target_sources(check_clamd
         PRIVATE
             check_clamd.c

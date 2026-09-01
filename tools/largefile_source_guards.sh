@@ -3434,6 +3434,9 @@ if ! awk '
     exit 1
 fi
 contains clamd/CMakeLists.txt 'largefile_admission.c'
+contains unit_tests/CMakeLists.txt 'add_dependencies(check_clamd tgt_clamd_test_inputs)'
+contains unit_tests/input/CMakeLists.txt 'add_custom_target(tgt_clamd_test_inputs)'
+contains unit_tests/input/CMakeLists.txt 'add_dependencies(tgt_clamd_test_inputs ${CLAMD_TEST_INPUT_TARGETS})'
 contains clamd/largefile_admission.c 'LARGEFILE_MIN_AVAILABLE'
 contains clamd/largefile_admission.c 'LARGEFILE_LEGACY_MAX_FILE_SIZE'
 contains clamd/largefile_admission.c 'LARGEFILE_LEGACY_MAX_SCAN_SIZE'

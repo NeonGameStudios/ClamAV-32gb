@@ -17375,6 +17375,24 @@ on-access coverage, sanitizer, certified Linux x86-64, materialized-large-file,
 Sonic1 resource evidence, and the final requirement-by-requirement release
 audit remain open.
 
+## clamd targeted-fixture dependency correction — 2026-09-01
+
+The clamd test inputs now have an explicit `tgt_clamd_test_inputs` aggregate;
+`check_clamd` depends on it, and the aggregate uses CMake target dependencies
+for every repository XOR fixture. This closes a reproducibility gap where a
+target-only production build could link `check_clamd` without materializing
+the inputs consumed by `clamd_test.py`. In the existing Docker harness, one
+disposable generated fixture (`clam.ea05.exe`) was removed and a targeted
+`cmake --build ... --target check_clamd -j2` recreated it through the aggregate
+before linking. The follow-up verbose CTest clamd run passed 1/1, with 15 Python
+tests and `check_clamd` reporting `100%: Checks: 105, Failures: 0, Errors: 0`.
+
+This is a build/test reproducibility correction and current-object service
+evidence, not final release certification. Complete production-CVD/service
+parity, milter and on-access coverage, sanitizer, certified Linux x86-64,
+materialized-large-file, Sonic1 resource evidence, and the final
+requirement-by-requirement release audit remain open.
+
 ## Milter quota harness build refresh — 2026-09-01
 
 The dependency-free `check_clamfi_quota` target previously failed in the

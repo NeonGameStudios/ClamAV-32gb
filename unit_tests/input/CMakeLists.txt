@@ -115,3 +115,15 @@ add_dependencies(tgt_largefile_autoit_fixtures tgt_build_unit_tests_directories)
 foreach(TESTFILE ${ENCRYPTED_TESTFILES})
     decrypt_testfile(${TESTFILE})
 endforeach()
+
+# A targeted check_clamd build must carry the complete fixture set used by the
+# Python service test. The normal ALL build already materializes these files,
+# but relying on that implicit ordering makes focused production-linked service
+# qualification depend on a prior unrelated build.
+set(CLAMD_TEST_INPUT_TARGETS)
+foreach(TESTFILE ${ENCRYPTED_TESTFILES})
+    string(REPLACE "/" "_" TESTFILE_TGT ${TESTFILE})
+    list(APPEND CLAMD_TEST_INPUT_TARGETS tgt_${TESTFILE_TGT})
+endforeach()
+add_custom_target(tgt_clamd_test_inputs)
+add_dependencies(tgt_clamd_test_inputs ${CLAMD_TEST_INPUT_TARGETS})

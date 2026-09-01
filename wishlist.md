@@ -9873,6 +9873,19 @@ qualification as required evidence.
   materialized-large-file, Sonic1 resource evidence, and final
   parser/release qualification.
 
+## clamd targeted-fixture dependency correction — 2026-09-01
+
+- Retain the `tgt_clamd_test_inputs` aggregate and explicit CMake target
+  dependencies from `check_clamd` to every repository XOR fixture, so a
+  target-only production build cannot omit files consumed by `clamd_test.py`.
+- Retain the targeted proof: after deleting one disposable generated fixture,
+  `cmake --build ... --target check_clamd -j2` recreated it through the
+  aggregate, and verbose CTest `clamd` passed 1/1 with 15 Python tests and
+  `check_clamd` reporting `100%: Checks: 105, Failures: 0, Errors: 0`.
+- Complete production-CVD/service parity, milter and on-access coverage,
+  sanitizer, certified Linux x86-64, materialized-large-file, Sonic1 resource
+  evidence, and final parser/release qualification.
+
 ## Milter quota harness build refresh — 2026-09-01
 
 - Retain the standalone `check_clamfi_quota` target's explicit JSON-C and
