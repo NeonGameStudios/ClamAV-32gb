@@ -3742,7 +3742,7 @@ START_TEST(test_top_level_maxfilesize_is_fail_visible)
     ck_assert_str_eq(last_alert, "Heuristics.Limits.Exceeded.MaxFileSize");
 
     ret = cl_scanmap_callback(map, NULL, &last_alert, &legacy_scanned, engine, &options, NULL);
-    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(ret, CL_EMAXSIZE);
 
     /* A modern alert callback may filter the heuristic indicator, but doing
      * so must expose the original configured-limit failure rather than turn
