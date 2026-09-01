@@ -120,12 +120,15 @@
   Full PE corpus, sanitizer, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final qualification remain required.
 
-## Bundled YARA code-page ceiling — 2026-08-31
+## Bundled YARA code-page ceiling — 2026-09-01
 
 - Keep compiler and matcher admission aligned to the contiguous 64 KiB YARA
   instruction-stream contract; reject an oversized rule before it is appended
   to the engine and keep malformed manually supplied streams incomplete and
   non-cacheable.
+- Retain exact canonical/container SHA-256 equality for `yara_arena.c`,
+  `yara_arena.h`, `yara_exec.c`, `matcher.c`, and `check_clamav.c`; the current
+  test source hash is `71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`.
 - Retain the isolated current-source production-linked GCC `yara` TCase at
   21/21 and source guards. Full YARA corpus, sanitizer, production-CVD/service,
   materialized-large-file, Sonic1, and final qualification remain required.

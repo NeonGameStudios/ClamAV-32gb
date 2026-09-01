@@ -77,13 +77,17 @@ Sanitizer/leak, native-width certified Linux x86-64, complete Mach-O/FAT/Java
 corpus, materialized-large-file/resource, production-CVD/service, Sonic1, and
 final parser/release evidence remain open.
 
-## Bundled YARA code-page ceiling — 2026-08-31
+## Bundled YARA code-page ceiling — 2026-09-01
 
 Bundled YARA compilation now rejects a rule whose contiguous instruction
 stream exceeds the 64 KiB evaluator contract immediately after emitting its
 terminal `OP_HALT`; the matcher retains the same fail-visible admission for
-manually supplied oversized streams. The isolated current-source
-production-linked GCC `yara` TCase passes 21/21, including valid execution,
+manually supplied oversized streams. The canonical `yara_arena.c`,
+`yara_arena.h`, `yara_exec.c`, `matcher.c`, and `check_clamav.c` sources match
+the Docker snapshot exactly by SHA-256, including current test hash
+`71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`. The
+isolated current-source production-linked GCC `yara` TCase passes 21/21,
+including valid execution,
 read/status propagation, resource/deadline behavior, VM faults, arena
 boundaries, and the oversized-stream regression. Full YARA corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
