@@ -58,6 +58,7 @@
 #include "str.h"
 #include "readdb.h"
 #include "default.h"
+#include "scanners.h"
 
 // common
 #include "optparser.h"
