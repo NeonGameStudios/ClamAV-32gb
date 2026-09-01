@@ -289,6 +289,8 @@ static int hwp3_test_fail_print_name;
 static int hwp5_test_fail_raw_version;
 static int ole2_test_fail_streams;
 static int ooxml_test_fail_file_count;
+static int msxml_test_fail_count;
+static int msxml_test_fail_attribute;
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
@@ -303,6 +305,8 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
 {
     if (hwp3_test_fail_print_name && key && strcmp(key, "PrintName") == 0)
         return CL_EMEM;
+    if (msxml_test_fail_attribute && key && strcmp(key, "attr") == 0)
+        return CL_EMEM;
     return __real_cli_jsonstr(obj, key, s);
 }
 
@@ -312,8 +316,11 @@ cl_error_t __wrap_cli_jsonint(json_object *obj, const char *key, int32_t i)
         return CL_EMEM;
     if (ooxml_test_fail_file_count && key && strcmp(key, "CorePropertiesFileCount") == 0)
         return CL_EMEM;
+    if (msxml_test_fail_count && key && strcmp(key, "Count") == 0)
+        return CL_EMEM;
     return __real_cli_jsonint(obj, key, i);
 }
+
 #endif
 
 #ifdef CLAMAV_TEST_7Z_EXTRACT_WRAP
@@ -9732,6 +9739,140 @@ START_TEST(test_msxml_sticky_incomplete_result_is_fail_visible)
     cl_fmap_close(map);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_msxml_count_metadata_failure_is_fail_visible)
+{
+    static const uint8_t document[] = "<bindata/>";
+    static const struct key_entry keys[] = {
+        {"bindata", "BinaryData", MSXML_JSON_ROOT | MSXML_JSON_COUNT},
+    };
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    struct msxml_ctx mxctx;
+    cli_ctx ctx;
+    fmap_t *map;
+    json_object *metadata;
+    xmlTextReaderPtr reader;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    memset(&engine, 0, sizeof(engine));
+    memset(&mxctx, 0, sizeof(mxctx));
+    memset(&ctx, 0, sizeof(ctx));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-count.xml", NULL, 0);
+    ck_assert_ptr_nonnull(reader);
+    ctx.engine                  = &engine;
+    ctx.options                 = &options;
+    ctx.fmap                    = map;
+    ctx.this_layer_metadata_json = metadata;
+
+    msxml_test_fail_count = 1;
+    ret = cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]),
+                                   MSXML_FLAG_JSON | MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
+    msxml_test_fail_count = 0;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML JSON count metadata could not be recorded");
+    ck_assert(map->dont_cache_flag);
+    xmlFreeTextReader(reader);
+    json_object_put(metadata);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    ctx.engine                  = &engine;
+    ctx.options                 = &options;
+    ctx.fmap                    = map;
+    ctx.this_layer_metadata_json = metadata;
+
+    msxml_test_fail_count = 1;
+    ret = cli_msxml_parse_document_streaming(&ctx, map, keys, sizeof(keys) / sizeof(keys[0]),
+                                             MSXML_FLAG_JSON | MSXML_FLAG_FAIL_INCOMPLETE, NULL);
+    msxml_test_fail_count = 0;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML JSON count metadata could not be recorded");
+    ck_assert(map->dont_cache_flag);
+    json_object_put(metadata);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_msxml_attribute_metadata_failure_is_fail_visible)
+{
+    static const uint8_t document[] = "<root attr=\"value\"/>";
+    static const struct key_entry keys[] = {
+        {"root", "Root", MSXML_JSON_ROOT | MSXML_JSON_ATTRIB},
+    };
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    struct msxml_ctx mxctx;
+    cli_ctx ctx;
+    fmap_t *map;
+    json_object *metadata;
+    xmlTextReaderPtr reader;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    memset(&engine, 0, sizeof(engine));
+    memset(&mxctx, 0, sizeof(mxctx));
+    memset(&ctx, 0, sizeof(ctx));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-attribute.xml", NULL, 0);
+    ck_assert_ptr_nonnull(reader);
+    ctx.engine                  = &engine;
+    ctx.options                 = &options;
+    ctx.fmap                    = map;
+    ctx.this_layer_metadata_json = metadata;
+
+    msxml_test_fail_attribute = 1;
+    ret = cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]),
+                                   MSXML_FLAG_JSON | MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
+    msxml_test_fail_attribute = 0;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML JSON attribute metadata could not be recorded");
+    ck_assert(map->dont_cache_flag);
+    xmlFreeTextReader(reader);
+    json_object_put(metadata);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    ctx.engine                  = &engine;
+    ctx.options                 = &options;
+    ctx.fmap                    = map;
+    ctx.this_layer_metadata_json = metadata;
+
+    msxml_test_fail_attribute = 1;
+    ret = cli_msxml_parse_document_streaming(&ctx, map, keys, sizeof(keys) / sizeof(keys[0]),
+                                             MSXML_FLAG_JSON | MSXML_FLAG_FAIL_INCOMPLETE, NULL);
+    msxml_test_fail_attribute = 0;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML JSON attribute metadata could not be recorded");
+    ck_assert(map->dont_cache_flag);
+    json_object_put(metadata);
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
 
 START_TEST(test_msxml_stream_time_limit_is_fail_visible)
 {
@@ -53746,6 +53887,10 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_msxml, test_msxml_base64_decode_failure_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_sticky_incomplete_result_is_fail_visible);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_msxml, test_msxml_count_metadata_failure_is_fail_visible);
+    tcase_add_test(tc_msxml, test_msxml_attribute_metadata_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_msxml, test_msxml_attribute_limit_is_fail_visible);
     tcase_add_test(tc_msxml, test_msxml_stream_time_limit_is_fail_visible);
     suite_add_tcase(s, tc_rust_map);

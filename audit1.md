@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## MSXML JSON metadata write visibility — 2026-09-01
+
+The shared MSXML reader and streaming parser discarded required JSON count and
+attribute write statuses. A fault in `cli_jsonint()` or `cli_jsonstr()` could
+therefore leave XML/OOXML/HWPML metadata incomplete while returning clean.
+Both paths now record the exact sticky reason and return the injected failure;
+the streaming path also stops the push parser immediately. The paired
+JSON-wrap regressions `test_msxml_count_metadata_failure_is_fail_visible` and
+`test_msxml_attribute_metadata_failure_is_fail_visible` exercise reader and
+streaming entry points and assert `CL_EMEM` plus non-cacheable maps.
+Current-source production-GCC compilation, production-linked execution,
+sanitizer, complete XML/OOXML/HWPML corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## OOXML metadata record failure visibility — 2026-09-01
 
 The OOXML content-types callback discarded the return values from its required

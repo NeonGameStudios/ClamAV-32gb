@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MSXML JSON metadata write visibility — 2026-09-01
+
+The shared MSXML reader and streaming parser now check required JSON count and
+attribute writes. A `cli_jsonint()` or `cli_jsonstr()` failure records a
+sticky incomplete result, prevents caching, and remains visible to the caller;
+the streaming parser stops immediately after the failed write. Paired
+JSON-wrap regressions cover reader and streaming count and attribute paths.
+Current-source production-linked execution, sanitizer, complete
+XML/OOXML/HWPML corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## Embedded PDF header context admission — 2026-09-01
 
 Embedded PDF raw dispatch now uses a context-aware header wrapper. It retains

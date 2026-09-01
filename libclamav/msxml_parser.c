@@ -144,6 +144,14 @@ static void msxml_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
         *status = cli_merge_cleanup_status(*status, cleanup_status);
 }
 
+static cl_error_t msxml_record_json_status(cli_ctx *ctx, cl_error_t status, const char *reason)
+{
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 static const struct key_entry *msxml_check_key(struct msxml_ictx *ictx, const xmlChar *key, size_t keylen)
 {
     unsigned i;
@@ -324,11 +332,17 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                     json_object *counter = NULL;
 
                     if (!json_object_object_get_ex(thisjobj, "Count", &counter)) { /* object not found */
-                        cli_jsonint(thisjobj, "Count", 1);
+                        ret = msxml_record_json_status(
+                            ctx, cli_jsonint(thisjobj, "Count", 1),
+                            "MSXML JSON count metadata could not be recorded");
                     } else {
                         int value = json_object_get_int(counter);
-                        cli_jsonint(thisjobj, "Count", value + 1);
+                        ret = msxml_record_json_status(
+                            ctx, cli_jsonint(thisjobj, "Count", value + 1),
+                            "MSXML JSON count metadata could not be recorded");
                     }
+                    if (ret != CL_SUCCESS)
+                        return ret;
                     cli_msxmlmsg("msxml_parse_element: retrieved json object [Count]\n");
                 }
 
@@ -365,7 +379,11 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                             value = xmlTextReaderConstValue(reader);
 
                             cli_msxmlmsg("\t%s: %s\n", name, value);
-                            cli_jsonstr(attributes, (char *)name, (const char *)value);
+                            ret = msxml_record_json_status(
+                                ctx, cli_jsonstr(attributes, (char *)name, (const char *)value),
+                                "MSXML JSON attribute metadata could not be recorded");
+                            if (ret != CL_SUCCESS)
+                                return ret;
                         }
                     } else if (state == -1)
                         return CL_EPARSE;
@@ -1139,6 +1157,7 @@ static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, cons
 {
     struct msxml_stream_state *state = (struct msxml_stream_state *)arg;
     struct msxml_stream_frame *frame;
+    cl_error_t ret;
     const struct key_entry *keyinfo;
     int i;
 
@@ -1209,9 +1228,13 @@ static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, cons
         if (keyinfo->type & MSXML_JSON_COUNT) {
             json_object *counter = NULL;
             if (!json_object_object_get_ex(frame->json_obj, "Count", &counter))
-                cli_jsonint(frame->json_obj, "Count", 1);
+                ret = cli_jsonint(frame->json_obj, "Count", 1);
             else
-                cli_jsonint(frame->json_obj, "Count", json_object_get_int(counter) + 1);
+                ret = cli_jsonint(frame->json_obj, "Count", json_object_get_int(counter) + 1);
+            if (ret != CL_SUCCESS) {
+                msxml_stream_fail(state, ret, "MSXML JSON count metadata could not be recorded");
+                return;
+            }
         }
 
         if (keyinfo->type & MSXML_JSON_MULTI) {
@@ -1253,8 +1276,13 @@ static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, cons
             msxml_stream_fail(state, CL_EMEM, "MSXML JSON attribute object allocation failed");
             return;
         }
-        for (i = 0; i < frame->num_attribs; i++)
-            cli_jsonstr(json_attrs, frame->attribs[i].key, frame->attribs[i].value);
+        for (i = 0; i < frame->num_attribs; i++) {
+            ret = cli_jsonstr(json_attrs, frame->attribs[i].key, frame->attribs[i].value);
+            if (ret != CL_SUCCESS) {
+                msxml_stream_fail(state, ret, "MSXML JSON attribute metadata could not be recorded");
+                return;
+            }
+        }
     }
 
     if (keyinfo->type & MSXML_SCAN_CB) {

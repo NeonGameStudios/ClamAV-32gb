@@ -1,5 +1,17 @@
 # Wishlist
 
+## MSXML JSON metadata write visibility — 2026-09-01
+
+- Keep reader-based and streaming MSXML fail-visible when required count or
+  attribute metadata cannot be recorded: return the JSON failure, record an
+  exact sticky incomplete reason, and prevent caching of the confirmed layer.
+- Retain the paired `test_msxml_count_metadata_failure_is_fail_visible` and
+  `test_msxml_attribute_metadata_failure_is_fail_visible` regressions under
+  the JSON wrapper; complete current-source production-GCC compilation and
+  production-linked execution, sanitizer, complete XML/OOXML/HWPML corpus,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## OOXML metadata record failure visibility — 2026-09-01
 
 - Keep the OOXML content-types callback fail-visible when required file-count
