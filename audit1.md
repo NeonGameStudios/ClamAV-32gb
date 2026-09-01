@@ -17351,6 +17351,24 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## Milter quota harness build refresh — 2026-09-01
+
+The dependency-free `check_clamfi_quota` target previously failed in the
+existing Docker CMake build because its standalone include list omitted the
+JSON-C and disabled-UnRAR interface directories required by `others.h`. The
+target now carries both `${JSONC_INCLUDE_DIRS}` and
+`${PROJECT_SOURCE_DIR}/libclamunrar_iface`; after transferring the canonical
+target and quota sources, Docker reconfigured, rebuilt, linked, and executed
+`check_clamfi_quota` successfully. This verifies the zero-value 32-GiB
+normalization, exact quota edges, overflow rejection, and bounded RejectMsg
+size policy without installing dependencies.
+
+The actual `clamav-milter` executable remains unbuilt because this environment
+has no libmilter headers/library and the configured build has `ENABLE_MILTER=OFF`.
+Full milter translation-unit, one-request-at-a-time service, production-CVD,
+sanitizer, materialized-large-file, Sonic1, and final release qualification
+remain open.
+
 ## Compressed-stream focused rerun — 2026-09-01
 
 The existing current-source production-linked GCC harness now has the

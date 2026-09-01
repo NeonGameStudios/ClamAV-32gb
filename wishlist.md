@@ -9853,6 +9853,18 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## Milter quota harness build refresh — 2026-09-01
+
+- Retain the standalone `check_clamfi_quota` target's explicit JSON-C and
+  disabled-UnRAR interface include paths; the canonical Docker rebuild and
+  execution now succeed and cover exact 32-GiB quota, overflow, and bounded
+  RejectMsg edges.
+- Do not install a milter dependency or infer service qualification from the
+  quota-only harness. Build the certified `clamav-milter` target when
+  libmilter is available, then add full translation-unit, one-request,
+  production-CVD, sanitizer, materialized-large-file, Sonic1, and release
+  evidence.
+
 ## Compressed-stream focused rerun — 2026-09-01
 
 - Retain the repository CMake materialization path for the encrypted BZip2

@@ -217,7 +217,9 @@ target_include_directories(check_clamfi_quota
     PRIVATE
         ${CMAKE_BINARY_DIR}
         ${PROJECT_SOURCE_DIR}/libclamav
-        ${PROJECT_SOURCE_DIR}/clamav-milter)
+        ${PROJECT_SOURCE_DIR}/libclamunrar_iface
+        ${PROJECT_SOURCE_DIR}/clamav-milter
+        ${JSONC_INCLUDE_DIRS})
 set_target_properties(check_clamfi_quota PROPERTIES COMPILE_FLAGS "${WARNCFLAGS}")
 
 #
