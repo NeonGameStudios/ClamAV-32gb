@@ -510,6 +510,18 @@ Sonic1, resource, and final qualification remain required.
   materialized-large-file, Sonic1 resource, and final parser/release
   qualification open.
 
+## ZIP masked-SFX current-source production rerun — 2026-09-01
+
+- Retain the current-source production-linked GCC results from the existing
+  Docker build: `zip` passes 14/14, `zip_sfx` 3/3, and `zip_map` 2/2.
+- Keep weak masked local headers unconfirmed, require the bounded central
+  directory before confirmation, preserve `LAYER_ATTRIBUTES_ZIP_CENTRAL`, and
+  dispatch confirmed full archives through `cli_unzip()` while ordinary local
+  records retain `cli_unzip_single()`.
+- Complete ZIP/SFX corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and final
+  parser/release qualification.
+
 ## HFS+ leaf-chain admission — 2026-08-31
 
 - Reconcile HFS+ B-tree header leaf metadata before walking a declared tree;

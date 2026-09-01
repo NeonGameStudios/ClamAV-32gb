@@ -106,6 +106,20 @@ certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1 resource, and final requirement-by-requirement release audit evidence
 remain open.
 
+## ZIP masked-SFX current-source production rerun — 2026-09-01
+
+The restarted existing Docker build retained the canonical production-linked
+test binary. Its current-source ZIP cases pass `zip` 14/14, `zip_sfx` 3/3,
+and `zip_map` 2/2. The SFX cases cover weak masked-header rejection, confirmed
+central-directory extent/read classification, the `LAYER_ATTRIBUTES_ZIP_CENTRAL`
+attribute, and exact nested-child matching; the ordinary ZIP case also covers
+central masked-value resolution and the existing ZIP64/descriptor boundaries.
+
+This confirms the masked ZIP-SFX implementation and focused regressions, not
+full ZIP/SFX qualification. Complete archive corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1
+resource, and final parser/release evidence remain open.
+
 ## Rust parser and FFI current-source rerun — 2026-09-01
 
 The existing Docker image actually provides Rust 1.63.0 and Cargo 1.65.0;
