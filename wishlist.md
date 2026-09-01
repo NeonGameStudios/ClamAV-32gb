@@ -11157,3 +11157,16 @@ qualification as required evidence.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification remain open.
+
+## RAR optional scanner entry boundaries — 2026-09-01
+
+- Keep the optional UnRAR scanner entry explicit at its API boundary: null
+  contexts return `CL_ENULLARG`, missing maps return `CL_EPARSE` with sticky
+  incomplete state, and missing engines return `CL_ENULLARG` before fmap
+  dereference or temporary staging.
+- Keep optional RAR clean completion fail-visible when the layer was already
+  incomplete, while preserving detections and stronger decoder/parser,
+  resource, read, timeout, and cleanup results. Enabled-UnRAR execution,
+  complete RAR/RAR-SFX corpus, sanitizer/leak, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.

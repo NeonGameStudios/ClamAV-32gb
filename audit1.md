@@ -19005,3 +19005,21 @@ still pending because the Docker harness cannot remount its full overlay;
 complete EGG/SFX corpus, sanitizer, certified Linux x86-64, production-CVD/
 service, materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+## RAR optional scanner entry boundaries — 2026-09-01
+
+The optional UnRAR-backed scanner entry dereferenced `ctx->fmap` before
+validating the context and had no final reconciliation for a clean result
+after a prior required step marked the layer incomplete. `cli_scanrar()` now
+rejects null contexts with `CL_ENULLARG`, reports a missing fmap as `CL_EPARSE`
+with sticky incomplete state, rejects a missing engine before staging, and
+reconciles clean completion against pre-existing sticky incompleteness while
+preserving detections and stronger decoder, parser, resource, read, timeout,
+and cleanup results.
+
+The implementation is source-guarded and recorded as an optional-backend
+pending capability. The reusable container has no UnRAR backend and is also
+currently unable to remount because Docker reports no overlay space, so
+enabled-UnRAR compilation/execution, complete RAR/RAR-SFX corpus, sanitizer/
+leak, certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain open.

@@ -367,6 +367,14 @@ static cl_error_t cli_rar_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+static cl_error_t cli_rar_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 #define RAR_COMMENT_WRITE_CHUNK (64U * 1024U)
 
 static cl_error_t cli_rar_write_comment(cli_ctx *ctx, int fd, const char *comment, uint32_t comment_size)
@@ -937,6 +945,15 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
     uint64_t temporary_size = 0;
     bool temporary_reserved = false;
 
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "RAR input map is unavailable");
+        return CL_EPARSE;
+    }
+    if (ctx->engine == NULL)
+        return CL_ENULLARG;
+
     if ((SCAN_UNPRIVILEGED) ||
         (NULL == ctx->fmap->path) ||
         (0 != access(ctx->fmap->path, R_OK)) ||
@@ -1014,7 +1031,7 @@ done:
     if (tmpname != NULL) {
         free(tmpname);
     }
-    return status;
+    return cli_rar_reconcile_status(ctx, status);
 }
 
 /**

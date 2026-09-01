@@ -11767,6 +11767,21 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## RAR optional scanner entry boundaries — 2026-09-01
+
+When the optional UnRAR backend is enabled, `cli_scanrar()` now validates its
+context before using the current fmap: null contexts return `CL_ENULLARG`, a
+missing fmap returns `CL_EPARSE` with sticky incomplete state, and a missing
+engine returns `CL_ENULLARG` before input staging. Clean completion is also
+reconciled against pre-existing sticky incomplete state, while detections and
+stronger decoder, parser, resource, read, timeout, and cleanup failures retain
+precedence.
+
+This is source-level optional-backend evidence only. Enabled-UnRAR
+production-linked execution, complete RAR/RAR-SFX corpus, sanitizer/leak,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## SWF compressed direct completion — 2026-09-01
 
 The CWS and ZWS branches of `cli_scanswf()` now reconcile clean decoder
