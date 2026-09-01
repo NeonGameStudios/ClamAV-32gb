@@ -870,6 +870,14 @@ static void autoit_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int fa
     *status = cli_merge_cleanup_status(*status, cleanup_status);
 }
 
+static cl_error_t autoit_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 static cl_error_t autoit_release_temp_member(cli_ctx *ctx, int *tempfd, char **tempfile,
                                              uint64_t *temporary_reserved, cl_error_t status)
 {
@@ -2630,5 +2638,5 @@ cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset)
                                 "AutoIt temporary directory could not be removed");
 
     free(tmpd);
-    return status;
+    return autoit_reconcile_status(ctx, status);
 }

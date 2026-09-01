@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## AutoIt direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scanautoit()` could return clean after a valid EA06 script extraction when
+the recognized layer already carried sticky incomplete state. Its final direct
+return now converts only clean/`CL_SUCCESS` results in that state to
+`CL_EPARSE`, preserving detections and stronger decoder, I/O, limit, timeout,
+and cleanup results. The regression
+`test_autoit_sticky_incomplete_result_is_fail_visible` uses the materialized
+valid `autoit-ea06-script.bin` fixture, a production engine, and an isolated
+nested-scan handoff; it asserts the exact prior diagnostic and
+non-cacheability. The current-source production-linked GCC isolation runner
+passes with a clean untainted baseline and `CL_EPARSE` under sticky state,
+while the exact pre-change object returns clean for both cases. Current AutoIt
+source and unit translation unit compile with production GCC flags; full
+current AutoIt TCase relink/execution, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## ZIP direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_unzip()` and the ordinary `cli_unzip_single()` entry could return clean

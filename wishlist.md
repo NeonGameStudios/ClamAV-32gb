@@ -1,5 +1,21 @@
 # Wishlist
 
+## AutoIt direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scanautoit()` fail-visible for direct callers when valid EA06 script
+  extraction completes with a pre-existing sticky incomplete state. Clean
+  completion now returns `CL_EPARSE`, while detections and stronger decoder,
+  I/O, limit, timeout, and cleanup errors remain authoritative.
+- Retain `test_autoit_sticky_incomplete_result_is_fail_visible`, which uses the
+  materialized valid `autoit-ea06-script.bin` fixture and an isolated nested
+  handoff, checking the exact prior reason and non-cacheability. The
+  current-source production-linked GCC isolation runner passes with a clean
+  untainted baseline and `CL_EPARSE` under sticky state, and the pre-change
+  comparison returns clean for both cases. Keep full current AutoIt TCase
+  relink/execution, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification open.
+
 ## ZIP direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_unzip()` and `cli_unzip_single()` fail-visible for direct callers
