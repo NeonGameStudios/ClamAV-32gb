@@ -19097,3 +19097,17 @@ the capability manifest pin both return paths. Current-source production-
 linked matcher execution, complete signature/ABI corpus, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
 resource, and final matcher/release qualification remain required.
+## Matcher metadata engine admission — 2026-09-01
+
+The low-level `cli_matchmeta()` entry previously allowed a valid recursion
+context with no owning engine to skip metadata callbacks and CDB member
+matching, then return `CL_CLEAN`. It now rejects that incomplete admission as
+`CL_ENULLARG` before any callback or CDB access. Context/stack validation and
+the normal no-CDB clean result for an initialized engine remain unchanged.
+
+`test_matcher_entry_points_reject_invalid_contexts` now covers the missing-
+engine path alongside the existing matcher entrypoint checks. Source guards
+and the capability manifest pin the boundary. Current-source production-linked
+matcher execution, complete archive-metadata/signature corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final matcher/release qualification remain required.

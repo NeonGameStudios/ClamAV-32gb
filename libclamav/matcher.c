@@ -2254,12 +2254,16 @@ cl_error_t cli_matchmeta(cli_ctx *ctx, const char *fname, size_t fsizec, size_t 
         cli_errmsg("cli_matchmeta: invalid scan context or recursion stack\n");
         return CL_ENULLARG;
     }
+    if (!ctx->engine) {
+        cli_errmsg("cli_matchmeta: engine == NULL\n");
+        return CL_ENULLARG;
+    }
 
     cli_dbgmsg("CDBNAME:%s:%llu:%s:%llu:%llu:%d:%u:%u\n",
                cli_ftname(cli_recursion_stack_get_type(ctx, -1)), (long long unsigned)fsizec, fname ? fname : "n/a", (long long unsigned)fsizec, (long long unsigned)fsizer,
                encrypted, filepos, res1);
 
-    if (ctx->engine && ctx->engine->cb_meta) {
+    if (ctx->engine->cb_meta) {
         if (ctx->engine->cb_meta(cli_ftname(cli_recursion_stack_get_type(ctx, -1)), fsizec, fname, fsizer, encrypted, filepos, ctx->cb_ctx) == CL_VIRUS) {
             cli_dbgmsg("inner file blocked by callback: %s\n", fname);
 
@@ -2270,7 +2274,7 @@ cl_error_t cli_matchmeta(cli_ctx *ctx, const char *fname, size_t fsizec, size_t 
         }
     }
 
-    if (NULL == ctx->engine || (NULL == (cdb = ctx->engine->cdb))) {
+    if (NULL == (cdb = ctx->engine->cdb)) {
         return CL_CLEAN;
     }
 

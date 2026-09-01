@@ -11218,3 +11218,12 @@ final parser/release qualification remain open.
   signature/ABI corpus, sanitizer, certified Linux x86-64, production-CVD/
   service, materialized-large-file, Sonic1, resource, and final matcher/release
   qualification remain open.
+## Matcher metadata engine admission — 2026-09-01
+
+- Keep cli_matchmeta() from treating missing engine ownership as clean: return
+  CL_ENULLARG before metadata callbacks or CDB member matching.
+- Retain the missing-engine matcher regression and source guards. Current-source
+  production-linked matcher execution, complete archive-metadata/signature
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final matcher/release
+  qualification remain open.

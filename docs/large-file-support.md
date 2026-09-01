@@ -11880,3 +11880,17 @@ Current-source production-linked matcher execution, complete signature/ABI
 corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final matcher/release
 qualification remain required.
+## Matcher metadata engine admission — 2026-09-01
+
+Direct `cli_matchmeta()` now rejects a valid recursion context without an
+owning engine as `CL_ENULLARG` before metadata callbacks or CDB member
+matching. This prevents required member-metadata inspection from being
+silently skipped and reported as clean; initialized engines without a CDB
+retain the normal clean result.
+
+`test_matcher_entry_points_reject_invalid_contexts` covers the missing-engine
+path, with source guards and the capability manifest pinning the boundary.
+Current-source production-linked matcher execution, complete
+archive-metadata/signature corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+matcher/release qualification remain required.

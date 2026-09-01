@@ -2716,6 +2716,7 @@ START_TEST(test_matcher_entry_points_reject_invalid_contexts)
     ck_assert_int_eq(cli_scan_desc(-1, &missing_engine, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL, NULL, NULL,
                                    LAYER_ATTRIBUTES_NONE),
                      CL_ENULLARG);
+    ck_assert_int_eq(cli_matchmeta(&missing_engine, NULL, 0, 0, 0, 0, 0), CL_ENULLARG);
     ck_assert_int_eq(cli_check_fp(&missing_engine, NULL), CL_ENULLARG);
 
     missing_stack = ctx;
