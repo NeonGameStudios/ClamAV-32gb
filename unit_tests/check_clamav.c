@@ -19453,6 +19453,26 @@ START_TEST(test_cli_magic_scan_missing_recursion_state_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_cli_magic_scan_nested_entrypoints_reject_invalid_inputs)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.dboptions = CL_DB_COMPILED;
+    ctx.engine       = &engine;
+    ctx.options      = &options;
+
+    ck_assert_int_eq(cli_magic_scan_nested_fmap_type(NULL, 0, 0, &ctx, CL_TYPE_ANY, NULL,
+                                                     LAYER_ATTRIBUTES_NONE),
+                     CL_ENULLARG);
+    ck_assert_int_eq(cli_magic_scan_buff(NULL, 1, &ctx, NULL, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_ignored_file_type_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -53278,6 +53298,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_binhex_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_recursion_state_is_fail_visible);
+    tcase_add_test(tc_cl, test_cli_magic_scan_nested_entrypoints_reject_invalid_inputs);
     tcase_add_test(tc_cl, test_ignored_file_type_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_short_resource_fork_is_fail_visible);

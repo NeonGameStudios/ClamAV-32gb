@@ -8,10 +8,24 @@ size, or `recursion_level`. A malformed library caller could therefore turn a
 missing or out-of-range scan-state object into an out-of-bounds dereference.
 The entry now marks the available fmap incomplete and returns `CL_ENULLARG`
 before parser dispatch. `test_cli_magic_scan_missing_recursion_state_is_fail_visible`
-covers the missing-stack case, including the sticky reason and non-cacheability;
-the new source guard is present. Production-linked execution, sanitizer,
+covers missing-stack, zero-capacity, and out-of-range-level cases, including
+the sticky reason and non-cacheability; the new source guard is present.
+Production-linked execution, sanitizer,
 certified Linux x86-64, service/CVD, materialized-large-file, Sonic1, resource,
 and final release qualification remain open.
+
+## Exported nested-scan entrypoint admission — 2026-09-01
+
+The exported `cli_magic_scan_nested_fmap_type()` logged `map->len` before
+validating its map, so a null map could crash a library caller before the
+documented error return. The `cli_magic_scan_buff()` convenience wrapper also
+allowed a nonzero-length null buffer to reach fmap construction. Both
+entrypoints now reject invalid arguments with `CL_ENULLARG` before dereference
+or allocation. `test_cli_magic_scan_nested_entrypoints_reject_invalid_inputs`
+covers the null-map and null-buffer boundaries, and the source guards are
+present. Production-linked execution, sanitizer, certified Linux x86-64,
+service/CVD, materialized-large-file, Sonic1, resource, and final release
+qualification remain open.
 
 ## Rust parser exported-entry sticky reconciliation — 2026-09-01
 

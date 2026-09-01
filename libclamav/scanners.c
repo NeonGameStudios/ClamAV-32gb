@@ -8426,10 +8426,11 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
     cl_error_t ret = CL_SUCCESS;
     bool explicit_length;
 
-    cli_dbgmsg("cli_magic_scan_nested_fmap_type: [%zu, +%zu)\n", offset, length);
     if (NULL == map || NULL == ctx || NULL == ctx->engine) {
         return CL_ENULLARG;
     }
+
+    cli_dbgmsg("cli_magic_scan_nested_fmap_type: [%zu, +%zu)\n", offset, length);
 
     explicit_length = (length != 0);
     if (offset > map->len || (explicit_length && (offset == map->len || length > map->len - offset))) {
@@ -8543,6 +8544,10 @@ cl_error_t cli_magic_scan_buff(const void *buffer, size_t length, cli_ctx *ctx, 
 {
     cl_error_t ret;
     fmap_t *map = NULL;
+
+    if (NULL == ctx || NULL == ctx->engine || (NULL == buffer && length != 0)) {
+        return CL_ENULLARG;
+    }
 
     map = fmap_open_memory(buffer, length, name);
     if (!map) {

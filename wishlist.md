@@ -11,6 +11,17 @@
   service/CVD, materialized-large-file, Sonic1, resource, and final release
   qualification.
 
+## Exported nested-scan entrypoint admission — 2026-09-01
+
+- Keep `cli_magic_scan_nested_fmap_type()` and `cli_magic_scan_buff()` fail
+  visible for null maps, invalid contexts, and nonzero-length null buffers
+  before any map dereference or construction.
+- Retain `test_cli_magic_scan_nested_entrypoints_reject_invalid_inputs` and
+  the source guards for these API boundaries.
+- Complete production-linked execution, sanitizer, certified Linux x86-64,
+  service/CVD, materialized-large-file, Sonic1, resource, and final release
+  qualification.
+
 ## Rust parser exported-entry sticky reconciliation — 2026-09-01
 
 - Keep `scan_lha_lzh()`, `cli_scanalz()`, and `scan_onenote()` fail-visible for
