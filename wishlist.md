@@ -506,8 +506,10 @@ Sonic1, resource, and final qualification remain required.
 
 ## fmap and 7-Zip focused current-source revalidation — 2026-09-01
 
-- Retain the canonical-source Docker hash equality and production-linked GCC
-  evidence: `fmap_api` passes 2/2 across memory, descriptor, nested, and
+- Retain canonical/container SHA-256 equality for `fmap.c`, `fmap.h`,
+  `special.c`, `scanners.c`, and `check_clamav.c`; the current test source hash
+  is `71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`.
+  Retain the production-linked GCC evidence: `fmap_api` passes 2/2 across memory, descriptor, nested, and
   dumped-map `fmap_gets()` paths; matcher `swizz` passes 1/1; and 7-Zip passes
   `7z` 20/20, `7z_map` 3/3, `7z_sfx` 2/2, and `7z_sfx_corpus` 1/1.
 - Keep one-byte `fmap_gets()` no-consume behavior and descriptor-backed

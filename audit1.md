@@ -91,8 +91,15 @@ parser/release qualification remain open.
 
 ## fmap and 7-Zip focused current-source revalidation — 2026-09-01
 
-The canonical `fmap.c`, `check_clamav.c`, and related unit-test sources match
-the existing Docker production-linked GCC snapshot by SHA-256. The isolated
+The canonical `fmap.c`, `fmap.h`, `special.c`, `scanners.c`, and
+`check_clamav.c` sources match the existing Docker production-linked GCC
+snapshot by SHA-256: `fmap.c`
+`2c8e08b6942583ecf3682c1b22bd46e79ab7d51e25106dca95eaa1c93b1b4b79`, `fmap.h`
+`e3b0888c1acb7682f5e5ad176b24a9fbcd8288a353cb4eb96d2eefcf28ae2c86`,
+`special.c` `39b2f780cb755f200ad3af684dda23023d7ede6271c33fc29d131ec286747aed`,
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+and `check_clamav.c`
+`71e425b6f36591002cf0980ea3325f794be3020ae26792c81ba45edc71b081f8`. The isolated
 `fmap_api` TCase passes 2/2, covering memory-, descriptor-, nested-, and
 dumped-map `fmap_gets()` behavior, including the one-byte destination contract
 and injected multi-page read-failure cleanup. The matcher `swizz` TCase passes
