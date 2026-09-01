@@ -135,6 +135,14 @@ cl_error_t cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx,
 cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type);
 
 /**
+ * @brief Scan an EGG archive in the current fmap.
+ *
+ * This parser entry is exposed through the internal scanner interface so its
+ * context, completion, and resource boundaries can be exercised directly.
+ */
+cl_error_t cli_scanegg(cli_ctx *ctx);
+
+/**
  * @brief Scan the current fmap for configured structured-data heuristics.
  *
  * A backing-map read failure is incomplete rather than a clean result.

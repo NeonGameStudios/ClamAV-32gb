@@ -18987,3 +18987,21 @@ currently unavailable because its stopped container cannot remount on the
 full overlay, so current-source relink/execution, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
 and final parser/release qualification remain open.
+
+## EGG direct scanner entry boundaries — 2026-09-01
+
+The internal EGG scanner entry previously accepted a context without an input
+fmap and relied on the archive opener to report the resulting argument error;
+it also returned a clean result from a valid empty archive even when an earlier
+required scan step had already marked the layer incomplete. `cli_scanegg()` now
+rejects null contexts with `CL_ENULLARG`, reports a missing fmap as
+`CL_EPARSE` with sticky incomplete state, rejects a missing engine before
+archive indexing, and reconciles clean completion against pre-existing sticky
+incompleteness while preserving detections and stronger failures.
+
+`test_egg_scan_entry_boundaries_are_fail_visible` is registered in the EGG map
+TCase and source-guarded. Current-source production-linked relink/execution is
+still pending because the Docker harness cannot remount its full overlay;
+complete EGG/SFX corpus, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

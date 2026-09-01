@@ -11749,6 +11749,24 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## EGG direct scanner entry boundaries — 2026-09-01
+
+The internal EGG scanner entry now rejects a null context with `CL_ENULLARG`,
+reports a missing input fmap as `CL_EPARSE` with sticky incomplete state, and
+rejects a missing engine before archive indexing. A valid empty EGG archive
+also cannot return clean when its confirmed layer already carries sticky
+incomplete state; clean completion is reconciled to `CL_EPARSE` while
+detections and stronger parser, resource, read, timeout, and cleanup failures
+retain precedence.
+
+The direct boundary regression is
+`test_egg_scan_entry_boundaries_are_fail_visible`, with source guards covering
+the exported internal entry, admission checks, reconciliation, and TCase
+registration. Production-linked relink/execution, complete EGG/SFX corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## SWF compressed direct completion — 2026-09-01
 
 The CWS and ZWS branches of `cli_scanswf()` now reconcile clean decoder

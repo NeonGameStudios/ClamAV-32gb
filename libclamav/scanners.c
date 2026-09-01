@@ -1306,7 +1306,15 @@ static cl_error_t cli_egg_scan_metadata_ranges(void *hArchive, cli_ctx *ctx)
     }
 }
 
-static cl_error_t cli_scanegg(cli_ctx *ctx)
+static cl_error_t egg_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
+cl_error_t cli_scanegg(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
     cl_error_t egg_ret;
@@ -1328,7 +1336,14 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
 
     if (ctx == NULL) {
         cli_dbgmsg("EGG: Invalid arguments!\n");
-        return CL_EARG;
+        return CL_ENULLARG;
+    }
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "EGG input map is unavailable");
+        return CL_EPARSE;
+    }
+    if (ctx->engine == NULL) {
+        return CL_ENULLARG;
     }
 
     cli_dbgmsg("in scanegg()\n");
@@ -1599,7 +1614,7 @@ done:
 
     cli_dbgmsg("EGG: Exit code: %d\n", status);
 
-    return status;
+    return egg_reconcile_status(ctx, status);
 }
 
 static void cli_arj_close_output(cli_ctx *ctx, int *fd, cl_error_t *status)

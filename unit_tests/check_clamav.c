@@ -30787,6 +30787,67 @@ START_TEST(test_egg_sfx_header_admission)
 }
 END_TEST
 
+START_TEST(test_egg_scan_entry_boundaries_are_fail_visible)
+{
+    static const uint8_t empty_egg[] = {
+        0x45, 0x47, 0x47, 0x41, /* EGG_HEADER_MAGIC */
+        0x00, 0x01,             /* EGG_HEADER_VERSION */
+        0x01, 0x00, 0x00, 0x00, /* nonzero header id */
+        0x00, 0x00, 0x00, 0x00, /* reserved */
+        0x22, 0x82, 0xe2, 0x08  /* EOFARC */
+    };
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    ck_assert_int_eq(cli_scanegg(NULL), CL_ENULLARG);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ck_assert_int_eq(cli_scanegg(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG input map is unavailable");
+
+    map = cl_fmap_open_memory(empty_egg, sizeof(empty_egg));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanegg(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.this_layer_tmpdir    = tmpdir;
+    layer.type               = CL_TYPE_EGG;
+    layer.size               = sizeof(empty_egg);
+    layer.fmap               = map;
+    ck_assert_int_eq(cli_scanegg(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing EGG incomplete state";
+    map->dont_cache_flag       = true;
+    ck_assert_int_eq(cli_scanegg(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing EGG incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_egg_sfx_admission_reaches_nested_matcher)
 {
     enum {
@@ -52745,6 +52806,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_egg_metadata, test_egg_codepage_filename_is_streamed_and_scanned);
     suite_add_tcase(s, tc_egg_map);
     tcase_add_checked_fixture(tc_egg_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_egg_map, test_egg_scan_entry_boundaries_are_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_fixed_header_range_classes_are_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_archive_header_fields_are_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_extra_field_range_classes_are_fail_visible);

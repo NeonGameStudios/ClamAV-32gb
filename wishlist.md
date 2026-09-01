@@ -11145,3 +11145,15 @@ qualification as required evidence.
   original diagnostic, fmap non-cacheability, and source guards. Current
   production-linked relink/execution and all final SWF/release qualification
   gates remain open while the Docker harness is unavailable.
+
+## EGG direct scanner entry boundaries — 2026-09-01
+
+- Keep the internal EGG scanner entry explicit at its API boundary: null
+  contexts return `CL_ENULLARG`, missing maps return `CL_EPARSE` with sticky
+  incomplete state, and missing engines return `CL_ENULLARG` before indexing.
+- Keep valid empty EGG completion fail-visible when the layer was already
+  incomplete; retain the exact prior diagnostic and fmap non-cacheability.
+  Current-source production-linked execution, complete EGG/SFX corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
