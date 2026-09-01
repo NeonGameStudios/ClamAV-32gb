@@ -40918,6 +40918,53 @@ START_TEST(test_pe32plus_common_inspection_and_import_failures_are_visible)
 }
 END_TEST
 
+START_TEST(test_pe_import_result_failure_is_fail_visible)
+{
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    uint8_t data[PE32PLUS_TEST_FILE_SIZE];
+    fmap_t *map;
+    cl_error_t ret;
+
+    build_pe32plus_import_fixture(data, sizeof(data));
+    cli_writeint32(data + PE32PLUS_TEST_IMPORT_DESCRIPTOR_OFFSET + 12U, 0x1fffU);
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                   = scan_engine;
+    ctx.dconf                    = scan_engine->dconf;
+    ctx.options                  = &options;
+    ctx.fmap                     = map;
+    ctx.this_layer_tmpdir        = tmpdir;
+    ctx.this_layer_metadata_json = json_object_new_object();
+    ck_assert_ptr_nonnull(ctx.this_layer_metadata_json);
+    ctx.recursion_stack          = &layer;
+    ctx.recursion_stack_size     = 1;
+    layer.fmap                   = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PE import inspection returned a non-success result");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(ctx.this_layer_metadata_json);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JSON_WRAP
 START_TEST(test_pe_import_metadata_record_failure_is_fail_visible)
 {
@@ -53580,6 +53627,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_pe32plus);
     tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);
     tcase_add_test(tc_pe32plus, test_pe32plus_common_inspection_and_import_failures_are_visible);
+    tcase_add_test(tc_pe32plus, test_pe_import_result_failure_is_fail_visible);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_pe32plus, test_pe_import_metadata_record_failure_is_fail_visible);
     tcase_add_test(tc_pe32plus, test_pe_header_metadata_record_failure_is_fail_visible);

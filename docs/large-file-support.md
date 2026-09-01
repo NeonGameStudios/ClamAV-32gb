@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PE import result reconciliation — 2026-09-01
+
+The owning `cli_scanpe()` boundary now marks the confirmed PE layer incomplete
+and non-cacheable when `scan_pe_imp()` returns an invalid-argument or other
+non-success result without already recording a specific reason. The original
+parser or resource status remains authoritative. The malformed-import
+regression `test_pe_import_result_failure_is_fail_visible` covers this
+previously unmarked path. Current-source production-linked execution,
+sanitizer, complete PE/import corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## PE header metadata record failure — 2026-09-01
 
 The PE header parser now checks creation of its metadata object and every

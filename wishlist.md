@@ -1,5 +1,16 @@
 # Wishlist
 
+## PE import result reconciliation — 2026-09-01
+
+- Keep every non-success `scan_pe_imp()` result fail-visible at the owning PE
+  boundary: retain the original status, record an exact sticky diagnostic
+  when the import pass did not already do so, and prevent fmap caching.
+- Retain `test_pe_import_result_failure_is_fail_visible` and its source
+  guards; complete current-source production-GCC compilation and
+  production-linked execution, sanitizer, complete PE/import corpus,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## PE header metadata record failure — 2026-09-01
 
 - Keep every required PE header JSON write fail-visible, including metadata

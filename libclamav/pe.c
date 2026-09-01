@@ -3431,6 +3431,7 @@ int cli_scanpe(cli_ctx *ctx)
                 cli_warnmsg("cli_scanpe: NULL argument supplied\n");
                 /* The import-table pass is required when enabled; preserve
                  * an invalid invocation instead of continuing as clean. */
+                cli_mark_scan_incomplete(ctx, "PE import inspection received an invalid argument");
                 cli_exe_info_destroy(peinfo);
                 return ret;
             case CL_VIRUS:
@@ -3438,6 +3439,7 @@ int cli_scanpe(cli_ctx *ctx)
                 cli_exe_info_destroy(peinfo);
                 return ret == CL_VIRUS ? CL_VIRUS : CL_CLEAN;
             default:
+                cli_mark_scan_incomplete(ctx, "PE import inspection returned a non-success result");
                 cli_exe_info_destroy(peinfo);
                 return ret;
         }

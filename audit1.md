@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## PE import result reconciliation — 2026-09-01
+
+`cli_scanpe()` returned directly from non-success `scan_pe_imp()` results
+without marking the owning confirmed layer incomplete. Malformed import
+coordinates and some allocation failures could therefore leave the map
+cacheable even though the enabled import inspection stopped. The owning
+boundary now records an exact sticky diagnostic for invalid-argument and
+other import-pass failures before returning the original status. The
+malformed-import regression `test_pe_import_result_failure_is_fail_visible`
+requires `CL_EFORMAT`, the reconciliation diagnostic, and fmap
+non-cacheability. Current-source production-GCC compilation,
+production-linked execution, sanitizer, complete PE/import corpus, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.
+
 ## PE header metadata record failure — 2026-09-01
 
 The PE header metadata path discarded every `cli_json*()` result and could
