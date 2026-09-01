@@ -92,6 +92,14 @@ static cl_error_t nsis_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+static cl_error_t nsis_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 #define LINESTR(x) #x
 #define LINESTR2(x) LINESTR(x)
 #define __AT__ " at "__FILE__ \
@@ -928,5 +936,5 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
 
     free(nsist.dir);
 
-    return ret;
+    return nsis_reconcile_status(ctx, ret);
 }

@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## NSIS direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scannulsft()` could return clean after a complete header-only Nullsoft
+archive when the recognized layer already carried sticky incomplete state. Its
+final clean result now reconciles that state to `CL_EPARSE`, preserving stronger
+decoder, I/O, timeout, limit, detection, and cleanup results. The regression
+`test_nsis_sticky_incomplete_result_is_fail_visible` uses a complete synthetic
+header-only archive with an initialized production engine and asserts the exact
+prior diagnostic plus non-cacheability. The current-source production-linked
+GCC isolation runner passes clean untainted and `CL_EPARSE` sticky cases, while
+the exact pre-change object returns clean for both. Current NSIS source and the
+Check translation unit compile with production GCC flags; full current NSIS
+TCase relink/execution, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## MSPack direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scanmscab()` and `cli_scanmschm()` could return clean after valid CAB or

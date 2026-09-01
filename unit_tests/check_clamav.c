@@ -31617,6 +31617,59 @@ START_TEST(test_nsis_header_range_classes_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_nsis_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t archive[32];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(archive, 0, sizeof(archive));
+    cli_writeint32(archive, UINT32_C(0xdeadbeef));
+    memcpy(archive + 4, "NullsoftInst", 12);
+    cli_writeint32(archive + 0x14, 0x1c);
+    cli_writeint32(archive + 0x18, sizeof(archive));
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+
+    layers[0].fmap           = map;
+    layers[0].type           = CL_TYPE_NULSFT;
+    layers[0].size           = map->len;
+    layers[0].tmpdir         = tmpdir;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.scan_incomplete      = true;
+    ctx.scan_incomplete_reason = "pre-existing NSIS incomplete state";
+    map->dont_cache_flag     = true;
+
+    ck_assert_int_eq(cli_scannulsft(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing NSIS incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_nsis_missing_map_entry_points_are_fail_visible)
 {
     cli_ctx ctx;
@@ -52443,6 +52496,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_nulsft, test_nsis_missing_engine_is_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_time_limit_is_fail_visible);
+    tcase_add_test(tc_nulsft, test_nsis_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_nulsft_corpus);
     tcase_add_checked_fixture(tc_nulsft_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_nulsft_corpus, test_nsis_corpus_detects_embedded_mz);

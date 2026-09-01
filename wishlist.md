@@ -1,5 +1,20 @@
 # Wishlist
 
+## NSIS direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scannulsft()` fail-visible for direct callers when a complete
+  header-only Nullsoft archive finishes with a pre-existing sticky incomplete
+  state. Clean completion now returns `CL_EPARSE`, while stronger decoder,
+  I/O, timeout, limit, detection, and cleanup errors remain authoritative.
+- Retain `test_nsis_sticky_incomplete_result_is_fail_visible`, which uses a
+  complete synthetic archive and an initialized production engine to check the
+  exact prior reason plus non-cacheability. The current-source
+  production-linked GCC isolation runner passes clean untainted and `CL_EPARSE`
+  sticky cases, and the pre-change comparison returns clean for both. Keep
+  full current NSIS TCase relink/execution, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  parser/release qualification open.
+
 ## MSPack direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scanmscab()` and `cli_scanmschm()` fail-visible for direct callers
