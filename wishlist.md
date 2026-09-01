@@ -1,5 +1,19 @@
 # Wishlist
 
+## CPIO direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep the old-binary, ODC, and NEWC CPIO direct entries fail-visible when a
+  valid trailer-only archive completes with a pre-existing sticky incomplete
+  state. Clean completion now returns `CL_EPARSE`, while detections and
+  stronger parser or resource errors remain preserved.
+- Retain `test_cpio_sticky_incomplete_result_is_fail_visible`, which uses valid
+  trailer-only fixtures for all three formats and checks the exact prior reason
+  plus non-cacheability. The current-source production-linked GCC isolation
+  runner passes 3/3 and the pre-change comparison returns clean for all three
+  formats. Keep full current CPIO TCase relink/execution, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification open.
+
 ## MSXML direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_msxml_parse_document()` and

@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## CPIO direct sticky-incomplete reconciliation — 2026-09-01
+
+The old-binary, ODC, and NEWC CPIO direct entries could finish a valid
+trailer-only archive with clean status while the recognized layer already
+carried sticky incomplete state. All three direct parser exits now reconcile
+clean completion to `CL_EPARSE`, preserving detections and stronger parser or
+resource errors. The valid trailer-only regression
+`test_cpio_sticky_incomplete_result_is_fail_visible` covers all three formats
+and asserts the exact prior diagnostic plus non-cacheability. The current-source
+production-linked GCC isolation runner passes 3/3, while the pre-change
+comparison returns clean for all three formats. Current CPIO source and unit
+translation unit compile with production GCC flags; full current CPIO TCase
+relink/execution, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## MSXML direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_msxml_parse_document()` and `cli_msxml_parse_document_streaming()` could

@@ -22544,6 +22544,80 @@ START_TEST(test_cpio_old_high_word_size_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_cpio_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t old_archive[38] = {0};
+    uint8_t odc_archive[87];
+    uint8_t newc_archive[124];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(odc_archive, '0', sizeof(odc_archive));
+    memset(newc_archive, '0', sizeof(newc_archive));
+    cpio_test_write_u16le(old_archive, 070707);
+    cpio_test_write_u16le(old_archive + 20, 11);
+    memcpy(old_archive + 26, "TRAILER!!!", 10);
+    old_archive[36] = '\0';
+    memcpy(odc_archive, "070707", 6);
+    memcpy(odc_archive + 59, "000013", 6);
+    memcpy(odc_archive + 76, "TRAILER!!!", 10);
+    odc_archive[86] = '\0';
+    memcpy(newc_archive, "070701", 6);
+    cpio_test_write_hex8(newc_archive + 94, 11);
+    memcpy(newc_archive + 110, "TRAILER!!!", 10);
+    newc_archive[120] = '\0';
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                 = &engine;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing CPIO incomplete state";
+
+    map = cl_fmap_open_memory(old_archive, sizeof(old_archive));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap              = map;
+    map->dont_cache_flag  = true;
+    ret                   = cli_scancpio_old(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing CPIO incomplete state");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                 = &engine;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing CPIO incomplete state";
+    map = cl_fmap_open_memory(odc_archive, sizeof(odc_archive));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap             = map;
+    map->dont_cache_flag = true;
+    ret                   = cli_scancpio_odc(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing CPIO incomplete state");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                 = &engine;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing CPIO incomplete state";
+    map = cl_fmap_open_memory(newc_archive, sizeof(newc_archive));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap             = map;
+    map->dont_cache_flag = true;
+    ret                   = cli_scancpio_newc(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing CPIO incomplete state");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_iso_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -51387,6 +51461,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_cpio);
     tcase_add_checked_fixture(tc_cpio, cl_setup, cl_teardown);
     tcase_add_test(tc_cpio, test_cpio_corpus_detects_embedded_mz);
+    tcase_add_test(tc_cpio, test_cpio_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_cpio_crc);
     tcase_add_checked_fixture(tc_cpio_crc, cl_setup, cl_teardown);
     tcase_add_test(tc_cpio_crc, test_cpio_crc_member_reaches_nested_matchers);

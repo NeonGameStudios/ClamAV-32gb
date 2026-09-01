@@ -169,6 +169,14 @@ static cl_error_t cpio_validate_context(cli_ctx *ctx)
     return CL_SUCCESS;
 }
 
+static cl_error_t cpio_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 static int cpio_parse_hex_u32(const char field[8], uint32_t *value)
 {
     uint32_t parsed = 0;
@@ -425,7 +433,7 @@ done:
         }
     }
 
-    return status;
+    return cpio_reconcile_status(ctx, status);
 }
 
 cl_error_t cli_scancpio_odc(cli_ctx *ctx)
@@ -560,7 +568,7 @@ done:
         }
     }
 
-    return status;
+    return cpio_reconcile_status(ctx, status);
 }
 
 cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
@@ -730,5 +738,5 @@ done:
         }
     }
 
-    return status;
+    return cpio_reconcile_status(ctx, status);
 }
