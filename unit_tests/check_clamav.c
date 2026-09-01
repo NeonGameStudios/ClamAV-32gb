@@ -43245,6 +43245,33 @@ START_TEST(test_arjsfx_weak_candidate_is_rejected_without_incomplete_state)
 }
 END_TEST
 
+START_TEST(test_arjsfx_header_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[12];
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    arj_test_build_sfx_prefix(data, sizeof(data));
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing ARJ SFX incomplete state";
+    map                         = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap             = map;
+    map->dont_cache_flag = true;
+
+    ret = cli_unarj_sfx_header_check(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing ARJ SFX incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_arjsfx_malformed_confirmed_header_is_fail_visible)
 {
     uint8_t data[12];
@@ -53455,6 +53482,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_arjsfx);
     tcase_add_checked_fixture(tc_arjsfx, cl_setup, cl_teardown);
     tcase_add_test(tc_arjsfx, test_arjsfx_weak_candidate_is_rejected_without_incomplete_state);
+    tcase_add_test(tc_arjsfx, test_arjsfx_header_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_arjsfx, test_arjsfx_malformed_confirmed_header_is_fail_visible);
     tcase_add_test(tc_arjsfx, test_arjsfx_header_read_failure_is_fail_visible);
     tcase_add_test(tc_arjsfx, test_arjsfx_admission_reaches_nested_matcher);

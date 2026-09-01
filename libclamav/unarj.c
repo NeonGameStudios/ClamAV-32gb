@@ -146,7 +146,7 @@ cl_error_t cli_unarj_sfx_header_check(cli_ctx *ctx, size_t offset)
     if (first_header_size < FIRST_HDR_SIZE)
         return CL_EFORMAT;
 
-    return CL_SUCCESS;
+    return arj_reconcile_header_status(ctx, CL_SUCCESS);
 }
 
 static const void *unarj_need_off_once_len(fmap_t *map, size_t offset, size_t length, size_t *length_out,

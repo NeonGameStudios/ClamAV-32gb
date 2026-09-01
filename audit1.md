@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## ARJ SFX header sticky completion — 2026-09-01
+
+`cli_unarj_sfx_header_check()` performed the bounded ARJ-SFX pre-admission
+validation but returned `CL_SUCCESS` even when the owning context was already
+sticky-incomplete. The full ARJ header walk reconciled this state, but the
+SFX-specific admission helper did not. Its confirmed success now uses the
+existing ARJ header reconciliation helper, converting only clean completion to
+`CL_EPARSE` while preserving stronger statuses. The direct
+`test_arjsfx_header_sticky_incomplete_result_is_fail_visible` regression
+preserves the exact prior diagnostic and fmap non-cacheability. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+ARJ/ARJ-SFX corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## 7-Zip SFX header sticky completion — 2026-09-01
 
 `cli_7z_header_check()` could validate a complete embedded SFX start header
