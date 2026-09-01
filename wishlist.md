@@ -1,5 +1,16 @@
 # Wishlist
 
+## SCRENC trailer completion — 2026-09-01
+
+- Require a valid checksum and `^#~@` terminator before SCRENC or HTML
+  normalization can report successful decoded output, including zero-length
+  encoded payloads.
+- Retain `test_screnc_invalid_trailer_is_fail_visible` and the source guards
+  for checksum, terminator, and missing-trailer outcomes.
+- Complete production-linked execution, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final release qualification.
+
 ## Exported child-ingress recursion-state admission — 2026-09-01
 
 - Keep descriptor, file, directory, nested-map, and buffer scan entrypoints behind

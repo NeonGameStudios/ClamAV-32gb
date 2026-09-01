@@ -733,6 +733,7 @@ struct screnc_state {
     uint32_t length;
     uint32_t sum;
     uint8_t table_pos;
+    bool trailer_valid;
 };
 
 /* inplace decoding, so that we can normalize it later */
@@ -791,6 +792,7 @@ static void screnc_decode(unsigned char *ptr, struct screnc_state *s)
     }
     if (!s->length) {
         size_t remaining;
+        s->trailer_valid = false;
         if (strlen((const char *)ptr) >= 12) {
             uint64_t expected;
             expected = base64_chars[ptr[0]] < 0 ? 0 : base64_chars[ptr[0]] << 2;
@@ -804,12 +806,11 @@ static void screnc_decode(unsigned char *ptr, struct screnc_state *s)
             ptr += 8;
             if (s->sum != expected) {
                 cli_dbgmsg("screnc_decode: checksum mismatch: %u != %" PRIu64 "\n", s->sum, expected);
+            } else if (strncmp((const char *)ptr, "^#~@", 4) != 0) {
+                cli_dbgmsg("screnc_decode: terminator not found\n");
             } else {
-                if (strncmp((const char *)ptr, "^#~@", 4) != 0) {
-                    cli_dbgmsg("screnc_decode: terminator not found\n");
-                } else {
-                    cli_dbgmsg("screnc_decode: OK\n");
-                }
+                s->trailer_valid = true;
+                cli_dbgmsg("screnc_decode: OK\n");
             }
             ptr += 4;
         }
@@ -2002,6 +2003,11 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                 case HTML_JSDECODE_DECRYPT:
                     screnc_decode(ptr, &screnc_state);
                     if (!screnc_state.length) {
+                        if (!screnc_state.trailer_valid) {
+                            cli_mark_scan_incomplete(ctx, "HTML script-encoded checksum or terminator is invalid");
+                            retval = false;
+                            goto done;
+                        }
                         state      = HTML_NORM;
                         next_state = HTML_BAD_STATE;
                         in_screnc  = false;
@@ -2364,6 +2370,11 @@ done:
                                          : "HTML normalization input could not be read completely");
         retval = false;
     }
+    if (in_screnc && !input_failed && !(m_area && m_area->read_error) &&
+        !(ctx && ctx->scan_timed_out)) {
+        cli_mark_scan_incomplete(ctx, "HTML script-encoded content did not reach a valid trailer");
+        retval = false;
+    }
     if (line) /* only needed for done case */
         free(line);
     if (in_form_action) {
@@ -2654,7 +2665,7 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
     screnc_state.length += ((base64_chars[tmpstr[5]] >> 4) < 0 ? 0 : (base64_chars[tmpstr[5]] >> 4)) << 24;
     if (!html_screnc_write(ctx, ofd, "<script>", strlen("<script>"), temporary_reserved))
         goto done;
-    while (screnc_state.length && line) {
+    while (line) {
         if (!htmlnorm_checktimelimit(ctx, "HTML script-encoded inspection reached the configured time limit"))
             goto done;
 
@@ -2663,14 +2674,19 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
             goto done;
         free(line);
         line = NULL;
-        if (screnc_state.length) {
-            ptr = line = cli_readchunk(NULL, &m_area, 8192, NULL);
-        }
+        if (!screnc_state.length)
+            break;
+        ptr = line = cli_readchunk(NULL, &m_area, 8192, NULL);
     }
     if (screnc_state.length) {
         cli_dbgmsg("html_screnc_decode: missing %u bytes\n", screnc_state.length);
         if (ctx)
             cli_mark_scan_incomplete(ctx, "HTML script-encoded content was not decoded completely");
+        goto done;
+    }
+    if (!screnc_state.trailer_valid) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "HTML script-encoded checksum or terminator is invalid");
         goto done;
     }
     if (!html_screnc_write(ctx, ofd, "</script>", strlen("</script>"), temporary_reserved))

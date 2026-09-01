@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## SCRENC trailer completion — 2026-09-01
+
+The SCRENC decoder previously logged checksum and terminator mismatches but
+returned success after producing output. It also skipped trailer validation
+when the encoded length was zero. The decoder now records trailer validity,
+requires a valid checksum and `^#~@` terminator before completing, and marks
+missing or malformed trailers incomplete in both the direct SCRENC path and
+the shared HTML normalizer. `test_screnc_invalid_trailer_is_fail_visible`
+covers checksum and terminator failures, including zero-payload streams;
+source guards pin the validation and registration. Current-source
+production-linked execution, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+release qualification remain open.
+
 ## Exported child-ingress recursion-state admission — 2026-09-01
 
 The descriptor, file, directory, and nested-map scan entrypoints could bypass

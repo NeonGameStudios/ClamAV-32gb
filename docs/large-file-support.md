@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## SCRENC trailer completion — 2026-09-01
+
+SCRENC decoding now requires the encoded stream's checksum and `^#~@`
+terminator to validate before decoded output is considered complete. Missing
+or malformed trailers, including zero-payload streams, remain incomplete and
+non-cacheable in the direct SCRENC parser and the shared HTML normalizer. The
+focused checksum/terminator regression and source guards cover the boundary;
+current-source production-linked execution, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final release qualification remain required.
+
 ## Exported child-ingress recursion-state admission — 2026-09-01
 
 Descriptor, file, directory, nested-map, and buffer scan entrypoints now share a

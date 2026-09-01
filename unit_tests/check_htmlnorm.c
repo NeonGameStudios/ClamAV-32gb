@@ -403,6 +403,46 @@ START_TEST(test_screnc_nullterminate)
 }
 END_TEST
 
+START_TEST(test_screnc_invalid_trailer_is_fail_visible)
+{
+    static const uint8_t invalid_checksum[] = "#@~^" "AAAAAAAA" "BAAAAAAA" "^#~@";
+    static const uint8_t invalid_terminator[] = "#@~^" "AAAAAAAA" "AAAAAAAA" "^#~X";
+    const uint8_t *inputs[] = {invalid_checksum, invalid_terminator};
+    const size_t input_lengths[] = {sizeof(invalid_checksum) - 1U, sizeof(invalid_terminator) - 1U};
+    struct cl_engine *engine;
+    size_t i;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+
+    for (i = 0; i < sizeof(inputs) / sizeof(inputs[0]); i++) {
+        cli_ctx ctx;
+        fmap_t *map;
+        uint64_t temporary_reserved = 0;
+
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine = engine;
+        ck_assert_int_eq(mkdir(dir, 0700), 0);
+        map = cl_fmap_open_memory(inputs[i], input_lengths[i]);
+        ck_assert_ptr_nonnull(map);
+
+        ck_assert(!html_screnc_decode_ctx(&ctx, map, dir, &temporary_reserved));
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         "HTML script-encoded checksum or terminator is invalid");
+        ck_assert(map->dont_cache_flag);
+        if (temporary_reserved != 0)
+            cli_scan_release_temporary(&ctx, temporary_reserved);
+        ck_assert_uint_eq(ctx.temporary_bytes, 0);
+
+        fmap_free(map);
+        ck_assert_int_eq(cli_rmdirs(dir), 0);
+    }
+
+    cl_engine_free(engine);
+}
+END_TEST
+
 #ifndef _WIN32
 START_TEST(test_screnc_time_limit_is_fail_visible)
 {
@@ -489,6 +529,7 @@ Suite *test_htmlnorm_suite(void)
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_time_limit_is_fail_visible);
 #endif
     tcase_add_test(tc_htmlnorm_api, test_screnc_nullterminate);
+    tcase_add_test(tc_htmlnorm_api, test_screnc_invalid_trailer_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_htmlnorm_api, test_screnc_time_limit_is_fail_visible);
 #endif
