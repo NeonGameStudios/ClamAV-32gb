@@ -1,5 +1,19 @@
 # Wishlist
 
+## TAR direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_untar()` fail-visible for direct callers when a valid empty TAR
+  completes with a pre-existing sticky incomplete state. The clean untainted
+  result remains clean, while the pre-tainted clean completion returns
+  `CL_EPARSE` and preserves the exact prior reason plus fmap non-cacheability.
+- Retain `test_tar_sticky_incomplete_result_is_fail_visible` and the
+  current-source production-linked GCC isolation oracle: current results are
+  clean/`CL_EPARSE` for untainted/sticky cases, while the exact pre-change
+  object is clean/clean. The current TAR source and Check translation unit
+  compile with production GCC flags; keep full TAR TCase, corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification open.
+
 ## ARJ direct header sticky completion — 2026-09-01
 
 - Keep `cli_unarj_header_check()` fail-visible for direct callers when a

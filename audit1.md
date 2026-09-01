@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## TAR direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_untar()` could return the clean result for a valid two-block empty TAR
+when the recognized layer already carried sticky incomplete state. Its final
+clean completion now reconciles that state to `CL_EPARSE`, preserving all
+stronger early parser, I/O, timeout, limit, detection, and cleanup results.
+The regression `test_tar_sticky_incomplete_result_is_fail_visible` checks a
+clean untainted walk and a pre-tainted walk with the exact prior diagnostic and
+non-cacheability. The current-source production-linked GCC isolation oracle
+passes clean/`CL_EPARSE` for those cases, while the exact pre-change object
+returns clean for both; the current TAR source and Check translation unit
+compile with production GCC flags. Full current TAR TCase relink/execution,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## NSIS direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scannulsft()` could return clean after a complete header-only Nullsoft

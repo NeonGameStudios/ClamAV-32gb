@@ -151,6 +151,15 @@ cli_untar_checktimelimit(cli_ctx *ctx, const char *reason)
 }
 
 static cl_error_t
+cli_untar_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
+static cl_error_t
 cli_untar_parse_pax_size(cli_ctx *ctx, size_t offset, size_t length, uint64_t *size_value, bool *found)
 {
     size_t consumed = 0;
@@ -703,5 +712,6 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
         }
     }
 
-    return incomplete ? CL_EPARSE : CL_CLEAN;
+    ret = incomplete ? CL_EPARSE : CL_CLEAN;
+    return cli_untar_reconcile_status(ctx, ret);
 }

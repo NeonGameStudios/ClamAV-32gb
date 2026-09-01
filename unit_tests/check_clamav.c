@@ -21569,6 +21569,42 @@ START_TEST(test_tar_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tar_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[1024] = {0};
+    struct cl_engine *scan_engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = scan_engine;
+    ctx.fmap   = map;
+    ret = cli_untar(tmpdir, 1, &ctx);
+    ck_assert_int_eq(ret, CL_CLEAN);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = scan_engine;
+    ctx.fmap   = map;
+    cli_mark_scan_incomplete(&ctx, "pre-existing TAR incomplete state");
+    ret = cli_untar(tmpdir, 1, &ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing TAR incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_tar_eof_releases_member_resources)
 {
     uint8_t data[1024] = {0};
@@ -52084,6 +52120,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tar, test_tar_time_limit_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_missing_map_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_missing_engine_is_fail_visible);
+    tcase_add_test(tc_tar, test_tar_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_initial_header_read_failure_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_invalid_magic_is_fail_visible);
     tcase_add_test(tc_tar, test_tar_temporary_limit_is_fail_visible);
