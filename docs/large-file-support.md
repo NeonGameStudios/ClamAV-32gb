@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PE import metadata record failure — 2026-09-01
+
+The PE import pass now checks `ImportTable` allocation, import-item, and
+`Imphash` JSON record statuses. Any required import metadata failure records
+the exact sticky incomplete diagnostic and taints the fmap; the final
+imphash failure is merged without hiding stronger parser, resource, or
+detection statuses. The JSON-wrap regression
+`test_pe_import_metadata_record_failure_is_fail_visible` covers all three
+failure shapes. Current-source production-linked execution, sanitizer,
+complete PE/import corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## PE metadata sticky completion — 2026-09-01
 
 The metadata-only `cli_peheader()` entry now returns `CL_EPARSE` when native

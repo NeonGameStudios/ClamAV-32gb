@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## PE import metadata record failure — 2026-09-01
+
+The PE import pass previously discarded failures while creating the
+`ImportTable` JSON array and recording import items, and ignored the final
+`Imphash` record status. A confirmed PE layer could therefore skip required
+import metadata without sticky incomplete state or fmap cache taint. The
+import path now records one exact incomplete diagnostic for all three failure
+shapes and merges the final imphash failure with import-scan status. The
+JSON-wrap regression `test_pe_import_metadata_record_failure_is_fail_visible`
+injects array, item, and imphash failures and requires `CL_EMEM`, the exact
+diagnostic, and non-cacheability. Current-source production-GCC compilation,
+production-linked execution, sanitizer, complete PE/import corpus, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.
+
 ## PE metadata sticky completion — 2026-09-01
 
 `cli_peheader()` preserved native-width section metadata and marked

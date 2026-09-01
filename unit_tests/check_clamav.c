@@ -292,12 +292,17 @@ static int ooxml_test_fail_file_count;
 static int msxml_test_fail_count;
 static int msxml_test_fail_attribute;
 static int pdf_test_fail_page_count;
+static int pe_test_fail_import_table;
+static int pe_test_fail_import_item;
+static int pe_test_fail_imphash;
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
     if (hwp3_test_fail_font_counts && key && strcmp(key, "FontCounts") == 0)
         return NULL;
     if (ole2_test_fail_streams && key && strcmp(key, "Streams") == 0)
+        return NULL;
+    if (pe_test_fail_import_table && key && strcmp(key, "ImportTable") == 0)
         return NULL;
     return __real_cli_jsonarray(obj, key);
 }
@@ -307,6 +312,10 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
     if (hwp3_test_fail_print_name && key && strcmp(key, "PrintName") == 0)
         return CL_EMEM;
     if (msxml_test_fail_attribute && key && strcmp(key, "attr") == 0)
+        return CL_EMEM;
+    if (pe_test_fail_import_item && key == NULL && s && strcmp(s, "kernel32.TestFunction") == 0)
+        return CL_EMEM;
+    if (pe_test_fail_imphash && key && strcmp(key, "Imphash") == 0)
         return CL_EMEM;
     return __real_cli_jsonstr(obj, key, s);
 }
@@ -40903,6 +40912,70 @@ START_TEST(test_pe32plus_common_inspection_and_import_failures_are_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_pe_import_metadata_record_failure_is_fail_visible)
+{
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    uint8_t data[PE32PLUS_TEST_FILE_SIZE];
+    unsigned int failure_mode;
+
+    build_pe32plus_import_fixture(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (failure_mode = 0; failure_mode < 3; failure_mode++) {
+        fmap_t *map;
+        cl_error_t ret;
+
+        map = cl_fmap_open_memory(data, sizeof(data));
+        ck_assert_ptr_nonnull(map);
+        memset(&layer, 0, sizeof(layer));
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine                   = scan_engine;
+        ctx.dconf                    = scan_engine->dconf;
+        ctx.options                  = &options;
+        ctx.fmap                     = map;
+        ctx.this_layer_tmpdir        = tmpdir;
+        ctx.this_layer_metadata_json = json_object_new_object();
+        ck_assert_ptr_nonnull(ctx.this_layer_metadata_json);
+        ctx.recursion_stack          = &layer;
+        ctx.recursion_stack_size     = 1;
+        layer.fmap                   = map;
+
+        if (failure_mode == 0)
+            pe_test_fail_import_table = 1;
+        else if (failure_mode == 1)
+            pe_test_fail_import_item = 1;
+        else
+            pe_test_fail_imphash = 1;
+
+        ret = cli_scanpe(&ctx);
+        pe_test_fail_import_table = 0;
+        pe_test_fail_import_item  = 0;
+        pe_test_fail_imphash      = 0;
+
+        ck_assert_int_eq(ret, CL_EMEM);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         "PE import metadata JSON could not be recorded");
+        ck_assert(map->dont_cache_flag);
+
+        json_object_put(ctx.this_layer_metadata_json);
+        cl_fmap_close(map);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+#endif
+
 START_TEST(test_pe_truncated_header_is_fail_visible)
 {
     static const uint8_t data[] = {'M', 'Z'};
@@ -53399,6 +53472,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_pe32plus);
     tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);
     tcase_add_test(tc_pe32plus, test_pe32plus_common_inspection_and_import_failures_are_visible);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_pe32plus, test_pe_import_metadata_record_failure_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_pe_map);
     tcase_add_checked_fixture(tc_pe_map, cl_setup, cl_teardown);
     tcase_add_test(tc_pe_map, test_pe_missing_map_is_fail_visible);

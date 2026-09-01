@@ -2484,6 +2484,14 @@ static int validate_impname(const char *name, uint32_t length, int dll)
     return 1;
 }
 
+static cl_error_t pe_record_import_json_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, "PE import metadata JSON could not be recorded");
+
+    return status;
+}
+
 static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, struct pe_image_import_descriptor *image, const char *dllname, struct cli_exe_info *peinfo, int *first)
 {
     uint32_t thuoff = 0, offset;
@@ -2508,6 +2516,7 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
         imptbl = cli_jsonarray(ctx->this_layer_metadata_json, "ImportTable");
         if (!imptbl) {
             cli_dbgmsg("scan_pe: cannot allocate import table json object\n");
+            cli_mark_scan_incomplete(ctx, "PE import metadata JSON could not be recorded");
             return CL_EMEM;
         }
     }
@@ -2554,7 +2563,11 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
                                                                                     \
             if (imptbl) {                                                           \
                 char *jname = *first ? fname : fname + 1;                           \
-                cli_jsonstr(imptbl, NULL, jname);                                   \
+                ret = pe_record_import_json_status(ctx, cli_jsonstr(imptbl, NULL, jname)); \
+                if (ret != CL_SUCCESS) {                                             \
+                    free(fname);                                                     \
+                    break;                                                          \
+                }                                                                     \
             }                                                                       \
                                                                                     \
             for (type = CLI_HASH_MD5; type < CLI_HASH_AVAIL_TYPES; type++)          \
@@ -2889,6 +2902,7 @@ static cl_error_t scan_pe_imp(cli_ctx *ctx, struct cli_exe_info *peinfo)
     uint32_t impsz                         = 0;
     cli_hash_type_t type;
     cl_error_t ret = CL_CLEAN;
+    cl_error_t metadata_status = CL_SUCCESS;
 
     /* pick hashtypes to generate */
     for (type = CLI_HASH_MD5; type < CLI_HASH_AVAIL_TYPES; type++) {
@@ -2936,7 +2950,8 @@ static cl_error_t scan_pe_imp(cli_ctx *ctx, struct cli_exe_info *peinfo)
         cli_dbgmsg("IMP: %s:%u\n", dstr ? (char *)dstr : "(NULL)", impsz);
 
         if (ctx->this_layer_metadata_json)
-            cli_jsonstr(ctx->this_layer_metadata_json, "Imphash", dstr ? dstr : "(NULL)");
+            metadata_status = pe_record_import_json_status(
+                ctx, cli_jsonstr(ctx->this_layer_metadata_json, "Imphash", dstr ? dstr : "(NULL)"));
 
         if (dstr)
             free(dstr);
@@ -2960,7 +2975,7 @@ static cl_error_t scan_pe_imp(cli_ctx *ctx, struct cli_exe_info *peinfo)
 
     for (type = CLI_HASH_MD5; type < CLI_HASH_AVAIL_TYPES; type++)
         free(hashset[type]);
-    return ret;
+    return cli_merge_scan_status(ret, metadata_status);
 }
 
 static struct json_object *get_pe_property(cli_ctx *ctx)

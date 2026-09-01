@@ -1,5 +1,17 @@
 # Wishlist
 
+## PE import metadata record failure — 2026-09-01
+
+- Keep PE import metadata fail-visible when the `ImportTable` array, an import
+  item, or the final `Imphash` record cannot be written: preserve the exact
+  sticky diagnostic, prevent fmap caching, and retain stronger import, parser,
+  resource, and detection statuses through the shared merge policy.
+- Retain `test_pe_import_metadata_record_failure_is_fail_visible` and its
+  JSON-wrap source guards; complete current-source production-GCC compilation
+  and production-linked execution, sanitizer, complete PE/import corpus,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## PE metadata sticky completion — 2026-09-01
 
 - Keep `cli_peheader()` fail-visible when native PE coordinates cannot be
