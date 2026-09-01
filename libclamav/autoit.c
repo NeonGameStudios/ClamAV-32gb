@@ -1011,7 +1011,7 @@ cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
             return CL_EFORMAT;
         if (remaining - (sizeof(signature_prefix) + 1) < 16)
             return CL_EPARSE;
-        return CL_SUCCESS;
+        return autoit_reconcile_status(ctx, CL_SUCCESS);
     }
 
     if (remaining < 17)
@@ -1020,7 +1020,7 @@ cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
         cli_mark_scan_incomplete(ctx, "AutoIt header body could not be read completely");
         return CL_EREAD;
     }
-    return CL_SUCCESS;
+    return autoit_reconcile_status(ctx, CL_SUCCESS);
 }
 
 static bool autoit_input_refill(struct UNP *UNP, cli_ctx *ctx)

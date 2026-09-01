@@ -32145,6 +32145,11 @@ START_TEST(test_autoit_sticky_incomplete_result_is_fail_visible)
     ctx.scan_incomplete_reason = "pre-existing AutoIt incomplete state";
     map->dont_cache_flag       = true;
 
+    ck_assert_int_eq(cli_autoit_header_check(&ctx, 23), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing AutoIt incomplete state");
+    ck_assert(map->dont_cache_flag);
+
     ret = cli_scanautoit(&ctx, 23);
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);

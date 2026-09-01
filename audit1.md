@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## AutoIt SFX header sticky completion — 2026-09-01
+
+`cli_autoit_header_check()` validated a confirmed AutoIt SFX header but
+returned `CL_SUCCESS` even when the owning context already carried sticky
+incomplete state. The full AutoIt scanner reconciled only at its final return,
+so the SFX admission boundary itself could proceed from a non-complete
+context. Both confirmed header-success paths now pass through the existing
+AutoIt reconciliation helper, converting only clean completion to `CL_EPARSE`
+while preserving stronger statuses. The existing
+`test_autoit_sticky_incomplete_result_is_fail_visible` regression now probes
+the header directly before full scanning and preserves the exact prior
+diagnostic and fmap non-cacheability. Current-source production-GCC
+compilation, production-linked execution, sanitizer, complete AutoIt corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## NSIS SFX header sticky completion — 2026-09-01
 
 `cli_nulsft_header_check()` validated a confirmed NSIS SFX fixed header but
