@@ -2164,6 +2164,18 @@ values; current-source production-linked execution and full OOXML corpus,
 sanitizer, materialized-large-file, production-CVD/service, Sonic1, and parser
 qualification remain open.
 
+## OOXML metadata record failure visibility — 2026-09-01
+
+The OOXML content-types callback now checks every required file-count
+`cli_jsonint()` result. A metadata allocation or record failure marks the
+confirmed layer incomplete and non-cacheable; status merging preserves an
+earlier parser error while surfacing a critical metadata failure. The
+registered JSON-wrap regression covers the core-properties file-count write
+path. Current-source production-linked execution, sanitizer, complete
+OOXML/Office corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## GIF short-signature admission — 2026-08-28
 
 A forced GIF parser entry with fewer than the three signature bytes now records

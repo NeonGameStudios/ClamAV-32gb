@@ -288,6 +288,7 @@ static int hwp3_test_fail_font_counts;
 static int hwp3_test_fail_print_name;
 static int hwp5_test_fail_raw_version;
 static int ole2_test_fail_streams;
+static int ooxml_test_fail_file_count;
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
@@ -308,6 +309,8 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
 cl_error_t __wrap_cli_jsonint(json_object *obj, const char *key, int32_t i)
 {
     if (hwp5_test_fail_raw_version && key && strcmp(key, "RawVersion") == 0)
+        return CL_EMEM;
+    if (ooxml_test_fail_file_count && key && strcmp(key, "CorePropertiesFileCount") == 0)
         return CL_EMEM;
     return __real_cli_jsonint(obj, key, i);
 }
@@ -6953,6 +6956,93 @@ static uint8_t *zip_stream_named_stored_archive(const char *filename,
     return archive;
 }
 
+static uint8_t *zip_stream_two_named_stored_archive(
+    const char *filename1, const uint8_t *input1, size_t input1_length,
+    const char *filename2, const uint8_t *input2, size_t input2_length,
+    size_t *archive_length)
+{
+    const size_t local_header_length   = 30U;
+    const size_t central_header_length = 46U;
+    const size_t end_length            = 22U;
+    const size_t filename1_length      = strlen(filename1);
+    const size_t filename2_length      = strlen(filename2);
+    const size_t local1_length         = local_header_length + filename1_length + input1_length;
+    const size_t local2_length         = local_header_length + filename2_length + input2_length;
+    const size_t central1_length       = central_header_length + filename1_length;
+    const size_t central2_length       = central_header_length + filename2_length;
+    const size_t central_offset        = local1_length + local2_length;
+    uint8_t *archive;
+    uint8_t *central;
+    uint8_t *end;
+
+    ck_assert_msg(filename1_length <= UINT16_MAX && filename2_length <= UINT16_MAX,
+                  "test ZIP filename is too long");
+    ck_assert_msg(input1_length <= UINT32_MAX && input2_length <= UINT32_MAX,
+                  "test ZIP input is too large");
+    ck_assert_msg(local1_length <= UINT32_MAX && local2_length <= UINT32_MAX &&
+                      central_offset <= UINT32_MAX,
+                  "test ZIP local offsets exceed 32 bits");
+    ck_assert_msg(central1_length <= SIZE_MAX - central2_length - end_length &&
+                      central_offset <= SIZE_MAX - central1_length - central2_length - end_length,
+                  "test ZIP central directory overflows");
+
+    *archive_length = central_offset + central1_length + central2_length + end_length;
+    archive         = calloc(1, *archive_length);
+    ck_assert_ptr_nonnull(archive);
+
+    zip_stream_write_u32(archive, 0x04034b50U);
+    zip_stream_write_u16(archive + 4, 20U);
+    zip_stream_write_u32(archive + 14,
+                         (uint32_t)crc32(0L, input1, (uInt)input1_length));
+    zip_stream_write_u32(archive + 18, (uint32_t)input1_length);
+    zip_stream_write_u32(archive + 22, (uint32_t)input1_length);
+    zip_stream_write_u16(archive + 26, (uint16_t)filename1_length);
+    memcpy(archive + local_header_length, filename1, filename1_length);
+    memcpy(archive + local_header_length + filename1_length, input1, input1_length);
+
+    archive += local1_length;
+    zip_stream_write_u32(archive, 0x04034b50U);
+    zip_stream_write_u16(archive + 4, 20U);
+    zip_stream_write_u32(archive + 14,
+                         (uint32_t)crc32(0L, input2, (uInt)input2_length));
+    zip_stream_write_u32(archive + 18, (uint32_t)input2_length);
+    zip_stream_write_u32(archive + 22, (uint32_t)input2_length);
+    zip_stream_write_u16(archive + 26, (uint16_t)filename2_length);
+    memcpy(archive + local_header_length, filename2, filename2_length);
+    memcpy(archive + local_header_length + filename2_length, input2, input2_length);
+
+    central = archive + local2_length;
+    zip_stream_write_u32(central, 0x02014b50U);
+    zip_stream_write_u16(central + 4, 20U);
+    zip_stream_write_u16(central + 6, 20U);
+    zip_stream_write_u32(central + 16,
+                         (uint32_t)crc32(0L, input1, (uInt)input1_length));
+    zip_stream_write_u32(central + 20, (uint32_t)input1_length);
+    zip_stream_write_u32(central + 24, (uint32_t)input1_length);
+    zip_stream_write_u16(central + 28, (uint16_t)filename1_length);
+    memcpy(central + central_header_length, filename1, filename1_length);
+
+    central += central1_length;
+    zip_stream_write_u32(central, 0x02014b50U);
+    zip_stream_write_u16(central + 4, 20U);
+    zip_stream_write_u16(central + 6, 20U);
+    zip_stream_write_u32(central + 16,
+                         (uint32_t)crc32(0L, input2, (uInt)input2_length));
+    zip_stream_write_u32(central + 20, (uint32_t)input2_length);
+    zip_stream_write_u32(central + 24, (uint32_t)input2_length);
+    zip_stream_write_u16(central + 28, (uint16_t)filename2_length);
+    zip_stream_write_u32(central + 42, (uint32_t)local1_length);
+    memcpy(central + central_header_length, filename2, filename2_length);
+
+    end = central + central2_length;
+    zip_stream_write_u32(end, 0x06054b50U);
+    zip_stream_write_u16(end + 8, 2U);
+    zip_stream_write_u16(end + 10, 2U);
+    zip_stream_write_u32(end + 12, (uint32_t)(central1_length + central2_length));
+    zip_stream_write_u32(end + 16, (uint32_t)central_offset);
+    return archive - local1_length;
+}
+
 static cl_error_t zip_index_run_maxfiles(
     size_t entry_count,
     uint32_t maxfiles,
@@ -10631,6 +10721,72 @@ START_TEST(test_ooxml_rejects_invalid_declared_part_name)
     }
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_ooxml_metadata_record_failure_is_fail_visible)
+{
+    static const char content[] =
+        "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
+        "<Override ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\" "
+        "PartName=\"/docProps/core.xml\"/></Types>";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    json_object *metadata;
+    fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+    static const char core_properties[] =
+        "<cp:coreProperties "
+        "xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\"/>";
+    cl_error_t ret;
+
+    archive = zip_stream_two_named_stored_archive(
+        "[Content_Types].xml", (const uint8_t *)content, sizeof(content) - 1U,
+        "docProps/core.xml", (const uint8_t *)core_properties, sizeof(core_properties) - 1U,
+        &archive_length);
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxfilesize          = CLI_MAX_LARGE_FILESIZE;
+    engine.maxscansize          = CLI_MAX_LARGE_FILESIZE;
+    engine.maxfiles             = 1000;
+    engine.maxtemporarysize     = CLI_MAX_LARGE_FILESIZE;
+    options.general             = CL_SCAN_GENERAL_COLLECT_METADATA;
+    ctx.engine                  = &engine;
+    ctx.options                 = &options;
+    ctx.fmap                    = map;
+    ctx.this_layer_tmpdir       = tmpdir;
+    ctx.this_layer_metadata_json = metadata;
+    ctx.recursion_stack         = &layer;
+    ctx.recursion_stack_size    = 1;
+    layer.fmap                   = map;
+    layer.type                   = CL_TYPE_OOXML_WORD;
+    layer.size                   = archive_length;
+
+    ooxml_test_fail_file_count = 1;
+    ret = cli_process_ooxml(&ctx, CL_TYPE_OOXML_WORD);
+    ooxml_test_fail_file_count = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "OOXML metadata JSON could not be updated completely");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(metadata);
+    cl_fmap_close(map);
+    free(archive);
+}
+END_TEST
+#endif
 
 #if HAVE_UNRAR
 static int test_rar_progress_was_called;
@@ -53793,6 +53949,9 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_ooxml_entry, cl_setup, cl_teardown);
     tcase_add_test(tc_ooxml_entry, test_ooxml_null_context_is_fail_visible);
     tcase_add_test(tc_ooxml_entry, test_ooxml_rejects_invalid_declared_part_name);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_ooxml_entry, test_ooxml_metadata_record_failure_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_swf);
     tcase_add_checked_fixture(tc_swf, cl_setup, cl_teardown);
     tcase_add_test(tc_swf, test_swf_zlib_truncated_stream_is_fail_visible);

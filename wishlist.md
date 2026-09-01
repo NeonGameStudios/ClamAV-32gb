@@ -1,5 +1,17 @@
 # Wishlist
 
+## OOXML metadata record failure visibility — 2026-09-01
+
+- Keep the OOXML content-types callback fail-visible when required file-count
+  metadata cannot be written: preserve the stronger parser status, return the
+  metadata failure when it is critical, record the exact sticky incomplete
+  reason, and mark the confirmed layer non-cacheable.
+- Retain `test_ooxml_metadata_record_failure_is_fail_visible` and its JSON-wrap
+  source guards; complete current-source production-GCC compilation and
+  production-linked execution, sanitizer, complete OOXML/Office corpus,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## Mach-O metadata sticky completion — 2026-09-01
 
 - Keep `cli_machoheader()` fail-visible when native 64-bit metadata cannot be

@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## OOXML metadata record failure visibility — 2026-09-01
+
+The OOXML content-types callback discarded the return values from its required
+file-count `cli_jsonint()` writes. A metadata allocation or record failure
+could therefore leave the confirmed document clean and cacheable. Each
+required count now passes through a shared recorder that marks the layer
+incomplete, while `cli_merge_scan_status()` preserves parser errors and
+surfaces critical metadata failures. The registered JSON-wrap regression
+`test_ooxml_metadata_record_failure_is_fail_visible` injects failure while
+recording the core-properties file count and asserts `CL_EMEM`, the exact
+sticky reason, and fmap non-cacheability. Current-source production-GCC
+compilation, production-linked execution, sanitizer, complete OOXML/Office
+corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Mach-O metadata sticky completion — 2026-09-01
 
 `cli_machoheader()` preserved native 64-bit section metadata and marked

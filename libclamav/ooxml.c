@@ -34,6 +34,7 @@
 #include "json_api.h"
 #include "msxml_parser.h"
 #include "ooxml.h"
+#include "scanners.h"
 
 // clang-format off
 
@@ -116,6 +117,14 @@ static void ooxml_note_failure(cli_ctx *ctx, cl_error_t status, const char *reas
 {
     if ((status != CL_SUCCESS) && (status != CL_VIRUS) && (status != CL_BREAK) && (status != CL_ETIMEOUT))
         cli_mark_scan_incomplete(ctx, reason);
+}
+
+static cl_error_t ooxml_record_metadata(cli_ctx *ctx, cl_error_t status)
+{
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, "OOXML metadata JSON could not be updated completely");
+
+    return status;
 }
 
 static cl_error_t ooxml_search_declared_part(cli_ctx *ctx, const xmlChar *part_name, size_t *loff)
@@ -354,40 +363,54 @@ static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, c
 
 ooxml_content_exit:
     if (core) {
-        cli_jsonint(ctx->this_layer_metadata_json, "CorePropertiesFileCount", core);
+        ret = cli_merge_scan_status(
+            ret, ooxml_record_metadata(ctx, cli_jsonint(ctx->this_layer_metadata_json,
+                                                        "CorePropertiesFileCount", core)));
         if (core > 1)
             cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_MULTIPLE_CORE_PROPFILES");
     } else if (!mcore)
         cli_dbgmsg("cli_process_ooxml: file does not contain core properties file\n");
     if (mcore) {
-        cli_jsonint(ctx->this_layer_metadata_json, "CorePropertiesMissingFileCount", mcore);
+        ret = cli_merge_scan_status(
+            ret, ooxml_record_metadata(ctx, cli_jsonint(ctx->this_layer_metadata_json,
+                                                        "CorePropertiesMissingFileCount", mcore)));
         cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_MISSING_CORE_PROPFILES");
     }
 
     if (extn) {
-        cli_jsonint(ctx->this_layer_metadata_json, "ExtendedPropertiesFileCount", extn);
+        ret = cli_merge_scan_status(
+            ret, ooxml_record_metadata(ctx, cli_jsonint(ctx->this_layer_metadata_json,
+                                                        "ExtendedPropertiesFileCount", extn)));
         if (extn > 1)
             cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_MULTIPLE_EXTN_PROPFILES");
     } else if (!mextn)
         cli_dbgmsg("cli_process_ooxml: file does not contain extended properties file\n");
     if (mextn) {
-        cli_jsonint(ctx->this_layer_metadata_json, "ExtendedPropertiesMissingFileCount", mextn);
+        ret = cli_merge_scan_status(
+            ret, ooxml_record_metadata(ctx, cli_jsonint(ctx->this_layer_metadata_json,
+                                                        "ExtendedPropertiesMissingFileCount", mextn)));
         cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_MISSING_EXTN_PROPFILES");
     }
 
     if (cust) {
-        cli_jsonint(ctx->this_layer_metadata_json, "CustomPropertiesFileCount", cust);
+        ret = cli_merge_scan_status(
+            ret, ooxml_record_metadata(ctx, cli_jsonint(ctx->this_layer_metadata_json,
+                                                        "CustomPropertiesFileCount", cust)));
         if (cust > 1)
             cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_MULTIPLE_CUSTOM_PROPFILES");
     } else if (!mcust)
         cli_dbgmsg("cli_process_ooxml: file does not contain custom properties file\n");
     if (mcust) {
-        cli_jsonint(ctx->this_layer_metadata_json, "CustomPropertiesMissingFileCount", mcust);
+        ret = cli_merge_scan_status(
+            ret, ooxml_record_metadata(ctx, cli_jsonint(ctx->this_layer_metadata_json,
+                                                        "CustomPropertiesMissingFileCount", mcust)));
         cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_MISSING_CUST_PROPFILES");
     }
 
     if (dsig) {
-        cli_jsonint(ctx->this_layer_metadata_json, "DigitalSignaturesCount", dsig);
+        ret = cli_merge_scan_status(
+            ret, ooxml_record_metadata(ctx, cli_jsonint(ctx->this_layer_metadata_json,
+                                                        "DigitalSignaturesCount", dsig)));
     }
 
     /* restore the engine tracking limits; resets session limit tracking */
