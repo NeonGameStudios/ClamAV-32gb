@@ -198,6 +198,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=stat"
         "-Wl,--wrap=lseek"
         "-Wl,--wrap=SzArEx_ExtractToStreamEx"
+        "-Wl,--wrap=cli_magic_scan_desc"
         "-Wl,--wrap=cli_magic_scan_desc_type_reserved"
         "-Wl,--wrap=cli_bytecode_context_alloc"
         "-Wl,--wrap=cli_bytecode_run"

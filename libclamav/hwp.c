@@ -383,6 +383,14 @@ cl_error_t cli_scanhwpole2(cli_ctx *ctx)
 
 /*** HWP5 ***/
 
+static cl_error_t hwp5_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 static inline cl_error_t hwp5_record_metadata(cli_ctx *ctx, cl_error_t ret, const char *reason)
 {
     if (ret != CL_SUCCESS)
@@ -553,7 +561,8 @@ cl_error_t cli_scanhwp5_stream(cli_ctx *ctx, hwp5_header_t *hwp5, char *name, in
 
             if (hwp5->flags & HWP5_PASSWORD) {
                 cli_dbgmsg("HWP5.x: Password encrypted stream, scanning as-is\n");
-                return cli_magic_scan_desc(fd, filepath, ctx, name, LAYER_ATTRIBUTES_NONE);
+                return hwp5_reconcile_status(ctx,
+                                             cli_magic_scan_desc(fd, filepath, ctx, name, LAYER_ATTRIBUTES_NONE));
             }
 
             if (hwp5->flags & HWP5_COMPRESSED) {
@@ -577,7 +586,7 @@ cl_error_t cli_scanhwp5_stream(cli_ctx *ctx, hwp5_header_t *hwp5, char *name, in
                 }
                 ret = decompress_and_callback(ctx, input, 0, 0, "HWP5.x", hwp5_cb, NULL);
                 fmap_free(input);
-                return ret;
+                return hwp5_reconcile_status(ctx, ret);
             }
         }
 
@@ -597,7 +606,7 @@ cl_error_t cli_scanhwp5_stream(cli_ctx *ctx, hwp5_header_t *hwp5, char *name, in
     }
 
     /* normal streams */
-    return cli_magic_scan_desc(fd, filepath, ctx, name, LAYER_ATTRIBUTES_NONE);
+    return hwp5_reconcile_status(ctx, cli_magic_scan_desc(fd, filepath, ctx, name, LAYER_ATTRIBUTES_NONE));
 }
 
 /*** HWP3 ***/

@@ -1,5 +1,20 @@
 # Wishlist
 
+## HWP5 stream direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scanhwp5_stream()` fail-visible for direct callers when a normal,
+  password-protected, or decompressed stream completes with a pre-existing
+  sticky incomplete state. Clean/direct results now return `CL_EPARSE`, while
+  detections and stronger parser or cleanup errors remain preserved.
+- Retain the valid HWP5 stream-context regression
+  `test_hwp5_stream_sticky_incomplete_result_is_fail_visible`, which isolates
+  the ordinary child handoff and checks the exact prior reason plus
+  non-cacheability. The current-source production-linked GCC isolation runner
+  passes 1/1 and the pre-change comparison returns clean for the same fixture.
+  Keep full current HWP5 TCase relink/execution, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification open.
+
 ## HWPOLE2 direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scanhwpole2()` fail-visible for direct callers when a valid wrapped

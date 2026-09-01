@@ -111,6 +111,7 @@
 
 static int binhex_test_bypass_child_scan;
 static int hwp3_test_bypass_child_scan;
+static int hwp5_test_bypass_child_scan;
 static int hwpole2_test_bypass_child_scan;
 static int xar_test_bypass_child_scan;
 
@@ -322,6 +323,16 @@ SRes __wrap_SzArEx_ExtractToStreamEx(
 
 extern cl_error_t __real_cli_magic_scan_desc_type_reserved(int, const char *, cli_ctx *, cli_file_t,
                                                            const char *, uint32_t);
+extern cl_error_t __real_cli_magic_scan_desc(int, const char *, cli_ctx *, const char *, uint32_t);
+
+cl_error_t __wrap_cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx,
+                                      const char *name, uint32_t attributes)
+{
+    if (hwp5_test_bypass_child_scan)
+        return CL_CLEAN;
+
+    return __real_cli_magic_scan_desc(desc, filepath, ctx, name, attributes);
+}
 
 cl_error_t __wrap_cli_magic_scan_desc_type_reserved(int desc, const char *filepath, cli_ctx *ctx,
                                                     cli_file_t type, const char *name, uint32_t attributes)
@@ -27328,6 +27339,56 @@ START_TEST(test_hwp5_stream_requires_context_and_engine)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_7Z_EXTRACT_WRAP
+START_TEST(test_hwp5_stream_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    hwp5_header_t hwp5;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    cli_scan_layer_t layer;
+    fmap_t *map;
+    cl_error_t ret;
+    int fd;
+
+    memset(&hwp5, 0, sizeof(hwp5));
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&layer, 0, sizeof(layer));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    fd = open("/dev/null", O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(/dev/null) failed: %s", strerror(errno));
+
+    layer.fmap = map;
+    layer.type = CL_TYPE_HWP3;
+    layer.size = map->len;
+    ctx.engine = &engine;
+    ctx.options = &options;
+    ctx.fmap = map;
+    ctx.recursion_stack = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.scan_incomplete = true;
+    ctx.scan_incomplete_reason = "pre-existing HWP5 stream incomplete state";
+    map->dont_cache_flag = true;
+
+    hwp5_test_bypass_child_scan = 1;
+    ret = cli_scanhwp5_stream(&ctx, &hwp5, NULL, fd, NULL);
+    hwp5_test_bypass_child_scan = 0;
+
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing HWP5 stream incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    ck_assert_int_eq(close(fd), 0);
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 #ifdef CLAMAV_TEST_JSON_WRAP
 START_TEST(test_hwp5_header_metadata_record_failure_is_fail_visible)
 {
@@ -51992,6 +52053,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_time_limit_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_missing_map_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp5_stream_requires_context_and_engine);
+#ifdef CLAMAV_TEST_7Z_EXTRACT_WRAP
+    tcase_add_test(tc_hwp3, test_hwp5_stream_sticky_incomplete_result_is_fail_visible);
+#endif
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_hwp3, test_hwp5_header_metadata_record_failure_is_fail_visible);
 #endif
