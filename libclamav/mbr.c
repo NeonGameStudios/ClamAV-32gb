@@ -205,7 +205,11 @@ cl_error_t cli_mbr_check2(cli_ctx *ctx, size_t sectorsize)
     if ((mbr.entries[0].type == MBR_PROTECTIVE) || (mbr.entries[0].type == MBR_HYBRID))
         return CL_TYPE_GPT;
 
-    return mbr_check_mbr(&mbr, maplen, sectorsize);
+    cl_error_t status = mbr_check_mbr(&mbr, maplen, sectorsize);
+    if ((status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        status = CL_EPARSE;
+
+    return status;
 }
 
 /* sets sectorsize to default value if specified to be 0 */
@@ -359,6 +363,8 @@ done:
 
     if (ctx && status != CL_SUCCESS && status != CL_VIRUS && status != CL_BREAK && !ctx->scan_incomplete)
         cli_mark_scan_incomplete(ctx, "MBR inspection ended before completion");
+    if (ctx && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        status = CL_EPARSE;
 
     return status;
 }

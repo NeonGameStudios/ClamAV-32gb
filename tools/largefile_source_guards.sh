@@ -4545,6 +4545,8 @@ contains libclamav/mbr.c 'MBR logical partition count limit left a partition uni
 contains libclamav/mbr.c 'mbr_partition_extent_is_valid'
 contains libclamav/mbr.c 'Non-empty partition has zero length'
 contains unit_tests/check_clamav.c 'test_mbr_zero_length_partition_is_fail_visible'
+contains libclamav/mbr.c '(status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete'
+contains unit_tests/check_clamav.c 'test_mbr_sticky_incomplete_result_is_fail_visible'
 contains libclamav/mbr.c 'status = cli_checktimelimit(ctx)'
 contains libclamav/mbr.c 'if (!ctx->engine)'
 contains unit_tests/check_clamav.c 'test_mbr_partition_limit_is_fail_visible'

@@ -1,5 +1,19 @@
 # Wishlist
 
+## MBR direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_mbr_check2()` fail-visible for direct admission callers when a
+  valid two-sector MBR completes with a pre-existing sticky incomplete state.
+  Clean/direct results now return `CL_EPARSE`, while GPT classification and
+  stronger parser errors remain preserved.
+- Retain the valid empty-partition MBR pre-taint regression
+  `test_mbr_sticky_incomplete_result_is_fail_visible`, canonical/container
+  hash equality for the current `mbr.c` and `check_clamav.c`, and current
+  production-linked GCC results at `mbr` 8/8 and `mbr_corpus` 1/1. Keep
+  complete partition-image corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## UUEncode direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_uuencode()` fail-visible for direct callers when an empty or

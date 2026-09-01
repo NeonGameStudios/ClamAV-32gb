@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## MBR direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_mbr_check2()` could return `CL_SUCCESS` to a direct MBR admission caller
+after a valid two-sector image was validated while the scan context was
+already sticky-incomplete. The admission result now converts only clean
+results with sticky incomplete state to `CL_EPARSE`, preserving GPT
+classification and stronger parser errors. The valid empty-partition MBR
+regression `test_mbr_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `mbr.c`
+(`5fade4d03d78f3be3599e7c3968c719a203905f7f5bdce22b224efcc85b7e16a`) and
+`check_clamav.c`
+(`f653fc9ebe5116270b33bcc48c1e102a6c68698fc0165a89027003c11235e94a`). The
+current-source production-linked GCC harness passes `mbr` 8/8 and
+`mbr_corpus` 1/1. This closes direct admission status reconciliation only;
+complete partition-image corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## UUEncode direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_uuencode()` could return `CL_CLEAN` to a direct parser caller after an

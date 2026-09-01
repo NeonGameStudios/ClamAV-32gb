@@ -25057,6 +25057,44 @@ START_TEST(test_mbr_zero_length_partition_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbr_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[1024] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    data[510] = 0x55;
+    data[511] = 0xaa;
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine                 = &engine;
+    ctx.options                = &options;
+    ctx.fmap                   = map;
+    ctx.recursion_stack        = &layer;
+    ctx.recursion_stack_size   = 1;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing MBR incomplete state";
+    layer.type                 = CL_TYPE_MBR;
+    layer.size                 = sizeof(data);
+    layer.fmap                 = map;
+    map->dont_cache_flag       = true;
+
+    ck_assert_int_eq(cli_mbr_check2(&ctx, 512), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing MBR incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbr_corpus_detects_embedded_mz)
 {
     enum { SECTOR_SIZE = 512, PARTITION_LBA = 1, DISK_SECTORS = 2 };
@@ -50836,6 +50874,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mbr, test_mbr_type_confirmation_read_failure_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_partition_limit_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_zero_length_partition_is_fail_visible);
+    tcase_add_test(tc_mbr, test_mbr_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_missing_map_entry_points_are_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_mbr, test_mbr_partition_coordinate_overflow_is_fail_visible);
