@@ -1,5 +1,23 @@
 # Wishlist
 
+## MIME header admission failure visibility — 2026-09-01
+
+- Keep MIME type/subtype/disposition setters and argument/encoding table
+  admission fail-visible. Allocation, native-size, and bounded-allocation
+  failures now taint the message/context instead of silently dropping a
+  boundary, filename, parameter, or decoder selection.
+- Retain the direct saturation regression
+  `test_message_header_admission_failures_are_fail_visible`, canonical versus
+  container hash equality for `message.c`
+  (`d329a38e9675be85d62befa38629460ac7eab0d1b258da62d71c36cde5ce3943`) and
+  `check_str.c`
+  (`c3947dd6e0bf308b659c5898405d05060cc7432cd0f3e2a1a7b87a531c1c8356`), and
+  current-source results at `str` 49/49, `str functions` 32/32, `mail` 13/13,
+  `mail_api` 2/2, `mail_partial` 1/1, and `mhtml` 4/4.
+- Keep complete MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification open.
+
 ## CVD filename-boundary and Rust qualification refresh — 2026-09-01
 
 - Keep CVD API type admission tied to the final case-insensitive `.cvd`,

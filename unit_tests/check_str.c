@@ -377,6 +377,43 @@ START_TEST(test_message_table_size_rejects_product_wrap)
 }
 END_TEST
 
+START_TEST(test_message_header_admission_failures_are_fail_visible)
+{
+    cli_ctx ctx;
+    message *m;
+
+    memset(&ctx, 0, sizeof(ctx));
+    m = messageCreate();
+    ck_assert_ptr_nonnull(m);
+    messageSetCTX(m, &ctx);
+
+    /* Exercise the saturated pointer-table admission without allocating a
+     * SIZE_MAX-sized table. A failed header argument must taint the message
+     * and preserve the first incomplete reason for the outer scan. */
+    m->numberOfArguments = SIZE_MAX;
+    messageAddArgument(m, "name=file");
+    ck_assert(m->isTruncated);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "MIME argument table exceeded its native representation");
+    messageDestroy(m);
+
+    memset(&ctx, 0, sizeof(ctx));
+    m = messageCreate();
+    ck_assert_ptr_nonnull(m);
+    messageSetCTX(m, &ctx);
+
+    /* The encoding table has the same bounded-admission contract. */
+    m->numberOfEncTypes = INT_MAX;
+    messageSetEncoding(m, "base64");
+    ck_assert(m->isTruncated);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "MIME encoding table count is saturated");
+    messageDestroy(m);
+}
+END_TEST
+
 START_TEST(test_iconv_cache_table_size_rejects_product_wrap)
 {
     size_t bytes;
@@ -504,6 +541,7 @@ Suite *test_str_suite(void)
     tcase_add_test(tc_str, test_message_addstr_deduplicated_blank_does_not_charge);
     tcase_add_test(tc_str, test_message_export_rejects_truncated_materialization);
     tcase_add_test(tc_str, test_message_table_size_rejects_product_wrap);
+    tcase_add_test(tc_str, test_message_header_admission_failures_are_fail_visible);
     tcase_add_test(tc_str, test_iconv_cache_table_size_rejects_product_wrap);
 
     return s;

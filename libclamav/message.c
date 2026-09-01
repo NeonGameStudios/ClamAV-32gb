@@ -143,6 +143,18 @@ static void messageMarkMaterializationFailure(message *m, const char *reason)
     cli_mark_scan_incomplete(m->ctx, reason);
 }
 
+/* Header metadata selects the body decoder and MIME boundaries. Losing a
+ * header value on an allocation or table-admission failure must therefore be
+ * fail-visible just like losing body materialization. */
+static void messageMarkHeaderFailure(message *m, const char *reason)
+{
+    if (m == NULL)
+        return;
+
+    m->isTruncated = 1;
+    cli_mark_scan_incomplete(m->ctx, reason);
+}
+
 static int messageCheckDeadline(message *m)
 {
     if (m == NULL || m->ctx == NULL || cli_checktimelimit(m->ctx) == CL_SUCCESS)
@@ -448,6 +460,8 @@ int messageSetMimeType(message *mess, const char *type)
 #ifdef CL_THREAD_SAFE
             pthread_mutex_unlock(&mime_mutex);
 #endif
+            messageMarkHeaderFailure(mess,
+                                     "MIME type table could not be allocated");
             return 0;
         }
 
@@ -458,6 +472,8 @@ int messageSetMimeType(message *mess, const char *type)
 #ifdef CL_THREAD_SAFE
                 pthread_mutex_unlock(&mime_mutex);
 #endif
+                messageMarkHeaderFailure(mess,
+                                         "MIME type table could not be initialized");
                 return 0;
             }
     }
@@ -548,6 +564,8 @@ void messageSetMimeSubtype(message *m, const char *subtype)
         free(m->mimeSubtype);
 
     m->mimeSubtype = cli_safer_strdup(subtype);
+    if (m->mimeSubtype == NULL)
+        messageMarkHeaderFailure(m, "MIME subtype could not be allocated");
 }
 
 const char *
@@ -582,6 +600,9 @@ void messageSetDispositionType(message *m, const char *disptype)
         m->mimeDispositionType = cli_safer_strdup(disptype);
         if (m->mimeDispositionType)
             strstrip(m->mimeDispositionType);
+        else
+            messageMarkHeaderFailure(m,
+                                     "MIME disposition type could not be allocated");
     } else
         m->mimeDispositionType = NULL;
 }
@@ -624,8 +645,11 @@ void messageAddArgument(message *m, const char *arg)
     if (!usefulArg(arg))
         return;
 
-    if (m->numberOfArguments == SIZE_MAX)
+    if (m->numberOfArguments == SIZE_MAX) {
+        messageMarkHeaderFailure(m,
+                                 "MIME argument table exceeded its native representation");
         return;
+    }
 
     for (offset = 0; offset < m->numberOfArguments; offset++)
         if (m->mimeArguments[offset] == NULL)
@@ -639,11 +663,15 @@ void messageAddArgument(message *m, const char *arg)
         size_t table_size;
 
         next_count = m->numberOfArguments + 1;
-        if (cli_message_table_size(next_count, sizeof(char *), &table_size) != CL_SUCCESS)
+        if (cli_message_table_size(next_count, sizeof(char *), &table_size) != CL_SUCCESS) {
+            messageMarkHeaderFailure(m,
+                                     "MIME argument table exceeded its bounded allocation");
             return;
+        }
 
         q = (char **)cli_max_realloc(m->mimeArguments, table_size);
         if (q == NULL) {
+            messageMarkHeaderFailure(m, "MIME argument table could not be allocated");
             return;
         }
         m->mimeArguments = q;
@@ -654,6 +682,7 @@ void messageAddArgument(message *m, const char *arg)
     if (!p) {
         /* problem inside rfc2231() */
         cli_dbgmsg("messageAddArgument, error from rfc2231()\n");
+        messageMarkHeaderFailure(m, "MIME argument could not be materialized");
         return;
     }
 
@@ -772,8 +801,10 @@ void messageAddArguments(message *m, const char *s)
              */
             kcopy = cli_safer_strdup(key);
 
-            if (kcopy == NULL)
+            if (kcopy == NULL) {
+                messageMarkHeaderFailure(m, "MIME argument key could not be allocated");
                 return;
+            }
 
             ptr = strchr(kcopy, '=');
             if (ptr == NULL) {
@@ -804,6 +835,7 @@ void messageAddArguments(message *m, const char *s)
 
             if (!data) {
                 cli_dbgmsg("Can't parse header \"%s\" - if you believe this file contains a missed virus, report it to bugs@clamav.net\n", s);
+                messageMarkHeaderFailure(m, "MIME argument value could not be allocated");
                 free(kcopy);
                 return;
             }
@@ -831,6 +863,7 @@ void messageAddArguments(message *m, const char *s)
                 cli_strlcat(field, data, datasz);
             } else {
                 free(kcopy);
+                messageMarkHeaderFailure(m, "MIME quoted argument could not be allocated");
             }
             free(data);
         } else {
@@ -854,7 +887,8 @@ void messageAddArguments(message *m, const char *s)
             if (field) {
                 memcpy(field, key, len - 1);
                 field[len - 1] = '\0';
-            }
+            } else
+                messageMarkHeaderFailure(m, "MIME argument field could not be allocated");
         }
         if (field) {
             messageAddArgument(m, field);
@@ -1063,6 +1097,8 @@ void messageSetEncoding(message *m, const char *enctype)
 
                 if (m->numberOfEncTypes < 0 || m->numberOfEncTypes == INT_MAX) {
                     cli_errmsg("messageSetEncoding: encoding type table count is saturated\n");
+                    messageMarkHeaderFailure(m,
+                                             "MIME encoding table count is saturated");
                     break;
                 }
 
@@ -1077,12 +1113,18 @@ void messageSetEncoding(message *m, const char *enctype)
                 }
 
                 next_count = (size_t)m->numberOfEncTypes + 1;
-                if (cli_message_table_size(next_count, sizeof(encoding_type), &table_size) != CL_SUCCESS)
+                if (cli_message_table_size(next_count, sizeof(encoding_type), &table_size) != CL_SUCCESS) {
+                    messageMarkHeaderFailure(m,
+                                             "MIME encoding table exceeded its bounded allocation");
                     break;
+                }
 
                 et = (encoding_type *)cli_max_realloc(m->encodingTypes, table_size);
-                if (et == NULL)
+                if (et == NULL) {
+                    messageMarkHeaderFailure(m,
+                                             "MIME encoding table could not be allocated");
                     break;
+                }
 
                 m->encodingTypes                = et;
                 m->encodingTypes[m->numberOfEncTypes] = e->type;

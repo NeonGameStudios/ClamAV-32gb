@@ -1,5 +1,28 @@
 # Independent read-only audit of audit.md
 
+## MIME header admission failure visibility — 2026-09-01
+
+The mail header state machine now marks the owning message and scan context
+incomplete when MIME type/subtype/disposition strings, filename/parameter
+tables, or transfer-encoding tables cannot be allocated or exceed their
+native/bounded representation. Previously, those setter and argument-builder
+failures could silently leave a message without its boundary, filename, or
+decoder selection while parsing continued. The direct saturation regression
+`test_message_header_admission_failures_are_fail_visible` covers argument and
+encoding table admission; current canonical/container hashes match for
+`message.c` (`d329a38e9675be85d62befa38629460ac7eab0d1b258da62d71c36cde5ce3943`)
+and `check_str.c`
+(`c3947dd6e0bf308b659c5898405d05060cc7432cd0f3e2a1a7b87a531c1c8356`). The
+production-linked GCC harness passes `str` 49/49 and the isolated `str
+functions` TCase 32/32; mail integration passes `mail` 13/13,
+`mail_api` 2/2, `mail_partial` 1/1, and `mhtml` 4/4 with Check's explicit
+60-second default timeout for the existing 65 MiB streaming fixture.
+
+This closes a fail-visible header-admission boundary but is not full MIME
+qualification. Complete MIME/mbox/MHTML corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final requirement-by-requirement release evidence remain open.
+
 ## CVD filename-boundary and Rust qualification refresh — 2026-09-01
 
 The current CVD API source and test harness match the Docker snapshot exactly:
