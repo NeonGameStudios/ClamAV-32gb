@@ -17334,6 +17334,25 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## MIME/mbox current-source production-linked rerun — 2026-08-31
+
+The canonical `mbox.c`, `mbox.h`, `scanners.c`, and `check_clamav.c` sources
+were compared with the existing Docker production-linked GCC harness; all
+four SHA-256 digests matched exactly. After materializing the checked-in
+`clam.mail.xor` fixture through its repository CMake target, the focused
+`mail` TCase passes 13/13, including the MIME-part limit, line/header
+failure, mbox, uuencode, BinHex, and embedded-MZ regressions. The direct API
+and admission cases pass `mail_api` 2/2, `mail_map` 2/2, and `mail_partial`
+1/1. The MHTML TCase passes 4/4 when run with the explicit 60-second test
+timeout required for its 65 MiB streaming fixture; its default-timeout
+failure was a harness timeout, not a parser assertion.
+
+This is refreshed parser-path and corpus evidence, not final MIME/mbox
+qualification. Complete MIME/mbox/MHTML corpus breadth, current-head
+sanitizer, certified Linux x86-64, production CVD/service parity,
+materialized-large-file, Sonic1 resource evidence, and the final
+requirement-by-requirement release audit remain open.
+
 ## CVD skipped-member and hash-context follow-up — 2026-08-31
 
 The current CVD loader now consumes and hashes database members that are

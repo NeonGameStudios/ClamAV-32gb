@@ -9841,6 +9841,20 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## MIME/mbox current-source production-linked rerun — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for `mbox.c`, `mbox.h`,
+  `scanners.c`, and `check_clamav.c`.
+- Retain the materialized-corpus production-linked evidence: `mail` passes
+  13/13, `mail_api` 2/2, `mail_map` 2/2, and `mail_partial` 1/1; `mhtml`
+  passes 4/4 with the explicit 60-second timeout needed by its 65 MiB
+  streaming fixture.
+- Keep the default-timeout result classified as harness setup, not a parser
+  assertion failure. Complete MIME/mbox/MHTML corpus breadth, current-head
+  sanitizer, certified Linux x86-64, production-CVD/service parity,
+  materialized-large-file, Sonic1 resource, and final parser/release
+  qualification.
+
 ## CVD skipped-member and hash-context follow-up — 2026-08-31
 
 - Keep disabled CVD database families fully consumed and SHA-256 hashed before
