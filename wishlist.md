@@ -9853,6 +9853,27 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## Compressed-stream focused rerun — 2026-09-01
+
+- Retain the repository CMake materialization path for the encrypted BZip2
+  fixture and the refreshed current-source production-linked GCC evidence:
+  `bz_map` 5/5, `bz_core` 7/7, `xz` 2/2, `xz_corpus` 1/1, and
+  `xz_trailing` 1/1, all with zero failures or errors.
+- Complete compressed-format corpus breadth, sanitizer, certified Linux
+  x86-64, materialized-large-file/resource measurements,
+  production-CVD/service parity, Sonic1, and final parser/release
+  qualification.
+
+## Service front-end build-gate audit — 2026-09-01
+
+- Keep the strict service gate requirement for `clamscan`, `clamd`,
+  `clamdscan`, and `clamav-milter`; the existing Docker CMake build produced
+  the first three but records `ENABLE_MILTER=OFF` and has no milter target.
+- Do not claim service qualification from the partial build. Avoid installing
+  a milter dependency; provide a certified-feature authoritative build,
+  production CVDs, materialized inputs, resource measurements, and Sonic1
+  evidence before release certification.
+
 ## OneNote materialized-fixture verification refresh — 2026-09-01
 
 - Retain the repository CMake materialization path for all three encrypted

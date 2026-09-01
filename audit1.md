@@ -17351,6 +17351,32 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## Compressed-stream focused rerun — 2026-09-01
+
+The existing current-source production-linked GCC harness now has the
+repository's encrypted BZip2 fixture materialized through its CMake test-data
+target. The focused compressed cases pass `bz_map` 5/5 and `bz_core` 7/7 with
+zero failures or errors. The XZ cases independently pass `xz` 2/2,
+`xz_corpus` 1/1, and `xz_trailing` 1/1. This reconfirms callback-failure
+classification, bounded output/deadline handling, concatenated BZip2
+inspection, nested BZip2/GZip/XZ handoff, and trailing-stream rejection.
+
+This is refreshed compressed-parser evidence, not final qualification.
+Complete corpus breadth, sanitizer, certified Linux x86-64,
+materialized-large-file/resource measurements, production-CVD/service parity,
+Sonic1, and the final requirement-by-requirement release audit remain open.
+
+## Service front-end build-gate audit — 2026-09-01
+
+Using the existing Docker CMake build, `clamscan`, `clamd`, and `clamdscan`
+were built successfully. The configured build records `ENABLE_MILTER=OFF`
+and has no `clamav-milter` target, so the strict service qualification gate
+correctly remains unavailable rather than treating the three built binaries
+as sufficient. No milter dependency was installed and no service
+qualification result is claimed. A current authoritative-source build with
+the certified milter feature, production CVDs, materialized qualification
+inputs, resource measurement, and Sonic1 execution remains required.
+
 ## OneNote materialized-fixture verification refresh — 2026-09-01
 
 The existing production-linked GCC harness was restarted without changing the
