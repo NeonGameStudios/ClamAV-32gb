@@ -3913,17 +3913,19 @@ done:
     return bRet;
 }
 
-static void save_urls(cli_ctx *ctx, tag_arguments_t *hrefs, form_data_t *form_data)
+static cl_error_t save_urls(cli_ctx *ctx, tag_arguments_t *hrefs, form_data_t *form_data)
 {
-    int i            = 0;
+    cl_error_t status = CL_SUCCESS;
+    cl_error_t ret;
+    int i = 0;
     json_object *ary = NULL;
 
     if (NULL == hrefs) {
-        return;
+        return CL_SUCCESS;
     }
 
     if (!(SCAN_STORE_HTML_URIS && SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL))) {
-        return;
+        return CL_SUCCESS;
     }
 
     /*Add hrefs*/
@@ -3933,10 +3935,15 @@ static void save_urls(cli_ctx *ctx, tag_arguments_t *hrefs, form_data_t *form_da
                 ary = cli_jsonarray(ctx->this_layer_metadata_json, HTML_URIS_JSON_KEY);
                 if (!ary) {
                     cli_dbgmsg("[cli_scanhtml] Failed to add \"%s\" entry JSON array\n", HTML_URIS_JSON_KEY);
-                    return;
+                    cli_mark_scan_incomplete(ctx, "HTML URI metadata array could not be allocated");
+                    return CL_EMEM;
                 }
             }
-            cli_jsonstr(ary, NULL, (const char *)hrefs->value[i]);
+            ret = cli_jsonstr(ary, NULL, (const char *)hrefs->value[i]);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "HTML URI metadata could not be recorded");
+                status = cli_merge_scan_status(status, ret);
+            }
         }
     }
 
@@ -3947,12 +3954,19 @@ static void save_urls(cli_ctx *ctx, tag_arguments_t *hrefs, form_data_t *form_da
                 ary = cli_jsonarray(ctx->this_layer_metadata_json, HTML_URIS_JSON_KEY);
                 if (!ary) {
                     cli_dbgmsg("[cli_scanhtml] Failed to add \"%s\" entry JSON array\n", HTML_URIS_JSON_KEY);
-                    return;
+                    cli_mark_scan_incomplete(ctx, "HTML URI metadata array could not be allocated");
+                    return (status == CL_SUCCESS) ? CL_EMEM : status;
                 }
             }
-            cli_jsonstr(ary, NULL, (const char *)form_data->urls[i]);
+            ret = cli_jsonstr(ary, NULL, (const char *)form_data->urls[i]);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "HTML URI metadata could not be recorded");
+                status = cli_merge_scan_status(status, ret);
+            }
         }
     }
+
+    return status;
 }
 
 static void cli_scanhtml_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
@@ -4018,10 +4032,12 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
         tag_arguments_t hrefs = {0};
         hrefs.scanContents    = 1;
         form_data_t form_data = {0};
+        cl_error_t url_status;
         normalization_ok = html_normalise_map_form_data_with_quota_status(ctx, map, tempname, &hrefs, ctx->dconf,
                                                                           &form_data, &temporary_reserved,
                                                                           &normalization_read_error);
-        save_urls(ctx, &hrefs, &form_data);
+        url_status = save_urls(ctx, &hrefs, &form_data);
+        status     = cli_merge_scan_status(status, url_status);
         html_tag_arg_free(&hrefs);
         html_form_data_tag_free(&form_data);
     } else {

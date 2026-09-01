@@ -19528,3 +19528,22 @@ boundary. Current-source production-linked execution, sanitizer, complete PDF
 corpus, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+
+## HTML URI metadata completion — 2026-09-01
+
+The HTML scanner's URI reporting helper previously discarded failures from
+the required URI array allocation and per-URI JSON string writes. The helper
+now returns its status to `cli_scanhtml()`, marks the confirmed layer
+incomplete, and preserves normalized-content scanning while final completion
+reconciles the sticky failure.
+
+`test_html_uri_metadata_record_failure_is_fail_visible` is registered under
+the JSON wrapper test configuration and uses the checked-in HTML link fixture
+to establish a clean baseline before injecting the URI metadata string
+failure. It requires a non-clean parse result, cleared public outputs, and a
+non-cacheable fmap. Source guards and the capability manifest record the
+boundary. Current-source production-linked execution, sanitizer, complete
+HTML corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

@@ -296,6 +296,7 @@ static int msxml_test_fail_attribute;
 static int pdf_test_fail_page_count;
 static int pdf_test_fail_incorrect_pages_count;
 static int pdf_test_fail_uri_metadata;
+static int html_test_fail_uri_metadata;
 static int pe_test_fail_import_table;
 static int pe_test_fail_import_item;
 static int pe_test_fail_imphash;
@@ -329,6 +330,8 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
     if (msxml_test_fail_attribute && key && strcmp(key, "attr") == 0)
         return CL_EMEM;
     if (pdf_test_fail_uri_metadata && key == NULL && s && strcmp(s, "https://docs.clamav.net/manual/Development.html") == 0)
+        return CL_EMEM;
+    if (html_test_fail_uri_metadata && key == NULL && s && strcmp(s, "https://www.clamav.net/reports/malware") == 0)
         return CL_EMEM;
     if (pe_test_fail_import_item && key == NULL && s && strcmp(s, "kernel32.TestFunction") == 0)
         return CL_EMEM;
@@ -4392,6 +4395,72 @@ START_TEST(test_html_corpus_detects_embedded_mz)
     cl_engine_free(scan_engine);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_html_uri_metadata_record_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct stat sb;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/html/index.html", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sb), 0);
+    ck_assert_msg(sb.st_size > 0, "empty HTML URI fixture: %s", file_path);
+    data_size = (size_t)sb.st_size;
+    data      = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_int_eq(read(fd, data, data_size), (ssize_t)data_size);
+    ck_assert_int_eq(close(fd), 0);
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA | CL_SCAN_GENERAL_STORE_HTML_URIS;
+    options.parse   = CL_SCAN_PARSE_HTML;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_HTML", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+
+    html_test_fail_uri_metadata = 1;
+    verdict                     = CL_VERDICT_STRONG_INDICATOR;
+    last_alert                  = "stale";
+    scanned                     = UINT64_MAX;
+    ret                         = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                                                 scan_engine, &options, NULL, NULL, NULL, NULL,
+                                                 "CL_TYPE_HTML", NULL);
+    html_test_fail_uri_metadata = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+#endif
 
 #ifndef _WIN32
 START_TEST(test_top_level_maxfilesize_descriptor_is_fail_visible)
@@ -54039,6 +54108,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_html, test_html_notags_cap_is_fail_visible);
     tcase_add_test(tc_html, test_html_notags_cap_uses_generated_size);
     tcase_add_test(tc_html, test_script_normalization_time_limit_is_fail_visible);
+#endif
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_html, test_html_uri_metadata_record_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_html, test_html_input_read_failure_is_fail_visible);
     tcase_add_test(tc_html, test_html_utf16_time_limit_is_fail_visible);

@@ -11544,3 +11544,16 @@ final parser/release qualification remain open.
   Current-source production-linked execution, complete PDF corpus, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final release qualification remain open.
+
+
+## HTML URI metadata completion — 2026-09-01
+
+- Keep HTML URI metadata array allocation and per-URI JSON string recording
+  failures fail-visible after a confirmed HTML layer is admitted; preserve the
+  normalized scans, but reconcile the sticky incomplete state to a non-clean,
+  non-cacheable result.
+- Retain `test_html_uri_metadata_record_failure_is_fail_visible` and its
+  source guard. Current-source production-linked execution, complete HTML
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
