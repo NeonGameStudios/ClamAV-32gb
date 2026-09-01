@@ -2572,7 +2572,7 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
     bool retval         = false;
     unsigned char *line = NULL, tmpstr[6];
     unsigned char *ptr, filename[1024];
-    int ofd;
+    int ofd = -1;
     struct screnc_state screnc_state;
     m_area_t m_area;
 
@@ -2592,14 +2592,16 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
     m_area.read_error = false;
 
     if (!htmlnorm_checktimelimit(ctx, "HTML script-encoded inspection reached the configured time limit"))
-        return false;
+        goto done;
 
     snprintf((char *)filename, 1024, "%s" PATHSEP "screnc.html", dirname);
     ofd = open((const char *)filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, S_IWUSR | S_IRUSR);
 
     if (ofd < 0) {
         cli_dbgmsg("open failed: %s\n", filename);
-        return false;
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "HTML script-encoded output could not be opened");
+        goto done;
     }
 
     while (true) {
@@ -2683,7 +2685,7 @@ done:
             cli_mark_scan_incomplete(ctx, "HTML script-encoded input could not be read completely");
         retval = false;
     }
-    if (close(ofd) != 0) {
+    if (ofd >= 0 && close(ofd) != 0) {
         if (ctx)
             cli_mark_scan_incomplete(ctx, "HTML script-encoded output could not be closed");
         retval = false;
@@ -2691,6 +2693,8 @@ done:
     if (line) {
         free(line);
     }
+    if (ctx && map && !retval)
+        map->dont_cache_flag = true;
     return retval;
 }
 

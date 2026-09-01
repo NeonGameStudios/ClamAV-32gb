@@ -7610,7 +7610,22 @@ and Sonic1 qualification as release gates.
   accounting, and `CL_EREAD` read-failure evidence; complete corpora,
   full-C execution, ASan/UBSan, certified Linux x86-64, materialized
   large-file, production-CVD/service parity, and Sonic1 evidence remain gates
-  before certification.
+before certification.
+
+## Current-source API-boundary matrix refresh — 2026-08-31
+
+- Retain the current-source production-linked GCC results: `htmlnorm api`
+  14/14, `matchers` 49/49, `str functions` 31/31, `pdf_map` 4/4, `elf_map`
+  14/14, `pe_map` 4/4, `autoit_map` 7/7, `mspack_map` 6/6, `mspack` 7/7,
+  `zip_map` 2/2, `7z_map` 3/3, `hwp3_map` 3/3, `ole2` 18/18, `ole2_xlm`
+  3/3, `vba` 2/2, `ole2_map` 6/6, `ole10_entry` 2/2, `ppt_entry` 4/4,
+  `msxml` 5/5, `msxml_map` 2/2, `binhex_map` 13/13, and `rust_map` 1/1.
+- Keep bytecode `map_read`/`loader` aggregate results outside release evidence:
+  wrapper-gated or platform-limit assertions and a Docker filesystem write
+  failure remain unresolved; `valid_loader` passes 1/1. Complete API/corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, Sonic1, and final release qualification
+  remain required.
 
 ## HWP3 current-source qualification audit — 2026-08-25
 

@@ -10389,6 +10389,24 @@ completion because production corpora, ASan/UBSan, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1 evidence
 are still required.
 
+## Current-source API-boundary matrix refresh — 2026-08-31
+
+The canonical implementation sources for this matrix and the Docker source
+tree were hash-compared before relinking; the current linked test source is
+`unit_tests/check_clamav.c`
+(`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
+focused GCC cases pass `htmlnorm api` 14/14 after aligning the two stale
+timeout assertions with the canonical `Heuristics.Limits.Exceeded.MaxScanTime`
+reason, `matchers` 49/49, and `str functions` 31/31. Parser/API boundary
+cases pass `pdf_map` 4/4, `elf_map` 14/14, `pe_map` 4/4, `autoit_map` 7/7,
+`mspack_map` 6/6, `mspack` 7/7, `zip_map` 2/2, `7z_map` 3/3, `hwp3_map` 3/3,
+`ole2` 18/18, `ole2_xlm` 3/3, `vba` 2/2, `ole2_map` 6/6,
+`ole10_entry` 2/2, `ppt_entry` 4/4, `msxml` 5/5, `msxml_map` 2/2,
+`binhex_map` 13/13, and `rust_map` 1/1. This is focused boundary evidence;
+complete corpora, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service parity, Sonic1, and final release qualification remain
+open.
+
 ## Partition-intersection coordinate audit — 2026-08-26
 
 The shared APM, GPT, and MBR partition-intersection helper now compares the

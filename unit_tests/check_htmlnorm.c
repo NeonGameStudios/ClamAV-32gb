@@ -368,7 +368,7 @@ START_TEST(test_htmlnorm_time_limit_is_fail_visible)
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "HTML normalization reached the configured time limit");
+                     "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -426,7 +426,7 @@ START_TEST(test_screnc_time_limit_is_fail_visible)
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "HTML script-encoded inspection reached the configured time limit");
+                     "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert_uint_eq(temporary_reserved, 0);
     ck_assert_uint_eq(ctx.temporary_bytes, 0);
     ck_assert(map->dont_cache_flag);

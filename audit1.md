@@ -14511,6 +14511,27 @@ certified Linux x86-64, materialized large-file, production CVD/service
 parity, and Sonic1 qualification remain open, so the UTF-16 parser rows stay
 pending.
 
+## Current-source API-boundary matrix refresh — 2026-08-31
+
+The canonical implementation sources for this matrix and the Docker source
+tree were hash-compared before relinking; the linked `check_clamav.c` hash is
+`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`. The
+focused current-source GCC cases pass `htmlnorm api` 14/14 after correcting
+the two stale family-specific timeout assertions, `matchers` 49/49, and
+`str functions` 31/31. The parser/API cases pass `pdf_map` 4/4, `elf_map`
+14/14, `pe_map` 4/4, `autoit_map` 7/7, `mspack_map` 6/6, `mspack` 7/7,
+`zip_map` 2/2, `7z_map` 3/3, `hwp3_map` 3/3, `ole2` 18/18, `ole2_xlm` 3/3,
+`vba` 2/2, `ole2_map` 6/6, `ole10_entry` 2/2, `ppt_entry` 4/4, `msxml`
+5/5, `msxml_map` 2/2, `binhex_map` 13/13, and `rust_map` 1/1.
+
+The bytecode `map_read` aggregate remains non-clean because its
+wrapper-gated startup test is not enabled in this build and its 4-GiB
+accounting assertion receives the platform limit result; `loader` also has a
+Docker filesystem write failure, while `valid_loader` passes 1/1. Those are
+not promoted to release evidence. Complete API/corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service parity, Sonic1,
+and final release qualification remain open.
+
 ## HWP3 current-source qualification audit — 2026-08-25
 
 The isolated current-source production-linked `hwp3_api` TCase passes 1/1
