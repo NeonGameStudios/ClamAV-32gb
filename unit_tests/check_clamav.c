@@ -110,6 +110,7 @@
 #include "checks.h"
 
 static int binhex_test_bypass_child_scan;
+static int xar_test_bypass_child_scan;
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 extern int clamav_test_fail_write;
@@ -326,7 +327,7 @@ cl_error_t __wrap_cli_magic_scan_desc_type_reserved(int desc, const char *filepa
     uint8_t prefix[3];
     ssize_t nread;
 
-    if (binhex_test_bypass_child_scan)
+    if (binhex_test_bypass_child_scan || xar_test_bypass_child_scan)
         return CL_SUCCESS;
 
     if (type == CL_TYPE_ANY) {
@@ -24040,6 +24041,61 @@ static uint8_t *xar_test_make_archive(size_t *data_length)
 
     return xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, data_length);
 }
+
+START_TEST(test_xar_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t toc[] = "<?xml version=\"1.0\"?><xar><toc/></xar>";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    uint8_t *data;
+    size_t data_length;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+
+    layers[0].fmap           = map;
+    layers[0].type           = CL_TYPE_XAR;
+    layers[0].size           = map->len;
+    layers[0].tmpdir         = tmpdir;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing XAR incomplete state";
+    map->dont_cache_flag       = true;
+
+    xar_test_bypass_child_scan = 1;
+    ret = cli_scanxar(&ctx);
+    xar_test_bypass_child_scan = 0;
+
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing XAR incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
 
 START_TEST(test_xar_header_size_below_fixed_header_is_fail_visible)
 {
@@ -51802,6 +51858,7 @@ static Suite *test_cl_suite(void)
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_xar, test_xar_lzma_member_decoder_init_failure_is_fail_visible);
 #endif
+    tcase_add_test(tc_xar, test_xar_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_header_size_below_fixed_header_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_invalid_file_metadata_is_fail_visible);
     tcase_add_test(tc_xar_metadata, test_xar_invalid_file_metadata_public_is_fail_visible);

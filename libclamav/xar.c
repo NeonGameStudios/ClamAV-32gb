@@ -1599,6 +1599,8 @@ exit_toc:
         cli_mark_scan_incomplete(ctx, "XAR inspection ended before completion");
     if (rc == CL_BREAK)
         rc = CL_SUCCESS;
+    if ((rc == CL_SUCCESS || rc == CL_CLEAN) && ctx->scan_incomplete)
+        rc = CL_EPARSE;
 
     if (cksum_fails + extract_errors != 0) {
         cli_dbgmsg("cli_scanxar: %u checksum errors and %u extraction errors.\n",
