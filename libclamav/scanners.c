@@ -9328,6 +9328,17 @@ cl_error_t cli_scandesc_ex2_with_temporary_bytes(
     cl_scan_report_t *report = NULL;
     uint64_t root_size;
 
+    if (NULL != verdict_out)
+        *verdict_out = CL_VERDICT_NOTHING_FOUND;
+    if (NULL != last_alert_out)
+        *last_alert_out = NULL;
+    if (NULL != scanned_out)
+        *scanned_out = 0;
+    if (NULL != hash_out)
+        *hash_out = NULL;
+    if (NULL != file_type_out)
+        *file_type_out = NULL;
+
     if (NULL != report_out)
         *report_out = NULL;
 
@@ -9344,15 +9355,6 @@ cl_error_t cli_scandesc_ex2_with_temporary_bytes(
         cli_scan_report_finish(report, NULL, CL_ENULLARG, CL_VERDICT_NOTHING_FOUND, NULL);
         return CL_ENULLARG;
     }
-
-    *verdict_out    = CL_VERDICT_NOTHING_FOUND;
-    *last_alert_out = NULL;
-    if (NULL != scanned_out)
-        *scanned_out = 0;
-    if (NULL != hash_out)
-        *hash_out = NULL;
-    if (NULL != file_type_out)
-        *file_type_out = NULL;
 
     if (FSTAT(desc, &sb) == -1) {
         cli_errmsg("cl_scandesc_callback: Can't fstat descriptor %d\n", desc);
@@ -9586,6 +9588,17 @@ cl_error_t cl_scanmap_ex2(
     cl_error_t status;
     cl_scan_report_t *report = NULL;
 
+    if (NULL != verdict_out)
+        *verdict_out = CL_VERDICT_NOTHING_FOUND;
+    if (NULL != last_alert_out)
+        *last_alert_out = NULL;
+    if (NULL != scanned_out)
+        *scanned_out = 0;
+    if (NULL != hash_out)
+        *hash_out = NULL;
+    if (NULL != file_type_out)
+        *file_type_out = NULL;
+
     if (NULL != report_out)
         *report_out = NULL;
 
@@ -9604,15 +9617,6 @@ cl_error_t cl_scanmap_ex2(
     }
 
     cli_scan_report_set_root_size(report, (uint64_t)map->len);
-
-    *verdict_out    = CL_VERDICT_NOTHING_FOUND;
-    *last_alert_out = NULL;
-    if (NULL != scanned_out)
-        *scanned_out = 0;
-    if (NULL != hash_out)
-        *hash_out = NULL;
-    if (NULL != file_type_out)
-        *file_type_out = NULL;
 
     if (NULL != filename && map->name == NULL) {
         // Use the provided name for the fmap name if one wasn't already set.
@@ -9803,7 +9807,20 @@ static cl_error_t scanfile_ex2_with_temporary_bytes(
     int fd;
     cl_error_t ret;
     cl_scan_report_t *report = NULL;
-    const char *fname        = cli_to_utf8_maybe_alloc(filename);
+    const char *fname;
+
+    if (NULL != verdict_out)
+        *verdict_out = CL_VERDICT_NOTHING_FOUND;
+    if (NULL != last_alert_out)
+        *last_alert_out = NULL;
+    if (NULL != scanned_out)
+        *scanned_out = 0;
+    if (NULL != hash_out)
+        *hash_out = NULL;
+    if (NULL != file_type_out)
+        *file_type_out = NULL;
+
+    fname = cli_to_utf8_maybe_alloc(filename);
 
     if (NULL != report_out)
         *report_out = NULL;

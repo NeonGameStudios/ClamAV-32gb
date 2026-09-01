@@ -19038,3 +19038,21 @@ source-guarded. Current-source production-linked relink/execution, complete
 PDF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+## Public scan output initialization — 2026-09-01
+
+The extended map, descriptor, and file scan entrypoints previously initialized
+caller output objects only after optional structured-report creation. A report
+allocation failure could therefore return `CL_EMEM` while leaving a caller's
+verdict, alert, scanned-byte count, hash, or file-type outputs unchanged from
+an earlier scan. The shared entry paths now clear each non-null output before
+any report allocation, filename conversion, or descriptor setup; required
+pointer validation remains fail-visible and no sentinel is dereferenced.
+
+`test_scan_report_allocation_failure_clears_output` now seeds every output
+with stale values and verifies that `cl_scanmap_ex2()`, `cl_scandesc_ex2()`,
+and `cl_scanfile_ex2()` clear them when report allocation fails. The source
+guard covers the early reset paths. Current-source production-linked execution,
+sanitizer, full ingress/service parity, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+release qualification remain required.

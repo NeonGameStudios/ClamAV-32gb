@@ -1937,6 +1937,8 @@ START_TEST(test_scan_report_allocation_failure_clears_output)
     cl_scan_report_t *report;
     cl_verdict_t verdict;
     const char *last_alert;
+    char *hash_out;
+    char *file_type_out;
     uint64_t scanned;
     cl_error_t ret;
     int fd;
@@ -1946,35 +1948,70 @@ START_TEST(test_scan_report_allocation_failure_clears_output)
     ck_assert_ptr_nonnull(map);
 
     report     = (cl_scan_report_t *)(uintptr_t)1U;
-    verdict    = CL_VERDICT_NOTHING_FOUND;
-    last_alert = NULL;
-    scanned    = 0;
+    verdict       = CL_VERDICT_STRONG_INDICATOR;
+    last_alert    = (const char *)(uintptr_t)1U;
+    hash_out      = (char *)(uintptr_t)1U;
+    file_type_out = (char *)(uintptr_t)1U;
+    scanned       = UINT64_MAX;
     scan_report_test_allocation_failures = 0;
     scan_report_test_fail_allocation     = true;
     ret = cl_scanmap_ex2(map, "scan-report-map", &verdict, &last_alert, &scanned,
-                         g_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL,
-                         &report);
+                         g_engine, &options, NULL, NULL, &hash_out,
+                         NULL, &file_type_out, &report);
     scan_report_test_fail_allocation = false;
     ck_assert_int_eq(ret, CL_EMEM);
     ck_assert_uint_eq(scan_report_test_allocation_failures, 1U);
     ck_assert_ptr_null(report);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert_uint_eq(scanned, 0);
+    ck_assert_ptr_null(hash_out);
+    ck_assert_ptr_null(file_type_out);
 
     fd = open("/dev/null", O_RDONLY | O_BINARY);
     ck_assert_int_ge(fd, 0);
     report     = (cl_scan_report_t *)(uintptr_t)1U;
-    verdict    = CL_VERDICT_NOTHING_FOUND;
-    last_alert = NULL;
-    scanned    = 0;
+    verdict       = CL_VERDICT_STRONG_INDICATOR;
+    last_alert    = (const char *)(uintptr_t)1U;
+    hash_out      = (char *)(uintptr_t)1U;
+    file_type_out = (char *)(uintptr_t)1U;
+    scanned       = UINT64_MAX;
     scan_report_test_allocation_failures = 0;
     scan_report_test_fail_allocation     = true;
     ret = cl_scandesc_ex2(fd, "scan-report-desc", &verdict, &last_alert, &scanned,
-                          g_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL,
-                          &report);
+                          g_engine, &options, NULL, NULL, &hash_out,
+                          NULL, &file_type_out, &report);
     scan_report_test_fail_allocation = false;
     ck_assert_int_eq(close(fd), 0);
     ck_assert_int_eq(ret, CL_EMEM);
     ck_assert_uint_eq(scan_report_test_allocation_failures, 1U);
     ck_assert_ptr_null(report);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert_uint_eq(scanned, 0);
+    ck_assert_ptr_null(hash_out);
+    ck_assert_ptr_null(file_type_out);
+
+    report       = (cl_scan_report_t *)(uintptr_t)1U;
+    verdict      = CL_VERDICT_STRONG_INDICATOR;
+    last_alert   = (const char *)(uintptr_t)1U;
+    hash_out     = (char *)(uintptr_t)1U;
+    file_type_out = (char *)(uintptr_t)1U;
+    scanned      = UINT64_MAX;
+    scan_report_test_allocation_failures = 0;
+    scan_report_test_fail_allocation     = true;
+    ret = cl_scanfile_ex2("/dev/null", &verdict, &last_alert, &scanned,
+                          g_engine, &options, NULL, NULL, &hash_out, NULL,
+                          NULL, &file_type_out, &report);
+    scan_report_test_fail_allocation = false;
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_uint_eq(scan_report_test_allocation_failures, 1U);
+    ck_assert_ptr_null(report);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert_uint_eq(scanned, 0);
+    ck_assert_ptr_null(hash_out);
+    ck_assert_ptr_null(file_type_out);
 
     cl_fmap_close(map);
 }

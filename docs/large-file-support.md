@@ -11749,6 +11749,23 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## Public scan output initialization — 2026-09-01
+
+The extended map, descriptor, and file scan entrypoints now clear every
+non-null verdict, alert, scanned-byte, hash, and file-type output before
+optional structured-report allocation, filename conversion, or descriptor
+setup can fail. This prevents an early `CL_EMEM` or input/setup error from
+leaving stale caller-visible results while preserving required pointer
+validation and report completion behavior.
+
+`test_scan_report_allocation_failure_clears_output` seeds all outputs with
+stale values and covers `cl_scanmap_ex2()`, `cl_scandesc_ex2()`, and
+`cl_scanfile_ex2()` when report allocation fails. Current-source
+production-linked execution,
+sanitizer, full ingress/service parity, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+release qualification remain required.
+
 ## EGG direct scanner entry boundaries — 2026-09-01
 
 The internal EGG scanner entry now rejects a null context with `CL_ENULLARG`,

@@ -11177,6 +11177,17 @@ qualification as required evidence.
 - Keep optional RAR clean completion fail-visible when the layer was already
   incomplete, while preserving detections and stronger decoder/parser,
   resource, read, timeout, and cleanup results. Enabled-UnRAR execution,
-  complete RAR/RAR-SFX corpus, sanitizer/leak, certified Linux x86-64,
+complete RAR/RAR-SFX corpus, sanitizer/leak, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and
+final parser/release qualification remain open.
+
+## Public scan output initialization — 2026-09-01
+
+- Keep the extended map, descriptor, and file scan entrypoints clearing every
+  non-null verdict, alert, scanned-byte, hash, and file-type output before
+  report allocation, filename conversion, or descriptor setup can fail.
+- Retain the stale-output allocation-failure regression for map, descriptor,
+  and file APIs and the source guards. Current-source production-linked
+  execution, sanitizer, full ingress/service parity, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
-  final parser/release qualification remain open.
+  final release qualification remain open.
