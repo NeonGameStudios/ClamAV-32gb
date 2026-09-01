@@ -17353,6 +17353,23 @@ sanitizer, certified Linux x86-64, production CVD/service parity,
 materialized-large-file, Sonic1 resource evidence, and the final
 requirement-by-requirement release audit remain open.
 
+## UTF-8/script normalization current-source rerun — 2026-08-31
+
+The canonical `scanners.c`, `htmlnorm.c`, `htmlnorm.h`, and
+`check_clamav.c` sources were compared with the existing Docker
+production-linked GCC harness; all SHA-256 digests matched exactly. With a
+60-second focused-test timeout, the current-source cases pass
+`text_encoding` 3/3, `html` 12/12, `script` 1/1, and `screnc` 1/1 with no
+failures or errors. The results cover incremental UTF-8 validation,
+bounded UTF-16 decoding, normalized-view accounting, generated-size caps,
+read/cleanup failures, timeouts, and the HTML/script corpus path.
+
+This is refreshed normalization evidence, not final `CL_TYPE_TEXT_UTF8`
+qualification. Production signature/corpus breadth, current-head sanitizer,
+certified Linux x86-64, production-CVD/service parity,
+materialized-large-file, Sonic1 resource evidence, and the final
+requirement-by-requirement release audit remain open.
+
 ## CVD skipped-member and hash-context follow-up — 2026-08-31
 
 The current CVD loader now consumes and hashes database members that are

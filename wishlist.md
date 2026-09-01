@@ -9841,6 +9841,18 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## UTF-8/script normalization current-source rerun — 2026-08-31
+
+- Retain exact canonical/container SHA-256 equality for `scanners.c`,
+  `htmlnorm.c`, `htmlnorm.h`, and `check_clamav.c`.
+- Retain the current-source production-linked GCC evidence with `T=60`:
+  `text_encoding` passes 3/3, `html` 12/12, `script` 1/1, and `screnc` 1/1
+  with no failures or errors.
+- Complete production signature/corpus breadth, current-head sanitizer,
+  certified Linux x86-64, production-CVD/service parity,
+  materialized-large-file, Sonic1 resource, and final `CL_TYPE_TEXT_UTF8`
+  qualification.
+
 ## MIME/mbox current-source production-linked rerun — 2026-08-31
 
 - Retain exact canonical/container SHA-256 equality for `mbox.c`, `mbox.h`,
