@@ -304,6 +304,15 @@ Sonic1, resource, and final qualification remain required.
 - Keep the HFS+ fork regression's valid fmap callback intact across its
   multiple subcases; malformed forks must return explicit incomplete results
   rather than crash before admission.
+- Record canonical/container SHA-256 equality before accepting the Docker
+  relink: `hfsplus.c`
+  `06e2a7181f92adc8b338aae26325a0df8b404155944f4fdc364abdf02e2d4883`,
+  `hfsplus.h`
+  `d76848aba83232d971790ef39fdd4ac0165aff368572c19a5d2c733379f05e72`,
+  `scanners.c`
+  `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`, and
+  `check_clamav.c`
+  `d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`.
 - Retain current-source production-linked GCC evidence at `hfs_map` 20/20,
   `hfs_inline` 2/2, and `hfs_fork` 1/1. ExtentOverflow, full HFS+ corpus,
 certified Linux x86-64, production-CVD/service, materialized-large-file,

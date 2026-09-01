@@ -578,7 +578,15 @@ parser/release qualification remain required.
 
 ## Current HFS+ production-linked rerun — 2026-08-31
 
-The HFS+ fork regression now retains its valid fmap read callback across all
+The canonical `hfsplus.c`, `hfsplus.h`, `scanners.c`, and `check_clamav.c`
+sources were transferred into the existing Docker production-linked GCC
+harness with exact SHA-256 equality (`hfsplus.c`
+`06e2a7181f92adc8b338aae26325a0df8b404155944f4fdc364abdf02e2d4883`,
+`hfsplus.h` `d76848aba83232d971790ef39fdd4ac0165aff368572c19a5d2c733379f05e72`,
+`scanners.c` `be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`,
+and `check_clamav.c`
+`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
+HFS+ fork regression retains its valid fmap read callback across all
 subcases; its previous `map->need = NULL` assignment caused a test-only null
 callback crash before the final malformed-fork assertion. The current-source
 production-linked GCC harness passes `hfs_map` 20/20, `hfs_inline` 2/2, and
