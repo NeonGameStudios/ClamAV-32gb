@@ -1,5 +1,20 @@
 # Wishlist
 
+## Structured detector direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scan_structured()` fail-visible for direct callers when a valid
+  structured-data scan completes with a pre-existing sticky incomplete state.
+  The clean untainted result remains `CL_SUCCESS`, while the pre-tainted clean
+  completion returns `CL_EPARSE` and preserves the exact prior reason plus fmap
+  non-cacheability.
+- Retain `test_structured_detector_sticky_incomplete_result_is_fail_visible`
+  and the current-source production-linked GCC isolation oracle: clean and
+  sticky cases return `CL_SUCCESS`/`CL_EPARSE`, while the exact pre-change
+  object returns clean for both. Keep full structured detector corpus/raw
+  dispatch, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification open.
+
 ## TAR direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_untar()` fail-visible for direct callers when a valid empty TAR

@@ -33413,6 +33413,45 @@ START_TEST(test_structured_detector_time_limit_is_fail_visible)
 END_TEST
 #endif
 
+START_TEST(test_structured_detector_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t input[] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine  = &engine;
+    ctx.options = &options;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scan_structured(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine           = &engine;
+    ctx.options          = &options;
+    ctx.fmap             = map;
+    ctx.scan_incomplete  = true;
+    ctx.scan_incomplete_reason = "pre-existing structured detector incomplete state";
+
+    ck_assert_int_eq(cli_scan_structured(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "pre-existing structured detector incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_tnef_exact_eof_ends_attribute_list)
 {
     static const uint8_t input[] = {
@@ -52986,6 +53025,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_structured_map, test_structured_detector_missing_map_is_fail_visible);
     tcase_add_test(tc_structured_map, test_structured_detector_requires_scan_options);
     tcase_add_test(tc_structured_map, test_structured_detector_clipped_read_failure_is_truncation);
+    tcase_add_test(tc_structured_map, test_structured_detector_sticky_incomplete_result_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_structured_map, test_structured_detector_time_limit_is_fail_visible);
 #endif
@@ -52996,6 +53036,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_structured_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_structured_detector_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_structured_detector_clipped_read_failure_is_truncation);
+    tcase_add_test(tc_cl, test_structured_detector_sticky_incomplete_result_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_structured_detector_time_limit_is_fail_visible);
 #endif

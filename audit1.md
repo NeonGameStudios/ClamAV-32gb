@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Structured detector direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scan_structured()` could return `CL_SUCCESS` after a valid structured
+detector walk when the recognized layer already carried sticky incomplete
+state. Its completed clean result now reconciles that state to `CL_EPARSE`,
+preserving the original diagnostic and fmap non-cacheability. The regression
+`test_structured_detector_sticky_incomplete_result_is_fail_visible` checks the
+clean untainted baseline and the pre-tainted clean completion. A current-source
+production-linked GCC isolation oracle passes `CL_SUCCESS`/`CL_EPARSE`, while
+the exact pre-change object returns clean for both; the current scanners.c and
+Check translation unit compile with production GCC flags. Full structured
+detector corpus/raw dispatch, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## TAR direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_untar()` could return the clean result for a valid two-block empty TAR

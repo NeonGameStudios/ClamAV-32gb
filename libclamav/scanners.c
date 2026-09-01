@@ -5208,6 +5208,14 @@ done:
     return ret;
 }
 
+static cl_error_t structured_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 cl_error_t cli_scan_structured(cli_ctx *ctx)
 {
     cl_error_t status;
@@ -5345,7 +5353,7 @@ cl_error_t cli_scan_structured(cli_ctx *ctx)
         }
     }
 
-    return CL_SUCCESS;
+    return structured_reconcile_status(ctx, CL_SUCCESS);
 }
 
 #if defined(_WIN32) || defined(C_LINUX) || defined(C_DARWIN)
