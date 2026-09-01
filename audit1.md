@@ -5,12 +5,13 @@
 The PE header metadata path discarded every `cli_json*()` result and could
 also continue with a missing PE metadata object. A report allocation or
 record failure could therefore leave a confirmed PE layer clean while header
-metadata inspection was incomplete. All required header JSON writes now use a
-single status boundary; failures record an exact sticky diagnostic, taint the
-fmap, and return the critical status. The JSON-wrap regression
-`test_pe_header_metadata_record_failure_is_fail_visible` injects the
-`NumberOfSections` write failure and requires `CL_EMEM`, the exact diagnostic,
-and non-cacheability. Current-source production-GCC compilation,
+or section metadata inspection was incomplete. All required header and
+section JSON writes now use checked status boundaries; failures record an
+exact sticky diagnostic, taint the fmap, and return the critical status. The
+JSON-wrap regressions `test_pe_header_metadata_record_failure_is_fail_visible`
+and `test_pe_section_metadata_record_failure_is_fail_visible` inject header
+and section write failures and require `CL_EMEM`, the exact diagnostic, and
+non-cacheability. Current-source production-GCC compilation,
 production-linked execution, sanitizer, complete PE corpus, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
 and final parser/release qualification remain required.

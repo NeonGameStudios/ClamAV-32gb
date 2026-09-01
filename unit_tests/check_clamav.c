@@ -296,6 +296,7 @@ static int pe_test_fail_import_table;
 static int pe_test_fail_import_item;
 static int pe_test_fail_imphash;
 static int pe_test_fail_header_metadata;
+static int pe_test_fail_section_metadata;
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
@@ -332,6 +333,8 @@ cl_error_t __wrap_cli_jsonint(json_object *obj, const char *key, int32_t i)
     if (pdf_test_fail_page_count && key && strcmp(key, "PageCount") == 0)
         return CL_EMEM;
     if (pe_test_fail_header_metadata && key && strcmp(key, "NumberOfSections") == 0)
+        return CL_EMEM;
+    if (pe_test_fail_section_metadata && key && strcmp(key, "RawSize") == 0)
         return CL_EMEM;
     return __real_cli_jsonint(obj, key, i);
 }
@@ -41030,6 +41033,57 @@ START_TEST(test_pe_header_metadata_record_failure_is_fail_visible)
 END_TEST
 #endif
 
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_pe_section_metadata_record_failure_is_fail_visible)
+{
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    uint8_t data[PE32PLUS_TEST_FILE_SIZE];
+    fmap_t *map;
+    cl_error_t ret;
+
+    build_pe32plus_import_fixture(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                   = scan_engine;
+    ctx.dconf                    = scan_engine->dconf;
+    ctx.options                  = &options;
+    ctx.fmap                     = map;
+    ctx.this_layer_tmpdir        = tmpdir;
+    ctx.this_layer_metadata_json = json_object_new_object();
+    ck_assert_ptr_nonnull(ctx.this_layer_metadata_json);
+    ctx.recursion_stack          = &layer;
+    ctx.recursion_stack_size     = 1;
+    layer.fmap                   = map;
+
+    pe_test_fail_section_metadata = 1;
+    ret                           = cli_scanpe(&ctx);
+    pe_test_fail_section_metadata = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PE header metadata JSON could not be recorded");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(ctx.this_layer_metadata_json);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+#endif
+
 START_TEST(test_pe_truncated_header_is_fail_visible)
 {
     static const uint8_t data[] = {'M', 'Z'};
@@ -53529,6 +53583,7 @@ static Suite *test_cl_suite(void)
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_pe32plus, test_pe_import_metadata_record_failure_is_fail_visible);
     tcase_add_test(tc_pe32plus, test_pe_header_metadata_record_failure_is_fail_visible);
+    tcase_add_test(tc_pe32plus, test_pe_section_metadata_record_failure_is_fail_visible);
 #endif
     suite_add_tcase(s, tc_pe_map);
     tcase_add_checked_fixture(tc_pe_map, cl_setup, cl_teardown);

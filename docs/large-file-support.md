@@ -6,12 +6,14 @@ pending
 ## PE header metadata record failure — 2026-09-01
 
 The PE header parser now checks creation of its metadata object and every
-required JSON string, integer, boolean, and 64-bit integer record. A failure
-records the exact sticky incomplete diagnostic, prevents fmap caching, and
-returns the critical status through the header and PE scan boundaries. The
-JSON-wrap regression `test_pe_header_metadata_record_failure_is_fail_visible`
-injects a `NumberOfSections` failure. Current-source production-linked
-execution, sanitizer, complete PE corpus, certified Linux x86-64,
+required header and section JSON string, integer, boolean, and 64-bit integer
+record. A failure records the exact sticky incomplete diagnostic, prevents
+fmap caching, and returns the critical status through the header and PE scan
+boundaries. The JSON-wrap regressions
+`test_pe_header_metadata_record_failure_is_fail_visible` and
+`test_pe_section_metadata_record_failure_is_fail_visible` inject header and
+section failures. Current-source production-linked execution, sanitizer,
+complete PE corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain open.
 

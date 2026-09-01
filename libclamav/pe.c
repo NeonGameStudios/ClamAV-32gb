@@ -3041,52 +3041,47 @@ static struct json_object *get_section_json(cli_ctx *ctx)
     return section;
 }
 
-static void add_section_info(cli_ctx *ctx, struct cli_exe_section *s)
+static cl_error_t add_section_info(cli_ctx *ctx, struct cli_exe_section *s)
 {
-    struct json_object *sections, *section, *obj;
+    struct json_object *sections, *section;
     char address[16];
+    cl_error_t ret;
 
     sections = get_section_json(ctx);
     if (!(sections))
-        return;
+        return CL_EMEM;
 
-    section = json_object_new_object();
+    section = cli_jsonobj(sections, NULL);
     if (!(section))
-        return;
+        return CL_EMEM;
 
-    obj = json_object_new_int((int32_t)(s->rsz));
-    if (!(obj))
-        return;
+    ret = cli_jsonint(section, "RawSize", (int32_t)(s->rsz));
+    if (ret != CL_SUCCESS)
+        return ret;
 
-    json_object_object_add(section, "RawSize", obj);
-
-    obj = json_object_new_int((int32_t)(s->raw));
-    if (!(obj))
-        return;
-
-    json_object_object_add(section, "RawOffset", obj);
+    ret = cli_jsonint(section, "RawOffset", (int32_t)(s->raw));
+    if (ret != CL_SUCCESS)
+        return ret;
 
     snprintf(address, sizeof(address), "0x%08x", s->rva);
 
-    obj = json_object_new_string(address);
-    if (!(obj))
-        return;
+    ret = cli_jsonstr(section, "VirtualAddress", address);
+    if (ret != CL_SUCCESS)
+        return ret;
 
-    json_object_object_add(section, "VirtualAddress", obj);
+    ret = cli_jsonbool(section, "Executable", (s->chr & 0x20000000) == 0x20000000);
+    if (ret != CL_SUCCESS)
+        return ret;
 
-    obj = json_object_new_boolean((s->chr & 0x20000000) == 0x20000000);
-    if ((obj))
-        json_object_object_add(section, "Executable", obj);
+    ret = cli_jsonbool(section, "Writable", (s->chr & 0x80000000) == 0x80000000);
+    if (ret != CL_SUCCESS)
+        return ret;
 
-    obj = json_object_new_boolean((s->chr & 0x80000000) == 0x80000000);
-    if ((obj))
-        json_object_object_add(section, "Writable", obj);
+    ret = cli_jsonbool(section, "Signed", s->urva >> 31 || s->uvsz >> 31 || (s->rsz && s->uraw >> 31) || s->ursz >> 31);
+    if (ret != CL_SUCCESS)
+        return ret;
 
-    obj = json_object_new_boolean(s->urva >> 31 || s->uvsz >> 31 || (s->rsz && s->uraw >> 31) || s->ursz >> 31);
-    if ((obj))
-        json_object_object_add(section, "Signed", obj);
-
-    json_object_array_add(sections, section);
+    return CL_SUCCESS;
 }
 
 static cl_error_t pe_readn_full(cli_ctx *ctx,
@@ -5982,7 +5977,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         sname[8] = '\0';
 
         if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
-            add_section_info(ctx, &peinfo->sections[i]);
+            PE_RECORD_HEADER_JSON(add_section_info(ctx, &peinfo->sections[i]));
 
             if (cli_json_timeout_cycle_check(ctx, &toval) != CL_SUCCESS) {
                 ret = CL_ETIMEOUT;

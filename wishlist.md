@@ -3,14 +3,16 @@
 ## PE header metadata record failure — 2026-09-01
 
 - Keep every required PE header JSON write fail-visible, including metadata
-  object creation: record the exact sticky incomplete state, prevent fmap
-  caching, and return the critical status without hiding stronger parser or
-  detection results.
-- Retain `test_pe_header_metadata_record_failure_is_fail_visible` and its
-  JSON-wrap source guards; complete current-source production-GCC compilation
-  and production-linked execution, sanitizer, complete PE corpus, certified
-  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
-  resource, and final parser/release qualification.
+  object creation and section metadata: record the exact sticky incomplete
+  state, prevent fmap caching, and return the critical status without hiding
+  stronger parser or detection results.
+- Retain `test_pe_header_metadata_record_failure_is_fail_visible` and
+  `test_pe_section_metadata_record_failure_is_fail_visible` with their
+  JSON-wrap source guards; complete current-source production-GCC
+  compilation and production-linked execution, sanitizer, complete PE
+  corpus, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification.
 
 ## PE import metadata record failure — 2026-09-01
 
