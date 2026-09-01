@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## RAR SFX header sticky completion — 2026-09-01
+
+The RAR4 SFX fixed-header admission helper validated a complete main-header
+prefix but returned `CL_SUCCESS` even when the owning context already carried
+sticky incomplete state. The later RAR parser reconciled its own completion,
+but the admission boundary could still begin nested dispatch from a
+non-complete context. `cli_rar_sfx_header_check()` is now an internal
+header-probe entry with confirmed success routed through the existing RAR
+reconciliation helper, converting only clean completion to `CL_EPARSE` while
+preserving stronger statuses. The direct
+`test_rar_sfx_header_sticky_incomplete_result_is_fail_visible` regression
+preserves the exact prior diagnostic and fmap non-cacheability. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+RAR/UnRAR corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## InstallShield MSI header sticky completion — 2026-09-01
 
 `cli_ishield_msi_header_check()` validated a confirmed InstallShield MSI SFX

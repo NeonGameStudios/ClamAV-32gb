@@ -124,6 +124,14 @@ cl_error_t cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx,
                                const char *name, uint32_t attributes);
 
 /**
+ * @brief Validate the fixed RAR4 header before admitting an embedded SFX layer.
+ *
+ * This internal probe confirms enough structure for SFX dispatch but does not
+ * perform archive extraction.
+ */
+cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset);
+
+/**
  * @brief Perform a magic scan on the current ctx.
  *
  * Calls to cli_magic_scan() should be wrapped with a cli_recursion_stack_push/pop, except in scan_common()

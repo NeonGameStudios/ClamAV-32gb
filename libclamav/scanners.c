@@ -5593,7 +5593,7 @@ static inline void perf_done(cli_ctx *ctx)
  * the fixed main-header prefix before admitting an embedded RAR layer so that
  * a coincidental signature in an executable payload cannot become a parser
  * failure for the containing file. */
-static cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset)
+cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset)
 {
     static const unsigned char rar_signature[] = {0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00};
     unsigned char header[14];
@@ -5624,7 +5624,7 @@ static cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset)
     if (header_size < 7 || (uint64_t)header_size > remaining - 7)
         return CL_EPARSE;
 
-    return CL_SUCCESS;
+    return cli_rar_reconcile_status(ctx, CL_SUCCESS);
 }
 
 /* scanraw() mode that performs file-type recognition without repeating the

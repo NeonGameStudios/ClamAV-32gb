@@ -1,5 +1,18 @@
 # Wishlist
 
+## RAR SFX header sticky completion — 2026-09-01
+
+- Keep confirmed RAR4 SFX fixed-header admission fail-visible when the owning
+  context is already incomplete; convert only clean completion to `CL_EPARSE`
+  and preserve stronger header-probe statuses.
+- Retain the direct
+  `test_rar_sfx_header_sticky_incomplete_result_is_fail_visible` regression,
+  the exact prior diagnostic, fmap non-cacheability, and source guards.
+- Complete current-source production-GCC compilation and production-linked
+  execution, sanitizer, complete RAR/UnRAR corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## InstallShield MSI header sticky completion — 2026-09-01
 
 - Keep confirmed `cli_ishield_msi_header_check()` success fail-visible when
