@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PE metadata sticky completion — 2026-09-01
+
+The metadata-only `cli_peheader()` entry now returns `CL_EPARSE` when native
+PE section or entrypoint coordinates exceed the legacy 32-bit metadata ABI.
+Native-width metadata remains available to callers, while the exact sticky
+diagnostic marks the confirmed PE layer incomplete and non-cacheable. The
+`test_pe_header_preserves_unsigned_high_bit_section_fields` regression covers
+the high-bit section case. Current-source production-linked execution,
+sanitizer, complete PE corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## PDF exported metadata write visibility — 2026-09-01
 
 The confirmed PDF parser's final metadata export now checks every attempted

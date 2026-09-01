@@ -6336,8 +6336,10 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     peinfo->is_dll = is_dll;
 
     ret = CL_SUCCESS;
-    if (peinfo->legacy_metadata_incomplete)
+    if (peinfo->legacy_metadata_incomplete) {
         cli_mark_scan_incomplete(ctx, "PE coordinates exceed the legacy 32-bit metadata ABI");
+        ret = CL_EPARSE;
+    }
 
 done:
     /* In the fail case, peinfo will get destroyed by the caller */

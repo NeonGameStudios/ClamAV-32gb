@@ -1,5 +1,17 @@
 # Wishlist
 
+## PE metadata sticky completion — 2026-09-01
+
+- Keep `cli_peheader()` fail-visible when native PE coordinates cannot be
+  represented by the legacy 32-bit metadata ABI: preserve the native section
+  view, record the exact sticky diagnostic, mark the map non-cacheable, and
+  return `CL_EPARSE` rather than `CL_SUCCESS`.
+- Retain `test_pe_header_preserves_unsigned_high_bit_section_fields` and its
+  source guards; complete current-source production-GCC compilation and
+  production-linked execution, sanitizer, complete PE corpus, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification.
+
 ## PDF exported metadata write visibility — 2026-09-01
 
 - Keep every attempted PDF exported metadata JSON write fail-visible: record

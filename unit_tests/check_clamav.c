@@ -6217,8 +6217,10 @@ START_TEST(test_pe_header_preserves_unsigned_high_bit_section_fields)
     header_ctx.this_layer_tmpdir = tmpdir;
     cli_exe_info_init(&peinfo, 0);
     ret = cli_peheader(&header_ctx, &peinfo, CLI_PEHEADER_OPT_NONE);
-    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(header_ctx.scan_incomplete);
+    ck_assert_str_eq(header_ctx.scan_incomplete_reason, "PE coordinates exceed the legacy 32-bit metadata ABI");
+    ck_assert(nested->dont_cache_flag);
     ck_assert(peinfo.legacy_metadata_incomplete);
     ck_assert_uint_eq(peinfo.sections[1].urva, 0x80002000U);
     ck_assert_uint_eq(peinfo.sections64[1].urva, 0x80002000U);

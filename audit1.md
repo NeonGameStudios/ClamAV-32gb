@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## PE metadata sticky completion — 2026-09-01
+
+`cli_peheader()` preserved native-width section metadata and marked
+`legacy_metadata_incomplete` when PE coordinates exceeded the legacy 32-bit
+metadata ABI, but its metadata-only entry returned `CL_SUCCESS`. That could
+expose a confirmed PE layer as clean even though PE-specific inspection was
+skipped. The direct header boundary now records the exact sticky diagnostic,
+returns `CL_EPARSE`, and leaves the native section view available. The
+expanded `test_pe_header_preserves_unsigned_high_bit_section_fields`
+regression asserts the fail-visible status, diagnostic, and fmap
+non-cacheability. Current-source production-GCC compilation,
+production-linked execution, sanitizer, complete PE corpus, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## PDF exported metadata write visibility — 2026-09-01
 
 The confirmed PDF parser's final `pdf_export_json()` path discarded required
