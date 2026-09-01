@@ -1011,5 +1011,5 @@ cl_error_t cli_unpackmacho(cli_ctx *ctx)
     ret = cli_bytecode_runhook(ctx, ctx->engine, bc_ctx, BC_MACHO_UNPACKER, ctx->fmap);
     cli_dbgmsg("Finished running bytecode hook\n");
     cli_bytecode_context_destroy(bc_ctx);
-    return ret;
+    return cli_macho_reconcile_status(ctx, ret); /* preserve direct sticky incomplete state */
 }

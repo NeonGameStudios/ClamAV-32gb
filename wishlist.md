@@ -1,5 +1,22 @@
 # Wishlist
 
+## ELF/Mach-O bytecode unpack-entry sticky reconciliation — 2026-09-01
+
+- Keep `cli_unpackelf()` and `cli_unpackmacho()` fail-visible for direct
+  callers when a no-hook bytecode dispatch completes cleanly after the owning
+  layer already carries sticky incomplete state. Clean completion must return
+  `CL_EPARSE` and preserve the exact prior reason and fmap non-cacheability;
+  stronger hook, nested-scan, timeout, resource, detection, and cleanup
+  statuses remain authoritative.
+- Retain `test_elf_unpack_sticky_incomplete_result_is_fail_visible` and
+  `test_macho_unpack_sticky_incomplete_result_is_fail_visible`. Current-source
+  ELF, Mach-O, and Check translation units compile with warning-enabled
+  production GCC flags, and a section-pruned current-source production-linked
+  runner passes both clean and pre-tainted cases in memory. Keep full current
+  Check relink/execution, complete executable bytecode/corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification open.
+
 ## OLE10 direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scan_ole10()` fail-visible for direct callers when a valid

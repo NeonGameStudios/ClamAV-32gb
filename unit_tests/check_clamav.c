@@ -43448,6 +43448,35 @@ START_TEST(test_elf_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_elf_unpack_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t input[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_unpackelf(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing ELF unpack incomplete state";
+    map->dont_cache_flag       = true;
+    ck_assert_int_eq(cli_unpackelf(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing ELF unpack incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
 START_TEST(test_elf_unpack_context_allocation_failure_is_fail_visible)
 {
@@ -44346,6 +44375,35 @@ START_TEST(test_macho_missing_maps_are_fail_visible)
         ck_assert_int_eq(cli_unpackmacho(&ctx), CL_ENULLARG);
         cl_fmap_close(map);
     }
+}
+END_TEST
+
+START_TEST(test_macho_unpack_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t input[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_unpackmacho(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing Mach-O unpack incomplete state";
+    map->dont_cache_flag       = true;
+    ck_assert_int_eq(cli_unpackmacho(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing Mach-O unpack incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -52012,6 +52070,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_elf_map);
     tcase_add_checked_fixture(tc_elf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_map, test_elf_missing_map_is_fail_visible);
+    tcase_add_test(tc_elf_map, test_elf_unpack_sticky_incomplete_result_is_fail_visible);
 #ifdef CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
     tcase_add_test(tc_elf_map, test_elf_unpack_context_allocation_failure_is_fail_visible);
 #endif
@@ -52535,6 +52594,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_macho_boundary, test_macho_load_command_alignment_is_fail_visible);
     suite_add_tcase(s, tc_macho_map);
     tcase_add_test(tc_macho_map, test_macho_missing_maps_are_fail_visible);
+    tcase_add_test(tc_macho_map, test_macho_unpack_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_macho_unsupported);
     tcase_add_test(tc_macho_unsupported, test_macho_unibin_unsupported_architecture_count_is_fail_visible);
     tcase_add_test(tc_macho_unsupported, test_macho_unibin_empty_architecture_table_is_fail_visible);

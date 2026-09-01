@@ -121,6 +121,14 @@ static cl_error_t cli_elf_checktimelimit(cli_ctx *ctx, const char *reason)
     return ret;
 }
 
+static cl_error_t cli_elf_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 static uint64_t cli_rawaddr32(uint32_t vaddr, struct elf_program_hdr32 *ph, uint16_t phnum, uint8_t conv, uint8_t *err)
 {
     uint16_t i, found = 0;
@@ -1217,5 +1225,5 @@ done:
         cli_bytecode_context_destroy(bc_ctx);
     }
 
-    return ret;
+    return cli_elf_reconcile_status(ctx, ret);
 }

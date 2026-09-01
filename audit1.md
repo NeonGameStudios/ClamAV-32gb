@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## ELF/Mach-O bytecode unpack-entry sticky reconciliation — 2026-09-01
+
+`cli_unpackelf()` and `cli_unpackmacho()` returned a successful no-hook
+bytecode dispatch directly, so direct callers could observe clean completion
+after the owning layer already carried sticky incomplete state. ELF now uses a
+local status reconciliation helper, while Mach-O reuses its existing helper;
+only `CL_SUCCESS`/`CL_CLEAN` are converted to `CL_EPARSE`, preserving stronger
+hook, nested-scan, timeout, resource, detection, and cleanup statuses. The
+registered `test_elf_unpack_sticky_incomplete_result_is_fail_visible` and
+`test_macho_unpack_sticky_incomplete_result_is_fail_visible` cases cover clean
+and pre-tainted no-hook completions with exact reason and non-cacheability
+assertions. Current-source ELF, Mach-O, and Check translation units compile
+with the warning-enabled production GCC flags, and a section-pruned
+current-source runner linked against the preserved production shared library
+passes both parser cases in memory. Full current Check relink/execution,
+complete executable bytecode/corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+qualification remain open.
+
 ## OLE10 direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scan_ole10()` returned the nested descriptor scan status directly, so a
