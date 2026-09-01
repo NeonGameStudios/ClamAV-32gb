@@ -17334,6 +17334,25 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## ELF/PE/Mach-O current-source rerun — 2026-08-31
+
+The canonical ELF (`elf.c`, `elf.h`), PE (`pe.c`, `pe.h`), and Mach-O
+(`macho.c`, `macho.h`, `matcher.c`) sources, together with `scanners.c` and
+`check_clamav.c`, were verified byte-identical to the existing Docker GCC
+harness. Focused production-linked results are ELF `elf` 4/4, `elf_map` 14/14,
+`elf_corpus` 1/1; PE `pe32plus_common` 1/1, `pe` 13/13, `pe_map` 4/4,
+`pe_corpus` 1/1; and Mach-O `macho` 11/11, `macho_fat` 2/2,
+`macho_sections` 1/1, `macho_corpus` 2/2, `macho_timeout` 2/2,
+`macho_boundary` 2/2, `macho_map` 1/1, and `macho_unsupported` 2/2.
+The PE corpus run materialized both checked-in `clam-fsg.exe` and
+`clam-upx.exe` XOR fixtures through the repository CMake targets.
+
+This is refreshed executable-format evidence, not final release
+certification. Complete executable corpus breadth, sanitizer, certified Linux
+x86-64, materialized-large-file/resource, production-CVD/service, Sonic1
+resource evidence, and the final requirement-by-requirement parser/release
+audit remain open.
+
 ## GIF/PNG/JPEG/RIFF/SWF current-source rerun — 2026-08-31
 
 The canonical media/parser sources and `check_clamav.c` were verified

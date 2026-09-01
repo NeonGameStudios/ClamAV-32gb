@@ -9841,6 +9841,19 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## ELF/PE/Mach-O current-source rerun — 2026-08-31
+
+- Retain canonical-source equality for the ELF, PE, Mach-O, matcher, scanner,
+  and unit-test sources in the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: ELF `4/4 + 14/14 + 1/1`,
+  PE `1/1 + 13/13 + 4/4 + 1/1`, and Mach-O `11/11 + 2/2 + 1/1 + 2/2 +
+  2/2 + 2/2 + 1/1 + 2/2` across their direct, map, boundary, timeout,
+  unsupported, and corpus cases; PE used materialized `clam-fsg.exe` and
+  `clam-upx.exe` fixtures.
+- Complete executable corpus breadth, sanitizer, certified Linux x86-64,
+  materialized-large-file/resource, production-CVD/service, Sonic1 resource,
+  and final parser/release qualification.
+
 ## GIF/PNG/JPEG/RIFF/SWF current-source rerun — 2026-08-31
 
 - Retain canonical-source equality for the media/parser sources and
