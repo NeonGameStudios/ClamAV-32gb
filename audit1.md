@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## PE direct sticky-incomplete reconciliation — 2026-09-01
+
+The confirmed PE scanner deliberately marks a short 32-bit entry-point window
+incomplete and skips only legacy fixed-offset heuristics, but its final common
+path returned `CL_SUCCESS`. That allowed a direct caller to observe a clean
+result after required PE inspection had been skipped. The final completion now
+reconciles sticky incomplete state to `CL_EPARSE`, preserving the explicit
+short-window reason, common PE/overlay/bytecode handoff, and fmap
+non-cacheability. The existing deterministic
+`test_pe_short_entrypoint_skips_legacy_path_fail_visible` regression now
+requires `CL_EPARSE`; the current PE source and Check translation unit compile
+with production GCC flags. A full current-object production-linked rerun,
+sanitizer, complete PE/unpacker corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain open.
+
 ## Structured detector direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_scan_structured()` could return `CL_SUCCESS` after a valid structured

@@ -1,5 +1,19 @@
 # Wishlist
 
+## PE direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scanpe()` fail-visible when a confirmed PE skips only the fixed
+  offset legacy path because its entry-point window is short. The parser must
+  return `CL_EPARSE` after preserving the common PE, overlay, and bytecode
+  handoff state, while retaining the explicit incomplete reason and fmap
+  non-cacheability.
+- Retain `test_pe_short_entrypoint_skips_legacy_path_fail_visible` with the
+  `CL_EPARSE` assertion. The current PE source and Check translation unit
+  compile with production GCC flags; full current-object production-linked
+  execution, sanitizer, complete PE/unpacker corpus, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain required.
+
 ## Structured detector direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scan_structured()` fail-visible for direct callers when a valid

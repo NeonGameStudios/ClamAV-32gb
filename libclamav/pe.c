@@ -3161,6 +3161,14 @@ static const char *pe_need_tail_window(cli_ctx *ctx,
     return pe_need_window(ctx, map, (size_t)(end - tail_bytes), length, status, read_reason, range_reason);
 }
 
+static cl_error_t pe_reconcile_status(cli_ctx *ctx, cl_error_t status)
+{
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+        return CL_EPARSE;
+
+    return status;
+}
+
 int cli_scanpe(cli_ctx *ctx)
 {
     uint8_t polipos = 0;
@@ -5133,7 +5141,7 @@ pe_legacy_unpackers_done:
     if (cli_json_timeout_cycle_check(ctx, &toval) != CL_SUCCESS)
         return CL_ETIMEOUT;
 
-    return CL_SUCCESS;
+    return pe_reconcile_status(ctx, CL_SUCCESS);
 }
 
 cl_error_t cli_pe_targetinfo(cli_ctx *ctx, struct cli_exe_info *peinfo)

@@ -39325,7 +39325,7 @@ START_TEST(test_pe_short_entrypoint_skips_legacy_path_fail_visible)
     layer.fmap               = map;
 
     ret = cli_scanpe(&ctx);
-    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "PE legacy x86 entry-point inspection requires a larger read window");
