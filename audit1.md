@@ -38,6 +38,17 @@ directory, and the source guard is present. Production-linked execution,
 sanitizer, certified Linux x86-64, service/CVD, materialized-large-file,
 Sonic1, resource, and final release qualification remain open.
 
+## Exported file-scan filename admission — 2026-09-01
+
+`cli_magic_scan_file()` passed a null filename or context to its open path
+without an early argument check. The entrypoint now rejects a null filename,
+context, or engine with `CL_ENULLARG` before calling `safe_open()`. The
+regression `test_cli_magic_scan_file_rejects_invalid_inputs` covers the null
+filename with a valid context and the null-context boundary, and the source
+guard is present. Production-linked execution, sanitizer, certified Linux
+x86-64, service/CVD, materialized-large-file, Sonic1, resource, and final
+release qualification remain open.
+
 ## Rust parser exported-entry sticky reconciliation — 2026-09-01
 
 The three enabled Rust parser exports (`scan_lha_lzh()`, `cli_scanalz()`, and

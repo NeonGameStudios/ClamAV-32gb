@@ -9617,6 +9617,9 @@ cl_error_t cli_magic_scan_file(const char *filename, cli_ctx *ctx, const char *o
     int fd         = -1;
     cl_error_t ret = CL_EOPEN;
 
+    if (filename == NULL || ctx == NULL || ctx->engine == NULL)
+        return CL_ENULLARG;
+
     /* internal version of cl_scanfile with arec/mrec preserved */
     fd = safe_open(filename, O_RDONLY | O_BINARY);
     if (fd < 0) {

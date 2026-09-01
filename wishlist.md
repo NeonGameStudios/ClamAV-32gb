@@ -31,6 +31,16 @@
   service/CVD, materialized-large-file, Sonic1, resource, and final release
   qualification.
 
+## Exported file-scan filename admission — 2026-09-01
+
+- Keep `cli_magic_scan_file()` fail-visible for null filenames, contexts, and
+  engines before opening a path.
+- Retain `test_cli_magic_scan_file_rejects_invalid_inputs` and its source
+  guard for the open-path boundary.
+- Complete production-linked execution, sanitizer, certified Linux x86-64,
+  service/CVD, materialized-large-file, Sonic1, resource, and final release
+  qualification.
+
 ## Rust parser exported-entry sticky reconciliation — 2026-09-01
 
 - Keep `scan_lha_lzh()`, `cli_scanalz()`, and `scan_onenote()` fail-visible for

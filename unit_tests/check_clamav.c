@@ -19492,6 +19492,20 @@ START_TEST(test_cli_magic_scan_dir_rejects_missing_engine)
 }
 END_TEST
 
+START_TEST(test_cli_magic_scan_file_rejects_invalid_inputs)
+{
+    struct cl_engine engine;
+    cli_ctx ctx;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    ck_assert_int_eq(cli_magic_scan_file(NULL, &ctx, NULL, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+    ck_assert_int_eq(cli_magic_scan_file(NULL, NULL, NULL, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_ignored_file_type_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -53319,6 +53333,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_recursion_state_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_nested_entrypoints_reject_invalid_inputs);
     tcase_add_test(tc_cl, test_cli_magic_scan_dir_rejects_missing_engine);
+    tcase_add_test(tc_cl, test_cli_magic_scan_file_rejects_invalid_inputs);
     tcase_add_test(tc_cl, test_ignored_file_type_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_short_resource_fork_is_fail_visible);
