@@ -3,6 +3,24 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Exported scan-ingress admission refresh — 2026-09-01
+
+The exported magic-scan boundaries now reject malformed caller state before
+parser dispatch: `cli_magic_scan()` requires a usable recursion stack,
+`cli_magic_scan_nested_fmap_type()` rejects null maps before logging map
+coordinates, `cli_magic_scan_buff()` rejects nonzero-length null buffers, and
+the directory/file helpers reject missing engines or paths before walking or
+opening them. Focused source-registered regressions cover missing, zero-size,
+and out-of-range recursion state plus nested-map, directory, and file ingress
+arguments; the generated capability manifest contains 381 entries and the
+source/release gates pass.
+
+These are current-source boundary and syntax-check results, not final
+production qualification. Current-object production-linked execution,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Streaming MIME multipart part-limit parity — 2026-08-31
 
 The disk-backed multipart parser now counts each boundary with a native
