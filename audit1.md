@@ -19023,3 +19023,18 @@ currently unable to remount because Docker reports no overlay space, so
 enabled-UnRAR compilation/execution, complete RAR/RAR-SFX corpus, sanitizer/
 leak, certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain open.
+
+## PDF direct map admission — 2026-09-01
+
+The exported PDF scanner entry previously collapsed a valid context without an
+input fmap into `CL_ENULLARG`. `cli_pdf()` now keeps null-context admission as
+`CL_ENULLARG`, but reports a missing input map as `CL_EPARSE` and marks the
+recognized layer incomplete before any parser access. This makes the
+missing-input boundary consistent with the plan's fail-visible completion
+contract; existing missing-engine and sticky-completion behavior is retained.
+
+`test_pdf_missing_map_is_fail_visible` is registered in the PDF map TCase and
+source-guarded. Current-source production-linked relink/execution, complete
+PDF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

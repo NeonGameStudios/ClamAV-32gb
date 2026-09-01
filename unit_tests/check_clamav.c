@@ -33261,6 +33261,27 @@ START_TEST(test_pdf_null_context_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_missing_map_is_fail_visible)
+{
+    struct cl_engine engine;
+    struct cli_dconf dconf;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine  = &engine;
+    ctx.dconf   = &dconf;
+    ctx.options = &options;
+
+    ck_assert_int_eq(cli_pdf(tmpdir, &ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PDF input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_pdf_corpus_detects_embedded_mz)
 {
     static const char *const documents[] = {"clam.pdf"};
@@ -52729,6 +52750,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_pdf_map);
     tcase_add_checked_fixture(tc_pdf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_pdf_map, test_pdf_null_context_is_fail_visible);
+    tcase_add_test(tc_pdf_map, test_pdf_missing_map_is_fail_visible);
     tcase_add_test(tc_pdf_map, test_pdf_missing_engine_is_fail_visible);
     tcase_add_test(tc_pdf_map, test_pdf_requires_scan_state);
     tcase_add_test(tc_pdf_map, test_pdf_sticky_incomplete_result_is_fail_visible);

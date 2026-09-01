@@ -2040,6 +2040,16 @@ final parser/release qualification.
   sanitizer, production-CVD/service, materialized-large-file, Sonic1, and
   final parser/release qualification remain open.
 
+## PDF direct map admission — 2026-09-01
+
+- Keep `cli_pdf()` explicit at the direct boundary: null contexts return
+  `CL_ENULLARG`, while a recognized context without an input fmap returns
+  `CL_EPARSE` and records sticky incomplete state before parser access.
+- Retain `test_pdf_missing_map_is_fail_visible` and its source guards. Current
+  production-linked execution, complete PDF corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification remain open.
+
 ## Generic hash-table capacity and rehash failure visibility — 2026-08-29
 
 - Keep string/u32 hash-table and hashset capacities behind

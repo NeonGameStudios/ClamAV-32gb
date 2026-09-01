@@ -11782,6 +11782,19 @@ production-linked execution, complete RAR/RAR-SFX corpus, sanitizer/leak,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.
 
+## PDF direct map admission — 2026-09-01
+
+The exported `cli_pdf()` entry now distinguishes a null context from a
+recognized context without an input fmap. The former remains `CL_ENULLARG`;
+the latter returns `CL_EPARSE` and records sticky incomplete state before PDF
+parser access. This keeps a missing direct input fail-visible without changing
+the existing missing-engine or sticky-completion behavior.
+
+`test_pdf_missing_map_is_fail_visible` and source guards cover the boundary.
+Current-source production-linked execution, complete PDF corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## SWF compressed direct completion — 2026-09-01
 
 The CWS and ZWS branches of `cli_scanswf()` now reconcile clean decoder

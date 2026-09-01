@@ -4585,8 +4585,12 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
     json_object *pdfobj = NULL;
     char *begin, *end, *p1;
 
-    if (!ctx || !map)
+    if (!ctx)
         return CL_ENULLARG;
+    if (!map) {
+        cli_mark_scan_incomplete(ctx, "PDF input map is unavailable");
+        return CL_EPARSE;
+    }
     if (!ctx->engine)
         return CL_ENULLARG;
     if (!ctx->options || !ctx->dconf)
