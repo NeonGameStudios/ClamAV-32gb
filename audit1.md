@@ -89,6 +89,23 @@ boundaries, and the oversized-stream regression. Full YARA corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
 parser/release qualification remain open.
 
+## Bytecode normalizer cleanup and core matcher rerun — 2026-08-31
+
+Bytecode context teardown previously removed and freed the normalized-
+JavaScript output directory before finalizing outstanding normalizer states.
+When a limit or decoder failure left a live state behind, teardown then passed
+a dangling directory path into `cli_bcapi_jsnorm_done()`. The cleanup order now
+finalizes all outstanding normalizers before directory scanning and removal.
+The current-source production-linked GCC `bytecode` map-read TCase passes 17/17,
+including the JS-normalizer limit cleanup regression; `loader` passes 10/10 and
+`valid_loader` passes 1/1. The matcher suite passes 49/49 and its bundled YARA
+TCase passes 21/21. The bytecode preparation regression now avoids treating
+GNU ld's same-object wrapping limitation as a test failure. The full legacy
+arithmetic TCase remains open because this Docker build is AArch64 and cannot
+certify legacy/JIT behavior; sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+requirement-by-requirement release qualification remain open.
+
 ## clamd large-file admission focused rerun — 2026-08-31
 
 The current authoritative source rebuilt the `check_clamd` target in the

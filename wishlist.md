@@ -128,7 +128,19 @@
   non-cacheable.
 - Retain the isolated current-source production-linked GCC `yara` TCase at
   21/21 and source guards. Full YARA corpus, sanitizer, production-CVD/service,
-materialized-large-file, Sonic1, and final qualification remain required.
+  materialized-large-file, Sonic1, and final qualification remain required.
+
+## Bytecode normalizer cleanup and core matcher rerun — 2026-08-31
+
+- Keep `bytecode_context_reset()` finalizing outstanding JavaScript normalizer
+  states before disposing their output directory; limit/decoder failures must
+  not hand `cli_bcapi_jsnorm_done()` a dangling path.
+- Retain current-source production-linked GCC evidence at `bytecode` map_read
+  17/17, loader 10/10, valid_loader 1/1, matcher 49/49, and bundled YARA 21/21.
+  The legacy arithmetic TCase remains open on the AArch64 Docker build until
+  certified Linux x86-64 interpreter/JIT evidence is available. Keep
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final requirement-by-requirement release qualification open.
 
 ## InstallShield focused current-source admission refresh — 2026-08-31
 

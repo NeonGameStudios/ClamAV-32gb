@@ -215,6 +215,13 @@ static void bytecode_context_reset(struct cli_bc_ctx *ctx)
         ctx->temporary_reserved = 0;
     }
 
+    /* Finalize outstanding normalizers before disposing their output
+     * directory. A limit or decoder failure can leave a live normalizer
+     * behind until context teardown, and cli_bcapi_jsnorm_done() still needs
+     * this path to publish its completed output. */
+    for (i = 0; i < ctx->njsnorms; i++)
+        cli_bcapi_jsnorm_done(ctx, i);
+
     if (ctx->jsnormdir) {
         char fullname[1025];
         cli_ctx *cctx = ctx->ctx;
@@ -305,8 +312,6 @@ static void bytecode_context_reset(struct cli_bc_ctx *ctx)
     ctx->hashsets  = NULL;
     ctx->nhashsets = 0;
 
-    for (i = 0; i < ctx->njsnorms; i++)
-        cli_bcapi_jsnorm_done(ctx, i);
     free(ctx->jsnorms);
     ctx->jsnorms   = NULL;
     ctx->njsnorms  = 0;
