@@ -9591,6 +9591,34 @@ START_TEST(test_rtf_truncated_document_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_rtf_sticky_incomplete_result_is_fail_visible)
+{
+    static const uint8_t valid_rtf[] = {'{', '\\', 'r', 't', 'f', '1', '}'};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(valid_rtf, sizeof(valid_rtf));
+    ck_assert_ptr_nonnull(map);
+    engine.keeptmp             = 0;
+    ctx.engine                 = &engine;
+    ctx.fmap                   = map;
+    ctx.this_layer_tmpdir      = tmpdir;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing RTF incomplete state";
+    map->dont_cache_flag       = true;
+
+    ck_assert_int_eq(cli_scanrtf(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing RTF incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_rtf_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -50561,6 +50589,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_rtf_map);
     tcase_add_checked_fixture(tc_rtf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_rtf_map, test_rtf_truncated_document_is_fail_visible);
+    tcase_add_test(tc_rtf_map, test_rtf_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_time_limit_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_input_read_failure_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_split_object_data_header_is_fail_visible);

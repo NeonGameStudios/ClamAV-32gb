@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## RTF direct sticky-incomplete reconciliation — 2026-09-01
+
+`cli_scanrtf()` could return `CL_CLEAN` to a direct parser caller after a
+valid RTF document completed while the scan context was already
+sticky-incomplete. The final status now converts only clean results with
+sticky incomplete state to `CL_EPARSE`, preserving detections and stronger
+parser errors. The valid minimal RTF regression
+`test_rtf_sticky_incomplete_result_is_fail_visible` asserts direct
+`CL_EPARSE`, preservation of the pre-existing diagnostic, and
+non-cacheability. Canonical/container SHA-256 equality was verified for the
+current `rtf.c`
+(`bb51571cc0a7e04d7382e37da17bfd17e767663f6a9779f99465c9bcd14ca711`) and
+`check_clamav.c`
+(`d2df7fbdebae94218062422fd59b8da279a8a93fb282504a5e6463df4c31f6a5`). The
+current-source production-linked GCC harness passes `rtf_map` 14/14 and
+`rtf` 1/1 against the materialized `clam.exe.rtf` fixture. This closes direct
+status reconciliation only; complete RTF corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain open.
+
 ## JPEG direct sticky-incomplete reconciliation — 2026-09-01
 
 `cli_parsejpeg()` could return `CL_SUCCESS` to a direct parser caller after a

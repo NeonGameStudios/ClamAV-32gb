@@ -1,5 +1,19 @@
 # Wishlist
 
+## RTF direct sticky-incomplete reconciliation — 2026-09-01
+
+- Keep `cli_scanrtf()` fail-visible for direct callers when a valid RTF
+  document completes with a pre-existing sticky incomplete state. Clean/direct
+  results now return `CL_EPARSE`, while detections and stronger parser errors
+  remain preserved.
+- Retain the valid minimal RTF pre-taint regression
+  `test_rtf_sticky_incomplete_result_is_fail_visible`, canonical/container
+  hash equality for the current `rtf.c` and `check_clamav.c`, and current
+  production-linked GCC results at `rtf_map` 14/14 and `rtf` 1/1 against the
+  materialized `clam.exe.rtf` fixture. Keep complete RTF corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification open.
+
 ## JPEG direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_parsejpeg()` fail-visible for direct callers when a valid JPEG

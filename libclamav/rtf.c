@@ -892,5 +892,7 @@ int cli_scanrtf(cli_ctx* ctx)
     SCAN_CLEANUP;
     if (fmap_read_failed && ret == CL_CLEAN)
         ret = CL_EREAD;
+    if ((ret == CL_CLEAN || ret == CL_SUCCESS) && ctx->scan_incomplete)
+        ret = CL_EPARSE;
     return ret;
 }
