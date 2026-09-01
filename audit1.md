@@ -16846,6 +16846,22 @@ corpus, sanitizer scanner fault injection, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain open.
 
+## Current RTF production-linked rerun — 2026-08-31
+
+Canonical/container SHA-256 equality was verified before relinking for
+`rtf.c` (`5044131c30247c3e6c1cbf45a617b3ad5686bdd5ffb161f8200bd341f38ab4e0`),
+`rtf.h` (`53005ef3dcb587f36f3366b80476d0a19f4d10b0175298fbe726d3f3fdaf20c1`),
+`scanners.c` (`be01859e77f89b36e337fa284a093c77be9ee17f6ba91add26182df6dcf05565`),
+and `check_clamav.c`
+(`d4e4c4529d239da0dc82bd963ae571316c3abe922743a9cce9f834a0d546a380`). The
+current-source production-linked GCC harness passes `rtf_map` 13/13 and
+materialized `rtf` 1/1, including exact nested MZP matching after RTF
+extraction. The materialized `clam.exe.rtf` fixture has SHA-256
+`bba4eab51c27a6ffbd86bf870048da1902cc7235a4de49cf30208906dac50f85`.
+Complete RTF/OLE corpus, sanitizer scanner fault injection, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
+final parser/release qualification remain open.
+
 ## Legacy VBA and PowerPoint seek-result admission — 2026-08-31
 
 The legacy `cli_vba_readdir()` path previously ignored the return values of
