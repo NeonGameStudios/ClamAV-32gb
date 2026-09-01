@@ -17334,6 +17334,21 @@ TIFF/image corpus coverage, sanitizer, certified Linux x86-64,
 materialized-large-file, production-CVD/service, Sonic1, and final
 parser/release qualification remain open.
 
+## UDF current-source production-linked rerun — 2026-08-31
+
+The canonical `udf.c`, `scanners.c`, and `check_clamav.c` sources were
+verified byte-identical to the copies used by the existing Docker GCC
+harness. The focused production-linked cases pass `udf_map` 12/12 and
+`udf_corpus` 1/1. The map suite covers entry, truncation, timeout, descriptor
+read failure, descriptor/list/set rejection, information-length and partition
+bounds, and allocation alignment; the corpus suite reaches the exact nested
+child marker and clean-volume completion paths.
+
+This is refreshed UDF evidence, not final release certification. Complete UDF
+corpus breadth, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1 resource evidence, and the final
+requirement-by-requirement parser/release audit remain open.
+
 ## TNEF current-source production-linked rerun — 2026-08-31
 
 The canonical `tnef.c`, `scanners.c`, and `check_clamav.c` sources were

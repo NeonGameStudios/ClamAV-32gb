@@ -9841,6 +9841,17 @@ qualification as required evidence.
   materialized-large-file, production-CVD/service, Sonic1, and final
   parser/release qualification.
 
+## UDF current-source production-linked rerun — 2026-08-31
+
+- Retain canonical-source equality for `udf.c`, `scanners.c`, and
+  `check_clamav.c` in the existing Docker GCC harness.
+- Retain the refreshed production-linked evidence: `udf_map` passes 12/12
+  and `udf_corpus` 1/1, covering descriptor/admission boundaries and exact
+  nested-child/clean-volume completion.
+- Complete UDF corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1 resource, and
+  final parser/release qualification.
+
 ## TNEF current-source production-linked rerun — 2026-08-31
 
 - Retain canonical-source equality for `tnef.c`, `scanners.c`, and
