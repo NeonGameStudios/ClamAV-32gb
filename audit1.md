@@ -67,6 +67,27 @@ claimed here. Complete ZIP/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## 7-Zip coder-property extent preflight — 2026-09-02
+
+The 7-Zip folder parser read a coder-property length as a 64-bit value, cast
+it to `size_t`, and allocated the payload before verifying that the declared
+bytes remained in the bounded decoded header. On a malformed header this
+could request attacker-controlled storage, and on narrower targets the cast
+could change the length before the parser consumed it. The parser now checks
+the decoded-header remainder before narrowing and enforces the existing
+individual-allocation ceiling before `Buf_Create()`.
+
+`test_7z_coder_property_extent_is_fail_visible` constructs a valid start
+header and folder metadata whose coder property declares a 1 TiB payload with
+no remaining bytes. It requires the structural parse result, the stable
+header-parse diagnostic, sticky incomplete state, and non-cacheability. The
+source guard and capability manifest record the boundary. Current-source
+relink and execution are pending because `clamav-poc-build` remains unable to
+start with a full Docker overlay; no runtime qualification is claimed here.
+Complete 7-Zip/SFX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## TNEF fileblob status reconciliation — 2026-09-02
 
 TNEF attachment handling now preserves the specific status retained by a

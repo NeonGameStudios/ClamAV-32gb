@@ -630,6 +630,14 @@ static SRes SzGetNextFolderItem(CSzData *sd, CSzFolder *folder, ISzAlloc *alloc)
       {
         UInt64 propertiesSize = 0;
         RINOK(SzReadNumber(sd, &propertiesSize));
+        /* The property payload is part of the bounded decoded header. Check
+         * its extent before narrowing the 64-bit length or asking the
+         * allocator for attacker-controlled storage. */
+        if (propertiesSize > sd->Size)
+          return SZ_ERROR_ARCHIVE;
+        if (propertiesSize > (UInt64)(size_t)-1 ||
+            propertiesSize > (UInt64)CLI_MAX_ALLOCATION)
+          return SZ_ERROR_MEM;
         if (!Buf_Create(&coder->Props, (size_t)propertiesSize, alloc))
           return SZ_ERROR_MEM;
         RINOK(SzReadBytes(sd, coder->Props.data, (size_t)propertiesSize));

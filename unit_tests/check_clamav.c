@@ -32017,6 +32017,63 @@ START_TEST(test_7z_archive_property_truncation_is_fail_visible)
     ret = cli_7unz(&ctx, 0);
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "7-Zip archive header could not be parsed completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_7z_coder_property_extent_is_fail_visible)
+{
+    uint8_t data[55] = {0};
+    size_t header_size = 55U;
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memcpy(data, "7z\xbc\xaf'\x1c", 6);
+    data[6] = 0;
+    data[7] = 4;
+    data[32] = 0x01; /* Header. */
+    data[33] = 0x04; /* MainStreamsInfo. */
+    data[34] = 0x06; /* PackInfo. */
+    data[35] = 0x00; /* Data offset. */
+    data[36] = 0x01; /* One packed stream. */
+    data[37] = 0x09; /* Pack sizes. */
+    data[38] = 0x00; /* No packed bytes. */
+    data[39] = 0x00; /* End PackInfo. */
+    data[40] = 0x07; /* UnpackInfo. */
+    data[41] = 0x0b; /* Folder. */
+    data[42] = 0x01; /* One folder. */
+    data[43] = 0x00; /* Folder is internal. */
+    data[44] = 0x21; /* One-byte Copy coder with properties. */
+    data[45] = 0x00; /* Copy method. */
+    data[46] = 0xff; /* Eight-byte property length follows. */
+    zip_stream_write_u64(data + 47, UINT64_C(1) << 40);
+    zip_stream_write_u64(data + 20, (uint64_t)(header_size - 32U));
+    zip_stream_write_u32(data + 28,
+                         (uint32_t)crc32(0L, data + 32, header_size - 32U));
+
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ctx.engine  = scan_engine;
+    ctx.options = &options;
+    map         = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_7unz(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "7-Zip archive header could not be parsed completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -56733,6 +56790,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_7z, cl_setup, cl_teardown);
     tcase_add_test(tc_7z, test_7z_truncated_header_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_archive_property_truncation_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_coder_property_extent_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_files_info_property_boundary_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_files_info_zero_length_name_is_parse_error);
     tcase_add_test(tc_7z, test_7z_files_info_stream_count_is_fail_visible);

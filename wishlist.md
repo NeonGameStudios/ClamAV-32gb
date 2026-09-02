@@ -11734,6 +11734,20 @@ complete RAR/RAR-SFX corpus, sanitizer/leak, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and
 final parser/release qualification remain open.
 
+## 7-Zip coder-property extent preflight — 2026-09-02
+
+- Keep coder-property lengths bounded by the decoded header remainder before
+  `size_t` narrowing or allocation, while retaining the existing individual
+  allocation ceiling.
+- Retain `test_7z_coder_property_extent_is_fail_visible`, which requires the
+  structural parse result, stable diagnostic, sticky incomplete state, and
+  cache taint for a declared 1 TiB property with no remaining payload. Source
+  guards and the capability manifest are refreshed. Current-source relink and
+  execution remain pending while `clamav-poc-build` cannot start because its
+  Docker overlay is full; complete 7-Zip/SFX corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification remain open.
+
 ## Public scan output initialization — 2026-09-01
 
 - Keep the extended map, descriptor, and file scan entrypoints clearing every
