@@ -840,7 +840,10 @@ static cl_error_t cli_hashsect(cli_ctx *ctx, const struct cli_exe_section *s, ui
             return status;
         }
 
-        cl_finish_hash(hash_ctx, digest[type]);
+        if (cl_finish_hash(hash_ctx, digest[type]) != 0) {
+            cli_mark_scan_incomplete(ctx, "PE section hash could not be finalized completely");
+            return CL_EREAD;
+        }
     }
 
     return CL_SUCCESS;
@@ -2904,7 +2907,14 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
     }
 
     for (type = CLI_HASH_MD5; type < CLI_HASH_AVAIL_TYPES; type++) {
-        cl_finish_hash(hashctx[type], digest[type]);
+        if (NULL == hashctx[type])
+            continue;
+        if (cl_finish_hash(hashctx[type], digest[type]) != 0) {
+            hashctx[type] = NULL;
+            cli_mark_scan_incomplete(ctx, "PE import hash could not be finalized completely");
+            status = CL_EREAD;
+            goto done;
+        }
         hashctx[type] = NULL;
     }
 
@@ -6740,6 +6750,12 @@ cl_error_t cli_check_auth_header(cli_ctx *ctx, struct cli_exe_info *peinfo)
         } else if (CL_VIRUS == ret) {
             // A block list rule hit - don't continue on to check hm_fp for a match
             goto finish;
+        } else if (CL_EVERIFY != ret) {
+            /* A confirmed certificate table that could not be parsed or
+             * verified operationally is not a catalog-verification miss.
+             * Preserve the concrete failure instead of continuing into a
+             * possibly clean-looking catalog path. */
+            goto finish;
         }
 
         // Otherwise, we still need to check to see whether this file is
@@ -6785,7 +6801,12 @@ cl_error_t cli_check_auth_header(cli_ctx *ctx, struct cli_exe_info *peinfo)
             goto finish;
         }
 
-        cl_finish_hash(hashctx, authsha);
+        if (cl_finish_hash(hashctx, authsha) != 0) {
+            hashctx = NULL;
+            cli_mark_scan_incomplete(ctx, "Authenticode catalog hash could not be finalized completely");
+            ret = CL_EREAD;
+            goto finish;
+        }
         hashctx = NULL;
 
         if (cli_hm_scan(authsha, 2, NULL, ctx->engine->hm_fp, hashtype) == CL_VIRUS) {

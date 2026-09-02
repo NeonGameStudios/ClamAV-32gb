@@ -721,7 +721,10 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
             p->indexPos = p->indexPreSize;
             p->indexSize += p->indexPreSize;
             if ((p->sha)) {
-                cl_finish_hash(p->sha, p->shaDigest);
+                if (cl_finish_hash(p->sha, p->shaDigest) != 0) {
+                    p->sha = NULL;
+                    return SZ_ERROR_CRC;
+                }
                 p->sha = cl_hash_init("sha2-256");
             }
             p->crc = CrcUpdate(CRC_INIT_VAL, p->buf, p->indexPreSize);

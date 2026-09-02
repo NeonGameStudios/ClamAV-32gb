@@ -249,6 +249,7 @@ int clamav_test_fail_ferror;
 int clamav_test_fail_fgets;
 int clamav_test_fail_fread;
 int clamav_test_fail_finish_hash;
+int clamav_test_finish_hash_calls_before_failure;
 int clamav_test_fail_closedir;
 int clamav_test_fail_readdir;
 int clamav_test_fail_stat;
@@ -310,8 +311,10 @@ int __wrap_cl_finish_hash(void *ctx, void *buf)
 {
     int ret = __real_cl_finish_hash(ctx, buf);
 
-    if (clamav_test_fail_finish_hash)
+    if (clamav_test_fail_finish_hash && clamav_test_finish_hash_calls_before_failure == 0)
         return -1;
+    if (clamav_test_fail_finish_hash)
+        clamav_test_finish_hash_calls_before_failure--;
     return ret;
 }
 

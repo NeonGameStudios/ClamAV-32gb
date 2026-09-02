@@ -147,6 +147,7 @@ extern int clamav_test_fail_ferror;
 extern int clamav_test_fail_fgets;
 extern int clamav_test_fail_fread;
 extern int clamav_test_fail_finish_hash;
+extern int clamav_test_finish_hash_calls_before_failure;
 extern int clamav_test_fail_closedir;
 extern int clamav_test_fail_readdir;
 extern int clamav_test_fail_stat;
@@ -7296,6 +7297,41 @@ START_TEST(test_authenticode_post_container_parse_failure_is_fail_visible)
     state.fail_exact  = true;
     map->handle       = &state;
     map->need         = authenticode_hash_test_need;
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    /* The signed fixture reaches the authenticated-attribute digest after
+     * three earlier finalizations (issuer, serial, and message). Fail the
+     * fourth finalization: the old path ignored that status and could still
+     * trust the digest written by the wrapped implementation. */
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    ctx.skipped_operations     = 0;
+    map->dont_cache_flag       = false;
+    state.calls                = 0;
+    state.fail_at              = SIZE_MAX;
+    state.fail_offset          = 0;
+    state.fail_length          = 0;
+    state.fail_exact           = false;
+    clamav_test_finish_hash_calls_before_failure = 3;
+    clamav_test_fail_finish_hash                 = 1;
+    status = cli_check_auth_header(&ctx, &peinfo);
+    clamav_test_fail_finish_hash                 = 0;
+    clamav_test_finish_hash_calls_before_failure = 0;
+    ck_assert_int_eq(status, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Authenticode attribute digest could not be finalized completely");
+    ck_assert(map->dont_cache_flag);
+#endif
+
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    ctx.skipped_operations     = 0;
+    map->dont_cache_flag       = false;
+    state.calls                = 0;
+    state.fail_at              = SIZE_MAX;
+    state.fail_offset          = fail_offset;
+    state.fail_length          = 6U;
+    state.fail_exact           = true;
 
     status = cli_check_auth_header(&ctx, &peinfo);
     ck_assert_int_eq(status, CL_EPARSE);

@@ -177,7 +177,8 @@ static int map_hash_by_name(fmap_t *map, const void *data, unsigned int len, uin
         return 1;
     }
 
-    cl_finish_hash(hash_ctx, digest);
+    if (cl_finish_hash(hash_ctx, digest) != 0)
+        return 1;
     return 0;
 }
 
@@ -1141,7 +1142,7 @@ static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size,
     return ret;
 }
 
-static int asn1_parse_countersignature(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *cmgr, const uint8_t *message, const unsigned int message_size, int64_t not_before, int64_t not_after, cli_ctx *scan_ctx)
+static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *cmgr, const uint8_t *message, const unsigned int message_size, int64_t not_before, int64_t not_after, cli_ctx *scan_ctx)
 {
 
     struct cli_asn1 asn1, deep, deeper;
@@ -1388,10 +1389,15 @@ static int asn1_parse_countersignature(fmap_t *map, const void **asn1data, unsig
             hash_status         = cli_hash_mapped_regions(map, hash_ctx, &attrs_region, 1, scan_ctx);
             if (CL_SUCCESS != hash_status) {
                 cl_hash_destroy(hash_ctx);
-                break;
+                return hash_status;
             }
         }
-        cl_finish_hash(hash_ctx, hash);
+        if (cl_finish_hash(hash_ctx, hash) != 0) {
+            hash_ctx = NULL;
+            cli_mark_scan_incomplete(scan_ctx, "Authenticode countersignature digest could not be finalized completely");
+            return CL_EREAD;
+        }
+        hash_ctx = NULL;
 
         if (!fmap_need_ptr_once(map, asn1.content, asn1.size)) {
             cli_dbgmsg("asn1_parse_countersignature: failed to read countersignature encryptedDigest\n");
@@ -1404,11 +1410,11 @@ static int asn1_parse_countersignature(fmap_t *map, const void **asn1data, unsig
 
         cli_dbgmsg("asn1_parse_countersignature: countersignature verification completed successfully\n");
 
-        return 0;
+        return CL_SUCCESS;
 
     } while (0);
 
-    return 1;
+    return CL_EPARSE;
 }
 
 static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, crtmgr *cmgr, int embedded, const void **hashes, unsigned int *hashes_size, cli_ctx *ctx)
@@ -2011,10 +2017,17 @@ static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t
             hash_status         = cli_hash_mapped_regions(map, hash_ctx, &attrs_region, 1, ctx);
             if (CL_SUCCESS != hash_status) {
                 cl_hash_destroy(hash_ctx);
+                ret = hash_status;
                 break;
             }
         }
-        cl_finish_hash(hash_ctx, hash);
+        if (cl_finish_hash(hash_ctx, hash) != 0) {
+            hash_ctx = NULL;
+            cli_mark_scan_incomplete(ctx, "Authenticode attribute digest could not be finalized completely");
+            ret = CL_EREAD;
+            break;
+        }
+        hash_ctx = NULL;
 
         if (!fmap_need_ptr_once(map, asn1.content, asn1.size)) {
             cli_dbgmsg("asn1_parse_mscat: failed to read encryptedDigest\n");
@@ -2140,8 +2153,13 @@ static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t
 
             if (content == 0) { /* counterSignature */
 
-                if (asn1_parse_countersignature(map, &deeper.content, &deeper.size, cmgr, message, message_size, x509->not_before, x509->not_after, ctx)) {
+                cl_error_t countersignature_status;
+
+                countersignature_status = asn1_parse_countersignature(map, &deeper.content, &deeper.size, cmgr, message, message_size, x509->not_before, x509->not_after, ctx);
+                if (CL_SUCCESS != countersignature_status) {
                     dsize = 1;
+                    if (CL_EPARSE != countersignature_status)
+                        ret = countersignature_status;
                     break;
                 }
 
@@ -2512,7 +2530,12 @@ cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset
         return ret;
     }
 
-    cl_finish_hash(hash_ctx, hash);
+    if (cl_finish_hash(hash_ctx, hash) != 0) {
+        hash_ctx = NULL;
+        cli_mark_scan_incomplete(ctx, "Authenticode hash could not be finalized completely");
+        return CL_EREAD;
+    }
+    hash_ctx = NULL;
 
     if (cli_debug_flag) {
         char hashtxt[MAX_HASH_SIZE * 2 + 1];

@@ -1,5 +1,31 @@
 # Independent read-only audit of audit.md
 
+## Authenticode and PE hash finalization status — 2026-09-02
+
+The Authenticode ASN.1 path had several unchecked `cl_finish_hash()` calls:
+issuer/serial mapping, authenticated attributes, countersignatures, and the
+computed PE hash. PE section, import-table, and external-catalog hash paths
+had the same status hole. These consumers now treat finalization failure as
+fail-visible, consume the context exactly once, mark the affected layer
+incomplete and non-cacheable, preserve `CL_EREAD` for the operational
+failure, and stop a confirmed malformed/failed certificate path before a
+catalog fallback can produce a clean-looking result.
+
+`test_authenticode_post_container_parse_failure_is_fail_visible` injects the
+authenticated-attribute finalization failure after the fixture's three
+earlier digest finalizations and verifies `CL_EREAD`, the exact sticky reason,
+and fmap cache taint. Source guards and the capability manifest cover the
+ASN.1, PE, XZ, wrapper, and regression boundaries. Current-source
+production-GCC compilation and production-linked execution, complete
+Authenticode/PE corpus, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
+The established `clamav-poc-build` runtime was attempted for focused
+production-linked execution, but Docker reported its container stopped on an
+overlay mount `no space left on device`; no host compiler or new software was
+substituted.
+
 ## Raw matcher hash finalization status — 2026-09-02
 
 The raw hash-signature matcher accumulated required digests and ignored the
@@ -21,10 +47,11 @@ matcher/release qualification remain required.
 ## XZ checksum finalization status — 2026-09-02
 
 The XZ decoder maintained a stream-index SHA-256 context and optional block
-SHA-256 contexts, but discarded `cl_finish_hash()` failures in both finalizer
-paths. A fault could therefore leave a valid digest in the buffer while the
-decoder accepted the stream. XZ now treats either finalization failure as a
-decoder CRC failure, consumes and clears the context, and lets `cli_scanxz()`
+SHA-256 contexts, but discarded `cl_finish_hash()` failures at both the
+block-boundary rollover and end-of-index finalizers. A fault could therefore
+leave a valid digest in the buffer while the decoder accepted the stream. XZ
+now treats either finalization failure as a decoder CRC failure, consumes and
+clears the context, and lets `cli_scanxz()`
 return `CL_EUNPACK` with sticky incomplete, non-cacheable state before the
 decompressed child is handed to the matcher.
 

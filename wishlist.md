@@ -1,5 +1,21 @@
 # Wishlist
 
+## Authenticode and PE hash finalization status — 2026-09-02
+
+- Keep Authenticode ASN.1 issuer/serial, authenticated-attribute,
+  countersignature, and computed-container hash paths checking
+  `cl_finish_hash()` before verification or trust. Keep PE section,
+  import-table, and external-catalog hash paths fail-visible with
+  `CL_EREAD`, sticky incomplete/non-cacheable state, and single-owner context
+  cleanup; do not fall through from a confirmed certificate failure into a
+  clean-looking catalog path.
+- Retain the authenticated-attribute fault case in
+  `test_authenticode_post_container_parse_failure_is_fail_visible`, its
+  source guards, and manifest evidence. Current-source production-GCC
+  execution, complete Authenticode/PE corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification remain open.
+
 ## Raw matcher hash finalization status — 2026-09-02
 
 - Keep raw hash-signature matching checking `cl_finish_hash()` before fmap
@@ -14,9 +30,10 @@
 ## XZ checksum finalization status — 2026-09-02
 
 - Keep XZ stream-index and block SHA-256 finalization checking
-  `cl_finish_hash()` before accepting integrity results; convert either
-  failure to decoder failure, preserve sticky incomplete/non-cacheable state,
-  and prevent decompressed child handoff.
+  `cl_finish_hash()` at block-boundary rollover and end-of-index completion
+  before accepting integrity results; convert either failure to decoder
+  failure, preserve sticky incomplete/non-cacheable state, and prevent
+  decompressed child handoff.
 - Retain `test_xz_hash_finalization_failure_is_fail_visible`, its source
   guards, and manifest evidence. Current-source production-GCC execution,
   complete XZ corpus, sanitizer, certified Linux x86-64, production-CVD/
