@@ -2990,7 +2990,10 @@ static struct json_object *get_pe_property(cli_ctx *ctx)
         if (!(pe))
             return NULL;
 
-        json_object_object_add(ctx->this_layer_metadata_json, "PE", pe);
+        if (json_object_object_add(ctx->this_layer_metadata_json, "PE", pe) != 0) {
+            json_object_put(pe);
+            return NULL;
+        }
     }
 
     return pe;
@@ -3051,7 +3054,10 @@ static struct json_object *get_section_json(cli_ctx *ctx)
         if (!(section))
             return NULL;
 
-        json_object_object_add(pe, "Sections", section);
+        if (json_object_object_add(pe, "Sections", section) != 0) {
+            json_object_put(section);
+            return NULL;
+        }
     }
 
     return section;

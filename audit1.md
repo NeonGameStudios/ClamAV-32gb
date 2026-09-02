@@ -19480,6 +19480,23 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final matcher/release
 qualification remain required.
 
+## PE metadata container property insertion — 2026-09-01
+
+The PE metadata constructors previously ignored failures while attaching the
+top-level `PE` object and the per-section `Sections` array. A rejected
+property could leave an unattached object that subsequent writes treated as a
+valid report node. Both constructors now release rejected objects and return
+`NULL`, allowing the existing header/section status macros to mark the layer
+incomplete and preserve `CL_EMEM`.
+
+`test_pe_metadata_property_add_failure_is_fail_visible` injects both
+production-linked property failures through `cli_scanpe()`, requiring
+`CL_EMEM`, the exact PE metadata diagnostic, no orphaned property, and fmap
+cache taint. Current-source production-GCC compilation, production-linked
+execution, complete PE/packer corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+matcher/release qualification remain required.
+
 ## XAR checksum mismatch visibility — 2026-09-01
 
 The XAR member walker compared declared archived and extracted checksums but

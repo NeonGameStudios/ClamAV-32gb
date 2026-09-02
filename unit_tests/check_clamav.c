@@ -312,6 +312,7 @@ static int pe_test_fail_header_metadata;
 static int pe_test_fail_section_metadata;
 static int pe_test_fail_empty_section_metadata;
 static int pe_test_fail_heuristic_array_add;
+static unsigned int pe_test_fail_property_add;
 static int pe_test_fail_packer_metadata;
 static int image_fuzzy_test_fail_error_metadata;
 static int image_fuzzy_test_fail_hash_metadata;
@@ -360,6 +361,15 @@ int __wrap_json_object_array_add(json_object *obj, json_object *val)
 
 int __wrap_json_object_object_add(json_object *obj, const char *key, json_object *val)
 {
+    if (pe_test_fail_property_add != 0U && key) {
+        static const char *const property_names[] = {"PE", "Sections"};
+        unsigned int index = pe_test_fail_property_add - 1U;
+        if (index < (sizeof(property_names) / sizeof(property_names[0])) &&
+            strcmp(key, property_names[index]) == 0) {
+            pe_test_fail_property_add = 0U;
+            return -1;
+        }
+    }
     if (indicator_test_fail_object_property != 0U && key) {
         static const char *const property_names[] = {"Name", "Type", "Depth"};
         unsigned int index = indicator_test_fail_object_property - 1U;
@@ -42343,6 +42353,70 @@ END_TEST
 #endif
 
 #ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_pe_metadata_property_add_failure_is_fail_visible)
+{
+    static const char *const property_names[] = {"PE", "Sections"};
+    struct cl_scan_options options;
+    unsigned int property;
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+
+    for (property = 0; property < 2; property++) {
+        struct cl_engine *scan_engine;
+        struct cli_scan_layer layer;
+        cli_ctx ctx;
+        struct json_object *pe_json = NULL;
+        struct json_object *sections = NULL;
+        uint8_t data[PE32PLUS_TEST_FILE_SIZE];
+        fmap_t *map;
+        cl_error_t ret;
+
+        build_pe32plus_import_fixture(data, sizeof(data));
+        scan_engine = cl_engine_new();
+        ck_assert_ptr_nonnull(scan_engine);
+        ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+        map = cl_fmap_open_memory(data, sizeof(data));
+        ck_assert_ptr_nonnull(map);
+        memset(&layer, 0, sizeof(layer));
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine                   = scan_engine;
+        ctx.dconf                    = scan_engine->dconf;
+        ctx.options                  = &options;
+        ctx.fmap                     = map;
+        ctx.this_layer_tmpdir        = tmpdir;
+        ctx.this_layer_metadata_json = json_object_new_object();
+        ck_assert_ptr_nonnull(ctx.this_layer_metadata_json);
+        ctx.recursion_stack          = &layer;
+        ctx.recursion_stack_size     = 1;
+        layer.fmap                   = map;
+
+        pe_test_fail_property_add = property + 1U;
+        ret                        = cli_scanpe(&ctx);
+        ck_assert_int_eq(pe_test_fail_property_add, 0U);
+
+        ck_assert_int_eq(ret, CL_EMEM);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         "PE header metadata JSON could not be recorded");
+        ck_assert(map->dont_cache_flag);
+        if (property == 0) {
+            ck_assert(!json_object_object_get_ex(ctx.this_layer_metadata_json, property_names[property], &pe_json));
+        } else {
+            ck_assert(json_object_object_get_ex(ctx.this_layer_metadata_json, property_names[property - 1U], &pe_json));
+            ck_assert(!json_object_object_get_ex(pe_json, property_names[property], &sections));
+        }
+
+        json_object_put(ctx.this_layer_metadata_json);
+        cl_fmap_close(map);
+        cl_engine_free(scan_engine);
+    }
+}
+END_TEST
+#endif
+
+#ifdef CLAMAV_TEST_JSON_WRAP
 START_TEST(test_pe_section_metadata_record_failure_is_fail_visible)
 {
     struct cl_engine *scan_engine;
@@ -55063,6 +55137,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe32plus, test_pe_import_metadata_record_failure_is_fail_visible);
     tcase_add_test(tc_pe32plus, test_pe_header_metadata_record_failure_is_fail_visible);
     tcase_add_test(tc_pe32plus, test_pe_heuristic_metadata_array_add_failure_is_fail_visible);
+    tcase_add_test(tc_pe32plus, test_pe_metadata_property_add_failure_is_fail_visible);
     tcase_add_test(tc_pe32plus, test_pe_section_metadata_record_failure_is_fail_visible);
 #endif
     suite_add_tcase(s, tc_pe_map);

@@ -62,6 +62,17 @@
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification remain open.
 
+## PE metadata container property insertion — 2026-09-01
+
+- Keep `PE` and `Sections` metadata-container attachment failures
+  fail-visible; release unattached objects, return `CL_EMEM`, mark the
+  confirmed layer non-cacheable, and preserve the exact metadata diagnostic.
+- Retain `test_pe_metadata_property_add_failure_is_fail_visible` and its
+  JSON-wrap source guards. Current-source production-linked execution,
+  complete PE/packer corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## PE import metadata record failure — 2026-09-01
 
 - Keep PE import metadata fail-visible when the `ImportTable` array, an import

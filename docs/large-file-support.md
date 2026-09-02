@@ -12265,6 +12265,19 @@ execution, complete parser corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 release qualification remain required.
 
+## PE metadata container property insertion — 2026-09-01
+
+The PE metadata constructors now check attachment of the top-level `PE`
+object and the per-section `Sections` array. Rejected objects are released
+and the constructors return `NULL`, so the existing PE status paths mark the
+confirmed layer incomplete and preserve `CL_EMEM`. The
+`test_pe_metadata_property_add_failure_is_fail_visible` regression injects
+both production-linked failures and requires the exact diagnostic, no
+orphaned property, and fmap cache taint. Current-source execution, complete
+PE/packer corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final release qualification
+remain required.
+
 ## PE heuristic metadata array insertion — 2026-09-01
 
 Malformed PE headers can emit heuristic metadata such as
