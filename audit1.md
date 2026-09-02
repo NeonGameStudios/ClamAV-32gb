@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## Rust parser scan-options admission — 2026-09-02
+
+The ALZ, LHA/LZH, and OneNote Rust parser entries already rejected missing
+engine ownership, but could proceed past that boundary with `ctx->options`
+absent. Each entry now returns `CL_ENULLARG` after current-fmap and engine
+admission and before parser, metadata, temporary-spool, or nested-scan work.
+
+`test_rust_parser_missing_options_is_fail_visible` exercises all three
+recognized layer types with a valid engine and fmap but no options, verifying
+that the result is fail-visible without sticky incomplete state or cache taint.
+Source guards and the capability manifest record the change. Current-source
+Rust/C production-GCC compilation, production-linked execution, complete
+parser corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## OLE10 scan-options admission — 2026-09-02
 
 The `cli_scan_ole10()` embedded-object extraction entry already rejected a

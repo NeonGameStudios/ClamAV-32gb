@@ -930,6 +930,9 @@ unsafe fn scan_onenote_inner(ctx: *mut cli_ctx) -> cl_error_t {
     if (*ctx).engine.is_null() {
         return cl_error_t_CL_ENULLARG;
     }
+    if (*ctx).options.is_null() {
+        return cl_error_t_CL_ENULLARG;
+    }
 
     let mut reader = FMapReader::new_with_context(&fmap, ctx);
     let mut prefix = [0u8; 16];
@@ -1105,6 +1108,9 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
         }
     };
     if (*ctx).engine.is_null() {
+        return cl_error_t_CL_ENULLARG;
+    }
+    if (*ctx).options.is_null() {
         return cl_error_t_CL_ENULLARG;
     }
 
@@ -1540,6 +1546,9 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
         }
     };
     if (*ctx).engine.is_null() {
+        return cl_error_t_CL_ENULLARG;
+    }
+    if (*ctx).options.is_null() {
         return cl_error_t_CL_ENULLARG;
     }
 

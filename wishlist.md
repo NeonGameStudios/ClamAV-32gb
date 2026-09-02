@@ -1,5 +1,16 @@
 # Wishlist
 
+## Rust parser scan-options admission — 2026-09-02
+
+- Keep the ALZ, LHA/LZH, and OneNote Rust parser entries fail-visible when a
+  recognized current-layer context has an engine but no scan options; return
+  `CL_ENULLARG` before parser, metadata, temporary-spool, or nested-scan work.
+- Retain `test_rust_parser_missing_options_is_fail_visible`, its source guard,
+  and manifest evidence that the invalid context remains neither sticky
+  incomplete nor cache-tainted. Full parser, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final release qualification remain open.
+
 ## OLE10 scan-options admission — 2026-09-02
 
 - Keep `cli_scan_ole10()` fail-visible for direct callers when a valid engine
