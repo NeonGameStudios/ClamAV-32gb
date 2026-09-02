@@ -2245,7 +2245,10 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
         cli_dbgmsg("GZip: Can't generate temporary file.\n");
         cli_mark_scan_incomplete(ctx, "GZip temporary output could not be created");
-        inflateEnd(&z);
+        if (inflateEnd(&z) != Z_OK) {
+            cli_mark_scan_incomplete(ctx, "GZip decompressor could not be finalized");
+            ret = cli_merge_cleanup_status(ret, CL_EUNPACK);
+        }
         return ret;
     }
 
@@ -2262,7 +2265,10 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, (input_status == CL_EREAD)
                                           ? "GZip compressed input could not be read completely"
                                           : "GZip stream ended before compressed input was complete");
-            inflateEnd(&z);
+            if (inflateEnd(&z) != Z_OK) {
+                cli_mark_scan_incomplete(ctx, "GZip decompressor could not be finalized");
+                input_status = cli_merge_cleanup_status(input_status, CL_EUNPACK);
+            }
             ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, input_status,
                                               temporary_reserved,
                                               "GZip temporary output could not be closed",
@@ -2314,7 +2320,10 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
             if ((decode_status = cli_write_temp_output(ctx, fd, buff, produced,
                                                        "GZip output reached the configured time limit",
                                                        "GZip output could not be written completely")) != CL_SUCCESS) {
-                inflateEnd(&z);
+                if (inflateEnd(&z) != Z_OK) {
+                    cli_mark_scan_incomplete(ctx, "GZip decompressor could not be finalized");
+                    decode_status = cli_merge_cleanup_status(decode_status, CL_EUNPACK);
+                }
                 ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
                                                   temporary_reserved,
                                                   "GZip temporary output could not be closed",
@@ -2338,7 +2347,10 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
         } while (z.avail_out == 0);
     }
 
-    inflateEnd(&z);
+    if (inflateEnd(&z) != Z_OK) {
+        cli_mark_scan_incomplete(ctx, "GZip decompressor could not be finalized");
+        decode_status = cli_merge_cleanup_status(decode_status, CL_EUNPACK);
+    }
 
     /* A decoder error, configured limit, or EOF before Z_STREAM_END leaves a
      * partial temporary member. Never pass that member to the nested scanner

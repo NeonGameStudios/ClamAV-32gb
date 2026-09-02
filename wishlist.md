@@ -1,5 +1,16 @@
 # Wishlist
 
+## GZip decoder finalization status — 2026-09-02
+
+- Keep every initialized main-GZip exit checking `inflateEnd()` and merging
+  `CL_EUNPACK` without replacing an earlier result. Preserve the exact
+  incomplete diagnostic and non-cacheable state.
+- Retain `test_gzip_decoder_finalization_failure_is_fail_visible`, its
+  one-shot wrapper fault, and source guards. Current-source production-GCC
+  execution, complete compressed corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## InstallShield extraction status and range admission — 2026-09-02
 
 - Preserve every `cli_scan_reserve_temporary()` result in InstallShield MSI,

@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## GZip decoder finalization status — 2026-09-02
+
+The main GZip decoder now checks `inflateEnd()` on every initialized-stream
+exit, including temporary-output creation failure, input/read failure,
+short-output failure, and normal completion. Finalization failures mark the
+layer incomplete and merge `CL_EUNPACK` without hiding an earlier parser,
+I/O, limit, timeout, detection, or cleanup result. The focused production
+wrapper regression injects a finalization failure after a complete GZip
+stream and requires an empty public verdict plus fmap cache taint. Current
+source production-GCC compilation and linked execution, complete compressed
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## InstallShield extraction status and range admission — 2026-09-02
 
 The InstallShield MSI, legacy embedded-file, and CAB extraction paths now
