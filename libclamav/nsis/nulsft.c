@@ -130,14 +130,19 @@ static int nsis_init(struct nsis_st *n)
     return CL_SUCCESS;
 }
 
-static void nsis_shutdown(struct nsis_st *n)
+static cl_error_t nsis_shutdown(struct nsis_st *n, cli_ctx *ctx)
 {
+    cl_error_t ret = CL_SUCCESS;
+
     if (!n->freecomp)
-        return;
+        return ret;
 
     switch (n->comp) {
         case COMP_BZIP2:
-            nsis_BZ2_bzDecompressEnd(&n->bz);
+            if (nsis_BZ2_bzDecompressEnd(&n->bz) != BZ_OK) {
+                cli_mark_scan_incomplete(ctx, "NSIS BZIP2 decompressor could not be finalized");
+                ret = CL_EUNPACK;
+            }
             break;
         case COMP_LZMA:
             cli_LzmaShutdown(&n->lz);
@@ -148,6 +153,7 @@ static void nsis_shutdown(struct nsis_st *n)
     }
 
     n->freecomp = 0;
+    return ret;
 }
 
 static void nsis_close_output(struct nsis_st *n)
@@ -432,7 +438,7 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
 
                     ret = nsis_checktimelimit(ctx, "NSIS compressed member traversal reached the configured time limit");
                     if (ret != CL_SUCCESS) {
-                        nsis_shutdown(n);
+                        ret = cli_merge_cleanup_status(ret, nsis_shutdown(n, ctx));
                         break;
                     }
 
@@ -442,8 +448,7 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
                         if (fmap_readn(n->map, ibuf, input_pos, chunk) != chunk) {
                             cli_mark_scan_incomplete(ctx, "NSIS member could not be read completely");
                             nsis_close_output(n);
-                            nsis_shutdown(n);
-                            return CL_EREAD;
+                            return cli_merge_cleanup_status(CL_EREAD, nsis_shutdown(n, ctx));
                         }
                         input_pos += chunk;
                         input_remaining -= chunk;
@@ -459,8 +464,7 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
                         gotsome = 1;
                         if ((write_ret = nsis_write_output(n, ctx, n->ofd, obuf, produced, &total_out)) != CL_SUCCESS) {
                             nsis_close_output(n);
-                            nsis_shutdown(n);
-                            return write_ret;
+                            return cli_merge_cleanup_status(write_ret, nsis_shutdown(n, ctx));
                         }
                         loops = 0;
                     } else if (++loops > 20) {
@@ -488,7 +492,7 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
                     }
                 }
 
-                nsis_shutdown(n);
+                ret = cli_merge_cleanup_status(ret, nsis_shutdown(n, ctx));
                 if (ret != CL_SUCCESS && ret != CL_BREAK) {
                     cli_dbgmsg("NSIS: bad stream"__AT__
                                "\n");
@@ -926,7 +930,7 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
 
     nsis_close_output(&nsist);
     nsis_note_close_failure(&nsist, ctx, &ret);
-    nsis_shutdown(&nsist);
+    ret = cli_merge_cleanup_status(ret, nsis_shutdown(&nsist, ctx));
     nsis_release_reservations(&nsist, ctx);
 
     if (!ctx->engine->keeptmp) {

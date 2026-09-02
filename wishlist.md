@@ -1,5 +1,19 @@
 # Wishlist
 
+## NSIS BZIP2 decoder finalization status — 2026-09-02
+
+- Keep NSIS raw-BZIP2 teardown fail-visible at non-solid member shutdown and
+  final solid-stream cleanup. Merge `CL_EUNPACK` without replacing an earlier
+  read, timeout, output, parser, detection, or cleanup status, mark the owning
+  layer incomplete/non-cacheable, and never publish completed bytes as a clean
+  child after finalization fails.
+- Retain `test_nsis_bzip_decoder_finalization_failure_is_fail_visible`, its
+  valid raw-BZIP2 member and matching-child setup, one-shot wrapper fault,
+  exact diagnostic, no-false-detection assertion, and source guards.
+  Current-source production-GCC execution, complete NSIS/SFX corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final NSIS/release qualification remain open.
+
 ## Bytecode BZIP2 decoder finalization status — 2026-09-02
 
 - Keep `bzip2_done()` fail-visible: return the `BZ2_bzDecompressEnd()` status

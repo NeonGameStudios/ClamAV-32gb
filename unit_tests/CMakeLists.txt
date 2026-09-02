@@ -198,6 +198,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=inflateEnd"
         "-Wl,--wrap=BZ2_bzDecompressInit"
         "-Wl,--wrap=BZ2_bzDecompressEnd"
+        "-Wl,--wrap=nsis_BZ2_bzDecompressEnd"
         "-Wl,--wrap=adc_decompressEnd"
         "-Wl,--wrap=cli_LzmaInit"
         "-Wl,--wrap=cli_LzmaShutdown"

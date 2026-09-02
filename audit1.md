@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## NSIS BZIP2 decoder finalization status — 2026-09-02
+
+Enabled NSIS raw-BZIP2 cleanup now checks the vendored
+`nsis_BZ2_bzDecompressEnd()` result at non-solid member teardown and final
+solid-stream cleanup. A failure marks the recognized layer incomplete and
+non-cacheable, returns/merges `CL_EUNPACK` without hiding an earlier read,
+timeout, output, parser, detection, or cleanup status, and prevents completed
+member bytes from being treated as a clean child. The focused regression uses
+a valid raw-BZIP2 NSIS member whose decoded child would match, injects a
+one-shot `BZ_SEQUENCE_ERROR`, and requires the exact incomplete reason and
+fmap cache taint. Current-source production-GCC compilation and linked
+execution, complete NSIS/SFX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+NSIS/release qualification remain required.
+
 ## Bytecode BZIP2 decoder finalization status — 2026-09-02
 
 The bytecode BZIP2 API now returns the `BZ2_bzDecompressEnd()` status instead

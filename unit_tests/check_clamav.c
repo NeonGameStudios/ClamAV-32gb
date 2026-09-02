@@ -85,6 +85,7 @@
 #include "7z/Bcj2.h"
 #include "autoit.h"
 #include "binhex.h"
+#include "nsis/nsis_bzlib.h"
 #include "nsis/nulsft.h"
 #include "apm.h"
 #include "gpt.h"
@@ -159,6 +160,7 @@ extern int __real_inflateInit2_(z_streamp strm, int windowBits, const char *vers
 extern int __real_inflateEnd(z_streamp strm);
 extern int __real_BZ2_bzDecompressInit(bz_stream *strm, int blockSize100k, int verbosity);
 extern int __real_BZ2_bzDecompressEnd(bz_stream *strm);
+extern int __real_nsis_BZ2_bzDecompressEnd(nsis_bzstream *strm);
 extern int __real_adc_decompressEnd(adc_stream *strm);
 extern int __real_cli_LzmaInit(struct CLI_LZMA *lz, uint64_t usize);
 extern void __real_cli_LzmaShutdown(struct CLI_LZMA *lz);
@@ -179,6 +181,7 @@ int clamav_test_force_dmg_bzip_decoder_end;
 int clamav_test_force_bzip_decoder_end;
 int clamav_test_force_egg_bzip_decoder_end;
 int clamav_test_force_bytecode_bzip_decoder_end;
+int clamav_test_force_nsis_bzip_decoder_end;
 int clamav_test_force_bzip_concat_decoder_init;
 int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
@@ -288,6 +291,18 @@ int __wrap_BZ2_bzDecompressEnd(bz_stream *strm)
     if (clamav_test_force_bytecode_bzip_decoder_end > 0) {
         clamav_test_force_bytecode_bzip_decoder_end--;
         if (clamav_test_force_bytecode_bzip_decoder_end == 0)
+            return BZ_SEQUENCE_ERROR;
+    }
+    return ret;
+}
+
+int __wrap_nsis_BZ2_bzDecompressEnd(nsis_bzstream *strm)
+{
+    int ret = __real_nsis_BZ2_bzDecompressEnd(strm);
+
+    if (clamav_test_force_nsis_bzip_decoder_end > 0) {
+        clamav_test_force_nsis_bzip_decoder_end--;
+        if (clamav_test_force_nsis_bzip_decoder_end == 0)
             return BZ_SEQUENCE_ERROR;
     }
     return ret;
@@ -36204,6 +36219,91 @@ START_TEST(test_nsis_sticky_incomplete_result_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_nsis_bzip_decoder_finalization_failure_is_fail_visible)
+{
+    static const uint8_t child[64] = {'M', 'Z', 'P'};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *bzip;
+    uint8_t *archive;
+    unsigned int bzip_capacity;
+    unsigned int bzip_length;
+    size_t raw_length;
+    size_t archive_length;
+    cl_error_t ret;
+
+    bzip_capacity = (unsigned int)(sizeof(child) + sizeof(child) / 100U + 601U);
+    bzip          = malloc(bzip_capacity);
+    ck_assert_ptr_nonnull(bzip);
+    bzip_length = bzip_capacity;
+    ck_assert_int_eq(BZ2_bzBuffToBuffCompress((char *)bzip, &bzip_length, (char *)child,
+                                              (unsigned int)sizeof(child), 9, 0, 30),
+                     BZ_OK);
+    ck_assert_msg(bzip_length > 4U && bzip[0] == 'B' && bzip[1] == 'Z' && bzip[2] == 'h',
+                  "unexpected BZIP2 stream header");
+
+    raw_length     = bzip_length - 4U;
+    archive_length = 0x1cU + 4U + raw_length + 4U;
+    ck_assert_msg(archive_length <= UINT32_MAX, "NSIS fixture length is not representable");
+    archive = calloc(1, archive_length);
+    ck_assert_ptr_nonnull(archive);
+    cli_writeint32(archive, UINT32_C(0xdeadbeef));
+    memcpy(archive + 4, "NullsoftInst", 12);
+    cli_writeint32(archive + 0x14, 0x1c);
+    cli_writeint32(archive + 0x18, (uint32_t)archive_length);
+    cli_writeint32(archive + 0x1c, (uint32_t)raw_length | UINT32_C(0x80000000));
+    memcpy(archive + 0x20, bzip + 4, raw_length);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "NSIS.BZIP.Child", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    layers[0].fmap           = map;
+    layers[0].type           = CL_TYPE_NULSFT;
+    layers[0].size           = map->len;
+    layers[0].tmpdir         = tmpdir;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+
+    clamav_test_force_nsis_bzip_decoder_end = 1;
+    ret = cli_scannulsft(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "NSIS BZIP2 decompressor could not be finalized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_nsis_bzip_decoder_end, 0);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(archive);
+    free(bzip);
+}
+END_TEST
+#endif
+
 START_TEST(test_nsis_missing_map_entry_points_are_fail_visible)
 {
     cli_ctx ctx;
@@ -59714,6 +59814,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_nulsft, test_nsis_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_time_limit_is_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_sticky_incomplete_result_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_nulsft, test_nsis_bzip_decoder_finalization_failure_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_nulsft_corpus);
     tcase_add_checked_fixture(tc_nulsft_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_nulsft_corpus, test_nsis_corpus_detects_embedded_mz);
