@@ -19627,3 +19627,24 @@ wrapped `cli_jsonuint64()` boundary. Current-source production-linked
 execution, complete signature/evidence corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
 final matcher/release qualification remain required.
+
+## Shared JSON array insertion failures — 2026-09-01
+
+The shared `cli_json` scalar and null helpers, plus the array/object factories,
+previously discarded the return from `json_object_array_add()`. A report value
+or nested metadata object appended to an array could therefore be silently
+omitted while callers received success or a non-NULL child. The scalar helpers
+now return `CL_EMEM`, and the factories return `NULL`, when array insertion
+fails; each releases a newly allocated JSON value that was not accepted by the
+array. Object insertion retains json-c's void API, while existing
+object-allocation checks remain in the callers and helper constructors.
+
+`test_json_array_add_failure_is_fail_visible` injects the production-linked
+json-c array insertion failure across the array/object factories, null, string,
+bounded string, signed and unsigned integer, boolean, double, and integer-array
+helpers. It requires all failed operations to leave the array empty, then
+verifies successful insertion after the fault is cleared. Current-source
+production-GCC compilation,
+production-linked execution, sanitizer, complete metadata/parser corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final matcher/release qualification remain required.

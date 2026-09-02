@@ -77,7 +77,8 @@ cl_error_t cli_jsonnull(json_object *obj, const char *key)
 
         json_object_object_add(obj, key, fpobj);
     } else if (objty == json_type_array) {
-        json_object_array_add(obj, fpobj);
+        if (json_object_array_add(obj, fpobj) != 0)
+            return CL_EMEM;
     }
 
     return CL_SUCCESS;
@@ -115,8 +116,10 @@ cl_error_t cli_jsonstr(json_object *obj, const char *key, const char *s)
 
     if (objty == json_type_object)
         json_object_object_add(obj, key, fpobj);
-    else if (objty == json_type_array)
-        json_object_array_add(obj, fpobj);
+    else if (objty == json_type_array && json_object_array_add(obj, fpobj) != 0) {
+        json_object_put(fpobj);
+        return CL_EMEM;
+    }
 
     return CL_SUCCESS;
 }
@@ -153,8 +156,10 @@ cl_error_t cli_jsonstrlen(json_object *obj, const char *key, const char *s, int 
 
     if (objty == json_type_object)
         json_object_object_add(obj, key, fpobj);
-    else if (objty == json_type_array)
-        json_object_array_add(obj, fpobj);
+    else if (objty == json_type_array && json_object_array_add(obj, fpobj) != 0) {
+        json_object_put(fpobj);
+        return CL_EMEM;
+    }
 
     return CL_SUCCESS;
 }
@@ -186,8 +191,10 @@ cl_error_t cli_jsonint(json_object *obj, const char *key, int32_t i)
 
     if (objty == json_type_object)
         json_object_object_add(obj, key, fpobj);
-    else if (objty == json_type_array)
-        json_object_array_add(obj, fpobj);
+    else if (objty == json_type_array && json_object_array_add(obj, fpobj) != 0) {
+        json_object_put(fpobj);
+        return CL_EMEM;
+    }
 
     return CL_SUCCESS;
 }
@@ -219,8 +226,10 @@ cl_error_t cli_jsonint64(json_object *obj, const char *key, int64_t i)
 
     if (objty == json_type_object)
         json_object_object_add(obj, key, fpobj);
-    else if (objty == json_type_array)
-        json_object_array_add(obj, fpobj);
+    else if (objty == json_type_array && json_object_array_add(obj, fpobj) != 0) {
+        json_object_put(fpobj);
+        return CL_EMEM;
+    }
 
     return CL_SUCCESS;
 }
@@ -259,8 +268,10 @@ cl_error_t cli_jsonuint64(json_object *obj, const char *key, uint64_t i)
 
     if (objty == json_type_object)
         json_object_object_add(obj, key, fpobj);
-    else if (objty == json_type_array)
-        json_object_array_add(obj, fpobj);
+    else if (objty == json_type_array && json_object_array_add(obj, fpobj) != 0) {
+        json_object_put(fpobj);
+        return CL_EMEM;
+    }
 
     return CL_SUCCESS;
 }
@@ -292,8 +303,10 @@ cl_error_t cli_jsonbool(json_object *obj, const char *key, int i)
 
     if (objty == json_type_object)
         json_object_object_add(obj, key, fpobj);
-    else if (objty == json_type_array)
-        json_object_array_add(obj, fpobj);
+    else if (objty == json_type_array && json_object_array_add(obj, fpobj) != 0) {
+        json_object_put(fpobj);
+        return CL_EMEM;
+    }
 
     return CL_SUCCESS;
 }
@@ -325,8 +338,10 @@ cl_error_t cli_jsondouble(json_object *obj, const char *key, double d)
 
     if (objty == json_type_object)
         json_object_object_add(obj, key, fpobj);
-    else if (objty == json_type_array)
-        json_object_array_add(obj, fpobj);
+    else if (objty == json_type_array && json_object_array_add(obj, fpobj) != 0) {
+        json_object_put(fpobj);
+        return CL_EMEM;
+    }
 
     return CL_SUCCESS;
 }
@@ -352,8 +367,9 @@ json_object *cli_jsonarray(json_object *obj, const char *key)
             json_object_object_add(obj, key, newobj);
             if (!json_object_object_get_ex(obj, key, &newobj))
                 return NULL;
-        } else if (objty == json_type_array) {
-            json_object_array_add(obj, newobj);
+        } else if (objty == json_type_array && json_object_array_add(obj, newobj) != 0) {
+            json_object_put(newobj);
+            return NULL;
         }
     }
 
@@ -384,8 +400,9 @@ json_object *cli_jsonobj(json_object *obj, const char *key)
             json_object_object_add(obj, key, newobj);
             if (!json_object_object_get_ex(obj, key, &newobj))
                 return NULL;
-        } else if (objty == json_type_array) {
-            json_object_array_add(obj, newobj);
+        } else if (objty == json_type_array && json_object_array_add(obj, newobj) != 0) {
+            json_object_put(newobj);
+            return NULL;
         }
     }
 

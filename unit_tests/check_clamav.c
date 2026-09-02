@@ -50,6 +50,7 @@
 #include "cache.h"
 #include "stats.h"
 #include "stats_json.h"
+#include "json_api.h"
 #include "scanners.h"
 #include "dconf.h"
 #include "msxml.h"
@@ -281,6 +282,7 @@ int htmlnorm_test_fail_next_realloc;
 #endif
 
 #ifdef CLAMAV_TEST_JSON_WRAP
+extern int __real_json_object_array_add(json_object *obj, json_object *val);
 extern json_object *__real_cli_jsonarray(json_object *obj, const char *key);
 extern cl_error_t __real_cli_jsonbool(json_object *obj, const char *key, int i);
 extern cl_error_t __real_cli_jsonint(json_object *obj, const char *key, int32_t i);
@@ -311,6 +313,14 @@ static int pe_test_fail_packer_metadata;
 static int image_fuzzy_test_fail_error_metadata;
 static int image_fuzzy_test_fail_hash_metadata;
 static int indicator_test_fail_object_id_metadata;
+static int json_api_test_fail_array_add;
+
+int __wrap_json_object_array_add(json_object *obj, json_object *val)
+{
+    if (json_api_test_fail_array_add)
+        return -1;
+    return __real_json_object_array_add(obj, val);
+}
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
@@ -4967,6 +4977,34 @@ START_TEST(test_virus_indicator_append_boundaries_are_fail_visible)
 END_TEST
 
 #ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_json_array_add_failure_is_fail_visible)
+{
+    json_object *array;
+
+    array = json_object_new_array();
+    ck_assert_ptr_nonnull(array);
+    json_api_test_fail_array_add = 1;
+
+    ck_assert_ptr_null(cli_jsonarray(array, NULL));
+    ck_assert_ptr_null(cli_jsonobj(array, NULL));
+    ck_assert_int_eq(cli_jsonnull(array, NULL), CL_EMEM);
+    ck_assert_int_eq(cli_jsonstr(array, NULL, "value"), CL_EMEM);
+    ck_assert_int_eq(cli_jsonstrlen(array, NULL, "value", 5), CL_EMEM);
+    ck_assert_int_eq(cli_jsonint(array, NULL, 1), CL_EMEM);
+    ck_assert_int_eq(cli_jsonint64(array, NULL, 2), CL_EMEM);
+    ck_assert_int_eq(cli_jsonuint64(array, NULL, 3), CL_EMEM);
+    ck_assert_int_eq(cli_jsonbool(array, NULL, 1), CL_EMEM);
+    ck_assert_int_eq(cli_jsondouble(array, NULL, 4.0), CL_EMEM);
+    ck_assert_int_eq(cli_jsonint_array(array, 5), CL_EMEM);
+    ck_assert_uint_eq(json_object_array_length(array), 0U);
+
+    json_api_test_fail_array_add = 0;
+    ck_assert_int_eq(cli_jsonstr(array, NULL, "value"), CL_SUCCESS);
+    ck_assert_uint_eq(json_object_array_length(array), 1U);
+    json_object_put(array);
+}
+END_TEST
+
 START_TEST(test_virus_indicator_metadata_record_failure_is_fail_visible)
 {
     static const uint8_t input[] = {'M', 'Z', 'P'};
@@ -55496,6 +55534,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_virus_found_callback_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_append_boundaries_are_fail_visible);
 #ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_cl, test_json_array_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_metadata_record_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);

@@ -11561,6 +11561,20 @@ final parser/release qualification remain open.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final matcher/release qualification remain open.
 
+
+## Shared JSON array insertion failures — 2026-09-01
+
+- Keep every shared `cli_json` scalar/null helper and array/object factory
+  fail-visible when `json_object_array_add()` rejects an append; return
+  `CL_EMEM` or `NULL`, release the unowned newly allocated value, and let
+  required parser metadata propagate the failure into sticky
+  incomplete/non-cacheable state.
+- Retain `test_json_array_add_failure_is_fail_visible` and its source guards.
+  Current-source production-linked execution, complete metadata/parser corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification
+  remain open.
+
 ## OLE2 custom-property metadata completion — 2026-09-01
 
 - Keep `HasUserDefinedProperties` report failures fail-visible when an OLE2

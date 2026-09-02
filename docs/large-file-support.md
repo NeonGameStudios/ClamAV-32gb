@@ -8680,6 +8680,21 @@ corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and release qualification remain
 required.
 
+## Shared JSON array insertion failures — 2026-09-01
+
+The shared `cli_json` scalar and null helpers, plus the array/object factories,
+now propagate a nonzero `json_object_array_add()` result as `CL_EMEM` or `NULL`
+and release a newly allocated value that the array did not take ownership of.
+Required array metadata and nested objects can no longer be silently omitted
+while the helper reports success. The focused
+`test_json_array_add_failure_is_fail_visible` regression injects the failure
+across the factories and all scalar/null and integer-array helper variants,
+requires an unchanged empty array, and verifies that normal insertion resumes
+after the fault is cleared. Current-source production-linked execution,
+complete metadata/parser corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and release
+qualification remain required.
+
 ## Bytecode logical-dispatch argument validation — 2026-08-20
 
 The logical-bytecode entry point now validates the scan context, bytecode
