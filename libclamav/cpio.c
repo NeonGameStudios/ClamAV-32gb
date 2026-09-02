@@ -166,6 +166,8 @@ static cl_error_t cpio_validate_context(cli_ctx *ctx)
     }
     if (ctx->engine == NULL)
         return CL_ENULLARG;
+    if (ctx->options == NULL)
+        return CL_ENULLARG;
     return CL_SUCCESS;
 }
 

@@ -1,5 +1,17 @@
 # Wishlist
 
+## CPIO direct scan-state admission — 2026-09-02
+
+- Keep old-binary, ODC, NEWC, and CRC CPIO direct parser entries fail-visible
+  when scan options are absent, before a non-empty member can reach nested
+  dispatch that requires `ctx->options`.
+- Retain `test_cpio_missing_options_is_fail_visible`, the updated complete
+  state in direct parser tests, source guards, and manifest evidence.
+  Current-source production-GCC compilation, production-linked execution,
+  complete CPIO corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## MIME caller export status reconciliation — 2026-09-02
 
 - Preserve the first specific `messageToFileblob()` materialization status

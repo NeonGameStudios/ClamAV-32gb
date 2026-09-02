@@ -24539,18 +24539,21 @@ START_TEST(test_cpio_time_limit_is_fail_visible)
     enum { CPIO_OLD, CPIO_ODC, CPIO_NEWC, CPIO_CRC, CPIO_FORMATS };
     static const uint8_t data[] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
     int format;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     for (format = 0; format < CPIO_FORMATS; format++) {
         memset(&ctx, 0, sizeof(ctx));
         map = cl_fmap_open_memory(data, sizeof(data));
         ck_assert_ptr_nonnull(map);
-        ctx.engine = &engine;
-        ctx.fmap   = map;
+        ctx.engine  = &engine;
+        ctx.options = &options;
+        ctx.fmap    = map;
         ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
         ctx.time_limit.tv_sec--;
 
@@ -24729,6 +24732,7 @@ START_TEST(test_cpio_invalid_next_header_is_fail_visible)
 {
     uint8_t data[230] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -24741,11 +24745,13 @@ START_TEST(test_cpio_invalid_next_header_is_fail_visible)
     memcpy(data + 120, "invalid", 7);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
 
     ret = cli_scancpio_newc(&ctx, 0);
     ck_assert_int_eq(ret, CL_EFORMAT);
@@ -25054,6 +25060,7 @@ START_TEST(test_cpio_sticky_incomplete_result_is_fail_visible)
     uint8_t odc_archive[87];
     uint8_t newc_archive[124];
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -25074,8 +25081,10 @@ START_TEST(test_cpio_sticky_incomplete_result_is_fail_visible)
     newc_archive[120] = '\0';
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine                 = &engine;
+    ctx.options                = &options;
     ctx.scan_incomplete        = true;
     ctx.scan_incomplete_reason = "pre-existing CPIO incomplete state";
 
@@ -25092,6 +25101,7 @@ START_TEST(test_cpio_sticky_incomplete_result_is_fail_visible)
 
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine                 = &engine;
+    ctx.options                = &options;
     ctx.scan_incomplete        = true;
     ctx.scan_incomplete_reason = "pre-existing CPIO incomplete state";
     map = cl_fmap_open_memory(odc_archive, sizeof(odc_archive));
@@ -25107,6 +25117,7 @@ START_TEST(test_cpio_sticky_incomplete_result_is_fail_visible)
 
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine                 = &engine;
+    ctx.options                = &options;
     ctx.scan_incomplete        = true;
     ctx.scan_incomplete_reason = "pre-existing CPIO incomplete state";
     map = cl_fmap_open_memory(newc_archive, sizeof(newc_archive));
@@ -25118,6 +25129,29 @@ START_TEST(test_cpio_sticky_incomplete_result_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing CPIO incomplete state");
     ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_cpio_missing_options_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scancpio_old(&ctx), CL_ENULLARG);
+    ck_assert_int_eq(cli_scancpio_odc(&ctx), CL_ENULLARG);
+    ck_assert_int_eq(cli_scancpio_newc(&ctx, 0), CL_ENULLARG);
+    ck_assert_int_eq(cli_scancpio_newc(&ctx, 1), CL_ENULLARG);
+
     cl_fmap_close(map);
 }
 END_TEST
@@ -56737,6 +56771,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cpio_map, test_cpio_invalid_next_header_is_fail_visible);
     tcase_add_test(tc_cpio_map, test_cpio_initial_read_failure_is_read_error);
     tcase_add_test(tc_cpio_map, test_cpio_missing_engine_is_fail_visible);
+    tcase_add_test(tc_cpio_map, test_cpio_missing_options_is_fail_visible);
     suite_add_tcase(s, tc_iso_map);
     tcase_add_checked_fixture(tc_iso_map, cl_setup, cl_teardown);
     tcase_add_test(tc_iso_map, test_iso_missing_map_is_fail_visible);

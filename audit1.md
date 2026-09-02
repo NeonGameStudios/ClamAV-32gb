@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## CPIO direct scan-state admission — 2026-09-02
+
+The CPIO old-binary, ODC, NEWC, and CRC direct parser entries required an
+engine and fmap but did not require scan options. A valid non-empty member can
+therefore reach `cli_magic_scan()`, whose parser dispatch reads
+`ctx->options`; callers with incomplete state were not fail-closed at the
+CPIO boundary. The shared validator now returns `CL_ENULLARG` before traversal
+when options are absent.
+
+`test_cpio_missing_options_is_fail_visible` covers all four direct variants.
+The existing direct tests that intentionally exercise time limits, malformed
+next headers, and sticky completion now provide options so their parser
+assertions remain specific. Source guards and the capability manifest record
+the boundary. Current-source production-GCC compilation, production-linked
+execution, complete CPIO corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## Partition parser scan-state admission — 2026-09-02
 
 The direct MBR, APM, and GPT scanner entries required an engine but could
