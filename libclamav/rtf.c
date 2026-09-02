@@ -667,6 +667,8 @@ int cli_scanrtf(cli_ctx* ctx)
     }
     if (ctx->engine == NULL)
         return CL_ENULLARG;
+    if (ctx->options == NULL)
+        return CL_ENULLARG;
 
     ret = rtf_checktimelimit(ctx, "RTF inspection reached the configured time limit");
     if (ret != CL_SUCCESS)

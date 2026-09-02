@@ -57251,6 +57251,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_rtf_map, test_rtf_empty_object_data_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_partial_object_magic_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_missing_engine_is_fail_visible);
+    tcase_add_test(tc_rtf_map, test_rtf_missing_options_is_fail_visible);
     suite_add_tcase(s, tc_rtf);
     tcase_add_checked_fixture(tc_rtf, cl_setup, cl_teardown);
     tcase_add_test(tc_rtf, test_rtf_corpus_detects_embedded_mz);
@@ -59681,6 +59682,28 @@ START_TEST(test_rtf_missing_engine_is_fail_visible)
     ctx.fmap = map;
 
     ck_assert_int_eq(cli_scanrtf(&ctx), CL_ENULLARG);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_rtf_missing_options_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_scanrtf(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
 
     cl_fmap_close(map);
 }
