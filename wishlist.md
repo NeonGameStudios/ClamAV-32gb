@@ -13292,3 +13292,17 @@ qualification remain open.
   production-linked execution, complete OLE2/MSO corpus, sanitizer, certified
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
   resource, and parser/release qualification before closure.
+
+## SIS buffered-cursor range classification — 2026-09-02
+
+- Reject legacy SIS file-record-table pointers outside the containing archive
+  before buffered `GETD2` traversal, and classify SIS 9.x buffered cursors
+  beyond the fmap as malformed `CL_EPARSE`; retain `CL_EREAD` for genuine
+  fully in-range fmap callback failures.
+- Retain `test_sis_file_record_cursor_out_of_range_is_parse_error` and
+  `test_sis9x_cursor_out_of_range_is_parse_error`, their registrations and
+  source guards, and the `sis-buffered-cursor-range` capability evidence.
+  Add current-source production-linked execution, complete SIS corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and parser/release qualification
+  before closure.

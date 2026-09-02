@@ -23847,6 +23847,109 @@ START_TEST(test_sis_malformed_metadata_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_sis_file_record_cursor_out_of_range_is_parse_error)
+{
+    uint8_t data[96] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    /* A confirmed old-format SIS package can point its file-record table
+     * beyond the containing map. That is malformed input, not an attempted
+     * read from an available range, so the buffered parser must return
+     * CL_EPARSE rather than CL_EREAD. */
+    data[8]  = 0x19;
+    data[9]  = 0x04;
+    data[11] = 0x10;
+    data[18] = 1;
+    data[20] = 1;
+    cli_writeint32(data + 48, 92);  /* language table */
+    cli_writeint32(data + 52, 100); /* file records beyond this map */
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_SIS", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_sis9x_cursor_out_of_range_is_parse_error)
+{
+    uint8_t data[128] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    /* A nested SIS 9.x field can end beyond the physical map while its
+     * enclosing field still looks large enough to continue. Once the
+     * buffered cursor is outside the map, the next getd() must classify the
+     * condition as malformed input rather than an in-range read failure. */
+    data[0] = 0x7a;
+    data[1] = 0x1a;
+    data[2] = 0x20;
+    data[3] = 0x10;
+    cli_writeint32(data + 16, 12);  /* T_CONTENTS */
+    cli_writeint32(data + 20, 200); /* enclosing field ends beyond map */
+    cli_writeint32(data + 24, 34);  /* T_CONTROLLERCHECKSUM */
+    cli_writeint32(data + 28, 1);
+    cli_writeint32(data + 36, 35);  /* T_DATACHECKSUM */
+    cli_writeint32(data + 40, 1);
+    cli_writeint32(data + 48, 3);   /* T_COMPRESSED option */
+    cli_writeint32(data + 52, 1);
+    cli_writeint32(data + 60, 30);  /* T_DATA */
+    cli_writeint32(data + 64, 100);
+    cli_writeint32(data + 68, 1);   /* unexpected zero-length nested field */
+    cli_writeint32(data + 72, 0);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_SIS", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_sis_truncated_compressed_member_is_fail_visible)
 {
     uint8_t data[134] = {0};
@@ -60522,6 +60625,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_sis_structure, cl_setup, cl_teardown);
     tcase_add_test(tc_sis_structure, test_sis_option_skip_overflow_is_fail_visible);
     tcase_add_test(tc_sis_structure, test_sis_malformed_metadata_is_fail_visible);
+    tcase_add_test(tc_sis_structure, test_sis_file_record_cursor_out_of_range_is_parse_error);
     suite_add_tcase(s, tc_tar);
     tcase_add_checked_fixture(tc_tar, cl_setup, cl_teardown);
     tcase_add_test(tc_tar, test_tar_truncated_header_is_fail_visible);
@@ -61400,6 +61504,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_sis_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_name_table_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_language_table_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_sis_file_record_cursor_out_of_range_is_parse_error);
     tcase_add_test(tc_cl, test_python_compiled_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_ai_model_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_graphics_bmp_truncated_header_is_fail_visible);
@@ -61412,6 +61517,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_jp2_structural_admission_remains_incomplete);
     tcase_add_test(tc_cl, test_generic_graphics_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_sis_truncated_compressed_member_is_fail_visible);
+    tcase_add_test(tc_cl, test_sis9x_cursor_out_of_range_is_parse_error);
     tcase_add_test(tc_cl, test_sis9x_short_nested_field_is_fail_visible);
     tcase_add_test(tc_cl, test_sis9x_unexpected_nested_field_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_member_limit_is_fail_visible);

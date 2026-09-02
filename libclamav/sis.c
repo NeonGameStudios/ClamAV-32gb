@@ -731,6 +731,11 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
         status = sis_incomplete(ctx, "SIS file-record table pointer was invalid");
         goto done;
     }
+    if ((size_t)sis.pfiles > map->len) {
+        cli_dbgmsg("SIS: File-record table pointer is outside the archive: %u\n", sis.pfiles);
+        status = sis_incomplete(ctx, "SIS file-record table pointer was outside the archive");
+        goto done;
+    }
 
     pos = sis.pfiles;
     for (i = 0; i < sis.files; i++) {
@@ -1096,6 +1101,15 @@ static cl_error_t sis9x_checktimelimit(cli_ctx *ctx, struct SISTREAM *s)
 
 static inline int getd(struct SISTREAM *s, uint32_t *v)
 {
+    if (s == NULL || s->map == NULL || s->pos > s->map->len) {
+        if (s != NULL) {
+            s->incomplete = 1;
+            if (s->failure == CL_CLEAN)
+                s->failure = CL_EPARSE;
+        }
+        return 1;
+    }
+
     if (s->sleft < 4) {
         size_t nread;
         memcpy(s->buff, s->buff + s->smax - s->sleft, s->sleft);

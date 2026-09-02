@@ -21947,3 +21947,26 @@ Current-source production-GCC and linked execution, complete OLE2/MSO corpus,
 sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+## SIS buffered-cursor range classification — 2026-09-02
+
+The legacy SIS parser accepted a file-record-table pointer beyond the
+containing fmap and then let its buffered `GETD2` read call `fmap_readn()` with
+an out-of-range position. The SIS 9.x buffered reader had the same class of
+problem after a malformed enclosing field advanced `seeknext()` beyond the
+map: `getd()` converted that malformed coordinate into `CL_EREAD`, even
+though no in-range backing read was attempted.
+
+The old-format path now rejects a file-record-table pointer outside the
+archive before buffered traversal. The SIS 9.x `getd()` path rejects a null
+reader/map or a cursor beyond the fmap as `CL_EPARSE`; positions at the exact
+EOF still follow the existing short-field parse path, and fully in-range
+callback failures remain `CL_EREAD`. Two public `CL_TYPE_SIS` regressions
+cover the legacy table pointer and SIS 9.x cursor cases and require a clean
+verdict, sticky incomplete state, and fmap non-cacheability. The source guards
+and capability row are updated. Current-source production-GCC compilation and
+linked execution remain pending because the prescribed Docker production
+container cannot start due to its host overlay storage exhaustion; complete
+SIS corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
