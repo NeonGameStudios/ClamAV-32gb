@@ -112,6 +112,17 @@ vba_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, cl_error_t cleanup_st
         *status = cli_merge_cleanup_status(*status, cleanup_status);
 }
 
+static cl_error_t
+vba_readn_full(int fd, void *buffer, size_t length)
+{
+    size_t read_length = cli_readn(fd, buffer, length);
+
+    if (read_length == length)
+        return CL_SUCCESS;
+
+    return read_length == (size_t)-1 ? CL_EREAD : CL_EPARSE;
+}
+
 static uint16_t
 vba_endian_convert_16(uint16_t value, int big_endian)
 {
@@ -2274,8 +2285,10 @@ cl_error_t cli_vba_inflate_stream(int fd, off_t offset, cli_vba_inflate_write_cb
                 uint16_t len;
                 uint64_t srcpos;
 
-                if (!read_uint16(fd, &token, FALSE))
-                    return CL_EREAD;
+                status = vba_readn_full(fd, &token, sizeof(token));
+                if (status != CL_SUCCESS)
+                    return status;
+                token = vba_endian_convert_16(token, FALSE);
                 shift    = 12 - (winpos > 0x10) - (winpos > 0x20) - (winpos > 0x40) - (winpos > 0x80) - (winpos > 0x100) - (winpos > 0x200) - (winpos > 0x400) - (winpos > 0x800);
                 len      = (uint16_t)((token & ((1 << shift) - 1)) + 3);
                 distance = token >> shift;
@@ -2311,18 +2324,16 @@ cl_error_t cli_vba_inflate_stream(int fd, off_t offset, cli_vba_inflate_write_cb
                     clean = FALSE;
                     break;
                 }
-                read_result = cli_readn(fd, &buffer[winpos], 1);
-                if (read_result == 1) {
+                status = vba_readn_full(fd, &buffer[winpos], 1);
+                if (status == CL_SUCCESS) {
                     if (pos == UINT64_MAX)
                         return CL_EFORMAT;
                     pos++;
-                } else if (read_result == (size_t)-1) {
-                    return CL_EREAD;
                 } else {
                     /* A flag bit announced a literal, but the compressed
                      * stream ended before that byte. Do not publish the
                      * preceding prefix as a complete module. */
-                    return CL_EREAD;
+                    return status;
                 }
             }
             clean = TRUE;

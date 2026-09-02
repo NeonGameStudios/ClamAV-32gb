@@ -21721,3 +21721,19 @@ production-linked execution, injected descriptor-read failure, complete
 HFS+ catalog/attribute/resource corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
+## VBA compressed-stream short-read classification — 2026-09-02
+
+The bounded VBA inflater previously returned `CL_EREAD` for a compressed
+token or literal that ended at EOF. These inputs are materialized temporary
+streams whose complete range is known to the descriptor, so a short read is
+malformed content (`CL_EPARSE`); a descriptor-level read failure remains
+`CL_EREAD`. The shared VBA full-read helper now preserves that distinction for
+token and literal reads, and no output prefix is published on either failure.
+
+`test_vba_inflate_stream_rejects_truncated_literal` now requires `CL_EPARSE`,
+and `test_vba_inflate_stream_rejects_truncated_token` covers the two-byte token
+boundary. Source guards and the capability manifest record the contract.
+Current-source production-GCC compilation and linked execution, complete
+OLE/VBA/PowerPoint corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.

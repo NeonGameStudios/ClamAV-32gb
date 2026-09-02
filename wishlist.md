@@ -13133,3 +13133,14 @@ qualification remain open.
   production-linked, sanitizer, certified Linux x86-64, production-CVD/
   service, materialized-large-file, Sonic1, resource, and parser/release
   qualification before closure.
+## VBA compressed-stream short-read classification — 2026-09-02
+
+- Keep complete temporary VBA token and literal reads classified as
+  `CL_EPARSE` when the stream ends early, while preserving `CL_EREAD` for an
+  in-range descriptor failure; do not publish any partial module prefix.
+- Retain the truncated-literal and truncated-token regressions, the
+  `vba_readn_full()` source guard, and the new `vba-compressed-read-status`
+  manifest evidence. Add current-source production-linked execution,
+  complete OLE/VBA/PowerPoint corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  parser/release qualification before closure.
