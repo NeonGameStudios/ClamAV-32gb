@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## MSPack extraction-limit status propagation — 2026-09-02
+
+The CAB/CHM MSPack bridge previously kept output-limit state only on the
+short-lived file handle. When a decoder wrote a partial member and returned an
+error, the state was lost on close and the parser converted the required limit
+failure to generic `CL_EPARSE`. Limit and physical output-write failures now
+travel through the shared callback state and are reconciled after extraction as
+`CL_EMAXSIZE` or `CL_EWRITE`, before any partial member can be nested-scanned.
+
+`test_mspack_scan_limit_is_fail_visible` now includes a member that passes
+temporary admission but exceeds the remaining scan budget during extraction,
+and requires the exact incomplete reason, `CL_EMAXSIZE`, and cache taint.
+Source guards and the capability manifest pin the callback state and both CAB
+and CHM caller paths. Current-source production-GCC compilation and linked
+execution, complete CAB/CHM corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## 7-Zip copy input progress admission — 2026-09-02
 
 The vendored 7-Zip copy decoder trusted `ILookInStream::Look()` to return no

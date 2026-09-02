@@ -1,5 +1,17 @@
 # Wishlist
 
+## MSPack extraction-limit status propagation — 2026-09-02
+
+- Keep CAB/CHM callback output-limit and physical-write failures in shared
+  decoder state after the temporary file handle closes. Preserve `CL_EMAXSIZE`
+  and `CL_EWRITE` through the extraction boundary, and never scan partial
+  output.
+- Retain the expanded `test_mspack_scan_limit_is_fail_visible` regression,
+  source guards, and manifest evidence. Current-source production-GCC
+  execution, complete CAB/CHM corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## 7-Zip copy input progress admission — 2026-09-02
 
 - Keep both whole-buffer and streaming copy decoders validating the

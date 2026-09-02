@@ -41,6 +41,8 @@ struct mspack_system_ex {
     bool time_limit_exceeded;
     bool read_failure;
     bool position_failure;
+    bool limit_exceeded;
+    bool write_failure;
     bool close_failure;
     const char *time_limit_reason;
 };
@@ -81,6 +83,10 @@ static cl_error_t mspack_decoder_failure(const struct mspack_system_ex *system_e
         return CL_EREAD;
     if (system_ex->position_failure)
         return CL_ESEEK;
+    if (system_ex->limit_exceeded)
+        return CL_EMAXSIZE;
+    if (system_ex->write_failure)
+        return CL_EWRITE;
     return fallback;
 }
 
@@ -301,12 +307,17 @@ static int mspack_fmap_write(struct mspack_file *file, void *buffer, int bytes)
     } else {
         if (!max_size) {
             mspack_handle->limit_exceeded = true;
+            if (mspack_handle->system_ex != NULL)
+                mspack_handle->system_ex->limit_exceeded = true;
             cli_dbgmsg("%s() extraction limit exhausted\n", __func__);
             return -1;
         }
 
-        if (max_size < (uint64_t)bytes)
+        if (max_size < (uint64_t)bytes) {
             mspack_handle->limit_exceeded = true;
+            if (mspack_handle->system_ex != NULL)
+                mspack_handle->system_ex->limit_exceeded = true;
+        }
 
         max_size = max_size < (uint64_t)bytes ? max_size : (uint64_t)bytes;
 
@@ -320,6 +331,8 @@ static int mspack_fmap_write(struct mspack_file *file, void *buffer, int bytes)
 
     count = fwrite(buffer, max_size, 1, mspack_handle->f);
     if (count < 1) {
+        if (mspack_handle->system_ex != NULL)
+            mspack_handle->system_ex->write_failure = true;
         cli_dbgmsg("%s() err %d <%zu %d>\n", __func__, __LINE__, count, bytes);
         return -1;
     }
@@ -829,6 +842,16 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
         ret = CL_ESEEK;
         goto done;
     }
+    if (ops_ex.limit_exceeded) {
+        cli_mark_scan_incomplete(ctx, "CAB member extraction reached the configured output limit");
+        ret = CL_EMAXSIZE;
+        goto done;
+    }
+    if (ops_ex.write_failure) {
+        cli_mark_scan_incomplete(ctx, "CAB member output could not be written completely");
+        ret = CL_EWRITE;
+        goto done;
+    }
     if (ops_ex.close_failure) {
         cli_mark_scan_incomplete(ctx, "CAB member output could not be closed");
         ret = cli_merge_cleanup_status(ret, CL_EWRITE);
@@ -1042,6 +1065,16 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         if (ops_ex.position_failure) {
             cli_mark_scan_incomplete(ctx, "CHM member position could not be established");
             ret = CL_ESEEK;
+            goto done;
+        }
+        if (ops_ex.limit_exceeded) {
+            cli_mark_scan_incomplete(ctx, "CHM member extraction reached the configured output limit");
+            ret = CL_EMAXSIZE;
+            goto done;
+        }
+        if (ops_ex.write_failure) {
+            cli_mark_scan_incomplete(ctx, "CHM member output could not be written completely");
+            ret = CL_EWRITE;
             goto done;
         }
         if (ops_ex.close_failure) {

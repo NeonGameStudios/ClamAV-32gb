@@ -47389,7 +47389,7 @@ START_TEST(test_mspack_scan_limit_is_fail_visible)
         CAB_HEADER_SIZE = 36,
         CAB_FOLDER_SIZE = 8,
         CAB_FILE_SIZE   = 18,
-        CAB_DATA_SIZE   = 9,
+        CAB_DATA_SIZE   = 10,
         CAB_TOTAL_SIZE  = CAB_HEADER_SIZE + CAB_FOLDER_SIZE + CAB_FILE_SIZE + CAB_DATA_SIZE
     };
     uint8_t data[CAB_TOTAL_SIZE] = {0};
@@ -47416,14 +47416,15 @@ START_TEST(test_mspack_scan_limit_is_fail_visible)
     mspack_test_write_u16(data + 40, 1);
     mspack_test_write_u16(data + 42, 0);
 
-    mspack_test_write_u32(data + 44, 1);
+    mspack_test_write_u32(data + 44, 2);
     mspack_test_write_u32(data + 48, 0);
     mspack_test_write_u16(data + 52, 0);
     memcpy(data + 60, "a", 2);
 
-    mspack_test_write_u16(data + 66, 1);
+    mspack_test_write_u16(data + 66, 2);
     mspack_test_write_u16(data + 68, 1);
     data[70] = 'x';
+    data[71] = 'y';
 
     memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
@@ -47461,6 +47462,27 @@ START_TEST(test_mspack_scan_limit_is_fail_visible)
     ret = cli_scanmscab(&ctx, 0);
     ck_assert_int_eq(ret, CL_ERESOURCE);
     ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    /* Extraction output can hit the remaining shared scan budget after
+     * temporary admission has succeeded. The decoder callback must preserve
+     * that limit result instead of flattening the partial member to parse
+     * failure. */
+    ctx.temporary_bytes        = 0;
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    ctx.limit_exceeded         = false;
+    ctx.limit_exceeded_result  = CL_SUCCESS;
+    engine.maxtemporarysize    = 0;
+    engine.maxscansize         = 1;
+    ctx.scansize               = 0;
+    ctx.this_layer_tmpdir      = tmpdir;
+    map->dont_cache_flag       = false;
+
+    ret = cli_scanmscab(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "CAB member extraction reached the configured output limit");
     ck_assert(map->dont_cache_flag);
 
     /* Temporary admission can succeed while the output directory is no
