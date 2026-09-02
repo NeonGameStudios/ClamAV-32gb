@@ -12134,3 +12134,15 @@ final parser/release qualification remain open.
   full; complete ZIP/SFX corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification remain open.
+
+## Partition parser scan-state admission — 2026-09-02
+
+- Keep direct MBR, APM, and GPT scanners fail-visible when required scan
+  options are absent, and when partition-intersection heuristics are requested
+  without dynamic configuration.
+- Retain test_partition_missing_scan_state_is_fail_visible, its registrations,
+  source guards, and manifest evidence. Current-source production-GCC
+  compilation, production-linked execution, complete partition corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.

@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Partition parser scan-state admission — 2026-09-02
+
+The direct MBR, APM, and GPT scanner entries required an engine but could
+reach option-controlled deadline/heuristic expressions with no scan options,
+or dereference a missing dynamic configuration when partition-intersection
+heuristics were requested. Each entry now rejects missing options before any
+option macro is evaluated and rejects missing dconf only when the requested
+intersection path needs it, preserving the existing no-sticky-state contract
+for invalid API context.
+
+test_partition_missing_scan_state_is_fail_visible exercises both missing
+options and missing heuristic configuration across all three partition
+parsers. The capability manifest and source guards record the boundary.
+Current-source production-GCC compilation, production-linked execution,
+complete partition corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## MIME caller export status reconciliation — 2026-09-02
 
 The MIME owners above `messageExport()` could still collapse a failed

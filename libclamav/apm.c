@@ -100,6 +100,10 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
+    if (SCAN_HEURISTIC_PARTITION_INTXN && ctx->dconf == NULL)
+        return CL_ENULLARG;
 
     status = cli_checktimelimit(ctx);
     if (status != CL_SUCCESS)

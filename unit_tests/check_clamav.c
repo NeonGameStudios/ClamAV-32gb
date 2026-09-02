@@ -55534,6 +55534,39 @@ START_TEST(test_partition_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_partition_missing_scan_state_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scanapm(&ctx), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanmbr(&ctx, 512), CL_ENULLARG);
+    ck_assert_int_eq(cli_scangpt(&ctx, 512), CL_ENULLARG);
+
+    options.heuristic = CL_SCAN_HEURISTIC_PARTITION_INTXN;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+    ck_assert_int_eq(cli_scanapm(&ctx), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanmbr(&ctx, 512), CL_ENULLARG);
+    ck_assert_int_eq(cli_scangpt(&ctx, 512), CL_ENULLARG);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_cpio_missing_engine_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -56778,6 +56811,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_partition_map, test_gpt_missing_map_is_fail_visible);
     tcase_add_test(tc_partition_map, test_partition_missing_engine_is_fail_visible);
+    tcase_add_test(tc_partition_map, test_partition_missing_scan_state_is_fail_visible);
     suite_add_tcase(s, tc_gpt);
     tcase_add_checked_fixture(tc_gpt, cl_setup, cl_teardown);
     tcase_add_test(tc_gpt, test_gpt_null_context_is_fail_visible);
@@ -57506,6 +57540,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xar, test_xar_subdocument_temporary_quota_is_fail_visible);
     tcase_add_test(tc_cl, test_partition_parser_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_partition_time_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_partition_missing_scan_state_is_fail_visible);
     tcase_add_test(tc_cl, test_mbr_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gpt_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gpt_sector_size_probe_read_failure_is_fail_visible);
