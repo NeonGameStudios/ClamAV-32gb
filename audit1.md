@@ -1277,8 +1277,12 @@ Ordinary MIME body spooling and subsequent fileblob export now retain the
 first specific failure from a required fileblob operation at the message
 boundary. Body-spool creation, write, and export failures are no longer
 reduced to `CL_EMAXSIZE` or a generic parse failure when `cli_mbox()` unwinds;
-`CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, and `CL_ERESOURCE` remain
-visible while sticky incomplete and cache-taint behavior is preserved. The
+`CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, `CL_EMEM`, and
+`CL_ERESOURCE` remain visible while sticky incomplete and cache-taint behavior
+is preserved. The message boundary also records allocation failures, missing
+temporary-directory configuration, incomplete source blobs, and output blobs
+that never acquire a descriptor or pathname, rather than leaving
+`materialization_status` clean. The
 `test_mbox_body_spool_output_creation_status_is_fail_visible` and
 `test_mbox_body_export_output_creation_status_is_fail_visible` regressions
 require `CL_ECREAT` for invalid source-spool and export destinations.

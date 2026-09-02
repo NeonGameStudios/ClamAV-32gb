@@ -906,8 +906,11 @@ final parser/release qualification remain open.
 
 - Retain the first specific required fileblob failure through MIME body
   spooling, export, and `cli_mbox()`, including `CL_ECREAT`, `CL_EOPEN`,
-  `CL_EWRITE`, `CL_ETIMEOUT`, and `CL_ERESOURCE`, instead of substituting
+  `CL_EWRITE`, `CL_ETIMEOUT`, `CL_EMEM`, and `CL_ERESOURCE`, instead of substituting
   `CL_EMAXSIZE` or a generic parse failure.
+- Keep allocation failures, missing temporary-directory configuration,
+  incomplete source blobs, and output blobs lacking a descriptor or pathname
+  recorded at the message boundary before cleanup.
 - Keep sticky incomplete/cache-taint behavior and the ordinary-text invalid
   spool and export-directory regressions. Complete current-source
   production-GCC compilation and linked MIME execution, complete

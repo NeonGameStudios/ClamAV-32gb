@@ -148,7 +148,7 @@ static cl_error_t messageFileblobStatus(const fileblob *fb)
     if (fb == NULL)
         return CL_ERESOURCE;
     if (!fb->isIncomplete)
-        return CL_SUCCESS;
+        return (fb->fp != NULL && fb->fullname != NULL) ? CL_SUCCESS : CL_ERESOURCE;
     return fb->incomplete_status != CL_SUCCESS ? fb->incomplete_status : CL_ERESOURCE;
 }
 
@@ -340,16 +340,15 @@ int messageBeginBodySpool(message *m)
 
     dir = m->ctx->this_layer_tmpdir ? m->ctx->this_layer_tmpdir : m->ctx->engine->tmpdir;
     if (dir == NULL || *dir == '\0') {
-        cli_mark_scan_incomplete(m->ctx,
-                                 "MIME body spool has no usable temporary directory");
-        m->isTruncated = 1;
+        messageRecordMaterializationStatus(
+            m, CL_ECREAT, "MIME body spool has no usable temporary directory");
         return -1;
     }
 
     fb = fileblobCreate();
     if (fb == NULL) {
-        cli_mark_scan_incomplete(m->ctx, "MIME body spool could not be allocated");
-        m->isTruncated = 1;
+        messageRecordMaterializationStatus(m, CL_EMEM,
+                                           "MIME body spool could not be allocated");
         return -1;
     }
 
@@ -1540,8 +1539,8 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
     ret = (*create)();
 
     if (ret == NULL) {
-        messageMarkMaterializationFailure(m,
-                                          "MIME export output could not be allocated");
+        messageRecordMaterializationStatus(m, CL_EMEM,
+                                           "MIME export output could not be allocated");
         return NULL;
     }
 
@@ -1628,8 +1627,8 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
             newret = (*create)();
             if (newret == NULL) {
                 cli_warnmsg("messageExport: unable to create output for all decoding algorithms\n");
-                messageMarkMaterializationFailure(m,
-                                                  "MIME export output could not be allocated");
+                messageRecordMaterializationStatus(
+                    m, CL_EMEM, "MIME export output could not be allocated");
                 (*destroy)(ret);
                 return NULL;
             }
@@ -1909,15 +1908,17 @@ int messageSavePartial(message *m, const char *dir, const char *md5id, unsigned 
     if (m && m->body_spool) {
         fb = fileblobCreate();
         if (!fb) {
-            cli_mark_scan_incomplete(m->ctx, "MIME partial message spool could not be allocated");
+            messageRecordMaterializationStatus(
+                m, CL_EMEM, "MIME partial message spool could not be allocated");
             return CL_EMEM;
         }
 
         fileblobSetCTX(fb, m->ctx);
         fileblobPartialSet(fb, fullname, NULL);
         messageSetSpoolBuildContext(fb, m->ctx);
-        if (fb->isIncomplete || fb->fp == NULL || messageCopyBodySpool(m, fb) < 0) {
-            if (fb->isIncomplete)
+        if (fb->isIncomplete || fb->fp == NULL || fb->fullname == NULL ||
+            messageCopyBodySpool(m, fb) < 0) {
+            if (fb->isIncomplete || fb->fp == NULL || fb->fullname == NULL)
                 messageRecordFileblobFailure(m, fb,
                                              "MIME partial message spool could not be materialized completely");
             cli_mark_scan_incomplete(m->ctx, "MIME partial message spool could not be materialized completely");
@@ -1970,8 +1971,8 @@ static int messageCopyBodySpool(message *m, fileblob *out)
 
     source = m->body_spool;
     if (source->isIncomplete || source->fp == NULL || source->fullname == NULL) {
-        cli_mark_scan_incomplete(m->ctx,
-                                 "MIME body spool is not a complete scan source");
+        messageRecordFileblobFailure(m, source,
+                                     "MIME body spool is not a complete scan source");
         return -1;
     }
 
@@ -2136,8 +2137,8 @@ static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy
 
     source = m->body_spool;
     if (source->isIncomplete || source->fp == NULL || source->fullname == NULL) {
-        cli_mark_scan_incomplete(m->ctx,
-                                 "MIME body spool is not a complete scan source");
+        messageRecordFileblobFailure(m, source,
+                                     "MIME body spool is not a complete scan source");
         return NULL;
     }
 
@@ -2153,12 +2154,18 @@ static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy
     spool_dir = dir;
     if (spool_dir == NULL || *spool_dir == '\0')
         spool_dir = m->ctx ? m->ctx->this_layer_tmpdir : NULL;
-    if (spool_dir == NULL || *spool_dir == '\0')
+    if (spool_dir == NULL || *spool_dir == '\0') {
+        messageRecordMaterializationStatus(
+            m, CL_ECREAT, "MIME body export has no usable temporary directory");
         goto fail;
+    }
 
     out = fileblobCreate();
-    if (out == NULL)
+    if (out == NULL) {
+        messageRecordMaterializationStatus(
+            m, CL_EMEM, "MIME body export output could not be allocated");
         goto fail;
+    }
     filename = messageGetFilename(m);
     fileblobSetFilename(out, spool_dir,
                         (filename && *filename) ? filename : "mailbody");
@@ -2182,7 +2189,7 @@ static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy
 fail:
     if (filename)
         free(filename);
-    if (out && out->isIncomplete) {
+    if (out && (out->isIncomplete || out->fp == NULL || out->fullname == NULL)) {
         messageRecordFileblobFailure(m, out,
                                      "MIME body could not be exported completely from its spool");
     }
@@ -2242,8 +2249,9 @@ messageToBlob(message *m, int destroy)
     cli_dbgmsg("messageToBlob\n");
 
     if (m && m->body_spool) {
-        cli_mark_scan_incomplete(m->ctx,
-                                 "MIME body requires a disk-backed export rather than blob materialization");
+        messageRecordMaterializationStatus(
+            m, CL_EPARSE,
+            "MIME body requires a disk-backed export rather than blob materialization");
         return NULL;
     }
 

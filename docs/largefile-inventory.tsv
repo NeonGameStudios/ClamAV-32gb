@@ -12673,123 +12673,123 @@ native-width-integer	libclamav/mbr.h	88	cl_error_t cli_mbr_check2(cli_ctx *ctx, 
 native-width-integer	libclamav/mbr.h	89	cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize);
 native-width-integer	libclamav/message.c	101	static size_t messageMaterializedEntryBytes(size_t line_bytes, bool has_line)
 native-width-integer	libclamav/message.c	103	    size_t total = line_bytes;
-native-width-integer	libclamav/message.c	1039	static int
-native-width-integer	libclamav/message.c	1042	    size_t i;
-native-width-integer	libclamav/message.c	1043	    size_t len;
-native-width-integer	libclamav/message.c	1060	                   (unsigned long)len, variable, ptr);
-native-width-integer	libclamav/message.c	1076	int messageHasFilename(const message *m)
-native-width-integer	libclamav/message.c	1084	    int i;
-native-width-integer	libclamav/message.c	1111	        int highestSimil    = 0;
-native-width-integer	libclamav/message.c	1115	            int sim;
-native-width-integer	libclamav/message.c	1140	                int j;
-native-width-integer	libclamav/message.c	1142	                size_t next_count;
-native-width-integer	libclamav/message.c	1143	                size_t table_size;
-native-width-integer	libclamav/message.c	1162	                next_count = (size_t)m->numberOfEncTypes + 1;
+native-width-integer	libclamav/message.c	1038	static int
+native-width-integer	libclamav/message.c	1041	    size_t i;
+native-width-integer	libclamav/message.c	1042	    size_t len;
+native-width-integer	libclamav/message.c	1059	                   (unsigned long)len, variable, ptr);
+native-width-integer	libclamav/message.c	1075	int messageHasFilename(const message *m)
+native-width-integer	libclamav/message.c	1083	    int i;
+native-width-integer	libclamav/message.c	1110	        int highestSimil    = 0;
+native-width-integer	libclamav/message.c	1114	            int sim;
+native-width-integer	libclamav/message.c	1139	                int j;
+native-width-integer	libclamav/message.c	1141	                size_t next_count;
+native-width-integer	libclamav/message.c	1142	                size_t table_size;
+native-width-integer	libclamav/message.c	1161	                next_count = (size_t)m->numberOfEncTypes + 1;
 native-width-integer	libclamav/message.c	122	static size_t messageLineMaterializedBytes(const line_t *line)
-native-width-integer	libclamav/message.c	1228	int messageAddLine(message *m, line_t *line)
+native-width-integer	libclamav/message.c	1227	int messageAddLine(message *m, line_t *line)
 native-width-integer	libclamav/message.c	125	    const size_t line_bytes = data ? strlen(data) + 1 : 1;
-native-width-integer	libclamav/message.c	1271	int messageAddStr(message *m, const char *data)
-native-width-integer	libclamav/message.c	1274	    size_t stored_bytes;
-native-width-integer	libclamav/message.c	1290	            int iswhite = 1;
+native-width-integer	libclamav/message.c	1270	int messageAddStr(message *m, const char *data)
+native-width-integer	libclamav/message.c	1273	    size_t stored_bytes;
+native-width-integer	libclamav/message.c	1289	            int iswhite = 1;
 native-width-integer	libclamav/message.c	130	static size_t messageStringMaterializedBytes(const char *data)
 native-width-integer	libclamav/message.c	132	    const size_t line_bytes = data ? strlen(data) + 1 : 1;
-native-width-integer	libclamav/message.c	1384	int messageMoveText(message *m, text *t, message *old_message)
-native-width-integer	libclamav/message.c	1386	    int rc;
-native-width-integer	libclamav/message.c	1387	    int materialization_ok   = 1;
-native-width-integer	libclamav/message.c	1388	    const size_t moved_bytes = messageTextMaterializedBytes(t);
-native-width-integer	libclamav/message.c	1521	messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy)(void *), void (*setFilename)(void *, const char *, const char *), int (*addData)(void *, const unsigned char *, size_t), void *(*exportText)(text *, void *, int), void (*setCTX)(void *, cli_ctx *), cl_error_t (*getStatus)(const void *), int destroy_text)
-native-width-integer	libclamav/message.c	1526	    int i;
-native-width-integer	libclamav/message.c	1527	    int export_failed = 0;
-native-width-integer	libclamav/message.c	1623	        size_t size;
-native-width-integer	libclamav/message.c	1641	        cli_dbgmsg("messageExport: enctype %d is %d\n", i, (int)enctype);
-native-width-integer	libclamav/message.c	1771	            size_t datasize;
-native-width-integer	libclamav/message.c	1814	                if ((*addData)(ret, data, (size_t)(uptr - data)) < 0) {
-native-width-integer	libclamav/message.c	1823	                    size += (size_t)(uptr - data);
-native-width-integer	libclamav/message.c	1857	                   (unsigned long)size, (int)enctype);
-native-width-integer	libclamav/message.c	1866	                if ((*addData)(ret, data, (size_t)(ptr - data)) < 0) {
-native-width-integer	libclamav/message.c	1899	int messageSavePartial(message *m, const char *dir, const char *md5id, unsigned part)
-native-width-integer	libclamav/message.c	1903	    unsigned long time_val;
-native-width-integer	libclamav/message.c	1940	                       (int (*)(void *, const unsigned char *, size_t))fileblobAddData,
-native-width-integer	libclamav/message.c	1941	                       (void *(*)(text *, void *, int))textToFileblob,
-native-width-integer	libclamav/message.c	1960	static int messageCopyBodySpool(message *m, fileblob *out)
-native-width-integer	libclamav/message.c	1966	    int failed = 0;
+native-width-integer	libclamav/message.c	1383	int messageMoveText(message *m, text *t, message *old_message)
+native-width-integer	libclamav/message.c	1385	    int rc;
+native-width-integer	libclamav/message.c	1386	    int materialization_ok   = 1;
+native-width-integer	libclamav/message.c	1387	    const size_t moved_bytes = messageTextMaterializedBytes(t);
+native-width-integer	libclamav/message.c	1520	messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy)(void *), void (*setFilename)(void *, const char *, const char *), int (*addData)(void *, const unsigned char *, size_t), void *(*exportText)(text *, void *, int), void (*setCTX)(void *, cli_ctx *), cl_error_t (*getStatus)(const void *), int destroy_text)
+native-width-integer	libclamav/message.c	1525	    int i;
+native-width-integer	libclamav/message.c	1526	    int export_failed = 0;
+native-width-integer	libclamav/message.c	1622	        size_t size;
+native-width-integer	libclamav/message.c	1640	        cli_dbgmsg("messageExport: enctype %d is %d\n", i, (int)enctype);
+native-width-integer	libclamav/message.c	1770	            size_t datasize;
+native-width-integer	libclamav/message.c	1813	                if ((*addData)(ret, data, (size_t)(uptr - data)) < 0) {
+native-width-integer	libclamav/message.c	1822	                    size += (size_t)(uptr - data);
+native-width-integer	libclamav/message.c	1856	                   (unsigned long)size, (int)enctype);
+native-width-integer	libclamav/message.c	1865	                if ((*addData)(ret, data, (size_t)(ptr - data)) < 0) {
+native-width-integer	libclamav/message.c	1898	int messageSavePartial(message *m, const char *dir, const char *md5id, unsigned part)
+native-width-integer	libclamav/message.c	1902	    unsigned long time_val;
+native-width-integer	libclamav/message.c	1941	                       (int (*)(void *, const unsigned char *, size_t))fileblobAddData,
+native-width-integer	libclamav/message.c	1942	                       (void *(*)(text *, void *, int))textToFileblob,
+native-width-integer	libclamav/message.c	1961	static int messageCopyBodySpool(message *m, fileblob *out)
+native-width-integer	libclamav/message.c	1967	    int failed = 0;
 native-width-integer	libclamav/message.c	199	static int messageCheckDeadline(message *m)
-native-width-integer	libclamav/message.c	1995	            size_t n;
-native-width-integer	libclamav/message.c	2050	        size_t line_len = strlen(line);
-native-width-integer	libclamav/message.c	2074	                                              (size_t)(end - decoded)) < 0) {
-native-width-integer	libclamav/message.c	2090	        if (end && fileblobAddData(out, decoded, (size_t)(end - decoded)) < 0) {
-native-width-integer	libclamav/message.c	2127	static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy)
+native-width-integer	libclamav/message.c	1996	            size_t n;
+native-width-integer	libclamav/message.c	2051	        size_t line_len = strlen(line);
+native-width-integer	libclamav/message.c	2075	                                              (size_t)(end - decoded)) < 0) {
+native-width-integer	libclamav/message.c	2091	        if (end && fileblobAddData(out, decoded, (size_t)(end - decoded)) < 0) {
+native-width-integer	libclamav/message.c	2128	static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy)
 native-width-integer	libclamav/message.c	215	static int messageReserveMaterializedBytes(message *m, size_t bytes, const char *caller)
-native-width-integer	libclamav/message.c	2209	messageToFileblob(message *m, const char *dir, int destroy)
-native-width-integer	libclamav/message.c	2221	                       (int (*)(void *, const unsigned char *, size_t))fileblobAddData,
-native-width-integer	libclamav/message.c	2222	                       (void *(*)(text *, void *, int))textToFileblob,
-native-width-integer	libclamav/message.c	2238	messageToBlob(message *m, int destroy)
-native-width-integer	libclamav/message.c	2254	                      (int (*)(void *, const unsigned char *, size_t))blobAddData,
-native-width-integer	libclamav/message.c	2255	                      (void *(*)(text *, void *, int))textToBlob,
-native-width-integer	libclamav/message.c	2274	    int i;
+native-width-integer	libclamav/message.c	2216	messageToFileblob(message *m, const char *dir, int destroy)
+native-width-integer	libclamav/message.c	2228	                       (int (*)(void *, const unsigned char *, size_t))fileblobAddData,
+native-width-integer	libclamav/message.c	2229	                       (void *(*)(text *, void *, int))textToFileblob,
+native-width-integer	libclamav/message.c	2245	messageToBlob(message *m, int destroy)
+native-width-integer	libclamav/message.c	2262	                      (int (*)(void *, const unsigned char *, size_t))blobAddData,
+native-width-integer	libclamav/message.c	2263	                      (void *(*)(text *, void *, int))textToBlob,
+native-width-integer	libclamav/message.c	2282	    int i;
 native-width-integer	libclamav/message.c	230	static size_t messageTextMaterializedBytes(const text *t)
 native-width-integer	libclamav/message.c	232	    size_t total = 0;
-native-width-integer	libclamav/message.c	2333	                   i, (int)enctype);
+native-width-integer	libclamav/message.c	2341	                   i, (int)enctype);
 native-width-integer	libclamav/message.c	235	        const size_t bytes = messageLineMaterializedBytes(t->t_line);
-native-width-integer	libclamav/message.c	2435	            if ((size_t)(uptr - data) > sizeof(data)) {
-native-width-integer	libclamav/message.c	2596	int
-native-width-integer	libclamav/message.c	2624	decodeLine(message *m, encoding_type et, const char *line, unsigned char *buf, size_t buflen)
-native-width-integer	libclamav/message.c	2626	    size_t len, reallen;
-native-width-integer	libclamav/message.c	2631	    /*cli_dbgmsg("decodeLine(et = %d buflen = %u)\n", (int)et, buflen);*/
-native-width-integer	libclamav/message.c	2751	            reallen = (size_t)uudecode(*line++);
-native-width-integer	libclamav/message.c	2802	        if (base64Table[(unsigned int)(*s & 0xFF)] == 255) {
-native-width-integer	libclamav/message.c	2868	        int nbytes;
-native-width-integer	libclamav/message.c	2919	            int nbytes;
-native-width-integer	libclamav/message.c	3003	    const unsigned char ret = base64Table[(unsigned int)(c & 0xFF)];
-native-width-integer	libclamav/message.c	3025	static int
-native-width-integer	libclamav/message.c	3052	int messageContainsVirus(const message *m)
-native-width-integer	libclamav/message.c	3061	 * FIXME: this can take a long time. The real solution is for system admins
-native-width-integer	libclamav/message.c	3069	    size_t saved = 0;
-native-width-integer	libclamav/message.c	3079	        unsigned int r1;
-native-width-integer	libclamav/message.c	3090	        r1 = (unsigned int)lineGetRefCount(l1);
-native-width-integer	libclamav/message.c	3129	    cli_dbgmsg("messageDedup reclaimed %lu bytes\n", (unsigned long)saved);
+native-width-integer	libclamav/message.c	2443	            if ((size_t)(uptr - data) > sizeof(data)) {
+native-width-integer	libclamav/message.c	2604	int
+native-width-integer	libclamav/message.c	2632	decodeLine(message *m, encoding_type et, const char *line, unsigned char *buf, size_t buflen)
+native-width-integer	libclamav/message.c	2634	    size_t len, reallen;
+native-width-integer	libclamav/message.c	2639	    /*cli_dbgmsg("decodeLine(et = %d buflen = %u)\n", (int)et, buflen);*/
+native-width-integer	libclamav/message.c	2759	            reallen = (size_t)uudecode(*line++);
+native-width-integer	libclamav/message.c	2810	        if (base64Table[(unsigned int)(*s & 0xFF)] == 255) {
+native-width-integer	libclamav/message.c	2876	        int nbytes;
+native-width-integer	libclamav/message.c	2927	            int nbytes;
+native-width-integer	libclamav/message.c	3011	    const unsigned char ret = base64Table[(unsigned int)(c & 0xFF)];
+native-width-integer	libclamav/message.c	3033	static int
+native-width-integer	libclamav/message.c	3060	int messageContainsVirus(const message *m)
+native-width-integer	libclamav/message.c	3069	 * FIXME: this can take a long time. The real solution is for system admins
+native-width-integer	libclamav/message.c	3077	    size_t saved = 0;
+native-width-integer	libclamav/message.c	3087	        unsigned int r1;
+native-width-integer	libclamav/message.c	3098	        r1 = (unsigned int)lineGetRefCount(l1);
+native-width-integer	libclamav/message.c	3137	    cli_dbgmsg("messageDedup reclaimed %lu bytes\n", (unsigned long)saved);
 native-width-integer	libclamav/message.c	321	int messageBeginBodySpool(message *m)
-native-width-integer	libclamav/message.c	3304	static int push(LINK1 *top, const char *string);
-native-width-integer	libclamav/message.c	3305	static int pop(LINK1 *top, char *buffer);
-native-width-integer	libclamav/message.c	3306	static unsigned int compare(char *ls1, char **rs1, char *ls2, char **rs2);
-native-width-integer	libclamav/message.c	3310	static int
-native-width-integer	libclamav/message.c	3314	    unsigned int score = 0;
-native-width-integer	libclamav/message.c	3315	    size_t common, total;
-native-width-integer	libclamav/message.c	3316	    size_t len1, len2;
-native-width-integer	libclamav/message.c	3350	            score += (unsigned int)common;
-native-width-integer	libclamav/message.c	3376	static unsigned int
-native-width-integer	libclamav/message.c	3379	    unsigned int common, maxchars = 0;
-native-width-integer	libclamav/message.c	3411	                        unsigned int diff = common - maxchars;
-native-width-integer	libclamav/message.c	3437	static int
-native-width-integer	libclamav/message.c	3454	static int
-native-width-integer	libclamav/message.c	3472	int isuuencodebegin(const char *line)
-native-width-integer	libclamav/message.c	374	int messageHasBodySpool(const message *m)
-native-width-integer	libclamav/message.c	379	static int messageAddSpoolLine(message *m, const char *data)
-native-width-integer	libclamav/message.c	382	    size_t len                = data ? strlen(data) : 0;
-native-width-integer	libclamav/message.c	429	    size_t i;
-native-width-integer	libclamav/message.c	475	int messageSetMimeType(message *mess, const char *type)
-native-width-integer	libclamav/message.c	481	    int typeval;
-native-width-integer	libclamav/message.c	555	                int highestSimil = 0, t = -1;
-native-width-integer	libclamav/message.c	559	                    const int s = simil(m->string, type);
-native-width-integer	libclamav/message.c	644	    while (*disptype && isspace((int)*disptype))
+native-width-integer	libclamav/message.c	3312	static int push(LINK1 *top, const char *string);
+native-width-integer	libclamav/message.c	3313	static int pop(LINK1 *top, char *buffer);
+native-width-integer	libclamav/message.c	3314	static unsigned int compare(char *ls1, char **rs1, char *ls2, char **rs2);
+native-width-integer	libclamav/message.c	3318	static int
+native-width-integer	libclamav/message.c	3322	    unsigned int score = 0;
+native-width-integer	libclamav/message.c	3323	    size_t common, total;
+native-width-integer	libclamav/message.c	3324	    size_t len1, len2;
+native-width-integer	libclamav/message.c	3358	            score += (unsigned int)common;
+native-width-integer	libclamav/message.c	3384	static unsigned int
+native-width-integer	libclamav/message.c	3387	    unsigned int common, maxchars = 0;
+native-width-integer	libclamav/message.c	3419	                        unsigned int diff = common - maxchars;
+native-width-integer	libclamav/message.c	3445	static int
+native-width-integer	libclamav/message.c	3462	static int
+native-width-integer	libclamav/message.c	3480	int isuuencodebegin(const char *line)
+native-width-integer	libclamav/message.c	373	int messageHasBodySpool(const message *m)
+native-width-integer	libclamav/message.c	378	static int messageAddSpoolLine(message *m, const char *data)
+native-width-integer	libclamav/message.c	381	    size_t len                = data ? strlen(data) : 0;
+native-width-integer	libclamav/message.c	428	    size_t i;
+native-width-integer	libclamav/message.c	474	int messageSetMimeType(message *mess, const char *type)
+native-width-integer	libclamav/message.c	480	    int typeval;
+native-width-integer	libclamav/message.c	554	                int highestSimil = 0, t = -1;
+native-width-integer	libclamav/message.c	558	                    const int s = simil(m->string, type);
+native-width-integer	libclamav/message.c	643	    while (*disptype && isspace((int)*disptype))
 native-width-integer	libclamav/message.c	66	static int messageHasArgument(const message *m, const char *variable);
-native-width-integer	libclamav/message.c	672	    size_t offset;
-native-width-integer	libclamav/message.c	709	        size_t next_count;
-native-width-integer	libclamav/message.c	710	        size_t table_size;
+native-width-integer	libclamav/message.c	671	    size_t offset;
+native-width-integer	libclamav/message.c	708	        size_t next_count;
+native-width-integer	libclamav/message.c	709	        size_t table_size;
+native-width-integer	libclamav/message.c	789	        size_t datasz = 0;
 native-width-integer	libclamav/message.c	79	static const char *messageGetArgument(const message *m, size_t arg);
-native-width-integer	libclamav/message.c	790	        size_t datasz = 0;
 native-width-integer	libclamav/message.c	80	static void *messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy)(void *), void (*setFilename)(void *, const char *, const char *), int (*addData)(void *, const unsigned char *, size_t), void *(*exportText)(text *, void *, int), void (*setCTX)(void *, cli_ctx *), cl_error_t (*getStatus)(const void *), int destroy_text);
 native-width-integer	libclamav/message.c	81	static int usefulArg(const char *arg);
 native-width-integer	libclamav/message.c	84	static int simil(const char *str1, const char *str2);
 native-width-integer	libclamav/message.c	86	static int messageCopyBodySpool(message *m, fileblob *out);
 native-width-integer	libclamav/message.c	88	cl_error_t cli_message_table_size(size_t count, size_t element_size, size_t *bytes)
-native-width-integer	libclamav/message.c	917	            size_t len;
-native-width-integer	libclamav/message.c	931	            len   = (size_t)string - (size_t)key + 1;
+native-width-integer	libclamav/message.c	916	            size_t len;
+native-width-integer	libclamav/message.c	930	            len   = (size_t)string - (size_t)key + 1;
 native-width-integer	libclamav/message.c	94	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
-native-width-integer	libclamav/message.c	948	messageGetArgument(const message *m, size_t arg)
-native-width-integer	libclamav/message.c	969	    size_t i;
-native-width-integer	libclamav/message.c	970	    size_t len;
-native-width-integer	libclamav/message.c	987	                   (unsigned long)len, variable, ptr);
+native-width-integer	libclamav/message.c	947	messageGetArgument(const message *m, size_t arg)
+native-width-integer	libclamav/message.c	968	    size_t i;
+native-width-integer	libclamav/message.c	969	    size_t len;
+native-width-integer	libclamav/message.c	986	                   (unsigned long)len, variable, ptr);
 native-width-integer	libclamav/message.h	105	unsigned char *decodeLine(message *m, encoding_type enctype, const char *line, unsigned char *buf, size_t buflen);
 native-width-integer	libclamav/message.h	106	int isuuencodebegin(const char *line);
 native-width-integer	libclamav/message.h	108	int messageContainsVirus(const message *m);
@@ -22252,8 +22252,8 @@ boundary-constant	libclamav/mbox.c	4928	        strlen(number) > SIZE_MAX - 10U 
 boundary-constant	libclamav/mbr.c	391	        extoff > SIZE_MAX - extsize) {
 boundary-constant	libclamav/mbr.c	72	    if (!offset || sectorsize == 0 || lba > SIZE_MAX / sectorsize)
 boundary-constant	libclamav/mbr.c	97	    if (*offset > SIZE_MAX - base)
-boundary-constant	libclamav/message.c	1145	                if (m->numberOfEncTypes < 0 || m->numberOfEncTypes == INT_MAX) {
-boundary-constant	libclamav/message.c	695	    if (m->numberOfArguments == SIZE_MAX) {
+boundary-constant	libclamav/message.c	1144	                if (m->numberOfEncTypes < 0 || m->numberOfEncTypes == INT_MAX) {
+boundary-constant	libclamav/message.c	694	    if (m->numberOfArguments == SIZE_MAX) {
 boundary-constant	libclamav/message.c	93	    if (count > SIZE_MAX / element_size ||
 boundary-constant	libclamav/mew.c	810	    if (section_count > SIZE_MAX / sizeof(struct cli_exe_section) ||
 boundary-constant	libclamav/mew.c	848	                   base, vadd, UINT32_MAX);
@@ -23050,9 +23050,9 @@ narrowing-cast	libclamav/matcher-hash.c	507	    item = cli_htu32_find(&root->hm.
 narrowing-cast	libclamav/matcher.c	1173	            legacy_offsets[i] = (uint32_t)offsets[i];
 narrowing-cast	libclamav/mbox.c	4758	        cli_dbgmsg("Decoded as '%*.*s'\n", (int)len, (int)len,
 narrowing-cast	libclamav/mbox.c	4880	    if (pdir_length < 0 || pdir_length >= (int)sizeof(pdir)) {
-narrowing-cast	libclamav/message.c	1060	                   (unsigned long)len, variable, ptr);
-narrowing-cast	libclamav/message.c	1857	                   (unsigned long)size, (int)enctype);
-narrowing-cast	libclamav/message.c	987	                   (unsigned long)len, variable, ptr);
+narrowing-cast	libclamav/message.c	1059	                   (unsigned long)len, variable, ptr);
+narrowing-cast	libclamav/message.c	1856	                   (unsigned long)size, (int)enctype);
+narrowing-cast	libclamav/message.c	986	                   (unsigned long)len, variable, ptr);
 narrowing-cast	libclamav/mpool.c	611	    spam("malloc @%p size %lu (%s) origsize %lu overhead %lu\n", f, (unsigned long)realneed, dbg, (unsigned long)size, (unsigned long)(needed - size));
 narrowing-cast	libclamav/mpool.c	629	        cli_errmsg("mpool_malloc(): Attempt to allocate %lu bytes. Please report to https://github.com/Cisco-Talos/clamav/issues\n", (unsigned long)size);
 narrowing-cast	libclamav/mpool.c	638	        cli_errmsg("mpool_malloc(): Attempt to allocate %lu bytes. Please report to https://github.com/Cisco-Talos/clamav/issues\n", (unsigned long)size);
@@ -24348,25 +24348,25 @@ format-width	libclamav/mbr.c	538	                               "entry at index 
 format-width	libclamav/mbr.c	555	    cli_dbgmsg("cli_scanmbr: examined %u logical partitions\n", i);
 format-width	libclamav/mbr.c	685	                               "[%u, %u]\n",
 format-width	libclamav/mbr.c	764	                           "[%u, %u]\n",
-format-width	libclamav/message.c	1059	        cli_dbgmsg("messageHasArgument: compare %lu bytes of %s with %s\n",
-format-width	libclamav/message.c	1180	                cli_dbgmsg("Encoding type %d is \"%s\"\n", m->numberOfEncTypes, type);
-format-width	libclamav/message.c	1197	                cli_dbgmsg("Unknown encoding type \"%s\" - guessing as %s (%u%% certainty)\n",
-format-width	libclamav/message.c	1553	    cli_dbgmsg("messageExport: numberOfEncTypes == %d\n", m->numberOfEncTypes);
-format-width	libclamav/message.c	1641	        cli_dbgmsg("messageExport: enctype %d is %d\n", i, (int)enctype);
-format-width	libclamav/message.c	1790	                    cli_dbgmsg("Failed to allocate data buffer of size %zu\n", datasize);
-format-width	libclamav/message.c	1856	        cli_dbgmsg("Exported %lu bytes using enctype %d\n",
-format-width	libclamav/message.c	1887	    cli_dbgmsg("%d trailing bytes to export\n", m->base64chars);
-format-width	libclamav/message.c	1907	    snprintf(fullname, 1024, "%s" PATHSEP "clamav-partial-%lu_%s-%u", dir, time_val, md5id, part);
-format-width	libclamav/message.c	2332	        cli_dbgmsg("messageToText: export transfer method %d = %d\n",
-format-width	libclamav/message.c	2631	    /*cli_dbgmsg("decodeLine(et = %d buflen = %u)\n", (int)et, buflen);*/
-format-width	libclamav/message.c	2824	    /*cli_dbgmsg("decode %s (len %d isFast %d base64chars %d)\n", in,
-format-width	libclamav/message.c	2843	                cli_errmsg("email message decode error: invalid base64chars value: %d\n", m->base64chars);
-format-width	libclamav/message.c	2873	        cli_dbgmsg("base64chars = %d (%c %c %c)\n", m->base64chars,
-format-width	libclamav/message.c	2914	                cli_errmsg("email message decode error: invalid nbytes value: %d\n", nbytes);
-format-width	libclamav/message.c	2974	                    cli_errmsg("email message decode error: invalid nbytes value: %d\n", nbytes);
-format-width	libclamav/message.c	3129	    cli_dbgmsg("messageDedup reclaimed %lu bytes\n", (unsigned long)saved);
-format-width	libclamav/message.c	568	                    cli_dbgmsg("Unknown MIME type \"%s\" - guessing as %s (%d%% certainty)\n",
-format-width	libclamav/message.c	986	        cli_dbgmsg("messageFindArgument: compare %lu bytes of %s with %s\n",
+format-width	libclamav/message.c	1058	        cli_dbgmsg("messageHasArgument: compare %lu bytes of %s with %s\n",
+format-width	libclamav/message.c	1179	                cli_dbgmsg("Encoding type %d is \"%s\"\n", m->numberOfEncTypes, type);
+format-width	libclamav/message.c	1196	                cli_dbgmsg("Unknown encoding type \"%s\" - guessing as %s (%u%% certainty)\n",
+format-width	libclamav/message.c	1552	    cli_dbgmsg("messageExport: numberOfEncTypes == %d\n", m->numberOfEncTypes);
+format-width	libclamav/message.c	1640	        cli_dbgmsg("messageExport: enctype %d is %d\n", i, (int)enctype);
+format-width	libclamav/message.c	1789	                    cli_dbgmsg("Failed to allocate data buffer of size %zu\n", datasize);
+format-width	libclamav/message.c	1855	        cli_dbgmsg("Exported %lu bytes using enctype %d\n",
+format-width	libclamav/message.c	1886	    cli_dbgmsg("%d trailing bytes to export\n", m->base64chars);
+format-width	libclamav/message.c	1906	    snprintf(fullname, 1024, "%s" PATHSEP "clamav-partial-%lu_%s-%u", dir, time_val, md5id, part);
+format-width	libclamav/message.c	2340	        cli_dbgmsg("messageToText: export transfer method %d = %d\n",
+format-width	libclamav/message.c	2639	    /*cli_dbgmsg("decodeLine(et = %d buflen = %u)\n", (int)et, buflen);*/
+format-width	libclamav/message.c	2832	    /*cli_dbgmsg("decode %s (len %d isFast %d base64chars %d)\n", in,
+format-width	libclamav/message.c	2851	                cli_errmsg("email message decode error: invalid base64chars value: %d\n", m->base64chars);
+format-width	libclamav/message.c	2881	        cli_dbgmsg("base64chars = %d (%c %c %c)\n", m->base64chars,
+format-width	libclamav/message.c	2922	                cli_errmsg("email message decode error: invalid nbytes value: %d\n", nbytes);
+format-width	libclamav/message.c	2982	                    cli_errmsg("email message decode error: invalid nbytes value: %d\n", nbytes);
+format-width	libclamav/message.c	3137	    cli_dbgmsg("messageDedup reclaimed %lu bytes\n", (unsigned long)saved);
+format-width	libclamav/message.c	567	                    cli_dbgmsg("Unknown MIME type \"%s\" - guessing as %s (%d%% certainty)\n",
+format-width	libclamav/message.c	985	        cli_dbgmsg("messageFindArgument: compare %lu bytes of %s with %s\n",
 format-width	libclamav/mew.c	887	        cli_dbgmsg("MEW unpacking section %d (%p->%p)\n", i, lesi, ledi);
 format-width	libclamav/mew.c	948	                cli_dbgmsg("MEW: Section %i [%d, %d] exceeds destination size %u\n",
 format-width	libclamav/mpool.c	483	    spam("Map created @%p->%p - size %lu out of %lu - voidptr=%lu\n", mpool_p, (char *)mpool_p + mp.u.mpm.size, (unsigned long)mp.u.mpm.usize, (unsigned long)mp.u.mpm.size, (unsigned long)SIZEOF_VOID_P);
@@ -31328,70 +31328,70 @@ offset-size-arithmetic	libclamav/mbr.c	96	    base = sectorsize - sizeof(struct 
 offset-size-arithmetic	libclamav/mbr.c	97	    if (*offset > SIZE_MAX - base)
 offset-size-arithmetic	libclamav/mbr.c	99	    *offset += base;
 offset-size-arithmetic	libclamav/mbr.h	63	/* 16-byte MBR partition entry, little-endian */
-offset-size-arithmetic	libclamav/message.c	1016	                    ret[strlen(ret) - 1] = '\0';
-offset-size-arithmetic	libclamav/message.c	1028	messageGetFilename(const message *m)
-offset-size-arithmetic	libclamav/message.c	1030	    char *filename = (char *)messageFindArgument(m, "filename");
+offset-size-arithmetic	libclamav/message.c	1015	                    ret[strlen(ret) - 1] = '\0';
+offset-size-arithmetic	libclamav/message.c	1027	messageGetFilename(const message *m)
+offset-size-arithmetic	libclamav/message.c	1029	    char *filename = (char *)messageFindArgument(m, "filename");
 offset-size-arithmetic	libclamav/message.c	107	     * lines could exceed the intended resident-memory bound while remaining
-offset-size-arithmetic	libclamav/message.c	1076	int messageHasFilename(const message *m)
-offset-size-arithmetic	libclamav/message.c	1162	                next_count = (size_t)m->numberOfEncTypes + 1;
+offset-size-arithmetic	libclamav/message.c	1075	int messageHasFilename(const message *m)
+offset-size-arithmetic	libclamav/message.c	1161	                next_count = (size_t)m->numberOfEncTypes + 1;
 offset-size-arithmetic	libclamav/message.c	122	static size_t messageLineMaterializedBytes(const line_t *line)
 offset-size-arithmetic	libclamav/message.c	125	    const size_t line_bytes = data ? strlen(data) + 1 : 1;
 offset-size-arithmetic	libclamav/message.c	130	static size_t messageStringMaterializedBytes(const char *data)
 offset-size-arithmetic	libclamav/message.c	132	    const size_t line_bytes = data ? strlen(data) + 1 : 1;
-offset-size-arithmetic	libclamav/message.c	1477	        (strncasecmp(line, encoding, sizeof(encoding) - 1) == 0) &&
-offset-size-arithmetic	libclamav/message.c	1482	             (cli_compare_ftm_file((const unsigned char *)line, strlen(line), m->ctx->engine) == CL_TYPE_MAIL))
-offset-size-arithmetic	libclamav/message.c	1521	messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy)(void *), void (*setFilename)(void *, const char *, const char *), int (*addData)(void *, const unsigned char *, size_t), void *(*exportText)(text *, void *, int), void (*setCTX)(void *, cli_ctx *), cl_error_t (*getStatus)(const void *), int destroy_text)
-offset-size-arithmetic	libclamav/message.c	1574	        filename = (char *)messageFindArgument(m, "filename");
-offset-size-arithmetic	libclamav/message.c	1576	            filename = (char *)messageFindArgument(m, "name");
-offset-size-arithmetic	libclamav/message.c	1591	        (*setFilename)(ret, dir, (filename && *filename) ? filename : "attachment");
-offset-size-arithmetic	libclamav/message.c	1663	            (*setFilename)(ret, dir, (filename && *filename) ? filename : "attachment");
-offset-size-arithmetic	libclamav/message.c	1706	            (*setFilename)(ret, dir, (filename && *filename) ? filename : "attachment");
-offset-size-arithmetic	libclamav/message.c	1785	            datasize = (line) ? strlen(line) + 2 : 0;
-offset-size-arithmetic	libclamav/message.c	1814	                if ((*addData)(ret, data, (size_t)(uptr - data)) < 0) {
-offset-size-arithmetic	libclamav/message.c	1823	                    size += (size_t)(uptr - data);
-offset-size-arithmetic	libclamav/message.c	1866	                if ((*addData)(ret, data, (size_t)(ptr - data)) < 0) {
-offset-size-arithmetic	libclamav/message.c	1959	 * additional full-size staging copy. */
-offset-size-arithmetic	libclamav/message.c	2048	        unsigned char decoded[sizeof(line) + 4];
-offset-size-arithmetic	libclamav/message.c	2057	        if (line_len == sizeof(line) - 1 && line[line_len - 1] != '\n' && !feof(input)) {
-offset-size-arithmetic	libclamav/message.c	2074	                                              (size_t)(end - decoded)) < 0) {
-offset-size-arithmetic	libclamav/message.c	2090	        if (end && fileblobAddData(out, decoded, (size_t)(end - decoded)) < 0) {
+offset-size-arithmetic	libclamav/message.c	1476	        (strncasecmp(line, encoding, sizeof(encoding) - 1) == 0) &&
+offset-size-arithmetic	libclamav/message.c	1481	             (cli_compare_ftm_file((const unsigned char *)line, strlen(line), m->ctx->engine) == CL_TYPE_MAIL))
+offset-size-arithmetic	libclamav/message.c	1520	messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy)(void *), void (*setFilename)(void *, const char *, const char *), int (*addData)(void *, const unsigned char *, size_t), void *(*exportText)(text *, void *, int), void (*setCTX)(void *, cli_ctx *), cl_error_t (*getStatus)(const void *), int destroy_text)
+offset-size-arithmetic	libclamav/message.c	1573	        filename = (char *)messageFindArgument(m, "filename");
+offset-size-arithmetic	libclamav/message.c	1575	            filename = (char *)messageFindArgument(m, "name");
+offset-size-arithmetic	libclamav/message.c	1590	        (*setFilename)(ret, dir, (filename && *filename) ? filename : "attachment");
+offset-size-arithmetic	libclamav/message.c	1662	            (*setFilename)(ret, dir, (filename && *filename) ? filename : "attachment");
+offset-size-arithmetic	libclamav/message.c	1705	            (*setFilename)(ret, dir, (filename && *filename) ? filename : "attachment");
+offset-size-arithmetic	libclamav/message.c	1784	            datasize = (line) ? strlen(line) + 2 : 0;
+offset-size-arithmetic	libclamav/message.c	1813	                if ((*addData)(ret, data, (size_t)(uptr - data)) < 0) {
+offset-size-arithmetic	libclamav/message.c	1822	                    size += (size_t)(uptr - data);
+offset-size-arithmetic	libclamav/message.c	1865	                if ((*addData)(ret, data, (size_t)(ptr - data)) < 0) {
+offset-size-arithmetic	libclamav/message.c	1960	 * additional full-size staging copy. */
+offset-size-arithmetic	libclamav/message.c	2049	        unsigned char decoded[sizeof(line) + 4];
+offset-size-arithmetic	libclamav/message.c	2058	        if (line_len == sizeof(line) - 1 && line[line_len - 1] != '\n' && !feof(input)) {
+offset-size-arithmetic	libclamav/message.c	2075	                                              (size_t)(end - decoded)) < 0) {
+offset-size-arithmetic	libclamav/message.c	2091	        if (end && fileblobAddData(out, decoded, (size_t)(end - decoded)) < 0) {
 offset-size-arithmetic	libclamav/message.c	215	static int messageReserveMaterializedBytes(message *m, size_t bytes, const char *caller)
-offset-size-arithmetic	libclamav/message.c	2164	                        (filename && *filename) ? filename : "mailbody");
+offset-size-arithmetic	libclamav/message.c	2171	                        (filename && *filename) ? filename : "mailbody");
 offset-size-arithmetic	libclamav/message.c	230	static size_t messageTextMaterializedBytes(const text *t)
 offset-size-arithmetic	libclamav/message.c	235	        const size_t bytes = messageLineMaterializedBytes(t->t_line);
-offset-size-arithmetic	libclamav/message.c	2435	            if ((size_t)(uptr - data) > sizeof(data)) {
-offset-size-arithmetic	libclamav/message.c	2572	        if(cli_compare_ftm_file(t_line->t_text, strlen(t_line->t_text)) == CL_TYPE_MAIL)
-offset-size-arithmetic	libclamav/message.c	2604	            strlen("Content-Transfer-Encoding")) == 0)
-offset-size-arithmetic	libclamav/message.c	2658	            while (buflen && *line) {
-offset-size-arithmetic	libclamav/message.c	2751	            reallen = (size_t)uudecode(*line++);
-offset-size-arithmetic	libclamav/message.c	3117	                    saved += strlen(d1) + 1;
-offset-size-arithmetic	libclamav/message.c	3153	        p = ret = cli_max_malloc(strlen(in) + 16);
-offset-size-arithmetic	libclamav/message.c	3209	    ret = cli_max_malloc(strlen(in) + 1);
-offset-size-arithmetic	libclamav/message.c	3308	#define MAX_PATTERN_SIZ 50 /* maximum string lengths */
-offset-size-arithmetic	libclamav/message.c	3331	    if (((total = strstrip(s1)) > MAX_PATTERN_SIZ - 1) || ((len2 = strstrip(s2)) > MAX_PATTERN_SIZ - 1)) {
-offset-size-arithmetic	libclamav/message.c	3383	    char *cs1, *cs2, *start1, *end1, *end2;
-offset-size-arithmetic	libclamav/message.c	3385	    end1   = ls1 + strlen(ls1);
-offset-size-arithmetic	libclamav/message.c	3386	    end2   = ls2 + strlen(ls2);
-offset-size-arithmetic	libclamav/message.c	3417	                        end1 -= diff;
-offset-size-arithmetic	libclamav/message.c	3418	                        end2 -= diff;
-offset-size-arithmetic	libclamav/message.c	3424	            start1++;
-offset-size-arithmetic	libclamav/message.c	357	    fileblobSetFilename(fb, dir, (filename && *filename) ? filename : "mailbody");
-offset-size-arithmetic	libclamav/message.c	392	    if ((len && fileblobAddData(m->body_spool, line, len) < 0) ||
-offset-size-arithmetic	libclamav/message.c	624	void messageSetDispositionType(message *m, const char *disptype)
-offset-size-arithmetic	libclamav/message.c	658	messageGetDispositionType(const message *m)
-offset-size-arithmetic	libclamav/message.c	660	    return (m->mimeDispositionType) ? m->mimeDispositionType : "";
-offset-size-arithmetic	libclamav/message.c	701	    for (offset = 0; offset < m->numberOfArguments; offset++)
-offset-size-arithmetic	libclamav/message.c	707	    if (offset == m->numberOfArguments) {
-offset-size-arithmetic	libclamav/message.c	713	        if (cli_message_table_size(next_count, sizeof(char *), &table_size) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/message.c	2443	            if ((size_t)(uptr - data) > sizeof(data)) {
+offset-size-arithmetic	libclamav/message.c	2580	        if(cli_compare_ftm_file(t_line->t_text, strlen(t_line->t_text)) == CL_TYPE_MAIL)
+offset-size-arithmetic	libclamav/message.c	2612	            strlen("Content-Transfer-Encoding")) == 0)
+offset-size-arithmetic	libclamav/message.c	2666	            while (buflen && *line) {
+offset-size-arithmetic	libclamav/message.c	2759	            reallen = (size_t)uudecode(*line++);
+offset-size-arithmetic	libclamav/message.c	3125	                    saved += strlen(d1) + 1;
+offset-size-arithmetic	libclamav/message.c	3161	        p = ret = cli_max_malloc(strlen(in) + 16);
+offset-size-arithmetic	libclamav/message.c	3217	    ret = cli_max_malloc(strlen(in) + 1);
+offset-size-arithmetic	libclamav/message.c	3316	#define MAX_PATTERN_SIZ 50 /* maximum string lengths */
+offset-size-arithmetic	libclamav/message.c	3339	    if (((total = strstrip(s1)) > MAX_PATTERN_SIZ - 1) || ((len2 = strstrip(s2)) > MAX_PATTERN_SIZ - 1)) {
+offset-size-arithmetic	libclamav/message.c	3391	    char *cs1, *cs2, *start1, *end1, *end2;
+offset-size-arithmetic	libclamav/message.c	3393	    end1   = ls1 + strlen(ls1);
+offset-size-arithmetic	libclamav/message.c	3394	    end2   = ls2 + strlen(ls2);
+offset-size-arithmetic	libclamav/message.c	3425	                        end1 -= diff;
+offset-size-arithmetic	libclamav/message.c	3426	                        end2 -= diff;
+offset-size-arithmetic	libclamav/message.c	3432	            start1++;
+offset-size-arithmetic	libclamav/message.c	356	    fileblobSetFilename(fb, dir, (filename && *filename) ? filename : "mailbody");
+offset-size-arithmetic	libclamav/message.c	391	    if ((len && fileblobAddData(m->body_spool, line, len) < 0) ||
+offset-size-arithmetic	libclamav/message.c	623	void messageSetDispositionType(message *m, const char *disptype)
+offset-size-arithmetic	libclamav/message.c	657	messageGetDispositionType(const message *m)
+offset-size-arithmetic	libclamav/message.c	659	    return (m->mimeDispositionType) ? m->mimeDispositionType : "";
+offset-size-arithmetic	libclamav/message.c	700	    for (offset = 0; offset < m->numberOfArguments; offset++)
+offset-size-arithmetic	libclamav/message.c	706	    if (offset == m->numberOfArguments) {
+offset-size-arithmetic	libclamav/message.c	712	        if (cli_message_table_size(next_count, sizeof(char *), &table_size) != CL_SUCCESS) {
 offset-size-arithmetic	libclamav/message.c	80	static void *messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy)(void *), void (*setFilename)(void *, const char *, const char *), int (*addData)(void *, const unsigned char *, size_t), void *(*exportText)(text *, void *, int), void (*setCTX)(void *, cli_ctx *), cl_error_t (*getStatus)(const void *), int destroy_text);
 offset-size-arithmetic	libclamav/message.c	88	cl_error_t cli_message_table_size(size_t count, size_t element_size, size_t *bytes)
-offset-size-arithmetic	libclamav/message.c	906	            datasz = strlen(kcopy) + strlen(data) + 2;
-offset-size-arithmetic	libclamav/message.c	907	            field  = cli_max_realloc(kcopy, strlen(kcopy) + strlen(data) + 2);
-offset-size-arithmetic	libclamav/message.c	931	            len   = (size_t)string - (size_t)key + 1;
-offset-size-arithmetic	libclamav/message.c	935	                memcpy(field, key, len - 1);
-offset-size-arithmetic	libclamav/message.c	936	                field[len - 1] = '\0';
+offset-size-arithmetic	libclamav/message.c	905	            datasz = strlen(kcopy) + strlen(data) + 2;
+offset-size-arithmetic	libclamav/message.c	906	            field  = cli_max_realloc(kcopy, strlen(kcopy) + strlen(data) + 2);
+offset-size-arithmetic	libclamav/message.c	930	            len   = (size_t)string - (size_t)key + 1;
+offset-size-arithmetic	libclamav/message.c	934	                memcpy(field, key, len - 1);
+offset-size-arithmetic	libclamav/message.c	935	                field[len - 1] = '\0';
 offset-size-arithmetic	libclamav/message.c	94	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
-offset-size-arithmetic	libclamav/message.c	998	            if ((strlen(ptr) > 1) && (*ptr == '"') && (strchr(&ptr[1], '"') != NULL)) {
+offset-size-arithmetic	libclamav/message.c	997	            if ((strlen(ptr) > 1) && (*ptr == '"') && (strchr(&ptr[1], '"') != NULL)) {
 offset-size-arithmetic	libclamav/message.h	111	#endif /*_MESSAGE_H*/
 offset-size-arithmetic	libclamav/message.h	29	/* Check a message-owned pointer table before forming its native-size product. */
 offset-size-arithmetic	libclamav/message.h	30	cl_error_t cli_message_table_size(size_t count, size_t element_size, size_t *bytes);
