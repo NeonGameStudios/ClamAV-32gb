@@ -171,6 +171,19 @@ static void messageRecordFileblobFailure(message *m, const fileblob *fb,
     messageMarkMaterializationFailure(m, reason);
 }
 
+static void messageRecordMaterializationStatus(message *m, cl_error_t status,
+                                               const char *reason)
+{
+    if (m == NULL)
+        return;
+
+    if (status == CL_SUCCESS)
+        status = CL_ERESOURCE;
+    if (m->materialization_status == CL_SUCCESS)
+        m->materialization_status = status;
+    messageMarkMaterializationFailure(m, reason);
+}
+
 /* Header metadata selects the body decoder and MIME boundaries. Losing a
  * header value on an allocation or table-admission failure must therefore be
  * fail-visible just like losing body materialization. */
@@ -185,11 +198,17 @@ static void messageMarkHeaderFailure(message *m, const char *reason)
 
 static int messageCheckDeadline(message *m)
 {
-    if (m == NULL || m->ctx == NULL || cli_checktimelimit(m->ctx) == CL_SUCCESS)
+    cl_error_t status;
+
+    if (m == NULL || m->ctx == NULL)
         return 0;
 
-    cli_mark_scan_incomplete(m->ctx,
-                             "MIME body processing reached the configured time limit");
+    status = cli_checktimelimit(m->ctx);
+    if (status == CL_SUCCESS)
+        return 0;
+
+    messageRecordMaterializationStatus(
+        m, status, "MIME body processing reached the configured time limit");
     return 1;
 }
 
@@ -1960,8 +1979,17 @@ static int messageCopyBodySpool(message *m, fileblob *out)
         m->encodingTypes[0] == NOENCODING ||
         m->encodingTypes[0] == BINARY ||
         m->encodingTypes[0] == EIGHTBIT) {
-        if (fflush(source->fp) != 0 || (input = fopen(source->fullname, "rb")) == NULL)
+        if (fflush(source->fp) != 0) {
+            messageRecordMaterializationStatus(
+                m, CL_EWRITE, "MIME body source spool could not be flushed");
             goto copy_fail;
+        }
+        input = fopen(source->fullname, "rb");
+        if (input == NULL) {
+            messageRecordMaterializationStatus(
+                m, CL_EOPEN, "MIME body source spool could not be opened");
+            goto copy_fail;
+        }
 
         while (!feof(input)) {
             size_t n;
@@ -1978,12 +2006,17 @@ static int messageCopyBodySpool(message *m, fileblob *out)
                 break;
             }
             if (ferror(input)) {
+                messageRecordMaterializationStatus(
+                    m, CL_EREAD, "MIME body source spool could not be read completely");
                 failed = 1;
                 break;
             }
         }
-        if (fclose(input) != 0)
+        if (fclose(input) != 0) {
+            messageRecordMaterializationStatus(
+                m, CL_EREAD, "MIME body source spool could not be closed after reading");
             failed = 1;
+        }
         input = NULL;
         if (failed)
             goto copy_fail;
@@ -1992,14 +2025,23 @@ static int messageCopyBodySpool(message *m, fileblob *out)
 
     if (m->numberOfEncTypes != 1 ||
         (m->encodingTypes[0] != BASE64 && m->encodingTypes[0] != QUOTEDPRINTABLE)) {
-        cli_mark_scan_incomplete(m->ctx,
-                                 "MIME body uses an encoding without a streaming decoder");
+        messageRecordMaterializationStatus(
+            m, CL_EPARSE, "MIME body uses an encoding without a streaming decoder");
         return -1;
     }
 
     enctype   = m->encodingTypes[0];
-    if (fflush(source->fp) != 0 || (input = fopen(source->fullname, "rb")) == NULL)
+    if (fflush(source->fp) != 0) {
+        messageRecordMaterializationStatus(
+            m, CL_EWRITE, "MIME body source spool could not be flushed");
         goto copy_fail;
+    }
+    input = fopen(source->fullname, "rb");
+    if (input == NULL) {
+        messageRecordMaterializationStatus(
+            m, CL_EOPEN, "MIME body source spool could not be opened");
+        goto copy_fail;
+    }
 
     m->base64chars = 0;
     while (fgets(line, sizeof(line), input) != NULL) {
@@ -2013,16 +2055,23 @@ static int messageCopyBodySpool(message *m, fileblob *out)
         }
 
         if (line_len == sizeof(line) - 1 && line[line_len - 1] != '\n' && !feof(input)) {
-            cli_mark_scan_incomplete(m->ctx,
-                                     "MIME encoded body line exceeded the streaming decoder buffer");
+            messageRecordMaterializationStatus(
+                m, CL_EPARSE,
+                "MIME encoded body line exceeded the streaming decoder buffer");
             failed = 1;
             break;
         }
 
         cli_chomp(line);
         end = decodeLine(m, enctype, line, decoded, sizeof(decoded));
-        if (end == NULL || (end != decoded && fileblobAddData(out, decoded,
-                                                              (size_t)(end - decoded)) < 0)) {
+        if (end == NULL) {
+            messageRecordMaterializationStatus(
+                m, CL_EPARSE, "MIME encoded body could not be decoded completely");
+            failed = 1;
+            break;
+        }
+        if (end != decoded && fileblobAddData(out, decoded,
+                                              (size_t)(end - decoded)) < 0) {
             if (end != NULL)
                 messageRecordFileblobFailure(m, out,
                                              "MIME body could not be copied completely from its spool");
@@ -2030,8 +2079,11 @@ static int messageCopyBodySpool(message *m, fileblob *out)
             break;
         }
     }
-    if (!failed && ferror(input))
+    if (!failed && ferror(input)) {
+        messageRecordMaterializationStatus(
+            m, CL_EREAD, "MIME body source spool could not be read completely");
         failed = 1;
+    }
     if (!failed && m->base64chars) {
         unsigned char decoded[4];
         unsigned char *end = base64Flush(m, decoded);
@@ -2041,8 +2093,11 @@ static int messageCopyBodySpool(message *m, fileblob *out)
             failed = 1;
         }
     }
-    if (fclose(input) != 0)
+    if (fclose(input) != 0) {
+        messageRecordMaterializationStatus(
+            m, CL_EREAD, "MIME body source spool could not be closed after reading");
         failed = 1;
+    }
     input = NULL;
 
     if (failed)
@@ -2051,11 +2106,14 @@ static int messageCopyBodySpool(message *m, fileblob *out)
     return 0;
 
 copy_fail:
-    if (input)
-        fclose(input);
+    if (input) {
+        if (fclose(input) != 0)
+            messageRecordMaterializationStatus(
+                m, CL_EREAD, "MIME body source spool could not be closed after reading");
+    }
     m->base64chars = 0;
-    cli_mark_scan_incomplete(m->ctx,
-                             "MIME body could not be copied completely from its spool");
+    messageRecordMaterializationStatus(
+        m, CL_EPARSE, "MIME body could not be copied completely from its spool");
     return -1;
 }
 

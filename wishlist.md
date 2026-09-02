@@ -13034,4 +13034,16 @@ final parser/release qualification remain open.
   compilation, production-linked execution, complete partition corpus,
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
+## RFC 1341 saved-fragment status reconciliation — 2026-09-02
+
+- Keep positive `messageSavePartial()` fileblob statuses fail-visible at the
+  `rfc1341()` caller; preserve the first specific output/materialization
+  status through `cli_mbox()` rather than checking only for a negative
+  sentinel.
+- Retain `test_message_save_partial_output_creation_status_is_fail_visible`
+  and its source guards. Current-source production-linked execution, complete
+  partial/MIME corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and parser/release
   qualification remain open.

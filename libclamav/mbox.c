@@ -4922,13 +4922,26 @@ rfc1341(mbox_ctx *mctx, message *m)
         return CL_EMEM;
     }
 
-    if (messageSavePartial(m, pdir, md5_hex, n) < 0) {
-        cli_mark_scan_incomplete(mctx->ctx, "MIME partial message could not be saved completely");
-        free(md5_hex);
-        free(id);
-        free(number);
-        free(total);
-        return -1;
+    {
+        const int save_status = messageSavePartial(m, pdir, md5_hex, n);
+
+        /* cl_error_t values are non-negative enum members. The historical
+         * caller checked only for a negative sentinel, which allowed a
+         * positive CL_ECREAT/CL_EWRITE/etc. from the fileblob layer to be
+         * treated as a successfully saved fragment. Preserve the specific
+         * status before the parser converts the RFC 1341 branch to its
+         * internal mailbox control result. */
+        if (save_status != CL_SUCCESS) {
+            mbox_record_message_failure(
+                mctx, m, "MIME partial message could not be saved completely");
+            cli_mark_scan_incomplete(mctx->ctx,
+                                     "MIME partial message could not be saved completely");
+            free(md5_hex);
+            free(id);
+            free(number);
+            free(total);
+            return save_status > CL_SUCCESS ? save_status : CL_EPARSE;
+        }
     }
 
     cli_dbgmsg("rfc1341: %s, %s of %s\n", id, number, (total) ? total : "?");

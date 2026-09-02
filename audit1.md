@@ -21578,3 +21578,23 @@ precedence. Focused position-failure execution, current-source GCC
 compilation, complete MSPack corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and parser
 qualification remain required.
+
+## RFC 1341 saved-fragment status reconciliation — 2026-09-02
+
+The `message/partial` caller previously treated only negative returns from
+`messageSavePartial()` as failures. ClamAV operational statuses are
+non-negative enum values, so a failed partial-fragment fileblob could return
+`CL_ECREAT`, `CL_EWRITE`, `CL_ETIMEOUT`, or another specific status and still
+be treated as successfully saved. The caller now checks for `CL_SUCCESS`,
+records the message's first specific materialization status at the mailbox
+boundary, and returns the exact status (or `CL_EPARSE` for the legacy negative
+sentinel). `test_message_save_partial_output_creation_status_is_fail_visible`
+directly covers the invalid-output-directory path and requires `CL_ECREAT`
+plus the stable fileblob diagnostic. The body-spool copy helper now also
+records source flush/open/read/close, decoder, and deadline failures before
+its generic cleanup path, so those failures cannot be replaced by a later
+format result. The source guards pass and the inventory has been regenerated;
+current-source production-GCC compilation, linked execution, complete
+partial/MIME corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and parser/release qualification remain required.

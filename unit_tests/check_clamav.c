@@ -39506,6 +39506,32 @@ START_TEST(test_mbox_public_api_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_message_save_partial_output_creation_status_is_fail_visible)
+{
+    struct cl_engine engine;
+    cli_ctx ctx;
+    message *m;
+    char bad_dir[PATH_MAX];
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    m = messageCreate();
+    ck_assert_ptr_nonnull(m);
+    messageSetCTX(m, &ctx);
+    ck_assert_int_eq(messageAddStr(m, "partial body"), 1);
+
+    snprintf(bad_dir, sizeof(bad_dir), "%s/message-save-partial-missing", tmpdir);
+    ck_assert_int_eq(messageSavePartial(m, bad_dir, "status-regression", 1), CL_ECREAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "fileblob temporary spool could not be created");
+
+    messageDestroy(m);
+}
+END_TEST
+
 START_TEST(test_mhtml_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[] =
@@ -59170,6 +59196,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_mail_api);
     tcase_add_checked_fixture(tc_mail_api, cl_setup, cl_teardown);
     tcase_add_test(tc_mail_api, test_mbox_public_api_read_failure_is_fail_visible);
+    tcase_add_test(tc_mail_api, test_message_save_partial_output_creation_status_is_fail_visible);
     tcase_add_test(tc_mail_api, test_mhtml_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_mail_map);
     tcase_add_checked_fixture(tc_mail_map, cl_setup, cl_teardown);
