@@ -2579,7 +2579,7 @@ final parser/release qualification.
   `CL_EPARSE` and records sticky incomplete state before parser access.
 - Retain `test_pdf_missing_map_is_fail_visible` and its source guards. Current
   production-linked execution, complete PDF corpus, sanitizer, certified Linux
-  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+ x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
   and final parser/release qualification remain open.
 
 ## Generic hash-table capacity and rehash failure visibility — 2026-08-29
@@ -11745,6 +11745,19 @@ final parser/release qualification remain open.
   guards and the capability manifest are refreshed. Current-source relink and
   execution remain pending while `clamav-poc-build` cannot start because its
   Docker overlay is full; complete 7-Zip/SFX corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification remain open.
+
+## ALZ total-size limit arithmetic — 2026-09-02
+
+- Keep ALZ total extracted-size admission based on the checked remaining
+  budget, including when the current total is already at the limit or a
+  `u64::MAX` addition would overflow.
+- Retain `total_limit_uses_checked_remaining_budget`, which covers exhausted,
+  exact-boundary, and valid remaining-budget cases. Source guards and the
+  capability manifest are refreshed. Current-source Rust test execution and C
+  ABI relink remain pending while `clamav-poc-build` cannot start because its
+  Docker overlay is full; complete ALZ corpus, sanitizer, certified Linux
   x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
   and final parser/release qualification remain open.
 

@@ -88,6 +88,24 @@ Complete 7-Zip/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## ALZ total-size limit arithmetic — 2026-09-02
+
+ALZ total-size admission used a saturating `base_extracted_size + needed`
+calculation as its limit predicate. When the existing budget was already
+exhausted, or when the addition overflowed at `u64::MAX`, the saturated value
+could incorrectly look admissible. The predicate is now checked against the
+remaining budget before the saturating sum is retained only for the diagnostic
+size marker, so an exhausted or overflowing admission is fail-visible.
+
+`total_limit_uses_checked_remaining_budget` covers an overflowing current
+budget, an exact limit with additional output, and a valid remaining budget.
+The source guard and capability manifest record the boundary. Current-source
+Rust test execution and C ABI relink are pending because `clamav-poc-build`
+remains unable to start with a full Docker overlay; no runtime qualification is
+claimed here. Complete ALZ corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## TNEF fileblob status reconciliation — 2026-09-02
 
 TNEF attachment handling now preserves the specific status retained by a

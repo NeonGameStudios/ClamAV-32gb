@@ -861,6 +861,10 @@ pub enum AlzExtractionDecision {
     Stop,
 }
 
+fn alz_total_size_exceeds_limit(current: u64, next: u64, limit: u64) -> bool {
+    current > limit || next > limit.saturating_sub(current)
+}
+
 #[derive(Default)]
 pub struct Alz {
     pub embedded_files: Vec<ExtractedFile>,
@@ -988,7 +992,11 @@ impl<'aa> Alz {
                 }
 
                 let total_needed = base_extracted_size.saturating_add(needed);
-                if total_needed > limits.max_total_size
+                if alz_total_size_exceeds_limit(
+                    base_extracted_size,
+                    needed,
+                    limits.max_total_size,
+                )
                     && self
                         .total_limit_exceeded_size
                         .map_or(true, |current| current < total_needed)
@@ -1027,7 +1035,11 @@ impl<'aa> Alz {
                     }
 
                     let total_needed = base_extracted_size.saturating_add(needed);
-                    if total_needed > limits.max_total_size
+                    if alz_total_size_exceeds_limit(
+                        base_extracted_size,
+                        needed,
+                        limits.max_total_size,
+                    )
                         && self
                             .total_limit_exceeded_size
                             .map_or(true, |current| current < total_needed)
@@ -1780,6 +1792,13 @@ mod tests {
 
         assert_eq!(alz.file_limit_exceeded_size, Some(payload.len() as u64));
         assert!(alz.embedded_files.is_empty());
+    }
+
+    #[test]
+    fn total_limit_uses_checked_remaining_budget() {
+        assert!(alz_total_size_exceeds_limit(u64::MAX, 1, u64::MAX));
+        assert!(alz_total_size_exceeds_limit(5, 1, 5));
+        assert!(!alz_total_size_exceeds_limit(4, 1, 5));
     }
 
     #[test]
