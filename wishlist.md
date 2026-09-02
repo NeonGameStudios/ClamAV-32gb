@@ -1,5 +1,18 @@
 # Wishlist
 
+## EGG stream decoder finalization status — 2026-09-02
+
+- Keep enabled bounded EGG deflate and BZIP2 block teardown fail-visible
+  before CRC acceptance or child publication, merging `CL_EUNPACK` without
+  replacing an earlier read, limit, timeout, output, parser, or cleanup
+  result. Preserve the same non-clean status in legacy contiguous helpers.
+- Retain `test_egg_stream_decoder_finalization_failure_is_fail_visible`, its
+  synthetic two-algorithm fixture, one-shot wrapper faults, and source guards.
+  Current-source production-GCC execution, complete EGG/SFX corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
+
 ## ZIP inflate decoder finalization status — 2026-09-02
 
 - Keep ZIP bounded deflate and deflate64 decoder teardown fail-visible before

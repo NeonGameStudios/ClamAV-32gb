@@ -2488,6 +2488,28 @@ static cl_error_t egg_stream_store(const egg_handle* handle, const egg_block* bl
     return (output->written == output->expected) ? CL_SUCCESS : CL_EFORMAT;
 }
 
+static cl_error_t egg_finalize_deflate(const egg_handle* handle, z_stream* stream,
+                                       cl_error_t status)
+{
+    if (inflateEnd(stream) != Z_OK) {
+        if (handle != NULL && handle->ctx != NULL)
+            cli_mark_scan_incomplete(handle->ctx, "EGG deflate decompressor could not be finalized");
+        status = cli_merge_cleanup_status(status, CL_EUNPACK);
+    }
+    return status;
+}
+
+static cl_error_t egg_finalize_bzip2(const egg_handle* handle, bz_stream* stream,
+                                     cl_error_t status)
+{
+    if (BZ2_bzDecompressEnd(stream) != BZ_OK) {
+        if (handle != NULL && handle->ctx != NULL)
+            cli_mark_scan_incomplete(handle->ctx, "EGG BZIP2 decompressor could not be finalized");
+        status = cli_merge_cleanup_status(status, CL_EUNPACK);
+    }
+    return status;
+}
+
 static cl_error_t egg_stream_deflate(const egg_handle* handle, const egg_block* block,
                                      egg_stream_output* output)
 {
@@ -2555,7 +2577,7 @@ static cl_error_t egg_stream_deflate(const egg_handle* handle, const egg_block* 
 
 done:
     if (initialized)
-        (void)inflateEnd(&stream);
+        status = egg_finalize_deflate(handle, &stream, status);
     return status;
 }
 
@@ -2626,7 +2648,7 @@ static cl_error_t egg_stream_bzip2(const egg_handle* handle, const egg_block* bl
 
 done:
     if (initialized)
-        (void)BZ2_bzDecompressEnd(&stream);
+        status = egg_finalize_bzip2(handle, &stream, status);
     return status;
 }
 
@@ -2963,9 +2985,8 @@ cl_error_t cli_egg_deflate_decompress(char* compressed, size_t compressed_size, 
 
 done:
 
-    if (stream_initialized) {
-        (void)inflateEnd(&stream);
-    }
+    if (stream_initialized && inflateEnd(&stream) != Z_OK)
+        status = cli_merge_cleanup_status(status, CL_EUNPACK);
 
     if (NULL != decoded) {
         free(decoded);
@@ -3086,8 +3107,8 @@ cl_error_t cli_egg_bzip2_decompress(char* compressed, size_t compressed_size, ch
 
 done:
 
-    if (stream_initialized)
-        (void)BZ2_bzDecompressEnd(&stream);
+    if (stream_initialized && BZ2_bzDecompressEnd(&stream) != BZ_OK)
+        status = cli_merge_cleanup_status(status, CL_EUNPACK);
 
     if (NULL != decoded) {
         free(decoded);

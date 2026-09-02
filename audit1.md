@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## EGG stream decoder finalization status — 2026-09-02
+
+Enabled bounded EGG deflate and BZIP2 block extraction now checks initialized
+decoder teardown and merges `CL_EUNPACK` without hiding an earlier read,
+limit, timeout, output, parser, or cleanup result. A finalization failure
+marks the owning layer incomplete before the block can be CRC-accepted or
+returned as a complete child. The legacy contiguous deflate and BZIP2 helpers
+also retain a teardown failure as a non-clean result. The focused synthetic
+one-file EGG regression injects one-shot failures for both algorithms and
+requires the exact incomplete diagnostic, cleared output publication, and
+fmap non-cacheability. Current-source production-GCC compilation and linked
+execution, complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## ZIP inflate decoder finalization status — 2026-09-02
 
 ZIP bounded deflate and deflate64 extraction now checks initialized decoder

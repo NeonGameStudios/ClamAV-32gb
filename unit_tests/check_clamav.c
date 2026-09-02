@@ -168,10 +168,12 @@ int clamav_test_force_xar_member_decoder_end;
 int clamav_test_force_ishield_cab_decoder_end;
 int clamav_test_force_gzip_decoder_end;
 int clamav_test_force_zip_inflate_decoder_end;
+int clamav_test_force_egg_deflate_decoder_end;
 int clamav_test_force_dmg_decoder_end;
 int clamav_test_force_dmg_adc_decoder_end;
 int clamav_test_force_dmg_bzip_decoder_end;
 int clamav_test_force_bzip_decoder_end;
+int clamav_test_force_egg_bzip_decoder_end;
 int clamav_test_force_bzip_concat_decoder_init;
 int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
@@ -211,6 +213,11 @@ int __wrap_inflateEnd(z_streamp strm)
         if (clamav_test_force_zip_inflate_decoder_end == 0)
             return Z_STREAM_ERROR;
     }
+    if (clamav_test_force_egg_deflate_decoder_end > 0) {
+        clamav_test_force_egg_deflate_decoder_end--;
+        if (clamav_test_force_egg_deflate_decoder_end == 0)
+            return Z_STREAM_ERROR;
+    }
     if (clamav_test_force_dmg_decoder_end > 0) {
         clamav_test_force_dmg_decoder_end--;
         if (clamav_test_force_dmg_decoder_end == 0)
@@ -246,6 +253,11 @@ int __wrap_BZ2_bzDecompressEnd(bz_stream *strm)
     if (clamav_test_force_bzip_decoder_end > 0) {
         clamav_test_force_bzip_decoder_end--;
         if (clamav_test_force_bzip_decoder_end == 0)
+            return BZ_SEQUENCE_ERROR;
+    }
+    if (clamav_test_force_egg_bzip_decoder_end > 0) {
+        clamav_test_force_egg_bzip_decoder_end--;
+        if (clamav_test_force_egg_bzip_decoder_end == 0)
             return BZ_SEQUENCE_ERROR;
     }
     return ret;
@@ -34655,7 +34667,6 @@ START_TEST(test_egg_extra_field_range_classes_are_fail_visible)
 
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
-    engine.maxcontiguoussize = CLI_DEFAULT_MAX_CONTIGUOUS_SIZE;
     map = cl_fmap_open_memory(archive, archive_length);
     ck_assert_ptr_nonnull(map);
     egg_read_failure_offset = sizeof(valid_header) + 4U;
@@ -34756,6 +34767,152 @@ static cl_error_t egg_test_capture(void *opaque, const void *data, size_t length
     output->length += length;
     return CL_SUCCESS;
 }
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+static size_t egg_test_single_block_archive(uint8_t *archive, size_t capacity,
+                                            const uint8_t *compressed,
+                                            size_t compressed_size,
+                                            size_t uncompressed_size,
+                                            uint8_t algorithm, uint32_t checksum)
+{
+    static const uint8_t filename[] = "test.bin";
+    size_t offset = 0;
+    size_t required;
+
+    if (archive == NULL || compressed == NULL || compressed_size == 0 ||
+        compressed_size > UINT32_MAX || uncompressed_size > UINT32_MAX)
+        return 0;
+    if (compressed_size > SIZE_MAX - 79U)
+        return 0;
+    required = 79U + compressed_size;
+    if (required > capacity)
+        return 0;
+
+    memset(archive, 0, capacity);
+    zip_stream_write_u32(archive + offset, 0x41474745U);
+    offset += 4;
+    zip_stream_write_u16(archive + offset, 0x0100U);
+    offset += 2;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    zip_stream_write_u32(archive + offset, 0x0A8590E3U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u64(archive + offset, uncompressed_size);
+    offset += 8;
+    zip_stream_write_u32(archive + offset, 0x0A8591ACU);
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, sizeof(filename) - 1U);
+    offset += 2;
+    memcpy(archive + offset, filename, sizeof(filename) - 1U);
+    offset += sizeof(filename) - 1U;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    zip_stream_write_u32(archive + offset, 0x02B50C13U);
+    offset += 4;
+    archive[offset++] = algorithm;
+    archive[offset++] = 0;
+    zip_stream_write_u32(archive + offset, (uint32_t)uncompressed_size);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, (uint32_t)compressed_size);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, checksum);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+    memcpy(archive + offset, compressed, compressed_size);
+    offset += compressed_size;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+    return offset;
+}
+
+START_TEST(test_egg_stream_decoder_finalization_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "EGG decoder finalization regression";
+    const uint8_t algorithms[] = {1, 2};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    uint8_t archive[512];
+    uint8_t decoded[sizeof(input) - 1U];
+    egg_test_output output;
+    fmap_t *map;
+    void *handle;
+    uint8_t *compressed;
+    char **comments;
+    const char *filename;
+    uint32_t ncomments;
+    uint64_t output_length;
+    size_t compressed_size;
+    size_t archive_length;
+    size_t i;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    engine.maxcontiguoussize = CLI_DEFAULT_MAX_CONTIGUOUS_SIZE;
+    for (i = 0; i < sizeof(algorithms); i++) {
+        if (algorithms[i] == 1)
+            compressed = zip_stream_raw_deflate_compressed(input, sizeof(input) - 1U, &compressed_size);
+        else
+            compressed = zip_stream_bzip2(input, sizeof(input) - 1U, &compressed_size);
+        ck_assert_ptr_nonnull(compressed);
+        archive_length = egg_test_single_block_archive(
+            archive, sizeof(archive), compressed, compressed_size, sizeof(input) - 1U,
+            algorithms[i], (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)));
+        ck_assert_uint_gt(archive_length, 0U);
+        free(compressed);
+
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(archive, archive_length);
+        ck_assert_ptr_nonnull(map);
+        ctx.engine = &engine;
+        ctx.fmap   = map;
+        handle    = NULL;
+        comments  = NULL;
+        ncomments = 0;
+        ck_assert_int_eq(cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx), CL_SUCCESS);
+        memset(&output, 0, sizeof(output));
+        output.buffer   = decoded;
+        output.capacity = sizeof(decoded);
+        filename        = NULL;
+        output_length   = 0;
+
+        if (algorithms[i] == 1)
+            clamav_test_force_egg_deflate_decoder_end = 1;
+        else
+            clamav_test_force_egg_bzip_decoder_end = 1;
+        ret = cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                          &filename, &output_length);
+
+        ck_assert_int_eq(ret, CL_EUNPACK);
+        ck_assert_ptr_null(filename);
+        ck_assert_uint_eq(output_length, 0U);
+        ck_assert(ctx.scan_incomplete);
+        if (algorithms[i] == 1) {
+            ck_assert_str_eq(ctx.scan_incomplete_reason,
+                             "EGG deflate decompressor could not be finalized");
+            ck_assert_int_eq(clamav_test_force_egg_deflate_decoder_end, 0);
+        } else {
+            ck_assert_str_eq(ctx.scan_incomplete_reason,
+                             "EGG BZIP2 decompressor could not be finalized");
+            ck_assert_int_eq(clamav_test_force_egg_bzip_decoder_end, 0);
+        }
+        ck_assert(map->dont_cache_flag);
+
+        cli_egg_close(handle);
+        cl_fmap_close(map);
+    }
+}
+END_TEST
+#endif
 
 START_TEST(test_egg_lzma_stream_extracts_bounded_member)
 {
@@ -58718,6 +58875,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_egg_map, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_metadata_index_respects_contiguous_limit);
     tcase_add_test(tc_egg_map, test_egg_oversized_skippable_extra_fields_are_bounded);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_egg_map, test_egg_stream_decoder_finalization_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_egg_map, test_egg_lzma_stream_extracts_bounded_member);
     suite_add_tcase(s, tc_egg_sfx);
     tcase_add_checked_fixture(tc_egg_sfx, cl_setup, cl_teardown);
