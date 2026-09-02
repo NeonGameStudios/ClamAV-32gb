@@ -107,6 +107,8 @@ uint64_t cli_rawaddr64(uint32_t, const struct cli_exe_section *, uint16_t, unsig
 uint32_t cli_rawaddr(uint32_t, const struct cli_exe_section *, uint16_t, unsigned int *, size_t, uint32_t);
 cl_error_t findres_ex(uint32_t, uint32_t, fmap_t *map, struct cli_exe_info *,
                       int (*)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *);
+cl_error_t findres_ex_ctx(uint32_t, uint32_t, fmap_t *, struct cli_exe_info *, cli_ctx *,
+                          int (*)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *);
 void findres(uint32_t, uint32_t, fmap_t *map, struct cli_exe_info *, int (*)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *);
 
 #endif

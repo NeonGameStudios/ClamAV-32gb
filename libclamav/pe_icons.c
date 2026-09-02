@@ -217,7 +217,7 @@ int cli_scanicon(icon_groupset *set, cli_ctx *ctx, struct cli_exe_info *peinfo)
         return status;
 
     /* icon group scan callback --> groupicon_scan_cb() */
-    status = findres_ex(14, 0xffffffff, map, peinfo, groupicon_scan_cb, &icon_env);
+    status = findres_ex_ctx(14, 0xffffffff, map, peinfo, ctx, groupicon_scan_cb, &icon_env);
     if (status != CL_SUCCESS) {
         if (status == CL_EREAD)
             cli_mark_scan_incomplete(ctx, "PE icon resource tree could not be read completely");
@@ -340,8 +340,10 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
                     cli_dbgmsg("cli_scanicon: Icongrp @%x - %ux%ux%u - (id=%x, rsvd=%u, planes=%u, palcnt=%u, sz=%x)\n", rva, grp[0], grp[1], depth, id, planes, grp[2], grp[3], icon_size);
 
                     /* icon scan callback --> icon_scan_cb() */
-                    status = findres_ex(3, id, map, peinfo, icon_scan_cb, icon_env);
+                    status = findres_ex_ctx(3, id, map, peinfo, ctx, icon_scan_cb, icon_env);
                     if (status != CL_SUCCESS) {
+                        if (status == CL_ETIMEOUT)
+                            return CL_ETIMEOUT;
                         if (status == CL_EREAD) {
                             cli_mark_scan_incomplete(ctx, "PE icon resource tree could not be read completely");
                             return CL_EREAD;

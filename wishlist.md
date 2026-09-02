@@ -1,5 +1,15 @@
 # Wishlist
 
+## PE resource-walk deadline propagation — 2026-09-02
+
+- Keep context-aware PE version/icon resource walks deadline-bounded before
+  admission and during type, name, and language traversal; preserve timeout
+  status, canonical reporting, and cache taint.
+- Retain `test_pe_resource_walk_time_limit_is_fail_visible`, the context-free
+  compatibility wrapper, and source/manifest evidence while completing PE
+  resource corpus, sanitizer, certified Linux x86-64, service,
+  materialized-large-file, Sonic1, resource, and release qualification.
+
 ## PE icon resource deadline admission — 2026-09-02
 
 - Keep confirmed PE icon resource walks bounded by the shared scan deadline

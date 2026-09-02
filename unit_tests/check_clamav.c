@@ -55478,6 +55478,77 @@ static void pe_icon_test_build_resource_tree(uint8_t *data, size_t data_size)
     pe_icon_test_write_u32(data + 0xc4, 20);
 }
 
+static cli_ctx *pe_resource_expire_ctx;
+
+static const void *pe_resource_expiring_read(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 2 && pe_resource_expire_ctx != NULL) {
+        ck_assert_int_eq(gettimeofday(&pe_resource_expire_ctx->time_limit, NULL), 0);
+        pe_resource_expire_ctx->time_limit.tv_sec--;
+        pe_resource_expire_ctx = NULL;
+    }
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static int pe_resource_noop_cb(void *opaque, uint32_t type, uint32_t name, uint32_t lang, uint32_t rva)
+{
+    (void)opaque;
+    (void)type;
+    (void)name;
+    (void)lang;
+    (void)rva;
+    return 0;
+}
+
+START_TEST(test_pe_resource_walk_time_limit_is_fail_visible)
+{
+    uint8_t data[24] = {0};
+    struct cl_engine engine;
+    struct cli_exe_section section;
+    struct cli_exe_info peinfo;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&section, 0, sizeof(section));
+    memset(&peinfo, 0, sizeof(peinfo));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    data[12] = 2;
+
+    section.rsz                   = sizeof(data);
+    peinfo.sections               = &section;
+    peinfo.nsections              = 1;
+    peinfo.ndatadirs              = 3;
+    peinfo.dirs[2].VirtualAddress = 0;
+    peinfo.hdr_size               = 0;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need                 = pe_resource_expiring_read;
+    ctx.engine                = &engine;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec += 60;
+    pe_resource_expire_ctx = &ctx;
+
+    ck_assert_int_eq(findres_ex_ctx(0xffffffffU, 0xffffffffU, map, &peinfo, &ctx,
+                                    pe_resource_noop_cb, NULL), CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
+    ck_assert(map->dont_cache_flag);
+
+    pe_resource_expire_ctx = NULL;
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_pe_icon_group_header_read_failure_is_fail_visible)
 {
     uint8_t data[256];
@@ -58700,6 +58771,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_pe_nspack_loader_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_petite_section_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_resource_walk_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_group_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_entry_rejects_invalid_contexts);
     tcase_add_test(tc_cl, test_pe_icon_time_limit_is_fail_visible);

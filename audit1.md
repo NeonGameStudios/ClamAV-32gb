@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## PE resource-walk deadline propagation — 2026-09-02
+
+The shared PE resource-directory helper had no scan context, so its
+attacker-declared type/name/language loops could outlive the global deadline
+before invoking a callback. A context-aware `findres_ex_ctx()` now checks the
+deadline before admission and at every directory level, preserving
+`CL_ETIMEOUT`; version-resource and icon-resource callers use it while the
+legacy context-free wrapper remains available.
+
+`test_pe_resource_walk_time_limit_is_fail_visible` expires the fmap callback
+between resource entries and verifies the canonical timeout diagnostic,
+incomplete state, and fmap cache taint. Source guards and the capability
+manifest record the boundary. Current-source production-GCC compilation,
+production-linked execution, complete PE/resource corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## PE icon resource deadline admission — 2026-09-02
 
 The confirmed PE icon scanner enforced its engine, fmap, resource, and image

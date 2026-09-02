@@ -499,15 +499,16 @@ static cl_error_t findres_advance(size_t base, uint32_t count, size_t *result)
 }
 
 /*
-   cl_error_t findres_ex(uint32_t by_type, uint32_t by_name, fmap_t *map,
-   struct cli_exe_info *peinfo, int (*cb)(void *, uint32_t, uint32_t,
-   uint32_t, uint32_t), void *opaque)
+   cl_error_t findres_ex_ctx(uint32_t by_type, uint32_t by_name, fmap_t *map,
+   struct cli_exe_info *peinfo, cli_ctx *ctx, int (*cb)(void *, uint32_t,
+   uint32_t, uint32_t, uint32_t), void *opaque)
    callback based res lookup with explicit structural and fmap errors
 
    by_type: lookup type
    by_name: lookup name or (unsigned)-1 to look for any name
    res_rva: base resource rva (i.e. dirs[2].VirtualAddress)
    map, peinfo: same as in scanpe
+   ctx: optional scan context used for deadline checkpoints
    cb: the callback function executed on each successful match
    opaque: an opaque pointer passed to the callback
 
@@ -515,8 +516,8 @@ static cl_error_t findres_advance(size_t base, uint32_t count, size_t *result)
    int pe_res_cballback (void *opaque, uint32_t type, uint32_t name, uint32_t lang, uint32_t rva);
    the callback shall return 0 to continue the lookup or 1 to abort
 */
-cl_error_t findres_ex(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cli_exe_info *peinfo,
-                      int (*cb)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *opaque)
+cl_error_t findres_ex_ctx(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cli_exe_info *peinfo,
+                          cli_ctx *ctx, int (*cb)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *opaque)
 {
     uint32_t type, type_offs, name, name_offs, lang, lang_offs;
     uint32_t type_cnt, name_cnt, lang_cnt;
@@ -527,6 +528,11 @@ cl_error_t findres_ex(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cl
 
     if (NULL == map || NULL == peinfo || NULL == cb)
         return CL_EARG;
+    if (ctx != NULL) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            return status;
+    }
     if (peinfo->ndatadirs < 3)
         return CL_SUCCESS;
 
@@ -554,6 +560,11 @@ cl_error_t findres_ex(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cl
     }
 
     while (type_cnt--) {
+        if (ctx != NULL) {
+            status = cli_checktimelimit(ctx);
+            if (status != CL_SUCCESS)
+                return status;
+        }
         status = findres_map_window(map, type_entry_offset, 8, &entry);
         if (status != CL_SUCCESS)
             return status;
@@ -581,6 +592,11 @@ cl_error_t findres_ex(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cl
                 name_cnt = cli_readint16(resdir + 14);
             }
             while (name_cnt--) {
+                if (ctx != NULL) {
+                    status = cli_checktimelimit(ctx);
+                    if (status != CL_SUCCESS)
+                        return status;
+                }
                 status = findres_map_window(map, name_entry_offset, 8, &entry);
                 if (status != CL_SUCCESS)
                     return status;
@@ -600,6 +616,11 @@ cl_error_t findres_ex(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cl
                     if (status != CL_SUCCESS)
                         return status;
                     while (lang_cnt--) {
+                        if (ctx != NULL) {
+                            status = cli_checktimelimit(ctx);
+                            if (status != CL_SUCCESS)
+                                return status;
+                        }
                         status = findres_map_window(map, lang_entry_offset, 8, &entry);
                         if (status != CL_SUCCESS)
                             return status;
@@ -628,6 +649,12 @@ cl_error_t findres_ex(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cl
     }
 
     return CL_SUCCESS;
+}
+
+cl_error_t findres_ex(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cli_exe_info *peinfo,
+                      int (*cb)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *opaque)
+{
+    return findres_ex_ctx(by_type, by_name, map, peinfo, NULL, cb, opaque);
 }
 
 void findres(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cli_exe_info *peinfo,
@@ -6193,10 +6220,12 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         }
 
         memset(&vlist, 0, sizeof(vlist));
-        resource_status = findres_ex(0x10, 0xffffffff, map, peinfo, versioninfo_cb, &vlist);
+        resource_status = findres_ex_ctx(0x10, 0xffffffff, map, peinfo, ctx, versioninfo_cb, &vlist);
         if (resource_status != CL_SUCCESS) {
             if (resource_status == CL_EREAD)
                 cli_mark_scan_incomplete(ctx, "PE version resource tree could not be read completely");
+            else if (resource_status == CL_ETIMEOUT)
+                cli_mark_scan_incomplete(ctx, "PE version resource inspection reached the configured time limit");
             else
                 cli_mark_scan_incomplete(ctx, "PE version resource tree is malformed or out of range");
             ret = resource_status;
