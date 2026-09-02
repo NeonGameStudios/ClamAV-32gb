@@ -50,6 +50,18 @@
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification.
 
+## PE heuristic metadata array insertion — 2026-09-01
+
+- Keep malformed-PE `Heuristics` metadata allocation, attachment, and string
+  insertion failures fail-visible; release rejected values, mark the
+  confirmed layer incomplete and non-cacheable, and preserve critical
+  `CL_EMEM` over the underlying `CL_EFORMAT`.
+- Retain `test_pe_heuristic_metadata_array_add_failure_is_fail_visible` and
+  its JSON-wrap source guards. Current-source production-linked execution,
+  complete PE/packer corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## PE import metadata record failure — 2026-09-01
 
 - Keep PE import metadata fail-visible when the `ImportTable` array, an import

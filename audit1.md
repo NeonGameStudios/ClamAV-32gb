@@ -19460,6 +19460,26 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final matcher/release
 qualification remain required.
 
+## PE heuristic metadata array insertion — 2026-09-01
+
+The malformed PE-header path used `pe_add_heuristic_property()` to append
+`BadNumberOfSections` and related diagnostics but previously discarded
+allocation, object-attachment, and array-insertion failures. A missing
+required heuristic report could therefore be followed by a format result
+without preserving the critical metadata failure. The helper now returns
+`CL_EMEM`, releases rejected JSON values, marks the confirmed PE layer
+incomplete and non-cacheable, and merges that critical status over
+`CL_EFORMAT` at all three call sites.
+
+`test_pe_heuristic_metadata_array_add_failure_is_fail_visible` uses the
+production-linked malformed-PE path and injects the heuristic-array append
+failure. It requires `CL_EMEM`, the exact sticky diagnostic, an empty
+`Heuristics` array, and fmap cache taint. Current-source production-GCC
+compilation, production-linked execution, complete PE/packer corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final matcher/release
+qualification remain required.
+
 ## XAR checksum mismatch visibility — 2026-09-01
 
 The XAR member walker compared declared archived and extracted checksums but

@@ -12223,3 +12223,17 @@ capability manifest and source guards record this boundary; current-source
 execution, complete parser corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 release qualification remain required.
+
+## PE heuristic metadata array insertion — 2026-09-01
+
+Malformed PE headers can emit heuristic metadata such as
+`BadNumberOfSections`. That path now checks heuristic-array allocation,
+attachment, and string insertion, releases rejected values, marks the
+confirmed PE layer incomplete and non-cacheable, and preserves critical
+`CL_EMEM` over the underlying `CL_EFORMAT`. The
+`test_pe_heuristic_metadata_array_add_failure_is_fail_visible` regression
+injects the production-linked array failure and requires the exact sticky
+diagnostic, `CL_EMEM`, an empty `Heuristics` array, and fmap cache taint.
+Current-source execution, complete PE/packer corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final release qualification remain required.

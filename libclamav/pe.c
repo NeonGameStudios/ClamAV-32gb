@@ -2996,29 +2996,45 @@ static struct json_object *get_pe_property(cli_ctx *ctx)
     return pe;
 }
 
-static void pe_add_heuristic_property(cli_ctx *ctx, const char *key)
+static cl_error_t pe_add_heuristic_property(cli_ctx *ctx, const char *key)
 {
     struct json_object *heuristics;
     struct json_object *pe;
     struct json_object *str;
 
     pe = get_pe_property(ctx);
-    if (!(pe))
-        return;
+    if (!(pe)) {
+        cli_mark_scan_incomplete(ctx, "PE heuristic metadata JSON could not be recorded");
+        return CL_EMEM;
+    }
 
     if (!json_object_object_get_ex(pe, "Heuristics", &heuristics)) {
         heuristics = json_object_new_array();
-        if (!(heuristics))
-            return;
+        if (!(heuristics)) {
+            cli_mark_scan_incomplete(ctx, "PE heuristic metadata JSON could not be recorded");
+            return CL_EMEM;
+        }
 
-        json_object_object_add(pe, "Heuristics", heuristics);
+        if (json_object_object_add(pe, "Heuristics", heuristics) != 0) {
+            json_object_put(heuristics);
+            cli_mark_scan_incomplete(ctx, "PE heuristic metadata JSON could not be recorded");
+            return CL_EMEM;
+        }
     }
 
     str = json_object_new_string(key);
-    if (!(str))
-        return;
+    if (!(str)) {
+        cli_mark_scan_incomplete(ctx, "PE heuristic metadata JSON could not be recorded");
+        return CL_EMEM;
+    }
 
-    json_object_array_add(heuristics, str);
+    if (json_object_array_add(heuristics, str) != 0) {
+        json_object_put(str);
+        cli_mark_scan_incomplete(ctx, "PE heuristic metadata JSON could not be recorded");
+        return CL_EMEM;
+    }
+
+    return CL_SUCCESS;
 }
 
 static struct json_object *get_section_json(cli_ctx *ctx)
@@ -5509,8 +5525,9 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     peinfo->nsections = EC16(file_hdr->NumberOfSections);
     if (peinfo->nsections == 0) {
 
+        ret = CL_EFORMAT;
         if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
-            pe_add_heuristic_property(ctx, "BadNumberOfSections");
+            ret = cli_merge_scan_status(ret, pe_add_heuristic_property(ctx, "BadNumberOfSections"));
         }
 
         if ((opts & CLI_PEHEADER_OPT_DBG_PRINT_INFO) && !ctx->corrupted_input) {
@@ -5518,7 +5535,6 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
                 cli_dbgmsg("cli_peheader: Invalid NumberOfSections (0)\n");
             }
         }
-        ret = CL_EFORMAT;
         goto done;
     }
 
@@ -5545,10 +5561,10 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         cli_dbgmsg("cli_peheader: SizeOfOptionalHeader too small\n");
 
         if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
-            pe_add_heuristic_property(ctx, "BadOptionalHeaderSize");
+            ret = cli_merge_scan_status(ret, pe_add_heuristic_property(ctx, "BadOptionalHeaderSize"));
         }
 
-        ret = CL_EFORMAT;
+        ret = cli_merge_scan_status(ret, CL_EFORMAT);
         goto done;
     }
 
@@ -5573,10 +5589,10 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
             cli_dbgmsg("cli_peheader: Incorrect SizeOfOptionalHeader for PE32+\n");
 
             if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
-                pe_add_heuristic_property(ctx, "BadOptionalHeaderSizePE32Plus");
+                ret = cli_merge_scan_status(ret, pe_add_heuristic_property(ctx, "BadOptionalHeaderSizePE32Plus"));
             }
 
-            ret = CL_EFORMAT;
+            ret = cli_merge_scan_status(ret, CL_EFORMAT);
             goto done;
         }
 
