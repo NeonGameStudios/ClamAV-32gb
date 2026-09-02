@@ -1,5 +1,17 @@
 # Wishlist
 
+## XAR checksum finalization status — 2026-09-02
+
+- Keep XAR archived and extracted checksum finalization checking
+  `cl_finish_hash()` before publishing or comparing a digest; preserve
+  `CL_EREAD`, the exact sticky incomplete reason, and non-cacheability, and
+  stop member child scanning after finalization failure.
+- Retain `test_xar_hash_finalization_failure_is_fail_visible`, its source
+  guards, and manifest evidence. Current-source production-GCC execution,
+  complete XAR corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final release
+  qualification remain open.
+
 ## Public file-scan path-conversion cleanup — 2026-09-02
 
 - Keep `cl_scanfile_ex2()` capturing `errno` immediately after `safe_open()`

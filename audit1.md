@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## XAR checksum finalization status — 2026-09-02
+
+XAR created archived and extracted checksum contexts and compared their
+results, but the old finalization helper discarded the `cl_finish_hash()`
+return value. A finalization failure could therefore be treated as a
+checksum mismatch or, when the produced bytes happened to match, as a
+complete member and successful child handoff. The helper now returns the
+failure, marks the XAR layer incomplete and non-cacheable, and returns
+`CL_EREAD`; member traversal stops before checksum comparison or nested
+scanning, while cleanup preserves any earlier stronger status.
+
+`test_xar_hash_finalization_failure_is_fail_visible` uses the existing Linux
+linker fault hook with a valid archived SHA-1 checksum and verifies the exact
+diagnostic, `CL_EREAD`, and cache taint. Source guards and the capability
+manifest record the finalization boundary. Current-source production-GCC
+compilation and production-linked execution, complete XAR corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## Public file-scan path-conversion cleanup — 2026-09-02
 
 The public `cl_scanfile_ex2()` path can receive an owned UTF-8 conversion from

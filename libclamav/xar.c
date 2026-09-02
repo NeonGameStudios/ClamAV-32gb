@@ -837,18 +837,23 @@ static void xar_hash_update(void *hash_ctx, void *data, unsigned long size, int 
     cl_update_hash(hash_ctx, data, size);
 }
 
-static void xar_hash_final(void *hash_ctx, void *result, int hash)
+static cl_error_t xar_hash_final(void *hash_ctx, void *result, int hash, cli_ctx *ctx, const char *reason)
 {
     if (!hash_ctx || !result)
-        return;
+        return CL_SUCCESS;
 
     switch (hash) {
         case XAR_CKSUM_OTHER:
         case XAR_CKSUM_NONE:
-            return;
+            return CL_SUCCESS;
     }
 
-    cl_finish_hash(hash_ctx, result);
+    if (cl_finish_hash(hash_ctx, result) != 0) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return CL_EREAD;
+    }
+
+    return CL_SUCCESS;
 }
 
 static int xar_hash_check(int hash, const void *result, const void *expected)
@@ -1524,55 +1529,60 @@ int cli_scanxar(cli_ctx *ctx)
         } /* end of switch */
 
         if (a_hash_ctx != NULL) {
-            xar_hash_final(a_hash_ctx, a_hash_result, a_hash);
+            cl_error_t hash_status = xar_hash_final(a_hash_ctx, a_hash_result, a_hash, ctx,
+                                                    "XAR archived checksum could not be finalized completely");
             a_hash_ctx = NULL;
+            rc          = cli_merge_scan_status(rc, hash_status);
         } else if (rc == CL_SUCCESS) {
             cli_dbgmsg("cli_scanxar: archived-checksum missing.\n");
             cksum_fails++;
         }
         if (e_hash_ctx != NULL) {
-            xar_hash_final(e_hash_ctx, e_hash_result, e_hash);
+            cl_error_t hash_status = xar_hash_final(e_hash_ctx, e_hash_result, e_hash, ctx,
+                                                    "XAR extracted checksum could not be finalized completely");
             e_hash_ctx = NULL;
+            rc          = cli_merge_scan_status(rc, hash_status);
         } else if (rc == CL_SUCCESS) {
             cli_dbgmsg("cli_scanxar: extracted-checksum(unarchived-checksum) missing.\n");
             cksum_fails++;
         }
 
-        if (rc == CL_SUCCESS) {
-            if (a_cksum != NULL) {
-                expected = cli_hex2str((char *)a_cksum);
-                if (xar_hash_check(a_hash, a_hash_result, expected) != 0) {
-                    cli_dbgmsg("cli_scanxar: archived-checksum mismatch.\n");
+        if (rc != CL_SUCCESS)
+            goto exit_tmpfile;
+
+        if (a_cksum != NULL) {
+            expected = cli_hex2str((char *)a_cksum);
+            if (xar_hash_check(a_hash, a_hash_result, expected) != 0) {
+                cli_dbgmsg("cli_scanxar: archived-checksum mismatch.\n");
+                cksum_fails++;
+                checksum_mismatch = true;
+            } else {
+                cli_dbgmsg("cli_scanxar: archived-checksum matched.\n");
+            }
+            free(expected);
+        }
+
+        if (e_cksum != NULL) {
+            if (do_extract_cksum) {
+                expected = cli_hex2str((char *)e_cksum);
+                if (xar_hash_check(e_hash, e_hash_result, expected) != 0) {
+                    cli_dbgmsg("cli_scanxar: extracted-checksum mismatch.\n");
                     cksum_fails++;
                     checksum_mismatch = true;
                 } else {
-                    cli_dbgmsg("cli_scanxar: archived-checksum matched.\n");
+                    cli_dbgmsg("cli_scanxar: extracted-checksum matched.\n");
                 }
                 free(expected);
             }
+        }
 
-            if (e_cksum != NULL) {
-                if (do_extract_cksum) {
-                    expected = cli_hex2str((char *)e_cksum);
-                    if (xar_hash_check(e_hash, e_hash_result, expected) != 0) {
-                        cli_dbgmsg("cli_scanxar: extracted-checksum mismatch.\n");
-                        cksum_fails++;
-                        checksum_mismatch = true;
-                    } else {
-                        cli_dbgmsg("cli_scanxar: extracted-checksum matched.\n");
-                    }
-                    free(expected);
-                }
-            }
-
-            rc = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE); /// TODO: collect file names in xar_get_toc_data_values()
-            if (checksum_mismatch) {
-                cli_mark_scan_incomplete(ctx, "XAR member checksum did not match its declared value");
-                rc = cli_merge_scan_status(rc, CL_EFORMAT);
-            }
-            if (rc != CL_SUCCESS) {
-                goto exit_tmpfile;
-            }
+        rc = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE); /// TODO: collect file names in xar_get_toc_data_values()
+        if (checksum_mismatch) {
+            cli_mark_scan_incomplete(ctx, "XAR member checksum did not match its declared value");
+            rc = cli_merge_scan_status(rc, CL_EFORMAT);
+        }
+        if (rc != CL_SUCCESS) {
+            goto exit_tmpfile;
         }
 
         if (a_cksum != NULL) {
@@ -1588,10 +1598,18 @@ int cli_scanxar(cli_ctx *ctx)
 exit_tmpfile:
     cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname, &member_reserved);
     rc = cli_merge_cleanup_status(rc, cleanup_rc);
-    if (a_hash_ctx != NULL)
-        xar_hash_final(a_hash_ctx, a_hash_result, a_hash);
-    if (e_hash_ctx != NULL)
-        xar_hash_final(e_hash_ctx, e_hash_result, e_hash);
+    if (a_hash_ctx != NULL) {
+        cleanup_rc = xar_hash_final(a_hash_ctx, a_hash_result, a_hash, ctx,
+                                    "XAR archived checksum could not be finalized completely");
+        a_hash_ctx = NULL;
+        rc          = cli_merge_cleanup_status(rc, cleanup_rc);
+    }
+    if (e_hash_ctx != NULL) {
+        cleanup_rc = xar_hash_final(e_hash_ctx, e_hash_result, e_hash, ctx,
+                                    "XAR extracted checksum could not be finalized completely");
+        e_hash_ctx = NULL;
+        rc          = cli_merge_cleanup_status(rc, cleanup_rc);
+    }
 
 exit_reader:
     if (a_cksum != NULL)
