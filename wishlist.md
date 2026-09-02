@@ -607,6 +607,17 @@
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification remain open.
 
+## MSPack filename-backed position failure propagation — 2026-09-02
+
+- Keep filename-backed `fseeko()`/`fseek()` and `ftello()` failures in the
+  MSPack callback state and propagate them as `CL_ESEEK` through CAB/CHM open
+  and member extraction, with sticky incomplete and non-cacheable state.
+- Retain source guards for the position-failure state and diagnostics.
+  Focused position-failure execution, current-source production-linked
+  execution, complete CAB/CHM corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  parser/release qualification remain open.
+
 ## OLE10 direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scan_ole10()` fail-visible for direct callers when a valid

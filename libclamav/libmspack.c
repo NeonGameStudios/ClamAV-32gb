@@ -40,6 +40,7 @@ struct mspack_system_ex {
     cli_ctx *ctx;
     bool time_limit_exceeded;
     bool read_failure;
+    bool position_failure;
     bool close_failure;
     const char *time_limit_reason;
 };
@@ -78,6 +79,8 @@ static cl_error_t mspack_decoder_failure(const struct mspack_system_ex *system_e
         return CL_ETIMEOUT;
     if (system_ex->read_failure)
         return CL_EREAD;
+    if (system_ex->position_failure)
+        return CL_ESEEK;
     return fallback;
 }
 
@@ -403,11 +406,24 @@ static int mspack_fmap_seek(struct mspack_file *file, off_t offset, int mode)
     }
 
 #if HAVE_FSEEKO
-    return fseeko(mspack_handle->f, offset, mode);
+    {
+        int status = fseeko(mspack_handle->f, offset, mode);
+        if (status != 0 && mspack_handle->system_ex != NULL)
+            mspack_handle->system_ex->position_failure = true;
+        return status;
+    }
 #else
-    if (offset > (off_t)LONG_MAX || offset < (off_t)LONG_MIN)
+    if (offset > (off_t)LONG_MAX || offset < (off_t)LONG_MIN) {
+        if (mspack_handle->system_ex != NULL)
+            mspack_handle->system_ex->position_failure = true;
         return -1;
-    return fseek(mspack_handle->f, (long)offset, mode);
+    }
+    {
+        int status = fseek(mspack_handle->f, (long)offset, mode);
+        if (status != 0 && mspack_handle->system_ex != NULL)
+            mspack_handle->system_ex->position_failure = true;
+        return status;
+    }
 #endif
 }
 
@@ -430,9 +446,19 @@ static off_t mspack_fmap_tell(struct mspack_file *file)
         return (off_t)-1;
 
 #if HAVE_FSEEKO
-    return ftello(mspack_handle->f);
+    {
+        off_t position = ftello(mspack_handle->f);
+        if (position < 0 && mspack_handle->system_ex != NULL)
+            mspack_handle->system_ex->position_failure = true;
+        return position;
+    }
 #else
-    return (off_t)ftell(mspack_handle->f);
+    {
+        long position = ftell(mspack_handle->f);
+        if (position < 0 && mspack_handle->system_ex != NULL)
+            mspack_handle->system_ex->position_failure = true;
+        return (off_t)position;
+    }
 #endif
 }
 
@@ -612,6 +638,8 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CAB archive header could not be inspected completely");
         status = mspack_decoder_failure(&ops_ex, CL_EPARSE);
+        if (status == CL_ESEEK)
+            cli_mark_scan_incomplete(ctx, "CAB archive header position could not be established");
         goto done;
     }
     if (ops_ex.time_limit_exceeded) {
@@ -621,6 +649,11 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
     if (ops_ex.read_failure) {
         cli_mark_scan_incomplete(ctx, "CAB archive header could not be read completely");
         status = CL_EREAD;
+        goto done;
+    }
+    if (ops_ex.position_failure) {
+        cli_mark_scan_incomplete(ctx, "CAB archive header position could not be established");
+        status = CL_ESEEK;
         goto done;
     }
 
@@ -700,6 +733,8 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CAB archive could not be opened for inspection");
         ret = mspack_decoder_failure(&ops_ex, CL_EFORMAT);
+        if (ret == CL_ESEEK)
+            cli_mark_scan_incomplete(ctx, "CAB archive position could not be established");
         goto done;
     }
     if (ops_ex.time_limit_exceeded) {
@@ -709,6 +744,11 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
     if (ops_ex.read_failure) {
         cli_mark_scan_incomplete(ctx, "CAB archive could not be read completely");
         ret = CL_EREAD;
+        goto done;
+    }
+    if (ops_ex.position_failure) {
+        cli_mark_scan_incomplete(ctx, "CAB archive position could not be established");
+        ret = CL_ESEEK;
         goto done;
     }
 
@@ -780,6 +820,11 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
     if (ops_ex.read_failure) {
         cli_mark_scan_incomplete(ctx, "CAB member input could not be read completely");
         ret = CL_EREAD;
+        goto done;
+    }
+    if (ops_ex.position_failure) {
+        cli_mark_scan_incomplete(ctx, "CAB member position could not be established");
+        ret = CL_ESEEK;
         goto done;
     }
     if (ops_ex.close_failure) {
@@ -896,6 +941,8 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CHM archive could not be opened for inspection");
         ret = mspack_decoder_failure(&ops_ex, CL_EFORMAT);
+        if (ret == CL_ESEEK)
+            cli_mark_scan_incomplete(ctx, "CHM archive position could not be established");
         goto done;
     }
     if (ops_ex.time_limit_exceeded) {
@@ -905,6 +952,11 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
     if (ops_ex.read_failure) {
         cli_mark_scan_incomplete(ctx, "CHM archive could not be read completely");
         ret = CL_EREAD;
+        goto done;
+    }
+    if (ops_ex.position_failure) {
+        cli_mark_scan_incomplete(ctx, "CHM archive position could not be established");
+        ret = CL_ESEEK;
         goto done;
     }
 
@@ -981,6 +1033,11 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         if (ops_ex.read_failure) {
             cli_mark_scan_incomplete(ctx, "CHM member input could not be read completely");
             ret = CL_EREAD;
+            goto done;
+        }
+        if (ops_ex.position_failure) {
+            cli_mark_scan_incomplete(ctx, "CHM member position could not be established");
+            ret = CL_ESEEK;
             goto done;
         }
         if (ops_ex.close_failure) {

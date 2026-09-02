@@ -20184,3 +20184,16 @@ production-GCC compilation, production-linked execution, complete Rust
 evidence/indicator corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 matcher/release qualification remain required.
+
+## MSPack filename-backed position failure propagation — 2026-09-02
+
+The filename-backed MSPack adapter returned failed `fseeko()`/`fseek()` and
+`ftello()` operations directly to libmspack without retaining why the callback
+failed. CAB/CHM callers could consequently receive a generic format error
+instead of the required seek status. The adapter now records position failure
+state and the CAB/CHM header and member boundaries return `CL_ESEEK` with
+sticky incomplete state, while timeout and read failures retain their existing
+precedence. Focused position-failure execution, current-source GCC
+compilation, complete MSPack corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and parser
+qualification remain required.
