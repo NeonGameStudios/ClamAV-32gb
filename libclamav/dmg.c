@@ -161,6 +161,17 @@ static const uint8_t *dmg_map_window(cli_ctx *ctx, uint64_t offset, uint64_t rem
     return window;
 }
 
+static cl_error_t
+dmg_readn_full(int fd, void *buffer, size_t length)
+{
+    size_t read_length = cli_readn(fd, buffer, length);
+
+    if (read_length == length)
+        return CL_SUCCESS;
+
+    return read_length == (size_t)-1 ? CL_EREAD : CL_EPARSE;
+}
+
 static int dmg_expected_output(cli_ctx *ctx, uint32_t index, uint64_t sector_count, uint64_t *expected)
 {
     if (!expected || sector_count > UINT64_MAX / DMG_SECTOR_SIZE) {
@@ -629,7 +640,7 @@ static int dmg_decode_mish_fd(cli_ctx *ctx, unsigned int *mishblocknum, int fd,
     STATBUF statbuf;
     uint8_t *decoded;
     size_t decoded_len;
-    size_t nread;
+    cl_error_t read_status;
 
     if (!ctx || !mishblocknum || fd < 0 || !mish_set)
         return CL_ENULLARG;
@@ -661,11 +672,11 @@ static int dmg_decode_mish_fd(cli_ctx *ctx, unsigned int *mishblocknum, int fd,
         cli_mark_scan_incomplete(ctx, "DMG decoded mish spool could not be rewound");
         return CL_ESEEK;
     }
-    nread = cli_readn(fd, decoded, decoded_len);
-    if (nread == (size_t)-1 || nread != decoded_len) {
+    read_status = dmg_readn_full(fd, decoded, decoded_len);
+    if (read_status != CL_SUCCESS) {
         free(decoded);
         cli_mark_scan_incomplete(ctx, "DMG decoded mish spool could not be read completely");
-        return CL_EREAD;
+        return read_status;
     }
 
     return dmg_parse_mish_bytes(ctx, mishblocknum, decoded, decoded_len, mish_set);

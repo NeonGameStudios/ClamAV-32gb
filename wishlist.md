@@ -13144,3 +13144,15 @@ qualification remain open.
   complete OLE/VBA/PowerPoint corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   parser/release qualification before closure.
+
+## DMG materialized mish read classification — 2026-09-02
+
+- Keep the exact-length DMG mish spool read fail-visible: an early EOF is
+  `CL_EPARSE`, while an in-range descriptor failure remains `CL_EREAD`; do not
+  publish metadata after either failure.
+- Retain `dmg_readn_full()`, the Linux-static `cli_readn` short/error
+  regression, source guards, and the `dmg-materialized-mish-read-status`
+  manifest evidence. Add current-source production-linked execution, complete
+  DMG/UDIF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and parser/release qualification
+  before closure.

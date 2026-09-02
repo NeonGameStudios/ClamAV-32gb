@@ -21737,3 +21737,20 @@ Current-source production-GCC compilation and linked execution, complete
 OLE/VBA/PowerPoint corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
+
+## DMG materialized mish read classification — 2026-09-02
+
+The bounded DMG blkx callback reads a decoded temporary spool whose exact
+length was obtained from `fstat()`. Its prior `cli_readn()` check collapsed an
+early EOF and an operational descriptor failure into `CL_EREAD`. The new
+`dmg_readn_full()` helper returns `CL_EPARSE` for the short materialized
+stream, retains `CL_EREAD` for `(size_t)-1`, and prevents malformed metadata
+from being treated as an operational read-only result before publication.
+
+`test_dmg_materialized_mish_read_status_is_fail_visible` injects both outcomes
+through the Linux-static `cli_readn` wrapper and requires the result to remain
+non-clean with the incomplete flag set. Source guards and the capability
+manifest record the contract. Current-source production-GCC compilation and
+linked execution, complete DMG/UDIF corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.

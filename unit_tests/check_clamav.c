@@ -148,6 +148,7 @@ extern int clamav_test_fail_fclose;
 extern int clamav_test_fail_ferror;
 extern int clamav_test_fail_fgets;
 extern int clamav_test_fail_fread;
+extern size_t __real_cli_readn(int fd, void *buff, size_t count);
 extern int clamav_test_fail_finish_hash;
 extern int clamav_test_finish_hash_calls_before_failure;
 extern int clamav_test_fail_closedir;
@@ -187,6 +188,27 @@ int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
 int clamav_test_force_egg_lzma_decoder_init;
 int clamav_test_lzma_shutdown_calls;
+int clamav_test_force_cli_readn_status;
+
+size_t __wrap_cli_readn(int fd, void *buff, size_t count)
+{
+    size_t ret;
+
+    if (clamav_test_force_cli_readn_status == 2) {
+        clamav_test_force_cli_readn_status = 0;
+        errno                              = EIO;
+        return (size_t)-1;
+    }
+
+    ret = __real_cli_readn(fd, buff, count);
+    if (clamav_test_force_cli_readn_status == 1) {
+        clamav_test_force_cli_readn_status = 0;
+        if (ret == count && count > 0)
+            return ret - 1;
+    }
+
+    return ret;
+}
 
 int __wrap_inflateInit_(z_streamp strm, const char *version, int stream_size)
 {
@@ -43447,6 +43469,41 @@ START_TEST(test_dmg_bzip_decoder_finalization_failure_is_fail_visible)
     free(compressed);
 }
 END_TEST
+
+START_TEST(test_dmg_materialized_mish_read_status_is_fail_visible)
+{
+    static const uint32_t terminal_end[] = {DMG_STRIPE_END};
+    struct cl_engine *engine;
+    char *base64;
+    int scan_incomplete;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    base64 = dmg_test_mish_base64(terminal_end, 1);
+    ck_assert_ptr_nonnull(base64);
+
+    clamav_test_force_cli_readn_status = 1;
+    scan_incomplete = 0;
+    ret             = dmg_test_scan_data_body(base64, engine, &scan_incomplete);
+    clamav_test_force_cli_readn_status = 0;
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(scan_incomplete);
+
+    clamav_test_force_cli_readn_status = 2;
+    scan_incomplete = 0;
+    ret             = dmg_test_scan_data_body(base64, engine, &scan_incomplete);
+    clamav_test_force_cli_readn_status = 0;
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(scan_incomplete);
+
+    free(base64);
+    cl_engine_free(engine);
+}
+END_TEST
 #endif
 
 START_TEST(test_dmg_sticky_incomplete_result_is_fail_visible)
@@ -60306,6 +60363,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_dmg, test_dmg_deflate_decoder_finalization_failure_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_adc_decoder_finalization_failure_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_bzip_decoder_finalization_failure_is_fail_visible);
+    tcase_add_test(tc_dmg, test_dmg_materialized_mish_read_status_is_fail_visible);
 #endif
     tcase_add_test(tc_dmg, test_dmg_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_external_sort_is_bounded_and_complete);
