@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## HFS+ compressed-resource type-table deadline — 2026-09-02
+
+HFS+ compressed-resource discovery bounded the resource type-list size and
+each reference list, but its attacker-declared type count could still drive
+the complete table read without an inner shared-deadline checkpoint. The
+type-table loop now checks `cli_checktimelimit()` before every entry and
+returns `CL_ETIMEOUT` with sticky incomplete/non-cacheable state before doing
+the next read.
+
+`test_hfsplus_resource_map_uses_declared_offsets` now exercises an expired
+type-table admission using the materialized resource-map fixture, while its
+declared-offset regression remains intact. Source guards and the capability
+manifest record the boundary. Current-source production-GCC compilation,
+production-linked execution, complete HFS+ compressed-resource corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## OLE2 small-block chain deadline and status propagation — 2026-09-02
 
 The OLE2 XBAT, SBAT metadata, and small-block data-chain helpers could spend

@@ -1,5 +1,17 @@
 # Wishlist
 
+## HFS+ compressed-resource type-table deadline — 2026-09-02
+
+- Keep the declared HFS+ compressed-resource type table bounded by the shared
+  deadline before each type-entry read; preserve `CL_ETIMEOUT`, sticky
+  incomplete state, and non-cacheability when type-table inspection expires.
+- Retain the expired type-table and declared-offset coverage in
+  `test_hfsplus_resource_map_uses_declared_offsets`, its source guards, and
+  manifest evidence while completing current-source production-GCC and
+  production-linked execution, complete HFS+ compressed-resource corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification.
+
 ## OLE2 small-block chain deadline and status propagation — 2026-09-02
 
 - Keep OLE2 XBAT, SBAT metadata, and small-block data-chain traversal bounded

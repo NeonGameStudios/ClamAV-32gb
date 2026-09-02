@@ -1252,6 +1252,12 @@ cl_error_t cli_hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
         uint64_t reference_bytes;
         uint64_t reference_relative;
 
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type-table traversal reached the configured time limit");
+            goto done;
+        }
+
         if (cli_readn(fd, &resourceType, sizeof(resourceType)) != sizeof(resourceType)) {
             cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to read resource type from temporary file\n");
             cli_mark_scan_incomplete(ctx, "HFS+ resource type table could not be read completely");

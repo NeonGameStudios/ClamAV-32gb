@@ -52138,6 +52138,16 @@ START_TEST(test_hfsplus_resource_map_uses_declared_offsets)
     ck_assert_int_eq(cli_hfsplus_seek_to_cmpf_resource(&ctx, fd, &resource_size), CL_SUCCESS);
     ck_assert_uint_eq(resource_size, 8);
 
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    ck_assert_int_eq(cli_hfsplus_seek_to_cmpf_resource(&ctx, fd, &resource_size), CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "HFS+ compressed resource type-table traversal reached the configured time limit");
+
     /* A reference offset outside the bounded map must not fall through to a
      * cursor-relative read or expose unrelated bytes as a resource entry. */
     test_hfsplus_put_be16(data + 64 + 36, 46);
