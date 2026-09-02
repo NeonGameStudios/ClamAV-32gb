@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## ISO temporary-output status propagation — 2026-09-01
+
+The ISO file-materialization path discarded the specific status returned by
+`cli_gentempfd()` and returned the generic `CL_ETMPFILE` value, obscuring
+creation failures such as `CL_ECREAT`. It also replaced any temporary
+reservation failure with `CL_ERESOURCE`. The path now preserves both returned
+statuses while retaining the sticky incomplete diagnostic and fmap
+non-cacheability. `test_iso_temporary_output_creation_status_is_fail_visible`
+reaches a valid one-byte ISO file entry with an invalid temporary directory and
+requires `CL_ECREAT`, the exact reason, and cache taint. Current-source
+production-GCC compilation, production-linked execution, complete ISO/Joliet
+corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.
+
 ## PDF preclassification metadata failure visibility — 2026-09-01
 
 The PDF preclassification pass created `PDFStats` and recorded bad-version,

@@ -102,16 +102,19 @@ static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsign
     char *tmpf;
     int fd                      = -1;
     cl_error_t ret              = CL_SUCCESS;
+    cl_error_t temp_status;
     uint64_t temporary_reserved = 0;
 
-    if (cli_gentempfd(iso->ctx->this_layer_tmpdir, &tmpf, &fd) != CL_SUCCESS) {
+    temp_status = cli_gentempfd(iso->ctx->this_layer_tmpdir, &tmpf, &fd);
+    if (temp_status != CL_SUCCESS) {
         cli_mark_scan_incomplete(iso->ctx, "ISO temporary output could not be created");
-        return CL_ETMPFILE;
+        return temp_status;
     }
 
-    if (cli_scan_reserve_temporary(iso->ctx, (uint64_t)len) != CL_SUCCESS) {
+    temp_status = cli_scan_reserve_temporary(iso->ctx, (uint64_t)len);
+    if (temp_status != CL_SUCCESS) {
         cli_mark_scan_incomplete(iso->ctx, "ISO file extent exceeds temporary storage limits");
-        ret = CL_ERESOURCE;
+        ret = temp_status;
         goto cleanup;
     }
     temporary_reserved = (uint64_t)len;

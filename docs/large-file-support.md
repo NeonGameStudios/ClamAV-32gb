@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ISO temporary-output status propagation — 2026-09-01
+
+ISO file materialization now preserves the originating `cli_gentempfd()` and
+temporary-reservation statuses instead of relabeling them as generic temporary
+or resource failures. The sticky incomplete diagnostic and fmap cache taint
+remain enforced. `test_iso_temporary_output_creation_status_is_fail_visible`
+requires `CL_ECREAT` for a valid file entry with an invalid output directory.
+Current-source production-GCC compilation, production-linked execution,
+complete ISO/Joliet corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## PDF preclassification metadata failure visibility — 2026-09-01
 
 The confirmed PDF preclassification path now checks `PDFStats` creation,

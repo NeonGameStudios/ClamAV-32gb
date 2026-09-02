@@ -25922,6 +25922,70 @@ START_TEST(test_iso_file_extent_respects_volume_space)
 }
 END_TEST
 
+START_TEST(test_iso_temporary_output_creation_status_is_fail_visible)
+{
+    enum {
+        ISO_OFFSET  = 32768,
+        ROOT_BLOCK  = 32,
+        ROOT_OFFSET = ROOT_BLOCK * 2048,
+        ISO_BLOCKS  = ROOT_BLOCK + 3,
+        ISO_LENGTH  = ISO_BLOCKS * 2048
+    };
+    uint8_t data[ISO_LENGTH] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    /* A valid one-byte file entry reaches iso_scan_file(). The deliberately
+     * missing parent directory makes cli_gentempfd() return CL_ECREAT; the
+     * parser must preserve that operational status instead of relabeling it
+     * as the generic CL_ETMPFILE result. */
+    data[ISO_OFFSET] = 1;
+    memcpy(data + ISO_OFFSET + 1, "CD001", 5);
+    data[ISO_OFFSET + 80]     = ISO_BLOCKS;
+    data[ISO_OFFSET + 84 + 3] = ISO_BLOCKS;
+    data[ISO_OFFSET + 128]    = 0x00;
+    data[ISO_OFFSET + 129]    = 0x08;
+    data[ISO_OFFSET + 156]    = 34;
+    data[ISO_OFFSET + 158]    = ROOT_BLOCK;
+    data[ISO_OFFSET + 166]    = 0x00;
+    data[ISO_OFFSET + 167]    = 0x08;
+    data[ISO_OFFSET + 2048]   = 0xff;
+    memcpy(data + ISO_OFFSET + 2049, "CD001", 5);
+
+    data[ROOT_OFFSET]      = 34;
+    data[ROOT_OFFSET + 2]  = ROOT_BLOCK + 1;
+    data[ROOT_OFFSET + 10] = 1;
+    data[ROOT_OFFSET + 32] = 1;
+    data[ROOT_OFFSET + 33] = 'x';
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = scan_engine;
+    ctx.dconf             = scan_engine->dconf;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = "/definitely/nonexistent/clamav-iso-temp";
+
+    ck_assert_int_eq(cli_scaniso(&ctx, ISO_OFFSET), CL_ECREAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ISO temporary output could not be created");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_iso_corpus_detects_embedded_png)
 {
     static const char *const images[] = {
@@ -56153,6 +56217,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_iso_map, test_iso_joliet_odd_name_length_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_directory_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_file_extent_respects_volume_space);
+    tcase_add_test(tc_iso_map, test_iso_temporary_output_creation_status_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_null_context_is_fail_visible);
     suite_add_tcase(s, tc_iso);
     tcase_add_checked_fixture(tc_iso, cl_setup, cl_teardown);

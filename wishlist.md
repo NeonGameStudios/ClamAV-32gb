@@ -1,5 +1,16 @@
 # Wishlist
 
+## ISO temporary-output status propagation — 2026-09-01
+
+- Preserve the originating `cli_gentempfd()` and temporary-reservation status
+  in ISO file materialization, including `CL_ECREAT`, while keeping the exact
+  sticky incomplete reason and fmap non-cacheability.
+- Retain `test_iso_temporary_output_creation_status_is_fail_visible` and its
+  registration. Complete current-source production-GCC compilation and
+  execution, complete ISO/Joliet corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification.
+
 ## PDF preclassification metadata failure visibility — 2026-09-01
 
 - Keep confirmed PDF preclassification metadata fail-visible for `PDFStats`,
