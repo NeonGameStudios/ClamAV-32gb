@@ -6302,6 +6302,7 @@ contains libclamav/hfsplus.c 'HFS+ resource block table exceeds the allocation c
 contains libclamav/hfsplus.c 'HFS+ resource block-table conversion reached the configured time limit'
 contains libclamav/hfsplus.c 'table_size = (size_t)*numBlocks * sizeof(hfsPlusResourceBlockTable)'
 contains libclamav/hfsplus.c 'hfsplus_readn_full(ctx, fd, *table, table_size,'
+contains libclamav/hfsplus.c 'ctx, ifd, block, readLen,'
 contains libclamav/hfsplus.c 'FSTAT(fd, &resource_stat)'
 contains libclamav/hfsplus.c 'HFS+ resource data or map is outside the fork'
 contains libclamav/hfsplus.c 'HFS+ resource map could not be located completely'

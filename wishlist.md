@@ -13125,3 +13125,11 @@ qualification remain open.
   failure, complete HFS+ catalog/attribute/resource corpus, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and parser/release qualification before closure.
+
+- Add a materialized compressed-resource block fixture proving that the
+  payload loop returns `CL_EPARSE` for a short block and `CL_EREAD` for an
+  in-range descriptor failure, while preserving sticky incomplete state and
+  cache taint; retain the payload full-read source guard and complete the
+  production-linked, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and parser/release
+  qualification before closure.

@@ -21710,3 +21710,14 @@ execution, injected descriptor-read failure, complete HFS+ catalog/attribute/
 resource corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+The compressed-resource payload loop had one remaining direct `cli_readn()`
+call after the fixed metadata reads were corrected. It now uses the same
+full-read helper after declared block-range admission, so a short materialized
+block is `CL_EPARSE` and an in-range descriptor failure is `CL_EREAD`; both
+retain sticky incomplete/non-cacheable state. The source guard pins this
+payload boundary. A dedicated materialized compressed-resource block fixture,
+production-linked execution, injected descriptor-read failure, complete
+HFS+ catalog/attribute/resource corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.

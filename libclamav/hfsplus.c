@@ -1877,10 +1877,11 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                     readLen = sizeof(block);
                                                 }
 
-                                                if (cli_readn(ifd, block, readLen) != readLen) {
+                                                status = hfsplus_readn_full(
+                                                    ctx, ifd, block, readLen,
+                                                    "HFS+ compressed resource block could not be read completely");
+                                                if (status != CL_SUCCESS) {
                                                     cli_dbgmsg("hfsplus_walk_catalog: Failed to read block from temporary file\n");
-                                                    cli_mark_scan_incomplete(ctx, "HFS+ compressed resource block could not be read completely");
-                                                    status = CL_EREAD;
                                                     goto resource_block_done;
                                                 }
 
