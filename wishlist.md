@@ -1,5 +1,20 @@
 # Wishlist
 
+## ARJ scanner header failure reconciliation — 2026-09-01
+
+- Keep the owning `cli_scanarj()` boundary fail-visible when
+  `cli_unarj_open()` or `cli_unarj_prepare_file()` returns a non-success
+  result without a lower-level sticky diagnostic: preserve `CL_EREAD` for
+  in-range fmap callback failures, record exact main/member-header reasons,
+  retain stronger parser/resource statuses, and leave normal `CL_BREAK`
+  end-of-archive handling unchanged.
+- Retain `test_arj_scan_header_read_failures_are_fail_visible`, the direct
+  `cli_unarj_open()` regression, exact sticky diagnostics, and fmap
+  non-cacheability. Complete current-source production-GCC compilation and
+  production-linked execution, complete ARJ/ARJ-SFX corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## PE packer metadata write visibility — 2026-09-01
 
 - Keep every PE packer metadata write fail-visible, including `HasEmptySection`
