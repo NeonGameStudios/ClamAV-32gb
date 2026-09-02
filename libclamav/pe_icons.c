@@ -71,6 +71,20 @@ static int pe_icon_reconcile_status(cli_ctx *ctx, int status)
     return status;
 }
 
+static cl_error_t pe_icon_checktimelimit(struct ICON_ENV *icon_env)
+{
+    cl_error_t status;
+
+    if (icon_env == NULL || icon_env->ctx == NULL)
+        return CL_ENULLARG;
+
+    status = cli_checktimelimit(icon_env->ctx);
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(icon_env->ctx, "PE icon inspection reached the configured time limit");
+
+    return status;
+}
+
 static int icon_parse_error(struct ICON_ENV *icon_env, uint32_t *counter, const char *reason)
 {
     if (counter != NULL)
@@ -102,6 +116,15 @@ static int groupicon_scan_cb(void *ptr, uint32_t type, uint32_t name, uint32_t l
     UNUSEDPARAM(type);
     UNUSEDPARAM(lang);
 
+    if (icon_env == NULL)
+        return 1;
+
+    ret = pe_icon_checktimelimit(icon_env);
+    if (ret != CL_SUCCESS) {
+        icon_env->result = ret;
+        return 1;
+    }
+
     cli_dbgmsg("groupicon_cb: scanning group %x\n", name);
     if (!icon_env->gcnt || icon_env->lastg == name) {
         icon_env->gcnt++;
@@ -124,10 +147,20 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva);
 static int icon_scan_cb(void *ptr, uint32_t type, uint32_t name, uint32_t lang, uint32_t rva)
 {
     struct ICON_ENV *icon_env = ptr;
+    cl_error_t status;
 
     UNUSEDPARAM(type);
     UNUSEDPARAM(lang);
     UNUSEDPARAM(name);
+
+    if (icon_env == NULL)
+        return 1;
+
+    status = pe_icon_checktimelimit(icon_env);
+    if (status != CL_SUCCESS) {
+        icon_env->result = status;
+        return 1;
+    }
 
     /* scan icon */
     icon_env->result = parseicon(icon_env, rva);
@@ -178,6 +211,10 @@ int cli_scanicon(icon_groupset *set, cli_ctx *ctx, struct cli_exe_info *peinfo)
     icon_env.err_bhts  = 0;
     icon_env.err_tstl  = 0;
     icon_env.err_insl  = 0;
+
+    status = pe_icon_checktimelimit(&icon_env);
+    if (status != CL_SUCCESS)
+        return status;
 
     /* icon group scan callback --> groupicon_scan_cb() */
     status = findres_ex(14, 0xffffffff, map, peinfo, groupicon_scan_cb, &icon_env);
@@ -277,6 +314,12 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
                     uint16_t planes, depth, id;
                     uint32_t icon_size;
                     size_t entry_at;
+
+                    status = pe_icon_checktimelimit(icon_env);
+                    if (status != CL_SUCCESS) {
+                        icon_env->result = status;
+                        return status;
+                    }
 
                     if (entry_offset > UINT64_MAX - (uint64_t)raddr ||
                         (entry_offset + (uint64_t)raddr) > map->len ||

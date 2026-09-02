@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## PE icon resource deadline admission — 2026-09-02
+
+The confirmed PE icon scanner enforced its engine, fmap, resource, and image
+limits but had no direct deadline checkpoint. A scan could therefore enter or
+complete a resource walk after the shared deadline had expired. Admission,
+group and icon callbacks, and each declared icon-group entry now check
+`cli_checktimelimit()` and preserve `CL_ETIMEOUT`, the canonical timeout
+diagnostic, and non-cacheability.
+
+`test_pe_icon_time_limit_is_fail_visible` exercises expired direct icon
+admission with the existing engine-free-options contract. Source guards and
+the capability manifest record the new boundary. Current-source production-
+GCC compilation, production-linked execution, complete PE/icon corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Rust parser scan-options admission — 2026-09-02
 
 The ALZ, LHA/LZH, and OneNote Rust parser entries already rejected missing

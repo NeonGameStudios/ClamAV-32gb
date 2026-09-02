@@ -1,5 +1,15 @@
 # Wishlist
 
+## PE icon resource deadline admission — 2026-09-02
+
+- Keep confirmed PE icon resource walks bounded by the shared scan deadline
+  at admission, resource callbacks, and per-entry traversal; preserve
+  `CL_ETIMEOUT`, the canonical timeout report, and non-cacheability.
+- Retain `test_pe_icon_time_limit_is_fail_visible` and its source/manifest
+  evidence while completing PE/icon corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final release qualification.
+
 ## Rust parser scan-options admission — 2026-09-02
 
 - Keep the ALZ, LHA/LZH, and OneNote Rust parser entries fail-visible when a
