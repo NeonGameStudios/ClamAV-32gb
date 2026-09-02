@@ -12107,6 +12107,29 @@ START_TEST(test_ppt_vba_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ppt_vba_missing_options_is_fail_visible)
+{
+    struct cl_engine engine;
+    cli_ctx ctx;
+    uint64_t temporary_reserved = UINT64_MAX;
+    char *dir;
+    int fd;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    fd = open("/dev/null", O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(/dev/null) failed: %s", strerror(errno));
+    ctx.engine = &engine;
+
+    dir = cli_ppt_vba_read_ex(fd, &ctx, &temporary_reserved);
+    ck_assert_ptr_null(dir);
+    ck_assert_uint_eq(temporary_reserved, 0);
+    ck_assert(!ctx.scan_incomplete);
+
+    ck_assert_int_eq(close(fd), 0);
+}
+END_TEST
+
 START_TEST(test_ppt_vba_consumes_compressed_atom_tail)
 {
     const unsigned char source[] = {'P', 'P', 'T', ' ', 'V', 'B', 'A'};
@@ -57920,6 +57943,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_ppt_entry, cl_setup, cl_teardown);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_missing_engine_is_fail_visible);
+    tcase_add_test(tc_ppt_entry, test_ppt_vba_missing_options_is_fail_visible);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_consumes_compressed_atom_tail);
 #ifdef CLAMAV_TEST_LSEEK_WRAP
     tcase_add_test(tc_ppt_entry, test_ppt_vba_lseek_failure_is_fail_visible);

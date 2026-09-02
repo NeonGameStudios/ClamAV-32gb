@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## PowerPoint VBA options admission — 2026-09-02
+
+The `cli_ppt_vba_read_ex()` extraction helper rejected null context and
+missing engine ownership but could create temporary output and enter
+PowerPoint atom/nested-object processing without a scan-options object. It
+now returns `NULL` immediately after engine admission when `ctx->options` is
+absent, preserving its existing nullable-directory and reservation-output
+contract.
+
+`test_ppt_vba_missing_options_is_fail_visible` supplies a valid engine and
+descriptor while omitting options, and verifies no directory or temporary
+reservation is returned and no sticky incomplete state is recorded. Source
+guards and the capability manifest record the boundary. Current-source
+production-GCC compilation, production-linked execution, complete
+PowerPoint/VBA corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## HWP nested scan-options admission — 2026-09-02
 
 `cli_scanhwpole2()` validated its wrapper and then delegated engine/options

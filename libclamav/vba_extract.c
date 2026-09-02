@@ -2885,6 +2885,9 @@ cli_ppt_vba_read_ex(int ifd, cli_ctx *ctx, uint64_t *temporary_reserved_out)
     if (ctx->engine == NULL)
         return NULL;
 
+    if (ctx->options == NULL)
+        return NULL;
+
     /* Create a directory to store the extracted OLE2 objects */
     dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "ppt-ole2-tmp");
     if (dir == NULL) {

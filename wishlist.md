@@ -1,5 +1,19 @@
 # Wishlist
 
+## PowerPoint VBA options admission — 2026-09-02
+
+- Keep `cli_ppt_vba_read_ex()` fail-visible when an otherwise recognized
+  engine context omits scan options; return `NULL` before temporary-directory
+  creation, atom traversal, or nested-object scanning while preserving the
+  nullable-directory and reservation-output contract.
+- Retain `test_ppt_vba_missing_options_is_fail_visible`, its source guards,
+  and manifest evidence that the invalid context does not allocate a
+  directory, reserve temporary bytes, or become sticky incomplete. Current-
+  source production-GCC compilation, production-linked execution, complete
+  PowerPoint/VBA corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## HWP nested scan-options admission — 2026-09-02
 
 - Keep the HWPOLE2 nested handoff fail-visible when engine or scan options are
