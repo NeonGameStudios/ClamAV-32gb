@@ -58,6 +58,17 @@ int SzPpmdInputAccountingAllowed(UInt64 processed, size_t buffered, UInt64 limit
          buffered64 <= limit - processed;
 }
 
+int SzDecoderInputProgressAllowed(UInt64 remaining, size_t available, size_t consumed)
+{
+  UInt64 available64 = (UInt64)available;
+  UInt64 consumed64 = (UInt64)consumed;
+
+  return (size_t)available64 == available &&
+         (size_t)consumed64 == consumed &&
+         consumed64 <= available64 &&
+         consumed64 <= remaining;
+}
+
 static Byte ReadByte(void *pp)
 {
   CByteInToLook *p = (CByteInToLook *)pp;
@@ -184,6 +195,10 @@ static SRes SzDecodeLzma(CSzCoderInfo *coder, UInt64 inSize, ILookInStream *inSt
       SizeT inProcessed = (SizeT)lookahead, dicPos = state.dicPos;
       ELzmaStatus status;
       res = LzmaDec_DecodeToDic(&state, outSize, inBuf, &inProcessed, LZMA_FINISH_END, &status);
+      if (!SzDecoderInputProgressAllowed(inSize, lookahead, (size_t)inProcessed)) {
+        res = SZ_ERROR_DATA;
+        break;
+      }
       lookahead -= inProcessed;
       inSize -= inProcessed;
       if (res != SZ_OK)
@@ -234,6 +249,10 @@ static SRes SzDecodeLzma2(CSzCoderInfo *coder, UInt64 inSize, ILookInStream *inS
       SizeT inProcessed = (SizeT)lookahead, dicPos = state.decoder.dicPos;
       ELzmaStatus status;
       res = Lzma2Dec_DecodeToDic(&state, outSize, inBuf, &inProcessed, LZMA_FINISH_END, &status);
+      if (!SzDecoderInputProgressAllowed(inSize, lookahead, (size_t)inProcessed)) {
+        res = SZ_ERROR_DATA;
+        break;
+      }
       lookahead -= inProcessed;
       inSize -= inProcessed;
       if (res != SZ_OK)
@@ -364,6 +383,10 @@ static SRes SzDecodeLzmaToStream(const CSzCoderInfo *coder, UInt64 inSize, UInt6
     inProcessed = lookahead;
     res = LzmaDec_DecodeToDic(&state, dicLimit, (const Byte *)inBuf,
                               &inProcessed, finishMode, &status);
+    if (!SzDecoderInputProgressAllowed(inSize, lookahead, inProcessed)) {
+      res = SZ_ERROR_DATA;
+      goto done;
+    }
     if (inProcessed) {
       res = inStream->Skip((void *)inStream, inProcessed);
       if (res != SZ_OK)
@@ -469,6 +492,10 @@ static SRes SzDecodeLzma2ToStream(const CSzCoderInfo *coder, UInt64 inSize, UInt
     inProcessed = lookahead;
     res = Lzma2Dec_DecodeToDic(&state, dicLimit, (const Byte *)inBuf,
                                &inProcessed, finishMode, &status);
+    if (!SzDecoderInputProgressAllowed(inSize, lookahead, inProcessed)) {
+      res = SZ_ERROR_DATA;
+      goto done;
+    }
     if (inProcessed) {
       res = inStream->Skip((void *)inStream, inProcessed);
       if (res != SZ_OK)

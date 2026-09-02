@@ -16,6 +16,17 @@ contains() {
     fi
 }
 
+count_at_least() {
+    file=$1
+    text=$2
+    minimum=$3
+    actual=$(grep -F -c -- "$text" "$root/$file" || true)
+    if [ "$actual" -lt "$minimum" ]; then
+        echo "large-file source guard failed: $file contains $actual occurrences, expected at least $minimum: $text" >&2
+        exit 1
+    fi
+}
+
 not_contains() {
     file=$1
     text=$2
@@ -5179,6 +5190,14 @@ contains libclamav/7z/7zDec.c 'if (!SzPpmdInputAccountingAllowed'
 contains libclamav/7z/7zDec.c 's.processed + (UInt64)(s.cur - s.begin) != inSize'
 contains unit_tests/check_clamav.c 'test_7z_ppmd_input_accounting_is_bounded'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_7z, test_7z_ppmd_input_accounting_is_bounded)'
+contains libclamav/7z/7z.h 'SzDecoderInputProgressAllowed'
+contains libclamav/7z/7zDec.c 'int SzDecoderInputProgressAllowed(UInt64 remaining, size_t available, size_t consumed)'
+contains libclamav/7z/7zDec.c 'if (!SzDecoderInputProgressAllowed(inSize, lookahead, (size_t)inProcessed))'
+contains libclamav/7z/7zDec.c 'if (!SzDecoderInputProgressAllowed(inSize, lookahead, inProcessed))'
+count_at_least libclamav/7z/7zDec.c 'if (!SzDecoderInputProgressAllowed(inSize, lookahead, (size_t)inProcessed))' 2
+count_at_least libclamav/7z/7zDec.c 'if (!SzDecoderInputProgressAllowed(inSize, lookahead, inProcessed))' 2
+contains unit_tests/check_clamav.c 'test_7z_decoder_input_progress_is_bounded'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_7z, test_7z_decoder_input_progress_is_bounded)'
 contains libclamav/nsis/bzlib.c 'items <= 0 || size <= 0'
 contains libclamav/nsis/bzlib.c 'item_count > SIZE_MAX / item_size'
 contains libclamav/nsis/bzlib.c 'item_count > (size_t)CLI_MAX_ALLOCATION / item_size'

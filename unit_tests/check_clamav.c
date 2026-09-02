@@ -33674,6 +33674,17 @@ START_TEST(test_7z_ppmd_input_accounting_is_bounded)
 }
 END_TEST
 
+START_TEST(test_7z_decoder_input_progress_is_bounded)
+{
+    ck_assert(SzDecoderInputProgressAllowed(0, 0, 0));
+    ck_assert(SzDecoderInputProgressAllowed(4, 4, 4));
+    ck_assert(SzDecoderInputProgressAllowed(4, 0, 0));
+    ck_assert(!SzDecoderInputProgressAllowed(4, 3, 4));
+    ck_assert(!SzDecoderInputProgressAllowed(3, 4, 4));
+    ck_assert(!SzDecoderInputProgressAllowed(UINT64_MAX, SIZE_MAX - 1, SIZE_MAX));
+}
+END_TEST
+
 static cli_ctx *sevenzip_test_expire_ctx;
 static unsigned int sevenzip_test_read_calls;
 
@@ -58477,6 +58488,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_dynbuf_growth_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_substream_size_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_ppmd_input_accounting_is_bounded);
+    tcase_add_test(tc_7z, test_7z_decoder_input_progress_is_bounded);
     tcase_add_test(tc_7z, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_input_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_stream_rejects_overreported_callback_results);

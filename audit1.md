@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip LZMA input progress admission — 2026-09-02
+
+The vendored 7-Zip LZMA and LZMA2 decoders accepted the decoder-reported
+input-consumption count as an invariant when subtracting from the declared
+packed-stream length and, in streaming mode, before advancing the input
+adapter. The whole-buffer and streaming paths now require consumption to be
+representable, no greater than the current lookahead, and no greater than the
+remaining declared input before any subtraction or skip. A violation becomes
+a decoder data error and cannot be treated as successful progress.
+
+`test_7z_decoder_input_progress_is_bounded` covers exact, zero-progress, and
+available/declared-length overrun boundaries. Source guards and the capability
+manifest pin the helper and all four LZMA/LZMA2 call sites. Current-source
+production-GCC compilation and linked execution, complete 7-Zip/BCJ2/LZMA
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## APM zero-length partition admission — 2026-09-02
 
 The Apple Partition Map walker accepted a typed entry whose block count was

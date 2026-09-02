@@ -1,5 +1,18 @@
 # Wishlist
 
+## 7-Zip LZMA input progress admission — 2026-09-02
+
+- Keep the whole-buffer and streaming LZMA/LZMA2 decoders checking that every
+  decoder-reported input count is representable and no greater than both the
+  available lookahead and the declared packed-stream remainder before any
+  `Skip()` or subtraction. Preserve a fail-visible decoder error for an
+  over-reported count.
+- Retain `test_7z_decoder_input_progress_is_bounded`, its source guards, and
+  manifest evidence. Current-source production-GCC execution, complete
+  7-Zip/BCJ2/LZMA corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final parser/
+  release qualification remain open.
+
 ## APM zero-length partition admission — 2026-09-02
 
 - Keep confirmed APM walks rejecting typed zero-block entries before nested
