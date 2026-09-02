@@ -21810,3 +21810,26 @@ source production-GCC compilation and linked execution, complete OLE10/VBA
 corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+## OLE2 MSO stream probe read-status reconciliation — 2026-09-02
+
+The OLE2 OTF and encrypted-OTF handlers used `likely_mso_stream()` to inspect
+the first six bytes of each fully materialized stream, but the helper collapsed
+seek failures and short or descriptor-level reads into “not MSO.” Its callers
+already had an unreachable negative-result branch, so a required probe failure
+could fall through to generic child scanning and potentially appear clean.
+
+`cli_ole2_likely_mso_stream()` now reports `CL_ESEEK` for positioning failures,
+`CL_EPARSE` for a short in-range materialized signature read, and `CL_EREAD`
+for an in-range descriptor failure. Each failure records a sticky incomplete
+diagnostic and taints the owning fmap; both OTF handlers stop before child
+dispatch, and the post-probe rewind is likewise fail-visible.
+
+`test_ole2_mso_stream_probe_read_status_is_fail_visible` covers valid MSO
+detection, both Linux-static `cli_readn` fault classes, and invalid-descriptor
+positioning with exact status, sticky-reason, and cache-taint assertions. The
+current source, test, registration, and capability manifest are source-guarded.
+Current-source production-GCC and linked execution, complete OLE2/MSO corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

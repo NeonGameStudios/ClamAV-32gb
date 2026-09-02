@@ -41618,6 +41618,81 @@ START_TEST(test_ole2_mso_prefix_range_classes_are_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_ole2_mso_stream_probe_read_status_is_fail_visible)
+{
+    static const uint8_t mso_stream[] = {0, 0, 0, 0, 0x78, 0x9c};
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    char *path = NULL;
+    int fd = -1;
+    int is_mso;
+    cl_error_t ret;
+    int fault;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_uint_eq(cli_writen(fd, mso_stream, sizeof(mso_stream)), sizeof(mso_stream));
+
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(mso_stream, sizeof(mso_stream));
+    ck_assert_ptr_nonnull(map);
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    is_mso = 0;
+    ck_assert_int_eq(cli_ole2_likely_mso_stream(fd, &is_mso, &ctx), CL_SUCCESS);
+    ck_assert_int_eq(is_mso, 1);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    for (fault = 1; fault <= 2; fault++) {
+        map = cl_fmap_open_memory(mso_stream, sizeof(mso_stream));
+        ck_assert_ptr_nonnull(map);
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.options = &options;
+        ctx.fmap    = map;
+        is_mso      = 1;
+        clamav_test_force_cli_readn_count  = 2;
+        clamav_test_force_cli_readn_status = fault;
+
+        ret = cli_ole2_likely_mso_stream(fd, &is_mso, &ctx);
+        clamav_test_force_cli_readn_count  = 0;
+        clamav_test_force_cli_readn_status = 0;
+
+        ck_assert_int_eq(ret, fault == 1 ? CL_EPARSE : CL_EREAD);
+        ck_assert_int_eq(is_mso, 0);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         "OLE2 embedded stream MSO signature could not be read completely");
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+    }
+
+    is_mso = 1;
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(mso_stream, sizeof(mso_stream));
+    ck_assert_ptr_nonnull(map);
+    ctx.options = &options;
+    ctx.fmap    = map;
+    ck_assert_int_eq(cli_ole2_likely_mso_stream(-1, &is_mso, &ctx), CL_ESEEK);
+    ck_assert_int_eq(is_mso, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "OLE2 embedded stream size could not be determined");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+}
+END_TEST
+#endif
+
 START_TEST(test_vba_project_directory_requires_context_and_engine)
 {
     int tempfd = -1;
@@ -60526,6 +60601,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2_map, test_ole2_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_ole2_map, test_ole2_encrypted_output_length_is_bounded);
     tcase_add_test(tc_ole2_map, test_ole2_workbook_encryption_probe_rejects_out_of_range_skip);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_ole2_map, test_ole2_mso_stream_probe_read_status_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_nulsft);
     tcase_add_checked_fixture(tc_nulsft, cl_setup, cl_teardown);
     tcase_add_test(tc_nulsft, test_nsis_header_range_classes_are_fail_visible);

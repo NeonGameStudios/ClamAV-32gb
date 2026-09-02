@@ -7829,6 +7829,14 @@ contains clamdscan/proto.c 'if (ftw != CL_SUCCESS && ftw != CL_BREAK && cdata.er
 contains clamdscan/proto.c 'if (sendln(cdata.sockd, zEND, sizeof(zEND)))'
 contains docs/largefile-capabilities.tsv 'clamdscan-directory-walk-failure'
 contains docs/largefile-capabilities.tsv 'clamdscan-idsession-termination-send'
+contains libclamav/ole2_extract.h 'cl_error_t cli_ole2_likely_mso_stream(int fd, int *is_mso, cli_ctx *ctx);'
+contains libclamav/ole2_extract.c 'cli_ole2_likely_mso_stream(int fd, int *is_mso, cli_ctx *ctx)'
+contains libclamav/ole2_extract.c 'return bytes_read == (size_t)-1 ? CL_EREAD : CL_EPARSE;'
+contains libclamav/ole2_extract.c 'OLE2 embedded stream MSO signature could not be read completely'
+contains libclamav/ole2_extract.c 'OLE2 embedded stream size could not be determined'
+not_contains libclamav/ole2_extract.c 'is_mso < 0'
+contains unit_tests/check_clamav.c 'test_ole2_mso_stream_probe_read_status_is_fail_visible'
+contains docs/largefile-capabilities.tsv 'ole2-mso-stream-probe-read-status'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2

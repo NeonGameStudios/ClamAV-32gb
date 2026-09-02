@@ -13196,3 +13196,17 @@ qualification remain open.
   production-linked execution, complete OLE10/VBA corpus, sanitizer, certified
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
   resource, and parser/release qualification before closure.
+
+## OLE2 MSO stream probe read-status reconciliation — 2026-09-02
+
+- Keep the OLE2 OTF and encrypted-OTF materialized-stream heuristic
+  fail-visible: positioning failures return `CL_ESEEK`, short in-range MSO
+  signature reads return `CL_EPARSE`, and descriptor failures return
+  `CL_EREAD`; all three remain sticky incomplete and non-cacheable and must
+  prevent child scanning.
+- Retain `cli_ole2_likely_mso_stream()`, the invalid-descriptor and sized
+  `cli_readn` fault-injection regression, its source guards, and the
+  `ole2-mso-stream-probe-read-status` manifest evidence. Add current-source
+  production-linked execution, complete OLE2/MSO corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and parser/release qualification before closure.

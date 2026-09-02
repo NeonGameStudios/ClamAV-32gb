@@ -2024,34 +2024,44 @@ done:
     return status;
 }
 
-static int
-likely_mso_stream(int fd)
+cl_error_t
+cli_ole2_likely_mso_stream(int fd, int *is_mso, cli_ctx *ctx)
 {
     off_t fsize;
     unsigned char check[2];
+    size_t bytes_read;
+
+    if (is_mso == NULL || ctx == NULL)
+        return CL_ENULLARG;
+
+    *is_mso = 0;
 
     fsize = lseek(fd, 0, SEEK_END);
     if (fsize == -1) {
         cli_dbgmsg("likely_mso_stream: call to lseek() failed\n");
-        return 0;
+        cli_mark_scan_incomplete(ctx, "OLE2 embedded stream size could not be determined");
+        return CL_ESEEK;
     } else if (fsize < 6) {
-        return 0;
+        return CL_SUCCESS;
     }
 
     if (lseek(fd, 4, SEEK_SET) == -1) {
         cli_dbgmsg("likely_mso_stream: call to lseek() failed\n");
-        return 0;
+        cli_mark_scan_incomplete(ctx, "OLE2 embedded stream could not be positioned for MSO detection");
+        return CL_ESEEK;
     }
 
-    if (cli_readn(fd, check, 2) != 2) {
+    bytes_read = cli_readn(fd, check, sizeof(check));
+    if (bytes_read != sizeof(check)) {
         cli_dbgmsg("likely_mso_stream: reading from fd failed\n");
-        return 0;
+        cli_mark_scan_incomplete(ctx, "OLE2 embedded stream MSO signature could not be read completely");
+        return bytes_read == (size_t)-1 ? CL_EREAD : CL_EPARSE;
     }
 
     if (check[0] == 0x78 && check[1] == 0x9C)
-        return 1;
+        *is_mso = 1;
 
-    return 0;
+    return CL_SUCCESS;
 }
 
 cl_error_t cli_ole2_read_mso_prefix(fmap_t *input, uint32_t *prefix, cli_ctx *ctx)
@@ -2414,8 +2424,11 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
 
     /* defragmenting of ole2 stream complete */
 
-    is_mso = likely_mso_stream(ofd);
+    ret = cli_ole2_likely_mso_stream(ofd, &is_mso, ctx);
+    if (ret != CL_SUCCESS)
+        goto done;
     if (lseek(ofd, 0, SEEK_SET) == -1) {
+        cli_mark_scan_incomplete(ctx, "OLE2 embedded stream could not be rewound after MSO detection");
         ret = CL_ESEEK;
         goto done;
     }
@@ -2457,8 +2470,6 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
             name = cli_ole2_get_property_name2(prop->name, prop->name_size);
         }
         ret = cli_scanhwp5_stream(ctx, hdr->is_hwp, name, ofd, tempfile);
-    } else if (is_mso < 0) {
-        ret = CL_ESEEK;
     } else if (is_mso) {
         /* MSO Stream Scan */
         ret = scan_mso_stream(ofd, tempfile, ctx);
@@ -2733,8 +2744,11 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
 
     /* defragmenting of ole2 stream complete */
 
-    is_mso = likely_mso_stream(ofd);
+    ret = cli_ole2_likely_mso_stream(ofd, &is_mso, ctx);
+    if (ret != CL_SUCCESS)
+        goto done;
     if (lseek(ofd, 0, SEEK_SET) == -1) {
+        cli_mark_scan_incomplete(ctx, "OLE2 embedded encrypted stream could not be rewound after MSO detection");
         ret = CL_ESEEK;
         goto done;
     }
@@ -2776,8 +2790,6 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
             name = cli_ole2_get_property_name2(prop->name, prop->name_size);
         }
         ret = cli_scanhwp5_stream(ctx, hdr->is_hwp, name, ofd, tempfile);
-    } else if (is_mso < 0) {
-        ret = CL_ESEEK;
     } else if (is_mso) {
         /* MSO Stream Scan */
         ret = scan_mso_stream(ofd, tempfile, ctx);
