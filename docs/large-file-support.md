@@ -485,6 +485,18 @@ current-source production-linked execution, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
 and final release qualification remain required.
 
+## RTF unmatched closing-group admission — 2026-09-02
+
+RTF group parsing now treats a closing brace without a matching opening group
+as an incomplete recognized layer. The parser returns `CL_EPARSE`, records the
+stable diagnostic `RTF document has unmatched closing group`, and preserves
+fmap non-cacheability; previously `pop_state()` reset to the base state and
+allowed malformed input to complete cleanly. The focused regression
+`test_rtf_unmatched_close_is_fail_visible` covers the boundary. Complete
+RTF/OLE corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and parser-family qualification
+remain release gates.
+
 ## Exported child-ingress recursion-state admission — 2026-09-01
 
 Descriptor, file, directory, nested-map, and buffer scan entrypoints now share a

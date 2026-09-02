@@ -207,7 +207,7 @@ static int pop_state(struct stack* stack, struct rtf_state* state)
             stack->warned = 1;
         }
         *state = base_state; /* lets assume we give it a base state */
-        return 0;
+        return CL_EPARSE;
     }
     *state = stack->states[--stack->stack_cnt];
     return 0;
@@ -764,6 +764,7 @@ int cli_scanrtf(cli_ctx* ctx)
                                 return ret;
                             }
                             if ((ret = pop_state(&stack, &state))) {
+                                cli_mark_scan_incomplete(ctx, "RTF document has unmatched closing group");
                                 cli_dbgmsg("RTF:pop failure!\n");
                                 SCAN_CLEANUP;
                                 return ret;

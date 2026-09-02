@@ -3521,6 +3521,20 @@ production-GCC compilation, the complete phishing corpus, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, and final
 matcher/release qualification remain required.
 
+## RTF unmatched closing-group admission — 2026-09-02
+
+RTF `pop_state()` previously treated a closing brace with no corresponding
+opening group as an ordinary base-state reset. A malformed recognized RTF could
+therefore reach clean completion and remain cacheable even though its group
+structure was incomplete. The parser now returns `CL_EPARSE`, marks the layer
+incomplete, and taints the input fmap when it observes an unmatched closing
+group. `test_rtf_unmatched_close_is_fail_visible` requires the exact diagnostic
+`RTF document has unmatched closing group` and non-cacheability. Current-source
+GCC compilation, production-linked execution, complete RTF/OLE corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and parser-family qualification
+remain required.
+
 ## Regex matcher table admission — 2026-08-29
 
 The phishing/allow-list matcher grew suffix-bucket and compiled-regex pointer

@@ -595,6 +595,18 @@
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification open.
 
+## RTF unmatched closing-group admission — 2026-09-02
+
+- Keep an unmatched closing RTF group fail-visible: `pop_state()` now returns
+  `CL_EPARSE`, the parser records `RTF document has unmatched closing group`,
+  and the input fmap is made non-cacheable instead of silently resetting to the
+  base state.
+- Retain `test_rtf_unmatched_close_is_fail_visible` and its source guard.
+  Current-source production-linked execution, complete RTF/OLE corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
+
 ## OLE10 direct sticky-incomplete reconciliation — 2026-09-01
 
 - Keep `cli_scan_ole10()` fail-visible for direct callers when a valid

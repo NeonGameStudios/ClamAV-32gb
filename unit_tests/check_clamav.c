@@ -11409,6 +11409,36 @@ START_TEST(test_rtf_sticky_incomplete_result_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_rtf_unmatched_close_is_fail_visible)
+{
+    static const uint8_t document[] = {'{', '\\', 'r', 't', 'f', '1', '}', '}'};
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanrtf(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "RTF document has unmatched closing group");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_rtf_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -56299,6 +56329,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_rtf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_rtf_map, test_rtf_truncated_document_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_sticky_incomplete_result_is_fail_visible);
+    tcase_add_test(tc_rtf_map, test_rtf_unmatched_close_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_time_limit_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_input_read_failure_is_fail_visible);
     tcase_add_test(tc_rtf_map, test_rtf_split_object_data_header_is_fail_visible);
