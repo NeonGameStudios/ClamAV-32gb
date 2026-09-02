@@ -32524,6 +32524,15 @@ static SRes sevenz_overreport_look_skip(void *opaque, size_t offset)
     return SZ_OK;
 }
 
+static SRes sevenz_overreport_look_seek(void *opaque, Int64 *pos, ESzSeek origin)
+{
+    UNUSEDPARAM(opaque);
+    UNUSEDPARAM(origin);
+    if (pos == NULL || *pos != 0)
+        return SZ_ERROR_PARAM;
+    return SZ_OK;
+}
+
 START_TEST(test_7z_stream_rejects_overreported_callback_results)
 {
     uint8_t output[1] = {0};
@@ -32568,6 +32577,44 @@ START_TEST(test_7z_stream_rejects_overreported_callback_results)
         adapter_size = 1;
         ck_assert_int_eq(adapter.s.Read(&adapter.s, output, &adapter_size), SZ_ERROR_FAIL);
     }
+}
+END_TEST
+
+START_TEST(test_7z_copy_decoder_rejects_overreported_lookahead)
+{
+    CSzCoderInfo coder;
+    CSzFolder folder;
+    UInt32 pack_streams[] = {0};
+    UInt64 unpack_sizes[] = {1};
+    UInt64 pack_sizes[] = {1};
+    uint8_t output[1] = {0};
+    uint8_t stream_data[1] = {0};
+    bcj2_test_output stream_output;
+    sevenz_overreport_look_input look = {{sevenz_overreport_look_look,
+                                          sevenz_overreport_look_skip,
+                                          NULL,
+                                          sevenz_overreport_look_seek}};
+    ISzAlloc alloc = {SzAlloc, SzFree};
+
+    memset(&coder, 0, sizeof(coder));
+    coder.NumInStreams = 1;
+    coder.NumOutStreams = 1;
+    coder.MethodID = 0;
+    memset(&folder, 0, sizeof(folder));
+    folder.Coders = &coder;
+    folder.PackStreams = pack_streams;
+    folder.UnpackSizes = unpack_sizes;
+    folder.NumCoders = 1;
+    folder.NumPackStreams = 1;
+    folder.NumUnpackStreams = 1;
+
+    ck_assert_int_eq(SzFolder_Decode(&folder, pack_sizes, &look.s, 0,
+                                     output, sizeof(output), &alloc), SZ_ERROR_DATA);
+
+    bcj2_test_output_init(&stream_output, stream_data, sizeof(stream_data));
+    ck_assert_int_eq(SzFolder_DecodeToStream(&folder, pack_sizes, &look.s, 0,
+                                             &stream_output.s, &alloc), SZ_ERROR_DATA);
+    ck_assert_uint_eq(stream_output.size, 0);
 }
 END_TEST
 
@@ -58489,6 +58536,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_substream_size_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_ppmd_input_accounting_is_bounded);
     tcase_add_test(tc_7z, test_7z_decoder_input_progress_is_bounded);
+    tcase_add_test(tc_7z, test_7z_copy_decoder_rejects_overreported_lookahead);
     tcase_add_test(tc_7z, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_input_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_stream_rejects_overreported_callback_results);

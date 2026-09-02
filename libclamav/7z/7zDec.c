@@ -285,6 +285,8 @@ static SRes SzDecodeCopy(UInt64 inSize, ILookInStream *inStream, Byte *outBuffer
     RINOK(inStream->Look((void *)inStream, (const void **)&inBuf, &curSize));
     if (curSize == 0)
       return SZ_ERROR_INPUT_EOF;
+    if (!SzDecoderInputProgressAllowed(inSize, curSize, curSize) || inBuf == NULL)
+      return SZ_ERROR_DATA;
     memcpy(outBuffer, inBuf, curSize);
     outBuffer += curSize;
     inSize -= curSize;
@@ -315,6 +317,8 @@ static SRes SzDecodeCopyToStream(UInt64 inSize, ILookInStream *inStream, ISeqOut
     RINOK(inStream->Look((void *)inStream, &inBuf, &curSize));
     if (!curSize)
       return SZ_ERROR_INPUT_EOF;
+    if (!SzDecoderInputProgressAllowed(inSize, curSize, curSize) || inBuf == NULL)
+      return SZ_ERROR_DATA;
     RINOK(SzStreamWrite(outStream, (const Byte *)inBuf, curSize));
     inSize -= curSize;
     RINOK(inStream->Skip((void *)inStream, curSize));

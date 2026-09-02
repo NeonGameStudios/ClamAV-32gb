@@ -5196,8 +5196,11 @@ contains libclamav/7z/7zDec.c 'if (!SzDecoderInputProgressAllowed(inSize, lookah
 contains libclamav/7z/7zDec.c 'if (!SzDecoderInputProgressAllowed(inSize, lookahead, inProcessed))'
 count_at_least libclamav/7z/7zDec.c 'if (!SzDecoderInputProgressAllowed(inSize, lookahead, (size_t)inProcessed))' 2
 count_at_least libclamav/7z/7zDec.c 'if (!SzDecoderInputProgressAllowed(inSize, lookahead, inProcessed))' 2
+count_at_least libclamav/7z/7zDec.c 'if (!SzDecoderInputProgressAllowed(inSize, curSize, curSize) || inBuf == NULL)' 2
 contains unit_tests/check_clamav.c 'test_7z_decoder_input_progress_is_bounded'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_7z, test_7z_decoder_input_progress_is_bounded)'
+contains unit_tests/check_clamav.c 'test_7z_copy_decoder_rejects_overreported_lookahead'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_7z, test_7z_copy_decoder_rejects_overreported_lookahead)'
 contains libclamav/nsis/bzlib.c 'items <= 0 || size <= 0'
 contains libclamav/nsis/bzlib.c 'item_count > SIZE_MAX / item_size'
 contains libclamav/nsis/bzlib.c 'item_count > (size_t)CLI_MAX_ALLOCATION / item_size'

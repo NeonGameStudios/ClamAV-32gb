@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip copy input progress admission — 2026-09-02
+
+The vendored 7-Zip copy decoder trusted `ILookInStream::Look()` to return no
+more bytes than requested before copying into the caller's output buffer and
+subtracting the count from the declared packed-stream remainder. Both the
+whole-buffer and streaming copy paths now require the returned window to be
+representable and no greater than the remaining declaration, and reject a
+non-empty window without a backing pointer as a decoder data error.
+
+`test_7z_copy_decoder_rejects_overreported_lookahead` drives both public
+folder-decoder modes with an over-reporting look callback and verifies that no
+output is published. Source guards and the capability manifest pin both copy
+call sites. Current-source production-GCC compilation and linked execution,
+complete 7-Zip/copy corpus, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## 7-Zip LZMA input progress admission — 2026-09-02
 
 The vendored 7-Zip LZMA and LZMA2 decoders accepted the decoder-reported

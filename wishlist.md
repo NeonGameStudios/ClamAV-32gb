@@ -1,5 +1,17 @@
 # Wishlist
 
+## 7-Zip copy input progress admission — 2026-09-02
+
+- Keep both whole-buffer and streaming copy decoders validating the
+  `ILookInStream::Look()` result against the declared packed-stream remainder
+  before copying, subtracting, or skipping input. Preserve a fail-visible
+  decoder error for over-reported windows and null backing pointers.
+- Retain `test_7z_copy_decoder_rejects_overreported_lookahead`, its source
+  guards, and manifest evidence. Current-source production-GCC execution,
+  complete 7-Zip/copy corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## 7-Zip LZMA input progress admission — 2026-09-02
 
 - Keep the whole-buffer and streaming LZMA/LZMA2 decoders checking that every
