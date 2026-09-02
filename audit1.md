@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## InstallShield extraction status and range admission — 2026-09-02
+
+The InstallShield MSI, legacy embedded-file, and CAB extraction paths now
+preserve the originating `cli_scan_reserve_temporary()` status instead of
+relabelling a reservation failure as a generic resource result. The legacy
+CAB extractor also preflights its complete compressed member range against
+the owning fmap before allocating output state, so a direct or future caller
+cannot turn an out-of-map request into an in-range read failure.
+
+Both InstallShield zlib extraction paths now check `inflateEnd()`. A decoder
+finalization failure marks the layer incomplete and merges `CL_EUNPACK` with
+the existing parser, I/O, limit, timeout, detection, or cleanup status. The
+focused CAB regression `test_ishield_cab_decoder_init_and_finalize_failures_are_visible`
+injects finalization failure after a valid raw-deflate
+member and requires the exact diagnostic, non-cacheability, and cleanup of
+the one-shot fault. Current-source production-GCC compilation and linked
+execution, complete InstallShield/CAB corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## Base64 encoder length and status admission — 2026-09-02
 
 The shared `cl_base64_encode()` helper previously passed a `size_t` input

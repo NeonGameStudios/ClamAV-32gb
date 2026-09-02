@@ -424,15 +424,22 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
                     break;
                 }
                 if (produced) {
+                    cl_error_t reserve_status;
+
                     ret = cli_checktimelimit(ctx);
                     if (ret != CL_SUCCESS) {
                         cli_mark_scan_incomplete(ctx, "InstallShield MSI member output reached the configured time limit");
                         break;
                     }
-                    if (UINT64_MAX - temporary_reserved < (uint64_t)produced ||
-                        cli_scan_reserve_temporary(ctx, (uint64_t)produced) != CL_SUCCESS) {
+                    if (UINT64_MAX - temporary_reserved < (uint64_t)produced) {
                         cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output exceeds storage limits");
                         ret = CL_ERESOURCE;
+                        break;
+                    }
+                    reserve_status = cli_scan_reserve_temporary(ctx, (uint64_t)produced);
+                    if (reserve_status != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output exceeds storage limits");
+                        ret = reserve_status;
                         break;
                     }
                     temporary_reserved += (uint64_t)produced;
@@ -469,7 +476,10 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
             } while (z.avail_in != 0 || z.avail_out == 0);
         }
 
-        inflateEnd(&z);
+        if (inflateEnd(&z) != Z_OK) {
+            cli_mark_scan_incomplete(ctx, "InstallShield MSI decompressor could not be finalized");
+            ret = cli_merge_cleanup_status(ret, CL_EUNPACK);
+        }
 
         if (ret == CL_SUCCESS && !stream_complete) {
             cli_mark_scan_incomplete(ctx, "InstallShield MSI compressed member ended before stream completion");
@@ -752,9 +762,10 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
     }
 
     temporary_reserved = (uint64_t)fsize;
-    if (cli_scan_reserve_temporary(ctx, temporary_reserved) != CL_SUCCESS) {
+    ret = cli_scan_reserve_temporary(ctx, temporary_reserved);
+    if (ret != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "InstallShield embedded file exceeds temporary storage limits");
-        return CL_ERESOURCE;
+        return ret;
     }
 
     if (!(fname = cli_gentemp(ctx->this_layer_tmpdir))) {
@@ -1108,6 +1119,11 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
     bool extraction_complete   = false;
     fmap_t *map              = ctx->fmap;
 
+    if (off > (uint64_t)map->len || csize > (uint64_t)(map->len - (size_t)off)) {
+        cli_mark_scan_incomplete(ctx, "InstallShield CAB member is outside the containing map");
+        return CL_EPARSE;
+    }
+
     if (!(outbuf = malloc(IS_CABBUFSZ))) {
         cli_errmsg("is_extract_cab: Unable to allocate memory for outbuf\n");
         cli_mark_scan_incomplete(ctx, "InstallShield CAB output buffer could not be allocated");
@@ -1127,10 +1143,11 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
         free(outbuf);
         return ret;
     }
-    if (cli_scan_reserve_temporary(ctx, size) != CL_SUCCESS) {
+    ret = cli_scan_reserve_temporary(ctx, size);
+    if (ret != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "InstallShield CAB output exceeds temporary storage limits");
         free(outbuf);
-        return CL_ERESOURCE;
+        return ret;
     }
     temporary_reserved = size;
 
@@ -1266,8 +1283,10 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
             ret = CL_EUNPACK;
             break;
         }
-        if (z_initialized)
-            inflateEnd(&z);
+        if (z_initialized && inflateEnd(&z) != Z_OK) {
+            cli_mark_scan_incomplete(ctx, "InstallShield CAB decompressor could not be finalized");
+            ret = cli_merge_cleanup_status(ret, CL_EUNPACK);
+        }
         if (!chunk_complete)
             break;
     }

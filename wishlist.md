@@ -1,5 +1,21 @@
 # Wishlist
 
+## InstallShield extraction status and range admission — 2026-09-02
+
+- Preserve every `cli_scan_reserve_temporary()` result in InstallShield MSI,
+  legacy embedded-file, and CAB extraction; keep the explicit overflow and
+  temporary-limit diagnostics fail-visible.
+- Preflight the CAB compressed member range against the input fmap before
+  output allocation and preserve zlib `inflateEnd()` failures as
+  `CL_EUNPACK`, without hiding an earlier parser, I/O, limit, timeout,
+  detection, or cleanup result.
+- Retain `test_ishield_cab_decoder_init_and_finalize_failures_are_visible` and
+  its source guards.
+  Current-source production-GCC execution, complete InstallShield/CAB corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
+
 ## Base64 encoder length and status admission — 2026-09-02
 
 - Keep `cl_base64_encode()` validating the OpenSSL `int` input boundary and a

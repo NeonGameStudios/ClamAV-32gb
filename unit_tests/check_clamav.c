@@ -162,6 +162,7 @@ extern void __real_cli_LzmaShutdown(struct CLI_LZMA *lz);
 int clamav_test_force_swf_decoder_init;
 int clamav_test_force_xar_member_decoder_init;
 int clamav_test_force_xar_member_decoder_end;
+int clamav_test_force_ishield_cab_decoder_end;
 int clamav_test_force_bzip_concat_decoder_init;
 int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
@@ -186,6 +187,11 @@ int __wrap_inflateEnd(z_streamp strm)
 {
     int ret = __real_inflateEnd(strm);
 
+    if (clamav_test_force_ishield_cab_decoder_end > 0) {
+        clamav_test_force_ishield_cab_decoder_end--;
+        if (clamav_test_force_ishield_cab_decoder_end == 0)
+            return Z_STREAM_ERROR;
+    }
     if (clamav_test_force_xar_member_decoder_end > 0) {
         clamav_test_force_xar_member_decoder_end--;
         if (clamav_test_force_xar_member_decoder_end == 0)
@@ -43005,7 +43011,7 @@ START_TEST(test_ishield_invalid_embedded_header_is_fail_visible)
 END_TEST
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
-START_TEST(test_ishield_cab_decoder_init_failure_is_fail_visible)
+START_TEST(test_ishield_cab_decoder_init_and_finalize_failures_are_visible)
 {
     enum {
         ISHIELD_TEST_HEADER_SIZE       = 0x300,
@@ -43039,7 +43045,7 @@ START_TEST(test_ishield_cab_decoder_init_failure_is_fail_visible)
     file = header + ISHIELD_TEST_FILE_TABLE_OFFSET;
     zip_stream_write_u16(file, 4U);
     ishield_test_write_u64(file + 2, 1U);
-    ishield_test_write_u64(file + 10, 3U);
+    ishield_test_write_u64(file + 10, 6U);
     ishield_test_write_u64(file + 18, 0U);
     zip_stream_write_u32(file + 58, 8U);
     zip_stream_write_u16(file + 62, 0U);
@@ -43062,11 +43068,15 @@ START_TEST(test_ishield_cab_decoder_init_failure_is_fail_visible)
     used += 1;
     memcpy(data + used, "", 1);
     used += 1;
-    memcpy(data + used, "3", sizeof("3"));
-    used += sizeof("3");
-    data[used++] = 1;
-    data[used++] = 0;
-    data[used++] = 0;
+    memcpy(data + used, "6", sizeof("6"));
+    used += sizeof("6");
+    /* One-byte final stored DEFLATE block containing 'x'. */
+    data[used++] = 0x01;
+    data[used++] = 0x01;
+    data[used++] = 0x00;
+    data[used++] = 0xfe;
+    data[used++] = 0xff;
+    data[used++] = 'x';
 
     memset(&engine, 0, sizeof(engine));
     engine.maxtemporarysize = UINT64_MAX;
@@ -43092,6 +43102,28 @@ START_TEST(test_ishield_cab_decoder_init_failure_is_fail_visible)
                      "InstallShield CAB decompressor could not be initialized");
     ck_assert(map->dont_cache_flag);
     ck_assert_int_eq(clamav_test_force_ishield_cab_decoder_init, 0);
+
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.this_layer_tmpdir   = tmpdir;
+    ctx.recursion_stack     = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.fmap                 = map = cl_fmap_open_memory(data, used);
+    layer.fmap               = map;
+    ck_assert_ptr_nonnull(map);
+
+    clamav_test_force_ishield_cab_decoder_end = 1;
+    ret = cli_scanishield(&ctx, 0, map->len);
+
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "InstallShield CAB decompressor could not be finalized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_ishield_cab_decoder_end, 0);
 
     cl_fmap_close(map);
 }
@@ -59477,7 +59509,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ishield_metadata_string_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ishield_invalid_embedded_header_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
-    tcase_add_test(tc_cl, test_ishield_cab_decoder_init_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_ishield_cab_decoder_init_and_finalize_failures_are_visible);
 #endif
     tcase_add_test(tc_cl, test_arj_encrypted_member_range_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_main_header_read_failure_is_fail_visible);
