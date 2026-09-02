@@ -1,5 +1,17 @@
 # Wishlist
 
+## Base64 encoder length and status admission — 2026-09-02
+
+- Keep `cl_base64_encode()` validating the OpenSSL `int` input boundary and a
+  conservative NUL-terminated output bound before BIO work. Preserve BIO
+  write, flush, and returned-memory failures instead of returning partial
+  output.
+- Retain the expanded `test_base64_decode_rejects_length_overflow` regression,
+  source guards, and manifest evidence. Current-source production-GCC
+  execution, full Base64 call-site/corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## Legacy LZMA wrapper progress admission — 2026-09-02
 
 - Keep `cli_LzmaDecode()` rejecting null non-empty buffers and validating

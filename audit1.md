@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## Base64 encoder length and status admission — 2026-09-02
+
+The shared `cl_base64_encode()` helper previously passed a `size_t` input
+length to OpenSSL's `int`-sized BIO write, ignored write/flush failures, and
+formed its NUL-terminated output allocation without a checked encoded-size
+bound. It now admits only representable input and conservatively bounded
+encoded output, checks the BIO write and flush results, validates the returned
+memory length, and avoids copying from a null buffer for empty output.
+
+`test_base64_decode_rejects_length_overflow` now covers `SIZE_MAX`, the
+OpenSSL `INT_MAX` boundary, and a valid small encode without allocating a
+large test buffer. Source guards and the capability manifest pin the encoder
+admission and operation checks. Current-source production-GCC compilation and
+linked execution, full Base64 call-site/corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## Legacy LZMA wrapper progress admission — 2026-09-02
 
 The shared `cli_LzmaDecode()` wrapper, used by XAR, EGG, SWF, NSIS, UPX, and

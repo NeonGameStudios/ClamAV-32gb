@@ -204,6 +204,7 @@ START_TEST(test_base64_decode_rejects_length_overflow)
     static char valid[] = "Zg==";
     static char input[] = "A";
     unsigned char *decoded;
+    char *encoded;
     size_t decoded_len = 0;
 
     decoded = (unsigned char *)cl_base64_decode(valid, sizeof(valid) - 1, NULL, &decoded_len, 1);
@@ -217,6 +218,11 @@ START_TEST(test_base64_decode_rejects_length_overflow)
     ck_assert_ptr_null(cl_base64_decode(input, (size_t)CLI_MAX_ALLOCATION + 1U, NULL, &decoded_len, 0));
     ck_assert_ptr_null(cl_base64_decode(NULL, 1, NULL, &decoded_len, 0));
     ck_assert_ptr_null(cl_base64_encode(NULL, 1));
+    ck_assert_ptr_null(cl_base64_encode(input, SIZE_MAX));
+    ck_assert_ptr_null(cl_base64_encode(input, (size_t)INT_MAX));
+    encoded = cl_base64_encode(input, 1);
+    ck_assert_ptr_nonnull(encoded);
+    free(encoded);
 }
 END_TEST
 

@@ -1687,6 +1687,7 @@ fixed-width-integer	libclamav/clamav.h	892	    uint32_t *recursion_level_out);
 fixed-width-integer	libclamav/clamav.h	908	    uint64_t *object_id_out);
 fixed-width-integer	libclamav/clamav.h	945	    uint32_t *attributes_out);
 fixed-width-integer	libclamav/clambc.h	29	    uint64_t timestamp;
+fixed-width-integer	libclamav/conv.c	200	    if (bio_len < 0 || (uint64_t)bio_len > SIZE_MAX) {
 fixed-width-integer	libclamav/cpio.c	182	static int cpio_parse_hex_u32(const char field[8], uint32_t *value)
 fixed-width-integer	libclamav/cpio.c	184	    uint32_t parsed = 0;
 fixed-width-integer	libclamav/cpio.c	209	static int cpio_parse_octal_u32(const char *field, size_t width, uint32_t *value)
@@ -10391,24 +10392,35 @@ native-width-integer	libclamav/clamav.h	79	typedef char clamav_large_file_off_t_
 native-width-integer	libclamav/clamav.h	818	    size_t offset,
 native-width-integer	libclamav/clamav.h	819	    size_t len,
 native-width-integer	libclamav/clamav.h	821	    size_t *data_len_out);
-native-width-integer	libclamav/conv.c	117	    read_len = BIO_read(bio, buf, (int)decoded_len);
-native-width-integer	libclamav/conv.c	124	    *olen = (size_t)read_len;
-native-width-integer	libclamav/conv.c	136	char *cl_base64_encode(void *data, size_t len)
-native-width-integer	libclamav/conv.c	140	    size_t elen;
-native-width-integer	libclamav/conv.c	158	    elen = (size_t)BIO_get_mem_data(bio, &buf);
-native-width-integer	libclamav/conv.c	177	int main(int argc, char *argv[])
-native-width-integer	libclamav/conv.c	181	    size_t len;
-native-width-integer	libclamav/conv.c	182	    int ret = 0;
-native-width-integer	libclamav/conv.c	183	    unsigned int shalen;
+native-width-integer	libclamav/conv.c	102	    return *encoded_len < (size_t)CLI_MAX_ALLOCATION;
+native-width-integer	libclamav/conv.c	112	void *cl_base64_decode(char *data, size_t len, void *obuf, size_t *olen, int oneline)
+native-width-integer	libclamav/conv.c	116	    size_t decoded_len;
+native-width-integer	libclamav/conv.c	117	    int read_len;
+native-width-integer	libclamav/conv.c	147	    read_len = BIO_read(bio, buf, (int)decoded_len);
+native-width-integer	libclamav/conv.c	154	    *olen = (size_t)read_len;
+native-width-integer	libclamav/conv.c	166	char *cl_base64_encode(void *data, size_t len)
+native-width-integer	libclamav/conv.c	170	    long bio_len;
+native-width-integer	libclamav/conv.c	171	    int written;
+native-width-integer	libclamav/conv.c	172	    size_t elen;
+native-width-integer	libclamav/conv.c	189	    written = BIO_write(bio, data, (int)len);
+native-width-integer	libclamav/conv.c	190	    if (written != (int)len) {
+native-width-integer	libclamav/conv.c	204	    elen = (size_t)bio_len;
+native-width-integer	libclamav/conv.c	205	    if (elen >= (size_t)CLI_MAX_ALLOCATION) {
+native-width-integer	libclamav/conv.c	228	int main(int argc, char *argv[])
+native-width-integer	libclamav/conv.c	232	    size_t len;
+native-width-integer	libclamav/conv.c	233	    int ret = 0;
+native-width-integer	libclamav/conv.c	234	    unsigned int shalen;
 native-width-integer	libclamav/conv.c	47	 * The OpenSSL memory BIO used by cl_base64_decode() accepts an int length,
 native-width-integer	libclamav/conv.c	51	static int base64_len(const char *data, size_t len, size_t *decoded_len)
 native-width-integer	libclamav/conv.c	53	    size_t padding = 0;
 native-width-integer	libclamav/conv.c	54	    size_t i;
 native-width-integer	libclamav/conv.c	56	    if (!decoded_len || (len != 0 && data == NULL) || len > (size_t)INT_MAX ||
 native-width-integer	libclamav/conv.c	57	        len > (size_t)CLI_MAX_ALLOCATION || len > (size_t)-1 / 3)
-native-width-integer	libclamav/conv.c	82	void *cl_base64_decode(char *data, size_t len, void *obuf, size_t *olen, int oneline)
-native-width-integer	libclamav/conv.c	86	    size_t decoded_len;
-native-width-integer	libclamav/conv.c	87	    int read_len;
+native-width-integer	libclamav/conv.c	76	static int base64_encoded_len(size_t len, size_t *encoded_len)
+native-width-integer	libclamav/conv.c	78	    size_t groups;
+native-width-integer	libclamav/conv.c	79	    size_t encoded_chars;
+native-width-integer	libclamav/conv.c	80	    size_t line_breaks;
+native-width-integer	libclamav/conv.c	82	    if (encoded_len == NULL || len > (size_t)INT_MAX)
 native-width-integer	libclamav/conv.h	24	void *cl_base64_decode(char *, size_t, void *, size_t *, int);
 native-width-integer	libclamav/conv.h	25	char *cl_base64_encode(void *, size_t);
 native-width-integer	libclamav/cpio.c	101	static int cpio_align_size(size_t value, size_t alignment, size_t *aligned)
@@ -21746,17 +21758,18 @@ native-width-integer	unit_tests/check_str.c	157	    int rc;
 native-width-integer	unit_tests/check_str.c	189	    size_t native_wrap_len = (size_t)(UINT_MAX / 2U) + 1U;
 native-width-integer	unit_tests/check_str.c	196	    /* The old unsigned-int product allocated one byte for this length. */
 native-width-integer	unit_tests/check_str.c	197	    ck_assert_ptr_null(cli_str2hex(input, (unsigned int)native_wrap_len));
-native-width-integer	unit_tests/check_str.c	207	    size_t decoded_len = 0;
-native-width-integer	unit_tests/check_str.c	216	    ck_assert_ptr_null(cl_base64_decode(input, (size_t)-1, NULL, &decoded_len, 0));
-native-width-integer	unit_tests/check_str.c	217	    ck_assert_ptr_null(cl_base64_decode(input, (size_t)CLI_MAX_ALLOCATION + 1U, NULL, &decoded_len, 0));
-native-width-integer	unit_tests/check_str.c	226	    unsigned int len;
-native-width-integer	unit_tests/check_str.c	308	    const size_t expected_bytes = strlen("body") + 1 + sizeof(text) + sizeof(line_t);
-native-width-integer	unit_tests/check_str.c	327	    size_t materialized_bytes;
-native-width-integer	unit_tests/check_str.c	354	    size_t bytes;
-native-width-integer	unit_tests/check_str.c	419	    size_t bytes;
-native-width-integer	unit_tests/check_str.c	481	    const size_t overflowing_length = SIZE_MAX / 3 + 1;
-native-width-integer	unit_tests/check_str.c	482	    const size_t over_allocation_length =
-native-width-integer	unit_tests/check_str.c	483	        (((size_t)CLI_MAX_ALLOCATION - 2) / 3 + 1) * 2;
+native-width-integer	unit_tests/check_str.c	208	    size_t decoded_len = 0;
+native-width-integer	unit_tests/check_str.c	217	    ck_assert_ptr_null(cl_base64_decode(input, (size_t)-1, NULL, &decoded_len, 0));
+native-width-integer	unit_tests/check_str.c	218	    ck_assert_ptr_null(cl_base64_decode(input, (size_t)CLI_MAX_ALLOCATION + 1U, NULL, &decoded_len, 0));
+native-width-integer	unit_tests/check_str.c	222	    ck_assert_ptr_null(cl_base64_encode(input, (size_t)INT_MAX));
+native-width-integer	unit_tests/check_str.c	232	    unsigned int len;
+native-width-integer	unit_tests/check_str.c	314	    const size_t expected_bytes = strlen("body") + 1 + sizeof(text) + sizeof(line_t);
+native-width-integer	unit_tests/check_str.c	333	    size_t materialized_bytes;
+native-width-integer	unit_tests/check_str.c	360	    size_t bytes;
+native-width-integer	unit_tests/check_str.c	425	    size_t bytes;
+native-width-integer	unit_tests/check_str.c	487	    const size_t overflowing_length = SIZE_MAX / 3 + 1;
+native-width-integer	unit_tests/check_str.c	488	    const size_t over_allocation_length =
+native-width-integer	unit_tests/check_str.c	489	        (((size_t)CLI_MAX_ALLOCATION - 2) / 3 + 1) * 2;
 native-width-integer	unit_tests/check_uniq.c	47	    size_t bytes = 0;
 native-width-integer	unit_tests/check_uniq.c	69	    int i;
 native-width-integer	unit_tests/check_uniq.c	96	    int i, j;
@@ -21996,7 +22009,13 @@ boundary-constant	libclamav/bytecode_api.c	613	        if (!remaining || off > (
 boundary-constant	libclamav/bytecode_api.c	680	    if (!ctx->fmap || off > (uint64_t)SIZE_MAX) {
 boundary-constant	libclamav/bytecode_vm.c	620	    if (infos->nstacks == UINT_MAX ||
 boundary-constant	libclamav/bytecode_vm.c	676	    if (infos->nglobs == UINT_MAX) {
+boundary-constant	libclamav/conv.c	200	    if (bio_len < 0 || (uint64_t)bio_len > SIZE_MAX) {
 boundary-constant	libclamav/conv.c	56	    if (!decoded_len || (len != 0 && data == NULL) || len > (size_t)INT_MAX ||
+boundary-constant	libclamav/conv.c	82	    if (encoded_len == NULL || len > (size_t)INT_MAX)
+boundary-constant	libclamav/conv.c	88	    if (len > SIZE_MAX - 2)
+boundary-constant	libclamav/conv.c	91	    if (groups > SIZE_MAX / 4)
+boundary-constant	libclamav/conv.c	94	    if (encoded_chars > SIZE_MAX - 2)
+boundary-constant	libclamav/conv.c	99	    if (encoded_chars > SIZE_MAX - line_breaks)
 boundary-constant	libclamav/cpio.c	108	    if (value > SIZE_MAX - padding)
 boundary-constant	libclamav/cpio.c	116	    if (NULL == position || amount > SIZE_MAX - *position)
 boundary-constant	libclamav/cpio.c	223	        if (parsed > (UINT32_MAX - digit) / 8U)
@@ -22775,12 +22794,14 @@ boundary-constant	unit_tests/check_regex.c	651	    ck_assert_int_eq(cli_url_cano
 boundary-constant	unit_tests/check_regex.c	737	    ck_assert_int_eq(cli_regex_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
 boundary-constant	unit_tests/check_str.c	189	    size_t native_wrap_len = (size_t)(UINT_MAX / 2U) + 1U;
 boundary-constant	unit_tests/check_str.c	198	    ck_assert_ptr_null(cli_str2hex(input, UINT_MAX));
-boundary-constant	unit_tests/check_str.c	366	    ck_assert_int_eq(cli_message_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
-boundary-constant	unit_tests/check_str.c	391	     * SIZE_MAX-sized table. A failed header argument must taint the message
-boundary-constant	unit_tests/check_str.c	393	    m->numberOfArguments = SIZE_MAX;
-boundary-constant	unit_tests/check_str.c	407	    m->numberOfEncTypes = INT_MAX;
-boundary-constant	unit_tests/check_str.c	430	    ck_assert_int_eq(cli_iconv_cache_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
-boundary-constant	unit_tests/check_str.c	481	    const size_t overflowing_length = SIZE_MAX / 3 + 1;
+boundary-constant	unit_tests/check_str.c	221	    ck_assert_ptr_null(cl_base64_encode(input, SIZE_MAX));
+boundary-constant	unit_tests/check_str.c	222	    ck_assert_ptr_null(cl_base64_encode(input, (size_t)INT_MAX));
+boundary-constant	unit_tests/check_str.c	372	    ck_assert_int_eq(cli_message_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
+boundary-constant	unit_tests/check_str.c	397	     * SIZE_MAX-sized table. A failed header argument must taint the message
+boundary-constant	unit_tests/check_str.c	399	    m->numberOfArguments = SIZE_MAX;
+boundary-constant	unit_tests/check_str.c	413	    m->numberOfEncTypes = INT_MAX;
+boundary-constant	unit_tests/check_str.c	436	    ck_assert_int_eq(cli_iconv_cache_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
+boundary-constant	unit_tests/check_str.c	487	    const size_t overflowing_length = SIZE_MAX / 3 + 1;
 boundary-constant	unit_tests/check_uniq.c	49	    ck_assert_int_eq(cli_uniq_table_size(UINT32_MAX, &bytes), CL_ERESOURCE);
 boundary-constant	unit_tests/check_uniq.c	50	    ck_assert_ptr_null(uniq_init(UINT32_MAX));
 quantity-parser	clamav-milter/clamav-milter.c	245	            gid_t sock_gid = strtol(gname, &end, 10);
@@ -22896,6 +22917,8 @@ narrowing-cast	libclamav/bytecode_api.c	1857	    for (i = 0; i < (unsigned int)l
 narrowing-cast	libclamav/bytecode_api.c	2286	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
 narrowing-cast	libclamav/bytecode_api.c	2454	    return size > UINT32_MAX ? 0 : (uint32_t)size;
 narrowing-cast	libclamav/bytecode_api.c	357	    write_len = (uint64_t)(uint32_t)len;
+narrowing-cast	libclamav/conv.c	189	    written = BIO_write(bio, data, (int)len);
+narrowing-cast	libclamav/conv.c	190	    if (written != (int)len) {
 narrowing-cast	libclamav/egg.c	2593	        stream.avail_out = (unsigned int)sizeof(decoded);
 narrowing-cast	libclamav/entconv.c	1535	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
 narrowing-cast	libclamav/iso9660.c	323	            name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
@@ -25499,8 +25522,8 @@ format-width	unit_tests/check_regex.c	329	    ck_assert_msg(signo == 201, "Incor
 format-width	unit_tests/check_regex.c	340	        ck_assert_msg(signo == 4, "Incorrect number of signatures: %u, expected %u", signo, 4);
 format-width	unit_tests/check_regex.c	353	    ck_assert_msg(signo == 31, "Incorrect number of signatures: %u, expected %u", signo, 31);
 format-width	unit_tests/check_regex.c	512	    ck_assert_msg(rc == CL_SUCCESS || rc == CL_VIRUS, "phishingScan failed with error code: %s (%u)",
-format-width	unit_tests/check_str.c	257	    ck_assert_msg(len == test->len, "invalid base64 decoded length: %u expected %u (%s)\n",
-format-width	unit_tests/check_str.c	472	    ck_assert_msg(!strcmp(result, u16_tests[_i].u8), "utf16_to_8 %d failed, expected: %s, got %s", _i, u16_tests[_i].u8, result);
+format-width	unit_tests/check_str.c	263	    ck_assert_msg(len == test->len, "invalid base64 decoded length: %u expected %u (%s)\n",
+format-width	unit_tests/check_str.c	478	    ck_assert_msg(!strcmp(result, u16_tests[_i].u8), "utf16_to_8 %d failed, expected: %s, got %s", _i, u16_tests[_i].u8, result);
 format-width	unit_tests/check_str.c	86	    char *str = cli_unescape("%u05D0");
 format-width	unit_tests/check_str.c	91	    str = cli_unescape("%u00a2%u007f%u0080%u07ff%u0800%ue000");
 format-width	unit_tests/check_str.c	96	    str = cli_unescape("%%u123%u12%u1%u%u1234");
@@ -27948,7 +27971,11 @@ offset-size-arithmetic	libclamav/clamav.h	79	typedef char clamav_large_file_off_
 offset-size-arithmetic	libclamav/clamav.h	821	    size_t *data_len_out);
 offset-size-arithmetic	libclamav/clamav.h	975	     * This callback is useful for post-processing the results of the scan, but is the most likely of the callbacks to
 offset-size-arithmetic	libclamav/clambc.h	42	 * frozen format-6/7 interface. Format 8 appends, but never renumbers, entries. */
-offset-size-arithmetic	libclamav/conv.c	161	    p = (char *)cli_max_malloc(elen + 1);
+offset-size-arithmetic	libclamav/conv.c	101	    *encoded_len = encoded_chars + line_breaks;
+offset-size-arithmetic	libclamav/conv.c	107	 * @param[in] len Length of the base64-encoded string
+offset-size-arithmetic	libclamav/conv.c	112	void *cl_base64_decode(char *data, size_t len, void *obuf, size_t *olen, int oneline)
+offset-size-arithmetic	libclamav/conv.c	122	    buf = (obuf) ? obuf : cli_max_malloc(decoded_len + 1);
+offset-size-arithmetic	libclamav/conv.c	211	    p = (char *)cli_max_malloc(elen + 1);
 offset-size-arithmetic	libclamav/conv.c	45	/** Get the expected decoded length of a base64-encoded string.
 offset-size-arithmetic	libclamav/conv.c	49	 * Reject oversized inputs before inspecting data or forming 3 * len.
 offset-size-arithmetic	libclamav/conv.c	51	static int base64_len(const char *data, size_t len, size_t *decoded_len)
@@ -27956,9 +27983,10 @@ offset-size-arithmetic	libclamav/conv.c	57	        len > (size_t)CLI_MAX_ALLOCAT
 offset-size-arithmetic	libclamav/conv.c	65	    for (i = len - 1; i > 0 && data[i] == '='; i--)
 offset-size-arithmetic	libclamav/conv.c	68	    *decoded_len = (3 * len) / 4;
 offset-size-arithmetic	libclamav/conv.c	71	    *decoded_len -= padding;
-offset-size-arithmetic	libclamav/conv.c	77	 * @param[in] len Length of the base64-encoded string
-offset-size-arithmetic	libclamav/conv.c	82	void *cl_base64_decode(char *data, size_t len, void *obuf, size_t *olen, int oneline)
-offset-size-arithmetic	libclamav/conv.c	92	    buf = (obuf) ? obuf : cli_max_malloc(decoded_len + 1);
+offset-size-arithmetic	libclamav/conv.c	75	/** Get a conservative encoded length for the OpenSSL Base64 BIO. */
+offset-size-arithmetic	libclamav/conv.c	76	static int base64_encoded_len(size_t len, size_t *encoded_len)
+offset-size-arithmetic	libclamav/conv.c	88	    if (len > SIZE_MAX - 2)
+offset-size-arithmetic	libclamav/conv.c	90	    groups = (len + 2) / 3;
 offset-size-arithmetic	libclamav/conv.h	24	void *cl_base64_decode(char *, size_t, void *, size_t *, int);
 offset-size-arithmetic	libclamav/cpio.c	101	static int cpio_align_size(size_t value, size_t alignment, size_t *aligned)
 offset-size-arithmetic	libclamav/cpio.c	114	static int cpio_advance(size_t *position, size_t amount)
@@ -40912,34 +40940,34 @@ offset-size-arithmetic	unit_tests/check_str.c	176	    ck_assert_msg(!memcmp(r, o
 offset-size-arithmetic	unit_tests/check_str.c	189	    size_t native_wrap_len = (size_t)(UINT_MAX / 2U) + 1U;
 offset-size-arithmetic	unit_tests/check_str.c	191	    hex = cli_str2hex(input, sizeof(input) - 1);
 offset-size-arithmetic	unit_tests/check_str.c	196	    /* The old unsigned-int product allocated one byte for this length. */
-offset-size-arithmetic	unit_tests/check_str.c	209	    decoded = (unsigned char *)cl_base64_decode(valid, sizeof(valid) - 1, NULL, &decoded_len, 1);
-offset-size-arithmetic	unit_tests/check_str.c	215	    /* These lengths must be rejected before the decoder inspects input. */
-offset-size-arithmetic	unit_tests/check_str.c	216	    ck_assert_ptr_null(cl_base64_decode(input, (size_t)-1, NULL, &decoded_len, 0));
-offset-size-arithmetic	unit_tests/check_str.c	217	    ck_assert_ptr_null(cl_base64_decode(input, (size_t)CLI_MAX_ALLOCATION + 1U, NULL, &decoded_len, 0));
-offset-size-arithmetic	unit_tests/check_str.c	256	    len   = ret2 - buf;
-offset-size-arithmetic	unit_tests/check_str.c	257	    ck_assert_msg(len == test->len, "invalid base64 decoded length: %u expected %u (%s)\n",
-offset-size-arithmetic	unit_tests/check_str.c	258	                  len, test->len, buf);
-offset-size-arithmetic	unit_tests/check_str.c	308	    const size_t expected_bytes = strlen("body") + 1 + sizeof(text) + sizeof(line_t);
-offset-size-arithmetic	unit_tests/check_str.c	357	    ck_assert_int_eq(cli_message_table_size(0, sizeof(char *), &bytes), CL_SUCCESS);
-offset-size-arithmetic	unit_tests/check_str.c	359	    ck_assert_int_eq(cli_message_table_size(CLI_MAX_ALLOCATION / sizeof(char *),
-offset-size-arithmetic	unit_tests/check_str.c	360	                                            sizeof(char *), &bytes),
-offset-size-arithmetic	unit_tests/check_str.c	363	    ck_assert_int_eq(cli_message_table_size(CLI_MAX_ALLOCATION / sizeof(char *) + 1,
-offset-size-arithmetic	unit_tests/check_str.c	364	                                            sizeof(char *), &bytes),
-offset-size-arithmetic	unit_tests/check_str.c	366	    ck_assert_int_eq(cli_message_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
-offset-size-arithmetic	unit_tests/check_str.c	368	    ck_assert_int_eq(cli_message_table_size(1, sizeof(char *), NULL), CL_EARG);
-offset-size-arithmetic	unit_tests/check_str.c	421	    ck_assert_int_eq(cli_iconv_cache_table_size(0, sizeof(void *), &bytes), CL_SUCCESS);
-offset-size-arithmetic	unit_tests/check_str.c	423	    ck_assert_int_eq(cli_iconv_cache_table_size(CLI_MAX_ALLOCATION / sizeof(void *),
-offset-size-arithmetic	unit_tests/check_str.c	424	                                                sizeof(void *), &bytes),
-offset-size-arithmetic	unit_tests/check_str.c	427	    ck_assert_int_eq(cli_iconv_cache_table_size(CLI_MAX_ALLOCATION / sizeof(void *) + 1,
-offset-size-arithmetic	unit_tests/check_str.c	428	                                                sizeof(void *), &bytes),
-offset-size-arithmetic	unit_tests/check_str.c	430	    ck_assert_int_eq(cli_iconv_cache_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
-offset-size-arithmetic	unit_tests/check_str.c	432	    ck_assert_int_eq(cli_iconv_cache_table_size(1, sizeof(void *), NULL), CL_EARG);
-offset-size-arithmetic	unit_tests/check_str.c	460	static unsigned u16_len(const char *s)
-offset-size-arithmetic	unit_tests/check_str.c	479	    /* This length makes length * 3 wrap to a tiny value on unsigned native
-offset-size-arithmetic	unit_tests/check_str.c	481	    const size_t overflowing_length = SIZE_MAX / 3 + 1;
-offset-size-arithmetic	unit_tests/check_str.c	483	        (((size_t)CLI_MAX_ALLOCATION - 2) / 3 + 1) * 2;
-offset-size-arithmetic	unit_tests/check_str.c	532	    tcase_add_loop_test(tc_str, test_u16_u8, 0, sizeof(u16_tests) / sizeof(u16_tests[0]));
-offset-size-arithmetic	unit_tests/check_str.c	537	    tcase_add_loop_test(tc_decodeline, test_base64, 0, sizeof(base64tests) / sizeof(base64tests[0]));
+offset-size-arithmetic	unit_tests/check_str.c	210	    decoded = (unsigned char *)cl_base64_decode(valid, sizeof(valid) - 1, NULL, &decoded_len, 1);
+offset-size-arithmetic	unit_tests/check_str.c	216	    /* These lengths must be rejected before the decoder inspects input. */
+offset-size-arithmetic	unit_tests/check_str.c	217	    ck_assert_ptr_null(cl_base64_decode(input, (size_t)-1, NULL, &decoded_len, 0));
+offset-size-arithmetic	unit_tests/check_str.c	218	    ck_assert_ptr_null(cl_base64_decode(input, (size_t)CLI_MAX_ALLOCATION + 1U, NULL, &decoded_len, 0));
+offset-size-arithmetic	unit_tests/check_str.c	262	    len   = ret2 - buf;
+offset-size-arithmetic	unit_tests/check_str.c	263	    ck_assert_msg(len == test->len, "invalid base64 decoded length: %u expected %u (%s)\n",
+offset-size-arithmetic	unit_tests/check_str.c	264	                  len, test->len, buf);
+offset-size-arithmetic	unit_tests/check_str.c	314	    const size_t expected_bytes = strlen("body") + 1 + sizeof(text) + sizeof(line_t);
+offset-size-arithmetic	unit_tests/check_str.c	363	    ck_assert_int_eq(cli_message_table_size(0, sizeof(char *), &bytes), CL_SUCCESS);
+offset-size-arithmetic	unit_tests/check_str.c	365	    ck_assert_int_eq(cli_message_table_size(CLI_MAX_ALLOCATION / sizeof(char *),
+offset-size-arithmetic	unit_tests/check_str.c	366	                                            sizeof(char *), &bytes),
+offset-size-arithmetic	unit_tests/check_str.c	369	    ck_assert_int_eq(cli_message_table_size(CLI_MAX_ALLOCATION / sizeof(char *) + 1,
+offset-size-arithmetic	unit_tests/check_str.c	370	                                            sizeof(char *), &bytes),
+offset-size-arithmetic	unit_tests/check_str.c	372	    ck_assert_int_eq(cli_message_table_size(SIZE_MAX, sizeof(char *), &bytes), CL_ERESOURCE);
+offset-size-arithmetic	unit_tests/check_str.c	374	    ck_assert_int_eq(cli_message_table_size(1, sizeof(char *), NULL), CL_EARG);
+offset-size-arithmetic	unit_tests/check_str.c	427	    ck_assert_int_eq(cli_iconv_cache_table_size(0, sizeof(void *), &bytes), CL_SUCCESS);
+offset-size-arithmetic	unit_tests/check_str.c	429	    ck_assert_int_eq(cli_iconv_cache_table_size(CLI_MAX_ALLOCATION / sizeof(void *),
+offset-size-arithmetic	unit_tests/check_str.c	430	                                                sizeof(void *), &bytes),
+offset-size-arithmetic	unit_tests/check_str.c	433	    ck_assert_int_eq(cli_iconv_cache_table_size(CLI_MAX_ALLOCATION / sizeof(void *) + 1,
+offset-size-arithmetic	unit_tests/check_str.c	434	                                                sizeof(void *), &bytes),
+offset-size-arithmetic	unit_tests/check_str.c	436	    ck_assert_int_eq(cli_iconv_cache_table_size(SIZE_MAX, sizeof(void *), &bytes), CL_ERESOURCE);
+offset-size-arithmetic	unit_tests/check_str.c	438	    ck_assert_int_eq(cli_iconv_cache_table_size(1, sizeof(void *), NULL), CL_EARG);
+offset-size-arithmetic	unit_tests/check_str.c	466	static unsigned u16_len(const char *s)
+offset-size-arithmetic	unit_tests/check_str.c	485	    /* This length makes length * 3 wrap to a tiny value on unsigned native
+offset-size-arithmetic	unit_tests/check_str.c	487	    const size_t overflowing_length = SIZE_MAX / 3 + 1;
+offset-size-arithmetic	unit_tests/check_str.c	489	        (((size_t)CLI_MAX_ALLOCATION - 2) / 3 + 1) * 2;
+offset-size-arithmetic	unit_tests/check_str.c	538	    tcase_add_loop_test(tc_str, test_u16_u8, 0, sizeof(u16_tests) / sizeof(u16_tests[0]));
+offset-size-arithmetic	unit_tests/check_str.c	543	    tcase_add_loop_test(tc_decodeline, test_base64, 0, sizeof(base64tests) / sizeof(base64tests[0]));
 offset-size-arithmetic	unit_tests/input/embedded_testfiles/emb/smol_exe/src/main.rs	13	/// $env:RUSTFLAGS="-Ctarget-cpu=native -Clink-args=/ENTRY:_start -Clink-args=/SUBSYSTEM:CONSOLE -Clink-args=/LARGEADDRESSAWARE:NO -Clink-args=ucrt.lib -Crelocation-model=static -Clink-args=-Wl,-n,-N,--no-dynamic-linker,--no-pie,--build-id=none,--no-eh-frame-hdr"
 offset-size-arithmetic	unit_tests/input/embedded_testfiles/emb/smol_exe/src/main.rs	14	/// cargo +nightly build  -Z build-std=std,panic_abort -Z build-std-features="optimize_for_size" --target x86_64-pc-windows-msvc  --release
 offset-size-arithmetic	unit_tests/input/embedded_testfiles/emb/smol_exe/src/main.rs	19	pub extern "C" fn _start() -> ! {

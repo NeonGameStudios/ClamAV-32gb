@@ -72,6 +72,36 @@ static int base64_len(const char *data, size_t len, size_t *decoded_len)
     return 1;
 }
 
+/** Get a conservative encoded length for the OpenSSL Base64 BIO. */
+static int base64_encoded_len(size_t len, size_t *encoded_len)
+{
+    size_t groups;
+    size_t encoded_chars;
+    size_t line_breaks;
+
+    if (encoded_len == NULL || len > (size_t)INT_MAX)
+        return 0;
+    if (len == 0) {
+        *encoded_len = 0;
+        return 1;
+    }
+    if (len > SIZE_MAX - 2)
+        return 0;
+    groups = (len + 2) / 3;
+    if (groups > SIZE_MAX / 4)
+        return 0;
+    encoded_chars = groups * 4;
+    if (encoded_chars > SIZE_MAX - 2)
+        return 0;
+    /* The default BIO emits line breaks and a final newline. Keep two extra
+     * bytes of slack beyond the complete 64-character line count. */
+    line_breaks = encoded_chars / 64 + 2;
+    if (encoded_chars > SIZE_MAX - line_breaks)
+        return 0;
+    *encoded_len = encoded_chars + line_breaks;
+    return *encoded_len < (size_t)CLI_MAX_ALLOCATION;
+}
+
 /** Decode a base64-encoded string
  * @param[in] data The base64-encoded string
  * @param[in] len Length of the base64-encoded string
@@ -137,9 +167,13 @@ char *cl_base64_encode(void *data, size_t len)
 {
     BIO *bio, *b64;
     char *buf, *p;
+    long bio_len;
+    int written;
     size_t elen;
 
     if (len != 0 && data == NULL)
+        return NULL;
+    if (!base64_encoded_len(len, &elen))
         return NULL;
 
     b64 = BIO_new(BIO_f_base64());
@@ -152,18 +186,35 @@ char *cl_base64_encode(void *data, size_t len)
     }
 
     bio = BIO_push(b64, bio);
-    BIO_write(bio, data, len);
+    written = BIO_write(bio, data, (int)len);
+    if (written != (int)len) {
+        BIO_free_all(bio);
+        return NULL;
+    }
 
-    BIO_flush(bio);
-    elen = (size_t)BIO_get_mem_data(bio, &buf);
+    if (BIO_flush(bio) != 1) {
+        BIO_free_all(bio);
+        return NULL;
+    }
+    bio_len = BIO_get_mem_data(bio, &buf);
+    if (bio_len < 0 || (uint64_t)bio_len > SIZE_MAX) {
+        BIO_free_all(bio);
+        return NULL;
+    }
+    elen = (size_t)bio_len;
+    if (elen >= (size_t)CLI_MAX_ALLOCATION) {
+        BIO_free_all(bio);
+        return NULL;
+    }
 
     /* Ensure we're dealing with a NULL-terminated string */
     p = (char *)cli_max_malloc(elen + 1);
     if (NULL == p) {
-        BIO_free(b64);
+        BIO_free_all(bio);
         return NULL;
     }
-    memcpy((void *)p, (void *)buf, elen);
+    if (elen != 0)
+        memcpy((void *)p, (void *)buf, elen);
     p[elen] = 0x00;
     buf     = p;
 
