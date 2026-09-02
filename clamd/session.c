@@ -720,23 +720,24 @@ static int print_ver(int desc, char term, const struct cl_engine *engine)
     return mdprintf(desc, "ClamAV %s%c", get_version(), term);
 }
 
-static void print_commands(int desc, char term, const struct cl_engine *engine)
+static int print_commands(int desc, char term, const struct cl_engine *engine)
 {
     unsigned i, n;
     const char *engine_ver = cl_retver();
     const char *clamd_ver  = get_version();
     if (strcmp(engine_ver, clamd_ver)) {
-        mdprintf(desc, "ENGINE VERSION MISMATCH: %s != %s. ERROR%c",
-                 engine_ver, clamd_ver, term);
-        return;
+        return mdprintf(desc, "ENGINE VERSION MISMATCH: %s != %s. ERROR%c",
+                        engine_ver, clamd_ver, term) < 0
+                   ? -1
+                   : 0;
     }
-    print_ver(desc, '|', engine);
-    mdprintf(desc, " COMMANDS:");
+    if (print_ver(desc, '|', engine) < 0 || mdprintf(desc, " COMMANDS:") < 0)
+        return -1;
     n = sizeof(commands) / sizeof(commands[0]);
-    for (i = 0; i < n; i++) {
-        mdprintf(desc, " %s", commands[i].cmd);
-    }
-    mdprintf(desc, "%c", term);
+    for (i = 0; i < n; i++)
+        if (mdprintf(desc, " %s", commands[i].cmd) < 0)
+            return -1;
+    return mdprintf(desc, "%c", term) < 0 ? -1 : 0;
 }
 
 /* returns:
@@ -819,23 +820,25 @@ int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const ch
                 pthread_mutex_lock(&reload_mutex);
                 reload = 1;
                 pthread_mutex_unlock(&reload_mutex);
-                mdprintf(desc, "RELOADING%c", term);
+                if (mdprintf(desc, "RELOADING%c", term) < 0)
+                    return 1;
                 /* we set reload flag, and we'll reload before closing the connection */
             } else {
                 conn_reply_single(conn, NULL, "COMMAND UNAVAILABLE");
             }
             return 1;
         case COMMAND_PING:
-            if (conn->group)
-                mdprintf(desc, "%u: PONG%c", conn->id, term);
-            else
-                mdprintf(desc, "PONG%c", term);
+            if (conn->group) {
+                if (mdprintf(desc, "%u: PONG%c", conn->id, term) < 0)
+                    return 1;
+            } else if (mdprintf(desc, "PONG%c", term) < 0)
+                return 1;
             return conn->group ? 0 : 1;
         case COMMAND_VERSION: {
             if (optget(conn->opts, "EnableVersionCommand")->enabled) {
-                if (conn->group)
-                    mdprintf(desc, "%u: ", conn->id);
-                print_ver(desc, conn->term, engine);
+                if ((conn->group && mdprintf(desc, "%u: ", conn->id) < 0) ||
+                    print_ver(desc, conn->term, engine) < 0)
+                    return 1;
                 return conn->group ? 0 : 1;
             } else {
                 conn_reply_single(conn, NULL, "COMMAND UNAVAILABLE");
@@ -843,9 +846,9 @@ int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const ch
             }
         }
         case COMMAND_COMMANDS: {
-            if (conn->group)
-                mdprintf(desc, "%u: ", conn->id);
-            print_commands(desc, conn->term, engine);
+            if ((conn->group && mdprintf(desc, "%u: ", conn->id) < 0) ||
+                print_commands(desc, conn->term, engine) < 0)
+                return 1;
             return conn->group ? 0 : 1;
         }
         case COMMAND_DETSTATSCLEAR: {

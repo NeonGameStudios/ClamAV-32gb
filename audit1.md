@@ -3561,6 +3561,19 @@ production-linked execution, structured/legacy service parity, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final release qualification remain required.
 
+## clamd synchronous response-write failures — 2026-09-02
+
+The clamd receive loop previously ignored `mdprintf()` failures for
+synchronous `PING`, `VERSION`, `COMMANDS`, and enabled `RELOAD` responses.
+Inside an IDSESSION, a closed or stalled client could therefore leave the
+command result at zero and keep the session in its command mode with no
+response. These paths now return a non-clean command result as soon as a
+required response write fails. The stats formatter remains a separate
+multi-write audit item. Focused protocol fault injection, current-source
+production-linked execution, structured/legacy service parity, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final release qualification remain required.
+
 ## Regex matcher table admission — 2026-08-29
 
 The phishing/allow-list matcher grew suffix-bucket and compiled-regex pointer

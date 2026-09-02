@@ -523,6 +523,17 @@ production-linked structured/legacy service parity, sanitizer, certified
 Linux x86-64, production-CVD, materialized-large-file, Sonic1, resource, and
 final release qualification remain required.
 
+## clamd synchronous response-write failures — 2026-09-02
+
+The clamd receive loop now checks required `mdprintf()` results for
+`PING`, `VERSION`, `COMMANDS`, and enabled `RELOAD` responses. A closed or
+stalled client can no longer leave an IDSESSION command returning success
+while its response is missing. The stats formatter remains a separate
+multi-write audit item. Focused protocol fault injection, production-linked
+structured/legacy service parity, sanitizer, certified Linux x86-64,
+production-CVD, materialized-large-file, Sonic1, resource, and final release
+qualification remain required.
+
 ## Exported child-ingress recursion-state admission — 2026-09-01
 
 Descriptor, file, directory, nested-map, and buffer scan entrypoints now share a
