@@ -924,7 +924,8 @@ final parser/release qualification remain open.
   `uudecodeFile()` interface and both standalone and MIME-embedded callers,
   including `CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, and
   `CL_EREAD`, instead of flattening output/materialization failures to
-  `CL_EPARSE`.
+  `CL_EPARSE`; preserve `CL_EMEM` for output-blob allocation and
+  `CL_ERESOURCE` for a blob lacking a usable descriptor or pathname.
 - Keep the private read sentinel and the direct/MIME invalid-directory
   regressions. Complete current-source production-GCC compilation and linked
   UUEncode/MIME execution, complete UUEncode/mail corpus, sanitizer,
@@ -936,7 +937,8 @@ final parser/release qualification remain open.
 - Preserve the specific status retained by a required TNEF attachment
   fileblob operation, including `CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, and
   `CL_ETIMEOUT`, instead of returning `CL_ETMPFILE` or generic
-  `CL_ERESOURCE`.
+  `CL_ERESOURCE`; reject an output blob lacking a usable descriptor or
+  pathname as `CL_ERESOURCE`.
 - Keep the real `cli_tnef()` invalid-directory regression and sticky
   incomplete/cache-taint behavior. Complete current-source production-GCC
   compilation and linked TNEF/MIME execution, complete TNEF corpus,

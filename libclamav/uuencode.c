@@ -67,6 +67,8 @@ static cl_error_t uuencode_fileblob_status(const fileblob *fb)
 {
     if (fb == NULL)
         return CL_ERESOURCE;
+    if (!fb->isIncomplete && (fb->fp == NULL || fb->fullname == NULL))
+        return CL_ERESOURCE;
     return fb->incomplete_status != CL_SUCCESS ? fb->incomplete_status : CL_ERESOURCE;
 }
 
@@ -167,13 +169,15 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
     fb = fileblobCreate();
     if (fb == NULL) {
         cli_mark_scan_incomplete(m->ctx, "UUencoded attachment output blob could not be allocated");
+        if (failure_status)
+            *failure_status = CL_EMEM;
         free(filename);
         return -1;
     }
 
     fileblobSetCTX(fb, m->ctx);
     fileblobSetFilename(fb, dir, filename);
-    if (fb->isIncomplete) {
+    if (fb->isIncomplete || fb->fp == NULL || fb->fullname == NULL) {
         if (failure_status)
             *failure_status = uuencode_fileblob_status(fb);
         cli_mark_scan_incomplete(m->ctx, "UUencoded attachment output blob could not be initialized");

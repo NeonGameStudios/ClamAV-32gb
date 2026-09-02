@@ -1297,10 +1297,12 @@ The historical `uudecodeFile()` negative-result interface now carries an
 internal `cl_error_t` failure-status out parameter. Standalone UUEncode and
 both MIME parser call paths preserve required fileblob statuses such as
 `CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, and `CL_EREAD` instead of
-flattening output/materialization failures to `CL_EPARSE`. The existing
-private read sentinel remains intact. The direct invalid-directory regression
-now requires `CL_ECREAT`, and the MIME-embedded regression exercises the
-same status through `cli_mbox()`. Current-source production-GCC compilation,
+flattening output/materialization failures to `CL_EPARSE`. The private
+negative read sentinel remains intact, while output-blob allocation now
+exports `CL_EMEM` and a blob lacking a usable descriptor or pathname is
+reported as `CL_ERESOURCE`. The direct invalid-directory regression now
+requires `CL_ECREAT`, and the MIME-embedded regression exercises the same
+status through `cli_mbox()`. Current-source production-GCC compilation,
 production-linked UUEncode/MIME execution, complete UUEncode/mail corpus,
 sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
@@ -1413,10 +1415,12 @@ TNEF attachment handling now preserves the specific status retained by a
 required fileblob operation instead of converting output creation to
 `CL_ETMPFILE` or materialization failures to generic `CL_ERESOURCE`. The
 `cli_tnef()` path now returns statuses such as `CL_ECREAT`, `CL_EOPEN`,
-`CL_EWRITE`, and `CL_ETIMEOUT` from the attachment owner, while preserving
-sticky incomplete/cache-taint behavior. `test_tnef_attachment_output_creation_status_is_fail_visible`
-drives a real attachment through an invalid output directory and requires
-`CL_ECREAT`. Current-source production-GCC compilation, production-linked
+`CL_EWRITE`, and `CL_ETIMEOUT` from the attachment owner, while also rejecting
+an output blob that lacks a usable descriptor or pathname as
+`CL_ERESOURCE`. Sticky incomplete/cache-taint behavior remains preserved.
+`test_tnef_attachment_output_creation_status_is_fail_visible` drives a real
+attachment through an invalid output directory and requires `CL_ECREAT`.
+Current-source production-GCC compilation, production-linked
 TNEF/MIME execution, complete TNEF corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
 and final parser/release qualification remain required.
