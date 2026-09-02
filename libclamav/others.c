@@ -2599,7 +2599,9 @@ static cl_error_t json_add_child_array(json_object *parent, json_object *child, 
 
         if (json_object_object_add(parent, array_name, parent_layer_indicators)) {
             cli_errmsg("cli_recursion_stack_pop: failed to add json Indicators array to parent object\n");
-            status = CL_ERROR;
+            json_object_put(parent_layer_indicators);
+            parent_layer_indicators = NULL;
+            status = CL_EMEM;
             goto done;
         }
     }
@@ -2638,14 +2640,27 @@ static cl_error_t json_add_child_array(json_object *parent, json_object *child, 
                 json_object *new_depth = json_object_new_int(json_object_get_int(val) + 1);
                 if (NULL == new_depth) {
                     cli_errmsg("cli_recursion_stack_pop: no memory for json new_depth\n");
+                    json_object_put(indicator_copy);
                     status = CL_EMEM;
                     goto done;
                 }
-                json_object_object_add(indicator_copy, key, new_depth);
+                if (json_object_object_add(indicator_copy, key, new_depth) != 0) {
+                    cli_errmsg("cli_recursion_stack_pop: failed to add json new_depth to indicator copy\n");
+                    json_object_put(new_depth);
+                    json_object_put(indicator_copy);
+                    status = CL_EMEM;
+                    goto done;
+                }
             } else {
                 /* All other fields are shallow copied. Just need to increment the reference count */
                 json_object_get(val);
-                json_object_object_add(indicator_copy, key, val);
+                if (json_object_object_add(indicator_copy, key, val) != 0) {
+                    cli_errmsg("cli_recursion_stack_pop: failed to copy indicator property %s\n", key);
+                    json_object_put(val);
+                    json_object_put(indicator_copy);
+                    status = CL_EMEM;
+                    goto done;
+                }
             }
         }
 

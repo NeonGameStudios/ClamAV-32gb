@@ -19835,3 +19835,21 @@ and cache taint on both fmaps. Current-source production-GCC compilation,
 production-linked execution, complete signature/evidence corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final matcher/release qualification remain required.
+
+## Nested indicator metadata property-copy failures — 2026-09-01
+
+The nested metadata copier also creates a fresh `Depth` value and shallow-copies
+the remaining indicator properties. Those object-property insertions, and the
+initial parent-array attachment, previously ignored `json-c` rejection. The
+helper now returns `CL_EMEM`, releases rejected arrays, generated depth values,
+retained property references, and partial copies, and leaves the pop boundary
+to mark the child and containing layers incomplete and non-cacheable.
+
+`test_nested_indicator_metadata_object_add_failure_is_fail_visible` injects
+parent-array, shallow-property, and regenerated-depth failures through the
+production-linked wrappers and requires the exact nested diagnostic, no
+partial destination array, and both fmap cache-taint flags. Current-source
+production-GCC compilation, production-linked execution, complete
+signature/evidence corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+matcher/release qualification remain required.

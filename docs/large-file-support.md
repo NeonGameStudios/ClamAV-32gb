@@ -8694,6 +8694,22 @@ corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and release qualification remain
 required.
 
+## Nested indicator metadata property-copy failures — 2026-09-01
+
+The nested metadata copier now checks the initial parent-array attachment and
+each copied indicator property, including the regenerated `Depth` value. A
+rejected write releases its unowned value and partial copy and returns
+`CL_EMEM`; the pop boundary marks both child and containing layers incomplete
+and non-cacheable.
+
+`test_nested_indicator_metadata_object_add_failure_is_fail_visible` injects
+parent-array, shallow-property, and regenerated-depth failures through the
+production-linked wrappers and requires the exact nested diagnostic, no
+partial destination array, and cache taint on both layers. Current-source
+production-linked execution, complete signature/evidence corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and release qualification remain required.
+
 ## Indicator metadata array append failures — 2026-09-01
 
 The indicator-append path now checks both direct metadata array insertions and
