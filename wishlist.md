@@ -1,5 +1,16 @@
 # Wishlist
 
+## DMG ADC and bzip2 decoder finalization status — 2026-09-02
+
+- Keep initialized DMG ADC and bzip2 stripe teardown fail-visible and merge
+  `CL_EUNPACK` without replacing an earlier parser, read, limit, timeout,
+  detection, or cleanup result.
+- Retain the ADC and bzip2 finalization-fault regressions, their one-shot
+  wrapper faults, and source guards. Current-source production-GCC
+  execution, complete DMG/UDIF corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## DMG deflate decoder finalization status — 2026-09-02
 
 - Keep DMG deflate stripe finalization fail-visible and merge

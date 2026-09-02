@@ -1338,7 +1338,10 @@ static int dmg_stripe_adc(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_
         }
     }
 
-    adc_decompressEnd(&strm);
+    if (adc_decompressEnd(&strm) != ADC_OK) {
+        cli_mark_scan_incomplete(ctx, "DMG ADC decompressor could not be finalized");
+        ret = cli_merge_cleanup_status(ret, CL_EUNPACK);
+    }
     cli_dbgmsg("dmg_stripe_adc: stripe " STDu32 " actual len " STDu64 " expected len " STDu64 "\n",
                index, size_so_far, expected_len);
     return ret;
@@ -1553,7 +1556,10 @@ static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish
         }
     }
 
-    BZ2_bzDecompressEnd(&strm);
+    if (BZ2_bzDecompressEnd(&strm) != BZ_OK) {
+        cli_mark_scan_incomplete(ctx, "DMG bzip2 decompressor could not be finalized");
+        ret = cli_merge_cleanup_status(ret, CL_EUNPACK);
+    }
     return ret;
 }
 

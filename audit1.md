@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## DMG ADC and bzip2 decoder finalization status — 2026-09-02
+
+DMG ADC and bzip2 stripes now check their initialized decoder teardown
+results and merge `CL_EUNPACK` when finalization fails, preserving any earlier
+parser, read, limit, timeout, detection, or output-cleanup result. Focused
+synthetic 512-byte stripe regressions inject one-shot ADC and bzip2 teardown
+failures and require the exact incomplete diagnostic plus fmap
+non-cacheability. Current-source production-GCC compilation and linked
+execution, complete DMG/UDIF corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## DMG deflate decoder finalization status — 2026-09-02
 
 DMG deflate stripes now check `inflateEnd()` and merge `CL_EUNPACK` when the
