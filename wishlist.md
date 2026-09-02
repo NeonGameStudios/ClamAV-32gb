@@ -13157,6 +13157,19 @@ qualification remain open.
   materialized-large-file, Sonic1, resource, and parser/release qualification
   before closure.
 
+## OLE10 fixed-header read-status reconciliation — 2026-09-02
+
+- Keep OLE10 object-size and payload-header reads fail-visible: short reads
+  are `CL_EPARSE`, in-range descriptor failures are `CL_EREAD`, and both
+  outcomes remain sticky incomplete and non-cacheable before size admission or
+  nested scanning.
+- Retain `read_uint32_full()`, the Linux-static `cli_readn` regression, its
+  source guards, and the `ole10-fixed-header-read-status` manifest evidence.
+  Add current-source production-linked execution, complete OLE10/VBA corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and parser/release qualification
+  before closure.
+
 ## VBA callback materialized-read classification — 2026-09-02
 
 - Keep the legacy `cl_engine_set_clcb_vba` compatibility callback explicitly

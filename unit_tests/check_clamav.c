@@ -12508,6 +12508,56 @@ START_TEST(test_ole10_nul_name_read_status_is_fail_visible)
     }
 }
 END_TEST
+
+START_TEST(test_ole10_header_read_status_is_fail_visible)
+{
+    static const int forced_statuses[]         = {1, 2};
+    static const cl_error_t expected_status[] = {CL_EPARSE, CL_EREAD};
+    uint32_t object_size = 0;
+    char file_path[PATH_MAX];
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    size_t i;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/ole10-header-read-status", tmpdir);
+    for (i = 0; i < sizeof(forced_statuses) / sizeof(forced_statuses[0]); i++) {
+        fd = open(file_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
+        ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+        ck_assert_int_eq(write(fd, &object_size, sizeof(object_size)), (ssize_t)sizeof(object_size));
+        ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+
+        map = fmap_new(fd, 0, 0, file_path, NULL);
+        ck_assert_ptr_nonnull(map);
+        memset(&options, 0, sizeof(options));
+        memset(&engine, 0, sizeof(engine));
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine = &engine;
+        ctx.options = &options;
+        ctx.fmap   = map;
+
+        clamav_test_force_cli_readn_count  = sizeof(object_size);
+        clamav_test_force_cli_readn_status = forced_statuses[i];
+        ret                                = cli_scan_ole10(fd, &ctx);
+        clamav_test_force_cli_readn_status = 0;
+        clamav_test_force_cli_readn_count  = 0;
+
+        ck_assert_int_eq(ret, expected_status[i]);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         i == 0 ? "OLE10 embedded object header was truncated"
+                                 : "OLE10 embedded object header could not be read completely");
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+        ck_assert_int_eq(close(fd), 0);
+        ck_assert_int_eq(unlink(file_path), 0);
+    }
+}
+END_TEST
 #endif
 
 START_TEST(test_ole10_null_context_is_fail_visible)
@@ -60747,6 +60797,7 @@ static Suite *test_cl_suite(void)
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_ole10_entry, test_ole10_materialized_read_status_is_fail_visible);
     tcase_add_test(tc_ole10_entry, test_ole10_nul_name_read_status_is_fail_visible);
+    tcase_add_test(tc_ole10_entry, test_ole10_header_read_status_is_fail_visible);
 #endif
     suite_add_tcase(s, tc_ppt_entry);
     tcase_add_checked_fixture(tc_ppt_entry, cl_setup, cl_teardown);

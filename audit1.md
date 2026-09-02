@@ -150,6 +150,25 @@ PDF/Flate corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## OLE10 fixed-header read-status reconciliation — 2026-09-02
+
+After the attachment-name boundary was corrected, the OLE10 fixed object-size
+and payload-header reads still used the boolean legacy `read_uint32()` helper.
+An in-range descriptor failure at either header could consequently be
+reported as `CL_EPARSE`, indistinguishable from a short materialized header.
+
+`read_uint32_full()` now reuses `vba_readn_full()` for both OLE10 headers.
+`cli_scan_ole10()` preserves `CL_EPARSE` for short reads and `CL_EREAD` for
+descriptor failures, records the matching sticky incomplete diagnostic, and
+returns before size admission or nested scanning. The new
+`test_ole10_header_read_status_is_fail_visible` regression injects both
+outcomes at the fixed header and asserts status, cache taint, and cleanup.
+The current source, test, registration, and capability manifest are
+source-guarded. Current-source production-GCC and linked execution, complete
+OLE10/VBA corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## OLE10 attachment-name read-status reconciliation — 2026-09-02
 
 The OLE10 metadata parser used `skip_past_nul()` for attachment names and

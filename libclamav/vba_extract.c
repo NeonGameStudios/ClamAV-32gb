@@ -88,6 +88,7 @@ typedef struct {
 static cl_error_t skip_past_nul(int fd);
 static int read_uint16(int fd, uint16_t *u, int big_endian);
 static int read_uint32(int fd, uint32_t *u, int big_endian);
+static cl_error_t read_uint32_full(int fd, uint32_t *u, int big_endian);
 static int seekandread(int fd, off_t offset, int whence, void *data, size_t len);
 static vba_project_t *create_vba_project(int record_count, const char *dir, struct uniq *U);
 
@@ -2471,9 +2472,13 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object could not be rewound");
         return CL_ESEEK;
     }
-    if (!read_uint32(fd, &object_size, FALSE)) {
-        cli_mark_scan_incomplete(ctx, "OLE10 embedded object header was truncated");
-        return CL_EPARSE;
+    ret = read_uint32_full(fd, &object_size, FALSE);
+    if (ret != CL_SUCCESS) {
+        if (ret == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object header could not be read completely");
+        else
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object header was truncated");
+        return ret;
     }
 
     if (FSTAT(fd, &statbuf) == -1) {
@@ -2535,9 +2540,13 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
             return ret;
         }
 
-        if (!read_uint32(fd, &object_size, FALSE)) {
-            cli_mark_scan_incomplete(ctx, "OLE10 embedded object payload header was truncated");
-            return CL_EPARSE;
+        ret = read_uint32_full(fd, &object_size, FALSE);
+        if (ret != CL_SUCCESS) {
+            if (ret == CL_EREAD)
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object payload header could not be read completely");
+            else
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object payload header was truncated");
+            return ret;
         }
         payload_offset = lseek(fd, 0, SEEK_CUR);
         if (payload_offset < 0 || (uint64_t)payload_offset > (uint64_t)statbuf.st_size ||
@@ -3591,6 +3600,18 @@ read_uint32(int fd, uint32_t *u, int big_endian)
     *u = vba_endian_convert_32(*u, big_endian);
 
     return TRUE;
+}
+
+static cl_error_t
+read_uint32_full(int fd, uint32_t *u, int big_endian)
+{
+    cl_error_t status = vba_readn_full(fd, u, sizeof(*u));
+
+    if (status != CL_SUCCESS)
+        return status;
+
+    *u = vba_endian_convert_32(*u, big_endian);
+    return CL_SUCCESS;
 }
 
 /*
