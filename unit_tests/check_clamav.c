@@ -49461,17 +49461,20 @@ END_TEST
 START_TEST(test_udf_truncated_descriptor_area_is_fail_visible)
 {
     static const uint8_t data[] = {0};
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.options = &options;
+    ctx.engine  = &engine;
+    ctx.fmap    = map;
 
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
     ck_assert_int_eq(ret, CL_EPARSE);
@@ -49574,6 +49577,7 @@ START_TEST(test_udf_descriptor_read_failure_is_fail_visible)
     enum { UDF_TEST_SIZE = UDF_EMPTY_LEN + (3 * VOLUME_DESCRIPTOR_SIZE) };
     static const uint8_t data[UDF_TEST_SIZE] = {0};
     struct udf_descriptor_read_failure_state state;
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
@@ -49585,10 +49589,12 @@ START_TEST(test_udf_descriptor_read_failure_is_fail_visible)
     map                = cl_fmap_open_handle(&state, 0, state.length, udf_descriptor_read_failure_cb, 0);
     ck_assert_ptr_nonnull(map);
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.options = &options;
+    ctx.engine  = &engine;
+    ctx.fmap    = map;
 
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
     ck_assert_int_eq(ret, CL_EREAD);
@@ -49621,6 +49627,7 @@ START_TEST(test_udf_unknown_generic_descriptor_is_fail_visible)
         UDF_TEST_SIZE = UDF_EMPTY_LEN + (3 * VOLUME_DESCRIPTOR_SIZE)
     };
     uint8_t *data;
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
@@ -49630,12 +49637,14 @@ START_TEST(test_udf_unknown_generic_descriptor_is_fail_visible)
     ck_assert_ptr_nonnull(data);
     memcpy(data + UDF_EMPTY_LEN + offsetof(GenericVolumeStructureDescriptor, standardIdentifier), "BAD00", 5);
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.options = &options;
+    ctx.engine  = &engine;
+    ctx.fmap    = map;
 
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
     ck_assert_int_eq(ret, CL_EPARSE);
@@ -49665,6 +49674,7 @@ START_TEST(test_udf_mismatched_file_lists_are_fail_visible)
         UDF_TEST_FILE_IDENTIFIER = 257
     };
     uint8_t *data;
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
@@ -49704,12 +49714,14 @@ START_TEST(test_udf_mismatched_file_lists_are_fail_visible)
     data[base + (14 * VOLUME_DESCRIPTOR_SIZE) + 1]  = 0x03;
     test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.options = &options;
+    ctx.engine  = &engine;
+    ctx.fmap    = map;
 
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
     ck_assert_int_eq(ret, CL_EPARSE);
@@ -49738,6 +49750,7 @@ START_TEST(test_udf_missing_file_set_descriptor_is_fail_visible)
         UDF_TEST_FILE_IDENTIFIER     = 257
     };
     uint8_t *data;
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
@@ -49772,12 +49785,14 @@ START_TEST(test_udf_missing_file_set_descriptor_is_fail_visible)
     data[base + (12 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_FILE_IDENTIFIER >> 8;
     test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.options = &options;
+    ctx.engine  = &engine;
+    ctx.fmap    = map;
 
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
     ck_assert_int_eq(ret, CL_EPARSE);
@@ -49993,6 +50008,7 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
         UDF_TEST_ALLOCATED_LENGTH    = 1024
     };
     uint8_t *data;
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
@@ -50051,12 +50067,14 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
     data[base + (15 * VOLUME_DESCRIPTOR_SIZE) + 1] = 0x03;
     test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.options = &options;
+    ctx.engine  = &engine;
+    ctx.fmap    = map;
 
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
     ck_assert_int_eq(ret, CL_EPARSE);
@@ -50071,8 +50089,9 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
     test_udf_finalize_descriptor_tags(data, base, UDF_TEST_VOLUME_BLOCKS);
     memset(&ctx, 0, sizeof(ctx));
     map->dont_cache_flag = false;
-    ctx.engine           = &engine;
-    ctx.fmap             = map;
+    ctx.options           = &options;
+    ctx.engine            = &engine;
+    ctx.fmap              = map;
 
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
     ck_assert_int_eq(ret, CL_EPARSE);
@@ -50093,8 +50112,9 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
 
     memset(&ctx, 0, sizeof(ctx));
     map->dont_cache_flag = false;
-    ctx.engine           = &engine;
-    ctx.fmap             = map;
+    ctx.options           = &options;
+    ctx.engine            = &engine;
+    ctx.fmap              = map;
 
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
     ck_assert_int_eq(ret, CL_EUNPACK);
@@ -55818,6 +55838,28 @@ START_TEST(test_udf_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_udf_missing_options_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scanudf(&ctx, 32768), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_tar_null_output_directory_is_fail_visible)
 {
     static const uint8_t data[512] = {0};
@@ -56937,6 +56979,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_udf_map, test_udf_null_context_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_missing_map_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_missing_engine_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_missing_options_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_descriptor_size_arithmetic_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_truncated_descriptor_area_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_time_limit_is_fail_visible);

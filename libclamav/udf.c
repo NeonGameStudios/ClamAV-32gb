@@ -2127,6 +2127,8 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
     }
     if (ctx->engine == NULL)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     if (offset < 32768) {
         cli_mark_scan_incomplete(ctx, "UDF inspection started before the mandatory descriptor area");

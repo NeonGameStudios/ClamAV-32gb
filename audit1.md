@@ -52,6 +52,24 @@ execution, complete ISO/Joliet corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## UDF direct options admission — 2026-09-02
+
+The exported `cli_scanudf()` entry rejected null context, input fmap, and
+engine state but did not reject missing scan options before time-limit checks
+and descriptor traversal. Several direct UDF parser regressions consequently
+relied on an incomplete context while reaching format-specific code. The
+entry now returns `CL_ENULLARG` immediately after engine admission when
+`ctx->options` is absent, and parser-specific tests now provide valid options
+so their format assertions remain meaningful.
+
+`test_udf_missing_options_is_fail_visible` supplies a map and engine while
+omitting options, and verifies `CL_ENULLARG` without sticky incomplete or
+cache-taint state. Source guards and the capability manifest record the
+boundary. Current-source production-GCC compilation, production-linked
+execution, complete UDF corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## HFS+ direct options admission — 2026-09-02
 
 The exported `cli_scanhfsplus()` entry rejected null context, input fmap, and
