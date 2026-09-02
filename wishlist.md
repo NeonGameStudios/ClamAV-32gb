@@ -1,5 +1,17 @@
 # Wishlist
 
+## TNEF debug-message read status — 2026-09-02
+
+- Keep the optional CL_DEBUG TNEF message-metadata path distinguishing an
+  in-range fmap callback failure from a short or malformed payload. Preserve
+  `CL_EREAD` and the read-specific incomplete reason for attTNEFVERSION,
+  attOEMCODEPAGE, and attMSGCLASS reads, while retaining explicit allocation
+  and format failures.
+- Retain `test_tnef_message_attribute_read_failure_preserves_status` and its
+  source guards. Add current-source linked debug execution, sanitizer, complete
+  TNEF corpus, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification before closure.
+
 ## XAR TOC member closure — 2026-09-02
 
 - Keep XAR `<data>` and `<ea>` entries fail-visible until the enclosing element

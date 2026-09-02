@@ -37901,6 +37901,16 @@ static const void *tnef_nonzero_checksum_read_failure(fmap_t *map, size_t at, si
     return (const uint8_t *)map->data + at;
 }
 
+static const void *tnef_message_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 15U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static const void *tnef_debug_dump_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -39554,6 +39564,43 @@ START_TEST(test_tnef_message_attribute_range_is_fail_visible)
     cl_fmap_close(map);
 }
 END_TEST
+
+#ifdef CL_DEBUG
+START_TEST(test_tnef_message_attribute_read_failure_preserves_status)
+{
+    static const uint8_t input[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x01,                   /* message level */
+        0x06, 0x90, 0x00, 0x00, /* attTNEFVERSION */
+        0x04, 0x00, 0x00, 0x00, /* four-byte payload */
+        0xde, 0xad, 0xbe, 0xef,
+        0x00, 0x00              /* checksum, payload read is fault-injected */
+    };
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    map->need = tnef_message_read_failure;
+    ctx.fmap  = map;
+
+    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "TNEF message attribute could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
 
 START_TEST(test_tnef_negative_attribute_length_is_fail_visible)
 {
@@ -60579,6 +60626,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tnef, test_tnef_nonzero_attribute_requires_checksum);
     tcase_add_test(tc_tnef, test_tnef_nonzero_checksum_read_failure_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_message_attribute_range_is_fail_visible);
+#ifdef CL_DEBUG
+    tcase_add_test(tc_tnef, test_tnef_message_attribute_read_failure_preserves_status);
+#endif
     tcase_add_test(tc_tnef, test_tnef_negative_attribute_length_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_time_limit_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_initial_read_failure_is_fail_visible);

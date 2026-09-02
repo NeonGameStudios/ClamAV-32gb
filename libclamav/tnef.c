@@ -40,7 +40,7 @@
 #include "mbox.h"
 #include "tnef.h"
 
-static int tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, off_t fsize);
+static cl_error_t tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, off_t fsize);
 static cl_error_t tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, cli_ctx *ctx, fileblob **fbref, off_t fsize);
 static int tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length);
 static size_t tnef_readn(fmap_t *map, void *dst, off_t at, size_t len);
@@ -211,10 +211,12 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                     alldone = 1;
                     break;
                 }
-                if (tnef_message(ctx->fmap, &pos, type, tag, length, fsize) != 0) {
+                ret = tnef_message(ctx->fmap, &pos, type, tag, length, fsize);
+                if (ret != CL_SUCCESS) {
                     cli_dbgmsg("TNEF: Error reading TNEF message\n");
-                    cli_mark_scan_incomplete(ctx, "TNEF message attribute could not be inspected completely");
-                    ret     = CL_EFORMAT;
+                    cli_mark_scan_incomplete(ctx, ret == CL_EREAD
+                                                       ? "TNEF message attribute could not be read completely"
+                                                       : "TNEF message attribute could not be inspected completely");
                     alldone = 1;
                 } else {
                     ret = tnef_read_checksum(ctx->fmap, &pos, fsize, ctx);
@@ -330,13 +332,14 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
     return ret;
 }
 
-static int
+static cl_error_t
 tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, off_t fsize)
 {
     off_t offset;
 #ifdef CL_DEBUG
     uint32_t i32;
     char *string;
+    size_t got;
     size_t string_len;
 #else
     UNUSEDPARAM(map);
@@ -356,18 +359,22 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
             break;
 #ifdef CL_DEBUG
         case attTNEFVERSION:
-            if (length < (int32_t)sizeof(uint32_t) ||
-                tnef_readn(map, &i32, *pos, sizeof(uint32_t)) != sizeof(uint32_t))
-                return -1;
+            if (length < (int32_t)sizeof(uint32_t))
+                return CL_EFORMAT;
+            got = tnef_readn(map, &i32, *pos, sizeof(uint32_t));
+            if (got != sizeof(uint32_t))
+                return got == (size_t)-1 ? CL_EREAD : CL_EFORMAT;
             (*pos) += sizeof(uint32_t);
             i32 = host32(i32);
             cli_dbgmsg("TNEF version %d\n", i32);
             break;
         case attOEMCODEPAGE:
             /* 8 bytes, but just print the first 4 */
-            if (length < (int32_t)sizeof(uint32_t) ||
-                tnef_readn(map, &i32, *pos, sizeof(uint32_t)) != sizeof(uint32_t))
-                return -1;
+            if (length < (int32_t)sizeof(uint32_t))
+                return CL_EFORMAT;
+            got = tnef_readn(map, &i32, *pos, sizeof(uint32_t));
+            if (got != sizeof(uint32_t))
+                return got == (size_t)-1 ? CL_EREAD : CL_EFORMAT;
             (*pos) += sizeof(uint32_t);
             i32 = host32(i32);
             cli_dbgmsg("TNEF codepage %d\n", i32);
@@ -384,11 +391,12 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
             string = cli_max_malloc(string_len + 1);
             if (string == NULL) {
                 cli_errmsg("tnef_message: Unable to allocate memory for string\n");
-                return -1;
+                return CL_EMEM;
             }
-            if (tnef_readn(map, string, *pos, string_len) != string_len) {
+            got = tnef_readn(map, string, *pos, string_len);
+            if (got != string_len) {
                 free(string);
-                return -1;
+                return got == (size_t)-1 ? CL_EREAD : CL_EFORMAT;
             }
             (*pos) += (off_t)string_len;
             string[string_len] = '\0';
@@ -405,11 +413,11 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
 
     if (!CLI_ISCONTAINED_2_0_TO(fsize, offset, length)) {
         cli_dbgmsg("TNEF: Incorrect length field in tnef_message\n");
-        return -1;
+        return CL_EFORMAT;
     }
     (*pos) = offset + length;
 
-    return 0;
+    return CL_SUCCESS;
 }
 
 static cl_error_t

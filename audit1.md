@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## TNEF debug-message read status — 2026-09-02
+
+The optional CL_DEBUG TNEF message-metadata path previously collapsed an
+in-range fmap callback failure while reading attTNEFVERSION,
+attOEMCODEPAGE, or attMSGCLASS into the generic `CL_EFORMAT` message-parse
+result. The message helper now returns `cl_error_t`, distinguishes
+`CL_EREAD` from short/malformed payloads and allocation failure, and the
+caller preserves that status while recording a read-specific incomplete
+reason. The conditional `test_tnef_message_attribute_read_failure_preserves_status`
+regression injects a failure in a fully in-range fixed-width metadata read
+and requires `CL_EREAD` plus non-cacheability. Current-source linked execution,
+sanitizer, complete TNEF corpus, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## XAR TOC member closure — 2026-09-02
 
 The XAR TOC value walker previously returned success as soon as offset, length,
