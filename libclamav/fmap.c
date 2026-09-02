@@ -1651,11 +1651,20 @@ cl_error_t fmap_get_hash_ctx(fmap_t *map, unsigned char **hash, cli_hash_type_t 
 
     for (hash_type = CLI_HASH_MD5; hash_type < CLI_HASH_AVAIL_TYPES; hash_type++) {
         if (map->will_need_hash[hash_type] && !map->have_hash[hash_type]) {
-            cl_finish_hash(hashctx[hash_type], map->hash[hash_type]);
+            if (cl_finish_hash(hashctx[hash_type], map->hash[hash_type]) != 0) {
+                /* cl_finish_hash() consumes the context even when the digest
+                 * finalization fails. Do not let cleanup reuse it or publish
+                 * the untrusted output as a cached hash. */
+                hashctx[hash_type] = NULL;
+                cli_mark_scan_incomplete(ctx, "fmap hash digest could not be finalized completely");
+                status = CL_EREAD;
+                goto done;
+            }
+
+            hashctx[hash_type] = NULL;
             map->have_hash[hash_type] = true;
 
             /* hashctx is finished, don't need to destroy it later */
-            hashctx[hash_type] = NULL;
 
             if (cli_debug_flag) {
                 // Convert the hash to a hex string for logging

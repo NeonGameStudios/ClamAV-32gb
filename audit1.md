@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## FMap hash finalization status — 2026-09-02
+
+`fmap_get_hash_ctx()` checked input reads and hash updates, but ignored the
+return value from `cl_finish_hash()`. It then marked the digest available and
+returned it to matcher and cache callers even when digest finalization failed.
+The context-aware path now preserves the finalization failure as `CL_EREAD`,
+marks the scan incomplete and non-cacheable, and leaves the fmap hash unset;
+the consumed hash context is cleared before cleanup to avoid reuse.
+
+`test_fmap_hash_finalization_failure_is_fail_visible` uses the existing Linux
+linker-injected `cl_finish_hash()` failure hook and verifies the status,
+diagnostic, cleared hash output, and cache taint. Source guards and a
+capability-manifest row record the boundary. Current-source production-GCC
+compilation, production-linked execution, complete matcher/hash corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## ALZ directory payload admission — 2026-09-02
 
 The bounded ALZ parser treated directory entries as structural metadata and

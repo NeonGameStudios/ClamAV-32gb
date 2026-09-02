@@ -1,5 +1,17 @@
 # Wishlist
 
+## FMap hash finalization status — 2026-09-02
+
+- Keep context-aware `fmap_get_hash_ctx()` checking `cl_finish_hash()` before
+  publishing a digest or setting `map->have_hash`; preserve `CL_EREAD`, the
+  sticky incomplete diagnostic, and fmap non-cacheability on finalization
+  failure, and clear the consumed context before cleanup.
+- Retain `test_fmap_hash_finalization_failure_is_fail_visible`, its source
+  guards, and manifest evidence. Current-source production-GCC execution,
+  complete matcher/hash corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## ALZ directory payload admission — 2026-09-02
 
 - Keep ALZ directory entries metadata-only: require both declared compressed

@@ -7352,6 +7352,36 @@ START_TEST(test_fmap_hash_read_failure_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_fmap_hash_finalization_failure_is_fail_visible)
+{
+    static const uint8_t data[] = "fmap hash finalization regression";
+    fmap_t *map;
+    cli_ctx ctx;
+    uint8_t *hash = NULL;
+    cl_error_t status;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = fmap_open_memory(data, sizeof(data) - 1U, NULL);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    clamav_test_fail_finish_hash = 1;
+    status = fmap_get_hash_ctx(map, &hash, CLI_HASH_SHA2_256, &ctx);
+    clamav_test_fail_finish_hash = 0;
+
+    ck_assert_int_eq(status, CL_EREAD);
+    ck_assert_ptr_null(hash);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "fmap hash digest could not be finalized completely");
+    ck_assert(map->dont_cache_flag);
+    ck_assert(!map->have_hash[CLI_HASH_SHA2_256]);
+
+    fmap_free(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_pe_overlay_range_preserves_native_size)
 {
     struct cli_exe_section sections[2];
@@ -59318,6 +59348,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_authenticode_parse_read_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_authenticode_post_container_parse_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_fmap_hash_read_failure_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl_scan, test_fmap_hash_finalization_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl_scan, test_pe_overlay_range_preserves_native_size);
 
     suite_add_tcase(s, tc_fmap_api);
