@@ -57,6 +57,12 @@ static bool apm_scale_blocks(uint64_t blocks, size_t sectorsize, size_t *bytes)
     return true;
 }
 
+static bool apm_partition_extent_is_valid(const struct apm_partition_info *entry)
+{
+    /* A typed zero-length entry must not become a zero-length nested scan. */
+    return (NULL != entry) && (0 != entry->pBlockCount);
+}
+
 static cl_error_t apm_read(cli_ctx *ctx, void *dst, size_t at, size_t len, const char *reason)
 {
     if (at > ctx->fmap->len || len > ctx->fmap->len - at)
@@ -282,6 +288,13 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
             continue;
         }
 
+        if (!apm_partition_extent_is_valid(&apentry)) {
+            cli_dbgmsg("cli_scanapm: Non-empty partition has zero length\n");
+            cli_mark_scan_incomplete(ctx, "APM partition entry has zero length");
+            status = CL_EFORMAT;
+            goto done;
+        }
+
         if (!apm_scale_blocks(apentry.pBlockStart, sectorsize, &partoff) ||
             !apm_scale_blocks(apentry.pBlockCount, sectorsize, &partsize)) {
             cli_mark_scan_incomplete(ctx, "APM partition coordinate overflowed");
@@ -401,6 +414,12 @@ static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_
         /* convert necessary info big endian to host */
         apentry.pBlockStart = be32_to_host(apentry.pBlockStart);
         apentry.pBlockCount = be32_to_host(apentry.pBlockCount);
+        if (!apm_partition_extent_is_valid(&apentry)) {
+            cli_dbgmsg("cli_scanapm: Partition intersection entry has zero length\n");
+            cli_mark_scan_incomplete(ctx, "APM partition intersection entry has zero length");
+            status = CL_EFORMAT;
+            goto done;
+        }
         /* re-calculate if old_school and aligned [512 * 4 => 2048] */
         if (old_school && ((i % 4) == 0)) {
             if (!strncmp((char *)apentry.type, "Apple_Driver", 32) ||

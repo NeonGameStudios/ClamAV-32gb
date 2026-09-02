@@ -1,5 +1,17 @@
 # Wishlist
 
+## APM zero-length partition admission — 2026-09-02
+
+- Keep confirmed APM walks rejecting typed zero-block entries before nested
+  dispatch, and keep the partition-intersection preflight fail-visible for
+  the same malformed extent. Preserve the exact sticky incomplete reason and
+  non-cacheable map state.
+- Retain `test_apm_zero_length_partition_is_fail_visible`, its source guards,
+  and manifest evidence. Current-source production-GCC execution, complete
+  APM/partition corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final parser/
+  release qualification remain open.
+
 ## 7-Zip PPMd input accounting — 2026-09-02
 
 - Keep both PPMd decode modes checking the buffered-input window against the

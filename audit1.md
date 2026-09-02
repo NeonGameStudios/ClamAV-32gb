@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## APM zero-length partition admission — 2026-09-02
+
+The Apple Partition Map walker accepted a typed entry whose block count was
+zero whenever its start coordinate was otherwise in range, allowing a
+confirmed partition layer to reach zero-length nested dispatch. APM now
+rejects zero-block entries before child dispatch and during the optional
+partition-intersection preflight, records the exact incomplete reason, and
+taints the input map as non-cacheable.
+
+`test_apm_zero_length_partition_is_fail_visible` covers a readable,
+in-range empty child entry and verifies `CL_EFORMAT`, sticky incomplete state,
+and cache taint. Source guards and the capability manifest record the
+boundary. Current-source production-GCC compilation and linked execution,
+complete APM/partition corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## 7-Zip PPMd input accounting — 2026-09-02
 
 The vendored 7-Zip PPMd adapter buffered input through a `processed` counter
