@@ -3535,6 +3535,20 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and parser-family qualification
 remain required.
 
+## clamd final completion response failure — 2026-09-02
+
+The legacy clamd path/directory command previously set `ret` to
+`CL_ETIMEOUT` when its final clean `OK` response could not be written, but
+then returned only the callback error count. A scan with no per-file errors
+could therefore terminate its group after a transport failure while the
+worker still reported a clean result. The command now preserves the existing
+virus/error accounting, terminates the group, and returns one worker error
+when a timeout would otherwise return zero. Focused daemon fault injection,
+current-source production-linked execution, structured/legacy service parity,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final release qualification
+remain required.
+
 ## Regex matcher table admission — 2026-08-29
 
 The phishing/allow-list matcher grew suffix-bucket and compiled-regex pointer

@@ -132,10 +132,10 @@ fixed-width-integer	clamd/session.c	216	    uint32_t length;
 fixed-width-integer	clamd/session.c	217	    uint32_t network_length;
 fixed-width-integer	clamd/session.c	218	    uint32_t terminator = 0;
 fixed-width-integer	clamd/session.c	301	    length         = (uint32_t)json_length;
-fixed-width-integer	clamd/session.c	702	    uint32_t ver;
-fixed-width-integer	clamd/session.c	856	            uint64_t stream_limit;
-fixed-width-integer	clamd/session.c	857	            uint64_t temporary_limit;
-fixed-width-integer	clamd/session.c	872	            temporary_limit    = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
+fixed-width-integer	clamd/session.c	707	    uint32_t ver;
+fixed-width-integer	clamd/session.c	861	            uint64_t stream_limit;
+fixed-width-integer	clamd/session.c	862	            uint64_t temporary_limit;
+fixed-width-integer	clamd/session.c	877	            temporary_limit    = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
 fixed-width-integer	clamd/session.h	149	    uint64_t quota;
 fixed-width-integer	clamd/session.h	150	    uint64_t stream_bytes;
 fixed-width-integer	clamdscan/clamdscan.c	112	        int16_t ping_result = ping_clamd(opts);
@@ -7868,22 +7868,22 @@ native-width-integer	clamd/session.c	328	    int maxdirrec;
 native-width-integer	clamd/session.c	329	    int ret   = 0;
 native-width-integer	clamd/session.c	330	    int flags = CLI_FTW_STD;
 native-width-integer	clamd/session.c	370	            int multiscan, max, alive;
-native-width-integer	clamd/session.c	615	static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
-native-width-integer	clamd/session.c	617	    int ret = 0;
-native-width-integer	clamd/session.c	618	    int reserved = 0;
-native-width-integer	clamd/session.c	619	    int dispatch_attempted = 0;
-native-width-integer	clamd/session.c	620	    int bulk;
-native-width-integer	clamd/session.c	700	static int print_ver(int desc, char term, const struct cl_engine *engine)
-native-width-integer	clamd/session.c	713	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
-native-width-integer	clamd/session.c	718	static void print_commands(int desc, char term, const struct cl_engine *engine)
-native-width-integer	clamd/session.c	744	int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
-native-width-integer	clamd/session.c	746	    int desc                       = conn->sd;
-native-width-integer	clamd/session.c	751	     *  - not involve any operation that can block for a long time, such as disk
+native-width-integer	clamd/session.c	620	static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
+native-width-integer	clamd/session.c	622	    int ret = 0;
+native-width-integer	clamd/session.c	623	    int reserved = 0;
+native-width-integer	clamd/session.c	624	    int dispatch_attempted = 0;
+native-width-integer	clamd/session.c	625	    int bulk;
+native-width-integer	clamd/session.c	705	static int print_ver(int desc, char term, const struct cl_engine *engine)
+native-width-integer	clamd/session.c	718	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
+native-width-integer	clamd/session.c	723	static void print_commands(int desc, char term, const struct cl_engine *engine)
+native-width-integer	clamd/session.c	749	int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
+native-width-integer	clamd/session.c	751	    int desc                       = conn->sd;
+native-width-integer	clamd/session.c	756	     *  - not involve any operation that can block for a long time, such as disk
 native-width-integer	clamd/session.c	80	    const size_t len;
 native-width-integer	clamd/session.c	82	    int need_arg;
 native-width-integer	clamd/session.c	83	    int support_old;
 native-width-integer	clamd/session.c	84	    int enabled;
-native-width-integer	clamd/session.c	858	            int rc;
+native-width-integer	clamd/session.c	863	            int rc;
 native-width-integer	clamd/session.h	140	    int scanfd;
 native-width-integer	clamd/session.h	141	    int sd;
 native-width-integer	clamd/session.h	148	    int id;
@@ -23030,12 +23030,12 @@ format-width	clamd/session.c	478	                logg(LOGG_DEBUG_NV, "Closed fd 
 format-width	clamd/session.c	493	                mdprintf(desc, "%u: ", conn->id);
 format-width	clamd/session.c	518	                logg(LOGG_DEBUG, "ftruncate failed: %d\n", errno);
 format-width	clamd/session.c	535	            logg(LOGG_ERROR, "Invalid command dispatched: %d\n", conn->cmdtype);
-format-width	clamd/session.c	676	            logg(LOGG_ERROR, "Invalid command dispatch: %d\n", cmd);
-format-width	clamd/session.c	713	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
-format-width	clamd/session.c	777	                logg(LOGG_DEBUG_NV, "SESSION: command is not valid inside IDSESSION: %d\n", cmd);
-format-width	clamd/session.c	825	                mdprintf(desc, "%u: PONG%c", conn->id, term);
-format-width	clamd/session.c	832	                    mdprintf(desc, "%u: ", conn->id);
-format-width	clamd/session.c	842	                mdprintf(desc, "%u: ", conn->id);
+format-width	clamd/session.c	681	            logg(LOGG_ERROR, "Invalid command dispatch: %d\n", cmd);
+format-width	clamd/session.c	718	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
+format-width	clamd/session.c	782	                logg(LOGG_DEBUG_NV, "SESSION: command is not valid inside IDSESSION: %d\n", cmd);
+format-width	clamd/session.c	830	                mdprintf(desc, "%u: PONG%c", conn->id, term);
+format-width	clamd/session.c	837	                    mdprintf(desc, "%u: ", conn->id);
+format-width	clamd/session.c	847	                mdprintf(desc, "%u: ", conn->id);
 format-width	clamd/tcpserver.c	108	    snprintf(port, sizeof(port), "%lld", optget(opts, "TCPSocket")->numarg);
 format-width	clamd/tcpserver.c	166	        snprintf(serv, sizeof(serv), "%u", (unsigned int)(optget(opts, "TCPSocket")->numarg));
 format-width	clamd/tcpserver.c	178	        logg(LOGG_INFO_NF, "TCP: Setting connection queue length to %d\n", backlog);
@@ -25731,16 +25731,16 @@ offset-size-arithmetic	clamd/session.c	423	            char *display_filename = 
 offset-size-arithmetic	clamd/session.c	430	            ret = scan_callback(NULL, display_filename, scan_filename, visit_file, &data); /* callback freed display_filename */
 offset-size-arithmetic	clamd/session.c	559	     * request cannot be reduced to a clean result with no scanned object. */
 offset-size-arithmetic	clamd/session.c	586	        if (conn_reply_single(conn, conn->filename, "OK") == -1)
-offset-size-arithmetic	clamd/session.c	627	    memcpy(dup_conn, conn, sizeof(*conn));
-offset-size-arithmetic	clamd/session.c	667	            dup_conn->filename = conn->filename;
-offset-size-arithmetic	clamd/session.c	712	        timestr[strlen(tstr) - 1] = '\0';
-offset-size-arithmetic	clamd/session.c	730	    n = sizeof(commands) / sizeof(commands[0]);
-offset-size-arithmetic	clamd/session.c	861	            rc = cli_gentempfd(optget(conn->opts, "TemporaryDirectory")->strarg, &conn->filename, &conn->scanfd);
+offset-size-arithmetic	clamd/session.c	632	    memcpy(dup_conn, conn, sizeof(*conn));
+offset-size-arithmetic	clamd/session.c	672	            dup_conn->filename = conn->filename;
+offset-size-arithmetic	clamd/session.c	717	        timestr[strlen(tstr) - 1] = '\0';
+offset-size-arithmetic	clamd/session.c	735	    n = sizeof(commands) / sizeof(commands[0]);
+offset-size-arithmetic	clamd/session.c	866	            rc = cli_gentempfd(optget(conn->opts, "TemporaryDirectory")->strarg, &conn->filename, &conn->scanfd);
 offset-size-arithmetic	clamd/session.c	88	    {CMD25, sizeof(CMD25) - 1, COMMAND_SCANREPORT, 1, 0, 1},
 offset-size-arithmetic	clamd/session.c	89	    {CMD26, sizeof(CMD26) - 1, COMMAND_CONTSCANREPORT, 1, 0, 1},
 offset-size-arithmetic	clamd/session.c	90	    {CMD27, sizeof(CMD27) - 1, COMMAND_MULTISCANREPORT, 1, 0, 1},
-offset-size-arithmetic	clamd/session.c	905	                /* end without idsession? */
 offset-size-arithmetic	clamd/session.c	91	    {CMD28, sizeof(CMD28) - 1, COMMAND_ALLMATCHSCANREPORT, 1, 0, 1},
+offset-size-arithmetic	clamd/session.c	910	                /* end without idsession? */
 offset-size-arithmetic	clamd/session.c	92	    {CMD29, sizeof(CMD29) - 1, COMMAND_FILDESREPORT, 0, 0, FEATURE_FDPASSING},
 offset-size-arithmetic	clamd/session.c	93	    {CMD30, sizeof(CMD30) - 1, COMMAND_INSTREAMREPORT, 0, 0, 1},
 offset-size-arithmetic	clamd/session.c	94	    {CMD1, sizeof(CMD1) - 1, COMMAND_SCAN, 1, 1, 0},

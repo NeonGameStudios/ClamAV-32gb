@@ -588,8 +588,13 @@ int command(client_conn_t *conn, int *virus)
     }
     *virus = total - (ok + error);
 
-    if (ret == CL_ETIMEOUT)
+    if (ret == CL_ETIMEOUT) {
         thrmgr_group_terminate(conn->group);
+        /* A failed final completion response is itself a command error. Keep
+         * the callback-derived counts unchanged for virus accounting, but do
+         * not let the worker report a clean result after transport failure. */
+        return (error == 0) ? 1 : error;
+    }
     return error;
 }
 

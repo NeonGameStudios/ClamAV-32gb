@@ -497,6 +497,20 @@ RTF/OLE corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and parser-family qualification
 remain release gates.
 
+## clamd final completion response failure — 2026-09-02
+
+The legacy clamd path/directory command now keeps a failed final clean
+completion response visible to the worker. Previously, a `CL_ETIMEOUT` from
+the final `OK` write was stored in the local transport status, but the
+function returned only the scan callback error count; an otherwise-clean scan
+could consequently be reported as successful after the client had already
+lost its response. The command now preserves its virus/error accounting,
+terminates the group, and returns one worker error when the timeout would
+otherwise return zero. Focused daemon fault injection, production-linked
+service parity, sanitizer, certified Linux x86-64, production-CVD,
+materialized-large-file, Sonic1, resource, and final release qualification
+remain required.
+
 ## Exported child-ingress recursion-state admission — 2026-09-01
 
 Descriptor, file, directory, nested-map, and buffer scan entrypoints now share a

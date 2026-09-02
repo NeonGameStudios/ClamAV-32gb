@@ -607,6 +607,17 @@
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification remain open.
 
+## clamd final completion response failure — 2026-09-02
+
+- Keep a failed final legacy `OK` response fail-visible: a `CL_ETIMEOUT`
+  while writing the clean completion must not return a zero command error
+  count after terminating the scan group.
+- Retain the existing virus/error counts and add focused daemon transport
+  fault-injection evidence; complete current-source production-linked,
+  structured/legacy service, sanitizer, certified Linux x86-64,
+  production-CVD, materialized-large-file, Sonic1, resource, and final
+  release qualification.
+
 ## MSPack filename-backed position failure propagation — 2026-09-02
 
 - Keep filename-backed `fseeko()`/`fseek()` and `ftello()` failures in the

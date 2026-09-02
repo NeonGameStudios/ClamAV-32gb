@@ -6893,6 +6893,8 @@ contains unit_tests/check_clamd.c 'test_scan_report_json_status_accepts_dispatch
 contains clamd/scanner.c 'STREAM command is no longer supported; use INSTREAM'
 contains clamd/session.c 'Preserve the non-clean result for the command worker'
 contains clamd/session.c 'descriptor/stream parser failure disappear'
+contains clamd/session.c 'A failed final completion response is itself a command error'
+contains clamd/session.c 'return (error == 0) ? 1 : error;'
 not_contains clamd/scanner.c 'quota = maxsize = optget(opts, "StreamMaxLength")->numarg'
 not_contains clamd/scanner.c 'StreamMinPort'
 not_contains clamd/scanner.c 'poll_fd(acceptd'
