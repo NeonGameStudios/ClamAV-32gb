@@ -13092,3 +13092,14 @@ qualification remain open.
   production-linked execution, complete OLE/VBA/XLM corpus, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification remain open.
+
+## CVD header-read status reconciliation — 2026-09-02
+
+- Keep the initial post-header seven-byte `cli_readn()` distinction fail-visible:
+  `(size_t)-1` is an in-range backing-read failure and must return `CL_EREAD`,
+  while a genuinely short input remains `CL_EFORMAT`.
+- Retain the source guards and capability-manifest evidence. Add current-source
+  production-GCC and linked execution, real production CVD/CLD/CUD service
+  parity, complete database corpus, sanitizer, certified Linux x86-64,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification before release closure.

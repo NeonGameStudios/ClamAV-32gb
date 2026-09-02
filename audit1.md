@@ -758,6 +758,19 @@ complete OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## CVD header-read status reconciliation — 2026-09-02
+
+`cli_tgzload()` previously mapped every short result from its initial
+post-header seven-byte `cli_readn()` call to `CL_EFORMAT`. Because
+`cli_readn()` uses `(size_t)-1` for an in-range backing-read failure, that
+boundary could hide an operational read error as truncated archive syntax.
+The loader now preserves `CL_EREAD` for that sentinel and keeps `CL_EFORMAT`
+for a genuinely short read; source guards pin the declaration, call, and
+classification. Current-source production-GCC and linked execution, real
+production CVD/CLD/CUD service parity, complete database corpus, sanitizer,
+certified Linux x86-64, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## RFC 1341 reassembly output status reconciliation — 2026-09-02
 
 The final RFC 1341 reassembly path could discard specific directory creation,

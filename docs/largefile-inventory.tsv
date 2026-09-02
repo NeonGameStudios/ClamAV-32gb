@@ -1718,25 +1718,25 @@ fixed-width-integer	libclamav/crypto.c	192	    uint32_t flags)
 fixed-width-integer	libclamav/crypto.c	352	    uint32_t flags,
 fixed-width-integer	libclamav/crypto.c	497	    uint32_t flags)
 fixed-width-integer	libclamav/crypto.c	586	    uint32_t flags)
-fixed-width-integer	libclamav/cvd.c	1147	    if (cvd_get_time_creation(cvd) > (uint64_t)s_time) {
-fixed-width-integer	libclamav/cvd.c	1150	        *age_seconds = (uint64_t)s_time - cvd_get_time_creation(cvd);
+fixed-width-integer	libclamav/cvd.c	1149	    if (cvd_get_time_creation(cvd) > (uint64_t)s_time) {
+fixed-width-integer	libclamav/cvd.c	1152	        *age_seconds = (uint64_t)s_time - cvd_get_time_creation(cvd);
 fixed-width-integer	libclamav/cvd.c	142	        if (!cli_tgzload_offset_from_u64((uint64_t)current, off))
 fixed-width-integer	libclamav/cvd.c	154	        if (!cli_tgzload_offset_from_u64((uint64_t)current, off))
 fixed-width-integer	libclamav/cvd.c	167	    uint64_t distance64;
 fixed-width-integer	libclamav/cvd.c	172	    distance64 = (current == off) ? (uint64_t)size + (uint64_t)pad : (uint64_t)pad;
 fixed-width-integer	libclamav/cvd.c	182	        if (zdistance < 0 || (uint64_t)zdistance != distance64)
-fixed-width-integer	libclamav/cvd.c	460	    uint64_t parsed            = 0;
-fixed-width-integer	libclamav/cvd.c	469	        uint64_t digit = (uint64_t)(*cursor - '0');
-fixed-width-integer	libclamav/cvd.c	652	cl_error_t cl_cvdverify_ex(const char *file, const char *certs_directory, uint32_t dboptions)
-fixed-width-integer	libclamav/cvd.c	708	    uint32_t options,
-fixed-width-integer	libclamav/cvd.c	793	        if (cvd_get_time_creation(cvd) > (uint64_t)s_time) {
+fixed-width-integer	libclamav/cvd.c	462	    uint64_t parsed            = 0;
+fixed-width-integer	libclamav/cvd.c	471	        uint64_t digit = (uint64_t)(*cursor - '0');
+fixed-width-integer	libclamav/cvd.c	654	cl_error_t cl_cvdverify_ex(const char *file, const char *certs_directory, uint32_t dboptions)
+fixed-width-integer	libclamav/cvd.c	710	    uint32_t options,
+fixed-width-integer	libclamav/cvd.c	795	        if (cvd_get_time_creation(cvd) > (uint64_t)s_time) {
 fixed-width-integer	libclamav/cvd.c	82	static int cli_tgzload_offset_from_u64(uint64_t value, off_t *offset)
-fixed-width-integer	libclamav/cvd.c	831	        ((uint32_t)dbinfo->cvd->version != cvd_get_version(cvd)) ||
-fixed-width-integer	libclamav/cvd.c	832	        ((uint32_t)dbinfo->cvd->sigs != cvd_get_num_sigs(cvd)) ||
-fixed-width-integer	libclamav/cvd.c	833	        ((uint32_t)dbinfo->cvd->fl != cvd_get_min_flevel(cvd)) ||
-fixed-width-integer	libclamav/cvd.c	834	        ((uint64_t)dbinfo->cvd->stime != cvd_get_time_creation(cvd))) {
+fixed-width-integer	libclamav/cvd.c	833	        ((uint32_t)dbinfo->cvd->version != cvd_get_version(cvd)) ||
+fixed-width-integer	libclamav/cvd.c	834	        ((uint32_t)dbinfo->cvd->sigs != cvd_get_num_sigs(cvd)) ||
+fixed-width-integer	libclamav/cvd.c	835	        ((uint32_t)dbinfo->cvd->fl != cvd_get_min_flevel(cvd)) ||
+fixed-width-integer	libclamav/cvd.c	836	        ((uint64_t)dbinfo->cvd->stime != cvd_get_time_creation(cvd))) {
 fixed-width-integer	libclamav/cvd.c	90	    if (converted < 0 || (uint64_t)converted != value)
-fixed-width-integer	libclamav/cvd.c	990	cl_error_t cl_cvdunpack_ex(const char *file, const char *dir, const char *certs_directory, uint32_t dboptions)
+fixed-width-integer	libclamav/cvd.c	992	cl_error_t cl_cvdunpack_ex(const char *file, const char *dir, const char *certs_directory, uint32_t dboptions)
 fixed-width-integer	libclamav/cvd.h	70	    uint32_t options,
 fixed-width-integer	libclamav/dconf.c	367	    uint32_t val;
 fixed-width-integer	libclamav/dconf.c	43	    uint32_t bflag;    /* bit flag */
@@ -10620,7 +10620,7 @@ native-width-integer	libclamav/crypto.c	826	    unsigned int i;
 native-width-integer	libclamav/crypto.c	827	    size_t cur;
 native-width-integer	libclamav/crypto.c	894	        size_t todo = MIN((unsigned long)EVP_MD_block_size(md), (unsigned long)(len - cur));
 native-width-integer	libclamav/crypto.c	960	unsigned char *cl_hash_file_fd(int fd, const char *alg, unsigned int *olen)
-native-width-integer	libclamav/cvd.c	1170	    size_t path_len;
+native-width-integer	libclamav/cvd.c	1172	    size_t path_len;
 native-width-integer	libclamav/cvd.c	129	static cl_error_t cli_tgzload_fail(int comp, struct cli_dbio *dbio, int fdd,
 native-width-integer	libclamav/cvd.c	135	static cl_error_t cli_tgzload_tell(int comp, struct cli_dbio *dbio, off_t *off)
 native-width-integer	libclamav/cvd.c	150	        long current = ftell(dbio->fs);
@@ -10631,23 +10631,25 @@ native-width-integer	libclamav/cvd.c	166	    off_t distance;
 native-width-integer	libclamav/cvd.c	191	        if (distance > LONG_MAX || fseek(dbio->fs, (long)distance, SEEK_CUR) != 0)
 native-width-integer	libclamav/cvd.c	199	static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo, unsigned int options, struct cli_dbio *dbio, struct cli_dbinfo *dbinfo, void *sign_verifier)
 native-width-integer	libclamav/cvd.c	203	    int nread, fdd, ret, zerr;
-native-width-integer	libclamav/cvd.c	204	    unsigned int type, size, pad, compr = 1;
-native-width-integer	libclamav/cvd.c	205	    off_t off;
-native-width-integer	libclamav/cvd.c	208	    int hash_status;
-native-width-integer	libclamav/cvd.c	209	    int fd = -1;
-native-width-integer	libclamav/cvd.c	315	            int i;
-native-width-integer	libclamav/cvd.c	434	static int cli_cvd_parse_uint(const char *text, unsigned int *value)
-native-width-integer	libclamav/cvd.c	437	    unsigned int parsed = 0;
-native-width-integer	libclamav/cvd.c	443	        unsigned int digit;
-native-width-integer	libclamav/cvd.c	447	        digit = (unsigned int)(*cursor - '0');
-native-width-integer	libclamav/cvd.c	457	static int cli_cvd_parse_octal_size(const char *text, unsigned int *value)
-native-width-integer	libclamav/cvd.c	483	    *value = (unsigned int)parsed;
+native-width-integer	libclamav/cvd.c	204	    size_t header_read;
+native-width-integer	libclamav/cvd.c	205	    unsigned int type, size, pad, compr = 1;
+native-width-integer	libclamav/cvd.c	206	    off_t off;
+native-width-integer	libclamav/cvd.c	209	    int hash_status;
+native-width-integer	libclamav/cvd.c	210	    int fd = -1;
+native-width-integer	libclamav/cvd.c	243	        return header_read == (size_t)-1 ? CL_EREAD : CL_EFORMAT;
+native-width-integer	libclamav/cvd.c	317	            int i;
+native-width-integer	libclamav/cvd.c	436	static int cli_cvd_parse_uint(const char *text, unsigned int *value)
+native-width-integer	libclamav/cvd.c	439	    unsigned int parsed = 0;
+native-width-integer	libclamav/cvd.c	445	        unsigned int digit;
+native-width-integer	libclamav/cvd.c	449	        digit = (unsigned int)(*cursor - '0');
+native-width-integer	libclamav/cvd.c	459	static int cli_cvd_parse_octal_size(const char *text, unsigned int *value)
+native-width-integer	libclamav/cvd.c	485	    *value = (unsigned int)parsed;
 native-width-integer	libclamav/cvd.c	59	static int cli_cvd_parse_octal_size(const char *text, unsigned int *value);
-native-width-integer	libclamav/cvd.c	601	    int i;
-native-width-integer	libclamav/cvd.c	602	    unsigned int bread;
-native-width-integer	libclamav/cvd.c	707	    unsigned int *signo,
-native-width-integer	libclamav/cvd.c	794	            if (cvd_get_time_creation(cvd) - (unsigned int)s_time > 3600) {
-native-width-integer	libclamav/cvd.c	800	        } else if ((unsigned int)s_time - cvd_get_time_creation(cvd) > 604800) {
+native-width-integer	libclamav/cvd.c	603	    int i;
+native-width-integer	libclamav/cvd.c	604	    unsigned int bread;
+native-width-integer	libclamav/cvd.c	709	    unsigned int *signo,
+native-width-integer	libclamav/cvd.c	796	            if (cvd_get_time_creation(cvd) - (unsigned int)s_time > 3600) {
+native-width-integer	libclamav/cvd.c	802	        } else if ((unsigned int)s_time - cvd_get_time_creation(cvd) > 604800) {
 native-width-integer	libclamav/cvd.c	82	static int cli_tgzload_offset_from_u64(uint64_t value, off_t *offset)
 native-width-integer	libclamav/cvd.c	84	    off_t converted;
 native-width-integer	libclamav/cvd.c	89	    converted = (off_t)value;
@@ -22137,8 +22139,8 @@ boundary-constant	libclamav/crypto.c	1621	            nauths + 1 > SIZE_MAX / si
 boundary-constant	libclamav/crypto.c	1649	    if (nauths == SIZE_MAX || nauths + 1 > SIZE_MAX / sizeof(*authorities))
 boundary-constant	libclamav/crypto.c	632	    if (sb.st_size < 0 || (uintmax_t)sb.st_size > (uintmax_t)SIZE_MAX) {
 boundary-constant	libclamav/crypto.c	745	        if (SIZE_MAX - (size_t)nread < byte_read) {
-boundary-constant	libclamav/cvd.c	448	        if (parsed > (UINT_MAX - digit) / 10U)
-boundary-constant	libclamav/cvd.c	480	    if (!saw_digit || *cursor != '\0' || parsed > UINT_MAX)
+boundary-constant	libclamav/cvd.c	450	        if (parsed > (UINT_MAX - digit) / 10U)
+boundary-constant	libclamav/cvd.c	482	    if (!saw_digit || *cursor != '\0' || parsed > UINT_MAX)
 boundary-constant	libclamav/dmg.c	144	    if (!ctx || !ctx->fmap || !window_len || remaining == 0 || offset > (uint64_t)SIZE_MAX) {
 boundary-constant	libclamav/dmg.c	1855	        read_result = offset > (uint64_t)SIZE_MAX
 boundary-constant	libclamav/dmg.c	485	    if (offset > (uint64_t)SIZE_MAX) {
@@ -23853,10 +23855,10 @@ format-width	libclamav/crypto.c	695	            cli_errmsg("cl_hash_data_ex: Pro
 format-width	libclamav/crypto.c	723	        cli_errmsg("cl_hash_data_ex: Failed to seek to offset %zu: %s\n", offset, cl_strerror(CL_ESEEK));
 format-width	libclamav/crypto.c	737	            cli_errmsg("cl_hash_data_ex: Failed to read from file descriptor %d: %s\n", fd, cl_strerror(CL_EREAD));
 format-width	libclamav/crypto.c	772	        cli_errmsg("cl_hash_data_ex: Requested %zu bytes but read %zu\n", length, byte_read);
-format-width	libclamav/cvd.c	251	        cli_errmsg("cli_tgzload: Can't duplicate descriptor %d\n", fd);
-format-width	libclamav/cvd.c	257	            cli_errmsg("cli_tgzload: Can't gzdopen() descriptor %d, errno = %d\n", fdd, errno);
-format-width	libclamav/cvd.c	265	            cli_errmsg("cli_tgzload: Can't fdopen() descriptor %d, errno = %d\n", fdd, errno);
-format-width	libclamav/cvd.c	373	        /* cli_dbgmsg("cli_tgzload: Loading %s, size: %u\n", name, size); */
+format-width	libclamav/cvd.c	253	        cli_errmsg("cli_tgzload: Can't duplicate descriptor %d\n", fd);
+format-width	libclamav/cvd.c	259	            cli_errmsg("cli_tgzload: Can't gzdopen() descriptor %d, errno = %d\n", fdd, errno);
+format-width	libclamav/cvd.c	267	            cli_errmsg("cli_tgzload: Can't fdopen() descriptor %d, errno = %d\n", fdd, errno);
+format-width	libclamav/cvd.c	375	        /* cli_dbgmsg("cli_tgzload: Loading %s, size: %u\n", name, size); */
 format-width	libclamav/dconf.c	476	        cli_errmsg("Problem parsing configuration file at line %u\n", line);
 format-width	libclamav/disasm.c	1231	                            hr += sprintf(hr, "%s*%d", x86regs[s->args[i].arg.marg.r1], s->args[i].arg.marg.scale);
 format-width	libclamav/dlp.c	348	            cli_dbgmsg("dlp_is_valid_ssn: unknown format type %d \n", format);
@@ -28208,9 +28210,9 @@ offset-size-arithmetic	libclamav/crypto.c	722	    if (lseek(fd, offset, SEEK_SET
 offset-size-arithmetic	libclamav/crypto.c	729	        blocksize = MIN(blocksize, length - byte_read);
 offset-size-arithmetic	libclamav/crypto.c	813	unsigned char *cl_hash_data(const char *alg, const void *buf, size_t len, unsigned char *obuf, unsigned int *olen)
 offset-size-arithmetic	libclamav/crypto.c	894	        size_t todo = MIN((unsigned long)EVP_MD_block_size(md), (unsigned long)(len - cur));
-offset-size-arithmetic	libclamav/cvd.c	1199	        if (strcmp(path + path_len - strlen(PATHSEP), PATHSEP) == 0) {
-offset-size-arithmetic	libclamav/cvd.c	1229	            snprintf(fname, sizeof(fname) - 1, "%s%s", path, dent->d_name);
-offset-size-arithmetic	libclamav/cvd.c	1231	            snprintf(fname, sizeof(fname) - 1, "%s" PATHSEP "%s", path, dent->d_name);
+offset-size-arithmetic	libclamav/cvd.c	1201	        if (strcmp(path + path_len - strlen(PATHSEP), PATHSEP) == 0) {
+offset-size-arithmetic	libclamav/cvd.c	1231	            snprintf(fname, sizeof(fname) - 1, "%s%s", path, dent->d_name);
+offset-size-arithmetic	libclamav/cvd.c	1233	            snprintf(fname, sizeof(fname) - 1, "%s" PATHSEP "%s", path, dent->d_name);
 offset-size-arithmetic	libclamav/cvd.c	135	static cl_error_t cli_tgzload_tell(int comp, struct cli_dbio *dbio, off_t *off)
 offset-size-arithmetic	libclamav/cvd.c	138	        z_off_t current = gzseek(dbio->gzs, 0, SEEK_CUR);
 offset-size-arithmetic	libclamav/cvd.c	146	        *off = ftello(dbio->fs);
@@ -28218,15 +28220,16 @@ offset-size-arithmetic	libclamav/cvd.c	172	    distance64 = (current == off) ? (
 offset-size-arithmetic	libclamav/cvd.c	184	        if (gzseek(dbio->gzs, zdistance, SEEK_CUR) < 0)
 offset-size-arithmetic	libclamav/cvd.c	188	        if (fseeko(dbio->fs, distance, SEEK_CUR) != 0)
 offset-size-arithmetic	libclamav/cvd.c	191	        if (distance > LONG_MAX || fseek(dbio->fs, (long)distance, SEEK_CUR) != 0)
-offset-size-arithmetic	libclamav/cvd.c	298	            cli_errmsg("cli_tgzload: Missing end-of-archive block\n");
-offset-size-arithmetic	libclamav/cvd.c	354	        strncpy(osize, block + 124, 12);
-offset-size-arithmetic	libclamav/cvd.c	362	        dbio->readsize = dbio->size < dbio->bufsize ? dbio->size : dbio->bufsize - 1;
-offset-size-arithmetic	libclamav/cvd.c	402	                if (db->size != dbio->bread) {
-offset-size-arithmetic	libclamav/cvd.c	425	        pad = size % TAR_BLOCKSIZE ? (TAR_BLOCKSIZE - (size % TAR_BLOCKSIZE)) : 0;
-offset-size-arithmetic	libclamav/cvd.c	457	static int cli_cvd_parse_octal_size(const char *text, unsigned int *value)
+offset-size-arithmetic	libclamav/cvd.c	243	        return header_read == (size_t)-1 ? CL_EREAD : CL_EFORMAT;
+offset-size-arithmetic	libclamav/cvd.c	300	            cli_errmsg("cli_tgzload: Missing end-of-archive block\n");
+offset-size-arithmetic	libclamav/cvd.c	356	        strncpy(osize, block + 124, 12);
+offset-size-arithmetic	libclamav/cvd.c	364	        dbio->readsize = dbio->size < dbio->bufsize ? dbio->size : dbio->bufsize - 1;
+offset-size-arithmetic	libclamav/cvd.c	404	                if (db->size != dbio->bread) {
+offset-size-arithmetic	libclamav/cvd.c	427	        pad = size % TAR_BLOCKSIZE ? (TAR_BLOCKSIZE - (size % TAR_BLOCKSIZE)) : 0;
+offset-size-arithmetic	libclamav/cvd.c	459	static int cli_cvd_parse_octal_size(const char *text, unsigned int *value)
 offset-size-arithmetic	libclamav/cvd.c	59	static int cli_cvd_parse_octal_size(const char *text, unsigned int *value);
-offset-size-arithmetic	libclamav/cvd.c	768	        dupname[strlen(dupname) - 2] = (dbtype == CVD_TYPE_CLD ? 'v' : 'l');
-offset-size-arithmetic	libclamav/cvd.c	803	            cli_warnmsg("***   Please update it as soon as possible.    ***\n");
+offset-size-arithmetic	libclamav/cvd.c	770	        dupname[strlen(dupname) - 2] = (dbtype == CVD_TYPE_CLD ? 'v' : 'l');
+offset-size-arithmetic	libclamav/cvd.c	805	            cli_warnmsg("***   Please update it as soon as possible.    ***\n");
 offset-size-arithmetic	libclamav/cvd.c	82	static int cli_tgzload_offset_from_u64(uint64_t value, off_t *offset)
 offset-size-arithmetic	libclamav/dconf.c	44	    uint8_t state;     /* default state (on/off) */
 offset-size-arithmetic	libclamav/disasm-common.h	152	    OP_PUSHAD,      /**< Push All Double General Purpose Registers */

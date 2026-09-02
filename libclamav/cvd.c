@@ -201,6 +201,7 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
     char osize[13], name[101];
     char block[TAR_BLOCKSIZE];
     int nread, fdd, ret, zerr;
+    size_t header_read;
     unsigned int type, size, pad, compr = 1;
     off_t off;
     struct cli_dbinfo *db;
@@ -237,8 +238,9 @@ static int cli_tgzload(cvd_t *cvd, struct cl_engine *engine, unsigned int *signo
         return CL_ESEEK;
     }
 
-    if (cli_readn(fd, block, 7) != 7)
-        return CL_EFORMAT; /* truncated file? */
+    header_read = cli_readn(fd, block, 7);
+    if (header_read != 7)
+        return header_read == (size_t)-1 ? CL_EREAD : CL_EFORMAT;
 
     if (!strncmp(block, "COPYING", 7))
         compr = 0;
