@@ -1119,6 +1119,40 @@ START_TEST(test_cvd_api_rejects_null_arguments)
 }
 END_TEST
 
+#ifndef _WIN32
+START_TEST(test_cvd_directory_preserves_long_database_path)
+{
+    char long_dir[PATH_MAX];
+    char cvd_path[PATH_MAX];
+    char component[241];
+    const char *fixture = OBJDIR PATHSEP "input" PATHSEP "freshclam_testfiles" PATHSEP "test-1.cvd";
+    time_t age_seconds = 0;
+    size_t path_len;
+    size_t i;
+    int written;
+
+    memset(component, 'c', sizeof(component) - 1);
+    component[sizeof(component) - 1] = '\0';
+    ck_assert(strlen(tmpdir) + 5 * (1 + sizeof(component) - 1) + 1 < sizeof(long_dir));
+    strcpy(long_dir, tmpdir);
+    path_len = strlen(long_dir);
+    for (i = 0; i < 5; i++) {
+        long_dir[path_len++] = PATHSEP[0];
+        memcpy(long_dir + path_len, component, sizeof(component));
+        path_len += sizeof(component) - 1;
+        long_dir[path_len] = '\0';
+        ck_assert_int_eq(mkdir(long_dir, 0700), 0);
+    }
+    ck_assert(path_len > 1023);
+
+    written = snprintf(cvd_path, sizeof(cvd_path), "%s" PATHSEP "database.cvd", long_dir);
+    ck_assert(written > 0 && (size_t)written < sizeof(cvd_path));
+    ck_assert_int_eq(cli_filecopy(fixture, cvd_path), 0);
+    ck_assert_int_eq(cl_cvdgetage(long_dir, &age_seconds), CL_SUCCESS);
+}
+END_TEST
+#endif
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_cvd_directory_close_failure_is_fail_visible)
 {
@@ -60405,6 +60439,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cvd, test_cl_cvdparse);
     tcase_add_test(tc_cvd, test_cl_cvdparse_rejects_invalid_numeric_fields);
     tcase_add_test(tc_cvd, test_cvd_api_rejects_null_arguments);
+#ifndef _WIN32
+    tcase_add_test(tc_cvd, test_cvd_directory_preserves_long_database_path);
+#endif
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cvd, test_cvd_directory_close_failure_is_fail_visible);
     tcase_add_test(tc_cvd, test_cvd_directory_readdir_failure_is_fail_visible);

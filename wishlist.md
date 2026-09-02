@@ -1,5 +1,15 @@
 # Wishlist
 
+## CVD long-path admission — 2026-09-02
+
+- Keep the directory form of `cl_cvdgetage()` from truncating matching database
+  paths into a different filename. Use checked path arithmetic and bounded
+  allocation, preserving explicit resource/memory failures.
+- Retain `test_cvd_directory_preserves_long_database_path`, its source guards,
+  and production-CVD API evidence. Add current-source linked execution,
+  sanitizer, complete CVD corpus, service parity, materialized-large-file,
+  Sonic1, resource, and final release qualification before closure.
+
 ## FMap dump API argument admission — 2026-09-02
 
 - Keep `fmap_dump_to_file()` fail-visible for a null fmap or output sink:

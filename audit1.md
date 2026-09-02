@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## CVD long-path admission — 2026-09-02
+
+The directory form of `cl_cvdgetage()` previously formatted each matching
+database path into a fixed 1024-byte buffer, silently truncating a valid long
+path before opening it. Directory enumeration now checks path-length
+arithmetic, allocates the complete path through the bounded allocator, and
+returns an explicit resource or memory error instead of consulting a different
+filename. The POSIX `test_cvd_directory_preserves_long_database_path`
+regression copies the checked-in CVD fixture below a path over 1023 bytes and
+requires successful age discovery; source guards pin the complete-path
+construction and registration. Current-source linked execution, sanitizer,
+complete CVD corpus, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final release qualification remain required.
+
 ## FMap dump API argument admission — 2026-09-02
 
 `fmap_dump_to_file()` dereferenced its fmap before validating the input and

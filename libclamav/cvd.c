@@ -1205,8 +1205,11 @@ cl_error_t cl_cvdgetage(const char *path, time_t *age_seconds)
     }
 
     for (;;) {
-        char fname[1024] = {0};
+        char *fname = NULL;
         time_t file_age;
+        size_t name_len;
+        size_t separator_len;
+        size_t full_len;
 
         errno = 0;
         dent  = readdir(dd);
@@ -1227,15 +1230,42 @@ cl_error_t cl_cvdgetage(const char *path, time_t *age_seconds)
         if (!CLI_DBEXT_SIGNATURE(dent->d_name))
             continue;
 
-        if (ends_with_sep)
-            snprintf(fname, sizeof(fname) - 1, "%s%s", path, dent->d_name);
-        else
-            snprintf(fname, sizeof(fname) - 1, "%s" PATHSEP "%s", path, dent->d_name);
+        /* Do not truncate a database path into a different filename. The
+         * directory entry is attacker-controlled when this API is used on a
+         * supplied database directory, so construct the complete path with
+         * checked size arithmetic before opening it. */
+        name_len      = strlen(dent->d_name);
+        separator_len = ends_with_sep ? 0 : strlen(PATHSEP);
+        if (path_len > SIZE_MAX - separator_len) {
+            cli_errmsg("cl_cvdgetage: Database path is too long: %s\n", path);
+            status = CL_ERESOURCE;
+            goto done;
+        }
+        full_len = path_len + separator_len;
+        if (full_len == SIZE_MAX || name_len > SIZE_MAX - full_len - 1) {
+            cli_errmsg("cl_cvdgetage: Database filename is too long: %s\n", dent->d_name);
+            status = CL_ERESOURCE;
+            goto done;
+        }
+        full_len += name_len + 1;
+        fname = cli_max_malloc(full_len);
+        if (fname == NULL) {
+            cli_errmsg("cl_cvdgetage: Unable to allocate database path\n");
+            status = CL_EMEM;
+            goto done;
+        }
+        memcpy(fname, path, path_len);
+        if (separator_len != 0)
+            memcpy(fname + path_len, PATHSEP, separator_len);
+        memcpy(fname + path_len + separator_len, dent->d_name, name_len);
+        fname[full_len - 1] = '\0';
 
         if ((status = cvdgetfileage(fname, &file_age)) != CL_SUCCESS) {
             cli_errmsg("cl_cvdgetage: cvdgetfileage() failed for %s\n", fname);
+            free(fname);
             goto done;
         }
+        free(fname);
 
         if (first_age_set) {
             first_age_set = false;
