@@ -402,6 +402,17 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain open.
 
+## Root metadata serialization failure visibility — 2026-09-01
+
+The legacy root-metadata preclassification serializer and final public scan
+metadata serializer returned `CL_EMEM` without marking the scan incomplete or
+tainting the fmap. Both required serialization boundaries now record exact
+sticky diagnostics while preserving the original error. Source guards cover
+both paths. Current-source production-GCC compilation, production-linked
+execution, sanitizer, complete metadata/parser corpus, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain open.
+
 ## SCRENC trailer completion — 2026-09-01
 
 The SCRENC decoder previously logged checksum and terminator mismatches but

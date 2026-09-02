@@ -7280,6 +7280,7 @@ static cl_error_t scan_root_metadata_json_preclass(cli_ctx *ctx)
 #endif
     if (NULL == jstring) {
         cli_errmsg("cli_magic_scan: no memory for json serialization.\n");
+        cli_mark_scan_incomplete(ctx, "root metadata JSON could not be serialized");
         status = CL_EMEM;
         goto done;
     }
@@ -9041,6 +9042,7 @@ static cl_error_t scan_common(
 #endif
         if (NULL == jstring) {
             cli_errmsg("scan_common: no memory for json serialization.\n");
+            cli_mark_scan_incomplete(&ctx, "scan-level metadata JSON could not be serialized");
             status = CL_EMEM;
             goto done;
         }

@@ -11848,3 +11848,13 @@ final parser/release qualification remain open.
   metadata/parser corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification remain open.
+
+## Root metadata serialization completion — 2026-09-01
+
+- Keep legacy root-metadata preclassification and final scan-level metadata
+  serialization failures fail-visible; mark the scan incomplete and
+  non-cacheable while preserving `CL_EMEM`.
+- Retain the source guards for both serialization boundaries. Current-source
+  production-linked execution, complete metadata/parser corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification remain open.

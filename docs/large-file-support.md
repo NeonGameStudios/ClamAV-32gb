@@ -43,6 +43,18 @@ sanitizer, complete metadata/parser corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## Root metadata serialization failure visibility — 2026-09-01
+
+Legacy root-metadata preclassification now marks the scan incomplete and
+non-cacheable when the required metadata JSON cannot be serialized. Final
+scan-level metadata serialization has the same fail-visible treatment. Both
+paths preserve `CL_EMEM` and their exact sticky diagnostics; source guards
+cover the bounded preclass and public scan cleanup boundaries. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+metadata/parser corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## PE import result reconciliation — 2026-09-01
 
 The owning `cli_scanpe()` boundary now marks the confirmed PE layer incomplete
