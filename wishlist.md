@@ -358,6 +358,20 @@ final parser/release qualification remain open.
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification remain open.
 
+## Exported child-ingress dynamic-configuration admission — 2026-09-02
+
+- Keep descriptor, file, directory, buffer, and nested-map magic-scan
+  entrypoints fail-visible when a valid engine, scan-options object, and
+  recursion stack omit dynamic scan configuration; return `CL_ENULLARG` before
+  empty-input completion, fmap construction, file open, directory traversal,
+  or parser dispatch, and mark the available layer incomplete and
+  non-cacheable.
+- Retain `test_cli_magic_scan_ingress_rejects_missing_dconf`, its source
+  guards, and manifest evidence. Current-source production-GCC compilation,
+  production-linked execution, complete ingress/parser corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification remain open.
+
 ## ISO9660 direct options admission — 2026-09-02
 
 - Keep exported `cli_scaniso()` fail-visible when an otherwise recognized

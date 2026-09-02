@@ -237,6 +237,10 @@ static cl_error_t cli_magic_scan_dir_internal(const char *dir, cli_ctx *ctx, uin
     if (status != CL_SUCCESS)
         goto done;
 
+    status = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan_dir");
+    if (status != CL_SUCCESS)
+        goto done;
+
     if ((dd = opendir(dir)) != NULL) {
         while (1) {
             errno = 0;
@@ -8462,6 +8466,10 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
     if (status != CL_SUCCESS)
         goto done;
 
+    status = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan_desc_type");
+    if (status != CL_SUCCESS)
+        goto done;
+
     cli_dbgmsg("in cli_magic_scan_desc_type (recursion_level: %u/%u)\n", ctx->recursion_level, ctx->engine->max_recursion_level);
 
     if (FSTAT(desc, &sb) == -1) {
@@ -8637,6 +8645,10 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
     if (ret != CL_SUCCESS)
         return ret;
 
+    ret = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan_nested_fmap_type");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     cli_dbgmsg("cli_magic_scan_nested_fmap_type: [%zu, +%zu)\n", offset, length);
 
     explicit_length = (length != 0);
@@ -8757,6 +8769,10 @@ cl_error_t cli_magic_scan_buff(const void *buffer, size_t length, cli_ctx *ctx, 
     }
 
     ret = cli_magic_scan_validate_options(ctx, "cli_magic_scan_buff");
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    ret = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan_buff");
     if (ret != CL_SUCCESS)
         return ret;
 
@@ -9843,6 +9859,10 @@ cl_error_t cli_magic_scan_file(const char *filename, cli_ctx *ctx, const char *o
         return CL_ENULLARG;
 
     ret = cli_magic_scan_validate_options(ctx, "cli_magic_scan_file");
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    ret = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan_file");
     if (ret != CL_SUCCESS)
         return ret;
 

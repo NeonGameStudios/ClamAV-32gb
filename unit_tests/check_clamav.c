@@ -21390,6 +21390,116 @@ START_TEST(test_cli_magic_scan_missing_dconf_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_cli_magic_scan_ingress_rejects_missing_dconf)
+{
+    static const uint8_t input[] = "missing dynamic configuration on ingress";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    char *path = NULL;
+    char directory[PATH_MAX];
+    int fd = -1;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.dboptions         = CL_DB_COMPILED;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap   = map;
+    layer.fmap = map;
+
+    ck_assert_int_eq(cli_magic_scan_nested_fmap_type(map, 0, 0, &ctx, CL_TYPE_ANY, NULL,
+                                                     LAYER_ATTRIBUTES_NONE),
+                     CL_ENULLARG);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "scan dynamic configuration is unavailable");
+    ck_assert(map->dont_cache_flag);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+    map->dont_cache_flag     = false;
+    ck_assert_int_eq(cli_magic_scan_buff(NULL, 0, &ctx, NULL, LAYER_ATTRIBUTES_NONE),
+                     CL_ENULLARG);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "scan dynamic configuration is unavailable");
+    ck_assert(map->dont_cache_flag);
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, input, sizeof(input) - 1U), (ssize_t)(sizeof(input) - 1U));
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+    map->dont_cache_flag     = false;
+    ck_assert_int_eq(cli_magic_scan_desc_type(fd, path, &ctx, CL_TYPE_ANY, NULL,
+                                              LAYER_ATTRIBUTES_NONE),
+                     CL_ENULLARG);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "scan dynamic configuration is unavailable");
+    ck_assert(map->dont_cache_flag);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+    map->dont_cache_flag     = false;
+    ck_assert_int_eq(cli_magic_scan_file(path, &ctx, NULL, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "scan dynamic configuration is unavailable");
+    ck_assert(map->dont_cache_flag);
+
+    ck_assert_int_gt(snprintf(directory, sizeof(directory), "%s/magic-scan-dir-no-dconf-%ld",
+                              tmpdir, (long)getpid()),
+                     0);
+    ck_assert_int_eq(mkdir(directory, 0700), 0);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+    map->dont_cache_flag     = false;
+    ck_assert_int_eq(cli_magic_scan_dir(directory, &ctx, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "scan dynamic configuration is unavailable");
+    ck_assert(map->dont_cache_flag);
+
+    ck_assert_int_eq(rmdir(directory), 0);
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_cli_magic_scan_missing_recursion_state_is_fail_visible)
 {
     static const uint8_t input[] = "missing recursion state";
@@ -21477,6 +21587,7 @@ START_TEST(test_empty_nested_ingress_preserves_incomplete_state)
 {
     struct cl_engine engine;
     struct cl_scan_options options;
+    struct cli_dconf dconf;
     cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
@@ -21487,11 +21598,13 @@ START_TEST(test_empty_nested_ingress_preserves_incomplete_state)
 
     memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
+    memset(&dconf, 0, sizeof(dconf));
     memset(&layer, 0, sizeof(layer));
     memset(&ctx, 0, sizeof(ctx));
     engine.dboptions          = CL_DB_COMPILED;
     ctx.engine                = &engine;
     ctx.options               = &options;
+    ctx.dconf                 = &dconf;
     ctx.this_layer_tmpdir     = tmpdir;
     ctx.recursion_stack       = &layer;
     ctx.recursion_stack_size  = 1;
@@ -58540,6 +58653,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_options_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_dconf_is_fail_visible);
+    tcase_add_test(tc_cl, test_cli_magic_scan_ingress_rejects_missing_dconf);
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_recursion_state_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_nested_entrypoints_reject_invalid_inputs);
     tcase_add_test(tc_cl, test_empty_nested_ingress_preserves_incomplete_state);

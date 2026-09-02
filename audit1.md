@@ -516,6 +516,25 @@ production-linked execution, complete ingress/parser corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.
 
+## Exported child-ingress dynamic-configuration admission — 2026-09-02
+
+The descriptor, file, directory, buffer, and nested-map magic-scan entrypoints
+could complete empty inputs or begin resource acquisition before the central
+`cli_magic_scan()` guard was reached. They now validate `ctx->dconf` after the
+existing engine, recursion, and options checks, returning `CL_ENULLARG` and
+marking an available layer incomplete/non-cacheable before those paths can
+produce a clean result or dereference parser configuration.
+
+`test_cli_magic_scan_ingress_rejects_missing_dconf` covers zero-length nested
+map and buffer ingress, descriptor ingress, and an empty directory with a
+valid engine/options/recursion context but no dynamic configuration. It
+requires the exact sticky diagnostic and fmap cache taint for each path.
+Source guards and the capability manifest record the complete boundary.
+Current-source production-GCC compilation, production-linked execution,
+complete ingress/parser corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## ISO9660 direct options admission — 2026-09-02
 
 The exported `cli_scaniso()` entry rejected null context, input fmap, and
