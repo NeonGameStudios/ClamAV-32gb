@@ -150,6 +150,28 @@ PDF/Flate corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## Legacy Word macro skip-record read status — 2026-09-02
+
+The legacy Word macro-directory skip helpers for `0x03`, menu,
+`MacroExtNames`, and `MacroIntNames` previously returned boolean success. A
+fully in-range descriptor failure in one of their fixed-size reads was
+therefore reported as an ordinary truncated record. The helpers now return
+`cl_error_t`, reuse the bounded full-read classifier, and preserve
+`CL_EPARSE` for short ranges, `CL_EREAD` for in-range backing-read failures,
+and `CL_ESEEK` for positioning failures. The owning Word layer records a
+class-specific sticky incomplete reason before abandoning the confirmed
+directory.
+
+`test_word_macro_skip_record_read_status_is_fail_visible` injects short and
+descriptor failures into a confirmed menu-record count read and requires the
+matching status, exact reason, and fmap cache taint. The source guard and
+registration cover the helper return-status contract. Fresh GCC compilation
+and production-linked execution remain open because the prescribed Docker
+production container cannot start due to host overlay storage exhaustion;
+complete malformed Word/OLE corpus, sanitizer and allocation-fault coverage,
+production-CVD/service parity, materialized-large-file, Sonic1, and final
+OLE/VBA qualification remain required.
+
 ## PowerPoint compressed-stream read-status reconciliation — 2026-09-02
 
 The PowerPoint compressed-atom decoder used sized `cli_readn()` calls for its

@@ -13306,3 +13306,18 @@ qualification remain open.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and parser/release qualification
   before closure.
+
+## Legacy Word macro skip-record read status — 2026-09-02
+
+- Keep the Word 6 `0x03`, menu, `MacroExtNames`, and `MacroIntNames` skip
+  helpers fail-visible. Genuine short ranges remain truncated `CL_EPARSE`,
+  in-range descriptor failures remain `CL_EREAD`, and positioning failures
+  remain `CL_ESEEK`; each outcome must mark the confirmed Word layer
+  incomplete and non-cacheable before the directory is abandoned.
+- Retain the bounded `cl_error_t` helper returns, the
+  `test_word_macro_skip_record_read_status_is_fail_visible` wrapped-read
+  regression, its source guards, and the capability evidence. Add
+  current-source production-GCC and linked execution, complete malformed
+  Word/OLE corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final OLE/VBA qualification
+  before closure.

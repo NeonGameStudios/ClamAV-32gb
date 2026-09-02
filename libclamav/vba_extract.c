@@ -3165,125 +3165,141 @@ word_read_macro_info(int fd, macro_info_t *macro_info, uint64_t end_offset)
     return CL_SUCCESS;
 }
 
-static int
+static cl_error_t
 word_read_bounded(int fd, void *buffer, size_t size, uint64_t end_offset)
 {
     off_t current_offset = lseek(fd, 0, SEEK_CUR);
 
-    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
+    if (current_offset < 0)
+        return CL_ESEEK;
+    if ((uint64_t)current_offset > end_offset ||
         (uint64_t)size > end_offset - (uint64_t)current_offset)
-        return FALSE;
+        return CL_EPARSE;
 
-    return cli_readn(fd, buffer, size) == size;
+    return vba_readn_full(fd, buffer, size);
 }
 
-static int
+static cl_error_t
 word_read_uint16_bounded(int fd, uint16_t *value, uint64_t end_offset)
 {
-    if (!word_read_bounded(fd, value, sizeof(*value), end_offset))
-        return FALSE;
+    cl_error_t status = word_read_bounded(fd, value, sizeof(*value), end_offset);
+
+    if (status != CL_SUCCESS)
+        return status;
 
     *value = vba_endian_convert_16(*value, FALSE);
-    return TRUE;
+    return CL_SUCCESS;
 }
 
-static int
+static cl_error_t
 word_skip_bounded(int fd, uint64_t size, uint64_t end_offset)
 {
     off_t current_offset = lseek(fd, 0, SEEK_CUR);
     uint64_t target_offset;
     off_t seek_offset;
 
-    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
+    if (current_offset < 0)
+        return CL_ESEEK;
+    if ((uint64_t)current_offset > end_offset ||
         size > end_offset - (uint64_t)current_offset)
-        return FALSE;
+        return CL_EPARSE;
 
     target_offset = (uint64_t)current_offset + size;
     seek_offset   = (off_t)target_offset;
     if ((uint64_t)seek_offset != target_offset || lseek(fd, seek_offset, SEEK_SET) != seek_offset)
-        return FALSE;
+        return CL_ESEEK;
 
-    return TRUE;
+    return CL_SUCCESS;
 }
 
-static int
+static cl_error_t
 word_rewind_bounded(int fd, uint64_t size, uint64_t end_offset)
 {
     off_t current_offset = lseek(fd, 0, SEEK_CUR);
     uint64_t target_offset;
     off_t seek_offset;
 
-    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
+    if (current_offset < 0)
+        return CL_ESEEK;
+    if ((uint64_t)current_offset > end_offset ||
         size > (uint64_t)current_offset)
-        return FALSE;
+        return CL_EPARSE;
 
     target_offset = (uint64_t)current_offset - size;
     seek_offset   = (off_t)target_offset;
     if ((uint64_t)seek_offset != target_offset || lseek(fd, seek_offset, SEEK_SET) != seek_offset)
-        return FALSE;
+        return CL_ESEEK;
 
-    return TRUE;
+    return CL_SUCCESS;
 }
 
-static int
+static cl_error_t
 word_skip_oxo3(int fd, uint64_t end_offset)
 {
     uint8_t count;
+    cl_error_t status;
 
-    if (!word_read_bounded(fd, &count, 1, end_offset)) {
+    status = word_read_bounded(fd, &count, 1, end_offset);
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("read oxo3 record1 failed\n");
-        return FALSE;
+        return status;
     }
     cli_dbgmsg("oxo3 records1: %d\n", count);
 
-    if (!word_skip_bounded(fd, (uint64_t)count * 14U, end_offset) ||
-        !word_read_bounded(fd, &count, 1, end_offset)) {
+    status = word_skip_bounded(fd, (uint64_t)count * 14U, end_offset);
+    if (status != CL_SUCCESS) {
+        cli_dbgmsg("skip oxo3 record1 failed\n");
+        return status;
+    }
+    status = word_read_bounded(fd, &count, 1, end_offset);
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("read oxo3 record2 failed\n");
-        return FALSE;
+        return status;
     }
 
     if (count == 0) {
         uint8_t twobytes[2];
 
-        if (!word_read_bounded(fd, twobytes, sizeof(twobytes), end_offset)) {
+        status = word_read_bounded(fd, twobytes, sizeof(twobytes), end_offset);
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("read oxo3 failed\n");
-            return FALSE;
+            return status;
         }
         if (twobytes[0] != 2) {
-            if (!word_rewind_bounded(fd, sizeof(twobytes), end_offset))
-                return FALSE;
-            return TRUE;
+            status = word_rewind_bounded(fd, sizeof(twobytes), end_offset);
+            return status;
         }
         count = twobytes[1];
     }
     if (count > 0)
-        if (!word_skip_bounded(fd, (uint64_t)count * 4U + 1U, end_offset)) {
+        if ((status = word_skip_bounded(fd, (uint64_t)count * 4U + 1U, end_offset)) != CL_SUCCESS) {
             cli_dbgmsg("lseek oxo3 failed\n");
-            return FALSE;
+            return status;
         }
 
     cli_dbgmsg("oxo3 records2: %d\n", count);
-    return TRUE;
+    return CL_SUCCESS;
 }
 
-static int
+static cl_error_t
 word_skip_menu_info(int fd, uint64_t end_offset)
 {
     uint16_t count;
+    cl_error_t status;
 
-    if (!word_read_uint16_bounded(fd, &count, end_offset)) {
+    status = word_read_uint16_bounded(fd, &count, end_offset);
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("read menu_info failed\n");
-        return FALSE;
+        return status;
     }
     cli_dbgmsg("menu_info count: %d\n", count);
 
     if (count)
-        if (!word_skip_bounded(fd, (uint64_t)count * 12U, end_offset))
-            return FALSE;
-    return TRUE;
+        return word_skip_bounded(fd, (uint64_t)count * 12U, end_offset);
+    return CL_SUCCESS;
 }
 
-static int
+static cl_error_t
 word_skip_macro_extnames(int fd, uint64_t end_offset)
 {
     int is_unicode;
@@ -3291,18 +3307,21 @@ word_skip_macro_extnames(int fd, uint64_t end_offset)
     uint64_t extnames_end;
     off_t size_offset;
     off_t current_offset;
+    cl_error_t status;
 
     size_offset = lseek(fd, 0, SEEK_CUR);
     if (size_offset < 0 || (uint64_t)size_offset > end_offset)
-        return FALSE;
-    if (!word_read_uint16_bounded(fd, &size, end_offset)) {
+        return size_offset < 0 ? CL_ESEEK : CL_EPARSE;
+    status = word_read_uint16_bounded(fd, &size, end_offset);
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("read macro_extnames failed\n");
-        return FALSE;
+        return status;
     }
     if (size == UINT16_MAX) { /* Unicode flag */
-        if (!word_read_uint16_bounded(fd, &size, end_offset)) {
+        status = word_read_uint16_bounded(fd, &size, end_offset);
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("read macro_extnames failed\n");
-            return FALSE;
+            return status;
         }
         is_unicode = 1;
     } else
@@ -3311,7 +3330,7 @@ word_skip_macro_extnames(int fd, uint64_t end_offset)
     cli_dbgmsg("ext names size: 0x%x\n", size);
 
     if ((uint64_t)size > end_offset - (uint64_t)size_offset)
-        return FALSE;
+        return CL_EPARSE;
     extnames_end = (uint64_t)size_offset + (uint64_t)size;
 
     while (TRUE) {
@@ -3320,13 +3339,14 @@ word_skip_macro_extnames(int fd, uint64_t end_offset)
 
         current_offset = lseek(fd, 0, SEEK_CUR);
         if (current_offset < 0 || (uint64_t)current_offset > extnames_end)
-            return FALSE;
+            return current_offset < 0 ? CL_ESEEK : CL_EPARSE;
         if ((uint64_t)current_offset == extnames_end)
             break;
 
-        if (!word_read_bounded(fd, &length, sizeof(length), extnames_end)) {
+        status = word_read_bounded(fd, &length, sizeof(length), extnames_end);
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("read macro_extnames failed\n");
-            return FALSE;
+            return status;
         }
 
         if (is_unicode)
@@ -3335,22 +3355,25 @@ word_skip_macro_extnames(int fd, uint64_t end_offset)
             offset = (uint64_t)length;
 
         /* ignore numref as well */
-        if (!word_skip_bounded(fd, offset + sizeof(uint16_t), extnames_end)) {
+        status = word_skip_bounded(fd, offset + sizeof(uint16_t), extnames_end);
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("read macro_extnames failed to seek\n");
-            return FALSE;
+            return status;
         }
     }
-    return TRUE;
+    return CL_SUCCESS;
 }
 
-static int
+static cl_error_t
 word_skip_macro_intnames(int fd, uint64_t end_offset)
 {
     uint16_t count;
+    cl_error_t status;
 
-    if (!word_read_uint16_bounded(fd, &count, end_offset)) {
+    status = word_read_uint16_bounded(fd, &count, end_offset);
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("read macro_intnames failed\n");
-        return FALSE;
+        return status;
     }
     cli_dbgmsg("intnames count: %u\n", (unsigned int)count);
 
@@ -3358,19 +3381,25 @@ word_skip_macro_intnames(int fd, uint64_t end_offset)
         uint8_t length;
 
         /* id */
-        if (!word_skip_bounded(fd, sizeof(uint16_t), end_offset) ||
-            !word_read_bounded(fd, &length, sizeof(length), end_offset)) {
+        status = word_skip_bounded(fd, sizeof(uint16_t), end_offset);
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("skip_macro_intnames failed\n");
-            return FALSE;
+            return status;
+        }
+        status = word_read_bounded(fd, &length, sizeof(length), end_offset);
+        if (status != CL_SUCCESS) {
+            cli_dbgmsg("skip_macro_intnames failed\n");
+            return status;
         }
 
         /* Internal name, plus one byte of unknown data */
-        if (!word_skip_bounded(fd, (uint64_t)length + 1U, end_offset)) {
+        status = word_skip_bounded(fd, (uint64_t)length + 1U, end_offset);
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("skip_macro_intnames failed\n");
-            return FALSE;
+            return status;
         }
     }
-    return TRUE;
+    return CL_SUCCESS;
 }
 
 vba_project_t *
@@ -3508,33 +3537,53 @@ cli_wm_readdir_status(int fd, cli_ctx *ctx, vba_project_t **project_out)
                 done = TRUE;
                 break;
             case 0x03:
-                if (!word_skip_oxo3(fd, end_offset)) {
-                    cli_mark_scan_incomplete(ctx, "Word macro directory oxo3 record was truncated");
-                    read_status = CL_EPARSE;
+                read_status = word_skip_oxo3(fd, end_offset);
+                if (read_status != CL_SUCCESS) {
+                    if (read_status == CL_EREAD)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory oxo3 record could not be read completely");
+                    else if (read_status == CL_ESEEK)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory oxo3 record could not be positioned");
+                    else
+                        cli_mark_scan_incomplete(ctx, "Word macro directory oxo3 record was truncated");
                     malformed = TRUE;
                     done      = TRUE;
                 }
                 break;
             case 0x05:
-                if (!word_skip_menu_info(fd, end_offset)) {
-                    cli_mark_scan_incomplete(ctx, "Word macro directory menu record was truncated");
-                    read_status = CL_EPARSE;
+                read_status = word_skip_menu_info(fd, end_offset);
+                if (read_status != CL_SUCCESS) {
+                    if (read_status == CL_EREAD)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory menu record could not be read completely");
+                    else if (read_status == CL_ESEEK)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory menu record could not be positioned");
+                    else
+                        cli_mark_scan_incomplete(ctx, "Word macro directory menu record was truncated");
                     malformed = TRUE;
                     done      = TRUE;
                 }
                 break;
             case 0x10:
-                if (!word_skip_macro_extnames(fd, end_offset)) {
-                    cli_mark_scan_incomplete(ctx, "Word macro directory external names were truncated");
-                    read_status = CL_EPARSE;
+                read_status = word_skip_macro_extnames(fd, end_offset);
+                if (read_status != CL_SUCCESS) {
+                    if (read_status == CL_EREAD)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory external names could not be read completely");
+                    else if (read_status == CL_ESEEK)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory external names could not be positioned");
+                    else
+                        cli_mark_scan_incomplete(ctx, "Word macro directory external names were truncated");
                     malformed = TRUE;
                     done      = TRUE;
                 }
                 break;
             case 0x11:
-                if (!word_skip_macro_intnames(fd, end_offset)) {
-                    cli_mark_scan_incomplete(ctx, "Word macro directory internal names were truncated");
-                    read_status = CL_EPARSE;
+                read_status = word_skip_macro_intnames(fd, end_offset);
+                if (read_status != CL_SUCCESS) {
+                    if (read_status == CL_EREAD)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory internal names could not be read completely");
+                    else if (read_status == CL_ESEEK)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory internal names could not be positioned");
+                    else
+                        cli_mark_scan_incomplete(ctx, "Word macro directory internal names were truncated");
                     malformed = TRUE;
                     done      = TRUE;
                 }
