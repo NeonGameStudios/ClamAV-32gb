@@ -77,7 +77,7 @@ static unsigned char base64(char c);
 static unsigned char uudecode(char c);
 #endif
 static const char *messageGetArgument(const message *m, size_t arg);
-static void *messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy)(void *), void (*setFilename)(void *, const char *, const char *), int (*addData)(void *, const unsigned char *, size_t), void *(*exportText)(text *, void *, int), void (*setCTX)(void *, cli_ctx *), int destroy_text);
+static void *messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy)(void *), void (*setFilename)(void *, const char *, const char *), int (*addData)(void *, const unsigned char *, size_t), void *(*exportText)(text *, void *, int), void (*setCTX)(void *, cli_ctx *), cl_error_t (*getStatus)(const void *), int destroy_text);
 static int usefulArg(const char *arg);
 static void messageDedup(message *m);
 static char *rfc2231(const char *in);
@@ -147,7 +147,14 @@ static cl_error_t messageFileblobStatus(const fileblob *fb)
 {
     if (fb == NULL)
         return CL_ERESOURCE;
+    if (!fb->isIncomplete)
+        return CL_SUCCESS;
     return fb->incomplete_status != CL_SUCCESS ? fb->incomplete_status : CL_ERESOURCE;
+}
+
+static cl_error_t messageExportStatus(const void *output)
+{
+    return messageFileblobStatus((const fileblob *)output);
 }
 
 static void messageRecordFileblobFailure(message *m, const fileblob *fb,
@@ -1492,7 +1499,7 @@ messageGetBody(message *m)
  * last item that was exported. That's sufficient for now.
  */
 static void *
-messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy)(void *), void (*setFilename)(void *, const char *, const char *), int (*addData)(void *, const unsigned char *, size_t), void *(*exportText)(text *, void *, int), void (*setCTX)(void *, cli_ctx *), int destroy_text)
+messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy)(void *), void (*setFilename)(void *, const char *, const char *), int (*addData)(void *, const unsigned char *, size_t), void *(*exportText)(text *, void *, int), void (*setCTX)(void *, cli_ctx *), cl_error_t (*getStatus)(const void *), int destroy_text)
 {
     void *ret;
     text *t_line;
@@ -1564,14 +1571,27 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
 
         (*setFilename)(ret, dir, (filename && *filename) ? filename : "attachment");
 
+        if (getStatus && getStatus(ret) != CL_SUCCESS) {
+            messageRecordFileblobFailure(m, (const fileblob *)ret,
+                                         "MIME decoded message output could not be created");
+            if (filename)
+                free((char *)filename);
+            (*destroy)(ret);
+            return NULL;
+        }
+
         if (filename)
             free((char *)filename);
 
         if (m->numberOfEncTypes == 0) {
             void *exported = exportText(messageGetBody(m), ret, destroy_text);
             if (exported == NULL) {
-                messageMarkMaterializationFailure(m,
-                                                  "MIME decoded message could not be materialized completely");
+                if (getStatus && getStatus(ret) != CL_SUCCESS)
+                    messageRecordFileblobFailure(m, (const fileblob *)ret,
+                                                 "MIME decoded message could not be materialized completely");
+                else
+                    messageMarkMaterializationFailure(m,
+                                                      "MIME decoded message could not be materialized completely");
                 (*destroy)(ret);
                 return NULL;
             }
@@ -1622,6 +1642,14 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
             }
 
             (*setFilename)(ret, dir, (filename && *filename) ? filename : "attachment");
+            if (getStatus && getStatus(ret) != CL_SUCCESS) {
+                messageRecordFileblobFailure(m, (const fileblob *)ret,
+                                             "MIME decoded message output could not be created");
+                if (filename)
+                    free((char *)filename);
+                (*destroy)(ret);
+                return NULL;
+            }
             if (filename) {
                 free((char *)filename);
                 filename = NULL;
@@ -1657,6 +1685,14 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
                 messageSetEncoding(m, "base64");
 
             (*setFilename)(ret, dir, (filename && *filename) ? filename : "attachment");
+            if (getStatus && getStatus(ret) != CL_SUCCESS) {
+                messageRecordFileblobFailure(m, (const fileblob *)ret,
+                                             "MIME decoded message output could not be created");
+                if (filename)
+                    free((char *)filename);
+                (*destroy)(ret);
+                return NULL;
+            }
 
             t_line = messageGetBody(m);
         }
@@ -1682,8 +1718,12 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
                 /* last one */
                 void *exported = exportText(t_line, ret, destroy_text);
                 if (exported == NULL) {
-                    messageMarkMaterializationFailure(m,
-                                                      "MIME decoded message could not be materialized completely");
+                    if (getStatus && getStatus(ret) != CL_SUCCESS)
+                        messageRecordFileblobFailure(m, (const fileblob *)ret,
+                                                     "MIME decoded message could not be materialized completely");
+                    else
+                        messageMarkMaterializationFailure(m,
+                                                          "MIME decoded message could not be materialized completely");
                     (*destroy)(ret);
                     return NULL;
                 }
@@ -1691,8 +1731,12 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
                 break;
             }
             if (exportText(t_line, ret, 0) == NULL) {
-                messageMarkMaterializationFailure(m,
-                                                  "MIME decoded message could not be materialized completely");
+                if (getStatus && getStatus(ret) != CL_SUCCESS)
+                    messageRecordFileblobFailure(m, (const fileblob *)ret,
+                                                 "MIME decoded message could not be materialized completely");
+                else
+                    messageMarkMaterializationFailure(m,
+                                                      "MIME decoded message could not be materialized completely");
                 (*destroy)(ret);
                 return NULL;
             }
@@ -1749,8 +1793,12 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
 
             if (uptr != data) {
                 if ((*addData)(ret, data, (size_t)(uptr - data)) < 0) {
-                    messageMarkMaterializationFailure(m,
-                                                      "MIME decoded message could not be materialized completely");
+                    if (getStatus && getStatus(ret) != CL_SUCCESS)
+                        messageRecordFileblobFailure(m, (const fileblob *)ret,
+                                                     "MIME decoded message could not be materialized completely");
+                    else
+                        messageMarkMaterializationFailure(m,
+                                                          "MIME decoded message could not be materialized completely");
                     export_failed = 1;
                 } else {
                     size += (size_t)(uptr - data);
@@ -1798,8 +1846,12 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
             if (ptr) {
                 if ((*addData)(ret, data, (size_t)(ptr - data)) < 0) {
                     cli_warnmsg("messageExport: trailing decoded data could not be materialized\n");
-                    messageMarkMaterializationFailure(m,
-                                                      "MIME decoded message could not be materialized completely");
+                    if (getStatus && getStatus(ret) != CL_SUCCESS)
+                        messageRecordFileblobFailure(m, (const fileblob *)ret,
+                                                     "MIME decoded message could not be materialized completely");
+                    else
+                        messageMarkMaterializationFailure(m,
+                                                          "MIME decoded message could not be materialized completely");
                     (*destroy)(ret);
                     return NULL;
                 }
@@ -1846,7 +1898,15 @@ int messageSavePartial(message *m, const char *dir, const char *md5id, unsigned 
         fileblobPartialSet(fb, fullname, NULL);
         messageSetSpoolBuildContext(fb, m->ctx);
         if (fb->isIncomplete || fb->fp == NULL || messageCopyBodySpool(m, fb) < 0) {
+            if (fb->isIncomplete)
+                messageRecordFileblobFailure(m, fb,
+                                             "MIME partial message spool could not be materialized completely");
             cli_mark_scan_incomplete(m->ctx, "MIME partial message spool could not be materialized completely");
+            if (m->materialization_status != CL_SUCCESS) {
+                const cl_error_t status = m->materialization_status;
+                fileblobDestructiveDestroy(fb);
+                return status;
+            }
             fileblobDestructiveDestroy(fb);
             return CL_EFORMAT;
         }
@@ -1861,9 +1921,12 @@ int messageSavePartial(message *m, const char *dir, const char *md5id, unsigned 
                        (int (*)(void *, const unsigned char *, size_t))fileblobAddData,
                        (void *(*)(text *, void *, int))textToFileblob,
                        (void (*)(void *, cli_ctx *))fileblobSetCTX,
+                       messageExportStatus,
                        0);
     if (!fb) {
         cli_mark_scan_incomplete(m ? m->ctx : NULL, "MIME partial message spool could not be materialized completely");
+        if (m && m->materialization_status != CL_SUCCESS)
+            return m->materialization_status;
         return CL_EFORMAT;
     }
     fileblobDestroy(fb);
@@ -2100,6 +2163,7 @@ messageToFileblob(message *m, const char *dir, int destroy)
                        (int (*)(void *, const unsigned char *, size_t))fileblobAddData,
                        (void *(*)(text *, void *, int))textToFileblob,
                        (void (*)(void *, cli_ctx *))fileblobSetCTX,
+                       messageExportStatus,
                        destroy);
     if (destroy && m->body_first) {
         textDestroy(m->body_first);
@@ -2132,6 +2196,7 @@ messageToBlob(message *m, int destroy)
                       (int (*)(void *, const unsigned char *, size_t))blobAddData,
                       (void *(*)(text *, void *, int))textToBlob,
                       (void (*)(void *, cli_ctx *))NULL,
+                      NULL,
                       destroy);
 
     if (destroy && m->body_first) {

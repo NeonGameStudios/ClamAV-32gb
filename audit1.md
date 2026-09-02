@@ -2,18 +2,19 @@
 
 ## MIME body-spool status propagation — 2026-09-02
 
-Ordinary MIME body spooling now retains the first specific failure from its
-required fileblob operation at the message boundary. Body-spool creation and
-write failures are no longer reduced to `CL_EMAXSIZE` or a generic parse
-failure when `cli_mbox()` unwinds; `CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`,
-`CL_ETIMEOUT`, and `CL_ERESOURCE` remain visible while sticky incomplete and
-cache-taint behavior is preserved. The new
-`test_mbox_body_spool_output_creation_status_is_fail_visible` regression
-drives ordinary text through an invalid spool directory and requires
-`CL_ECREAT`. Current-source production-GCC compilation, production-linked
-MIME execution, complete mail/multipart corpus, sanitizer, certified Linux
-x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
-and final parser/release qualification remain required.
+Ordinary MIME body spooling and subsequent fileblob export now retain the
+first specific failure from a required fileblob operation at the message
+boundary. Body-spool creation, write, and export failures are no longer
+reduced to `CL_EMAXSIZE` or a generic parse failure when `cli_mbox()` unwinds;
+`CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, and `CL_ERESOURCE` remain
+visible while sticky incomplete and cache-taint behavior is preserved. The
+`test_mbox_body_spool_output_creation_status_is_fail_visible` and
+`test_mbox_body_export_output_creation_status_is_fail_visible` regressions
+require `CL_ECREAT` for invalid source-spool and export destinations.
+Current-source production-GCC compilation, production-linked MIME execution,
+complete mail/multipart corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
 
 ## UUEncode fileblob status reconciliation — 2026-09-02
 
