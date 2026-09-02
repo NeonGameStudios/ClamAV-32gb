@@ -373,6 +373,11 @@ cl_error_t cli_scanhwpole2(cli_ctx *ctx)
     }
     cli_dbgmsg("HWPOLE2: Matched uncompressed prefix and size: %u == %u\n", usize, asize);
 
+    if (!ctx->engine)
+        return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
+
     ret = cli_magic_scan_nested_fmap_type(map, 4, 0, ctx,
                                           CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     if ((ret == CL_SUCCESS || ret == CL_CLEAN) && ctx->scan_incomplete)
@@ -547,6 +552,9 @@ cl_error_t cli_scanhwp5_stream(cli_ctx *ctx, hwp5_header_t *hwp5, char *name, in
         cli_errmsg("HWP5.x: Invalid scan context or header argument\n");
         return CL_ENULLARG;
     }
+
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     if (fd < 0) {
         cli_errmsg("HWP5.x: Invalid file descriptor argument\n");

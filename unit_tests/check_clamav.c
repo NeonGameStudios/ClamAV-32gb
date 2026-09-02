@@ -30652,6 +30652,27 @@ START_TEST(test_hwp5_stream_requires_context_and_engine)
 }
 END_TEST
 
+START_TEST(test_hwp5_stream_requires_options)
+{
+    hwp5_header_t hwp5;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    int fd;
+
+    memset(&hwp5, 0, sizeof(hwp5));
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    fd = open("/dev/null", O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(/dev/null) failed: %s", strerror(errno));
+
+    ctx.engine = &engine;
+    ck_assert_int_eq(cli_scanhwp5_stream(&ctx, &hwp5, NULL, fd, NULL), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+
+    ck_assert_int_eq(close(fd), 0);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_7Z_EXTRACT_WRAP
 START_TEST(test_hwp5_stream_sticky_incomplete_result_is_fail_visible)
 {
@@ -30744,6 +30765,32 @@ START_TEST(test_hwpole2_missing_map_is_fail_visible)
     ck_assert_int_eq(cli_scanhwpole2(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "HWPOLE2 input map is unavailable");
+}
+END_TEST
+
+START_TEST(test_hwpole2_nested_scan_requires_engine_and_options)
+{
+    static const uint8_t data[] = {1, 0, 0, 0, 0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scanhwpole2(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    ctx.engine = &engine;
+    ck_assert_int_eq(cli_scanhwpole2(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -57464,6 +57511,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_hwpole2_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_null_context_is_fail_visible);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_missing_map_is_fail_visible);
+    tcase_add_test(tc_hwpole2_map, test_hwpole2_nested_scan_requires_engine_and_options);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_partition_map);
@@ -58244,6 +58292,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_time_limit_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_missing_map_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp5_stream_requires_context_and_engine);
+    tcase_add_test(tc_hwp3, test_hwp5_stream_requires_options);
 #ifdef CLAMAV_TEST_7Z_EXTRACT_WRAP
     tcase_add_test(tc_hwp3, test_hwp5_stream_sticky_incomplete_result_is_fail_visible);
 #endif

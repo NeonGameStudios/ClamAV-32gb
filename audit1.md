@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## HWP nested scan-options admission — 2026-09-02
+
+`cli_scanhwpole2()` validated its wrapper and then delegated engine/options
+admission to the nested scanner, while `cli_scanhwp5_stream()` checked engine
+ownership but accepted a missing options object before descriptor or
+decompression handoff. The HWPOLE2 nested boundary now rejects missing engine
+or options after structural wrapper validation, preserving its existing
+engine-free malformed-input checks; the HWP5 stream entry rejects missing
+options immediately after engine admission.
+
+`test_hwpole2_nested_scan_requires_engine_and_options` and
+`test_hwp5_stream_requires_options` verify `CL_ENULLARG` without sticky
+incomplete or cache-taint state. Source guards and the capability manifest
+record the boundaries. Current-source production-GCC compilation,
+production-linked execution, complete HWP/OLE corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.
+
 ## MSPack direct options admission — 2026-09-02
 
 The exported `cli_scanmscab()` and `cli_scanmschm()` entries rejected null

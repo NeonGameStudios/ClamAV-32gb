@@ -1,5 +1,19 @@
 # Wishlist
 
+## HWP nested scan-options admission — 2026-09-02
+
+- Keep the HWPOLE2 nested handoff fail-visible when engine or scan options are
+  absent after a structurally valid wrapper; preserve engine-free structural
+  validation for malformed/truncated input. Keep HWP5 stream handoff
+  fail-visible when options are absent after engine admission.
+- Retain `test_hwpole2_nested_scan_requires_engine_and_options` and
+  `test_hwp5_stream_requires_options`, their source guards, and manifest
+  evidence that invalid contexts do not become sticky incomplete or
+  cache-tainted. Current-source production-GCC compilation,
+  production-linked execution, complete HWP/OLE corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification remain open.
+
 ## MSPack direct options admission — 2026-09-02
 
 - Keep exported `cli_scanmscab()` and `cli_scanmschm()` fail-visible when an
