@@ -11956,6 +11956,24 @@ START_TEST(test_ole10_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole10_missing_options_is_fail_visible)
+{
+    struct cl_engine engine;
+    cli_ctx ctx;
+    int fd;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    fd         = open("/dev/null", O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(/dev/null) failed: %s", strerror(errno));
+
+    ck_assert_int_eq(cli_scan_ole10(fd, &ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert_int_eq(close(fd), 0);
+}
+END_TEST
+
 START_TEST(test_ole10_temporary_limit_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -57938,6 +57956,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_ole10_entry, cl_setup, cl_teardown);
     tcase_add_test(tc_ole10_entry, test_ole10_null_context_is_fail_visible);
     tcase_add_test(tc_ole10_entry, test_ole10_missing_engine_is_fail_visible);
+    tcase_add_test(tc_ole10_entry, test_ole10_missing_options_is_fail_visible);
     tcase_add_test(tc_ole10_entry, test_ole10_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_ppt_entry);
     tcase_add_checked_fixture(tc_ppt_entry, cl_setup, cl_teardown);

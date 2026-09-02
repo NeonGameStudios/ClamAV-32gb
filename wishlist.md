@@ -1,5 +1,17 @@
 # Wishlist
 
+## OLE10 scan-options admission — 2026-09-02
+
+- Keep `cli_scan_ole10()` fail-visible for direct callers when a valid engine
+  context omits scan options; return `CL_ENULLARG` before temporary storage,
+  payload materialization, or nested descriptor scanning.
+- Retain `test_ole10_missing_options_is_fail_visible`, its source guard, and
+  manifest evidence that the invalid context does not become sticky
+  incomplete. Current-source production-GCC compilation, production-linked
+  execution, complete OLE10/VBA corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## PowerPoint VBA options admission — 2026-09-02
 
 - Keep `cli_ppt_vba_read_ex()` fail-visible when an otherwise recognized

@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## OLE10 scan-options admission — 2026-09-02
+
+The `cli_scan_ole10()` embedded-object extraction entry already rejected a
+missing scan context or owning engine, but it could proceed into temporary
+storage admission, payload materialization, and nested descriptor scanning
+without `ctx->options`. It now returns `CL_ENULLARG` immediately after engine
+admission when the scan-options object is absent.
+
+`test_ole10_missing_options_is_fail_visible` supplies a valid engine and file
+descriptor while omitting options, and verifies the direct entry returns
+`CL_ENULLARG` without sticky incomplete state. Source guards and the
+capability manifest record this boundary. Current-source production-GCC
+compilation, production-linked execution, complete OLE10/VBA corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## PowerPoint VBA options admission — 2026-09-02
 
 The `cli_ppt_vba_read_ex()` extraction helper rejected null context and
