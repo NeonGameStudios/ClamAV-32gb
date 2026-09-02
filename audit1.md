@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## EGG archive-index read-status preservation — 2026-09-02
+
+After `cli_egg_open_ex()` completed the fixed archive header, its next
+top-level magic read used the bounded range helper but replaced an in-range
+backing callback failure (`CL_EREAD`) with `CL_EFORMAT`. A recognized archive
+could therefore lose the operational read status even though the helper had
+already recorded the exact incomplete reason and fmap cache taint. The
+top-level path now preserves the helper status, and
+`test_egg_archive_index_read_failure_preserves_status` exercises the
+post-header callback failure. Current-source production-GCC compilation and
+linked execution, complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+EGG/parser-release qualification remain required.
+
 ## ARJ direct extraction output-open status — 2026-09-02
 
 The owning `cli_scanarj()` path already converted a failed ARJ member output

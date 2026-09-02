@@ -35090,6 +35090,50 @@ START_TEST(test_egg_extra_field_range_classes_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_egg_archive_index_read_failure_preserves_status)
+{
+    static const uint8_t valid_header[] = {
+        0x45, 0x47, 0x47, 0x41, /* EGG_HEADER_MAGIC */
+        0x00, 0x01,             /* EGG_HEADER_VERSION */
+        0x01, 0x00, 0x00, 0x00, /* nonzero header id */
+        0x00, 0x00, 0x00, 0x00  /* reserved */
+    };
+    uint8_t archive[sizeof(valid_header) + 8U];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    cl_error_t ret;
+
+    memset(archive, 0, sizeof(archive));
+    memcpy(archive, valid_header, sizeof(valid_header));
+    zip_stream_write_u32(archive + sizeof(valid_header), 0x08E28222U); /* EOFARC */
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    egg_read_failure_offset = sizeof(valid_header) + 4U;
+    egg_read_failure_length = 4U;
+    map->need = egg_targeted_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_ptr_null(handle);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG fixed metadata could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    egg_read_failure_offset = SIZE_MAX;
+    egg_read_failure_length = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
 typedef struct {
     uint8_t *buffer;
     size_t capacity;
@@ -59386,6 +59430,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_egg_map, test_egg_fixed_header_range_classes_are_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_archive_header_fields_are_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_extra_field_range_classes_are_fail_visible);
+    tcase_add_test(tc_egg_map, test_egg_archive_index_read_failure_preserves_status);
     tcase_add_test(tc_egg_map, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_metadata_index_respects_contiguous_limit);
     tcase_add_test(tc_egg_map, test_egg_oversized_skippable_extra_fields_are_bounded);

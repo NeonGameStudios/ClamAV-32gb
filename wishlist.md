@@ -1,5 +1,16 @@
 # Wishlist
 
+## EGG archive-index read-status preservation — 2026-09-02
+
+- Keep the post-header `cli_egg_open_ex()` magic read preserving in-range
+  fmap callback failures as `CL_EREAD` with the exact incomplete diagnostic
+  and non-cacheability, instead of converting them to `CL_EFORMAT`.
+- Retain `test_egg_archive_index_read_failure_preserves_status`, source
+  guards, and capability evidence. Current-source production-GCC execution,
+  complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final EGG/parser-release qualification remain open.
+
 ## ARJ direct extraction output-open status — 2026-09-02
 
 - Keep `cli_unarj_extract_file()` marking a recognized ARJ layer incomplete

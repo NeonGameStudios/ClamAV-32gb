@@ -7026,6 +7026,7 @@ contains unit_tests/check_clamav.c 'the LZMA member above is intentionally unsup
 contains unit_tests/check_clamav.c 'test_egg_fixed_header_range_classes_are_fail_visible'
 contains unit_tests/check_clamav.c 'test_egg_archive_header_fields_are_fail_visible'
 contains unit_tests/check_clamav.c 'test_egg_extra_field_range_classes_are_fail_visible'
+contains unit_tests/check_clamav.c 'test_egg_archive_index_read_failure_preserves_status'
 contains unit_tests/check_clamav.c 'test_egg_time_limit_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_egg_metadata_index_respects_contiguous_limit'
 contains unit_tests/check_clamav.c 'test_egg_scan_entry_boundaries_are_fail_visible'

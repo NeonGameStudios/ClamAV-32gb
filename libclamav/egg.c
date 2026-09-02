@@ -1985,7 +1985,6 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
         index = egg_read_fixed_range(handle, handle->offset, sizeof(magic32_t), &status);
         if (!index) {
             cli_dbgmsg("cli_egg_open: No more data in archive.\n");
-            status = CL_EFORMAT;
             goto done;
         }
 
