@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## TNEF fileblob status reconciliation — 2026-09-02
+
+TNEF attachment handling now preserves the specific status retained by a
+required fileblob operation instead of converting output creation to
+`CL_ETMPFILE` or materialization failures to generic `CL_ERESOURCE`. The
+`cli_tnef()` path now returns statuses such as `CL_ECREAT`, `CL_EOPEN`,
+`CL_EWRITE`, and `CL_ETIMEOUT` from the attachment owner, while preserving
+sticky incomplete/cache-taint behavior. `test_tnef_attachment_output_creation_status_is_fail_visible`
+drives a real attachment through an invalid output directory and requires
+`CL_ECREAT`. Current-source production-GCC compilation, production-linked
+TNEF/MIME execution, complete TNEF corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## Fileblob status propagation — 2026-09-02
 
 The shared fileblob spool previously converted a temporary-file creation or

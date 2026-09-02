@@ -79,6 +79,13 @@ static cl_error_t tnef_checktimelimit(cli_ctx *ctx, const char *reason)
     return ret;
 }
 
+static cl_error_t tnef_fileblob_status(const fileblob *fb)
+{
+    if (fb == NULL)
+        return CL_ERESOURCE;
+    return fb->incomplete_status != CL_SUCCESS ? fb->incomplete_status : CL_ERESOURCE;
+}
+
 int cli_tnef(const char *dir, cli_ctx *ctx)
 {
     uint32_t i32;
@@ -198,7 +205,7 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                 }
                 fileblobSetCTX(fb, ctx);
                 if (fb->isIncomplete) {
-                    ret     = CL_ERESOURCE;
+                    ret     = tnef_fileblob_status(fb);
                     alldone = 1;
                     break;
                 }
@@ -304,6 +311,8 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
         if (fileblobGetFilename(fb) == NULL) {
             cli_dbgmsg("Saving TNEF portion with an unknown name\n");
             fileblobSetFilename(fb, dir, "tnef");
+            if (fb->isIncomplete && (ret == CL_CLEAN || ret == CL_SUCCESS))
+                ret = tnef_fileblob_status(fb);
         }
         fileblobDestroy(fb);
         fb = NULL;
@@ -456,13 +465,13 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
                 fileblobSetCTX(*fbref, ctx);
                 if ((*fbref)->isIncomplete) {
                     free(string);
-                    return CL_ERESOURCE;
+                    return tnef_fileblob_status(*fbref);
                 }
             }
             fileblobSetFilename(*fbref, dir, string);
             if ((*fbref)->isIncomplete) {
                 free(string);
-                return CL_ETMPFILE;
+                return tnef_fileblob_status(*fbref);
             }
             free(string);
             break;
@@ -476,11 +485,11 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
             }
             fileblobSetCTX(*fbref, ctx);
             if ((*fbref)->isIncomplete)
-                return CL_ERESOURCE;
+                return tnef_fileblob_status(*fbref);
             if (fileblobGetFilename(*fbref) == NULL) {
                 fileblobSetFilename(*fbref, dir, "tnef");
                 if ((*fbref)->isIncomplete)
-                    return CL_ETMPFILE;
+                    return tnef_fileblob_status(*fbref);
             }
             todo = length;
             while (todo) {
@@ -501,7 +510,7 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
 
                 if (fileblobAddData(*fbref, buf, got) < 0) {
                     cli_mark_scan_incomplete(ctx, "TNEF attachment data could not be materialized completely");
-                    return CL_ERESOURCE;
+                    return tnef_fileblob_status(*fbref);
                 }
                 todo -= (uint32_t)got;
             }

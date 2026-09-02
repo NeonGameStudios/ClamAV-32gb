@@ -1,5 +1,18 @@
 # Wishlist
 
+## TNEF fileblob status reconciliation — 2026-09-02
+
+- Preserve the specific status retained by a required TNEF attachment
+  fileblob operation, including `CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, and
+  `CL_ETIMEOUT`, instead of returning `CL_ETMPFILE` or generic
+  `CL_ERESOURCE`.
+- Keep the real `cli_tnef()` invalid-directory regression and sticky
+  incomplete/cache-taint behavior. Complete current-source production-GCC
+  compilation and linked TNEF/MIME execution, complete TNEF corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification.
+
 ## Fileblob status propagation — 2026-09-02
 
 - Retain the first specific fileblob required-operation status through

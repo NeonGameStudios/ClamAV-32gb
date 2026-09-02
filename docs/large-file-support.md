@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## TNEF fileblob status reconciliation — 2026-09-02
+
+TNEF attachment handling now preserves the specific status retained by a
+required fileblob operation through `cli_tnef()`, including `CL_ECREAT`,
+`CL_EOPEN`, `CL_EWRITE`, and `CL_ETIMEOUT`, instead of relabeling output
+creation as `CL_ETMPFILE` or materialization as generic `CL_ERESOURCE`.
+`test_tnef_attachment_output_creation_status_is_fail_visible` drives a real
+attachment through an invalid output directory and requires `CL_ECREAT`.
+Sticky incomplete/cache-taint behavior remains enforced. Current-source
+production-GCC compilation, production-linked TNEF/MIME execution, complete
+TNEF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Fileblob status propagation — 2026-09-02
 
 Shared fileblob spools now retain the first specific required-operation status

@@ -37905,6 +37905,41 @@ START_TEST(test_tnef_attachment_temporary_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tnef_attachment_output_creation_status_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x02,                   /* attachment level */
+        0x0f, 0x80, 0x00, 0x00, /* attachment data tag */
+        0x01, 0x00, 0x00, 0x00, /* one-byte attachment */
+        0xaa,
+        0x00, 0x00              /* checksum */
+    };
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    char bad_dir[PATH_MAX];
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    snprintf(bad_dir, sizeof(bad_dir), "%s/tnef-attachment-output-missing", tmpdir);
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = bad_dir;
+    map                   = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_tnef(bad_dir, &ctx), CL_ECREAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "fileblob temporary spool could not be created");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_tnef_corpus_detects_embedded_mz)
 {
     char file_path[PATH_MAX];
@@ -55908,6 +55943,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tnef, test_tnef_attachment_read_failure_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_message_body_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_attachment_temporary_limit_is_fail_visible);
+    tcase_add_test(tc_tnef, test_tnef_attachment_output_creation_status_is_fail_visible);
     tcase_add_test(tc_tnef, test_tnef_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_uuencode_map);
     tcase_add_checked_fixture(tc_uuencode_map, cl_setup, cl_teardown);
