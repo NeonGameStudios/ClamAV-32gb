@@ -167,6 +167,7 @@ int clamav_test_force_xar_member_decoder_init;
 int clamav_test_force_xar_member_decoder_end;
 int clamav_test_force_ishield_cab_decoder_end;
 int clamav_test_force_gzip_decoder_end;
+int clamav_test_force_zip_inflate_decoder_end;
 int clamav_test_force_dmg_decoder_end;
 int clamav_test_force_dmg_adc_decoder_end;
 int clamav_test_force_dmg_bzip_decoder_end;
@@ -203,6 +204,11 @@ int __wrap_inflateEnd(z_streamp strm)
     if (clamav_test_force_gzip_decoder_end > 0) {
         clamav_test_force_gzip_decoder_end--;
         if (clamav_test_force_gzip_decoder_end == 0)
+            return Z_STREAM_ERROR;
+    }
+    if (clamav_test_force_zip_inflate_decoder_end > 0) {
+        clamav_test_force_zip_inflate_decoder_end--;
+        if (clamav_test_force_zip_inflate_decoder_end == 0)
             return Z_STREAM_ERROR;
     }
     if (clamav_test_force_dmg_decoder_end > 0) {
@@ -13955,6 +13961,69 @@ START_TEST(test_zip_bzip_decoder_finalization_failure_is_fail_visible)
     ck_assert_str_eq(ctx.scan_incomplete_reason, "ZIP BZIP2 decompressor could not be finalized");
     ck_assert(map->dont_cache_flag);
     ck_assert_int_eq(clamav_test_force_bzip_decoder_end, 0);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(archive);
+}
+END_TEST
+
+START_TEST(test_zip_deflate_decoder_finalization_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "ZIP DEFLATE finalization regression";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *deflate;
+    uint8_t *archive;
+    size_t deflate_length;
+    size_t archive_length;
+    cl_error_t ret;
+
+    deflate = zip_stream_raw_deflate_compressed(input, sizeof(input) - 1U, &deflate_length);
+    ck_assert_ptr_nonnull(deflate);
+    archive = zip_stream_local_archive(deflate, deflate_length, sizeof(input) - 1U,
+                                       ZIP_TEST_METHOD_DEFLATE,
+                                       (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                       &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    free(deflate);
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         engine->root[0], "ZIP.DEFLATE.Member.Exact", "5a4950204445464c", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    layers[0].type             = CL_TYPE_ZIP;
+    layers[0].size             = map->len;
+    layers[0].fmap             = map;
+    ctx.engine                 = engine;
+    ctx.dconf                  = engine->dconf;
+    ctx.options                = &options;
+    ctx.fmap                   = map;
+    ctx.this_layer_tmpdir      = tmpdir;
+    ctx.recursion_stack        = layers;
+    ctx.recursion_stack_size   = 2;
+
+    clamav_test_force_zip_inflate_decoder_end = 1;
+    ret = cli_unzip_single(&ctx, 0);
+
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ZIP inflate decompressor could not be finalized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_zip_inflate_decoder_end, 0);
 
     cl_fmap_close(map);
     cl_engine_free(engine);
@@ -59076,6 +59145,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_zip, test_zip_sticky_incomplete_result_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_zip, test_zip_bzip_decoder_finalization_failure_is_fail_visible);
+    tcase_add_test(tc_zip, test_zip_deflate_decoder_finalization_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_zip, test_zip_confirmed_central_structure_is_fail_visible);
     tcase_add_test(tc_zip, test_zip_central_directory_resolves_masked_local_values);

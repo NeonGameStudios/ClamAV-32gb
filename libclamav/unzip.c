@@ -365,6 +365,15 @@ static cl_error_t zip_bzip_finalize(cli_ctx *ctx, bz_stream *strm, cl_error_t st
     return status;
 }
 
+static cl_error_t zip_inflate_finalize(cli_ctx *ctx, int (*end)(void *), void *strm, cl_error_t status)
+{
+    if (end(strm) != Z_OK) {
+        cli_mark_scan_incomplete(ctx, "ZIP inflate decompressor could not be finalized");
+        status = cli_merge_cleanup_status(status, CL_EUNPACK);
+    }
+    return status;
+}
+
 static cl_error_t zip_write_output(int out_file, const void *buffer, size_t length, uint64_t *written, cli_ctx *ctx)
 {
     cl_error_t ret;
@@ -677,7 +686,7 @@ static cl_error_t unz_stream(
         }
 
         if (initialized)
-            unz_end(&strm);
+            ret = zip_inflate_finalize(ctx, unz_end, &strm, ret);
     } else if (ALG_BZIP2 == method) {
         bz_stream strm;
         int bzret;
@@ -1060,7 +1069,11 @@ static cl_error_t unz_legacy(
                     continue;
                 break;
             }
-            unz_end(&strm);
+            if (unz_end(&strm) != Z_OK) {
+                cli_mark_scan_incomplete(ctx, "ZIP inflate decompressor could not be finalized");
+                ret = cli_merge_cleanup_status(ret, CL_EUNPACK);
+                res = 100;
+            }
             if (res == Z_STREAM_END && 0 == *avail_in)
                 res = 0;
             break;

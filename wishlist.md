@@ -1,5 +1,19 @@
 # Wishlist
 
+## ZIP inflate decoder finalization status — 2026-09-02
+
+- Keep ZIP bounded deflate and deflate64 decoder teardown fail-visible before
+  member completion or child dispatch, and preserve the same status in the
+  dormant legacy path. Merge `CL_EUNPACK` without replacing an earlier
+  parser, read, limit, timeout, detection, or cleanup result; never scan
+  partial output.
+- Retain `test_zip_deflate_decoder_finalization_failure_is_fail_visible`, its
+  one-shot wrapper fault, exact child signature, and source guards.
+  Current-source production-GCC execution, complete ZIP/deflate corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
+
 ## ZIP BZIP2 decoder finalization status — 2026-09-02
 
 - Keep ZIP bounded BZIP2 decoder teardown fail-visible before member

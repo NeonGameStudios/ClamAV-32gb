@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## ZIP inflate decoder finalization status — 2026-09-02
+
+ZIP bounded deflate and deflate64 extraction now checks initialized decoder
+teardown before completing a member or dispatching its child, and the dormant
+legacy path also preserves teardown failure as `CL_EUNPACK`. The focused
+`cli_unzip_single()` regression injects a one-shot `inflateEnd()` failure after
+a complete local deflate member whose exact child signature would otherwise
+match, requiring the exact incomplete diagnostic, no child dispatch, and fmap
+non-cacheability. Current-source production-GCC compilation and linked
+execution, complete ZIP/deflate corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## ZIP BZIP2 decoder finalization status — 2026-09-02
 
 ZIP bounded BZIP2 extraction now checks initialized decoder teardown before
