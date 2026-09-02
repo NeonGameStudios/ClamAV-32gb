@@ -11538,6 +11538,18 @@ final parser/release qualification remain open.
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
   resource, and final nested-ingress qualification remain open.
 
+## Image fuzzy-hash metadata completion — 2026-09-01
+
+- Keep image fuzzy-hash `Error` and `Hash` JSON recording failures
+  fail-visible. A failed required metadata write must taint the confirmed
+  image layer, prevent caching, and prevent publication of a calculated hash
+  as complete.
+- Retain `test_image_fuzzy_hash_metadata_record_failure_is_fail_visible` and
+  its source guards. Current-source production-linked execution, complete
+  image corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
+
 ## OLE2 custom-property metadata completion — 2026-09-01
 
 - Keep `HasUserDefinedProperties` report failures fail-visible when an OLE2

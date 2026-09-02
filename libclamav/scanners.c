@@ -6680,12 +6680,13 @@ static cl_error_t dispatch_prescan_callback(clcb_pre_scan cb, cli_ctx *ctx, cons
 
 static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
 {
-    cl_error_t status       = CL_EPARSE;
-    const uint8_t *offset   = NULL;
-    size_t image_size       = ctx->fmap->len;
-    bool image_locked       = false;
-    image_fuzzy_hash_t hash = {0};
-    json_object *header     = NULL;
+    cl_error_t status          = CL_EPARSE;
+    cl_error_t metadata_status = CL_SUCCESS;
+    const uint8_t *offset      = NULL;
+    size_t image_size          = ctx->fmap->len;
+    bool image_locked          = false;
+    image_fuzzy_hash_t hash    = {0};
+    json_object *header        = NULL;
 
     FFIError *fuzzy_hash_calc_error = NULL;
 
@@ -6720,7 +6721,11 @@ static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
         cli_mark_scan_incomplete(ctx, "image fuzzy hash calculation did not complete");
 
         if (SCAN_COLLECT_METADATA && (NULL != header)) {
-            (void)cli_jsonstr(header, "Error", ffierror_fmt(fuzzy_hash_calc_error));
+            cl_error_t json_status = cli_jsonstr(header, "Error", ffierror_fmt(fuzzy_hash_calc_error));
+            if (json_status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "image fuzzy hash metadata JSON could not be recorded");
+                metadata_status = cli_merge_scan_status(metadata_status, json_status);
+            }
         }
 
         goto done;
@@ -6731,13 +6736,21 @@ static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
         snprintf(hashstr, 17, "%02x%02x%02x%02x%02x%02x%02x%02x",
                  hash.hash[0], hash.hash[1], hash.hash[2], hash.hash[3],
                  hash.hash[4], hash.hash[5], hash.hash[6], hash.hash[7]);
-        (void)cli_jsonstr(header, "Hash", hashstr);
+        {
+            cl_error_t json_status = cli_jsonstr(header, "Hash", hashstr);
+            if (json_status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "image fuzzy hash metadata JSON could not be recorded");
+                metadata_status = cli_merge_scan_status(metadata_status, json_status);
+            }
+        }
     }
 
-    ctx->recursion_stack[ctx->recursion_level].image_fuzzy_hash            = hash;
-    ctx->recursion_stack[ctx->recursion_level].calculated_image_fuzzy_hash = true;
+    if (metadata_status == CL_SUCCESS) {
+        ctx->recursion_stack[ctx->recursion_level].image_fuzzy_hash            = hash;
+        ctx->recursion_stack[ctx->recursion_level].calculated_image_fuzzy_hash = true;
 
-    status = CL_SUCCESS;
+        status = CL_SUCCESS;
+    }
 
 done:
     if (image_locked) {
@@ -6746,7 +6759,7 @@ done:
     if (NULL != fuzzy_hash_calc_error) {
         ffierror_free(fuzzy_hash_calc_error);
     }
-    return status;
+    return cli_merge_scan_status(status, metadata_status);
 }
 
 /**

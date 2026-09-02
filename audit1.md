@@ -19585,3 +19585,26 @@ boundary. Current-source production-linked execution, complete OLE/VBA/XLM
 corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+## Image fuzzy-hash metadata completion — 2026-09-01
+
+The image fuzzy-hash dispatcher previously discarded failures while recording
+the calculation error or the successful hash in the layer metadata object. A
+required report field could therefore disappear while the image layer was
+reported as clean, and a successful hash could be published in the recursion
+state even though its metadata write failed. The calculator now marks the
+layer incomplete, preserves the metadata status through its final return, and
+publishes the hash only after the `Hash` record succeeds.
+
+`test_image_fuzzy_hash_metadata_record_failure_is_fail_visible` exercises both
+branches through the public scan-map API: an invalid image forces the `Error`
+recording path, and a valid one-pixel GIF reaches the successful `Hash` path.
+Injected `CL_EMEM` from the production-linked JSON wrapper must propagate as
+`CL_EMEM`, clear stale public outputs, produce an incomplete structured report
+with the calculation diagnostic for the failed-image branch and the exact
+metadata diagnostic for the successful-hash branch, and taint the fmap
+non-cacheable. Source guards and the capability manifest record the checked
+writes. Current-source production-linked execution, complete image corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

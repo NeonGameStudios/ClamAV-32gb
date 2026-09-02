@@ -307,6 +307,8 @@ static int pe_test_fail_header_metadata;
 static int pe_test_fail_section_metadata;
 static int pe_test_fail_empty_section_metadata;
 static int pe_test_fail_packer_metadata;
+static int image_fuzzy_test_fail_error_metadata;
+static int image_fuzzy_test_fail_hash_metadata;
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
@@ -351,6 +353,10 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
     if (pe_test_fail_imphash && key && strcmp(key, "Imphash") == 0)
         return CL_EMEM;
     if (pe_test_fail_packer_metadata && key && strcmp(key, "Packer") == 0)
+        return CL_EMEM;
+    if (image_fuzzy_test_fail_error_metadata && key && strcmp(key, "Error") == 0)
+        return CL_EMEM;
+    if (image_fuzzy_test_fail_hash_metadata && key && strcmp(key, "Hash") == 0)
         return CL_EMEM;
     return __real_cli_jsonstr(obj, key, s);
 }
@@ -50947,6 +50953,98 @@ START_TEST(test_gif_sticky_incomplete_result_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_image_fuzzy_hash_metadata_record_failure_is_fail_visible)
+{
+    static const uint8_t invalid_image[] = {'n', 'o', 't', ' ', 'a', 'n', ' ', 'i', 'm', 'a', 'g', 'e'};
+    static const uint8_t valid_image[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+        0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+        0x02, 0x02, 0x44, 0x01, 0x00,
+        0x3b,
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_scan_report_t *report;
+    cl_scan_completion_t completion;
+    cl_error_t report_status;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    const char *reason;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    options.parse   = CL_SCAN_PARSE_IMAGE | CL_SCAN_PARSE_IMAGE_FUZZY_HASH;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    scan_engine->dconf->other |= OTHER_CONF_IMAGE_FUZZY_HASH;
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(invalid_image, sizeof(invalid_image));
+    ck_assert_ptr_nonnull(map);
+    report     = NULL;
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    image_fuzzy_test_fail_error_metadata = 1;
+    ret = cl_scanmap_ex2(map, "fuzzy-error-metadata", &verdict, &last_alert, &scanned,
+                         scan_engine, &options, NULL, NULL, NULL, NULL,
+                         "CL_TYPE_GIF", NULL, &report);
+    image_fuzzy_test_fail_error_metadata = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_EMEM);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_ne(completion, CL_SCAN_COMPLETION_COMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "image fuzzy hash calculation did not complete");
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(valid_image, sizeof(valid_image));
+    ck_assert_ptr_nonnull(map);
+    report     = NULL;
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    image_fuzzy_test_fail_hash_metadata = 1;
+    ret = cl_scanmap_ex2(map, "fuzzy-hash-metadata", &verdict, &last_alert, &scanned,
+                         scan_engine, &options, NULL, NULL, NULL, NULL,
+                         "CL_TYPE_GIF", NULL, &report);
+    image_fuzzy_test_fail_hash_metadata = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_EMEM);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_ne(completion, CL_SCAN_COMPLETION_COMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "image fuzzy hash metadata JSON could not be recorded");
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+#endif
+
 START_TEST(test_gif_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {'G', 'I', 'F'};
@@ -55814,6 +55912,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif, test_gif_fixed_extension_block_sizes_are_validated);
     tcase_add_test(tc_gif, test_gif_image_data_completion_is_validated);
     tcase_add_test(tc_gif, test_gif_sticky_incomplete_result_is_fail_visible);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_gif, test_image_fuzzy_hash_metadata_record_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_gif, test_gif_truncated_screen_descriptor_is_parse_error);
     tcase_add_test(tc_gif, test_gif_block_timeout_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_null_context_is_fail_visible);

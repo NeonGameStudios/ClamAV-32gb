@@ -8658,6 +8658,17 @@ failed detector cannot be published as a successful fuzzy result. The
 capability manifest records this deliberate unsupported boundary; image
 corpus, sanitizer, and supported-build qualification remain release gates.
 
+## Image fuzzy-hash metadata completion — 2026-09-01
+
+The image fuzzy-hash dispatcher now checks both the calculation-error and
+successful-hash metadata writes. A failed required JSON record marks the
+confirmed image layer incomplete and non-cacheable, preserves the critical
+status, and prevents a computed hash from being published as complete. The
+focused JSON-wrapper regression covers both branches; current-source
+production-linked execution, complete image corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
+release qualification remain required.
+
 ## Bytecode logical-dispatch argument validation — 2026-08-20
 
 The logical-bytecode entry point now validates the scan context, bytecode
