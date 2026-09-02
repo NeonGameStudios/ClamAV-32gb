@@ -1,5 +1,18 @@
 # Wishlist
 
+## NSIS direct options admission — 2026-09-02
+
+- Keep exported `cli_scannulsft()` fail-visible when an otherwise recognized
+  engine/map context omits scan options; return `CL_ENULLARG` before deadline
+  checks, temporary output, decoder traversal, or nested-child scanning.
+- Retain `test_nsis_missing_options_is_fail_visible`, its source guards, and
+  manifest evidence that the invalid context does not become sticky incomplete
+  or cache-tainted. Keep valid options in direct NSIS parser regressions.
+  Current-source production-GCC compilation, production-linked execution,
+  complete NSIS/SFX corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## DMG direct options admission — 2026-09-02
 
 - Keep exported `cli_scandmg()` fail-visible when an otherwise recognized

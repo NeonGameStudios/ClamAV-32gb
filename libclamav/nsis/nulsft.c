@@ -847,6 +847,8 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
     ret = nsis_checktimelimit(ctx, "NSIS inspection reached the configured time limit");
     if (ret != CL_SUCCESS)
         return ret;

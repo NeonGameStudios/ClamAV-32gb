@@ -34616,12 +34616,15 @@ START_TEST(test_nsis_header_range_classes_are_fail_visible)
     static const uint8_t truncated_data[0x1b] = {0};
     static const uint8_t readable_data[0x1c] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.options           = &options;
     ctx.this_layer_tmpdir = tmpdir;
 
     map = cl_fmap_open_memory(truncated_data, sizeof(truncated_data));
@@ -34635,6 +34638,7 @@ START_TEST(test_nsis_header_range_classes_are_fail_visible)
 
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.options           = &options;
     ctx.this_layer_tmpdir = tmpdir;
     map                   = cl_fmap_open_memory(readable_data, sizeof(readable_data));
     ck_assert_ptr_nonnull(map);
@@ -34743,6 +34747,28 @@ START_TEST(test_nsis_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_nsis_missing_options_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scannulsft(&ctx, 0), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_nsis_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[0x1c] = {0};
@@ -34784,16 +34810,19 @@ START_TEST(test_nsis_time_limit_is_fail_visible)
 {
     static const uint8_t data[1] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
@@ -57612,6 +57641,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_nulsft, test_nsis_header_range_classes_are_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_missing_map_entry_points_are_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_missing_engine_is_fail_visible);
+    tcase_add_test(tc_nulsft, test_nsis_missing_options_is_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_time_limit_is_fail_visible);
     tcase_add_test(tc_nulsft, test_nsis_sticky_incomplete_result_is_fail_visible);
