@@ -18,6 +18,25 @@ execution, complete DMG/UDIF corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## InstallShield direct options admission — 2026-09-02
+
+The confirmed MSI and legacy InstallShield extraction entries validated null
+context, input fmap, and engine state but did not reject missing scan options
+before temporary-output creation, metadata traversal, and nested child
+scanning. A direct caller with incomplete scan configuration could therefore
+enter extraction paths without the required options object. Both entries now
+return `CL_ENULLARG` immediately after engine admission when `ctx->options` is
+absent.
+
+`test_ishield_missing_options_confirmed_entries_are_fail_visible` supplies a
+map and engine while omitting options, and verifies `CL_ENULLARG` for both
+entries without sticky incomplete or cache-taint state. Source guards and the
+capability manifest record the boundary. Current-source production-GCC
+compilation, production-linked execution, complete InstallShield/CAB corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## MSXML direct options admission — 2026-09-02
 
 The exported `cli_scanmsxml()` entry rejected null context, input fmap, and

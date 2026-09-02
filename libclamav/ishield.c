@@ -248,6 +248,8 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
     map = ctx->fmap;
 
     cli_dbgmsg("in ishield-msi\n");
@@ -581,6 +583,8 @@ cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
         return CL_EPARSE;
     }
     if (!ctx->engine)
+        return CL_ENULLARG;
+    if (!ctx->options)
         return CL_ENULLARG;
     map = ctx->fmap;
 

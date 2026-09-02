@@ -2234,6 +2234,8 @@ contains unit_tests/check_clamav.c 'test_ishield_msi_partial_limit_and_decode_fa
 contains unit_tests/check_clamav.c 'test_ishield_missing_map_confirmed_entries_are_fail_visible'
 contains unit_tests/check_clamav.c 'cli_ishield_msi_header_check(&ctx, 0), CL_EPARSE'
 contains unit_tests/check_clamav.c 'test_ishield_null_context_confirmed_entries_are_fail_visible'
+contains libclamav/ishield.c 'if (!ctx->options)'
+contains unit_tests/check_clamav.c 'test_ishield_missing_options_confirmed_entries_are_fail_visible'
 contains unit_tests/check_clamav.c 'InstallShield MSI control metadata is unsupported by the bounded parser'
 contains unit_tests/check_clamav.c 'test_ishield_truncated_metadata_is_fail_visible'
 contains libclamav/ishield.c 'InstallShield header metadata is incomplete'
