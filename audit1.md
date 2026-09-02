@@ -19800,6 +19800,24 @@ complete signature/evidence corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 matcher/release qualification remain required.
 
+## Trusted and ignored indicator metadata insertion — 2026-09-01
+
+The trusted-layer and alert-callback paths add an `Ignored` marker to
+indicator metadata. A rejected marker string was previously leaked, and
+recursive trusted-layer failures were logged but then overwritten by a final
+success status. These paths now release rejected values, return `CL_EMEM`,
+preserve child failures through recursion, and mark the callback path
+incomplete and non-cacheable.
+
+`test_trusted_indicator_metadata_add_failure_is_fail_visible` injects direct
+and nested marker failures through the production-linked object-add wrapper
+and requires `CL_EMEM`, recursive propagation, the exact owning-layer
+diagnostic, and fmap cache taint. Current-source production-GCC compilation,
+production-linked execution, complete signature/evidence and trust-callback
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final matcher/release
+qualification remain required.
+
 ## Nested indicator metadata copy failures — 2026-09-01
 
 Child indicators and alerts are copied into parent metadata during

@@ -8723,6 +8723,19 @@ complete signature/evidence corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 release qualification remain required.
 
+## Trusted and ignored indicator metadata insertion — 2026-09-01
+
+Trusted-layer and alert-callback paths now release rejected `Ignored` marker
+strings, return `CL_EMEM`, preserve recursive child failures, and mark the
+callback path incomplete and non-cacheable. The
+`test_trusted_indicator_metadata_add_failure_is_fail_visible` regression
+injects direct and nested marker failures through the production-linked
+object-add wrapper and requires `CL_EMEM`, recursive propagation, the exact
+owning-layer diagnostic, and fmap cache taint. Current-source execution,
+complete signature/evidence and trust-callback corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final release qualification remain required.
+
 ## Shared JSON object-property insertion failures — 2026-09-01
 
 The shared `cli_json` scalar helpers now propagate

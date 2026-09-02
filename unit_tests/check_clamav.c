@@ -325,6 +325,7 @@ static int nested_layer_test_fail_object_add;
 static int json_api_test_fail_array_add;
 static int json_api_test_fail_object_add;
 static int scan_report_test_fail_object_add;
+static int ignored_test_fail_object_add;
 
 int __wrap_json_object_array_add(json_object *obj, json_object *val)
 {
@@ -361,6 +362,10 @@ int __wrap_json_object_array_add(json_object *obj, json_object *val)
 
 int __wrap_json_object_object_add(json_object *obj, const char *key, json_object *val)
 {
+    if (ignored_test_fail_object_add && key && strcmp(key, "Ignored") == 0) {
+        ignored_test_fail_object_add = 0;
+        return -1;
+    }
     if (pe_test_fail_property_add != 0U && key) {
         static const char *const property_names[] = {"PE", "Sections"};
         unsigned int index = pe_test_fail_property_add - 1U;
@@ -5242,6 +5247,96 @@ START_TEST(test_virus_indicator_metadata_property_add_failure_is_fail_visible)
         cl_scan_report_free(report);
         cl_fmap_close(map);
         cl_engine_free(scan_engine);
+    }
+}
+END_TEST
+
+START_TEST(test_trusted_indicator_metadata_add_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "trusted";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    unsigned int nested;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+
+    for (nested = 0; nested < 2; nested++) {
+        json_object *root;
+        json_object *indicators;
+        json_object *indicator;
+        json_object *contained;
+        json_object *child;
+        json_object *child_indicators;
+        fmap_t *map;
+        cl_error_t ret;
+
+        memset(&layer, 0, sizeof(layer));
+        memset(&ctx, 0, sizeof(ctx));
+        root            = json_object_new_object();
+        indicators      = json_object_new_array();
+        indicator       = json_object_new_object();
+        contained       = json_object_new_array();
+        child           = json_object_new_object();
+        child_indicators = json_object_new_array();
+        ck_assert_ptr_nonnull(root);
+        ck_assert_ptr_nonnull(indicators);
+        ck_assert_ptr_nonnull(indicator);
+        ck_assert_ptr_nonnull(contained);
+        ck_assert_ptr_nonnull(child);
+        ck_assert_ptr_nonnull(child_indicators);
+        if (nested == 0) {
+            json_object_object_add(indicator, "Name", json_object_new_string("Trusted.Direct"));
+            ck_assert_int_eq(json_object_array_add(indicators, indicator), 0);
+        } else {
+            json_object_object_add(indicator, "Name", json_object_new_string("Trusted.Nested"));
+            ck_assert_int_eq(json_object_array_add(child_indicators, indicator), 0);
+            json_object_object_add(child, "Indicators", child_indicators);
+            ck_assert_int_eq(json_object_array_add(contained, child), 0);
+            json_object_object_add(root, "Indicators", indicators);
+            json_object_object_add(root, "ContainedObjects", contained);
+            indicator = NULL;
+            child     = NULL;
+        }
+        if (nested == 0)
+            json_object_object_add(root, "Indicators", indicators);
+        else {
+            indicators = NULL;
+            contained = NULL;
+            child_indicators = NULL;
+        }
+        if (nested == 0) {
+            json_object_put(contained);
+            json_object_put(child);
+            json_object_put(child_indicators);
+        }
+
+        map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+        ck_assert_ptr_nonnull(map);
+        layer.fmap          = map;
+        layer.metadata_json = root;
+        ctx.engine                  = &engine;
+        ctx.options                 = &options;
+        ctx.fmap                    = map;
+        ctx.recursion_stack         = &layer;
+        ctx.recursion_stack_size    = 1;
+        ctx.this_layer_metadata_json = root;
+
+        ignored_test_fail_object_add = 1;
+        ret                          = cli_trust_this_layer(&ctx, "test");
+        ck_assert_int_eq(ignored_test_fail_object_add, 0);
+        ck_assert_int_eq(ret, CL_EMEM);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "trust-layer metadata could not be updated");
+        ck_assert(map->dont_cache_flag);
+
+        json_object_put(root);
+        cl_fmap_close(map);
     }
 }
 END_TEST
@@ -56119,6 +56214,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_json_object_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_metadata_record_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_metadata_property_add_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_trusted_indicator_metadata_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_metadata_array_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_nested_layer_metadata_array_add_failure_is_fail_visible);
 #endif

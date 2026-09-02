@@ -1929,7 +1929,9 @@ cl_error_t cli_virus_found_cb(cli_ctx *ctx, const char *virname, bool is_potenti
                 json_ret = json_object_object_add(indicator_obj, "Ignored", ignored);
                 if (0 != json_ret) {
                     cli_errmsg("cli_virus_found_cb: Failed to add Ignored boolean to indicator object\n");
-                    status = CL_ERROR;
+                    json_object_put(ignored);
+                    cli_mark_scan_incomplete(ctx, "ignored indicator metadata could not be recorded");
+                    status = CL_EMEM;
                     goto done;
                 }
             }
@@ -3514,7 +3516,8 @@ static cl_error_t metadata_json_trust_this_layer(json_object *scan_layer_json, c
                 json_ret = json_object_object_add(indicator, "Ignored", ignored);
                 if (0 != json_ret) {
                     cli_errmsg("metadata_json_trust_this_layer: Failed to add Ignored boolean to indicator object\n");
-                    status = CL_ERROR;
+                    json_object_put(ignored);
+                    status = CL_EMEM;
                     goto done;
                 }
             }
@@ -3531,6 +3534,8 @@ static cl_error_t metadata_json_trust_this_layer(json_object *scan_layer_json, c
                     ret = metadata_json_trust_this_layer(contained_object, reason);
                     if (ret != CL_SUCCESS) {
                         cli_errmsg("metadata_json_trust_this_layer: failed to update metadata JSON for contained object: %s\n", cl_strerror(ret));
+                        status = ret;
+                        goto done;
                     }
                 }
             }
@@ -3547,6 +3552,8 @@ static cl_error_t metadata_json_trust_this_layer(json_object *scan_layer_json, c
                     ret = metadata_json_trust_this_layer(embedded_object, reason);
                     if (ret != CL_SUCCESS) {
                         cli_errmsg("metadata_json_trust_this_layer: failed to update metadata JSON for embedded object: %s\n", cl_strerror(ret));
+                        status = ret;
+                        goto done;
                     }
                 }
             }
