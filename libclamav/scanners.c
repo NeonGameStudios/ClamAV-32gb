@@ -2384,6 +2384,15 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
 #define BZ2_bzDecompressEnd bzDecompressEnd
 #endif
 
+static cl_error_t cli_scanbzip_finalize(cli_ctx *ctx, bz_stream *strm, cl_error_t status)
+{
+    if (BZ2_bzDecompressEnd(strm) != BZ_OK) {
+        cli_mark_scan_incomplete(ctx, "Bzip decompressor could not be finalized");
+        status = cli_merge_cleanup_status(status, CL_EUNPACK);
+    }
+    return status;
+}
+
 static cl_error_t cli_scanbzip(cli_ctx *ctx)
 {
     cl_error_t ret           = CL_SUCCESS;
@@ -2413,7 +2422,7 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd))) {
         cli_dbgmsg("Bzip: Can't generate temporary file.\n");
         cli_mark_scan_incomplete(ctx, "Bzip temporary output could not be created");
-        BZ2_bzDecompressEnd(&strm);
+        ret = cli_scanbzip_finalize(ctx, &strm, ret);
         return ret;
     }
 
@@ -2482,7 +2491,7 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
                                                        "Bzip output reached the configured time limit",
                                                        "Bzip output could not be written completely")) != CL_SUCCESS) {
                 cli_dbgmsg("Bzip: Can't write to file.\n");
-                BZ2_bzDecompressEnd(&strm);
+                decode_status = cli_scanbzip_finalize(ctx, &strm, decode_status);
                 decode_status = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
                                                             temporary_reserved,
                                                             "Bzip temporary output could not be closed",
@@ -2504,8 +2513,10 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
                 /* bzip2 permits concatenated streams. Reinitialize only
                  * after the current stream has reached BZ_STREAM_END, while
                  * preserving any unread bytes in the current fmap window. */
-                BZ2_bzDecompressEnd(&strm);
+                decode_status = cli_scanbzip_finalize(ctx, &strm, decode_status);
                 stream_initialized = false;
+                if (decode_status != CL_SUCCESS)
+                    break;
                 memset(&strm, 0, sizeof(strm));
                 init_status = BZ2_bzDecompressInit(&strm, 0, 0);
                 if (BZ_OK != init_status) {
@@ -2532,7 +2543,7 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
     } while (BZ_STREAM_END != rc);
 
     if (stream_initialized)
-        BZ2_bzDecompressEnd(&strm);
+        decode_status = cli_scanbzip_finalize(ctx, &strm, decode_status);
 
     /* Do not scan a temporary member unless the BZip2 decoder reached its
      * terminal state and no configured limit/error stopped extraction. */

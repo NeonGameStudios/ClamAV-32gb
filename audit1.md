@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## BZIP2 scanner decoder finalization status — 2026-09-02
+
+The top-level BZIP2 scanner now checks initialized decoder teardown on
+temporary-output creation failure, output-write failure, concatenated-member
+reinitialization, and final completion. A failure marks the recognized layer
+incomplete and merges `CL_EUNPACK` without hiding an earlier parser, read,
+limit, timeout, detection, or cleanup result; partial output is not handed to
+the nested scanner. The focused `CL_TYPE_BZ` regression injects a one-shot
+finalization failure after a complete stream and requires the non-clean public
+result, empty verdict, and fmap non-cacheability. Current-source
+production-GCC compilation and linked execution, complete BZIP2 corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## DMG ADC and bzip2 decoder finalization status — 2026-09-02
 
 DMG ADC and bzip2 stripes now check their initialized decoder teardown

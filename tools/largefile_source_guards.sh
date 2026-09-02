@@ -4613,6 +4613,12 @@ contains unit_tests/check_clamav.c 'test_gzip_legacy_fallback_stages_visible_map
 contains unit_tests/check_clamav.c 'test_gzip_decoder_finalization_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'clamav_test_force_gzip_decoder_end'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_core, test_gzip_decoder_finalization_failure_is_fail_visible)'
+contains libclamav/scanners.c 'static cl_error_t cli_scanbzip_finalize(cli_ctx *ctx, bz_stream *strm, cl_error_t status)'
+contains libclamav/scanners.c 'Bzip decompressor could not be finalized'
+count_at_least libclamav/scanners.c 'cli_scanbzip_finalize(ctx' 4
+contains unit_tests/check_clamav.c 'test_bzip_decoder_finalization_failure_is_fail_visible'
+contains unit_tests/check_clamav.c 'clamav_test_force_bzip_decoder_end'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_core, test_bzip_decoder_finalization_failure_is_fail_visible)'
 contains libclamav/scanners.c 'refusing to scan partial output at'
 contains libclamav/swf.c 'SWF zlib stream ended before decompression completed'
 contains libclamav/swf.c 'SWF LZMA stream ended before decompression completed'

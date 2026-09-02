@@ -1,5 +1,17 @@
 # Wishlist
 
+## BZIP2 scanner decoder finalization status — 2026-09-02
+
+- Keep every initialized top-level BZIP2 decoder teardown fail-visible across
+  temporary-file, output, concatenated-member, and normal-completion paths.
+  Merge `CL_EUNPACK` without replacing an earlier parser, read, limit,
+  timeout, detection, or cleanup result, and never scan partial output.
+- Retain `test_bzip_decoder_finalization_failure_is_fail_visible`, its
+  one-shot wrapper fault, and source guards. Current-source production-GCC
+  execution, complete BZIP2 corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## DMG ADC and bzip2 decoder finalization status — 2026-09-02
 
 - Keep initialized DMG ADC and bzip2 stripe teardown fail-visible and merge

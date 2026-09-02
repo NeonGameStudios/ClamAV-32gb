@@ -170,6 +170,7 @@ int clamav_test_force_gzip_decoder_end;
 int clamav_test_force_dmg_decoder_end;
 int clamav_test_force_dmg_adc_decoder_end;
 int clamav_test_force_dmg_bzip_decoder_end;
+int clamav_test_force_bzip_decoder_end;
 int clamav_test_force_bzip_concat_decoder_init;
 int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
@@ -234,6 +235,11 @@ int __wrap_BZ2_bzDecompressEnd(bz_stream *strm)
     if (clamav_test_force_dmg_bzip_decoder_end > 0) {
         clamav_test_force_dmg_bzip_decoder_end--;
         if (clamav_test_force_dmg_bzip_decoder_end == 0)
+            return BZ_SEQUENCE_ERROR;
+    }
+    if (clamav_test_force_bzip_decoder_end > 0) {
+        clamav_test_force_bzip_decoder_end--;
+        if (clamav_test_force_bzip_decoder_end == 0)
             return BZ_SEQUENCE_ERROR;
     }
     return ret;
@@ -9978,6 +9984,51 @@ START_TEST(test_bzip_concatenated_decoder_init_failure_is_fail_visible)
     free(combined);
     free(first_bzip);
     free(second_bzip);
+}
+END_TEST
+#endif
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_bzip_decoder_finalization_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "BZIP finalization regression";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    uint8_t *bzip;
+    size_t bzip_length;
+    fmap_t *map;
+    cl_error_t ret;
+
+    bzip = zip_stream_bzip2(input, sizeof(input) - 1U, &bzip_length);
+    ck_assert_ptr_nonnull(bzip);
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(bzip, bzip_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    clamav_test_force_bzip_decoder_end = 1;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_BZ", NULL);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_bzip_decoder_end, 0);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(bzip);
 }
 END_TEST
 #endif
@@ -59239,6 +59290,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_bz_core, test_gzip_input_read_failure_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_bz_core, test_gzip_decoder_finalization_failure_is_fail_visible);
+    tcase_add_test(tc_bz_core, test_bzip_decoder_finalization_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_bz_core, test_bzip_corpus_detects_embedded_mz);
     tcase_add_test(tc_bz_core, test_gzip_corpus_detects_embedded_mz);
