@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MIME caller export status reconciliation — 2026-09-02
+
+MIME callers above `messageExport()` now retain the first specific status from
+failed `messageToFileblob()` operations across MHTML root input, streamed body,
+application/multipart/BinHex attachments, and text-part export. The final
+`cli_mbox()` boundary merges that status only when detection, timeout, or a
+stronger limit result does not already own the scan, preventing a specific
+`CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, or `CL_ERESOURCE` from
+being reduced to generic `CL_EFORMAT`. Current-source production-GCC
+compilation, linked caller-fault execution, complete MIME/mbox/MHTML corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## MIME body-spool status propagation — 2026-09-02
 
 Ordinary MIME body spooling and subsequent fileblob export now retain the

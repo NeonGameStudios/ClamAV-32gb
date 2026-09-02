@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## MIME caller export status reconciliation — 2026-09-02
+
+The MIME owners above `messageExport()` could still collapse a failed
+`messageToFileblob()` into the internal `FAIL` enum and then generic
+`CL_EFORMAT`, even though the message retained a specific fileblob status.
+The mbox context now keeps the first such status across MHTML root input,
+streamed body, application attachment, BinHex attachment, multipart fallback,
+and text-part export owners. The final `cli_mbox()` merge applies it only when
+there is no detection, timeout, or stronger limit result. Current-source
+production-GCC compilation, linked caller-fault execution, complete
+MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## MIME body-spool status propagation — 2026-09-02
 
 Ordinary MIME body spooling and subsequent fileblob export now retain the

@@ -169,6 +169,7 @@ typedef struct mbox_ctx {
     cli_ctx *ctx;
     unsigned int files; /* number of files extracted */
     json_object *wrkobj;
+    cl_error_t message_failure_status;
 } mbox_ctx;
 
 /* Metadata is part of the confirmed MIME-layer result contract. A report
@@ -197,6 +198,26 @@ static void mbox_merge_json_status(mbox_status *status, mbox_status metadata_sta
     if (status != NULL && metadata_status != OK && *status != VIRUS &&
         *status != MAXREC && *status != MAXFILES)
         *status = FAIL;
+}
+
+/* The internal mbox_status enum intentionally describes parser control flow,
+ * but it cannot carry a fileblob's specific output/materialization error.
+ * Preserve that status at the mbox boundary so a later FAIL/CL_EFORMAT result
+ * cannot hide CL_ECREAT, CL_EOPEN, CL_EWRITE, CL_ETIMEOUT, or CL_ERESOURCE. */
+static void mbox_record_message_failure(mbox_ctx *mctx, const message *m,
+                                        const char *reason)
+{
+    cl_error_t status;
+
+    if (mctx == NULL || mctx->ctx == NULL)
+        return;
+
+    if (m != NULL) {
+        status = messageGetMaterializationStatus(m);
+        if (status != CL_SUCCESS && mctx->message_failure_status == CL_SUCCESS)
+            mctx->message_failure_status = status;
+    }
+    cli_mark_scan_incomplete(mctx->ctx, reason);
 }
 
 /* if supported by the system, use the optimized
@@ -256,7 +277,7 @@ static bool messageNeedsMaterializedBody(const message *m)
     return false;
 }
 
-static blob *getHrefs(cli_ctx *, message *m, tag_arguments_t *hrefs, bool *incomplete);
+static blob *getHrefs(mbox_ctx *, message *m, tag_arguments_t *hrefs, bool *incomplete);
 static void hrefs_done(blob *b, tag_arguments_t *hrefs);
 static void checkURLs(message *m, mbox_ctx *mctx, mbox_status *rc, int is_html);
 
@@ -506,6 +527,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
     mctx.ctx          = ctx;
     mctx.files        = 0;
     mctx.wrkobj       = ctx->this_layer_metadata_json;
+    mctx.message_failure_status = CL_SUCCESS;
 
     /*
      * Is it a UNIX style mbox with more than one
@@ -841,6 +863,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                 retcode = CL_EMAXSIZE;
             }
         }
+
         /*
          * Tidy up and quit
          */
@@ -852,6 +875,9 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
      * clean mailbox result while unwinding to cli_scanmail(). */
     if ((retcode != CL_VIRUS) && ctx->scan_timed_out)
         retcode = CL_ETIMEOUT;
+    else if ((retcode == CL_SUCCESS || retcode == CL_EFORMAT || retcode == CL_EPARSE) &&
+             mctx.message_failure_status != CL_SUCCESS)
+        retcode = mctx.message_failure_status;
     else if ((retcode == CL_SUCCESS) && ctx->scan_incomplete)
         retcode = CL_EPARSE;
 
@@ -1969,10 +1995,16 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
         input_fb       = m->body_spool;
         borrowed_input = true;
         if (input_fb->isIncomplete || input_fb->fp == NULL || input_fb->fullname == NULL ||
-            fflush(input_fb->fp) != 0)
+            fflush(input_fb->fp) != 0) {
+            mbox_record_message_failure(mctx, m,
+                                        "MHTML root HTML input could not be materialized completely");
             input_fb = NULL;
+        }
     } else if (m != NULL) {
         input_fb = messageToFileblob(m, mctx->dir, 0);
+        if (input_fb == NULL)
+            mbox_record_message_failure(mctx, m,
+                                        "MHTML root HTML input could not be materialized completely");
     } else { /* t != NULL */
         input_fb = fileblobCreate();
         if (input_fb != NULL) {
@@ -2610,6 +2642,8 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
 
             fb = messageToFileblob(mainMessage, mctx->dir, 1);
             if (fb == NULL) {
+                mbox_record_message_failure(mctx, mainMessage,
+                                            "MIME body could not be exported completely from its spool");
                 rc = FAIL;
             } else if (streamed_type == MESSAGE && !fb->isNotEmpty) {
                 cli_mark_scan_incomplete(mctx->ctx,
@@ -3642,6 +3676,8 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                         } else
                             messageReset(mainMessage);
                     } else {
+                        mbox_record_message_failure(mctx, mainMessage,
+                                                    "MIME attachment could not be materialized completely");
                         (void)scanFileblob(mctx, fb);
                         rc = FAIL;
                     }
@@ -4488,9 +4524,11 @@ saveTextPart(mbox_ctx *mctx, message *m, int destroy_text)
         mctx->files++;
         return scanFileblob(mctx, fb);
     }
+    mbox_record_message_failure(mctx, m,
+                                "MIME text part could not be materialized as a temporary spool");
     cli_mark_scan_incomplete(mctx->ctx,
                              "MIME text part could not be materialized as a temporary spool");
-    return CL_ETMPFILE;
+    return (mctx->message_failure_status != CL_SUCCESS) ? mctx->message_failure_status : CL_ETMPFILE;
 }
 
 /*
@@ -5258,8 +5296,9 @@ static bool extract_text_urls_map(cli_ctx *ctx, fmap_t *map, tag_arguments_t *hr
  * disabled (see ifdef)
  */
 static blob *
-getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
+getHrefs(mbox_ctx *mctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
 {
+    cli_ctx *ctx = mctx->ctx;
     const char *tmpdir = ctx && ctx->this_layer_tmpdir ? ctx->this_layer_tmpdir : NULL;
     fileblob *input    = NULL;
     fmap_t *map        = NULL;
@@ -5286,6 +5325,9 @@ getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
     if (input == NULL || input->isIncomplete || input->fp == NULL || input->fullname == NULL ||
         fflush(input->fp) != 0 || FSTAT(input->fd, &sb) != 0 || sb.st_size < 0 ||
         (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
+        if (input == NULL || input->isIncomplete)
+            mbox_record_message_failure(mctx, m,
+                                        "HTML phishing input could not be materialized completely");
         cli_mark_scan_incomplete(ctx, "HTML phishing input could not be materialized completely");
         if (incomplete)
             *incomplete = true;
@@ -5369,7 +5411,7 @@ checkURLs(message *mainMessage, mbox_ctx *mctx, mbox_status *rc, int is_html)
     hrefs.tag = hrefs.value = NULL;
     hrefs.contents          = NULL;
 
-    b = getHrefs(mctx->ctx, mainMessage, &hrefs, &incomplete);
+    b = getHrefs(mctx, mainMessage, &hrefs, &incomplete);
     if (incomplete && *rc == OK)
         *rc = FAIL;
     if (b) {
@@ -5623,6 +5665,8 @@ exportBinhexMessage(mbox_ctx *mctx, message *m)
         mctx->files++;
     } else {
         cli_errmsg("Couldn't decode binhex file to %s\n", mctx->dir);
+        mbox_record_message_failure(mctx, m,
+                                    "BinHex mail attachment could not be materialized");
         cli_mark_scan_incomplete(mctx->ctx,
                                  "BinHex mail attachment could not be materialized");
         return FAIL;
@@ -6021,6 +6065,10 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
 
     if (*rc != VIRUS) {
         fileblob *fb = messageToFileblob(aMessage, mctx->dir, 1);
+
+        if (fb == NULL)
+            mbox_record_message_failure(mctx, aMessage,
+                                        "MIME attachment could not be materialized completely");
 
         json_object *arrobj;
 #if (JSON_C_MAJOR_VERSION == 0) && (JSON_C_MINOR_VERSION < 13)

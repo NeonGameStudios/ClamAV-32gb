@@ -1,5 +1,18 @@
 # Wishlist
 
+## MIME caller export status reconciliation — 2026-09-02
+
+- Preserve the first specific `messageToFileblob()` materialization status
+  through every mbox owner, including MHTML root input, streamed body,
+  application/multipart/BinHex attachments, and text-part export, instead of
+  converting it to internal `FAIL` and generic `CL_EFORMAT`.
+- Merge the status at the final `cli_mbox()` boundary only when detection,
+  timeout, or a stronger limit result does not already own the scan. Complete
+  current-source production-GCC compilation and linked caller-fault execution,
+  MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## MIME body-spool status propagation — 2026-09-02
 
 - Retain the first specific required fileblob failure through MIME body
