@@ -323,6 +323,8 @@ cl_error_t cli_scansis(cli_ctx *ctx)
     }
     if (ctx->engine == NULL)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     status = sis_checktimelimit(ctx, "SIS inspection reached the configured time limit");
     if (status != CL_SUCCESS)

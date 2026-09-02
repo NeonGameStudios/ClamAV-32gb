@@ -22124,6 +22124,7 @@ START_TEST(test_parser_staging_directory_failures_are_fail_visible)
     static const uint8_t sis_data[16] = {0};
     static const uint8_t xdp_document[] = "<chunk>QUJD</chunk>";
     char invalid_tmpdir[PATH_MAX];
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
@@ -22132,10 +22133,12 @@ START_TEST(test_parser_staging_directory_failures_are_fail_visible)
     ck_assert_msg(snprintf(invalid_tmpdir, sizeof(invalid_tmpdir), "%s/legacy-staging-root-does-not-exist", tmpdir) < (int)sizeof(invalid_tmpdir),
                   "temporary directory test path was truncated");
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(sis_data, sizeof(sis_data));
     ck_assert_ptr_nonnull(map);
+    ctx.options           = &options;
     ctx.engine            = &engine;
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = invalid_tmpdir;
@@ -22152,6 +22155,7 @@ START_TEST(test_parser_staging_directory_failures_are_fail_visible)
     engine.keeptmp = 1;
     map             = cl_fmap_open_memory(xdp_document, sizeof(xdp_document) - 1U);
     ck_assert_ptr_nonnull(map);
+    ctx.options           = &options;
     ctx.engine            = &engine;
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = invalid_tmpdir;
@@ -55821,6 +55825,28 @@ START_TEST(test_sis_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_sis_missing_options_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scansis(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_udf_missing_engine_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -57184,6 +57210,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_sis_map, cl_setup, cl_teardown);
     tcase_add_test(tc_sis_map, test_sis_missing_map_is_fail_visible);
     tcase_add_test(tc_sis_map, test_sis_missing_engine_is_fail_visible);
+    tcase_add_test(tc_sis_map, test_sis_missing_options_is_fail_visible);
     suite_add_tcase(s, tc_ishield_map);
     tcase_add_checked_fixture(tc_ishield_map, cl_setup, cl_teardown);
     tcase_add_test(tc_ishield_map, test_ishield_null_context_confirmed_entries_are_fail_visible);

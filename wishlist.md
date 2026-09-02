@@ -38,6 +38,20 @@
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification remain open.
 
+## SIS direct options admission — 2026-09-02
+
+- Keep exported `cli_scansis()` fail-visible when an otherwise recognized
+  engine/map context omits scan options; return `CL_ENULLARG` before deadline
+  checks, temporary-directory creation, SIS traversal, or nested-child
+  scanning.
+- Retain complete options in direct SIS staging regressions and keep
+  `test_sis_missing_options_is_fail_visible`, its source guards, and manifest
+  evidence that the invalid context does not become sticky incomplete or
+  cache-tainted. Current-source production-GCC compilation, production-linked
+  execution, complete SIS corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## UDF direct options admission — 2026-09-02
 
 - Keep exported `cli_scanudf()` fail-visible when an otherwise recognized
