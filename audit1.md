@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## OLE2 small-block chain deadline and status propagation — 2026-09-02
+
+The OLE2 XBAT, SBAT metadata, and small-block data-chain helpers could spend
+unbounded time following attacker-declared allocation chains between their
+existing outer stream checkpoints. Their small-block consumers also converted
+helper failures to `CL_EREAD`, which could hide a timeout or parse failure
+already recorded on the OLE2 header. The chain walks now check the shared
+deadline inside each attacker-controlled traversal, and the small-block
+handlers preserve the stored `CL_ETIMEOUT`, `CL_EPARSE`, or `CL_EREAD` status
+before applying the compatibility fallback.
+
+`test_ole2_small_block_chain_timeout_status_is_fail_visible` verifies the
+status-precedence boundary, with source guards and the capability manifest
+recording the in-loop checkpoints and consumer propagation. Current-source
+production-GCC compilation, production-linked execution, complete OLE2/VBA/
+XLM corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## HFS+ compressed-resource output admission — 2026-09-02
 
 The HFS+ decmpfs resource-fork paths checked `produced` against

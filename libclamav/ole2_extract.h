@@ -34,4 +34,9 @@ cl_error_t cli_ole2_read_mso_prefix(fmap_t *input, uint32_t *prefix, cli_ctx *ct
 char *cli_ole2_get_property_name2(const char *name, int size);
 uint32_t cli_ole2_clamp_decrypted_output(uint32_t requested, uint64_t written, uint64_t declared);
 
+static inline cl_error_t cli_ole2_chain_failure_status(cl_error_t stored_status, cl_error_t fallback)
+{
+    return stored_status != CL_SUCCESS ? stored_status : fallback;
+}
+
 #endif

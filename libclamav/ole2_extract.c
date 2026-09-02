@@ -478,6 +478,23 @@ static void ole2_mark_block_read_failure(ole2_header_t *hdr, cl_error_t status)
     }
 }
 
+static bool ole2_check_chain_time_limit(ole2_header_t *hdr, const char *reason)
+{
+    cl_error_t status;
+
+    if (hdr == NULL || hdr->ctx == NULL)
+        return true;
+
+    status = ole2_checktimelimit(hdr->ctx, reason);
+    if (status != CL_SUCCESS) {
+        if (hdr->read_status == CL_SUCCESS)
+            hdr->read_status = status;
+        return false;
+    }
+
+    return true;
+}
+
 /* fmap_need_off_once() uses NULL for both an unavailable range and a failed
  * backing read. Keep the bounded encryption probe fail-visible without
  * borrowing the whole remaining OLE2 map. */
@@ -592,6 +609,8 @@ ole2_get_next_xbat_block(ole2_header_t *hdr, int32_t current_block)
     }
     /* Follow the chain of XBAT blocks */
     while (xbat_block_index > 0) {
+        if (!ole2_check_chain_time_limit(hdr, "OLE2 XBAT chain traversal reached the configured time limit"))
+            return -1;
         if (!ole2_read_block(hdr, &xbat, 512,
                              ole2_endian_convert_32(xbat[127]))) {
             return -1;
@@ -630,6 +649,8 @@ ole2_get_next_sbat_block(ole2_header_t *hdr, int32_t current_block)
     current_bat_block = hdr->sbat_start;
     iter              = current_block / 128;
     while (iter > 0) {
+        if (!ole2_check_chain_time_limit(hdr, "OLE2 small-block allocation chain traversal reached the configured time limit"))
+            return -1;
         current_bat_block = ole2_get_next_block_number(hdr, current_bat_block);
         iter--;
     }
@@ -654,6 +675,8 @@ static bool ole2_get_sbat_data_block(ole2_header_t *hdr, void *buff, int32_t sba
     block_count   = sbat_index / (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size));
     current_block = hdr->sbat_root_start;
     while (block_count > 0) {
+        if (!ole2_check_chain_time_limit(hdr, "OLE2 small-block allocation chain traversal reached the configured time limit"))
+            return false;
         current_block = ole2_get_next_block_number(hdr, current_block);
         block_count--;
     }
@@ -1454,7 +1477,7 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
             if (!ole2_get_sbat_data_block(hdr, buff, current_block)) {
                 cli_dbgmsg("OLE2 [handler_writefile]: ole2_get_sbat_data_block failed\n");
                 cli_mark_scan_incomplete(ctx, "OLE2 VBA stream small-block chain could not be read");
-                ret = CL_EREAD;
+                ret = cli_ole2_chain_failure_status(hdr->read_status, CL_EREAD);
                 break;
             }
 
@@ -1927,6 +1950,7 @@ static cl_error_t handler_enum(ole2_header_t *hdr, property_t *prop, const char 
                     offset = 0;
                     if (prop->size < (uint64_t)hdr->sbat_cutoff) {
                         if (!ole2_get_sbat_data_block(hdr, hwp_check, prop->start_block)) {
+                            status = cli_ole2_chain_failure_status(hdr->read_status, CL_EREAD);
                             break;
                         }
                         offset = (1 << hdr->log2_small_block_size) *
@@ -2331,7 +2355,7 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
             /* Small block file */
             if (!ole2_get_sbat_data_block(hdr, buff, current_block)) {
                 cli_dbgmsg("OLE2 [handler_otf]: ole2_get_sbat_data_block failed\n");
-                ret = CL_EREAD;
+                ret = cli_ole2_chain_failure_status(hdr->read_status, CL_EREAD);
                 break;
             }
 
@@ -2609,7 +2633,7 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
             /* Small block file */
             if (!ole2_get_sbat_data_block(hdr, buff, current_block)) {
                 cli_dbgmsg("OLE2 [handler_otf]: ole2_get_sbat_data_block failed\n");
-                ret = CL_EREAD;
+                ret = cli_ole2_chain_failure_status(hdr->read_status, CL_EREAD);
                 break;
             }
 

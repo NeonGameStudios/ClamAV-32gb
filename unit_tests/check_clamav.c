@@ -39905,6 +39905,14 @@ START_TEST(test_ole2_stream_chain_read_failure_preserves_status)
 }
 END_TEST
 
+START_TEST(test_ole2_small_block_chain_timeout_status_is_fail_visible)
+{
+    ck_assert_int_eq(cli_ole2_chain_failure_status(CL_SUCCESS, CL_EREAD), CL_EREAD);
+    ck_assert_int_eq(cli_ole2_chain_failure_status(CL_ETIMEOUT, CL_EREAD), CL_ETIMEOUT);
+    ck_assert_int_eq(cli_ole2_chain_failure_status(CL_EPARSE, CL_EREAD), CL_EPARSE);
+}
+END_TEST
+
 START_TEST(test_ole2_mso_prefix_range_classes_are_fail_visible)
 {
     static const uint8_t truncated_prefix[sizeof(uint32_t) - 1U] = {0};
@@ -58060,6 +58068,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2, test_ole2_truncated_property_tree_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_stream_chain_read_failure_preserves_status);
+    tcase_add_test(tc_ole2, test_ole2_small_block_chain_timeout_status_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_mso_prefix_range_classes_are_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_invalid_block_geometry_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_extracted_output_requires_directory);

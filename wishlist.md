@@ -1,5 +1,17 @@
 # Wishlist
 
+## OLE2 small-block chain deadline and status propagation — 2026-09-02
+
+- Keep OLE2 XBAT, SBAT metadata, and small-block data-chain traversal bounded
+  by the shared deadline inside attacker-controlled loops; preserve stored
+  `CL_ETIMEOUT`, `CL_EPARSE`, and `CL_EREAD` statuses instead of collapsing
+  helper failures to a compatibility-only `CL_EREAD` result.
+- Retain `test_ole2_small_block_chain_timeout_status_is_fail_visible`, its
+  source guards, and manifest evidence while completing current-source
+  production-GCC and production-linked execution, complete OLE2/VBA/XLM
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification.
+
 ## HFS+ compressed-resource output admission — 2026-09-02
 
 - Keep decmpfs inline and resource-fork output bounded with a checked
