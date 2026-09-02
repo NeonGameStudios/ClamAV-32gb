@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Public file-scan path-conversion cleanup — 2026-09-02
+
+The public `cl_scanfile_ex2()` path can receive an owned UTF-8 conversion from
+`cli_to_utf8_maybe_alloc()` on Windows. If `safe_open()` failed, the old path
+returned without releasing that conversion; report construction could also
+overwrite `errno` before the open result was classified. The failure path now
+captures `errno` immediately, uses that stable value for the report and return
+status, and frees an owned converted filename before returning.
+
+`test_cl_scanfile_open_failure_is_fail_visible` exercises the production
+public API's missing-path result and verifies reset outputs plus a matching
+`CL_EOPEN` report status. Source guards and the capability manifest record the
+ownership and status boundary. Windows conversion/failure-injection coverage,
+current-source production-GCC compilation and execution, sanitizer, complete
+ingress/API corpus, service parity, certified Linux x86-64, production-CVD,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## FMap hash finalization status — 2026-09-02
 
 `fmap_get_hash_ctx()` checked input reads and hash updates, but ignored the

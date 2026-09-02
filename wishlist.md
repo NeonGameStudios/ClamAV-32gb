@@ -1,5 +1,17 @@
 # Wishlist
 
+## Public file-scan path-conversion cleanup — 2026-09-02
+
+- Keep `cl_scanfile_ex2()` capturing `errno` immediately after `safe_open()`
+  fails, using that stable value for the report/return classification, and
+  freeing an owned `cli_to_utf8_maybe_alloc()` result before every open-error
+  return.
+- Retain `test_cl_scanfile_open_failure_is_fail_visible`, its source guards,
+  and manifest evidence. Add Windows conversion/failure-injection coverage
+  and complete current-source production-GCC, sanitizer, service, production-
+  CVD, materialized-large-file, Sonic1, resource, and final release
+  qualification.
+
 ## FMap hash finalization status — 2026-09-02
 
 - Keep context-aware `fmap_get_hash_ctx()` checking `cl_finish_hash()` before

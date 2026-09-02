@@ -10032,14 +10032,19 @@ static cl_error_t scanfile_ex2_with_temporary_bytes(
     }
 
     if ((fd = safe_open(fname, O_RDONLY | O_BINARY)) == -1) {
+        int open_errno = errno;
+
         if (NULL != report_out) {
             if (cli_scan_report_create(&report, engine) == CL_SUCCESS) {
                 *report_out = report;
                 cli_scan_report_set_target(report, filename);
-                cli_scan_report_finish(report, NULL, errno == EACCES ? CL_EACCES : CL_EOPEN, CL_VERDICT_NOTHING_FOUND, NULL);
+                cli_scan_report_finish(report, NULL, open_errno == EACCES ? CL_EACCES : CL_EOPEN,
+                                       CL_VERDICT_NOTHING_FOUND, NULL);
             }
         }
-        if (errno == EACCES) {
+        if (fname != filename)
+            free((char *)fname);
+        if (open_errno == EACCES) {
             return CL_EACCES;
         } else {
             return CL_EOPEN;
