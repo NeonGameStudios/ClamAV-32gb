@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## PE direct options admission — 2026-09-02
+
+The exported `cli_scanpe()` entry rejected null context, input fmap, and
+engine state but did not reject missing scan options before JSON timeout and
+metadata handling, parser selection, heuristic evaluation, and unpacker or
+nested-child scanning. A direct caller with incomplete scan configuration
+could therefore enter PE inspection without the required options object. The
+entry now returns `CL_ENULLARG` immediately after engine admission when
+`ctx->options` is absent.
+
+`test_pe_missing_options_is_fail_visible` supplies a map and engine while
+omitting options, and verifies `CL_ENULLARG` without sticky incomplete or
+cache-taint state. Existing direct PE parser regressions already provide
+valid options for their format-specific assertions. Source guards and the
+capability manifest record the boundary. Current-source production-GCC
+compilation, production-linked execution, complete PE/unpacker corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## NSIS direct options admission — 2026-09-02
 
 The exported `cli_scannulsft()` entry rejected null context, input fmap, and
