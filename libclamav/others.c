@@ -2009,7 +2009,13 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
                 cli_mark_scan_incomplete(ctx, "indicator metadata JSON array could not be allocated");
                 metadata_status = cli_merge_scan_status(metadata_status, CL_EMEM);
             } else {
-                json_object_object_add(ctx->this_layer_metadata_json, "Indicators", indicators);
+                if (json_object_object_add(ctx->this_layer_metadata_json, "Indicators", indicators) != 0) {
+                    cli_errmsg("append_virus: failed to add json Indicators array\n");
+                    json_object_put(indicators);
+                    indicators = NULL;
+                    cli_mark_scan_incomplete(ctx, "indicator metadata JSON array could not be recorded");
+                    metadata_status = cli_merge_scan_status(metadata_status, CL_EMEM);
+                }
             }
         }
 
@@ -2022,25 +2028,38 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
                 metadata_status = cli_merge_scan_status(metadata_status, CL_EMEM);
             }
         } else {
-            (void)json_object_object_add(indicator_obj, "Name", json_object_new_string(virname));
+            cl_error_t json_status;
+
+            json_status = cli_jsonstr(indicator_obj, "Name", virname);
+            if (json_status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "indicator metadata JSON could not be recorded");
+                metadata_status = cli_merge_scan_status(metadata_status, json_status);
+            }
+            json_status = CL_SUCCESS;
             switch (type) {
                 case IndicatorType_Strong: {
-                    (void)json_object_object_add(indicator_obj, "Type", json_object_new_string("Strong"));
+                    json_status = cli_jsonstr(indicator_obj, "Type", "Strong");
                 } break;
                 case IndicatorType_PotentiallyUnwanted: {
-                    (void)json_object_object_add(indicator_obj, "Type", json_object_new_string("PotentiallyUnwanted"));
+                    json_status = cli_jsonstr(indicator_obj, "Type", "PotentiallyUnwanted");
                 } break;
                 case IndicatorType_Weak: {
-                    (void)json_object_object_add(indicator_obj, "Type", json_object_new_string("Weak"));
+                    json_status = cli_jsonstr(indicator_obj, "Type", "Weak");
                 } break;
             }
-            (void)json_object_object_add(indicator_obj, "Depth", json_object_new_int(0)); // 0 for this layer
-            {
-                cl_error_t json_status = cli_jsonuint64(indicator_obj, "ObjectID", (uint64_t)ctx->recursion_stack[ctx->recursion_level].object_id);
-                if (json_status != CL_SUCCESS) {
-                    cli_mark_scan_incomplete(ctx, "indicator metadata JSON could not be recorded");
-                    metadata_status = cli_merge_scan_status(metadata_status, json_status);
-                }
+            if (json_status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "indicator metadata JSON could not be recorded");
+                metadata_status = cli_merge_scan_status(metadata_status, json_status);
+            }
+            json_status = cli_jsonint(indicator_obj, "Depth", 0); // 0 for this layer
+            if (json_status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "indicator metadata JSON could not be recorded");
+                metadata_status = cli_merge_scan_status(metadata_status, json_status);
+            }
+            json_status = cli_jsonuint64(indicator_obj, "ObjectID", (uint64_t)ctx->recursion_stack[ctx->recursion_level].object_id);
+            if (json_status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "indicator metadata JSON could not be recorded");
+                metadata_status = cli_merge_scan_status(metadata_status, json_status);
             }
             if (json_object_array_add(indicators, indicator_obj) != 0) {
                 cli_mark_scan_incomplete(ctx, "indicator metadata JSON array could not be recorded");
@@ -2062,8 +2081,13 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
                     cli_mark_scan_incomplete(ctx, "indicator metadata Alerts array could not be allocated");
                     metadata_status = cli_merge_scan_status(metadata_status, CL_EMEM);
                 }
-                if (arrobj)
-                    (void)json_object_object_add(ctx->this_layer_metadata_json, "Alerts", arrobj);
+                if (arrobj && json_object_object_add(ctx->this_layer_metadata_json, "Alerts", arrobj) != 0) {
+                    cli_errmsg("append_virus: failed to add json Alerts array\n");
+                    json_object_put(arrobj);
+                    arrobj = NULL;
+                    cli_mark_scan_incomplete(ctx, "indicator metadata Alerts array could not be recorded");
+                    metadata_status = cli_merge_scan_status(metadata_status, CL_EMEM);
+                }
             }
 
             if (arrobj) {

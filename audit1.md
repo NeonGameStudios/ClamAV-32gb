@@ -19764,6 +19764,25 @@ execution, complete signature/evidence corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
 final matcher/release qualification remain required.
 
+## Indicator metadata property insertion — 2026-09-01
+
+The central indicator path previously discarded failures while recording the
+required `Name`, `Type`, and `Depth` properties and while attaching its
+`Indicators` and `Alerts` arrays. Those omissions could leave a detected
+result with incomplete evidence metadata without a sticky state. The path
+now routes required scalar properties through the checked JSON helpers,
+checks array attachment, releases rejected arrays or values, marks the layer
+incomplete and non-cacheable, and preserves detection precedence.
+
+`test_virus_indicator_metadata_property_add_failure_is_fail_visible` injects
+each required property insertion through the production-linked wrapper and
+requires the expected detection, `CL_VIRUS` report status,
+detection-terminated completion, exact diagnostic, and fmap cache taint.
+Current-source production-GCC compilation, production-linked execution,
+complete signature/evidence corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+matcher/release qualification remain required.
+
 ## Nested indicator metadata copy failures — 2026-09-01
 
 Child indicators and alerts are copied into parent metadata during

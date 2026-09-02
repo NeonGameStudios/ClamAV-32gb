@@ -11586,6 +11586,17 @@ final parser/release qualification remain open.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final matcher/release qualification remain open.
 
+## Indicator metadata property insertion — 2026-09-01
+
+- Keep indicator `Name`, `Type`, and `Depth` writes plus `Indicators` and
+  `Alerts` array attachment fail-visible; release rejected values, mark the
+  detected layer non-cacheable, and preserve the stronger detection result.
+- Retain `test_virus_indicator_metadata_property_add_failure_is_fail_visible`
+  and its JSON-wrap source guards. Current-source production-linked
+  execution, complete signature/evidence corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final matcher/release qualification remain open.
+
 
 ## Nested indicator metadata copy failures — 2026-09-01
 

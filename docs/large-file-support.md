@@ -8709,6 +8709,20 @@ complete signature/evidence corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and release
 qualification remain required.
 
+## Indicator metadata property insertion — 2026-09-01
+
+The central indicator path now routes required `Name`, `Type`, and `Depth`
+properties through the checked JSON helpers and checks attachment of its
+`Indicators` and `Alerts` arrays. Rejected values or arrays are released, the
+detected layer is marked incomplete and non-cacheable, and detection remains
+authoritative. `test_virus_indicator_metadata_property_add_failure_is_fail_visible`
+injects each required property insertion through the production-linked
+wrapper and requires the expected detection, exact metadata diagnostic,
+detection-terminated report, and fmap cache taint. Current-source execution,
+complete signature/evidence corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+release qualification remain required.
+
 ## Shared JSON object-property insertion failures — 2026-09-01
 
 The shared `cli_json` scalar helpers now propagate
