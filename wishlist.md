@@ -1,5 +1,16 @@
 # Wishlist
 
+## HFS+ compressed-resource output admission — 2026-09-02
+
+- Keep decmpfs inline and resource-fork output bounded with a checked
+  `written + produced <= declared_size` admission; reject counter-overrun and
+  UINT64_MAX arithmetic cases before materialized writes, while preserving
+  distinct format and write-failure results.
+- Retain `test_hfsplus_compressed_output_size_admission_is_fail_visible` and
+  its source/manifest evidence while completing HFS+ compressed-resource
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification.
+
 ## PE resource-walk deadline propagation — 2026-09-02
 
 - Keep context-aware PE version/icon resource walks deadline-bounded before

@@ -52083,6 +52083,16 @@ START_TEST(test_hfsplus_resource_block_offset_overflow_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hfsplus_compressed_output_size_admission_is_fail_visible)
+{
+    ck_assert_int_eq(cli_hfsplus_output_size_admission(0, 0, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_hfsplus_output_size_admission(4, 6, 10), CL_SUCCESS);
+    ck_assert_int_eq(cli_hfsplus_output_size_admission(10, 0, 10), CL_SUCCESS);
+    ck_assert_int_eq(cli_hfsplus_output_size_admission(10, 1, 10), CL_EFORMAT);
+    ck_assert_int_eq(cli_hfsplus_output_size_admission(UINT64_MAX, 1, UINT64_MAX), CL_EFORMAT);
+}
+END_TEST
+
 START_TEST(test_hfsplus_resource_map_uses_declared_offsets)
 {
     uint8_t data[128];
@@ -57558,6 +57568,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hfs_map, test_hfsplus_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_resource_reference_index_overflow_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_resource_block_offset_overflow_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_compressed_output_size_admission_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_resource_map_uses_declared_offsets);
     tcase_add_test(tc_hfs_map, test_hfsplus_declared_volume_boundary_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_catalog_key_length_padding_is_fail_visible);

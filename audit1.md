@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## HFS+ compressed-resource output admission — 2026-09-02
+
+The HFS+ decmpfs resource-fork paths checked `produced` against
+`declared_size - written` without first proving that `written` was within the
+declared output. An already-overrun counter could therefore wrap the
+subtraction on unsigned arithmetic before the final size comparison. The
+shared `cli_hfsplus_output_size_admission()` boundary now rejects both an
+existing overrun and any chunk that crosses the declared size before writing;
+the inline and resource-fork paths use it, and write failures retain their
+distinct `CL_EWRITE` status.
+
+`test_hfsplus_compressed_output_size_admission_is_fail_visible` covers the
+empty, exact, boundary, overrun, and UINT64_MAX cases. Source guards and the
+capability manifest record the boundary. Current-source production-GCC
+compilation, production-linked execution, complete HFS+ compressed-resource
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## PE resource-walk deadline propagation — 2026-09-02
 
 The shared PE resource-directory helper had no scan context, so its

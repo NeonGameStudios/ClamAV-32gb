@@ -102,7 +102,7 @@ cl_error_t cli_hfsplus_inflate_inline(cli_ctx *ctx, const uint8_t *input,
         z_ret            = inflate(&stream, Z_NO_FLUSH);
         produced         = sizeof(output) - stream.avail_out;
 
-        if (total > expected_size || (uint64_t)produced > expected_size - total) {
+        if (cli_hfsplus_output_size_admission(total, produced, expected_size) != CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output exceeds its declared size");
             status = CL_EFORMAT;
             goto done;
@@ -1913,10 +1913,15 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                             cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource output reached the configured time limit");
                                                             goto resource_block_done;
                                                         }
-                                                        if ((uint64_t)produced > header.fileSize - written ||
-                                                            cli_writen(ofd, uncompressed_block, produced) != produced) {
-                                                            cli_dbgmsg("hfsplus_walk_catalog: Failed to write to temporary file\n");
+                                                        if (cli_hfsplus_output_size_admission(written, produced, header.fileSize) != CL_SUCCESS) {
+                                                            cli_dbgmsg("hfsplus_walk_catalog: Compressed output exceeds its declared size\n");
                                                             cli_mark_scan_incomplete(ctx, "HFS+ compressed output exceeded its declared size");
+                                                            status = CL_EFORMAT;
+                                                            goto resource_block_done;
+                                                        }
+                                                        if (cli_writen(ofd, uncompressed_block, produced) != produced) {
+                                                            cli_dbgmsg("hfsplus_walk_catalog: Failed to write to temporary file\n");
+                                                            cli_mark_scan_incomplete(ctx, "HFS+ compressed output could not be written completely");
                                                             status = CL_EWRITE;
                                                             goto resource_block_done;
                                                         }
@@ -1939,10 +1944,15 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                         cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource output reached the configured time limit");
                                                         goto resource_block_done;
                                                     }
-                                                    if ((uint64_t)produced > header.fileSize - written ||
-                                                        cli_writen(ofd, &block[streamBeginning ? 1 : 0], produced) != produced) {
-                                                        cli_dbgmsg("hfsplus_walk_catalog: Failed to write to temporary file\n");
+                                                    if (cli_hfsplus_output_size_admission(written, produced, header.fileSize) != CL_SUCCESS) {
+                                                        cli_dbgmsg("hfsplus_walk_catalog: Compressed output exceeds its declared size\n");
                                                         cli_mark_scan_incomplete(ctx, "HFS+ compressed output exceeded its declared size");
+                                                        status = CL_EFORMAT;
+                                                        goto resource_block_done;
+                                                    }
+                                                    if (cli_writen(ofd, &block[streamBeginning ? 1 : 0], produced) != produced) {
+                                                        cli_dbgmsg("hfsplus_walk_catalog: Failed to write to temporary file\n");
+                                                        cli_mark_scan_incomplete(ctx, "HFS+ compressed output could not be written completely");
                                                         status = CL_EWRITE;
                                                         goto resource_block_done;
                                                     }

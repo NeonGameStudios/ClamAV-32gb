@@ -357,6 +357,15 @@ static inline cl_error_t cli_hfsplus_resource_block_offset(uint64_t data_offset,
     return CL_SUCCESS;
 }
 
+static inline cl_error_t cli_hfsplus_output_size_admission(uint64_t written, uint64_t produced,
+                                                            uint64_t declared_size)
+{
+    if (written > declared_size || produced > declared_size - written)
+        return CL_EFORMAT;
+
+    return CL_SUCCESS;
+}
+
 struct hfsPlusResourceBlockTable {
     uint32_t offset;
     uint32_t length;
