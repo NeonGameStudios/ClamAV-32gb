@@ -1,5 +1,17 @@
 # Wishlist
 
+## Remaining library hash finalization status — 2026-09-02
+
+- Keep signed-database RSA-PSS verification checking every hash update and
+  finalization, HTML phishing URL hashing returning `CL_EREAD` to its caller,
+  and non-SYSCTL host-ID generation releasing all device/output ownership on
+  update or finalization failure. No consumer should verify, look up, or
+  format a digest after an incomplete crypto operation.
+- Retain the source guards and capability rows. Current-source production-GCC
+  execution, complete signed-database/HTML/platform corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final release qualification remain open.
+
 ## Authenticode and PE hash finalization status — 2026-09-02
 
 - Keep Authenticode ASN.1 issuer/serial, authenticated-attribute,

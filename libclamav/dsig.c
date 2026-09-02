@@ -337,7 +337,7 @@ cl_error_t cli_versig2(const uint8_t *sha2_256, const char *dsig_str, const char
     uint8_t digest1[SHA256_HASH_SIZE], digest2[SHA256_HASH_SIZE], digest3[SHA256_HASH_SIZE], *salt;
     uint8_t mask[BLK_LEN], data[BLK_LEN], final[8 + 2 * SHA256_HASH_SIZE], c[4];
     unsigned int i, rounds;
-    void *ctx;
+    void *ctx = NULL;
     BIGNUM *n, *e;
     cl_error_t ret;
 
@@ -384,12 +384,23 @@ cl_error_t cli_versig2(const uint8_t *sha2_256, const char *dsig_str, const char
         c[3] = (unsigned char)i;
 
         ctx = cl_hash_init("sha2-256");
-        if (!(ctx))
-            return CL_EMEM;
+        if (!(ctx)) {
+            ret = CL_EMEM;
+            goto done;
+        }
 
-        cl_update_hash(ctx, digest2, SHA256_HASH_SIZE);
-        cl_update_hash(ctx, c, 4);
-        cl_finish_hash(ctx, digest3);
+        if (cl_update_hash(ctx, digest2, SHA256_HASH_SIZE) != 0 || cl_update_hash(ctx, c, 4) != 0) {
+            cl_hash_destroy(ctx);
+            ctx = NULL;
+            ret = CL_EREAD;
+            goto done;
+        }
+        if (cl_finish_hash(ctx, digest3) != 0) {
+            ctx = NULL;
+            ret = CL_EREAD;
+            goto done;
+        }
+        ctx = NULL;
         if (i + 1 == rounds)
             memcpy(&data[i * 32], digest3, BLK_LEN - i * SHA256_HASH_SIZE);
         else
@@ -412,15 +423,29 @@ cl_error_t cli_versig2(const uint8_t *sha2_256, const char *dsig_str, const char
     memcpy(&final[8 + SHA256_HASH_SIZE], salt, SALT_LEN);
 
     ctx = cl_hash_init("sha2-256");
-    if (!(ctx))
-        return CL_EMEM;
+    if (!(ctx)) {
+        ret = CL_EMEM;
+        goto done;
+    }
 
-    cl_update_hash(ctx, final, sizeof(final));
-    cl_finish_hash(ctx, digest1);
+    if (cl_update_hash(ctx, final, sizeof(final)) != 0) {
+        cl_hash_destroy(ctx);
+        ctx = NULL;
+        ret = CL_EREAD;
+        goto done;
+    }
+    if (cl_finish_hash(ctx, digest1) != 0) {
+        ctx = NULL;
+        ret = CL_EREAD;
+        goto done;
+    }
+    ctx = NULL;
 
-    return memcmp(digest1, digest2, SHA256_HASH_SIZE) ? CL_EVERIFY : CL_SUCCESS;
+    ret = memcmp(digest1, digest2, SHA256_HASH_SIZE) ? CL_EVERIFY : CL_SUCCESS;
 
 done:
+    if (ctx != NULL)
+        cl_hash_destroy(ctx);
     free(decoded);
     BN_free(n);
     BN_free(e);

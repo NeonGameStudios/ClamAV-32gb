@@ -271,10 +271,19 @@ char *internal_get_host_id(void)
         return NULL;
     }
 
-    for (i = 0; devices[i].name != NULL; i++)
-        cl_update_hash(ctx, devices[i].mac, sizeof(devices[i].mac));
+    for (i = 0; devices[i].name != NULL; i++) {
+        if (cl_update_hash(ctx, devices[i].mac, sizeof(devices[i].mac)) != 0) {
+            cl_hash_destroy(ctx);
+            ctx = NULL;
+            goto fail;
+        }
+    }
 
-    cl_finish_hash(ctx, raw_md5);
+    if (cl_finish_hash(ctx, raw_md5) != 0) {
+        ctx = NULL;
+        goto fail;
+    }
+    ctx = NULL;
 
     for (i = 0; devices[i].name != NULL; i++)
         free(devices[i].name);
@@ -295,5 +304,12 @@ char *internal_get_host_id(void)
     }
 
     return printable_md5;
+
+fail:
+    for (i = 0; devices[i].name != NULL; i++)
+        free(devices[i].name);
+    free(devices);
+    free(printable_md5);
+    return NULL;
 }
 #endif

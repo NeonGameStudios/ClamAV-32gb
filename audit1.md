@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## Remaining library hash finalization status — 2026-09-02
+
+After the parser and Authenticode review, three non-parser library consumers
+still discarded hash operation status. Signed-database RSA-PSS verification
+now checks every update and finalization, HTML phishing URL hashing returns a
+non-success result when its host/path digest cannot be completed, and the
+non-SYSCTL host-ID path releases its device/output ownership and returns no
+identifier on hash failure. These paths no longer format, verify, or look up
+data from a digest after an incomplete crypto operation.
+
+Source guards and three capability rows record the boundaries. Current-source
+production-GCC compilation and production-linked execution, complete signed
+database/HTML/platform corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+release qualification remain required.
+
 ## Authenticode and PE hash finalization status — 2026-09-02
 
 The Authenticode ASN.1 path had several unchecked `cl_finish_hash()` calls:

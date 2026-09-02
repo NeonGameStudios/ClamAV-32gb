@@ -11528,7 +11528,7 @@ native-width-integer	libclamav/hfsplus.h	395	cl_error_t cli_hfsplus_seek_to_cmpf
 native-width-integer	libclamav/hostid_internal.c	114	    size_t ndevices        = 0, i, j;
 native-width-integer	libclamav/hostid_internal.c	117	    int sock;
 native-width-integer	libclamav/hostid_internal.c	247	    size_t i;
-native-width-integer	libclamav/hostid_internal.c	284	        size_t len = strlen(printable_md5);
+native-width-integer	libclamav/hostid_internal.c	293	        size_t len = strlen(printable_md5);
 native-width-integer	libclamav/hostid_internal.c	65	struct device *get_device_entry(struct device *devices, size_t *ndevices, const char *name);
 native-width-integer	libclamav/hostid_internal.c	67	struct device *get_device_entry(struct device *devices, size_t *ndevices, const char *name)
 native-width-integer	libclamav/hostid_internal.c	70	    size_t i;
@@ -14457,16 +14457,16 @@ native-width-integer	libclamav/phishcheck.c	1152	static cl_error_t allow_list_ch
 native-width-integer	libclamav/phishcheck.c	1159	                             size_t hlen,
 native-width-integer	libclamav/phishcheck.c	1161	                             size_t plen,
 native-width-integer	libclamav/phishcheck.c	1162	                             int* prefix_matched,
-native-width-integer	libclamav/phishcheck.c	1234	enum phish_status cli_url_canon(const char* inurl, size_t len, char* urlbuff, size_t dest_len, char** host, size_t* hostlen, const char** path, size_t* pathlen)
-native-width-integer	libclamav/phishcheck.c	1239	    size_t host_len, path_len;
-native-width-integer	libclamav/phishcheck.c	1350	    size_t len,
-native-width-integer	libclamav/phishcheck.c	1354	    size_t j, k, ji, ki;
-native-width-integer	libclamav/phishcheck.c	1358	    size_t path_len;
-native-width-integer	libclamav/phishcheck.c	1359	    size_t host_len;
-native-width-integer	libclamav/phishcheck.c	1363	    int prefix_matched = 0;
-native-width-integer	libclamav/phishcheck.c	1365	    size_t pp[COMPONENTS + 2];
-native-width-integer	libclamav/phishcheck.c	1427	            int need_prefixmatch = (count < 2 && !prefix_matched) &&
-native-width-integer	libclamav/phishcheck.c	1479	    int phishy                         = 0;
+native-width-integer	libclamav/phishcheck.c	1238	enum phish_status cli_url_canon(const char* inurl, size_t len, char* urlbuff, size_t dest_len, char** host, size_t* hostlen, const char** path, size_t* pathlen)
+native-width-integer	libclamav/phishcheck.c	1243	    size_t host_len, path_len;
+native-width-integer	libclamav/phishcheck.c	1354	    size_t len,
+native-width-integer	libclamav/phishcheck.c	1358	    size_t j, k, ji, ki;
+native-width-integer	libclamav/phishcheck.c	1362	    size_t path_len;
+native-width-integer	libclamav/phishcheck.c	1363	    size_t host_len;
+native-width-integer	libclamav/phishcheck.c	1367	    int prefix_matched = 0;
+native-width-integer	libclamav/phishcheck.c	1369	    size_t pp[COMPONENTS + 2];
+native-width-integer	libclamav/phishcheck.c	1431	            int need_prefixmatch = (count < 2 && !prefix_matched) &&
+native-width-integer	libclamav/phishcheck.c	1483	    int phishy                         = 0;
 native-width-integer	libclamav/phishcheck.c	151	static const size_t href_text_len    = sizeof(href_text);
 native-width-integer	libclamav/phishcheck.c	152	static const size_t src_text_len     = sizeof(src_text);
 native-width-integer	libclamav/phishcheck.c	153	static const size_t dotnet_len       = sizeof(dotnet) - 1;
@@ -24616,7 +24616,7 @@ format-width	libclamav/petite.c	260	                        cli_dbgmsg("Petite: 
 format-width	libclamav/petite.c	270	                cli_dbgmsg("Petite: .SECT%d RVA:%x VSize:%x ROffset: %x, RSize:%x\n", t, usects[t].rva, usects[t].vsz, usects[t].raw, usects[t].rsz);
 format-width	libclamav/petite.c	562	                    cli_dbgmsg("Petite: Found petite code in sect%d(%x). Let's strip it.\n", j - 1, usects[j - 1].rva);
 format-width	libclamav/phish_allow_list.c	48	    cli_dbgmsg("Phishing: looking up in allow list: %s:%s; host-only:%d\n", real_url, display_url, hostOnly);
-format-width	libclamav/phishcheck.c	1201	        cli_dbgmsg("Looking up hash %s for %s(%u)%s(%u)\n", h, host, (unsigned)hlen, path, (unsigned)plen);
+format-width	libclamav/phishcheck.c	1205	        cli_dbgmsg("Looking up hash %s for %s(%u)%s(%u)\n", h, host, (unsigned)hlen, path, (unsigned)plen);
 format-width	libclamav/phishcheck.c	462	    sscanf(host, "%d.%d.%d.%d%n", &a, &b, &c, &d, &n);
 format-width	libclamav/phishcheck.c	650	    /*cli_dbgmsg("%d %d\n", end-begin, len);*/
 format-width	libclamav/png.c	273	                cli_dbgmsg("PNG: invalid compression method (%u)\n", compression_method);
@@ -29243,7 +29243,7 @@ offset-size-arithmetic	libclamav/hostid_internal.c	169	                    snpri
 offset-size-arithmetic	libclamav/hostid_internal.c	208	            snprintf(devices[i].mac + strlen(devices[i].mac), sizeof(devices[i].mac) - strlen(devices[i].mac) - 1, "%02x:", mac[j]);
 offset-size-arithmetic	libclamav/hostid_internal.c	212	    p = realloc(devices, sizeof(struct device) * (ndevices + 1));
 offset-size-arithmetic	libclamav/hostid_internal.c	238	#endif /* HAVE_GETIFADDRS */
-offset-size-arithmetic	libclamav/hostid_internal.c	290	                printable_md5[len++] = '-';
+offset-size-arithmetic	libclamav/hostid_internal.c	299	                printable_md5[len++] = '-';
 offset-size-arithmetic	libclamav/hostid_internal.c	65	struct device *get_device_entry(struct device *devices, size_t *ndevices, const char *name);
 offset-size-arithmetic	libclamav/hostid_internal.c	67	struct device *get_device_entry(struct device *devices, size_t *ndevices, const char *name)
 offset-size-arithmetic	libclamav/hostid_internal.c	83	            p = realloc(devices, sizeof(struct device) * (*ndevices + 1));
@@ -33313,34 +33313,35 @@ offset-size-arithmetic	libclamav/phishcheck.c	1099	    const char *start, *end;
 offset-size-arithmetic	libclamav/phishcheck.c	1128	        url->pre_fixup.host_start                                    = start - URL;
 offset-size-arithmetic	libclamav/phishcheck.c	1129	        url->pre_fixup.host_end                                      = end - URL;
 offset-size-arithmetic	libclamav/phishcheck.c	1170		s[hlen+plen] = '\0';
-offset-size-arithmetic	libclamav/phishcheck.c	1234	enum phish_status cli_url_canon(const char* inurl, size_t len, char* urlbuff, size_t dest_len, char** host, size_t* hostlen, const char** path, size_t* pathlen)
-offset-size-arithmetic	libclamav/phishcheck.c	1245	    dest_len -= 3;
-offset-size-arithmetic	libclamav/phishcheck.c	1249	    urlend = urlbuff + len;
-offset-size-arithmetic	libclamav/phishcheck.c	1252	    urlbuff[dest_len] = urlbuff[dest_len + 1] = urlbuff[dest_len + 2] = '\0';
-offset-size-arithmetic	libclamav/phishcheck.c	1262	    while ((host_begin < urlend) && *host_begin == '/') ++host_begin;
-offset-size-arithmetic	libclamav/phishcheck.c	1263	    host_len = strcspn(host_begin, ":/?");
-offset-size-arithmetic	libclamav/phishcheck.c	1271	    len        = urlend - url;
-offset-size-arithmetic	libclamav/phishcheck.c	1273	    while ((host_begin < urlend) && *host_begin == '/') ++host_begin;
-offset-size-arithmetic	libclamav/phishcheck.c	1274	    while (*host_begin == '.' && host_begin < urlend) ++host_begin;
-offset-size-arithmetic	libclamav/phishcheck.c	1279	        if (p + 2 < urlend && *p == '/' && p[1] == '.') {
-offset-size-arithmetic	libclamav/phishcheck.c	1283	                    memmove(p + 1, p + 3, urlend - p - 3);
-offset-size-arithmetic	libclamav/phishcheck.c	1284	                urlend -= 2;
-offset-size-arithmetic	libclamav/phishcheck.c	1288	                    memmove(last + 1, p + 4, urlend - p - 4);
-offset-size-arithmetic	libclamav/phishcheck.c	1289	                urlend -= 3 + (p - last);
-offset-size-arithmetic	libclamav/phishcheck.c	1296	    p  = &url[urlend - url];
-offset-size-arithmetic	libclamav/phishcheck.c	1300	    while (p < urlend && p + 2 < url + dest_len && urlend < urlbuff + dest_len) {
-offset-size-arithmetic	libclamav/phishcheck.c	1305	            memmove(p + 3, p + 1, urlend - p - 1);
-offset-size-arithmetic	libclamav/phishcheck.c	1309	            urlend += 2;
-offset-size-arithmetic	libclamav/phishcheck.c	1315	    len    = urlend - url;
-offset-size-arithmetic	libclamav/phishcheck.c	1316	    /* determine end of hostname */
-offset-size-arithmetic	libclamav/phishcheck.c	1317	    host_len   = strcspn(host_begin, ":/?");
-offset-size-arithmetic	libclamav/phishcheck.c	1321	        memmove(path_begin + 2, path_begin + 1, len - host_len);
-offset-size-arithmetic	libclamav/phishcheck.c	1327	        path_len = url + len - path_begin + 1;
-offset-size-arithmetic	libclamav/phishcheck.c	1332	            path_len = p - path_begin;
-offset-size-arithmetic	libclamav/phishcheck.c	1365	    size_t pp[COMPONENTS + 2];
-offset-size-arithmetic	libclamav/phishcheck.c	1366	    char urlbuff[URL_MAX_LEN + 3]; /* htmlnorm truncates at 1024 bytes + terminating null + slash + host end null */
-offset-size-arithmetic	libclamav/phishcheck.c	1434	                            host_begin + host_len - lp[ji] + 1,
-offset-size-arithmetic	libclamav/phishcheck.c	1504	                                               strlen(urls->realLink.data),
+offset-size-arithmetic	libclamav/phishcheck.c	1192	        if (cl_update_hash(sha2_256, (void*)host, hlen) != 0 || cl_update_hash(sha2_256, (void*)path, plen) != 0) {
+offset-size-arithmetic	libclamav/phishcheck.c	1238	enum phish_status cli_url_canon(const char* inurl, size_t len, char* urlbuff, size_t dest_len, char** host, size_t* hostlen, const char** path, size_t* pathlen)
+offset-size-arithmetic	libclamav/phishcheck.c	1249	    dest_len -= 3;
+offset-size-arithmetic	libclamav/phishcheck.c	1253	    urlend = urlbuff + len;
+offset-size-arithmetic	libclamav/phishcheck.c	1256	    urlbuff[dest_len] = urlbuff[dest_len + 1] = urlbuff[dest_len + 2] = '\0';
+offset-size-arithmetic	libclamav/phishcheck.c	1266	    while ((host_begin < urlend) && *host_begin == '/') ++host_begin;
+offset-size-arithmetic	libclamav/phishcheck.c	1267	    host_len = strcspn(host_begin, ":/?");
+offset-size-arithmetic	libclamav/phishcheck.c	1275	    len        = urlend - url;
+offset-size-arithmetic	libclamav/phishcheck.c	1277	    while ((host_begin < urlend) && *host_begin == '/') ++host_begin;
+offset-size-arithmetic	libclamav/phishcheck.c	1278	    while (*host_begin == '.' && host_begin < urlend) ++host_begin;
+offset-size-arithmetic	libclamav/phishcheck.c	1283	        if (p + 2 < urlend && *p == '/' && p[1] == '.') {
+offset-size-arithmetic	libclamav/phishcheck.c	1287	                    memmove(p + 1, p + 3, urlend - p - 3);
+offset-size-arithmetic	libclamav/phishcheck.c	1288	                urlend -= 2;
+offset-size-arithmetic	libclamav/phishcheck.c	1292	                    memmove(last + 1, p + 4, urlend - p - 4);
+offset-size-arithmetic	libclamav/phishcheck.c	1293	                urlend -= 3 + (p - last);
+offset-size-arithmetic	libclamav/phishcheck.c	1300	    p  = &url[urlend - url];
+offset-size-arithmetic	libclamav/phishcheck.c	1304	    while (p < urlend && p + 2 < url + dest_len && urlend < urlbuff + dest_len) {
+offset-size-arithmetic	libclamav/phishcheck.c	1309	            memmove(p + 3, p + 1, urlend - p - 1);
+offset-size-arithmetic	libclamav/phishcheck.c	1313	            urlend += 2;
+offset-size-arithmetic	libclamav/phishcheck.c	1319	    len    = urlend - url;
+offset-size-arithmetic	libclamav/phishcheck.c	1320	    /* determine end of hostname */
+offset-size-arithmetic	libclamav/phishcheck.c	1321	    host_len   = strcspn(host_begin, ":/?");
+offset-size-arithmetic	libclamav/phishcheck.c	1325	        memmove(path_begin + 2, path_begin + 1, len - host_len);
+offset-size-arithmetic	libclamav/phishcheck.c	1331	        path_len = url + len - path_begin + 1;
+offset-size-arithmetic	libclamav/phishcheck.c	1336	            path_len = p - path_begin;
+offset-size-arithmetic	libclamav/phishcheck.c	1369	    size_t pp[COMPONENTS + 2];
+offset-size-arithmetic	libclamav/phishcheck.c	1370	    char urlbuff[URL_MAX_LEN + 3]; /* htmlnorm truncates at 1024 bytes + terminating null + slash + host end null */
+offset-size-arithmetic	libclamav/phishcheck.c	1438	                            host_begin + host_len - lp[ji] + 1,
+offset-size-arithmetic	libclamav/phishcheck.c	1508	                                               strlen(urls->realLink.data),
 offset-size-arithmetic	libclamav/phishcheck.c	153	static const size_t dotnet_len       = sizeof(dotnet) - 1;
 offset-size-arithmetic	libclamav/phishcheck.c	154	static const size_t adonet_len       = sizeof(adonet) - 1;
 offset-size-arithmetic	libclamav/phishcheck.c	155	static const size_t aspnet_len       = sizeof(aspnet) - 1;

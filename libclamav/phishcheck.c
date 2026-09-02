@@ -1189,9 +1189,13 @@ static cl_error_t hash_match(const struct regex_matcher* rlist,
         if (!(sha2_256))
             return CL_EMEM;
 
-        cl_update_hash(sha2_256, (void*)host, hlen);
-        cl_update_hash(sha2_256, (void*)path, plen);
-        cl_finish_hash(sha2_256, sha2_256_dig);
+        if (cl_update_hash(sha2_256, (void*)host, hlen) != 0 || cl_update_hash(sha2_256, (void*)path, plen) != 0) {
+            cl_hash_destroy(sha2_256);
+            return CL_EREAD;
+        }
+        if (cl_finish_hash(sha2_256, sha2_256_dig) != 0)
+            return CL_EREAD;
+        sha2_256 = NULL;
 
         for (i = 0; i < 32; i++) {
             h[2 * i]     = hexchars[sha2_256_dig[i] >> 4];
