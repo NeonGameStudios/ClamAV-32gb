@@ -1,5 +1,18 @@
 # Wishlist
 
+## clamdscan service completion failure visibility — 2026-09-01
+
+- Keep serial `cli_ftw()` failures fail-visible even when no callback ran, so
+  an empty failed walk cannot be reported clean; preserve the status and emit
+  a bounded structured failure object in report mode.
+- Check the parallel IDSESSION `zEND` send, including empty sessions; on
+  failure, suppress clean output, release pending IDs, and preserve a
+  non-clean client result.
+- Retain the source guards and capability rows. Complete current-source
+  production-linked execution, injected walk/transport failures,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification.
+
 ## ARJ scanner header failure reconciliation — 2026-09-01
 
 - Keep the owning `cli_scanarj()` boundary fail-visible when

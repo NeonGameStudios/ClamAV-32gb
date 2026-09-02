@@ -7357,6 +7357,10 @@ contains libclamav/matcher-ac.c 'exceeds the 16-bit pattern length limit'
 contains libclamav/readdb.c 'exceeds the 16-bit pattern length limit'
 contains unit_tests/check_matchers.c 'test_matcher_rejects_oversized_body_patterns'
 contains docs/largefile-capabilities.tsv 'matcher-pattern-length-admission'
+contains clamdscan/proto.c 'if (ftw != CL_SUCCESS && ftw != CL_BREAK && cdata.errors == 0)'
+contains clamdscan/proto.c 'if (sendln(cdata.sockd, zEND, sizeof(zEND)))'
+contains docs/largefile-capabilities.tsv 'clamdscan-directory-walk-failure'
+contains docs/largefile-capabilities.tsv 'clamdscan-idsession-termination-send'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2

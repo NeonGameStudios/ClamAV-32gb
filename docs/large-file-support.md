@@ -3,6 +3,22 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## clamdscan service completion failure visibility — 2026-09-01
+
+The serial client walker now preserves a non-success `cli_ftw()` result even
+when traversal failed before its callback could count a file; it no longer
+falls through to a clean empty-walk result. The parallel IDSESSION walker now
+checks the terminating `zEND` send as well. A failed terminator increments the
+client error count, suppresses clean output, releases pending IDs, and emits a
+bounded structured failure object when report mode is active, including for an
+empty session.
+
+Source guards and the capability manifest pin both service boundaries.
+Current-source production-linked execution, empty-directory and injected
+walk/transport failure coverage, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+release qualification remain required.
+
 ## ARJ scanner header failure reconciliation — 2026-09-01
 
 The owning `cli_scanarj()` boundary now reconciles non-success results from

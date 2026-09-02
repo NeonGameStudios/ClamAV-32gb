@@ -148,9 +148,9 @@ fixed-width-integer	clamdscan/client.c	180	    uint16_t ret = 0;
 fixed-width-integer	clamdscan/client.c	405	        int16_t ping_result = ping_clamd(opts);
 fixed-width-integer	clamdscan/client.c	75	uint64_t maxstream;
 fixed-width-integer	clamdscan/client.h	33	int16_t ping_clamd(const struct optstruct *opts);
-fixed-width-integer	clamdscan/proto.c	427	static int report_json_id(const char *json, uint32_t length, unsigned int *id)
-fixed-width-integer	clamdscan/proto.c	454	    uint32_t json_length       = 0;
-fixed-width-integer	clamdscan/proto.c	455	    uint32_t terminator_length = 0;
+fixed-width-integer	clamdscan/proto.c	438	static int report_json_id(const char *json, uint32_t length, unsigned int *id)
+fixed-width-integer	clamdscan/proto.c	465	    uint32_t json_length       = 0;
+fixed-width-integer	clamdscan/proto.c	466	    uint32_t terminator_length = 0;
 fixed-width-integer	clamdscan/proto.c	71	extern uint64_t maxstream;
 fixed-width-integer	clamonacc/clamonacc.c	383	        int16_t ping_result = onas_ping_clamd(&ctx);
 fixed-width-integer	clamonacc/clamonacc.c	399	        int16_t ping_result = onas_ping_clamd(&ctx);
@@ -8009,32 +8009,32 @@ native-width-integer	clamdscan/proto.c	318	        int report_infected   = 0;
 native-width-integer	clamdscan/proto.c	319	        int report_incomplete = 0;
 native-width-integer	clamdscan/proto.c	373	int serial_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream)
 native-width-integer	clamdscan/proto.c	377	    int ftw;
-native-width-integer	clamdscan/proto.c	409	    int infected;
-native-width-integer	clamdscan/proto.c	410	    int files;
-native-width-integer	clamdscan/proto.c	411	    int errors;
-native-width-integer	clamdscan/proto.c	412	    int scantype;
-native-width-integer	clamdscan/proto.c	413	    int sockd;
-native-width-integer	clamdscan/proto.c	414	    int lastid;
-native-width-integer	clamdscan/proto.c	415	    int printok;
-native-width-integer	clamdscan/proto.c	418	        unsigned int id;
-native-width-integer	clamdscan/proto.c	423	    unsigned int action_sources;
-native-width-integer	clamdscan/proto.c	424	    unsigned int max_action_sources;
-native-width-integer	clamdscan/proto.c	427	static int report_json_id(const char *json, uint32_t length, unsigned int *id)
-native-width-integer	clamdscan/proto.c	431	    unsigned long value;
-native-width-integer	clamdscan/proto.c	446	    *id = (unsigned int)value;
-native-width-integer	clamdscan/proto.c	450	static int dspreport(struct client_parallel_data *c)
-native-width-integer	clamdscan/proto.c	456	    int terminator             = 0;
-native-width-integer	clamdscan/proto.c	457	    int frame_infected         = 0;
-native-width-integer	clamdscan/proto.c	458	    int frame_incomplete       = 0;
-native-width-integer	clamdscan/proto.c	460	    unsigned int rid;
-native-width-integer	clamdscan/proto.c	529	static int dspresult(struct client_parallel_data *c)
-native-width-integer	clamdscan/proto.c	534	    unsigned int rid;
-native-width-integer	clamdscan/proto.c	535	    int len;
-native-width-integer	clamdscan/proto.c	628	    int res                        = 0;
+native-width-integer	clamdscan/proto.c	420	    int infected;
+native-width-integer	clamdscan/proto.c	421	    int files;
+native-width-integer	clamdscan/proto.c	422	    int errors;
+native-width-integer	clamdscan/proto.c	423	    int scantype;
+native-width-integer	clamdscan/proto.c	424	    int sockd;
+native-width-integer	clamdscan/proto.c	425	    int lastid;
+native-width-integer	clamdscan/proto.c	426	    int printok;
+native-width-integer	clamdscan/proto.c	429	        unsigned int id;
+native-width-integer	clamdscan/proto.c	434	    unsigned int action_sources;
+native-width-integer	clamdscan/proto.c	435	    unsigned int max_action_sources;
+native-width-integer	clamdscan/proto.c	438	static int report_json_id(const char *json, uint32_t length, unsigned int *id)
+native-width-integer	clamdscan/proto.c	442	    unsigned long value;
+native-width-integer	clamdscan/proto.c	457	    *id = (unsigned int)value;
+native-width-integer	clamdscan/proto.c	461	static int dspreport(struct client_parallel_data *c)
+native-width-integer	clamdscan/proto.c	467	    int terminator             = 0;
+native-width-integer	clamdscan/proto.c	468	    int frame_infected         = 0;
+native-width-integer	clamdscan/proto.c	469	    int frame_incomplete       = 0;
+native-width-integer	clamdscan/proto.c	471	    unsigned int rid;
+native-width-integer	clamdscan/proto.c	540	static int dspresult(struct client_parallel_data *c)
+native-width-integer	clamdscan/proto.c	545	    unsigned int rid;
+native-width-integer	clamdscan/proto.c	546	    int len;
+native-width-integer	clamdscan/proto.c	639	    int res                        = 0;
 native-width-integer	clamdscan/proto.c	72	int printinfected;
 native-width-integer	clamdscan/proto.c	77	static unsigned int get_max_action_sources(void)
-native-width-integer	clamdscan/proto.c	814	int parallel_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream)
-native-width-integer	clamdscan/proto.c	818	    int ftw;
+native-width-integer	clamdscan/proto.c	825	int parallel_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream)
+native-width-integer	clamdscan/proto.c	829	    int ftw;
 native-width-integer	clamdscan/proto.c	95	            return (unsigned int)limit;
 native-width-integer	clamdscan/proto.h	28	int clamdscan_write_client_failure_report(FILE *stream, const char *target, cl_error_t status);
 native-width-integer	clamdscan/proto.h	29	int serial_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream);
@@ -21841,8 +21841,8 @@ boundary-constant	clamd/scanner.c	245	    *destination = (scaled > (uint64_t)ULO
 boundary-constant	clamd/session.c	550	    ret = cli_ftw(conn->filename, flags, maxdirrec ? maxdirrec : INT_MAX, scan_callback, &data, scan_pathchk);
 boundary-constant	clamdscan/proto.c	385	    cdata.maxlevel      = maxlevel ? maxlevel : INT_MAX;
 boundary-constant	clamdscan/proto.c	390	    ftw = cli_ftw(file, flags, maxlevel ? maxlevel : INT_MAX, serial_callback, &data, ftw_chkpath);
-boundary-constant	clamdscan/proto.c	444	    if (end == field + 1 || value > UINT_MAX)
-boundary-constant	clamdscan/proto.c	848	    ftw = cli_ftw(file, flags, maxlevel ? maxlevel : INT_MAX, parallel_callback, &data, ftw_chkpath);
+boundary-constant	clamdscan/proto.c	455	    if (end == field + 1 || value > UINT_MAX)
+boundary-constant	clamdscan/proto.c	859	    ftw = cli_ftw(file, flags, maxlevel ? maxlevel : INT_MAX, parallel_callback, &data, ftw_chkpath);
 boundary-constant	common/actions.c	1141	        if (stream_size.QuadPart > UINT32_MAX) {
 boundary-constant	common/actions.c	1142	            want = UINT32_MAX;
 boundary-constant	common/actions.c	1307	            if (stream_name_chars > (SIZE_MAX / sizeof(WCHAR)) - 1) {
@@ -22701,8 +22701,8 @@ quantity-parser	clamd/clamd.c	805	                gid_t sock_gid = strtol(gname,
 quantity-parser	clamd/clamd.c	827	                sock_mode = strtol(optget(opts, "LocalSocketMode")->strarg, &end, 8);
 quantity-parser	clamd/largefile_admission.c	225	    parsed = strtoull(buffer, &end, 10);
 quantity-parser	clamd/localserver.c	123	                    sock_mode = strtol(optget(opts, "LocalSocketMode")->strarg, &end, 8);
-quantity-parser	clamdscan/proto.c	443	    value = strtoul(field + 1, &end, 10);
-quantity-parser	clamdscan/proto.c	547	        if ((rid = atoi(bol))) {
+quantity-parser	clamdscan/proto.c	454	    value = strtoul(field + 1, &end, 10);
+quantity-parser	clamdscan/proto.c	558	        if ((rid = atoi(bol))) {
 quantity-parser	clamonacc/inotif/inotif.c	156	    tmp = strtol(nwatch_str, &p, 10);
 quantity-parser	common/optparser.c	1330	                        numarg = atoi(arg);
 quantity-parser	common/optparser.c	1349	                    lnumarg = strtoll(arg, &buff, 0);
@@ -25773,21 +25773,21 @@ offset-size-arithmetic	clamdscan/client.c	506	    } else if (opts->filename || o
 offset-size-arithmetic	clamdscan/client.c	507	        if (opts->filename && optget(opts, "file-list")->enabled)
 offset-size-arithmetic	clamdscan/client.c	95	        nixsock.sun_path[sizeof(nixsock.sun_path) - 1] = '\0';
 offset-size-arithmetic	clamdscan/proto.c	224	static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path, enum cli_ftw_reason reason, struct cli_ftw_cbdata *data)
-offset-size-arithmetic	clamdscan/proto.c	427	static int report_json_id(const char *json, uint32_t length, unsigned int *id)
-offset-size-arithmetic	clamdscan/proto.c	444	    if (end == field + 1 || value > UINT_MAX)
-offset-size-arithmetic	clamdscan/proto.c	491	    filename      = (*id)->file;
-offset-size-arithmetic	clamdscan/proto.c	494	        (fwrite(json, 1, json_length, c->report_stream) != json_length ||
-offset-size-arithmetic	clamdscan/proto.c	528	 * Returns 0 on success, 1 on hard failures, 2 on len == 0 (bb#1717) */
-offset-size-arithmetic	clamdscan/proto.c	559	        filename      = (*id)->file;
-offset-size-arithmetic	clamdscan/proto.c	622	static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *path, enum cli_ftw_reason reason, struct cli_ftw_cbdata *data)
-offset-size-arithmetic	clamdscan/proto.c	696	        action_source = malloc(sizeof(*action_source));
-offset-size-arithmetic	clamdscan/proto.c	747	                          ? send_fdpass_fd_report_checked(c->sockd, action_source->scan_fd,
-offset-size-arithmetic	clamdscan/proto.c	749	                          : send_fdpass_report_checked(c->sockd, scan_path, clamdopts);
-offset-size-arithmetic	clamdscan/proto.c	752	                          ? send_fdpass_fd_checked(c->sockd, action_source->scan_fd,
-offset-size-arithmetic	clamdscan/proto.c	754	                          : send_fdpass_checked(c->sockd, scan_path, clamdopts);
-offset-size-arithmetic	clamdscan/proto.c	759	                res = (NULL != action_source) ? send_stream_fd_report(c->sockd, action_source->scan_fd, action_source->display_path, clamdopts) : send_stream_report(c->sockd, scan_path, clamdopts);
-offset-size-arithmetic	clamdscan/proto.c	761	                res = (NULL != action_source) ? send_stream_fd_action(c->sockd, action_source->scan_fd, action_source->display_path, clamdopts) : send_stream(c->sockd, scan_path, clamdopts);
-offset-size-arithmetic	clamdscan/proto.c	789	    /* Give up ownership of the filename to the client parallel scan ID list */
+offset-size-arithmetic	clamdscan/proto.c	438	static int report_json_id(const char *json, uint32_t length, unsigned int *id)
+offset-size-arithmetic	clamdscan/proto.c	455	    if (end == field + 1 || value > UINT_MAX)
+offset-size-arithmetic	clamdscan/proto.c	502	    filename      = (*id)->file;
+offset-size-arithmetic	clamdscan/proto.c	505	        (fwrite(json, 1, json_length, c->report_stream) != json_length ||
+offset-size-arithmetic	clamdscan/proto.c	539	 * Returns 0 on success, 1 on hard failures, 2 on len == 0 (bb#1717) */
+offset-size-arithmetic	clamdscan/proto.c	570	        filename      = (*id)->file;
+offset-size-arithmetic	clamdscan/proto.c	633	static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *path, enum cli_ftw_reason reason, struct cli_ftw_cbdata *data)
+offset-size-arithmetic	clamdscan/proto.c	707	        action_source = malloc(sizeof(*action_source));
+offset-size-arithmetic	clamdscan/proto.c	758	                          ? send_fdpass_fd_report_checked(c->sockd, action_source->scan_fd,
+offset-size-arithmetic	clamdscan/proto.c	760	                          : send_fdpass_report_checked(c->sockd, scan_path, clamdopts);
+offset-size-arithmetic	clamdscan/proto.c	763	                          ? send_fdpass_fd_checked(c->sockd, action_source->scan_fd,
+offset-size-arithmetic	clamdscan/proto.c	765	                          : send_fdpass_checked(c->sockd, scan_path, clamdopts);
+offset-size-arithmetic	clamdscan/proto.c	770	                res = (NULL != action_source) ? send_stream_fd_report(c->sockd, action_source->scan_fd, action_source->display_path, clamdopts) : send_stream_report(c->sockd, scan_path, clamdopts);
+offset-size-arithmetic	clamdscan/proto.c	772	                res = (NULL != action_source) ? send_stream_fd_action(c->sockd, action_source->scan_fd, action_source->display_path, clamdopts) : send_stream(c->sockd, scan_path, clamdopts);
+offset-size-arithmetic	clamdscan/proto.c	800	    /* Give up ownership of the filename to the client parallel scan ID list */
 offset-size-arithmetic	clamdtop/clamdtop.c	1019	            snprintf(buf, sizeof(buf), "heap   N/A mmap   N/A unused  N/A");
 offset-size-arithmetic	clamdtop/clamdtop.c	1028	            snprintf(buf, sizeof(buf), "used   N/A free   N/A total   N/A");
 offset-size-arithmetic	clamdtop/clamdtop.c	1080	        mem[sizeof(mem) - 1] = '\0';

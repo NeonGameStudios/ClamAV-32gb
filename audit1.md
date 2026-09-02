@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## clamdscan service completion failure visibility — 2026-09-01
+
+The serial `clamdscan` walker could treat a `cli_ftw()` failure that happened
+before any callback as a clean "No files scanned" result. The parallel
+IDSESSION walker also ignored failure to send its terminating `zEND`; an empty
+session consequently had no pending response read that could expose the
+transport failure. Both service boundaries now increment the client error
+count, suppress clean output, and emit one bounded structured failure report
+when report mode is active. Pending IDs are still released through the normal
+cleanup path.
+
+The source guards pin both completion checks and the capability manifest
+records them as bounded service behavior. Current-source production-linked
+execution, empty-directory and injected walk/transport failure coverage,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final release qualification
+remain required.
+
 ## ARJ scanner header failure reconciliation — 2026-09-01
 
 The owning `cli_scanarj()` boundary previously returned non-success results

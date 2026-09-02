@@ -388,6 +388,17 @@ int serial_client_scan(char *file, int scantype, int *infected, int *err, int ma
     data.data = &cdata;
 
     ftw = cli_ftw(file, flags, maxlevel ? maxlevel : INT_MAX, serial_callback, &data, ftw_chkpath);
+    /* cli_ftw() can fail before serial_callback() has a chance to account for
+     * the root path.  Do not let an empty failed walk take the historical
+     * "No files scanned" clean path.  A structured caller also needs one
+     * bounded failure object for this whole-walk failure. */
+    if (ftw != CL_SUCCESS && ftw != CL_BREAK && cdata.errors == 0) {
+        cdata.errors++;
+        cdata.printok = 0;
+        if (report_stream &&
+            clamdscan_write_client_failure_report(report_stream, file, ftw) != 0)
+            cdata.errors++;
+    }
     *infected += cdata.infected;
     *err += cdata.errors;
 
@@ -848,6 +859,13 @@ int parallel_client_scan(char *file, int scantype, int *infected, int *err, int 
     ftw = cli_ftw(file, flags, maxlevel ? maxlevel : INT_MAX, parallel_callback, &data, ftw_chkpath);
 
     if (ftw != CL_SUCCESS) {
+        if (cdata.errors == 0) {
+            cdata.errors++;
+            cdata.printok = 0;
+            if (report_stream &&
+                clamdscan_write_client_failure_report(report_stream, file, ftw) != 0)
+                cdata.errors++;
+        }
         free_scanids(&cdata);
         *err += cdata.errors;
         *infected += cdata.infected;
@@ -855,7 +873,21 @@ int parallel_client_scan(char *file, int scantype, int *infected, int *err, int 
         return 1;
     }
 
-    sendln(cdata.sockd, zEND, sizeof(zEND));
+    if (sendln(cdata.sockd, zEND, sizeof(zEND))) {
+        /* A session without outstanding IDs has no dspresult() call that can
+         * observe a closed socket.  Account for the failed terminator send
+         * explicitly so an empty directory cannot become a clean result. */
+        cdata.errors++;
+        cdata.printok = 0;
+        if (report_stream && !cdata.ids &&
+            clamdscan_write_client_failure_report(report_stream, file, CL_EWRITE) != 0)
+            cdata.errors++;
+        free_scanids(&cdata);
+        *infected += cdata.infected;
+        *err += cdata.errors;
+        closesocket(cdata.sockd);
+        return 1;
+    }
     while (cdata.ids && !dspresult(&cdata)) continue;
     closesocket(cdata.sockd);
 
