@@ -1,5 +1,18 @@
 # Wishlist
 
+## ALZ directory payload admission — 2026-09-02
+
+- Keep ALZ directory entries metadata-only: require both declared compressed
+  and uncompressed sizes to be zero after the metadata callback, and make an
+  in-range directory payload a sticky incomplete parse result instead of
+  silently skipping it.
+- Retain `directory_payload_is_fail_visible_after_metadata`, its source
+  guards, and manifest evidence that metadata remains observable while no
+  malformed directory child is extracted. Current-source Rust/C execution,
+  complete ALZ corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final
+  parser/release qualification remain open.
+
 ## Public file-scan parameter admission — 2026-09-02
 
 - Keep `cl_scanfile_ex2()` fail-visible when the filename or required output,

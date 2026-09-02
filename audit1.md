@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## ALZ directory payload admission — 2026-09-02
+
+The bounded ALZ parser treated directory entries as structural metadata and
+did not extract them, but it only checked that a directory's declared payload
+was within the source. An in-range nonzero directory payload could therefore
+be skipped and the archive could complete without a parser error. Directory
+admission now requires both compressed and uncompressed sizes to be zero after
+the metadata callback; a directory that declares file data is a sticky
+incomplete parse result while its metadata remains observable.
+
+`directory_payload_is_fail_visible_after_metadata` constructs a directory
+entry with a stored payload and verifies that metadata is delivered, no child
+file is extracted, and the archive reports a parse error. Source guards and a
+capability-manifest row record the boundary. Current-source Rust/C
+production-GCC compilation, production-linked execution, complete ALZ corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Public file-scan parameter admission — 2026-09-02
 
 `cl_scanfile_ex2()` reset its outputs but passed `filename` to the platform

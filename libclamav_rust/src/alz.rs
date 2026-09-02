@@ -325,6 +325,10 @@ impl AlzLocalFileHeader {
             || (self.compression_method == ALZ_COMP_NOCOMP && self.uncompressed_size == 0)
     }
 
+    const fn has_valid_directory_sizes(&self) -> bool {
+        self.compressed_size == 0 && self.uncompressed_size == 0
+    }
+
     const fn has_valid_compressed_data_bounds(&self) -> bool {
         self.compressed_data_is_within_bounds
     }
@@ -928,6 +932,10 @@ impl<'aa> Alz {
             return Err(Error::Parse(
                 "Compressed data is empty for a non-empty or compressed member",
             ));
+        }
+
+        if local_fileheader.is_directory() && !local_fileheader.has_valid_directory_sizes() {
+            return Err(Error::Parse("Directory member declares file data"));
         }
 
         if !local_fileheader.is_directory() {
@@ -1764,6 +1772,41 @@ mod tests {
         .unwrap();
 
         assert_eq!(metadata, vec![("secret.txt".to_owned(), 1, true)]);
+        assert!(alz.has_parse_error());
+        assert!(alz.embedded_files.is_empty());
+    }
+
+    #[test]
+    fn directory_payload_is_fail_visible_after_metadata() {
+        const ALZ_COMP_NOCOMP: u8 = 0;
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_entry(
+            &mut bytes,
+            "dir/",
+            AlzFileAttribute::Directory as u8,
+            0x10,
+            ALZ_COMP_NOCOMP,
+            1,
+            b"x",
+        );
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+
+        let mut metadata = Vec::new();
+        let alz = Alz::from_bytes_with_filter(&bytes, |entry| {
+            metadata.push((
+                entry.file_name.to_owned(),
+                entry.compressed_size,
+                entry.uncompressed_size,
+                entry.is_directory,
+            ));
+            AlzExtractionDecision::Skip
+        })
+        .unwrap();
+
+        assert_eq!(metadata, vec![("dir/".to_owned(), 1, 1, true)]);
         assert!(alz.has_parse_error());
         assert!(alz.embedded_files.is_empty());
     }
