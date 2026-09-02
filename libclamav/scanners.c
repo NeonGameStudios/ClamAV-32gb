@@ -7202,6 +7202,7 @@ static cl_error_t set_root_file_type_metadata(cli_ctx *ctx)
             jstr = json_object_get_string(jobj);
             ret  = cli_jsonstr(ctx->metadata_json, "RootFileType", jstr);
             if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "root file type metadata could not be recorded");
                 status = ret;
                 goto done;
             }

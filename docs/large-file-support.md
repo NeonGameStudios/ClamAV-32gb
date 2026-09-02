@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Root file-type metadata failure visibility — 2026-09-01
+
+The root-layer `RootFileType` metadata alias is required after file-type
+recognition. Its JSON insertion now marks the confirmed scan incomplete and
+non-cacheable while preserving the `CL_EMEM` result. The production-linked
+JSON-wrap regression `test_root_file_type_metadata_record_failure_is_fail_visible`
+injects the insertion failure and requires a cleared verdict, incomplete
+structured report, exact sticky diagnostic, and fmap cache taint. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+metadata/parser corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## PE import result reconciliation — 2026-09-01
 
 The owning `cli_scanpe()` boundary now marks the confirmed PE layer incomplete

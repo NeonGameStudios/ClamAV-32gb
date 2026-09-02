@@ -11815,3 +11815,14 @@ final parser/release qualification remain open.
   archive/parser metadata corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification remain open.
+
+## Root file-type metadata completion — 2026-09-01
+
+- Keep the required root-layer `RootFileType` alias fail-visible when its JSON
+  insertion fails; mark the confirmed scan incomplete and non-cacheable while
+  preserving `CL_EMEM`.
+- Retain `test_root_file_type_metadata_record_failure_is_fail_visible` and
+  its source guards. Current-source production-linked execution, complete
+  metadata/parser corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.

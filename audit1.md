@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Root file-type metadata failure visibility — 2026-09-01
+
+The root-layer `RootFileType` alias was required after file-type recognition,
+but a failed JSON insertion returned an error without marking the confirmed
+fmap incomplete or non-cacheable. The boundary now records the exact sticky
+diagnostic while preserving `CL_EMEM`. The registered
+`test_root_file_type_metadata_record_failure_is_fail_visible` JSON-wrap
+regression injects the production-linked insertion failure and requires a
+cleared verdict, incomplete report, and fmap cache taint. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+metadata/parser corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## PE import result reconciliation — 2026-09-01
 
 `cli_scanpe()` returned directly from non-success `scan_pe_imp()` results
