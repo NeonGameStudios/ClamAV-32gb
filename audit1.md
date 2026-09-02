@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## ZIP BZIP2 decoder finalization status — 2026-09-02
+
+ZIP bounded BZIP2 extraction now checks initialized decoder teardown before
+completing a member or dispatching its child, and the dormant legacy path
+also preserves a teardown failure as `CL_EUNPACK`. The focused
+`cli_unzip_single()` regression injects a one-shot failure after a complete
+local BZIP2 member and requires the exact incomplete diagnostic, no child
+dispatch, and fmap non-cacheability. Current-source production-GCC
+compilation and linked execution, complete ZIP/BZIP2 corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## BZIP2 scanner decoder finalization status — 2026-09-02
 
 The top-level BZIP2 scanner now checks initialized decoder teardown on

@@ -356,6 +356,15 @@ static cl_error_t zip_check_output_deadline(cli_ctx *ctx, const char *reason)
     return ret;
 }
 
+static cl_error_t zip_bzip_finalize(cli_ctx *ctx, bz_stream *strm, cl_error_t status)
+{
+    if (BZ2_bzDecompressEnd(strm) != BZ_OK) {
+        cli_mark_scan_incomplete(ctx, "ZIP BZIP2 decompressor could not be finalized");
+        status = cli_merge_cleanup_status(status, CL_EUNPACK);
+    }
+    return status;
+}
+
 static cl_error_t zip_write_output(int out_file, const void *buffer, size_t length, uint64_t *written, cli_ctx *ctx)
 {
     cl_error_t ret;
@@ -755,7 +764,7 @@ static cl_error_t unz_stream(
         }
 
         if (initialized)
-            BZ2_bzDecompressEnd(&strm);
+            ret = zip_bzip_finalize(ctx, &strm, ret);
     } else {
         struct xplstate strm;
         bool initialized = false;
@@ -1084,7 +1093,11 @@ static cl_error_t unz_legacy(
                 }
                 break;
             }
-            BZ2_bzDecompressEnd(&strm);
+            if (BZ2_bzDecompressEnd(&strm) != BZ_OK) {
+                cli_mark_scan_incomplete(ctx, "ZIP BZIP2 decompressor could not be finalized");
+                ret = cli_merge_cleanup_status(ret, CL_EUNPACK);
+                res = 100;
+            }
             if (res == BZ_STREAM_END && 0 == strm.avail_in)
                 res = 0;
             break;
