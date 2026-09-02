@@ -1,5 +1,18 @@
 # Wishlist
 
+## PDF Flate decoder finalization status — 2026-09-02
+
+- Keep enabled bounded PDF Flate reader and retained legacy contiguous filter
+  teardown fail-visible on every initialized-stream exit. Merge `CL_EUNPACK`
+  without replacing an earlier parser, I/O, limit, timeout, detection, or
+  cleanup result, and never publish or scan partial decoded output.
+- Retain `test_pdf_flate_decoder_finalization_failure_is_fail_visible`, its
+  one-shot wrapper fault, exact diagnostic, rollback assertion, and source
+  guards. Current-source production-GCC execution, complete PDF/Flate corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
+
 ## EGG stream decoder finalization status — 2026-09-02
 
 - Keep enabled bounded EGG deflate and BZIP2 block teardown fail-visible

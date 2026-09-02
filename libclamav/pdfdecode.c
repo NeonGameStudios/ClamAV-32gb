@@ -2201,6 +2201,17 @@ static cl_error_t pdf_require_identity_predictor(struct pdf_struct *pdf,
     return CL_SUCCESS;
 }
 
+static cl_error_t pdf_finalize_inflate(struct pdf_struct *pdf,
+                                       z_stream *stream, cl_error_t status)
+{
+    if (inflateEnd(stream) != Z_OK) {
+        if (pdf != NULL && pdf->ctx != NULL)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoder could not be finalized");
+        status = cli_merge_cleanup_status(status, CL_EUNPACK);
+    }
+    return status;
+}
+
 static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf,
                                              struct pdf_stream_reader *reader,
                                              int fout, size_t *decoded_length,
@@ -2317,7 +2328,7 @@ static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf,
 
     *decoded_length = decoded;
     *inflate_status = zstat;
-    (void)inflateEnd(&stream);
+    status = pdf_finalize_inflate(pdf, &stream, status);
     free(output);
     return status;
 }
@@ -3245,7 +3256,7 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
 
     if (pdf_checktimelimit(pdf, "PDF Flate traversal reached the configured time limit") != CL_SUCCESS) {
         rc = CL_ETIMEOUT;
-        (void)inflateEnd(&stream);
+        rc = pdf_finalize_inflate(pdf, &stream, rc);
         free(decoded);
         return rc;
     }
@@ -3258,12 +3269,16 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
          * PDFs contain extra whitespace */
         uint8_t *q = decode_nextlinestart(pdf, content, length);
         if (pdf->ctx && pdf->ctx->scan_timed_out) {
-            (void)inflateEnd(&stream);
+            rc = pdf_finalize_inflate(pdf, &stream, rc);
             free(decoded);
-            return CL_ETIMEOUT;
+            return rc;
         }
         if (q) {
-            (void)inflateEnd(&stream);
+            rc = pdf_finalize_inflate(pdf, &stream, rc);
+            if (rc != CL_SUCCESS) {
+                free(decoded);
+                return rc;
+            }
             length -= q - content;
             content = q;
 
@@ -3362,7 +3377,7 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
             break;
     }
 
-    (void)inflateEnd(&stream);
+    rc = pdf_finalize_inflate(pdf, &stream, rc);
 
     if (declen > (size_t)UINT32_MAX) {
         cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoder output exceeds the 32-bit decoder boundary");

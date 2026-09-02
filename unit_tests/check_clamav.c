@@ -168,6 +168,7 @@ int clamav_test_force_xar_member_decoder_end;
 int clamav_test_force_ishield_cab_decoder_end;
 int clamav_test_force_gzip_decoder_end;
 int clamav_test_force_zip_inflate_decoder_end;
+int clamav_test_force_pdf_flatedecode_decoder_end;
 int clamav_test_force_egg_deflate_decoder_end;
 int clamav_test_force_dmg_decoder_end;
 int clamav_test_force_dmg_adc_decoder_end;
@@ -211,6 +212,11 @@ int __wrap_inflateEnd(z_streamp strm)
     if (clamav_test_force_zip_inflate_decoder_end > 0) {
         clamav_test_force_zip_inflate_decoder_end--;
         if (clamav_test_force_zip_inflate_decoder_end == 0)
+            return Z_STREAM_ERROR;
+    }
+    if (clamav_test_force_pdf_flatedecode_decoder_end > 0) {
+        clamav_test_force_pdf_flatedecode_decoder_end--;
+        if (clamav_test_force_pdf_flatedecode_decoder_end == 0)
             return Z_STREAM_ERROR;
     }
     if (clamav_test_force_egg_deflate_decoder_end > 0) {
@@ -16442,6 +16448,73 @@ START_TEST(test_pdf_flate_stream_quota_failure_rolls_back_output)
     free(decoded);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_pdf_flate_decoder_finalization_failure_is_fail_visible)
+{
+    static const uint8_t decoded[] = "PDF Flate finalization failure";
+    uint8_t compressed[128];
+    uLongf compressed_length = sizeof(compressed);
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_ctx ctx;
+    fmap_t *map;
+    struct stat output_stat;
+    char *path = NULL;
+    int fd = -1;
+    cl_error_t status = CL_SUCCESS;
+    size_t written;
+
+    memset(&options, 0, sizeof(options));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(compress2(compressed, &compressed_length, decoded,
+                               sizeof(decoded) - 1U, Z_BEST_SPEED),
+                     Z_OK);
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(compressed, (size_t)compressed_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine             = scan_engine;
+    ctx.dconf              = scan_engine->dconf;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+    pdf.ctx                = &ctx;
+    obj.id                 = 13U << 8;
+    obj.numfilters         = 1;
+    obj.filterlist[0]      = OBJ_FILTER_FLATE;
+
+    clamav_test_force_pdf_flatedecode_decoder_end = 1;
+    written = pdf_decodestream(&pdf, &obj, NULL, (const char *)compressed,
+                               (size_t)compressed_length, 0, fd, &status, NULL);
+    ck_assert_uint_eq(written, 0);
+    ck_assert_int_eq(status, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PDF Flate decoder could not be finalized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_pdf_flatedecode_decoder_end, 0);
+    ck_assert_int_eq(fstat(fd, &output_stat), 0);
+    ck_assert_int_eq(output_stat.st_size, 0);
+
+    close(fd);
+    cli_unlink(path);
+    free(path);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+#endif
 
 static uint8_t *pdf_test_runlength_fixture(size_t run_count, uint8_t **decoded,
                                            size_t *encoded_length, size_t *decoded_length)
@@ -60033,6 +60106,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_raw_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_flate_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_flate_stream_quota_failure_rolls_back_output);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_pdf_flate_decoder_finalization_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_pdf_flate_predictor_parameters_are_fail_visible);
     tcase_add_test(tc_cl, test_pdf_runlength_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_runlength_stream_quota_failure_rolls_back_output);

@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## PDF Flate decoder finalization status — 2026-09-02
+
+Enabled bounded PDF Flate decoding now checks initialized `inflateEnd()`
+status in both the chunked reader and the retained legacy contiguous filter.
+Finalization failures mark the confirmed PDF layer incomplete, merge
+`CL_EUNPACK` without hiding an earlier parser, I/O, limit, timeout, detection,
+or cleanup status, and prevent partial decoded output from being published.
+The focused production-linked wrapper regression injects a one-shot teardown
+failure after a valid Flate stream and requires `CL_EUNPACK`, the exact
+incomplete diagnostic, zero rolled-back output, and fmap non-cacheability.
+Current-source production-GCC compilation and linked execution, complete
+PDF/Flate corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## EGG stream decoder finalization status — 2026-09-02
 
 Enabled bounded EGG deflate and BZIP2 block extraction now checks initialized
