@@ -1836,10 +1836,12 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                             ret = module_status;
                             goto done;
                         }
+                        deferred_failure = cli_merge_cleanup_status(deferred_failure, module_status);
                         /* Callback delivery is auxiliary. Allocation, read,
                          * and contiguous-ABI failures are already recorded as
                          * incomplete, but must not suppress bounded scanning
-                         * of the project spool. */
+                         * of the project spool. Preserve the failure for the
+                         * direct project-directory caller after that scan. */
                         break;
                     }
 

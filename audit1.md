@@ -738,6 +738,26 @@ production-linked execution, complete HWP/OLE corpus, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
 resource, and final parser/release qualification remain required.
 
+## OLE2 block-read and VBA callback status reconciliation — 2026-09-02
+
+The OLE2 sector reader records distinct truncation and in-range backing-read
+failures, but several initial big-block consumers still returned a fixed
+`CL_EREAD` or left their local status unchanged after that helper failed. The
+VBA, ordinary embedded-stream, encrypted-stream, and HWP-header consumers now
+use the stored status with a compatibility fallback, preserving `CL_EPARSE`
+for truncated sectors and `CL_EREAD` for injected in-range read failures.
+
+The bounded VBA project-directory path also treated callback delivery as
+auxiliary without carrying callback allocation, read, or contiguous-ABI
+failures into its direct return. Those failures remain non-fatal to bounded
+project-spool scanning, but are now deferred into `cli_vba_readdir_new()`'s
+result so the direct entry cannot return clean after recording an incomplete
+callback operation. Source guards and the capability manifest record both
+boundaries. Current-source production-GCC compilation and linked execution,
+complete OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## RFC 1341 reassembly output status reconciliation — 2026-09-02
 
 The final RFC 1341 reassembly path could discard specific directory creation,

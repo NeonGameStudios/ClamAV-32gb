@@ -13078,3 +13078,17 @@ qualification remain open.
   GCC compilation, sanitizer, complete recognition/embedded corpus, certified
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
   resource, and final parser/release qualification before release closure.
+
+## OLE2 block-read and VBA callback status reconciliation — 2026-09-02
+
+- Keep initial OLE2 big-block reads and HWP-header probes aligned with the
+  stored sector-read class: truncated sectors return `CL_EPARSE`, while
+  in-range fmap callback failures return `CL_EREAD`; preserve the same status
+  through ordinary, VBA, encrypted, and nested stream handlers.
+- Keep VBA callback allocation/read/contiguous-ABI failures explicitly
+  incomplete while continuing bounded project-spool scanning, and preserve
+  those failures in the direct `cli_vba_readdir_new()` return. Retain the
+  source guards and manifest evidence. Current-source production-GCC and
+  production-linked execution, complete OLE/VBA/XLM corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification remain open.

@@ -1504,7 +1504,7 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
             /* Big block file */
             if (!ole2_read_block(hdr, buff, 1 << hdr->log2_big_block_size, current_block)) {
                 cli_mark_scan_incomplete(ctx, "OLE2 VBA stream block could not be read");
-                ret = CL_EREAD;
+                ret = cli_ole2_chain_failure_status(hdr->read_status, CL_EREAD);
                 break;
             }
 
@@ -1961,6 +1961,7 @@ static cl_error_t handler_enum(ole2_header_t *hdr, property_t *prop, const char 
                             break;
                     } else {
                         if (!ole2_read_block(hdr, hwp_check, 1 << hdr->log2_big_block_size, prop->start_block)) {
+                            status = cli_ole2_chain_failure_status(hdr->read_status, CL_EREAD);
                             break;
                         }
                     }
@@ -2380,7 +2381,7 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
         } else {
             /* Big block file */
             if (!ole2_read_block(hdr, buff, 1 << hdr->log2_big_block_size, current_block)) {
-                ret = CL_EREAD;
+                ret = cli_ole2_chain_failure_status(hdr->read_status, CL_EREAD);
                 break;
             }
 
@@ -2664,7 +2665,7 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
             uint32_t decryptDstIdx = 0;
 
             if (!ole2_read_block(hdr, &(buff[readIdx]), blockSize, current_block)) {
-                ret = CL_EREAD;
+                ret = cli_ole2_chain_failure_status(hdr->read_status, CL_EREAD);
                 break;
             }
             if (0 == bytesRead) {

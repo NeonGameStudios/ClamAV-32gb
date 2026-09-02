@@ -3739,67 +3739,67 @@ fixed-width-integer	libclamav/ole2_extract.c	194	    uint32_t reserved6;
 fixed-width-integer	libclamav/ole2_extract.c	1951	                    if (prop->size < (uint64_t)hdr->sbat_cutoff) {
 fixed-width-integer	libclamav/ole2_extract.c	200	    uint32_t Val;
 fixed-width-integer	libclamav/ole2_extract.c	205	    uint32_t Size;
-fixed-width-integer	libclamav/ole2_extract.c	2056	cl_error_t cli_ole2_read_mso_prefix(fmap_t *input, uint32_t *prefix, cli_ctx *ctx)
-fixed-width-integer	libclamav/ole2_extract.c	2076	uint32_t cli_ole2_clamp_decrypted_output(uint32_t requested, uint64_t written, uint64_t declared)
-fixed-width-integer	libclamav/ole2_extract.c	2078	    uint64_t remaining;
-fixed-width-integer	libclamav/ole2_extract.c	2084	    return remaining < requested ? (uint32_t)remaining : requested;
-fixed-width-integer	libclamav/ole2_extract.c	2097	    uint32_t prefix;
-fixed-width-integer	libclamav/ole2_extract.c	2099	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2057	cl_error_t cli_ole2_read_mso_prefix(fmap_t *input, uint32_t *prefix, cli_ctx *ctx)
+fixed-width-integer	libclamav/ole2_extract.c	2077	uint32_t cli_ole2_clamp_decrypted_output(uint32_t requested, uint64_t written, uint64_t declared)
+fixed-width-integer	libclamav/ole2_extract.c	2079	    uint64_t remaining;
+fixed-width-integer	libclamav/ole2_extract.c	2085	    return remaining < requested ? (uint32_t)remaining : requested;
+fixed-width-integer	libclamav/ole2_extract.c	2098	    uint32_t prefix;
+fixed-width-integer	libclamav/ole2_extract.c	2100	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/ole2_extract.c	211	uint32_t ole2_list_size(ole2_list_t *list);
 fixed-width-integer	libclamav/ole2_extract.c	212	int ole2_list_push(ole2_list_t *list, uint32_t val);
 fixed-width-integer	libclamav/ole2_extract.c	213	uint32_t ole2_list_pop(ole2_list_t *list);
-fixed-width-integer	libclamav/ole2_extract.c	2157	    off_in += sizeof(uint32_t);
-fixed-width-integer	libclamav/ole2_extract.c	2171	            if (off_in >= 0 && (uint64_t)off_in > (uint64_t)input->len) {
-fixed-width-integer	libclamav/ole2_extract.c	2202	            if (cli_scan_reserve_temporary(ctx, (uint64_t)count) != CL_SUCCESS) {
-fixed-width-integer	libclamav/ole2_extract.c	2207	            temporary_reserved += (uint64_t)count;
-fixed-width-integer	libclamav/ole2_extract.c	2269	    int32_t current_block = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2274	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2158	    off_in += sizeof(uint32_t);
+fixed-width-integer	libclamav/ole2_extract.c	2172	            if (off_in >= 0 && (uint64_t)off_in > (uint64_t)input->len) {
+fixed-width-integer	libclamav/ole2_extract.c	2203	            if (cli_scan_reserve_temporary(ctx, (uint64_t)count) != CL_SUCCESS) {
+fixed-width-integer	libclamav/ole2_extract.c	2208	            temporary_reserved += (uint64_t)count;
+fixed-width-integer	libclamav/ole2_extract.c	2270	    int32_t current_block = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2275	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/ole2_extract.c	228	uint32_t
-fixed-width-integer	libclamav/ole2_extract.c	2286	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)prop->size);
-fixed-width-integer	libclamav/ole2_extract.c	2291	    temporary_reserved = (uint64_t)prop->size;
-fixed-width-integer	libclamav/ole2_extract.c	2335	        if (current_block > (int32_t)hdr->max_block_no) {
+fixed-width-integer	libclamav/ole2_extract.c	2287	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)prop->size);
+fixed-width-integer	libclamav/ole2_extract.c	2292	    temporary_reserved = (uint64_t)prop->size;
+fixed-width-integer	libclamav/ole2_extract.c	2336	        if (current_block > (int32_t)hdr->max_block_no) {
 fixed-width-integer	libclamav/ole2_extract.c	234	int ole2_list_push(ole2_list_t *list, uint32_t val)
-fixed-width-integer	libclamav/ole2_extract.c	2354	        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
-fixed-width-integer	libclamav/ole2_extract.c	2518	    int32_t current_block = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2527	    uint32_t *rk          = NULL;
-fixed-width-integer	libclamav/ole2_extract.c	2528	    uint64_t bytesRead    = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2529	    uint64_t actualFileLength = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2355	        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
+fixed-width-integer	libclamav/ole2_extract.c	2519	    int32_t current_block = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2528	    uint32_t *rk          = NULL;
+fixed-width-integer	libclamav/ole2_extract.c	2529	    uint64_t bytesRead    = 0;
 fixed-width-integer	libclamav/ole2_extract.c	253	uint32_t
-fixed-width-integer	libclamav/ole2_extract.c	2530	    uint64_t bytesWritten    = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2533	    uint32_t leftover        = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2534	    uint32_t readIdx         = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2535	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2551	    CLI_MAX_MALLOC_OR_GOTO_DONE(rk, RKLENGTH(key->key_length_bits) * sizeof(uint32_t), ret = CL_EMEM);
-fixed-width-integer	libclamav/ole2_extract.c	2555	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)prop->size);
+fixed-width-integer	libclamav/ole2_extract.c	2530	    uint64_t actualFileLength = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2531	    uint64_t bytesWritten    = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2534	    uint32_t leftover        = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2535	    uint32_t readIdx         = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2536	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2552	    CLI_MAX_MALLOC_OR_GOTO_DONE(rk, RKLENGTH(key->key_length_bits) * sizeof(uint32_t), ret = CL_EMEM);
+fixed-width-integer	libclamav/ole2_extract.c	2556	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)prop->size);
 fixed-width-integer	libclamav/ole2_extract.c	256	    uint32_t val;
-fixed-width-integer	libclamav/ole2_extract.c	2560	    temporary_reserved = (uint64_t)prop->size;
-fixed-width-integer	libclamav/ole2_extract.c	2591	    uint32_t blockSize = 1 << hdr->log2_big_block_size;
-fixed-width-integer	libclamav/ole2_extract.c	2592	    CLI_MAX_MALLOC_OR_GOTO_DONE(buff, blockSize + sizeof(uint64_t), ret = CL_EMEM);
-fixed-width-integer	libclamav/ole2_extract.c	2613	        if (current_block > (int32_t)hdr->max_block_no) {
-fixed-width-integer	libclamav/ole2_extract.c	2620	        if (cli_bitset_test(blk_bitset, (uint64_t)current_block)) {
-fixed-width-integer	libclamav/ole2_extract.c	2627	        if (!cli_bitset_set(blk_bitset, (uint64_t)current_block)) {
-fixed-width-integer	libclamav/ole2_extract.c	2632	        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
-fixed-width-integer	libclamav/ole2_extract.c	2662	            uint32_t bytesToWrite  = (uint32_t)MIN((uint64_t)len - bytesRead, (uint64_t)blockSize);
-fixed-width-integer	libclamav/ole2_extract.c	2663	            uint32_t writeIdx      = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2664	            uint32_t decryptDstIdx = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2673	                writeIdx += sizeof(uint64_t);
-fixed-width-integer	libclamav/ole2_extract.c	2914	static inline bool key_length_valid_aes_bits(const uint32_t keyLength)
-fixed-width-integer	libclamav/ole2_extract.c	2948	    uint32_t i                                                         = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2950	    uint8_t sha1[sizeof(uint32_t) + SHA1_HASH_SIZE + sizeof(uint32_t)] = {0};
-fixed-width-integer	libclamav/ole2_extract.c	2951	    uint8_t *sha1Dst                                                   = &(sha1[sizeof(uint32_t)]);
-fixed-width-integer	libclamav/ole2_extract.c	2955	    uint32_t tmp         = 0;
-fixed-width-integer	libclamav/ole2_extract.c	3053	        uint32_t eye = ole2_endian_convert_32(i);
-fixed-width-integer	libclamav/ole2_extract.c	3056	        SHA1_HASH_WITH_CTX(sha1, SHA1_HASH_SIZE + sizeof(uint32_t), sha1Dst);
-fixed-width-integer	libclamav/ole2_extract.c	3059	    memset(&(sha1Dst[SHA1_HASH_SIZE]), 0, sizeof(uint32_t));
-fixed-width-integer	libclamav/ole2_extract.c	3061	    SHA1_HASH_WITH_CTX(sha1Dst, SHA1_HASH_SIZE + sizeof(uint32_t), sha1Dst);
-fixed-width-integer	libclamav/ole2_extract.c	3108	    uint32_t rk[RKLENGTH(128)];
-fixed-width-integer	libclamav/ole2_extract.c	3152	    uint32_t actual_hash_size                = 0;
-fixed-width-integer	libclamav/ole2_extract.c	3239	    uint16_t *encryptionInfo_CSPName                 = NULL;
+fixed-width-integer	libclamav/ole2_extract.c	2561	    temporary_reserved = (uint64_t)prop->size;
+fixed-width-integer	libclamav/ole2_extract.c	2592	    uint32_t blockSize = 1 << hdr->log2_big_block_size;
+fixed-width-integer	libclamav/ole2_extract.c	2593	    CLI_MAX_MALLOC_OR_GOTO_DONE(buff, blockSize + sizeof(uint64_t), ret = CL_EMEM);
+fixed-width-integer	libclamav/ole2_extract.c	2614	        if (current_block > (int32_t)hdr->max_block_no) {
+fixed-width-integer	libclamav/ole2_extract.c	2621	        if (cli_bitset_test(blk_bitset, (uint64_t)current_block)) {
+fixed-width-integer	libclamav/ole2_extract.c	2628	        if (!cli_bitset_set(blk_bitset, (uint64_t)current_block)) {
+fixed-width-integer	libclamav/ole2_extract.c	2633	        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
+fixed-width-integer	libclamav/ole2_extract.c	2663	            uint32_t bytesToWrite  = (uint32_t)MIN((uint64_t)len - bytesRead, (uint64_t)blockSize);
+fixed-width-integer	libclamav/ole2_extract.c	2664	            uint32_t writeIdx      = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2665	            uint32_t decryptDstIdx = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2674	                writeIdx += sizeof(uint64_t);
+fixed-width-integer	libclamav/ole2_extract.c	2915	static inline bool key_length_valid_aes_bits(const uint32_t keyLength)
+fixed-width-integer	libclamav/ole2_extract.c	2949	    uint32_t i                                                         = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2951	    uint8_t sha1[sizeof(uint32_t) + SHA1_HASH_SIZE + sizeof(uint32_t)] = {0};
+fixed-width-integer	libclamav/ole2_extract.c	2952	    uint8_t *sha1Dst                                                   = &(sha1[sizeof(uint32_t)]);
+fixed-width-integer	libclamav/ole2_extract.c	2956	    uint32_t tmp         = 0;
+fixed-width-integer	libclamav/ole2_extract.c	3054	        uint32_t eye = ole2_endian_convert_32(i);
+fixed-width-integer	libclamav/ole2_extract.c	3057	        SHA1_HASH_WITH_CTX(sha1, SHA1_HASH_SIZE + sizeof(uint32_t), sha1Dst);
+fixed-width-integer	libclamav/ole2_extract.c	3060	    memset(&(sha1Dst[SHA1_HASH_SIZE]), 0, sizeof(uint32_t));
+fixed-width-integer	libclamav/ole2_extract.c	3062	    SHA1_HASH_WITH_CTX(sha1Dst, SHA1_HASH_SIZE + sizeof(uint32_t), sha1Dst);
+fixed-width-integer	libclamav/ole2_extract.c	3109	    uint32_t rk[RKLENGTH(128)];
+fixed-width-integer	libclamav/ole2_extract.c	3153	    uint32_t actual_hash_size                = 0;
+fixed-width-integer	libclamav/ole2_extract.c	3240	    uint16_t *encryptionInfo_CSPName                 = NULL;
 fixed-width-integer	libclamav/ole2_extract.c	332	                const uint16_t x = (((uint16_t)name[i]) << 8) | name[i + 1];
-fixed-width-integer	libclamav/ole2_extract.c	3366	    encryptionInfo_CSPName = (uint16_t *)(encryptionInfoStreamPtr + sizeof(encryption_info_stream_standard_t));
-fixed-width-integer	libclamav/ole2_extract.c	3446	    uint64_t scansize, scansize2;
-fixed-width-integer	libclamav/ole2_extract.c	3544	        // To allow for future changes, and prevent overflowing an int32_t, we're limiting to 28.
-fixed-width-integer	libclamav/ole2_extract.c	3607	        hdr.max_block_no = data_block_count ? (uint32_t)(data_block_count - 1U) : 0U;
+fixed-width-integer	libclamav/ole2_extract.c	3367	    encryptionInfo_CSPName = (uint16_t *)(encryptionInfoStreamPtr + sizeof(encryption_info_stream_standard_t));
+fixed-width-integer	libclamav/ole2_extract.c	3447	    uint64_t scansize, scansize2;
+fixed-width-integer	libclamav/ole2_extract.c	3545	        // To allow for future changes, and prevent overflowing an int32_t, we're limiting to 28.
+fixed-width-integer	libclamav/ole2_extract.c	3608	        hdr.max_block_no = data_block_count ? (uint32_t)(data_block_count - 1U) : 0U;
 fixed-width-integer	libclamav/ole2_extract.c	370	        uint16_t lo, hi, u = cli_readint16(oname) - 0x3800;
 fixed-width-integer	libclamav/ole2_extract.c	523	static bool ole2_read_block(ole2_header_t *hdr, void *buff, size_t size, int32_t blockno)
 fixed-width-integer	libclamav/ole2_extract.c	525	    uint64_t block_offset;
@@ -5952,131 +5952,131 @@ fixed-width-integer	libclamav/vba_extract.c	1762	                uint32_t module
 fixed-width-integer	libclamav/vba_extract.c	1767	                if (uniq_get(U, stream_name, (uint32_t)strlen(stream_name), &module_hash, &module_hashcnt) != CL_SUCCESS) {
 fixed-width-integer	libclamav/vba_extract.c	1786	                    uint64_t reservation_before = temporary_reserved;
 fixed-width-integer	libclamav/vba_extract.c	1787	                    uint64_t module_output_size  = 0;
-fixed-width-integer	libclamav/vba_extract.c	1982	cli_vba_readdir(const char *dir, struct uniq *U, uint32_t which)
-fixed-width-integer	libclamav/vba_extract.c	1986	    uint16_t record_count, buflen, ffff, byte_count;
-fixed-width-integer	libclamav/vba_extract.c	1987	    uint32_t offset;
-fixed-width-integer	libclamav/vba_extract.c	1993	    uint32_t hashcnt = 0;
-fixed-width-integer	libclamav/vba_extract.c	2065	    if (!seekandread(fd, -3, SEEK_CUR, &ffff, sizeof(uint16_t))) {
-fixed-width-integer	libclamav/vba_extract.c	2129	        uint16_t length;
+fixed-width-integer	libclamav/vba_extract.c	1984	cli_vba_readdir(const char *dir, struct uniq *U, uint32_t which)
+fixed-width-integer	libclamav/vba_extract.c	1988	    uint16_t record_count, buflen, ffff, byte_count;
+fixed-width-integer	libclamav/vba_extract.c	1989	    uint32_t offset;
+fixed-width-integer	libclamav/vba_extract.c	1995	    uint32_t hashcnt = 0;
+fixed-width-integer	libclamav/vba_extract.c	2067	    if (!seekandread(fd, -3, SEEK_CUR, &ffff, sizeof(uint16_t))) {
+fixed-width-integer	libclamav/vba_extract.c	2131	        uint16_t length;
 fixed-width-integer	libclamav/vba_extract.c	220	    uint16_t buflen    = 0;
 fixed-width-integer	libclamav/vba_extract.c	221	    uint16_t length    = 0;
-fixed-width-integer	libclamav/vba_extract.c	2227	                                   const unsigned char *data, size_t data_size, uint64_t *output_size)
-fixed-width-integer	libclamav/vba_extract.c	2233	    if ((uint64_t)data_size > UINT64_MAX - *output_size)
-fixed-width-integer	libclamav/vba_extract.c	2239	    *output_size += (uint64_t)data_size;
-fixed-width-integer	libclamav/vba_extract.c	2244	                                  void *write_context, uint64_t *output_size)
-fixed-width-integer	libclamav/vba_extract.c	2246	    uint64_t pos;
-fixed-width-integer	libclamav/vba_extract.c	2248	    uint64_t produced = 0;
-fixed-width-integer	libclamav/vba_extract.c	2251	    uint16_t token;
-fixed-width-integer	libclamav/vba_extract.c	2272	                uint16_t len;
-fixed-width-integer	libclamav/vba_extract.c	2273	                uint64_t srcpos;
-fixed-width-integer	libclamav/vba_extract.c	2278	                len      = (uint16_t)((token & ((1 << shift) - 1)) + 3);
-fixed-width-integer	libclamav/vba_extract.c	2284	                if ((uint64_t)distance >= pos)
-fixed-width-integer	libclamav/vba_extract.c	2358	    uint64_t output_size = 0;
-fixed-width-integer	libclamav/vba_extract.c	2385	ole_copy_file_data(cli_ctx *ctx, int s, int d, uint32_t len)
-fixed-width-integer	libclamav/vba_extract.c	2435	    uint32_t object_size;
-fixed-width-integer	libclamav/vba_extract.c	2439	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/vba_extract.c	2469	    if (statbuf.st_size < 0 || (uint64_t)object_size > (uint64_t)statbuf.st_size) {
-fixed-width-integer	libclamav/vba_extract.c	2474	    if (((uint64_t)statbuf.st_size - (uint64_t)object_size) >= 4) {
-fixed-width-integer	libclamav/vba_extract.c	2510	        if (payload_offset < 0 || (uint64_t)payload_offset > (uint64_t)statbuf.st_size ||
-fixed-width-integer	libclamav/vba_extract.c	2511	            (uint64_t)object_size > (uint64_t)statbuf.st_size - (uint64_t)payload_offset) {
-fixed-width-integer	libclamav/vba_extract.c	2517	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)object_size);
-fixed-width-integer	libclamav/vba_extract.c	2522	    temporary_reserved = (uint64_t)object_size;
-fixed-width-integer	libclamav/vba_extract.c	2582	    uint16_t type;
-fixed-width-integer	libclamav/vba_extract.c	2583	    uint32_t length;
-fixed-width-integer	libclamav/vba_extract.c	2589	    uint16_t v;
-fixed-width-integer	libclamav/vba_extract.c	2591	        uint16_t ver;
-fixed-width-integer	libclamav/vba_extract.c	2592	        uint16_t type;
-fixed-width-integer	libclamav/vba_extract.c	2593	        uint32_t length;
-fixed-width-integer	libclamav/vba_extract.c	2618	ppt_reserve_output(cli_ctx *ctx, uint64_t *temporary_reserved, size_t output_size)
-fixed-width-integer	libclamav/vba_extract.c	2620	    uint64_t bytes = (uint64_t)output_size;
-fixed-width-integer	libclamav/vba_extract.c	2636	ppt_write_output(cli_ctx *ctx, uint64_t *temporary_reserved, int ofd, const void *buffer, size_t size)
-fixed-width-integer	libclamav/vba_extract.c	2682	ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/vba_extract.c	2777	        if ((uint64_t)skip != (uint64_t)length || lseek(fd, skip, SEEK_CUR) == (off_t)-1) {
-fixed-width-integer	libclamav/vba_extract.c	2808	ppt_stream_iter(int fd, const char *dir, cli_ctx *ctx, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/vba_extract.c	2824	        if (header_offset < 0 || (uint64_t)header_offset > (uint64_t)statbuf.st_size) {
-fixed-width-integer	libclamav/vba_extract.c	2828	        if ((uint64_t)header_offset == (uint64_t)statbuf.st_size)
-fixed-width-integer	libclamav/vba_extract.c	2830	        if ((uint64_t)sizeof(atom_header_t) > (uint64_t)statbuf.st_size - (uint64_t)header_offset) {
-fixed-width-integer	libclamav/vba_extract.c	2845	            uint32_t length;
-fixed-width-integer	libclamav/vba_extract.c	2848	            if (offset < 0 || (uint64_t)offset > (uint64_t)statbuf.st_size || atom_header.length < sizeof(uint32_t) ||
-fixed-width-integer	libclamav/vba_extract.c	2849	                (uint64_t)(atom_header.length - sizeof(uint32_t)) > (uint64_t)statbuf.st_size - (uint64_t)offset) {
-fixed-width-integer	libclamav/vba_extract.c	2855	            if (lseek(fd, sizeof(uint32_t), SEEK_CUR) == -1) {
-fixed-width-integer	libclamav/vba_extract.c	2860	            length = atom_header.length - sizeof(uint32_t);
-fixed-width-integer	libclamav/vba_extract.c	2869	            if (offset < 0 || (uint64_t)offset > (uint64_t)statbuf.st_size ||
-fixed-width-integer	libclamav/vba_extract.c	2870	                (uint64_t)atom_header.length > (uint64_t)statbuf.st_size - (uint64_t)offset) {
-fixed-width-integer	libclamav/vba_extract.c	2886	cli_ppt_vba_read_ex(int ifd, cli_ctx *ctx, uint64_t *temporary_reserved_out)
-fixed-width-integer	libclamav/vba_extract.c	2890	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/vba_extract.c	2945	    uint32_t macro_offset;
-fixed-width-integer	libclamav/vba_extract.c	2946	    uint32_t macro_len;
-fixed-width-integer	libclamav/vba_extract.c	2950	    uint32_t len;
-fixed-width-integer	libclamav/vba_extract.c	2951	    uint32_t offset;
-fixed-width-integer	libclamav/vba_extract.c	2957	    uint16_t count;
-fixed-width-integer	libclamav/vba_extract.c	2964	        uint32_t offset;
-fixed-width-integer	libclamav/vba_extract.c	2965	        uint32_t len;
-fixed-width-integer	libclamav/vba_extract.c	2979	word_read_macro_entry(int fd, macro_info_t *macro_info, uint64_t end_offset)
-fixed-width-integer	libclamav/vba_extract.c	2982	    uint16_t count = macro_info->count;
-fixed-width-integer	libclamav/vba_extract.c	2995	        uint32_t len __attribute__((packed));
-fixed-width-integer	libclamav/vba_extract.c	2996	        uint32_t state __attribute__((packed));
-fixed-width-integer	libclamav/vba_extract.c	2997	        uint32_t offset __attribute__((packed));
-fixed-width-integer	libclamav/vba_extract.c	3019	        if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
-fixed-width-integer	libclamav/vba_extract.c	3020	            (uint64_t)msize > end_offset - (uint64_t)current_offset) {
-fixed-width-integer	libclamav/vba_extract.c	3046	word_read_macro_info(int fd, macro_info_t *macro_info, uint64_t end_offset)
-fixed-width-integer	libclamav/vba_extract.c	3050	    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
-fixed-width-integer	libclamav/vba_extract.c	3051	        sizeof(uint16_t) > end_offset - (uint64_t)current_offset) {
-fixed-width-integer	libclamav/vba_extract.c	3080	word_read_bounded(int fd, void *buffer, size_t size, uint64_t end_offset)
-fixed-width-integer	libclamav/vba_extract.c	3084	    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
-fixed-width-integer	libclamav/vba_extract.c	3085	        (uint64_t)size > end_offset - (uint64_t)current_offset)
-fixed-width-integer	libclamav/vba_extract.c	3092	word_read_uint16_bounded(int fd, uint16_t *value, uint64_t end_offset)
-fixed-width-integer	libclamav/vba_extract.c	3102	word_skip_bounded(int fd, uint64_t size, uint64_t end_offset)
-fixed-width-integer	libclamav/vba_extract.c	3105	    uint64_t target_offset;
-fixed-width-integer	libclamav/vba_extract.c	3108	    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
-fixed-width-integer	libclamav/vba_extract.c	3109	        size > end_offset - (uint64_t)current_offset)
-fixed-width-integer	libclamav/vba_extract.c	3112	    target_offset = (uint64_t)current_offset + size;
-fixed-width-integer	libclamav/vba_extract.c	3114	    if ((uint64_t)seek_offset != target_offset || lseek(fd, seek_offset, SEEK_SET) != seek_offset)
-fixed-width-integer	libclamav/vba_extract.c	3121	word_rewind_bounded(int fd, uint64_t size, uint64_t end_offset)
-fixed-width-integer	libclamav/vba_extract.c	3124	    uint64_t target_offset;
-fixed-width-integer	libclamav/vba_extract.c	3127	    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
-fixed-width-integer	libclamav/vba_extract.c	3128	        size > (uint64_t)current_offset)
-fixed-width-integer	libclamav/vba_extract.c	3131	    target_offset = (uint64_t)current_offset - size;
-fixed-width-integer	libclamav/vba_extract.c	3133	    if ((uint64_t)seek_offset != target_offset || lseek(fd, seek_offset, SEEK_SET) != seek_offset)
-fixed-width-integer	libclamav/vba_extract.c	3140	word_skip_oxo3(int fd, uint64_t end_offset)
-fixed-width-integer	libclamav/vba_extract.c	3150	    if (!word_skip_bounded(fd, (uint64_t)count * 14U, end_offset) ||
-fixed-width-integer	libclamav/vba_extract.c	3171	        if (!word_skip_bounded(fd, (uint64_t)count * 4U + 1U, end_offset)) {
-fixed-width-integer	libclamav/vba_extract.c	3181	word_skip_menu_info(int fd, uint64_t end_offset)
-fixed-width-integer	libclamav/vba_extract.c	3183	    uint16_t count;
-fixed-width-integer	libclamav/vba_extract.c	3192	        if (!word_skip_bounded(fd, (uint64_t)count * 12U, end_offset))
-fixed-width-integer	libclamav/vba_extract.c	3198	word_skip_macro_extnames(int fd, uint64_t end_offset)
-fixed-width-integer	libclamav/vba_extract.c	3201	    uint16_t size;
-fixed-width-integer	libclamav/vba_extract.c	3202	    uint64_t extnames_end;
-fixed-width-integer	libclamav/vba_extract.c	3207	    if (size_offset < 0 || (uint64_t)size_offset > end_offset)
-fixed-width-integer	libclamav/vba_extract.c	3224	    if ((uint64_t)size > end_offset - (uint64_t)size_offset)
-fixed-width-integer	libclamav/vba_extract.c	3226	    extnames_end = (uint64_t)size_offset + (uint64_t)size;
-fixed-width-integer	libclamav/vba_extract.c	3230	        uint64_t offset;
-fixed-width-integer	libclamav/vba_extract.c	3233	        if (current_offset < 0 || (uint64_t)current_offset > extnames_end)
-fixed-width-integer	libclamav/vba_extract.c	3235	        if ((uint64_t)current_offset == extnames_end)
-fixed-width-integer	libclamav/vba_extract.c	3244	            offset = (uint64_t)length * 2U + 1U;
-fixed-width-integer	libclamav/vba_extract.c	3246	            offset = (uint64_t)length;
-fixed-width-integer	libclamav/vba_extract.c	3249	        if (!word_skip_bounded(fd, offset + sizeof(uint16_t), extnames_end)) {
-fixed-width-integer	libclamav/vba_extract.c	3258	word_skip_macro_intnames(int fd, uint64_t end_offset)
-fixed-width-integer	libclamav/vba_extract.c	3260	    uint16_t count;
-fixed-width-integer	libclamav/vba_extract.c	3272	        if (!word_skip_bounded(fd, sizeof(uint16_t), end_offset) ||
-fixed-width-integer	libclamav/vba_extract.c	3279	        if (!word_skip_bounded(fd, (uint64_t)length + 1U, end_offset)) {
-fixed-width-integer	libclamav/vba_extract.c	3297	    uint64_t end_offset, start_offset;
-fixed-width-integer	libclamav/vba_extract.c	3323	    if ((uint64_t)fib.macro_offset > (uint64_t)statbuf.st_size ||
-fixed-width-integer	libclamav/vba_extract.c	3324	        (uint64_t)fib.macro_len > (uint64_t)statbuf.st_size - (uint64_t)fib.macro_offset) {
-fixed-width-integer	libclamav/vba_extract.c	3333	    start_offset = (uint64_t)fib.macro_offset + 1;
-fixed-width-integer	libclamav/vba_extract.c	3334	    if (start_offset > (uint64_t)statbuf.st_size) {
-fixed-width-integer	libclamav/vba_extract.c	3340	        if ((uint64_t)seek_offset != start_offset || lseek(fd, seek_offset, SEEK_SET) != seek_offset) {
-fixed-width-integer	libclamav/vba_extract.c	3347	    end_offset = (uint64_t)fib.macro_offset + (uint64_t)fib.macro_len;
-fixed-width-integer	libclamav/vba_extract.c	3353	        if (current_offset < 0 || (uint64_t)current_offset > end_offset) {
-fixed-width-integer	libclamav/vba_extract.c	3359	        if ((uint64_t)current_offset == end_offset) {
-fixed-width-integer	libclamav/vba_extract.c	3436	        vba_project->length = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * macro_info.count);
-fixed-width-integer	libclamav/vba_extract.c	3470	cli_wm_decrypt_macro(int fd, off_t offset, uint32_t len, unsigned char key)
-fixed-width-integer	libclamav/vba_extract.c	3527	read_uint16(int fd, uint16_t *u, int big_endian)
-fixed-width-integer	libclamav/vba_extract.c	3529	    if (cli_readn(fd, u, sizeof(uint16_t)) != sizeof(uint16_t))
-fixed-width-integer	libclamav/vba_extract.c	3541	read_uint32(int fd, uint32_t *u, int big_endian)
-fixed-width-integer	libclamav/vba_extract.c	3543	    if (cli_readn(fd, u, sizeof(uint32_t)) != sizeof(uint32_t))
-fixed-width-integer	libclamav/vba_extract.c	3580	    ret->colls  = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * record_count);
-fixed-width-integer	libclamav/vba_extract.c	3582	    ret->offset = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * record_count);
+fixed-width-integer	libclamav/vba_extract.c	2229	                                   const unsigned char *data, size_t data_size, uint64_t *output_size)
+fixed-width-integer	libclamav/vba_extract.c	2235	    if ((uint64_t)data_size > UINT64_MAX - *output_size)
+fixed-width-integer	libclamav/vba_extract.c	2241	    *output_size += (uint64_t)data_size;
+fixed-width-integer	libclamav/vba_extract.c	2246	                                  void *write_context, uint64_t *output_size)
+fixed-width-integer	libclamav/vba_extract.c	2248	    uint64_t pos;
+fixed-width-integer	libclamav/vba_extract.c	2250	    uint64_t produced = 0;
+fixed-width-integer	libclamav/vba_extract.c	2253	    uint16_t token;
+fixed-width-integer	libclamav/vba_extract.c	2274	                uint16_t len;
+fixed-width-integer	libclamav/vba_extract.c	2275	                uint64_t srcpos;
+fixed-width-integer	libclamav/vba_extract.c	2280	                len      = (uint16_t)((token & ((1 << shift) - 1)) + 3);
+fixed-width-integer	libclamav/vba_extract.c	2286	                if ((uint64_t)distance >= pos)
+fixed-width-integer	libclamav/vba_extract.c	2360	    uint64_t output_size = 0;
+fixed-width-integer	libclamav/vba_extract.c	2387	ole_copy_file_data(cli_ctx *ctx, int s, int d, uint32_t len)
+fixed-width-integer	libclamav/vba_extract.c	2437	    uint32_t object_size;
+fixed-width-integer	libclamav/vba_extract.c	2441	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/vba_extract.c	2471	    if (statbuf.st_size < 0 || (uint64_t)object_size > (uint64_t)statbuf.st_size) {
+fixed-width-integer	libclamav/vba_extract.c	2476	    if (((uint64_t)statbuf.st_size - (uint64_t)object_size) >= 4) {
+fixed-width-integer	libclamav/vba_extract.c	2512	        if (payload_offset < 0 || (uint64_t)payload_offset > (uint64_t)statbuf.st_size ||
+fixed-width-integer	libclamav/vba_extract.c	2513	            (uint64_t)object_size > (uint64_t)statbuf.st_size - (uint64_t)payload_offset) {
+fixed-width-integer	libclamav/vba_extract.c	2519	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)object_size);
+fixed-width-integer	libclamav/vba_extract.c	2524	    temporary_reserved = (uint64_t)object_size;
+fixed-width-integer	libclamav/vba_extract.c	2584	    uint16_t type;
+fixed-width-integer	libclamav/vba_extract.c	2585	    uint32_t length;
+fixed-width-integer	libclamav/vba_extract.c	2591	    uint16_t v;
+fixed-width-integer	libclamav/vba_extract.c	2593	        uint16_t ver;
+fixed-width-integer	libclamav/vba_extract.c	2594	        uint16_t type;
+fixed-width-integer	libclamav/vba_extract.c	2595	        uint32_t length;
+fixed-width-integer	libclamav/vba_extract.c	2620	ppt_reserve_output(cli_ctx *ctx, uint64_t *temporary_reserved, size_t output_size)
+fixed-width-integer	libclamav/vba_extract.c	2622	    uint64_t bytes = (uint64_t)output_size;
+fixed-width-integer	libclamav/vba_extract.c	2638	ppt_write_output(cli_ctx *ctx, uint64_t *temporary_reserved, int ofd, const void *buffer, size_t size)
+fixed-width-integer	libclamav/vba_extract.c	2684	ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/vba_extract.c	2779	        if ((uint64_t)skip != (uint64_t)length || lseek(fd, skip, SEEK_CUR) == (off_t)-1) {
+fixed-width-integer	libclamav/vba_extract.c	2810	ppt_stream_iter(int fd, const char *dir, cli_ctx *ctx, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/vba_extract.c	2826	        if (header_offset < 0 || (uint64_t)header_offset > (uint64_t)statbuf.st_size) {
+fixed-width-integer	libclamav/vba_extract.c	2830	        if ((uint64_t)header_offset == (uint64_t)statbuf.st_size)
+fixed-width-integer	libclamav/vba_extract.c	2832	        if ((uint64_t)sizeof(atom_header_t) > (uint64_t)statbuf.st_size - (uint64_t)header_offset) {
+fixed-width-integer	libclamav/vba_extract.c	2847	            uint32_t length;
+fixed-width-integer	libclamav/vba_extract.c	2850	            if (offset < 0 || (uint64_t)offset > (uint64_t)statbuf.st_size || atom_header.length < sizeof(uint32_t) ||
+fixed-width-integer	libclamav/vba_extract.c	2851	                (uint64_t)(atom_header.length - sizeof(uint32_t)) > (uint64_t)statbuf.st_size - (uint64_t)offset) {
+fixed-width-integer	libclamav/vba_extract.c	2857	            if (lseek(fd, sizeof(uint32_t), SEEK_CUR) == -1) {
+fixed-width-integer	libclamav/vba_extract.c	2862	            length = atom_header.length - sizeof(uint32_t);
+fixed-width-integer	libclamav/vba_extract.c	2871	            if (offset < 0 || (uint64_t)offset > (uint64_t)statbuf.st_size ||
+fixed-width-integer	libclamav/vba_extract.c	2872	                (uint64_t)atom_header.length > (uint64_t)statbuf.st_size - (uint64_t)offset) {
+fixed-width-integer	libclamav/vba_extract.c	2888	cli_ppt_vba_read_ex(int ifd, cli_ctx *ctx, uint64_t *temporary_reserved_out)
+fixed-width-integer	libclamav/vba_extract.c	2892	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/vba_extract.c	2947	    uint32_t macro_offset;
+fixed-width-integer	libclamav/vba_extract.c	2948	    uint32_t macro_len;
+fixed-width-integer	libclamav/vba_extract.c	2952	    uint32_t len;
+fixed-width-integer	libclamav/vba_extract.c	2953	    uint32_t offset;
+fixed-width-integer	libclamav/vba_extract.c	2959	    uint16_t count;
+fixed-width-integer	libclamav/vba_extract.c	2966	        uint32_t offset;
+fixed-width-integer	libclamav/vba_extract.c	2967	        uint32_t len;
+fixed-width-integer	libclamav/vba_extract.c	2981	word_read_macro_entry(int fd, macro_info_t *macro_info, uint64_t end_offset)
+fixed-width-integer	libclamav/vba_extract.c	2984	    uint16_t count = macro_info->count;
+fixed-width-integer	libclamav/vba_extract.c	2997	        uint32_t len __attribute__((packed));
+fixed-width-integer	libclamav/vba_extract.c	2998	        uint32_t state __attribute__((packed));
+fixed-width-integer	libclamav/vba_extract.c	2999	        uint32_t offset __attribute__((packed));
+fixed-width-integer	libclamav/vba_extract.c	3021	        if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
+fixed-width-integer	libclamav/vba_extract.c	3022	            (uint64_t)msize > end_offset - (uint64_t)current_offset) {
+fixed-width-integer	libclamav/vba_extract.c	3048	word_read_macro_info(int fd, macro_info_t *macro_info, uint64_t end_offset)
+fixed-width-integer	libclamav/vba_extract.c	3052	    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
+fixed-width-integer	libclamav/vba_extract.c	3053	        sizeof(uint16_t) > end_offset - (uint64_t)current_offset) {
+fixed-width-integer	libclamav/vba_extract.c	3082	word_read_bounded(int fd, void *buffer, size_t size, uint64_t end_offset)
+fixed-width-integer	libclamav/vba_extract.c	3086	    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
+fixed-width-integer	libclamav/vba_extract.c	3087	        (uint64_t)size > end_offset - (uint64_t)current_offset)
+fixed-width-integer	libclamav/vba_extract.c	3094	word_read_uint16_bounded(int fd, uint16_t *value, uint64_t end_offset)
+fixed-width-integer	libclamav/vba_extract.c	3104	word_skip_bounded(int fd, uint64_t size, uint64_t end_offset)
+fixed-width-integer	libclamav/vba_extract.c	3107	    uint64_t target_offset;
+fixed-width-integer	libclamav/vba_extract.c	3110	    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
+fixed-width-integer	libclamav/vba_extract.c	3111	        size > end_offset - (uint64_t)current_offset)
+fixed-width-integer	libclamav/vba_extract.c	3114	    target_offset = (uint64_t)current_offset + size;
+fixed-width-integer	libclamav/vba_extract.c	3116	    if ((uint64_t)seek_offset != target_offset || lseek(fd, seek_offset, SEEK_SET) != seek_offset)
+fixed-width-integer	libclamav/vba_extract.c	3123	word_rewind_bounded(int fd, uint64_t size, uint64_t end_offset)
+fixed-width-integer	libclamav/vba_extract.c	3126	    uint64_t target_offset;
+fixed-width-integer	libclamav/vba_extract.c	3129	    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
+fixed-width-integer	libclamav/vba_extract.c	3130	        size > (uint64_t)current_offset)
+fixed-width-integer	libclamav/vba_extract.c	3133	    target_offset = (uint64_t)current_offset - size;
+fixed-width-integer	libclamav/vba_extract.c	3135	    if ((uint64_t)seek_offset != target_offset || lseek(fd, seek_offset, SEEK_SET) != seek_offset)
+fixed-width-integer	libclamav/vba_extract.c	3142	word_skip_oxo3(int fd, uint64_t end_offset)
+fixed-width-integer	libclamav/vba_extract.c	3152	    if (!word_skip_bounded(fd, (uint64_t)count * 14U, end_offset) ||
+fixed-width-integer	libclamav/vba_extract.c	3173	        if (!word_skip_bounded(fd, (uint64_t)count * 4U + 1U, end_offset)) {
+fixed-width-integer	libclamav/vba_extract.c	3183	word_skip_menu_info(int fd, uint64_t end_offset)
+fixed-width-integer	libclamav/vba_extract.c	3185	    uint16_t count;
+fixed-width-integer	libclamav/vba_extract.c	3194	        if (!word_skip_bounded(fd, (uint64_t)count * 12U, end_offset))
+fixed-width-integer	libclamav/vba_extract.c	3200	word_skip_macro_extnames(int fd, uint64_t end_offset)
+fixed-width-integer	libclamav/vba_extract.c	3203	    uint16_t size;
+fixed-width-integer	libclamav/vba_extract.c	3204	    uint64_t extnames_end;
+fixed-width-integer	libclamav/vba_extract.c	3209	    if (size_offset < 0 || (uint64_t)size_offset > end_offset)
+fixed-width-integer	libclamav/vba_extract.c	3226	    if ((uint64_t)size > end_offset - (uint64_t)size_offset)
+fixed-width-integer	libclamav/vba_extract.c	3228	    extnames_end = (uint64_t)size_offset + (uint64_t)size;
+fixed-width-integer	libclamav/vba_extract.c	3232	        uint64_t offset;
+fixed-width-integer	libclamav/vba_extract.c	3235	        if (current_offset < 0 || (uint64_t)current_offset > extnames_end)
+fixed-width-integer	libclamav/vba_extract.c	3237	        if ((uint64_t)current_offset == extnames_end)
+fixed-width-integer	libclamav/vba_extract.c	3246	            offset = (uint64_t)length * 2U + 1U;
+fixed-width-integer	libclamav/vba_extract.c	3248	            offset = (uint64_t)length;
+fixed-width-integer	libclamav/vba_extract.c	3251	        if (!word_skip_bounded(fd, offset + sizeof(uint16_t), extnames_end)) {
+fixed-width-integer	libclamav/vba_extract.c	3260	word_skip_macro_intnames(int fd, uint64_t end_offset)
+fixed-width-integer	libclamav/vba_extract.c	3262	    uint16_t count;
+fixed-width-integer	libclamav/vba_extract.c	3274	        if (!word_skip_bounded(fd, sizeof(uint16_t), end_offset) ||
+fixed-width-integer	libclamav/vba_extract.c	3281	        if (!word_skip_bounded(fd, (uint64_t)length + 1U, end_offset)) {
+fixed-width-integer	libclamav/vba_extract.c	3299	    uint64_t end_offset, start_offset;
+fixed-width-integer	libclamav/vba_extract.c	3325	    if ((uint64_t)fib.macro_offset > (uint64_t)statbuf.st_size ||
+fixed-width-integer	libclamav/vba_extract.c	3326	        (uint64_t)fib.macro_len > (uint64_t)statbuf.st_size - (uint64_t)fib.macro_offset) {
+fixed-width-integer	libclamav/vba_extract.c	3335	    start_offset = (uint64_t)fib.macro_offset + 1;
+fixed-width-integer	libclamav/vba_extract.c	3336	    if (start_offset > (uint64_t)statbuf.st_size) {
+fixed-width-integer	libclamav/vba_extract.c	3342	        if ((uint64_t)seek_offset != start_offset || lseek(fd, seek_offset, SEEK_SET) != seek_offset) {
+fixed-width-integer	libclamav/vba_extract.c	3349	    end_offset = (uint64_t)fib.macro_offset + (uint64_t)fib.macro_len;
+fixed-width-integer	libclamav/vba_extract.c	3355	        if (current_offset < 0 || (uint64_t)current_offset > end_offset) {
+fixed-width-integer	libclamav/vba_extract.c	3361	        if ((uint64_t)current_offset == end_offset) {
+fixed-width-integer	libclamav/vba_extract.c	3438	        vba_project->length = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * macro_info.count);
+fixed-width-integer	libclamav/vba_extract.c	3472	cli_wm_decrypt_macro(int fd, off_t offset, uint32_t len, unsigned char key)
+fixed-width-integer	libclamav/vba_extract.c	3529	read_uint16(int fd, uint16_t *u, int big_endian)
+fixed-width-integer	libclamav/vba_extract.c	3531	    if (cli_readn(fd, u, sizeof(uint16_t)) != sizeof(uint16_t))
+fixed-width-integer	libclamav/vba_extract.c	3543	read_uint32(int fd, uint32_t *u, int big_endian)
+fixed-width-integer	libclamav/vba_extract.c	3545	    if (cli_readn(fd, u, sizeof(uint32_t)) != sizeof(uint32_t))
+fixed-width-integer	libclamav/vba_extract.c	3582	    ret->colls  = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * record_count);
+fixed-width-integer	libclamav/vba_extract.c	3584	    ret->offset = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * record_count);
 fixed-width-integer	libclamav/vba_extract.c	393	    uint64_t *temporary_reserved;
 fixed-width-integer	libclamav/vba_extract.c	403	    uint64_t output_size;
 fixed-width-integer	libclamav/vba_extract.c	410	    uint64_t inflated_size;
@@ -13220,71 +13220,71 @@ native-width-integer	libclamav/ole2_extract.c	1714	                        cli_d
 native-width-integer	libclamav/ole2_extract.c	1750	    size_t len = 0, offset = 0;
 native-width-integer	libclamav/ole2_extract.c	1784	        if (cli_bitset_test(blk_bitset, (unsigned long)current_block)) {
 native-width-integer	libclamav/ole2_extract.c	1789	        if (!cli_bitset_set(blk_bitset, (unsigned long)current_block)) {
-native-width-integer	libclamav/ole2_extract.c	2026	static int
-native-width-integer	libclamav/ole2_extract.c	2027	likely_mso_stream(int fd)
-native-width-integer	libclamav/ole2_extract.c	2029	    off_t fsize;
-native-width-integer	libclamav/ole2_extract.c	2058	    size_t bytes_read;
-native-width-integer	libclamav/ole2_extract.c	2067	    if (bytes_read == (size_t)-1) {
-native-width-integer	libclamav/ole2_extract.c	2087	static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
-native-width-integer	libclamav/ole2_extract.c	2089	    int zret, ofd;
+native-width-integer	libclamav/ole2_extract.c	2027	static int
+native-width-integer	libclamav/ole2_extract.c	2028	likely_mso_stream(int fd)
+native-width-integer	libclamav/ole2_extract.c	2030	    off_t fsize;
+native-width-integer	libclamav/ole2_extract.c	2059	    size_t bytes_read;
+native-width-integer	libclamav/ole2_extract.c	2068	    if (bytes_read == (size_t)-1) {
+native-width-integer	libclamav/ole2_extract.c	2088	static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
 native-width-integer	libclamav/ole2_extract.c	209	int ole2_list_init(ole2_list_t *list);
-native-width-integer	libclamav/ole2_extract.c	2092	    off_t off_in = 0;
-native-width-integer	libclamav/ole2_extract.c	2093	    size_t count, outsize = 0;
+native-width-integer	libclamav/ole2_extract.c	2090	    int zret, ofd;
+native-width-integer	libclamav/ole2_extract.c	2093	    off_t off_in = 0;
+native-width-integer	libclamav/ole2_extract.c	2094	    size_t count, outsize = 0;
 native-width-integer	libclamav/ole2_extract.c	210	int ole2_list_is_empty(ole2_list_t *list);
 native-width-integer	libclamav/ole2_extract.c	212	int ole2_list_push(ole2_list_t *list, uint32_t val);
 native-width-integer	libclamav/ole2_extract.c	214	int ole2_list_delete(ole2_list_t *list);
 native-width-integer	libclamav/ole2_extract.c	216	int ole2_list_init(ole2_list_t *list)
-native-width-integer	libclamav/ole2_extract.c	2168	            size_t bytes_read;
-native-width-integer	libclamav/ole2_extract.c	2177	            if (bytes_read == (size_t)-1) {
+native-width-integer	libclamav/ole2_extract.c	2169	            size_t bytes_read;
+native-width-integer	libclamav/ole2_extract.c	2178	            if (bytes_read == (size_t)-1) {
 native-width-integer	libclamav/ole2_extract.c	223	int ole2_list_is_empty(ole2_list_t *list)
-native-width-integer	libclamav/ole2_extract.c	2230	    cli_dbgmsg("scan_mso_stream: Decompressed %llu bytes to %s\n", (long long unsigned)outsize, tmpname);
-native-width-integer	libclamav/ole2_extract.c	2234	                    (long long unsigned)prefix, (long long unsigned)outsize);
-native-width-integer	libclamav/ole2_extract.c	2240	               (long long unsigned)prefix, (long long unsigned)outsize);
-native-width-integer	libclamav/ole2_extract.c	2270	    size_t len = 0, offset = 0;
-native-width-integer	libclamav/ole2_extract.c	2271	    int ofd              = -1;
-native-width-integer	libclamav/ole2_extract.c	2272	    int is_mso           = 0;
+native-width-integer	libclamav/ole2_extract.c	2231	    cli_dbgmsg("scan_mso_stream: Decompressed %llu bytes to %s\n", (long long unsigned)outsize, tmpname);
+native-width-integer	libclamav/ole2_extract.c	2235	                    (long long unsigned)prefix, (long long unsigned)outsize);
+native-width-integer	libclamav/ole2_extract.c	2241	               (long long unsigned)prefix, (long long unsigned)outsize);
+native-width-integer	libclamav/ole2_extract.c	2271	    size_t len = 0, offset = 0;
+native-width-integer	libclamav/ole2_extract.c	2272	    int ofd              = -1;
+native-width-integer	libclamav/ole2_extract.c	2273	    int is_mso           = 0;
 native-width-integer	libclamav/ole2_extract.c	234	int ole2_list_push(ole2_list_t *list, uint32_t val)
-native-width-integer	libclamav/ole2_extract.c	2342	        if (cli_bitset_test(blk_bitset, (unsigned long)current_block)) {
-native-width-integer	libclamav/ole2_extract.c	2349	        if (!cli_bitset_set(blk_bitset, (unsigned long)current_block)) {
+native-width-integer	libclamav/ole2_extract.c	2343	        if (cli_bitset_test(blk_bitset, (unsigned long)current_block)) {
+native-width-integer	libclamav/ole2_extract.c	2350	        if (!cli_bitset_set(blk_bitset, (unsigned long)current_block)) {
 native-width-integer	libclamav/ole2_extract.c	237	    int status                 = CL_EMEM;
-native-width-integer	libclamav/ole2_extract.c	2519	    size_t len            = 0;
-native-width-integer	libclamav/ole2_extract.c	2520	    size_t offset         = 0;
-native-width-integer	libclamav/ole2_extract.c	2521	    int ofd               = -1;
-native-width-integer	libclamav/ole2_extract.c	2522	    int is_mso            = 0;
-native-width-integer	libclamav/ole2_extract.c	2524	    int nrounds           = 0;
-native-width-integer	libclamav/ole2_extract.c	2532	    size_t stream_bytes_read = 0;
-native-width-integer	libclamav/ole2_extract.c	2641	            offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
+native-width-integer	libclamav/ole2_extract.c	2520	    size_t len            = 0;
+native-width-integer	libclamav/ole2_extract.c	2521	    size_t offset         = 0;
+native-width-integer	libclamav/ole2_extract.c	2522	    int ofd               = -1;
+native-width-integer	libclamav/ole2_extract.c	2523	    int is_mso            = 0;
+native-width-integer	libclamav/ole2_extract.c	2525	    int nrounds           = 0;
+native-width-integer	libclamav/ole2_extract.c	2533	    size_t stream_bytes_read = 0;
+native-width-integer	libclamav/ole2_extract.c	2642	            offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
 native-width-integer	libclamav/ole2_extract.c	273	int ole2_list_delete(ole2_list_t *list)
-native-width-integer	libclamav/ole2_extract.c	2827	static bool ole2_read_header(int fd, ole2_header_t *hdr)
-native-width-integer	libclamav/ole2_extract.c	2829	    int i;
-native-width-integer	libclamav/ole2_extract.c	2945	    size_t bufLen                                                      = 0;
-native-width-integer	libclamav/ole2_extract.c	2946	    size_t passwordLen                                                 = 0;
-native-width-integer	libclamav/ole2_extract.c	2949	    size_t j                                                           = 0;
+native-width-integer	libclamav/ole2_extract.c	2828	static bool ole2_read_header(int fd, ole2_header_t *hdr)
+native-width-integer	libclamav/ole2_extract.c	2830	    int i;
+native-width-integer	libclamav/ole2_extract.c	2946	    size_t bufLen                                                      = 0;
+native-width-integer	libclamav/ole2_extract.c	2947	    size_t passwordLen                                                 = 0;
+native-width-integer	libclamav/ole2_extract.c	2950	    size_t j                                                           = 0;
 native-width-integer	libclamav/ole2_extract.c	297	char *cli_ole2_get_property_name2(const char *name, int size)
 native-width-integer	libclamav/ole2_extract.c	299	    int i, j;
-native-width-integer	libclamav/ole2_extract.c	3106	static bool aes_128ecb_decrypt(const unsigned char *in, size_t length, unsigned char *out, const encryption_key_t *const key)
-native-width-integer	libclamav/ole2_extract.c	3109	    int nrounds;
-native-width-integer	libclamav/ole2_extract.c	3110	    size_t i;
-native-width-integer	libclamav/ole2_extract.c	3228	    size_t remainingBytes,
-native-width-integer	libclamav/ole2_extract.c	3233	    size_t idx              = 0;
-native-width-integer	libclamav/ole2_extract.c	3234	    size_t csp_name_max_u16 = 0;
-native-width-integer	libclamav/ole2_extract.c	3240	    size_t CSPName_length                            = 0;
-native-width-integer	libclamav/ole2_extract.c	3440	cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **files, int *has_vba, int *has_xlm, int *has_image)
-native-width-integer	libclamav/ole2_extract.c	3444	    size_t hdr_size;
-native-width-integer	libclamav/ole2_extract.c	3445	    unsigned int file_count = 0;
-native-width-integer	libclamav/ole2_extract.c	3451	    size_t encryption_offset              = 0;
-native-width-integer	libclamav/ole2_extract.c	3494	    if ((size_t)(ctx->fmap->len) < (size_t)(hdr_size)) {
+native-width-integer	libclamav/ole2_extract.c	3107	static bool aes_128ecb_decrypt(const unsigned char *in, size_t length, unsigned char *out, const encryption_key_t *const key)
+native-width-integer	libclamav/ole2_extract.c	3110	    int nrounds;
+native-width-integer	libclamav/ole2_extract.c	3111	    size_t i;
+native-width-integer	libclamav/ole2_extract.c	3229	    size_t remainingBytes,
+native-width-integer	libclamav/ole2_extract.c	3234	    size_t idx              = 0;
+native-width-integer	libclamav/ole2_extract.c	3235	    size_t csp_name_max_u16 = 0;
+native-width-integer	libclamav/ole2_extract.c	3241	    size_t CSPName_length                            = 0;
+native-width-integer	libclamav/ole2_extract.c	3441	cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **files, int *has_vba, int *has_xlm, int *has_image)
+native-width-integer	libclamav/ole2_extract.c	3445	    size_t hdr_size;
+native-width-integer	libclamav/ole2_extract.c	3446	    unsigned int file_count = 0;
+native-width-integer	libclamav/ole2_extract.c	3452	    size_t encryption_offset              = 0;
+native-width-integer	libclamav/ole2_extract.c	3495	    if ((size_t)(ctx->fmap->len) < (size_t)(hdr_size)) {
 native-width-integer	libclamav/ole2_extract.c	353	get_property_name(char *name, int size)
 native-width-integer	libclamav/ole2_extract.c	356	    int csize          = size >> 1;
-native-width-integer	libclamav/ole2_extract.c	3561	     * header window is only hdr_size bytes long; it cannot be reused for the
-native-width-integer	libclamav/ole2_extract.c	3563	    encryption_offset = ((size_t)4) << hdr.log2_big_block_size;
-native-width-integer	libclamav/ole2_extract.c	3566	        size_t encryption_window = MIN(hdr.m_length - encryption_offset,
-native-width-integer	libclamav/ole2_extract.c	3567	                                       (size_t)OLE2_ENCRYPTION_INFO_READ_WINDOW);
-native-width-integer	libclamav/ole2_extract.c	3585	        const size_t big_block_size = (size_t)1 << hdr.log2_big_block_size;
-native-width-integer	libclamav/ole2_extract.c	3586	        const size_t data_start     = MAX((size_t)512, big_block_size);
-native-width-integer	libclamav/ole2_extract.c	3587	        size_t data_block_count;
-native-width-integer	libclamav/ole2_extract.c	3601	        if (data_block_count > (size_t)INT32_MAX + 1U) {
-native-width-integer	libclamav/ole2_extract.c	3611	    cli_dbgmsg("Max block number: %lu\n", (unsigned long int)hdr.max_block_no);
+native-width-integer	libclamav/ole2_extract.c	3562	     * header window is only hdr_size bytes long; it cannot be reused for the
+native-width-integer	libclamav/ole2_extract.c	3564	    encryption_offset = ((size_t)4) << hdr.log2_big_block_size;
+native-width-integer	libclamav/ole2_extract.c	3567	        size_t encryption_window = MIN(hdr.m_length - encryption_offset,
+native-width-integer	libclamav/ole2_extract.c	3568	                                       (size_t)OLE2_ENCRYPTION_INFO_READ_WINDOW);
+native-width-integer	libclamav/ole2_extract.c	3586	        const size_t big_block_size = (size_t)1 << hdr.log2_big_block_size;
+native-width-integer	libclamav/ole2_extract.c	3587	        const size_t data_start     = MAX((size_t)512, big_block_size);
+native-width-integer	libclamav/ole2_extract.c	3588	        size_t data_block_count;
+native-width-integer	libclamav/ole2_extract.c	3602	        if (data_block_count > (size_t)INT32_MAX + 1U) {
+native-width-integer	libclamav/ole2_extract.c	3612	    cli_dbgmsg("Max block number: %lu\n", (unsigned long int)hdr.max_block_no);
 native-width-integer	libclamav/ole2_extract.c	429	    cli_dbgmsg("%s size:0x%.16llx flags:0x%.8x\n", spam, (unsigned long long)property->size, property->user_flags);
 native-width-integer	libclamav/ole2_extract.c	501	static const uint8_t *ole2_need_range(ole2_header_t *hdr, size_t offset, size_t length, cl_error_t *read_status)
 native-width-integer	libclamav/ole2_extract.c	523	static bool ole2_read_block(ole2_header_t *hdr, void *buff, size_t size, int32_t blockno)
@@ -16412,130 +16412,130 @@ native-width-integer	libclamav/vba_extract.c	1780	                    int module
 native-width-integer	libclamav/vba_extract.c	1785	                    off_t module_output_offset = lseek(*tempfd, 0, SEEK_CUR);
 native-width-integer	libclamav/vba_extract.c	1790	                    if (module_output_offset == (off_t)-1) {
 native-width-integer	libclamav/vba_extract.c	188	static void vba56_test_middle(int fd)
-native-width-integer	libclamav/vba_extract.c	1988	    int i, j, fd, big_endian = FALSE;
-native-width-integer	libclamav/vba_extract.c	1991	    off_t seekback;
-native-width-integer	libclamav/vba_extract.c	2147	        if (cli_readn(fd, buf, (size_t)length) != (size_t)length) {
+native-width-integer	libclamav/vba_extract.c	1990	    int i, j, fd, big_endian = FALSE;
+native-width-integer	libclamav/vba_extract.c	1993	    off_t seekback;
+native-width-integer	libclamav/vba_extract.c	2149	        if (cli_readn(fd, buf, (size_t)length) != (size_t)length) {
 native-width-integer	libclamav/vba_extract.c	216	static int
-native-width-integer	libclamav/vba_extract.c	2169	        if (lseek(fd, length, SEEK_CUR) == (off_t)-1) {
 native-width-integer	libclamav/vba_extract.c	217	vba_read_project_strings(int fd, int big_endian)
-native-width-integer	libclamav/vba_extract.c	2177	            if (lseek(fd, 2, SEEK_CUR) == (off_t)-1) {
-native-width-integer	libclamav/vba_extract.c	2183	            if (lseek(fd, ffff + 8, SEEK_CUR) == (off_t)-1) {
-native-width-integer	libclamav/vba_extract.c	2188	            if (lseek(fd, ffff + 10, SEEK_CUR) == (off_t)-1) {
-native-width-integer	libclamav/vba_extract.c	2195	        if (lseek(fd, (8 * byte_count) + 5, SEEK_CUR) == (off_t)-1) {
-native-width-integer	libclamav/vba_extract.c	2203	        if (lseek(fd, 2, SEEK_CUR) == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2171	        if (lseek(fd, length, SEEK_CUR) == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2179	            if (lseek(fd, 2, SEEK_CUR) == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2185	            if (lseek(fd, ffff + 8, SEEK_CUR) == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2190	            if (lseek(fd, ffff + 10, SEEK_CUR) == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2197	        if (lseek(fd, (8 * byte_count) + 5, SEEK_CUR) == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2205	        if (lseek(fd, 2, SEEK_CUR) == (off_t)-1) {
 native-width-integer	libclamav/vba_extract.c	222	    int ret = 0, getnewlength = 1;
-native-width-integer	libclamav/vba_extract.c	2227	                                   const unsigned char *data, size_t data_size, uint64_t *output_size)
-native-width-integer	libclamav/vba_extract.c	2243	cl_error_t cli_vba_inflate_stream(int fd, off_t offset, cli_vba_inflate_write_cb write_cb,
-native-width-integer	libclamav/vba_extract.c	2247	    unsigned int shift, mask, distance, clean;
-native-width-integer	libclamav/vba_extract.c	2249	    size_t read_result;
+native-width-integer	libclamav/vba_extract.c	2229	                                   const unsigned char *data, size_t data_size, uint64_t *output_size)
+native-width-integer	libclamav/vba_extract.c	2245	cl_error_t cli_vba_inflate_stream(int fd, off_t offset, cli_vba_inflate_write_cb write_cb,
+native-width-integer	libclamav/vba_extract.c	2249	    unsigned int shift, mask, distance, clean;
 native-width-integer	libclamav/vba_extract.c	225	        off_t offset;
-native-width-integer	libclamav/vba_extract.c	2261	    if (lseek(fd, offset, SEEK_SET) == (off_t)-1 ||
-native-width-integer	libclamav/vba_extract.c	2262	        lseek(fd, 3, SEEK_CUR) == (off_t)-1) /* 1byte ?? , 2byte length ?? */
-native-width-integer	libclamav/vba_extract.c	2270	            unsigned int winpos = (unsigned int)(pos % VBA_COMPRESSION_WINDOW);
-native-width-integer	libclamav/vba_extract.c	2317	                } else if (read_result == (size_t)-1) {
-native-width-integer	libclamav/vba_extract.c	2330	    if (read_result == (size_t)-1)
-native-width-integer	libclamav/vba_extract.c	2334	                              (size_t)(pos % VBA_COMPRESSION_WINDOW), &produced);
-native-width-integer	libclamav/vba_extract.c	2347	static cl_error_t vba_blob_write(const unsigned char *data, size_t data_size, void *context)
-native-width-integer	libclamav/vba_extract.c	2355	cli_vba_inflate(int fd, off_t offset, size_t *size)
-native-width-integer	libclamav/vba_extract.c	2377	        *size = (size_t)output_size;
-native-width-integer	libclamav/vba_extract.c	2385	ole_copy_file_data(cli_ctx *ctx, int s, int d, uint32_t len)
-native-width-integer	libclamav/vba_extract.c	2390	        size_t todo = MIN(sizeof(data), len);
-native-width-integer	libclamav/vba_extract.c	2406	ole10_cleanup_output(cli_ctx *ctx, int *ofd, const char *fullname, cl_error_t *status)
-native-width-integer	libclamav/vba_extract.c	2431	int cli_scan_ole10(int fd, cli_ctx *ctx)
-native-width-integer	libclamav/vba_extract.c	2433	    int ofd;
-native-width-integer	libclamav/vba_extract.c	2438	    off_t payload_offset;
-native-width-integer	libclamav/vba_extract.c	2455	    if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
-native-width-integer	libclamav/vba_extract.c	2556	    if (lseek(ofd, 0, SEEK_SET) == (off_t)-1) {
-native-width-integer	libclamav/vba_extract.c	2586	static int
-native-width-integer	libclamav/vba_extract.c	2587	ppt_read_atom_header(int fd, atom_header_t *atom_header)
-native-width-integer	libclamav/vba_extract.c	2608	    cli_dbgmsg("\tlength: 0x%.8x\n", (int)atom_header->length);
-native-width-integer	libclamav/vba_extract.c	2618	ppt_reserve_output(cli_ctx *ctx, uint64_t *temporary_reserved, size_t output_size)
+native-width-integer	libclamav/vba_extract.c	2251	    size_t read_result;
+native-width-integer	libclamav/vba_extract.c	2263	    if (lseek(fd, offset, SEEK_SET) == (off_t)-1 ||
+native-width-integer	libclamav/vba_extract.c	2264	        lseek(fd, 3, SEEK_CUR) == (off_t)-1) /* 1byte ?? , 2byte length ?? */
+native-width-integer	libclamav/vba_extract.c	2272	            unsigned int winpos = (unsigned int)(pos % VBA_COMPRESSION_WINDOW);
+native-width-integer	libclamav/vba_extract.c	2319	                } else if (read_result == (size_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2332	    if (read_result == (size_t)-1)
+native-width-integer	libclamav/vba_extract.c	2336	                              (size_t)(pos % VBA_COMPRESSION_WINDOW), &produced);
+native-width-integer	libclamav/vba_extract.c	2349	static cl_error_t vba_blob_write(const unsigned char *data, size_t data_size, void *context)
+native-width-integer	libclamav/vba_extract.c	2357	cli_vba_inflate(int fd, off_t offset, size_t *size)
+native-width-integer	libclamav/vba_extract.c	2379	        *size = (size_t)output_size;
+native-width-integer	libclamav/vba_extract.c	2387	ole_copy_file_data(cli_ctx *ctx, int s, int d, uint32_t len)
+native-width-integer	libclamav/vba_extract.c	2392	        size_t todo = MIN(sizeof(data), len);
+native-width-integer	libclamav/vba_extract.c	2408	ole10_cleanup_output(cli_ctx *ctx, int *ofd, const char *fullname, cl_error_t *status)
+native-width-integer	libclamav/vba_extract.c	2433	int cli_scan_ole10(int fd, cli_ctx *ctx)
+native-width-integer	libclamav/vba_extract.c	2435	    int ofd;
+native-width-integer	libclamav/vba_extract.c	2440	    off_t payload_offset;
+native-width-integer	libclamav/vba_extract.c	2457	    if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2558	    if (lseek(ofd, 0, SEEK_SET) == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2588	static int
+native-width-integer	libclamav/vba_extract.c	2589	ppt_read_atom_header(int fd, atom_header_t *atom_header)
+native-width-integer	libclamav/vba_extract.c	2610	    cli_dbgmsg("\tlength: 0x%.8x\n", (int)atom_header->length);
+native-width-integer	libclamav/vba_extract.c	2620	ppt_reserve_output(cli_ctx *ctx, uint64_t *temporary_reserved, size_t output_size)
 native-width-integer	libclamav/vba_extract.c	263	        if (cli_readn(fd, buf, (size_t)length) != (size_t)length) {
-native-width-integer	libclamav/vba_extract.c	2635	static int
-native-width-integer	libclamav/vba_extract.c	2636	ppt_write_output(cli_ctx *ctx, uint64_t *temporary_reserved, int ofd, const void *buffer, size_t size)
-native-width-integer	libclamav/vba_extract.c	2652	static int
-native-width-integer	libclamav/vba_extract.c	2653	ppt_close_output(cli_ctx *ctx, int ofd)
-native-width-integer	libclamav/vba_extract.c	2670	static int
-native-width-integer	libclamav/vba_extract.c	2681	static int
-native-width-integer	libclamav/vba_extract.c	2682	ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temporary_reserved)
-native-width-integer	libclamav/vba_extract.c	2684	    int ofd;
-native-width-integer	libclamav/vba_extract.c	2685	    int zret;
-native-width-integer	libclamav/vba_extract.c	2686	    off_t input_offset;
-native-width-integer	libclamav/vba_extract.c	2692	    if (input_offset == (off_t)-1) {
-native-width-integer	libclamav/vba_extract.c	2698	             dir, (long)input_offset);
-native-width-integer	libclamav/vba_extract.c	2718	    if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
-native-width-integer	libclamav/vba_extract.c	2748	            if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
-native-width-integer	libclamav/vba_extract.c	2775	        off_t skip = (off_t)length;
-native-width-integer	libclamav/vba_extract.c	2777	        if ((uint64_t)skip != (uint64_t)length || lseek(fd, skip, SEEK_CUR) == (off_t)-1) {
-native-width-integer	libclamav/vba_extract.c	2808	ppt_stream_iter(int fd, const char *dir, cli_ctx *ctx, uint64_t *temporary_reserved)
-native-width-integer	libclamav/vba_extract.c	2819	        off_t header_offset = lseek(fd, 0, SEEK_CUR);
-native-width-integer	libclamav/vba_extract.c	2846	            off_t offset = lseek(fd, 0, SEEK_CUR);
-native-width-integer	libclamav/vba_extract.c	2861	            cli_dbgmsg("length: %d\n", (int)length);
-native-width-integer	libclamav/vba_extract.c	2867	            off_t offset = lseek(fd, 0, SEEK_CUR);
-native-width-integer	libclamav/vba_extract.c	2886	cli_ppt_vba_read_ex(int ifd, cli_ctx *ctx, uint64_t *temporary_reserved_out)
-native-width-integer	libclamav/vba_extract.c	2935	cli_ppt_vba_read(int ifd, cli_ctx *ctx)
-native-width-integer	libclamav/vba_extract.c	2960	static int
-native-width-integer	libclamav/vba_extract.c	2961	word_read_fib(int fd, mso_fib_t *fib)
-native-width-integer	libclamav/vba_extract.c	2978	static int
-native-width-integer	libclamav/vba_extract.c	2979	word_read_macro_entry(int fd, macro_info_t *macro_info, uint64_t end_offset)
-native-width-integer	libclamav/vba_extract.c	2981	    size_t msize;
-native-width-integer	libclamav/vba_extract.c	3018	        off_t current_offset = lseek(fd, 0, SEEK_CUR);
-native-width-integer	libclamav/vba_extract.c	3045	static int
-native-width-integer	libclamav/vba_extract.c	3046	word_read_macro_info(int fd, macro_info_t *macro_info, uint64_t end_offset)
-native-width-integer	libclamav/vba_extract.c	3048	    off_t current_offset = lseek(fd, 0, SEEK_CUR);
+native-width-integer	libclamav/vba_extract.c	2637	static int
+native-width-integer	libclamav/vba_extract.c	2638	ppt_write_output(cli_ctx *ctx, uint64_t *temporary_reserved, int ofd, const void *buffer, size_t size)
+native-width-integer	libclamav/vba_extract.c	2654	static int
+native-width-integer	libclamav/vba_extract.c	2655	ppt_close_output(cli_ctx *ctx, int ofd)
+native-width-integer	libclamav/vba_extract.c	2672	static int
+native-width-integer	libclamav/vba_extract.c	2683	static int
+native-width-integer	libclamav/vba_extract.c	2684	ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temporary_reserved)
+native-width-integer	libclamav/vba_extract.c	2686	    int ofd;
+native-width-integer	libclamav/vba_extract.c	2687	    int zret;
+native-width-integer	libclamav/vba_extract.c	2688	    off_t input_offset;
+native-width-integer	libclamav/vba_extract.c	2694	    if (input_offset == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2700	             dir, (long)input_offset);
+native-width-integer	libclamav/vba_extract.c	2720	    if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
+native-width-integer	libclamav/vba_extract.c	2750	            if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
+native-width-integer	libclamav/vba_extract.c	2777	        off_t skip = (off_t)length;
+native-width-integer	libclamav/vba_extract.c	2779	        if ((uint64_t)skip != (uint64_t)length || lseek(fd, skip, SEEK_CUR) == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	2810	ppt_stream_iter(int fd, const char *dir, cli_ctx *ctx, uint64_t *temporary_reserved)
+native-width-integer	libclamav/vba_extract.c	2821	        off_t header_offset = lseek(fd, 0, SEEK_CUR);
+native-width-integer	libclamav/vba_extract.c	2848	            off_t offset = lseek(fd, 0, SEEK_CUR);
+native-width-integer	libclamav/vba_extract.c	2863	            cli_dbgmsg("length: %d\n", (int)length);
+native-width-integer	libclamav/vba_extract.c	2869	            off_t offset = lseek(fd, 0, SEEK_CUR);
+native-width-integer	libclamav/vba_extract.c	2888	cli_ppt_vba_read_ex(int ifd, cli_ctx *ctx, uint64_t *temporary_reserved_out)
+native-width-integer	libclamav/vba_extract.c	2937	cli_ppt_vba_read(int ifd, cli_ctx *ctx)
+native-width-integer	libclamav/vba_extract.c	2962	static int
+native-width-integer	libclamav/vba_extract.c	2963	word_read_fib(int fd, mso_fib_t *fib)
+native-width-integer	libclamav/vba_extract.c	2980	static int
+native-width-integer	libclamav/vba_extract.c	2981	word_read_macro_entry(int fd, macro_info_t *macro_info, uint64_t end_offset)
+native-width-integer	libclamav/vba_extract.c	2983	    size_t msize;
+native-width-integer	libclamav/vba_extract.c	3020	        off_t current_offset = lseek(fd, 0, SEEK_CUR);
+native-width-integer	libclamav/vba_extract.c	3047	static int
+native-width-integer	libclamav/vba_extract.c	3048	word_read_macro_info(int fd, macro_info_t *macro_info, uint64_t end_offset)
+native-width-integer	libclamav/vba_extract.c	3050	    off_t current_offset = lseek(fd, 0, SEEK_CUR);
 native-width-integer	libclamav/vba_extract.c	306	        cli_dbgmsg("offset: %lu\n", (unsigned long)offset);
-native-width-integer	libclamav/vba_extract.c	3079	static int
-native-width-integer	libclamav/vba_extract.c	3080	word_read_bounded(int fd, void *buffer, size_t size, uint64_t end_offset)
-native-width-integer	libclamav/vba_extract.c	3082	    off_t current_offset = lseek(fd, 0, SEEK_CUR);
-native-width-integer	libclamav/vba_extract.c	3091	static int
-native-width-integer	libclamav/vba_extract.c	3092	word_read_uint16_bounded(int fd, uint16_t *value, uint64_t end_offset)
-native-width-integer	libclamav/vba_extract.c	3101	static int
-native-width-integer	libclamav/vba_extract.c	3102	word_skip_bounded(int fd, uint64_t size, uint64_t end_offset)
-native-width-integer	libclamav/vba_extract.c	3104	    off_t current_offset = lseek(fd, 0, SEEK_CUR);
-native-width-integer	libclamav/vba_extract.c	3106	    off_t seek_offset;
-native-width-integer	libclamav/vba_extract.c	3113	    seek_offset   = (off_t)target_offset;
-native-width-integer	libclamav/vba_extract.c	3120	static int
-native-width-integer	libclamav/vba_extract.c	3121	word_rewind_bounded(int fd, uint64_t size, uint64_t end_offset)
-native-width-integer	libclamav/vba_extract.c	3123	    off_t current_offset = lseek(fd, 0, SEEK_CUR);
-native-width-integer	libclamav/vba_extract.c	3125	    off_t seek_offset;
-native-width-integer	libclamav/vba_extract.c	3132	    seek_offset   = (off_t)target_offset;
-native-width-integer	libclamav/vba_extract.c	3139	static int
-native-width-integer	libclamav/vba_extract.c	3140	word_skip_oxo3(int fd, uint64_t end_offset)
+native-width-integer	libclamav/vba_extract.c	3081	static int
+native-width-integer	libclamav/vba_extract.c	3082	word_read_bounded(int fd, void *buffer, size_t size, uint64_t end_offset)
+native-width-integer	libclamav/vba_extract.c	3084	    off_t current_offset = lseek(fd, 0, SEEK_CUR);
+native-width-integer	libclamav/vba_extract.c	3093	static int
+native-width-integer	libclamav/vba_extract.c	3094	word_read_uint16_bounded(int fd, uint16_t *value, uint64_t end_offset)
+native-width-integer	libclamav/vba_extract.c	3103	static int
+native-width-integer	libclamav/vba_extract.c	3104	word_skip_bounded(int fd, uint64_t size, uint64_t end_offset)
+native-width-integer	libclamav/vba_extract.c	3106	    off_t current_offset = lseek(fd, 0, SEEK_CUR);
+native-width-integer	libclamav/vba_extract.c	3108	    off_t seek_offset;
+native-width-integer	libclamav/vba_extract.c	3115	    seek_offset   = (off_t)target_offset;
+native-width-integer	libclamav/vba_extract.c	3122	static int
+native-width-integer	libclamav/vba_extract.c	3123	word_rewind_bounded(int fd, uint64_t size, uint64_t end_offset)
+native-width-integer	libclamav/vba_extract.c	3125	    off_t current_offset = lseek(fd, 0, SEEK_CUR);
+native-width-integer	libclamav/vba_extract.c	3127	    off_t seek_offset;
+native-width-integer	libclamav/vba_extract.c	3134	    seek_offset   = (off_t)target_offset;
+native-width-integer	libclamav/vba_extract.c	3141	static int
+native-width-integer	libclamav/vba_extract.c	3142	word_skip_oxo3(int fd, uint64_t end_offset)
 native-width-integer	libclamav/vba_extract.c	315	static size_t vba_normalize(unsigned char *buffer, size_t size)
-native-width-integer	libclamav/vba_extract.c	3180	static int
-native-width-integer	libclamav/vba_extract.c	3181	word_skip_menu_info(int fd, uint64_t end_offset)
-native-width-integer	libclamav/vba_extract.c	3197	static int
-native-width-integer	libclamav/vba_extract.c	3198	word_skip_macro_extnames(int fd, uint64_t end_offset)
-native-width-integer	libclamav/vba_extract.c	3200	    int is_unicode;
-native-width-integer	libclamav/vba_extract.c	3203	    off_t size_offset;
-native-width-integer	libclamav/vba_extract.c	3204	    off_t current_offset;
+native-width-integer	libclamav/vba_extract.c	3182	static int
+native-width-integer	libclamav/vba_extract.c	3183	word_skip_menu_info(int fd, uint64_t end_offset)
+native-width-integer	libclamav/vba_extract.c	3199	static int
+native-width-integer	libclamav/vba_extract.c	3200	word_skip_macro_extnames(int fd, uint64_t end_offset)
+native-width-integer	libclamav/vba_extract.c	3202	    int is_unicode;
+native-width-integer	libclamav/vba_extract.c	3205	    off_t size_offset;
+native-width-integer	libclamav/vba_extract.c	3206	    off_t current_offset;
 native-width-integer	libclamav/vba_extract.c	324	    size_t o = 0;
 native-width-integer	libclamav/vba_extract.c	325	    size_t i;
-native-width-integer	libclamav/vba_extract.c	3257	static int
-native-width-integer	libclamav/vba_extract.c	3258	word_skip_macro_intnames(int fd, uint64_t end_offset)
-native-width-integer	libclamav/vba_extract.c	3266	    cli_dbgmsg("intnames count: %u\n", (unsigned int)count);
-native-width-integer	libclamav/vba_extract.c	3288	cli_wm_readdir(int fd)
-native-width-integer	libclamav/vba_extract.c	3294	cli_wm_readdir_ex(int fd, cli_ctx *ctx)
-native-width-integer	libclamav/vba_extract.c	3296	    int done, malformed = FALSE;
-native-width-integer	libclamav/vba_extract.c	3329	    cli_dbgmsg("wm_readdir: macro offset: 0x%.4x\n", (int)fib.macro_offset);
-native-width-integer	libclamav/vba_extract.c	3330	    cli_dbgmsg("wm_readdir: macro len: 0x%.4x\n\n", (int)fib.macro_len);
-native-width-integer	libclamav/vba_extract.c	3339	        off_t seek_offset = (off_t)start_offset;
-native-width-integer	libclamav/vba_extract.c	3351	        off_t current_offset = lseek(fd, 0, SEEK_CUR);
-native-width-integer	libclamav/vba_extract.c	3440	            int i;
-native-width-integer	libclamav/vba_extract.c	3470	cli_wm_decrypt_macro(int fd, off_t offset, uint32_t len, unsigned char key)
-native-width-integer	libclamav/vba_extract.c	3503	 * @return int Returns FALSE if none is found, else TRUE
-native-width-integer	libclamav/vba_extract.c	3505	static int skip_past_nul(int fd)
-native-width-integer	libclamav/vba_extract.c	3511	        size_t nread = cli_readn(fd, smallbuf, sizeof(smallbuf));
-native-width-integer	libclamav/vba_extract.c	3512	        if ((nread == 0) || (nread == (size_t)-1))
-native-width-integer	libclamav/vba_extract.c	3516	            if (lseek(fd, 1 + (end - smallbuf) - (off_t)nread, SEEK_CUR) < 0)
-native-width-integer	libclamav/vba_extract.c	3526	static int
-native-width-integer	libclamav/vba_extract.c	3527	read_uint16(int fd, uint16_t *u, int big_endian)
-native-width-integer	libclamav/vba_extract.c	3540	static int
-native-width-integer	libclamav/vba_extract.c	3541	read_uint32(int fd, uint32_t *u, int big_endian)
-native-width-integer	libclamav/vba_extract.c	3554	static int
-native-width-integer	libclamav/vba_extract.c	3555	seekandread(int fd, off_t offset, int whence, void *data, size_t len)
-native-width-integer	libclamav/vba_extract.c	3557	    if (lseek(fd, offset, whence) == (off_t)-1) {
-native-width-integer	libclamav/vba_extract.c	3568	create_vba_project(int record_count, const char *dir, struct uniq *U)
+native-width-integer	libclamav/vba_extract.c	3259	static int
+native-width-integer	libclamav/vba_extract.c	3260	word_skip_macro_intnames(int fd, uint64_t end_offset)
+native-width-integer	libclamav/vba_extract.c	3268	    cli_dbgmsg("intnames count: %u\n", (unsigned int)count);
+native-width-integer	libclamav/vba_extract.c	3290	cli_wm_readdir(int fd)
+native-width-integer	libclamav/vba_extract.c	3296	cli_wm_readdir_ex(int fd, cli_ctx *ctx)
+native-width-integer	libclamav/vba_extract.c	3298	    int done, malformed = FALSE;
+native-width-integer	libclamav/vba_extract.c	3331	    cli_dbgmsg("wm_readdir: macro offset: 0x%.4x\n", (int)fib.macro_offset);
+native-width-integer	libclamav/vba_extract.c	3332	    cli_dbgmsg("wm_readdir: macro len: 0x%.4x\n\n", (int)fib.macro_len);
+native-width-integer	libclamav/vba_extract.c	3341	        off_t seek_offset = (off_t)start_offset;
+native-width-integer	libclamav/vba_extract.c	3353	        off_t current_offset = lseek(fd, 0, SEEK_CUR);
+native-width-integer	libclamav/vba_extract.c	3442	            int i;
+native-width-integer	libclamav/vba_extract.c	3472	cli_wm_decrypt_macro(int fd, off_t offset, uint32_t len, unsigned char key)
+native-width-integer	libclamav/vba_extract.c	3505	 * @return int Returns FALSE if none is found, else TRUE
+native-width-integer	libclamav/vba_extract.c	3507	static int skip_past_nul(int fd)
+native-width-integer	libclamav/vba_extract.c	3513	        size_t nread = cli_readn(fd, smallbuf, sizeof(smallbuf));
+native-width-integer	libclamav/vba_extract.c	3514	        if ((nread == 0) || (nread == (size_t)-1))
+native-width-integer	libclamav/vba_extract.c	3518	            if (lseek(fd, 1 + (end - smallbuf) - (off_t)nread, SEEK_CUR) < 0)
+native-width-integer	libclamav/vba_extract.c	3528	static int
+native-width-integer	libclamav/vba_extract.c	3529	read_uint16(int fd, uint16_t *u, int big_endian)
+native-width-integer	libclamav/vba_extract.c	3542	static int
+native-width-integer	libclamav/vba_extract.c	3543	read_uint32(int fd, uint32_t *u, int big_endian)
+native-width-integer	libclamav/vba_extract.c	3556	static int
+native-width-integer	libclamav/vba_extract.c	3557	seekandread(int fd, off_t offset, int whence, void *data, size_t len)
+native-width-integer	libclamav/vba_extract.c	3559	    if (lseek(fd, offset, whence) == (off_t)-1) {
+native-width-integer	libclamav/vba_extract.c	3570	create_vba_project(int record_count, const char *dir, struct uniq *U)
 native-width-integer	libclamav/vba_extract.c	374	                        buffer[o++] = (unsigned char)tolower((int)buffer[i]);
 native-width-integer	libclamav/vba_extract.c	392	    int fd;
 native-width-integer	libclamav/vba_extract.c	398	    unsigned int state;
@@ -22269,7 +22269,7 @@ boundary-constant	libclamav/nsis/nulsft.c	793	        if (ctx->fmap->offset > SI
 boundary-constant	libclamav/nsis/nulsft.c	794	            ctx->fmap->offset + ctx->fmap->nested_offset > SIZE_MAX - (size_t)offset)
 boundary-constant	libclamav/nsis/nulsft.c	862	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset > ctx->fmap->len) {
 boundary-constant	libclamav/ole2_extract.c	1243	                if (prop_block[idx].size > SIZE_MAX) {
-boundary-constant	libclamav/ole2_extract.c	2989	    if (passwordLen > ((SIZE_MAX - verifier->salt_size) / 2)) {
+boundary-constant	libclamav/ole2_extract.c	2990	    if (passwordLen > ((SIZE_MAX - verifier->salt_size) / 2)) {
 boundary-constant	libclamav/ole2_extract.c	539	    if (block_offset > SIZE_MAX || (size_t)block_offset >= hdr->m_length) {
 boundary-constant	libclamav/ole2_extract.c	835	            return SIZE_MAX;
 boundary-constant	libclamav/ole2_extract.c	843	    return fib_offset > SIZE_MAX ? SIZE_MAX : (size_t)fib_offset;
@@ -22464,7 +22464,7 @@ boundary-constant	libclamav/upx.c	602	                if (backsize + oob > UINT3
 boundary-constant	libclamav/upx.c	609	                    if (backsize + oob > UINT32_MAX / 2)
 boundary-constant	libclamav/upx.c	615	                if (backsize > UINT32_MAX - 2)
 boundary-constant	libclamav/upx.c	624	        if (backsize > UINT32_MAX - 2)
-boundary-constant	libclamav/vba_extract.c	2371	    if (status != CL_SUCCESS || output_size > SIZE_MAX) {
+boundary-constant	libclamav/vba_extract.c	2373	    if (status != CL_SUCCESS || output_size > SIZE_MAX) {
 boundary-constant	libclamav/vba_extract.c	63	#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
 boundary-constant	libclamav/vba_extract.c	812	    if (output_size > CLI_MAX_ALLOCATION || output_size > SIZE_MAX) {
 boundary-constant	libclamav/vba_extract.c	921	        if (data_len_u64 == 0 || data_len_u64 > SIZE_MAX) {
@@ -23072,7 +23072,7 @@ narrowing-cast	libclamav/tnef.c	425	               (int)length);
 narrowing-cast	libclamav/tnef.c	522	                       tag, type, (int)length);
 narrowing-cast	libclamav/unarj.c	449	        if ((int)len <= tablebits) {
 narrowing-cast	libclamav/untar.c	392	        cli_dbgmsg("cli_untar: pos = %lu\n", (unsigned long)pos);
-narrowing-cast	libclamav/vba_extract.c	2861	            cli_dbgmsg("length: %d\n", (int)length);
+narrowing-cast	libclamav/vba_extract.c	2863	            cli_dbgmsg("length: %d\n", (int)length);
 narrowing-cast	libclamav/vba_extract.c	306	        cli_dbgmsg("offset: %lu\n", (unsigned long)offset);
 narrowing-cast	libclammspack/mspack/cabd.c	1343	      unsigned int sum2 = cabd_checksum(d->i_end, (unsigned int) len, 0);
 narrowing-cast	libclammspack/mspack/cabd.c	674	    if (sys->read(fh, &buf[0], (int) length) != (int) length) {
@@ -24445,18 +24445,18 @@ format-width	libclamav/ole2_extract.c	1454	            cli_dbgmsg("OLE2 [handler
 format-width	libclamav/ole2_extract.c	1714	                        cli_dbgmsg("[scan_biff_for_xlm_macros_and_images] Unexpected state value %d\n", (int)state->state);
 format-width	libclamav/ole2_extract.c	1765	                                cli_errmsg("OLE2 [scan_for_xlm_macros_and_images]: Unable to allocate memory for buff: %u\n", 1 << hdr->log2_big_block_size);
 format-width	libclamav/ole2_extract.c	1780	            cli_dbgmsg("OLE2 [scan_for_xlm_macros_and_images]: Max block number for file size exceeded: %d\n", current_block);
-format-width	libclamav/ole2_extract.c	2158	    cli_dbgmsg("scan_mso_stream: stream prefix = %08x(%d)\n", prefix, prefix);
-format-width	libclamav/ole2_extract.c	2230	    cli_dbgmsg("scan_mso_stream: Decompressed %llu bytes to %s\n", (long long unsigned)outsize, tmpname);
-format-width	libclamav/ole2_extract.c	2233	        cli_warnmsg("scan_mso_stream: declared prefix != inflated stream size, %llu != %llu\n",
-format-width	libclamav/ole2_extract.c	2239	    cli_dbgmsg("scan_mso_stream: declared prefix == inflated stream size, %llu == %llu\n",
-format-width	libclamav/ole2_extract.c	2336	            cli_dbgmsg("OLE2 [handler_otf]: Max block number for file size exceeded: %d\n", current_block);
-format-width	libclamav/ole2_extract.c	2540	        cli_errmsg("%s::%d::key NULL\n", __FUNCTION__, __LINE__);
-format-width	libclamav/ole2_extract.c	2614	            cli_dbgmsg("OLE2 [handler_otf]: Max block number for file size exceeded: %d\n", current_block);
+format-width	libclamav/ole2_extract.c	2159	    cli_dbgmsg("scan_mso_stream: stream prefix = %08x(%d)\n", prefix, prefix);
+format-width	libclamav/ole2_extract.c	2231	    cli_dbgmsg("scan_mso_stream: Decompressed %llu bytes to %s\n", (long long unsigned)outsize, tmpname);
+format-width	libclamav/ole2_extract.c	2234	        cli_warnmsg("scan_mso_stream: declared prefix != inflated stream size, %llu != %llu\n",
+format-width	libclamav/ole2_extract.c	2240	    cli_dbgmsg("scan_mso_stream: declared prefix == inflated stream size, %llu == %llu\n",
+format-width	libclamav/ole2_extract.c	2337	            cli_dbgmsg("OLE2 [handler_otf]: Max block number for file size exceeded: %d\n", current_block);
+format-width	libclamav/ole2_extract.c	2541	        cli_errmsg("%s::%d::key NULL\n", __FUNCTION__, __LINE__);
+format-width	libclamav/ole2_extract.c	2615	            cli_dbgmsg("OLE2 [handler_otf]: Max block number for file size exceeded: %d\n", current_block);
 format-width	libclamav/ole2_extract.c	314	                                cli_errmsg("OLE2 [cli_ole2_get_property_name2]: Unable to allocate memory for newname: %u\n", size * 5));
-format-width	libclamav/ole2_extract.c	3545	        cli_dbgmsg("CAN'T PARSE: Invalid big block size (2^%u)\n", hdr.log2_big_block_size);
-format-width	libclamav/ole2_extract.c	3551	        cli_dbgmsg("CAN'T PARSE: Invalid small block size (2^%u)\n", hdr.log2_small_block_size);
-format-width	libclamav/ole2_extract.c	3557	        cli_dbgmsg("WARNING: Untested sbat cutoff (%u); data may not extract correctly\n", hdr.sbat_cutoff);
-format-width	libclamav/ole2_extract.c	3611	    cli_dbgmsg("Max block number: %lu\n", (unsigned long int)hdr.max_block_no);
+format-width	libclamav/ole2_extract.c	3546	        cli_dbgmsg("CAN'T PARSE: Invalid big block size (2^%u)\n", hdr.log2_big_block_size);
+format-width	libclamav/ole2_extract.c	3552	        cli_dbgmsg("CAN'T PARSE: Invalid small block size (2^%u)\n", hdr.log2_small_block_size);
+format-width	libclamav/ole2_extract.c	3558	        cli_dbgmsg("WARNING: Untested sbat cutoff (%u); data may not extract correctly\n", hdr.sbat_cutoff);
+format-width	libclamav/ole2_extract.c	3612	    cli_dbgmsg("Max block number: %lu\n", (unsigned long int)hdr.max_block_no);
 format-width	libclamav/ole2_extract.c	366	                                cli_errmsg("OLE2 [get_property_name]: Unable to allocate memory for newname %u\n", size));
 format-width	libclamav/ole2_extract.c	396	        cli_dbgmsg("[err name len: %d]\n", property->name_size);
 format-width	libclamav/ole2_extract.c	451	    cli_dbgmsg("Byte Order:\t\t%d\n", hdr->byte_order);
@@ -25142,17 +25142,17 @@ format-width	libclamav/vba_extract.c	1295	                int buf_length       =
 format-width	libclamav/vba_extract.c	1313	                int buf_length       = snprintf(buf, sizeof(buf), "REM PROJECTMODULES: %u\n", modules);
 format-width	libclamav/vba_extract.c	150	        cli_dbgmsg("get_unicode_name: odd number of bytes %d\n", size);
 format-width	libclamav/vba_extract.c	1777	                    snprintf(module_filename, sizeof(module_filename), "%s" PATHSEP "%s_%u", dir, module_hash, i);
-format-width	libclamav/vba_extract.c	2011	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s_%u", dir, hash, which);
-format-width	libclamav/vba_extract.c	2108	    cli_dbgmsg("vba_readdir: VBA Record count %d\n", record_count);
+format-width	libclamav/vba_extract.c	2013	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s_%u", dir, hash, which);
+format-width	libclamav/vba_extract.c	2110	    cli_dbgmsg("vba_readdir: VBA Record count %d\n", record_count);
 format-width	libclamav/vba_extract.c	272	        cli_dbgmsg("length: %d, name: %s\n", length, (name) ? name : "[null]");
-format-width	libclamav/vba_extract.c	2861	            cli_dbgmsg("length: %d\n", (int)length);
-format-width	libclamav/vba_extract.c	3029	        cli_warnmsg("read %u macro_entries failed\n", count);
+format-width	libclamav/vba_extract.c	2863	            cli_dbgmsg("length: %d\n", (int)length);
+format-width	libclamav/vba_extract.c	3031	        cli_warnmsg("read %u macro_entries failed\n", count);
 format-width	libclamav/vba_extract.c	306	        cli_dbgmsg("offset: %lu\n", (unsigned long)offset);
-format-width	libclamav/vba_extract.c	3061	    cli_dbgmsg("macro count: %d\n", macro_info->count);
-format-width	libclamav/vba_extract.c	3148	    cli_dbgmsg("oxo3 records1: %d\n", count);
-format-width	libclamav/vba_extract.c	3176	    cli_dbgmsg("oxo3 records2: %d\n", count);
-format-width	libclamav/vba_extract.c	3189	    cli_dbgmsg("menu_info count: %d\n", count);
-format-width	libclamav/vba_extract.c	3266	    cli_dbgmsg("intnames count: %u\n", (unsigned int)count);
+format-width	libclamav/vba_extract.c	3063	    cli_dbgmsg("macro count: %d\n", macro_info->count);
+format-width	libclamav/vba_extract.c	3150	    cli_dbgmsg("oxo3 records1: %d\n", count);
+format-width	libclamav/vba_extract.c	3178	    cli_dbgmsg("oxo3 records2: %d\n", count);
+format-width	libclamav/vba_extract.c	3191	    cli_dbgmsg("menu_info count: %d\n", count);
+format-width	libclamav/vba_extract.c	3268	    cli_dbgmsg("intnames count: %u\n", (unsigned int)count);
 format-width	libclamav/vba_extract.c	887	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s_%u", dir, hash, which);
 format-width	libclamav/www.c	227	        snprintf(chunkedlen, sizeof(chunkedlen), "%zu", strlen(encoded));
 format-width	libclamav/xar.c	1013	            cli_dbgmsg("cli_scanxar: inflateInit error %i\n", rc);
@@ -31846,98 +31846,98 @@ offset-size-arithmetic	libclamav/ole2_extract.c	1956	                        off
 offset-size-arithmetic	libclamav/ole2_extract.c	1957	                                 (prop->start_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
 offset-size-arithmetic	libclamav/ole2_extract.c	1960	                        if (offset + 40 >= 1 << hdr->log2_big_block_size)
 offset-size-arithmetic	libclamav/ole2_extract.c	1963	                        if (!ole2_read_block(hdr, hwp_check, 1 << hdr->log2_big_block_size, prop->start_block)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1987	                        hwp_new->version = ole2_endian_convert_32(hwp_new->version);
-offset-size-arithmetic	libclamav/ole2_extract.c	1988	                        hwp_new->flags   = ole2_endian_convert_32(hwp_new->flags);
-offset-size-arithmetic	libclamav/ole2_extract.c	2033	    if (fsize == -1) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2040	    if (lseek(fd, 4, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2063	    bytes_read = fmap_readn_full(input, prefix, 0, sizeof(*prefix));
-offset-size-arithmetic	libclamav/ole2_extract.c	2064	    if (bytes_read == sizeof(*prefix))
-offset-size-arithmetic	libclamav/ole2_extract.c	2067	    if (bytes_read == (size_t)-1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1988	                        hwp_new->version = ole2_endian_convert_32(hwp_new->version);
+offset-size-arithmetic	libclamav/ole2_extract.c	1989	                        hwp_new->flags   = ole2_endian_convert_32(hwp_new->flags);
+offset-size-arithmetic	libclamav/ole2_extract.c	2034	    if (fsize == -1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2041	    if (lseek(fd, 4, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2064	    bytes_read = fmap_readn_full(input, prefix, 0, sizeof(*prefix));
+offset-size-arithmetic	libclamav/ole2_extract.c	2065	    if (bytes_read == sizeof(*prefix))
+offset-size-arithmetic	libclamav/ole2_extract.c	2068	    if (bytes_read == (size_t)-1) {
 offset-size-arithmetic	libclamav/ole2_extract.c	211	uint32_t ole2_list_size(ole2_list_t *list);
-offset-size-arithmetic	libclamav/ole2_extract.c	2157	    off_in += sizeof(uint32_t);
-offset-size-arithmetic	libclamav/ole2_extract.c	2171	            if (off_in >= 0 && (uint64_t)off_in > (uint64_t)input->len) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2177	            if (bytes_read == (size_t)-1) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2190	            off_in += bytes_read;
-offset-size-arithmetic	libclamav/ole2_extract.c	2195	            cl_error_t limitret = cli_checklimits("MSO", ctx, outsize + count, 0, 0);
-offset-size-arithmetic	libclamav/ole2_extract.c	2218	            outsize += count;
+offset-size-arithmetic	libclamav/ole2_extract.c	2158	    off_in += sizeof(uint32_t);
+offset-size-arithmetic	libclamav/ole2_extract.c	2172	            if (off_in >= 0 && (uint64_t)off_in > (uint64_t)input->len) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2178	            if (bytes_read == (size_t)-1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2191	            off_in += bytes_read;
+offset-size-arithmetic	libclamav/ole2_extract.c	2196	            cl_error_t limitret = cli_checklimits("MSO", ctx, outsize + count, 0, 0);
+offset-size-arithmetic	libclamav/ole2_extract.c	2219	            outsize += count;
 offset-size-arithmetic	libclamav/ole2_extract.c	229	ole2_list_size(ole2_list_t *list)
-offset-size-arithmetic	libclamav/ole2_extract.c	2311	    len           = prop->size;
-offset-size-arithmetic	libclamav/ole2_extract.c	2354	        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2363	            offset = (1 << hdr->log2_small_block_size) * (current_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
-offset-size-arithmetic	libclamav/ole2_extract.c	2368	            if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2374	            len -= MIN(len, 1 << hdr->log2_small_block_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2391	            if (cli_writen(ofd, buff, MIN(len, (1 << hdr->log2_big_block_size))) != MIN(len, (1 << hdr->log2_big_block_size))) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2402	            len -= MIN(len, (1 << hdr->log2_big_block_size));
-offset-size-arithmetic	libclamav/ole2_extract.c	2417	    if (lseek(ofd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2510	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/e5ad39b8-9bc1-4a19-bad3-44e6246d21e6
-offset-size-arithmetic	libclamav/ole2_extract.c	2551	    CLI_MAX_MALLOC_OR_GOTO_DONE(rk, RKLENGTH(key->key_length_bits) * sizeof(uint32_t), ret = CL_EMEM);
-offset-size-arithmetic	libclamav/ole2_extract.c	2582	    len           = prop->size;
-offset-size-arithmetic	libclamav/ole2_extract.c	2632	        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2641	            offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
-offset-size-arithmetic	libclamav/ole2_extract.c	2647	            if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2652	            stream_bytes_read += MIN(len, 1 << hdr->log2_small_block_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2653	            len -= MIN(len, 1 << hdr->log2_small_block_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2662	            uint32_t bytesToWrite  = (uint32_t)MIN((uint64_t)len - bytesRead, (uint64_t)blockSize);
-offset-size-arithmetic	libclamav/ole2_extract.c	2691	            /*Make sure we don't write more data than the file is actually supposed to be.*/
-offset-size-arithmetic	libclamav/ole2_extract.c	2736	    if (lseek(ofd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2891	    dst->version_major = ole2_endian_convert_16(dst->version_major);
-offset-size-arithmetic	libclamav/ole2_extract.c	2892	    dst->version_minor = ole2_endian_convert_16(dst->version_minor);
-offset-size-arithmetic	libclamav/ole2_extract.c	2894	    dst->flags = ole2_endian_convert_32(dst->flags);
-offset-size-arithmetic	libclamav/ole2_extract.c	2895	    dst->size  = ole2_endian_convert_32(dst->size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2897	    dst->encryptionInfo.flags           = ole2_endian_convert_32(dst->encryptionInfo.flags);
-offset-size-arithmetic	libclamav/ole2_extract.c	2898	    dst->encryptionInfo.sizeExtra       = ole2_endian_convert_32(dst->encryptionInfo.sizeExtra);
-offset-size-arithmetic	libclamav/ole2_extract.c	2899	    dst->encryptionInfo.algorithmID     = ole2_endian_convert_32(dst->encryptionInfo.algorithmID);
-offset-size-arithmetic	libclamav/ole2_extract.c	2900	    dst->encryptionInfo.algorithmIDHash = ole2_endian_convert_32(dst->encryptionInfo.algorithmIDHash);
-offset-size-arithmetic	libclamav/ole2_extract.c	2901	    dst->encryptionInfo.keySize         = ole2_endian_convert_32(dst->encryptionInfo.keySize);
-offset-size-arithmetic	libclamav/ole2_extract.c	2902	    dst->encryptionInfo.providerType    = ole2_endian_convert_32(dst->encryptionInfo.providerType);
-offset-size-arithmetic	libclamav/ole2_extract.c	2903	    dst->encryptionInfo.reserved1       = ole2_endian_convert_32(dst->encryptionInfo.reserved1);
-offset-size-arithmetic	libclamav/ole2_extract.c	2904	    dst->encryptionInfo.reserved2       = ole2_endian_convert_32(dst->encryptionInfo.reserved2);
-offset-size-arithmetic	libclamav/ole2_extract.c	2910	    dst->salt_size          = ole2_endian_convert_32(dst->salt_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2911	    dst->verifier_hash_size = ole2_endian_convert_32(dst->verifier_hash_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2950	    uint8_t sha1[sizeof(uint32_t) + SHA1_HASH_SIZE + sizeof(uint32_t)] = {0};
-offset-size-arithmetic	libclamav/ole2_extract.c	2981	    if (!key_length_valid_aes_bits(key->key_length_bits)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2982	        cli_errmsg("ole2: Invalid key length '0x%x'\n", key->key_length_bits / 8);
-offset-size-arithmetic	libclamav/ole2_extract.c	2986	    memset(key->key, 0, key->key_length_bits / 8);
-offset-size-arithmetic	libclamav/ole2_extract.c	2989	    if (passwordLen > ((SIZE_MAX - verifier->salt_size) / 2)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2994	    bufLen = verifier->salt_size + (passwordLen * 2);
-offset-size-arithmetic	libclamav/ole2_extract.c	3039	    if (verifier->salt_size > sizeof(verifier->salt)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3040	        cli_dbgmsg("ole2: Invalid salt length '0x%x'\n", verifier->salt_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	3041	        tmp = sizeof(verifier->salt);
-offset-size-arithmetic	libclamav/ole2_extract.c	3047	        buffer[verifier->salt_size + (j * 2)] = (uint8_t)password[j];
-offset-size-arithmetic	libclamav/ole2_extract.c	3078	    tmp = key->key_length_bits / 8;
-offset-size-arithmetic	libclamav/ole2_extract.c	3079	    if (tmp > sizeof(key->key)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3080	        cli_warnmsg("ole2: Invalid key length 0x%x\n", key->key_length_bits / 8);
-offset-size-arithmetic	libclamav/ole2_extract.c	3081	        tmp = sizeof(key->key);
-offset-size-arithmetic	libclamav/ole2_extract.c	3106	static bool aes_128ecb_decrypt(const unsigned char *in, size_t length, unsigned char *out, const encryption_key_t *const key)
+offset-size-arithmetic	libclamav/ole2_extract.c	2312	    len           = prop->size;
+offset-size-arithmetic	libclamav/ole2_extract.c	2355	        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2364	            offset = (1 << hdr->log2_small_block_size) * (current_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
+offset-size-arithmetic	libclamav/ole2_extract.c	2369	            if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2375	            len -= MIN(len, 1 << hdr->log2_small_block_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2392	            if (cli_writen(ofd, buff, MIN(len, (1 << hdr->log2_big_block_size))) != MIN(len, (1 << hdr->log2_big_block_size))) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2403	            len -= MIN(len, (1 << hdr->log2_big_block_size));
+offset-size-arithmetic	libclamav/ole2_extract.c	2418	    if (lseek(ofd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2511	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/e5ad39b8-9bc1-4a19-bad3-44e6246d21e6
+offset-size-arithmetic	libclamav/ole2_extract.c	2552	    CLI_MAX_MALLOC_OR_GOTO_DONE(rk, RKLENGTH(key->key_length_bits) * sizeof(uint32_t), ret = CL_EMEM);
+offset-size-arithmetic	libclamav/ole2_extract.c	2583	    len           = prop->size;
+offset-size-arithmetic	libclamav/ole2_extract.c	2633	        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2642	            offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
+offset-size-arithmetic	libclamav/ole2_extract.c	2648	            if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2653	            stream_bytes_read += MIN(len, 1 << hdr->log2_small_block_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2654	            len -= MIN(len, 1 << hdr->log2_small_block_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2663	            uint32_t bytesToWrite  = (uint32_t)MIN((uint64_t)len - bytesRead, (uint64_t)blockSize);
+offset-size-arithmetic	libclamav/ole2_extract.c	2692	            /*Make sure we don't write more data than the file is actually supposed to be.*/
+offset-size-arithmetic	libclamav/ole2_extract.c	2737	    if (lseek(ofd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2892	    dst->version_major = ole2_endian_convert_16(dst->version_major);
+offset-size-arithmetic	libclamav/ole2_extract.c	2893	    dst->version_minor = ole2_endian_convert_16(dst->version_minor);
+offset-size-arithmetic	libclamav/ole2_extract.c	2895	    dst->flags = ole2_endian_convert_32(dst->flags);
+offset-size-arithmetic	libclamav/ole2_extract.c	2896	    dst->size  = ole2_endian_convert_32(dst->size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2898	    dst->encryptionInfo.flags           = ole2_endian_convert_32(dst->encryptionInfo.flags);
+offset-size-arithmetic	libclamav/ole2_extract.c	2899	    dst->encryptionInfo.sizeExtra       = ole2_endian_convert_32(dst->encryptionInfo.sizeExtra);
+offset-size-arithmetic	libclamav/ole2_extract.c	2900	    dst->encryptionInfo.algorithmID     = ole2_endian_convert_32(dst->encryptionInfo.algorithmID);
+offset-size-arithmetic	libclamav/ole2_extract.c	2901	    dst->encryptionInfo.algorithmIDHash = ole2_endian_convert_32(dst->encryptionInfo.algorithmIDHash);
+offset-size-arithmetic	libclamav/ole2_extract.c	2902	    dst->encryptionInfo.keySize         = ole2_endian_convert_32(dst->encryptionInfo.keySize);
+offset-size-arithmetic	libclamav/ole2_extract.c	2903	    dst->encryptionInfo.providerType    = ole2_endian_convert_32(dst->encryptionInfo.providerType);
+offset-size-arithmetic	libclamav/ole2_extract.c	2904	    dst->encryptionInfo.reserved1       = ole2_endian_convert_32(dst->encryptionInfo.reserved1);
+offset-size-arithmetic	libclamav/ole2_extract.c	2905	    dst->encryptionInfo.reserved2       = ole2_endian_convert_32(dst->encryptionInfo.reserved2);
+offset-size-arithmetic	libclamav/ole2_extract.c	2911	    dst->salt_size          = ole2_endian_convert_32(dst->salt_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2912	    dst->verifier_hash_size = ole2_endian_convert_32(dst->verifier_hash_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2951	    uint8_t sha1[sizeof(uint32_t) + SHA1_HASH_SIZE + sizeof(uint32_t)] = {0};
+offset-size-arithmetic	libclamav/ole2_extract.c	2982	    if (!key_length_valid_aes_bits(key->key_length_bits)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2983	        cli_errmsg("ole2: Invalid key length '0x%x'\n", key->key_length_bits / 8);
+offset-size-arithmetic	libclamav/ole2_extract.c	2987	    memset(key->key, 0, key->key_length_bits / 8);
+offset-size-arithmetic	libclamav/ole2_extract.c	2990	    if (passwordLen > ((SIZE_MAX - verifier->salt_size) / 2)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2995	    bufLen = verifier->salt_size + (passwordLen * 2);
+offset-size-arithmetic	libclamav/ole2_extract.c	3040	    if (verifier->salt_size > sizeof(verifier->salt)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3041	        cli_dbgmsg("ole2: Invalid salt length '0x%x'\n", verifier->salt_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	3042	        tmp = sizeof(verifier->salt);
+offset-size-arithmetic	libclamav/ole2_extract.c	3048	        buffer[verifier->salt_size + (j * 2)] = (uint8_t)password[j];
+offset-size-arithmetic	libclamav/ole2_extract.c	3079	    tmp = key->key_length_bits / 8;
+offset-size-arithmetic	libclamav/ole2_extract.c	3080	    if (tmp > sizeof(key->key)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3081	        cli_warnmsg("ole2: Invalid key length 0x%x\n", key->key_length_bits / 8);
+offset-size-arithmetic	libclamav/ole2_extract.c	3082	        tmp = sizeof(key->key);
+offset-size-arithmetic	libclamav/ole2_extract.c	3107	static bool aes_128ecb_decrypt(const unsigned char *in, size_t length, unsigned char *out, const encryption_key_t *const key)
 offset-size-arithmetic	libclamav/ole2_extract.c	313	    CLI_MAX_MALLOC_OR_GOTO_DONE(newname, size * 5 + 1,
 offset-size-arithmetic	libclamav/ole2_extract.c	314	                                cli_errmsg("OLE2 [cli_ole2_get_property_name2]: Unable to allocate memory for newname: %u\n", size * 5));
-offset-size-arithmetic	libclamav/ole2_extract.c	3144	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/e5ad39b8-9bc1-4a19-bad3-44e6246d21e6
-offset-size-arithmetic	libclamav/ole2_extract.c	3156	    actual_hash_size = verifier->verifier_hash_size;
-offset-size-arithmetic	libclamav/ole2_extract.c	3157	    if (actual_hash_size > sizeof(verifier->encrypted_verifier_hash)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3158	        cli_dbgmsg("ole2: Invalid encrypted verifier hash length 0x%x\n", verifier->verifier_hash_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	3159	        actual_hash_size = sizeof(verifier->encrypted_verifier_hash);
-offset-size-arithmetic	libclamav/ole2_extract.c	3166	            if (!aes_128ecb_decrypt(verifier->encrypted_verifier, sizeof(verifier->encrypted_verifier), decrypted, key)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3145	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/e5ad39b8-9bc1-4a19-bad3-44e6246d21e6
+offset-size-arithmetic	libclamav/ole2_extract.c	3157	    actual_hash_size = verifier->verifier_hash_size;
+offset-size-arithmetic	libclamav/ole2_extract.c	3158	    if (actual_hash_size > sizeof(verifier->encrypted_verifier_hash)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3159	        cli_dbgmsg("ole2: Invalid encrypted verifier hash length 0x%x\n", verifier->verifier_hash_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	3160	        actual_hash_size = sizeof(verifier->encrypted_verifier_hash);
+offset-size-arithmetic	libclamav/ole2_extract.c	3167	            if (!aes_128ecb_decrypt(verifier->encrypted_verifier, sizeof(verifier->encrypted_verifier), decrypted, key)) {
 offset-size-arithmetic	libclamav/ole2_extract.c	317	    /* size-2 to ignore trailing NULL */
-offset-size-arithmetic	libclamav/ole2_extract.c	3172	            (void)cl_sha1(decrypted, sizeof(verifier->encrypted_verifier), sha, NULL);
+offset-size-arithmetic	libclamav/ole2_extract.c	3173	            (void)cl_sha1(decrypted, sizeof(verifier->encrypted_verifier), sha, NULL);
 offset-size-arithmetic	libclamav/ole2_extract.c	318	    for (i = 0; i < size - 2; i += 2) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3222	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/dca653b5-b93b-48df-8e1e-0fb9e1c83b0f
-offset-size-arithmetic	libclamav/ole2_extract.c	3223	 * https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/2895eba1-acb1-4624-9bde-2cdad3fea015
-offset-size-arithmetic	libclamav/ole2_extract.c	3265	    // https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/200a3d61-1ab4-4402-ae11-0290b28ab9cb
-offset-size-arithmetic	libclamav/ole2_extract.c	3374	    csp_name_max_u16 = remainingBytes / sizeof(*encryptionInfo_CSPName);
-offset-size-arithmetic	libclamav/ole2_extract.c	3387	    CSPName_length = (idx + 1) * sizeof(*encryptionInfo_CSPName);
-offset-size-arithmetic	libclamav/ole2_extract.c	3477	        if (ctx->engine->maxscansize > ctx->scansize) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3478	            scansize = ctx->engine->maxscansize - ctx->scansize;
-offset-size-arithmetic	libclamav/ole2_extract.c	3491	     * field offset avoids counting tail padding added by parser state. */
-offset-size-arithmetic	libclamav/ole2_extract.c	3494	    if ((size_t)(ctx->fmap->len) < (size_t)(hdr_size)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3499	    hdr.m_length = hdr.map->len;
-offset-size-arithmetic	libclamav/ole2_extract.c	3525	    hdr.sbat_root_start = -1;
+offset-size-arithmetic	libclamav/ole2_extract.c	3223	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/dca653b5-b93b-48df-8e1e-0fb9e1c83b0f
+offset-size-arithmetic	libclamav/ole2_extract.c	3224	 * https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/2895eba1-acb1-4624-9bde-2cdad3fea015
+offset-size-arithmetic	libclamav/ole2_extract.c	3266	    // https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/200a3d61-1ab4-4402-ae11-0290b28ab9cb
+offset-size-arithmetic	libclamav/ole2_extract.c	3375	    csp_name_max_u16 = remainingBytes / sizeof(*encryptionInfo_CSPName);
+offset-size-arithmetic	libclamav/ole2_extract.c	3388	    CSPName_length = (idx + 1) * sizeof(*encryptionInfo_CSPName);
+offset-size-arithmetic	libclamav/ole2_extract.c	3478	        if (ctx->engine->maxscansize > ctx->scansize) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3479	            scansize = ctx->engine->maxscansize - ctx->scansize;
+offset-size-arithmetic	libclamav/ole2_extract.c	3492	     * field offset avoids counting tail padding added by parser state. */
+offset-size-arithmetic	libclamav/ole2_extract.c	3495	    if ((size_t)(ctx->fmap->len) < (size_t)(hdr_size)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3500	    hdr.m_length = hdr.map->len;
+offset-size-arithmetic	libclamav/ole2_extract.c	3526	    hdr.sbat_root_start = -1;
 offset-size-arithmetic	libclamav/ole2_extract.c	356	    int csize          = size >> 1;
-offset-size-arithmetic	libclamav/ole2_extract.c	3563	    encryption_offset = ((size_t)4) << hdr.log2_big_block_size;
-offset-size-arithmetic	libclamav/ole2_extract.c	3565	        sizeof(encryption_info_stream_standard_t) <= hdr.m_length - encryption_offset) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3566	        size_t encryption_window = MIN(hdr.m_length - encryption_offset,
-offset-size-arithmetic	libclamav/ole2_extract.c	3585	        const size_t big_block_size = (size_t)1 << hdr.log2_big_block_size;
-offset-size-arithmetic	libclamav/ole2_extract.c	3595	        data_block_count = (hdr.map->len - data_start) / big_block_size;
-offset-size-arithmetic	libclamav/ole2_extract.c	3601	        if (data_block_count > (size_t)INT32_MAX + 1U) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3564	    encryption_offset = ((size_t)4) << hdr.log2_big_block_size;
+offset-size-arithmetic	libclamav/ole2_extract.c	3566	        sizeof(encryption_info_stream_standard_t) <= hdr.m_length - encryption_offset) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3567	        size_t encryption_window = MIN(hdr.m_length - encryption_offset,
+offset-size-arithmetic	libclamav/ole2_extract.c	3586	        const size_t big_block_size = (size_t)1 << hdr.log2_big_block_size;
+offset-size-arithmetic	libclamav/ole2_extract.c	3596	        data_block_count = (hdr.map->len - data_start) / big_block_size;
+offset-size-arithmetic	libclamav/ole2_extract.c	3602	        if (data_block_count > (size_t)INT32_MAX + 1U) {
 offset-size-arithmetic	libclamav/ole2_extract.c	396	        cli_dbgmsg("[err name len: %d]\n", property->name_size);
 offset-size-arithmetic	libclamav/ole2_extract.c	401	    spam[sizeof(spam) - 1] = '\0';
 offset-size-arithmetic	libclamav/ole2_extract.c	406	            strncat(spam, " [file] ", sizeof(spam) - 1 - strlen(spam));
@@ -35673,115 +35673,115 @@ offset-size-arithmetic	libclamav/vba_extract.c	1760	                stream_name 
 offset-size-arithmetic	libclamav/vba_extract.c	1778	                    module_filename[sizeof(module_filename) - 1] = '\0';
 offset-size-arithmetic	libclamav/vba_extract.c	1785	                    off_t module_output_offset = lseek(*tempfd, 0, SEEK_CUR);
 offset-size-arithmetic	libclamav/vba_extract.c	1790	                    if (module_output_offset == (off_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	1866	                    if (CL_SUCCESS == cli_codepage_to_utf8((char *)module_data, module_data_size, codepage, (char **)&module_data_utf8, &module_data_utf8_size)) {
-offset-size-arithmetic	libclamav/vba_extract.c	1872	                            ctx->engine->cb_vba(module_data_utf8, module_data_utf8_size, ctx->cb_ctx);
-offset-size-arithmetic	libclamav/vba_extract.c	1878	                            ctx->engine->cb_vba(module_data, module_data_size, ctx->cb_ctx);
-offset-size-arithmetic	libclamav/vba_extract.c	1905	                data_offset += size;
-offset-size-arithmetic	libclamav/vba_extract.c	2012	    fullname[sizeof(fullname) - 1] = '\0';
-offset-size-arithmetic	libclamav/vba_extract.c	2028	    if ((seekback = lseek(fd, 0, SEEK_CUR)) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2033	    if (lseek(fd, sizeof(struct vba56_header), SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2046	        if (lseek(fd, seekback, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2047	            cli_dbgmsg("vba_readdir: call to lseek() while guessing big-endian has failed\n");
-offset-size-arithmetic	libclamav/vba_extract.c	2065	    if (!seekandread(fd, -3, SEEK_CUR, &ffff, sizeof(uint16_t))) {
+offset-size-arithmetic	libclamav/vba_extract.c	1868	                    if (CL_SUCCESS == cli_codepage_to_utf8((char *)module_data, module_data_size, codepage, (char **)&module_data_utf8, &module_data_utf8_size)) {
+offset-size-arithmetic	libclamav/vba_extract.c	1874	                            ctx->engine->cb_vba(module_data_utf8, module_data_utf8_size, ctx->cb_ctx);
+offset-size-arithmetic	libclamav/vba_extract.c	1880	                            ctx->engine->cb_vba(module_data, module_data_size, ctx->cb_ctx);
+offset-size-arithmetic	libclamav/vba_extract.c	1907	                data_offset += size;
+offset-size-arithmetic	libclamav/vba_extract.c	2014	    fullname[sizeof(fullname) - 1] = '\0';
+offset-size-arithmetic	libclamav/vba_extract.c	2030	    if ((seekback = lseek(fd, 0, SEEK_CUR)) == -1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2035	    if (lseek(fd, sizeof(struct vba56_header), SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2048	        if (lseek(fd, seekback, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2049	            cli_dbgmsg("vba_readdir: call to lseek() while guessing big-endian has failed\n");
+offset-size-arithmetic	libclamav/vba_extract.c	2067	    if (!seekandread(fd, -3, SEEK_CUR, &ffff, sizeof(uint16_t))) {
 offset-size-arithmetic	libclamav/vba_extract.c	207	        if (lseek(fd, -MIDDLE_SIZE, SEEK_CUR) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2070	        if (lseek(fd, 1, SEEK_CUR) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2083	        if (lseek(fd, ffff, SEEK_CUR) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2098	    if (lseek(fd, ffff + 100, SEEK_CUR) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2169	        if (lseek(fd, length, SEEK_CUR) == (off_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2177	            if (lseek(fd, 2, SEEK_CUR) == (off_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2183	            if (lseek(fd, ffff + 8, SEEK_CUR) == (off_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2188	            if (lseek(fd, ffff + 10, SEEK_CUR) == (off_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2195	        if (lseek(fd, (8 * byte_count) + 5, SEEK_CUR) == (off_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2203	        if (lseek(fd, 2, SEEK_CUR) == (off_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2227	                                   const unsigned char *data, size_t data_size, uint64_t *output_size)
-offset-size-arithmetic	libclamav/vba_extract.c	2233	    if ((uint64_t)data_size > UINT64_MAX - *output_size)
-offset-size-arithmetic	libclamav/vba_extract.c	2239	    *output_size += (uint64_t)data_size;
-offset-size-arithmetic	libclamav/vba_extract.c	2261	    if (lseek(fd, offset, SEEK_SET) == (off_t)-1 ||
-offset-size-arithmetic	libclamav/vba_extract.c	2262	        lseek(fd, 3, SEEK_CUR) == (off_t)-1) /* 1byte ?? , 2byte length ?? */
-offset-size-arithmetic	libclamav/vba_extract.c	2277	                shift    = 12 - (winpos > 0x10) - (winpos > 0x20) - (winpos > 0x40) - (winpos > 0x80) - (winpos > 0x100) - (winpos > 0x200) - (winpos > 0x400) - (winpos > 0x800);
-offset-size-arithmetic	libclamav/vba_extract.c	2278	                len      = (uint16_t)((token & ((1 << shift) - 1)) + 3);
+offset-size-arithmetic	libclamav/vba_extract.c	2072	        if (lseek(fd, 1, SEEK_CUR) == -1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2085	        if (lseek(fd, ffff, SEEK_CUR) == -1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2100	    if (lseek(fd, ffff + 100, SEEK_CUR) == -1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2171	        if (lseek(fd, length, SEEK_CUR) == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2179	            if (lseek(fd, 2, SEEK_CUR) == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2185	            if (lseek(fd, ffff + 8, SEEK_CUR) == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2190	            if (lseek(fd, ffff + 10, SEEK_CUR) == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2197	        if (lseek(fd, (8 * byte_count) + 5, SEEK_CUR) == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2205	        if (lseek(fd, 2, SEEK_CUR) == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2229	                                   const unsigned char *data, size_t data_size, uint64_t *output_size)
+offset-size-arithmetic	libclamav/vba_extract.c	2235	    if ((uint64_t)data_size > UINT64_MAX - *output_size)
+offset-size-arithmetic	libclamav/vba_extract.c	2241	    *output_size += (uint64_t)data_size;
+offset-size-arithmetic	libclamav/vba_extract.c	2263	    if (lseek(fd, offset, SEEK_SET) == (off_t)-1 ||
+offset-size-arithmetic	libclamav/vba_extract.c	2264	        lseek(fd, 3, SEEK_CUR) == (off_t)-1) /* 1byte ?? , 2byte length ?? */
+offset-size-arithmetic	libclamav/vba_extract.c	2279	                shift    = 12 - (winpos > 0x10) - (winpos > 0x20) - (winpos > 0x40) - (winpos > 0x80) - (winpos > 0x100) - (winpos > 0x200) - (winpos > 0x400) - (winpos > 0x800);
 offset-size-arithmetic	libclamav/vba_extract.c	228	        /* if no initial name length, exit */
-offset-size-arithmetic	libclamav/vba_extract.c	2281	                if (pos > UINT64_MAX - len)
-offset-size-arithmetic	libclamav/vba_extract.c	2287	                srcpos = pos - distance - 1;
-offset-size-arithmetic	libclamav/vba_extract.c	2288	                if ((((srcpos + len) % VBA_COMPRESSION_WINDOW) < winpos) &&
-offset-size-arithmetic	libclamav/vba_extract.c	2289	                    ((winpos + len) < VBA_COMPRESSION_WINDOW) &&
-offset-size-arithmetic	libclamav/vba_extract.c	2290	                    (((srcpos % VBA_COMPRESSION_WINDOW) + len) < VBA_COMPRESSION_WINDOW) &&
-offset-size-arithmetic	libclamav/vba_extract.c	2294	                    pos += len;
-offset-size-arithmetic	libclamav/vba_extract.c	2296	                    while (len-- > 0) {
-offset-size-arithmetic	libclamav/vba_extract.c	2297	                        srcpos                                 = (pos - distance - 1) % VBA_COMPRESSION_WINDOW;
-offset-size-arithmetic	libclamav/vba_extract.c	2298	                        buffer[pos++ % VBA_COMPRESSION_WINDOW] = buffer[srcpos];
-offset-size-arithmetic	libclamav/vba_extract.c	2316	                    pos++;
-offset-size-arithmetic	libclamav/vba_extract.c	2317	                } else if (read_result == (size_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2330	    if (read_result == (size_t)-1)
-offset-size-arithmetic	libclamav/vba_extract.c	2347	static cl_error_t vba_blob_write(const unsigned char *data, size_t data_size, void *context)
-offset-size-arithmetic	libclamav/vba_extract.c	2355	cli_vba_inflate(int fd, off_t offset, size_t *size)
+offset-size-arithmetic	libclamav/vba_extract.c	2280	                len      = (uint16_t)((token & ((1 << shift) - 1)) + 3);
+offset-size-arithmetic	libclamav/vba_extract.c	2283	                if (pos > UINT64_MAX - len)
+offset-size-arithmetic	libclamav/vba_extract.c	2289	                srcpos = pos - distance - 1;
+offset-size-arithmetic	libclamav/vba_extract.c	2290	                if ((((srcpos + len) % VBA_COMPRESSION_WINDOW) < winpos) &&
+offset-size-arithmetic	libclamav/vba_extract.c	2291	                    ((winpos + len) < VBA_COMPRESSION_WINDOW) &&
+offset-size-arithmetic	libclamav/vba_extract.c	2292	                    (((srcpos % VBA_COMPRESSION_WINDOW) + len) < VBA_COMPRESSION_WINDOW) &&
+offset-size-arithmetic	libclamav/vba_extract.c	2296	                    pos += len;
+offset-size-arithmetic	libclamav/vba_extract.c	2298	                    while (len-- > 0) {
+offset-size-arithmetic	libclamav/vba_extract.c	2299	                        srcpos                                 = (pos - distance - 1) % VBA_COMPRESSION_WINDOW;
+offset-size-arithmetic	libclamav/vba_extract.c	2300	                        buffer[pos++ % VBA_COMPRESSION_WINDOW] = buffer[srcpos];
+offset-size-arithmetic	libclamav/vba_extract.c	2318	                    pos++;
+offset-size-arithmetic	libclamav/vba_extract.c	2319	                } else if (read_result == (size_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2332	    if (read_result == (size_t)-1)
+offset-size-arithmetic	libclamav/vba_extract.c	2349	static cl_error_t vba_blob_write(const unsigned char *data, size_t data_size, void *context)
+offset-size-arithmetic	libclamav/vba_extract.c	2357	cli_vba_inflate(int fd, off_t offset, size_t *size)
 offset-size-arithmetic	libclamav/vba_extract.c	237	            if (lseek(fd, -2, SEEK_CUR) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2399	        len -= todo;
-offset-size-arithmetic	libclamav/vba_extract.c	2455	    if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2474	    if (((uint64_t)statbuf.st_size - (uint64_t)object_size) >= 4) {
-offset-size-arithmetic	libclamav/vba_extract.c	2476	        if (lseek(fd, 2, SEEK_CUR) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2494	        if (lseek(fd, 8, SEEK_CUR) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2511	            (uint64_t)object_size > (uint64_t)statbuf.st_size - (uint64_t)payload_offset) {
+offset-size-arithmetic	libclamav/vba_extract.c	2401	        len -= todo;
+offset-size-arithmetic	libclamav/vba_extract.c	2457	    if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2476	    if (((uint64_t)statbuf.st_size - (uint64_t)object_size) >= 4) {
+offset-size-arithmetic	libclamav/vba_extract.c	2478	        if (lseek(fd, 2, SEEK_CUR) == -1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2496	        if (lseek(fd, 8, SEEK_CUR) == -1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2513	            (uint64_t)object_size > (uint64_t)statbuf.st_size - (uint64_t)payload_offset) {
 offset-size-arithmetic	libclamav/vba_extract.c	254	        /* save current offset */
-offset-size-arithmetic	libclamav/vba_extract.c	2556	    if (lseek(ofd, 0, SEEK_SET) == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2558	    if (lseek(ofd, 0, SEEK_SET) == (off_t)-1) {
 offset-size-arithmetic	libclamav/vba_extract.c	256	        if (offset == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2608	    cli_dbgmsg("\tlength: 0x%.8x\n", (int)atom_header->length);
+offset-size-arithmetic	libclamav/vba_extract.c	2610	    cli_dbgmsg("\tlength: 0x%.8x\n", (int)atom_header->length);
 offset-size-arithmetic	libclamav/vba_extract.c	265	            if (lseek(fd, offset, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2682	ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temporary_reserved)
-offset-size-arithmetic	libclamav/vba_extract.c	2692	    if (input_offset == (off_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2697	    snprintf(fullname, sizeof(fullname) - 1, "%s" PATHSEP "ppt%.8lx.doc",
-offset-size-arithmetic	libclamav/vba_extract.c	2724	    length -= stream.avail_in;
-offset-size-arithmetic	libclamav/vba_extract.c	2755	            length -= stream.avail_in;
-offset-size-arithmetic	libclamav/vba_extract.c	2777	        if ((uint64_t)skip != (uint64_t)length || lseek(fd, skip, SEEK_CUR) == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2684	ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temporary_reserved)
+offset-size-arithmetic	libclamav/vba_extract.c	2694	    if (input_offset == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2699	    snprintf(fullname, sizeof(fullname) - 1, "%s" PATHSEP "ppt%.8lx.doc",
+offset-size-arithmetic	libclamav/vba_extract.c	2726	    length -= stream.avail_in;
+offset-size-arithmetic	libclamav/vba_extract.c	2757	            length -= stream.avail_in;
+offset-size-arithmetic	libclamav/vba_extract.c	2779	        if ((uint64_t)skip != (uint64_t)length || lseek(fd, skip, SEEK_CUR) == (off_t)-1) {
 offset-size-arithmetic	libclamav/vba_extract.c	278	            if (lseek(fd, -(length + 2), SEEK_CUR) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2830	        if ((uint64_t)sizeof(atom_header_t) > (uint64_t)statbuf.st_size - (uint64_t)header_offset) {
-offset-size-arithmetic	libclamav/vba_extract.c	2849	                (uint64_t)(atom_header.length - sizeof(uint32_t)) > (uint64_t)statbuf.st_size - (uint64_t)offset) {
-offset-size-arithmetic	libclamav/vba_extract.c	2855	            if (lseek(fd, sizeof(uint32_t), SEEK_CUR) == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	2860	            length = atom_header.length - sizeof(uint32_t);
-offset-size-arithmetic	libclamav/vba_extract.c	2868	            /* Check we don't wrap or seek past the materialized input. */
+offset-size-arithmetic	libclamav/vba_extract.c	2832	        if ((uint64_t)sizeof(atom_header_t) > (uint64_t)statbuf.st_size - (uint64_t)header_offset) {
+offset-size-arithmetic	libclamav/vba_extract.c	2851	                (uint64_t)(atom_header.length - sizeof(uint32_t)) > (uint64_t)statbuf.st_size - (uint64_t)offset) {
+offset-size-arithmetic	libclamav/vba_extract.c	2857	            if (lseek(fd, sizeof(uint32_t), SEEK_CUR) == -1) {
+offset-size-arithmetic	libclamav/vba_extract.c	2862	            length = atom_header.length - sizeof(uint32_t);
 offset-size-arithmetic	libclamav/vba_extract.c	287	        /* can't get length, break */
-offset-size-arithmetic	libclamav/vba_extract.c	2870	                (uint64_t)atom_header.length > (uint64_t)statbuf.st_size - (uint64_t)offset) {
-offset-size-arithmetic	libclamav/vba_extract.c	2874	            offset += atom_header.length;
+offset-size-arithmetic	libclamav/vba_extract.c	2870	            /* Check we don't wrap or seek past the materialized input. */
+offset-size-arithmetic	libclamav/vba_extract.c	2872	                (uint64_t)atom_header.length > (uint64_t)statbuf.st_size - (uint64_t)offset) {
+offset-size-arithmetic	libclamav/vba_extract.c	2876	            offset += atom_header.length;
 offset-size-arithmetic	libclamav/vba_extract.c	294	        /* continue on reasonable length value */
 offset-size-arithmetic	libclamav/vba_extract.c	299	        /* determine offset and run middle test */
 offset-size-arithmetic	libclamav/vba_extract.c	301	        if (offset == -1) {
-offset-size-arithmetic	libclamav/vba_extract.c	3010	    msize = count * sizeof(struct macro);
-offset-size-arithmetic	libclamav/vba_extract.c	3020	            (uint64_t)msize > end_offset - (uint64_t)current_offset) {
-offset-size-arithmetic	libclamav/vba_extract.c	3036	        macro_entry->len    = vba_endian_convert_32(n->len, FALSE);
-offset-size-arithmetic	libclamav/vba_extract.c	3037	        macro_entry->offset = vba_endian_convert_32(n->offset, FALSE);
-offset-size-arithmetic	libclamav/vba_extract.c	3051	        sizeof(uint16_t) > end_offset - (uint64_t)current_offset) {
-offset-size-arithmetic	libclamav/vba_extract.c	3064	    macro_info->entries = (macro_entry_t *)cli_max_malloc(sizeof(macro_entry_t) * macro_info->count);
-offset-size-arithmetic	libclamav/vba_extract.c	3085	        (uint64_t)size > end_offset - (uint64_t)current_offset)
-offset-size-arithmetic	libclamav/vba_extract.c	3094	    if (!word_read_bounded(fd, value, sizeof(*value), end_offset))
-offset-size-arithmetic	libclamav/vba_extract.c	3097	    *value = vba_endian_convert_16(*value, FALSE);
-offset-size-arithmetic	libclamav/vba_extract.c	3109	        size > end_offset - (uint64_t)current_offset)
-offset-size-arithmetic	libclamav/vba_extract.c	3112	    target_offset = (uint64_t)current_offset + size;
-offset-size-arithmetic	libclamav/vba_extract.c	3131	    target_offset = (uint64_t)current_offset - size;
+offset-size-arithmetic	libclamav/vba_extract.c	3012	    msize = count * sizeof(struct macro);
+offset-size-arithmetic	libclamav/vba_extract.c	3022	            (uint64_t)msize > end_offset - (uint64_t)current_offset) {
+offset-size-arithmetic	libclamav/vba_extract.c	3038	        macro_entry->len    = vba_endian_convert_32(n->len, FALSE);
+offset-size-arithmetic	libclamav/vba_extract.c	3039	        macro_entry->offset = vba_endian_convert_32(n->offset, FALSE);
+offset-size-arithmetic	libclamav/vba_extract.c	3053	        sizeof(uint16_t) > end_offset - (uint64_t)current_offset) {
+offset-size-arithmetic	libclamav/vba_extract.c	3066	    macro_info->entries = (macro_entry_t *)cli_max_malloc(sizeof(macro_entry_t) * macro_info->count);
+offset-size-arithmetic	libclamav/vba_extract.c	3087	        (uint64_t)size > end_offset - (uint64_t)current_offset)
+offset-size-arithmetic	libclamav/vba_extract.c	3096	    if (!word_read_bounded(fd, value, sizeof(*value), end_offset))
+offset-size-arithmetic	libclamav/vba_extract.c	3099	    *value = vba_endian_convert_16(*value, FALSE);
+offset-size-arithmetic	libclamav/vba_extract.c	3111	        size > end_offset - (uint64_t)current_offset)
+offset-size-arithmetic	libclamav/vba_extract.c	3114	    target_offset = (uint64_t)current_offset + size;
+offset-size-arithmetic	libclamav/vba_extract.c	3133	    target_offset = (uint64_t)current_offset - size;
 offset-size-arithmetic	libclamav/vba_extract.c	315	static size_t vba_normalize(unsigned char *buffer, size_t size)
-offset-size-arithmetic	libclamav/vba_extract.c	3213	    if (size == UINT16_MAX) { /* Unicode flag */
-offset-size-arithmetic	libclamav/vba_extract.c	3224	    if ((uint64_t)size > end_offset - (uint64_t)size_offset)
-offset-size-arithmetic	libclamav/vba_extract.c	3226	    extnames_end = (uint64_t)size_offset + (uint64_t)size;
-offset-size-arithmetic	libclamav/vba_extract.c	3244	            offset = (uint64_t)length * 2U + 1U;
-offset-size-arithmetic	libclamav/vba_extract.c	3249	        if (!word_skip_bounded(fd, offset + sizeof(uint16_t), extnames_end)) {
-offset-size-arithmetic	libclamav/vba_extract.c	3279	        if (!word_skip_bounded(fd, (uint64_t)length + 1U, end_offset)) {
-offset-size-arithmetic	libclamav/vba_extract.c	3324	        (uint64_t)fib.macro_len > (uint64_t)statbuf.st_size - (uint64_t)fib.macro_offset) {
-offset-size-arithmetic	libclamav/vba_extract.c	3332	    /* Go one past the start to ignore start_id */
-offset-size-arithmetic	libclamav/vba_extract.c	3333	    start_offset = (uint64_t)fib.macro_offset + 1;
-offset-size-arithmetic	libclamav/vba_extract.c	3347	    end_offset = (uint64_t)fib.macro_offset + (uint64_t)fib.macro_len;
-offset-size-arithmetic	libclamav/vba_extract.c	3410	            case 0x40: /* end marker */
-offset-size-arithmetic	libclamav/vba_extract.c	3436	        vba_project->length = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * macro_info.count);
-offset-size-arithmetic	libclamav/vba_extract.c	3437	        vba_project->key    = (unsigned char *)cli_max_malloc(sizeof(unsigned char) * macro_info.count);
-offset-size-arithmetic	libclamav/vba_extract.c	3444	                vba_project->offset[i] = m->offset;
-offset-size-arithmetic	libclamav/vba_extract.c	3445	                vba_project->length[i] = m->len;
-offset-size-arithmetic	libclamav/vba_extract.c	3512	        if ((nread == 0) || (nread == (size_t)-1))
-offset-size-arithmetic	libclamav/vba_extract.c	3516	            if (lseek(fd, 1 + (end - smallbuf) - (off_t)nread, SEEK_CUR) < 0)
-offset-size-arithmetic	libclamav/vba_extract.c	3532	    *u = vba_endian_convert_16(*u, big_endian);
-offset-size-arithmetic	libclamav/vba_extract.c	3546	    *u = vba_endian_convert_32(*u, big_endian);
-offset-size-arithmetic	libclamav/vba_extract.c	3555	seekandread(int fd, off_t offset, int whence, void *data, size_t len)
-offset-size-arithmetic	libclamav/vba_extract.c	3557	    if (lseek(fd, offset, whence) == (off_t)-1) {
-offset-size-arithmetic	libclamav/vba_extract.c	3579	    ret->name   = (char **)cli_max_malloc(sizeof(char *) * record_count);
-offset-size-arithmetic	libclamav/vba_extract.c	3580	    ret->colls  = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * record_count);
-offset-size-arithmetic	libclamav/vba_extract.c	3582	    ret->offset = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * record_count);
+offset-size-arithmetic	libclamav/vba_extract.c	3215	    if (size == UINT16_MAX) { /* Unicode flag */
+offset-size-arithmetic	libclamav/vba_extract.c	3226	    if ((uint64_t)size > end_offset - (uint64_t)size_offset)
+offset-size-arithmetic	libclamav/vba_extract.c	3228	    extnames_end = (uint64_t)size_offset + (uint64_t)size;
+offset-size-arithmetic	libclamav/vba_extract.c	3246	            offset = (uint64_t)length * 2U + 1U;
+offset-size-arithmetic	libclamav/vba_extract.c	3251	        if (!word_skip_bounded(fd, offset + sizeof(uint16_t), extnames_end)) {
+offset-size-arithmetic	libclamav/vba_extract.c	3281	        if (!word_skip_bounded(fd, (uint64_t)length + 1U, end_offset)) {
+offset-size-arithmetic	libclamav/vba_extract.c	3326	        (uint64_t)fib.macro_len > (uint64_t)statbuf.st_size - (uint64_t)fib.macro_offset) {
+offset-size-arithmetic	libclamav/vba_extract.c	3334	    /* Go one past the start to ignore start_id */
+offset-size-arithmetic	libclamav/vba_extract.c	3335	    start_offset = (uint64_t)fib.macro_offset + 1;
+offset-size-arithmetic	libclamav/vba_extract.c	3349	    end_offset = (uint64_t)fib.macro_offset + (uint64_t)fib.macro_len;
+offset-size-arithmetic	libclamav/vba_extract.c	3412	            case 0x40: /* end marker */
+offset-size-arithmetic	libclamav/vba_extract.c	3438	        vba_project->length = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * macro_info.count);
+offset-size-arithmetic	libclamav/vba_extract.c	3439	        vba_project->key    = (unsigned char *)cli_max_malloc(sizeof(unsigned char) * macro_info.count);
+offset-size-arithmetic	libclamav/vba_extract.c	3446	                vba_project->offset[i] = m->offset;
+offset-size-arithmetic	libclamav/vba_extract.c	3447	                vba_project->length[i] = m->len;
+offset-size-arithmetic	libclamav/vba_extract.c	3514	        if ((nread == 0) || (nread == (size_t)-1))
+offset-size-arithmetic	libclamav/vba_extract.c	3518	            if (lseek(fd, 1 + (end - smallbuf) - (off_t)nread, SEEK_CUR) < 0)
+offset-size-arithmetic	libclamav/vba_extract.c	3534	    *u = vba_endian_convert_16(*u, big_endian);
+offset-size-arithmetic	libclamav/vba_extract.c	3548	    *u = vba_endian_convert_32(*u, big_endian);
+offset-size-arithmetic	libclamav/vba_extract.c	3557	seekandread(int fd, off_t offset, int whence, void *data, size_t len)
+offset-size-arithmetic	libclamav/vba_extract.c	3559	    if (lseek(fd, offset, whence) == (off_t)-1) {
+offset-size-arithmetic	libclamav/vba_extract.c	3581	    ret->name   = (char **)cli_max_malloc(sizeof(char *) * record_count);
+offset-size-arithmetic	libclamav/vba_extract.c	3582	    ret->colls  = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * record_count);
+offset-size-arithmetic	libclamav/vba_extract.c	3584	    ret->offset = (uint32_t *)cli_max_malloc(sizeof(uint32_t) * record_count);
 offset-size-arithmetic	libclamav/vba_extract.c	431	                                           size_t consumed, size_t *released);
 offset-size-arithmetic	libclamav/vba_extract.c	440	    if (write_size > UINT64_MAX - *output->temporary_reserved ||
 offset-size-arithmetic	libclamav/vba_extract.c	458	static cl_error_t vba_metadata_output_write(const unsigned char *data, size_t data_size, void *context)
@@ -41430,7 +41430,7 @@ large-file-option	libclamav/libmspack.c	809	                cli_mark_scan_incomp
 large-file-option	libclamav/matcher.h	366	 * On qualifying 64-bit fmap builds, PCREMaxFileSize values are constrained to
 large-file-option	libclamav/ole2_extract.c	1249	                    limit_name    = "Heuristics.Limits.Exceeded.MaxFileSize";
 large-file-option	libclamav/ole2_extract.c	1252	                    limit_name    = "Heuristics.Limits.Exceeded.MaxScanSize";
-large-file-option	libclamav/ole2_extract.c	3481	            cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanSize", CL_EMAXSIZE);
+large-file-option	libclamav/ole2_extract.c	3482	            cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanSize", CL_EMAXSIZE);
 large-file-option	libclamav/others.c	1042	                cli_errmsg("PCREMaxFileSize: negative values are not allowed\n");
 large-file-option	libclamav/others.c	1102	        case CL_ENGINE_MAX_SCANSIZE:
 large-file-option	libclamav/others.c	1104	        case CL_ENGINE_MAX_FILESIZE:
