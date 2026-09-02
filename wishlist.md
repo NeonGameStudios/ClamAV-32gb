@@ -1,5 +1,19 @@
 # Wishlist
 
+## PowerPoint compressed decoder finalization status — 2026-09-02
+
+- Keep the enabled PowerPoint compressed-atom `inflateEnd()` teardown
+  fail-visible on every initialized-stream exit, including output, input,
+  decode, atom-boundary, and normal-completion paths. Preserve the exact
+  incomplete diagnostic and never return a temporary child directory after a
+  finalization failure.
+- Retain `test_ppt_vba_decoder_finalization_failure_is_fail_visible`, its
+  one-shot wrapper fault, reservation-release assertion, and source guards.
+  Current-source production-GCC execution, complete VBA/PowerPoint/OOXML
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
+
 ## PDF Flate decoder finalization status — 2026-09-02
 
 - Keep enabled bounded PDF Flate reader and retained legacy contiguous filter

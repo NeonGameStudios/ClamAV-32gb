@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## PowerPoint compressed decoder finalization status — 2026-09-02
+
+The enabled PowerPoint compressed-atom path now checks `inflateEnd()` on every
+initialized-stream exit, including output, input, decode, atom-boundary, and
+normal-completion failures. A teardown failure marks the confirmed PowerPoint
+layer incomplete and prevents the temporary child directory from being
+returned; the exact diagnostic is retained even when another earlier failure
+already controls the boolean API result. The focused production-linked wrapper
+regression injects a one-shot failure after a valid compressed atom and
+requires null extraction, zero released reservation, and the exact sticky
+diagnostic. Current-source production-GCC compilation and linked execution,
+complete VBA/PowerPoint/OOXML corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## PDF Flate decoder finalization status — 2026-09-02
 
 Enabled bounded PDF Flate decoding now checks initialized `inflateEnd()`

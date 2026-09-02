@@ -169,6 +169,7 @@ int clamav_test_force_ishield_cab_decoder_end;
 int clamav_test_force_gzip_decoder_end;
 int clamav_test_force_zip_inflate_decoder_end;
 int clamav_test_force_pdf_flatedecode_decoder_end;
+int clamav_test_force_ppt_decoder_end;
 int clamav_test_force_egg_deflate_decoder_end;
 int clamav_test_force_dmg_decoder_end;
 int clamav_test_force_dmg_adc_decoder_end;
@@ -217,6 +218,11 @@ int __wrap_inflateEnd(z_streamp strm)
     if (clamav_test_force_pdf_flatedecode_decoder_end > 0) {
         clamav_test_force_pdf_flatedecode_decoder_end--;
         if (clamav_test_force_pdf_flatedecode_decoder_end == 0)
+            return Z_STREAM_ERROR;
+    }
+    if (clamav_test_force_ppt_decoder_end > 0) {
+        clamav_test_force_ppt_decoder_end--;
+        if (clamav_test_force_ppt_decoder_end == 0)
             return Z_STREAM_ERROR;
     }
     if (clamav_test_force_egg_deflate_decoder_end > 0) {
@@ -12599,6 +12605,68 @@ START_TEST(test_ppt_vba_consumes_compressed_atom_tail)
     unlink(path);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_ppt_vba_decoder_finalization_failure_is_fail_visible)
+{
+    static const unsigned char source[] = "PPT Flate finalization failure";
+    uLongf compressed_size = compressBound(sizeof(source) - 1U);
+    unsigned char *compressed = malloc(compressed_size);
+    unsigned char *input;
+    size_t atom_payload_size;
+    size_t input_size;
+    char path[PATH_MAX];
+    char *dir;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    uint64_t temporary_reserved = 0;
+    int fd;
+
+    ck_assert_ptr_nonnull(compressed);
+    ck_assert_int_eq(compress2(compressed, &compressed_size, source,
+                               sizeof(source) - 1U, Z_BEST_COMPRESSION), Z_OK);
+
+    atom_payload_size = sizeof(uint32_t) + (size_t)compressed_size;
+    input_size        = sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t) + atom_payload_size;
+    input             = calloc(1, input_size);
+    ck_assert_ptr_nonnull(input);
+    input[2] = 0x11;
+    input[3] = 0x10;
+    cli_writeint32(input + 4, (uint32_t)atom_payload_size);
+    memcpy(input + 8 + sizeof(uint32_t), compressed, compressed_size);
+    free(compressed);
+
+    snprintf(path, sizeof(path), "%s/ppt-compressed-finalization-failure", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, input, input_size), input_size);
+    free(input);
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxtemporarysize = 1024U * 1024U;
+    ctx.engine              = &engine;
+    ctx.options             = &options;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    clamav_test_force_ppt_decoder_end = 1;
+    dir = cli_ppt_vba_read_ex(fd, &ctx, &temporary_reserved);
+    ck_assert_ptr_null(dir);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PowerPoint compressed stream decoder could not be finalized");
+    ck_assert_uint_eq(temporary_reserved, 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert_int_eq(clamav_test_force_ppt_decoder_end, 0);
+
+    ck_assert_int_eq(close(fd), 0);
+    unlink(path);
+}
+END_TEST
+#endif
 
 START_TEST(test_ooxml_null_context_is_fail_visible)
 {
@@ -59549,6 +59617,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ppt_entry, test_ppt_vba_missing_engine_is_fail_visible);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_missing_options_is_fail_visible);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_consumes_compressed_atom_tail);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_ppt_entry, test_ppt_vba_decoder_finalization_failure_is_fail_visible);
+#endif
 #ifdef CLAMAV_TEST_LSEEK_WRAP
     tcase_add_test(tc_ppt_entry, test_ppt_vba_lseek_failure_is_fail_visible);
 #endif

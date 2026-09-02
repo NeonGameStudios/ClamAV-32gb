@@ -2668,6 +2668,17 @@ ppt_remove_output(cli_ctx *ctx, const char *fullname)
 }
 
 static int
+ppt_finalize_decoder(cli_ctx *ctx, z_stream *stream)
+{
+    if (inflateEnd(stream) != Z_OK) {
+        cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream decoder could not be finalized");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static int
 ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temporary_reserved)
 {
     int ofd;
@@ -2724,7 +2735,7 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
         if (stream.avail_out == 0) {
             if (!ppt_write_output(ctx, temporary_reserved, ofd, outbuff, PPT_LZW_BUFFSIZE)) {
                 ppt_close_output(ctx, ofd);
-                inflateEnd(&stream);
+                (void)ppt_finalize_decoder(ctx, &stream);
                 ppt_remove_output(ctx, fullname);
                 return FALSE;
             }
@@ -2736,7 +2747,7 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
             stream.avail_in = MIN(length, PPT_LZW_BUFFSIZE);
             if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
                 ppt_close_output(ctx, ofd);
-                inflateEnd(&stream);
+                (void)ppt_finalize_decoder(ctx, &stream);
                 ppt_remove_output(ctx, fullname);
                 cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream could not be read completely");
                 return FALSE;
@@ -2748,7 +2759,7 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
 
     if (zret != Z_STREAM_END) {
         ppt_close_output(ctx, ofd);
-        inflateEnd(&stream);
+        (void)ppt_finalize_decoder(ctx, &stream);
         ppt_remove_output(ctx, fullname);
         cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream was not fully decoded");
         return FALSE;
@@ -2765,7 +2776,7 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
 
         if ((uint64_t)skip != (uint64_t)length || lseek(fd, skip, SEEK_CUR) == (off_t)-1) {
             ppt_close_output(ctx, ofd);
-            inflateEnd(&stream);
+            (void)ppt_finalize_decoder(ctx, &stream);
             ppt_remove_output(ctx, fullname);
             cli_mark_scan_incomplete(ctx, "PowerPoint compressed atom could not be advanced to its declared boundary");
             return FALSE;
@@ -2776,18 +2787,17 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
     if (!ppt_write_output(ctx, temporary_reserved, ofd, outbuff,
                           PPT_LZW_BUFFSIZE - stream.avail_out)) {
         ppt_close_output(ctx, ofd);
-        inflateEnd(&stream);
+        (void)ppt_finalize_decoder(ctx, &stream);
         ppt_remove_output(ctx, fullname);
         return FALSE;
     }
     if (!ppt_close_output(ctx, ofd)) {
         ppt_remove_output(ctx, fullname);
-        inflateEnd(&stream);
+        (void)ppt_finalize_decoder(ctx, &stream);
         return FALSE;
     }
-    if (inflateEnd(&stream) != Z_OK) {
+    if (!ppt_finalize_decoder(ctx, &stream)) {
         ppt_remove_output(ctx, fullname);
-        cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream was not fully decoded");
         return FALSE;
     }
 
