@@ -1,5 +1,18 @@
 # Wishlist
 
+## RAR archive-open status — 2026-09-02
+
+- Keep every non-encrypted optional-UnRAR archive-open failure fail-visible:
+  preserve the backend-specific public status and mark the recognized RAR
+  layer incomplete/non-cacheable before returning.
+- Keep RAR `keeptmp` archive-comment output-path allocation failure marked
+  incomplete with an exact diagnostic before returning `CL_EMEM`.
+- Retain `test_rar_archive_open_failure_is_fail_visible`, source guards, and
+  capability-manifest evidence. Current-source production-GCC execution,
+  complete RAR/UnRAR corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final RAR/parser-release qualification remain open.
+
 ## MSPack decoder allocation status — 2026-09-02
 
 - Keep bounded MSPack decoder allocations fail-visible through the shared

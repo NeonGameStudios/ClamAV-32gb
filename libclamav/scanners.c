@@ -516,8 +516,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
             goto done;
         }
         status = cli_rar_error_to_scan_result(unrar_ret);
-        if (status == CL_EFORMAT)
-            cli_mark_scan_incomplete(ctx, "RAR archive header could not be opened completely");
+        cli_mark_scan_incomplete(ctx, "RAR archive header could not be opened completely");
         goto done;
     }
     status = cli_rar_checktimelimit(ctx, "RAR archive inspection reached the configured time limit");
@@ -530,6 +529,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
         if (ctx->engine->keeptmp) {
             int comment_fd = -1;
             if (!(comment_fullpath = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "comments"))) {
+                cli_mark_scan_incomplete(ctx, "RAR archive comment output could not be allocated");
                 status = CL_EMEM;
                 goto done;
             }

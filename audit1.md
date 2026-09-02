@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## RAR archive-open status — 2026-09-02
+
+The optional UnRAR scanner converted only an unrecognized backend result to a
+sticky incomplete state when opening the archive. Allocation, open, create,
+read, and other backend failures could therefore return a non-success status
+without tainting the recognized RAR fmap, and an archive-comment temporary
+output-path allocation failure returned `CL_EMEM` without an incomplete reason.
+The scanner now marks every non-encrypted archive-open failure incomplete
+while preserving the specific `cli_rar_error_to_scan_result()` status, and it
+marks comment-path allocation failure before returning `CL_EMEM`. The
+focused `test_rar_archive_open_failure_is_fail_visible` regression injects
+`UNRAR_EMEM` and requires the public status, cleared outputs, and fmap
+non-cacheability. Current-source production-GCC compilation and linked
+execution, complete RAR/UnRAR corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+RAR/parser-release qualification remain required.
+
 ## MSPack decoder allocation status — 2026-09-02
 
 The MSPack bridge already bounded decoder-requested allocations with
