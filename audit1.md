@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## FMap dump API argument admission — 2026-09-02
+
+`fmap_dump_to_file()` dereferenced its fmap before validating the input and
+could write success outputs through null `outname` or `outfd` pointers. The
+staging helper now returns `CL_ENULLARG` for those invalid arguments and clears
+valid output slots before offset validation or temporary-file creation, so a
+failed dump cannot leave stale ownership state published. The registered
+`test_fmap_dump_rejects_invalid_arguments` regression covers null map/name/fd
+boundaries and confirms invalid calls do not modify caller outputs; the
+existing injected staged-read regression continues to cover partial-copy
+cleanup. Linked current-source execution, sanitizer, complete fmap/line-parser
+corpus, production-CVD/service, materialized-large-file, Sonic1, resource, and
+final release qualification remain required.
+
 ## EGG archive-index read-status preservation — 2026-09-02
 
 After `cli_egg_open_ex()` completed the fixed archive header, its next

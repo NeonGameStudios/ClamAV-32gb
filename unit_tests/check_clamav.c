@@ -16385,6 +16385,27 @@ static const void *fmap_dump_read_failure(fmap_t *map, size_t at, size_t len, in
     return (const uint8_t *)map->data + at;
 }
 
+START_TEST(test_fmap_dump_rejects_invalid_arguments)
+{
+    uint8_t data[1] = {0};
+    fmap_t *map;
+    char *outname = (char *)0x1;
+    int outfd      = 42;
+
+    ck_assert_int_eq(fmap_dump_to_file(NULL, NULL, NULL, &outname, &outfd, 0, 0), CL_ENULLARG);
+    ck_assert_int_eq(fmap_dump_to_file(NULL, NULL, NULL, NULL, &outfd, 0, 0), CL_ENULLARG);
+    ck_assert_int_eq(fmap_dump_to_file(NULL, NULL, NULL, &outname, NULL, 0, 0), CL_ENULLARG);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(fmap_dump_to_file(map, NULL, NULL, NULL, &outfd, 0, 0), CL_ENULLARG);
+    ck_assert_int_eq(fmap_dump_to_file(map, NULL, NULL, &outname, NULL, 0, 0), CL_ENULLARG);
+    ck_assert_ptr_eq(outname, (char *)0x1);
+    ck_assert_int_eq(outfd, 42);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_fmap_dump_read_failure_is_fail_visible)
 {
     uint8_t data[BUFSIZ + 1];
@@ -62330,6 +62351,7 @@ static Suite *test_cl_suite(void)
 
     suite_add_tcase(s, tc_fmap_api);
     tcase_add_test(tc_fmap_api, test_fmap_assorted_api);
+    tcase_add_test(tc_fmap_api, test_fmap_dump_rejects_invalid_arguments);
     tcase_add_test(tc_fmap_api, test_cl_fmap_open_memory_rejects_missing_backing_memory);
     tcase_add_test(tc_fmap_api, test_fmap_gets_read_failure_releases_pages);
 

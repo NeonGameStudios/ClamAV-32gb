@@ -1381,6 +1381,15 @@ cl_error_t fmap_dump_to_file(fmap_t *map, const char *filepath, const char *tmpd
 
     size_t pos = 0, len = 0, bytes_remaining = 0, write_size = 0;
 
+    if (map == NULL || outname == NULL || outfd == NULL)
+        return CL_ENULLARG;
+
+    /* Never leave caller-visible output state ambiguous when admission or
+     * staging fails. The caller owns any prior outputs and must release them
+     * before starting another dump. */
+    *outname = NULL;
+    *outfd   = -1;
+
     /* The public offsets are relative to the accessible fmap.  Use map->len
      * so nested and sliced maps cannot stage bytes outside their visible range. */
     if ((start_offset > map->len) || (end_offset < start_offset)) {

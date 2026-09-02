@@ -1,5 +1,16 @@
 # Wishlist
 
+## FMap dump API argument admission — 2026-09-02
+
+- Keep `fmap_dump_to_file()` fail-visible for a null fmap or output sink:
+  return `CL_ENULLARG` before dereference, and clear valid `outname`/`outfd`
+  slots before offset validation or staging.
+- Retain `test_fmap_dump_rejects_invalid_arguments`, its source guards, and the
+  existing partial-copy read-failure regression. Add current-source linked
+  execution, sanitizer, complete fmap/line-parser corpus,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  release qualification before closure.
+
 ## EGG archive-index read-status preservation — 2026-09-02
 
 - Keep the post-header `cli_egg_open_ex()` magic read preserving in-range
