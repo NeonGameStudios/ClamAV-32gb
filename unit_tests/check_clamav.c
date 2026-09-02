@@ -48712,6 +48712,28 @@ START_TEST(test_macho_missing_maps_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_macho_unibin_missing_options_is_fail_visible)
+{
+    static const uint8_t input[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scanmacho_unibin(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_macho_unpack_sticky_incomplete_result_is_fail_visible)
 {
     static const uint8_t input[] = {0};
@@ -48745,15 +48767,18 @@ START_TEST(test_macho_unibin_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     ctx.engine = &engine;
+    ctx.options = &options;
     ctx.fmap   = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
@@ -48775,6 +48800,7 @@ START_TEST(test_macho_unibin_unsupported_architecture_count_is_fail_visible)
 {
     uint8_t data[8] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -48786,10 +48812,12 @@ START_TEST(test_macho_unibin_unsupported_architecture_count_is_fail_visible)
     macho_test_write_be32(data + 4, 39U);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     ctx.engine = &engine;
+    ctx.options = &options;
     ctx.fmap   = map;
 
     ret = cli_scanmacho_unibin(&ctx);
@@ -48807,6 +48835,7 @@ START_TEST(test_macho_unibin_empty_architecture_table_is_fail_visible)
 {
     uint8_t data[8] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -48817,10 +48846,12 @@ START_TEST(test_macho_unibin_empty_architecture_table_is_fail_visible)
     macho_test_write_be32(data + 4, 0U);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     ctx.engine = &engine;
+    ctx.options = &options;
     ctx.fmap   = map;
 
     ret = cli_scanmacho_unibin(&ctx);
@@ -48844,6 +48875,7 @@ START_TEST(test_macho_unibin_member_must_follow_complete_table)
     };
     uint8_t data[ARCHIVE_SIZE] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -48858,10 +48890,12 @@ START_TEST(test_macho_unibin_member_must_follow_complete_table)
     macho_test_write_be32(data + FAT_HEADER_SIZE + FAT_ARCH_SIZE + 12, 1U);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     ctx.engine = &engine;
+    ctx.options = &options;
     ctx.fmap   = map;
 
     ret = cli_scanmacho_unibin(&ctx);
@@ -48884,6 +48918,7 @@ START_TEST(test_macho_unibin_empty_member_is_fail_visible)
     };
     uint8_t data[FAT_TABLE_SIZE] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -48894,10 +48929,12 @@ START_TEST(test_macho_unibin_empty_member_is_fail_visible)
     macho_test_write_be32(data + FAT_HEADER_SIZE + 12, 0U);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     ctx.engine = &engine;
+    ctx.options = &options;
     ctx.fmap   = map;
 
     ret = cli_scanmacho_unibin(&ctx);
@@ -49478,6 +49515,7 @@ START_TEST(test_macho_unibin_member_range_is_fail_visible)
 {
     struct macho_unibin_range_state state;
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -49490,6 +49528,7 @@ START_TEST(test_macho_unibin_member_range_is_fail_visible)
     macho_test_write_be32(state.data + 8 + 12, 16U);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = calloc(1, sizeof(*map));
     ck_assert_ptr_nonnull(map);
@@ -49498,8 +49537,9 @@ START_TEST(test_macho_unibin_member_range_is_fail_visible)
     map->real_len = state.length;
     map->need = macho_unibin_sparse_need;
     map->unmap = macho_unibin_sparse_unmap;
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
 
     ret = cli_scanmacho_unibin(&ctx);
     ck_assert_int_eq(ret, CL_EPARSE);
@@ -57361,6 +57401,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_macho_boundary, test_macho_load_command_alignment_is_fail_visible);
     suite_add_tcase(s, tc_macho_map);
     tcase_add_test(tc_macho_map, test_macho_missing_maps_are_fail_visible);
+    tcase_add_test(tc_macho_map, test_macho_unibin_missing_options_is_fail_visible);
     tcase_add_test(tc_macho_map, test_macho_unpack_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_macho_unsupported);
     tcase_add_test(tc_macho_unsupported, test_macho_unibin_unsupported_architecture_count_is_fail_visible);

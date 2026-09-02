@@ -1,5 +1,26 @@
 # Independent read-only audit of audit.md
 
+## Mach-O universal-binary direct options admission — 2026-09-02
+
+The exported `cli_scanmacho_unibin()` entry rejected null context, input fmap,
+and engine state but did not reject missing scan options before deadline
+checks, universal-binary table validation, or nested thin-member scanning. A
+direct caller with incomplete scan configuration could therefore enter
+universal-binary inspection without the required options object. The entry now
+returns `CL_ENULLARG` immediately after engine admission when `ctx->options` is
+absent, while the thin Mach-O metadata path retains its intentional
+engine-free `fileinfo` mode.
+
+`test_macho_unibin_missing_options_is_fail_visible` supplies a map and engine
+while omitting options, and verifies `CL_ENULLARG` without sticky incomplete or
+cache-taint state. Existing universal-binary parser regressions now provide
+valid options for their format-specific assertions. Source guards and the
+capability manifest record the boundary. Current-source production-GCC
+compilation, production-linked execution, complete Mach-O/FAT/Java corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## ELF direct options admission — 2026-09-02
 
 The exported `cli_scanelf()` entry rejected null context, input fmap, and

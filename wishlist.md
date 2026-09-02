@@ -1,5 +1,21 @@
 # Wishlist
 
+## Mach-O universal-binary direct options admission — 2026-09-02
+
+- Keep exported `cli_scanmacho_unibin()` fail-visible when an otherwise
+  recognized engine/map context omits scan options; return `CL_ENULLARG` before
+  deadline checks, universal-binary validation, or nested thin-member
+  scanning. Preserve the thin Mach-O metadata entry's intentional engine-free
+  `fileinfo` mode.
+- Retain `test_macho_unibin_missing_options_is_fail_visible`, its source
+  guards, and manifest evidence that the invalid context does not become
+  sticky incomplete or cache-tainted. Keep valid options in direct
+  universal-binary parser regressions. Current-source production-GCC
+  compilation, production-linked execution, complete Mach-O/FAT/Java corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
+
 ## ELF direct options admission — 2026-09-02
 
 - Keep exported `cli_scanelf()` fail-visible when an otherwise recognized

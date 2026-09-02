@@ -872,6 +872,8 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
     }
     if (ctx->engine == NULL)
         return CL_ENULLARG;
+    if (ctx->options == NULL)
+        return CL_ENULLARG;
     map = ctx->fmap;
 
     read_status = cli_checktimelimit(ctx);
