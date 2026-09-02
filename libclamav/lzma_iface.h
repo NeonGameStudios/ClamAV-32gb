@@ -54,6 +54,9 @@ struct stream_state {
 
 int cli_LzmaInit(struct CLI_LZMA *, uint64_t);
 void cli_LzmaShutdown(struct CLI_LZMA *);
+int cli_LzmaProgressAllowed(SizeT input_available, SizeT input_consumed,
+                            SizeT output_available, SizeT output_produced,
+                            uint64_t output_remaining);
 int cli_LzmaDecode(struct CLI_LZMA *);
 
 void *__lzma_wrap_alloc(void *unused, size_t size);

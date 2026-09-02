@@ -32618,6 +32618,29 @@ START_TEST(test_7z_copy_decoder_rejects_overreported_lookahead)
 }
 END_TEST
 
+START_TEST(test_lzma_decoder_progress_is_bounded)
+{
+    struct CLI_LZMA lz;
+
+    ck_assert(cli_LzmaProgressAllowed(4, 4, 4, 4, 4));
+    ck_assert(cli_LzmaProgressAllowed(4, 0, 4, 0, 4));
+    ck_assert(cli_LzmaProgressAllowed(4, 4, 4, 4, UINT64_MAX));
+    ck_assert(!cli_LzmaProgressAllowed(3, 4, 4, 4, 4));
+    ck_assert(!cli_LzmaProgressAllowed(4, 4, 3, 4, 4));
+    ck_assert(!cli_LzmaProgressAllowed(4, 4, 4, 4, 3));
+
+    ck_assert_int_eq(cli_LzmaDecode(NULL), LZMA_RESULT_DATA_ERROR);
+    memset(&lz, 0, sizeof(lz));
+    lz.freeme = 1;
+    lz.avail_in = 1;
+    ck_assert_int_eq(cli_LzmaDecode(&lz), LZMA_RESULT_DATA_ERROR);
+    memset(&lz, 0, sizeof(lz));
+    lz.freeme = 1;
+    lz.avail_out = 1;
+    ck_assert_int_eq(cli_LzmaDecode(&lz), LZMA_RESULT_DATA_ERROR);
+}
+END_TEST
+
 static void bcj2_test_stream_vector(const uint8_t *main_data, size_t main_size,
                                     const uint8_t *call_data, size_t call_size,
                                     const uint8_t *jump_data, size_t jump_size,
@@ -58559,6 +58582,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_ppmd_input_accounting_is_bounded);
     tcase_add_test(tc_7z, test_7z_decoder_input_progress_is_bounded);
     tcase_add_test(tc_7z, test_7z_copy_decoder_rejects_overreported_lookahead);
+    tcase_add_test(tc_7z, test_lzma_decoder_progress_is_bounded);
     tcase_add_test(tc_7z, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_input_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_stream_rejects_overreported_callback_results);

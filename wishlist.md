@@ -1,5 +1,17 @@
 # Wishlist
 
+## Legacy LZMA wrapper progress admission — 2026-09-02
+
+- Keep `cli_LzmaDecode()` rejecting null non-empty buffers and validating
+  decoder-reported input/output progress before pointer, buffer, and declared
+  output counters are updated. Preserve a visible LZMA data error on any
+  over-report.
+- Retain `test_lzma_decoder_progress_is_bounded`, its source guards, and
+  manifest evidence. Current-source production-GCC execution, complete
+  XAR/EGG/SWF/NSIS/UPX/bytecode corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## MSPack extraction-limit status propagation — 2026-09-02
 
 - Keep CAB/CHM callback output-limit and physical-write failures in shared

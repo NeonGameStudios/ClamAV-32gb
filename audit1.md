@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Legacy LZMA wrapper progress admission — 2026-09-02
+
+The shared `cli_LzmaDecode()` wrapper, used by XAR, EGG, SWF, NSIS, UPX, and
+bytecode paths, previously trusted the vendored decoder's input and output
+counts before subtracting them from available buffers and the declared output
+remainder. It now rejects null buffers for non-empty requests and validates
+both counts against their pre-call windows and the finite declared output
+before any pointer or counter update; invalid progress becomes a visible LZMA
+data error.
+
+`test_lzma_decoder_progress_is_bounded` covers exact, zero, input-overrun,
+output-overrun, and declared-output-overrun boundaries. Source guards and the
+capability manifest pin the shared wrapper. Current-source production-GCC
+compilation and linked execution, complete XAR/EGG/SWF/NSIS/UPX/bytecode
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## MSPack extraction-limit status propagation — 2026-09-02
 
 The CAB/CHM MSPack bridge previously kept output-limit state only on the

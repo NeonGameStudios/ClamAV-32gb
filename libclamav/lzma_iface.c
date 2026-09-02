@@ -110,6 +110,24 @@ void cli_LzmaShutdown(struct CLI_LZMA *L)
     return;
 }
 
+int cli_LzmaProgressAllowed(SizeT input_available, SizeT input_consumed,
+                            SizeT output_available, SizeT output_produced,
+                            uint64_t output_remaining)
+{
+    uint64_t input_available64 = (uint64_t)input_available;
+    uint64_t input_consumed64  = (uint64_t)input_consumed;
+    uint64_t output_available64 = (uint64_t)output_available;
+    uint64_t output_produced64  = (uint64_t)output_produced;
+
+    return (SizeT)input_available64 == input_available &&
+           (SizeT)input_consumed64 == input_consumed &&
+           (SizeT)output_available64 == output_available &&
+           (SizeT)output_produced64 == output_produced &&
+           input_consumed64 <= input_available64 &&
+           output_produced64 <= output_available64 &&
+           (output_remaining == UINT64_MAX || output_produced64 <= output_remaining);
+}
+
 int cli_LzmaDecode(struct CLI_LZMA *L)
 {
     SRes res;
@@ -117,7 +135,12 @@ int cli_LzmaDecode(struct CLI_LZMA *L)
     ELzmaStatus status;
     ELzmaFinishMode finish;
 
+    if (L == NULL)
+        return LZMA_RESULT_DATA_ERROR;
     if (!L->freeme) return cli_LzmaInit(L, 0);
+    if ((L->avail_in != 0 && L->next_in == NULL) ||
+        (L->avail_out != 0 && L->next_out == NULL))
+        return LZMA_RESULT_DATA_ERROR;
 
     inbytes = L->avail_in;
     if (~L->usize && L->avail_out > L->usize) {
@@ -128,6 +151,8 @@ int cli_LzmaDecode(struct CLI_LZMA *L)
         finish   = LZMA_FINISH_ANY;
     }
     res = LzmaDec_DecodeToBuf(&L->state, L->next_out, &outbytes, L->next_in, &inbytes, finish, &status);
+    if (!cli_LzmaProgressAllowed(L->avail_in, inbytes, L->avail_out, outbytes, L->usize))
+        return LZMA_RESULT_DATA_ERROR;
     L->avail_in -= inbytes;
     L->next_in += inbytes;
     L->avail_out -= outbytes;
