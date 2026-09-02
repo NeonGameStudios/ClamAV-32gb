@@ -2766,6 +2766,8 @@ cl_error_t cli_scanhwpml(cli_ctx *ctx)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     memset(&mxctx, 0, sizeof(mxctx));
     mxctx.scan_cb = hwpml_binary_cb;

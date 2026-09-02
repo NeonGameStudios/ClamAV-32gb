@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## HWPML direct options admission — 2026-09-02
+
+The exported `cli_scanhwpml()` entry rejected null context, input fmap, and
+engine state but did not reject missing scan options before delegating to the
+JSON-mode streaming MSXML parser. That lower layer could return a generic
+parse/incomplete result for an otherwise recognized HWPML context instead of
+exposing the invalid API state directly. The entry now returns `CL_ENULLARG`
+immediately after engine admission when `ctx->options` is absent.
+
+`test_hwpml_missing_options_is_fail_visible` supplies a map and engine while
+omitting options, and verifies `CL_ENULLARG` without sticky incomplete or
+cache-taint state. Source guards and the capability manifest record the
+boundary. Current-source production-GCC compilation, production-linked
+execution, complete HWPML/XML/OOXML corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## Exported magic-scan options admission — 2026-09-02
 
 The exported `cli_magic_scan()` entry validated its engine, fmap, and

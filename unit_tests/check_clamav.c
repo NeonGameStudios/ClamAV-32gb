@@ -28615,6 +28615,28 @@ START_TEST(test_hwpml_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwpml_missing_options_is_fail_visible)
+{
+    uint8_t data = 0;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(&data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scanhwpml(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_apm_missing_map_is_fail_visible)
 {
     struct cl_engine engine;
@@ -57280,6 +57302,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwpml_map, test_hwpml_null_context_is_fail_visible);
     tcase_add_test(tc_hwpml_map, test_hwpml_missing_map_is_fail_visible);
     tcase_add_test(tc_hwpml_map, test_hwpml_missing_engine_is_fail_visible);
+    tcase_add_test(tc_hwpml_map, test_hwpml_missing_options_is_fail_visible);
     suite_add_tcase(s, tc_hwpole2_corpus);
     tcase_add_checked_fixture(tc_hwpole2_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpole2_corpus, test_hwpole2_corpus_detects_embedded_member);

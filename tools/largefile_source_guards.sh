@@ -3190,6 +3190,8 @@ contains unit_tests/check_clamav.c 'test_hwpml_truncated_document_is_fail_visibl
 contains unit_tests/check_clamav.c 'test_hwpml_missing_map_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hwpml_null_context_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hwpml_missing_engine_is_fail_visible'
+contains libclamav/hwp.c 'if (!ctx->options)'
+contains unit_tests/check_clamav.c 'test_hwpml_missing_options_is_fail_visible'
 contains libclamav/pdf.c 'cli_scan_reserve_temporary(ctx, (uint64_t)size)'
 contains libclamav/pdf.c 'mmap(NULL, size, PROT_READ, MAP_PRIVATE'
 contains libclamav/pdf.c 'pdf_cleanup_temp_output'
