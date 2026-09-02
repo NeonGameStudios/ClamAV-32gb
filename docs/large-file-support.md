@@ -8710,6 +8710,21 @@ production-linked execution, complete signature/evidence corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and release qualification remain required.
 
+## Nested evidence merge failures — 2026-09-01
+
+Rust evidence creation and child-evidence append failures during
+`cli_recursion_stack_pop()` now mark the active recursion chain incomplete and
+non-cacheable instead of logging the FFI error and continuing without required
+child evidence. The stable diagnostic is `nested evidence could not be
+recorded`.
+
+`test_nested_evidence_merge_failure_is_fail_visible` exercises both empty-child
+merge branches and requires the exact diagnostic plus parent and child fmap
+cache taint. Current-source production-linked execution, complete Rust
+evidence/indicator corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and release
+qualification remain required.
+
 ## Indicator metadata array append failures — 2026-09-01
 
 The indicator-append path now checks both direct metadata array insertions and

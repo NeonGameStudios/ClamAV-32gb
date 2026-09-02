@@ -5569,6 +5569,63 @@ START_TEST(test_nested_indicator_metadata_object_add_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_nested_evidence_merge_failure_is_fail_visible)
+{
+    static const uint8_t parent_input[] = "parent";
+    static const uint8_t child_input[]  = "child";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    unsigned int failure;
+
+    for (failure = 0; failure < 2; failure++) {
+        fmap_t *parent_map;
+        fmap_t *child_map;
+        fmap_t *popped;
+
+        memset(&engine, 0, sizeof(engine));
+        memset(&options, 0, sizeof(options));
+        memset(layers, 0, sizeof(layers));
+        memset(&ctx, 0, sizeof(ctx));
+        parent_map = cl_fmap_open_memory(parent_input, sizeof(parent_input) - 1U);
+        child_map  = cl_fmap_open_memory(child_input, sizeof(child_input) - 1U);
+        ck_assert_ptr_nonnull(parent_map);
+        ck_assert_ptr_nonnull(child_map);
+
+        layers[0].fmap = parent_map;
+        layers[1].fmap = child_map;
+        layers[1].evidence = evidence_new();
+        ck_assert_ptr_nonnull(layers[1].evidence);
+        if (failure == 1) {
+            layers[0].evidence = evidence_new();
+            ck_assert_ptr_nonnull(layers[0].evidence);
+        }
+
+        ctx.engine               = &engine;
+        ctx.options              = &options;
+        ctx.fmap                 = child_map;
+        ctx.recursion_stack      = layers;
+        ctx.recursion_stack_size = 2;
+        ctx.recursion_level      = 1;
+
+        popped = cli_recursion_stack_pop(&ctx);
+        ck_assert_ptr_eq(popped, child_map);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "nested evidence could not be recorded");
+        ck_assert(parent_map->dont_cache_flag);
+        ck_assert(child_map->dont_cache_flag);
+
+        if (layers[0].evidence != NULL) {
+            evidence_free(layers[0].evidence);
+            layers[0].evidence = NULL;
+        }
+        cl_fmap_close(child_map);
+        cl_fmap_close(parent_map);
+    }
+}
+END_TEST
+
 START_TEST(test_nested_layer_metadata_array_add_failure_is_fail_visible)
 {
     static const uint8_t parent_input[] = "parent";
@@ -56311,6 +56368,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_trusted_indicator_metadata_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_metadata_array_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_nested_indicator_metadata_object_add_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_nested_evidence_merge_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_nested_layer_metadata_array_add_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);

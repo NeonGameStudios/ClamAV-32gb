@@ -2716,6 +2716,7 @@ cl_fmap_t *cli_recursion_stack_pop(cli_ctx *ctx)
                 if (NULL != new_evidence_error) {
                     ffierror_free(new_evidence_error);
                 }
+                cli_mark_scan_incomplete(ctx, "nested evidence could not be recorded");
             }
 
             ctx->recursion_stack[ctx->recursion_level - 1].evidence = parent_evidence;
@@ -2734,6 +2735,7 @@ cl_fmap_t *cli_recursion_stack_pop(cli_ctx *ctx)
                 if (NULL != add_evidence_error) {
                     ffierror_free(add_evidence_error);
                 }
+                cli_mark_scan_incomplete(ctx, "nested evidence could not be recorded");
             }
         }
 

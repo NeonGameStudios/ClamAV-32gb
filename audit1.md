@@ -19853,3 +19853,20 @@ production-GCC compilation, production-linked execution, complete
 signature/evidence corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 matcher/release qualification remain required.
+
+## Nested evidence merge failures — 2026-09-01
+
+During recursion-pop, Rust evidence creation and child-evidence append failures
+were logged but did not mark the scan incomplete. Required child indicators
+could therefore disappear from the containing evidence while the scan remained
+apparently clean and cacheable. Both failure branches now mark the entire
+active recursion chain incomplete and non-cacheable with the stable reason
+`nested evidence could not be recorded`.
+
+`test_nested_evidence_merge_failure_is_fail_visible` exercises both branches
+with deterministic empty child evidence and requires the exact sticky
+diagnostic plus parent and child fmap cache taint. Current-source
+production-GCC compilation, production-linked execution, complete Rust
+evidence/indicator corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+matcher/release qualification remain required.

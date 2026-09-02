@@ -11584,6 +11584,17 @@ final parser/release qualification remain open.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final matcher/release qualification remain open.
 
+## Nested evidence merge failures — 2026-09-01
+
+- Preserve Rust evidence creation and child-evidence append failures as
+  fail-visible incomplete, non-cacheable results; required child evidence must
+  not disappear behind a clean status.
+- Retain `test_nested_evidence_merge_failure_is_fail_visible` and its source
+  guards. Current-source production-linked execution, complete Rust
+  evidence/indicator corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final matcher/release qualification remain open.
+
 
 ## Indicator metadata array append failures — 2026-09-01
 
