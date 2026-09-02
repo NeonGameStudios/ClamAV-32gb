@@ -1,5 +1,15 @@
 # Wishlist
 
+## XAR TOC member closure — 2026-09-02
+
+- Keep XAR `<data>` and `<ea>` entries fail-visible until the enclosing element
+  is actually closed; complete offset/length/size fields alone must not publish
+  a member for extraction or nested scanning.
+- Retain `test_xar_data_element_close_is_required`, its source guards, and
+  capability evidence. Add current-source linked execution, sanitizer, complete
+  XAR corpus, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final release qualification before closure.
+
 ## CVD long-path admission — 2026-09-02
 
 - Keep the directory form of `cl_cvdgetage()` from truncating matching database

@@ -29159,6 +29159,63 @@ START_TEST(test_xar_toc_missing_root_close_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_xar_data_element_close_is_required)
+{
+    static const uint8_t toc[] =
+        "<?xml version=\"1.0\"?><xar><toc><file><data>"
+        "<offset>0</offset><length>3</length><size>3</size>"
+        "<encoding style=\"application/octet-stream\"/>";
+    static const uint8_t heap[] = {'M', 'Z', 'P'};
+    uint8_t *data;
+    size_t data_length;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    data = realloc(data, data_length + sizeof(heap));
+    ck_assert_ptr_nonnull(data);
+    memcpy(data + data_length, heap, sizeof(heap));
+    data_length += sizeof(heap);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Xar.Member.MZ", "4d5a50", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_XAR", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_xar_toc_temporary_quota_is_fail_visible)
 {
     uint8_t *data;
@@ -61799,6 +61856,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xar, test_xar_unsupported_encoding_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_xml_reader_error_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_toc_missing_root_close_is_fail_visible);
+    tcase_add_test(tc_xar, test_xar_data_element_close_is_required);
     tcase_add_test(tc_xar, test_xar_toc_temporary_quota_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_subdocument_temporary_quota_is_fail_visible);
     tcase_add_test(tc_cl, test_partition_parser_errors_are_fail_visible);

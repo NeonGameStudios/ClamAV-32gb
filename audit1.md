@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## XAR TOC member closure — 2026-09-02
+
+The XAR TOC value walker previously returned success as soon as offset, length,
+and size had been read, even if the enclosing `<data>` or `<ea>` element had
+not reached its closing node. It now records closure explicitly and requires
+that state before publishing a member for heap bounds, extraction, or nested
+scanning. The registered `test_xar_data_element_close_is_required` regression
+uses a complete-looking member metadata prefix plus an exact child signature
+and requires `CL_EPARSE`, an empty verdict, and a non-cacheable map; source
+guards pin the state check and registration. Current-source linked execution,
+sanitizer, complete XAR corpus, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final release qualification remain required.
+
 ## CVD long-path admission — 2026-09-02
 
 The directory form of `cl_cvdgetage()` previously formatted each matching

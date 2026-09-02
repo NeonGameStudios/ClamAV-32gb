@@ -576,6 +576,7 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
     const xmlChar *name;
     int indata = 0, inea = 0;
     int rc, gotoffset = 0, gotlength = 0, gotsize = 0;
+    bool member_closed = false;
     bool toc_closed = false;
 
     *a_cksum  = NULL;
@@ -665,10 +666,12 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
 
             } else if (indata && xmlStrEqual(name, (const xmlChar *)"data") &&
                        xmlTextReaderNodeType(reader) == XML_READER_TYPE_END_ELEMENT) {
+                member_closed = true;
                 break;
 
             } else if (inea && xmlStrEqual(name, (const xmlChar *)"ea") &&
                        xmlTextReaderNodeType(reader) == XML_READER_TYPE_END_ELEMENT) {
+                member_closed = true;
                 break;
             }
 
@@ -696,7 +699,7 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
         return xar_incomplete(ctx, "XAR TOC XML reader failed while reading data entries");
     }
 
-    if (gotoffset && gotlength && gotsize) {
+    if (gotoffset && gotlength && gotsize && member_closed) {
         rc = CL_SUCCESS;
     } else if (!indata && !inea && 0 == gotoffset + gotlength + gotsize) {
         if (toc_closed)
