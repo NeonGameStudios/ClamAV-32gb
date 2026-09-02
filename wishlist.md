@@ -1,5 +1,18 @@
 # Wishlist
 
+## ELF direct options admission — 2026-09-02
+
+- Keep exported `cli_scanelf()` fail-visible when an otherwise recognized
+  engine/map context omits scan options; return `CL_ENULLARG` before deadline
+  checks, heuristic evaluation, unpacking, or nested-child scanning.
+- Retain `test_elf_missing_options_is_fail_visible`, its source guards, and
+  manifest evidence that the invalid context does not become sticky incomplete
+  or cache-tainted. Keep valid options in direct ELF timeout regressions.
+  Current-source production-GCC compilation, production-linked execution,
+  complete ELF/unpacker corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## PE direct options admission — 2026-09-02
 
 - Keep exported `cli_scanpe()` fail-visible when an otherwise recognized

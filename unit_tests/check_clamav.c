@@ -47705,16 +47705,19 @@ START_TEST(test_elf_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
@@ -47752,6 +47755,28 @@ START_TEST(test_elf_missing_map_is_fail_visible)
     memset(&ctx, 0, sizeof(ctx));
     ctx.fmap = map;
     ck_assert_int_eq(cli_unpackelf(&ctx), CL_ENULLARG);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_elf_missing_options_is_fail_visible)
+{
+    static const uint8_t input[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scanelf(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
     cl_fmap_close(map);
 }
 END_TEST
@@ -56778,6 +56803,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_elf_map);
     tcase_add_checked_fixture(tc_elf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_elf_map, test_elf_missing_map_is_fail_visible);
+    tcase_add_test(tc_elf_map, test_elf_missing_options_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_unpack_sticky_incomplete_result_is_fail_visible);
 #ifdef CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
     tcase_add_test(tc_elf_map, test_elf_unpack_context_allocation_failure_is_fail_visible);

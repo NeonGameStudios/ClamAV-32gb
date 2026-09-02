@@ -941,6 +941,8 @@ cl_error_t cli_scanelf(cli_ctx *ctx)
     }
     if (ctx->engine == NULL)
         return CL_ENULLARG;
+    if (ctx->options == NULL)
+        return CL_ENULLARG;
 
     ret = cli_elf_checktimelimit(ctx, "ELF inspection reached the configured time limit");
     if (ret != CL_SUCCESS)

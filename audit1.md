@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## ELF direct options admission — 2026-09-02
+
+The exported `cli_scanelf()` entry rejected null context, input fmap, and
+engine state but did not reject missing scan options before deadline checks,
+heuristic evaluation, parser traversal, bytecode/unpacker decisions, and
+nested-child scanning. A direct caller with incomplete scan configuration
+could therefore enter ELF inspection without the required options object. The
+entry now returns `CL_ENULLARG` immediately after engine admission when
+`ctx->options` is absent.
+
+`test_elf_missing_options_is_fail_visible` supplies a map and engine while
+omitting options, and verifies `CL_ENULLARG` without sticky incomplete or
+cache-taint state. The direct ELF timeout regression now provides valid
+options for its specific limit assertion. Source guards and the capability
+manifest record the boundary. Current-source production-GCC compilation,
+production-linked execution, complete ELF/unpacker corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## PE direct options admission — 2026-09-02
 
 The exported `cli_scanpe()` entry rejected null context, input fmap, and
