@@ -12787,6 +12787,63 @@ START_TEST(test_ppt_vba_decoder_finalization_failure_is_fail_visible)
     unlink(path);
 }
 END_TEST
+
+START_TEST(test_ppt_atom_header_read_status_is_fail_visible)
+{
+    static const unsigned char atom_header[] = {0, 0, 0, 0, 1, 0, 0, 0};
+    static const char *const reasons[] = {
+        "PowerPoint atom header was truncated",
+        "PowerPoint atom header could not be read completely",
+    };
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    char path[PATH_MAX];
+    char *dir;
+    size_t header_size = sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t);
+    unsigned int i;
+    int fd;
+
+    ck_assert_uint_eq(header_size, sizeof(atom_header));
+    snprintf(path, sizeof(path), "%s/ppt-atom-header-read-status", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, atom_header, sizeof(atom_header)), sizeof(atom_header));
+
+    map = fmap_open_memory(atom_header, sizeof(atom_header), NULL);
+    ck_assert_ptr_nonnull(map);
+
+    for (i = 0; i < 2; i++) {
+        memset(&engine, 0, sizeof(engine));
+        memset(&options, 0, sizeof(options));
+        memset(&ctx, 0, sizeof(ctx));
+        engine.maxtemporarysize = 1024U * 1024U;
+        ctx.engine              = &engine;
+        ctx.options             = &options;
+        ctx.fmap                = map;
+        ctx.this_layer_tmpdir   = tmpdir;
+        map->dont_cache_flag    = false;
+
+        ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+        clamav_test_force_cli_readn_count  = header_size;
+        clamav_test_force_cli_readn_status = i == 0 ? 1 : 2;
+        dir = cli_ppt_vba_read_ex(fd, &ctx, NULL);
+
+        ck_assert_ptr_null(dir);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, reasons[i]);
+        ck_assert(map->dont_cache_flag);
+        ck_assert_uint_eq(ctx.temporary_bytes, 0);
+        ck_assert_int_eq(clamav_test_force_cli_readn_status, 0);
+    }
+
+    clamav_test_force_cli_readn_count = 0;
+    fmap_free(map);
+    ck_assert_int_eq(close(fd), 0);
+    unlink(path);
+}
+END_TEST
 #endif
 
 START_TEST(test_ooxml_null_context_is_fail_visible)
@@ -60640,6 +60697,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ppt_entry, test_ppt_vba_consumes_compressed_atom_tail);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_ppt_entry, test_ppt_vba_decoder_finalization_failure_is_fail_visible);
+    tcase_add_test(tc_ppt_entry, test_ppt_atom_header_read_status_is_fail_visible);
 #endif
 #ifdef CLAMAV_TEST_LSEEK_WRAP
     tcase_add_test(tc_ppt_entry, test_ppt_vba_lseek_failure_is_fail_visible);

@@ -13197,6 +13197,19 @@ qualification remain open.
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
   resource, and parser/release qualification before closure.
 
+## PowerPoint atom-header read-status reconciliation — 2026-09-02
+
+- Keep the PowerPoint atom-header boundary fail-visible: short materialized
+  reads are `CL_EPARSE`, in-range descriptor failures are `CL_EREAD`, and
+  both outcomes remain sticky incomplete and non-cacheable before atom
+  dispatch; ordinary preflight range truncation retains its existing reason.
+- Retain `ppt_read_atom_header()`, the Linux-static `cli_readn` regression,
+  its source guards, and the `ppt-atom-header-read-status` manifest evidence.
+  Add current-source production-linked execution, complete OLE2/VBA/PowerPoint
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and parser/release qualification
+  before closure.
+
 ## OLE2 MSO stream probe read-status reconciliation — 2026-09-02
 
 - Keep the OLE2 OTF and encrypted-OTF materialized-stream heuristic

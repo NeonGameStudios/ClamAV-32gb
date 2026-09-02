@@ -150,6 +150,26 @@ PDF/Flate corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## PowerPoint atom-header read-status reconciliation — 2026-09-02
+
+The PowerPoint atom iterator prevalidated the materialized range but its
+fixed-header `cli_readn()` helper collapsed a short read and an in-range
+descriptor failure into the same boolean result. That hid the distinction at
+the recognized PowerPoint layer and made the read boundary less auditable.
+
+`ppt_read_atom_header()` now uses `vba_readn_full()`, returning `CL_EPARSE`
+for a short header and `CL_EREAD` for a descriptor failure. The iterator keeps
+the existing explicit range-truncation diagnostic, records a distinct
+read-status diagnostic for each failure class, and stops before atom dispatch.
+
+`test_ppt_atom_header_read_status_is_fail_visible` injects both outcomes with
+the Linux-static `cli_readn` wrapper and asserts sticky incomplete state,
+cache taint, and cleanup. The current source, test, registration, and
+capability manifest are source-guarded. Current-source production-GCC and
+linked execution, complete OLE2/VBA/PowerPoint corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.
+
 
 ## EGG stream decoder finalization status — 2026-09-02
 

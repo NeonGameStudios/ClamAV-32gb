@@ -2598,9 +2598,10 @@ typedef struct {
     uint32_t length;
 } atom_header_t;
 
-static int
+static cl_error_t
 ppt_read_atom_header(int fd, atom_header_t *atom_header)
 {
+    cl_error_t status;
     uint16_t v;
     struct ppt_header {
         uint16_t ver;
@@ -2609,9 +2610,10 @@ ppt_read_atom_header(int fd, atom_header_t *atom_header)
     } h;
 
     cli_dbgmsg("in ppt_read_atom_header\n");
-    if (cli_readn(fd, &h, sizeof(struct ppt_header)) != sizeof(struct ppt_header)) {
+    status = vba_readn_full(fd, &h, sizeof(struct ppt_header));
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("read ppt_header failed\n");
-        return FALSE;
+        return status;
     }
     v = vba_endian_convert_16(h.ver, FALSE);
     cli_dbgmsg("\tversion: 0x%.2x\n", v & 0xF);
@@ -2622,7 +2624,7 @@ ppt_read_atom_header(int fd, atom_header_t *atom_header)
     atom_header->length = vba_endian_convert_32(h.length, FALSE);
     cli_dbgmsg("\tlength: 0x%.8x\n", (int)atom_header->length);
 
-    return TRUE;
+    return CL_SUCCESS;
 }
 
 /*
@@ -2846,9 +2848,16 @@ ppt_stream_iter(int fd, const char *dir, cli_ctx *ctx, uint64_t *temporary_reser
             cli_mark_scan_incomplete(ctx, "PowerPoint input ended before an atom header was complete");
             return NULL;
         }
-        if (!ppt_read_atom_header(fd, &atom_header)) {
-            cli_mark_scan_incomplete(ctx, "PowerPoint atom header could not be read completely");
-            return NULL;
+        {
+            cl_error_t status = ppt_read_atom_header(fd, &atom_header);
+
+            if (status != CL_SUCCESS) {
+                if (status == CL_EREAD)
+                    cli_mark_scan_incomplete(ctx, "PowerPoint atom header could not be read completely");
+                else
+                    cli_mark_scan_incomplete(ctx, "PowerPoint atom header was truncated");
+                return NULL;
+            }
         }
 
         if (atom_header.length == 0) {
