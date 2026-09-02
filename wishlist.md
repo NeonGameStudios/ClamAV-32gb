@@ -1,5 +1,17 @@
 # Wishlist
 
+## PE packer metadata write visibility — 2026-09-01
+
+- Keep every PE packer metadata write fail-visible, including `HasEmptySection`
+  and `Packer`: record the exact sticky incomplete state, prevent fmap caching,
+  preserve the metadata failure across unpacker cleanup and early clean exits,
+  and retain stronger parser, resource, or detection results.
+- Retain `test_pe_packer_metadata_record_failure_is_fail_visible` and its
+  JSON-wrap source guards; complete current-source production-GCC compilation
+  and production-linked execution, sanitizer, complete PE/packer corpus,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## MIME/MHTML metadata write visibility — 2026-09-01
 
 - Keep MIME and MHTML metadata object, array, string, integer, null, and

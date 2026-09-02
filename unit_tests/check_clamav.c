@@ -305,6 +305,8 @@ static int pe_test_fail_import_item;
 static int pe_test_fail_imphash;
 static int pe_test_fail_header_metadata;
 static int pe_test_fail_section_metadata;
+static int pe_test_fail_empty_section_metadata;
+static int pe_test_fail_packer_metadata;
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
 {
@@ -327,6 +329,8 @@ cl_error_t __wrap_cli_jsonbool(json_object *obj, const char *key, int i)
         return CL_EMEM;
     if (pdf_test_fail_incorrect_pages_count && key && strcmp(key, "IncorrectPagesCount") == 0)
         return CL_EMEM;
+    if (pe_test_fail_empty_section_metadata && key && strcmp(key, "HasEmptySection") == 0)
+        return CL_EMEM;
     return __real_cli_jsonbool(obj, key, i);
 }
 
@@ -345,6 +349,8 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
     if (pe_test_fail_import_item && key == NULL && s && strcmp(s, "kernel32.TestFunction") == 0)
         return CL_EMEM;
     if (pe_test_fail_imphash && key && strcmp(key, "Imphash") == 0)
+        return CL_EMEM;
+    if (pe_test_fail_packer_metadata && key && strcmp(key, "Packer") == 0)
         return CL_EMEM;
     return __real_cli_jsonstr(obj, key, s);
 }
@@ -42620,6 +42626,83 @@ START_TEST(test_pe_mew_loader_read_failure_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_pe_packer_metadata_record_failure_is_fail_visible)
+{
+    const char *file = OBJDIR PATHSEP "input" PATHSEP "clamav_hdb_scanfiles" PATHSEP "clam-mew.exe";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct stat st;
+    uint8_t *data;
+    size_t offset = 0;
+    unsigned int failure_mode;
+    int fd;
+
+    fd = open(file, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+    data = malloc((size_t)st.st_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < (size_t)st.st_size) {
+        ssize_t nread = read(fd, data + offset, (size_t)st.st_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file, strerror(errno));
+        offset += (size_t)nread;
+    }
+    close(fd);
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (failure_mode = 0; failure_mode < 2; failure_mode++) {
+        cli_scan_layer_t layer;
+        cli_ctx ctx;
+        fmap_t *map;
+        cl_error_t ret;
+
+        map = cl_fmap_open_memory(data, (size_t)st.st_size);
+        ck_assert_ptr_nonnull(map);
+        memset(&layer, 0, sizeof(layer));
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine                   = scan_engine;
+        ctx.dconf                    = scan_engine->dconf;
+        ctx.options                  = &options;
+        ctx.fmap                     = map;
+        ctx.this_layer_tmpdir        = tmpdir;
+        ctx.this_layer_metadata_json = json_object_new_object();
+        ck_assert_ptr_nonnull(ctx.this_layer_metadata_json);
+        ctx.recursion_stack          = &layer;
+        ctx.recursion_stack_size     = 1;
+        layer.fmap                   = map;
+
+        if (failure_mode == 0)
+            pe_test_fail_empty_section_metadata = 1;
+        else
+            pe_test_fail_packer_metadata = 1;
+
+        ret = cli_scanpe(&ctx);
+        pe_test_fail_empty_section_metadata = 0;
+        pe_test_fail_packer_metadata        = 0;
+
+        ck_assert_int_eq(ret, CL_EMEM);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         "PE packer metadata JSON could not be recorded");
+        ck_assert(map->dont_cache_flag);
+
+        json_object_put(ctx.this_layer_metadata_json);
+        cl_fmap_close(map);
+    }
+
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+#endif
+
 static size_t pe_nspack_read_failure_offset = SIZE_MAX;
 
 static const void *pe_nspack_read_failure(fmap_t *map, size_t at, size_t len, int lock)
@@ -55654,6 +55737,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_swizzor_resource_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_import_thunk_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_mew_loader_read_failure_is_fail_visible);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_cl, test_pe_packer_metadata_record_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_pe_nspack_loader_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_petite_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_group_header_read_failure_is_fail_visible);

@@ -219,7 +219,7 @@ static cl_error_t cli_pe_cleanup_temp(cli_ctx *ctx, int *fd, char **tempfile,
         if (ret != CL_SUCCESS) {                          \
             cli_exe_info_destroy(peinfo);                 \
             FREESEC;                                      \
-            return ret;                                   \
+            return cli_merge_scan_status(ret, metadata_status); \
         }                                                 \
         FREESEC;                                          \
         found       = 0;                                  \
@@ -237,7 +237,7 @@ static cl_error_t cli_pe_cleanup_temp(cli_ctx *ctx, int *fd, char **tempfile,
         }                                                  \
         cli_dbgmsg("cli_scanpe: PESpin: Size exceeded\n"); \
         cli_exe_info_destroy(peinfo);                      \
-        return ret;
+        return cli_merge_scan_status(ret, metadata_status);
 
 #define CLI_UNPRESULTS_(NAME, FSGSTUFF, EXPR, GOOD, FREEME)                                                     \
     switch (EXPR) {                                                                                             \
@@ -251,7 +251,7 @@ static cl_error_t cli_pe_cleanup_temp(cli_ctx *ctx, int *fd, char **tempfile,
                 ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, CL_ESEEK);                                    \
                 free(tempfile);                                                                                 \
                 tempfile = NULL;                                                                                \
-                return ret;                                                                                     \
+                return cli_merge_scan_status(ret, metadata_status);                                             \
             }                                                                                                   \
             cli_dbgmsg("***** Scanning rebuilt PE file *****\n");                                               \
             ret = cli_checktimelimit(ctx);                                                                        \
@@ -261,7 +261,7 @@ static cl_error_t cli_pe_cleanup_temp(cli_ctx *ctx, int *fd, char **tempfile,
                 ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret);                                            \
                 free(tempfile);                                                                                   \
                 tempfile = NULL;                                                                                  \
-                return ret;                                                                                        \
+                return cli_merge_scan_status(ret, metadata_status);                                              \
             }                                                                                                     \
             if (temporary_reserved) \
                 ret = cli_magic_scan_desc_type_reserved(ndesc, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE); \
@@ -272,12 +272,12 @@ static cl_error_t cli_pe_cleanup_temp(cli_ctx *ctx, int *fd, char **tempfile,
                 ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret);                                          \
                 free(tempfile);                                                                                 \
                 tempfile = NULL;                                                                                \
-                return ret;                                                                                     \
+                return cli_merge_scan_status(ret, metadata_status);                                               \
             }                                                                                                   \
             ret = cli_pe_cleanup_temp(ctx, &ndesc, &tempfile, ret);                                              \
             free(tempfile);                                                                                     \
             tempfile = NULL;                                                                                    \
-            return ret;                                                                                         \
+            return cli_merge_scan_status(ret, metadata_status);                                                   \
                                                                                                                 \
             FSGSTUFF;                                                                                           \
                                                                                                                 \
@@ -293,7 +293,7 @@ static cl_error_t cli_pe_cleanup_temp(cli_ctx *ctx, int *fd, char **tempfile,
             if (ret != CL_SUCCESS) {                                                                             \
                 cli_exe_info_destroy(peinfo);                                                                   \
                 cli_multifree FREEME;                                                                           \
-                return ret;                                                                                     \
+                return cli_merge_scan_status(ret, metadata_status);                                               \
             }                                                                                                   \
             cli_multifree FREEME;                                                                               \
     }
@@ -3198,8 +3198,18 @@ int cli_scanpe(cli_ctx *ctx)
     fmap_t *map;
     struct cli_pe_hook_data pedata;
     uint64_t temporary_reserved = 0;
+    cl_error_t metadata_status = CL_SUCCESS;
     int toval                   = 0;
     struct json_object *pe_json = NULL;
+
+#define PE_RECORD_PACKER_JSON(call)                                                \
+    do {                                                                            \
+        cl_error_t json_status = (call);                                           \
+        if (json_status != CL_SUCCESS) {                                           \
+            cli_mark_scan_incomplete(ctx, "PE packer metadata JSON could not be recorded"); \
+            metadata_status = cli_merge_scan_status(metadata_status, json_status); \
+        }                                                                           \
+    } while (0)
 
     if (!ctx) {
         cli_errmsg("cli_scanpe: ctx == NULL\n");
@@ -3795,7 +3805,7 @@ int cli_scanpe(cli_ctx *ctx)
                 cli_dbgmsg("cli_scanpe: UPX/FSG/MEW: empty section found - assuming compression\n");
 
                 if (pe_json != NULL)
-                    cli_jsonbool(pe_json, "HasEmptySection", 1);
+                    PE_RECORD_PACKER_JSON(cli_jsonbool(pe_json, "HasEmptySection", 1));
 
                 break;
             }
@@ -3902,7 +3912,7 @@ int cli_scanpe(cli_ctx *ctx)
             }
 
             if (pe_json != NULL)
-                cli_jsonstr(pe_json, "Packer", "MEW");
+                PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "MEW"));
 
             CLI_UNPTEMP("cli_scanpe: MEW", (src, 0));
             CLI_UNPRESULTS("cli_scanpe: MEW", (unmew11(src, offdiff, ssize, dsize, EC32(peinfo->pe_opt.opt32.ImageBase), peinfo->sections[0].rva, uselzma, ndesc, ctx)), 1, (src, 0));
@@ -4031,7 +4041,7 @@ int cli_scanpe(cli_ctx *ctx)
             }
 
             if (pe_json != NULL)
-                cli_jsonstr(pe_json, "Packer", "Upack");
+                PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "Upack"));
 
             CLI_UNPTEMP("cli_scanpe: Upack", (dest, 0));
             CLI_UNPRESULTS("cli_scanpe: Upack", (unupack(upack, dest, dsize, epbuff, vma, peinfo->ep, EC32(peinfo->pe_opt.opt32.ImageBase), peinfo->sections[0].rva, ndesc, ctx)), 1, (dest, 0));
@@ -4054,7 +4064,7 @@ int cli_scanpe(cli_ctx *ctx)
         if (ssize <= 0x19 || dsize <= ssize) {
             cli_dbgmsg("cli_scanpe: FSG: Size mismatch (ssize: %d, dsize: %d)\n", ssize, dsize);
             cli_exe_info_destroy(peinfo);
-            return CL_CLEAN;
+            return pe_reconcile_status(ctx, cli_merge_scan_status(CL_CLEAN, metadata_status));
         }
 
         newedx = cli_readint32(epbuff + 2) - EC32(peinfo->pe_opt.opt32.ImageBase);
@@ -4131,7 +4141,7 @@ int cli_scanpe(cli_ctx *ctx)
         }
 
         if (pe_json != NULL)
-            cli_jsonstr(pe_json, "Packer", "FSG");
+            PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "FSG"));
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, 0));
         CLI_UNPRESULTSFSG2("cli_scanpe: FSG", (unfsg_200(newesi - peinfo->sections[i + 1].rva + src, dest, fsg_input_size, dsize, newedi, EC32(peinfo->pe_opt.opt32.ImageBase), newedx, ndesc, ctx)), 1, (dest, 0));
@@ -4155,7 +4165,7 @@ int cli_scanpe(cli_ctx *ctx)
         if (ssize <= 0x19 || dsize <= ssize) {
             cli_dbgmsg("cli_scanpe: FSG: Size mismatch (ssize: %d, dsize: %d)\n", ssize, dsize);
             cli_exe_info_destroy(peinfo);
-            return CL_CLEAN;
+            return pe_reconcile_status(ctx, cli_merge_scan_status(CL_CLEAN, metadata_status));
         }
 
         if (!(t = cli_rawaddr(cli_readint32(epbuff + 1) - EC32(peinfo->pe_opt.opt32.ImageBase), NULL, 0, &err, fsize, peinfo->hdr_size)) && err) {
@@ -4263,7 +4273,7 @@ int cli_scanpe(cli_ctx *ctx)
         fsg_input_size -= newesi;
 
         if (pe_json != NULL)
-            cli_jsonstr(pe_json, "Packer", "FSG");
+            PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "FSG"));
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, sections, 0));
         CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc, ctx)), 1, (dest, sections, 0));
@@ -4306,7 +4316,7 @@ int cli_scanpe(cli_ctx *ctx)
         if (ssize <= 0x19 || dsize <= ssize) {
             cli_dbgmsg("cli_scanpe: FSG: Size mismatch (ssize: %d, dsize: %d)\n", ssize, dsize);
             cli_exe_info_destroy(peinfo);
-            return CL_CLEAN;
+            return pe_reconcile_status(ctx, cli_merge_scan_status(CL_CLEAN, metadata_status));
         }
 
         gp = peinfo->sections[i + 1].raw - t;
@@ -4392,7 +4402,7 @@ int cli_scanpe(cli_ctx *ctx)
         fsg_input_size -= newesi;
 
         if (pe_json != NULL)
-            cli_jsonstr(pe_json, "Packer", "FSG");
+            PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "FSG"));
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, sections, 0));
         CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc, ctx)), 1, (dest, sections, 0));
@@ -4420,7 +4430,7 @@ int cli_scanpe(cli_ctx *ctx)
         if (ssize <= 0x19 || dsize <= ssize || dsize > CLI_MAX_ALLOCATION) {
             cli_dbgmsg("cli_scanpe: UPX: Size mismatch or dsize too big (ssize: %d, dsize: %d)\n", ssize, dsize);
             cli_exe_info_destroy(peinfo);
-            return CL_CLEAN;
+            return pe_reconcile_status(ctx, cli_merge_scan_status(CL_CLEAN, metadata_status));
         }
 
         if (!peinfo->sections[i + 1].rsz) {
@@ -4548,7 +4558,7 @@ int cli_scanpe(cli_ctx *ctx)
         CLI_UNPTEMP("cli_scanpe: UPX/FSG", (dest, 0));
 
         if (pe_json != NULL)
-            cli_jsonstr(pe_json, "Packer", "UPX");
+            PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "UPX"));
 
         ret = cli_checktimelimit(ctx);
         if (ret != CL_SUCCESS) {
@@ -4668,7 +4678,7 @@ int cli_scanpe(cli_ctx *ctx)
             }
 
             if (pe_json != NULL)
-                cli_jsonstr(pe_json, "Packer", "Petite");
+                PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "Petite"));
 
             CLI_UNPTEMP("cli_scanpe: Petite", (dest, 0));
             CLI_UNPRESULTS("Petite", (petite_inflate2x_1to9(dest, peinfo->min, peinfo->max - peinfo->min, peinfo->sections, peinfo->nsections - (found == 1 ? 1 : 0), EC32(peinfo->pe_opt.opt32.ImageBase), peinfo->vep, ndesc, found, peinfo->dirs[2].VirtualAddress, peinfo->dirs[2].Size, ctx)), 0, (dest, 0));
@@ -4703,7 +4713,7 @@ int cli_scanpe(cli_ctx *ctx)
         }
 
         if (pe_json != NULL)
-            cli_jsonstr(pe_json, "Packer", "PEspin");
+            PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "PEspin"));
 
         CLI_UNPTEMP("cli_scanpe: PESpin", (spinned, 0));
             CLI_UNPRESULTS_("cli_scanpe: PEspin", SPINCASE(), (unspin(spinned, fsize, peinfo->sections, peinfo->nsections - 1, peinfo->vep, ndesc, ctx)), 0, (spinned, 0));
@@ -4774,7 +4784,7 @@ int cli_scanpe(cli_ctx *ctx)
             }
 
             if (pe_json != NULL)
-                cli_jsonstr(pe_json, "Packer", "yC");
+                PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "yC"));
 
             // record number of alerts before unpacking and scanning
             num_alerts = evidence_num_alerts(ctx->this_layer_evidence);
@@ -4911,7 +4921,7 @@ int cli_scanpe(cli_ctx *ctx)
         }
 
         if (pe_json != NULL)
-            cli_jsonstr(pe_json, "Packer", "WWPack");
+            PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "WWPack"));
 
         CLI_UNPTEMP("cli_scanpe: WWPack", (src, packer, 0));
             CLI_UNPRESULTS("cli_scanpe: WWPack", (wwunpack((uint8_t *)src, ssize, packer, peinfo->sections, peinfo->nsections - 1, peinfo->e_lfanew, ndesc, ctx)), 0, (src, packer, 0));
@@ -4993,7 +5003,7 @@ int cli_scanpe(cli_ctx *ctx)
         }
 
         if (pe_json != NULL)
-            cli_jsonstr(pe_json, "Packer", "Aspack");
+            PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "Aspack"));
 
         CLI_UNPTEMP("cli_scanpe: Aspack", (src, 0));
         CLI_UNPRESULTS("cli_scanpe: Aspack", (unaspack((uint8_t *)src, ssize, peinfo->sections, peinfo->nsections, peinfo->vep - 1, EC32(peinfo->pe_opt.opt32.ImageBase), ndesc, aspack_ver, ctx)), 1, (src, 0));
@@ -5094,7 +5104,7 @@ int cli_scanpe(cli_ctx *ctx)
         cli_dbgmsg("cli_scanpe: NsPack: OEP = %08x\n", eprva);
 
         if (pe_json != NULL)
-            cli_jsonstr(pe_json, "Packer", "NsPack");
+            PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "NsPack"));
 
         CLI_UNPTEMP("cli_scanpe: NsPack", (dest, 0));
         /* Keep the bounded source window locked until unspack() has consumed
@@ -5153,8 +5163,11 @@ pe_legacy_unpackers_done:
     if (cli_json_timeout_cycle_check(ctx, &toval) != CL_SUCCESS)
         return CL_ETIMEOUT;
 
-    return pe_reconcile_status(ctx, CL_SUCCESS);
+    ret = cli_merge_scan_status(ret, metadata_status);
+    return pe_reconcile_status(ctx, ret);
 }
+
+#undef PE_RECORD_PACKER_JSON
 
 cl_error_t cli_pe_targetinfo(cli_ctx *ctx, struct cli_exe_info *peinfo)
 {
