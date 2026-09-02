@@ -50474,6 +50474,94 @@ static void test_udf_prepare_scan_context(cli_ctx *ctx, cli_scan_layer_t layers[
     layers[0].fmap            = map;
 }
 
+struct udf_anchor_timeout_state {
+    const uint8_t *data;
+    size_t length;
+    size_t anchor_offset;
+    cli_ctx *ctx;
+    bool expired;
+};
+
+static off_t udf_anchor_timeout_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct udf_anchor_timeout_state *state = handle;
+
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+    if (count > state->length - (size_t)offset)
+        count = state->length - (size_t)offset;
+    memcpy(buf, state->data + (size_t)offset, count);
+
+    if (!state->expired && (uint64_t)offset <= (uint64_t)state->anchor_offset &&
+        (uint64_t)count > (uint64_t)state->anchor_offset - (uint64_t)offset) {
+        struct timeval now;
+
+        if (gettimeofday(&now, NULL) == 0) {
+            state->ctx->time_limit.tv_sec  = now.tv_sec - 1;
+            state->ctx->time_limit.tv_usec = 0;
+            state->expired                  = true;
+        }
+    }
+
+    return (off_t)count;
+}
+
+START_TEST(test_udf_anchor_descriptor_sequence_timeout_is_fail_visible)
+{
+    enum {
+        UDF_TEST_MAIN_LOCATION = 257,
+        UDF_TEST_BLOCKS        = UDF_TEST_MAIN_LOCATION + 1,
+        UDF_TEST_SIZE          = UDF_TEST_BLOCKS * VOLUME_DESCRIPTOR_SIZE
+    };
+    uint8_t *data;
+    struct udf_anchor_timeout_state state;
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t anchor_offset = 256U * VOLUME_DESCRIPTOR_SIZE;
+    cl_error_t ret;
+
+    data = calloc(1, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(data);
+    test_udf_put_le16(data + anchor_offset + offsetof(DescriptorTag, tagId), 2);
+    test_udf_put_le32(data + anchor_offset +
+                          offsetof(AnchorVolumeDescriptorPointer, mainVolumeDescriptorSequence) +
+                          offsetof(extent_ad, extentLength),
+                      VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + anchor_offset +
+                          offsetof(AnchorVolumeDescriptorPointer, mainVolumeDescriptorSequence) +
+                          offsetof(extent_ad, extentLocation),
+                      UDF_TEST_MAIN_LOCATION);
+    test_udf_finalize_tag(data + anchor_offset, sizeof(AnchorVolumeDescriptorPointer), 256);
+
+    memset(&options, 0, sizeof(options));
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&state, 0, sizeof(state));
+    state.data          = data;
+    state.length        = UDF_TEST_SIZE;
+    state.anchor_offset = anchor_offset;
+    state.ctx           = &ctx;
+    ctx.options         = &options;
+    ctx.engine          = &engine;
+    map = cl_fmap_open_handle(&state, 0, UDF_TEST_SIZE, udf_anchor_timeout_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap            = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "UDF main descriptor sequence traversal reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+    ck_assert(state.expired);
+
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_udf_declared_information_length_is_fail_visible)
 {
     enum {
@@ -57707,6 +57795,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_udf_map, test_udf_unknown_generic_descriptor_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_mismatched_file_lists_are_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_missing_file_set_descriptor_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_anchor_descriptor_sequence_timeout_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_declared_information_length_is_fail_visible);
     tcase_add_test(tc_udf_map, test_udf_allocation_descriptor_alignment_is_fail_visible);
     suite_add_tcase(s, tc_udf_corpus);

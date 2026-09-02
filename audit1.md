@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## UDF anchored main-sequence deadline — 2026-09-02
+
+The confirmed UDF anchor path already bounded the main volume-descriptor
+sequence by checked file-map geometry, but its per-descriptor loop had no
+inner shared-deadline checkpoint. It now calls `udf_checktimelimit()` before
+each descriptor read and returns `CL_ETIMEOUT` with sticky
+incomplete/non-cacheable state when the deadline expires.
+
+`test_udf_anchor_descriptor_sequence_timeout_is_fail_visible` uses a
+handle-backed fmap whose read callback expires the context after the anchor
+descriptor is admitted; the regression therefore proves that the first main
+sequence descriptor is rejected before a read. Source guards and a dedicated
+bounded capability row record the boundary. Current-source production-GCC
+compilation, production-linked execution, complete UDF corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## HFS+ compressed-resource type-table deadline — 2026-09-02
 
 HFS+ compressed-resource discovery bounded the resource type-list size and

@@ -1,5 +1,17 @@
 # Wishlist
 
+## UDF anchored main-sequence deadline — 2026-09-02
+
+- Keep the confirmed UDF anchor main-descriptor sequence bounded by the
+  shared deadline before every descriptor read; preserve `CL_ETIMEOUT`, the
+  exact sticky incomplete reason, and fmap cache taint when the sequence
+  expires.
+- Retain `test_udf_anchor_descriptor_sequence_timeout_is_fail_visible`, its
+  source guards, and the dedicated manifest row while completing current-
+  source production-GCC and production-linked execution, the complete UDF
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification.
+
 ## HFS+ compressed-resource type-table deadline — 2026-09-02
 
 - Keep the declared HFS+ compressed-resource type table bounded by the shared

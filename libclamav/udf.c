@@ -1429,6 +1429,10 @@ static cl_error_t udf_scan_anchor_volume(cli_ctx *ctx, const size_t offset)
     for (cursor = sequence_offset; cursor < end; cursor += VOLUME_DESCRIPTOR_SIZE) {
         tag_identifier tag_id;
 
+        ret = udf_checktimelimit(ctx, "UDF main descriptor sequence traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            return ret;
+
         ret = udf_copy_descriptor_block(ctx, cursor, block,
                                         "UDF main descriptor sequence could not be read completely");
         if (ret != CL_SUCCESS)
