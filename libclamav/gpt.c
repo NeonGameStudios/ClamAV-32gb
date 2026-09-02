@@ -117,6 +117,21 @@ static void gpt_printSectors(cli_ctx *ctx, size_t sectorsize);
 static void gpt_printGUID(uint8_t GUID[], const char *msg);
 static cl_error_t gpt_partition_intersection(cli_ctx *ctx, struct gpt_header hdr, size_t sectorsize);
 
+static bool gpt_partition_entry_is_unused(const struct gpt_partition_entry *entry)
+{
+    size_t i;
+
+    if (entry == NULL)
+        return false;
+
+    for (i = 0; i < sizeof(entry->typeGUID); ++i) {
+        if (entry->typeGUID[i] != 0)
+            return false;
+    }
+
+    return true;
+}
+
 /* returns 0 on failing to detect sectorsize */
 static cl_error_t gpt_detect_size_read(fmap_t *map, size_t *detected_size, cli_ctx *ctx)
 {
@@ -441,9 +456,19 @@ static cl_error_t gpt_scan_partitions(cli_ctx *ctx, struct gpt_header hdr, size_
             gpe.name[j] = le16_to_host(gpe.name[j]);
         }
 
-        /* check that partition is not empty and within a valid location */
-        if (gpe.firstLBA == 0) {
-            /* empty partition, invalid */
+        /* An unused GPT entry has an all-zero type GUID and an all-zero LBA
+         * range. A typed entry with a zero start, or an unused entry carrying
+         * stale coordinates, is malformed rather than an empty partition. */
+        if (gpt_partition_entry_is_unused(&gpe)) {
+            if (gpe.firstLBA != 0 || gpe.lastLBA != 0) {
+                cli_mark_scan_incomplete(ctx, "GPT unused partition entry has a non-zero range");
+                status = CL_EFORMAT;
+                goto done;
+            }
+        } else if (gpe.firstLBA == 0) {
+            cli_mark_scan_incomplete(ctx, "GPT typed partition entry has a zero start");
+            status = CL_EFORMAT;
+            goto done;
         } else if ((gpe.firstLBA > gpe.lastLBA) ||
                    (gpe.firstLBA < hdr.firstUsableLBA) || (gpe.lastLBA > hdr.lastUsableLBA)) {
             cli_dbgmsg("cli_scangpt: GPT partition exists outside specified bounds\n");
@@ -805,8 +830,16 @@ static cl_error_t gpt_partition_intersection(cli_ctx *ctx, struct gpt_header hdr
         gpe.firstLBA = le64_to_host(gpe.firstLBA);
         gpe.lastLBA  = le64_to_host(gpe.lastLBA);
 
-        if (gpe.firstLBA == 0) {
-            /* empty partition, invalid */
+        if (gpt_partition_entry_is_unused(&gpe)) {
+            if (gpe.firstLBA != 0 || gpe.lastLBA != 0) {
+                cli_mark_scan_incomplete(ctx, "GPT unused partition entry has a non-zero range");
+                status = CL_EFORMAT;
+                goto done;
+            }
+        } else if (gpe.firstLBA == 0) {
+            cli_mark_scan_incomplete(ctx, "GPT typed partition entry has a zero start");
+            status = CL_EFORMAT;
+            goto done;
         } else if ((gpe.firstLBA > gpe.lastLBA) ||
                    (gpe.firstLBA < hdr.firstUsableLBA) || (gpe.lastLBA > hdr.lastUsableLBA)) {
             /* partition exists outside bounds specified by header or invalid */

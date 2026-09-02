@@ -52,6 +52,19 @@
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification.
 
+## GPT zero-length partition admission — 2026-09-02
+
+- Keep an all-zero GPT type GUID and all-zero LBA range as the only unused
+  entry shape; reject typed zero-start entries and stale-coordinate unused
+  entries before nested/intersection dispatch.
+- Retain `test_gpt_typed_zero_length_partition_is_fail_visible`, exact
+  diagnostic, sticky/cache-taint assertions, source guards, and manifest.
+  Current-source compile/relink/execution remain pending while
+  `clamav-poc-build` cannot start with its full Docker overlay. Complete
+  GPT/partition corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## Fileblob status propagation — 2026-09-02
 
 - Retain the first specific fileblob required-operation status through

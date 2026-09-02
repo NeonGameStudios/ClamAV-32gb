@@ -106,6 +106,26 @@ claimed here. Complete ALZ corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## GPT zero-length partition admission — 2026-09-02
+
+GPT partition traversal treated every entry with `firstLBA == 0` as unused.
+That silently discarded typed entries with a nonzero type GUID and zero LBA
+range, and could also scan stale coordinates in all-zero entries. The parser
+now accepts an unused entry only when both its type GUID and first/last LBA
+range are zero; typed zero-start and unused nonzero-range entries are sticky
+`CL_EFORMAT` failures in both normal and intersection walks.
+
+`test_gpt_typed_zero_length_partition_is_fail_visible` constructs a
+CRC-valid GPT whose only entry has a nonzero type GUID but zero range and
+requires the exact diagnostic, incomplete state, and cache taint. Source
+guards and the capability manifest record the boundary. Current-source
+production-GCC compile/relink/execution are pending because
+`clamav-poc-build` remains unable to start with a full Docker overlay; no
+runtime qualification is claimed here. Complete GPT/partition corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## TNEF fileblob status reconciliation — 2026-09-02
 
 TNEF attachment handling now preserves the specific status retained by a

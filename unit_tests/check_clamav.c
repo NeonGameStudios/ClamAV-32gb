@@ -29721,6 +29721,81 @@ START_TEST(test_gpt_invalid_partition_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gpt_typed_zero_length_partition_is_fail_visible)
+{
+    uint8_t data[6 * 512] = {0};
+    uint8_t *primary = data + 512;
+    uint8_t *table = data + 2 * 512;
+    uint8_t *secondary = data + 5 * 512;
+    uint32_t table_crc;
+    uint32_t header_crc;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* A nonzero type GUID with an all-zero LBA range is not an unused GPT
+     * entry. It must not become a zero-length nested scan. */
+    data[446 + 4] = MBR_PROTECTIVE;
+    cli_writeint32(data + 446 + 8, 1);
+    cli_writeint32(data + 446 + 12, 5);
+    data[510] = 0x55;
+    data[511] = 0xaa;
+    table[0] = 1;
+    table_crc = (uint32_t)crc32(0L, table, sizeof(struct gpt_partition_entry));
+
+    memcpy(primary, GPT_SIGNATURE_STR, 8);
+    cli_writeint32(primary + 8, 0x00010000U);
+    cli_writeint32(primary + 12, sizeof(struct gpt_header));
+    write_test_le64(primary + 24, 1);
+    write_test_le64(primary + 32, 5);
+    write_test_le64(primary + 40, 3);
+    write_test_le64(primary + 48, 3);
+    write_test_le64(primary + 72, 2);
+    cli_writeint32(primary + 80, 1);
+    cli_writeint32(primary + 84, sizeof(struct gpt_partition_entry));
+    cli_writeint32(primary + 88, table_crc);
+    header_crc = (uint32_t)crc32(0L, primary, sizeof(struct gpt_header));
+    cli_writeint32(primary + 16, header_crc);
+
+    memcpy(secondary, primary, sizeof(struct gpt_header));
+    write_test_le64(secondary + 24, 5);
+    write_test_le64(secondary + 32, 1);
+    write_test_le64(secondary + 72, 4);
+    cli_writeint32(secondary + 16, 0);
+    header_crc = (uint32_t)crc32(0L, secondary, sizeof(struct gpt_header));
+    cli_writeint32(secondary + 16, header_crc);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxpartitions    = 1;
+    options.parse            = CL_SCAN_PARSE_ARCHIVE;
+    map                      = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_GPT;
+    layer.size               = sizeof(data);
+    layer.fmap               = map;
+
+    ret = cli_scangpt(&ctx, 512);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "GPT typed partition entry has a zero start");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_gpt_sticky_incomplete_result_is_fail_visible)
 {
     enum {
@@ -56684,6 +56759,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gpt, test_gpt_invalid_secondary_header_is_fail_visible);
     tcase_add_test(tc_gpt, test_gpt_secondary_location_is_fail_visible);
     tcase_add_test(tc_gpt, test_gpt_invalid_partition_is_fail_visible);
+    tcase_add_test(tc_gpt, test_gpt_typed_zero_length_partition_is_fail_visible);
     tcase_add_test(tc_gpt, test_gpt_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_gpt_corpus);
     tcase_add_checked_fixture(tc_gpt_corpus, cl_setup, cl_teardown);
@@ -57413,6 +57489,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_apm_partition_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gpt_invalid_partition_is_fail_visible);
+    tcase_add_test(tc_cl, test_gpt_typed_zero_length_partition_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_parser_errors_are_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_font_table_is_parse_error);
