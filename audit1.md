@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## MBR extended-chain extent admission — 2026-09-02
+
+The MBR parser previously validated each linked EBR only against the whole
+input fmap. A valid-looking link could therefore move the EBR walk outside the
+primary extended partition that declared the chain. Both the nested partition
+walk and the optional intersection walk now require the complete EBR record to
+fit within that declared native-width extent; an out-of-extent link is
+`CL_EFORMAT`, records an explicit incomplete reason, and taints the fmap as
+non-cacheable. The new `test_mbr_ebr_outside_extent_is_fail_visible`
+regression constructs an in-map but out-of-extent link and asserts the exact
+failure. Current-source linked execution, complete partition-image corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## TNEF debug-message read status — 2026-09-02
 
 The optional CL_DEBUG TNEF message-metadata path previously collapsed an

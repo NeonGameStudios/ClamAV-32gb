@@ -1,5 +1,17 @@
 # Wishlist
 
+## MBR extended-chain extent admission — 2026-09-02
+
+- Keep every linked EBR record inside the primary extended partition's
+  declared extent in both nested scanning and intersection analysis. An
+  in-map but out-of-extent link must remain `CL_EFORMAT`, sticky incomplete,
+  and non-cacheable.
+- Retain `test_mbr_ebr_outside_extent_is_fail_visible`, its source guards, and
+  capability evidence. Add current-source linked execution, complete
+  partition-image corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  parser/release qualification before closure.
+
 ## TNEF debug-message read status — 2026-09-02
 
 - Keep the optional CL_DEBUG TNEF message-metadata path distinguishing an

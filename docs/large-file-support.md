@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MBR extended-chain extent admission — 2026-09-02
+
+Linked MBR EBR records are now required to fit completely within the primary
+extended partition's declared extent in both nested partition scanning and
+partition-intersection analysis. An in-map but out-of-extent link is treated
+as malformed, records an explicit incomplete reason, and prevents caching.
+The focused `test_mbr_ebr_outside_extent_is_fail_visible` regression covers
+this boundary. Current-source linked execution, complete partition-image
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## MIME caller export status reconciliation — 2026-09-02
 
 MIME callers above `messageExport()` now retain the first specific status from

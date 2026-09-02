@@ -65,7 +65,8 @@ static cl_error_t mbr_scanextprtn(cli_ctx *ctx, unsigned *prtncount, size_t extl
 static cl_error_t mbr_check_mbr(struct mbr_boot_record *record, size_t maplen, size_t sectorsize);
 static cl_error_t mbr_check_ebr(struct mbr_boot_record *record);
 static cl_error_t mbr_primary_partition_intersection(cli_ctx *ctx, struct mbr_boot_record mbr, size_t sectorsize);
-static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba, size_t sectorsize);
+static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba,
+                                                      size_t extlbasize, size_t sectorsize);
 
 static bool mbr_scale_lba(uint64_t lba, size_t sectorsize, size_t *offset)
 {
@@ -98,6 +99,12 @@ static bool mbr_boot_record_offset(uint64_t lba, size_t sectorsize, size_t *offs
         return false;
     *offset += base;
     return true;
+}
+
+static bool mbr_boot_record_in_range(size_t offset, size_t range_start, size_t range_end)
+{
+    return offset >= range_start && offset <= range_end &&
+           sizeof(struct mbr_boot_record) <= range_end - offset;
 }
 
 static bool mbr_partition_range(uint64_t lba, uint64_t count, size_t sectorsize,
@@ -405,6 +412,12 @@ static cl_error_t mbr_scanextprtn(cli_ctx *ctx, unsigned *prtncount, size_t extl
             goto done;
         }
 
+        if (!mbr_boot_record_in_range(pos, extoff, extend)) {
+            cli_mark_scan_incomplete(ctx, "MBR extended boot record lies outside the extended partition");
+            status = CL_EFORMAT;
+            goto done;
+        }
+
         /* read the extended boot record */
         status = mbr_read(ctx, &ebr, pos, sizeof(ebr), "MBR extended boot record could not be read completely");
         if (status != CL_SUCCESS) {
@@ -699,7 +712,8 @@ static cl_error_t mbr_primary_partition_intersection(cli_ctx *ctx, struct mbr_bo
             if (mbr.entries[i].type == MBR_EXTENDED) {
                 /* check the logical partitions */
                 ret = mbr_extended_partition_intersection(ctx, &prtncount,
-                                                          mbr.entries[i].firstLBA, sectorsize);
+                                                          mbr.entries[i].firstLBA,
+                                                          mbr.entries[i].numLBA, sectorsize);
                 if (ret != CL_SUCCESS) {
                     status = ret;
                     goto done;
@@ -716,7 +730,8 @@ done:
 }
 
 /* checks internal logical partitions */
-static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba, size_t sectorsize)
+static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba,
+                                                      size_t extlbasize, size_t sectorsize)
 {
     cl_error_t status = CL_CLEAN;
     cl_error_t ret;
@@ -724,9 +739,18 @@ static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *pr
     partition_intersection_list_t prtncheck;
     unsigned i, pitxn;
     size_t pos = 0, logiclba = 0;
+    size_t extoff = 0, extsize = 0, extend;
     uint64_t record_lba;
 
     partition_intersection_list_init(&prtncheck);
+
+    if (!mbr_partition_range(extlba, extlbasize, sectorsize, &extoff, &extsize) ||
+        extoff > SIZE_MAX - extsize) {
+        cli_mark_scan_incomplete(ctx, "MBR extended intersection coordinate overflowed");
+        status = CL_EFORMAT;
+        goto done;
+    }
+    extend = extoff + extsize;
 
     logiclba = 0;
     i        = 0;
@@ -738,6 +762,12 @@ static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *pr
         if (!mbr_add_lba(extlba, logiclba, &record_lba) ||
             !mbr_boot_record_offset(record_lba, sectorsize, &pos)) {
             cli_mark_scan_incomplete(ctx, "MBR extended intersection coordinate overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+
+        if (!mbr_boot_record_in_range(pos, extoff, extend)) {
+            cli_mark_scan_incomplete(ctx, "MBR extended intersection record lies outside the extended partition");
             status = CL_EFORMAT;
             goto done;
         }

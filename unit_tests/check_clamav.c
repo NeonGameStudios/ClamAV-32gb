@@ -29914,6 +29914,67 @@ START_TEST(test_mbr_zero_length_partition_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbr_ebr_outside_extent_is_fail_visible)
+{
+    enum { SECTOR_SIZE = 512, EXTENDED_LBA = 1, EXTENDED_SECTORS = 2, LINK_LBA = 10, DISK_SECTORS = 12 };
+    uint8_t data[SECTOR_SIZE * DISK_SECTORS] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* The first EBR links to another EBR at LBA 10, but the primary
+     * extended partition ends at LBA 3.  The linked record must not be
+     * admitted merely because it is still inside the containing fmap. */
+    data[446 + 4] = MBR_EXTENDED;
+    cli_writeint32(data + 446 + 8, EXTENDED_LBA);
+    cli_writeint32(data + 446 + 12, EXTENDED_SECTORS);
+    data[510] = 0x55;
+    data[511] = 0xaa;
+
+    data[EXTENDED_LBA * SECTOR_SIZE + 446 + 16 + 4] = MBR_EXTENDED;
+    cli_writeint32(data + EXTENDED_LBA * SECTOR_SIZE + 446 + 16 + 8, LINK_LBA);
+    cli_writeint32(data + EXTENDED_LBA * SECTOR_SIZE + 446 + 16 + 12, 1);
+    data[EXTENDED_LBA * SECTOR_SIZE + 510] = 0x55;
+    data[EXTENDED_LBA * SECTOR_SIZE + 511] = 0xaa;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = scan_engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_MBR;
+    layer.size               = sizeof(data);
+    layer.fmap               = map;
+
+    ret = cli_scanmbr(&ctx, SECTOR_SIZE);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MBR extended boot record lies outside the extended partition");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_mbr_sticky_incomplete_result_is_fail_visible)
 {
     uint8_t data[1024] = {0};
@@ -61127,6 +61188,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mbr, test_mbr_type_confirmation_read_failure_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_partition_limit_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_zero_length_partition_is_fail_visible);
+    tcase_add_test(tc_mbr, test_mbr_ebr_outside_extent_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_missing_map_entry_points_are_fail_visible);
 #if SIZE_MAX > UINT32_MAX
