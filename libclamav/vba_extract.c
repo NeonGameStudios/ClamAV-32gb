@@ -2401,9 +2401,11 @@ ole_copy_file_data(cli_ctx *ctx, int s, int d, uint32_t len)
 
     while (len > 0) {
         size_t todo = MIN(sizeof(data), len);
+        cl_error_t read_status;
 
-        if (cli_readn(s, data, todo) != todo)
-            return CL_EREAD;
+        read_status = vba_readn_full(s, data, todo);
+        if (read_status != CL_SUCCESS)
+            return read_status;
         if (vba_checktimelimit(ctx, "OLE10 embedded object output reached the configured time limit") != CL_SUCCESS)
             return CL_ETIMEOUT;
         if (cli_writen(d, data, todo) != todo)

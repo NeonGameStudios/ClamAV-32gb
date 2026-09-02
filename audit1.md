@@ -150,6 +150,7 @@ PDF/Flate corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+
 ## EGG stream decoder finalization status — 2026-09-02
 
 Enabled bounded EGG deflate and BZIP2 block extraction now checks initialized
@@ -21788,6 +21789,24 @@ HWP3 raw-deflate stream, bypasses only the nested child handoff, injects a
 one-shot `inflateEnd()` failure, and requires `CL_EUNPACK`, the exact sticky
 diagnostic, and fmap cache taint. The current source, test, registration, and
 manifest are source-guarded; production-linked execution, complete HWP/HWPML
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
+## OLE10 materialized payload read status — 2026-09-02
+
+The OLE10 embedded-object copier consumed an exact declared payload length from
+a temporary materialized stream but collapsed both an early EOF and a backing
+descriptor failure to `CL_EREAD`. The copier now uses the shared VBA full-read
+helper: a short materialized payload is `CL_EPARSE`, while an in-range
+descriptor failure remains `CL_EREAD`; either outcome marks the owning layer
+incomplete and non-cacheable before nested scanning.
+
+`test_ole10_materialized_read_status_is_fail_visible` supplies a valid one-byte
+payload, injects a short read and a descriptor failure only for that sized
+payload read, and requires `CL_EPARSE` and `CL_EREAD` respectively with cache
+taint. Source guards and the capability manifest record the boundary. Current-
+source production-GCC compilation and linked execution, complete OLE10/VBA
 corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.

@@ -13183,3 +13183,16 @@ qualification remain open.
   production-linked execution, complete HWP/HWPML corpus, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and parser/release qualification before closure.
+
+## OLE10 materialized payload read status — 2026-09-02
+
+- Keep the OLE10 copier fail-visible at the exact declared payload boundary: a
+  short read from the materialized stream is `CL_EPARSE`, while an in-range
+  descriptor failure remains `CL_EREAD`; both must remain incomplete and
+  non-cacheable and must prevent nested scanning.
+- Retain `vba_readn_full()`, the sized `cli_readn` fault-injection regression
+  `test_ole10_materialized_read_status_is_fail_visible`, its source guards, and
+  the `ole10-materialized-read-status` manifest evidence. Add current-source
+  production-linked execution, complete OLE10/VBA corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and parser/release qualification before closure.
