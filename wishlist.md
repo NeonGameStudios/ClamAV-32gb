@@ -1,5 +1,19 @@
 # Wishlist
 
+## XDP direct options admission — 2026-09-02
+
+- Keep exported `cli_scanxdp()` fail-visible when an otherwise recognized
+  engine/map context omits scan options; return `CL_ENULLARG` before retained
+  dump creation, temporary accounting, streaming XML/base64 parsing, or
+  decoder work.
+- Retain `test_xdp_missing_options_is_fail_visible`, its source guards, and
+  manifest evidence that the invalid context does not become sticky incomplete
+  or cache-tainted. Keep valid options in direct XDP temporary-accounting
+  regressions. Current-source production-GCC compilation, production-linked
+  execution, complete XDP/XML corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## ARJ direct options admission — 2026-09-02
 
 - Keep exported `cli_scanarj()` fail-visible when an otherwise recognized

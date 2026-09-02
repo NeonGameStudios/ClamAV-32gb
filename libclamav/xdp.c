@@ -176,6 +176,8 @@ cl_error_t cli_scanxdp(cli_ctx *ctx)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     if (ctx->engine->keeptmp) {
         ret = dump_xdp(ctx, ctx->fmap, &dumpname, &dump_reserved);

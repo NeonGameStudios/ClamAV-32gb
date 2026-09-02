@@ -11298,6 +11298,7 @@ START_TEST(test_xdp_retained_dump_uses_cumulative_temporary_accounting)
     static const char open_tag[] = "<xdp>";
     static const char close_tag[] = "</xdp>";
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     unsigned char *document;
@@ -11313,12 +11314,14 @@ START_TEST(test_xdp_retained_dump_uses_cumulative_temporary_accounting)
            close_tag, sizeof(close_tag) - 1U);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(document, document_size);
     ck_assert_ptr_nonnull(map);
     engine.keeptmp          = 1;
     engine.maxtemporarysize = FILEBUFF;
     ctx.engine              = &engine;
+    ctx.options             = &options;
     ctx.fmap                = map;
     ctx.this_layer_tmpdir   = tmpdir;
 
@@ -11349,17 +11352,20 @@ START_TEST(test_xdp_retained_dump_overlaps_decoded_output_accounting)
 {
     static const unsigned char document[] = "<chunk>QUJD</chunk>";
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(document, sizeof(document) - 1U);
     ck_assert_ptr_nonnull(map);
     engine.keeptmp          = 1;
     engine.maxtemporarysize = sizeof(document) - 1U;
     ctx.engine              = &engine;
+    ctx.options             = &options;
     ctx.fmap                = map;
     ctx.this_layer_tmpdir   = tmpdir;
 
@@ -28431,6 +28437,28 @@ START_TEST(test_xdp_missing_engine_is_fail_visible)
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
 
+    ck_assert_int_eq(cli_scanxdp(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_xdp_missing_options_is_fail_visible)
+{
+    static const uint8_t input[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
     ck_assert_int_eq(cli_scanxdp(&ctx), CL_ENULLARG);
     ck_assert(!ctx.scan_incomplete);
     ck_assert(!map->dont_cache_flag);
@@ -57496,6 +57524,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xdp_map, test_xdp_null_context_is_fail_visible);
     tcase_add_test(tc_xdp_map, test_xdp_missing_map_is_fail_visible);
     tcase_add_test(tc_xdp_map, test_xdp_missing_engine_is_fail_visible);
+    tcase_add_test(tc_xdp_map, test_xdp_missing_options_is_fail_visible);
     tcase_add_test(tc_xdp_map, test_xdp_sticky_incomplete_result_is_fail_visible);
     suite_add_tcase(s, tc_xdp_corpus);
     tcase_add_checked_fixture(tc_xdp_corpus, cl_setup, cl_teardown);

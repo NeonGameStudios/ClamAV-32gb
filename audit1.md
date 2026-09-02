@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## XDP direct options admission — 2026-09-02
+
+The exported `cli_scanxdp()` entry rejected null context, input fmap, and
+engine state but did not reject missing scan options before retained-dump
+creation, temporary accounting, streaming XML/base64 parsing, and the
+associated decoder paths. A direct caller with incomplete scan configuration
+could therefore enter XDP inspection without the required options object. The
+entry now returns `CL_ENULLARG` immediately after engine admission when
+`ctx->options` is absent.
+
+`test_xdp_missing_options_is_fail_visible` supplies a map and engine while
+omitting options, and verifies `CL_ENULLARG` without sticky incomplete or
+cache-taint state. The direct temporary-accounting regressions now provide
+valid options for their resource assertions. Source guards and the capability
+manifest record the boundary. Current-source production-GCC compilation,
+production-linked execution, complete XDP/XML corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.
+
 ## ARJ direct options admission — 2026-09-02
 
 The exported internal `cli_scanarj()` entry rejected null context, input fmap,
