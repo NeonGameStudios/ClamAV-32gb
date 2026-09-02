@@ -150,6 +150,25 @@ PDF/Flate corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## OLE10 attachment-name read-status reconciliation — 2026-09-02
+
+The OLE10 metadata parser used `skip_past_nul()` for attachment names and
+paths, but that boolean helper collapsed an in-range `cli_readn()` failure,
+an actual end-of-input, and a failed descriptor correction seek. The caller
+therefore reported an injected operational read failure as ordinary malformed
+metadata.
+
+`skip_past_nul()` now returns `CL_EREAD`, `CL_EPARSE`, or `CL_ESEEK` for those
+three classes. `cli_scan_ole10()` preserves the status and records a
+class-specific sticky incomplete diagnostic before temporary admission or
+nested scanning. `test_ole10_nul_name_read_status_is_fail_visible` injects the
+short-read and descriptor-failure cases, asserting status, cache taint, and
+cleanup. The current source, test, registration, and capability manifest are
+source-guarded. Current-source production-GCC and linked execution, complete
+OLE10/VBA corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## PowerPoint atom-header read-status reconciliation — 2026-09-02
 
 The PowerPoint atom iterator prevalidated the materialized range but its

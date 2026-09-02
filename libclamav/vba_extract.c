@@ -85,7 +85,7 @@ typedef struct {
     int big_endian; /* e.g. MAC Office */
 } vba_version_t;
 
-static int skip_past_nul(int fd);
+static cl_error_t skip_past_nul(int fd);
 static int read_uint16(int fd, uint16_t *u, int big_endian);
 static int read_uint32(int fd, uint32_t *u, int big_endian);
 static int seekandread(int fd, off_t offset, int whence, void *data, size_t len);
@@ -2494,15 +2494,27 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
         }
 
         /* Attachment name */
-        if (!skip_past_nul(fd)) {
-            cli_mark_scan_incomplete(ctx, "OLE10 embedded object name was truncated");
-            return CL_EPARSE;
+        ret = skip_past_nul(fd);
+        if (ret != CL_SUCCESS) {
+            if (ret == CL_EREAD)
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object name could not be read completely");
+            else if (ret == CL_ESEEK)
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object name could not be positioned");
+            else
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object name was truncated");
+            return ret;
         }
 
         /* Attachment full path */
-        if (!skip_past_nul(fd)) {
-            cli_mark_scan_incomplete(ctx, "OLE10 embedded object path was truncated");
-            return CL_EPARSE;
+        ret = skip_past_nul(fd);
+        if (ret != CL_SUCCESS) {
+            if (ret == CL_EREAD)
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object path could not be read completely");
+            else if (ret == CL_ESEEK)
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object path could not be positioned");
+            else
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object path was truncated");
+            return ret;
         }
 
         /* ??? */
@@ -2512,9 +2524,15 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
         }
 
         /* Attachment full path */
-        if (!skip_past_nul(fd)) {
-            cli_mark_scan_incomplete(ctx, "OLE10 embedded object target path was truncated");
-            return CL_EPARSE;
+        ret = skip_past_nul(fd);
+        if (ret != CL_SUCCESS) {
+            if (ret == CL_EREAD)
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object target path could not be read completely");
+            else if (ret == CL_ESEEK)
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object target path could not be positioned");
+            else
+                cli_mark_scan_incomplete(ctx, "OLE10 embedded object target path was truncated");
+            return ret;
         }
 
         if (!read_uint32(fd, &object_size, FALSE)) {
@@ -3524,22 +3542,25 @@ cli_wm_decrypt_macro(int fd, off_t offset, uint32_t len, unsigned char key)
  * @brief Keep reading bytes until we reach a NUL.
  *
  * @param fd   File descriptor
- * @return int Returns FALSE if none is found, else TRUE
+ * @return cl_error_t Returns CL_SUCCESS when a NUL is found, or the specific
+ *                    positioning, read, or truncation failure.
  */
-static int skip_past_nul(int fd)
+static cl_error_t skip_past_nul(int fd)
 {
     char *end;
     char smallbuf[128];
 
     do {
         size_t nread = cli_readn(fd, smallbuf, sizeof(smallbuf));
-        if ((nread == 0) || (nread == (size_t)-1))
-            return FALSE;
+        if (nread == 0)
+            return CL_EPARSE;
+        if (nread == (size_t)-1)
+            return CL_EREAD;
         end = memchr(smallbuf, '\0', nread);
         if (end) {
             if (lseek(fd, 1 + (end - smallbuf) - (off_t)nread, SEEK_CUR) < 0)
-                return FALSE;
-            return TRUE;
+                return CL_ESEEK;
+            return CL_SUCCESS;
         }
     } while (1);
 }

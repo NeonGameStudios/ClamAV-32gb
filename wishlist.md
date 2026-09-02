@@ -13197,6 +13197,19 @@ qualification remain open.
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
   resource, and parser/release qualification before closure.
 
+## OLE10 attachment-name read-status reconciliation — 2026-09-02
+
+- Keep OLE10 attachment-name and path scanning fail-visible: short reads are
+  `CL_EPARSE`, in-range descriptor failures are `CL_EREAD`, and correction
+  seek failures are `CL_ESEEK`; each outcome must remain sticky incomplete and
+  non-cacheable before temporary output or nested scanning.
+- Retain `skip_past_nul()`, the Linux-static `cli_readn` regression, its
+  source guards, and the `ole10-nul-name-read-status` manifest evidence. Add
+  current-source production-linked execution, complete OLE10/VBA corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and parser/release qualification
+  before closure.
+
 ## PowerPoint atom-header read-status reconciliation — 2026-09-02
 
 - Keep the PowerPoint atom-header boundary fail-visible: short materialized
