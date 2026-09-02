@@ -5096,6 +5096,15 @@ START_TEST(test_alert_callback_evidence_removal_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_scan_callback_dispatch_without_engine_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_dispatch_scan_callback(&ctx, CL_SCAN_CALLBACK_PRE_SCAN), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_virus_indicator_append_boundaries_are_fail_visible)
 {
     cli_ctx ctx;
@@ -56403,6 +56412,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_callback_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_virus_found_callback_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_alert_callback_evidence_removal_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_scan_callback_dispatch_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_append_boundaries_are_fail_visible);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_cl, test_json_array_add_failure_is_fail_visible);

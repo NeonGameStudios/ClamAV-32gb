@@ -11872,6 +11872,16 @@ corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and release qualification remain
 required.
 
+## Scan-callback dispatcher engine admission — 2026-09-01
+
+The shared callback dispatcher now rejects a non-null scan context without an
+owning engine before callback selection or engine dereference. The direct
+`test_scan_callback_dispatch_without_engine_is_fail_visible` regression
+requires `CL_ENULLARG`; current-source production-linked execution, complete
+callback/ingress parity, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and release
+qualification remain required.
+
 ## Virus-indicator append admission — 2026-08-27
 The shared virus-indicator append APIs now reject null contexts, null names, and
 invalid recursion-stack state before string classification, evidence creation,

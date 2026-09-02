@@ -3296,6 +3296,10 @@ cl_error_t cli_dispatch_scan_callback(cli_ctx *ctx, cl_scan_callback_t location)
         status = CL_ENULLARG;
         goto done;
     }
+    if (!ctx->engine) {
+        status = CL_ENULLARG;
+        goto done;
+    }
 
     /*
      * Determine which callback to use.

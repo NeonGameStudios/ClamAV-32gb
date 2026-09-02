@@ -9905,6 +9905,16 @@ qualification gates.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final matcher/release qualification remain open.
 
+## Scan-callback dispatcher engine admission — 2026-09-01
+
+- Keep `cli_dispatch_scan_callback()` fail-visible for a non-null context
+  without engine ownership before callback selection or dereference.
+- Retain `test_scan_callback_dispatch_without_engine_is_fail_visible` and its
+  source guards. Current-source production-linked execution, complete
+  callback/ingress parity, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final matcher/release qualification remain open.
+
 ## XDP parser admission — 2026-08-27
 - Keep XDP fail-visible for a recognized input map without an owning engine before retained-dump or streaming-MSXML state access.
 - Retain complete XDP corpus, sanitizer, production-CVD, materialized large-file, Sonic1, and release qualification gates.

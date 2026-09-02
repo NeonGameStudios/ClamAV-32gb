@@ -17411,6 +17411,17 @@ complete callback/indicator corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 matcher/release qualification remain required.
 
+## Scan-callback dispatcher engine admission — 2026-09-01
+
+`cli_dispatch_scan_callback()` previously validated only `ctx` and then read
+callback fields through `ctx->engine`. It now returns `CL_ENULLARG` for a
+non-null context without an engine before callback selection. The direct
+`test_scan_callback_dispatch_without_engine_is_fail_visible` regression covers
+the boundary; current-source production-GCC compilation, production-linked
+execution, complete callback/ingress parity, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
+final matcher/release qualification remain required.
+
 ## Virus-indicator append admission audit — 2026-08-27
 `cli_append_virus()` classified the alert with `strncmp()` before validating the
 context or name, while the shared append implementation indexed the current
