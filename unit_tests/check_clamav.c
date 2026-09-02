@@ -163,6 +163,7 @@ extern int __real_adc_decompressEnd(adc_stream *strm);
 extern int __real_cli_LzmaInit(struct CLI_LZMA *lz, uint64_t usize);
 extern void __real_cli_LzmaShutdown(struct CLI_LZMA *lz);
 int clamav_test_force_swf_decoder_init;
+int clamav_test_force_swf_zlib_decoder_end;
 int clamav_test_force_xar_member_decoder_init;
 int clamav_test_force_xar_member_decoder_end;
 int clamav_test_force_xar_toc_decoder_end;
@@ -201,6 +202,11 @@ int __wrap_inflateEnd(z_streamp strm)
 {
     int ret = __real_inflateEnd(strm);
 
+    if (clamav_test_force_swf_zlib_decoder_end > 0) {
+        clamav_test_force_swf_zlib_decoder_end--;
+        if (clamav_test_force_swf_zlib_decoder_end == 0)
+            return Z_STREAM_ERROR;
+    }
     if (clamav_test_force_ishield_cab_decoder_end > 0) {
         clamav_test_force_ishield_cab_decoder_end--;
         if (clamav_test_force_ishield_cab_decoder_end == 0)
@@ -13704,6 +13710,49 @@ START_TEST(test_swf_zlib_decoder_init_failure_is_fail_visible)
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(archive);
+}
+END_TEST
+
+START_TEST(test_swf_zlib_decoder_finalization_failure_is_fail_visible)
+{
+    static const uint8_t body[6] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+    cl_error_t ret;
+
+    archive = swf_cws_stream(body, sizeof(body), &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = scan_engine;
+    ctx.dconf             = scan_engine->dconf;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    clamav_test_force_swf_zlib_decoder_end = 1;
+    ret = cli_scanswf(&ctx);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "SWF zlib decoder could not be finalized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_swf_zlib_decoder_end, 0);
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
@@ -59697,6 +59746,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_swf, test_swf_output_size_add_rejects_native_overflow);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_swf, test_swf_zlib_decoder_init_failure_is_fail_visible);
+    tcase_add_test(tc_swf, test_swf_zlib_decoder_finalization_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_swf, test_swf_lzma_declared_input_size_is_fail_visible);
     tcase_add_test(tc_swf, test_swf_output_temporary_limit_is_fail_visible);

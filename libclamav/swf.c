@@ -100,6 +100,16 @@ static cl_error_t swf_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+static cl_error_t swf_finalize_zlib(cli_ctx *ctx, z_stream *stream,
+                                    cl_error_t status)
+{
+    if (inflateEnd(stream) != Z_OK) {
+        cli_mark_scan_incomplete(ctx, "SWF zlib decoder could not be finalized");
+        status = cli_merge_cleanup_status(status, CL_EUNPACK);
+    }
+    return status;
+}
+
 cl_error_t cli_swf_output_size_add(size_t current, size_t amount, size_t *next)
 {
     if (next == NULL)
@@ -438,7 +448,7 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     char inbuff[FILEBUFF], outbuff[FILEBUFF];
     fmap_t *map   = ctx->fmap;
     size_t offset = 8;
-    int zret      = Z_OK, zend;
+    int zret      = Z_OK;
     cl_error_t ret;
     cl_error_t decode_status = CL_SUCCESS;
     size_t outsize           = 8;
@@ -479,7 +489,7 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     do {
         ret = swf_checktimelimit(ctx, "SWF zlib traversal reached the configured time limit");
         if (ret != CL_SUCCESS) {
-            inflateEnd(&stream);
+            ret = swf_finalize_zlib(ctx, &stream, ret);
             return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
         }
 
@@ -488,9 +498,9 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
             ret = swf_read_chunk(map, inbuff, offset, FILEBUFF, &n_read);
             if (ret != CL_SUCCESS) {
                 cli_errmsg("scancws: Error reading SWF file\n");
-                inflateEnd(&stream);
                 ret = swf_read_failure(ctx, ret, "SWF zlib compressed input was truncated",
                                        "SWF zlib compressed input could not be read completely");
+                ret = swf_finalize_zlib(ctx, &stream, ret);
                 return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
             }
             if (0 == n_read)
@@ -510,7 +520,7 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
             if ((decode_status = swf_write_output(ctx, fd, outbuff, count, &temporary_reserved,
                                                   "SWF zlib output could not be written completely")) != CL_SUCCESS) {
                 cli_errmsg("scancws: Can't write to file %s\n", tmpname);
-                inflateEnd(&stream);
+                decode_status = swf_finalize_zlib(ctx, &stream, decode_status);
                 return swf_cleanup_temp(ctx, fd, tmpname, decode_status, temporary_reserved);
             }
             outsize = next_outsize;
@@ -519,12 +529,12 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         stream.avail_out = FILEBUFF;
     } while (zret == Z_OK);
 
-    zend = inflateEnd(&stream);
+    decode_status = swf_finalize_zlib(ctx, &stream, decode_status);
 
     /* A CWS decoder must reach Z_STREAM_END; scanning output after a
      * truncated/error stream would turn a partial SWF into an apparent clean
      * result. */
-    if (decode_status != CL_SUCCESS || zret != Z_STREAM_END || zend != Z_OK) {
+    if (decode_status != CL_SUCCESS || zret != Z_STREAM_END) {
         if (decode_status == CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "SWF zlib stream ended before decompression completed");
             decode_status = CL_EUNPACK;

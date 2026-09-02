@@ -1,5 +1,18 @@
 # Wishlist
 
+## SWF CWS zlib decoder finalization status — 2026-09-02
+
+- Keep the enabled CWS zlib `inflateEnd()` teardown fail-visible on traversal
+  timeout, input-read failure, output failure, and normal completion. Merge
+  `CL_EUNPACK` without replacing an earlier read, limit, timeout, parser,
+  output, detection, or cleanup result, and never hand partial decompressed
+  output to the nested scanner.
+- Retain `test_swf_zlib_decoder_finalization_failure_is_fail_visible`, its
+  one-shot wrapper fault, exact diagnostic, and source guards. Current-source
+  production-GCC execution, complete SWF/CWS corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification remain open.
+
 ## XAR zlib decoder finalization status — 2026-09-02
 
 - Keep XAR TOC and gzip-member zlib teardown fail-visible on every initialized

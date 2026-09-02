@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## SWF CWS zlib decoder finalization status — 2026-09-02
+
+The enabled CWS zlib path now checks initialized `inflateEnd()` on traversal
+timeout, input-read failure, output failure, and normal completion. A teardown
+failure marks the confirmed SWF layer incomplete and merges `CL_EUNPACK`
+without hiding an earlier read, limit, timeout, parser, output, detection, or
+cleanup result; partial decompressed SWF output is not handed to the nested
+scanner. The focused production-linked wrapper regression uses a valid CWS
+fixture and requires `CL_EUNPACK`, the exact incomplete diagnostic, and fmap
+non-cacheability. Current-source production-GCC compilation and linked
+execution, complete SWF/CWS corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## XAR zlib decoder finalization status — 2026-09-02
 
 The enabled XAR TOC and gzip-member readers now route every initialized zlib
