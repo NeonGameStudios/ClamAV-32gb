@@ -33,6 +33,7 @@
 #include <check.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <bzlib.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -59,6 +60,7 @@
 extern int clamav_test_fail_write;
 extern int clamav_test_short_write;
 extern size_t clamav_test_short_write_count;
+extern int clamav_test_force_bytecode_bzip_decoder_end;
 #endif
 
 #ifdef CLAMAV_TEST_BYTECODE_PREPARE_WRAP
@@ -2039,6 +2041,70 @@ START_TEST(test_bytecode_resource_constructors_publish_only_initialized_slots)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_bytecode_bzip2_decoder_finalization_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "Bytecode BZIP2 finalization regression";
+    struct cli_bc_ctx *bcctx;
+    cli_scan_layer_t layer;
+    cli_ctx cctx;
+    fmap_t *map;
+    uint8_t *bzip;
+    unsigned int bzip_length;
+    unsigned int bzip_capacity;
+    int32_t input_id;
+    int32_t output_id;
+    int32_t decoder_id;
+    int ret;
+
+    bzip_capacity = (unsigned int)(sizeof(input) + sizeof(input) / 100U + 601U);
+    bzip          = malloc(bzip_capacity);
+    ck_assert_ptr_nonnull(bzip);
+    bzip_length = bzip_capacity;
+    ret = BZ2_bzBuffToBuffCompress((char *)bzip, &bzip_length, (char *)input,
+                                   (unsigned int)(sizeof(input) - 1U), 9, 0, 30);
+    ck_assert_int_eq(ret, BZ_OK);
+
+    map = cl_fmap_open_memory(bzip, bzip_length);
+    ck_assert_ptr_nonnull(map);
+    memset(&cctx, 0, sizeof(cctx));
+    memset(&layer, 0, sizeof(layer));
+    layer.fmap            = map;
+    cctx.fmap             = map;
+    cctx.recursion_stack  = &layer;
+    cctx.recursion_stack_size = 1;
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+    ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
+
+    input_id = cli_bcapi_buffer_pipe_new_fromfile64(bcctx, 0);
+    ck_assert_int_ge(input_id, 0);
+    output_id = cli_bcapi_buffer_pipe_new(bcctx, (unsigned int)(sizeof(input) + 16U));
+    ck_assert_int_ge(output_id, 0);
+    decoder_id = cli_bcapi_bzip2_init(bcctx, input_id, output_id);
+    ck_assert_int_ge(decoder_id, 0);
+    ck_assert_int_eq(cli_bcapi_bzip2_process(bcctx, decoder_id), BZ_STREAM_END);
+    ck_assert_uint_eq(bcctx->buffers[output_id].write_cursor, sizeof(input) - 1U);
+    ck_assert_int_eq(memcmp(bcctx->buffers[output_id].data, input, sizeof(input) - 1U), 0);
+
+    clamav_test_force_bytecode_bzip_decoder_end = 1;
+    ret = cli_bcapi_bzip2_done(bcctx, decoder_id);
+    ck_assert_int_eq(ret, BZ_SEQUENCE_ERROR);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert_str_eq(cctx.scan_incomplete_reason,
+                     "Bytecode BZIP2 decompressor could not be finalized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_bytecode_bzip_decoder_end, 0);
+
+    cli_bytecode_context_destroy(bcctx);
+    cl_fmap_close(map);
+    free(bzip);
+}
+END_TEST
+#endif
+
 START_TEST(test_bytecode_map_rejects_null_key_and_value)
 {
     struct cli_map map;
@@ -2233,6 +2299,7 @@ Suite *test_bytecode_suite(void)
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cli_read, test_bytecode_output_short_write_preserves_materialized_budget);
     tcase_add_test(tc_cli_read, test_bytecode_output_write_failure_propagates_from_runner);
+    tcase_add_test(tc_cli_read, test_bytecode_bzip2_decoder_finalization_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cli_read, test_bytecode_jsnorm_limit_failure_releases_input);
     tcase_add_test(tc_cli_valid_loader, test_bytecode_loader_accepts_valid_fixture);

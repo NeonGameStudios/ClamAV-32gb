@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Bytecode BZIP2 decoder finalization status — 2026-09-02
+
+The bytecode BZIP2 API now returns the `BZ2_bzDecompressEnd()` status instead
+of converting teardown failures to success, and marks the owning scan
+incomplete/non-cacheable with the exact diagnostic even when context cleanup
+is the caller. The focused production-linked regression uses a valid compressed
+stream, injects a one-shot `BZ_SEQUENCE_ERROR`, and requires completed output,
+the returned decoder error, the exact incomplete reason, and fmap cache taint.
+Current-source production-GCC compilation and linked execution, complete
+bytecode fixture/interpreter/JIT corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+bytecode/release qualification remain required.
+
 ## SWF CWS zlib decoder finalization status — 2026-09-02
 
 The enabled CWS zlib path now checks initialized `inflateEnd()` on traversal

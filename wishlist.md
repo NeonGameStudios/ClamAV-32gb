@@ -1,5 +1,19 @@
 # Wishlist
 
+## Bytecode BZIP2 decoder finalization status — 2026-09-02
+
+- Keep `bzip2_done()` fail-visible: return the `BZ2_bzDecompressEnd()` status
+  and mark the owning scan incomplete/non-cacheable with the exact diagnostic,
+  including when `bytecode_context_reset()` performs cleanup. Do not treat
+  completed output as proof that decoder teardown succeeded.
+- Retain `test_bytecode_bzip2_decoder_finalization_failure_is_fail_visible`,
+  its valid-stream one-shot wrapper fault, returned decoder error, exact
+  diagnostic, cache-taint assertion, and source guards. Current-source
+  production-GCC execution, complete bytecode fixture/interpreter/JIT corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final bytecode/release
+  qualification remain open.
+
 ## SWF CWS zlib decoder finalization status — 2026-09-02
 
 - Keep the enabled CWS zlib `inflateEnd()` teardown fail-visible on traversal

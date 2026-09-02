@@ -1544,7 +1544,7 @@ int32_t bzip2_process(int32_t id);
   * All bzip2 data structures are automatically deallocated when bytecode
   * finishes execution.
   * @param[in] id ID of bzip2 data structure
-  * @return 0 on success.
+  * @return 0 on success, bzip2 error code otherwise.
   */
 int32_t bzip2_done(int32_t id);
 /* ----------------- END 0.103 APIs ---------------------------------- */

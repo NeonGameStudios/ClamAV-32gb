@@ -1580,12 +1580,16 @@ int32_t cli_bcapi_bzip2_process(struct cli_bc_ctx *ctx, int32_t id)
 
 int32_t cli_bcapi_bzip2_done(struct cli_bc_ctx *ctx, int32_t id)
 {
+    int ret;
     struct bc_bzip2 *b = get_bzip2(ctx, id);
     if (!b || b->from == -1 || b->to == -1)
         return -1;
-    BZ2_bzDecompressEnd(&b->stream);
+    ret = BZ2_bzDecompressEnd(&b->stream);
+    if (ret != BZ_OK)
+        cli_mark_scan_incomplete((cli_ctx *)ctx->ctx,
+                                 "Bytecode BZIP2 decompressor could not be finalized");
     b->from = b->to = -1;
-    return 0;
+    return ret;
 }
 
 int32_t cli_bcapi_bytecode_rt_error(struct cli_bc_ctx *ctx, int32_t id)

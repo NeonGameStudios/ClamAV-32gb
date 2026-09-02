@@ -178,6 +178,7 @@ int clamav_test_force_dmg_adc_decoder_end;
 int clamav_test_force_dmg_bzip_decoder_end;
 int clamav_test_force_bzip_decoder_end;
 int clamav_test_force_egg_bzip_decoder_end;
+int clamav_test_force_bytecode_bzip_decoder_end;
 int clamav_test_force_bzip_concat_decoder_init;
 int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
@@ -282,6 +283,11 @@ int __wrap_BZ2_bzDecompressEnd(bz_stream *strm)
     if (clamav_test_force_egg_bzip_decoder_end > 0) {
         clamav_test_force_egg_bzip_decoder_end--;
         if (clamav_test_force_egg_bzip_decoder_end == 0)
+            return BZ_SEQUENCE_ERROR;
+    }
+    if (clamav_test_force_bytecode_bzip_decoder_end > 0) {
+        clamav_test_force_bytecode_bzip_decoder_end--;
+        if (clamav_test_force_bytecode_bzip_decoder_end == 0)
             return BZ_SEQUENCE_ERROR;
     }
     return ret;
