@@ -8680,6 +8680,20 @@ corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and release qualification remain
 required.
 
+## Nested indicator metadata copy failures — 2026-09-01
+
+Child indicators and alerts copied during `cli_recursion_stack_pop()` now
+release rejected copies and return `CL_EMEM` from the metadata-copy helper.
+The pop boundary marks the nested metadata failure sticky, tainting both child
+and containing fmaps while preserving the existing scan result precedence.
+`test_nested_indicator_metadata_array_copy_failure_is_fail_visible` builds a
+two-layer context, injects the child-copy append failure, and requires the
+exact diagnostic, empty parent destination array, and cache taint on both
+layers. Current-source production-linked execution, complete signature/evidence
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and release qualification remain
+required.
+
 ## Indicator metadata array append failures — 2026-09-01
 
 The indicator-append path now checks both direct metadata array insertions and

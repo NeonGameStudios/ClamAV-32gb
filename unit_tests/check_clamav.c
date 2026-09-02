@@ -5146,6 +5146,76 @@ START_TEST(test_virus_indicator_metadata_array_add_failure_is_fail_visible)
     }
 }
 END_TEST
+
+START_TEST(test_nested_indicator_metadata_array_copy_failure_is_fail_visible)
+{
+    static const uint8_t parent_input[] = "parent";
+    static const uint8_t child_input[]  = "child";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    json_object *parent;
+    json_object *child;
+    json_object *indicators;
+    json_object *indicator;
+    json_object *parent_indicators = NULL;
+    fmap_t *parent_map;
+    fmap_t *child_map;
+    fmap_t *popped;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    parent_map = cl_fmap_open_memory(parent_input, sizeof(parent_input) - 1U);
+    child_map  = cl_fmap_open_memory(child_input, sizeof(child_input) - 1U);
+    ck_assert_ptr_nonnull(parent_map);
+    ck_assert_ptr_nonnull(child_map);
+    parent     = json_object_new_object();
+    child      = json_object_new_object();
+    indicators = json_object_new_array();
+    indicator  = json_object_new_object();
+    ck_assert_ptr_nonnull(parent);
+    ck_assert_ptr_nonnull(child);
+    ck_assert_ptr_nonnull(indicators);
+    ck_assert_ptr_nonnull(indicator);
+    json_object_object_add(indicator, "Name", json_object_new_string("Indicator.Array"));
+    json_object_object_add(indicator, "Depth", json_object_new_int(0));
+    ck_assert_int_eq(json_object_array_add(indicators, indicator), 0);
+    json_object_object_add(child, "Indicators", indicators);
+
+    layers[0].fmap         = parent_map;
+    layers[0].metadata_json = parent;
+    layers[1].fmap         = child_map;
+    layers[1].metadata_json = child;
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = child_map;
+    ctx.recursion_stack   = layers;
+    ctx.recursion_stack_size = 2;
+    ctx.recursion_level   = 1;
+    ctx.this_layer_metadata_json = child;
+
+    indicator_test_array_add_calls     = 0;
+    indicator_test_array_add_fail_call = 1;
+    popped = cli_recursion_stack_pop(&ctx);
+    ck_assert_int_eq(indicator_test_array_add_fail_call, 0U);
+    ck_assert_ptr_eq(popped, child_map);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "nested indicator metadata could not be recorded");
+    ck_assert(parent_map->dont_cache_flag);
+    ck_assert(child_map->dont_cache_flag);
+    ck_assert(json_object_object_get_ex(parent, "Indicators", &parent_indicators));
+    ck_assert_uint_eq(json_object_array_length(parent_indicators), 0U);
+
+    json_object_put(child);
+    json_object_put(parent);
+    cl_fmap_close(child_map);
+    cl_fmap_close(parent_map);
+}
+END_TEST
 #endif
 
 START_TEST(test_callback_abort_is_not_reported_as_timeout)

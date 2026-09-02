@@ -11575,6 +11575,17 @@ final parser/release qualification remain open.
   final matcher/release qualification remain open.
 
 
+## Nested indicator metadata copy failures — 2026-09-01
+
+- Keep child `Indicators` and `Alerts` copies fail-visible when parent-array
+  insertion fails; release rejected copies, mark child and containing fmaps
+  non-cacheable, and preserve the exact nested metadata diagnostic.
+- Retain `test_nested_indicator_metadata_array_copy_failure_is_fail_visible`
+  and its source guards. Current-source production-linked execution, complete
+  signature/evidence corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final matcher/release qualification remain open.
+
 ## Shared JSON array insertion failures — 2026-09-01
 
 - Keep every shared `cli_json` scalar/null helper and array/object factory

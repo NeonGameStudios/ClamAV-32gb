@@ -19690,3 +19690,21 @@ non-cacheability. Current-source production-GCC compilation, production-linked
 execution, complete signature/evidence corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
 final matcher/release qualification remain required.
+
+## Nested indicator metadata copy failures — 2026-09-01
+
+Child indicators and alerts are copied into parent metadata during
+`cli_recursion_stack_pop()`. The copy helper previously discarded the
+destination-array insertion result, leaking the rejected copy and allowing a
+partial report to remain apparently complete. It now releases the unowned
+copy and returns `CL_EMEM`; the pop boundary marks the nested indicator or
+alert metadata failure sticky so both the child and containing fmaps become
+non-cacheable.
+
+`test_nested_indicator_metadata_array_copy_failure_is_fail_visible` builds a
+two-layer production scan context, injects the child-indicator copy failure,
+and requires the exact sticky diagnostic, an empty parent destination array,
+and cache taint on both fmaps. Current-source production-GCC compilation,
+production-linked execution, complete signature/evidence corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final matcher/release qualification remain required.

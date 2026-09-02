@@ -2612,7 +2612,12 @@ static cl_error_t json_add_child_array(json_object *parent, json_object *child, 
         }
 
         /* Add the copied indicator to the parent layer's indicators */
-        json_object_array_add(parent_layer_indicators, indicator_copy);
+        if (json_object_array_add(parent_layer_indicators, indicator_copy) != 0) {
+            cli_errmsg("cli_recursion_stack_pop: failed to copy indicator into parent metadata\n");
+            json_object_put(indicator_copy);
+            status = CL_EMEM;
+            goto done;
+        }
     }
 
 done:
@@ -2698,12 +2703,14 @@ cl_fmap_t *cli_recursion_stack_pop(cli_ctx *ctx)
             ret = json_add_child_array(parent_object, this_layer_object, "Indicators");
             if (CL_SUCCESS != ret) {
                 cli_errmsg("cli_recursion_stack_pop: Failed to copy Indicators from child to parent: %s\n", cl_strerror(ret));
+                cli_mark_scan_incomplete(ctx, "nested indicator metadata could not be recorded");
             }
 
             // Copy alerts from this layer to the parent layer.
             ret = json_add_child_array(parent_object, this_layer_object, "Alerts");
             if (CL_SUCCESS != ret) {
                 cli_errmsg("cli_recursion_stack_pop: Failed to copy Alerts from child to parent: %s\n", cl_strerror(ret));
+                cli_mark_scan_incomplete(ctx, "nested alert metadata could not be recorded");
             }
         }
     }
