@@ -216,6 +216,8 @@ int cli_scandmg(cli_ctx *ctx)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     maplen = ctx->fmap->len;
     if (maplen <= 512) {

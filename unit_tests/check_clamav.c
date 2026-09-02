@@ -28381,6 +28381,28 @@ START_TEST(test_dmg_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_dmg_missing_options_is_fail_visible)
+{
+    uint8_t data = 0;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(&data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scandmg(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_xdp_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -57271,6 +57293,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_dmg_map, test_dmg_null_context_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_missing_map_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_missing_engine_is_fail_visible);
+    tcase_add_test(tc_dmg_map, test_dmg_missing_options_is_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg_map, test_dmg_in_memory_stripes_keep_host_order);
     tcase_add_test(tc_dmg_map, test_dmg_sticky_incomplete_result_is_fail_visible);
