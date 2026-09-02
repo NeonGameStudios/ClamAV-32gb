@@ -11623,6 +11623,17 @@ final parser/release qualification remain open.
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final matcher/release qualification remain open.
 
+## Structured scan-report JSON property insertion — 2026-09-01
+
+- Keep report-to-JSON number and string property insertion fail-visible;
+  release rejected values, return `CL_EMEM`, clear `json_out`, and never
+  expose a partial structured report.
+- Retain `test_scan_report_json_object_add_failure_is_fail_visible` and its
+  source guards. Current-source production-linked execution, complete
+  structured-report/service corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final report/release qualification remain open.
+
 
 ## MSXML Value-array metadata insertion — 2026-09-01
 

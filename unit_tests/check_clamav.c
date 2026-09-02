@@ -322,6 +322,7 @@ static int nested_layer_test_fail_array_add;
 static int nested_layer_test_fail_object_add;
 static int json_api_test_fail_array_add;
 static int json_api_test_fail_object_add;
+static int scan_report_test_fail_object_add;
 
 int __wrap_json_object_array_add(json_object *obj, json_object *val)
 {
@@ -358,6 +359,8 @@ int __wrap_json_object_array_add(json_object *obj, json_object *val)
 
 int __wrap_json_object_object_add(json_object *obj, const char *key, json_object *val)
 {
+    if (scan_report_test_fail_object_add)
+        return -1;
     if (json_api_test_fail_object_add)
         return -1;
     if (nested_layer_test_fail_object_add && key &&
@@ -2149,6 +2152,30 @@ START_TEST(test_scan_report_complete_and_json)
     free(path);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_scan_report_json_object_add_failure_is_fail_visible)
+{
+    cl_scan_report_t *report = NULL;
+    char *json              = (char *)(uintptr_t)1U;
+    cl_error_t status;
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    scan_report_test_fail_object_add = 1;
+    status                            = cl_scan_report_to_json(report, &json);
+    ck_assert_int_eq(scan_report_test_fail_object_add, 1);
+    ck_assert_int_eq(status, CL_EMEM);
+    ck_assert_ptr_null(json);
+
+    scan_report_test_fail_object_add = 0;
+    ck_assert_int_eq(cl_scan_report_to_json(report, &json), CL_SUCCESS);
+    ck_assert_ptr_nonnull(json);
+
+    free(json);
+    cl_scan_report_free(report);
+}
+END_TEST
+#endif
 
 #ifdef CLAMAV_TEST_MALLOC_WRAP
 START_TEST(test_scan_report_allocation_failure_clears_output)
@@ -55899,6 +55926,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_maxfiles_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
+#ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_cl, test_scan_report_json_object_add_failure_is_fail_visible);
+#endif
 #ifdef CLAMAV_TEST_MALLOC_WRAP
     tcase_add_test(tc_cl, test_scan_report_allocation_failure_clears_output);
 #endif

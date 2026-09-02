@@ -19707,6 +19707,22 @@ production-linked execution, sanitizer, complete metadata/parser corpus,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final matcher/release qualification remain required.
 
+## Structured scan-report JSON property insertion — 2026-09-01
+
+The structured report serializer's integer and string helpers previously
+discarded `json_object_object_add()` failures and returned success, allowing
+partial reports to escape through `cl_scan_report_to_json()`. The helpers now
+release rejected values and return `CL_EMEM`; the serializer frees the partial
+object and leaves the caller's output pointer cleared.
+
+`test_scan_report_json_object_add_failure_is_fail_visible` injects the first
+production-linked report-property failure, requires `CL_EMEM` and a NULL
+output, then verifies normal serialization after fault removal. Current-source
+production-GCC compilation, production-linked execution, complete
+structured-report/service corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+report/release qualification remain required.
+
 ## MSXML Value-array metadata insertion — 2026-09-01
 
 The MSXML reader and streaming parser both used a direct

@@ -174,6 +174,17 @@ static void report_add_u64(uint64_t *destination, uint64_t value)
         *destination += value;
 }
 
+static cl_error_t report_json_add_owned(json_object *object, const char *key, json_object *value)
+{
+    if (json_object_object_add(object, key, value) != 0) {
+        if (value)
+            json_object_put(value);
+        return CL_EMEM;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t report_json_add_u64(
     json_object *object,
     const char *key,
@@ -196,8 +207,7 @@ static cl_error_t report_json_add_u64(
     if (NULL == number)
         return CL_EMEM;
 
-    json_object_object_add(object, key, number);
-    return CL_SUCCESS;
+    return report_json_add_owned(object, key, number);
 }
 
 static cl_error_t report_json_add_int(
@@ -214,8 +224,7 @@ static cl_error_t report_json_add_int(
     if (NULL == number)
         return CL_EMEM;
 
-    json_object_object_add(object, key, number);
-    return CL_SUCCESS;
+    return report_json_add_owned(object, key, number);
 }
 
 static cl_error_t report_json_add_string(
@@ -232,8 +241,7 @@ static cl_error_t report_json_add_string(
     if (NULL == string)
         return CL_EMEM;
 
-    json_object_object_add(object, key, string);
-    return CL_SUCCESS;
+    return report_json_add_owned(object, key, string);
 }
 
 /* Report counters are diagnostic evidence, not scan-control state. Saturate

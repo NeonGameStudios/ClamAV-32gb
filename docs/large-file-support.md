@@ -8724,6 +8724,18 @@ metadata/parser corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 release qualification remain required.
 
+## Structured scan-report JSON property insertion — 2026-09-01
+
+The structured report serializer now checks object-property insertion for its
+numeric and string fields, releases rejected JSON values, and returns
+`CL_EMEM` while leaving `json_out` clear rather than exposing a partial
+serialization. `test_scan_report_json_object_add_failure_is_fail_visible`
+injects the first production-linked report-property failure and verifies
+serialization resumes after the fault is removed. Current-source execution,
+complete structured-report/service corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+report/release qualification remain required.
+
 ## Shared JSON array insertion failures — 2026-09-01
 
 The shared `cli_json` scalar and null helpers, plus the array/object factories,
