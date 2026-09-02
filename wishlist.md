@@ -13114,3 +13114,14 @@ qualification remain open.
   complete OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   parser/release qualification before closure.
+
+## HFS+ compressed-resource read status reconciliation — 2026-09-02
+
+- Preserve the distinction for temporary compressed-resource metadata reads:
+  an in-range descriptor failure returns `CL_EREAD`, while a short resource
+  file returns `CL_EPARSE`; both remain sticky incomplete and non-cacheable.
+- Retain `test_hfsplus_truncated_resource_header_is_fail_visible` and its
+  source guards. Add production-linked execution, injected descriptor-read
+  failure, complete HFS+ catalog/attribute/resource corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and parser/release qualification before closure.

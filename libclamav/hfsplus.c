@@ -1127,6 +1127,17 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     return CL_CLEAN;
 }
 
+static cl_error_t hfsplus_readn_full(cli_ctx *ctx, int fd, void *buffer, size_t length, const char *reason)
+{
+    size_t read_length = cli_readn(fd, buffer, length);
+
+    if (read_length == length)
+        return CL_SUCCESS;
+
+    cli_mark_scan_incomplete(ctx, reason);
+    return read_length == (size_t)-1 ? CL_EREAD : CL_EPARSE;
+}
+
 cl_error_t cli_hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
 {
     cl_error_t status = CL_SUCCESS;
@@ -1149,10 +1160,10 @@ cl_error_t cli_hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
         goto done;
     }
 
-    if (cli_readn(fd, &resourceHeader, sizeof(resourceHeader)) != sizeof(resourceHeader)) {
+    status = hfsplus_readn_full(ctx, fd, &resourceHeader, sizeof(resourceHeader),
+                                "HFS+ resource header could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to read resource header from temporary file\n");
-        cli_mark_scan_incomplete(ctx, "HFS+ resource header could not be read completely");
-        status = CL_EREAD;
         goto done;
     }
 
@@ -1196,10 +1207,10 @@ cl_error_t cli_hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
         }
     }
 
-    if (cli_readn(fd, &resourceMap, sizeof(resourceMap)) != sizeof(resourceMap)) {
+    status = hfsplus_readn_full(ctx, fd, &resourceMap, sizeof(resourceMap),
+                                "HFS+ resource map could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to read resource map from temporary file\n");
-        cli_mark_scan_incomplete(ctx, "HFS+ resource map could not be read completely");
-        status = CL_EREAD;
         goto done;
     }
 
@@ -1258,10 +1269,10 @@ cl_error_t cli_hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
             goto done;
         }
 
-        if (cli_readn(fd, &resourceType, sizeof(resourceType)) != sizeof(resourceType)) {
+        status = hfsplus_readn_full(ctx, fd, &resourceType, sizeof(resourceType),
+                                    "HFS+ resource type table could not be read completely");
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to read resource type from temporary file\n");
-            cli_mark_scan_incomplete(ctx, "HFS+ resource type table could not be read completely");
-            status = CL_EREAD;
             goto done;
         }
         resourceType.instanceCount       = be16_to_host(resourceType.instanceCount);
@@ -1317,10 +1328,10 @@ cl_error_t cli_hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
         }
     }
 
-    if (cli_readn(fd, &entry, sizeof(entry)) != sizeof(entry)) {
+    status = hfsplus_readn_full(ctx, fd, &entry, sizeof(entry),
+                                "HFS+ resource entry could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to read resource entry from temporary file\n");
-        cli_mark_scan_incomplete(ctx, "HFS+ resource entry could not be read completely");
-        status = CL_EREAD;
         goto done;
     }
 
@@ -1361,10 +1372,10 @@ cl_error_t cli_hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *size)
         }
     }
 
-    if (cli_readn(fd, &dataLength, sizeof(dataLength)) != sizeof(dataLength)) {
+    status = hfsplus_readn_full(ctx, fd, &dataLength, sizeof(dataLength),
+                                "HFS+ compressed resource length could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to read data length from temporary file\n");
-        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource length could not be read completely");
-        status = CL_EREAD;
         goto done;
     }
 
@@ -1407,10 +1418,10 @@ static cl_error_t hfsplus_read_block_table(cli_ctx *ctx, int fd, uint32_t *numBl
 
     *table = NULL;
 
-    if (cli_readn(fd, numBlocks, sizeof(*numBlocks)) != sizeof(*numBlocks)) {
+    status = hfsplus_readn_full(ctx, fd, numBlocks, sizeof(*numBlocks),
+                                "HFS+ resource block count could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("hfsplus_read_block_table: Failed to read block count\n");
-        cli_mark_scan_incomplete(ctx, "HFS+ resource block count could not be read completely");
-        status = CL_EREAD;
         goto done;
     }
 
@@ -1430,10 +1441,10 @@ static cl_error_t hfsplus_read_block_table(cli_ctx *ctx, int fd, uint32_t *numBl
         goto done;
     }
 
-    if (cli_readn(fd, *table, table_size) != table_size) {
+    status = hfsplus_readn_full(ctx, fd, *table, table_size,
+                                "HFS+ resource block table could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("hfsplus_read_block_table: Failed to read table\n");
-        cli_mark_scan_incomplete(ctx, "HFS+ resource block table could not be read completely");
-        status = CL_EREAD;
         goto done;
     }
 

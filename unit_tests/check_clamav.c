@@ -54066,6 +54066,40 @@ START_TEST(test_hfsplus_resource_map_uses_declared_offsets)
 }
 END_TEST
 
+START_TEST(test_hfsplus_truncated_resource_header_is_fail_visible)
+{
+    const uint8_t truncated_header[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    char *path = NULL;
+    size_t resource_size = 0;
+    fmap_t *map;
+    uint8_t parent_data = 0;
+    int fd = -1;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(&parent_data, sizeof(parent_data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_int_eq(write(fd, truncated_header, sizeof(truncated_header)),
+                     (ssize_t)sizeof(truncated_header));
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    ck_assert_int_eq(cli_hfsplus_seek_to_cmpf_resource(&ctx, fd, &resource_size), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ resource header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hfsplus_declared_volume_boundary_is_fail_visible)
 {
     uint8_t data[1024 + (32 * 512)];
@@ -59532,6 +59566,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hfs_map, test_hfsplus_resource_block_offset_overflow_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_compressed_output_size_admission_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_resource_map_uses_declared_offsets);
+    tcase_add_test(tc_hfs_map, test_hfsplus_truncated_resource_header_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_declared_volume_boundary_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_catalog_key_length_padding_is_fail_visible);
     tcase_add_test(tc_hfs_map, test_hfsplus_catalog_leaf_chain_is_fail_visible);

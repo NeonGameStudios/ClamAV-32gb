@@ -21690,3 +21690,23 @@ reconciliation. A production-linked callback-injection regression, current
 source GCC build, sanitizer, complete recognition/embedded corpus, certified
 Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
 resource, and final parser/release qualification remain required.
+
+## HFS+ compressed-resource read status reconciliation — 2026-09-02
+
+The HFS+ compressed-resource path read resource headers, maps, type entries,
+reference entries, lengths, and block tables from temporary files with
+`cli_readn()`, but previously returned `CL_EREAD` for both an in-range
+descriptor failure and a short file. A resource fork ending before a declared
+fixed-width structure was therefore classified as an operational failure
+instead of malformed/truncated content. The shared HFS+ full-read helper now
+preserves the `(size_t)-1` sentinel: descriptor failures remain `CL_EREAD`,
+while short reads return `CL_EPARSE`, and both mark the recognized layer
+incomplete and non-cacheable.
+
+`test_hfsplus_truncated_resource_header_is_fail_visible` supplies a one-byte
+temporary resource fork and requires `CL_EPARSE`, the exact resource-header
+diagnostic, and fmap cache taint. The current-source production-linked
+execution, injected descriptor-read failure, complete HFS+ catalog/attribute/
+resource corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
