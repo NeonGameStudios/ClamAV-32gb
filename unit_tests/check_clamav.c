@@ -109,6 +109,7 @@
 #include "clamav_rust.h"
 #include "cvd.h"
 #include "bytecode.h"
+#include "uniq.h"
 
 #include "checks.h"
 
@@ -189,19 +190,22 @@ int clamav_test_force_hfsplus_decoder_init;
 int clamav_test_force_egg_lzma_decoder_init;
 int clamav_test_lzma_shutdown_calls;
 int clamav_test_force_cli_readn_status;
+size_t clamav_test_force_cli_readn_count;
 
 size_t __wrap_cli_readn(int fd, void *buff, size_t count)
 {
     size_t ret;
+    int force_read = clamav_test_force_cli_readn_count == 0 ||
+                     clamav_test_force_cli_readn_count == count;
 
-    if (clamav_test_force_cli_readn_status == 2) {
+    if (force_read && clamav_test_force_cli_readn_status == 2) {
         clamav_test_force_cli_readn_status = 0;
         errno                              = EIO;
         return (size_t)-1;
     }
 
     ret = __real_cli_readn(fd, buff, count);
-    if (clamav_test_force_cli_readn_status == 1) {
+    if (force_read && clamav_test_force_cli_readn_status == 1) {
         clamav_test_force_cli_readn_status = 0;
         if (ret == count && count > 0)
             return ret - 1;
@@ -42302,6 +42306,206 @@ START_TEST(test_codepage_stream_preserves_iconv_state)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+static size_t vba_callback_test_append_record(uint8_t *data, size_t offset,
+                                              uint16_t id, const void *payload,
+                                              uint32_t payload_size)
+{
+    data[offset++] = (uint8_t)(id & 0xffU);
+    data[offset++] = (uint8_t)(id >> 8);
+    cli_writeint32(data + offset, payload_size);
+    offset += sizeof(uint32_t);
+    if (payload_size != 0)
+        memcpy(data + offset, payload, payload_size);
+    return offset + payload_size;
+}
+
+static size_t vba_callback_test_literal_stream(uint8_t *compressed,
+                                               const uint8_t *plain,
+                                               size_t plain_size)
+{
+    static const uint8_t header[] = {0x01, 0x00, 0x00};
+    size_t compressed_size = 0;
+
+    memcpy(compressed, header, sizeof(header));
+    compressed_size = sizeof(header);
+    while (plain_size != 0) {
+        size_t chunk = MIN(plain_size, 8U);
+        compressed[compressed_size++] = 0;
+        memcpy(compressed + compressed_size, plain, chunk);
+        compressed_size += chunk;
+        plain += chunk;
+        plain_size -= chunk;
+    }
+    return compressed_size;
+}
+
+static unsigned int vba_callback_test_calls;
+static size_t vba_callback_test_size;
+static uint8_t vba_callback_test_data[16];
+
+static int vba_callback_test_cb(const unsigned char *data, size_t data_len, void *cbdata)
+{
+    UNUSEDPARAM(cbdata);
+    vba_callback_test_calls++;
+    vba_callback_test_size = data_len;
+    if (data_len <= sizeof(vba_callback_test_data))
+        memcpy(vba_callback_test_data, data, data_len);
+    return 0;
+}
+
+static cl_error_t vba_callback_test_run(int forced_read_status)
+{
+    static const uint8_t project_codepage[] = {0xe4, 0x04};
+    static const uint8_t project_name[]     = {'A'};
+    static const uint8_t module_count[]    = {1, 0};
+    static const uint8_t module_name[]     = {'M'};
+    static const uint8_t module_name_u[]   = {'M', 0, 0, 0};
+    static const uint8_t module_data[]     = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+    static const uint8_t empty_payload[]   = {0};
+    static const uint8_t zero_u16[]        = {0, 0};
+    static const uint8_t zero_u32[]        = {0, 0, 0, 0};
+    uint8_t directory[256];
+    uint8_t compressed_directory[320];
+    uint8_t compressed_module[32];
+    size_t directory_size = 0;
+    size_t compressed_directory_size;
+    size_t compressed_module_size;
+    const char *project_hash = "vba-callback-read-status";
+    char project_path[PATH_MAX];
+    char module_path[PATH_MAX];
+    char *module_hash = NULL;
+    char *output_path = NULL;
+    struct uniq *U;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t map_data[] = {0};
+    uint64_t temporary_reserved = 0;
+    int output_fd = -1;
+    int has_macros = 0;
+    uint32_t module_hash_count = 0;
+    int fd;
+    cl_error_t status;
+
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x0003, project_codepage,
+                                                      sizeof(project_codepage));
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x0004, project_name,
+                                                      sizeof(project_name));
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x000f, module_count,
+                                                      sizeof(module_count));
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x0019, module_name,
+                                                      sizeof(module_name));
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x0047, module_name_u,
+                                                      sizeof(module_name_u));
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x001a, module_name,
+                                                      sizeof(module_name));
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x0032, module_name_u,
+                                                      sizeof(module_name_u));
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x001c, empty_payload, 0);
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x0048, empty_payload, 0);
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x0031, zero_u32,
+                                                      sizeof(zero_u32));
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x001e, zero_u32,
+                                                      sizeof(zero_u32));
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x002c, zero_u16,
+                                                      sizeof(zero_u16));
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x0021, empty_payload, 0);
+    directory_size = vba_callback_test_append_record(directory, directory_size,
+                                                      0x002b, empty_payload, 0);
+    compressed_directory_size = vba_callback_test_literal_stream(compressed_directory,
+                                                                  directory,
+                                                                  directory_size);
+    compressed_module_size = vba_callback_test_literal_stream(compressed_module,
+                                                               module_data,
+                                                               sizeof(module_data));
+
+    U = uniq_init(1);
+    ck_assert_ptr_nonnull(U);
+    ck_assert_int_eq(uniq_add(U, "m", 1, &module_hash, &module_hash_count), CL_SUCCESS);
+    ck_assert_uint_eq(module_hash_count, 1);
+
+    snprintf(project_path, sizeof(project_path), "%s/%s_1", tmpdir, project_hash);
+    snprintf(module_path, sizeof(module_path), "%s/%s_1", tmpdir, module_hash);
+
+    fd = open(project_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, compressed_directory, compressed_directory_size),
+                      compressed_directory_size);
+    ck_assert_int_eq(close(fd), 0);
+
+    fd = open(module_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, compressed_module, compressed_module_size),
+                      compressed_module_size);
+    ck_assert_int_eq(close(fd), 0);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    cl_engine_set_clcb_vba(&engine, vba_callback_test_cb);
+    engine.maxfilesize      = 1024U * 1024U;
+    engine.maxtemporarysize = 1024U * 1024U;
+    map = cl_fmap_open_memory(map_data, sizeof(map_data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    vba_callback_test_calls = 0;
+    vba_callback_test_size  = 0;
+    memset(vba_callback_test_data, 0, sizeof(vba_callback_test_data));
+    clamav_test_force_cli_readn_count  = sizeof(module_data);
+    clamav_test_force_cli_readn_status = forced_read_status;
+    status = cli_vba_readdir_new(&ctx, tmpdir, U, project_hash, 1,
+                                 &output_fd, &has_macros, &output_path,
+                                 &temporary_reserved);
+    clamav_test_force_cli_readn_status = 0;
+    clamav_test_force_cli_readn_count  = 0;
+
+    ck_assert_int_eq(status, forced_read_status == 1 ? CL_EPARSE : CL_EREAD);
+    ck_assert_int_eq(output_fd, -1);
+    ck_assert_int_eq(has_macros, 1);
+    ck_assert(vba_callback_test_calls == 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_uint_eq(temporary_reserved, 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+
+    if (output_path != NULL) {
+        ck_assert_int_eq(unlink(output_path), 0);
+        free(output_path);
+    }
+    cl_fmap_close(map);
+    uniq_free(U);
+    ck_assert_int_eq(unlink(project_path), 0);
+    ck_assert_int_eq(unlink(module_path), 0);
+    return status;
+}
+
+START_TEST(test_vba_callback_materialized_read_status_is_fail_visible)
+{
+    ck_assert_int_eq(vba_callback_test_run(1), CL_EPARSE);
+    ck_assert_int_eq(vba_callback_test_run(2), CL_EREAD);
+}
+END_TEST
+#endif
+
 START_TEST(test_vba_inflate_stream_matches_legacy_output)
 {
     static const unsigned char compressed[] = {
@@ -60181,6 +60385,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_vba);
     tcase_add_checked_fixture(tc_vba, cl_setup, cl_teardown);
     tcase_add_test(tc_vba, test_vba_empty_unicode_module_stream_name_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_vba, test_vba_callback_materialized_read_status_is_fail_visible);
+#endif
 #ifdef CLAMAV_TEST_LSEEK_WRAP
     tcase_add_test(tc_vba, test_vba_legacy_project_directory_seek_failure_is_fail_visible);
 #endif

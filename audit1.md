@@ -21754,3 +21754,22 @@ manifest record the contract. Current-source production-GCC compilation and
 linked execution, complete DMG/UDIF corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
 and final parser/release qualification remain required.
+
+## VBA callback materialized-read classification — 2026-09-02
+
+The legacy VBA callback compatibility bridge allocates a bounded contiguous
+buffer only after the normalized module has been committed to the exact
+project-output spool. Its sized read now uses `vba_readn_full()`: an early EOF
+is `CL_EPARSE`, while an in-range descriptor failure remains `CL_EREAD`.
+Neither outcome invokes the callback with a partial buffer; both remain sticky
+incomplete and non-cacheable, and `cli_vba_readdir_new` preserves the deferred
+failure for its direct caller.
+
+`test_vba_callback_materialized_read_status_is_fail_visible` builds a valid
+compressed VBA directory and module, targets only the callback-sized read with
+the Linux-static `cli_readn` wrapper, and requires `CL_EPARSE` for the short
+spool and `CL_EREAD` for the injected descriptor failure. The implementation,
+test hook, and registration are source-guarded; production-linked execution,
+complete OLE/VBA/PowerPoint corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.

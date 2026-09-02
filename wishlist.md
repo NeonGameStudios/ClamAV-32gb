@@ -13156,3 +13156,18 @@ qualification remain open.
   DMG/UDIF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and parser/release qualification
   before closure.
+
+## VBA callback materialized-read classification — 2026-09-02
+
+- Keep the legacy `cl_engine_set_clcb_vba` compatibility callback explicitly
+  bounded: a short read from the exact project-output spool is `CL_EPARSE`,
+  while an in-range descriptor failure remains `CL_EREAD`; both outcomes must
+  remain incomplete and non-cacheable and must not invoke the callback with a
+  partial buffer.
+- Retain `vba_readn_full()`, the sized `cli_readn` fault-injection selector,
+  the `test_vba_callback_materialized_read_status_is_fail_visible` regression,
+  source guards, and the existing `vba-callback-over-1g` manifest evidence.
+  Add current-source production-linked execution, complete OLE/VBA/PowerPoint
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and parser/release qualification
+  before closure.

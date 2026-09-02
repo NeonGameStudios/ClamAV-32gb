@@ -813,7 +813,7 @@ static cl_error_t vba_invoke_module_callback(cli_ctx *ctx, int output_fd,
 {
     unsigned char *module = NULL;
     off_t saved_offset;
-    size_t read_size;
+    cl_error_t read_status;
     cl_error_t status = CL_SUCCESS;
 
     if (ctx->engine->cb_vba == NULL)
@@ -838,15 +838,15 @@ static cl_error_t vba_invoke_module_callback(cli_ctx *ctx, int output_fd,
         goto done;
     }
 
-    read_size = cli_readn(output_fd, module, (size_t)output_size);
+    read_status = vba_readn_full(output_fd, module, (size_t)output_size);
     if (lseek(output_fd, saved_offset, SEEK_SET) == (off_t)-1) {
         cli_mark_scan_incomplete(ctx, "VBA callback read could not restore the project output position");
         status = CL_ESEEK;
         goto done;
     }
-    if (read_size != (size_t)output_size) {
+    if (read_status != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "VBA callback module could not be read from bounded output");
-        status = CL_EREAD;
+        status = read_status;
         goto done;
     }
 
