@@ -1737,7 +1737,7 @@ static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
                    outfile, cli_strerror(errno, err, sizeof(err)));
         cli_scan_release_temporary(ctx, temporary_reserved);
         cli_mark_scan_incomplete(ctx, "DMG reconstructed partition temporary file could not be opened");
-        return CL_ETMPFILE;
+        return CL_ECREAT;
     }
     cli_dbgmsg("dmg_handle_mish: extracting block %u to %s\n", mishblocknum, outfile);
 
@@ -1826,7 +1826,7 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
         cli_errmsg("cli_scandmg: Can't create temporary file %s: %s\n",
                    xmlfile, cli_strerror(errno, err, sizeof(err)));
         cli_mark_scan_incomplete(ctx, "DMG XML temporary file could not be opened");
-        ret = CL_ETMPFILE;
+        ret = CL_ECREAT;
         goto done;
     }
 
@@ -1850,9 +1850,9 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
             ret = read_result == (size_t)-1 ? CL_EREAD : CL_EPARSE;
             goto done;
         }
-        if (cli_scan_reserve_temporary(ctx, (uint64_t)wanted) != CL_SUCCESS) {
+        ret = cli_scan_reserve_temporary(ctx, (uint64_t)wanted);
+        if (ret != CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "DMG XML retained copy exceeds temporary storage limits");
-            ret = CL_ERESOURCE;
             goto done;
         }
         if (cli_writen(ofd, buffer, wanted) != wanted) {

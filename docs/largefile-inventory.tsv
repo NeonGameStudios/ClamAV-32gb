@@ -1827,7 +1827,7 @@ fixed-width-integer	libclamav/dmg.c	179	    if (!written || !buffer || *written 
 fixed-width-integer	libclamav/dmg.c	1809	    uint64_t offset, remaining;
 fixed-width-integer	libclamav/dmg.c	1836	        size_t wanted = (size_t)MIN(remaining, (uint64_t)sizeof(buffer));
 fixed-width-integer	libclamav/dmg.c	1844	        read_result = offset > (uint64_t)SIZE_MAX
-fixed-width-integer	libclamav/dmg.c	1853	        if (cli_scan_reserve_temporary(ctx, (uint64_t)wanted) != CL_SUCCESS) {
+fixed-width-integer	libclamav/dmg.c	1853	        ret = cli_scan_reserve_temporary(ctx, (uint64_t)wanted);
 fixed-width-integer	libclamav/dmg.c	1859	            cli_scan_release_temporary(ctx, (uint64_t)wanted);
 fixed-width-integer	libclamav/dmg.c	1865	        cli_scan_release_temporary(ctx, (uint64_t)wanted);
 fixed-width-integer	libclamav/dmg.c	247	    if (hdr.dataForkOffset > (uint64_t)maplen ||

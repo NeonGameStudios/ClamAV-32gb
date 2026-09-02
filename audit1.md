@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## DMG temporary-output status propagation — 2026-09-02
+
+The DMG reconstruction and XML staging paths previously relabeled manual
+temporary-file creation failures as `CL_ETMPFILE`, and XML retained-copy
+admission hardcoded `CL_ERESOURCE` after discarding the reservation result.
+They now return `CL_ECREAT` for output creation failures and preserve the
+originating temporary-reservation status while retaining the exact sticky
+incomplete diagnostics, resource release, and cleanup handling. Source guards
+pin both reconstruction and XML staging boundaries. Current-source
+production-GCC compilation, production-linked execution, complete DMG
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## UDF temporary-output status propagation — 2026-09-02
 
 The UDF file-materialization path discarded the specific status returned by

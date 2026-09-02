@@ -3,6 +3,18 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## DMG temporary-output status propagation — 2026-09-02
+
+DMG reconstructed-partition and XML staging now report `CL_ECREAT` for manual
+temporary-file creation failures, matching the shared temporary-file helper.
+XML retained-copy admission also preserves the originating temporary-reservation
+status. Exact sticky incomplete diagnostics, reservation release, and cleanup
+remain enforced. Source guards cover both output paths. Current-source
+production-GCC compilation, production-linked execution, complete DMG corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## UDF temporary-output status propagation — 2026-09-02
 
 UDF file materialization now preserves the originating statuses from

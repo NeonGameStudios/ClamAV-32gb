@@ -1,5 +1,16 @@
 # Wishlist
 
+## DMG temporary-output status propagation — 2026-09-02
+
+- Preserve `CL_ECREAT` for DMG reconstructed-partition and XML temporary-file
+  creation failures, and preserve the originating XML temporary-reservation
+  status instead of relabeling it as `CL_ERESOURCE`.
+- Retain exact sticky incomplete diagnostics, reservation release, cleanup,
+  and source guards. Complete current-source production-GCC compilation and
+  execution, complete DMG corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification.
+
 ## UDF temporary-output status propagation — 2026-09-02
 
 - Preserve the originating `cli_scan_reserve_temporary()` and
