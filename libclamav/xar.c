@@ -914,6 +914,8 @@ int cli_scanxar(cli_ctx *ctx)
     }
     if (ctx->engine == NULL)
         return CL_ENULLARG;
+    if (ctx->options == NULL)
+        return CL_ENULLARG;
 
     memset(&strm, 0x00, sizeof(z_stream));
 

@@ -12,7 +12,21 @@
   regressions. Current-source production-GCC compilation, production-linked
   execution, complete XDP/XML corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
-  final parser/release qualification remain open.
+final parser/release qualification remain open.
+
+## XAR direct options admission — 2026-09-02
+
+- Keep exported `cli_scanxar()` fail-visible when an otherwise recognized
+  engine/map context omits scan options; return `CL_ENULLARG` before TOC
+  staging, decoder traversal, temporary accounting, checksum handling, or
+  nested-member scanning.
+- Retain `test_xar_missing_options_is_fail_visible`, its source guards, and
+  manifest evidence that the invalid context does not become sticky incomplete
+  or cache-tainted. Keep valid options in direct XAR timeout, decoder,
+  metadata, and sticky-result regressions. Current-source production-GCC
+  compilation, production-linked execution, complete XAR corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification remain open.
 
 ## ARJ direct options admission — 2026-09-02
 
