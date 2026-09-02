@@ -771,6 +771,25 @@ production CVD/CLD/CUD service parity, complete database corpus, sanitizer,
 certified Linux x86-64, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## XLM BIFF payload-read status reconciliation — 2026-09-02
+
+The XLM extraction helper already distinguished a short BIFF record header
+from an input-descriptor read error, but it treated every short BIFF payload
+read as `CL_EREAD`. A declared payload that ended at EOF was therefore
+classified as an operational read failure rather than malformed/truncated
+content. The payload read now retains `cli_readn()`'s `(size_t)-1` sentinel:
+in-range descriptor failures remain `CL_EREAD`, while a short payload returns
+`CL_EPARSE`; both paths mark the containing OLE2 layer incomplete and
+non-cacheable.
+
+`test_xlm_truncated_record_data_is_fail_visible` supplies a complete BIFF
+header with a one-byte payload declaration and no payload, requiring
+`CL_EPARSE`, the exact truncated-data diagnostic, and fmap cache taint. The
+current-source production-linked execution, injected in-range descriptor
+failure, complete OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## RFC 1341 reassembly output status reconciliation — 2026-09-02
 
 The final RFC 1341 reassembly path could discard specific directory creation,

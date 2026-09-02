@@ -4830,10 +4830,16 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
             goto done;
         }
 
-        if (cli_readn(in_fd, data, biff_header.length) != biff_header.length) {
+        size_read = cli_readn(in_fd, data, biff_header.length);
+        if (size_read != biff_header.length) {
             cli_dbgmsg("[cli_extract_xlm_macros_and_images] Failed to read BIFF record data\n");
-            cli_mark_scan_incomplete(ctx, "XLM BIFF record data was truncated");
-            status = CL_EREAD;
+            if (size_read == (size_t)-1) {
+                cli_mark_scan_incomplete(ctx, "XLM BIFF record data could not be read completely");
+                status = CL_EREAD;
+            } else {
+                cli_mark_scan_incomplete(ctx, "XLM BIFF record data was truncated");
+                status = CL_EPARSE;
+            }
             goto done;
         }
 

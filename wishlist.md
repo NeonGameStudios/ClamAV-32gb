@@ -13103,3 +13103,14 @@ qualification remain open.
   parity, complete database corpus, sanitizer, certified Linux x86-64,
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification before release closure.
+
+## XLM BIFF payload-read status reconciliation — 2026-09-02
+
+- Preserve the distinction at the XLM BIFF payload boundary: an in-range
+  descriptor failure returns `CL_EREAD`, while a short file returns
+  `CL_EPARSE`; both remain sticky incomplete and non-cacheable.
+- Retain `test_xlm_truncated_record_data_is_fail_visible` and its source
+  guards. Add production-linked execution, injected descriptor-read failure,
+  complete OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  parser/release qualification before closure.
