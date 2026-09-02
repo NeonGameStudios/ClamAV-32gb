@@ -7412,6 +7412,59 @@ START_TEST(test_fmap_hash_finalization_failure_is_fail_visible)
     fmap_free(map);
 }
 END_TEST
+
+START_TEST(test_raw_matcher_hash_finalization_failure_is_fail_visible)
+{
+    static const char signature[] =
+        "b09a8ae0c407e2e0b7603c9c7d11cbcc:29:Raw-Matcher-Hash-Finalization\n";
+    static const uint8_t input[] = "raw matcher hash finalization";
+    char signature_path[PATH_MAX];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+    unsigned int sigs = 0;
+    int fd;
+
+    snprintf(signature_path, sizeof(signature_path), "%s/raw-matcher-hash-%ld.hdb", tmpdir, (long)getpid());
+    fd = open(signature_path, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0600);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(write(fd, signature, sizeof(signature) - 1U), (ssize_t)(sizeof(signature) - 1U));
+    ck_assert_int_eq(close(fd), 0);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_UNSIGNED), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    memset(&options, 0, sizeof(options));
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    clamav_test_fail_finish_hash = 1;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ANY", NULL);
+    clamav_test_fail_finish_hash = 0;
+
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    ck_assert_int_eq(unlink(signature_path), 0);
+}
+END_TEST
 #endif
 
 START_TEST(test_pe_overlay_range_preserves_native_size)
@@ -59505,6 +59558,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_fmap_hash_read_failure_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl_scan, test_fmap_hash_finalization_failure_is_fail_visible);
+    tcase_add_test(tc_cl_scan, test_raw_matcher_hash_finalization_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl_scan, test_pe_overlay_range_preserves_native_size);
 

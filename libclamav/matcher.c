@@ -2117,7 +2117,12 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
              * Compute the hash for the current data chunk, if we need to.
              */
             if (need_hash[hash_type] && !ctx->fmap->have_hash[hash_type]) {
-                cl_finish_hash(hashctx[hash_type], digest[hash_type]);
+                if (cl_finish_hash(hashctx[hash_type], digest[hash_type]) != 0) {
+                    hashctx[hash_type] = NULL;
+                    cli_mark_scan_incomplete(ctx, "raw matcher hash could not be finalized completely");
+                    ret = CL_EREAD;
+                    goto done;
+                }
                 hashctx[hash_type] = NULL;
 
                 ret = fmap_set_hash(ctx->fmap, digest[hash_type], hash_type);

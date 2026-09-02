@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Raw matcher hash finalization status — 2026-09-02
+
+The raw hash-signature matcher accumulated required digests and ignored the
+return value from `cl_finish_hash()` before putting the digest into the fmap
+cache and querying HDB/HDU signatures. A finalization failure could therefore
+publish an untrusted digest and even report a detection. The matcher now
+clears the consumed context, marks the layer incomplete and non-cacheable, and
+returns `CL_EREAD` before caching or hash-signature lookup.
+
+`test_raw_matcher_hash_finalization_failure_is_fail_visible` creates a valid
+HDB signature for a synthetic input, injects the existing Linux linker hash
+finalization failure, and verifies `CL_EREAD`, reset verdict/alert outputs,
+and fmap cache taint. Source guards and the capability manifest record the
+boundary. Current-source production-GCC compilation and production-linked
+execution, complete signature corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+matcher/release qualification remain required.
+
 ## XZ checksum finalization status — 2026-09-02
 
 The XZ decoder maintained a stream-index SHA-256 context and optional block

@@ -1,5 +1,16 @@
 # Wishlist
 
+## Raw matcher hash finalization status — 2026-09-02
+
+- Keep raw hash-signature matching checking `cl_finish_hash()` before fmap
+  cache publication or HDB/HDU lookup; preserve `CL_EREAD`, sticky
+  incomplete/non-cacheable state, and reset caller-visible outputs on failure.
+- Retain `test_raw_matcher_hash_finalization_failure_is_fail_visible`, its
+  source guards, and manifest evidence. Current-source production-GCC
+  execution, complete signature corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final matcher/release qualification remain open.
+
 ## XZ checksum finalization status — 2026-09-02
 
 - Keep XZ stream-index and block SHA-256 finalization checking
