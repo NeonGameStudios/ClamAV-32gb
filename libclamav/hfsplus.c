@@ -2198,6 +2198,8 @@ cl_error_t cli_scanhfsplus(cli_ctx *ctx)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     status = cli_checktimelimit(ctx);
     if (status != CL_SUCCESS) {

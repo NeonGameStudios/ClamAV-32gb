@@ -52,6 +52,23 @@ execution, complete ISO/Joliet corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## HFS+ direct options admission — 2026-09-02
+
+The exported `cli_scanhfsplus()` entry rejected null context, input fmap, and
+engine state but did not reject missing scan options before volume-header and
+catalog inspection. A direct caller with incomplete scan configuration could
+therefore enter the HFS+ walk and eventually hand extracted content to nested
+scanning. The entry now returns `CL_ENULLARG` immediately after engine
+admission when `ctx->options` is absent.
+
+`test_hfsplus_missing_options_is_fail_visible` supplies a map and engine while
+omitting options, and verifies `CL_ENULLARG` without sticky incomplete or
+cache-taint state. Source guards and the capability manifest record the
+boundary. Current-source production-GCC compilation, production-linked
+execution, complete HFS+ corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## CPIO direct scan-state admission — 2026-09-02
 
 The CPIO old-binary, ODC, NEWC, and CRC direct parser entries required an
