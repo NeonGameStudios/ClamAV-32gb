@@ -182,6 +182,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=cli_jsonint"
         "-Wl,--wrap=cli_jsonuint64"
         "-Wl,--wrap=cli_jsonstr"
+        "-Wl,--wrap=evidence_add_indicator"
         "-Wl,--wrap=malloc"
         "-Wl,--wrap=calloc"
         "-Wl,--wrap=realloc"

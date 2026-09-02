@@ -284,6 +284,10 @@ int htmlnorm_test_fail_next_realloc;
 #ifdef CLAMAV_TEST_JSON_WRAP
 extern int __real_json_object_array_add(json_object *obj, json_object *val);
 extern int __real_json_object_object_add(json_object *obj, const char *key, json_object *val);
+extern bool __real_evidence_add_indicator(evidence_t evidence, const char *name,
+                                          IndicatorType indicator_type, size_t object_id,
+                                          bool has_match_offset, uint64_t match_offset,
+                                          FFIError **err);
 extern json_object *__real_cli_jsonarray(json_object *obj, const char *key);
 extern cl_error_t __real_cli_jsonbool(json_object *obj, const char *key, int i);
 extern cl_error_t __real_cli_jsonint(json_object *obj, const char *key, int32_t i);
@@ -326,6 +330,20 @@ static int json_api_test_fail_array_add;
 static int json_api_test_fail_object_add;
 static int scan_report_test_fail_object_add;
 static int ignored_test_fail_object_add;
+static int evidence_test_fail_add_indicator;
+
+bool __wrap_evidence_add_indicator(evidence_t evidence, const char *name,
+                                   IndicatorType indicator_type, size_t object_id,
+                                   bool has_match_offset, uint64_t match_offset,
+                                   FFIError **err)
+{
+    if (evidence_test_fail_add_indicator) {
+        evidence_test_fail_add_indicator = 0;
+        return false;
+    }
+    return __real_evidence_add_indicator(evidence, name, indicator_type, object_id,
+                                         has_match_offset, match_offset, err);
+}
 
 int __wrap_json_object_array_add(json_object *obj, json_object *val)
 {
@@ -5675,6 +5693,41 @@ START_TEST(test_nested_evidence_merge_failure_is_fail_visible)
         cl_fmap_close(child_map);
         cl_fmap_close(parent_map);
     }
+}
+END_TEST
+
+START_TEST(test_indicator_evidence_add_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "indicator evidence";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    evidence_test_fail_add_indicator = 1;
+    ck_assert_int_eq(cli_append_virus(&ctx, "Indicator.Evidence"), CL_ERROR);
+    ck_assert_int_eq(evidence_test_fail_add_indicator, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "indicator evidence could not be recorded");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_ptr_nonnull(layer.evidence);
+
+    evidence_free(layer.evidence);
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -56423,6 +56476,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_virus_indicator_metadata_array_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_nested_indicator_metadata_object_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_nested_evidence_merge_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_indicator_evidence_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_nested_layer_metadata_array_add_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);

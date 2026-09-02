@@ -19711,6 +19711,23 @@ execution, complete signature/evidence corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
 final matcher/release qualification remain required.
 
+## Indicator evidence-store failures — 2026-09-01
+
+The central indicator path now treats both Rust evidence-store creation and
+`evidence_add_indicator()` insertion failures as fail-visible. The active layer
+is marked incomplete and non-cacheable, the stronger error result is preserved,
+and an evidence store that was created before insertion failure remains
+available for the structured report.
+
+`test_indicator_evidence_add_failure_is_fail_visible` injects the production-
+linked insertion failure and requires `CL_ERROR`, the exact
+`indicator evidence could not be recorded` reason, retained evidence state, and
+fmap cache taint. Source guards and the capability manifest record the checked
+boundary. Current-source production-GCC compilation, production-linked
+execution, complete signature/evidence corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
+final matcher/release qualification remain required.
+
 ## Shared JSON array insertion failures — 2026-09-01
 
 The shared `cli_json` scalar and null helpers, plus the array/object factories,

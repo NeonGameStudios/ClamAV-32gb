@@ -8680,6 +8680,21 @@ corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and release qualification remain
 required.
 
+## Indicator evidence-store failures — 2026-09-01
+
+`append_virus()` now marks the active layer incomplete and non-cacheable when
+the Rust evidence store cannot be created or when `evidence_add_indicator()`
+rejects a required indicator. The stronger error result remains authoritative,
+and an already-created evidence store is retained for structured reporting.
+
+`test_indicator_evidence_add_failure_is_fail_visible` injects the current-source
+production-linked evidence insertion failure and requires `CL_ERROR`, the exact
+`indicator evidence could not be recorded` diagnostic, retained evidence state,
+and fmap cache taint. Current-source production-GCC compilation,
+production-linked execution, complete signature/evidence corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final matcher/release qualification remain required.
+
 ## Nested indicator metadata copy failures — 2026-09-01
 
 Child indicators and alerts copied during `cli_recursion_stack_pop()` now

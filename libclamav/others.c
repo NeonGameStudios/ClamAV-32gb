@@ -1985,6 +1985,7 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
         ctx->recursion_stack[ctx->recursion_level].evidence = evidence_new();
         if (NULL == ctx->recursion_stack[ctx->recursion_level].evidence) {
             cli_errmsg("append_virus: no memory for evidence store\n");
+            cli_mark_scan_incomplete(ctx, "indicator evidence could not be recorded");
             status = CL_EMEM;
             goto done;
         }
@@ -2001,6 +2002,7 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
         &add_indicator_error);
     if (!add_successful) {
         cli_errmsg("Failed to add indicator to scan evidence: %s\n", ffierror_fmt(add_indicator_error));
+        cli_mark_scan_incomplete(ctx, "indicator evidence could not be recorded");
         status = CL_ERROR;
         goto done;
     }
