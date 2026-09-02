@@ -8695,6 +8695,21 @@ complete metadata/parser corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and release
 qualification remain required.
 
+## MSXML Value-array metadata insertion — 2026-09-01
+
+The MSXML reader and streaming parser now check the direct
+`json_object_array_add()` used for a recognized element's `Value` array. A
+failed append releases the unowned value, returns `CL_EMEM`, marks the owning
+layer incomplete, and preserves the exact `MSXML JSON value metadata could not
+be recorded` diagnostic. The focused
+`test_msxml_value_metadata_array_add_failure_is_fail_visible` regression
+injects a one-shot typed array failure in both reader and bounded streaming
+paths, requiring the error, sticky reason, and fmap non-cacheability while
+leaving later error-report insertion available. Current-source
+production-linked execution, complete XML/OOXML/HWPML corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and release qualification remain required.
+
 ## Bytecode logical-dispatch argument validation — 2026-08-20
 
 The logical-bytecode entry point now validates the scan context, bytecode

@@ -19648,3 +19648,24 @@ production-GCC compilation,
 production-linked execution, sanitizer, complete metadata/parser corpus,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final matcher/release qualification remain required.
+
+## MSXML Value-array metadata insertion — 2026-09-01
+
+The MSXML reader and streaming parser both used a direct
+`json_object_array_add()` for a recognized element's `Value` array and
+discarded its failure. A required XML value could therefore be omitted while
+the parser continued as if metadata had been recorded. The shared append now
+releases an unowned value and returns `CL_EMEM`; the reader records the exact
+sticky `MSXML JSON value metadata could not be recorded` reason, and the
+streaming callback uses the same fail-visible reason through its state
+failure path.
+
+`test_msxml_value_metadata_array_add_failure_is_fail_visible` injects a
+one-shot production-linked json-c array failure for a numeric value and runs
+both the XML reader and bounded streaming parser. Each path requires
+`CL_EMEM`, the exact sticky reason, and fmap non-cacheability, while the
+one-shot fault leaves subsequent parser error-report insertion available.
+Current-source production-GCC compilation, production-linked execution,
+sanitizer, complete XML/OOXML/HWPML corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.

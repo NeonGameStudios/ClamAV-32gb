@@ -236,7 +236,10 @@ static int msxml_parse_value(json_object *wrkptr, const char *arrname, const xml
         return CL_EMEM;
     }
 
-    json_object_array_add(arrobj, newobj);
+    if (json_object_array_add(arrobj, newobj) != 0) {
+        json_object_put(newobj);
+        return CL_EMEM;
+    }
     return CL_SUCCESS;
 }
 
@@ -464,7 +467,9 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
 
                         if (thisjobj && (keyinfo->type & MSXML_JSON_VALUE)) {
 
-                            ret = msxml_parse_value(thisjobj, "Value", node_value);
+                            ret = msxml_record_json_status(
+                                ctx, msxml_parse_value(thisjobj, "Value", node_value),
+                                "MSXML JSON value metadata could not be recorded");
                             if (ret != CL_SUCCESS)
                                 return ret;
 
@@ -1144,7 +1149,7 @@ static void msxml_stream_add_json_value(struct msxml_stream_state *state, struct
         value[chunk] = '\0';
         ret          = msxml_parse_value(frame->json_obj, "Value", value);
         if (ret != CL_SUCCESS) {
-            msxml_stream_fail(state, ret, "MSXML JSON value could not be retained");
+            msxml_stream_fail(state, ret, "MSXML JSON value metadata could not be recorded");
             return;
         }
         offset += chunk;

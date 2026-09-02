@@ -11575,6 +11575,18 @@ final parser/release qualification remain open.
   materialized-large-file, Sonic1, resource, and final release qualification
   remain open.
 
+
+## MSXML Value-array metadata insertion — 2026-09-01
+
+- Keep reader and streaming MSXML `Value`-array insertion fail-visible when
+  json-c rejects the append; release the unowned value, preserve the exact
+  metadata diagnostic, taint the owning fmap, and return `CL_EMEM`.
+- Retain `test_msxml_value_metadata_array_add_failure_is_fail_visible` and
+  its source guards. Current-source production-linked execution, complete
+  XML/OOXML/HWPML corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## OLE2 custom-property metadata completion — 2026-09-01
 
 - Keep `HasUserDefinedProperties` report failures fail-visible when an OLE2
