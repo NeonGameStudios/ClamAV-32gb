@@ -2584,6 +2584,8 @@ cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
     if (autoit_checktimelimit(ctx, "AutoIt inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;
 

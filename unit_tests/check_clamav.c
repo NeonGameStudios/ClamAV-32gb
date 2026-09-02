@@ -34286,6 +34286,7 @@ START_TEST(test_autoit_ea06_missing_member_is_fail_visible)
 {
     uint8_t data[25];
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -34294,10 +34295,12 @@ START_TEST(test_autoit_ea06_missing_member_is_fail_visible)
     data[0] = 0x36;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     ctx.engine            = &engine;
+    ctx.options           = &options;
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
 
@@ -34809,16 +34812,19 @@ START_TEST(test_autoit_version_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {0x35};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(input, sizeof(input));
     ck_assert_ptr_nonnull(map);
     map->need = embedded_header_read_failure;
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
 
     ck_assert_int_eq(cli_scanautoit(&ctx, 0), CL_EREAD);
     ck_assert(ctx.scan_incomplete);
@@ -34833,8 +34839,9 @@ START_TEST(test_autoit_version_read_failure_is_fail_visible)
     map = cl_fmap_open_memory(input, sizeof(input));
     ck_assert_ptr_nonnull(map);
     map->need = embedded_header_read_failure;
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
 
     ck_assert_int_eq(cli_autoit_header_check(&ctx, 0), CL_EREAD);
     ck_assert(ctx.scan_incomplete);
@@ -34852,8 +34859,9 @@ START_TEST(test_autoit_version_read_failure_is_fail_visible)
         map = cl_fmap_open_memory(signature_input, sizeof(signature_input));
         ck_assert_ptr_nonnull(map);
         map->need = autoit_signature_read_failure;
-        ctx.engine = &engine;
-        ctx.fmap   = map;
+        ctx.engine  = &engine;
+        ctx.options = &options;
+        ctx.fmap    = map;
 
         ck_assert_int_eq(cli_autoit_header_check(&ctx, 0), CL_EREAD);
         ck_assert(ctx.scan_incomplete);
@@ -56168,6 +56176,28 @@ START_TEST(test_autoit_requires_engine)
 }
 END_TEST
 
+START_TEST(test_autoit_missing_options_is_fail_visible)
+{
+    static const uint8_t input[] = {0x35};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scanautoit(&ctx, 0), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mspack_parsers_require_engine)
 {
     static const uint8_t input[] = {0};
@@ -57235,6 +57265,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_autoit_map, test_autoit_missing_map_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_header_missing_context_or_map_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_ea06_missing_member_is_fail_visible);
+    tcase_add_test(tc_autoit_map, test_autoit_missing_options_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_time_limit_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_version_read_failure_is_fail_visible);
