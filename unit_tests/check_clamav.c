@@ -307,6 +307,7 @@ static int msxml_test_fail_value_array_add;
 static int pdf_test_fail_page_count;
 static int pdf_test_fail_incorrect_pages_count;
 static int pdf_test_fail_uri_metadata;
+static int pdf_test_fail_derived_metadata_array_add;
 static int html_test_fail_uri_metadata;
 static int mbox_test_fail_root_metadata;
 static int pe_test_fail_import_table;
@@ -371,6 +372,11 @@ int __wrap_json_object_array_add(json_object *obj, json_object *val)
     }
     if (msxml_test_fail_value_array_add && val && json_object_is_type(val, json_type_int)) {
         msxml_test_fail_value_array_add = 0;
+        return -1;
+    }
+    if (pdf_test_fail_derived_metadata_array_add && val &&
+        json_object_is_type(val, json_type_int) && json_object_get_int(val) == 1) {
+        pdf_test_fail_derived_metadata_array_add = 0;
         return -1;
     }
     if (json_api_test_fail_array_add)
@@ -35137,6 +35143,60 @@ START_TEST(test_pdf_metadata_record_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_derived_metadata_array_add_failure_is_fail_visible)
+{
+    static const uint8_t document[] =
+        "%PDF-1.7\n"
+        "1 0 obj\n"
+        "<< /Type /Catalog /OpenAction 2 0 R >>\n"
+        "endobj\n"
+        "2 0 obj\n"
+        "<< /Type /Action /S /JavaScript /JS (app.alert(1)) >>\n"
+        "endobj\n"
+        "trailer\n<< /Root 1 0 R >>\n"
+        "startxref\n0\n%%EOF\n";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    json_object *metadata;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    ctx.engine                   = scan_engine;
+    ctx.dconf                    = scan_engine->dconf;
+    ctx.options                  = &options;
+    ctx.fmap                     = map;
+    ctx.this_layer_tmpdir        = tmpdir;
+    ctx.this_layer_metadata_json = metadata;
+
+    pdf_test_fail_derived_metadata_array_add = 1;
+    ret                                        = cli_pdf(tmpdir, &ctx, 0);
+    pdf_test_fail_derived_metadata_array_add = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PDF derived-object metadata could not be recorded");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(metadata);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_pdf_page_count_metadata_record_failure_is_fail_visible)
 {
     static const uint8_t document[] =
@@ -57020,6 +57080,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_ascii85_markerless_partial_group_is_fail_visible);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_pdf, test_pdf_metadata_record_failure_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_derived_metadata_array_add_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_page_count_metadata_record_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_uri_metadata_record_failure_is_fail_visible);
 #endif

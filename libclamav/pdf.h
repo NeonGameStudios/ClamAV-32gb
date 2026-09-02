@@ -231,6 +231,7 @@ struct pdf_struct {
     char *key;
     unsigned keylen;
     struct pdf_stats stats;
+    cl_error_t metadata_status;
     struct objstm_struct **objstms;
     uint32_t nobjstms;
     uint32_t parse_recursion_depth;

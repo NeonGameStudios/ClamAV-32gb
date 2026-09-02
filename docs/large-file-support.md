@@ -68,6 +68,23 @@ Current-source production-linked execution, sanitizer, complete PDF corpus,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain open.
 
+## PDF derived-object metadata failures — 2026-09-01
+
+PDF metadata for JavaScript objects, malformed-object lists, JBIG2 objects, and
+large-color objects now shares a checked recorder for PDFStats/array creation
+and integer append failures. A rejected required record marks the confirmed PDF
+layer incomplete and non-cacheable, and its `CL_EMEM` status survives extraction,
+temporary cleanup, and the final parser merge without replacing a stronger
+parser or detection result.
+
+`test_pdf_derived_metadata_array_add_failure_is_fail_visible` injects the
+production-linked JavaScript-object array append failure and requires `CL_EMEM`,
+the exact `PDF derived-object metadata could not be recorded` diagnostic, and
+fmap cache taint. Current-source production-GCC compilation, production-linked
+execution, complete PDF corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## MSXML JSON metadata write visibility — 2026-09-01
 
 The shared MSXML reader and streaming parser now check required JSON count and

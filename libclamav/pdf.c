@@ -178,6 +178,39 @@ static cl_error_t pdf_stream_dictionary_start(struct pdf_struct *pdf,
     return CL_SUCCESS;
 }
 
+static void pdf_record_object_id_metadata(struct pdf_struct *pdf,
+                                          const char *array_name,
+                                          uint32_t object_id)
+{
+    json_object *pdfobj;
+    json_object *objects;
+    cl_error_t status;
+
+    if (!pdf || !pdf->ctx || !SCAN_COLLECT_METADATA ||
+        !pdf->ctx->this_layer_metadata_json)
+        return;
+
+    pdfobj = cli_jsonobj(pdf->ctx->this_layer_metadata_json, "PDFStats");
+    if (!pdfobj) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF derived-object metadata could not be recorded");
+        pdf->metadata_status = cli_merge_scan_status(pdf->metadata_status, CL_EMEM);
+        return;
+    }
+
+    objects = cli_jsonarray(pdfobj, array_name);
+    if (!objects) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF derived-object metadata could not be recorded");
+        pdf->metadata_status = cli_merge_scan_status(pdf->metadata_status, CL_EMEM);
+        return;
+    }
+
+    status = cli_jsonint_array(objects, (int32_t)object_id);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF derived-object metadata could not be recorded");
+        pdf->metadata_status = cli_merge_scan_status(pdf->metadata_status, status);
+    }
+}
+
 /* PDF statistics callbacks and related */
 struct pdfname_action;
 
@@ -2407,15 +2440,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
                 }
 
                 if ((pdf->ctx->options->general & CL_SCAN_GENERAL_COLLECT_METADATA) && pdf->ctx->this_layer_metadata_json != NULL) {
-                    struct json_object *pdfobj, *jbig2arr;
-
-                    if (NULL == (pdfobj = cli_jsonobj(pdf->ctx->this_layer_metadata_json, "PDFStats"))) {
-                        cli_errmsg("pdf_extract_obj: failed to get PDFStats JSON object\n");
-                    } else if (NULL == (jbig2arr = cli_jsonarray(pdfobj, "JavascriptObjects"))) {
-                        cli_errmsg("pdf_extract_obj: failed to get JavascriptObjects JSON object\n");
-                    } else {
-                        cli_jsonint_array(jbig2arr, obj->id >> 8);
-                    }
+                    pdf_record_object_id_metadata(pdf, "JavascriptObjects", obj->id >> 8);
                 }
 
                 pdf->stats.njs++;
@@ -2537,6 +2562,7 @@ done:
                                      "PDF extracted object could not be removed");
     temporary_reserved = 0;
     pdf->temporary_reserved = NULL;
+    status = cli_merge_scan_status(status, pdf->metadata_status);
 
     return status;
 }
@@ -2805,8 +2831,6 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
     enum objstate objstate = STATE_NONE;
     cl_error_t search_status;
 
-    json_object *pdfobj = NULL, *jsonobj = NULL;
-
     if (NULL == pdf || NULL == obj) {
         cli_warnmsg("pdf_parseobj: invalid arguments\n");
         return;
@@ -2882,18 +2906,7 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
         if (!nextobj || bytesleft < 0) {
             cli_dbgmsg("pdf_parseobj: %u %u obj: no dictionary\n", obj->id >> 8, obj->id & 0xff);
 
-            if (!(pdfobj) && pdf->ctx->this_layer_metadata_json != NULL) {
-                pdfobj = cli_jsonobj(pdf->ctx->this_layer_metadata_json, "PDFStats");
-                if (!(pdfobj))
-                    return;
-            }
-
-            if (pdfobj) {
-                if (!(jsonobj))
-                    jsonobj = cli_jsonarray(pdfobj, "ObjectsWithoutDictionaries");
-                if (jsonobj)
-                    cli_jsonint_array(jsonobj, obj->id >> 8);
-            }
+            pdf_record_object_id_metadata(pdf, "ObjectsWithoutDictionaries", obj->id >> 8);
 
             return;
         }
@@ -2929,18 +2942,7 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
     if (bytesleft < 0) {
         cli_dbgmsg("pdf_parseobj: %u %u obj: broken dictionary\n", obj->id >> 8, obj->id & 0xff);
 
-        if (!(pdfobj) && pdf->ctx->this_layer_metadata_json != NULL) {
-            pdfobj = cli_jsonobj(pdf->ctx->this_layer_metadata_json, "PDFStats");
-            if (!(pdfobj))
-                return;
-        }
-
-        if (pdfobj) {
-            if (!(jsonobj))
-                jsonobj = cli_jsonarray(pdfobj, "ObjectsWithBrokenDictionaries");
-            if (jsonobj)
-                cli_jsonint_array(jsonobj, obj->id >> 8);
-        }
+        pdf_record_object_id_metadata(pdf, "ObjectsWithBrokenDictionaries", obj->id >> 8);
 
         return;
     }
@@ -2978,18 +2980,7 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
         /* probably truncated */
         cli_dbgmsg("pdf_parseobj: %u %u obj broken dictionary\n", obj->id >> 8, obj->id & 0xff);
 
-        if (!(pdfobj) && pdf->ctx->this_layer_metadata_json != NULL) {
-            pdfobj = cli_jsonobj(pdf->ctx->this_layer_metadata_json, "PDFStats");
-            if (!(pdfobj))
-                return;
-        }
-
-        if (pdfobj) {
-            if (!(jsonobj))
-                jsonobj = cli_jsonarray(pdfobj, "ObjectsWithBrokenDictionaries");
-            if (jsonobj)
-                cli_jsonint_array(jsonobj, obj->id >> 8);
-        }
+        pdf_record_object_id_metadata(pdf, "ObjectsWithBrokenDictionaries", obj->id >> 8);
 
         return;
     }
@@ -4956,6 +4947,7 @@ done:
 err:
 
     rc = cli_merge_scan_status(rc, pdf_export_json(&pdf));
+    rc = cli_merge_scan_status(rc, pdf.metadata_status);
 
     if (pdf.objstms) {
         for (i = 0; i < pdf.nobjstms; i++) {
@@ -5221,32 +5213,15 @@ static void CCITTFaxDecode_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struc
 
 static void JBIG2Decode_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_action *act)
 {
-    cli_ctx *ctx = NULL;
-    struct json_object *pdfobj, *jbig2arr;
-
-    UNUSEDPARAM(obj);
     UNUSEDPARAM(act);
 
-    if (NULL == pdf)
+    if (NULL == pdf || NULL == pdf->ctx || NULL == obj)
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
 
-    if (!(pdf->ctx->this_layer_metadata_json))
-        return;
-
-    pdfobj = cli_jsonobj(pdf->ctx->this_layer_metadata_json, "PDFStats");
-    if (!(pdfobj))
-        return;
-
-    jbig2arr = cli_jsonarray(pdfobj, "JBIG2Objects");
-    if (!(jbig2arr))
-        return;
-
-    cli_jsonint_array(jbig2arr, obj->id >> 8);
+    pdf_record_object_id_metadata(pdf, "JBIG2Objects", obj->id >> 8);
 
     pdf->stats.njbig2decode++;
 }
@@ -5706,24 +5681,22 @@ cleanup:
 
 static void Colors_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_action *act)
 {
-    cli_ctx *ctx = NULL;
-    json_object *colorsobj, *pdfobj;
     unsigned long ncolors;
     long temp_long;
     char *p1;
-    const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-                                         : (const char *)(obj->start + pdf->map);
+    const char *objstart;
     cl_error_t search_status;
 
     UNUSEDPARAM(act);
 
-    if (!(pdf) || !(pdf->ctx) || !(pdf->ctx->this_layer_metadata_json))
+    if (!(pdf) || !(pdf->ctx) || !(obj) || !(pdf->ctx->this_layer_metadata_json))
         return;
-
-    ctx = pdf->ctx;
 
     if (!(SCAN_COLLECT_METADATA))
         return;
+
+    objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+                             : (const char *)(obj->start + pdf->map);
 
     p1 = (char *)pdf_memstr_deadline(pdf, objstart, obj->size, "/Colors", 7, &search_status);
     if (CL_ETIMEOUT == search_status) {
@@ -5756,15 +5729,7 @@ static void Colors_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfnam
     if (ncolors < 1 << 24)
         return;
 
-    pdfobj = cli_jsonobj(pdf->ctx->this_layer_metadata_json, "PDFStats");
-    if (!(pdfobj))
-        return;
-
-    colorsobj = cli_jsonarray(pdfobj, "BigColors");
-    if (!(colorsobj))
-        return;
-
-    cli_jsonint_array(colorsobj, obj->id >> 8);
+    pdf_record_object_id_metadata(pdf, "BigColors", obj->id >> 8);
 }
 
 static void URI_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_action *act)

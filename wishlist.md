@@ -109,6 +109,18 @@
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
   resource, and final parser/release qualification.
 
+## PDF derived-object metadata failures — 2026-09-01
+
+- Keep PDF JavaScript-object, malformed-object, JBIG2-object, and large-color
+  metadata fail-visible when PDFStats/array creation or integer append fails;
+  preserve `CL_EMEM`, mark the confirmed layer incomplete and non-cacheable,
+  and retain stronger parser or detection results.
+- Retain `test_pdf_derived_metadata_array_add_failure_is_fail_visible` and its
+  source guards. Current-source production-GCC compilation, production-linked
+  execution, complete PDF corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## MSXML JSON metadata write visibility — 2026-09-01
 
 - Keep reader-based and streaming MSXML fail-visible when required count or
