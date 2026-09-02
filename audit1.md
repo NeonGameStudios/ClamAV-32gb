@@ -6582,6 +6582,24 @@ space. Malformed Word/OLE corpus, sanitizer and allocation-fault coverage,
 production-CVD/service parity, materialized-large-file, Sonic1, and final
 OLE/VBA qualification remain open.
 
+## 7-Zip BCJ2 scratch-input read status — 2026-09-02
+
+The production BCJ2 temporary-stream adapter used a size-only `cli_readn()`
+check for side-stream input. A short scratch stream and an in-range backing
+descriptor failure therefore both became `SZ_ERROR_READ`/`CL_EREAD`, losing
+the distinction required by the bounded parser contract. The current source
+now uses `cli_7z_readn_full()` for that exact read, maps short input to
+`SZ_ERROR_DATA`/`CL_EPARSE`, preserves `CL_EREAD` as `SZ_ERROR_READ`, and
+retains the provider's sticky incomplete state before output can continue.
+
+The focused helper regression is source-registered and source-guarded for both
+fault classes. Fresh GCC compilation, production-linked execution, and direct
+BCJ2 callback integration remain open because `clamav-poc-build` cannot start:
+the Docker daemon reports no space while mounting its overlay. Complete
+7-Zip/BCJ2 corpus, sanitizer and allocation-fault coverage, production-CVD/
+service parity, materialized-large-file, Sonic1, and final parser/release
+qualification remain open.
+
 ## OLE2 output-write failure visibility — 2026-08-28
 
 The OLE2 embedded-stream and MSO inflation paths returned `CL_EWRITE` when a

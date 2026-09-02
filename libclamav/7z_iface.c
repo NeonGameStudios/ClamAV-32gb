@@ -230,6 +230,16 @@ bool cli_7z_output_range_allowed(uint64_t written, uint64_t size, uint64_t decla
     return written <= declared_size && size <= declared_size - written;
 }
 
+cl_error_t cli_7z_readn_full(int fd, void *buffer, size_t length)
+{
+    size_t read_length = cli_readn(fd, buffer, length);
+
+    if (read_length == length)
+        return CL_SUCCESS;
+
+    return read_length == (size_t)-1 ? CL_EREAD : CL_EPARSE;
+}
+
 static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
 {
     CClamFileOutStream *p = (CClamFileOutStream *)pp;
@@ -282,6 +292,8 @@ static SRes ClamBcj2TempProvider_StatusToSRes(cl_error_t status)
         case CL_EREAD:
         case CL_ESEEK:
             return SZ_ERROR_READ;
+        case CL_EPARSE:
+            return SZ_ERROR_DATA;
         case CL_EUNPACK:
             return SZ_ERROR_DATA;
         default:
@@ -356,7 +368,7 @@ static SRes ClamBcj2TempInStream_Read(void *pp, void *data, size_t *size)
     CClamBcj2TempInStream *stream = (CClamBcj2TempInStream *)pp;
     CClamBcj2TempEntry *entry;
     size_t requested;
-    size_t read;
+    cl_error_t read_status;
 
     if (stream == NULL || stream->entry == NULL || size == NULL ||
         (*size != 0 && data == NULL))
@@ -377,14 +389,16 @@ static SRes ClamBcj2TempInStream_Read(void *pp, void *data, size_t *size)
         *size = 0;
         return SZ_OK;
     }
-    read = cli_readn(entry->fd, data, requested);
-    if (read == (size_t)-1 || read != requested) {
+    read_status = cli_7z_readn_full(entry->fd, data, requested);
+    if (read_status != CL_SUCCESS) {
         *size = 0;
-        return ClamBcj2TempProvider_Fail(entry->provider, CL_EREAD,
-                                         "7-Zip BCJ2 scratch input could not be read completely");
+        return ClamBcj2TempProvider_Fail(
+            entry->provider, read_status,
+            read_status == CL_EREAD ? "7-Zip BCJ2 scratch input could not be read completely"
+                                    : "7-Zip BCJ2 scratch input was truncated");
     }
-    entry->read += read;
-    *size = read;
+    entry->read += requested;
+    *size = requested;
     if (ClamBcj2TempProvider_Checkpoint(entry->provider) != SZ_OK) {
         *size = 0;
         return ClamBcj2TempProvider_StatusToSRes(entry->provider->status);

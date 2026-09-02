@@ -34550,6 +34550,37 @@ START_TEST(test_7z_read_failure_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_7z_bcj2_input_read_status_is_fail_visible)
+{
+    static const unsigned char data[] = "7z BCJ2 scratch input";
+    static const cl_error_t expected_status[] = {CL_EPARSE, CL_EREAD};
+    char path[PATH_MAX];
+    unsigned char output[sizeof(data)];
+    int fd;
+    unsigned int i;
+
+    snprintf(path, sizeof(path), "%s/7z-bcj2-input-read-status", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, data, sizeof(data)), sizeof(data));
+
+    for (i = 0; i < sizeof(expected_status) / sizeof(expected_status[0]); i++) {
+        memset(output, 0, sizeof(output));
+        ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+        clamav_test_force_cli_readn_count  = sizeof(data);
+        clamav_test_force_cli_readn_status = i == 0 ? 1 : 2;
+        ck_assert_int_eq(cli_7z_readn_full(fd, output, sizeof(data)), expected_status[i]);
+        ck_assert_int_eq(clamav_test_force_cli_readn_status, 0);
+    }
+
+    clamav_test_force_cli_readn_count = 0;
+    ck_assert_int_eq(close(fd), 0);
+    unlink(path);
+}
+END_TEST
+#endif
+
 START_TEST(test_7z_sfx_weak_candidate_is_rejected_without_incomplete_state)
 {
     uint8_t data[33] = {0};
@@ -60752,6 +60783,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_files_info_stream_count_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_files_info_allocation_ceiling_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_read_failure_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_7z, test_7z_bcj2_input_read_status_is_fail_visible);
+#endif
     tcase_add_test(tc_7z, test_7z_truncated_member_is_parse_error);
     tcase_add_test(tc_7z, test_7z_output_size_mismatch_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_legacy_fallback_discards_stream_prefix);

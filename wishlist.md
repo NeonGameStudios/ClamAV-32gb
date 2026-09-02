@@ -4624,6 +4624,19 @@ final parser/release qualification.
   production-CVD/service, materialized-large-file, Sonic1, and final OLE/VBA
   qualification.
 
+## 7-Zip BCJ2 scratch-input read status — 2026-09-02
+
+- Keep each bounded BCJ2 scratch-input read fail-visible: a short temporary
+  stream is truncated `CL_EPARSE`, while an in-range descriptor failure is
+  `CL_EREAD`; map those statuses to the matching 7-Zip decoder result and
+  prevent further output or cacheable completion.
+- The current source now centralizes the exact-read classifier and the
+  production helper regression covers both outcomes through the sized read
+  fault selector. Fresh GCC compilation, actual BCJ2 callback integration,
+  and production-linked execution remain required, along with the complete
+  7-Zip/BCJ2 corpus, sanitizer, production-CVD/service, materialized-large-
+  file, Sonic1, resource, and final parser/release qualification.
+
 ## OLE2 output-write failure visibility — 2026-08-28
 
 - Preserve sticky incomplete and non-cacheable state when OLE2 embedded
