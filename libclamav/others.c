@@ -1866,6 +1866,7 @@ cl_error_t cli_virus_found_cb(cli_ctx *ctx, const char *virname, bool is_potenti
             &remove_indicator_error);
         if (!remove_successful) {
             cli_errmsg("cli_virus_found_cb: Failed to remove indicator from scan evidence: %s\n", ffierror_fmt(remove_indicator_error));
+            cli_mark_scan_incomplete(ctx, "alert callback evidence could not be updated");
             status = CL_ERROR;
             goto done;
         }
@@ -1880,6 +1881,7 @@ cl_error_t cli_virus_found_cb(cli_ctx *ctx, const char *virname, bool is_potenti
                 size_t num_alerts = json_object_array_length(alerts);
                 if (0 == num_alerts) {
                     cli_errmsg("cli_virus_found_cb: Attempting to ignore an alert, but alert not found in metadata Alerts array.\n");
+                    cli_mark_scan_incomplete(ctx, "alert callback metadata could not be updated");
                     status = CL_ERROR;
                     goto done;
                 }
@@ -1888,6 +1890,7 @@ cl_error_t cli_virus_found_cb(cli_ctx *ctx, const char *virname, bool is_potenti
                 json_ret = json_object_array_del_idx(alerts, num_alerts - 1, 1);
                 if (0 != json_ret) {
                     cli_errmsg("cli_virus_found_cb: Failed to remove alert from metadata JSON.\n");
+                    cli_mark_scan_incomplete(ctx, "alert callback metadata could not be updated");
                     status = CL_ERROR;
                     goto done;
                 }
@@ -1907,6 +1910,7 @@ cl_error_t cli_virus_found_cb(cli_ctx *ctx, const char *virname, bool is_potenti
                 size_t num_indicators = json_object_array_length(indicators);
                 if (0 == num_indicators) {
                     cli_errmsg("cli_virus_found_cb: Attempting to ignore an alert, but alert not found in metadata Alerts array.\n");
+                    cli_mark_scan_incomplete(ctx, "alert callback metadata could not be updated");
                     status = CL_ERROR;
                     goto done;
                 }
@@ -1915,6 +1919,7 @@ cl_error_t cli_virus_found_cb(cli_ctx *ctx, const char *virname, bool is_potenti
                 json_object *indicator_obj = json_object_array_get_idx(indicators, num_indicators - 1);
                 if (NULL == indicator_obj) {
                     cli_errmsg("cli_virus_found_cb: Failed to get last indicator from Indicators array.\n");
+                    cli_mark_scan_incomplete(ctx, "alert callback metadata could not be updated");
                     status = CL_ERROR;
                     goto done;
                 }
@@ -1923,6 +1928,7 @@ cl_error_t cli_virus_found_cb(cli_ctx *ctx, const char *virname, bool is_potenti
                 json_object *ignored = json_object_new_string("Signature ignored by alert application callback");
                 if (!ignored) {
                     cli_errmsg("cli_virus_found_cb: no memory for json ignored indicator object\n");
+                    cli_mark_scan_incomplete(ctx, "ignored indicator metadata could not be recorded");
                     status = CL_EMEM;
                     goto done;
                 }

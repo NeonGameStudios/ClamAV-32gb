@@ -11858,6 +11858,20 @@ The shared `fileblobAddData()` spool boundary now rejects a scan context without
 ## Virus-found callback admission — 2026-08-27
 The shared virus-found callback boundary now rejects a scan context without owning engine state before legacy callback dispatch, returning `CL_ENULLARG`. The focused `test_virus_found_callback_without_engine_is_fail_visible` regression covers the direct helper boundary; complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification remain open.
 
+## Alert-callback dismissal failures — 2026-09-01
+
+When an alert callback returns `CL_CLEAN`, the scanner must remove the alert
+from evidence and metadata before continuing. Evidence-removal failures and
+metadata-removal failures now mark the active scan incomplete and
+non-cacheable, and ignored-marker allocation failures use the same sticky
+contract. `test_alert_callback_evidence_removal_failure_is_fail_visible`
+exercises the production-linked dismissal path with empty evidence and
+requires `CL_ERROR`, the exact callback-evidence diagnostic, and fmap cache
+taint. Current-source production-linked execution, complete callback/indicator
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and release qualification remain
+required.
+
 ## Virus-indicator append admission — 2026-08-27
 The shared virus-indicator append APIs now reject null contexts, null names, and
 invalid recursion-stack state before string classification, evidence creation,

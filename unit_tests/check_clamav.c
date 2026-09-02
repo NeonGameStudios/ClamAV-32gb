@@ -1092,6 +1092,13 @@ static cl_error_t unexpected_scan_callback_status(cl_scan_layer_t *layer, void *
     return CL_EREAD;
 }
 
+static cl_error_t ignore_alert_callback(cl_scan_layer_t *layer, void *context)
+{
+    (void)layer;
+    (void)context;
+    return CL_CLEAN;
+}
+
 static void assert_scan_callback_status_is_fail_visible(cl_scan_callback_t location, unsigned int suffix)
 {
     uint8_t input[64];
@@ -5050,6 +5057,42 @@ START_TEST(test_virus_found_callback_without_engine_is_fail_visible)
 
     memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cli_virus_found_cb(&ctx, "Missing.Engine", false), CL_ENULLARG);
+}
+END_TEST
+
+START_TEST(test_alert_callback_evidence_removal_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "alert callback evidence";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    layer.fmap = map;
+    layer.evidence = evidence_new();
+    ck_assert_ptr_nonnull(layer.evidence);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.this_layer_evidence  = layer.evidence;
+    cl_engine_set_scan_callback(&engine, ignore_alert_callback, CL_SCAN_CALLBACK_ALERT);
+
+    ck_assert_int_eq(cli_virus_found_cb(&ctx, "Alert.Remove", false), CL_ERROR);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "alert callback evidence could not be updated");
+    ck_assert(map->dont_cache_flag);
+
+    evidence_free(layer.evidence);
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -56359,6 +56402,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_legacy_callback_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_scan_callback_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_virus_found_callback_without_engine_is_fail_visible);
+    tcase_add_test(tc_cl, test_alert_callback_evidence_removal_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_append_boundaries_are_fail_visible);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_cl, test_json_array_add_failure_is_fail_visible);

@@ -9894,6 +9894,17 @@ qualification gates.
 - Keep virus-indicator append APIs fail-visible for null contexts, null names, and invalid recursion-stack state before string or stack access.
 - Retain complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification gates.
 
+## Alert-callback dismissal failures — 2026-09-01
+
+- Keep alert-callback evidence and metadata removal failures, plus ignored
+  marker allocation failure, sticky incomplete and non-cacheable; a dismissed
+  alert must not hide an incomplete reconciliation.
+- Retain `test_alert_callback_evidence_removal_failure_is_fail_visible` and
+  its source guards. Current-source production-linked execution, complete
+  callback/indicator corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final matcher/release qualification remain open.
+
 ## XDP parser admission — 2026-08-27
 - Keep XDP fail-visible for a recognized input map without an owning engine before retained-dump or streaming-MSXML state access.
 - Retain complete XDP corpus, sanitizer, production-CVD, materialized large-file, Sonic1, and release qualification gates.

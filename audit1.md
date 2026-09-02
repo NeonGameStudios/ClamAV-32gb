@@ -17396,6 +17396,21 @@ qualification evidence remain required.
 ## Virus-found callback admission audit — 2026-08-27
 `cli_virus_found_cb()` validated only the context and virus name, then dereferenced `ctx->engine->cb_virus_found`. It now rejects missing engine ownership with `CL_ENULLARG` before dispatch; `test_virus_found_callback_without_engine_is_fail_visible` covers the direct boundary. Complete callback/ingress parity, sanitizer, production-CVD/service, materialized large-file, Sonic1, and release qualification evidence remain required.
 
+## Alert-callback dismissal failures — 2026-09-01
+
+When an alert callback returns `CL_CLEAN`, evidence and metadata must be
+reconciled before the alert is ignored. Several removal failures returned an
+error without marking the active scan incomplete, leaving a required
+dismissal path potentially cacheable. The callback now marks evidence-removal
+and metadata-removal failures sticky and also marks ignored-marker allocation
+failure sticky. `test_alert_callback_evidence_removal_failure_is_fail_visible`
+drives the production-linked `CL_CLEAN` path with empty evidence and requires
+`CL_ERROR`, the exact callback-evidence diagnostic, and fmap cache taint.
+Current-source production-GCC compilation, production-linked execution,
+complete callback/indicator corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+matcher/release qualification remain required.
+
 ## Virus-indicator append admission audit — 2026-08-27
 `cli_append_virus()` classified the alert with `strncmp()` before validating the
 context or name, while the shared append implementation indexed the current
