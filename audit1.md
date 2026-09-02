@@ -45,6 +45,28 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## Confirmed ZIP central-structure fallback — 2026-09-02
+
+Once a ZIP EOCD had confirmed a central-directory location, malformed central
+record structure could still fall through to local-header discovery. That
+allowed an archive with a confirmed but unusable central record to be treated
+as a clean local-only candidate. The central parser now marks invalid central
+magic and filename, extra-field, or comment extents as sticky incomplete and
+non-cacheable, preserving the exact parse failure instead of permitting the
+fallback.
+
+`test_zip_confirmed_central_structure_is_fail_visible` mutates a valid
+EOCD-referenced central record through each of those four structural failures
+and requires `CL_EPARSE`, the exact diagnostic, and cache taint. The existing
+truncated local-header regressions now reach the 46-byte variable-field
+boundary, including the ZIP64 extra-field payload boundary. The source guards
+and generated inventory record the change. Current-source relink and focused
+execution are pending because the established `clamav-poc-build` container
+cannot start while its Docker overlay is full; no runtime qualification is
+claimed here. Complete ZIP/SFX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## TNEF fileblob status reconciliation — 2026-09-02
 
 TNEF attachment handling now preserves the specific status retained by a

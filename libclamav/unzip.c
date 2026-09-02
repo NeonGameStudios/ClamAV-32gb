@@ -2084,7 +2084,7 @@ static cl_error_t parse_central_directory_file_header(
     }
 
     if (magic != ZIP_MAGIC_CENTRAL_DIRECTORY_RECORD_BEGIN) {
-        cli_dbgmsg("cli_unzip: central header - file header offset has wrong magic\n");
+        cli_mark_scan_incomplete(ctx, "ZIP central-directory record has invalid magic");
         status = CL_EPARSE;
         goto done;
     }
@@ -2116,7 +2116,7 @@ static cl_error_t parse_central_directory_file_header(
                CENTRAL_HEADER_flags, CENTRAL_HEADER_method, CENTRAL_HEADER_csize, CENTRAL_HEADER_usize, CENTRAL_HEADER_flen, CENTRAL_HEADER_extra_len, CENTRAL_HEADER_comment_len, CENTRAL_HEADER_disk_num, CENTRAL_HEADER_off);
 
     if (CENTRAL_HEADER_flen > ctx->fmap->len - index) {
-        cli_dbgmsg("cli_unzip: central header - fname out of file\n");
+        cli_mark_scan_incomplete(ctx, "ZIP central filename field is outside the archive map");
         status = CL_EPARSE;
         goto done;
     }
@@ -2136,7 +2136,7 @@ static cl_error_t parse_central_directory_file_header(
     index += CENTRAL_HEADER_flen;
 
     if (CENTRAL_HEADER_extra_len > ctx->fmap->len - index) {
-        cli_dbgmsg("cli_unzip: central header - extra out of file\n");
+        cli_mark_scan_incomplete(ctx, "ZIP central extra field is outside the archive map");
         status = CL_EPARSE;
         goto done;
     }
@@ -2182,7 +2182,7 @@ static cl_error_t parse_central_directory_file_header(
     index += CENTRAL_HEADER_extra_len;
 
     if (CENTRAL_HEADER_comment_len > ctx->fmap->len - index) {
-        cli_dbgmsg("cli_unzip: central header - comment out of file\n");
+        cli_mark_scan_incomplete(ctx, "ZIP central comment field is outside the archive map");
         status = CL_EPARSE;
         goto done;
     }

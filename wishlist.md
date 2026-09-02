@@ -12066,3 +12066,18 @@ final parser/release qualification remain open.
   production-linked execution, complete metadata/parser corpus, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification remain open.
+
+## Confirmed ZIP central-structure fallback — 2026-09-02
+
+- Keep EOCD-confirmed ZIP central records authoritative: invalid central
+  magic and central filename, extra-field, or comment extents must remain
+  sticky incomplete and non-cacheable instead of falling back to local-header
+  discovery.
+- Retain `test_zip_confirmed_central_structure_is_fail_visible`, which covers
+  all four exact diagnostics, and the expanded 46-byte local-header
+  variable-field/ZIP64 truncation regressions. Source guards and the generated
+  inventory are refreshed. Current-source relink and focused execution remain
+  pending while `clamav-poc-build` cannot start because its Docker overlay is
+  full; complete ZIP/SFX corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.

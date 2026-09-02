@@ -9320,9 +9320,9 @@ END_TEST
 START_TEST(test_zip_truncated_entry_paths_are_fail_visible)
 {
     static const uint8_t archive[] = {0x50, 0x4b, 0x03, 0x04};
-    uint8_t variable_header[32] = {0};
-    uint8_t truncated_extra[34] = {0};
-    uint8_t truncated_zip64[38] = {0};
+    uint8_t variable_header[46] = {0};
+    uint8_t truncated_extra[46] = {0};
+    uint8_t truncated_zip64[46] = {0};
     const uint8_t *variable_fixtures[3];
     const size_t variable_fixture_lengths[3] = {
         sizeof(variable_header),
@@ -9388,11 +9388,11 @@ START_TEST(test_zip_truncated_entry_paths_are_fail_visible)
 
     /* Reach the variable local-header fields: the fixed 30-byte header is
      * complete, but the declared filename extends beyond the mapped slice.
-     * This is the fallback path that previously returned clean with no
-     * records when the central directory was absent. */
+     * The 46-byte fixture is long enough to enter local-header fallback
+     * instead of taking cli_unzip()'s early short-file branch. */
     zip_stream_write_u32(variable_header, 0x04034b50U);
     zip_stream_write_u16(variable_header + 4, 20U);
-    zip_stream_write_u16(variable_header + 26, 8U);
+    zip_stream_write_u16(variable_header + 26, 17U);
     memcpy(variable_header + 30, "ab", 2);
     variable_fixtures[0] = variable_header;
 
@@ -9400,21 +9400,18 @@ START_TEST(test_zip_truncated_entry_paths_are_fail_visible)
      * beyond the mapped slice. */
     zip_stream_write_u32(truncated_extra, 0x04034b50U);
     zip_stream_write_u16(truncated_extra + 4, 20U);
-    zip_stream_write_u16(truncated_extra + 28, 8U);
-    zip_stream_write_u16(truncated_extra + 30, 0x5455U);
-    zip_stream_write_u16(truncated_extra + 32, 4U);
+    zip_stream_write_u16(truncated_extra + 28, 17U);
     variable_fixtures[1] = truncated_extra;
 
     /* A ZIP64 local header declares both 64-bit sizes, but its ZIP64 extra
-     * field contains only a prefix of the required values. */
+     * field declares more bytes than the available extra-field payload. */
     zip_stream_write_u32(truncated_zip64, 0x04034b50U);
     zip_stream_write_u16(truncated_zip64 + 4, 45U);
     zip_stream_write_u32(truncated_zip64 + 18, UINT32_MAX);
     zip_stream_write_u32(truncated_zip64 + 22, UINT32_MAX);
-    zip_stream_write_u16(truncated_zip64 + 28, 20U);
-    zip_stream_write_u16(truncated_zip64 + 30, 0x0001U);
-    zip_stream_write_u16(truncated_zip64 + 32, 16U);
-    zip_stream_write_u32(truncated_zip64 + 34, 1U);
+    zip_stream_write_u16(truncated_zip64 + 30, 16U);
+    zip_stream_write_u16(truncated_zip64 + 32, 0x0001U);
+    zip_stream_write_u16(truncated_zip64 + 34, 16U);
     variable_fixtures[2] = truncated_zip64;
 
     for (fixture_index = 0; fixture_index < 3; fixture_index++) {
@@ -55813,6 +55810,93 @@ START_TEST(test_recursion_stack_helpers_reject_invalid_contexts)
 }
 END_TEST
 
+START_TEST(test_zip_confirmed_central_structure_is_fail_visible)
+{
+    static const uint8_t input[] = "confirmed-central-structure";
+    static const size_t local_header_length = 30U;
+    static const size_t filename_length = sizeof("stream-test.bin") - 1U;
+    static const char *const reasons[] = {
+        "ZIP central-directory record has invalid magic",
+        "ZIP central filename field is outside the archive map",
+        "ZIP central extra field is outside the archive map",
+        "ZIP central comment field is outside the archive map",
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(reasons) / sizeof(reasons[0]); i++) {
+        struct cl_engine *engine;
+        struct cl_scan_options options;
+        cli_scan_layer_t layer;
+        cli_ctx ctx;
+        fmap_t *map;
+        uint8_t *archive;
+        size_t archive_length;
+        size_t central_offset;
+        cl_error_t ret;
+
+        archive = zip_stream_central_archive(
+            input, sizeof(input) - 1U, sizeof(input) - 1U,
+            ZIP_TEST_METHOD_STORED,
+            (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+            &archive_length);
+        ck_assert_ptr_nonnull(archive);
+        central_offset = local_header_length + filename_length + (sizeof(input) - 1U);
+        ck_assert_msg(central_offset + 46U <= archive_length,
+                      "ZIP fixture is missing its central record");
+
+        /* The EOCD remains valid and points at this offset, so every case is
+         * a confirmed central-directory walk rather than a no-EOCD local
+         * scan. */
+        switch (i) {
+            case 0:
+                zip_stream_write_u32(archive + central_offset, 0U);
+                break;
+            case 1:
+                zip_stream_write_u16(archive + central_offset + 28U, UINT16_MAX);
+                break;
+            case 2:
+                zip_stream_write_u16(archive + central_offset + 30U, UINT16_MAX);
+                break;
+            default:
+                zip_stream_write_u16(archive + central_offset + 32U, UINT16_MAX);
+                break;
+        }
+
+        engine = cl_engine_new();
+        ck_assert_ptr_nonnull(engine);
+        ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+        ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+        memset(&options, 0, sizeof(options));
+        options.parse = CL_SCAN_PARSE_ARCHIVE;
+        memset(&layer, 0, sizeof(layer));
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(archive, archive_length);
+        ck_assert_ptr_nonnull(map);
+
+        ctx.engine               = engine;
+        ctx.dconf                = engine->dconf;
+        ctx.options              = &options;
+        ctx.fmap                 = map;
+        ctx.this_layer_tmpdir    = tmpdir;
+        ctx.recursion_stack      = &layer;
+        ctx.recursion_stack_size = 1;
+        layer.type               = CL_TYPE_ZIP;
+        layer.size               = archive_length;
+        layer.fmap               = map;
+
+        ret = cli_unzip(&ctx);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, reasons[i]);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+        cl_engine_free(engine);
+        free(archive);
+    }
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -56758,6 +56842,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_zip, cl_setup, cl_teardown);
     tcase_add_test(tc_zip, test_zip_unsupported_flags_and_method_are_fail_visible);
     tcase_add_test(tc_zip, test_zip_sticky_incomplete_result_is_fail_visible);
+    tcase_add_test(tc_zip, test_zip_confirmed_central_structure_is_fail_visible);
     tcase_add_test(tc_zip, test_zip_central_directory_resolves_masked_local_values);
     tcase_add_test(tc_zip, test_zip_central_filename_read_failure_is_fail_visible);
     tcase_add_test(tc_zip, test_zip_central_header_read_failure_is_fail_visible);
