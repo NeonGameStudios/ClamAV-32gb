@@ -310,6 +310,7 @@ static int pdf_test_fail_uri_metadata;
 static int pdf_test_fail_derived_metadata_array_add;
 static int html_test_fail_uri_metadata;
 static int mbox_test_fail_root_metadata;
+static int root_metadata_test_fail_initial;
 static int root_metadata_test_fail_file_type;
 static int pe_test_fail_import_table;
 static int pe_test_fail_import_item;
@@ -460,6 +461,10 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
         return CL_EMEM;
     if (mbox_test_fail_root_metadata && key && strcmp(key, "Encoding") == 0)
         return CL_EMEM;
+    if (root_metadata_test_fail_initial && key && strcmp(key, "Magic") == 0) {
+        root_metadata_test_fail_initial = 0;
+        return CL_EMEM;
+    }
     if (root_metadata_test_fail_file_type && key && strcmp(key, "RootFileType") == 0) {
         root_metadata_test_fail_file_type = 0;
         return CL_EMEM;
@@ -6735,6 +6740,51 @@ END_TEST
 #endif /* ANONYMOUS_MAP */
 
 #ifdef CLAMAV_TEST_JSON_WRAP
+START_TEST(test_root_metadata_initial_record_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "root metadata initialization";
+    struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    cl_error_t report_status;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    const char *reason;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    map             = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    root_metadata_test_fail_initial = 1;
+    ret = cl_scanmap_ex2(map, "root-metadata-initial", &verdict, &last_alert, &scanned,
+                         g_engine, &options, NULL, NULL, NULL, NULL, NULL,
+                         "CL_TYPE_TEXT", NULL, &report);
+    root_metadata_test_fail_initial = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_EMEM);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_ne(completion, CL_SCAN_COMPLETION_COMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "scan-level root metadata could not be recorded");
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_root_file_type_metadata_record_failure_is_fail_visible)
 {
     static const uint8_t input[] = "root file type metadata";
@@ -57248,6 +57298,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_metadata_hash_read_failure_is_fail_visible);
 #endif
 #ifdef CLAMAV_TEST_JSON_WRAP
+    tcase_add_test(tc_cl_scan, test_root_metadata_initial_record_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_root_file_type_metadata_record_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl_scan, test_authenticode_hash_regions_are_native_and_bounded);

@@ -11826,3 +11826,14 @@ final parser/release qualification remain open.
   metadata/parser corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification remain open.
+
+## Root metadata initialization completion — 2026-09-01
+
+- Keep root metadata object allocation and the required `Magic`, file
+  identity, size, and object-ID writes fail-visible; mark the scan incomplete
+  and non-cacheable while preserving the original critical status.
+- Retain `test_root_metadata_initial_record_failure_is_fail_visible` and its
+  source guards. Current-source production-linked execution, complete
+  metadata/parser corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.

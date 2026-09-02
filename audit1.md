@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Root metadata initialization failure visibility — 2026-09-01
+
+The required root metadata object and its initial `Magic`, file identity,
+size, and object-ID writes returned failures without marking the scan
+incomplete or tainting the fmap. Those allocation and record boundaries now
+record a shared sticky diagnostic while preserving the original status. The
+registered `test_root_metadata_initial_record_failure_is_fail_visible`
+JSON-wrap regression injects the `Magic` failure and requires a cleared
+verdict, incomplete report, and fmap cache taint. Current-source
+production-GCC compilation, production-linked execution, sanitizer, complete
+metadata/parser corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain open.
+
 ## Root file-type metadata failure visibility — 2026-09-01
 
 The root-layer `RootFileType` alias was required after file-type recognition,

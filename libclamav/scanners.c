@@ -8980,6 +8980,7 @@ static cl_error_t scan_common(
         ctx.metadata_json = json_object_new_object();
         if (NULL == ctx.metadata_json) {
             cli_errmsg("scan_common: no memory for json properties object\n");
+            cli_mark_scan_incomplete(&ctx, "scan-level root metadata could not be allocated");
             status = CL_EMEM;
             goto done;
         }
@@ -8990,12 +8991,14 @@ static cl_error_t scan_common(
         status = cli_jsonstr(ctx.metadata_json, "Magic", "CLAMJSONv0");
         if (status != CL_SUCCESS) {
             cli_errmsg("scan_common: error setting Magic property in metadata.json\n");
+            cli_mark_scan_incomplete(&ctx, "scan-level root metadata could not be recorded");
             goto done;
         }
         if (ctx.fmap->name) {
             status = cli_jsonstr(ctx.metadata_json, "FileName", ctx.fmap->name);
             if (status != CL_SUCCESS) {
                 cli_errmsg("scan_common: error setting FileName property in metadata.json\n");
+                cli_mark_scan_incomplete(&ctx, "scan-level root metadata could not be recorded");
                 goto done;
             }
         }
@@ -9003,17 +9006,20 @@ static cl_error_t scan_common(
             status = cli_jsonstr(ctx.metadata_json, "FilePath", ctx.fmap->path);
             if (status != CL_SUCCESS) {
                 cli_errmsg("scan_common: error setting FilePath property in metadata.json\n");
+                cli_mark_scan_incomplete(&ctx, "scan-level root metadata could not be recorded");
                 goto done;
             }
         }
         status = cli_jsonuint64(ctx.metadata_json, "FileSize", (uint64_t)ctx.fmap->len);
         if (status != CL_SUCCESS) {
             cli_errmsg("scan_common: error setting FileSize property in metadata.json\n");
+            cli_mark_scan_incomplete(&ctx, "scan-level root metadata could not be recorded");
             goto done;
         }
         status = cli_jsonuint64(ctx.metadata_json, "ObjectID", (uint64_t)ctx.recursion_stack[ctx.recursion_level].object_id);
         if (status != CL_SUCCESS) {
             cli_errmsg("scan_common: error setting ObjectID property in metadata.json\n");
+            cli_mark_scan_incomplete(&ctx, "scan-level root metadata could not be recorded");
             goto done;
         }
     }

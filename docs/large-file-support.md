@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Root metadata initialization failure visibility — 2026-09-01
+
+Required root metadata allocation and initialization now mark the scan
+incomplete and non-cacheable when the root JSON object or its `Magic`, file
+identity, size, or object-ID fields cannot be recorded. The original critical
+status is preserved. The production-linked JSON-wrap regression
+`test_root_metadata_initial_record_failure_is_fail_visible` injects the
+`Magic` insertion failure and requires a cleared verdict, incomplete report,
+exact sticky diagnostic, and fmap cache taint. Current-source production-GCC
+compilation, production-linked execution, sanitizer, complete metadata/parser
+corpus, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Root file-type metadata failure visibility — 2026-09-01
 
 The root-layer `RootFileType` metadata alias is required after file-type
