@@ -176,6 +176,7 @@ int clamav_test_force_gzip_decoder_end;
 int clamav_test_force_zip_inflate_decoder_end;
 int clamav_test_force_pdf_flatedecode_decoder_end;
 int clamav_test_force_ppt_decoder_end;
+int clamav_test_force_hwp_decoder_end;
 int clamav_test_force_egg_deflate_decoder_end;
 int clamav_test_force_dmg_decoder_end;
 int clamav_test_force_dmg_adc_decoder_end;
@@ -260,6 +261,11 @@ int __wrap_inflateEnd(z_streamp strm)
     if (clamav_test_force_ppt_decoder_end > 0) {
         clamav_test_force_ppt_decoder_end--;
         if (clamav_test_force_ppt_decoder_end == 0)
+            return Z_STREAM_ERROR;
+    }
+    if (clamav_test_force_hwp_decoder_end > 0) {
+        clamav_test_force_hwp_decoder_end--;
+        if (clamav_test_force_hwp_decoder_end == 0)
             return Z_STREAM_ERROR;
     }
     if (clamav_test_force_egg_deflate_decoder_end > 0) {
@@ -32845,6 +32851,65 @@ START_TEST(test_hwp3_raw_deflate_read_failure_is_fail_visible)
 }
 END_TEST
 
+#if defined(CLAMAV_TEST_JS_IO_WRAP) && defined(CLAMAV_TEST_7Z_EXTRACT_WRAP)
+START_TEST(test_hwp_decoder_finalization_failure_is_fail_visible)
+{
+    enum {
+        HWP3_CONTENT_OFFSET = 30 + 128 + 1008
+    };
+    static const uint8_t content[] = "HWP raw-deflate finalization failure";
+    uint8_t *compressed;
+    size_t compressed_length;
+    uint8_t *data;
+    size_t data_length;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    compressed = zip_stream_raw_deflate(content, sizeof(content), &compressed_length);
+    ck_assert_ptr_nonnull(compressed);
+    ck_assert_msg(HWP3_CONTENT_OFFSET <= SIZE_MAX - compressed_length,
+                  "HWP finalization fixture size overflow");
+    data_length = HWP3_CONTENT_OFFSET + compressed_length;
+    data        = calloc(1, data_length);
+    ck_assert_ptr_nonnull(data);
+    data[30 + 124] = 1U; /* HWP3 document-info compression flag. */
+    memcpy(data + HWP3_CONTENT_OFFSET, compressed, compressed_length);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxrechwp3 = 100;
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
+
+    hwp3_test_bypass_child_scan       = 1;
+    clamav_test_force_hwp_decoder_end = 1;
+    ret                               = cli_scanhwp3(&ctx);
+    clamav_test_force_hwp_decoder_end = 0;
+    hwp3_test_bypass_child_scan       = 0;
+
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "HWP compressed stream decoder could not be finalized");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+    free(compressed);
+}
+END_TEST
+#endif
+
 START_TEST(test_hwp3_password_protection_is_fail_visible)
 {
     uint8_t data[30 + 128 + 1008] = {0};
@@ -60840,6 +60905,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_variable_length_native_addition_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_document_info_is_parse_error);
+#if defined(CLAMAV_TEST_JS_IO_WRAP) && defined(CLAMAV_TEST_7Z_EXTRACT_WRAP)
+    tcase_add_test(tc_hwp3, test_hwp_decoder_finalization_failure_is_fail_visible);
+#endif
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_hwp3, test_hwp3_font_metadata_allocation_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_metadata_record_failure_is_fail_visible);

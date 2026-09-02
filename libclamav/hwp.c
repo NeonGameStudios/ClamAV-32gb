@@ -221,6 +221,7 @@ dc_end:
         zret = inflateEnd(&zstrm);
         if (zret != Z_OK) {
             cli_errmsg("%s: Error closing zlib inflation stream\n", parent);
+            cli_mark_scan_incomplete(ctx, "HWP compressed stream decoder could not be finalized");
             if (ret == CL_SUCCESS)
                 ret = CL_EUNPACK;
         }

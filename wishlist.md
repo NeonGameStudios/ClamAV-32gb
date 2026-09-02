@@ -13171,3 +13171,15 @@ qualification remain open.
   corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and parser/release qualification
   before closure.
+
+## HWP raw-deflate finalization status — 2026-09-02
+
+- Keep the shared HWP/HWP5/HWPML raw-deflate helper fail-visible when an
+  initialized `inflateEnd()` fails: record sticky incomplete state and return
+  `CL_EUNPACK` without publishing or scanning the temporary child.
+- Retain `test_hwp_decoder_finalization_failure_is_fail_visible`, the one-shot
+  finalizer fault and source guards, and the
+  `hwp-decompressor-finalization` manifest evidence. Add current-source
+  production-linked execution, complete HWP/HWPML corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and parser/release qualification before closure.

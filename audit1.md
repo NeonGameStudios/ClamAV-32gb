@@ -21773,3 +21773,21 @@ test hook, and registration are source-guarded; production-linked execution,
 complete OLE/VBA/PowerPoint corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
+
+## HWP raw-deflate finalization status — 2026-09-02
+
+The shared HWP/HWP5/HWPML raw-deflate helper previously converted an
+initialized `inflateEnd()` failure to `CL_EUNPACK` without setting the sticky
+incomplete state used by the surrounding parser contract. It now records the
+exact `HWP compressed stream decoder could not be finalized` reason before
+returning the teardown error, so the temporary output cannot be treated as a
+complete cacheable child.
+
+`test_hwp_decoder_finalization_failure_is_fail_visible` supplies a complete
+HWP3 raw-deflate stream, bypasses only the nested child handoff, injects a
+one-shot `inflateEnd()` failure, and requires `CL_EUNPACK`, the exact sticky
+diagnostic, and fmap cache taint. The current source, test, registration, and
+manifest are source-guarded; production-linked execution, complete HWP/HWPML
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
