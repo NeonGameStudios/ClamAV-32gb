@@ -10819,21 +10819,46 @@ START_TEST(test_msxml_missing_engine_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msxml_missing_options_is_fail_visible)
+{
+    uint8_t data = 0;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(&data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scanmsxml(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_MSXML_READER_WRAP
 START_TEST(test_msxml_reader_initialization_failure_is_fail_visible)
 {
     static const uint8_t document[] = "<worddocument/>";
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(document, sizeof(document) - 1U);
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
 
     clamav_test_force_msxml_reader_init = 1;
     ret = cli_scanmsxml(&ctx);
@@ -10871,6 +10896,7 @@ START_TEST(test_msxml_read_failure_is_fail_visible)
     static const uint8_t document[] = "<worddocument><author>callback fault</author></worddocument>";
     struct msxml_read_failure_state state;
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -10881,9 +10907,11 @@ START_TEST(test_msxml_read_failure_is_fail_visible)
     ck_assert_ptr_nonnull(map);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
 
     ret = cli_scanmsxml(&ctx);
     ck_assert_int_eq(ret, CL_EREAD);
@@ -57386,6 +57414,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_msxml_map);
     tcase_add_test(tc_msxml_map, test_msxml_missing_map_is_fail_visible);
     tcase_add_test(tc_msxml_map, test_msxml_missing_engine_is_fail_visible);
+    tcase_add_test(tc_msxml_map, test_msxml_missing_options_is_fail_visible);
     suite_add_tcase(s, tc_msxml_corpus);
     tcase_add_checked_fixture(tc_msxml_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_msxml_corpus, test_msxml_corpus_detects_embedded_marker);

@@ -240,6 +240,8 @@ cl_error_t cli_scanmsxml(cli_ctx *ctx)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     memset(&cbdata, 0, sizeof(cbdata));
     cbdata.map = ctx->fmap;

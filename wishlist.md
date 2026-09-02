@@ -1,5 +1,18 @@
 # Wishlist
 
+## MSXML direct options admission — 2026-09-02
+
+- Keep exported `cli_scanmsxml()` fail-visible when an otherwise recognized
+  engine/map context omits scan options; return `CL_ENULLARG` before XML-reader
+  construction, JSON-mode metadata parsing, or nested-child scanning.
+- Retain `test_msxml_missing_options_is_fail_visible`, its source guards, and
+  manifest evidence that the invalid context does not become sticky incomplete
+  or cache-tainted. Keep valid options in direct reader-initialization and
+  read-failure regressions. Current-source production-GCC compilation,
+  production-linked execution, complete MSXML/XML/OOXML corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification remain open.
+
 ## AutoIt direct options admission — 2026-09-02
 
 - Keep exported `cli_scanautoit()` fail-visible when an otherwise recognized
