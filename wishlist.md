@@ -1,5 +1,16 @@
 # Wishlist
 
+## Exported magic-scan options admission — 2026-09-02
+
+- Keep exported `cli_magic_scan()` fail-visible when a valid engine, fmap, and
+  recursion stack are supplied without scan options; return `CL_ENULLARG`
+  before any parser dispatch can dereference `ctx->options`.
+- Retain `test_cli_magic_scan_missing_options_is_fail_visible`, its source
+  guard, and manifest evidence. Current-source production-GCC compilation,
+  production-linked execution, complete ingress/parser corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification remain open.
+
 ## CPIO direct scan-state admission — 2026-09-02
 
 - Keep old-binary, ODC, NEWC, and CRC CPIO direct parser entries fail-visible

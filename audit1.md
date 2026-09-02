@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## Exported magic-scan options admission — 2026-09-02
+
+The exported `cli_magic_scan()` entry validated its engine, fmap, and
+recursion stack but could still reach unconditional `ctx->options` accesses
+with a valid map and missing scan options. The entry now returns `CL_ENULLARG`
+before parser dispatch for that incomplete API context, without reporting an
+apparently clean scan.
+
+`test_cli_magic_scan_missing_options_is_fail_visible` supplies a compiled
+engine, mapped input, and valid one-layer recursion state while omitting
+options, and requires `CL_ENULLARG` with no clean/cacheable result. The source
+guard and capability manifest record the boundary. Current-source
+production-GCC compilation, production-linked execution, complete
+ingress/parser corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## CPIO direct scan-state admission — 2026-09-02
 
 The CPIO old-binary, ODC, NEWC, and CRC direct parser entries required an

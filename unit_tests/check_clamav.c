@@ -21224,6 +21224,35 @@ START_TEST(test_cli_magic_scan_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_cli_magic_scan_missing_options_is_fail_visible)
+{
+    static const uint8_t input[] = "missing scan options";
+    struct cl_engine engine;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.dboptions         = CL_DB_COMPILED;
+    ctx.engine               = &engine;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap   = map;
+    layer.fmap = map;
+
+    ck_assert_int_eq(cli_magic_scan(&ctx, CL_TYPE_ANY), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_cli_magic_scan_missing_recursion_state_is_fail_visible)
 {
     static const uint8_t input[] = "missing recursion state";
@@ -57497,6 +57526,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_binhex_header_lengths_are_not_read_before_header_completion);
     tcase_add_test(tc_cl, test_binhex_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_map_is_fail_visible);
+    tcase_add_test(tc_cl, test_cli_magic_scan_missing_options_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_missing_recursion_state_is_fail_visible);
     tcase_add_test(tc_cl, test_cli_magic_scan_nested_entrypoints_reject_invalid_inputs);
     tcase_add_test(tc_cl, test_empty_nested_ingress_preserves_incomplete_state);

@@ -7355,6 +7355,12 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         goto early_ret;
     }
 
+    if (ctx->options == NULL) {
+        cli_errmsg("CRITICAL: options == NULL\n");
+        status = CL_ENULLARG;
+        goto early_ret;
+    }
+
     if (!(ctx->engine->dboptions & CL_DB_COMPILED)) {
         cli_errmsg("CRITICAL: engine not compiled\n");
         status = CL_EMALFDB;
