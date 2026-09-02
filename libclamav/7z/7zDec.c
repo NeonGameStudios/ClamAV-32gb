@@ -49,6 +49,15 @@ typedef struct
   ILookInStream *inStream;
 } CByteInToLook;
 
+int SzPpmdInputAccountingAllowed(UInt64 processed, size_t buffered, UInt64 limit)
+{
+  UInt64 buffered64 = (UInt64)buffered;
+
+  return (size_t)buffered64 == buffered &&
+         processed <= limit &&
+         buffered64 <= limit - processed;
+}
+
 static Byte ReadByte(void *pp)
 {
   CByteInToLook *p = (CByteInToLook *)pp;
@@ -57,6 +66,11 @@ static Byte ReadByte(void *pp)
   if (p->res == SZ_OK)
   {
     size_t size = p->cur - p->begin;
+    if (!SzPpmdInputAccountingAllowed(p->processed, size, p->limit)) {
+      p->res = SZ_ERROR_DATA;
+      p->extra = True;
+      return 0;
+    }
     p->processed += size;
     if (p->processed >= p->limit) {
       p->extra = True;
@@ -131,7 +145,9 @@ static SRes SzDecodePpmd(CSzCoderInfo *coder, UInt64 inSize, ILookInStream *inSt
       }
       if (i != outSize)
         res = (s.res != SZ_OK ? s.res : SZ_ERROR_DATA);
-      else if (s.processed + (s.cur - s.begin) != inSize || !Ppmd7z_RangeDec_IsFinishedOK(&rc))
+      else if (!SzPpmdInputAccountingAllowed(s.processed, s.cur - s.begin, inSize) ||
+               s.processed + (UInt64)(s.cur - s.begin) != inSize ||
+               !Ppmd7z_RangeDec_IsFinishedOK(&rc))
         res = SZ_ERROR_DATA;
     }
   }
@@ -548,7 +564,9 @@ static SRes SzDecodePpmdToStream(const CSzCoderInfo *coder, UInt64 inSize, UInt6
       }
     }
     if (res == SZ_OK && remaining == 0 &&
-        (s.processed + (s.cur - s.begin) != inSize || !Ppmd7z_RangeDec_IsFinishedOK(&rc)))
+        (!SzPpmdInputAccountingAllowed(s.processed, s.cur - s.begin, inSize) ||
+         s.processed + (UInt64)(s.cur - s.begin) != inSize ||
+         !Ppmd7z_RangeDec_IsFinishedOK(&rc)))
       res = SZ_ERROR_DATA;
   }
   Ppmd7_Free(&ppmd, allocMain);

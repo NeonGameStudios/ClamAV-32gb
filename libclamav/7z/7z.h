@@ -80,6 +80,7 @@ UInt64 SzFolder_GetUnpackSize(CSzFolder *p);
 int SzFolder_FindBindPairForInStream(CSzFolder *p, UInt32 inStreamIndex);
 UInt32 SzFolder_GetNumOutStreams(CSzFolder *p);
 int SzSubStreamsSizeAllowed(UInt64 folderSize, UInt64 accumulatedSize, UInt64 nextSize);
+int SzPpmdInputAccountingAllowed(UInt64 processed, size_t buffered, UInt64 limit);
 UInt64 SzFolder_GetUnpackSize(CSzFolder *p);
 
 SRes SzFolder_Decode(const CSzFolder *folder, const UInt64 *packSizes,

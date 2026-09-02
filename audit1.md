@@ -1,5 +1,26 @@
 # Independent read-only audit of audit.md
 
+## 7-Zip PPMd input accounting — 2026-09-02
+
+The vendored 7-Zip PPMd adapter buffered input through a `processed` counter
+and an uncommitted lookahead window, but its refill and completion checks formed
+their sum without proving that the buffered window stayed within the declared
+packed-stream length or that the `UInt64` addition was representable. A
+malformed or hostile boundary could therefore wrap the accounting and let the
+range decoder classify an over-read as complete. Both the whole-buffer and
+streaming PPMd paths now use `SzPpmdInputAccountingAllowed()` before committing
+buffered input and before accepting decoder completion; a failed boundary is a
+decoder data error and cannot publish output as complete.
+
+`test_7z_ppmd_input_accounting_is_bounded` covers zero, exact, over-declared,
+and `UInt64` overflow-shaped boundaries. Source guards and the capability
+manifest pin the shared helper and both decoder call sites. Current-source
+production-GCC compilation and linked execution, complete 7-Zip/BCJ2/PPMd
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required. The established Docker production harness is
+still unavailable because its overlay mount reports `no space left on device`.
+
 ## Remaining library hash finalization status — 2026-09-02
 
 After the parser and Authenticode review, three non-parser library consumers

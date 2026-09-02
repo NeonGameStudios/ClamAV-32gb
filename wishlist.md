@@ -1,5 +1,17 @@
 # Wishlist
 
+## 7-Zip PPMd input accounting — 2026-09-02
+
+- Keep both PPMd decode modes checking the buffered-input window against the
+  declared packed-stream length before updating `processed`, and checking the
+  same invariant before accepting range-decoder completion. Preserve a
+  fail-visible decoder error on over-read or `UInt64` accounting overflow.
+- Retain `test_7z_ppmd_input_accounting_is_bounded`, the source guards, and the
+  capability-manifest evidence. Current-source production-GCC execution,
+  complete 7-Zip/BCJ2/PPMd corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## Remaining library hash finalization status — 2026-09-02
 
 - Keep signed-database RSA-PSS verification checking every hash update and
