@@ -174,6 +174,19 @@ static cl_error_t cli_magic_scan_validate_options(cli_ctx *ctx, const char *who)
     return CL_SUCCESS;
 }
 
+static cl_error_t cli_magic_scan_validate_dconf(cli_ctx *ctx, const char *who)
+{
+    if (ctx == NULL || ctx->dconf == NULL) {
+        if (ctx != NULL && ctx->dconf == NULL) {
+            cli_mark_scan_incomplete(ctx, "scan dynamic configuration is unavailable");
+            cli_dbgmsg("%s: scan dynamic configuration is unavailable\n", who);
+        }
+        return CL_ENULLARG;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t cli_magic_scan_file_reserved(const char *filename, cli_ctx *ctx,
                                                 const char *original_name, uint32_t attributes)
 {
@@ -7383,6 +7396,11 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     if (!(ctx->engine->dboptions & CL_DB_COMPILED)) {
         cli_errmsg("CRITICAL: engine not compiled\n");
         status = CL_EMALFDB;
+        goto early_ret;
+    }
+
+    status = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan");
+    if (status != CL_SUCCESS) {
         goto early_ret;
     }
 

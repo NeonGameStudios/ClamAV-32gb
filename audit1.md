@@ -497,6 +497,25 @@ ingress/parser corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## Exported magic-scan dynamic-configuration admission — 2026-09-02
+
+`cli_magic_scan()` used `ctx->dconf` through parser-dispatch configuration
+macros after validating the engine, fmap, scan options, and recursion stack,
+but did not validate the dynamic configuration pointer itself. A malformed
+internal caller context could therefore reach a null dereference before a
+parser or raw matcher produced a result. The entry now rejects the missing
+configuration with `CL_ENULLARG`, records the exact sticky incomplete reason,
+and taints the available fmap before any parser dispatch.
+
+`test_cli_magic_scan_missing_dconf_is_fail_visible` supplies a non-empty
+mapped input with a compiled-engine marker, options, and one-layer recursion
+state while omitting `ctx.dconf`, and requires `CL_ENULLARG`, the exact sticky
+diagnostic, and fmap non-cacheability. Source guards and the capability
+manifest record the boundary. Current-source production-GCC compilation,
+production-linked execution, complete ingress/parser corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## ISO9660 direct options admission — 2026-09-02
 
 The exported `cli_scaniso()` entry rejected null context, input fmap, and

@@ -345,6 +345,19 @@ final parser/release qualification remain open.
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification remain open.
 
+## Exported magic-scan dynamic-configuration admission — 2026-09-02
+
+- Keep exported `cli_magic_scan()` fail-visible when a valid engine, fmap,
+  scan-options object, and recursion stack are paired with missing dynamic
+  scan configuration; return `CL_ENULLARG` before parser-dispatch macros can
+  dereference `ctx->dconf`, and mark the available layer incomplete and
+  non-cacheable.
+- Retain `test_cli_magic_scan_missing_dconf_is_fail_visible`, its source
+  guards, and manifest evidence. Current-source production-GCC compilation,
+  production-linked execution, complete ingress/parser corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification remain open.
+
 ## ISO9660 direct options admission — 2026-09-02
 
 - Keep exported `cli_scaniso()` fail-visible when an otherwise recognized
