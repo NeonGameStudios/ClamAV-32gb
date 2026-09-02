@@ -1,5 +1,16 @@
 # Wishlist
 
+## ARJ direct extraction output-open status — 2026-09-02
+
+- Keep `cli_unarj_extract_file()` marking a recognized ARJ layer incomplete
+  when its materialization output cannot be opened, while preserving
+  `CL_EOPEN` for the direct caller.
+- Retain `test_arj_direct_extract_output_open_failure_is_fail_visible`, its
+  source guard, and capability evidence. Current-source production-GCC
+  execution, complete ARJ/ARJ-SFX corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final ARJ/parser-release qualification remain open.
+
 ## RAR archive-open status — 2026-09-02
 
 - Keep every non-encrypted optional-UnRAR archive-open failure fail-visible:

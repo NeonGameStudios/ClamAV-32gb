@@ -1655,6 +1655,7 @@ cl_error_t cli_unarj_extract_file(const char *dirname, arj_metadata_t *metadata)
     cli_dbgmsg("Filename: %s\n", filename);
     metadata->ofd = open(filename, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
     if (metadata->ofd < 0) {
+        cli_mark_scan_incomplete(metadata->ctx, "ARJ temporary output could not be opened");
         return CL_EOPEN;
     }
     switch (metadata->method) {

@@ -57954,6 +57954,44 @@ START_TEST(test_arj_direct_entries_reject_missing_map)
 }
 END_TEST
 
+START_TEST(test_arj_direct_extract_output_open_failure_is_fail_visible)
+{
+    static const uint8_t data[] = {'x'};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    arj_metadata_t metadata;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&metadata, 0, sizeof(metadata));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.options = &options;
+    ctx.fmap   = map;
+    metadata.ctx       = &ctx;
+    metadata.map       = map;
+    metadata.offset    = 0;
+    metadata.comp_size = 0;
+    metadata.orig_size = 0;
+    metadata.method    = 0;
+    metadata.ofd       = -1;
+
+    ret = cli_unarj_extract_file("/path-that-does-not-exist/arj-output", &metadata);
+    ck_assert_int_eq(ret, CL_EOPEN);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ temporary output could not be opened");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static cl_error_t msxml_attribute_limit_scan_cb(int fd, const char *filepath, cli_ctx *ctx, int num_attribs,
                                                 struct attrib_entry *attribs, void *cbdata)
 {

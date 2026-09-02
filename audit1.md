@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## ARJ direct extraction output-open status — 2026-09-02
+
+The owning `cli_scanarj()` path already converted a failed ARJ member output
+open into an incomplete extraction result, but the exported internal
+`cli_unarj_extract_file()` helper returned `CL_EOPEN` without recording sticky
+incomplete state. A direct caller could therefore observe a failed
+materialization attempt without fmap cache taint. The helper now records the
+exact `ARJ temporary output could not be opened` diagnostic before returning,
+and `test_arj_direct_extract_output_open_failure_is_fail_visible` covers the
+valid-map direct boundary. Current-source production-GCC compilation and
+linked execution, complete ARJ/ARJ-SFX corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final ARJ/parser-release qualification remain required.
+
 ## RAR archive-open status — 2026-09-02
 
 The optional UnRAR scanner converted only an unrecognized backend result to a
