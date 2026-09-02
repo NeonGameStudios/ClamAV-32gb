@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## UUEncode fileblob status reconciliation — 2026-09-02
+
+The historical `uudecodeFile()` negative-result interface now carries an
+internal `cl_error_t` failure-status out parameter. Standalone UUEncode and
+both MIME parser call paths preserve required fileblob statuses such as
+`CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, and `CL_EREAD` instead of
+flattening output/materialization failures to `CL_EPARSE`. The existing
+private read sentinel remains intact. The direct invalid-directory regression
+now requires `CL_ECREAT`, and the MIME-embedded regression exercises the
+same status through `cli_mbox()`. Current-source production-GCC compilation,
+production-linked UUEncode/MIME execution, complete UUEncode/mail corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## TNEF fileblob status reconciliation — 2026-09-02
 
 TNEF attachment handling now preserves the specific status retained by a

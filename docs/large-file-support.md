@@ -3,6 +3,20 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UUEncode fileblob status reconciliation — 2026-09-02
+
+The historical `uudecodeFile()` negative-result interface now carries an
+internal `cl_error_t` failure-status out parameter. Standalone UUEncode and
+both MIME parser call paths preserve required fileblob statuses, including
+`CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, and `CL_EREAD`, instead
+of flattening output/materialization failures to `CL_EPARSE`. The private
+read sentinel remains intact. Direct and MIME-embedded invalid-directory
+regressions require `CL_ECREAT`. Current-source production-GCC compilation,
+production-linked UUEncode/MIME execution, complete UUEncode/mail corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## TNEF fileblob status reconciliation — 2026-09-02
 
 TNEF attachment handling now preserves the specific status retained by a

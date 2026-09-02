@@ -678,9 +678,16 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                  * TODO: binhex, yenc
                  */
                 {
-                    int decode_status = uudecodeFile(m, buffer, dir, map, &at);
+                    int decode_status;
+                    cl_error_t decode_failure = CL_SUCCESS;
+
+                    decode_status = uudecodeFile(m, buffer, dir, map, &at, &decode_failure);
 
                     if (decode_status < 0) {
+                        if (decode_failure != CL_SUCCESS) {
+                            retcode = decode_failure;
+                            break;
+                        }
                         if (decode_status == UUDECODE_READ_ERROR) {
                             retcode = CL_EREAD;
                             break;
@@ -1366,9 +1373,17 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
              * TODO: binhex, yenc
              */
             bodyIsEmpty = false;
-            int decode_status = uudecodeFile(ret, line, dir, map, at);
+            int decode_status;
+            cl_error_t decode_failure = CL_SUCCESS;
+
+            decode_status = uudecodeFile(ret, line, dir, map, at, &decode_failure);
 
             if (decode_status < 0) {
+                if (decode_failure != CL_SUCCESS) {
+                    if (failure_status)
+                        *failure_status = decode_failure;
+                    break;
+                }
                 if (ctx->scan_timed_out)
                     break;
                 if (decode_status == UUDECODE_READ_ERROR) {

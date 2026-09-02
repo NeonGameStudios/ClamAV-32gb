@@ -1,5 +1,18 @@
 # Wishlist
 
+## UUEncode fileblob status reconciliation — 2026-09-02
+
+- Carry the specific required fileblob failure status through the historical
+  `uudecodeFile()` interface and both standalone and MIME-embedded callers,
+  including `CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, and
+  `CL_EREAD`, instead of flattening output/materialization failures to
+  `CL_EPARSE`.
+- Keep the private read sentinel and the direct/MIME invalid-directory
+  regressions. Complete current-source production-GCC compilation and linked
+  UUEncode/MIME execution, complete UUEncode/mail corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## TNEF fileblob status reconciliation — 2026-09-02
 
 - Preserve the specific status retained by a required TNEF attachment

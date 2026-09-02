@@ -63,10 +63,18 @@ static cl_error_t uuencode_reconcile_status(cli_ctx *ctx, cl_error_t status)
     return status;
 }
 
+static cl_error_t uuencode_fileblob_status(const fileblob *fb)
+{
+    if (fb == NULL)
+        return CL_ERESOURCE;
+    return fb->incomplete_status != CL_SUCCESS ? fb->incomplete_status : CL_ERESOURCE;
+}
+
 int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
 {
     cl_error_t status;
     int decode_status;
+    cl_error_t decode_failure = CL_SUCCESS;
     message *m;
     char buffer[RFC2821LENGTH + 1];
     size_t at = 0;
@@ -116,9 +124,11 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
     /* uudecodeFile() retains private negative statuses for read failures and
      * incomplete materialization. Keep that result in an int; storing it in
      * cl_error_t lets optimizing compilers assume the enum is non-negative. */
-    decode_status = uudecodeFile(m, buffer, dir, map, &at);
+    decode_status = uudecodeFile(m, buffer, dir, map, &at, &decode_failure);
     if (decode_status < 0) {
         messageDestroy(m);
+        if (decode_failure != CL_SUCCESS)
+            return decode_failure;
         if (ctx->scan_timed_out)
             return CL_ETIMEOUT;
         if (decode_status == UUDECODE_READ_ERROR)
@@ -137,7 +147,8 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
  * to include it in the parse tree. Saves memory and parse time.
  * Return < 0 for failure
  */
-int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map, size_t *at)
+int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map, size_t *at,
+                 cl_error_t *failure_status)
 {
     fileblob *fb;
     char buffer[RFC2821LENGTH + 1];
@@ -146,6 +157,9 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
     bool data_block_ended       = false;
     bool materialization_failed = false;
     bool read_failed            = false;
+
+    if (failure_status)
+        *failure_status = CL_SUCCESS;
 
     if (filename == NULL)
         return -1;
@@ -160,6 +174,8 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
     fileblobSetCTX(fb, m->ctx);
     fileblobSetFilename(fb, dir, filename);
     if (fb->isIncomplete) {
+        if (failure_status)
+            *failure_status = uuencode_fileblob_status(fb);
         cli_mark_scan_incomplete(m->ctx, "UUencoded attachment output blob could not be initialized");
         free(filename);
         fileblobDestroy(fb);
@@ -173,7 +189,11 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
         const unsigned char *uptr;
         size_t len;
 
-        if (uuencode_checktimelimit(m->ctx, "UUencoded attachment traversal reached the configured time limit") != CL_SUCCESS) {
+        cl_error_t limit_status = uuencode_checktimelimit(
+            m->ctx, "UUencoded attachment traversal reached the configured time limit");
+        if (limit_status != CL_SUCCESS) {
+            if (failure_status)
+                *failure_status = limit_status;
             materialization_failed = true;
             break;
         }
@@ -181,6 +201,8 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
         if (!fmap_gets(map, buffer, at, sizeof(buffer) - 1)) {
             if (*at < map->len) {
                 cli_mark_scan_incomplete(m->ctx, "UUencoded input could not be read completely");
+                if (failure_status)
+                    *failure_status = CL_EREAD;
                 read_failed = true;
             }
             break;
@@ -216,6 +238,8 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
             break;
 
         if (fileblobAddData(fb, data, len) < 0) {
+            if (failure_status)
+                *failure_status = uuencode_fileblob_status(fb);
             cli_mark_scan_incomplete(m->ctx, "UUencoded attachment could not be materialized completely");
             materialization_failed = true;
             break;
