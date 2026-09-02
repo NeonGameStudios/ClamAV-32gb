@@ -7504,6 +7504,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                 ret = cli_jsonstr(ctx->this_layer_metadata_json, cli_hash_name(hash_type), hash_string);
                 if (ret != CL_SUCCESS) {
                     cli_dbgmsg("cli_magic_scan: Failed to store the %s hash in the metadata JSON.\n", cli_hash_name(hash_type));
+                    cli_mark_scan_incomplete(ctx, "file metadata hash could not be recorded");
                     status = ret;
                     goto done;
                 }

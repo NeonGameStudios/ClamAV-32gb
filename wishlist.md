@@ -11837,3 +11837,14 @@ final parser/release qualification remain open.
   metadata/parser corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification remain open.
+
+## Root hash metadata completion — 2026-09-01
+
+- Keep required root SHA-256 metadata insertion fail-visible before
+  cache/parser completion; mark the confirmed scan incomplete and
+  non-cacheable while preserving `CL_EMEM`.
+- Retain `test_root_hash_metadata_record_failure_is_fail_visible` and its
+  source guards. Current-source production-linked execution, complete
+  metadata/parser corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.

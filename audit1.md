@@ -28,6 +28,19 @@ metadata/parser corpus, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain open.
 
+## Root hash metadata failure visibility — 2026-09-01
+
+The required root SHA-256 hash was calculated before cache/parser completion,
+but its metadata JSON insertion returned an error without marking the
+confirmed fmap incomplete or non-cacheable. The insertion boundary now records
+the exact sticky diagnostic while preserving `CL_EMEM`. The registered
+`test_root_hash_metadata_record_failure_is_fail_visible` JSON-wrap regression
+injects the `sha2-256` write failure and requires a cleared verdict, incomplete
+report, and fmap cache taint. Current-source production-GCC compilation,
+production-linked execution, sanitizer, complete metadata/parser corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain open.
+
 ## PE import result reconciliation — 2026-09-01
 
 `cli_scanpe()` returned directly from non-success `scan_pe_imp()` results
