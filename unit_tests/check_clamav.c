@@ -4512,6 +4512,44 @@ START_TEST(test_screnc_input_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_screnc_temporary_limit_result_is_fail_visible)
+{
+    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_HTML;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = fmap_new(fd, 0, 0, "screnc_test", NULL);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_SCRENC", NULL);
+    ck_assert_msg(ret == CL_ERESOURCE, "SCRENC temporary quota was flattened: %s", cl_strerror(ret));
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    fmap_free(map);
+    close(fd);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_script_input_read_failure_is_fail_visible)
 {
     static const uint8_t data[] = "var script_read_failure = 1;";
@@ -55964,6 +56002,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_screnc);
     tcase_add_checked_fixture(tc_screnc, cl_setup, cl_teardown);
     tcase_add_test(tc_screnc, test_screnc_input_read_failure_is_fail_visible);
+    tcase_add_test(tc_screnc, test_screnc_temporary_limit_result_is_fail_visible);
     suite_add_tcase(s, tc_script);
     tcase_add_checked_fixture(tc_script, cl_setup, cl_teardown);
     tcase_add_test(tc_script, test_script_input_read_failure_is_fail_visible);

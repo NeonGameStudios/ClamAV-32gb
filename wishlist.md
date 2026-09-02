@@ -1,5 +1,16 @@
 # Wishlist
 
+## SCRENC resource-result reconciliation — 2026-09-02
+
+- Preserve `ctx->limit_exceeded_result` at the `CL_TYPE_SCRENC` owner when
+  script decoding fails after a shared temporary-resource limit, instead of
+  flattening the result to `CL_EPARSE`.
+- Retain the public one-byte temporary-limit regression, cleared verdict,
+  cache taint, and source guards. Complete current-source production-GCC
+  compilation and execution, complete SCRENC/HTML corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## DMG temporary-output status propagation — 2026-09-02
 
 - Preserve `CL_ECREAT` for DMG reconstructed-partition and XML temporary-file

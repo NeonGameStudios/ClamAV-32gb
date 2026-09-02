@@ -5051,7 +5051,16 @@ static cl_error_t cli_scanscrenc(cli_ctx *ctx)
     if (!html_screnc_decode_ctx_status(ctx, ctx->fmap, tempname, &temporary_reserved, &read_error)) {
         if (!ctx->scan_timed_out)
             cli_mark_scan_incomplete(ctx, "HTML script-encoded content could not be decoded completely");
-        ret = read_error ? CL_EREAD : ctx->scan_timed_out ? CL_ETIMEOUT : CL_EPARSE;
+        if (read_error)
+            ret = CL_EREAD;
+        else if (ctx->scan_timed_out)
+            ret = CL_ETIMEOUT;
+        else if (ctx->limit_exceeded &&
+                 ctx->limit_exceeded_result != CL_SUCCESS &&
+                 ctx->limit_exceeded_result != CL_VERIFIED)
+            ret = ctx->limit_exceeded_result;
+        else
+            ret = CL_EPARSE;
     } else {
         cli_scan_release_temporary(ctx, temporary_reserved);
         temporary_reserved = 0;

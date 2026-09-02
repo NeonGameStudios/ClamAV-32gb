@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## SCRENC resource-result reconciliation — 2026-09-02
+
+The `CL_TYPE_SCRENC` owner converted every decoder failure other than mapped
+read failure and timeout to `CL_EPARSE`, even when the decoder had recorded a
+shared temporary-resource limit. It now preserves the configured
+`limit_exceeded_result`, while retaining the sticky incomplete state and fmap
+cache taint. `test_screnc_temporary_limit_result_is_fail_visible` drives the
+public SCRENC map entry with a one-byte temporary limit and requires
+`CL_ERESOURCE`, a cleared verdict, and non-cacheability. Current-source
+production-GCC compilation, production-linked execution, complete SCRENC/
+HTML corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## DMG temporary-output status propagation — 2026-09-02
 
 The DMG reconstruction and XML staging paths previously relabeled manual

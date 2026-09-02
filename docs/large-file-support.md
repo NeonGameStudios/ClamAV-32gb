@@ -3,6 +3,17 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## SCRENC resource-result reconciliation — 2026-09-02
+
+The `CL_TYPE_SCRENC` owner now preserves a configured temporary-resource
+failure reported by the decoder instead of flattening it to `CL_EPARSE`.
+`test_screnc_temporary_limit_result_is_fail_visible` uses the public map API
+with a one-byte temporary limit and requires `CL_ERESOURCE`, a cleared
+verdict, and non-cacheability. Current-source production-GCC compilation,
+production-linked execution, complete SCRENC/HTML corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## DMG temporary-output status propagation — 2026-09-02
 
 DMG reconstructed-partition and XML staging now report `CL_ECREAT` for manual
