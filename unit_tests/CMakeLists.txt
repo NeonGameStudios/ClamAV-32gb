@@ -176,6 +176,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=mspack_create_chm_decompressor"
         "-Wl,--wrap=fmap_new"
         "-Wl,--wrap=json_object_array_add"
+        "-Wl,--wrap=json_object_object_add"
         "-Wl,--wrap=cli_jsonarray"
         "-Wl,--wrap=cli_jsonbool"
         "-Wl,--wrap=cli_jsonint"

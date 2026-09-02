@@ -19441,6 +19441,25 @@ matcher execution, complete archive-metadata/signature corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final matcher/release qualification remain required.
 
+## Nested layer metadata insertion failures — 2026-09-01
+
+`cli_recursion_stack_push()` previously discarded failures while attaching a
+new `ContainedObjects` or `EmbeddedObjects` array to its parent and while
+inserting the new child-layer metadata object into that array. Either failure
+could leave an unowned JSON object or allow a nested layer to proceed without
+its required metadata. The path now releases rejected objects, marks the
+scan incomplete and non-cacheable, returns `CL_EMEM`, and rolls the context
+back to the parent layer.
+
+`test_nested_layer_metadata_array_add_failure_is_fail_visible` injects both
+production-linked json-c ownership transitions and requires the exact sticky
+diagnostic, parent-layer rollback, cache taint on both maps, and no orphaned
+child metadata. Current-source production-GCC compilation,
+production-linked execution, complete archive/parser metadata corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final matcher/release
+qualification remain required.
+
 ## XAR checksum mismatch visibility — 2026-09-01
 
 The XAR member walker compared declared archived and extracted checksums but

@@ -11680,3 +11680,15 @@ final parser/release qualification remain open.
   OLE/VBA/XLM corpus, sanitizer, certified Linux x86-64, production-CVD/
   service, materialized-large-file, Sonic1, resource, and final parser/release
   qualification remain open.
+
+## Nested layer metadata insertion failures — 2026-09-01
+
+- Keep `ContainedObjects` and `EmbeddedObjects` attachment and child-layer
+  insertion failures fail-visible in `cli_recursion_stack_push()`; release
+  rejected JSON objects, roll back to the parent layer, mark both maps
+  non-cacheable, and preserve the exact `CL_EMEM` diagnostic.
+- Retain `test_nested_layer_metadata_array_add_failure_is_fail_visible` and
+  its source guards. Current-source production-linked execution, complete
+  archive/parser metadata corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.

@@ -12208,3 +12208,18 @@ Current-source production-linked matcher execution, complete
 archive-metadata/signature corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 matcher/release qualification remain required.
+
+## Nested layer metadata insertion failures — 2026-09-01
+
+`cli_recursion_stack_push()` now checks both JSON ownership transitions used
+to describe a nested layer: attaching the `ContainedObjects` or
+`EmbeddedObjects` array to its parent and appending the new child-layer object.
+Rejected objects are released, the scan is marked incomplete and
+non-cacheable, `CL_EMEM` is returned, and the context rolls back to its parent
+layer. `test_nested_layer_metadata_array_add_failure_is_fail_visible`
+injects both production-linked failures and requires the exact diagnostic,
+parent rollback, taint on both maps, and no orphaned child metadata. The
+capability manifest and source guards record this boundary; current-source
+execution, complete parser corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+release qualification remain required.

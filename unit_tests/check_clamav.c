@@ -283,6 +283,7 @@ int htmlnorm_test_fail_next_realloc;
 
 #ifdef CLAMAV_TEST_JSON_WRAP
 extern int __real_json_object_array_add(json_object *obj, json_object *val);
+extern int __real_json_object_object_add(json_object *obj, const char *key, json_object *val);
 extern json_object *__real_cli_jsonarray(json_object *obj, const char *key);
 extern cl_error_t __real_cli_jsonbool(json_object *obj, const char *key, int i);
 extern cl_error_t __real_cli_jsonint(json_object *obj, const char *key, int32_t i);
@@ -316,10 +317,16 @@ static int image_fuzzy_test_fail_hash_metadata;
 static int indicator_test_fail_object_id_metadata;
 static unsigned int indicator_test_array_add_fail_call;
 static unsigned int indicator_test_array_add_calls;
+static int nested_layer_test_fail_array_add;
+static int nested_layer_test_fail_object_add;
 static int json_api_test_fail_array_add;
 
 int __wrap_json_object_array_add(json_object *obj, json_object *val)
 {
+    if (nested_layer_test_fail_array_add) {
+        nested_layer_test_fail_array_add = 0;
+        return -1;
+    }
     if (indicator_test_array_add_fail_call != 0U && val &&
         json_object_is_type(val, json_type_object)) {
         json_object *name = NULL;
@@ -340,6 +347,17 @@ int __wrap_json_object_array_add(json_object *obj, json_object *val)
     if (json_api_test_fail_array_add)
         return -1;
     return __real_json_object_array_add(obj, val);
+}
+
+int __wrap_json_object_object_add(json_object *obj, const char *key, json_object *val)
+{
+    if (nested_layer_test_fail_object_add && key &&
+        (strcmp(key, "ContainedObjects") == 0 || strcmp(key, "EmbeddedObjects") == 0)) {
+        nested_layer_test_fail_object_add = 0;
+        return -1;
+    }
+
+    return __real_json_object_object_add(obj, key, val);
 }
 
 json_object *__wrap_cli_jsonarray(json_object *obj, const char *key)
@@ -5214,6 +5232,74 @@ START_TEST(test_nested_indicator_metadata_array_copy_failure_is_fail_visible)
     json_object_put(parent);
     cl_fmap_close(child_map);
     cl_fmap_close(parent_map);
+}
+END_TEST
+
+START_TEST(test_nested_layer_metadata_array_add_failure_is_fail_visible)
+{
+    static const uint8_t parent_input[] = "parent";
+    static const uint8_t child_input[]  = "child";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    json_object *parent;
+    json_object *children = NULL;
+    fmap_t *parent_map;
+    fmap_t *child_map;
+    unsigned int failure;
+
+    for (failure = 0; failure < 2; failure++) {
+        memset(&engine, 0, sizeof(engine));
+        memset(&options, 0, sizeof(options));
+        memset(layers, 0, sizeof(layers));
+        memset(&ctx, 0, sizeof(ctx));
+        options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+        parent_map     = cl_fmap_open_memory(parent_input, sizeof(parent_input) - 1U);
+        child_map      = cl_fmap_open_memory(child_input, sizeof(child_input) - 1U);
+        ck_assert_ptr_nonnull(parent_map);
+        ck_assert_ptr_nonnull(child_map);
+        parent = json_object_new_object();
+        ck_assert_ptr_nonnull(parent);
+
+        layers[0].fmap           = parent_map;
+        layers[0].metadata_json  = parent;
+        ctx.engine               = &engine;
+        ctx.options              = &options;
+        ctx.fmap                 = parent_map;
+        ctx.recursion_stack      = layers;
+        ctx.recursion_stack_size = 2;
+        ctx.this_layer_metadata_json = parent;
+
+        if (failure == 0)
+            nested_layer_test_fail_object_add = 1;
+        else
+            nested_layer_test_fail_array_add = 1;
+
+        ck_assert_int_eq(cli_recursion_stack_push(&ctx, child_map, CL_TYPE_ANY, true,
+                                                  LAYER_ATTRIBUTES_NONE),
+                         CL_EMEM);
+        ck_assert_int_eq(nested_layer_test_fail_object_add, 0);
+        ck_assert_int_eq(nested_layer_test_fail_array_add, 0);
+        ck_assert_uint_eq(ctx.recursion_level, 0);
+        ck_assert_ptr_eq(ctx.fmap, parent_map);
+        ck_assert_ptr_eq(ctx.this_layer_metadata_json, parent);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "nested layer metadata could not be recorded");
+        ck_assert(parent_map->dont_cache_flag);
+        ck_assert(child_map->dont_cache_flag);
+
+        if (failure == 0) {
+            ck_assert(!json_object_object_get_ex(parent, "ContainedObjects", &children));
+        } else {
+            ck_assert(json_object_object_get_ex(parent, "ContainedObjects", &children));
+            ck_assert_uint_eq(json_object_array_length(children), 0U);
+        }
+
+        json_object_put(parent);
+        cl_fmap_close(child_map);
+        cl_fmap_close(parent_map);
+    }
 }
 END_TEST
 #endif
@@ -55759,6 +55845,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_json_array_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_metadata_record_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_metadata_array_add_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_nested_layer_metadata_array_add_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);

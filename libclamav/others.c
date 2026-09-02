@@ -2413,7 +2413,13 @@ cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t typ
                 status = CL_EMEM;
                 goto done;
             }
-            json_object_object_add(parent_object, array_name, arrobj);
+            if (json_object_object_add(parent_object, array_name, arrobj) != 0) {
+                cli_errmsg("cli_recursion_stack_push: failed to add layer metadata array to parent object\n");
+                json_object_put(arrobj);
+                cli_mark_scan_incomplete(ctx, "nested layer metadata could not be recorded");
+                status = CL_EMEM;
+                goto done;
+            }
         }
         new_object = json_object_new_object();
         if (NULL == new_object) {
@@ -2421,7 +2427,13 @@ cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t typ
             status = CL_EMEM;
             goto done;
         }
-        json_object_array_add(arrobj, new_object);
+        if (json_object_array_add(arrobj, new_object) != 0) {
+            cli_errmsg("cli_recursion_stack_push: failed to add layer metadata object to parent array\n");
+            json_object_put(new_object);
+            cli_mark_scan_incomplete(ctx, "nested layer metadata could not be recorded");
+            status = CL_EMEM;
+            goto done;
+        }
 
         ctx->recursion_stack[ctx->recursion_level].metadata_json = new_object;
         ctx->this_layer_metadata_json                            = new_object;
