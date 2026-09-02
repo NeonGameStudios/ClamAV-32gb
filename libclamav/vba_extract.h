@@ -44,6 +44,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                                int *tempfd, int *has_macros, char **tempfile, uint64_t *temporary_reserved);
 vba_project_t *cli_wm_readdir(int fd);
 vba_project_t *cli_wm_readdir_ex(int fd, cli_ctx *ctx);
+cl_error_t cli_wm_readdir_status(int fd, cli_ctx *ctx, vba_project_t **project_out);
 void cli_free_vba_project(vba_project_t *vba_project);
 
 unsigned char *cli_vba_inflate(int fd, off_t offset, size_t *size);

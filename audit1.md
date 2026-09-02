@@ -6562,6 +6562,26 @@ Full production-linked unit execution, malformed Word/OLE corpus, sanitizer
 and allocation-fault coverage, production-CVD/service parity, materialized
 large-file, Sonic1, and final OLE/VBA qualification remain open.
 
+## Legacy Word macro fixed-size read status — 2026-09-02
+
+The Word 6 macro-directory reader used boolean fixed-size reads for its FIB,
+record identifier, macro count, and macro-entry table. That collapsed an
+in-range descriptor failure into the same result as a short/truncated input.
+The current source now routes each of those reads through the shared full-read
+classifier, preserving truncated `CL_EPARSE` versus in-range `CL_EREAD`
+classification in the owning layer's incomplete reason. A new internal
+status/out-project entry point carries that result through the Word scanner,
+while the existing pointer-returning API remains as a compatibility wrapper.
+The new wrapped-read regression covers both the FIB and macro-entry boundaries
+and verifies the exact status and cache taint.
+
+The source guard is updated and the test is registered. Fresh GCC compilation
+and production-linked execution remain open because the reusable Docker build
+container is stopped and cannot be restarted while its overlay reports no
+space. Malformed Word/OLE corpus, sanitizer and allocation-fault coverage,
+production-CVD/service parity, materialized-large-file, Sonic1, and final
+OLE/VBA qualification remain open.
+
 ## OLE2 output-write failure visibility — 2026-08-28
 
 The OLE2 embedded-stream and MSO inflation paths returned `CL_EWRITE` when a

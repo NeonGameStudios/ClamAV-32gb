@@ -4610,6 +4610,20 @@ final parser/release qualification.
   Word/OLE corpus, sanitizer, production-CVD/service, materialized large-file,
   Sonic1, and final OLE/VBA qualification open.
 
+## Legacy Word macro fixed-size read status — 2026-09-02
+
+- Keep the Word 6 macro-directory FIB, record identifier, macro count, and
+  fixed-size macro-entry reads fail-visible. Genuine short reads must remain
+  truncated `CL_EPARSE` paths, while in-range descriptor failures must remain
+  `CL_EREAD` paths; all failures must mark the owning layer incomplete and
+  non-cacheable.
+- The current source now uses the shared full-read classifier for those fixed
+  directory reads and has a registered wrapped-read regression covering both
+  classes. Fresh GCC compilation and production-linked execution remain
+  required, along with the broader malformed Word/OLE corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, and final OLE/VBA
+  qualification.
+
 ## OLE2 output-write failure visibility — 2026-08-28
 
 - Preserve sticky incomplete and non-cacheable state when OLE2 embedded

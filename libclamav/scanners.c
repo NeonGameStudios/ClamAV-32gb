@@ -3435,10 +3435,13 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
             continue;
         }
 
-        if (!(vba_project = (vba_project_t *)cli_wm_readdir_ex(fd, ctx))) {
-            cli_mark_scan_incomplete(ctx, "Word macro directory could not be parsed");
+        vba_project = NULL;
+        status = cli_wm_readdir_status(fd, ctx, &vba_project);
+        if (status != CL_SUCCESS || vba_project == NULL) {
+            if (vba_project == NULL && status == CL_SUCCESS)
+                cli_mark_scan_incomplete(ctx, "Word macro directory could not be parsed");
             if (deferred_failure == CL_SUCCESS)
-                deferred_failure = CL_EPARSE;
+                deferred_failure = status == CL_SUCCESS ? CL_EPARSE : status;
             if (close(fd) != 0) {
                 cli_mark_scan_incomplete(ctx, "Word macro input could not be closed");
                 deferred_failure = cli_merge_cleanup_status(deferred_failure, CL_EREAD);

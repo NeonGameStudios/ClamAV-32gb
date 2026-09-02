@@ -43485,6 +43485,86 @@ START_TEST(test_word_macro_directory_truncation_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_word_macro_directory_read_status_is_fail_visible)
+{
+    static const unsigned char fib[8] = {
+        0x20, 0x01, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00,
+    };
+    static const unsigned char directory[] = {
+        0x00,                         /* start marker */
+        0x01, 0x01, 0x00,             /* one macro */
+        0x00, 0x5a,                   /* version and key */
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x04, 0x00, 0x00, 0x00,       /* macro length */
+        0x00, 0x00, 0x00, 0x00,       /* macro state */
+        0x00, 0x02, 0x00, 0x00        /* macro offset */
+    };
+    static const size_t forced_counts[] = {sizeof(fib), 24U};
+    static const char *const truncated_reasons[] = {
+        "Word macro directory header was truncated",
+        "Word macro directory metadata was truncated",
+    };
+    static const char *const read_reasons[] = {
+        "Word macro directory header could not be read completely",
+        "Word macro directory metadata could not be read completely",
+    };
+    static const cl_error_t expected_statuses[] = {CL_EPARSE, CL_EREAD};
+    char path[PATH_MAX];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    vba_project_t *project;
+    cl_error_t status;
+    static const uint8_t map_data[] = {0};
+    unsigned int phase;
+    unsigned int fault;
+    int fd;
+
+    snprintf(path, sizeof(path), "%s/word-macro-read-status", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_int_eq(ftruncate(fd, 0x120 + sizeof(directory)), 0);
+    ck_assert_int_eq(pwrite(fd, fib, sizeof(fib), 0x118), (ssize_t)sizeof(fib));
+    ck_assert_int_eq(pwrite(fd, directory, sizeof(directory), 0x120), (ssize_t)sizeof(directory));
+
+    map = fmap_open_memory(map_data, sizeof(map_data), NULL);
+    ck_assert_ptr_nonnull(map);
+
+    for (phase = 0; phase < 2; phase++) {
+        for (fault = 0; fault < 2; fault++) {
+            memset(&engine, 0, sizeof(engine));
+            memset(&options, 0, sizeof(options));
+            memset(&ctx, 0, sizeof(ctx));
+            ctx.engine  = &engine;
+            ctx.options = &options;
+            ctx.fmap    = map;
+            map->dont_cache_flag = false;
+
+            ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+            clamav_test_force_cli_readn_count  = forced_counts[phase];
+            clamav_test_force_cli_readn_status = fault == 0 ? 1 : 2;
+            project = NULL;
+            status = cli_wm_readdir_status(fd, &ctx, &project);
+            ck_assert_int_eq(status, expected_statuses[fault]);
+            ck_assert_ptr_null(project);
+            ck_assert(ctx.scan_incomplete);
+            ck_assert_str_eq(ctx.scan_incomplete_reason,
+                             fault == 0 ? truncated_reasons[phase] : read_reasons[phase]);
+            ck_assert(map->dont_cache_flag);
+            ck_assert_int_eq(clamav_test_force_cli_readn_status, 0);
+        }
+    }
+
+    clamav_test_force_cli_readn_count = 0;
+    fmap_free(map);
+    ck_assert_int_eq(close(fd), 0);
+    unlink(path);
+}
+END_TEST
+#endif
+
 START_TEST(test_word_macro_extnames_are_fully_skipped)
 {
     static const uint8_t fib[8] = {0x20, 0x01, 0x00, 0x00, 0x27, 0x00, 0x00, 0x00};
@@ -61537,6 +61617,9 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_vba_inflate_seek_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_word_macro_directory_truncation_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_word_macro_directory_read_status_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_word_macro_extnames_are_fully_skipped);
 #endif
     tcase_add_test(tc_cl, test_arc4_apply_uses_native_length);

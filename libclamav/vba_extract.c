@@ -3024,30 +3024,37 @@ typedef struct macro_info_tag {
     uint16_t count;
 } macro_info_t;
 
-static int
+static cl_error_t
 word_read_fib(int fd, mso_fib_t *fib)
 {
     struct {
         uint32_t offset;
         uint32_t len;
     } macro_details;
+    cl_error_t read_status;
 
-    if (!seekandread(fd, 0x118, SEEK_SET, &macro_details, sizeof(macro_details))) {
+    if (lseek(fd, 0x118, SEEK_SET) != (off_t)0x118) {
         cli_dbgmsg("read word_fib failed\n");
-        return FALSE;
+        return CL_ESEEK;
+    }
+    read_status = vba_readn_full(fd, &macro_details, sizeof(macro_details));
+    if (read_status != CL_SUCCESS) {
+        cli_dbgmsg("read word_fib failed\n");
+        return read_status;
     }
     fib->macro_offset = vba_endian_convert_32(macro_details.offset, FALSE);
     fib->macro_len    = vba_endian_convert_32(macro_details.len, FALSE);
 
-    return TRUE;
+    return CL_SUCCESS;
 }
 
-static int
+static cl_error_t
 word_read_macro_entry(int fd, macro_info_t *macro_info, uint64_t end_offset)
 {
     size_t msize;
     uint16_t count = macro_info->count;
     macro_entry_t *macro_entry;
+    cl_error_t read_status;
 #ifdef HAVE_PRAGMA_PACK
 #pragma pack(1)
 #endif
@@ -3072,29 +3079,35 @@ word_read_macro_entry(int fd, macro_info_t *macro_info, uint64_t end_offset)
 #pragma pack
 #endif
     if (count == 0)
-        return TRUE;
+        return CL_SUCCESS;
 
     msize = count * sizeof(struct macro);
     m     = cli_max_malloc(msize);
     if (m == NULL) {
         cli_errmsg("word_read_macro_entry: Unable to allocate memory for 'm'\n");
-        return FALSE;
+        return CL_EMEM;
     }
 
     {
         off_t current_offset = lseek(fd, 0, SEEK_CUR);
-        if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
+        if (current_offset < 0) {
+            free(m);
+            cli_dbgmsg("word_read_macro_entry: metadata position could not be read\n");
+            return CL_ESEEK;
+        }
+        if ((uint64_t)current_offset > end_offset ||
             (uint64_t)msize > end_offset - (uint64_t)current_offset) {
             free(m);
             cli_dbgmsg("word_read_macro_entry: metadata exceeds declared directory\n");
-            return FALSE;
+            return CL_EPARSE;
         }
     }
 
-    if (cli_readn(fd, m, msize) != msize) {
+    read_status = vba_readn_full(fd, m, msize);
+    if (read_status != CL_SUCCESS) {
         free(m);
         cli_warnmsg("read %u macro_entries failed\n", count);
-        return FALSE;
+        return read_status;
     }
     macro_entry = macro_info->entries;
     n           = m;
@@ -3106,41 +3119,50 @@ word_read_macro_entry(int fd, macro_info_t *macro_info, uint64_t end_offset)
         n++;
     } while (--count > 0);
     free(m);
-    return TRUE;
+    return CL_SUCCESS;
 }
 
-static int
+static cl_error_t
 word_read_macro_info(int fd, macro_info_t *macro_info, uint64_t end_offset)
 {
     off_t current_offset = lseek(fd, 0, SEEK_CUR);
+    cl_error_t read_status;
 
-    if (current_offset < 0 || (uint64_t)current_offset > end_offset ||
+    if (current_offset < 0) {
+        cli_dbgmsg("word_read_macro_info: record position could not be read\n");
+        macro_info->count = 0;
+        return CL_ESEEK;
+    }
+    if ((uint64_t)current_offset > end_offset ||
         sizeof(uint16_t) > end_offset - (uint64_t)current_offset) {
         cli_dbgmsg("word_read_macro_info: record header exceeds declared directory\n");
         macro_info->count = 0;
-        return -1;
+        return CL_EPARSE;
     }
-    if (!read_uint16(fd, &macro_info->count, FALSE)) {
+    read_status = vba_readn_full(fd, &macro_info->count, sizeof(macro_info->count));
+    if (read_status != CL_SUCCESS) {
         cli_dbgmsg("read macro_info failed\n");
         macro_info->count = 0;
-        return -1;
+        return read_status;
     }
+    macro_info->count = vba_endian_convert_16(macro_info->count, FALSE);
     cli_dbgmsg("macro count: %d\n", macro_info->count);
     if (macro_info->count == 0)
-        return 0;
+        return CL_SUCCESS;
     macro_info->entries = (macro_entry_t *)cli_max_malloc(sizeof(macro_entry_t) * macro_info->count);
     if (macro_info->entries == NULL) {
         macro_info->count = 0;
         cli_errmsg("word_read_macro_info: Unable to allocate memory for macro_info->entries\n");
-        return -1;
+        return CL_EMEM;
     }
-    if (!word_read_macro_entry(fd, macro_info, end_offset)) {
+    read_status = word_read_macro_entry(fd, macro_info, end_offset);
+    if (read_status != CL_SUCCESS) {
         free(macro_info->entries);
         macro_info->entries = NULL;
         macro_info->count   = 0;
-        return -1;
+        return read_status;
     }
-    return 1;
+    return CL_SUCCESS;
 }
 
 static int
@@ -3354,13 +3376,28 @@ word_skip_macro_intnames(int fd, uint64_t end_offset)
 vba_project_t *
 cli_wm_readdir(int fd)
 {
-    return cli_wm_readdir_ex(fd, NULL);
+    vba_project_t *vba_project = NULL;
+
+    if (cli_wm_readdir_status(fd, NULL, &vba_project) != CL_SUCCESS)
+        return NULL;
+    return vba_project;
 }
 
 vba_project_t *
 cli_wm_readdir_ex(int fd, cli_ctx *ctx)
 {
+    vba_project_t *vba_project = NULL;
+
+    if (cli_wm_readdir_status(fd, ctx, &vba_project) != CL_SUCCESS)
+        return NULL;
+    return vba_project;
+}
+
+cl_error_t
+cli_wm_readdir_status(int fd, cli_ctx *ctx, vba_project_t **project_out)
+{
     int done, malformed = FALSE;
+    cl_error_t read_status;
     uint64_t end_offset, start_offset;
     unsigned char info_id;
     macro_info_t macro_info;
@@ -3368,29 +3405,39 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
     mso_fib_t fib;
     STATBUF statbuf;
 
+    if (project_out == NULL)
+        return CL_ENULLARG;
+    *project_out = NULL;
+
     macro_info.entries = NULL;
     macro_info.count   = 0;
 
-    if (!word_read_fib(fd, &fib)) {
-        cli_mark_scan_incomplete(ctx, "Word macro directory header could not be read completely");
-        return NULL;
+    read_status = word_read_fib(fd, &fib);
+    if (read_status != CL_SUCCESS) {
+        if (read_status == CL_ESEEK)
+            cli_mark_scan_incomplete(ctx, "Word macro directory header could not be positioned");
+        else if (read_status == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, "Word macro directory header could not be read completely");
+        else
+            cli_mark_scan_incomplete(ctx, "Word macro directory header was truncated");
+        return read_status;
     }
 
     if (fib.macro_len == 0) {
         cli_dbgmsg("wm_readdir: No macros detected\n");
         /* Must be clean */
-        return NULL;
+        return CL_SUCCESS;
     }
 
     if (FSTAT(fd, &statbuf) == -1 || statbuf.st_size < 0) {
         cli_mark_scan_incomplete(ctx, "Word macro directory could not be inspected");
-        return NULL;
+        return CL_ESTAT;
     }
 
     if ((uint64_t)fib.macro_offset > (uint64_t)statbuf.st_size ||
         (uint64_t)fib.macro_len > (uint64_t)statbuf.st_size - (uint64_t)fib.macro_offset) {
         cli_mark_scan_incomplete(ctx, "Word macro directory exceeds the input");
-        return NULL;
+        return CL_EPARSE;
     }
 
     cli_dbgmsg("wm_readdir: macro offset: 0x%.4x\n", (int)fib.macro_offset);
@@ -3400,14 +3447,14 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
     start_offset = (uint64_t)fib.macro_offset + 1;
     if (start_offset > (uint64_t)statbuf.st_size) {
         cli_mark_scan_incomplete(ctx, "Word macro directory has no complete start marker");
-        return NULL;
+        return CL_EPARSE;
     }
     {
         off_t seek_offset = (off_t)start_offset;
         if ((uint64_t)seek_offset != start_offset || lseek(fd, seek_offset, SEEK_SET) != seek_offset) {
             cli_dbgmsg("wm_readdir: lseek macro_offset failed\n");
             cli_mark_scan_incomplete(ctx, "Word macro directory could not be positioned");
-            return NULL;
+            return CL_ESEEK;
         }
     }
 
@@ -3420,17 +3467,23 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
         if (current_offset < 0 || (uint64_t)current_offset > end_offset) {
             cli_dbgmsg("wm_readdir: macro directory position failed\n");
             cli_mark_scan_incomplete(ctx, "Word macro directory position was invalid");
+            read_status = CL_ESEEK;
             malformed = TRUE;
             break;
         }
         if ((uint64_t)current_offset == end_offset) {
             cli_mark_scan_incomplete(ctx, "Word macro directory ended before its metadata was complete");
+            read_status = CL_EPARSE;
             malformed = TRUE;
             break;
         }
-        if (cli_readn(fd, &info_id, 1) != 1) {
+        read_status = vba_readn_full(fd, &info_id, sizeof(info_id));
+        if (read_status != CL_SUCCESS) {
             cli_dbgmsg("wm_readdir: read macro_info failed\n");
-            cli_mark_scan_incomplete(ctx, "Word macro directory metadata could not be read completely");
+            if (read_status == CL_EREAD)
+                cli_mark_scan_incomplete(ctx, "Word macro directory metadata could not be read completely");
+            else
+                cli_mark_scan_incomplete(ctx, "Word macro directory metadata was truncated");
             malformed = TRUE;
             break;
         }
@@ -3440,8 +3493,16 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
                     free(macro_info.entries);
                 macro_info.entries = NULL;
                 macro_info.count   = 0;
-                if (word_read_macro_info(fd, &macro_info, end_offset) < 0) {
-                    cli_mark_scan_incomplete(ctx, "Word macro directory metadata could not be read completely");
+                read_status = word_read_macro_info(fd, &macro_info, end_offset);
+                if (read_status != CL_SUCCESS) {
+                    if (read_status == CL_EREAD)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory metadata could not be read completely");
+                    else if (read_status == CL_EMEM)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory metadata could not be allocated");
+                    else if (read_status == CL_ESEEK)
+                        cli_mark_scan_incomplete(ctx, "Word macro directory metadata could not be positioned");
+                    else
+                        cli_mark_scan_incomplete(ctx, "Word macro directory metadata was truncated");
                     malformed = TRUE;
                 }
                 done = TRUE;
@@ -3449,6 +3510,7 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
             case 0x03:
                 if (!word_skip_oxo3(fd, end_offset)) {
                     cli_mark_scan_incomplete(ctx, "Word macro directory oxo3 record was truncated");
+                    read_status = CL_EPARSE;
                     malformed = TRUE;
                     done      = TRUE;
                 }
@@ -3456,6 +3518,7 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
             case 0x05:
                 if (!word_skip_menu_info(fd, end_offset)) {
                     cli_mark_scan_incomplete(ctx, "Word macro directory menu record was truncated");
+                    read_status = CL_EPARSE;
                     malformed = TRUE;
                     done      = TRUE;
                 }
@@ -3463,6 +3526,7 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
             case 0x10:
                 if (!word_skip_macro_extnames(fd, end_offset)) {
                     cli_mark_scan_incomplete(ctx, "Word macro directory external names were truncated");
+                    read_status = CL_EPARSE;
                     malformed = TRUE;
                     done      = TRUE;
                 }
@@ -3470,6 +3534,7 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
             case 0x11:
                 if (!word_skip_macro_intnames(fd, end_offset)) {
                     cli_mark_scan_incomplete(ctx, "Word macro directory internal names were truncated");
+                    read_status = CL_EPARSE;
                     malformed = TRUE;
                     done      = TRUE;
                 }
@@ -3481,6 +3546,7 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
             default:
                 cli_dbgmsg("wm_readdir: unknown type: 0x%x\n", info_id);
                 cli_mark_scan_incomplete(ctx, "Word macro directory contains an unknown record");
+                read_status = CL_EPARSE;
                 malformed = TRUE;
                 done      = TRUE;
                 break;
@@ -3489,14 +3555,14 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
 
     if (malformed || macro_info.count == 0) {
         free(macro_info.entries);
-        return NULL;
+        return malformed ? read_status : CL_SUCCESS;
     }
 
     vba_project = create_vba_project(macro_info.count, "", NULL);
     if (vba_project == NULL) {
         cli_mark_scan_incomplete(ctx, "Word macro project could not be allocated");
         free(macro_info.entries);
-        return NULL;
+        return CL_EMEM;
     }
 
     if (vba_project) {
@@ -3530,7 +3596,11 @@ cli_wm_readdir_ex(int fd, cli_ctx *ctx)
     }
     free(macro_info.entries);
 
-    return vba_project;
+    if (vba_project == NULL)
+        return CL_EMEM;
+
+    *project_out = vba_project;
+    return CL_SUCCESS;
 }
 
 unsigned char *
