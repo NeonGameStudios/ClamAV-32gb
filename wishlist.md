@@ -1,5 +1,18 @@
 # Wishlist
 
+## MIME body-spool status propagation — 2026-09-02
+
+- Retain the first specific required fileblob failure at the message body
+  boundary and through `cli_mbox()`, including `CL_ECREAT`, `CL_EOPEN`,
+  `CL_EWRITE`, `CL_ETIMEOUT`, and `CL_ERESOURCE`, instead of substituting
+  `CL_EMAXSIZE` or a generic parse failure.
+- Keep sticky incomplete/cache-taint behavior and the ordinary-text invalid
+  spool-directory regression. Complete current-source production-GCC
+  compilation and linked MIME execution, complete mail/multipart corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification.
+
 ## UUEncode fileblob status reconciliation — 2026-09-02
 
 - Carry the specific required fileblob failure status through the historical

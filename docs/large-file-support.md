@@ -3,6 +3,21 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## MIME body-spool status propagation — 2026-09-02
+
+Ordinary MIME body spooling now retains the first specific failure from its
+required fileblob operation at the message boundary. Body-spool creation and
+write failures remain visible through `cli_mbox()` as `CL_ECREAT`,
+`CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, or `CL_ERESOURCE`, rather than being
+reduced to `CL_EMAXSIZE` or a generic parse failure. Sticky incomplete and
+cache-taint behavior remains enforced. The new
+`test_mbox_body_spool_output_creation_status_is_fail_visible` regression
+requires `CL_ECREAT` for an invalid spool directory. Current-source
+production-GCC compilation, production-linked MIME execution, complete
+mail/multipart corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and
+final parser/release qualification remain required.
+
 ## UUEncode fileblob status reconciliation — 2026-09-02
 
 The historical `uudecodeFile()` negative-result interface now carries an

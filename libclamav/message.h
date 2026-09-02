@@ -56,6 +56,10 @@ typedef struct message {
      * list. This deep-parser representation is intentionally bounded. */
     size_t materialized_bytes;
 
+    /* First specific failure from a required disk-backed body-spool
+     * operation, if one occurred. */
+    cl_error_t materialization_status;
+
     /* Non-multipart bodies are appended to an on-disk fileblob after the
      * headers are parsed. Keeping this separate from body_first preserves the
      * legacy line-oriented multipart parser while preventing large ordinary
@@ -87,6 +91,7 @@ int messageAddLine(message *m, line_t *line);
 int messageAddStr(message *m, const char *data);
 int messageBeginBodySpool(message *m);
 int messageHasBodySpool(const message *m);
+cl_error_t messageGetMaterializationStatus(const message *m);
 int messageMoveText(message *m, text *t, message *old_message);
 text *messageGetBody(message *m);
 unsigned char *base64Flush(message *m, unsigned char *buf);

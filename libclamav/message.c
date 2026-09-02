@@ -143,6 +143,27 @@ static void messageMarkMaterializationFailure(message *m, const char *reason)
     cli_mark_scan_incomplete(m->ctx, reason);
 }
 
+static cl_error_t messageFileblobStatus(const fileblob *fb)
+{
+    if (fb == NULL)
+        return CL_ERESOURCE;
+    return fb->incomplete_status != CL_SUCCESS ? fb->incomplete_status : CL_ERESOURCE;
+}
+
+static void messageRecordFileblobFailure(message *m, const fileblob *fb,
+                                         const char *reason)
+{
+    cl_error_t status;
+
+    if (m == NULL)
+        return;
+
+    status = messageFileblobStatus(fb);
+    if (m->materialization_status == CL_SUCCESS)
+        m->materialization_status = status;
+    messageMarkMaterializationFailure(m, reason);
+}
+
 /* Header metadata selects the body decoder and MIME boundaries. Losing a
  * header value on an allocation or table-admission failure must therefore be
  * fail-visible just like losing body materialization. */
@@ -313,8 +334,8 @@ int messageBeginBodySpool(message *m)
     messageSetSpoolBuildContext(fb, m->ctx);
 
     if (fb->isIncomplete || fb->fp == NULL || fb->fullname == NULL) {
-        cli_mark_scan_incomplete(m->ctx,
-                                 "MIME body spool could not be created or opened");
+        messageRecordFileblobFailure(m, fb,
+                                     "MIME body spool could not be created or opened");
         fileblobDestroy(fb);
         m->isTruncated = 1;
         return -1;
@@ -345,8 +366,8 @@ static int messageAddSpoolLine(message *m, const char *data)
     if ((len && fileblobAddData(m->body_spool, line, len) < 0) ||
         fileblobAddData(m->body_spool, (const unsigned char *)"\n", 1) < 0) {
         m->isTruncated = 1;
-        cli_mark_scan_incomplete(m->ctx,
-                                 "MIME body temporary spool write was incomplete");
+        messageRecordFileblobFailure(m, m->body_spool,
+                                     "MIME body temporary spool write was incomplete");
         return -1;
     }
 
@@ -1888,6 +1909,8 @@ static int messageCopyBodySpool(message *m, fileblob *out)
             }
             n = fread(line, 1, sizeof(line), input);
             if (n != 0 && fileblobAddData(out, (const unsigned char *)line, n) < 0) {
+                messageRecordFileblobFailure(m, out,
+                                             "MIME body could not be copied completely from its spool");
                 failed = 1;
                 break;
             }
@@ -1937,6 +1960,9 @@ static int messageCopyBodySpool(message *m, fileblob *out)
         end = decodeLine(m, enctype, line, decoded, sizeof(decoded));
         if (end == NULL || (end != decoded && fileblobAddData(out, decoded,
                                                               (size_t)(end - decoded)) < 0)) {
+            if (end != NULL)
+                messageRecordFileblobFailure(m, out,
+                                             "MIME body could not be copied completely from its spool");
             failed = 1;
             break;
         }
@@ -1946,8 +1972,11 @@ static int messageCopyBodySpool(message *m, fileblob *out)
     if (!failed && m->base64chars) {
         unsigned char decoded[4];
         unsigned char *end = base64Flush(m, decoded);
-        if (end && fileblobAddData(out, decoded, (size_t)(end - decoded)) < 0)
+        if (end && fileblobAddData(out, decoded, (size_t)(end - decoded)) < 0) {
+            messageRecordFileblobFailure(m, out,
+                                         "MIME body could not be copied completely from its spool");
             failed = 1;
+        }
     }
     if (fclose(input) != 0)
         failed = 1;
@@ -2032,11 +2061,23 @@ static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy
 fail:
     if (filename)
         free(filename);
-    if (out)
+    if (out && out->isIncomplete) {
+        messageRecordFileblobFailure(m, out,
+                                     "MIME body could not be exported completely from its spool");
+    }
+    if (out) {
         fileblobDestructiveDestroy(out);
+    }
     cli_mark_scan_incomplete(m->ctx,
                              "MIME body could not be exported completely from its spool");
     return NULL;
+}
+
+cl_error_t messageGetMaterializationStatus(const message *m)
+{
+    if (m == NULL)
+        return CL_EARG;
+    return m->materialization_status;
 }
 
 /*

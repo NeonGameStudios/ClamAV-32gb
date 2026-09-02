@@ -828,10 +828,18 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
             }
         }
 
-        if (body->isTruncated && retcode == CL_SUCCESS) {
-            cli_append_potentially_unwanted_if_heur_exceedsmax(
-                ctx, "Heuristics.Limits.Exceeded.MailMaterialization", CL_EMAXSIZE);
-            retcode = CL_EMAXSIZE;
+        if (body->isTruncated) {
+            const cl_error_t materialization_status =
+                messageGetMaterializationStatus(body);
+
+            if (materialization_status != CL_SUCCESS &&
+                (retcode == CL_SUCCESS || retcode == CL_EFORMAT))
+                retcode = materialization_status;
+            else if (retcode == CL_SUCCESS) {
+                cli_append_potentially_unwanted_if_heur_exceedsmax(
+                    ctx, "Heuristics.Limits.Exceeded.MailMaterialization", CL_EMAXSIZE);
+                retcode = CL_EMAXSIZE;
+            }
         }
         /*
          * Tidy up and quit

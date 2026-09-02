@@ -37165,6 +37165,43 @@ START_TEST(test_mbox_uuencode_attachment_output_creation_status_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbox_body_spool_output_creation_status_is_fail_visible)
+{
+    static const uint8_t input[] =
+        "Content-Type: text/plain\n"
+        "\n"
+        "body\n";
+    struct cl_engine engine;
+    struct cli_dconf dconf;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    char bad_dir[PATH_MAX];
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    snprintf(bad_dir, sizeof(bad_dir), "%s/mbox-body-output-missing", tmpdir);
+    ctx.engine            = &engine;
+    ctx.dconf             = &dconf;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = bad_dir;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_mbox(bad_dir, &ctx), CL_ECREAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "fileblob temporary spool could not be created");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbox_initial_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "nonempty MIME input";
@@ -56004,6 +56041,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_mail, cl_setup, cl_teardown);
     tcase_add_test(tc_mail, test_mbox_uuencode_attachment_read_failure_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_uuencode_attachment_output_creation_status_is_fail_visible);
+    tcase_add_test(tc_mail, test_mbox_body_spool_output_creation_status_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_missing_map_is_fail_visible);
     tcase_add_test(tc_mail, test_mbox_time_limit_is_fail_visible);
