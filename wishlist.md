@@ -1,5 +1,18 @@
 # Wishlist
 
+## MSPack direct options admission — 2026-09-02
+
+- Keep exported `cli_scanmscab()` and `cli_scanmschm()` fail-visible when an
+  otherwise recognized engine/map context omits scan options; return
+  `CL_ENULLARG` before decoder construction, temporary-output admission,
+  extraction, or nested child scanning.
+- Retain `test_mspack_parsers_require_options`, its source guards, and
+  manifest evidence that the invalid context does not become sticky incomplete
+  or cache-tainted. Current-source production-GCC compilation,
+  production-linked execution, complete CAB/CHM corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification remain open.
+
 ## RTF direct options admission — 2026-09-02
 
 - Keep exported `cli_scanrtf()` fail-visible when an otherwise recognized

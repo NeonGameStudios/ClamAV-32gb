@@ -56501,6 +56501,28 @@ START_TEST(test_mspack_parsers_require_engine)
 }
 END_TEST
 
+START_TEST(test_mspack_parsers_require_options)
+{
+    static const uint8_t input[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_scanmscab(&ctx, 0), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert_int_eq(cli_scanmschm(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_zip_scan_entries_require_engine)
 {
     static const uint8_t input[] = {0};
@@ -57713,6 +57735,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_mspack_map);
     tcase_add_checked_fixture(tc_mspack_map, cl_setup, cl_teardown);
     tcase_add_test(tc_mspack_map, test_mspack_missing_map_is_fail_visible);
+    tcase_add_test(tc_mspack_map, test_mspack_parsers_require_options);
     tcase_add_test(tc_mspack_map, test_mspack_decoder_read_failure_is_fail_visible);
     tcase_add_test(tc_mspack_map, test_mspack_clipped_read_failure_is_truncation);
 #ifdef CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP

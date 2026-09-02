@@ -695,6 +695,8 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
     }
     if (NULL == ctx->engine)
         return CL_ENULLARG;
+    if (NULL == ctx->options)
+        return CL_ENULLARG;
 
     mspack_fmap.fmap = ctx->fmap;
 
@@ -916,6 +918,8 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         return CL_EPARSE;
     }
     if (NULL == ctx->engine)
+        return CL_ENULLARG;
+    if (NULL == ctx->options)
         return CL_ENULLARG;
     mspack_fmap.fmap = ctx->fmap;
 
