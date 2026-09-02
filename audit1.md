@@ -1,5 +1,25 @@
 # Independent read-only audit of audit.md
 
+## ARJ scanner header failure reconciliation — 2026-09-01
+
+The owning `cli_scanarj()` boundary previously returned non-success results
+from `cli_unarj_open()` and `cli_unarj_prepare_file()` without reconciling
+failures that the lower-level helper could not mark. A fully in-range fmap
+callback failure while reading the ARJ main header could therefore return
+`CL_EREAD` without sticky incomplete state; the same gap existed for member
+header failures after archive admission. The scanner now records exact
+main-header and member-header diagnostics for those unmarked failures while
+preserving `CL_EREAD`, other parser/resource statuses, and normal `CL_BREAK`
+end-of-archive handling.
+
+`test_arj_scan_header_read_failures_are_fail_visible` directly exercises both
+owner paths and requires the exact sticky reason and fmap non-cacheability.
+The lower-level `cli_unarj_open()` regression remains in the ARJ map case.
+Current-source production-GCC compilation, production-linked execution,
+sanitizer, complete ARJ/ARJ-SFX corpus, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## Root metadata initialization failure visibility — 2026-09-01
 
 The required root metadata object and its initial `Magic`, file identity,

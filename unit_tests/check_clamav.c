@@ -41666,11 +41666,68 @@ START_TEST(test_arj_stored_member_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_arj_scan_header_read_failures_are_fail_visible)
+{
+    uint8_t data[87];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    data[0] = 0x60;
+    data[1] = 0xea;
+    arj_test_write_u16(data + 2, 34);
+    data[4]  = 30;
+    data[34] = 'a';
+
+    data[43] = 0x60;
+    data[44] = 0xea;
+    arj_test_write_u16(data + 45, 35);
+    data[47] = 30;
+    data[52] = 0;
+    arj_test_write_u32(data + 59, 2);
+    arj_test_write_u32(data + 63, 2);
+    data[77] = 'f';
+    data[86] = 'x';
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need             = arj_targeted_read_failure;
+    ctx.engine            = &engine;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    arj_read_failure_offset = 4U;
+    ret                     = cli_scanarj(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ main header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag       = false;
+    arj_read_failure_offset    = 45U;
+    ret                         = cli_scanarj(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ member header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    arj_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_arj_main_header_read_failure_is_fail_visible)
 {
     uint8_t data[40];
     struct cl_engine engine;
     cli_ctx ctx;
+    arj_metadata_t metadata;
     fmap_t *map;
     size_t archive_size = 0;
     cl_error_t ret;
@@ -41678,6 +41735,7 @@ START_TEST(test_arj_main_header_read_failure_is_fail_visible)
     memset(data, 0, sizeof(data));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
+    memset(&metadata, 0, sizeof(metadata));
     data[0] = 0x60;
     data[1] = 0xea;
     arj_test_write_u16(data + 2, 34);
@@ -41691,6 +41749,17 @@ START_TEST(test_arj_main_header_read_failure_is_fail_visible)
     ctx.fmap              = map;
 
     ret = cli_unarj_header_check(&ctx, 0, &archive_size);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ main header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag       = false;
+    metadata.ctx                = &ctx;
+    arj_read_failure_offset     = 4U;
+    ret                         = cli_unarj_open(map, NULL, &metadata);
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ main header could not be read completely");
@@ -56514,6 +56583,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_arj, test_arj_truncated_signature_is_parse_error);
     tcase_add_test(tc_arj, test_arj_time_limit_is_fail_visible);
     tcase_add_test(tc_arj, test_arj_stored_member_read_failure_is_fail_visible);
+    tcase_add_test(tc_arj, test_arj_scan_header_read_failures_are_fail_visible);
     tcase_add_test(tc_arj, test_arj_truncated_member_is_fail_visible);
     tcase_add_test(tc_arj, test_arj_truncated_member_extraction_is_fail_visible);
     tcase_add_test(tc_arj, test_arj_output_size_mismatch_is_fail_visible);

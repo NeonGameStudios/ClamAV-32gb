@@ -1707,6 +1707,12 @@ cl_error_t cli_scanarj(cli_ctx *ctx)
 
     ret = cli_unarj_open(ctx->fmap, dir, &metadata);
     if (ret != CL_SUCCESS) {
+        if (!ctx->scan_incomplete && ret != CL_BREAK) {
+            cli_mark_scan_incomplete(ctx,
+                                     ret == CL_EREAD
+                                         ? "ARJ main header could not be read completely"
+                                         : "ARJ main header could not be inspected completely");
+        }
         ret = cli_arj_cleanup_dir(ctx, &dir, ret);
         cli_dbgmsg("ARJ: Error: %s\n", cl_strerror(ret));
         return ret;
@@ -1718,6 +1724,12 @@ cl_error_t cli_scanarj(cli_ctx *ctx)
         ret = cli_unarj_prepare_file(&metadata);
         if (ret != CL_SUCCESS) {
             cli_dbgmsg("ARJ: cli_unarj_prepare_file Error: %s\n", cl_strerror(ret));
+            if (ret != CL_BREAK && !ctx->scan_incomplete) {
+                cli_mark_scan_incomplete(ctx,
+                                         ret == CL_EREAD
+                                             ? "ARJ member header could not be read completely"
+                                             : "ARJ member header could not be inspected completely");
+            }
             break;
         }
 

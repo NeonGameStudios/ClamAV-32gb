@@ -3,6 +3,23 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## ARJ scanner header failure reconciliation — 2026-09-01
+
+The owning `cli_scanarj()` boundary now reconciles non-success results from
+`cli_unarj_open()` and `cli_unarj_prepare_file()` when a lower-level helper
+has not already recorded a sticky diagnostic. In-range main-header and
+member-header fmap callback failures remain `CL_EREAD`; other inspection
+failures remain fail-visible, while normal `CL_BREAK` end-of-archive
+termination is preserved. The exact diagnostic also taints the recognized
+fmap non-cacheable.
+
+`test_arj_scan_header_read_failures_are_fail_visible` directly exercises both
+owner paths. The lower-level `cli_unarj_open()` read-failure regression remains
+in the ARJ map case. Current-source production-GCC compilation,
+production-linked execution, complete ARJ/ARJ-SFX corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## Root metadata initialization failure visibility — 2026-09-01
 
 Required root metadata allocation and initialization now mark the scan
