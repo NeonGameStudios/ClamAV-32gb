@@ -153,7 +153,13 @@ static void scanner_thread(void *arg)
             report_status = CL_VIRUS;
         else if (report_status == CL_SUCCESS && errors)
             report_status = CL_ERROR;
-        (void)conn_reply_scan_report(conn, report_status, virus);
+        if (conn_reply_scan_report(conn, report_status, virus) == -1) {
+            /* A clean worker must not be counted as successful when the
+             * required structured completion frame could not be delivered. */
+            if (virus == 0 && errors == 0)
+                errors = 1;
+            thrmgr_group_terminate(conn->group);
+        }
     }
 
     if (conn->structured_scan_report) {

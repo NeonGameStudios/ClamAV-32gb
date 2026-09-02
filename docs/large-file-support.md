@@ -511,6 +511,18 @@ service parity, sanitizer, certified Linux x86-64, production-CVD,
 materialized-large-file, Sonic1, resource, and final release qualification
 remain required.
 
+## clamd structured completion response failure — 2026-09-02
+
+The clamd scanner worker now checks delivery of its final structured JSON
+completion frame. Previously, an otherwise-clean worker ignored a failed
+transport write and could be counted as `EXIT_OK` even though the required
+report never reached the client. A failed final report write now becomes a
+worker error when no detection or earlier error already dominates, and the
+associated group is terminated. Focused daemon transport fault injection,
+production-linked structured/legacy service parity, sanitizer, certified
+Linux x86-64, production-CVD, materialized-large-file, Sonic1, resource, and
+final release qualification remain required.
+
 ## Exported child-ingress recursion-state admission — 2026-09-01
 
 Descriptor, file, directory, nested-map, and buffer scan entrypoints now share a

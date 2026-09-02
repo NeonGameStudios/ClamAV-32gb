@@ -618,6 +618,17 @@
   production-CVD, materialized-large-file, Sonic1, resource, and final
   release qualification.
 
+## clamd structured completion response failure — 2026-09-02
+
+- Keep a failed final structured JSON report write fail-visible: a clean
+  scanner worker must not finish as `EXIT_OK` after its required completion
+  frame cannot be delivered.
+- Preserve detection and earlier error precedence, terminate the associated
+  group on transport failure, and add focused daemon fault-injection evidence;
+  complete current-source production-linked, structured/legacy service,
+  sanitizer, certified Linux x86-64, production-CVD, materialized-large-file,
+  Sonic1, resource, and final release qualification.
+
 ## MSPack filename-backed position failure propagation — 2026-09-02
 
 - Keep filename-backed `fseeko()`/`fseek()` and `ftello()` failures in the

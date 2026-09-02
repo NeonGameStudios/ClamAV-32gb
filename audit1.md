@@ -3549,6 +3549,18 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final release qualification
 remain required.
 
+## clamd structured completion response failure — 2026-09-02
+
+The clamd scanner worker previously ignored the return value from its final
+structured JSON report write. A clean scan could therefore be counted as
+`EXIT_OK` after the required completion frame failed at the transport layer.
+The worker now converts that failed final report delivery into an error exit
+when no detection or earlier error already dominates, and terminates the
+associated group. Focused daemon transport fault injection, current-source
+production-linked execution, structured/legacy service parity, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final release qualification remain required.
+
 ## Regex matcher table admission — 2026-08-29
 
 The phishing/allow-list matcher grew suffix-bucket and compiled-regex pointer
