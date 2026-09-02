@@ -7711,6 +7711,18 @@ contains libclamav/others.c 'cli_recursion_stack_pop: invalid scan context or re
 contains libclamav/others.c 'cli_recursion_stack_get_type: invalid scan context or recursion stack'
 contains libclamav/others.c 'cli_recursion_stack_get_size: invalid scan context or recursion stack'
 contains unit_tests/check_clamav.c 'test_recursion_stack_helpers_reject_invalid_contexts'
+contains libclamav/scanners.c 'MHTML type correction could not be recorded'
+contains libclamav/scanners.c 'XDP type correction could not be recorded'
+contains libclamav/scanners.c 'XML-WORD type correction could not be recorded'
+contains libclamav/scanners.c 'XML-XL type correction could not be recorded'
+contains libclamav/scanners.c 'XML-HWP type correction could not be recorded'
+contains libclamav/scanners.c 'DMG type correction could not be recorded'
+contains libclamav/scanners.c 'ISO type correction could not be recorded'
+contains libclamav/scanners.c 'UDF type correction could not be recorded'
+contains libclamav/scanners.c 'GPT type correction could not be recorded'
+contains libclamav/scanners.c 'MBR type correction could not be recorded'
+contains libclamav/scanners.c 'HTML type correction could not be recorded'
+contains libclamav/scanners.c 'mail type correction could not be recorded'
 
 if ! awk '
     /^[[:space:]]*#[[:space:]]*(if|ifdef|ifndef)([[:space:]]|$)/ { depth++; next }

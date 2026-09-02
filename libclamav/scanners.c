@@ -5873,6 +5873,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Reassign type of current layer based on what we discovered
                                 if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, fpt->type, true))) {
                                     cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                                    cli_mark_scan_incomplete(ctx, "MHTML type correction could not be recorded");
+                                    nret = cli_merge_scan_status(nret, ret);
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("MHTML signature found at " STDu64 "\n", (uint64_t)fpt->offset);
@@ -5893,6 +5895,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Reassign type of current layer based on what we discovered
                                 if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, fpt->type, true))) {
                                     cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                                    cli_mark_scan_incomplete(ctx, "XDP type correction could not be recorded");
+                                    nret = cli_merge_scan_status(nret, ret);
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("XDP signature found at " STDu64 "\n", (uint64_t)fpt->offset);
@@ -5913,6 +5917,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Reassign type of current layer based on what we discovered
                                 if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, fpt->type, true))) {
                                     cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                                    cli_mark_scan_incomplete(ctx, "XML-WORD type correction could not be recorded");
+                                    nret = cli_merge_scan_status(nret, ret);
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("XML-WORD signature found at " STDu64 "\n", (uint64_t)fpt->offset);
@@ -5932,6 +5938,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Reassign type of current layer based on what we discovered
                                 if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, fpt->type, true))) {
                                     cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                                    cli_mark_scan_incomplete(ctx, "XML-XL type correction could not be recorded");
+                                    nret = cli_merge_scan_status(nret, ret);
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("XML-XL signature found at " STDu64 "\n", (uint64_t)fpt->offset);
@@ -5951,6 +5959,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Reassign type of current layer based on what we discovered
                                 if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, fpt->type, true))) {
                                     cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                                    cli_mark_scan_incomplete(ctx, "XML-HWP type correction could not be recorded");
+                                    nret = cli_merge_scan_status(nret, ret);
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("XML-HWP signature found at " STDu64 "\n", (uint64_t)fpt->offset);
@@ -5969,6 +5979,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Reassign type of current layer based on what we discovered
                                 if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, fpt->type, true))) {
                                     cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                                    cli_mark_scan_incomplete(ctx, "DMG type correction could not be recorded");
+                                    nret = cli_merge_scan_status(nret, ret);
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("DMG signature found at " STDu64 "\n", (uint64_t)fpt->offset);
@@ -5986,6 +5998,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Reassign type of current layer based on what we discovered
                                 if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, fpt->type, true))) {
                                     cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                                    cli_mark_scan_incomplete(ctx, "ISO type correction could not be recorded");
+                                    nret = cli_merge_scan_status(nret, ret);
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("ISO signature found at " STDu64 "\n", (uint64_t)fpt->offset);
@@ -6001,6 +6015,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Reassign type of current layer based on what we discovered
                                 if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, fpt->type, true))) {
                                     cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                                    cli_mark_scan_incomplete(ctx, "UDF type correction could not be recorded");
+                                    nret = cli_merge_scan_status(nret, ret);
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("UDF signature found at " STDu64 "\n", (uint64_t)fpt->offset);
@@ -6022,6 +6038,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     // Reassign type of current layer based on what we discovered
                                     if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, CL_TYPE_GPT, true))) {
                                         cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                                        cli_mark_scan_incomplete(ctx, "GPT type correction could not be recorded");
+                                        nret = cli_merge_scan_status(nret, ret);
                                         type_has_been_handled = false;
                                     } else {
                                         cli_dbgmsg("Recognized GUID Partition Table file\n");
@@ -6032,6 +6050,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     // Reassign type of current layer based on what we discovered
                                     if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, CL_TYPE_MBR, true))) {
                                         cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                                        cli_mark_scan_incomplete(ctx, "MBR type correction could not be recorded");
+                                        nret = cli_merge_scan_status(nret, ret);
                                         type_has_been_handled = false;
                                     } else {
                                         cli_dbgmsg("MBR signature found at " STDu64 "\n", (uint64_t)fpt->offset);
@@ -6493,6 +6513,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         *dettype = CL_TYPE_HTML;
                         if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, CL_TYPE_HTML, true))) {
                             cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                            cli_mark_scan_incomplete(ctx, "HTML type correction could not be recorded");
+                            nret = cli_merge_scan_status(nret, ret);
                         } else {
                             nret = cli_merge_scan_status(nret, cli_scanhtml(ctx));
                         }
@@ -6504,6 +6526,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         *dettype = CL_TYPE_MAIL;
                         if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, CL_TYPE_MAIL, true))) {
                             cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
+                            cli_mark_scan_incomplete(ctx, "mail type correction could not be recorded");
+                            nret = cli_merge_scan_status(nret, ret);
                         } else {
                             nret = cli_merge_scan_status(nret, cli_scanmail(ctx));
                         }

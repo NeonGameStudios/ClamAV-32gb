@@ -21598,3 +21598,18 @@ current-source production-GCC compilation, linked execution, complete
 partial/MIME corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
 and parser/release qualification remain required.
+
+## Raw type-correction status reconciliation — 2026-09-02
+
+`scanraw()` logged failures from `cli_recursion_stack_change_type()` while
+leaving the aggregate status unchanged. The final `ret = nret` therefore
+discarded callback, metadata, or invalid-context failures; the affected
+recognition paths could continue through fallback dispatch and appear clean.
+MHTML, XDP, XML-WORD/XML-XL/XML-HWP, DMG, ISO, UDF, GPT, MBR, HTML, and mail
+correction failures now mark the containing layer incomplete and merge the
+exact status before any fallback handling. The source guards pin each
+affected reason and the raw-dispatch capability manifest records the
+reconciliation. A production-linked callback-injection regression, current
+source GCC build, sanitizer, complete recognition/embedded corpus, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.

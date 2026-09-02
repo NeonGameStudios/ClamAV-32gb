@@ -13047,3 +13047,15 @@ qualification remain open.
   partial/MIME corpus, sanitizer, certified Linux x86-64, production-CVD/
   service, materialized-large-file, Sonic1, resource, and parser/release
   qualification remain open.
+
+## Raw type-correction status reconciliation — 2026-09-02
+
+- Keep failed `cli_recursion_stack_change_type()` calls in `scanraw()`
+  fail-visible: mark the containing layer incomplete and merge callback,
+  metadata, or invalid-context status before fallback dispatch for MHTML, XDP,
+  XML-WORD/XML-XL/XML-HWP, DMG, ISO, UDF, GPT, MBR, HTML, and mail paths.
+- Retain the per-path source guards and raw-dispatch capability-manifest
+  evidence. Add production-linked callback-injection execution, current-source
+  GCC compilation, sanitizer, complete recognition/embedded corpus, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification before release closure.
