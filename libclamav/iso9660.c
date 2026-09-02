@@ -398,6 +398,8 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
         return iso_incomplete(ctx, "ISO input map is unavailable");
     if (ctx->engine == NULL)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     status = cli_checktimelimit(ctx);
     if (status != CL_SUCCESS) {

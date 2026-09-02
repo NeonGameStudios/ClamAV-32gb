@@ -35,6 +35,23 @@ ingress/parser corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## ISO9660 direct options admission — 2026-09-02
+
+The exported `cli_scaniso()` entry rejected null context, input fmap, and
+engine state but did not reject missing scan options before descriptor
+inspection. A direct caller with an otherwise recognized context could enter
+the ISO walk and eventually invoke child scanning without the required scan
+configuration. The entry now returns `CL_ENULLARG` immediately after engine
+admission when `ctx->options` is absent.
+
+`test_iso_missing_options_is_fail_visible` supplies a map and engine while
+omitting options, and verifies `CL_ENULLARG` without sticky incomplete or
+cache-taint state. Source guards and the capability manifest record the
+boundary. Current-source production-GCC compilation, production-linked
+execution, complete ISO/Joliet corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## CPIO direct scan-state admission — 2026-09-02
 
 The CPIO old-binary, ODC, NEWC, and CRC direct parser entries required an
