@@ -2343,6 +2343,31 @@ START_TEST(test_scan_report_allocation_failure_clears_output)
 END_TEST
 #endif
 
+START_TEST(test_cl_scanfile_missing_filename_is_fail_visible)
+{
+    struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t report_status;
+
+    memset(&options, 0, sizeof(options));
+    ck_assert_int_eq(cl_scanfile_ex2(NULL, &verdict, &last_alert, &scanned,
+                                     g_engine, &options, NULL, NULL, NULL, NULL,
+                                     NULL, NULL, &report),
+                     CL_ENULLARG);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert_uint_eq(scanned, 0);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_ENULLARG);
+
+    cl_scan_report_free(report);
+}
+END_TEST
+
 START_TEST(test_scan_report_last_alert_offset_contract)
 {
     cl_scan_report_t *report = NULL;
@@ -59239,6 +59264,7 @@ static Suite *test_cl_suite(void)
     tcase_add_loop_test(tc_cl_scan, test_cl_scanfile, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_cl_scanfile_allscan, 0, expect);
     tcase_add_test(tc_cl_scan, test_mbox_large_body_uses_streaming_spool);
+    tcase_add_test(tc_cl_scan, test_cl_scanfile_missing_filename_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_mbox_large_body_streams_without_alert);
     tcase_add_test(tc_cl_scan, test_partial_message_missing_fragment_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_unknown_message_subtype_is_fail_visible);

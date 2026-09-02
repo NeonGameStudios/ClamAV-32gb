@@ -10005,10 +10005,20 @@ static cl_error_t scanfile_ex2_with_temporary_bytes(
     if (NULL != file_type_out)
         *file_type_out = NULL;
 
-    fname = cli_to_utf8_maybe_alloc(filename);
-
     if (NULL != report_out)
         *report_out = NULL;
+
+    if (NULL == filename || NULL == verdict_out || NULL == last_alert_out ||
+        NULL == engine || NULL == scanoptions) {
+        if (NULL != report_out && cli_scan_report_create(&report, engine) == CL_SUCCESS) {
+            *report_out = report;
+            cli_scan_report_set_target(report, filename);
+            cli_scan_report_finish(report, NULL, CL_ENULLARG, CL_VERDICT_NOTHING_FOUND, NULL);
+        }
+        return CL_ENULLARG;
+    }
+
+    fname = cli_to_utf8_maybe_alloc(filename);
 
     if (!fname) {
         if (NULL != report_out) {

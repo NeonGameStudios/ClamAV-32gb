@@ -1,5 +1,17 @@
 # Wishlist
 
+## Public file-scan parameter admission — 2026-09-02
+
+- Keep `cl_scanfile_ex2()` fail-visible when the filename or required output,
+  engine, or scan-options pointer is absent; reject the incomplete context
+  before platform filename conversion or file opening, preserve the initialized
+  output contract, and finish a requested report with `CL_ENULLARG`.
+- Retain `test_cl_scanfile_missing_filename_is_fail_visible`, its source
+  guards, and manifest evidence. Current-source production-GCC compilation,
+  production-linked execution, complete ingress/API corpus, sanitizer, service
+  parity, certified Linux x86-64, production-CVD, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification remain open.
+
 ## UDF anchored main-sequence deadline — 2026-09-02
 
 - Keep the confirmed UDF anchor main-descriptor sequence bounded by the

@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## Public file-scan parameter admission — 2026-09-02
+
+`cl_scanfile_ex2()` reset its outputs but passed `filename` to the platform
+encoding helper before validating the required file name, output, engine, and
+scan-options arguments. On Windows, a null filename could therefore reach
+`strlen()` in `cli_to_utf8_maybe_alloc()`; on other platforms it could fall
+through to a lower-level open failure. The entry now rejects the incomplete
+API context before filename conversion or file opening and completes a
+requested report with `CL_ENULLARG`.
+
+`test_cl_scanfile_missing_filename_is_fail_visible` supplies stale output
+values and a report request, then verifies that the outputs are reset, the
+return and report status are `CL_ENULLARG`, and no file operation is attempted.
+Source guards and the capability manifest record the boundary. Current-source
+production-GCC compilation, production-linked execution, complete ingress/API
+corpus, sanitizer, service parity, certified Linux x86-64, production-CVD,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## UDF anchored main-sequence deadline — 2026-09-02
 
 The confirmed UDF anchor path already bounded the main volume-descriptor
