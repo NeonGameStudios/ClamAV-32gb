@@ -44,6 +44,7 @@ struct mspack_system_ex {
     bool limit_exceeded;
     bool write_failure;
     bool close_failure;
+    bool allocation_failure;
     const char *time_limit_reason;
 };
 
@@ -59,6 +60,14 @@ struct mspack_handle {
     bool limit_exceeded;
     struct mspack_system_ex *system_ex;
 };
+
+static struct mspack_system_ex *mspack_system_ex_from_ops(struct mspack_system *ops)
+{
+    if (ops == NULL)
+        return NULL;
+
+    return (struct mspack_system_ex *)((char *)ops - offsetof(struct mspack_system_ex, ops));
+}
 
 static bool mspack_deadline_ok(struct mspack_system_ex *system_ex)
 {
@@ -87,6 +96,8 @@ static cl_error_t mspack_decoder_failure(const struct mspack_system_ex *system_e
         return CL_EMAXSIZE;
     if (system_ex->write_failure)
         return CL_EWRITE;
+    if (system_ex->allocation_failure)
+        return CL_EMEM;
     return fallback;
 }
 
@@ -134,15 +145,16 @@ static struct mspack_file *mspack_fmap_open(struct mspack_system *self,
     struct mspack_handle *mspack_handle;
     struct mspack_system_ex *self_ex;
     const char *fmode;
-    const struct mspack_system *mptr = self;
 
     if (!self || !filename) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         return NULL;
     }
-    self_ex = (struct mspack_system_ex *)((char *)mptr - offsetof(struct mspack_system_ex, ops));
+    self_ex = mspack_system_ex_from_ops(self);
     mspack_handle = malloc(sizeof(*mspack_handle));
     if (!mspack_handle) {
+        if (self_ex != NULL)
+            self_ex->allocation_failure = true;
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         return NULL;
     }
@@ -503,8 +515,10 @@ static void mspack_fmap_message(struct mspack_file *file, const char *fmt, ...)
 
 static void *mspack_fmap_alloc(struct mspack_system *self, size_t num)
 {
-    UNUSEDPARAM(self);
+    struct mspack_system_ex *self_ex = mspack_system_ex_from_ops(self);
     void *addr = cli_max_malloc(num);
+    if (addr == NULL && num != 0 && self_ex != NULL)
+        self_ex->allocation_failure = true;
     if (addr) {
         memset(addr, 0, num);
     }
@@ -641,8 +655,11 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
     cab_d = mspack_create_cab_decompressor(&ops_ex.ops);
     if (NULL == cab_d) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
-        cli_mark_scan_incomplete(ctx, "CAB decompressor could not be constructed");
-        status = CL_EUNPACK;
+        status = mspack_decoder_failure(&ops_ex, CL_EUNPACK);
+        if (status == CL_EMEM)
+            cli_mark_scan_incomplete(ctx, "CAB decompressor could not be allocated");
+        else
+            cli_mark_scan_incomplete(ctx, "CAB decompressor could not be constructed");
         goto done;
     }
 
@@ -651,7 +668,9 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CAB archive header could not be inspected completely");
         status = mspack_decoder_failure(&ops_ex, CL_EPARSE);
-        if (status == CL_ESEEK)
+        if (status == CL_EMEM)
+            cli_mark_scan_incomplete(ctx, "CAB archive metadata could not be allocated");
+        else if (status == CL_ESEEK)
             cli_mark_scan_incomplete(ctx, "CAB archive header position could not be established");
         goto done;
     }
@@ -733,8 +752,11 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
     cab_d = mspack_create_cab_decompressor(&ops_ex.ops);
     if (!cab_d) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
-        cli_mark_scan_incomplete(ctx, "CAB decompressor could not be constructed");
-        ret = CL_EUNPACK;
+        ret = mspack_decoder_failure(&ops_ex, CL_EUNPACK);
+        if (ret == CL_EMEM)
+            cli_mark_scan_incomplete(ctx, "CAB decompressor could not be allocated");
+        else
+            cli_mark_scan_incomplete(ctx, "CAB decompressor could not be constructed");
         goto done;
     }
 
@@ -748,7 +770,9 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CAB archive could not be opened for inspection");
         ret = mspack_decoder_failure(&ops_ex, CL_EFORMAT);
-        if (ret == CL_ESEEK)
+        if (ret == CL_EMEM)
+            cli_mark_scan_incomplete(ctx, "CAB archive metadata could not be allocated");
+        else if (ret == CL_ESEEK)
             cli_mark_scan_incomplete(ctx, "CAB archive position could not be established");
         goto done;
     }
@@ -850,6 +874,11 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
     if (ops_ex.write_failure) {
         cli_mark_scan_incomplete(ctx, "CAB member output could not be written completely");
         ret = CL_EWRITE;
+        goto done;
+    }
+    if (ops_ex.allocation_failure) {
+        cli_mark_scan_incomplete(ctx, "CAB member decoder allocation failed");
+        ret = CL_EMEM;
         goto done;
     }
     if (ops_ex.close_failure) {
@@ -958,8 +987,11 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
     mschm_d = mspack_create_chm_decompressor(&ops_ex.ops);
     if (!mschm_d) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
-        cli_mark_scan_incomplete(ctx, "CHM decompressor could not be constructed");
-        ret = CL_EUNPACK;
+        ret = mspack_decoder_failure(&ops_ex, CL_EUNPACK);
+        if (ret == CL_EMEM)
+            cli_mark_scan_incomplete(ctx, "CHM decompressor could not be allocated");
+        else
+            cli_mark_scan_incomplete(ctx, "CHM decompressor could not be constructed");
         goto done;
     }
 
@@ -968,7 +1000,9 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CHM archive could not be opened for inspection");
         ret = mspack_decoder_failure(&ops_ex, CL_EFORMAT);
-        if (ret == CL_ESEEK)
+        if (ret == CL_EMEM)
+            cli_mark_scan_incomplete(ctx, "CHM archive metadata could not be allocated");
+        else if (ret == CL_ESEEK)
             cli_mark_scan_incomplete(ctx, "CHM archive position could not be established");
         goto done;
     }
@@ -1075,6 +1109,11 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         if (ops_ex.write_failure) {
             cli_mark_scan_incomplete(ctx, "CHM member output could not be written completely");
             ret = CL_EWRITE;
+            goto done;
+        }
+        if (ops_ex.allocation_failure) {
+            cli_mark_scan_incomplete(ctx, "CHM member decoder allocation failed");
+            ret = CL_EMEM;
             goto done;
         }
         if (ops_ex.close_failure) {

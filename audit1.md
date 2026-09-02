@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## MSPack decoder allocation status — 2026-09-02
+
+The MSPack bridge already bounded decoder-requested allocations with
+`cli_max_malloc()`, but a callback allocation failure did not survive into the
+shared decoder status. Constructor failure therefore returned generic
+`CL_EUNPACK`, and allocation failures during archive metadata or member
+extraction could be flattened to generic parse failure. The bridge now retains
+an allocation-failure flag in `mspack_system_ex`, uses it for CAB and CHM
+constructor/open/extraction status reconciliation, marks the recognized layer
+incomplete/non-cacheable, and preserves stronger timeout, read, position,
+limit, and write failures. The Linux static-link regression
+`test_mspack_decoder_allocation_failure_is_fail_visible` injects the first
+decoder allocation failure for both direct parser entries and requires
+`CL_EMEM` plus exact CAB/CHM diagnostics. Current-source production-GCC
+compilation and linked execution, complete CAB/CHM corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final MSPack/parser-release qualification remain
+required.
+
 ## NSIS BZIP2 decoder finalization status — 2026-09-02
 
 Enabled NSIS raw-BZIP2 cleanup now checks the vendored

@@ -394,6 +394,7 @@ static bool pdf_test_fail_output_window_allocation;
 static unsigned int pdf_test_output_window_allocation_failures;
 static bool scan_report_test_fail_allocation;
 static unsigned int scan_report_test_allocation_failures;
+static int mspack_test_fail_next_allocation;
 int htmlnorm_test_fail_next_malloc;
 int htmlnorm_test_fail_next_realloc;
 #endif
@@ -47345,6 +47346,51 @@ START_TEST(test_mspack_callback_time_limit_is_fail_visible)
 END_TEST
 #endif
 
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+START_TEST(test_mspack_decoder_allocation_failure_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    mspack_test_fail_next_allocation = 1;
+    ret = cli_scanmscab(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "CAB decompressor could not be allocated");
+    ck_assert(map->dont_cache_flag);
+
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag       = false;
+    mspack_test_fail_next_allocation = 1;
+    ret = cli_scanmschm(&ctx);
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "CHM decompressor could not be allocated");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_mspack_output_close_failure_is_fail_visible)
 {
@@ -48011,6 +48057,10 @@ extern void *__real_realloc(void *ptr, size_t size);
 
 void *__wrap_malloc(size_t size)
 {
+    if (mspack_test_fail_next_allocation) {
+        mspack_test_fail_next_allocation = 0;
+        return NULL;
+    }
     if (htmlnorm_test_fail_next_malloc) {
         htmlnorm_test_fail_next_malloc = 0;
         return NULL;
@@ -59692,6 +59742,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mspack_map, test_mspack_parsers_require_options);
     tcase_add_test(tc_mspack_map, test_mspack_decoder_read_failure_is_fail_visible);
     tcase_add_test(tc_mspack_map, test_mspack_clipped_read_failure_is_truncation);
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+    tcase_add_test(tc_mspack_map, test_mspack_decoder_allocation_failure_is_fail_visible);
+#endif
 #ifdef CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP
     tcase_add_test(tc_mspack_map, test_mspack_constructor_failures_are_fail_visible);
     tcase_add_test(tc_mspack_map, test_mspack_callback_time_limit_is_fail_visible);

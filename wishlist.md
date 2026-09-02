@@ -1,5 +1,19 @@
 # Wishlist
 
+## MSPack decoder allocation status — 2026-09-02
+
+- Keep bounded MSPack decoder allocations fail-visible through the shared
+  `mspack_system_ex` state. Preserve `CL_EMEM` for CAB/CHM constructor,
+  archive-metadata, and member-decoder allocation failures, mark the
+  recognized layer incomplete/non-cacheable, and retain stronger timeout,
+  read, position, limit, write, and cleanup statuses.
+- Retain `test_mspack_decoder_allocation_failure_is_fail_visible`, its
+  one-shot malloc wrapper for both direct parser entries, exact diagnostics,
+  cache-taint assertions, and source guards. Current-source production-GCC
+  execution, complete CAB/CHM corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final MSPack/parser-release qualification remain open.
+
 ## NSIS BZIP2 decoder finalization status — 2026-09-02
 
 - Keep NSIS raw-BZIP2 teardown fail-visible at non-solid member shutdown and
