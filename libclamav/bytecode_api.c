@@ -136,12 +136,19 @@ uint32_t cli_bcapi_test2(struct cli_bc_ctx *ctx, uint32_t a)
 int32_t cli_bcapi_read(struct cli_bc_ctx *ctx, uint8_t *data, int32_t size)
 {
     size_t n;
+    if (!ctx)
+        return -1;
     if (!ctx->fmap) {
         API_MISUSE();
         return -1;
     }
     if (size < 0) {
         cli_warnmsg("bytecode: negative read size: %d\n", size);
+        API_MISUSE();
+        return -1;
+    }
+    if (size > 0 && !data) {
+        cli_dbgmsg("bcapi_read: non-empty read requires a destination buffer\n");
         API_MISUSE();
         return -1;
     }
@@ -171,7 +178,14 @@ int64_t cli_bcapi_read64(struct cli_bc_ctx *ctx, uint8_t *data, uint32_t size)
 {
     size_t n;
 
+    if (!ctx)
+        return -1;
     if (!ctx->fmap || ctx->off < 0 || (uint64_t)ctx->off > (uint64_t)SIZE_MAX) {
+        API_MISUSE();
+        return -1;
+    }
+    if (size != 0 && !data) {
+        cli_dbgmsg("bcapi_read64: non-empty read requires a destination buffer\n");
         API_MISUSE();
         return -1;
     }
@@ -586,11 +600,14 @@ static inline const char *cli_memmem(const char *haystack, unsigned hlen,
 static int64_t cli_bcapi_file_find_limit_common(struct cli_bc_ctx *ctx, const uint8_t *data,
                                                 uint32_t len, uint64_t limit)
 {
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
     uint64_t off;
     size_t n;
 
-    if (!map || !len || !limit || ctx->off < 0) {
+    if (!ctx)
+        return -1;
+    map = ctx->fmap;
+    if (!map || !data || !len || !limit || ctx->off < 0) {
         cli_dbgmsg("bcapi_file_find preconditions not met\n");
         API_MISUSE();
         return -1;
@@ -642,7 +659,10 @@ static int64_t cli_bcapi_file_find_limit_common(struct cli_bc_ctx *ctx, const ui
 
 int32_t cli_bcapi_file_find(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_t len)
 {
-    int64_t result = cli_bcapi_file_find_limit_common(ctx, data, len, ctx->fmap ? ctx->fmap->len : 0);
+    int64_t result;
+    if (!ctx)
+        return -1;
+    result = cli_bcapi_file_find_limit_common(ctx, data, len, ctx->fmap ? ctx->fmap->len : 0);
     if (result > INT32_MAX) {
         cli_bcapi_mark_coordinate_error(ctx, "Bytecode v1 file-find result requires 64-bit matcher offsets");
         return -1;
@@ -652,6 +672,8 @@ int32_t cli_bcapi_file_find(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_
 
 int64_t cli_bcapi_file_find64(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_t len)
 {
+    if (!ctx)
+        return -1;
     return cli_bcapi_file_find_limit_common(ctx, data, len, ctx->fmap ? ctx->fmap->len : 0);
 }
 
@@ -670,6 +692,8 @@ int32_t cli_bcapi_file_find_limit(struct cli_bc_ctx *ctx, const uint8_t *data, u
 
 int64_t cli_bcapi_file_find_limit64(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_t len, uint64_t limit)
 {
+    if (!ctx)
+        return -1;
     return cli_bcapi_file_find_limit_common(ctx, data, len, limit);
 }
 
@@ -677,6 +701,8 @@ int32_t cli_bcapi_file_byteat64(struct cli_bc_ctx *ctx, uint64_t off)
 {
     unsigned char c;
     size_t n;
+    if (!ctx)
+        return -1;
     if (!ctx->fmap || off > (uint64_t)SIZE_MAX) {
         cli_dbgmsg("bcapi_file_byteat64: invalid map or offset\n");
         return -1;

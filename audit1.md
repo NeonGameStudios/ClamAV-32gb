@@ -22106,3 +22106,23 @@ container cannot start due to its host overlay storage exhaustion; complete
 SIS corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+## Bytecode read/search API null-buffer admission — 2026-09-02
+
+The bytecode read and file-search bridges previously dereferenced a null
+`cli_bc_ctx` in several entry points and passed a null non-empty destination or
+needle to `fmap_readn()` and event reporting. That made malformed or
+miscompiled matcher calls capable of crashing the scanner before the existing
+API-misuse and incomplete-result paths could run.
+
+`cli_bcapi_read()`, `cli_bcapi_read64()`, the file-find wrappers, the common
+file-find implementation, and `cli_bcapi_file_byteat64()` now reject null
+contexts before dereference. Read APIs reject null non-empty destination
+buffers, and file-find rejects null non-empty needles before fmap or event
+access. `test_bytecode_read_rejects_null_buffer` covers both null-context and
+null-buffer calls while confirming that the valid bytecode context remains
+unchanged; source guards and the capability manifest pin the change.
+
+Current-source production-GCC compilation, production-linked execution,
+interpreter/JIT coverage, sanitizer evidence, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+matcher/release qualification remain required.

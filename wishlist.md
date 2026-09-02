@@ -13407,3 +13407,15 @@ qualification remain open.
   malformed OLE/VBA corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and final
   OLE/parser/release qualification before closure.
+## Bytecode read/search API null-buffer admission — 2026-09-02
+
+- Keep legacy and ABI-v2 bytecode read and file-search entry points safe for
+  malformed calls: null contexts and null non-empty destination/needle buffers
+  must be rejected before fmap or event access, with no scanner-state mutation
+  for API misuse.
+- Retain `test_bytecode_read_rejects_null_buffer`, its registration and source
+  guards, and the `bytecode-read-buffer-admission` capability evidence. Add
+  current-source production-GCC and linked execution, interpreter/JIT,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final matcher/release
+  qualification before closure.

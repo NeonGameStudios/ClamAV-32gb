@@ -928,6 +928,46 @@ START_TEST(test_bytecode_v1_read_rejects_invalid_offsets)
 }
 END_TEST
 
+START_TEST(test_bytecode_read_rejects_null_buffer)
+{
+    struct cli_bc_ctx *bcctx;
+    cli_ctx cctx;
+    fmap_t *map;
+    uint8_t value = 0x5a;
+
+    memset(&cctx, 0, sizeof(cctx));
+    map = cl_fmap_open_memory(&value, sizeof(value));
+    ck_assert_ptr_nonnull(map);
+    cctx.fmap = map;
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+    ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
+
+    ck_assert_int_eq(cli_bcapi_read(NULL, NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_read64(NULL, NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_file_find(NULL, NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_file_find64(NULL, NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_file_find_limit(NULL, NULL, 1, 1), -1);
+    ck_assert_int_eq(cli_bcapi_file_find_limit64(NULL, NULL, 1, 1), -1);
+    ck_assert_int_eq(cli_bcapi_file_byteat64(NULL, 0), -1);
+
+    ck_assert_int_eq(cli_bcapi_read(bcctx, NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_read64(bcctx, NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_file_find(bcctx, NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_file_find64(bcctx, NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_file_find_limit(bcctx, NULL, 1, 1), -1);
+    ck_assert_int_eq(cli_bcapi_file_find_limit64(bcctx, NULL, 1, 1), -1);
+
+    ck_assert(!cctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_uint_eq((uint64_t)bcctx->off, 0);
+    cli_bytecode_context_destroy(bcctx);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_bytecode_v1_coordinate_narrowing_is_fail_visible)
 {
 #if SIZE_MAX > UINT32_MAX
@@ -2294,6 +2334,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_prepare2_failure_destroys_startup_context);
 #endif
     tcase_add_test(tc_cli_read, test_bytecode_v1_read_rejects_invalid_offsets);
+    tcase_add_test(tc_cli_read, test_bytecode_read_rejects_null_buffer);
     tcase_add_test(tc_cli_read, test_bytecode_v1_coordinate_narrowing_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
