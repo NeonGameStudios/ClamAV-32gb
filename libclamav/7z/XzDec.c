@@ -778,8 +778,13 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
             Byte digest[XZ_CHECK_SIZE_MAX];
             p->state = XZ_STATE_BLOCK_HEADER;
             p->pos = 0;
-            if (XzCheck_Final(&p->check, digest) && memcmp(digest, p->buf, checkSize) != 0)
-              return SZ_ERROR_CRC;
+            {
+              int checkStatus = XzCheck_Final(&p->check, digest);
+              if (checkStatus < 0)
+                return SZ_ERROR_CRC;
+              if (checkStatus > 0 && memcmp(digest, p->buf, checkSize) != 0)
+                return SZ_ERROR_CRC;
+            }
           }
         }
         break;
@@ -825,7 +830,10 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
             p->indexSize += 4;
             p->pos = 0;
             if ((p->sha)) {
-                cl_finish_hash(p->sha, digest);
+                if (cl_finish_hash(p->sha, digest) != 0) {
+                    p->sha = NULL;
+                    return SZ_ERROR_CRC;
+                }
                 p->sha = NULL;
             }
 

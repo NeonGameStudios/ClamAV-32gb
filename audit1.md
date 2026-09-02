@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## XZ checksum finalization status — 2026-09-02
+
+The XZ decoder maintained a stream-index SHA-256 context and optional block
+SHA-256 contexts, but discarded `cl_finish_hash()` failures in both finalizer
+paths. A fault could therefore leave a valid digest in the buffer while the
+decoder accepted the stream. XZ now treats either finalization failure as a
+decoder CRC failure, consumes and clears the context, and lets `cli_scanxz()`
+return `CL_EUNPACK` with sticky incomplete, non-cacheable state before the
+decompressed child is handed to the matcher.
+
+`test_xz_hash_finalization_failure_is_fail_visible` injects finalization
+failure while scanning the existing valid XZ fixture and verifies the
+non-clean result, cleared verdict/alert outputs, and fmap cache taint. Source
+guards and the capability manifest record both low-level finalization sites.
+Current-source production-GCC compilation and production-linked execution,
+complete XZ corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## XAR checksum finalization status — 2026-09-02
 
 XAR created archived and extracted checksum contexts and compared their

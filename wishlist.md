@@ -1,5 +1,17 @@
 # Wishlist
 
+## XZ checksum finalization status — 2026-09-02
+
+- Keep XZ stream-index and block SHA-256 finalization checking
+  `cl_finish_hash()` before accepting integrity results; convert either
+  failure to decoder failure, preserve sticky incomplete/non-cacheable state,
+  and prevent decompressed child handoff.
+- Retain `test_xz_hash_finalization_failure_is_fail_visible`, its source
+  guards, and manifest evidence. Current-source production-GCC execution,
+  complete XZ corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final release
+  qualification remain open.
+
 ## XAR checksum finalization status — 2026-09-02
 
 - Keep XAR archived and extracted checksum finalization checking
