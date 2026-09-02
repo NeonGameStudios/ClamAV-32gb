@@ -11550,6 +11550,17 @@ final parser/release qualification remain open.
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification remain open.
 
+## Indicator metadata completion — 2026-09-01
+
+- Keep the required `ObjectID` field in indicator metadata fail-visible. A
+  report allocation failure must taint the detected layer and prevent clean
+  caching while preserving the stronger detection result for legacy callers.
+- Retain `test_virus_indicator_metadata_record_failure_is_fail_visible` and
+  its source guards. Current-source production-linked execution, complete
+  signature/evidence corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final matcher/release qualification remain open.
+
 ## OLE2 custom-property metadata completion — 2026-09-01
 
 - Keep `HasUserDefinedProperties` report failures fail-visible when an OLE2

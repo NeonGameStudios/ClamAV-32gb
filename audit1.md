@@ -19608,3 +19608,22 @@ writes. Current-source production-linked execution, complete image corpus,
 sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+## Indicator metadata completion — 2026-09-01
+
+The central indicator-append path previously discarded the `ObjectID` JSON
+write status after successfully adding the indicator to scan evidence. A
+required report field could therefore be absent while the detection completed
+without a sticky incomplete state or cache taint. The path now marks the layer
+incomplete, preserves the metadata status through its final return, and keeps
+the stronger detection result for legacy callers.
+
+`test_virus_indicator_metadata_record_failure_is_fail_visible` loads a
+production-linked content signature, injects `CL_EMEM` only for the indicator
+`ObjectID` write, and requires the expected alert and strong verdict together
+with a detection-terminated incomplete report, the exact diagnostic, and fmap
+non-cacheability. Source guards and the capability manifest record the
+wrapped `cli_jsonuint64()` boundary. Current-source production-linked
+execution, complete signature/evidence corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
+final matcher/release qualification remain required.

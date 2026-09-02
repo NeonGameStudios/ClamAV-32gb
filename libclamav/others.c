@@ -1953,6 +1953,7 @@ done:
 static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType type)
 {
     cl_error_t status             = CL_ERROR;
+    cl_error_t metadata_status    = CL_SUCCESS;
     cl_error_t callback_ret       = CL_VIRUS;
     FFIError *add_indicator_error = NULL;
     bool add_successful;
@@ -2026,7 +2027,13 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
                 } break;
             }
             (void)json_object_object_add(indicator_obj, "Depth", json_object_new_int(0)); // 0 for this layer
-            (void)cli_jsonuint64(indicator_obj, "ObjectID", (uint64_t)ctx->recursion_stack[ctx->recursion_level].object_id);
+            {
+                cl_error_t json_status = cli_jsonuint64(indicator_obj, "ObjectID", (uint64_t)ctx->recursion_stack[ctx->recursion_level].object_id);
+                if (json_status != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "indicator metadata JSON could not be recorded");
+                    metadata_status = cli_merge_scan_status(metadata_status, json_status);
+                }
+            }
             (void)json_object_array_add(indicators, indicator_obj);
         }
 
@@ -2135,7 +2142,7 @@ done:
         free(location);
     }
 
-    return status;
+    return cli_merge_scan_status(status, metadata_status);
 }
 
 cl_error_t cli_append_potentially_unwanted(cli_ctx *ctx, const char *virname)

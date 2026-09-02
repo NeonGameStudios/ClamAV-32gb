@@ -8669,6 +8669,17 @@ production-linked execution, complete image corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
 release qualification remain required.
 
+## Indicator metadata completion — 2026-09-01
+
+The indicator-append path now checks the required `ObjectID` metadata write.
+If it fails, the detected layer is marked incomplete and non-cacheable while
+the stronger detection result remains available to legacy callers. The
+focused JSON-wrapper regression covers the detection/report boundary;
+current-source production-linked execution, complete signature/evidence
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and release qualification remain
+required.
+
 ## Bytecode logical-dispatch argument validation — 2026-08-20
 
 The logical-bytecode entry point now validates the scan context, bytecode
