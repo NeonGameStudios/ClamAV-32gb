@@ -1,5 +1,19 @@
 # Wishlist
 
+## ARJ direct options admission — 2026-09-02
+
+- Keep exported `cli_scanarj()` fail-visible when an otherwise recognized
+  engine/map context omits scan options; return `CL_ENULLARG` before temporary
+  directory creation, deadline/limit checks, extraction, or nested-member
+  scanning.
+- Retain `test_arj_missing_options_is_fail_visible`, its source guards, and
+  manifest evidence that the invalid context does not become sticky incomplete
+  or cache-tainted. Keep valid options in the ARJ entry and header-read
+  regressions. Current-source production-GCC compilation, production-linked
+  execution, complete ARJ/ARJ-SFX corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## EGG direct options admission — 2026-09-02
 
 - Keep exported `cli_scanegg()` fail-visible when an otherwise recognized

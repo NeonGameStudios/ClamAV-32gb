@@ -1706,6 +1706,8 @@ cl_error_t cli_scanarj(cli_ctx *ctx)
     }
     if (ctx->engine == NULL)
         return CL_ENULLARG;
+    if (ctx->options == NULL)
+        return CL_ENULLARG;
 
     memset(&metadata, 0, sizeof(arj_metadata_t));
     metadata.ctx = ctx;
