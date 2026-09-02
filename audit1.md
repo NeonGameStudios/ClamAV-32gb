@@ -740,19 +740,20 @@ resource, and final parser/release qualification remain required.
 
 ## RFC 1341 reassembly output status reconciliation — 2026-09-02
 
-The final RFC 1341 reassembly fileblob already retained specific output
-creation/open, temporary-budget, and related materialization failures, but the
-`fout->isIncomplete || fout->fp == NULL` branch destroyed that state and
-returned the legacy negative sentinel. The mailbox caller could consequently
-replace a confirmed final-output failure with generic `CL_EFORMAT`. The branch
-now records the fileblob's first specific status in `mbox_ctx` before cleanup,
-with `CL_EOPEN` as the defensive fallback, so `cli_mbox()` can preserve the
-operational result. Source guards and the `mime-caller-export-status-
-reconciliation` manifest evidence cover the correction. Production-linked
-reassembly fault injection, current-source GCC compilation, complete
-partial/MIME corpus, sanitizer, certified Linux x86-64, production-CVD/service,
-materialized-large-file, Sonic1, resource, and final parser/release
-qualification remain required.
+The final RFC 1341 reassembly path could discard specific directory creation,
+stat, output-blob, fragment open/read/close/unlink, deadline, and nested-scan
+failures. In particular, the `fout->isIncomplete || fout->fp == NULL` branch
+destroyed the fileblob's precise status and returned the legacy negative
+sentinel, allowing the mailbox caller to replace a confirmed final-output
+failure with generic `CL_EFORMAT`. RFC 1341 now records the first specific
+status in `mbox_ctx` before cleanup, with defensive fallbacks for generic
+parser failures, so `cli_mbox()` preserves the operational result while
+detection and stronger limit results retain precedence. Source guards and the
+`mime-caller-export-status-reconciliation` manifest evidence cover the
+correction. Production-linked reassembly fault injection, current-source GCC
+compilation, complete partial/MIME corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
 
 ## MSPack direct options admission — 2026-09-02
 

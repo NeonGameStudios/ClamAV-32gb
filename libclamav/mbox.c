@@ -220,6 +220,19 @@ static void mbox_record_message_failure(mbox_ctx *mctx, const message *m,
     cli_mark_scan_incomplete(mctx->ctx, reason);
 }
 
+static void mbox_record_status(mbox_ctx *mctx, cl_error_t status,
+                               const char *reason)
+{
+    if (mctx == NULL || mctx->ctx == NULL)
+        return;
+
+    if (status == CL_SUCCESS)
+        status = CL_EPARSE;
+    if (mctx->message_failure_status == CL_SUCCESS)
+        mctx->message_failure_status = status;
+    cli_mark_scan_incomplete(mctx->ctx, reason);
+}
+
 /* A reassembled message is materialized through a fileblob rather than the
  * message body spool. Preserve the blob's first specific failure before the
  * blob is destroyed and the internal mailbox status is reduced to FAIL. */
@@ -236,9 +249,7 @@ static void mbox_record_fileblob_failure(mbox_ctx *mctx, const fileblob *fb,
         status = fb->incomplete_status;
     if (status == CL_SUCCESS)
         status = CL_ERESOURCE;
-    if (mctx->message_failure_status == CL_SUCCESS)
-        mctx->message_failure_status = status;
-    cli_mark_scan_incomplete(mctx->ctx, reason);
+    mbox_record_status(mctx, status, reason);
 }
 
 /* if supported by the system, use the optimized
@@ -4878,8 +4889,9 @@ rfc1341(mbox_ctx *mctx, message *m)
     errno = 0;
     if ((mkdir(pdir, S_IRUSR | S_IWUSR) < 0) && (errno != EEXIST)) {
         cli_errmsg("Can't create the directory '%s'\n", pdir);
-        cli_mark_scan_incomplete(mctx->ctx,
-                                 "Partial MIME directory could not be created");
+        mbox_record_status(
+            mctx, CL_ECREAT,
+            "Partial MIME directory could not be created");
         free(id);
         free(number);
         free(total);
@@ -4891,8 +4903,9 @@ rfc1341(mbox_ctx *mctx, message *m)
             char err[128];
             cli_errmsg("Partial directory %s: %s\n", pdir,
                        cli_strerror(errno, err, sizeof(err)));
-            cli_mark_scan_incomplete(mctx->ctx,
-                                     "Partial MIME directory could not be inspected");
+            mbox_record_status(
+                mctx, CL_ESTAT,
+                "Partial MIME directory could not be inspected");
             free(id);
             free(number);
             free(total);
@@ -4989,7 +5002,9 @@ rfc1341(mbox_ctx *mctx, message *m)
             fout = fileblobCreate();
             if (fout == NULL) {
                 cli_errmsg("Can't open '%s' for writing", outname);
-                cli_mark_scan_incomplete(mctx->ctx, "MIME partial message reassembly output could not be allocated");
+                mbox_record_fileblob_failure(
+                    mctx, NULL, CL_EMEM,
+                    "MIME partial message reassembly output could not be allocated");
                 free(id);
                 free(number);
                 free(md5_hex);
@@ -5020,6 +5035,9 @@ rfc1341(mbox_ctx *mctx, message *m)
                 bool found_part = false;
 
                 if (mbox_check_deadline(mctx->ctx)) {
+                    mbox_record_status(
+                        mctx, CL_ETIMEOUT,
+                        "MIME partial message reassembly reached the configured time limit");
                     destroyPartialOutput(fout, outname);
                     free(md5_hex);
                     free(id);
@@ -5041,6 +5059,9 @@ rfc1341(mbox_ctx *mctx, message *m)
                     int test_fd;
 
                     if (mbox_check_deadline(mctx->ctx)) {
+                        mbox_record_status(
+                            mctx, CL_ETIMEOUT,
+                            "MIME partial message reassembly reached the configured time limit");
                         destroyPartialOutput(fout, outname);
                         free(md5_hex);
                         free(id);
@@ -5053,8 +5074,8 @@ rfc1341(mbox_ctx *mctx, message *m)
                     dent  = readdir(dd);
                     if (dent == NULL) {
                         if (errno != 0) {
-                            cli_mark_scan_incomplete(
-                                mctx->ctx,
+                            mbox_record_status(
+                                mctx, CL_EREAD,
                                 "Partial MIME directory could not be enumerated completely");
                             destroyPartialOutput(fout, outname);
                             free(md5_hex);
@@ -5091,6 +5112,9 @@ rfc1341(mbox_ctx *mctx, message *m)
 
                         if (now - statb.st_mtime > (time_t)(7 * 24 * 3600)) {
                             if (cli_unlink(fullname)) {
+                                mbox_record_status(
+                                    mctx, CL_EUNLINK,
+                                    "Partial MIME fragment could not be removed");
                                 destroyPartialOutput(fout, outname);
                                 free(md5_hex);
                                 free(id);
@@ -5109,6 +5133,9 @@ rfc1341(mbox_ctx *mctx, message *m)
                     fin        = fopen(fullname, "rb");
                     if (fin == NULL) {
                         cli_errmsg("Can't open '%s' for reading", fullname);
+                        mbox_record_status(
+                            mctx, CL_EOPEN,
+                            "Partial MIME fragment could not be opened");
                         destroyPartialOutput(fout, outname);
                         free(md5_hex);
                         free(id);
@@ -5133,6 +5160,9 @@ rfc1341(mbox_ctx *mctx, message *m)
                             if (nblanks || fileblobAddData(fout,
                                                             (const unsigned char *)buffer,
                                                             strlen(buffer)) < 0) {
+                                mbox_record_fileblob_failure(
+                                    mctx, fout, CL_EWRITE,
+                                    "MIME partial message reassembly output could not be written");
                                 fclose(fin);
                                 destroyPartialOutput(fout, outname);
                                 free(md5_hex);
@@ -5145,6 +5175,9 @@ rfc1341(mbox_ctx *mctx, message *m)
                     fin_error       = ferror(fin);
                     fin_close_error = fclose(fin);
                     if (fin_error || fin_close_error != 0) {
+                        mbox_record_status(
+                            mctx, CL_EREAD,
+                            "Partial MIME fragment could not be read completely");
                         destroyPartialOutput(fout, outname);
                         free(md5_hex);
                         free(id);
@@ -5156,6 +5189,9 @@ rfc1341(mbox_ctx *mctx, message *m)
                     /* don't unlink if leave temps */
                     if (!m->ctx->engine->keeptmp) {
                         if (cli_unlink(fullname)) {
+                            mbox_record_status(
+                                mctx, CL_EUNLINK,
+                                "Partial MIME fragment could not be removed");
                             destroyPartialOutput(fout, outname);
                             free(md5_hex);
                             free(id);
@@ -5167,8 +5203,9 @@ rfc1341(mbox_ctx *mctx, message *m)
                     break;
                 }
                 if (!found_part) {
-                    cli_mark_scan_incomplete(mctx->ctx,
-                                             "Partial MIME message is missing a numbered fragment");
+                    mbox_record_status(
+                        mctx, CL_EPARSE,
+                        "Partial MIME message is missing a numbered fragment");
                     destroyPartialOutput(fout, outname);
                     free(md5_hex);
                     free(id);
@@ -5179,8 +5216,9 @@ rfc1341(mbox_ctx *mctx, message *m)
                 rewinddir(dd);
             }
             if (closedir(dd) != 0) {
-                cli_mark_scan_incomplete(mctx->ctx,
-                                         "Partial MIME directory could not be closed");
+                mbox_record_status(
+                    mctx, CL_EREAD,
+                    "Partial MIME directory could not be closed");
                 destroyPartialOutput(fout, outname);
                 free(md5_hex);
                 free(id);
@@ -5192,8 +5230,10 @@ rfc1341(mbox_ctx *mctx, message *m)
 
                 mctx->files++;
                 if (scan_rc != CL_CLEAN && scan_rc != CL_VIRUS) {
-                    cli_mark_scan_incomplete(mctx->ctx,
-                                             "Reassembled partial MIME message could not be scanned completely");
+                    mbox_record_status(
+                        mctx,
+                        scan_rc > CL_SUCCESS ? (cl_error_t)scan_rc : CL_EPARSE,
+                        "Reassembled partial MIME message could not be scanned completely");
                     cli_unlink(outname);
                 }
                 free(md5_hex);

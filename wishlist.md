@@ -13050,13 +13050,14 @@ qualification remain open.
 
 ## RFC 1341 reassembly output status reconciliation — 2026-09-02
 
-- Preserve the first specific `fileblob` status when the final RFC 1341
-  reassembly output cannot be created or opened, before destroying the partial
-  output; the `cli_mbox()` boundary must not replace it with generic
+- Preserve the first specific RFC 1341 status for directory creation/stat,
+  final output-blob creation/open/write, fragment open/read/close/unlink,
+  deadline, missing-fragment, and nested-scan failures before cleanup; the
+  `cli_mbox()` boundary must not replace these results with generic
   `CL_EFORMAT`.
-- Retain the `mbox_record_fileblob_failure` source guards and
-  `mime-caller-export-status-reconciliation` manifest evidence. Add
-  production-linked reassembly fault injection, current-source GCC
+- Retain the `mbox_record_status` and `mbox_record_fileblob_failure` source
+  guards plus `mime-caller-export-status-reconciliation` manifest evidence.
+  Add production-linked reassembly fault injection, current-source GCC
   compilation, complete partial/MIME corpus, sanitizer, certified Linux
   x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
   and final parser/release qualification before release closure.
