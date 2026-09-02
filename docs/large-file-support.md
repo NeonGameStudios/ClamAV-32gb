@@ -8680,6 +8680,21 @@ corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and release qualification remain
 required.
 
+## Indicator metadata array append failures — 2026-09-01
+
+The indicator-append path now checks both direct metadata array insertions and
+the related indicator/array allocations. A rejected `Indicators` append
+releases the unowned object and suppresses the `Alerts` handoff; a rejected
+`Alerts` append releases the extra reference. Each failure marks the detected
+layer incomplete and non-cacheable while `CL_VIRUS` and the strong verdict
+remain authoritative. `test_virus_indicator_metadata_array_add_failure_is_fail_visible`
+injects the first and second append failures through the production-linked
+wrapper and requires the expected alert, exact sticky diagnostic, incomplete
+report, and fmap non-cacheability. Current-source production-linked execution,
+complete signature/evidence corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and release
+qualification remain required.
+
 ## Shared JSON array insertion failures — 2026-09-01
 
 The shared `cli_json` scalar and null helpers, plus the array/object factories,

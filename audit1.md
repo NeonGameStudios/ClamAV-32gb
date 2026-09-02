@@ -93,6 +93,7 @@ sanitizer, complete XML/OOXML/HWPML corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+
 ## OOXML metadata record failure visibility — 2026-09-01
 
 The OOXML content-types callback discarded the return values from its required
@@ -19669,3 +19670,23 @@ Current-source production-GCC compilation, production-linked execution,
 sanitizer, complete XML/OOXML/HWPML corpus, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
+
+## Indicator metadata array append failures — 2026-09-01
+
+The central indicator path directly appended its metadata object to both the
+`Indicators` and `Alerts` arrays but discarded json-c's insertion result. A
+failed first append could omit the required indicator evidence, while a failed
+alert append could leak the extra reference and leave the report incomplete
+without a sticky state. The path now marks allocation and append failures
+incomplete, releases unowned objects on rejected appends, avoids the alert
+handoff when the indicator was not retained, and preserves the stronger
+detection result through `cli_merge_scan_status()`.
+
+`test_virus_indicator_metadata_array_add_failure_is_fail_visible` injects the
+first and second array append failures through the production-linked wrapper.
+Both cases require the expected alert and strong verdict, `CL_VIRUS` report
+status, the exact array diagnostic, an incomplete report, and fmap
+non-cacheability. Current-source production-GCC compilation, production-linked
+execution, complete signature/evidence corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
+final matcher/release qualification remain required.

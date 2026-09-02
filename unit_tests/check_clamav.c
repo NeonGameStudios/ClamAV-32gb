@@ -314,10 +314,25 @@ static int pe_test_fail_packer_metadata;
 static int image_fuzzy_test_fail_error_metadata;
 static int image_fuzzy_test_fail_hash_metadata;
 static int indicator_test_fail_object_id_metadata;
+static unsigned int indicator_test_array_add_fail_call;
+static unsigned int indicator_test_array_add_calls;
 static int json_api_test_fail_array_add;
 
 int __wrap_json_object_array_add(json_object *obj, json_object *val)
 {
+    if (indicator_test_array_add_fail_call != 0U && val &&
+        json_object_is_type(val, json_type_object)) {
+        json_object *name = NULL;
+        if (json_object_object_get_ex(val, "Name", &name) && name &&
+            json_object_is_type(name, json_type_string) &&
+            strcmp(json_object_get_string(name), "Indicator.Array") == 0) {
+            indicator_test_array_add_calls++;
+            if (indicator_test_array_add_calls == indicator_test_array_add_fail_call) {
+                indicator_test_array_add_fail_call = 0U;
+                return -1;
+            }
+        }
+    }
     if (msxml_test_fail_value_array_add && val && json_object_is_type(val, json_type_int)) {
         msxml_test_fail_value_array_add = 0;
         return -1;
@@ -5065,6 +5080,70 @@ START_TEST(test_virus_indicator_metadata_record_failure_is_fail_visible)
     cl_scan_report_free(report);
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_virus_indicator_metadata_array_add_failure_is_fail_visible)
+{
+    static const uint8_t input[] = {'M', 'Z', 'P'};
+    struct cl_scan_options options;
+    cl_scan_report_t *report;
+    cl_scan_completion_t completion;
+    cl_error_t report_status;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    const char *reason;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+    unsigned int fail_call;
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+
+    for (fail_call = 1; fail_call <= 2; fail_call++) {
+        struct cl_engine *scan_engine = cl_engine_new();
+
+        ck_assert_ptr_nonnull(scan_engine);
+        ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+        ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+        ck_assert_int_eq(cli_add_content_match_pattern(
+                             scan_engine->root[0], "Indicator.Array", "4d5a50", 0, 0, 0,
+                             "0", NULL, 0),
+                         CL_SUCCESS);
+        ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+        map = cl_fmap_open_memory(input, sizeof(input));
+        ck_assert_ptr_nonnull(map);
+        report     = NULL;
+        verdict    = CL_VERDICT_NOTHING_FOUND;
+        last_alert = NULL;
+        scanned    = 0;
+        indicator_test_array_add_calls     = 0;
+        indicator_test_array_add_fail_call = fail_call;
+        ret = cl_scanmap_ex2(map, "indicator-array", &verdict, &last_alert, &scanned,
+                             scan_engine, &options, NULL, NULL, NULL, NULL, NULL,
+                             "CL_TYPE_BINARY_DATA", NULL, &report);
+        ck_assert_int_eq(indicator_test_array_add_fail_call, 0U);
+
+        ck_assert_int_eq(ret, CL_VIRUS);
+        ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+        ck_assert_ptr_nonnull(last_alert);
+        ck_assert_str_eq(last_alert, "Indicator.Array.UNOFFICIAL");
+        ck_assert(map->dont_cache_flag);
+        ck_assert_ptr_nonnull(report);
+        ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+        ck_assert_int_eq(report_status, CL_VIRUS);
+        ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+        ck_assert_int_ne(completion, CL_SCAN_COMPLETION_COMPLETE);
+        ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+        ck_assert_str_eq(reason, "indicator metadata JSON array could not be recorded");
+
+        cl_scan_report_free(report);
+        cl_fmap_close(map);
+        cl_engine_free(scan_engine);
+    }
 }
 END_TEST
 #endif
@@ -55609,6 +55688,7 @@ static Suite *test_cl_suite(void)
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_cl, test_json_array_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_metadata_record_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_virus_indicator_metadata_array_add_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);

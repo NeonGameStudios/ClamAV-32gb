@@ -2000,19 +2000,27 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
     if (SCAN_COLLECT_METADATA && ctx->this_layer_metadata_json) {
         // Add the indicator to the metadata.
         json_object *indicators = NULL;
+        json_object *indicator_obj;
+        bool indicator_added = false;
         if (!json_object_object_get_ex(ctx->this_layer_metadata_json, "Indicators", &indicators)) {
             indicators = json_object_new_array();
             if (NULL == indicators) {
                 cli_errmsg("append_virus: no memory for json Indicators array\n");
+                cli_mark_scan_incomplete(ctx, "indicator metadata JSON array could not be allocated");
+                metadata_status = cli_merge_scan_status(metadata_status, CL_EMEM);
             } else {
                 json_object_object_add(ctx->this_layer_metadata_json, "Indicators", indicators);
             }
         }
 
         // Create json object containing name, type, depth, and object_id
-        json_object *indicator_obj = json_object_new_object();
+        indicator_obj = indicators ? json_object_new_object() : NULL;
         if (NULL == indicator_obj) {
-            cli_errmsg("append_virus: no memory for json indicator object\n");
+            if (indicators) {
+                cli_errmsg("append_virus: no memory for json indicator object\n");
+                cli_mark_scan_incomplete(ctx, "indicator metadata JSON object could not be allocated");
+                metadata_status = cli_merge_scan_status(metadata_status, CL_EMEM);
+            }
         } else {
             (void)json_object_object_add(indicator_obj, "Name", json_object_new_string(virname));
             switch (type) {
@@ -2034,27 +2042,41 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
                     metadata_status = cli_merge_scan_status(metadata_status, json_status);
                 }
             }
-            (void)json_object_array_add(indicators, indicator_obj);
+            if (json_object_array_add(indicators, indicator_obj) != 0) {
+                cli_mark_scan_incomplete(ctx, "indicator metadata JSON array could not be recorded");
+                metadata_status = cli_merge_scan_status(metadata_status, CL_EMEM);
+                json_object_put(indicator_obj);
+                indicator_obj = NULL;
+            } else {
+                indicator_added = true;
+            }
         }
 
         // If this is a strong or potentially unwanted indicator, we add it to the "Alerts" array.
-        if (type != IndicatorType_Weak) {
+        if (type != IndicatorType_Weak && indicator_added) {
             json_object *arrobj = NULL;
             if (!json_object_object_get_ex(ctx->this_layer_metadata_json, "Alerts", &arrobj)) {
                 arrobj = json_object_new_array();
                 if (NULL == arrobj) {
                     cli_errmsg("append_virus: no memory for json virus array\n");
-                    status = CL_EMEM;
-                    goto done;
+                    cli_mark_scan_incomplete(ctx, "indicator metadata Alerts array could not be allocated");
+                    metadata_status = cli_merge_scan_status(metadata_status, CL_EMEM);
                 }
-                (void)json_object_object_add(ctx->this_layer_metadata_json, "Alerts", arrobj);
+                if (arrobj)
+                    (void)json_object_object_add(ctx->this_layer_metadata_json, "Alerts", arrobj);
             }
 
-            // Increment the indicator_obj reference count, so that it can be added to the "Alerts" array.
-            (void)json_object_get(indicator_obj);
+            if (arrobj) {
+                // Increment the indicator_obj reference count, so that it can be added to the "Alerts" array.
+                (void)json_object_get(indicator_obj);
 
-            // Add the same indicator object to the "Alerts" array.
-            (void)json_object_array_add(arrobj, indicator_obj);
+                // Add the same indicator object to the "Alerts" array.
+                if (json_object_array_add(arrobj, indicator_obj) != 0) {
+                    cli_mark_scan_incomplete(ctx, "indicator metadata JSON array could not be recorded");
+                    metadata_status = cli_merge_scan_status(metadata_status, CL_EMEM);
+                    json_object_put(indicator_obj);
+                }
+            }
         }
     }
 

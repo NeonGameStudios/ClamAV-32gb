@@ -11562,6 +11562,19 @@ final parser/release qualification remain open.
   final matcher/release qualification remain open.
 
 
+## Indicator metadata array append failures — 2026-09-01
+
+- Keep `Indicators` and `Alerts` array insertion and allocation failures
+  fail-visible; release rejected indicator objects, avoid alert handoff when
+  the indicator was not retained, taint the detected fmap, and preserve the
+  stronger detection result.
+- Retain `test_virus_indicator_metadata_array_add_failure_is_fail_visible`
+  and its source guards. Current-source production-linked execution, complete
+  signature/evidence corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final matcher/release qualification remain open.
+
+
 ## Shared JSON array insertion failures — 2026-09-01
 
 - Keep every shared `cli_json` scalar/null helper and array/object factory
