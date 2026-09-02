@@ -127,6 +127,8 @@ int cli_binhex(cli_ctx *ctx)
     }
     if (ctx->engine == NULL)
         return CL_ENULLARG;
+    if (ctx->options == NULL)
+        return CL_ENULLARG;
     enc_todo = map->len;
     ret = binhex_checktimelimit(ctx, "BinHex inspection reached the configured time limit");
     if (ret != CL_SUCCESS)

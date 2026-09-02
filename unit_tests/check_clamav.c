@@ -21095,13 +21095,16 @@ START_TEST(test_binhex_header_lengths_are_not_read_before_header_completion)
     static const uint8_t data[] =
         "(This file must be converted with BinHex 4.0)\r\n:!!!!";
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.options           = &options;
     ctx.this_layer_tmpdir = tmpdir;
     map                   = cl_fmap_open_memory(data, sizeof(data) - 1U);
     ck_assert_ptr_nonnull(map);
@@ -21161,16 +21164,19 @@ END_TEST
 START_TEST(test_binhex_empty_stream_is_fail_visible)
 {
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(NULL, 0);
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
 
     ret = cli_binhex(&ctx);
     ck_assert_int_eq(ret, CL_EPARSE);
@@ -21202,6 +21208,28 @@ START_TEST(test_binhex_missing_engine_is_fail_visible)
 
     ck_assert_int_eq(cli_binhex(&ctx), CL_ENULLARG);
     ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_binhex_missing_options_is_fail_visible)
+{
+    static const uint8_t data[] = "\r\n:";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_binhex(&ctx), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
 
     cl_fmap_close(map);
 }
@@ -34685,6 +34713,7 @@ START_TEST(test_parser_temporary_directory_failures_are_fail_visible)
     static const uint8_t input[] = {0x35};
     char invalid_tmpdir[PATH_MAX];
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
@@ -34692,8 +34721,10 @@ START_TEST(test_parser_temporary_directory_failures_are_fail_visible)
                   "temporary directory test path was truncated");
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.options           = &options;
     ctx.this_layer_tmpdir = invalid_tmpdir;
 
     map = cl_fmap_open_memory(input, sizeof(input));
@@ -34707,6 +34738,7 @@ START_TEST(test_parser_temporary_directory_failures_are_fail_visible)
 
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.options           = &options;
     ctx.this_layer_tmpdir = invalid_tmpdir;
     map                   = cl_fmap_open_memory(input, sizeof(input));
     ck_assert_ptr_nonnull(map);
@@ -34719,6 +34751,7 @@ START_TEST(test_parser_temporary_directory_failures_are_fail_visible)
 
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.options           = &options;
     ctx.this_layer_tmpdir = invalid_tmpdir;
     map                   = cl_fmap_open_memory(input, sizeof(input));
     ck_assert_ptr_nonnull(map);
@@ -36171,13 +36204,16 @@ START_TEST(test_binhex_encoded_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "nonempty BinHex input";
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     ctx.engine            = &engine;
+    ctx.options           = &options;
     ctx.this_layer_tmpdir = tmpdir;
 
     map = cl_fmap_open_memory(input, sizeof(input) - 1U);
@@ -57540,6 +57576,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_binhex_map, test_binhex_empty_stream_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_null_context_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_missing_engine_is_fail_visible);
+    tcase_add_test(tc_binhex_map, test_binhex_missing_options_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_truncated_header_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_header_lengths_are_not_read_before_header_completion);
     tcase_add_test(tc_binhex_map, test_binhex_time_limit_is_fail_visible);

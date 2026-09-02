@@ -38,6 +38,19 @@
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification remain open.
 
+## BinHex direct options admission — 2026-09-02
+
+- Keep exported `cli_binhex()` fail-visible when an otherwise recognized
+  engine/map context omits scan options; return `CL_ENULLARG` before deadline
+  checks, temporary output, encoded traversal, or nested-child scanning.
+- Retain `test_binhex_missing_options_is_fail_visible`, its source guards,
+  and manifest evidence that the invalid context does not become sticky
+  incomplete or cache-tainted. Keep valid options in direct BinHex parser
+  regressions. Current-source production-GCC compilation, production-linked
+  execution, complete BinHex corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## 7-Zip direct options admission — 2026-09-02
 
 - Keep exported `cli_7unz()` fail-visible when an otherwise recognized
