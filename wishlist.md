@@ -1,5 +1,18 @@
 # Wishlist
 
+## XAR zlib decoder finalization status — 2026-09-02
+
+- Keep XAR TOC and gzip-member zlib teardown fail-visible on every initialized
+  exit. Merge `CL_EUNPACK` without replacing an earlier read, limit, timeout,
+  parser, output, detection, or cleanup result, and never continue to child
+  scanning with partial TOC or member output.
+- Retain `test_xar_toc_decoder_finalize_failure_is_fail_visible` and
+  `test_xar_member_decoder_finalize_failure_is_fail_visible`, their one-shot
+  wrapper faults, exact diagnostics, and source guards. Current-source
+  production-GCC execution, complete XAR/gzip corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification remain open.
+
 ## PowerPoint compressed decoder finalization status — 2026-09-02
 
 - Keep the enabled PowerPoint compressed-atom `inflateEnd()` teardown

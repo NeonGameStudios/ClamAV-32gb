@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## XAR zlib decoder finalization status — 2026-09-02
+
+The enabled XAR TOC and gzip-member readers now route every initialized zlib
+exit through a state-aware finalizer. Teardown failures mark the confirmed XAR
+layer incomplete and merge `CL_EUNPACK` without hiding an earlier read, limit,
+timeout, parser, output, detection, or cleanup result; partial TOC/member
+output cannot proceed to child scanning. The focused existing member fault
+regression remains, and a new production-linked wrapper regression injects a
+TOC teardown failure and requires the exact diagnostic, `CL_EUNPACK`, and fmap
+non-cacheability. Current-source production-GCC compilation and linked
+execution, complete XAR/gzip corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## PowerPoint compressed decoder finalization status — 2026-09-02
 
 The enabled PowerPoint compressed-atom path now checks `inflateEnd()` on every

@@ -86,6 +86,20 @@ static cl_error_t xar_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+static cl_error_t xar_finalize_inflate(cli_ctx *ctx, z_stream *stream,
+                                       bool *initialized, cl_error_t status,
+                                       const char *reason)
+{
+    if (initialized != NULL && *initialized) {
+        *initialized = false;
+        if (inflateEnd(stream) != Z_OK) {
+            cli_mark_scan_incomplete(ctx, reason);
+            status = cli_merge_cleanup_status(status, CL_EUNPACK);
+        }
+    }
+    return status;
+}
+
 /*
    xar_cleanup_temp_file - cleanup after cli_gentempfd
    parameters:
@@ -992,6 +1006,7 @@ int cli_scanxar(cli_ctx *ctx)
         uint64_t compressed_read      = 0;
         uint64_t decompressed_written = 0;
         bool stream_complete          = false;
+        bool stream_initialized       = false;
 
         rc = inflateInit(&strm);
         if (rc != Z_OK) {
@@ -1000,6 +1015,7 @@ int cli_scanxar(cli_ctx *ctx)
             rc = CL_EFORMAT;
             goto exit_toc;
         }
+        stream_initialized = true;
 
         while (compressed_read < hdr.toc_length_compressed && !stream_complete) {
             size_t chunk         = MIN(sizeof(inbuf), (size_t)(hdr.toc_length_compressed - compressed_read));
@@ -1007,7 +1023,8 @@ int cli_scanxar(cli_ctx *ctx)
 
             rc = xar_checktimelimit(ctx, "XAR TOC decoder traversal reached the configured time limit");
             if (rc != CL_SUCCESS) {
-                inflateEnd(&strm);
+                rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                          "XAR TOC decoder could not be finalized");
                 goto exit_toc;
             }
 
@@ -1015,7 +1032,8 @@ int cli_scanxar(cli_ctx *ctx)
                 cli_dbgmsg("cli_scanxar: could not read the complete compressed TOC chunk\n");
                 cli_mark_scan_incomplete(ctx, "XAR TOC could not be read completely");
                 rc = CL_EREAD;
-                inflateEnd(&strm);
+                rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                          "XAR TOC decoder could not be finalized");
                 goto exit_toc;
             }
 
@@ -1029,7 +1047,8 @@ int cli_scanxar(cli_ctx *ctx)
 
                 rc = xar_checktimelimit(ctx, "XAR TOC decoder traversal reached the configured time limit");
                 if (rc != CL_SUCCESS) {
-                    inflateEnd(&strm);
+                    rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                              "XAR TOC decoder could not be finalized");
                     goto exit_toc;
                 }
 
@@ -1041,13 +1060,15 @@ int cli_scanxar(cli_ctx *ctx)
                 if (produced > hdr.toc_length_decompressed - decompressed_written) {
                     cli_mark_scan_incomplete(ctx, "XAR TOC decompressed output exceeded its declared length");
                     rc = CL_EFORMAT;
-                    inflateEnd(&strm);
+                    rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                              "XAR TOC decoder could not be finalized");
                     goto exit_toc;
                 }
 
                 rc = xar_spool_toc(ctx, toc_fd, outbuf, produced, &toc_reserved);
                 if (rc != CL_SUCCESS) {
-                    inflateEnd(&strm);
+                    rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                              "XAR TOC decoder could not be finalized");
                     goto exit_toc;
                 }
                 decompressed_written += produced;
@@ -1057,7 +1078,8 @@ int cli_scanxar(cli_ctx *ctx)
                     if (strm.avail_in != 0 || compressed_read != hdr.toc_length_compressed) {
                         cli_mark_scan_incomplete(ctx, "XAR TOC compressed range contains trailing data");
                         rc = CL_EFORMAT;
-                        inflateEnd(&strm);
+                        rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                                  "XAR TOC decoder could not be finalized");
                         goto exit_toc;
                     }
                     break;
@@ -1066,13 +1088,15 @@ int cli_scanxar(cli_ctx *ctx)
                     cli_dbgmsg("cli_scanxar: TOC decoder did not reach stream end: %i\n", inflate_rc);
                     cli_mark_scan_incomplete(ctx, "XAR TOC decompression was incomplete");
                     rc = CL_EFORMAT;
-                    inflateEnd(&strm);
+                    rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                              "XAR TOC decoder could not be finalized");
                     goto exit_toc;
                 }
                 if (inflate_rc == Z_BUF_ERROR && strm.avail_in == 0 && produced == 0) {
                     cli_mark_scan_incomplete(ctx, "XAR TOC decoder made no progress");
                     rc = CL_EFORMAT;
-                    inflateEnd(&strm);
+                    rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                              "XAR TOC decoder could not be finalized");
                     goto exit_toc;
                 }
             } while (strm.avail_in != 0 || strm.avail_out == 0);
@@ -1081,15 +1105,15 @@ int cli_scanxar(cli_ctx *ctx)
         if (!stream_complete || decompressed_written != hdr.toc_length_decompressed) {
             cli_mark_scan_incomplete(ctx, "XAR TOC decompressed length disagrees with its header");
             rc = CL_EFORMAT;
-            inflateEnd(&strm);
+            rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                      "XAR TOC decoder could not be finalized");
             goto exit_toc;
         }
 
-        if (inflateEnd(&strm) != Z_OK) {
-            cli_mark_scan_incomplete(ctx, "XAR TOC decoder could not be finalized");
-            rc = CL_EFORMAT;
+        rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                  "XAR TOC decoder could not be finalized");
+        if (rc != CL_SUCCESS)
             goto exit_toc;
-        }
     }
 
     /* Scan the completed TOC as a child, then parse it through libxml2's
@@ -1205,7 +1229,8 @@ int cli_scanxar(cli_ctx *ctx)
 
                     rc = xar_checktimelimit(ctx, "XAR gzip decoder traversal reached the configured time limit");
                     if (rc != CL_SUCCESS) {
-                        inflateEnd(&strm);
+                        rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                                  "XAR gzip member decoder could not be finalized");
                         goto exit_tmpfile;
                     }
 
@@ -1214,8 +1239,9 @@ int cli_scanxar(cli_ctx *ctx)
                         cli_mark_scan_incomplete(ctx, read_status == CL_EREAD
                                                        ? "XAR compressed member input could not be read completely"
                                                        : "XAR compressed member input is truncated");
-                        inflateEnd(&strm);
                         rc = read_status;
+                        rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                                  "XAR gzip member decoder could not be finalized");
                         goto exit_tmpfile;
                     }
                     at += bytes;
@@ -1272,7 +1298,8 @@ int cli_scanxar(cli_ctx *ctx)
                                                    "XAR gzip member output reached the configured time limit",
                                                    "XAR gzip member could not be written completely")) != CL_SUCCESS) {
                             cli_dbgmsg("cli_scanxar: cli_writen error file %s.\n", tmpname);
-                            inflateEnd(&strm);
+                            rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                                      "XAR gzip member decoder could not be finalized");
                             goto exit_tmpfile;
                         }
                         if (inf == Z_STREAM_END) {
@@ -1301,10 +1328,8 @@ int cli_scanxar(cli_ctx *ctx)
                     }
                 }
 
-                if (stream_initialized && inflateEnd(&strm) != Z_OK) {
-                    cli_mark_scan_incomplete(ctx, "XAR gzip member decoder could not be finalized");
-                    rc = cli_merge_cleanup_status(rc, CL_EUNPACK);
-                }
+                rc = xar_finalize_inflate(ctx, &strm, &stream_initialized, rc,
+                                          "XAR gzip member decoder could not be finalized");
                 if (rc != CL_SUCCESS)
                     goto exit_tmpfile;
                 if (rc == CL_SUCCESS && !stream_complete) {
