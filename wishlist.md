@@ -13163,9 +13163,11 @@ qualification remain open.
   short materialized input is `CL_EPARSE`, while an in-range descriptor
   failure remains `CL_EREAD`; neither outcome may publish decoded output or
   leave a cacheable owning layer.
-- Retain `vba_readn_full()`, the sized `cli_readn` regression
-  `test_ppt_compressed_stream_read_status_is_fail_visible`, its source guards,
-  and the `ppt-compressed-stream-read-status` manifest evidence. Add
+- Retain `vba_readn_full()`, the sized `cli_readn` regressions
+  `test_ppt_compressed_stream_read_status_is_fail_visible` and
+  `test_ppt_compressed_stream_refill_read_status_is_fail_visible`, their
+  source guards, and the `ppt-compressed-stream-read-status` manifest
+  evidence. Add
   current-source production-linked execution, complete OLE2/VBA/PowerPoint
   corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and parser/release qualification

@@ -159,10 +159,11 @@ The decoder now uses `vba_readn_full()` at both boundaries: a short read is
 reported as `CL_EPARSE`, while a descriptor failure remains `CL_EREAD`, with
 class-specific sticky incomplete state before any decoded output is published.
 
-`test_ppt_compressed_stream_read_status_is_fail_visible` injects both outcomes
-at the initial compressed window and requires no temporary output, no clean
-cache state, and the exact diagnostic. The current source, test, registration,
-and capability manifest are source-guarded. Current-source production-GCC
+`test_ppt_compressed_stream_read_status_is_fail_visible` and
+`test_ppt_compressed_stream_refill_read_status_is_fail_visible` inject both
+outcomes at the initial and final refill windows and require no temporary
+output, no clean cache state, and the exact diagnostic. The current source,
+tests, registration, and capability manifest are source-guarded. Current-source production-GCC
 and linked execution, complete OLE2/VBA/PowerPoint corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.

@@ -13032,6 +13032,97 @@ START_TEST(test_ppt_compressed_stream_read_status_is_fail_visible)
     unlink(path);
 }
 END_TEST
+
+START_TEST(test_ppt_compressed_stream_refill_read_status_is_fail_visible)
+{
+    static const char *const reasons[] = {
+        "PowerPoint compressed stream was truncated",
+        "PowerPoint compressed stream could not be read completely",
+    };
+    const size_t source_size = 20000U;
+    const size_t compressed_window_size = 8192U;
+    uLongf compressed_size = compressBound(source_size);
+    unsigned char *source = malloc(source_size);
+    unsigned char *compressed = malloc(compressed_size);
+    unsigned char *input;
+    size_t atom_payload_size;
+    size_t input_size;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    char path[PATH_MAX];
+    char *dir;
+    uint64_t temporary_reserved;
+    uint32_t random_state = 0x12345678U;
+    unsigned int i;
+    size_t j;
+    int fd;
+
+    ck_assert_ptr_nonnull(source);
+    ck_assert_ptr_nonnull(compressed);
+    for (j = 0; j < source_size; j++) {
+        random_state = random_state * 1664525U + 1013904223U;
+        source[j] = (unsigned char)(random_state >> 24);
+    }
+    ck_assert_int_eq(compress2(compressed, &compressed_size, source,
+                               source_size, Z_BEST_COMPRESSION), Z_OK);
+    ck_assert_uint_gt(compressed_size, compressed_window_size);
+    ck_assert_uint_ne(compressed_size % compressed_window_size, 0);
+
+    atom_payload_size = sizeof(uint32_t) + (size_t)compressed_size;
+    input_size        = sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t) + atom_payload_size;
+    input             = calloc(1, input_size);
+    ck_assert_ptr_nonnull(input);
+    input[2] = 0x11;
+    input[3] = 0x10;
+    cli_writeint32(input + 4, (uint32_t)atom_payload_size);
+    memcpy(input + 8 + sizeof(uint32_t), compressed, compressed_size);
+    free(source);
+    free(compressed);
+
+    snprintf(path, sizeof(path), "%s/ppt-compressed-stream-refill-read-status", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, input, input_size), input_size);
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+
+    map = fmap_open_memory(input, input_size, NULL);
+    ck_assert_ptr_nonnull(map);
+
+    for (i = 0; i < 2; i++) {
+        memset(&engine, 0, sizeof(engine));
+        memset(&options, 0, sizeof(options));
+        memset(&ctx, 0, sizeof(ctx));
+        engine.maxtemporarysize = 1024U * 1024U;
+        ctx.engine              = &engine;
+        ctx.options             = &options;
+        ctx.fmap                = map;
+        ctx.this_layer_tmpdir   = tmpdir;
+        map->dont_cache_flag    = false;
+        temporary_reserved      = 0;
+
+        ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+        clamav_test_force_cli_readn_count  = (size_t)compressed_size % compressed_window_size;
+        clamav_test_force_cli_readn_status = i == 0 ? 1 : 2;
+        dir = cli_ppt_vba_read_ex(fd, &ctx, &temporary_reserved);
+
+        ck_assert_ptr_null(dir);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, reasons[i]);
+        ck_assert(map->dont_cache_flag);
+        ck_assert_uint_eq(temporary_reserved, 0);
+        ck_assert_uint_eq(ctx.temporary_bytes, 0);
+        ck_assert_int_eq(clamav_test_force_cli_readn_status, 0);
+    }
+
+    clamav_test_force_cli_readn_count = 0;
+    fmap_free(map);
+    free(input);
+    ck_assert_int_eq(close(fd), 0);
+    unlink(path);
+}
+END_TEST
 #endif
 
 START_TEST(test_ooxml_null_context_is_fail_visible)
@@ -60889,6 +60980,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ppt_entry, test_ppt_vba_decoder_finalization_failure_is_fail_visible);
     tcase_add_test(tc_ppt_entry, test_ppt_atom_header_read_status_is_fail_visible);
     tcase_add_test(tc_ppt_entry, test_ppt_compressed_stream_read_status_is_fail_visible);
+    tcase_add_test(tc_ppt_entry, test_ppt_compressed_stream_refill_read_status_is_fail_visible);
 #endif
 #ifdef CLAMAV_TEST_LSEEK_WRAP
     tcase_add_test(tc_ppt_entry, test_ppt_vba_lseek_failure_is_fail_visible);
