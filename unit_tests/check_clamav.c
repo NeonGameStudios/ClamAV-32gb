@@ -321,6 +321,7 @@ static unsigned int indicator_test_array_add_calls;
 static int nested_layer_test_fail_array_add;
 static int nested_layer_test_fail_object_add;
 static int json_api_test_fail_array_add;
+static int json_api_test_fail_object_add;
 
 int __wrap_json_object_array_add(json_object *obj, json_object *val)
 {
@@ -357,6 +358,8 @@ int __wrap_json_object_array_add(json_object *obj, json_object *val)
 
 int __wrap_json_object_object_add(json_object *obj, const char *key, json_object *val)
 {
+    if (json_api_test_fail_object_add)
+        return -1;
     if (nested_layer_test_fail_object_add && key &&
         (strcmp(key, "ContainedObjects") == 0 || strcmp(key, "EmbeddedObjects") == 0)) {
         nested_layer_test_fail_object_add = 0;
@@ -5046,6 +5049,33 @@ START_TEST(test_json_array_add_failure_is_fail_visible)
     ck_assert_int_eq(cli_jsonstr(array, NULL, "value"), CL_SUCCESS);
     ck_assert_uint_eq(json_object_array_length(array), 1U);
     json_object_put(array);
+}
+END_TEST
+
+START_TEST(test_json_object_add_failure_is_fail_visible)
+{
+    json_object *object;
+
+    object = json_object_new_object();
+    ck_assert_ptr_nonnull(object);
+    json_api_test_fail_object_add = 1;
+
+    ck_assert_int_eq(cli_jsonnull(object, "Null"), CL_EMEM);
+    ck_assert_int_eq(cli_jsonstr(object, "String", "value"), CL_EMEM);
+    ck_assert_int_eq(cli_jsonstrlen(object, "Bounded", "value", 5), CL_EMEM);
+    ck_assert_int_eq(cli_jsonint(object, "Int", 1), CL_EMEM);
+    ck_assert_int_eq(cli_jsonint64(object, "Int64", 2), CL_EMEM);
+    ck_assert_int_eq(cli_jsonuint64(object, "UInt64", 3), CL_EMEM);
+    ck_assert_int_eq(cli_jsonbool(object, "Bool", 1), CL_EMEM);
+    ck_assert_int_eq(cli_jsondouble(object, "Double", 4.0), CL_EMEM);
+    ck_assert_ptr_null(cli_jsonarray(object, "Array"));
+    ck_assert_ptr_null(cli_jsonobj(object, "Object"));
+    ck_assert_uint_eq(json_object_object_length(object), 0U);
+
+    json_api_test_fail_object_add = 0;
+    ck_assert_int_eq(cli_jsonstr(object, "String", "value"), CL_SUCCESS);
+    ck_assert_uint_eq(json_object_object_length(object), 1U);
+    json_object_put(object);
 }
 END_TEST
 
@@ -55909,6 +55939,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_virus_indicator_append_boundaries_are_fail_visible);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_cl, test_json_array_add_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_json_object_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_metadata_record_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_virus_indicator_metadata_array_add_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_nested_layer_metadata_array_add_failure_is_fail_visible);

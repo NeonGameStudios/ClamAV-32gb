@@ -8709,6 +8709,21 @@ complete signature/evidence corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and release
 qualification remain required.
 
+## Shared JSON object-property insertion failures — 2026-09-01
+
+The shared `cli_json` scalar helpers now propagate
+`json_object_object_add()` failures as `CL_EMEM` and release newly allocated
+values that were not accepted. The array/object factories return `NULL` and
+release unattached children when object-property insertion fails. The focused
+`test_json_object_add_failure_is_fail_visible` regression injects the
+production-linked failure across null, string, bounded string, signed and
+unsigned integer, boolean, double, and array/object factory helpers, requires
+an unchanged empty object, and verifies normal insertion after the fault is
+cleared. Current-source production-linked execution, complete
+metadata/parser corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+release qualification remain required.
+
 ## Shared JSON array insertion failures — 2026-09-01
 
 The shared `cli_json` scalar and null helpers, plus the array/object factories,

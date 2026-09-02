@@ -11611,6 +11611,18 @@ final parser/release qualification remain open.
   materialized-large-file, Sonic1, resource, and final release qualification
   remain open.
 
+## Shared JSON object-property insertion failures — 2026-09-01
+
+- Keep shared `cli_json` scalar writes fail-visible when
+  `json_object_object_add()` rejects a property; release rejected values and
+  return `CL_EMEM`. Array/object factories must return `NULL` and release
+  unattached children when object insertion fails.
+- Retain `test_json_object_add_failure_is_fail_visible` and its JSON-wrap
+  source guards. Current-source production-linked execution, complete
+  metadata/parser corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final matcher/release qualification remain open.
+
 
 ## MSXML Value-array metadata insertion — 2026-09-01
 

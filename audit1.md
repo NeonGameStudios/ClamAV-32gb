@@ -19676,8 +19676,9 @@ or nested metadata object appended to an array could therefore be silently
 omitted while callers received success or a non-NULL child. The scalar helpers
 now return `CL_EMEM`, and the factories return `NULL`, when array insertion
 fails; each releases a newly allocated JSON value that was not accepted by the
-array. Object insertion retains json-c's void API, while existing
-object-allocation checks remain in the callers and helper constructors.
+array. Object-property insertion is covered by the shared helper audit below;
+existing object-allocation checks remain in the callers and helper
+constructors.
 
 `test_json_array_add_failure_is_fail_visible` injects the production-linked
 json-c array insertion failure across the array/object factories, null, string,
@@ -19685,6 +19686,23 @@ bounded string, signed and unsigned integer, boolean, double, and integer-array
 helpers. It requires all failed operations to leave the array empty, then
 verifies successful insertion after the fault is cleared. Current-source
 production-GCC compilation,
+production-linked execution, sanitizer, complete metadata/parser corpus,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final matcher/release qualification remain required.
+
+## Shared JSON object-property insertion failures — 2026-09-01
+
+The shared `cli_json` scalar helpers previously discarded failures from
+`json_object_object_add()`, and the array/object factories could return a
+newly allocated child that was never attached to its parent. The helper layer
+now returns `CL_EMEM` for rejected object-property values, releases those
+values, and returns `NULL` from factories after releasing unattached children.
+
+`test_json_object_add_failure_is_fail_visible` injects the production-linked
+object-property failure across null, string, bounded string, signed and
+unsigned integer, boolean, double, and array/object factory helpers. It
+requires an unchanged empty object and verifies normal insertion after the
+fault is cleared. Current-source production-GCC compilation,
 production-linked execution, sanitizer, complete metadata/parser corpus,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final matcher/release qualification remain required.
