@@ -671,6 +671,8 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
     }
     if (!ctx->engine)
         return CL_ENULLARG;
+    if (!ctx->options)
+        return CL_ENULLARG;
 
     if (cli_7z_checktimelimit(ctx, "7-Zip inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;

@@ -52,6 +52,23 @@ execution, complete ISO/Joliet corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## 7-Zip direct options admission — 2026-09-02
+
+The exported `cli_7unz()` entry rejected null context, input fmap, and engine
+state but did not reject missing scan options before deadline checks,
+temporary output, archive traversal, and nested-child scanning. A direct
+caller with incomplete scan configuration could therefore enter decoder paths
+without the required options object. The entry now returns `CL_ENULLARG`
+immediately after engine admission when `ctx->options` is absent.
+
+`test_7z_missing_options_is_fail_visible` supplies a map and engine while
+omitting options, and verifies `CL_ENULLARG` without sticky incomplete or
+cache-taint state. Source guards and the capability manifest record the
+boundary. Current-source production-GCC compilation, production-linked
+execution, complete 7-Zip corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## SIS direct options admission — 2026-09-02
 
 The exported `cli_scansis()` entry rejected null context, input fmap, and
