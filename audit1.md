@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## DMG deflate decoder finalization status — 2026-09-02
+
+DMG deflate stripes now check `inflateEnd()` and merge `CL_EUNPACK` when the
+decoder cannot be finalized, preserving any earlier parser, read, limit,
+timeout, detection, or output-cleanup result. The focused synthetic DMG
+regression injects a one-shot finalization failure after a complete 512-byte
+deflate stripe and requires the exact incomplete diagnostic and fmap
+non-cacheability. Current-source production-GCC compilation and linked
+execution, complete DMG/UDIF corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## GZip decoder finalization status — 2026-09-02
 
 The main GZip decoder now checks `inflateEnd()` on every initialized-stream

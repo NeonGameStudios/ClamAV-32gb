@@ -1447,7 +1447,10 @@ static int dmg_stripe_inflate(cli_ctx *ctx, int fd, uint32_t index, struct dmg_m
         }
     }
 
-    inflateEnd(&strm);
+    if (inflateEnd(&strm) != Z_OK) {
+        cli_mark_scan_incomplete(ctx, "DMG deflate decompressor could not be finalized");
+        ret = cli_merge_cleanup_status(ret, CL_EUNPACK);
+    }
     return ret;
 }
 

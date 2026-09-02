@@ -164,6 +164,7 @@ int clamav_test_force_xar_member_decoder_init;
 int clamav_test_force_xar_member_decoder_end;
 int clamav_test_force_ishield_cab_decoder_end;
 int clamav_test_force_gzip_decoder_end;
+int clamav_test_force_dmg_decoder_end;
 int clamav_test_force_bzip_concat_decoder_init;
 int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
@@ -196,6 +197,11 @@ int __wrap_inflateEnd(z_streamp strm)
     if (clamav_test_force_gzip_decoder_end > 0) {
         clamav_test_force_gzip_decoder_end--;
         if (clamav_test_force_gzip_decoder_end == 0)
+            return Z_STREAM_ERROR;
+    }
+    if (clamav_test_force_dmg_decoder_end > 0) {
+        clamav_test_force_dmg_decoder_end--;
+        if (clamav_test_force_dmg_decoder_end == 0)
             return Z_STREAM_ERROR;
     }
     if (clamav_test_force_xar_member_decoder_end > 0) {
@@ -41986,6 +41992,29 @@ static char *dmg_test_stored_mish_base64(void)
     return dmg_test_base64_encode(mish, sizeof(mish));
 }
 
+static char *dmg_test_deflate_mish_base64(uint64_t compressed_length)
+{
+    uint8_t mish[sizeof(struct dmg_mish_block) + 2U * sizeof(struct dmg_block_data)] = {0};
+    size_t stripe_offset = sizeof(struct dmg_mish_block);
+
+    memcpy(mish, "mish", 4);
+    dmg_test_write_be32(mish + offsetof(struct dmg_mish_block, version), 1);
+    dmg_test_write_be64(mish + offsetof(struct dmg_mish_block, sectorCount), 1);
+    dmg_test_write_be32(mish + offsetof(struct dmg_mish_block, blockDataCount), 2);
+
+    dmg_test_write_be32(mish + stripe_offset + offsetof(struct dmg_block_data, type), DMG_STRIPE_DEFLATE);
+    dmg_test_write_be64(mish + stripe_offset + offsetof(struct dmg_block_data, startSector), 0);
+    dmg_test_write_be64(mish + stripe_offset + offsetof(struct dmg_block_data, sectorCount), 1);
+    dmg_test_write_be64(mish + stripe_offset + offsetof(struct dmg_block_data, dataOffset), 0);
+    dmg_test_write_be64(mish + stripe_offset + offsetof(struct dmg_block_data, dataLength), compressed_length);
+
+    stripe_offset += sizeof(struct dmg_block_data);
+    dmg_test_write_be32(mish + stripe_offset + offsetof(struct dmg_block_data, type), DMG_STRIPE_END);
+    dmg_test_write_be64(mish + stripe_offset + offsetof(struct dmg_block_data, startSector), 1);
+
+    return dmg_test_base64_encode(mish, sizeof(mish));
+}
+
 static cl_error_t dmg_test_scan_data_body(const char *data_body, struct cl_engine *engine, int *scan_incomplete)
 {
     static const char prefix[] =
@@ -42352,6 +42381,79 @@ START_TEST(test_dmg_in_memory_stripes_keep_host_order)
     free(image);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_dmg_deflate_decoder_finalization_failure_is_fail_visible)
+{
+    static const char prefix[] =
+        "<?xml version=\"1.0\"?><plist><dict><key>resource-fork</key><dict>"
+        "<key>blkx</key><array><dict><key>Data</key><data>";
+    static const char suffix[] = "</data></dict></array></dict></dict></plist>";
+    uint8_t plain[512] = {0};
+    uint8_t compressed[1024];
+    uLongf compressed_length = sizeof(compressed);
+    char *base64;
+    char *xml;
+    size_t base64_length;
+    size_t xml_length;
+    uint8_t *image;
+    size_t image_length;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[4];
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(compress2(compressed, &compressed_length, plain, sizeof(plain), Z_BEST_SPEED), Z_OK);
+    base64 = dmg_test_deflate_mish_base64((uint64_t)compressed_length);
+    ck_assert_ptr_nonnull(base64);
+    base64_length = strlen(base64);
+    ck_assert_msg(base64_length <= SIZE_MAX - sizeof(prefix) - sizeof(suffix),
+                  "DMG deflate XML length overflow");
+    xml_length = sizeof(prefix) - 1U + base64_length + sizeof(suffix) - 1U;
+    xml = malloc(xml_length + 1U);
+    ck_assert_ptr_nonnull(xml);
+    ck_assert_int_eq(snprintf(xml, xml_length + 1U, "%s%s%s", prefix, base64, suffix),
+                     (int)xml_length);
+    image = dmg_test_image_with_data(compressed, (size_t)compressed_length, xml, &image_length);
+    free(xml);
+    free(base64);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(image, image_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+    ctx.recursion_stack     = layers;
+    ctx.recursion_stack_size = 4;
+    layers[0].type           = CL_TYPE_DMG;
+    layers[0].size           = image_length;
+    layers[0].fmap           = map;
+
+    clamav_test_force_dmg_decoder_end = 1;
+    ret = cli_scandmg(&ctx);
+
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "DMG deflate decompressor could not be finalized");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_dmg_decoder_end, 0);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(image);
+}
+END_TEST
+#endif
 
 START_TEST(test_dmg_sticky_incomplete_result_is_fail_visible)
 {
@@ -59063,6 +59165,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
     tcase_add_test(tc_dmg, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg, test_dmg_in_memory_stripes_keep_host_order);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_dmg, test_dmg_deflate_decoder_finalization_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_dmg, test_dmg_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_external_sort_is_bounded_and_complete);
     tcase_add_test(tc_dmg, test_dmg_truncated_metadata_is_parse_not_read);
