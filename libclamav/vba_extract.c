@@ -124,6 +124,19 @@ vba_readn_full(int fd, void *buffer, size_t length)
     return read_length == (size_t)-1 ? CL_EREAD : CL_EPARSE;
 }
 
+/* The project-directory stream is fully decompressed and size-verified
+ * before this parser starts. A failed field-size, record-id, or end-range
+ * check below therefore describes malformed materialized content, not a
+ * backing-file read failure. Keep that distinction visible to the OLE
+ * caller, which may otherwise retry a bad candidate as if it were merely
+ * unavailable. */
+static cl_error_t
+vba_directory_parse_error(cli_ctx *ctx)
+{
+    cli_mark_scan_incomplete(ctx, "VBA project directory is malformed");
+    return CL_EPARSE;
+}
+
 static uint16_t
 vba_endian_convert_16(uint16_t value, int big_endian)
 {
@@ -1035,7 +1048,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
         if (sizeof(uint16_t) > data_len - data_offset) {
             cli_warnmsg("vba_readdir_new: Failed to read record type from dir\n");
-            ret = CL_EREAD;
+            ret = vba_directory_parse_error(ctx);
             goto done;
         }
         memcpy(&val16, &data[data_offset], sizeof(uint16_t));
@@ -1044,7 +1057,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
         if (sizeof(uint32_t) > data_len - data_offset) {
             cli_warnmsg("vba_readdir_new: Failed to read record size from dir\n");
-            ret = CL_EREAD;
+            ret = vba_directory_parse_error(ctx);
             goto done;
         }
         memcpy(&val32, &data[data_offset], sizeof(uint32_t));
@@ -1053,7 +1066,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
         if (size > data_len - data_offset) {
             cli_warnmsg("vba_readdir_new: Record stretches past the end of the file\n");
-            ret = CL_EREAD;
+            ret = vba_directory_parse_error(ctx);
             goto done;
         }
 
@@ -1062,7 +1075,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x0001: {
                 if (size != sizeof(uint32_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTSYSKIND record size (%" PRIu32 " != 4)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val32, &data[data_offset], sizeof(uint32_t));
@@ -1099,7 +1112,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x0002: {
                 if (size != sizeof(uint32_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTLCID record size (%" PRIu32 " != 4)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val32, &data[data_offset], sizeof(uint32_t));
@@ -1117,7 +1130,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x0014: {
                 if (size != sizeof(uint32_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTLCIDINVOKE record size (%" PRIu32 " != 4)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val32, &data[data_offset], sizeof(uint32_t));
@@ -1135,7 +1148,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x0003: {
                 if (size != sizeof(uint16_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTCODEPAGE record size (%" PRIu32 " != 2)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
@@ -1153,7 +1166,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x0004: {
                 if (size < 1 || size > 128) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTNAME record size (1 <= %" PRIu32 " <= 128)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1175,7 +1188,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x0040: {
                 if (size % 2 != 0) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTDOCSTRINGUNICODE record size (%" PRIu32 " but should be even)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 CLI_WRITEN("REM PROJECTDOCSTRINGUNICODE: ", 29);
@@ -1188,7 +1201,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x0006: {
                 if (size > 260) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTHELPFILEPATH record size (%" PRIu32 " <= 260)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 const size_t projecthelpfilepath_offset = data_offset;
@@ -1199,7 +1212,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                 if (sizeof(uint16_t) > data_len - data_offset) {
                     cli_warnmsg("vba_readdir_new: Failed to read record type from dir\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
@@ -1213,7 +1226,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                 if (sizeof(uint32_t) > data_len - data_offset) {
                     cli_warnmsg("vba_readdir_new: Failed to read record size of PROJECTHELPFILEPATH2 record from dir\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 uint32_t size2;
@@ -1223,13 +1236,13 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                 if (size2 > data_len - data_offset) {
                     cli_warnmsg("vba_readdir_new: PROJECTHELPFILEPATH2 record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 if (size2 > 260) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTHELPFILEPATH2 record size (%" PRIu32 " <= 260)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1251,7 +1264,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x0007: {
                 if (size != sizeof(uint32_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTHELPCONTEXT record size (%" PRIu32 " != 4)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val32, &data[data_offset], sizeof(uint32_t));
@@ -1269,7 +1282,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x0008: {
                 if (size != sizeof(uint32_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTLIBFLAGS record size (%" PRIu32 " != 4)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val32, &data[data_offset], sizeof(uint32_t));
@@ -1288,7 +1301,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 // The PROJECTVERSION record size is expected to be 4, even though the record size is 6.
                 if (size != 4) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTVERSION record size (%" PRIu32 " != 4)\n", size);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val32, &data[data_offset], sizeof(uint32_t));
@@ -1297,7 +1310,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                 if (sizeof(uint16_t) > data_len - data_offset) {
                     cli_warnmsg("vba_readdir_new: PROJECTVERSION record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
@@ -1315,7 +1328,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x000f: {
                 if (size != sizeof(uint16_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTMODULES record size\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
@@ -1333,7 +1346,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             case 0x0013: {
                 if (size != sizeof(uint16_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTCOOKIE record size\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
@@ -1361,14 +1374,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 cli_dbgmsg("Reading MODULENAMEUNICODE record\n");
                 if (sizeof(uint16_t) + sizeof(uint32_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULENAMEUNICODE record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
                 if ((id = le16_to_host(val16)) != 0x0047) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULENAMEUNICODE (0x47) record, but got 0x%04x\n", id);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 data_offset += sizeof(uint16_t);
@@ -1379,12 +1392,12 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                 if (size > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULENAMEUNICODE stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 if (size % 2 != 0) {
                     cli_mark_scan_incomplete(ctx, "VBA Unicode module name has an odd byte length");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1399,14 +1412,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 cli_dbgmsg("Reading MODULESTREAMNAME record\n");
                 if (sizeof(uint16_t) + sizeof(uint32_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULESTREAMNAME record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
                 if ((id = le16_to_host(val16)) != 0x001a) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULESTREAMNAME (0x1a) record, but got 0x%04x\n", id);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 data_offset += sizeof(uint16_t);
@@ -1417,7 +1430,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                 if (size > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULESTREAMNAME stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 CLI_WRITEN_CODEPAGE(&data[data_offset], size, codepage, &mbcs_digest);
@@ -1426,14 +1439,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 cli_dbgmsg("Reading MODULESTREAMNAMEUNICODE record\n");
                 if (sizeof(uint16_t) + sizeof(uint32_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULESTREAMNAMEUNICODE record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
                 if ((id = le16_to_host(val16)) != 0x0032) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULESTREAMNAMEUNICODE (0x32) record, but got 0x%04x\n", id);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 data_offset += sizeof(uint16_t);
@@ -1444,7 +1457,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                 if (module_stream_name_size > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULESTREAMNAMEUNICODE stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 if (module_stream_name_size == 0) {
@@ -1471,14 +1484,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 cli_dbgmsg("Reading MODULEDOCSTRING record\n");
                 if (sizeof(uint16_t) + sizeof(uint32_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULEDOCSTRING record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
                 if ((id = le16_to_host(val16)) != 0x001c) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULEDOCSTRING (0x1c) record, but got 0x%04x\n", id);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 data_offset += sizeof(uint16_t);
@@ -1489,7 +1502,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                 if (size > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULEDOCSTRING stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 CLI_WRITEN_CODEPAGE(&data[data_offset], size, codepage, &mbcs_digest);
@@ -1498,14 +1511,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 cli_dbgmsg("Reading MODULEDOCSTRINGUNICODE record\n");
                 if (sizeof(uint16_t) + sizeof(uint32_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULEDOCSTRINGUNICODE record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
                 if ((id = le16_to_host(val16)) != 0x0048) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULEDOCSTRINGUNICODE (0x32) record, but got 0x%04x\n", id);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 data_offset += sizeof(uint16_t);
@@ -1516,12 +1529,12 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                 if (size > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULEDOCSTRINGUNICODE stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 if (size % 2 != 0) {
                     cli_mark_scan_incomplete(ctx, "VBA Unicode module docstring has an odd byte length");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1536,14 +1549,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 cli_dbgmsg("Reading MODULEOFFSET record\n");
                 if (sizeof(uint16_t) + sizeof(uint32_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULEOFFSET record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
                 if ((id = le16_to_host(val16)) != 0x0031) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULEOFFSET (0x31) record, but got 0x%04x\n", id);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 data_offset += sizeof(uint16_t);
@@ -1552,13 +1565,13 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 data_offset += sizeof(uint32_t);
                 if (size != sizeof(uint32_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULEOFFSET record size");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 if (size > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULEOFFSET stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1575,14 +1588,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 cli_dbgmsg("Reading MODULEHELPCONTEXT record\n");
                 if (sizeof(uint16_t) + sizeof(uint32_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULEHELPCONTEXT record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
                 if ((id = le16_to_host(val16)) != 0x001e) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULEHELPCONTEXT (0x1e) record, but got 0x%04x\n", id);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1592,13 +1605,13 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 data_offset += sizeof(uint32_t);
                 if (size != sizeof(uint32_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULEHELPCONTEXT record size");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 if (size > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULEHELPCONTEXT stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1614,14 +1627,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 cli_dbgmsg("Reading MODULECOOKIE record\n");
                 if (sizeof(uint16_t) + sizeof(uint32_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULECOOKIE record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 memcpy(&val16, &data[data_offset], sizeof(uint16_t));
                 if ((id = le16_to_host(val16)) != 0x002c) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULECOOKIE (0x2c) record, but got 0x%04x\n", id);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 data_offset += sizeof(uint16_t);
@@ -1630,13 +1643,13 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 data_offset += sizeof(uint32_t);
                 if (size != sizeof(uint16_t)) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULECOOKIE record size");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 if (size > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULECOOKIE record's cookie stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1651,7 +1664,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 // MS-OVBA 2.3.4.2.3.2.8 MODULETYPE
                 if (sizeof(uint16_t) + sizeof(uint32_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULETYPE record stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1659,7 +1672,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 id = le16_to_host(val16);
                 if (id != 0x0021 && id != 0x0022) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULETYPE (0x21/0x22) record, but got 0x%04x\n", id);
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 data_offset += sizeof(uint16_t);
@@ -1668,7 +1681,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 data_offset += sizeof(uint32_t);
                 if (size != 0) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULETYPE record size");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
                 if (id == 0x21) {
@@ -1680,7 +1693,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 // MS-OVBA 2.3.4.2.3.2.9 MODULEREADONLY
                 if (sizeof(uint16_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULEREADONLY record id field stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1691,7 +1704,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 if (id == 0x0025) {
                     if (sizeof(uint32_t) > data_len - data_offset) {
                         cli_dbgmsg("vba_readdir_new: MODULEREADONLY record size field stretches past the end of the file\n");
-                        ret = CL_EREAD;
+                        ret = vba_directory_parse_error(ctx);
                         goto done;
                     }
 
@@ -1700,14 +1713,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                     data_offset += sizeof(uint32_t);
                     if (size != 0) {
                         cli_dbgmsg("cli_vba_readdir_new: Expected MODULEREADONLY record size");
-                        ret = CL_EREAD;
+                        ret = vba_directory_parse_error(ctx);
                         goto done;
                     }
                     CLI_WRITEN("\nREM MODULEREADONLY", 19);
 
                     if (sizeof(uint16_t) > data_len - data_offset) {
                         cli_dbgmsg("vba_readdir_new: record id field after MODULEREADONLY stretches past the end of the file\n");
-                        ret = CL_EREAD;
+                        ret = vba_directory_parse_error(ctx);
                         goto done;
                     }
 
@@ -1720,7 +1733,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 if (id == 0x0028) {
                     if (sizeof(uint32_t) > data_len - data_offset) {
                         cli_dbgmsg("vba_readdir_new: MODULEPRIVATE record size field stretches past the end of the file\n");
-                        ret = CL_EREAD;
+                        ret = vba_directory_parse_error(ctx);
                         goto done;
                     }
 
@@ -1729,14 +1742,14 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                     data_offset += sizeof(uint32_t);
                     if (size != 0) {
                         cli_dbgmsg("cli_vba_readdir_new: Expected MODULEPRIVATE record size");
-                        ret = CL_EREAD;
+                        ret = vba_directory_parse_error(ctx);
                         goto done;
                     }
                     CLI_WRITEN("\nREM MODULEPRIVATE", 18);
 
                     if (sizeof(uint16_t) > data_len - data_offset) {
                         cli_dbgmsg("vba_readdir_new: record id field after MODULEPRIVATE stretches past the end of the file\n");
-                        ret = CL_EREAD;
+                        ret = vba_directory_parse_error(ctx);
                         goto done;
                     }
 
@@ -1748,13 +1761,13 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 // Terminator
                 if (id != 0x002b) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULETERMINATOR ....");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
                 if (sizeof(uint32_t) > data_len - data_offset) {
                     cli_dbgmsg("vba_readdir_new: MODULETERMINATOR record size field stretches past the end of the file\n");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 
@@ -1763,7 +1776,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 data_offset += sizeof(uint32_t);
                 if (size != 0) {
                     cli_dbgmsg("cli_vba_readdir_new: Expected MODULETERMINATOR record size");
-                    ret = CL_EREAD;
+                    ret = vba_directory_parse_error(ctx);
                     goto done;
                 }
 

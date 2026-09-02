@@ -43376,6 +43376,66 @@ START_TEST(test_vba_project_directory_uses_file_backed_input)
 }
 END_TEST
 
+START_TEST(test_vba_project_directory_materialized_malformed_record_is_parse_error)
+{
+    /* Three-byte compressed-container prefix, one literal flag, then an
+     * eight-byte PROJECTSYSKIND record with an impossible zero payload. */
+    static const unsigned char compressed_directory[] = {
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    static const unsigned char map_data[] = {0};
+    const char *hash = "vba-materialized-malformed-record";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    char input_path[PATH_MAX];
+    char *output_path = NULL;
+    uint64_t output_reserved = 0;
+    int output_fd = -1;
+    int has_macros = 0;
+    int input_fd;
+    cl_error_t status;
+
+    snprintf(input_path, sizeof(input_path), "%s/%s_1", tmpdir, hash);
+    input_fd = open(input_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(input_fd, -1);
+    ck_assert_uint_eq(cli_writen(input_fd, compressed_directory, sizeof(compressed_directory)),
+                      sizeof(compressed_directory));
+    ck_assert_int_eq(close(input_fd), 0);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(map_data, sizeof(map_data));
+    ck_assert_ptr_nonnull(map);
+    engine.maxfilesize      = 1024U * 1024U;
+    engine.maxtemporarysize = 1024U * 1024U;
+    ctx.engine              = &engine;
+    ctx.options             = &options;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    status = cli_vba_readdir_new(&ctx, tmpdir, NULL, hash, 1,
+                                 &output_fd, &has_macros, &output_path,
+                                 &output_reserved);
+    ck_assert_int_eq(status, CL_EPARSE);
+    ck_assert_int_eq(has_macros, 1);
+    ck_assert_int_eq(output_fd, -1);
+    ck_assert_ptr_nonnull(output_path);
+    ck_assert_int_eq(unlink(output_path), 0);
+    free(output_path);
+    ck_assert_uint_eq(output_reserved, 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "VBA project directory is malformed");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ck_assert_int_eq(unlink(input_path), 0);
+}
+END_TEST
+
 START_TEST(test_vba_project_directory_backing_quota_failure_is_fail_visible)
 {
     static const unsigned char compressed_directory[] = {
@@ -61819,6 +61879,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_vba_inflate_stream_propagates_output_failure);
 #if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_vba_project_directory_uses_file_backed_input);
+    tcase_add_test(tc_cl, test_vba_project_directory_materialized_malformed_record_is_parse_error);
     tcase_add_test(tc_cl, test_vba_project_directory_backing_quota_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_vba_project_directory_scan_limit_failure_is_fail_visible);
 #endif

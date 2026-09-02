@@ -150,6 +150,30 @@ PDF/Flate corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## VBA project-directory materialized parse status — 2026-09-02
+
+The modern VBA project-directory parser first fully decompresses and
+size-verifies the directory stream, then parses it from that exact
+materialized representation. Its record-boundary, fixed-size-field,
+expected-record-ID, and declared-size failures were still returned as
+`CL_EREAD`, even though no backing read was being attempted at those checks.
+The OLE caller could consequently retry malformed directory candidates as if
+they were unavailable, and direct callers received an operational status for
+malformed metadata.
+
+All post-decompression validation exits now use a shared parse-error helper
+that records `VBA project directory is malformed`, returns `CL_EPARSE`, and
+keeps the owning layer incomplete and non-cacheable. Genuine failures while
+decompressing the directory remain classified by `cli_vba_inflate_stream`,
+including `CL_EREAD` for an in-range source read failure. The focused
+`test_vba_project_directory_materialized_malformed_record_is_parse_error`
+fixture exercises an impossible `PROJECTSYSKIND` size and requires the
+fail-visible parse result, sticky reason, and cache taint; source guards and
+the capability manifest pin the boundary. Current-source production-GCC and
+linked execution, complete OLE/VBA corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## Legacy Word macro skip-record read status — 2026-09-02
 
 The legacy Word macro-directory skip helpers for `0x03`, menu,

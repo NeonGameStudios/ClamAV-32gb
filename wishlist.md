@@ -13321,3 +13321,21 @@ qualification remain open.
   Word/OLE corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final OLE/VBA qualification
   before closure.
+
+## VBA project-directory materialized parse status — 2026-09-02
+
+- Keep the modern VBA project-directory parser fail-visible after directory
+  decompression: record-boundary, fixed-size-field, expected-record-ID, and
+  declared-size validation failures are malformed materialized content and
+  must return `CL_EPARSE`, set the sticky incomplete diagnostic, and taint the
+  owning fmap; they must not be reported as `CL_EREAD` or retried as an
+  unavailable OLE candidate.
+- Retain `vba_directory_parse_error()`, the
+  `test_vba_project_directory_materialized_malformed_record_is_parse_error`
+  regression, its source guards, and the
+  `vba-project-directory-materialized-status` capability evidence. Genuine
+  failures while decompressing the directory remain `CL_EREAD` when the
+  backing source read fails. Add current-source production-GCC and linked
+  execution, complete OLE/VBA corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification before closure.

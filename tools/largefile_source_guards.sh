@@ -7898,6 +7898,12 @@ not_contains libclamav/ole2_extract.c 'is_mso < 0'
 contains unit_tests/check_clamav.c 'test_ole2_mso_stream_probe_read_status_is_fail_visible'
 contains docs/largefile-capabilities.tsv 'ole2-mso-stream-probe-read-status'
 
+contains libclamav/vba_extract.c 'vba_directory_parse_error(cli_ctx *ctx)'
+count_at_least libclamav/vba_extract.c 'vba_directory_parse_error(ctx)' 50
+contains unit_tests/check_clamav.c 'test_vba_project_directory_materialized_malformed_record_is_parse_error'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_cl, test_vba_project_directory_materialized_malformed_record_is_parse_error)'
+contains docs/largefile-capabilities.tsv 'vba-project-directory-materialized-status'
+
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2
     exit 1
