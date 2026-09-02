@@ -21471,6 +21471,68 @@ START_TEST(test_cli_magic_scan_ingress_rejects_missing_recursion_state)
 }
 END_TEST
 
+START_TEST(test_cli_magic_scan_ingress_rejects_missing_options)
+{
+    struct cl_engine engine;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    char directory[PATH_MAX];
+    char *path = NULL;
+    int fd      = -1;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.dboptions         = CL_DB_COMPILED;
+    ctx.engine               = &engine;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+
+    map = cl_fmap_open_memory(NULL, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap   = map;
+    layer.fmap = map;
+
+    ck_assert_int_eq(cli_magic_scan_nested_fmap_type(map, 0, 0, &ctx, CL_TYPE_ANY, NULL,
+                                                     LAYER_ATTRIBUTES_NONE),
+                     CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    ck_assert_int_eq(cli_magic_scan_buff(NULL, 0, &ctx, NULL, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(cli_magic_scan_desc_type(fd, path, &ctx, CL_TYPE_ANY, NULL,
+                                              LAYER_ATTRIBUTES_NONE),
+                     CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_int_eq(cli_magic_scan_file(path, &ctx, NULL, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+    ck_assert_int_eq(unlink(path), 0);
+    free(path);
+    path = NULL;
+
+    ck_assert_int_gt(snprintf(directory, sizeof(directory), "%s/magic-scan-dir-no-options-%ld", tmpdir,
+                              (long)getpid()),
+                     0);
+    ck_assert_int_eq(mkdir(directory, 0700), 0);
+    ck_assert_int_eq(cli_magic_scan_dir(directory, &ctx, LAYER_ATTRIBUTES_NONE), CL_ENULLARG);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+    ck_assert_int_eq(rmdir(directory), 0);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_cli_magic_scan_dir_rejects_missing_engine)
 {
     char directory[PATH_MAX];
@@ -57531,6 +57593,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cli_magic_scan_nested_entrypoints_reject_invalid_inputs);
     tcase_add_test(tc_cl, test_empty_nested_ingress_preserves_incomplete_state);
     tcase_add_test(tc_cl, test_cli_magic_scan_ingress_rejects_missing_recursion_state);
+    tcase_add_test(tc_cl, test_cli_magic_scan_ingress_rejects_missing_options);
     tcase_add_test(tc_cl, test_cli_magic_scan_dir_rejects_missing_engine);
     tcase_add_test(tc_cl, test_cli_magic_scan_file_rejects_invalid_inputs);
     tcase_add_test(tc_cl, test_ignored_file_type_is_fail_visible);

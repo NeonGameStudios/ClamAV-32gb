@@ -17,6 +17,24 @@ ingress/parser corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## Exported child-ingress options admission — 2026-09-02
+
+The descriptor, file, directory, buffer, and nested-map magic-scan entrypoints
+validated engines and, where applicable, recursion state, but empty inputs
+could return clean before validating `ctx->options`. The shared
+`cli_magic_scan_validate_options()` check now rejects that incomplete context
+with `CL_ENULLARG` before an empty-input fast path, fmap construction, file
+open, directory walk, or parser dispatch can present a false clean result.
+
+`test_cli_magic_scan_ingress_rejects_missing_options` covers all five exported
+entrypoints with a valid compiled engine and recursion layer, and verifies
+that the invalid context does not become sticky incomplete or cache-tainted.
+Source guards and the capability manifest record the boundary. Current-source
+production-GCC compilation, production-linked execution, complete
+ingress/parser corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## CPIO direct scan-state admission — 2026-09-02
 
 The CPIO old-binary, ODC, NEWC, and CRC direct parser entries required an

@@ -11,6 +11,21 @@
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification remain open.
 
+## Exported child-ingress options admission — 2026-09-02
+
+- Keep descriptor, file, directory, buffer, and nested-map magic-scan
+  entrypoints fail-visible when a valid engine and recursion layer are paired
+  with missing scan options; return `CL_ENULLARG` before empty-input
+  completion, fmap construction, file open, directory traversal, or parser
+  dispatch.
+- Retain `test_cli_magic_scan_ingress_rejects_missing_options`, its source
+  guards, and manifest evidence that no sticky incomplete/cache-taint state is
+  created for this invalid API context. Current-source production-GCC
+  compilation, production-linked execution, complete ingress/parser corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification remain open.
+
 ## CPIO direct scan-state admission — 2026-09-02
 
 - Keep old-binary, ODC, NEWC, and CRC CPIO direct parser entries fail-visible
