@@ -3,6 +3,22 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## PDF preclassification metadata failure visibility — 2026-09-01
+
+The confirmed PDF preclassification path now checks `PDFStats` creation,
+`BadVersion`, `PDFVersion`, `BadVersionLocation`, `NoEOF`, and `NoXREF` JSON
+writes, as well as the bounded `PDFVersion` allocation. Any failure records
+the exact sticky incomplete state, prevents fmap caching, and preserves
+`CL_EMEM` through the ordinary PDF cleanup merge. `PDFStats` creation is
+deferred until `%PDF-` is confirmed, so rejected candidates are not tainted.
+
+`test_pdf_preclassification_metadata_record_failure_is_fail_visible` covers
+the `BadVersion` write failure with the production-linked JSON wrapper.
+Current-source production-GCC compilation, production-linked execution,
+complete PDF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## clamdscan service completion failure visibility — 2026-09-01
 
 The serial client walker now preserves a non-success `cli_ftw()` result even

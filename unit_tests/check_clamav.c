@@ -308,6 +308,7 @@ static int pdf_test_fail_page_count;
 static int pdf_test_fail_incorrect_pages_count;
 static int pdf_test_fail_uri_metadata;
 static int pdf_test_fail_derived_metadata_array_add;
+static int pdf_test_fail_preclass_metadata;
 static int html_test_fail_uri_metadata;
 static int mbox_test_fail_root_metadata;
 static int root_metadata_test_fail_initial;
@@ -445,6 +446,10 @@ cl_error_t __wrap_cli_jsonbool(json_object *obj, const char *key, int i)
         return CL_EMEM;
     if (pdf_test_fail_incorrect_pages_count && key && strcmp(key, "IncorrectPagesCount") == 0)
         return CL_EMEM;
+    if (pdf_test_fail_preclass_metadata && key && strcmp(key, "BadVersion") == 0) {
+        pdf_test_fail_preclass_metadata = 0;
+        return CL_EMEM;
+    }
     if (pe_test_fail_empty_section_metadata && key && strcmp(key, "HasEmptySection") == 0)
         return CL_EMEM;
     return __real_cli_jsonbool(obj, key, i);
@@ -35296,6 +35301,59 @@ START_TEST(test_pdf_metadata_record_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_preclassification_metadata_record_failure_is_fail_visible)
+{
+    static const uint8_t document[] =
+        "%PDF-2.0\n"
+        "1 0 obj\n<<>>\nendobj\n"
+        "xref\n0 2\n"
+        "0000000000 65535 f \n"
+        "0000000009 00000 n \n"
+        "trailer\n<< /Size 2 >>\n"
+        "startxref\n29\n"
+        "%%EOF\n";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    json_object *metadata;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    ctx.engine                   = scan_engine;
+    ctx.dconf                    = scan_engine->dconf;
+    ctx.options                  = &options;
+    ctx.fmap                     = map;
+    ctx.this_layer_tmpdir        = tmpdir;
+    ctx.this_layer_metadata_json = metadata;
+
+    pdf_test_fail_preclass_metadata = 1;
+    ret                            = cli_pdf(tmpdir, &ctx, 0);
+    pdf_test_fail_preclass_metadata = 0;
+
+    ck_assert_int_eq(ret, CL_EMEM);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PDF preclassification metadata could not be recorded");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(metadata);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_pdf_derived_metadata_array_add_failure_is_fail_visible)
 {
     static const uint8_t document[] =
@@ -57303,6 +57361,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_ascii85_markerless_partial_group_is_fail_visible);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_pdf, test_pdf_metadata_record_failure_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_preclassification_metadata_record_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_derived_metadata_array_add_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_page_count_metadata_record_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_uri_metadata_record_failure_is_fail_visible);

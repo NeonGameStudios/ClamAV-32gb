@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## PDF preclassification metadata failure visibility — 2026-09-01
+
+The PDF preclassification pass created `PDFStats` and recorded bad-version,
+version-location, missing-EOF, and missing-xref metadata without checking
+`json-c` or bounded `PDFVersion` allocation failures. A confirmed PDF could
+therefore continue with incomplete required metadata and remain apparently
+clean/cacheable. The pass now records a sticky exact diagnostic, preserves
+`CL_EMEM`, and lets the normal PDF cleanup merge retain the failure; metadata
+creation is deferred until a `%PDF-` header is confirmed so rejected
+candidates are not tainted.
+
+`test_pdf_preclassification_metadata_record_failure_is_fail_visible` injects
+the `BadVersion` write failure through the production-linked wrapper and
+requires the sticky diagnostic and fmap cache taint. Current-source
+production-GCC compilation, production-linked execution, complete PDF corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## clamdscan service completion failure visibility — 2026-09-01
 
 The serial `clamdscan` walker could treat a `cli_ftw()` failure that happened

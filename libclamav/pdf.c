@@ -211,6 +211,34 @@ static void pdf_record_object_id_metadata(struct pdf_struct *pdf,
     }
 }
 
+static void pdf_record_preclassification_metadata_failure(struct pdf_struct *pdf,
+                                                           cl_error_t status)
+{
+    if (!pdf || !pdf->ctx || status == CL_SUCCESS)
+        return;
+
+    cli_mark_scan_incomplete(pdf->ctx, "PDF preclassification metadata could not be recorded");
+    pdf->metadata_status = cli_merge_scan_status(pdf->metadata_status, status);
+}
+
+static void pdf_record_preclassification_bool(struct pdf_struct *pdf,
+                                               json_object *pdfobj,
+                                               const char *key,
+                                               int value)
+{
+    if (pdfobj && cli_jsonbool(pdfobj, key, value) != CL_SUCCESS)
+        pdf_record_preclassification_metadata_failure(pdf, CL_EMEM);
+}
+
+static void pdf_record_preclassification_string(struct pdf_struct *pdf,
+                                                json_object *pdfobj,
+                                                const char *key,
+                                                const char *value)
+{
+    if (pdfobj && cli_jsonstr(pdfobj, key, value) != CL_SUCCESS)
+        pdf_record_preclassification_metadata_failure(pdf, CL_EMEM);
+}
+
 /* PDF statistics callbacks and related */
 struct pdfname_action;
 
@@ -4632,9 +4660,6 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
         goto done;
     }
 
-    if (ctx->this_layer_metadata_json)
-        pdfobj = cli_jsonobj(ctx->this_layer_metadata_json, "PDFStats");
-
     /* offset is 0 when coming from filetype2 */
     tmp = cli_memstr(pdfver, versize, "%PDF-", 5);
     if (!tmp) {
@@ -4653,14 +4678,19 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
         goto done;
     }
 
+    if (ctx->this_layer_metadata_json) {
+        pdfobj = cli_jsonobj(ctx->this_layer_metadata_json, "PDFStats");
+        if (!pdfobj)
+            pdf_record_preclassification_metadata_failure(&pdf, CL_EMEM);
+    }
+
     /* Check for PDF-1.[0-9]. Although 1.7 is highest now, allow for future versions */
     if (pdfver[5] != '1' || pdfver[6] != '.' ||
         pdfver[7] < '1' || pdfver[7] > '9') {
         pdf.flags |= 1 << BAD_PDF_VERSION;
         cli_dbgmsg("cli_pdf: bad pdf version: %.8s\n", pdfver);
 
-        if (pdfobj)
-            cli_jsonbool(pdfobj, "BadVersion", 1);
+        pdf_record_preclassification_bool(&pdf, pdfobj, "BadVersion", 1);
     } else {
         if (pdfobj) {
             begin = (char *)(pdfver + 5);
@@ -4670,9 +4700,10 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
             if (p1) {
                 strncpy(p1, begin, end - begin);
                 p1[end - begin] = '\0';
-                cli_jsonstr(pdfobj, "PDFVersion", p1);
+                pdf_record_preclassification_string(&pdf, pdfobj, "PDFVersion", p1);
                 free(p1);
-            }
+            } else
+                pdf_record_preclassification_metadata_failure(&pdf, CL_EMEM);
         }
     }
 
@@ -4680,8 +4711,7 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
         pdf.flags |= 1 << BAD_PDF_HEADERPOS;
         cli_dbgmsg("cli_pdf: PDF header is not at position 0: %lld\n", (long long)(pdfver - start + offset));
 
-        if (pdfobj)
-            cli_jsonbool(pdfobj, "BadVersionLocation", 1);
+        pdf_record_preclassification_bool(&pdf, pdfobj, "BadVersionLocation", 1);
     }
 
     offset += pdfver - start;
@@ -4713,8 +4743,7 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
         parse_error_reason = "PDF trailer is missing the %%EOF marker";
         cli_dbgmsg("cli_pdf: %%%%EOF not found\n");
 
-        if (pdfobj)
-            cli_jsonbool(pdfobj, "NoEOF", 1);
+        pdf_record_preclassification_bool(&pdf, pdfobj, "NoEOF", 1);
     } else {
         const char *t;
 
@@ -4730,8 +4759,7 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
             parse_error_reason = "PDF trailer is missing startxref";
             cli_dbgmsg("cli_pdf: startxref not found\n");
 
-            if (pdfobj)
-                cli_jsonbool(pdfobj, "NoXREF", 1);
+            pdf_record_preclassification_bool(&pdf, pdfobj, "NoXREF", 1);
         } else {
             for (t = q; t > eofmap; t--) {
                 if (memcmp(t, "trailer", 7) == 0)

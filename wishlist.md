@@ -1,5 +1,19 @@
 # Wishlist
 
+## PDF preclassification metadata failure visibility — 2026-09-01
+
+- Keep confirmed PDF preclassification metadata fail-visible for `PDFStats`,
+  `BadVersion`, `PDFVersion`, `BadVersionLocation`, `NoEOF`, and `NoXREF`,
+  including bounded `PDFVersion` allocation; preserve `CL_EMEM`, exact sticky
+  incomplete state, and fmap non-cacheability.
+- Keep metadata creation after `%PDF-` confirmation so rejected candidates do
+  not become incomplete solely because report allocation failed.
+- Retain `test_pdf_preclassification_metadata_record_failure_is_fail_visible`
+  and its source guards. Complete current-source production-GCC compilation and
+  execution, complete PDF corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  parser/release qualification.
+
 ## clamdscan service completion failure visibility — 2026-09-01
 
 - Keep serial `cli_ftw()` failures fail-visible even when no callback ran, so
