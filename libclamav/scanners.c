@@ -1377,6 +1377,9 @@ cl_error_t cli_scanegg(cli_ctx *ctx)
     if (ctx->engine == NULL) {
         return CL_ENULLARG;
     }
+    if (ctx->options == NULL) {
+        return CL_ENULLARG;
+    }
 
     cli_dbgmsg("in scanegg()\n");
 

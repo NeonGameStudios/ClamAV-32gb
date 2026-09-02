@@ -1,5 +1,19 @@
 # Wishlist
 
+## EGG direct options admission — 2026-09-02
+
+- Keep exported `cli_scanegg()` fail-visible when an otherwise recognized
+  engine/map context omits scan options; return `CL_ENULLARG` before deadline
+  checks, archive indexing, metadata-range accounting, temporary output, or
+  nested-member scanning.
+- Retain `test_egg_missing_options_is_fail_visible`, its source guards, and
+  manifest evidence that the invalid context does not become sticky incomplete
+  or cache-tainted. Keep valid options in the EGG entry-boundary regression.
+  Current-source production-GCC compilation, production-linked execution,
+  complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final parser/release qualification remain open.
+
 ## Mach-O universal-binary direct options admission — 2026-09-02
 
 - Keep exported `cli_scanmacho_unibin()` fail-visible when an otherwise

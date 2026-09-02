@@ -1,5 +1,24 @@
 # Independent read-only audit of audit.md
 
+## EGG direct options admission — 2026-09-02
+
+The exported internal `cli_scanegg()` entry rejected null context, input fmap,
+and engine state but did not reject missing scan options before EGG deadline
+checks, archive indexing, metadata-range accounting, temporary output, and
+nested-member scanning. A direct caller with incomplete scan configuration
+could therefore enter EGG inspection without the required options object. The
+entry now returns `CL_ENULLARG` immediately after engine admission when
+`ctx->options` is absent.
+
+`test_egg_missing_options_is_fail_visible` supplies a map and engine while
+omitting options, and verifies `CL_ENULLARG` without sticky incomplete or
+cache-taint state. The existing EGG boundary regression retains valid options
+for its clean archive and sticky-completion assertions. Source guards and the
+capability manifest record the boundary. Current-source production-GCC
+compilation, production-linked execution, complete EGG/SFX corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## Mach-O universal-binary direct options admission — 2026-09-02
 
 The exported `cli_scanmacho_unibin()` entry rejected null context, input fmap,
