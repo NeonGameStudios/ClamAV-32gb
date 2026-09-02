@@ -150,6 +150,23 @@ PDF/Flate corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## PowerPoint compressed-stream read-status reconciliation — 2026-09-02
+
+The PowerPoint compressed-atom decoder used sized `cli_readn()` calls for its
+initial and refill input windows, but collapsed an early end of the
+materialized atom and an in-range descriptor failure into the same diagnostic.
+The decoder now uses `vba_readn_full()` at both boundaries: a short read is
+reported as `CL_EPARSE`, while a descriptor failure remains `CL_EREAD`, with
+class-specific sticky incomplete state before any decoded output is published.
+
+`test_ppt_compressed_stream_read_status_is_fail_visible` injects both outcomes
+at the initial compressed window and requires no temporary output, no clean
+cache state, and the exact diagnostic. The current source, test, registration,
+and capability manifest are source-guarded. Current-source production-GCC
+and linked execution, complete OLE2/VBA/PowerPoint corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## OLE10 fixed-header read-status reconciliation — 2026-09-02
 
 After the attachment-name boundary was corrected, the OLE10 fixed object-size

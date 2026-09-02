@@ -2759,11 +2759,19 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
     stream.avail_out = sizeof(outbuff);
     stream.avail_in  = MIN(length, PPT_LZW_BUFFSIZE);
 
-    if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
-        ppt_close_output(ctx, ofd);
-        ppt_remove_output(ctx, fullname);
-        cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream could not be read completely");
-        return FALSE;
+    {
+        cl_error_t read_status = vba_readn_full(fd, inbuff, (size_t)stream.avail_in);
+
+        if (read_status != CL_SUCCESS) {
+            const char *reason = read_status == CL_EREAD
+                                     ? "PowerPoint compressed stream could not be read completely"
+                                     : "PowerPoint compressed stream was truncated";
+
+            ppt_close_output(ctx, ofd);
+            ppt_remove_output(ctx, fullname);
+            cli_mark_scan_incomplete(ctx, reason);
+            return FALSE;
+        }
     }
     length -= stream.avail_in;
 
@@ -2789,12 +2797,20 @@ ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temp
         if (stream.avail_in == 0) {
             stream.next_in  = inbuff;
             stream.avail_in = MIN(length, PPT_LZW_BUFFSIZE);
-            if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
-                ppt_close_output(ctx, ofd);
-                (void)ppt_finalize_decoder(ctx, &stream);
-                ppt_remove_output(ctx, fullname);
-                cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream could not be read completely");
-                return FALSE;
+            {
+                cl_error_t read_status = vba_readn_full(fd, inbuff, (size_t)stream.avail_in);
+
+                if (read_status != CL_SUCCESS) {
+                    const char *reason = read_status == CL_EREAD
+                                             ? "PowerPoint compressed stream could not be read completely"
+                                             : "PowerPoint compressed stream was truncated";
+
+                    ppt_close_output(ctx, ofd);
+                    (void)ppt_finalize_decoder(ctx, &stream);
+                    ppt_remove_output(ctx, fullname);
+                    cli_mark_scan_incomplete(ctx, reason);
+                    return FALSE;
+                }
             }
             length -= stream.avail_in;
         }
