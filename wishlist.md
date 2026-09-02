@@ -65,6 +65,19 @@
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification.
 
+## TAR non-file payload admission — 2026-09-02
+
+- Validate the size field of every non-file TAR entry. Preserve zero-sized
+  directories, links, devices, and volume entries, but mark nonzero declared
+  payloads malformed and skip their checked padded extents before continuing.
+- Retain `test_tar_nonfile_entry_payload_is_fail_visible`, its exact
+  diagnostic and cache-taint assertions, registration, source guards, and
+  manifest. Current-source compile/relink/execution remain pending while
+  `clamav-poc-build` cannot start with its full Docker overlay. Complete TAR
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification.
+
 ## Fileblob status propagation — 2026-09-02
 
 - Retain the first specific fileblob required-operation status through

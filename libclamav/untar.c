@@ -160,6 +160,26 @@ cli_untar_reconcile_status(cli_ctx *ctx, cl_error_t status)
 }
 
 static cl_error_t
+cli_untar_skip_entry(cli_ctx *ctx, size_t *pos, size_t size)
+{
+    size_t padding = size % BLOCKSIZE ? BLOCKSIZE - (size % BLOCKSIZE) : 0;
+    size_t nskip;
+
+    if (padding && size > SIZE_MAX - padding) {
+        cli_dbgmsg("cli_untar: got overflowing skip size, giving up\n");
+        cli_mark_scan_incomplete(ctx, "TAR entry skip size overflowed");
+        return CL_EPARSE;
+    }
+    nskip = size + padding;
+    if (nskip > SIZE_MAX - *pos) {
+        cli_mark_scan_incomplete(ctx, "TAR entry skip offset overflowed");
+        return CL_EPARSE;
+    }
+    *pos += nskip;
+    return CL_SUCCESS;
+}
+
+static cl_error_t
 cli_untar_parse_pax_size(cli_ctx *ctx, size_t offset, size_t length, uint64_t *size_value, bool *found)
 {
     size_t consumed = 0;
@@ -539,6 +559,23 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             }
 
             if (directory) {
+                /* Non-file TAR entries do not produce nested scan inputs, but
+                 * their declared payload still occupies archive space. A
+                 * nonzero payload is malformed; skip its bounded extent so
+                 * it cannot be reinterpreted as another header or EOF. */
+                memcpy(osize, block + TARSIZEOFFSET, TARSIZELEN);
+                osize[TARSIZELEN] = '\0';
+                if (!tar_size_field(osize, &size_value) || size_value > SIZE_MAX) {
+                    cli_mark_scan_incomplete(ctx, "TAR non-file entry size was invalid");
+                    incomplete = true;
+                } else if (size_value != 0) {
+                    size = (size_t)size_value;
+                    cli_mark_scan_incomplete(ctx, "TAR non-file entry declared content");
+                    incomplete = true;
+                    ret = cli_untar_skip_entry(ctx, &pos, size);
+                    if (ret != CL_SUCCESS)
+                        return ret;
+                }
                 pax_size_pending = false;
                 in_block = 0;
                 continue;
@@ -607,23 +644,10 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             }
 
             if (skipEntry) {
-                size_t nskip = size;
-                size_t padding = size % BLOCKSIZE ? BLOCKSIZE - (size % BLOCKSIZE) : 0;
-
-                if (padding && size > SIZE_MAX - padding) {
-                    cli_dbgmsg("cli_untar: got overflowing skip size, giving up\n");
-                    cli_mark_scan_incomplete(ctx, "TAR entry skip size overflowed");
-                    return CL_EPARSE;
-                } else {
-                    nskip += padding;
-                }
-
                 cli_dbgmsg("cli_untar: skipping entry\n");
-                if (nskip > SIZE_MAX - pos) {
-                    cli_mark_scan_incomplete(ctx, "TAR entry skip offset overflowed");
-                    return CL_EPARSE;
-                }
-                pos += nskip;
+                ret = cli_untar_skip_entry(ctx, &pos, size);
+                if (ret != CL_SUCCESS)
+                    return ret;
                 continue;
             }
 

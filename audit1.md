@@ -126,6 +126,26 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## TAR non-file payload admission — 2026-09-02
+
+TAR directory, link, device, and volume entries were accepted without
+validating their size field. A non-file entry that declared a payload could
+therefore leave its payload at the next parser position, where zero bytes
+could be mistaken for an end marker or crafted bytes could be reinterpreted
+as a new header. Non-file entries now require a valid size, retain zero-sized
+entries as valid, and skip a checked padded extent for malformed nonzero
+payloads while preserving sticky incomplete state.
+
+`test_tar_nonfile_entry_payload_is_fail_visible` builds a checksum-valid
+POSIX TAR directory entry declaring one payload block followed by valid
+end-of-archive blocks. It requires `CL_EPARSE`, the exact diagnostic, and
+cache taint; source guards and the capability manifest record the boundary.
+Current-source production-GCC compile/relink/execution are pending because
+`clamav-poc-build` remains unable to start with a full Docker overlay; no
+runtime qualification is claimed here. Complete TAR corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.
+
 ## TNEF fileblob status reconciliation — 2026-09-02
 
 TNEF attachment handling now preserves the specific status retained by a

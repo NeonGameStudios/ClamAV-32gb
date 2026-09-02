@@ -23642,6 +23642,33 @@ START_TEST(test_tar_zero_length_member_does_not_skip_next_header)
 }
 END_TEST
 
+START_TEST(test_tar_nonfile_entry_payload_is_fail_visible)
+{
+    uint8_t data[4 * 512] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    tar_test_make_posix_header(data, "directory", 512, '5');
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map       = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_untar(tmpdir, 1, &ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "TAR non-file entry declared content");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_tar_pax_global_local_size_scope_reaches_nested_matchers)
 {
     uint8_t local_override[4096] = {0};
@@ -56649,6 +56676,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tar_member, test_tar_base256_unrepresentable_and_negative_sizes_fail_visible);
     tcase_add_test(tc_tar_member, test_tar_pax_global_local_size_scope_reaches_nested_matchers);
     tcase_add_test(tc_tar_member, test_tar_zero_length_member_does_not_skip_next_header);
+    tcase_add_test(tc_tar_member, test_tar_nonfile_entry_payload_is_fail_visible);
     tcase_add_test(tc_tar_member, test_tar_eof_releases_member_resources);
     tcase_add_test(tc_tar_member, test_tar_member_read_failure_is_fail_visible);
     tcase_add_test(tc_tar_member, test_tar_member_eof_is_fail_visible);
@@ -57447,6 +57475,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_tar_initial_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_invalid_magic_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_temporary_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_tar_nonfile_entry_payload_is_fail_visible);
     tcase_add_test(tc_cl, test_cpio_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cpio_missing_maps_are_fail_visible);
     tcase_add_test(tc_cl, test_cpio_truncated_header_is_fail_visible);
