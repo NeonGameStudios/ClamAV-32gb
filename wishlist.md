@@ -13339,3 +13339,16 @@ qualification remain open.
   execution, complete OLE/VBA corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and
   final parser/release qualification before closure.
+
+## OLE2 live property-name admission — 2026-09-02
+
+- Keep live CFB root, storage, and stream directory entries fail-visible when
+  their UTF-16 name length is zero, odd, oversized, or missing its terminating
+  code unit. Return `CL_EPARSE` with sticky incomplete state before property
+  enumeration or stream extraction can continue with an unnamed live entry.
+- Retain `test_ole2_live_property_name_length_is_fail_visible`, its source
+  guards and registration, and the `ole2-property-name-admission` capability
+  evidence. Add current-source production-GCC and linked execution, complete
+  malformed OLE/VBA corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  OLE/parser/release qualification before closure.

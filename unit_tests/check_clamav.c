@@ -41065,6 +41065,60 @@ START_TEST(test_ole2_truncated_property_tree_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole2_live_property_name_length_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    struct stat sb;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/ole2_encryption/password.fat.xls", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sb), 0);
+    ck_assert_msg(sb.st_size > 0, "empty OLE2 fixture: %s", file_path);
+
+    data_size = (size_t)sb.st_size;
+    data      = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_int_eq(read(fd, data, data_size), (ssize_t)data_size);
+    ck_assert_int_eq(close(fd), 0);
+
+    /* The fixture's property sector is sector 0x53.  The second directory
+     * entry is the live WorkBook stream; its two-byte UTF-16 name length is
+     * reserved for unused entries when set to zero. */
+    ck_assert_uint_le(512U + (0x53U * 512U) + 128U + 66U, data_size);
+    data[512U + (0x53U * 512U) + 128U + 64U]     = 0;
+    data[512U + (0x53U * 512U) + 128U + 65U]     = 0;
+
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE2 property tree contains an invalid name length");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_ole2_sticky_incomplete_result_is_fail_visible)
 {
     const char *file = SRCDIR PATHSEP "input" PATHSEP "other_scanfiles" PATHSEP "has_png_and_jpeg.xls";
@@ -61233,6 +61287,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2, test_ole2_truncated_header_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_header_read_failure_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_truncated_property_tree_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_live_property_name_length_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_ole2, test_ole2_stream_chain_read_failure_preserves_status);
     tcase_add_test(tc_ole2, test_ole2_small_block_chain_timeout_status_is_fail_visible);

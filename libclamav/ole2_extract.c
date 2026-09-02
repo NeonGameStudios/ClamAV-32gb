@@ -1133,7 +1133,14 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
         prop_block[idx].start_block     = ole2_endian_convert_32(prop_block[idx].start_block);
         prop_block[idx].size            = ole2_endian_convert_64(prop_block[idx].size);
 
-        if ((64 < prop_block[idx].name_size) || (prop_block[idx].name_size % 2)) {
+        /* A zero name length is reserved for unused directory entries.  Every
+         * live root, storage, and stream entry has an even, nonzero length
+         * that includes its UTF-16 terminator.  Reject a live entry that would
+         * otherwise reach the handlers with no representable name. */
+        if ((prop_block[idx].name_size < 2) ||
+            (64 < prop_block[idx].name_size) ||
+            (prop_block[idx].name_size % 2) ||
+            (prop_block[idx].name[prop_block[idx].name_size - 2] != 0)) {
             cli_dbgmsg("ERROR: Invalid name_size %d\n", prop_block[idx].name_size);
             cli_mark_scan_incomplete(ctx, "OLE2 property tree contains an invalid name length");
             ole2_list_delete(&node_list);

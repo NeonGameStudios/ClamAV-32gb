@@ -150,6 +150,26 @@ PDF/Flate corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## OLE2 live property-name admission — 2026-09-02
+
+The CFB property-tree walker already rejected odd and oversized UTF-16 name
+lengths, but it admitted a zero-length name for a live root, storage, or stream
+entry. The later handlers tolerate a missing converted name, so a malformed
+directory entry could continue through enumeration or extraction without an
+explicit parse result. The walker now requires an even, nonzero name length
+including a terminating UTF-16 code unit before invoking any handler, returning
+`CL_EPARSE` with the existing invalid-name diagnostic and sticky incomplete
+state.
+
+`test_ole2_live_property_name_length_is_fail_visible` mutates the live
+`WorkBook` directory entry in the checked-in OLE2 fixture to a zero name length
+and requires `CL_EPARSE`, the exact incomplete reason, and fmap cache taint.
+The source guard, test registration, and capability manifest are updated.
+Current-source production-GCC compilation and linked execution, complete
+malformed OLE/VBA corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+OLE/parser/release qualification remain required.
+
 ## VBA project-directory materialized parse status — 2026-09-02
 
 The modern VBA project-directory parser first fully decompresses and
