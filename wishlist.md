@@ -13048,6 +13048,19 @@ qualification remain open.
   service, materialized-large-file, Sonic1, resource, and parser/release
   qualification remain open.
 
+## RFC 1341 reassembly output status reconciliation — 2026-09-02
+
+- Preserve the first specific `fileblob` status when the final RFC 1341
+  reassembly output cannot be created or opened, before destroying the partial
+  output; the `cli_mbox()` boundary must not replace it with generic
+  `CL_EFORMAT`.
+- Retain the `mbox_record_fileblob_failure` source guards and
+  `mime-caller-export-status-reconciliation` manifest evidence. Add
+  production-linked reassembly fault injection, current-source GCC
+  compilation, complete partial/MIME corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification before release closure.
+
 ## Raw type-correction status reconciliation — 2026-09-02
 
 - Keep failed `cli_recursion_stack_change_type()` calls in `scanraw()`

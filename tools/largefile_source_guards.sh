@@ -94,6 +94,8 @@ contains libclamav/mbox.c 'MIME partial message identifier could not be allocate
 contains libclamav/mbox.c 'MIME partial message could not be saved completely'
 contains libclamav/mbox.c 'save_status != CL_SUCCESS'
 contains libclamav/mbox.c 'MIME partial message reassembly output could not be allocated'
+contains libclamav/mbox.c 'mbox_record_fileblob_failure'
+contains libclamav/mbox.c 'MIME partial message reassembly output could not be opened'
 contains libclamav/mbox.c 'size_t mime_part_count = 0;'
 contains libclamav/mbox.c 'haveTooManyMIMEPartsPerMessage(mime_part_count, mctx->ctx, &result)'
 contains libclamav/message.c 'MIME partial message spool could not be allocated'

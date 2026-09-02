@@ -220,6 +220,27 @@ static void mbox_record_message_failure(mbox_ctx *mctx, const message *m,
     cli_mark_scan_incomplete(mctx->ctx, reason);
 }
 
+/* A reassembled message is materialized through a fileblob rather than the
+ * message body spool. Preserve the blob's first specific failure before the
+ * blob is destroyed and the internal mailbox status is reduced to FAIL. */
+static void mbox_record_fileblob_failure(mbox_ctx *mctx, const fileblob *fb,
+                                         cl_error_t fallback_status,
+                                         const char *reason)
+{
+    cl_error_t status = fallback_status;
+
+    if (mctx == NULL || mctx->ctx == NULL)
+        return;
+
+    if (fb != NULL && fb->incomplete_status != CL_SUCCESS)
+        status = fb->incomplete_status;
+    if (status == CL_SUCCESS)
+        status = CL_ERESOURCE;
+    if (mctx->message_failure_status == CL_SUCCESS)
+        mctx->message_failure_status = status;
+    cli_mark_scan_incomplete(mctx->ctx, reason);
+}
+
 /* if supported by the system, use the optimized
  * version of getc, that doesn't do locking,
  * and is possibly implemented entirely as a macro */
@@ -4981,6 +5002,9 @@ rfc1341(mbox_ctx *mctx, message *m)
             fileblobPartialSet(fout, outname, NULL);
             if (fout->isIncomplete || fout->fp == NULL) {
                 cli_errmsg("Can't open '%s' for writing", outname);
+                mbox_record_fileblob_failure(
+                    mctx, fout, CL_EOPEN,
+                    "MIME partial message reassembly output could not be opened");
                 destroyPartialOutput(fout, outname);
                 free(id);
                 free(number);

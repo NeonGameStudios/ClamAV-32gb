@@ -738,6 +738,22 @@ production-linked execution, complete HWP/OLE corpus, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
 resource, and final parser/release qualification remain required.
 
+## RFC 1341 reassembly output status reconciliation — 2026-09-02
+
+The final RFC 1341 reassembly fileblob already retained specific output
+creation/open, temporary-budget, and related materialization failures, but the
+`fout->isIncomplete || fout->fp == NULL` branch destroyed that state and
+returned the legacy negative sentinel. The mailbox caller could consequently
+replace a confirmed final-output failure with generic `CL_EFORMAT`. The branch
+now records the fileblob's first specific status in `mbox_ctx` before cleanup,
+with `CL_EOPEN` as the defensive fallback, so `cli_mbox()` can preserve the
+operational result. Source guards and the `mime-caller-export-status-
+reconciliation` manifest evidence cover the correction. Production-linked
+reassembly fault injection, current-source GCC compilation, complete
+partial/MIME corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## MSPack direct options admission — 2026-09-02
 
 The exported `cli_scanmscab()` and `cli_scanmschm()` entries rejected null
