@@ -3568,9 +3568,10 @@ synchronous `PING`, `VERSION`, `COMMANDS`, and enabled `RELOAD` responses.
 Inside an IDSESSION, a closed or stalled client could therefore leave the
 command result at zero and keep the session in its command mode with no
 response. These paths now return a non-clean command result as soon as a
-required response write fails. The stats formatter remains a separate
-multi-write audit item. Focused protocol fault injection, current-source
-production-linked execution, structured/legacy service parity, sanitizer,
+required response write fails. The multi-write stats formatter now propagates
+its `mdprintf()` failures through `thrmgr_printstats()` as well. Focused
+protocol fault injection, current-source production-linked execution,
+structured/legacy service parity, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final release qualification remain required.
 

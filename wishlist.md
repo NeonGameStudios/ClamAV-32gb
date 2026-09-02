@@ -634,11 +634,11 @@
 - Keep required `PING`, `VERSION`, `COMMANDS`, and enabled `RELOAD` response
   writes fail-visible inside and outside IDSESSION; a failed `mdprintf()`
   must not leave an IDSESSION command returning success with no response.
-- Retain a separate audit item for the multi-write stats formatter and add
-  focused protocol fault-injection evidence; complete current-source
-  production-linked, structured/legacy service, sanitizer, certified Linux
-  x86-64, production-CVD, materialized-large-file, Sonic1, resource, and
-  final release qualification.
+- Keep the multi-write stats formatter fail-visible through
+  `thrmgr_printstats()` and add focused protocol fault-injection evidence;
+  complete current-source production-linked, structured/legacy service,
+  sanitizer, certified Linux x86-64, production-CVD, materialized-large-file,
+  Sonic1, resource, and final release qualification.
 
 ## MSPack filename-backed position failure propagation — 2026-09-02
 

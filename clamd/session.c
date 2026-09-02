@@ -489,9 +489,10 @@ int command(client_conn_t *conn, int *virus)
 #endif
         case COMMAND_STATS:
             thrmgr_setactivetask(NULL, "STATS");
-            if (conn->group)
-                mdprintf(desc, "%u: ", conn->id);
-            thrmgr_printstats(desc, conn->term);
+            if (conn->group && mdprintf(desc, "%u: ", conn->id) < 0)
+                return 1;
+            if (thrmgr_printstats(desc, conn->term) < 0)
+                return 1;
             return 0;
         case COMMAND_INSTREAMSCAN:
             thrmgr_setactivetask(NULL, "INSTREAM");

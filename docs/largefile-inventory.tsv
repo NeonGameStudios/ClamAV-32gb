@@ -132,10 +132,10 @@ fixed-width-integer	clamd/session.c	216	    uint32_t length;
 fixed-width-integer	clamd/session.c	217	    uint32_t network_length;
 fixed-width-integer	clamd/session.c	218	    uint32_t terminator = 0;
 fixed-width-integer	clamd/session.c	301	    length         = (uint32_t)json_length;
-fixed-width-integer	clamd/session.c	707	    uint32_t ver;
-fixed-width-integer	clamd/session.c	864	            uint64_t stream_limit;
-fixed-width-integer	clamd/session.c	865	            uint64_t temporary_limit;
-fixed-width-integer	clamd/session.c	880	            temporary_limit    = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
+fixed-width-integer	clamd/session.c	708	    uint32_t ver;
+fixed-width-integer	clamd/session.c	865	            uint64_t stream_limit;
+fixed-width-integer	clamd/session.c	866	            uint64_t temporary_limit;
+fixed-width-integer	clamd/session.c	881	            temporary_limit    = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
 fixed-width-integer	clamd/session.h	149	    uint64_t quota;
 fixed-width-integer	clamd/session.h	150	    uint64_t stream_bytes;
 fixed-width-integer	clamdscan/clamdscan.c	112	        int16_t ping_result = ping_clamd(opts);
@@ -7868,22 +7868,22 @@ native-width-integer	clamd/session.c	328	    int maxdirrec;
 native-width-integer	clamd/session.c	329	    int ret   = 0;
 native-width-integer	clamd/session.c	330	    int flags = CLI_FTW_STD;
 native-width-integer	clamd/session.c	370	            int multiscan, max, alive;
-native-width-integer	clamd/session.c	620	static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
-native-width-integer	clamd/session.c	622	    int ret = 0;
-native-width-integer	clamd/session.c	623	    int reserved = 0;
-native-width-integer	clamd/session.c	624	    int dispatch_attempted = 0;
-native-width-integer	clamd/session.c	625	    int bulk;
-native-width-integer	clamd/session.c	705	static int print_ver(int desc, char term, const struct cl_engine *engine)
-native-width-integer	clamd/session.c	718	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
-native-width-integer	clamd/session.c	723	static int print_commands(int desc, char term, const struct cl_engine *engine)
-native-width-integer	clamd/session.c	750	int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
-native-width-integer	clamd/session.c	752	    int desc                       = conn->sd;
-native-width-integer	clamd/session.c	757	     *  - not involve any operation that can block for a long time, such as disk
+native-width-integer	clamd/session.c	621	static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
+native-width-integer	clamd/session.c	623	    int ret = 0;
+native-width-integer	clamd/session.c	624	    int reserved = 0;
+native-width-integer	clamd/session.c	625	    int dispatch_attempted = 0;
+native-width-integer	clamd/session.c	626	    int bulk;
+native-width-integer	clamd/session.c	706	static int print_ver(int desc, char term, const struct cl_engine *engine)
+native-width-integer	clamd/session.c	719	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
+native-width-integer	clamd/session.c	724	static int print_commands(int desc, char term, const struct cl_engine *engine)
+native-width-integer	clamd/session.c	751	int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
+native-width-integer	clamd/session.c	753	    int desc                       = conn->sd;
+native-width-integer	clamd/session.c	758	     *  - not involve any operation that can block for a long time, such as disk
 native-width-integer	clamd/session.c	80	    const size_t len;
 native-width-integer	clamd/session.c	82	    int need_arg;
 native-width-integer	clamd/session.c	83	    int support_old;
 native-width-integer	clamd/session.c	84	    int enabled;
-native-width-integer	clamd/session.c	866	            int rc;
+native-width-integer	clamd/session.c	867	            int rc;
 native-width-integer	clamd/session.h	140	    int scanfd;
 native-width-integer	clamd/session.h	141	    int sd;
 native-width-integer	clamd/session.h	148	    int id;
@@ -7914,40 +7914,41 @@ native-width-integer	clamd/tcpserver.c	64	    int num_fd;
 native-width-integer	clamd/tcpserver.c	74	        int i;
 native-width-integer	clamd/tcpserver.c	95	        t = realloc(sockets, sizeof(int) * (*nlsockets + 1));
 native-width-integer	clamd/tcpserver.h	27	int tcpserver(int **lsockets, unsigned int *nlsockets, char *ipaddr, const struct optstruct *opts);
-native-width-integer	clamd/thrmgr.c	1015	int thrmgr_group_need_terminate(jobgroup_t *group)
-native-width-integer	clamd/thrmgr.c	1017	    int ret;
-native-width-integer	clamd/thrmgr.c	165	static void print_queue(int f, work_queue_t *queue, struct timeval *tv_now)
+native-width-integer	clamd/thrmgr.c	1028	int thrmgr_group_need_terminate(jobgroup_t *group)
+native-width-integer	clamd/thrmgr.c	1030	    int ret;
+native-width-integer	clamd/thrmgr.c	165	static int print_queue(int f, work_queue_t *queue, struct timeval *tv_now)
 native-width-integer	clamd/thrmgr.c	167	    long umin = LONG_MAX, umax = 0, usum = 0;
-native-width-integer	clamd/thrmgr.c	174	        long delta;
-native-width-integer	clamd/thrmgr.c	197	int thrmgr_printstats(int f, char term)
-native-width-integer	clamd/thrmgr.c	201	    size_t pool_used = 0, pool_total = 0, seen_cnt = 0, error_flag = 0;
-native-width-integer	clamd/thrmgr.c	204	    int has_libc_memstats         = 0;
-native-width-integer	clamd/thrmgr.c	248	            size_t used, total;
-native-width-integer	clamd/thrmgr.c	259	                size_t i;
-native-width-integer	clamd/thrmgr.c	404	threadpool_t *thrmgr_new(int max_threads, int idle_timeout, int max_queue, void (*handler)(void *))
-native-width-integer	clamd/thrmgr.c	408	    size_t stacksize;
-native-width-integer	clamd/thrmgr.c	528	    logg(LOGG_INFO, "Set stacksize to %lu\n", (unsigned long int)stacksize);
-native-width-integer	clamd/thrmgr.c	609	static inline int thrmgr_contended(threadpool_t *pool, int bulk)
-native-width-integer	clamd/thrmgr.c	628	    int ratio;
-native-width-integer	clamd/thrmgr.c	669	    int retval, must_exit = FALSE, stats_inited = FALSE;
-native-width-integer	clamd/thrmgr.c	670	    int job_completed = FALSE;
+native-width-integer	clamd/thrmgr.c	169	    int write_error    = 0;
+native-width-integer	clamd/thrmgr.c	175	        long delta;
+native-width-integer	clamd/thrmgr.c	202	int thrmgr_printstats(int f, char term)
+native-width-integer	clamd/thrmgr.c	206	    size_t pool_used = 0, pool_total = 0, seen_cnt = 0, error_flag = 0;
+native-width-integer	clamd/thrmgr.c	209	    int has_libc_memstats         = 0;
+native-width-integer	clamd/thrmgr.c	260	            size_t used, total;
+native-width-integer	clamd/thrmgr.c	271	                size_t i;
+native-width-integer	clamd/thrmgr.c	417	threadpool_t *thrmgr_new(int max_threads, int idle_timeout, int max_queue, void (*handler)(void *))
+native-width-integer	clamd/thrmgr.c	421	    size_t stacksize;
+native-width-integer	clamd/thrmgr.c	541	    logg(LOGG_INFO, "Set stacksize to %lu\n", (unsigned long int)stacksize);
+native-width-integer	clamd/thrmgr.c	622	static inline int thrmgr_contended(threadpool_t *pool, int bulk)
+native-width-integer	clamd/thrmgr.c	641	    int ratio;
+native-width-integer	clamd/thrmgr.c	682	    int retval, must_exit = FALSE, stats_inited = FALSE;
+native-width-integer	clamd/thrmgr.c	683	    int job_completed = FALSE;
 native-width-integer	clamd/thrmgr.c	69	static int work_queue_add(work_queue_t *work_q, void *data)
-native-width-integer	clamd/thrmgr.c	737	static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, int bulk, int reserved)
-native-width-integer	clamd/thrmgr.c	739	    int ret = TRUE;
-native-width-integer	clamd/thrmgr.c	755	        int items;
-native-width-integer	clamd/thrmgr.c	813	int thrmgr_dispatch(threadpool_t *threadpool, void *user_data)
-native-width-integer	clamd/thrmgr.c	818	int thrmgr_group_dispatch(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk)
-native-width-integer	clamd/thrmgr.c	820	    int ret;
-native-width-integer	clamd/thrmgr.c	836	int thrmgr_group_dispatch_reserved(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk)
-native-width-integer	clamd/thrmgr.c	838	    int ret;
-native-width-integer	clamd/thrmgr.c	855	int thrmgr_try_reserve(threadpool_t *threadpool)
-native-width-integer	clamd/thrmgr.c	857	    int active;
-native-width-integer	clamd/thrmgr.c	858	    int queued;
-native-width-integer	clamd/thrmgr.c	859	    int ret = FALSE;
-native-width-integer	clamd/thrmgr.c	886	    int released = FALSE;
-native-width-integer	clamd/thrmgr.c	923	int thrmgr_group_finished(jobgroup_t *group, enum thrmgr_exit exitc)
-native-width-integer	clamd/thrmgr.c	925	    int ret = 0;
-native-width-integer	clamd/thrmgr.c	963	    int needexit = 0, needfree = 0;
+native-width-integer	clamd/thrmgr.c	750	static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, int bulk, int reserved)
+native-width-integer	clamd/thrmgr.c	752	    int ret = TRUE;
+native-width-integer	clamd/thrmgr.c	768	        int items;
+native-width-integer	clamd/thrmgr.c	826	int thrmgr_dispatch(threadpool_t *threadpool, void *user_data)
+native-width-integer	clamd/thrmgr.c	831	int thrmgr_group_dispatch(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk)
+native-width-integer	clamd/thrmgr.c	833	    int ret;
+native-width-integer	clamd/thrmgr.c	849	int thrmgr_group_dispatch_reserved(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk)
+native-width-integer	clamd/thrmgr.c	851	    int ret;
+native-width-integer	clamd/thrmgr.c	868	int thrmgr_try_reserve(threadpool_t *threadpool)
+native-width-integer	clamd/thrmgr.c	870	    int active;
+native-width-integer	clamd/thrmgr.c	871	    int queued;
+native-width-integer	clamd/thrmgr.c	872	    int ret = FALSE;
+native-width-integer	clamd/thrmgr.c	899	    int released = FALSE;
+native-width-integer	clamd/thrmgr.c	936	int thrmgr_group_finished(jobgroup_t *group, enum thrmgr_exit exitc)
+native-width-integer	clamd/thrmgr.c	938	    int ret = 0;
+native-width-integer	clamd/thrmgr.c	976	    int needexit = 0, needfree = 0;
 native-width-integer	clamd/thrmgr.h	107	threadpool_t *thrmgr_new(int max_threads, int idle_timeout, int max_queue, void (*handler)(void *));
 native-width-integer	clamd/thrmgr.h	110	int thrmgr_dispatch(threadpool_t *threadpool, void *user_data);
 native-width-integer	clamd/thrmgr.h	111	int thrmgr_group_dispatch(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk);
@@ -21845,7 +21846,7 @@ boundary-constant	clamd/largefile_admission.c	945	        (max_temporary_size > 
 boundary-constant	clamd/largefile_admission.c	946	        (max_contiguous_size > (uint64_t)SIZE_MAX) ||
 boundary-constant	clamd/largefile_admission.c	947	        (pcre_max_file_size > (uint64_t)SIZE_MAX)) {
 boundary-constant	clamd/scanner.c	245	    *destination = (scaled > (uint64_t)ULONG_MAX) ? ULONG_MAX : (unsigned long int)scaled;
-boundary-constant	clamd/session.c	550	    ret = cli_ftw(conn->filename, flags, maxdirrec ? maxdirrec : INT_MAX, scan_callback, &data, scan_pathchk);
+boundary-constant	clamd/session.c	551	    ret = cli_ftw(conn->filename, flags, maxdirrec ? maxdirrec : INT_MAX, scan_callback, &data, scan_pathchk);
 boundary-constant	clamdscan/proto.c	385	    cdata.maxlevel      = maxlevel ? maxlevel : INT_MAX;
 boundary-constant	clamdscan/proto.c	390	    ftw = cli_ftw(file, flags, maxlevel ? maxlevel : INT_MAX, serial_callback, &data, ftw_chkpath);
 boundary-constant	clamdscan/proto.c	455	    if (end == field + 1 || value > UINT_MAX)
@@ -23027,33 +23028,33 @@ format-width	clamd/session.c	249	        int prefix_length        = snprintf(id_
 format-width	clamd/session.c	285	                               "{\"version\":1,\"id\":%u,\"status\":%d,\"verdict\":%d,\"completion\":\"%s\","
 format-width	clamd/session.c	402	                logg(LOGG_WARNING, "Not enough threads for multiscan. Max: %d, Alive: %d, Multiscan: %d+1\n",
 format-width	clamd/session.c	478	                logg(LOGG_DEBUG_NV, "Closed fd %d\n", conn->scanfd);
-format-width	clamd/session.c	493	                mdprintf(desc, "%u: ", conn->id);
-format-width	clamd/session.c	518	                logg(LOGG_DEBUG, "ftruncate failed: %d\n", errno);
-format-width	clamd/session.c	535	            logg(LOGG_ERROR, "Invalid command dispatched: %d\n", conn->cmdtype);
-format-width	clamd/session.c	681	            logg(LOGG_ERROR, "Invalid command dispatch: %d\n", cmd);
-format-width	clamd/session.c	718	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
-format-width	clamd/session.c	783	                logg(LOGG_DEBUG_NV, "SESSION: command is not valid inside IDSESSION: %d\n", cmd);
-format-width	clamd/session.c	832	                if (mdprintf(desc, "%u: PONG%c", conn->id, term) < 0)
-format-width	clamd/session.c	839	                if ((conn->group && mdprintf(desc, "%u: ", conn->id) < 0) ||
-format-width	clamd/session.c	849	            if ((conn->group && mdprintf(desc, "%u: ", conn->id) < 0) ||
+format-width	clamd/session.c	492	            if (conn->group && mdprintf(desc, "%u: ", conn->id) < 0)
+format-width	clamd/session.c	519	                logg(LOGG_DEBUG, "ftruncate failed: %d\n", errno);
+format-width	clamd/session.c	536	            logg(LOGG_ERROR, "Invalid command dispatched: %d\n", conn->cmdtype);
+format-width	clamd/session.c	682	            logg(LOGG_ERROR, "Invalid command dispatch: %d\n", cmd);
+format-width	clamd/session.c	719	        return mdprintf(desc, "ClamAV %s/%u/%s%c", get_version(), (unsigned int)ver, tstr, term);
+format-width	clamd/session.c	784	                logg(LOGG_DEBUG_NV, "SESSION: command is not valid inside IDSESSION: %d\n", cmd);
+format-width	clamd/session.c	833	                if (mdprintf(desc, "%u: PONG%c", conn->id, term) < 0)
+format-width	clamd/session.c	840	                if ((conn->group && mdprintf(desc, "%u: ", conn->id) < 0) ||
+format-width	clamd/session.c	850	            if ((conn->group && mdprintf(desc, "%u: ", conn->id) < 0) ||
 format-width	clamd/tcpserver.c	108	    snprintf(port, sizeof(port), "%lld", optget(opts, "TCPSocket")->numarg);
 format-width	clamd/tcpserver.c	166	        snprintf(serv, sizeof(serv), "%u", (unsigned int)(optget(opts, "TCPSocket")->numarg));
 format-width	clamd/tcpserver.c	178	        logg(LOGG_INFO_NF, "TCP: Setting connection queue length to %d\n", backlog);
-format-width	clamd/thrmgr.c	191	        mdprintf(f, " (INVALID timestamps: %u)", invalids);
-format-width	clamd/thrmgr.c	193	        mdprintf(f, " (ERROR: %u != %u)", cnt + invalids,
-format-width	clamd/thrmgr.c	208	    mdprintf(f, "POOLS: %u\n\n", cnt);
-format-width	clamd/thrmgr.c	238	        mdprintf(f, "THREADS: live %u  idle %u max %u idle-timeout %u\n", pool->thr_alive, pool->thr_idle, pool->thr_max,
-format-width	clamd/thrmgr.c	241	        mdprintf(f, "QUEUE: %u items", pool->single_queue->item_count + pool->bulk_queue->item_count);
-format-width	clamd/thrmgr.c	304	            mdprintf(f, "MEMSTATS: heap %.3fM mmap %.3fM used %.3fM free %.3fM releasable %.3fM pools %u pools_used %.3fM pools_total %.3fM\n",
-format-width	clamd/thrmgr.c	308	            mdprintf(f, "MEMSTATS: heap N/A mmap N/A used N/A free N/A releasable N/A pools %u pools_used %.3fM pools_total %.3fM\n",
-format-width	clamd/thrmgr.c	528	    logg(LOGG_INFO, "Set stacksize to %lu\n", (unsigned long int)stacksize);
-format-width	clamd/thrmgr.c	824	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	830	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	193	        if (mdprintf(f, " (INVALID timestamps: %u)", invalids) < 0)
+format-width	clamd/thrmgr.c	196	        if (mdprintf(f, " (ERROR: %u != %u)", cnt + invalids,
+format-width	clamd/thrmgr.c	219	    STATS_MDPRINTF("POOLS: %u\n\n", cnt);
+format-width	clamd/thrmgr.c	249	        STATS_MDPRINTF("THREADS: live %u  idle %u max %u idle-timeout %u\n", pool->thr_alive, pool->thr_idle, pool->thr_max,
+format-width	clamd/thrmgr.c	252	        STATS_MDPRINTF("QUEUE: %u items", pool->single_queue->item_count + pool->bulk_queue->item_count);
+format-width	clamd/thrmgr.c	316	            STATS_MDPRINTF("MEMSTATS: heap %.3fM mmap %.3fM used %.3fM free %.3fM releasable %.3fM pools %u pools_used %.3fM pools_total %.3fM\n",
+format-width	clamd/thrmgr.c	320	            STATS_MDPRINTF("MEMSTATS: heap N/A mmap N/A used N/A free N/A releasable N/A pools %u pools_used %.3fM pools_total %.3fM\n",
+format-width	clamd/thrmgr.c	541	    logg(LOGG_INFO, "Set stacksize to %lu\n", (unsigned long int)stacksize);
+format-width	clamd/thrmgr.c	837	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
 format-width	clamd/thrmgr.c	843	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	849	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	931	    logg(LOGG_DEBUG_NV, "THRMGR: group_finished: %p, %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	947	            logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	983	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	856	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	862	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	944	    logg(LOGG_DEBUG_NV, "THRMGR: group_finished: %p, %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	960	            logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	996	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
 format-width	clamdscan/clamdscan.c	185	        logg(LOGG_INFO, "Infected files: %d\n", infected);
 format-width	clamdscan/clamdscan.c	187	            logg(LOGG_INFO, "Total errors: %d\n", err);
 format-width	clamdscan/clamdscan.c	189	            logg(LOGG_INFO, "Not removed: %d\n", notremoved);
@@ -25729,18 +25730,18 @@ offset-size-arithmetic	clamd/session.c	313	    return json_length == 0 ? 0 : -1;
 offset-size-arithmetic	clamd/session.c	422	            char *scan_filename    = conn->filename;
 offset-size-arithmetic	clamd/session.c	423	            char *display_filename = (NULL != conn->display_filename) ? conn->display_filename : conn->filename;
 offset-size-arithmetic	clamd/session.c	430	            ret = scan_callback(NULL, display_filename, scan_filename, visit_file, &data); /* callback freed display_filename */
-offset-size-arithmetic	clamd/session.c	559	     * request cannot be reduced to a clean result with no scanned object. */
-offset-size-arithmetic	clamd/session.c	586	        if (conn_reply_single(conn, conn->filename, "OK") == -1)
-offset-size-arithmetic	clamd/session.c	632	    memcpy(dup_conn, conn, sizeof(*conn));
-offset-size-arithmetic	clamd/session.c	672	            dup_conn->filename = conn->filename;
-offset-size-arithmetic	clamd/session.c	717	        timestr[strlen(tstr) - 1] = '\0';
-offset-size-arithmetic	clamd/session.c	736	    n = sizeof(commands) / sizeof(commands[0]);
-offset-size-arithmetic	clamd/session.c	869	            rc = cli_gentempfd(optget(conn->opts, "TemporaryDirectory")->strarg, &conn->filename, &conn->scanfd);
+offset-size-arithmetic	clamd/session.c	560	     * request cannot be reduced to a clean result with no scanned object. */
+offset-size-arithmetic	clamd/session.c	587	        if (conn_reply_single(conn, conn->filename, "OK") == -1)
+offset-size-arithmetic	clamd/session.c	633	    memcpy(dup_conn, conn, sizeof(*conn));
+offset-size-arithmetic	clamd/session.c	673	            dup_conn->filename = conn->filename;
+offset-size-arithmetic	clamd/session.c	718	        timestr[strlen(tstr) - 1] = '\0';
+offset-size-arithmetic	clamd/session.c	737	    n = sizeof(commands) / sizeof(commands[0]);
+offset-size-arithmetic	clamd/session.c	870	            rc = cli_gentempfd(optget(conn->opts, "TemporaryDirectory")->strarg, &conn->filename, &conn->scanfd);
 offset-size-arithmetic	clamd/session.c	88	    {CMD25, sizeof(CMD25) - 1, COMMAND_SCANREPORT, 1, 0, 1},
 offset-size-arithmetic	clamd/session.c	89	    {CMD26, sizeof(CMD26) - 1, COMMAND_CONTSCANREPORT, 1, 0, 1},
 offset-size-arithmetic	clamd/session.c	90	    {CMD27, sizeof(CMD27) - 1, COMMAND_MULTISCANREPORT, 1, 0, 1},
 offset-size-arithmetic	clamd/session.c	91	    {CMD28, sizeof(CMD28) - 1, COMMAND_ALLMATCHSCANREPORT, 1, 0, 1},
-offset-size-arithmetic	clamd/session.c	913	                /* end without idsession? */
+offset-size-arithmetic	clamd/session.c	914	                /* end without idsession? */
 offset-size-arithmetic	clamd/session.c	92	    {CMD29, sizeof(CMD29) - 1, COMMAND_FILDESREPORT, 0, 0, FEATURE_FDPASSING},
 offset-size-arithmetic	clamd/session.c	93	    {CMD30, sizeof(CMD30) - 1, COMMAND_INSTREAMREPORT, 0, 0, 1},
 offset-size-arithmetic	clamd/session.c	94	    {CMD1, sizeof(CMD1) - 1, COMMAND_SCAN, 1, 1, 0},
@@ -25757,19 +25758,19 @@ offset-size-arithmetic	clamd/tcpserver.c	163	            host[sizeof(host) - 1] 
 offset-size-arithmetic	clamd/tcpserver.c	166	        snprintf(serv, sizeof(serv), "%u", (unsigned int)(optget(opts, "TCPSocket")->numarg));
 offset-size-arithmetic	clamd/tcpserver.c	168	        if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
 offset-size-arithmetic	clamd/tcpserver.c	95	        t = realloc(sockets, sizeof(int) * (*nlsockets + 1));
+offset-size-arithmetic	clamd/thrmgr.c	1008	    group = malloc(sizeof(*group));
 offset-size-arithmetic	clamd/thrmgr.c	123	    struct threadpool_list *new = malloc(sizeof(*new));
-offset-size-arithmetic	clamd/thrmgr.c	255	                     task->filename ? task->filename : "");
-offset-size-arithmetic	clamd/thrmgr.c	270	                    s = realloc((void *)seen, seen_cnt * sizeof(*seen));
+offset-size-arithmetic	clamd/thrmgr.c	267	                           task->filename ? task->filename : "");
+offset-size-arithmetic	clamd/thrmgr.c	282	                    s = realloc((void *)seen, seen_cnt * sizeof(*seen));
 offset-size-arithmetic	clamd/thrmgr.c	49	/* BSD and HP-UX need a bigger stacksize than the system default */
-offset-size-arithmetic	clamd/thrmgr.c	517	    pthread_attr_getstacksize(&(threadpool->pool_attr), &stacksize);
-offset-size-arithmetic	clamd/thrmgr.c	518	    stacksize = stacksize + 64 * 1024;
-offset-size-arithmetic	clamd/thrmgr.c	519	    if (stacksize < 1048576) /* at least 1MB please */
-offset-size-arithmetic	clamd/thrmgr.c	524	            stacksize = 1048576 - cli_getpagesize();
-offset-size-arithmetic	clamd/thrmgr.c	529	    pthread_attr_setstacksize(&(threadpool->pool_attr), stacksize);
-offset-size-arithmetic	clamd/thrmgr.c	548	void thrmgr_setactivetask(const char *filename, const char *cmd)
-offset-size-arithmetic	clamd/thrmgr.c	577	    struct task_desc *desc = calloc(1, sizeof(*desc));
-offset-size-arithmetic	clamd/thrmgr.c	609	static inline int thrmgr_contended(threadpool_t *pool, int bulk)
-offset-size-arithmetic	clamd/thrmgr.c	995	    group = malloc(sizeof(*group));
+offset-size-arithmetic	clamd/thrmgr.c	530	    pthread_attr_getstacksize(&(threadpool->pool_attr), &stacksize);
+offset-size-arithmetic	clamd/thrmgr.c	531	    stacksize = stacksize + 64 * 1024;
+offset-size-arithmetic	clamd/thrmgr.c	532	    if (stacksize < 1048576) /* at least 1MB please */
+offset-size-arithmetic	clamd/thrmgr.c	537	            stacksize = 1048576 - cli_getpagesize();
+offset-size-arithmetic	clamd/thrmgr.c	542	    pthread_attr_setstacksize(&(threadpool->pool_attr), stacksize);
+offset-size-arithmetic	clamd/thrmgr.c	561	void thrmgr_setactivetask(const char *filename, const char *cmd)
+offset-size-arithmetic	clamd/thrmgr.c	590	    struct task_desc *desc = calloc(1, sizeof(*desc));
+offset-size-arithmetic	clamd/thrmgr.c	622	static inline int thrmgr_contended(threadpool_t *pool, int bulk)
 offset-size-arithmetic	clamd/thrmgr.h	122	void thrmgr_setactivetask(const char *filename, const char *command);
 offset-size-arithmetic	clamdscan/clamdscan.c	243	    mprintf(LOGG_INFO, "    --wait              -w             Wait up to 30 seconds for clamd to start. Optionally use alongside --ping to set attempts [A] and interval [I] to check clamd.\n");
 offset-size-arithmetic	clamdscan/client.c	102	    snprintf(port, sizeof(port), "%lld", optget(clamdopts, "TCPSocket")->numarg);

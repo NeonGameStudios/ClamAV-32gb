@@ -162,14 +162,15 @@ static void remove_frompools(threadpool_t *t)
     pthread_mutex_unlock(&pools_lock);
 }
 
-static void print_queue(int f, work_queue_t *queue, struct timeval *tv_now)
+static int print_queue(int f, work_queue_t *queue, struct timeval *tv_now)
 {
     long umin = LONG_MAX, umax = 0, usum = 0;
     unsigned invalids = 0, cnt = 0;
+    int write_error    = 0;
     work_item_t *q;
 
     if (!queue->head)
-        return;
+        return 0;
     for (q = queue->head; q; q = q->next) {
         long delta;
         delta = tv_now->tv_usec - q->time_queued.tv_usec;
@@ -185,13 +186,17 @@ static void print_queue(int f, work_queue_t *queue, struct timeval *tv_now)
         usum += delta;
         ++cnt;
     }
-    mdprintf(f, " min_wait: %.6f max_wait: %.6f avg_wait: %.6f",
-             umin / 1e6, umax / 1e6, usum / (1e6 * cnt));
+    if (mdprintf(f, " min_wait: %.6f max_wait: %.6f avg_wait: %.6f",
+                 umin / 1e6, umax / 1e6, usum / (1e6 * cnt)) < 0)
+        write_error = 1;
     if (invalids)
-        mdprintf(f, " (INVALID timestamps: %u)", invalids);
+        if (mdprintf(f, " (INVALID timestamps: %u)", invalids) < 0)
+            write_error = 1;
     if (cnt + invalids != (unsigned)queue->item_count)
-        mdprintf(f, " (ERROR: %u != %u)", cnt + invalids,
-                 (unsigned)queue->item_count);
+        if (mdprintf(f, " (ERROR: %u != %u)", cnt + invalids,
+                     (unsigned)queue->item_count) < 0)
+            write_error = 1;
+    return write_error ? -1 : 0;
 }
 
 int thrmgr_printstats(int f, char term)
@@ -203,9 +208,15 @@ int thrmgr_printstats(int f, char term)
     const struct cl_engine **seen = NULL;
     int has_libc_memstats         = 0;
 
+#define STATS_MDPRINTF(...)              \
+    do {                                  \
+        if (mdprintf(f, __VA_ARGS__) < 0) \
+            error_flag = 1;              \
+    } while (0)
+
     pthread_mutex_lock(&pools_lock);
     for (cnt = 0, l = pools; l; l = l->nxt) cnt++;
-    mdprintf(f, "POOLS: %u\n\n", cnt);
+    STATS_MDPRINTF("POOLS: %u\n\n", cnt);
     for (l = pools; l && !error_flag; l = l->nxt) {
         threadpool_t *pool = l->pool;
         const char *state;
@@ -214,7 +225,7 @@ int thrmgr_printstats(int f, char term)
         cnt = 0;
 
         if (!pool) {
-            mdprintf(f, "NULL\n\n");
+            STATS_MDPRINTF("NULL\n\n");
             continue;
         }
         /* now we can access desc->, knowing that they won't get freed
@@ -234,25 +245,26 @@ int thrmgr_printstats(int f, char term)
                 state = "??";
                 break;
         }
-        mdprintf(f, "STATE: %s %s\n", state, l->nxt ? "" : "PRIMARY");
-        mdprintf(f, "THREADS: live %u  idle %u max %u idle-timeout %u\n", pool->thr_alive, pool->thr_idle, pool->thr_max,
-                 pool->idle_timeout);
+        STATS_MDPRINTF("STATE: %s %s\n", state, l->nxt ? "" : "PRIMARY");
+        STATS_MDPRINTF("THREADS: live %u  idle %u max %u idle-timeout %u\n", pool->thr_alive, pool->thr_idle, pool->thr_max,
+                       pool->idle_timeout);
         /* TODO: show both queues */
-        mdprintf(f, "QUEUE: %u items", pool->single_queue->item_count + pool->bulk_queue->item_count);
+        STATS_MDPRINTF("QUEUE: %u items", pool->single_queue->item_count + pool->bulk_queue->item_count);
         gettimeofday(&tv_now, NULL);
-        print_queue(f, pool->bulk_queue, &tv_now);
-        print_queue(f, pool->single_queue, &tv_now);
-        mdprintf(f, "\n");
+        if (print_queue(f, pool->bulk_queue, &tv_now) < 0 ||
+            print_queue(f, pool->single_queue, &tv_now) < 0)
+            error_flag = 1;
+        STATS_MDPRINTF("\n");
         for (task = pool->tasks; task; task = task->nxt) {
             double delta;
             size_t used, total;
 
             delta = tv_now.tv_usec - task->tv.tv_usec;
             delta += (tv_now.tv_sec - task->tv.tv_sec) * 1000000.0;
-            mdprintf(f, "\t%s %f %s\n",
-                     task->command ? task->command : "N/A",
-                     delta / 1e6,
-                     task->filename ? task->filename : "");
+            STATS_MDPRINTF("\t%s %f %s\n",
+                           task->command ? task->command : "N/A",
+                           delta / 1e6,
+                           task->filename ? task->filename : "");
             if (task->engine) {
                 /* we usually have at most 2 engines so a linear
                  * search is good enough */
@@ -283,7 +295,7 @@ int thrmgr_printstats(int f, char term)
                 }
             }
         }
-        mdprintf(f, "\n");
+        STATS_MDPRINTF("\n");
     }
     free((void *)seen);
 #ifdef HAVE_MALLINFO
@@ -298,19 +310,20 @@ int thrmgr_printstats(int f, char term)
     }
 #endif
     if (error_flag) {
-        mdprintf(f, "ERROR: error encountered while formatting statistics\n");
+        STATS_MDPRINTF("ERROR: error encountered while formatting statistics\n");
     } else {
         if (has_libc_memstats)
-            mdprintf(f, "MEMSTATS: heap %.3fM mmap %.3fM used %.3fM free %.3fM releasable %.3fM pools %u pools_used %.3fM pools_total %.3fM\n",
-                     mem_heap, mem_mmap, mem_used, mem_free, mem_releasable, pool_cnt,
-                     pool_used / (1024 * 1024.0), pool_total / (1024 * 1024.0));
+            STATS_MDPRINTF("MEMSTATS: heap %.3fM mmap %.3fM used %.3fM free %.3fM releasable %.3fM pools %u pools_used %.3fM pools_total %.3fM\n",
+                           mem_heap, mem_mmap, mem_used, mem_free, mem_releasable, pool_cnt,
+                           pool_used / (1024 * 1024.0), pool_total / (1024 * 1024.0));
         else
-            mdprintf(f, "MEMSTATS: heap N/A mmap N/A used N/A free N/A releasable N/A pools %u pools_used %.3fM pools_total %.3fM\n",
-                     pool_cnt, pool_used / (1024 * 1024.0), pool_total / (1024 * 1024.0));
+            STATS_MDPRINTF("MEMSTATS: heap N/A mmap N/A used N/A free N/A releasable N/A pools %u pools_used %.3fM pools_total %.3fM\n",
+                           pool_cnt, pool_used / (1024 * 1024.0), pool_total / (1024 * 1024.0));
     }
-    mdprintf(f, "END%c", term);
+    STATS_MDPRINTF("END%c", term);
     pthread_mutex_unlock(&pools_lock);
-    return 0;
+#undef STATS_MDPRINTF
+    return error_flag ? -1 : 0;
 }
 
 void thrmgr_destroy(threadpool_t *threadpool)

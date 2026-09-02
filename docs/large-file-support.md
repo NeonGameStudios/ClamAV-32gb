@@ -528,9 +528,10 @@ final release qualification remain required.
 The clamd receive loop now checks required `mdprintf()` results for
 `PING`, `VERSION`, `COMMANDS`, and enabled `RELOAD` responses. A closed or
 stalled client can no longer leave an IDSESSION command returning success
-while its response is missing. The stats formatter remains a separate
-multi-write audit item. Focused protocol fault injection, production-linked
-structured/legacy service parity, sanitizer, certified Linux x86-64,
+while its response is missing. The multi-write stats formatter now propagates
+its `mdprintf()` failures through `thrmgr_printstats()` as well. Focused
+protocol fault injection, production-linked structured/legacy service parity,
+sanitizer, certified Linux x86-64,
 production-CVD, materialized-large-file, Sonic1, resource, and final release
 qualification remain required.
 
