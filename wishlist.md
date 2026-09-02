@@ -1,5 +1,17 @@
 # Wishlist
 
+## Fileblob status propagation — 2026-09-02
+
+- Retain the first specific fileblob required-operation status through
+  `fileblobScan()` and `fileblobScanAndDestroy()`, including `CL_ECREAT` for
+  temporary-file creation, instead of returning generic `CL_ERESOURCE` after
+  `isIncomplete` is set.
+- Keep exact sticky reasons, cleanup, and the deterministic invalid-directory
+  regression. Complete current-source production-GCC compilation and linked
+  MIME/TNEF/UUEncode execution, complete mail/fileblob corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification.
+
 ## SCRENC resource-result reconciliation — 2026-09-02
 
 - Preserve `ctx->limit_exceeded_result` at the `CL_TYPE_SCRENC` owner when

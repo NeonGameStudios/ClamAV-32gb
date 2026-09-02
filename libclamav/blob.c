@@ -494,7 +494,7 @@ fileblobReleaseTemporary(fileblob *fb)
 }
 
 static void
-fileblobMarkIncomplete(fileblob *fb, const char *reason)
+fileblobMarkIncompleteStatus(fileblob *fb, cl_error_t status, const char *reason)
 {
     cli_ctx *ctx;
 
@@ -502,9 +502,19 @@ fileblobMarkIncomplete(fileblob *fb, const char *reason)
         return;
 
     fb->isIncomplete = 1;
+    if (status == CL_SUCCESS)
+        status = CL_ERESOURCE;
+    if (fb->incomplete_status == CL_SUCCESS)
+        fb->incomplete_status = status;
     ctx              = fb->ctx ? fb->ctx : fb->temporary_ctx;
     if (ctx)
         cli_mark_scan_incomplete(ctx, reason);
+}
+
+static void
+fileblobMarkIncomplete(fileblob *fb, const char *reason)
+{
+    fileblobMarkIncompleteStatus(fb, CL_ERESOURCE, reason);
 }
 
 static void
@@ -517,6 +527,8 @@ fileblobNoteCleanupFailure(cli_ctx *ctx, const char *reason)
 static int
 fileblobReserveTemporary(fileblob *fb, cli_ctx *ctx, uint64_t bytes)
 {
+    cl_error_t status;
+
     if (fb == NULL || ctx == NULL)
         return 0;
 
@@ -529,16 +541,20 @@ fileblobReserveTemporary(fileblob *fb, cli_ctx *ctx, uint64_t bytes)
     if (bytes == 0)
         return 0;
 
-    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
-        fileblobMarkIncomplete(fb,
-                               "fileblob temporary spool reached the configured time limit");
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        fileblobMarkIncompleteStatus(fb, status,
+                                     "fileblob temporary spool reached the configured time limit");
         return -1;
     }
 
-    if (UINT64_MAX - fb->temporary_bytes < bytes ||
-        cli_scan_reserve_temporary(ctx, bytes) != CL_SUCCESS) {
-        fileblobMarkIncomplete(fb,
-                               "fileblob temporary spool exceeded the configured resource limit");
+    if (UINT64_MAX - fb->temporary_bytes < bytes)
+        status = CL_ERESOURCE;
+    else
+        status = cli_scan_reserve_temporary(ctx, bytes);
+    if (status != CL_SUCCESS) {
+        fileblobMarkIncompleteStatus(fb, status,
+                                     "fileblob temporary spool exceeded the configured resource limit");
         return -1;
     }
 
@@ -559,6 +575,7 @@ fileblobReserveExistingTemporary(fileblob *fb)
 
     if (fflush(fb->fp) != 0 || FSTAT(fb->fd, &sb) != 0 || sb.st_size < 0) {
         fb->isIncomplete = 1;
+        fb->incomplete_status = CL_ESTAT;
         cli_mark_scan_incomplete(fb->ctx,
                                  "fileblob temporary spool could not be measured");
         return -1;
@@ -692,7 +709,7 @@ void fileblobPartialSet(fileblob *fb, const char *fullname, const char *arg)
     fb->fd = open(fullname, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_EXCL, 0600);
     if (fb->fd < 0) {
         cli_errmsg("fileblobPartialSet: unable to create file: %s\n", fullname);
-        fileblobMarkIncomplete(fb, "fileblob temporary spool could not be created");
+        fileblobMarkIncompleteStatus(fb, CL_ECREAT, "fileblob temporary spool could not be created");
         return;
     }
     fb->fp = fdopen(fb->fd, "wb");
@@ -700,7 +717,7 @@ void fileblobPartialSet(fileblob *fb, const char *fullname, const char *arg)
     if (fb->fp == NULL) {
         cli_errmsg("fileblobSetFilename: fdopen failed\n");
         close(fb->fd);
-        fileblobMarkIncomplete(fb, "fileblob temporary spool could not be opened");
+        fileblobMarkIncompleteStatus(fb, CL_EOPEN, "fileblob temporary spool could not be opened");
         return;
     }
     blobSetFilename(&fb->b, fb->ctx ? fb->ctx->this_layer_tmpdir : NULL, fullname);
@@ -721,6 +738,7 @@ void fileblobPartialSet(fileblob *fb, const char *fullname, const char *arg)
 void fileblobSetFilename(fileblob *fb, const char *dir, const char *filename)
 {
     char *fullname;
+    cl_error_t status;
 
     if (fb->b.name)
         return;
@@ -738,8 +756,9 @@ void fileblobSetFilename(fileblob *fb, const char *dir, const char *filename)
 
     assert(filename != NULL);
 
-    if (cli_gentempfd(dir, &fullname, &fb->fd) != CL_SUCCESS) {
-        fileblobMarkIncomplete(fb, "fileblob temporary spool could not be created");
+    status = cli_gentempfd(dir, &fullname, &fb->fd);
+    if (status != CL_SUCCESS) {
+        fileblobMarkIncompleteStatus(fb, status, "fileblob temporary spool could not be created");
         return;
     }
 
@@ -751,7 +770,7 @@ void fileblobSetFilename(fileblob *fb, const char *dir, const char *filename)
         cli_errmsg("fileblobSetFilename: fdopen failed\n");
         close(fb->fd);
         free(fullname);
-        fileblobMarkIncomplete(fb, "fileblob temporary spool could not be opened");
+        fileblobMarkIncompleteStatus(fb, CL_EOPEN, "fileblob temporary spool could not be opened");
         return;
     }
     if (fb->b.data)
@@ -770,6 +789,8 @@ void fileblobSetFilename(fileblob *fb, const char *dir, const char *filename)
 
 int fileblobAddData(fileblob *fb, const unsigned char *data, size_t len)
 {
+    cl_error_t status;
+
     if (len == 0)
         return 0;
 
@@ -867,20 +888,20 @@ int fileblobAddData(fileblob *fb, const unsigned char *data, size_t len)
             return -1;
 #endif
 
-        if (write_ctx && cli_checktimelimit(write_ctx) != CL_SUCCESS) {
+        if (write_ctx && (status = cli_checktimelimit(write_ctx)) != CL_SUCCESS) {
             if (fb->temporary_ctx && fb->temporary_bytes >= (uint64_t)len) {
                 cli_scan_release_temporary(write_ctx, (uint64_t)len);
                 fb->temporary_bytes -= (uint64_t)len;
             }
-            fileblobMarkIncomplete(fb,
-                                   "fileblob temporary spool reached the configured time limit");
+            fileblobMarkIncompleteStatus(fb, status,
+                                         "fileblob temporary spool reached the configured time limit");
             return -1;
         }
 
         if (fwrite(data, len, 1, fb->fp) != 1) {
             cli_errmsg("fileblobAddData: Can't write %lu bytes to temporary file %s\n",
                        (unsigned long)len, fb->b.name);
-            fileblobMarkIncomplete(fb, "fileblob temporary spool write failed");
+            fileblobMarkIncompleteStatus(fb, CL_EWRITE, "fileblob temporary spool write failed");
             return -1;
         }
         fb->isNotEmpty = 1;
@@ -931,7 +952,7 @@ cl_error_t fileblobScan(fileblob *fb)
         if (fb->ctx)
             cli_mark_scan_incomplete(fb->ctx,
                                      "fileblob materialization was incomplete");
-        return CL_ERESOURCE;
+        return fb->incomplete_status != CL_SUCCESS ? fb->incomplete_status : CL_ERESOURCE;
     }
     if (fb->fp == NULL || fb->fullname == NULL) {
         /* shouldn't happen, scan called before fileblobSetFilename */

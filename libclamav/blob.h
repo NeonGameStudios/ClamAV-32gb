@@ -66,6 +66,7 @@ typedef struct fileblob {
     struct cli_ctx_tag *ctx;           /* When set we can scan the blob, otherwise NULL */
     struct cli_ctx_tag *temporary_ctx; /* Context holding the temporary-byte reservation. */
     uint64_t temporary_bytes;          /* Bytes reserved while the spool is being built. */
+    cl_error_t incomplete_status;      /* First required-operation failure, if incomplete. */
     uint64_t bytes_scanned;
     unsigned int isNotEmpty : 1;
     unsigned int isInfected : 1;

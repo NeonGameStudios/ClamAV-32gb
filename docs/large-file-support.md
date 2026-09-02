@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Fileblob status propagation — 2026-09-02
+
+Shared fileblob spools now retain the first specific required-operation status
+through `fileblobScan()` and `fileblobScanAndDestroy()`, including `CL_ECREAT`
+for temporary-file creation, `CL_EOPEN`, `CL_EWRITE`, `CL_ETIMEOUT`, and
+`CL_ESTAT`. Existing sticky incomplete reasons and cleanup remain enforced.
+`test_fileblob_output_creation_status_is_fail_visible` uses an invalid output
+directory and requires `CL_ECREAT`. Current-source production-GCC
+compilation, production-linked MIME/TNEF/UUEncode execution, complete
+mail/fileblob corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## SCRENC resource-result reconciliation — 2026-09-02
 
 The `CL_TYPE_SCRENC` owner now preserves a configured temporary-resource

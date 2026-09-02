@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Fileblob status propagation — 2026-09-02
+
+The shared fileblob spool previously converted a temporary-file creation or
+materialization failure into a generic `CL_ERESOURCE` when the later scan
+owner observed only `isIncomplete`. Fileblobs now retain the first specific
+required-operation status, including `CL_ECREAT`, `CL_EOPEN`, `CL_EWRITE`,
+`CL_ETIMEOUT`, and `CL_ESTAT`, while preserving the existing sticky reason
+and cleanup behavior. `test_fileblob_output_creation_status_is_fail_visible`
+uses a deterministic invalid output directory and requires `CL_ECREAT` from
+`fileblobScanAndDestroy()`. Current-source production-GCC compilation,
+production-linked MIME/TNEF/UUEncode execution, complete mail/fileblob
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## SCRENC resource-result reconciliation — 2026-09-02
 
 The `CL_TYPE_SCRENC` owner converted every decoder failure other than mapped

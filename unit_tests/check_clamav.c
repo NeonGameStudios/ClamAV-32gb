@@ -3196,6 +3196,30 @@ START_TEST(test_fileblob_scan_errors_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_fileblob_output_creation_status_is_fail_visible)
+{
+    struct cl_engine *engine;
+    cli_ctx ctx;
+    fileblob *fb;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = engine;
+
+    fb = fileblobCreate();
+    ck_assert_ptr_nonnull(fb);
+    fileblobSetCTX(fb, &ctx);
+    fileblobSetFilename(fb, "/definitely/nonexistent/clamav-fileblob-output", "creation-status");
+    ck_assert(fb->isIncomplete);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "fileblob temporary spool could not be created");
+    ck_assert_int_eq(fileblobScanAndDestroy(fb), CL_ECREAT);
+
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_parser_gate_limits_reject_above_32g)
 {
     struct cl_engine *engine = cl_engine_new();
@@ -56913,6 +56937,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_blob_allocation_boundaries);
     tcase_add_test(tc_cl, test_fileblob_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_scan_errors_are_fail_visible);
+    tcase_add_test(tc_cl, test_fileblob_output_creation_status_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_cleanup_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_add_data_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);
