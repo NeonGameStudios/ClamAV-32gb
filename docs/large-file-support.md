@@ -3,6 +3,19 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## UDF temporary-output status propagation — 2026-09-02
+
+UDF file materialization now preserves the originating statuses from
+`cli_scan_reserve_temporary()` and `cli_gentempfd_with_prefix()` instead of
+relabeling failures as generic resource or temporary-file errors. The exact
+sticky incomplete diagnostic and fmap cache taint remain enforced.
+`test_udf_corpus_detects_embedded_mz` retries its valid clean fixture with an
+invalid output directory and requires `CL_ECREAT` plus the exact diagnostic and
+non-cacheability. Current-source production-GCC compilation,
+production-linked execution, complete UDF corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## ISO temporary-output status propagation — 2026-09-01
 
 ISO file materialization now preserves the originating `cli_gentempfd()` and

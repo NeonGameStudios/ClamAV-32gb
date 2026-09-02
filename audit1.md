@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## UDF temporary-output status propagation — 2026-09-02
+
+The UDF file-materialization path discarded the specific status returned by
+`cli_scan_reserve_temporary()` and `cli_gentempfd_with_prefix()`, relabeling
+temporary admission failures as `CL_ERESOURCE` and output-creation failures as
+`CL_ETMPFILE`. The path now preserves the originating status while retaining
+the exact sticky incomplete diagnostic and fmap non-cacheability.
+`test_udf_corpus_detects_embedded_mz` extends its valid clean-volume phase with
+an invalid temporary-output directory and requires `CL_ECREAT`, the exact
+reason, and cache taint. Current-source production-GCC compilation,
+production-linked execution, complete UDF corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## ISO temporary-output status propagation — 2026-09-01
 
 The ISO file-materialization path discarded the specific status returned by

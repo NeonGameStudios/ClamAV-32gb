@@ -49750,6 +49750,19 @@ START_TEST(test_udf_corpus_detects_embedded_mz)
                   ctx.scan_incomplete_reason ? ctx.scan_incomplete_reason : "(no reason)");
     ck_assert(!map->dont_cache_flag);
 
+    /* A valid UDF file entry must preserve the specific temporary-output
+     * failure instead of relabeling it as the generic CL_ETMPFILE status. */
+    ctx.this_layer_tmpdir = "/definitely/nonexistent/clamav-udf-temp";
+    map->dont_cache_flag  = false;
+    ctx.scan_incomplete   = false;
+    ctx.scan_incomplete_reason = NULL;
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_msg(ret == CL_ECREAT, "UDF temporary output status was relabeled: %s", cl_strerror(ret));
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF temporary output could not be created");
+    ck_assert(map->dont_cache_flag);
+    ctx.this_layer_tmpdir = tmpdir;
+
     /* A direct parser call can follow another required operation in the same
      * context. A sticky incomplete state must not be hidden by a clean UDF
      * volume result, including when the anchor-based path returns early. */

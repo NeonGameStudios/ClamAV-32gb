@@ -171,6 +171,7 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
     size_t i;
 
     cl_error_t status = CL_ETMPFILE;
+    cl_error_t temp_status;
 
     if (0 == dataLen || NULL == map || NULL == extents || 0 == extent_count) {
         cli_warnmsg("writeWholeFile: Invalid arguments\n");
@@ -178,9 +179,10 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
         goto done;
     }
 
-    if (cli_scan_reserve_temporary(ctx, dataLen) != CL_SUCCESS) {
+    temp_status = cli_scan_reserve_temporary(ctx, dataLen);
+    if (temp_status != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "UDF file extent exceeds temporary storage limits");
-        status = CL_ERESOURCE;
+        status = temp_status;
         goto done;
     }
     temporary_reserved = (uint64_t)dataLen;
@@ -190,10 +192,11 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
         goto done;
 
     /* Not sure if I care about the name that is actually created. */
-    if (cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, fileName, &tmpf, &fd) != CL_SUCCESS) {
+    temp_status = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, fileName, &tmpf, &fd);
+    if (temp_status != CL_SUCCESS) {
         cli_warnmsg("writeWholeFile: Can't create temp file\n");
         cli_mark_scan_incomplete(ctx, "UDF temporary output could not be created");
-        status = CL_ETMPFILE;
+        status = temp_status;
         goto done;
     }
 

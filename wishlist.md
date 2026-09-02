@@ -1,5 +1,18 @@
 # Wishlist
 
+## UDF temporary-output status propagation — 2026-09-02
+
+- Preserve the originating `cli_scan_reserve_temporary()` and
+  `cli_gentempfd_with_prefix()` statuses during UDF file materialization,
+  including `CL_ECREAT`, while retaining the exact sticky incomplete reason
+  and fmap non-cacheability.
+- Retain the invalid-output-directory regression in
+  `test_udf_corpus_detects_embedded_mz` and its source guards. Complete
+  current-source production-GCC compilation and execution, complete UDF
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification.
+
 ## ISO temporary-output status propagation — 2026-09-01
 
 - Preserve the originating `cli_gentempfd()` and temporary-reservation status
