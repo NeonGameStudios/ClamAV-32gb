@@ -20141,20 +20141,20 @@ END_TEST
 START_TEST(test_pdf_invalid_asciihex_after_prefix_is_fail_visible)
 {
     static const uint8_t encoded[] = {'4', '1', '4', '2', 'G', '0', '>'};
+    const size_t lengths[] = {sizeof(encoded), 2U};
+    const char *reasons[] = {"PDF ASCIIHex stream contained an invalid byte", "PDF ASCIIHex stream did not reach the end marker"};
     struct pdf_single_filter_result result;
+    size_t i;
 
-    pdf_test_decode_single_filter(encoded, sizeof(encoded), sizeof(encoded), OBJ_FILTER_AH, 0, &result);
-    ck_assert_int_eq(result.status, CL_EPARSE);
-    ck_assert_uint_eq(result.written, sizeof(encoded));
-    ck_assert_uint_eq(result.output_size, sizeof(encoded));
-    ck_assert_uint_eq(result.output_offset, sizeof(encoded));
-    ck_assert_uint_eq(result.temporary_reserved, sizeof(encoded));
-    ck_assert_uint_eq(result.temporary_bytes, sizeof(encoded));
-    ck_assert(result.scan_incomplete);
-    ck_assert(result.dont_cache);
-    ck_assert_int_eq(memcmp(result.output, encoded, sizeof(encoded)), 0);
-
-    free(result.output);
+    for (i = 0; i < sizeof(lengths) / sizeof(lengths[0]); i++) {
+        pdf_test_decode_single_filter(encoded, lengths[i], lengths[i], OBJ_FILTER_AH, 0, &result);
+        ck_assert_int_eq(result.status, CL_EPARSE); ck_assert_uint_eq(result.written, lengths[i]);
+        ck_assert_uint_eq(result.output_size, lengths[i]); ck_assert_int_eq(result.output_offset, lengths[i]);
+        ck_assert_uint_eq(result.temporary_reserved, lengths[i]); ck_assert_uint_eq(result.temporary_bytes, lengths[i]);
+        ck_assert(result.scan_incomplete); ck_assert(result.dont_cache);
+        ck_assert_str_eq(result.scan_incomplete_reason, reasons[i]);
+        ck_assert_int_eq(memcmp(result.output, encoded, lengths[i]), 0); free(result.output);
+    }
 }
 END_TEST
 

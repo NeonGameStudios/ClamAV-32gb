@@ -3541,6 +3541,7 @@ contains libclamav/pdfdecode.c 'PDF streamed RunLength output exceeded configure
 contains libclamav/pdfdecode.c 'static cl_error_t pdf_stream_asciihexdecode'
 contains libclamav/pdfdecode.c 'PDF streamed ASCIIHex traversal reached the configured time limit'
 contains libclamav/pdfdecode.c 'PDF streamed ASCIIHex output exceeded configured scan limits'
+contains libclamav/pdfdecode.c 'PDF ASCIIHex stream did not reach the end marker'
 contains libclamav/pdfdecode.c 'static cl_error_t pdf_stream_ascii85decode'
 contains libclamav/pdfdecode.c 'PDF streamed ASCII85 traversal reached the configured time limit'
 contains libclamav/pdfdecode.c 'PDF streamed ASCII85 output exceeded configured scan limits'

@@ -3,7 +3,7 @@
 ## Current qualification warning — 2026-09-03
 
 This branch is not release-qualified. The current manifest records 0
-qualified, 142 bounded, 398 pending, and 26 unsupported capabilities; 547 rows
+qualified, 142 bounded, 399 pending, and 26 unsupported capabilities; 548 rows
 remain release-blocking, including 7 required rows marked unsupported, and all
 80 enabled parser rows still require release evidence. The August 14–18
 “current-head” statements below are historical and remain bound to their named

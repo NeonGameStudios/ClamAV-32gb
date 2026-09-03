@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## PDF ASCIIHex end-marker admission — 2026-09-03
+
+The bounded PDF ASCIIHex reader previously treated input EOF as successful
+completion, allowing a truncated stream without its required `>` end marker to
+publish a decoded prefix as clean. The reader now requires the marker, rolls
+back any decoded output on its absence, returns `CL_EPARSE`, and preserves raw
+fallback visibility with sticky incomplete/non-cacheable state. The focused
+production-linked regression checks the exact diagnostic, fallback bytes, and
+temporary accounting; full PDF corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final PLAN.md qualification
+remain open.
+
 ## Milter deterministic stream digest — 2026-09-03
 
 The exact-edge milter harness previously printed a SHA-256 without checking

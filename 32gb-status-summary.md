@@ -3,8 +3,8 @@
 ## Current qualification snapshot — 2026-09-03
 
 The current branch is **not release-qualified**. The authoritative capability
-manifest has 566 entries: 0 qualified, 142 bounded, 398 pending, and 26
-unsupported. It reports 547 release-blocking rows, including 7 required rows
+manifest has 567 entries: 0 qualified, 142 bounded, 399 pending, and 26
+unsupported. It reports 548 release-blocking rows, including 7 required rows
 marked unsupported, and all 80 enabled parser rows remain blocked on release
 evidence. `tools/largefile_release_readiness.sh` reports this distinction and
 fails unless every non-excluded row is independently qualified. The release

@@ -1,5 +1,14 @@
 # Wishlist
 
+## PDF ASCIIHex end-marker admission — 2026-09-03
+
+- Keep bounded ASCIIHex decoding fail-visible when the input ends before the
+  `>` EOD marker. Retain transactional rollback, raw fallback visibility,
+  sticky incomplete/non-cacheable state, the exact diagnostic, regression, and
+  source guards; complete current-source linked PDF/filter corpus, sanitizer,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final PLAN.md qualification remain required.
+
 ## Milter deterministic stream digest — 2026-09-03
 
 - Keep the exact-edge milter evidence bound to the independent logical-stream

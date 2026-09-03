@@ -8,14 +8,20 @@ gate passes.
 ## Current qualification boundary — 2026-09-03
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 566 capability rows, with
-0 qualified rows and 547 release-blocking bounded, pending, or required-
+certificate. At the current audit point it contains 567 capability rows, with
+0 qualified rows and 548 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical
 entries below preserve engineering evidence and open work; they do not
 substitute for current-source linked execution,
 production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
 resource measurements, service parity, or the final requirement-by-requirement
 PLAN.md completion audit.
+
+The bounded PDF ASCIIHex reader now requires its `>` end marker. A stream that
+ends first returns `CL_EPARSE`, rolls back decoded output, preserves raw
+fallback visibility, and marks the confirmed layer incomplete and
+non-cacheable; the focused regression checks the exact diagnostic and
+temporary accounting. Full PDF/filter qualification remains open.
 
 The UPX LZMA unpacker now rejects sections too short for its two-byte wrapper
 and gives the decoder only the remaining `ssize - 2` payload window. The

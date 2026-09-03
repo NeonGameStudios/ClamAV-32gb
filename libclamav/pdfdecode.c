@@ -2628,6 +2628,7 @@ static cl_error_t pdf_stream_asciihexdecode_reader(
     uint64_t reservation_start = 0;
     cl_error_t status           = CL_SUCCESS;
     int high_nibble             = -1;
+    bool found_eod              = false;
 
     if (reader == NULL || bytes_scanned == NULL)
         return CL_ENULLARG;
@@ -2661,10 +2662,13 @@ static cl_error_t pdf_stream_asciihexdecode_reader(
         status = pdf_stream_reader_get_byte(reader, &byte, &at_eof);
         if (status != CL_SUCCESS)
             break;
-        if (at_eof)
+        if (at_eof) {
             break;
-        if (byte == '>')
+        }
+        if (byte == '>') {
+            found_eod = true;
             break;
+        }
         if (pdf_is_whitespace(byte))
             continue;
 
@@ -2688,6 +2692,11 @@ static cl_error_t pdf_stream_asciihexdecode_reader(
         }
     }
 
+    if (status == CL_SUCCESS && !found_eod) {
+        cli_mark_scan_incomplete(pdf->ctx,
+                                 "PDF ASCIIHex stream did not reach the end marker");
+        status = CL_EPARSE;
+    }
     if (status == CL_SUCCESS && high_nibble >= 0) {
         uint8_t output = (uint8_t)(high_nibble << 4);
 
@@ -2718,7 +2727,9 @@ static cl_error_t pdf_stream_asciihexdecode_reader(
     if (status == CL_EPARSE) {
         if (!(obj->flags & ((1 << OBJ_IMAGE) | (1 << OBJ_TRUNCATED))))
             pdfobj_flag(pdf, obj, BAD_ASCIIDECODE);
-        cli_mark_scan_incomplete(pdf->ctx, "PDF ASCIIHex stream contained an invalid byte");
+        if (!pdf->ctx->scan_incomplete)
+            cli_mark_scan_incomplete(pdf->ctx,
+                                     "PDF ASCIIHex stream contained an invalid byte");
     }
     return status;
 }
