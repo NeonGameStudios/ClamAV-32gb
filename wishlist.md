@@ -13846,3 +13846,11 @@ qualification remain open.
   execution, complete PE/unpacker corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and final
   PE/parser-release qualification before closure.
+
+## PE legacy reconstructed-buffer pointer admission — 2026-09-03
+
+- Keep reconstructed PE section pointers in relative-coordinate form until
+  after containment admission; `src/dest + absolute_RVA - base_RVA` must not
+  form an out-of-object intermediate pointer. Retain the FSG, Upack, Petite,
+  WWPack, and Aspack source guards and extend linked malformed/high-coordinate
+  regression coverage before release closure.

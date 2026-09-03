@@ -4131,11 +4131,11 @@ int cli_scanpe(cli_ctx *ctx)
             }
 
             if (upack)
-                memmove(dest + peinfo->sections[2].rva - peinfo->sections[0].rva, dest, ssize);
+                memmove(dest + (peinfo->sections[2].rva - peinfo->sections[0].rva), dest, ssize);
 
             ret = pe_readn_full(ctx,
                                 map,
-                                dest + peinfo->sections[1].rva - off,
+                                dest + (peinfo->sections[1].rva - off),
                                 peinfo->sections[1].uraw,
                                 peinfo->sections[1].ursz,
                                 "PE Upack compressed section could not be read completely");
@@ -4386,7 +4386,7 @@ int cli_scanpe(cli_ctx *ctx)
             PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "FSG"));
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, sections, 0));
-        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc, ctx)), 1, (dest, sections, 0));
+        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + (newesi - peinfo->sections[i + 1].rva), dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc, ctx)), 1, (dest, sections, 0));
         break; /* were done with 1.33 */
     }
 
@@ -4515,7 +4515,7 @@ int cli_scanpe(cli_ctx *ctx)
             PE_RECORD_PACKER_JSON(cli_jsonstr(pe_json, "Packer", "FSG"));
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, sections, 0));
-        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc, ctx)), 1, (dest, sections, 0));
+        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + (newesi - peinfo->sections[i + 1].rva), dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc, ctx)), 1, (dest, sections, 0));
 
         break; /* were done with 1.31 */
     }
@@ -4766,9 +4766,10 @@ int cli_scanpe(cli_ctx *ctx)
                         return CL_EFORMAT;
                     }
 
-                    if (!CLI_ISCONTAINED(dest, dsize,
-                                         dest + peinfo->sections[i].rva - peinfo->min,
-                                         peinfo->sections[i].ursz)) {
+                    if (peinfo->sections[i].rva < peinfo->min ||
+                        !CLI_ISCONTAINED_0_TO(dsize,
+                                              peinfo->sections[i].rva - peinfo->min,
+                                              peinfo->sections[i].ursz)) {
                         cli_mark_scan_incomplete(ctx, "PE Petite section output range is invalid");
                         cli_exe_info_destroy(peinfo);
                         free(dest);
@@ -4777,7 +4778,7 @@ int cli_scanpe(cli_ctx *ctx)
 
                     ret = pe_readn_full(ctx,
                                         map,
-                                        dest + peinfo->sections[i].rva - peinfo->min,
+                                        dest + (peinfo->sections[i].rva - peinfo->min),
                                         peinfo->sections[i].raw,
                                         peinfo->sections[i].ursz,
                                         "PE Petite section could not be read completely");
@@ -4975,7 +4976,7 @@ int cli_scanpe(cli_ctx *ctx)
             if (!peinfo->sections[i].rsz)
                 continue;
 
-            if (!CLI_ISCONTAINED(src, ssize, src + peinfo->sections[i].rva, peinfo->sections[i].rsz)) {
+            if (!CLI_ISCONTAINED_0_TO(ssize, peinfo->sections[i].rva, peinfo->sections[i].rsz)) {
                 cli_mark_scan_incomplete(ctx, "PE WWPack section output range is invalid");
                 free(src);
                 cli_exe_info_destroy(peinfo);
@@ -5086,7 +5087,7 @@ int cli_scanpe(cli_ctx *ctx)
             if (!peinfo->sections[i].rsz)
                 continue;
 
-            if (!CLI_ISCONTAINED(src, ssize, src + peinfo->sections[i].rva, peinfo->sections[i].rsz)) {
+            if (!CLI_ISCONTAINED_0_TO(ssize, peinfo->sections[i].rva, peinfo->sections[i].rsz)) {
                 cli_mark_scan_incomplete(ctx, "PE Aspack section output range is invalid");
                 free(src);
                 cli_exe_info_destroy(peinfo);

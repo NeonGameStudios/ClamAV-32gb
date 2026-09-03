@@ -433,6 +433,21 @@ execution, sanitizer, certified Linux x86-64, complete PE/unpacker corpus,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## PE legacy reconstructed-buffer pointer admission — 2026-09-03
+
+Several legacy PE unpacker paths formed reconstructed-buffer pointers as
+`src/dest + absolute_RVA - base_RVA`. C evaluates that expression left to
+right, so the intermediate pointer addition could leave the allocated object
+even when the final relative offset was in range. FSG 1.33/1.31, Upack, and
+Petite now parenthesize validated relative coordinates before pointer
+formation; WWPack and Aspack use zero-based containment admission before their
+section pointers are formed. Source guards bind the corrected forms and the
+existing native-offset regression covers the relative-window arithmetic.
+Current-source production-GCC compilation and linked legacy-unpacker
+execution, complete PE/unpacker corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+PE/parser-release qualification remain required.
+
 ## SIS 9.x physical field boundary — 2026-09-03
 
 SIS 9.x field admission previously checked native-size arithmetic but did not
