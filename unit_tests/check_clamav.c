@@ -71,6 +71,7 @@
 #include "pe.h"
 #include "pe_icons.h"
 #include "spin.h"
+#include "upx.h"
 #include "mew.h"
 #include "aspack.h"
 #include "elf.h"
@@ -48116,6 +48117,25 @@ START_TEST(test_pe_public_api_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pe_upx_relative_window_offset_rejects_invalid_window)
+{
+    size_t offset = SIZE_MAX;
+
+    ck_assert_int_eq(cli_upx_relative_window_offset(100, 99, 32, 0, 1, &offset), -1);
+    ck_assert_int_eq(cli_upx_relative_window_offset(100, 101, 32, -2, 1, &offset), -1);
+    ck_assert_int_eq(cli_upx_relative_window_offset(100, 120, 32, -2, 2, &offset), 0);
+    ck_assert_uint_eq(offset, 18U);
+    ck_assert_int_eq(cli_upx_relative_window_offset(100, 132, 32, 0, 1, &offset), -1);
+    ck_assert_int_eq(cli_upx_relative_window_offset(UINT32_MAX - 100U,
+                                                    UINT32_MAX - 4U,
+                                                    200U, 4, 16U, &offset),
+                     0);
+    ck_assert_uint_eq(offset, 100U);
+    ck_assert_int_eq(cli_upx_relative_window_offset(100, 100, 32, 0, 33, &offset), -1);
+    ck_assert_int_eq(cli_upx_relative_window_offset(100, 100, 32, 0, 1, NULL), -1);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_pe_upx_lzma_decoder_init_failure_is_fail_visible)
 {
@@ -61965,6 +61985,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe_map, test_pe_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_pe_map, test_pe_relative_window_offset_rejects_underflow);
     tcase_add_test(tc_pe_map, test_pespin_entry_offset_rejects_invalid_window);
+    tcase_add_test(tc_pe_map, test_pe_upx_relative_window_offset_rejects_invalid_window);
     suite_add_tcase(s, tc_pe);
     tcase_add_checked_fixture(tc_pe, cl_setup, cl_teardown);
     tcase_add_test(tc_pe, test_pe_short_entrypoint_skips_legacy_path_fail_visible);
@@ -63529,6 +63550,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_unpack_contiguous_size_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_fsg_section_table_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_relative_window_offset_rejects_underflow);
+    tcase_add_test(tc_cl, test_pe_upx_relative_window_offset_rejects_invalid_window);
     tcase_add_test(tc_cl, test_pe_mew_section_table_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_aspack_block_buffer_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_fsg_section_read_failure_is_fail_visible);

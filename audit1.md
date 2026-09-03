@@ -469,6 +469,27 @@ Invalid later PEspin section ranges also now route through its existing cleanup
 path, so malformed reconstruction cannot leak earlier section buffers while
 returning a private decoder failure.
 
+## UPX reconstructed-buffer coordinate admission — 2026-09-03
+
+The legacy UPX path formed `src + ep - upx1 + adjustment` before proving that
+the entry RVA was in the UPX1 section. Its back-reference loops likewise
+formed `dst + dcur + unp_offset` before rejecting nonnegative or too-distant
+signed offsets, and reconstruction compared `offset3 - upx0` after unsigned
+subtraction. These are attacker-controlled coordinate boundaries: containment
+macros cannot make an already-formed out-of-object pointer safe.
+
+`cli_upx_relative_window_offset()` now performs subtraction-form RVA
+conversion, signed adjustment, and complete-window admission in native-width
+arithmetic. UPX entry/import probes use the helper; back-reference copies
+convert the signed distance to a checked zero-based offset; and section-copy
+coordinates reject `offset3 < upx0` before subtraction. The focused
+`test_pe_upx_relative_window_offset_rejects_invalid_window` regression covers
+lower-RVA, negative-adjustment, high-RVA, exact-end, and null-output cases.
+Current-source production-GCC compilation and linked malformed-UPX execution,
+complete PE/UPX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+PE/parser-release qualification remain required.
+
 ## SIS 9.x physical field boundary — 2026-09-03
 
 SIS 9.x field admission previously checked native-size arithmetic but did not

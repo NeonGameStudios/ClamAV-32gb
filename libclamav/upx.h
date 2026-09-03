@@ -30,5 +30,8 @@ int upx_inflate2b(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t
 int upx_inflate2d(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
 int upx_inflate2e(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
 int upx_inflatelzma(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
+int cli_upx_relative_window_offset(uint32_t section_rva, uint32_t target_rva,
+                                   size_t available, int64_t adjustment,
+                                   size_t needed, size_t *offset);
 
 #endif

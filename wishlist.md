@@ -13862,3 +13862,16 @@ qualification remain open.
   pointer formation. Retain `cli_pespin_entry_offset()` and its focused
   regression, the PEspin source guards, and add linked malformed
   candidate, sanitizer, complete corpus, and release evidence before closure.
+
+## UPX reconstructed-buffer coordinate admission — 2026-09-03
+
+- Keep UPX entry-relative probes behind subtraction-form RVA and adjusted
+  window checks; reject lower-than-section or wrapped coordinates before any
+  `src + offset` expression. Keep signed back-reference distances and
+  reconstructed section-copy coordinates in checked zero-based form before
+  containment or copying.
+- Retain `cli_upx_relative_window_offset()`,
+  `test_pe_upx_relative_window_offset_rejects_invalid_window`, its registration,
+  source guards, and the `upx-decoder-status` capability evidence. Add linked
+  malformed-UPX execution, complete PE/UPX corpus, sanitizer, and release
+  qualification before closure.
