@@ -27,6 +27,12 @@
 
 struct cli_ctx_tag;
 
+/* Convert WWPack's section-relative source description to a bounded native
+ * input window without performing wrapped 32-bit subtraction or addition. */
+int cli_wwpack_source_window_offset(uint32_t section_rva, uint32_t source_delta,
+                                    uint32_t source_end, uint32_t compressed_size,
+                                    size_t available, size_t *offset);
+
 cl_error_t wwunpack(uint8_t *, uint32_t, uint8_t *, struct cli_exe_section *, uint16_t, uint32_t, int, struct cli_ctx_tag *);
 
 #endif

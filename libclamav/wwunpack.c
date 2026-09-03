@@ -38,7 +38,7 @@
         ccur += 4;                              \
     } else {                                    \
         cli_dbgmsg("WWPack: Out of bits\n");    \
-        error = 1;                              \
+        error = CL_EPARSE;                      \
     }                                           \
     bc = 32;
 
@@ -66,17 +66,93 @@
             bt <<= (32 - bc);                       \
         } else {                                    \
             cli_dbgmsg("WWPack: Out of bits\n");    \
-            error = 1;                              \
+            error = CL_EPARSE;                      \
         }                                           \
     }
 
+int cli_wwpack_source_window_offset(uint32_t section_rva, uint32_t source_delta,
+                                    uint32_t source_end, uint32_t compressed_size,
+                                    size_t available, size_t *offset)
+{
+    uint64_t source_limit;
+
+    if (offset == NULL || source_delta > section_rva)
+        return -1;
+
+    source_limit = (uint64_t)section_rva - source_delta + source_end + 4U;
+    if (source_limit < compressed_size ||
+        source_limit - compressed_size > available ||
+        compressed_size == 0)
+        return -1;
+
+    *offset = (size_t)(source_limit - compressed_size);
+    return 0;
+}
+
+static uint8_t *ww_buffer_window(uint8_t *buf, size_t available, size_t offset, size_t needed)
+{
+    if (buf == NULL || offset > available || needed > available - offset)
+        return NULL;
+
+    return buf + offset;
+}
+
+static uint8_t *ww_offset_window(uint8_t *buf, size_t available, uint32_t base_offset,
+                                 int64_t adjustment, size_t needed)
+{
+    int64_t adjusted = (int64_t)base_offset + adjustment;
+
+    if (adjusted < 0 || (uint64_t)adjusted > available)
+        return NULL;
+    return ww_buffer_window(buf, available, (size_t)adjusted, needed);
+}
+
+static uint8_t *ww_adjusted_buffer_window(uint8_t *buf, size_t available, uint8_t *base,
+                                          int64_t adjustment, size_t needed)
+{
+    uintptr_t buf_address;
+    uintptr_t base_address;
+    size_t base_offset;
+    size_t offset;
+
+    if (buf == NULL || base == NULL)
+        return NULL;
+    buf_address  = (uintptr_t)buf;
+    base_address = (uintptr_t)base;
+    if (base_address < buf_address || base_address - buf_address > available)
+        return NULL;
+    base_offset = (size_t)(base_address - buf_address);
+    if (adjustment < 0) {
+        uint64_t magnitude = (uint64_t)(-(adjustment + 1)) + 1U;
+
+        if (magnitude > base_offset)
+            return NULL;
+        offset = base_offset - (size_t)magnitude;
+    } else {
+        uint64_t forward = (uint64_t)adjustment;
+
+        if (forward > available - base_offset)
+            return NULL;
+        offset = base_offset + (size_t)forward;
+    }
+
+    return ww_buffer_window(buf, available, offset, needed);
+}
+
 cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_exe_section *sects, uint16_t scount, uint32_t pe, int desc, cli_ctx *ctx)
 {
-    uint8_t *structs = wwsect + 0x2a1, *compd, *ccur, *unpd, *ucur, bc;
-    uint32_t src, srcend, szd, bt, bits;
+    uint8_t *structs, *compd, *ccur, *unpd, *ucur, bc;
+    uint32_t src, source_delta, srcend, szd, bt, bits;
+    size_t source_offset;
     uint32_t ticks = 0;
     cl_error_t error = 0;
     uint16_t i;
+
+    if (exe == NULL || wwsect == NULL || sects == NULL || exesz == 0 ||
+        (structs = ww_buffer_window(wwsect, sects[scount].rsz, 0x2a1, 17)) == NULL) {
+        cli_mark_scan_incomplete(ctx, "WWPack input or metadata window is invalid");
+        return CL_EPARSE;
+    }
 
     cli_dbgmsg("in wwunpack\n");
     while (1) {
@@ -87,23 +163,38 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
         }
         if (!CLI_ISCONTAINED(wwsect, sects[scount].rsz, structs, 17)) {
             cli_dbgmsg("WWPack: Array of structs out of section\n");
+            error = CL_EPARSE;
             break;
         }
-        src = sects[scount].rva - cli_readint32(structs); /* src delta / dst delta - not used / dwords / end of src */
+        source_delta = cli_readint32(structs);
+        if (source_delta > sects[scount].rva) {
+            cli_dbgmsg("WWPack: Compressed source coordinate underflow\n");
+            error = CL_EPARSE;
+            break;
+        }
+        src = sects[scount].rva - source_delta; /* src delta / dst delta - not used / dwords / end of src */
         structs += 8;
+        if (cli_readint32(structs) > UINT32_MAX / 4U) {
+            cli_dbgmsg("WWPack: Compressed source size overflow\n");
+            error = CL_EPARSE;
+            break;
+        }
         szd = cli_readint32(structs) * 4;
         structs += 4;
         srcend = cli_readint32(structs);
         structs += 4;
 
-        unpd = ucur = exe + src + srcend + 4 - szd;
-        if (!szd || !CLI_ISCONTAINED(exe, exesz, unpd, szd)) {
+        if (cli_wwpack_source_window_offset(sects[scount].rva, source_delta,
+                                             srcend, szd, exesz, &source_offset) != 0 ||
+            (unpd = ucur = ww_buffer_window(exe, exesz, source_offset, szd)) == NULL) {
             cli_dbgmsg("WWPack: Compressed data out of file\n");
+            error = CL_EPARSE;
             break;
         }
-        cli_dbgmsg("WWP: src: %x, szd: %x, srcend: %x - %x\n", src, szd, srcend, srcend + 4 - szd);
+        cli_dbgmsg("WWP: src: %x, szd: %x, srcend: %x - %zx\n", src, szd, srcend, source_offset);
         if (!(compd = cli_max_malloc(szd))) {
             cli_dbgmsg("WWPack: Unable to allocate memory for compd\n");
+            error = CL_EMEM;
             break;
         }
         memcpy(compd, unpd, szd);
@@ -124,7 +215,7 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
             BIT;
             if (!bits) { /* BYTE copy */
                 if (ccur - compd >= szd || !CLI_ISCONTAINED(exe, exesz, ucur, 1))
-                    error = 1;
+                    error = CL_EPARSE;
                 else
                     *ucur++ = *ccur++;
                 continue;
@@ -143,12 +234,17 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
                 BITS(shifted);                       /* 5, 6, 8, 9 */
                 if (error || bits == 0x1ff) break;
                 backbytes += bits;
-                if (!CLI_ISCONTAINED(exe, exesz, ucur, 2) || !CLI_ISCONTAINED(exe, exesz, ucur - backbytes, 2)) {
-                    error = 1;
-                } else {
-                    ucur[0] = *(ucur - backbytes);
-                    ucur[1] = *(ucur - backbytes + 1);
-                    ucur += 2;
+                {
+                    uint8_t *backcopy = ww_adjusted_buffer_window(exe, exesz, ucur,
+                                                                   -(int64_t)backbytes, 2);
+
+                    if (!CLI_ISCONTAINED(exe, exesz, ucur, 2) || backcopy == NULL) {
+                        error = CL_EPARSE;
+                    } else {
+                        ucur[0] = backcopy[0];
+                        ucur[1] = backcopy[1];
+                        ucur += 2;
+                    }
                 }
                 continue;
             }
@@ -226,17 +322,22 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
                 backsize = saved + 2;
             }
 
-            if (!CLI_ISCONTAINED(exe, exesz, ucur, backsize) || !CLI_ISCONTAINED(exe, exesz, ucur - backbytes, backsize))
-                error = 1;
-            else {
+            {
+                uint8_t *backcopy = ww_adjusted_buffer_window(exe, exesz, ucur,
+                                                               -(int64_t)backbytes, backsize);
+
+                if (!CLI_ISCONTAINED(exe, exesz, ucur, backsize) || backcopy == NULL)
+                    error = CL_EPARSE;
+                else {
                 while (backsize--) {
                     if (!(++ticks & 0xffffU) && cli_checktimelimit(ctx) != CL_SUCCESS) {
                         cli_mark_scan_incomplete(ctx, "WWPack decompression reached the configured time limit");
                         error = CL_ETIMEOUT;
                         break;
                     }
-                    *ucur = *(ucur - backbytes);
+                    *ucur = *backcopy++;
                     ucur++;
+                }
                 }
             }
         }
@@ -248,29 +349,46 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
         if (error || !*structs++) break;
     }
 
+    if (error == CL_EPARSE)
+        cli_mark_scan_incomplete(ctx, "WWPack input or compressed stream was malformed");
+
     if (CL_SUCCESS == error) {
 
         // Verify minimum size of exe before dereferencing.
-        if (!CLI_ISCONTAINED(exe, exesz, exe + pe + 0x50, 4)) {
+        uint8_t *pe_header = ww_offset_window(exe, exesz, pe, 0, 0x54);
+        uint8_t *ww_header = ww_buffer_window(wwsect, sects[scount].rsz, 0x295, 4);
+
+        if (pe_header == NULL) {
             cli_dbgmsg("WWPack: unpack memory address out of bounds.\n");
-            return CL_EFORMAT;
+            cli_mark_scan_incomplete(ctx, "WWPack PE header window is outside the input buffer");
+            return CL_EPARSE;
         }
 
         // Verify minimum size of wwsect before dereferencing.
-        if (!CLI_ISCONTAINED(wwsect, sects[scount].rsz, wwsect + 0x295, 4)) {
+        if (ww_header == NULL) {
             cli_dbgmsg("WWPack: unpack memory address out of bounds.\n");
-            return CL_EFORMAT;
+            cli_mark_scan_incomplete(ctx, "WWPack metadata window is outside the input buffer");
+            return CL_EPARSE;
         }
 
-        exe[pe + 6] = (uint8_t)scount;
-        exe[pe + 7] = (uint8_t)(scount >> 8);
+        pe_header[6] = (uint8_t)scount;
+        pe_header[7] = (uint8_t)(scount >> 8);
 
-        cli_writeint32(&exe[pe + 0x28], cli_readint32(wwsect + 0x295) + sects[scount].rva + 0x299);
+        cli_writeint32(pe_header + 0x28, cli_readint32(ww_header) + sects[scount].rva + 0x299);
 
-        cli_writeint32(&exe[pe + 0x50], cli_readint32(&exe[pe + 0x50]) - sects[scount].vsz);
+        cli_writeint32(pe_header + 0x50, cli_readint32(pe_header + 0x50) - sects[scount].vsz);
 
-        // Bounds check not required here, because we know exesz > pe + 0x50 + 4
-        structs = &exe[(0xffff & cli_readint32(&exe[pe + 0x14])) + pe + 0x18];
+        {
+            uint64_t section_table_offset = (uint64_t)pe +
+                                             (0xffffU & cli_readint32(pe_header + 0x14)) + 0x18U;
+
+            if (section_table_offset > exesz ||
+                (structs = ww_buffer_window(exe, exesz, (size_t)section_table_offset, 0x28)) == NULL) {
+                cli_dbgmsg("WWPack: section-table pointer out of bounds\n");
+                cli_mark_scan_incomplete(ctx, "WWPack reconstructed section table is outside the input buffer");
+                return CL_EPARSE;
+            }
+        }
 
         for (i = 0; i < scount; i++) {
             if (!(i & 0xffU) && cli_checktimelimit(ctx) != CL_SUCCESS) {
@@ -279,7 +397,8 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
             }
             if (!CLI_ISCONTAINED(exe, exesz, structs, 0x28)) {
                 cli_dbgmsg("WWPack: structs pointer out of bounds\n");
-                return CL_EFORMAT;
+                cli_mark_scan_incomplete(ctx, "WWPack reconstructed section table is outside the input buffer");
+                return CL_EPARSE;
             }
 
             cli_writeint32(structs + 8, sects[i].vsz);
@@ -290,7 +409,8 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
         }
         if (!CLI_ISCONTAINED(exe, exesz, structs, 0x28)) {
             cli_dbgmsg("WWPack: structs pointer out of bounds\n");
-            return CL_EFORMAT;
+            cli_mark_scan_incomplete(ctx, "WWPack reconstructed section table is outside the input buffer");
+            return CL_EPARSE;
         }
 
         memset(structs, 0, 0x28);

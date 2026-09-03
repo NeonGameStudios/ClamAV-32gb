@@ -13949,3 +13949,17 @@ qualification remain open.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final PE/parser-release
   qualification before closure.
+
+## WWPack source and backcopy admission — 2026-09-03
+
+- Keep WWPack compressed-source coordinates, stream sizes, backward-copy
+  windows, and reconstructed PE metadata behind bounded native-size checks;
+  malformed bit streams must remain `CL_EPARSE`/incomplete rather than the
+  `CL_VIRUS` numeric value or a clean rebuild path. Retain
+  `cli_wwpack_source_window_offset()`,
+  `test_pe_wwpack_source_window_offset_rejects_invalid_window`, its
+  registrations, and source guards. Add current-source production-GCC and
+  linked malformed/high-coordinate WWPack execution, complete PE/unpacker
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final PE/parser-release
+  qualification before closure.

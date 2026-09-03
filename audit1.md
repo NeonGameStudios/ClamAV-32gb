@@ -432,6 +432,26 @@ Upack execution, complete PE/unpacker corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
 final PE/parser-release qualification remain required.
 
+## WWPack source and backcopy admission — 2026-09-03
+
+WWPack previously formed its compressed-source pointer from wrapped 32-bit
+section arithmetic and formed `ucur - backbytes` before containment. Malformed
+bit streams also used the numeric `CL_VIRUS` value for generic decode errors,
+and metadata/source failures could break out with `CL_SUCCESS`, allowing the
+rebuild handoff to continue. The path now admits the compressed source and
+reconstructed PE metadata through bounded windows, rejects size and coordinate
+overflow, uses checked backward-copy windows, and keeps malformed streams
+fail-visible as `CL_EPARSE` with sticky incomplete state.
+
+`test_pe_wwpack_source_window_offset_rejects_invalid_window` covers source
+underflow, clipped/zero-size windows, and high-coordinate overflow. Source
+guards and the capability manifest bind the helper, parser status, and
+backcopy conversion. Current-source production-GCC compilation and linked
+malformed/high-coordinate WWPack execution, complete PE/unpacker corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final PE/parser-release
+qualification remain required.
+
 ## yC bounded section and emulator admission — 2026-09-03
 
 The yC bounds helper previously formed `offset + bound` before checking the
