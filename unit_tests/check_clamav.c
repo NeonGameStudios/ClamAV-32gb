@@ -49355,6 +49355,21 @@ START_TEST(test_pe_fsg_section_table_size_rejects_overflow)
 }
 END_TEST
 
+START_TEST(test_pe_relative_window_offset_rejects_underflow)
+{
+    size_t offset = SIZE_MAX;
+
+    ck_assert_int_eq(cli_pe_relative_window_offset(100, 99, 32, 1, &offset), -1);
+    ck_assert_int_eq(cli_pe_relative_window_offset(100, 132, 32, 1, &offset), -1);
+    ck_assert_int_eq(cli_pe_relative_window_offset(100, 131, 32, 2, &offset), 0);
+    ck_assert_uint_eq(offset, 31);
+    ck_assert_int_eq(cli_pe_relative_window_offset(100, 100, 32, 32, &offset), 0);
+    ck_assert_uint_eq(offset, 0);
+    ck_assert_int_eq(cli_pe_relative_window_offset(100, 100, 32, 33, &offset), -1);
+    ck_assert_int_eq(cli_pe_relative_window_offset(100, 100, 32, 1, NULL), -1);
+}
+END_TEST
+
 START_TEST(test_pe_mew_section_table_size_rejects_overflow)
 {
     size_t bytes;
@@ -61931,6 +61946,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe_map, test_pe_missing_map_is_fail_visible);
     tcase_add_test(tc_pe_map, test_pe_metadata_helpers_reject_invalid_contexts);
     tcase_add_test(tc_pe_map, test_pe_public_api_read_failure_is_fail_visible);
+    tcase_add_test(tc_pe_map, test_pe_relative_window_offset_rejects_underflow);
     suite_add_tcase(s, tc_pe);
     tcase_add_checked_fixture(tc_pe, cl_setup, cl_teardown);
     tcase_add_test(tc_pe, test_pe_short_entrypoint_skips_legacy_path_fail_visible);
@@ -63494,6 +63510,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_unpack_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_contiguous_size_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_fsg_section_table_size_rejects_overflow);
+    tcase_add_test(tc_cl, test_pe_relative_window_offset_rejects_underflow);
     tcase_add_test(tc_cl, test_pe_mew_section_table_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_aspack_block_buffer_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_fsg_section_read_failure_is_fail_visible);

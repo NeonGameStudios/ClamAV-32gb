@@ -13833,3 +13833,15 @@ qualification remain open.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final HWP3/parser-release
   qualification before closure.
+
+## PE FSG v2 relative-window admission — 2026-09-03
+
+- Keep FSG v2 target-RVA conversion subtraction-form and validate the complete
+  requested window before forming a pointer; malformed lower-than-section
+  targets must not exercise wrapped pointer arithmetic.
+- Retain `test_pe_relative_window_offset_rejects_underflow`, its registration
+  and source guards, and the `pe-relative-window-offset-admission` capability
+  evidence. Add current-source production-GCC and linked malformed-FSG
+  execution, complete PE/unpacker corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  PE/parser-release qualification before closure.

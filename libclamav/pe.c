@@ -345,6 +345,25 @@ cl_error_t cli_pe_fsg_section_table_size(size_t section_count, size_t *bytes)
     return CL_SUCCESS;
 }
 
+int cli_pe_relative_window_offset(uint32_t section_rva, uint32_t target_rva,
+                                  size_t available, size_t needed, size_t *offset)
+{
+    uint64_t relative;
+
+    if (offset == NULL || target_rva < section_rva)
+        return -1;
+
+    relative = (uint64_t)target_rva - (uint64_t)section_rva;
+    if (relative > (uint64_t)available)
+        return -1;
+
+    if (needed > available - (size_t)relative)
+        return -1;
+
+    *offset = (size_t)relative;
+    return 0;
+}
+
 static int cli_pe_add_u32(uint32_t left, uint32_t right, uint32_t *result)
 {
     if (result == NULL || UINT32_MAX - left < right)
@@ -4139,6 +4158,7 @@ int cli_scanpe(cli_ctx *ctx)
 
     while (found && (DCONF & PE_CONF_FSG) && epbuff[0] == '\x87' && epbuff[1] == '\x25') {
         const char *dst;
+        size_t dst_offset;
         uint32_t newesi, newedi, newebx, newedx, fsg_input_size;
 
         /* FSG v2.0 support - thanks to aCaB ! */
@@ -4175,11 +4195,12 @@ int cli_scanpe(cli_ctx *ctx)
             return ret;
         }
 
-        dst = src + newedx - peinfo->sections[i + 1].rva;
-        if (newedx < peinfo->sections[i + 1].rva || !CLI_ISCONTAINED(src, ssize, dst, 4)) {
+        if (cli_pe_relative_window_offset(peinfo->sections[i + 1].rva, newedx,
+                                           ssize, 4, &dst_offset) < 0) {
             cli_dbgmsg("cli_scanpe: FSG: New ESP out of bounds\n");
             break;
         }
+        dst = src + dst_offset;
 
         newedx = cli_readint32(dst) - EC32(peinfo->pe_opt.opt32.ImageBase);
         if (!CLI_ISCONTAINED(peinfo->sections[i + 1].rva, peinfo->sections[i + 1].rsz, newedx, 4)) {
@@ -4187,11 +4208,12 @@ int cli_scanpe(cli_ctx *ctx)
             break;
         }
 
-        dst = src + newedx - peinfo->sections[i + 1].rva;
-        if (!CLI_ISCONTAINED(src, ssize, dst, 32)) {
+        if (cli_pe_relative_window_offset(peinfo->sections[i + 1].rva, newedx,
+                                           ssize, 32, &dst_offset) < 0) {
             cli_dbgmsg("cli_scanpe: FSG: New stack out of bounds\n");
             break;
         }
+        dst = src + dst_offset;
 
         newedi = cli_readint32(dst) - EC32(peinfo->pe_opt.opt32.ImageBase);
         newesi = cli_readint32(dst + 4) - EC32(peinfo->pe_opt.opt32.ImageBase);

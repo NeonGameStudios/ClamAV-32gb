@@ -80,6 +80,14 @@ int cli_scanpe(cli_ctx *ctx);
 cl_error_t cli_pe_unpack_size_check(cli_ctx *ctx, const char *who, uint64_t size);
 cl_error_t cli_pe_fsg_section_table_size(size_t section_count, size_t *bytes);
 
+/**
+ * Convert a 32-bit section-relative coordinate into a bounded native offset.
+ * The target must be at or after the section RVA and the requested window
+ * must remain inside the already mapped section bytes.
+ */
+int cli_pe_relative_window_offset(uint32_t section_rva, uint32_t target_rva,
+                                  size_t available, size_t needed, size_t *offset);
+
 enum {
     CL_GENHASH_PE_CLASS_SECTION,
     CL_GENHASH_PE_CLASS_IMPTBL,

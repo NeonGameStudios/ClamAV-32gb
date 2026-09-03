@@ -414,6 +414,22 @@ linked execution, complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 EGG/parser-release qualification remain required.
 
+## PE FSG v2 relative-window admission — 2026-09-03
+
+The FSG v2 unpacker formed a pointer from `src + (newedx - section_rva)`
+before checking that the decoded target RVA was at or above the compressed
+section base. A malformed signature-shaped PE could therefore exercise
+unsigned-underflow pointer arithmetic before the intended bounds rejection.
+The path now converts the relative coordinate through
+`cli_pe_relative_window_offset()`, which validates the lower bound and the
+complete requested window before pointer formation. The focused regression
+`test_pe_relative_window_offset_rejects_underflow` covers underflow, exact-end,
+and window-size boundaries; source guards and the capability manifest bind the
+change. Current-source production-GCC compilation and linked malformed-FSG
+execution, sanitizer, certified Linux x86-64, complete PE/unpacker corpus,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## SIS 9.x physical field boundary — 2026-09-03
 
 SIS 9.x field admission previously checked native-size arithmetic but did not
