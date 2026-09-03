@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Fuzzy-image contiguous admission — 2026-09-03
+
+The optional fuzzy-image matcher mapped its entire image subject without
+charging that residency to the shared contiguous-resource ledger, and an
+in-range fmap backing-read failure was reported as a generic parse result.
+The path now reserves and releases the subject around the borrowed fmap
+window, preserves `CL_EREAD` for a failed read, and has a resource-limit
+regression that checks the report status, cache taint, and zero leaked
+reservation. The matcher remains outside the release capability claim when
+the image requires more than the 1-GiB individual-allocation ceiling; full
+image corpus, sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final PLAN.md qualification remain open.
+
 ## PDF ASCIIHex end-marker admission — 2026-09-03
 
 The bounded PDF ASCIIHex reader previously treated input EOF as successful

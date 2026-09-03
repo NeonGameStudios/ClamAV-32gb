@@ -57369,6 +57369,64 @@ START_TEST(test_image_fuzzy_hash_metadata_record_failure_is_fail_visible)
 END_TEST
 #endif
 
+START_TEST(test_image_fuzzy_hash_contiguous_limit_is_fail_visible)
+{
+    static const uint8_t valid_image[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+        0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+        0x02, 0x02, 0x44, 0x01, 0x00,
+        0x3b,
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_scan_report_t *report = NULL;
+    cl_scan_report_metrics_t metrics;
+    cl_scan_completion_t completion;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    const char *reason = NULL;
+    uint64_t scanned = UINT64_MAX;
+    fmap_t *map;
+    cl_error_t report_status;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_IMAGE | CL_SCAN_PARSE_IMAGE_FUZZY_HASH;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    scan_engine->dconf->other |= OTHER_CONF_IMAGE_FUZZY_HASH;
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(valid_image, sizeof(valid_image));
+    ck_assert_ptr_nonnull(map);
+    ret = cl_scanmap_ex2(map, "fuzzy-contiguous-limit", &verdict, &last_alert,
+                         &scanned, scan_engine, &options, NULL, NULL, NULL,
+                         NULL, "CL_TYPE_GIF", NULL, &report);
+
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert_ptr_nonnull(report);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_ERESOURCE);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_ne(completion, CL_SCAN_COMPLETION_COMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "contiguous matcher subject exceeded the configured resource limit");
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_uint_eq(metrics.contiguous_bytes, 0);
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_gif_public_api_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {'G', 'I', 'F'};
@@ -63118,6 +63176,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif, test_gif_fixed_extension_block_sizes_are_validated);
     tcase_add_test(tc_gif, test_gif_image_data_completion_is_validated);
     tcase_add_test(tc_gif, test_gif_sticky_incomplete_result_is_fail_visible);
+    tcase_add_test(tc_gif, test_image_fuzzy_hash_contiguous_limit_is_fail_visible);
 #ifdef CLAMAV_TEST_JSON_WRAP
     tcase_add_test(tc_gif, test_image_fuzzy_hash_metadata_record_failure_is_fail_visible);
 #endif

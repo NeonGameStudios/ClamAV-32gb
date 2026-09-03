@@ -6799,6 +6799,7 @@ static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
     const uint8_t *offset      = NULL;
     size_t image_size          = ctx->fmap->len;
     bool image_locked          = false;
+    bool contiguous_reserved   = false;
     image_fuzzy_hash_t hash    = {0};
     json_object *header        = NULL;
 
@@ -6812,9 +6813,15 @@ static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
         goto done;
     }
 
+    status = cli_scan_reserve_contiguous(ctx, image_size);
+    if (status != CL_SUCCESS)
+        goto done;
+    contiguous_reserved = true;
+
     offset = fmap_need_off(ctx->fmap, 0, image_size);
     if (NULL == offset) {
-        cli_mark_scan_incomplete(ctx, "image fuzzy hash could not map the complete image");
+        cli_mark_scan_incomplete(ctx, "image fuzzy hash could not read the complete image");
+        status = CL_EREAD;
         goto done;
     }
     image_locked = true;
@@ -6869,6 +6876,9 @@ static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
 done:
     if (image_locked) {
         fmap_unneed_off(ctx->fmap, 0, image_size);
+    }
+    if (contiguous_reserved) {
+        cli_scan_release_contiguous(ctx, image_size);
     }
     if (NULL != fuzzy_hash_calc_error) {
         ffierror_free(fuzzy_hash_calc_error);

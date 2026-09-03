@@ -1,5 +1,15 @@
 # Wishlist
 
+## Fuzzy-image contiguous admission — 2026-09-03
+
+- Keep the optional fuzzy-image matcher behind the 1-GiB individual
+  allocation ceiling, but charge every admitted full-image subject through
+  `MaxContiguousSize` and release the reservation on every exit path. Preserve
+  `CL_EREAD` for in-range fmap backing-read failures and retain the resource
+  regression/source guards. Full image corpus, sanitizer, production-
+  CVD/service, materialized-large-file, Sonic1, resource, and final PLAN.md
+  qualification remain required.
+
 ## PDF ASCIIHex end-marker admission — 2026-09-03
 
 - Keep bounded ASCIIHex decoding fail-visible when the input ends before the

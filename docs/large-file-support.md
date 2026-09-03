@@ -17,6 +17,13 @@ production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
 resource measurements, service parity, or the final requirement-by-requirement
 PLAN.md completion audit.
 
+The optional fuzzy-image matcher now charges its admitted full-image fmap
+window against `MaxContiguousSize`, releases that reservation on all exits,
+and preserves `CL_EREAD` for an in-range backing-read failure. Its individual
+1-GiB allocation/contiguous-subject restriction remains an explicit
+non-release-qualified boundary; the focused resource regression is control
+evidence, not parser-family qualification.
+
 The bounded PDF ASCIIHex reader now requires its `>` end marker. A stream that
 ends first returns `CL_EPARSE`, rolls back decoded output, preserves raw
 fallback visibility, and marks the confirmed layer incomplete and
