@@ -2522,6 +2522,21 @@ static cl_error_t pe_record_import_json_status(cli_ctx *ctx, cl_error_t status)
     return status;
 }
 
+static cl_error_t pe_update_import_hashes(cli_ctx *ctx, void **hashctx, const char *fname)
+{
+    cli_hash_type_t type;
+    const size_t fname_len = strlen(fname);
+
+    for (type = CLI_HASH_MD5; type < CLI_HASH_AVAIL_TYPES; type++) {
+        if (hashctx[type] != NULL && cl_update_hash(hashctx[type], fname, fname_len) != 0) {
+            cli_mark_scan_incomplete(ctx, "PE import hash could not be updated completely");
+            return CL_EREAD;
+        }
+    }
+
+    return CL_SUCCESS;
+}
+
 static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, struct pe_image_import_descriptor *image, const char *dllname, struct cli_exe_info *peinfo, int *first)
 {
     uint32_t thuoff = 0, offset;
@@ -2530,7 +2545,6 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
     unsigned int err = 0;
     int num_fns = 0, ret = CL_SUCCESS;
     const char *buffer;
-    cli_hash_type_t type;
     json_object *imptbl = NULL;
 
     if (image->u.OriginalFirstThunk)
@@ -2600,8 +2614,11 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
                 }                                                                     \
             }                                                                       \
                                                                                     \
-            for (type = CLI_HASH_MD5; type < CLI_HASH_AVAIL_TYPES; type++)          \
-                cl_update_hash(hashctx[type], fname, strlen(fname));                \
+            ret = pe_update_import_hashes(ctx, hashctx, fname);                     \
+            if (ret != CL_SUCCESS) {                                                 \
+                free(fname);                                                         \
+                break;                                                               \
+            }                                                                        \
             *impsz += strlen(fname);                                                \
                                                                                     \
             *first = 0;                                                             \
@@ -6890,6 +6907,7 @@ cl_error_t cli_genhash_pe(cli_ctx *ctx, unsigned int class, cli_hash_type_t type
     uint8_t *hashset[CLI_HASH_AVAIL_TYPES] = {NULL};
     bool genhash[CLI_HASH_AVAIL_TYPES]     = {false};
     int hlen                               = 0;
+    cl_error_t result                      = CL_SUCCESS;
 
     if (hashes) {
         hashes->sections = NULL;
@@ -6993,6 +7011,8 @@ cl_error_t cli_genhash_pe(cli_ctx *ctx, unsigned int class, cli_hash_type_t type
             }
         } else {
             cli_dbgmsg("Imphash: failed to generate hash for import table (%d)\n", ret);
+            if (ret != CL_BREAK)
+                result = ret;
         }
     } else {
         cli_dbgmsg("cli_genhash_pe: unknown pe genhash class: %u\n", class);
@@ -7000,5 +7020,5 @@ cl_error_t cli_genhash_pe(cli_ctx *ctx, unsigned int class, cli_hash_type_t type
 
     free(hash);
     cli_exe_info_destroy(peinfo);
-    return CL_SUCCESS;
+    return result;
 }

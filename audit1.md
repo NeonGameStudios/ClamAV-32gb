@@ -22304,3 +22304,21 @@ Current-source production-GCC compilation and linked execution, complete
 signed CVD/CLD/CUD and standalone signature corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.
+
+## PE import hash-update status — 2026-09-02
+
+The PE import-name hash pass previously discarded every `cl_update_hash()`
+result and called the hash API for unallocated hash slots. A generated import
+digest could therefore be partial while the exported `cli_genhash_pe()` helper
+logged the failure and returned `CL_SUCCESS`. The update loop now skips absent
+contexts, records the exact sticky incomplete diagnostic, returns `CL_EREAD`,
+and prevents fmap caching. The public generator propagates import-table
+failures while preserving the existing `CL_BREAK` no-import behavior.
+
+`test_pe_import_hash_update_failure_is_fail_visible` uses the current PE32+
+import fixture and the production linker hook to verify the status, diagnostic,
+and cache taint. Source guards and the capability manifest record both the
+update and exported-generator boundaries. Current-source production-GCC
+compilation and linked execution, complete PE/import corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.

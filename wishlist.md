@@ -13531,3 +13531,16 @@ qualification remain open.
   production-GCC and linked execution, complete XAR corpus, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification before closure.
+
+## PE import hash-update status — 2026-09-02
+
+- Check generated PE import-name hash updates, mark a confirmed layer
+  incomplete/non-cacheable on failure, and propagate `CL_EREAD` through
+  `cli_genhash_pe()` instead of accepting a partial digest. Preserve the
+  existing `CL_BREAK` no-import behavior. Retain
+  `test_pe_import_hash_update_failure_is_fail_visible`, its registration and
+  source guards, and the `pe-import-hash-update-status` capability evidence;
+  add current-source production-GCC and linked execution, complete PE/import
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification before closure.

@@ -60743,6 +60743,45 @@ START_TEST(test_signature_database_hash_update_failure_is_fail_visible)
     cl_engine_free(engine);
 }
 END_TEST
+
+START_TEST(test_pe_import_hash_update_failure_is_fail_visible)
+{
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    uint8_t data[PE32PLUS_TEST_FILE_SIZE];
+    fmap_t *map;
+    cl_error_t ret;
+
+    build_pe32plus_import_fixture(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine             = scan_engine;
+    ctx.dconf              = scan_engine->dconf;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+
+    clamav_test_fail_update_hash = 1;
+    ret = cli_genhash_pe(&ctx, CL_GENHASH_PE_CLASS_IMPTBL, CLI_HASH_MD5, NULL);
+    clamav_test_fail_update_hash = 0;
+
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE import hash could not be updated completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
 #endif
 
 static Suite *test_cl_suite(void)
@@ -61097,6 +61136,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe32plus, test_pe_heuristic_metadata_array_add_failure_is_fail_visible);
     tcase_add_test(tc_pe32plus, test_pe_metadata_property_add_failure_is_fail_visible);
     tcase_add_test(tc_pe32plus, test_pe_section_metadata_record_failure_is_fail_visible);
+#endif
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_pe32plus, test_pe_import_hash_update_failure_is_fail_visible);
 #endif
     suite_add_tcase(s, tc_pe_map);
     tcase_add_checked_fixture(tc_pe_map, cl_setup, cl_teardown);
