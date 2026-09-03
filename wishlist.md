@@ -1,5 +1,13 @@
 # Wishlist
 
+## Matcher fmap recursion-stack admission — 2026-09-03
+
+- Keep `cli_scan_fmap()` behind a valid recursion-stack check so all
+  downstream matcher paths have a current layer and malformed contexts are
+  fail-visible and non-cacheable. Retain the invalid-context regression and
+  source guard; add current linked matcher corpus, sanitizer, service,
+  materialized-large-file, Sonic1, resource, and final qualification.
+
 ## Logical HandlerType stack admission — 2026-09-03
 
 - Keep matched HandlerType logical signatures behind a valid recursion-stack

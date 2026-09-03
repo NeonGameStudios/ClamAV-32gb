@@ -1785,6 +1785,12 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
         ret = CL_ENULLARG;
         goto done;
     }
+    if (!ctx->recursion_stack || ctx->recursion_stack_size == 0 ||
+        ctx->recursion_level >= ctx->recursion_stack_size) {
+        cli_mark_scan_incomplete(ctx, "matcher recursion stack is unavailable");
+        ret = CL_ENULLARG;
+        goto done;
+    }
     if (!ctx->fmap) {
         cli_mark_scan_incomplete(ctx, "matcher fmap is unavailable");
         ret = CL_EPARSE;

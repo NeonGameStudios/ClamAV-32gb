@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## Matcher fmap recursion-stack admission — 2026-09-03
+
+`cli_scan_fmap()` previously checked only the engine and fmap before entering
+matcher paths that can read current-layer recursion metadata. A malformed
+context with no stack could therefore reach an unchecked layer access. The
+entry point now returns `CL_ENULLARG`, marks the scan incomplete, and taints
+the fmap; the invalid-context matcher regression covers the boundary.
+Production-linked matcher execution, complete image/logical corpus,
+sanitizer, service, materialized-large-file, Sonic1, resource, and final
+release qualification remain open.
+
 ## Logical HandlerType stack admission — 2026-09-03
 
 `lsig_eval()` previously dereferenced the current recursion layer directly

@@ -2724,6 +2724,10 @@ START_TEST(test_matcher_entry_points_reject_invalid_contexts)
     missing_stack.recursion_stack_size = 0;
     ck_assert_int_eq(cli_matchmeta(&missing_stack, NULL, 0, 0, 0, 0, 0), CL_ENULLARG);
     ck_assert_int_eq(cli_check_fp(&missing_stack, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scan_fmap(&missing_stack, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL), CL_ENULLARG);
+    ck_assert(missing_stack.scan_incomplete);
+    ck_assert_str_eq(missing_stack.scan_incomplete_reason, "matcher recursion stack is unavailable");
+    ck_assert(thefmap.dont_cache_flag);
 
     missing_layer = ctx.recursion_stack[ctx.recursion_level];
     missing_layer.fmap = NULL;
