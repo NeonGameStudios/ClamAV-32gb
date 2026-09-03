@@ -414,6 +414,26 @@ linked execution, complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 EGG/parser-release qualification remain required.
 
+## SIS 9.x physical field boundary — 2026-09-03
+
+SIS 9.x field admission previously checked native-size arithmetic but did not
+require the declared field end to remain inside the physical fmap. Its buffered
+aligned `skip()` path likewise could advance beyond the map when the alignment
+bytes were absent. A malformed nested field could therefore move the parser's
+logical cursor past EOF without immediately forcing an input read.
+
+`getsize()` now rejects field ends outside the fmap, and `skip()` rejects any
+aligned cursor advance beyond the physical map using subtraction-form bounds.
+The existing `test_sis9x_cursor_out_of_range_is_parse_error` regression covers
+the confirmed nested out-of-range field and asserts a cleared verdict plus
+non-cacheable state. Source guards and the capability manifest record both
+physical-boundary checks.
+
+Current-source production-GCC compilation and linked execution, complete SIS
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## ARJ direct extraction output-open status — 2026-09-02
 
 The owning `cli_scanarj()` path already converted a failed ARJ member output

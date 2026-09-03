@@ -13809,6 +13809,18 @@ qualification remain open.
   materialized-large-file, Sonic1, resource, and final EGG/parser-release
   qualification before closure.
 
+## SIS 9.x physical field boundary — 2026-09-03
+
+- Require every SIS 9.x declared field end to remain inside the physical fmap,
+  and reject aligned buffered skips that would advance beyond EOF. Preserve
+  `CL_EPARSE`, sticky incomplete state, and cache taint for malformed fields.
+- Retain `test_sis9x_cursor_out_of_range_is_parse_error`, its source guards,
+  and the `sis9x-physical-field-boundary` capability evidence. Add
+  current-source production-GCC and linked execution, complete SIS corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final SIS/parser-release
+  qualification before closure.
+
 ## HWP3 paragraph end-marker completion — 2026-09-03
 
 - Require HWP3 paragraph traversal to observe its terminator before returning

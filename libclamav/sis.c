@@ -1160,6 +1160,13 @@ static inline int getsize(struct SISTREAM *s)
             s->failure = CL_EPARSE;
         return 1;
     }
+    if (s->map == NULL || field_start > s->map->len ||
+        (size_t)*fsize > s->map->len - field_start) {
+        s->incomplete = 1;
+        if (s->failure == CL_CLEAN)
+            s->failure = CL_EPARSE;
+        return 1;
+    }
     s->fnext[s->level] = field_start + (size_t)*fsize;
     return 0;
 }
@@ -1186,7 +1193,8 @@ static inline int skip(struct SISTREAM *s, uint32_t size)
         s->sleft -= size;
     else {
         seekto = (size_t)size - (size_t)s->sleft;
-        if (seekto > SIZE_MAX - s->pos) {
+        if (s->map == NULL || s->pos > s->map->len ||
+            seekto > SIZE_MAX - s->pos || seekto > s->map->len - s->pos) {
             s->incomplete = 1;
             if (s->failure == CL_CLEAN)
                 s->failure = CL_EPARSE;
