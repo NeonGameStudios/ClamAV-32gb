@@ -968,6 +968,77 @@ START_TEST(test_bytecode_read_rejects_null_buffer)
 }
 END_TEST
 
+START_TEST(test_bytecode_api_rejects_invalid_contexts)
+{
+    static const uint8_t text[] = "123";
+    struct cli_bc_ctx bcctx;
+    uint8_t buffer[1] = {0};
+
+    memset(&bcctx, 0, sizeof(bcctx));
+
+    ck_assert_int_eq(cli_bcapi_seek(NULL, 0, SEEK_SET), -1);
+    ck_assert_int_eq(cli_bcapi_seek64(NULL, 0, SEEK_SET), -1);
+    ck_assert_uint_eq(cli_bcapi_debug_print_str(NULL, text, sizeof(text) - 1), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_debug_print_uint(NULL, 0), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_setvirusname(NULL, text, sizeof(text) - 1), UINT32_MAX);
+    ck_assert_int_eq(cli_bcapi_disasm_x86(NULL, NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_write(NULL, NULL, 0), -1);
+    cli_bytecode_context_set_trace(NULL, 0, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(cli_bcapi_trace_scope(NULL, NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_trace_directory(NULL, NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_trace_source(NULL, NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_trace_op(NULL, NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_trace_value(NULL, NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_trace_ptr(NULL, NULL, 0), -1);
+    ck_assert_uint_eq(cli_bcapi_pe_rawaddr(NULL, 0), PE_INVALID_RVA);
+    ck_assert_ptr_null(cli_bcapi_malloc(NULL, 1));
+    ck_assert_int_eq(cli_bcapi_get_pe_section(NULL, NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_fill_buffer(NULL, buffer, sizeof(buffer), 0, 0, 0), -1);
+    ck_assert_int_eq(cli_bcapi_fill_buffer(&bcctx, buffer, sizeof(buffer), 0, 1, 0), -1);
+    ck_assert_int_eq(cli_bcapi_extract_new(NULL, 0), CL_ENULLARG);
+    ck_assert_int_eq(cli_bcapi_read_number(NULL, 10), -1);
+    ck_assert_int_eq(cli_bcapi_extract_set_container(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_input_switch(NULL, 0), -1);
+    ck_assert_uint_eq(cli_bcapi_get_environment(NULL, NULL, 0), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_disable_bytecode_if(NULL, NULL, 0, 0), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_disable_jit_if(NULL, NULL, 0, 0), UINT32_MAX);
+    ck_assert_int_eq(cli_bcapi_memstr(NULL, text, sizeof(text) - 1, text, 1), -1);
+    ck_assert_int_eq(cli_bcapi_version_compare(NULL, NULL, 1, text, sizeof(text) - 1), -1);
+    ck_assert_uint_eq(cli_bcapi_debug_print_str_start(NULL, text, sizeof(text) - 1), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_debug_print_str_nonl(NULL, text, sizeof(text) - 1), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_check_platform(NULL, 0, 0, 0), 0);
+    ck_assert_int_eq(cli_bcapi_pdf_get_obj_num(NULL), -1);
+    ck_assert_int_eq(cli_bcapi_pdf_get_flags(NULL), -1);
+    ck_assert_int_eq(cli_bcapi_pdf_set_flags(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_pdf_lookupobj(NULL, 0), -1);
+    ck_assert_uint_eq(cli_bcapi_pdf_getobjsize(NULL, 0), 0);
+    ck_assert_uint_eq(cli_bcapi_pdf_getobjsize64(NULL, 0), 0);
+    ck_assert_ptr_null(cli_bcapi_pdf_getobj(NULL, 0, 0));
+    ck_assert_int_eq(cli_bcapi_pdf_getobjid(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_pdf_getobjflags(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_pdf_setobjflags(NULL, 0, 0), -1);
+    ck_assert_int_eq(cli_bcapi_pdf_get_offset(NULL, 0), -1);
+    ck_assert_uint_eq(cli_bcapi_pdf_get_offset64(NULL, 0), UINT64_MAX);
+    ck_assert_int_eq(cli_bcapi_pdf_get_phase(NULL), -1);
+    ck_assert_int_eq(cli_bcapi_pdf_get_dumpedobjid(NULL), -1);
+    ck_assert_int_eq(cli_bcapi_running_on_jit(NULL), 0);
+    ck_assert_int_eq(cli_bcapi_get_file_reliability(NULL), 3);
+    ck_assert_int_eq(cli_bcapi_json_is_active(NULL), 0);
+    ck_assert_int_eq(cli_bcapi_json_get_object(NULL, NULL, 0, 0), -1);
+    ck_assert_int_eq(cli_bcapi_json_get_type(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_json_get_array_length(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_json_get_array_idx(NULL, 0, 0), -1);
+    ck_assert_int_eq(cli_bcapi_json_get_string_length(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_json_get_string(NULL, NULL, 0, 0), -1);
+    ck_assert_int_eq(cli_bcapi_json_get_boolean(NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_json_get_int(NULL, 0), -1);
+
+    ck_assert_int_eq(cli_bcapi_atoi(NULL, NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_atoi(NULL, text, 0), -1);
+    ck_assert_int_eq(cli_bcapi_atoi(NULL, text, sizeof(text) - 1), 123);
+}
+END_TEST
+
 START_TEST(test_bytecode_v1_coordinate_narrowing_is_fail_visible)
 {
 #if SIZE_MAX > UINT32_MAX
@@ -2336,6 +2407,7 @@ Suite *test_bytecode_suite(void)
 #endif
     tcase_add_test(tc_cli_read, test_bytecode_v1_read_rejects_invalid_offsets);
     tcase_add_test(tc_cli_read, test_bytecode_read_rejects_null_buffer);
+    tcase_add_test(tc_cli_read, test_bytecode_api_rejects_invalid_contexts);
     tcase_add_test(tc_cli_read, test_bytecode_v1_coordinate_narrowing_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);
 #ifdef CLAMAV_TEST_JS_IO_WRAP

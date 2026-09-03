@@ -1,5 +1,16 @@
 # Wishlist
 
+## Bytecode ABI entry-point admission — 2026-09-03
+
+- Keep legacy and ABI-v2 bytecode entry points fail-visible when context,
+  backing PE/PDF metadata, output buffers, extraction cursors, JSON objects, or
+  string inputs are invalid. Retain checked legacy seek arithmetic and the
+  advancing, overflow-bounded numeric helper.
+- Retain `test_bytecode_api_rejects_invalid_contexts` and the source guards;
+  add current production-GCC relink/execution, complete bytecode/YARA corpus,
+  sanitizer, service, materialized-large-file, Sonic1, resource, and final
+  qualification.
+
 ## ZIP helper map-reader admission — 2026-09-03
 
 - Keep `zip_need_off_status()` fail-visible when a ZIP fmap has no backing

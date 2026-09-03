@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## Bytecode ABI entry-point admission — 2026-09-03
+
+The legacy and ABI-v2 bytecode API still had several direct context and
+metadata dereferences before validation. The repair now rejects null contexts,
+missing PE/PDF metadata, null output buffers, invalid extraction cursors, and
+unsafe JSON output/object states; legacy seek arithmetic is overflow-checked,
+and the bounded numeric helper now advances through digits and rejects signed
+overflow. `test_bytecode_api_rejects_invalid_contexts` covers the direct
+admission contract and the numeric helper. Current-source production-GCC
+relink/execution, complete bytecode/YARA corpus, sanitizer, service,
+materialized-large-file, Sonic1, resource, and final release qualification
+remain open.
+
 ## ZIP helper map-reader admission — 2026-09-03
 
 The ZIP-specific `zip_need_off_status()` helper previously validated the
