@@ -2742,6 +2742,51 @@ START_TEST(test_matcher_entry_points_reject_invalid_contexts)
 }
 END_TEST
 
+START_TEST(test_logical_handler_rejects_missing_recursion_stack)
+{
+    static char logic[] = "0";
+    static const uint32_t handler_type[] = {CL_TYPE_TEXT_ASCII};
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    cli_ctx missing_stack;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id              = 0;
+    lsig.type            = CLI_LSIG_NORMAL;
+    lsig.u.logic         = logic;
+    lsig.virname         = (char *)"MissingHandlerRecursionStack";
+    lsig.tdb.subsigs     = 1;
+    lsig.tdb.handlertype = handler_type;
+    lsigtable[0]         = &lsig;
+    root.ac_lsigs        = 1;
+    root.ac_lsigtable    = lsigtable;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    mdata.lsigcnt[0][0] = 1;
+    map = cl_fmap_open_memory((const unsigned char *)"x", 1);
+    ck_assert_ptr_nonnull(map);
+    missing_stack                       = ctx;
+    missing_stack.fmap                  = map;
+    missing_stack.recursion_stack       = NULL;
+    missing_stack.recursion_stack_size  = 0;
+
+    ret = cli_exp_eval(&missing_stack, &root, &mdata, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(missing_stack.scan_incomplete);
+    ck_assert_str_eq(missing_stack.scan_incomplete_reason,
+                     "logical signature HandlerType recursion stack is unavailable");
+    ck_assert(map->dont_cache_flag);
+
+    cli_ac_freedata(&mdata);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_pcre_matcher_limit_is_preserved_by_fmap)
 {
     static char pcre_signature[] = PCRE_BYPASS "/00/";
@@ -2936,6 +2981,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_pcre_full_map_read_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_scan_fmap_without_generic_root_is_fail_visible);
     tcase_add_test(tc_matchers, test_matcher_entry_points_reject_invalid_contexts);
+    tcase_add_test(tc_matchers, test_logical_handler_rejects_missing_recursion_stack);
     tcase_add_test(tc_matchers, test_pcre_matcher_limit_is_preserved_by_fmap);
     tcase_add_test(tc_matchers, test_pcre_subject_limit_is_fail_visible);
     return s;

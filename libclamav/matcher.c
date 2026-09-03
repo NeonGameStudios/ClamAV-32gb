@@ -1286,6 +1286,14 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
         // Instead of alerting, we'll make a duplicate fmap (add recursion depth, to prevent infinite loops) and
         // scan the file with the handler type.
 
+        if (!ctx->recursion_stack || ctx->recursion_stack_size == 0 ||
+            ctx->recursion_level >= ctx->recursion_stack_size) {
+            cli_mark_scan_incomplete(ctx, "logical signature HandlerType recursion stack is unavailable");
+            ctx->fmap->dont_cache_flag = 1;
+            status = CL_EPARSE;
+            goto done;
+        }
+
         /*
          * If the current layer was re-typed already, then prevent HandlerType from being applied again.
          */

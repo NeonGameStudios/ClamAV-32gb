@@ -1,5 +1,13 @@
 # Wishlist
 
+## Logical HandlerType stack admission — 2026-09-03
+
+- Keep matched HandlerType logical signatures behind a valid recursion-stack
+  check so malformed matcher contexts return explicit incomplete state rather
+  than indexing a missing layer. Retain the direct matcher regression and
+  source guard; add current linked HandlerType corpus, sanitizer, service,
+  materialized-large-file, Sonic1, resource, and final qualification.
+
 ## Bytecode runner argument validation — 2026-09-03
 
 - Keep `cli_bytecode_run()` argument validation ahead of all context

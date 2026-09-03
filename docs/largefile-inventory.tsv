@@ -3448,26 +3448,26 @@ fixed-width-integer	libclamav/matcher.c	1222	    if (expression_status < 0 || (u
 fixed-width-integer	libclamav/matcher.c	128	bool cli_matcher_window_reaches_map_end(uint64_t offset, uint32_t length, size_t map_length)
 fixed-width-integer	libclamav/matcher.c	131	    return (offset >= (uint64_t)map_length) ||
 fixed-width-integer	libclamav/matcher.c	132	           ((uint64_t)length >= (uint64_t)map_length - offset);
-fixed-width-integer	libclamav/matcher.c	1359	            uint32_t legacy_offsets[64];
 fixed-width-integer	libclamav/matcher.c	136	                                     const unsigned char *buffer, uint32_t length,
-fixed-width-integer	libclamav/matcher.c	1360	            if (!cli_lsig_bytecode_compatible((uint64_t)ctx->fmap->len, acdata->lsigsuboff_first[lsid], legacy_offsets)) {
+fixed-width-integer	libclamav/matcher.c	1367	            uint32_t legacy_offsets[64];
+fixed-width-integer	libclamav/matcher.c	1368	            if (!cli_lsig_bytecode_compatible((uint64_t)ctx->fmap->len, acdata->lsigsuboff_first[lsid], legacy_offsets)) {
 fixed-width-integer	libclamav/matcher.c	138	                                     uint64_t offset,
-fixed-width-integer	libclamav/matcher.c	1452	            return sizeof(uint64_t);
+fixed-width-integer	libclamav/matcher.c	1460	            return sizeof(uint64_t);
 fixed-width-integer	libclamav/matcher.c	151	    int32_t pos = 0;
-fixed-width-integer	libclamav/matcher.c	1514	    if ((uint64_t)ac_lsig->code_size > (uint64_t)(UINTPTR_MAX - code_start))
+fixed-width-integer	libclamav/matcher.c	1522	    if ((uint64_t)ac_lsig->code_size > (uint64_t)(UINTPTR_MAX - code_start))
 fixed-width-integer	libclamav/matcher.c	153	    uint32_t orig_length;
 fixed-width-integer	libclamav/matcher.c	154	    uint64_t orig_offset;
-fixed-width-integer	libclamav/matcher.c	1543	            uint64_t target_value;
-fixed-width-integer	libclamav/matcher.c	1548	            if (target_value > (uint64_t)UINTPTR_MAX) {
-fixed-width-integer	libclamav/matcher.c	1590	static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_data *acdata, struct cli_target_info *target_info, uint32_t lsid)
+fixed-width-integer	libclamav/matcher.c	1551	            uint64_t target_value;
+fixed-width-integer	libclamav/matcher.c	1556	            if (target_value > (uint64_t)UINTPTR_MAX) {
+fixed-width-integer	libclamav/matcher.c	1598	static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_data *acdata, struct cli_target_info *target_info, uint32_t lsid)
 fixed-width-integer	libclamav/matcher.c	160	            if (length > (uint32_t)root->maxpatlen + 1U)
 fixed-width-integer	libclamav/matcher.c	161	                pos = (int32_t)(length - (uint32_t)root->maxpatlen - 1U);
-fixed-width-integer	libclamav/matcher.c	1653	    uint32_t i;
+fixed-width-integer	libclamav/matcher.c	1661	    uint32_t i;
 fixed-width-integer	libclamav/matcher.c	167	                pos = (int32_t)(info.first_match - (unsigned long)root->maxpatlen - 1UL);
-fixed-width-integer	libclamav/matcher.c	1690	                    current = cli_scan_account_matcher_work(ctx, (uint64_t)ctx->fmap->len);
-fixed-width-integer	libclamav/matcher.c	1743	    uint32_t maxpatlen, bytes;
-fixed-width-integer	libclamav/matcher.c	1744	    uint64_t offset = 0;
-fixed-width-integer	libclamav/matcher.c	2091	            uint32_t data_len = bytes - maxpatlen * (offset != 0);
+fixed-width-integer	libclamav/matcher.c	1698	                    current = cli_scan_account_matcher_work(ctx, (uint64_t)ctx->fmap->len);
+fixed-width-integer	libclamav/matcher.c	1751	    uint32_t maxpatlen, bytes;
+fixed-width-integer	libclamav/matcher.c	1752	    uint64_t offset = 0;
+fixed-width-integer	libclamav/matcher.c	2099	            uint32_t data_len = bytes - maxpatlen * (offset != 0);
 fixed-width-integer	libclamav/matcher.c	247	        uint64_t maxfilesize;
 fixed-width-integer	libclamav/matcher.c	258	                maxfilesize = (uint64_t)cl_engine_get_num(ctx->engine, CL_ENGINE_PCRE_MAX_FILESIZE, &rc);
 fixed-width-integer	libclamav/matcher.c	293	            maxfilesize = (uint64_t)cl_engine_get_num(ctx->engine, CL_ENGINE_PCRE_MAX_FILESIZE, &rc);
@@ -7483,13 +7483,14 @@ fixed-width-integer	unit_tests/check_matchers.c	2249	    uint64_t target = PTR_T
 fixed-width-integer	unit_tests/check_matchers.c	2340	    const uint64_t reference_offset = 5000000000ULL;
 fixed-width-integer	unit_tests/check_matchers.c	2482	    static const uint64_t sizes[] = {
 fixed-width-integer	unit_tests/check_matchers.c	2585	    if (offset < 0 || (uint64_t)offset >= state->fail_at) {
-fixed-width-integer	unit_tests/check_matchers.c	2787	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
-fixed-width-integer	unit_tests/check_matchers.c	2788	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2791	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
-fixed-width-integer	unit_tests/check_matchers.c	2792	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2820	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
-fixed-width-integer	unit_tests/check_matchers.c	2822	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
-fixed-width-integer	unit_tests/check_matchers.c	2829	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+fixed-width-integer	unit_tests/check_matchers.c	2748	    static const uint32_t handler_type[] = {CL_TYPE_TEXT_ASCII};
+fixed-width-integer	unit_tests/check_matchers.c	2832	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
+fixed-width-integer	unit_tests/check_matchers.c	2833	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2836	    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &get_status),
+fixed-width-integer	unit_tests/check_matchers.c	2837	                      (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2865	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE);
+fixed-width-integer	unit_tests/check_matchers.c	2867	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+fixed-width-integer	unit_tests/check_matchers.c	2874	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
 fixed-width-integer	unit_tests/check_matchers.c	52	extern int64_t read_uint32_t(fmap_t *fmap, size_t offset);
 fixed-width-integer	unit_tests/check_matchers.c	54	#define TEST_YARA_UNDEFINED ((int64_t)0xFFFABADAFABADAFF)
 fixed-width-integer	unit_tests/check_matchers.c	663	    uint64_t offdata[4] = {0};
@@ -12489,21 +12490,21 @@ native-width-integer	libclamav/matcher.c	1157	int cli_lsig_bytecode_compatible(u
 native-width-integer	libclamav/matcher.c	1159	    unsigned int i;
 native-width-integer	libclamav/matcher.c	1185	    int expression_status;
 native-width-integer	libclamav/matcher.c	128	bool cli_matcher_window_reaches_map_end(uint64_t offset, uint32_t length, size_t map_length)
-native-width-integer	libclamav/matcher.c	1392	static cl_error_t yara_normalize_execution_status(int result)
+native-width-integer	libclamav/matcher.c	1400	static cl_error_t yara_normalize_execution_status(int result)
 native-width-integer	libclamav/matcher.c	142	                                     unsigned int acmode,
 native-width-integer	libclamav/matcher.c	143	                                     unsigned int pcremode,
-native-width-integer	libclamav/matcher.c	1436	static size_t yara_instruction_operand_size(uint8_t opcode)
-native-width-integer	libclamav/matcher.c	1503	    size_t pc = 0;
-native-width-integer	libclamav/matcher.c	1528	        size_t operand_size;
-native-width-integer	libclamav/matcher.c	1545	            size_t target_offset;
-native-width-integer	libclamav/matcher.c	1557	            target_offset = (size_t)(target - code_start);
-native-width-integer	libclamav/matcher.c	1594	    int execution_result;
+native-width-integer	libclamav/matcher.c	1444	static size_t yara_instruction_operand_size(uint8_t opcode)
+native-width-integer	libclamav/matcher.c	1511	    size_t pc = 0;
+native-width-integer	libclamav/matcher.c	1536	        size_t operand_size;
+native-width-integer	libclamav/matcher.c	1553	            size_t target_offset;
+native-width-integer	libclamav/matcher.c	1565	            target_offset = (size_t)(target - code_start);
+native-width-integer	libclamav/matcher.c	1602	    int execution_result;
 native-width-integer	libclamav/matcher.c	166	            if (info.first_match > (unsigned long)root->maxpatlen + 1UL)
 native-width-integer	libclamav/matcher.c	167	                pos = (int32_t)(info.first_match - (unsigned long)root->maxpatlen - 1UL);
-native-width-integer	libclamav/matcher.c	1730	cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, struct cli_matched_type **ftoffset, unsigned int acmode, struct cli_ac_result **acres)
-native-width-integer	libclamav/matcher.c	1742	    unsigned int i = 0, j = 0;
-native-width-integer	libclamav/matcher.c	2254	cl_error_t cli_matchmeta(cli_ctx *ctx, const char *fname, size_t fsizec, size_t fsizer, int encrypted, unsigned int filepos, int res1)
-native-width-integer	libclamav/matcher.c	2270	               cli_ftname(cli_recursion_stack_get_type(ctx, -1)), (long long unsigned)fsizec, fname ? fname : "n/a", (long long unsigned)fsizec, (long long unsigned)fsizer,
+native-width-integer	libclamav/matcher.c	1738	cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, struct cli_matched_type **ftoffset, unsigned int acmode, struct cli_ac_result **acres)
+native-width-integer	libclamav/matcher.c	1750	    unsigned int i = 0, j = 0;
+native-width-integer	libclamav/matcher.c	2262	cl_error_t cli_matchmeta(cli_ctx *ctx, const char *fname, size_t fsizec, size_t fsizer, int encrypted, unsigned int filepos, int res1)
+native-width-integer	libclamav/matcher.c	2278	               cli_ftname(cli_recursion_stack_get_type(ctx, -1)), (long long unsigned)fsizec, fname ? fname : "n/a", (long long unsigned)fsizec, (long long unsigned)fsizer,
 native-width-integer	libclamav/matcher.c	246	        int rc;
 native-width-integer	libclamav/matcher.c	345	    unsigned int i = 0, j = 0;
 native-width-integer	libclamav/matcher.c	479	static int cli_parse_uint64(const char *text, uint64_t *value)
@@ -22053,8 +22054,8 @@ native-width-integer	unit_tests/check_matchers.c	261	    unsigned int i;
 native-width-integer	unit_tests/check_matchers.c	2616	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
 native-width-integer	unit_tests/check_matchers.c	262	    int ret;
 native-width-integer	unit_tests/check_matchers.c	2626	static const void *matcher_pcre_full_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
-native-width-integer	unit_tests/check_matchers.c	2783	    int get_status;
-native-width-integer	unit_tests/check_matchers.c	2790	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, (long long)CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
+native-width-integer	unit_tests/check_matchers.c	2828	    int get_status;
+native-width-integer	unit_tests/check_matchers.c	2835	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, (long long)CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
 native-width-integer	unit_tests/check_matchers.c	304	    int ret;
 native-width-integer	unit_tests/check_matchers.c	325	    unsigned int i;
 native-width-integer	unit_tests/check_matchers.c	326	    int ret;
@@ -22469,8 +22470,8 @@ boundary-constant	libclamav/matcher-hash.c	434	    if (size >= UINT32_MAX) {
 boundary-constant	libclamav/matcher-hash.c	496	    if (size >= UINT32_MAX) {
 boundary-constant	libclamav/matcher-pcre.c	352	    if (root->pcre_metas == UINT32_MAX ||
 boundary-constant	libclamav/matcher.c	1161	    if (!offsets || !legacy_offsets || file_size > UINT32_MAX)
-boundary-constant	libclamav/matcher.c	1493	            return SIZE_MAX;
-boundary-constant	libclamav/matcher.c	1533	        if (operand_size == SIZE_MAX) {
+boundary-constant	libclamav/matcher.c	1501	            return SIZE_MAX;
+boundary-constant	libclamav/matcher.c	1541	        if (operand_size == SIZE_MAX) {
 boundary-constant	libclamav/mbox.c	1367	                    if (line_len > SIZE_MAX - totalHeaderBytes) {
 boundary-constant	libclamav/mbox.c	1651	                        if (line_len == SIZE_MAX) {
 boundary-constant	libclamav/mbox.c	1667	                    if (line_len == SIZE_MAX || fulllinelength > SIZE_MAX - line_len - 1U) {
@@ -24532,13 +24533,13 @@ format-width	libclamav/matcher-pcre.c	702	                cli_dbgmsg("cli_pcre_s
 format-width	libclamav/matcher-pcre.c	708	                        cli_dbgmsg("cli_pcre_scanbuf: match found outside of maxshift @%zu\n", adjbuffer + p_res.match[0]);
 format-width	libclamav/matcher-pcre.c	720	                    pm_dbgmsg("cli_pcre_scanbuf: assigning lsigcnt[%d][%d], located @ %zu\n",
 format-width	libclamav/matcher-pcre.c	94	    pm_dbgmsg("pcre_perf: adding sig ids starting %u for %s\n", p_sigid, pm->statname);
-format-width	libclamav/matcher.c	1348	            cli_dbgmsg("lsig_eval: logical signature '%s' references unavailable bytecode entry %u\n",
-format-width	libclamav/matcher.c	1702	            cli_dbgmsg("lsig_eval: logical signature has an unsupported type %u\n", root->ac_lsigtable[i]->type);
-format-width	libclamav/matcher.c	1721	                cli_dbgmsg("Exceeded scan time limit while evaluating logical and yara signatures (max: %u)\n", ctx->engine->maxscantime);
-format-width	libclamav/matcher.c	2028	            cli_dbgmsg("Exceeded scan time limit while scanning fmap (max: %u)\n", ctx->engine->maxscantime);
-format-width	libclamav/matcher.c	2035	            cli_errmsg("cli_scan_fmap: failed to map %u bytes at offset " STDu64 "\n", bytes, offset);
-format-width	libclamav/matcher.c	2153	                cli_dbgmsg("cli_scan_fmap: Error getting hash for type %d\n", hash_type);
-format-width	libclamav/matcher.c	2269	    cli_dbgmsg("CDBNAME:%s:%llu:%s:%llu:%llu:%d:%u:%u\n",
+format-width	libclamav/matcher.c	1356	            cli_dbgmsg("lsig_eval: logical signature '%s' references unavailable bytecode entry %u\n",
+format-width	libclamav/matcher.c	1710	            cli_dbgmsg("lsig_eval: logical signature has an unsupported type %u\n", root->ac_lsigtable[i]->type);
+format-width	libclamav/matcher.c	1729	                cli_dbgmsg("Exceeded scan time limit while evaluating logical and yara signatures (max: %u)\n", ctx->engine->maxscantime);
+format-width	libclamav/matcher.c	2036	            cli_dbgmsg("Exceeded scan time limit while scanning fmap (max: %u)\n", ctx->engine->maxscantime);
+format-width	libclamav/matcher.c	2043	            cli_errmsg("cli_scan_fmap: failed to map %u bytes at offset " STDu64 "\n", bytes, offset);
+format-width	libclamav/matcher.c	2161	                cli_dbgmsg("cli_scan_fmap: Error getting hash for type %d\n", hash_type);
+format-width	libclamav/matcher.c	2277	    cli_dbgmsg("CDBNAME:%s:%llu:%s:%llu:%llu:%d:%u:%u\n",
 format-width	libclamav/matcher.c	275	                cli_dbgmsg("matcher_run: performing regex matching on full map after window at " STDu64 "+%u (map length %zu)\n",
 format-width	libclamav/matcher.c	310	            cli_dbgmsg("matcher_run: performing regex matching on buffer with no map: " STDu64 "+%u(" STDu64 ")\n", offset, length, offset + length);
 format-width	libclamav/matcher.c	652	                cli_errmsg("cli_caloff: Invalid offset type for target %u\n", target);
@@ -31247,70 +31248,70 @@ offset-size-arithmetic	libclamav/matcher.c	1208	    exp_end = exp + strlen(exp);
 offset-size-arithmetic	libclamav/matcher.c	1232	    expression_status = cli_ac_chklsig(exp, exp_end, acdata->lsigcnt[lsid], &evalcnt, &evalids, 0);
 offset-size-arithmetic	libclamav/matcher.c	1271	    if (ac_lsig->tdb.filesize && (ac_lsig->tdb.filesize[0] > ctx->fmap->len || ac_lsig->tdb.filesize[1] < ctx->fmap->len)) {
 offset-size-arithmetic	libclamav/matcher.c	130	    /* The subtraction is evaluated only when offset is within the map. */
-offset-size-arithmetic	libclamav/matcher.c	1302	            new_map = fmap_duplicate(ctx->fmap, 0, ctx->fmap->len, ctx->fmap->name);
+offset-size-arithmetic	libclamav/matcher.c	1310	            new_map = fmap_duplicate(ctx->fmap, 0, ctx->fmap->len, ctx->fmap->name);
 offset-size-arithmetic	libclamav/matcher.c	132	           ((uint64_t)length >= (uint64_t)map_length - offset);
-offset-size-arithmetic	libclamav/matcher.c	1340	        status = cli_append_virus(ctx, ac_lsig->virname);
-offset-size-arithmetic	libclamav/matcher.c	1360	            if (!cli_lsig_bytecode_compatible((uint64_t)ctx->fmap->len, acdata->lsigsuboff_first[lsid], legacy_offsets)) {
-offset-size-arithmetic	libclamav/matcher.c	1361	                cli_dbgmsg("lsig_eval: refusing to run v1 bytecode '%s' with a file size or logical-signature offset outside the 32-bit ABI\n",
-offset-size-arithmetic	libclamav/matcher.c	1371	                                      acdata->lsigcnt[lsid], acdata->lsigsuboff_first[lsid], ctx->fmap);
+offset-size-arithmetic	libclamav/matcher.c	1348	        status = cli_append_virus(ctx, ac_lsig->virname);
+offset-size-arithmetic	libclamav/matcher.c	1368	            if (!cli_lsig_bytecode_compatible((uint64_t)ctx->fmap->len, acdata->lsigsuboff_first[lsid], legacy_offsets)) {
+offset-size-arithmetic	libclamav/matcher.c	1369	                cli_dbgmsg("lsig_eval: refusing to run v1 bytecode '%s' with a file size or logical-signature offset outside the 32-bit ABI\n",
+offset-size-arithmetic	libclamav/matcher.c	1379	                                      acdata->lsigcnt[lsid], acdata->lsigsuboff_first[lsid], ctx->fmap);
 offset-size-arithmetic	libclamav/matcher.c	146	                                     struct cli_bm_off *offdata,
 offset-size-arithmetic	libclamav/matcher.c	147	                                     struct cli_pcre_off *poffdata,
-offset-size-arithmetic	libclamav/matcher.c	1507	    if (ac_lsig == NULL || ac_lsig->u.code_start == NULL || ac_lsig->code_size == 0)
-offset-size-arithmetic	libclamav/matcher.c	1514	    if ((uint64_t)ac_lsig->code_size > (uint64_t)(UINTPTR_MAX - code_start))
-offset-size-arithmetic	libclamav/matcher.c	1516	    code_end = code_start + (uintptr_t)ac_lsig->code_size;
-offset-size-arithmetic	libclamav/matcher.c	1518	    flags = cli_max_calloc(ac_lsig->code_size, sizeof(*flags));
-offset-size-arithmetic	libclamav/matcher.c	1537	        if (operand_size > ac_lsig->code_size - pc) {
-offset-size-arithmetic	libclamav/matcher.c	1557	            target_offset = (size_t)(target - code_start);
+offset-size-arithmetic	libclamav/matcher.c	1515	    if (ac_lsig == NULL || ac_lsig->u.code_start == NULL || ac_lsig->code_size == 0)
+offset-size-arithmetic	libclamav/matcher.c	1522	    if ((uint64_t)ac_lsig->code_size > (uint64_t)(UINTPTR_MAX - code_start))
+offset-size-arithmetic	libclamav/matcher.c	1524	    code_end = code_start + (uintptr_t)ac_lsig->code_size;
+offset-size-arithmetic	libclamav/matcher.c	1526	    flags = cli_max_calloc(ac_lsig->code_size, sizeof(*flags));
+offset-size-arithmetic	libclamav/matcher.c	1545	        if (operand_size > ac_lsig->code_size - pc) {
+offset-size-arithmetic	libclamav/matcher.c	1565	            target_offset = (size_t)(target - code_start);
 offset-size-arithmetic	libclamav/matcher.c	158	        if (filter_search_ext(root->filter, buffer, length, &info) == -1) {
 offset-size-arithmetic	libclamav/matcher.c	159	            /*  for safety always scan last maxpatlen bytes */
 offset-size-arithmetic	libclamav/matcher.c	160	            if (length > (uint32_t)root->maxpatlen + 1U)
 offset-size-arithmetic	libclamav/matcher.c	161	                pos = (int32_t)(length - (uint32_t)root->maxpatlen - 1U);
-offset-size-arithmetic	libclamav/matcher.c	1617	    context.file_size = ctx->fmap->len;
 offset-size-arithmetic	libclamav/matcher.c	162	            perf_log_filter(pos, length, root->type);
-offset-size-arithmetic	libclamav/matcher.c	1631	            rc = cli_append_virus(ctx, ac_lsig->virname);
+offset-size-arithmetic	libclamav/matcher.c	1625	    context.file_size = ctx->fmap->len;
+offset-size-arithmetic	libclamav/matcher.c	1639	            rc = cli_append_virus(ctx, ac_lsig->virname);
 offset-size-arithmetic	libclamav/matcher.c	166	            if (info.first_match > (unsigned long)root->maxpatlen + 1UL)
 offset-size-arithmetic	libclamav/matcher.c	167	                pos = (int32_t)(info.first_match - (unsigned long)root->maxpatlen - 1UL);
 offset-size-arithmetic	libclamav/matcher.c	168	            perf_log_filter(pos, length, root->type);
 offset-size-arithmetic	libclamav/matcher.c	171	        perf_log_filter(0, length, root->type);
-offset-size-arithmetic	libclamav/matcher.c	1730	cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, struct cli_matched_type **ftoffset, unsigned int acmode, struct cli_ac_result **acres)
+offset-size-arithmetic	libclamav/matcher.c	1738	cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, struct cli_matched_type **ftoffset, unsigned int acmode, struct cli_ac_result **acres)
 offset-size-arithmetic	libclamav/matcher.c	177	    length -= pos;
 offset-size-arithmetic	libclamav/matcher.c	179	    offset += pos;
-offset-size-arithmetic	libclamav/matcher.c	1830	     * appropriate in cli_scanpe, but scanraw->cli_scan_fmap gets
-offset-size-arithmetic	libclamav/matcher.c	1882	                /* Recalculate the relative offsets in ac sigs (e.g. those that are based on pe/elf/macho section start/end). */
-offset-size-arithmetic	libclamav/matcher.c	1926	            /* Recalculate the relative offsets in ac sigs (e.g. those that are based on pe/elf/macho section start/end). */
-offset-size-arithmetic	libclamav/matcher.c	1937	                        /* Recalculate the relative offsets in boyer-moore signatures (e.g. those that are based on pe/elf/macho section start/end). */
+offset-size-arithmetic	libclamav/matcher.c	1838	     * appropriate in cli_scanpe, but scanraw->cli_scan_fmap gets
+offset-size-arithmetic	libclamav/matcher.c	1890	                /* Recalculate the relative offsets in ac sigs (e.g. those that are based on pe/elf/macho section start/end). */
+offset-size-arithmetic	libclamav/matcher.c	1934	            /* Recalculate the relative offsets in ac sigs (e.g. those that are based on pe/elf/macho section start/end). */
+offset-size-arithmetic	libclamav/matcher.c	1945	                        /* Recalculate the relative offsets in boyer-moore signatures (e.g. those that are based on pe/elf/macho section start/end). */
 offset-size-arithmetic	libclamav/matcher.c	195	            ret = cli_append_virus(ctx, *virname);
-offset-size-arithmetic	libclamav/matcher.c	1974	     * root cannot alter the independent root's scan coordinates. */
-offset-size-arithmetic	libclamav/matcher.c	1977	        maxpatlen = generic_ac_root->maxpatlen;
-offset-size-arithmetic	libclamav/matcher.c	1979	        maxpatlen = MAX(maxpatlen, target_ac_root->maxpatlen);
-offset-size-arithmetic	libclamav/matcher.c	1992	        need_hash[CLI_HASH_MD5] = cli_hm_have_size(hdb, CLI_HASH_MD5, ctx->fmap->len) ||
-offset-size-arithmetic	libclamav/matcher.c	1994	                                  cli_hm_have_size(fp, CLI_HASH_MD5, ctx->fmap->len) ||
-offset-size-arithmetic	libclamav/matcher.c	1997	        need_hash[CLI_HASH_SHA1] = cli_hm_have_size(hdb, CLI_HASH_SHA1, ctx->fmap->len) ||
-offset-size-arithmetic	libclamav/matcher.c	1999	                                   cli_hm_have_size(fp, CLI_HASH_SHA1, ctx->fmap->len) ||
-offset-size-arithmetic	libclamav/matcher.c	2002	        need_hash[CLI_HASH_SHA2_256] = cli_hm_have_size(hdb, CLI_HASH_SHA2_256, ctx->fmap->len) ||
-offset-size-arithmetic	libclamav/matcher.c	2004	                                       cli_hm_have_size(fp, CLI_HASH_SHA2_256, ctx->fmap->len) ||
-offset-size-arithmetic	libclamav/matcher.c	2026	    while (offset < ctx->fmap->len) {
-offset-size-arithmetic	libclamav/matcher.c	2033	        bytes = MIN(ctx->fmap->len - offset, SCANBUFF);
-offset-size-arithmetic	libclamav/matcher.c	2034	        if (!(buff = fmap_need_off_once(ctx->fmap, offset, bytes))) {
+offset-size-arithmetic	libclamav/matcher.c	1982	     * root cannot alter the independent root's scan coordinates. */
+offset-size-arithmetic	libclamav/matcher.c	1985	        maxpatlen = generic_ac_root->maxpatlen;
+offset-size-arithmetic	libclamav/matcher.c	1987	        maxpatlen = MAX(maxpatlen, target_ac_root->maxpatlen);
+offset-size-arithmetic	libclamav/matcher.c	2000	        need_hash[CLI_HASH_MD5] = cli_hm_have_size(hdb, CLI_HASH_MD5, ctx->fmap->len) ||
+offset-size-arithmetic	libclamav/matcher.c	2002	                                  cli_hm_have_size(fp, CLI_HASH_MD5, ctx->fmap->len) ||
+offset-size-arithmetic	libclamav/matcher.c	2005	        need_hash[CLI_HASH_SHA1] = cli_hm_have_size(hdb, CLI_HASH_SHA1, ctx->fmap->len) ||
+offset-size-arithmetic	libclamav/matcher.c	2007	                                   cli_hm_have_size(fp, CLI_HASH_SHA1, ctx->fmap->len) ||
+offset-size-arithmetic	libclamav/matcher.c	2010	        need_hash[CLI_HASH_SHA2_256] = cli_hm_have_size(hdb, CLI_HASH_SHA2_256, ctx->fmap->len) ||
+offset-size-arithmetic	libclamav/matcher.c	2012	                                       cli_hm_have_size(fp, CLI_HASH_SHA2_256, ctx->fmap->len) ||
+offset-size-arithmetic	libclamav/matcher.c	2034	    while (offset < ctx->fmap->len) {
 offset-size-arithmetic	libclamav/matcher.c	204	            ret = cli_append_virus(ctx, *virname);
-offset-size-arithmetic	libclamav/matcher.c	2044	            *ctx->scanned += bytes;
-offset-size-arithmetic	libclamav/matcher.c	2050	                              &info, ftype, ftoffset, acmode, PCRE_SCAN_FMAP, acres, ctx->fmap,
-offset-size-arithmetic	libclamav/matcher.c	2054	             * generic raw matcher to run after non-critical errors. */
-offset-size-arithmetic	libclamav/matcher.c	2068	                              &info, ftype, ftoffset, acmode, PCRE_SCAN_FMAP, acres, ctx->fmap,
-offset-size-arithmetic	libclamav/matcher.c	2086	        /* Hash-signature accumulation is independent of AC/BM/PCRE root
-offset-size-arithmetic	libclamav/matcher.c	2088	         * initialized hash context empty while the other raw root continues. */
-offset-size-arithmetic	libclamav/matcher.c	2089	        if (!filetype_only && scan_viruses && hdb && (bytes > (maxpatlen * (offset != 0)))) {
-offset-size-arithmetic	libclamav/matcher.c	2090	            const void *data  = buff + maxpatlen * (offset != 0);
-offset-size-arithmetic	libclamav/matcher.c	2091	            uint32_t data_len = bytes - maxpatlen * (offset != 0);
-offset-size-arithmetic	libclamav/matcher.c	2111	        offset += bytes - maxpatlen;
-offset-size-arithmetic	libclamav/matcher.c	2158	             * This part is fast, so we aren't checking if there are any of hash sigs for this type of hash at this file size */
-offset-size-arithmetic	libclamav/matcher.c	2161	                /* Matched with size-based hash ... */
-offset-size-arithmetic	libclamav/matcher.c	2169	             * This part is fast, so we aren't checking if there are any hash sigs for this type of hash with wildcard size */
-offset-size-arithmetic	libclamav/matcher.c	2172	                /* Matched with size-agnostic hash ... */
-offset-size-arithmetic	libclamav/matcher.c	2270	               cli_ftname(cli_recursion_stack_get_type(ctx, -1)), (long long unsigned)fsizec, fname ? fname : "n/a", (long long unsigned)fsizec, (long long unsigned)fsizer,
-offset-size-arithmetic	libclamav/matcher.c	2274	        if (ctx->engine->cb_meta(cli_ftname(cli_recursion_stack_get_type(ctx, -1)), fsizec, fname, fsizer, encrypted, filepos, ctx->cb_ctx) == CL_VIRUS) {
-offset-size-arithmetic	libclamav/matcher.c	2298	        CDBRANGE(cdb->csize, cli_recursion_stack_get_size(ctx, -1));
-offset-size-arithmetic	libclamav/matcher.c	2306	        ret = cli_append_virus(ctx, cdb->virname);
+offset-size-arithmetic	libclamav/matcher.c	2041	        bytes = MIN(ctx->fmap->len - offset, SCANBUFF);
+offset-size-arithmetic	libclamav/matcher.c	2042	        if (!(buff = fmap_need_off_once(ctx->fmap, offset, bytes))) {
+offset-size-arithmetic	libclamav/matcher.c	2052	            *ctx->scanned += bytes;
+offset-size-arithmetic	libclamav/matcher.c	2058	                              &info, ftype, ftoffset, acmode, PCRE_SCAN_FMAP, acres, ctx->fmap,
+offset-size-arithmetic	libclamav/matcher.c	2062	             * generic raw matcher to run after non-critical errors. */
+offset-size-arithmetic	libclamav/matcher.c	2076	                              &info, ftype, ftoffset, acmode, PCRE_SCAN_FMAP, acres, ctx->fmap,
+offset-size-arithmetic	libclamav/matcher.c	2094	        /* Hash-signature accumulation is independent of AC/BM/PCRE root
+offset-size-arithmetic	libclamav/matcher.c	2096	         * initialized hash context empty while the other raw root continues. */
+offset-size-arithmetic	libclamav/matcher.c	2097	        if (!filetype_only && scan_viruses && hdb && (bytes > (maxpatlen * (offset != 0)))) {
+offset-size-arithmetic	libclamav/matcher.c	2098	            const void *data  = buff + maxpatlen * (offset != 0);
+offset-size-arithmetic	libclamav/matcher.c	2099	            uint32_t data_len = bytes - maxpatlen * (offset != 0);
+offset-size-arithmetic	libclamav/matcher.c	2119	        offset += bytes - maxpatlen;
+offset-size-arithmetic	libclamav/matcher.c	2166	             * This part is fast, so we aren't checking if there are any of hash sigs for this type of hash at this file size */
+offset-size-arithmetic	libclamav/matcher.c	2169	                /* Matched with size-based hash ... */
+offset-size-arithmetic	libclamav/matcher.c	2177	             * This part is fast, so we aren't checking if there are any hash sigs for this type of hash with wildcard size */
+offset-size-arithmetic	libclamav/matcher.c	2180	                /* Matched with size-agnostic hash ... */
+offset-size-arithmetic	libclamav/matcher.c	2278	               cli_ftname(cli_recursion_stack_get_type(ctx, -1)), (long long unsigned)fsizec, fname ? fname : "n/a", (long long unsigned)fsizec, (long long unsigned)fsizer,
+offset-size-arithmetic	libclamav/matcher.c	2282	        if (ctx->engine->cb_meta(cli_ftname(cli_recursion_stack_get_type(ctx, -1)), fsizec, fname, fsizer, encrypted, filepos, ctx->cb_ctx) == CL_VIRUS) {
+offset-size-arithmetic	libclamav/matcher.c	2306	        CDBRANGE(cdb->csize, cli_recursion_stack_get_size(ctx, -1));
+offset-size-arithmetic	libclamav/matcher.c	2314	        ret = cli_append_virus(ctx, cdb->virname);
 offset-size-arithmetic	libclamav/matcher.c	250	            /* Do not add the 64-bit file offset and 32-bit window length
 offset-size-arithmetic	libclamav/matcher.c	251	             * before comparing them with the map length. Large-file scans
 offset-size-arithmetic	libclamav/matcher.c	254	            const bool scanned_to_map_end = cli_matcher_window_reaches_map_end(offset, length, map->len);
@@ -41481,8 +41482,8 @@ offset-size-arithmetic	unit_tests/check_matchers.c	2604	    state.length  = (siz
 offset-size-arithmetic	unit_tests/check_matchers.c	2616	    ck_assert_msg(!(map->bitmap[(size_t)SCANBUFF / map->pgsz] & MATCHER_TEST_FM_MASK_PAGED),
 offset-size-arithmetic	unit_tests/check_matchers.c	2629	    if ((at == 0) && (len == map->len))
 offset-size-arithmetic	unit_tests/check_matchers.c	2631	    if ((len == 0) || (at > map->len) || (len > map->len - at))
-offset-size-arithmetic	unit_tests/check_matchers.c	2822	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
-offset-size-arithmetic	unit_tests/check_matchers.c	2829	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2867	    ret = cli_pcre_check_size_limit(&ctx, 0, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
+offset-size-arithmetic	unit_tests/check_matchers.c	2874	    ret = cli_pcre_check_size_limit(&ctx, CLI_MAX_LARGE_FILESIZE, (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE + 1);
 offset-size-arithmetic	unit_tests/check_matchers.c	551	        hexlen = strlen(PCRE_BYPASS) + strlen(pcre_testdata[i].hexsig) + 1;
 offset-size-arithmetic	unit_tests/check_matchers.c	554	        ck_assert_msg(hexsig != NULL, "[pcre] failed to prepend bypass (out-of-memory)");
 offset-size-arithmetic	unit_tests/check_matchers.c	603	        hexlen = strlen(PCRE_BYPASS) + strlen(pcre_testdata[i].hexsig) + 1;

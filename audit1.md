@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## Logical HandlerType stack admission — 2026-09-03
+
+`lsig_eval()` previously dereferenced the current recursion layer directly
+for a matched `HandlerType` logical signature, even when the internal matcher
+context had no valid recursion stack. The path now returns `CL_EPARSE`, marks
+the scan incomplete with an explicit reason, and taints the fmap. The matcher
+regression constructs a matched HandlerType signature against a null stack.
+Production-linked logical-signature execution, complete HandlerType corpus,
+sanitizer, service, materialized-large-file, Sonic1, resource, and final
+release qualification remain open.
+
 ## Bytecode runner argument validation — 2026-09-03
 
 `cli_bytecode_run()` read `ctx->ctx` before checking whether its context was
