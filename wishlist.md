@@ -136,6 +136,16 @@ signature qualification remain required.
   partition-image corpus, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification before closure.
 
+## 7-Zip sticky completion — 2026-09-03
+
+- Keep `cli_7unz()` converting a clean aggregate result to `CL_EPARSE` when
+  the confirmed layer already carries sticky incomplete state, regardless of
+  whether the aggregate is `CL_SUCCESS` or `CL_CLEAN`. Retain
+  `test_7z_sticky_incomplete_result_is_fail_visible`, its source guards, and
+  capability evidence; add current-source linked execution, complete 7-Zip
+  corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final parser/release qualification before closure.
+
 ## TNEF debug-message read status — 2026-09-02
 
 - Keep the optional CL_DEBUG TNEF message-metadata path distinguishing an

@@ -972,7 +972,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
     else
         cli_dbgmsg("cli_7unz: error %d\n", res);
 
-    if (ctx->scan_incomplete && found == CL_SUCCESS)
+    if (ctx->scan_incomplete && (found == CL_SUCCESS || found == CL_CLEAN))
         found = CL_EPARSE;
 
     return found;

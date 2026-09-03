@@ -35519,6 +35519,45 @@ START_TEST(test_7z_input_time_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_7z_sticky_incomplete_result_is_fail_visible)
+{
+    uint8_t data[34] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memcpy(data, "7z\xbc\xaf'\x1c", 6);
+    data[6] = 0;
+    data[7] = 4;
+    zip_stream_write_u64(data + 12, 0U);
+    zip_stream_write_u64(data + 20, 2U);
+    data[32] = 0x01;
+    data[33] = 0x00;
+    zip_stream_write_u32(data + 28, (uint32_t)crc32(0L, data + 32, 2U));
+    zip_stream_write_u32(data + 8, (uint32_t)crc32(0L, data + 12, 20U));
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                 = &engine;
+    ctx.options                = &options;
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "pre-existing 7-Zip incomplete state";
+    map                         = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap             = map;
+    map->dont_cache_flag = true;
+
+    ck_assert_int_eq(cli_7unz(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "pre-existing 7-Zip incomplete state");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static void test_7z_corpus_scan(bool inject_unsupported_after_write)
 {
     char file_path[PATH_MAX];
@@ -62006,6 +62045,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_lzma_decoder_progress_is_bounded);
     tcase_add_test(tc_7z, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_input_time_limit_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_stream_rejects_overreported_callback_results);
     tcase_add_test(tc_7z, test_7z_seek_position_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_legacy_pack_position_overflow_is_fail_visible);

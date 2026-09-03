@@ -197,6 +197,18 @@ by the large-file source guards. This closes the direct helper boundary; MBR
 parser-family, production-linked, sanitizer, materialized-large-file, Sonic1,
 resource, service, and final release qualification remain open.
 
+## 7-Zip sticky completion — 2026-09-03
+
+`cli_7unz()` initialized its aggregate result to `CL_CLEAN` but reconciled a
+pre-existing sticky incomplete layer only when the aggregate was
+`CL_SUCCESS`. A valid empty archive could therefore return clean to a direct
+caller after required work had already been marked incomplete. The final
+reconciliation now covers both clean and success, and
+`test_7z_sticky_incomplete_result_is_fail_visible` uses a valid empty 7-Zip
+archive to require `CL_EPARSE`, the original reason, and cache taint. Full
+7-Zip parser, production-linked, sanitizer, corpus, materialized-large-file,
+Sonic1, resource, service, and final release qualification remain open.
+
 ## TNEF debug-message read status — 2026-09-02
 
 The optional CL_DEBUG TNEF message-metadata path previously collapsed an
