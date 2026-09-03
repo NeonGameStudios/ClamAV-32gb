@@ -39,6 +39,7 @@ struct cli_dbio {
     unsigned int usebuf, bufsize, readsize;
     unsigned int chkonly;
     void *hashctx;
+    cl_error_t hash_status;
 };
 
 typedef enum cvd_type {

@@ -60705,6 +60705,44 @@ START_TEST(test_xz_hash_update_failure_is_fail_visible)
     cl_engine_free(scan_engine);
 }
 END_TEST
+
+START_TEST(test_signature_database_hash_update_failure_is_fail_visible)
+{
+    static const char signature[] = "Database-Hash-Update=4142\n";
+    struct cli_dbio dbio;
+    struct cl_engine *engine;
+    FILE *fs;
+    unsigned int sigs = 0;
+    cl_error_t ret;
+
+    fs = tmpfile();
+    ck_assert_ptr_nonnull(fs);
+    ck_assert_int_eq(fwrite(signature, 1, sizeof(signature) - 1U, fs), sizeof(signature) - 1U);
+    ck_assert_int_eq(fseek(fs, 0, SEEK_SET), 0);
+
+    memset(&dbio, 0, sizeof(dbio));
+    dbio.fs      = fs;
+    dbio.size    = (unsigned int)(sizeof(signature) - 1U);
+    dbio.hashctx = cl_hash_init("sha2-256");
+    ck_assert_ptr_nonnull(dbio.hashctx);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+
+    clamav_test_fail_update_hash = 1;
+    ret = cli_load("database-hash-update.db", engine, &sigs, CL_DB_UNSIGNED,
+                   &dbio, NULL);
+    clamav_test_fail_update_hash = 0;
+
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(dbio.hash_status, CL_EREAD);
+    ck_assert_uint_eq(sigs, 1);
+    ck_assert_uint_eq(dbio.size, 0);
+
+    cl_hash_destroy(dbio.hashctx);
+    ck_assert_int_eq(fclose(fs), 0);
+    cl_engine_free(engine);
+}
+END_TEST
 #endif
 
 static Suite *test_cl_suite(void)
@@ -60903,6 +60941,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cvd, test_cl_load);
     tcase_add_test(tc_cvd, test_cl_load_rejects_null_arguments);
     tcase_add_test(tc_cvd, test_cvd_skipped_member_is_consumed);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cvd, test_signature_database_hash_update_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cvd, test_cl_cvdunpack_ex);
     suite_add_tcase(s, tc_cvd_info);
     tcase_add_checked_fixture(tc_cvd_info, cl_setup, cl_teardown);

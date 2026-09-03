@@ -13482,6 +13482,17 @@ qualification remain open.
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification before closure.
 
+## Signature-database hash-update status — 2026-09-02
+
+- Keep line-oriented signature-member and `.info` metadata hash update
+  failures fail-visible through `cli_dbgets()` and `cli_load()`; retain the
+  `cli_dbio` sticky status, `test_signature_database_hash_update_failure_is_fail_visible`,
+  source guards, and capability-manifest evidence. Add current-source
+  production-GCC and linked execution, complete signed CVD/CLD/CUD and
+  standalone signature corpus, sanitizer, service parity, certified Linux
+  x86-64, materialized-large-file, Sonic1, resource, and final parser/release
+  qualification before closure.
+
 ## PDF RunLength end-marker admission — 2026-09-02
 
 - Require both bounded and legacy PDF RunLength decoders to observe the 128

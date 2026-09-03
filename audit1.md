@@ -22281,3 +22281,26 @@ Current-source production-GCC compilation and linked execution, complete XZ
 corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+## Signature-database hash-update status — 2026-09-02
+
+The line-oriented signature database loader previously ignored
+`cl_update_hash()` failures while reading CVD members through `cli_dbgets()`,
+and the `.info` loader ignored failures while updating its metadata digest. A
+valid database line could therefore be accepted with a partial member hash,
+and a metadata digest could be incomplete without becoming a visible load
+failure.
+
+`cli_dbio` now carries sticky hash status. Member update failure is recorded as
+`CL_EREAD`, prevents later database reads, and is propagated through
+`cli_load()` after a valid parser result so parser errors retain precedence.
+The `.info` metadata update path now returns `CL_EMALFDB` on update failure.
+`test_signature_database_hash_update_failure_is_fail_visible` exercises the
+production `cli_load()` path with a valid `.db` line and injected hash failure,
+requiring `CL_EREAD`, the sticky status, and full line consumption. Source
+guards and the capability manifest record the boundary.
+
+Current-source production-GCC compilation and linked execution, complete
+signed CVD/CLD/CUD and standalone signature corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.

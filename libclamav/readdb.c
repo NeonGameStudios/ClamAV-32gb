@@ -1041,6 +1041,9 @@ char *cli_dbgets(char *buff, unsigned int size, FILE *fs, struct cli_dbio *dbio)
     if (fs)
         return fgets(buff, size, fs);
 
+    if (dbio->hash_status != CL_SUCCESS)
+        return NULL;
+
     if (dbio->usebuf) {
         int bread;
         char *nl;
@@ -1069,8 +1072,10 @@ char *cli_dbgets(char *buff, unsigned int size, FILE *fs, struct cli_dbio *dbio)
                 dbio->bufpt         = dbio->buf;
                 dbio->size -= bread;
                 dbio->bread += bread;
-                if (dbio->hashctx)
-                    cl_update_hash(dbio->hashctx, dbio->readpt, bread);
+                if (dbio->hashctx && cl_update_hash(dbio->hashctx, dbio->readpt, bread) != 0) {
+                    cli_errmsg("cli_dbgets: Could not update the database member hash\n");
+                    dbio->hash_status = CL_EREAD;
+                }
             }
             if (dbio->chkonly && dbio->bufpt) {
                 dbio->bufpt    = NULL;
@@ -1127,8 +1132,10 @@ char *cli_dbgets(char *buff, unsigned int size, FILE *fs, struct cli_dbio *dbio)
         bs = strlen(buff);
         dbio->size -= bs;
         dbio->bread += bs;
-        if (dbio->hashctx)
-            cl_update_hash(dbio->hashctx, buff, bs);
+        if (dbio->hashctx && cl_update_hash(dbio->hashctx, buff, bs) != 0) {
+            cli_errmsg("cli_dbgets: Could not update the database member hash\n");
+            dbio->hash_status = CL_EREAD;
+        }
         return pt;
     }
 }
@@ -2834,7 +2841,11 @@ static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options
                 buffer[len + 1] = 0;
             }
         }
-        cl_update_hash(ctx, buffer, strlen(buffer));
+        if (cl_update_hash(ctx, buffer, strlen(buffer)) != 0) {
+            cli_errmsg("cli_loadinfo: Could not update the metadata hash\n");
+            ret = CL_EMALFDB;
+            break;
+        }
         cli_chomp(buffer);
         if (!strncmp("ClamAV-VDB:", buffer, 11)) {
             if (engine->dbinfo) { /* shouldn't be initialized at this point */
@@ -4958,6 +4969,8 @@ cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int
 
     if (dbio && dbio->chkonly) {
         while (cli_dbgets(buff, FILEBUFF, NULL, dbio)) continue;
+        if (dbio->hash_status != CL_SUCCESS)
+            return dbio->hash_status;
         return dbio->size ? CL_EREAD : CL_SUCCESS;
     }
 
@@ -5110,6 +5123,9 @@ cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int
         if (dbio->size)
             ret = CL_EREAD;
     }
+
+    if (!ret && dbio && dbio->hash_status != CL_SUCCESS)
+        ret = dbio->hash_status;
 
     if (ret)
         cli_errmsg("Can't load %s: %s\n", filename, cl_strerror(ret));
