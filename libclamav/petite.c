@@ -87,6 +87,15 @@ int cli_petite_rva_window_offset(uint32_t base_rva, uint32_t target_rva,
     return 0;
 }
 
+int cli_petite_length_step(uint32_t value, uint32_t bit, uint32_t *next)
+{
+    if (next == NULL || bit > 1 || value > (UINT32_MAX - bit) / 2)
+        return -1;
+
+    *next = value * 2 + bit;
+    return 0;
+}
+
 static char *petite_rva_window(char *buf, uint32_t base_rva, uint32_t target_rva,
                                int64_t adjustment, size_t available, size_t needed)
 {
@@ -603,12 +612,18 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                         free(usects);
                         return 1;
                     }
-                    backsize = backsize * 2 + oob;
+                    if (cli_petite_length_step(backsize, (uint32_t)oob, &backsize) < 0) {
+                        free(usects);
+                        return 1;
+                    }
                     if ((oob = doubledl(&ssrc, &mydl, buf, bufsz)) == -1) {
                         free(usects);
                         return 1;
                     }
-                    backsize = backsize * 2 + oob;
+                    if (cli_petite_length_step(backsize, (uint32_t)oob, &backsize) < 0) {
+                        free(usects);
+                        return 1;
+                    }
                     if (!backsize) {
                         backsize++;
                         while (1) {
@@ -616,7 +631,10 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                                 free(usects);
                                 return 1;
                             }
-                            backsize = backsize * 2 + oob;
+                            if (cli_petite_length_step(backsize, (uint32_t)oob, &backsize) < 0) {
+                                free(usects);
+                                return 1;
+                            }
                             if ((oob = doubledl(&ssrc, &mydl, buf, bufsz)) == -1) {
                                 free(usects);
                                 return 1;
@@ -624,9 +642,17 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                             if (!oob)
                                 break;
                         }
+                        if (backsize > UINT32_MAX - 2) {
+                            free(usects);
+                            return 1;
+                        }
                         backsize += 2;
                     }
-                    backsize += addsize;
+                    if ((uint32_t)addsize > UINT32_MAX - backsize) {
+                        free(usects);
+                        return 1;
+                    }
+                    backsize += (uint32_t)addsize;
                     if ((uint64_t)backsize > (uint64_t)size) {
                         free(usects);
                         return 1;

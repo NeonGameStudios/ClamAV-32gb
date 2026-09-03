@@ -4105,6 +4105,20 @@ final parser/release qualification.
   x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
   parser-family, and release qualification before closure.
 
+## Petite back-reference length admission — 2026-09-03
+
+- Keep Petite compressed back-reference length doubling and final additions
+  behind checked `uint32_t` arithmetic before comparing or subtracting the
+  decoded span. Preserve explicit incomplete behavior for overflowed or
+  malformed confirmed sections.
+- Retain `cli_petite_length_step()`,
+  `test_pe_petite_length_step_rejects_overflow`, both registrations, source
+  guards, and the `petite-backreference-length-admission` capability evidence.
+  Add current-source production-GCC and linked malformed/high-coordinate
+  Petite execution, complete corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource,
+  parser-family, and release qualification before closure.
+
 ## MEW section-table product admission — 2026-08-29
 
 - Keep non-LZMA MEW rebuilt section-table growth behind

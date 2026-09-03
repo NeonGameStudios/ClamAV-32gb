@@ -702,6 +702,24 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## Petite back-reference length admission — 2026-09-03
+
+Petite’s compressed-section decoder doubled attacker-derived `backsize`
+values several times without checking the `uint32_t` multiplication and bit
+addition. A wrapped length could pass the later remaining-output comparison
+and make the decoder’s copy accounting diverge from the actual encoded span.
+
+`cli_petite_length_step()` now checks each `value * 2 + bit` operation before
+committing it, and the final `+2`/`+addsize` operations are checked before
+subtracting from the remaining output. The focused
+`test_pe_petite_length_step_rejects_overflow` regression covers the exact
+maximum result, overflow, invalid bits, and null output; source guards and the
+`petite-backreference-length-admission` capability row bind the change.
+Current-source production-GCC compilation and linked malformed/high-coordinate
+Petite execution, complete PE/unpacker corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final parser/release qualification remain required.
+
 ## SIS 9.x physical field boundary — 2026-09-03
 
 SIS 9.x field admission previously checked native-size arithmetic but did not
