@@ -4074,6 +4074,21 @@ final parser/release qualification.
   evidence. Add linked malformed-Aspack execution, complete corpus, sanitizer,
   and release qualification before closure.
 
+## Aspack stream-init multiplier admission — 2026-09-03
+
+- Keep each attacker-controlled Aspack stream-init multiplier in the
+  representable 0..31 shift range and reject cumulative `uint32_t` dictionary
+  offsets before addition. Preserve sticky incomplete/non-cacheable state and
+  dictionary cleanup when the confirmed unpacking path encounters an invalid
+  multiplier or arithmetic overflow.
+- Retain `cli_aspack_init_array_step()`,
+  `test_pe_aspack_init_array_step_rejects_invalid_multiplier`, its
+  registration, source guards, and the `aspack-init-array-step` capability
+  evidence. Add current-source production-GCC and linked malformed/high-
+  coordinate Aspack execution, complete corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  parser-family, and release qualification before closure.
+
 ## MEW section-table product admission — 2026-08-29
 
 - Keep non-LZMA MEW rebuilt section-table growth behind
