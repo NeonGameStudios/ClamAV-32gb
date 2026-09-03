@@ -13468,3 +13468,17 @@ qualification remain open.
   execution, complete HFS+ catalog/attribute/resource corpus, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification before closure.
+
+## PDF RunLength end-marker admission — 2026-09-02
+
+- Require both bounded and legacy PDF RunLength decoders to observe the 128
+  EOD marker before publishing decoded content. A complete packet sequence
+  that reaches stream EOF without the marker must return `CL_EPARSE`, keep the
+  raw fallback visible, and mark the confirmed PDF layer incomplete and
+  non-cacheable.
+- Retain `test_pdf_runlength_missing_end_marker_is_fail_visible`, its
+  registration and source guards, and the `pdf-runlength-end-marker`
+  capability evidence. Add current-source production-GCC and linked execution,
+  complete PDF/filter corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  parser/release qualification before closure.

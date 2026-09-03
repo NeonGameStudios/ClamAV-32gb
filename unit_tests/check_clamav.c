@@ -17622,6 +17622,7 @@ struct pdf_single_filter_result {
     uint64_t temporary_peak;
     bool scan_incomplete;
     bool dont_cache;
+    const char *scan_incomplete_reason;
 };
 
 static void pdf_test_decode_single_filter_with_params(const uint8_t *input, size_t input_size,
@@ -17703,6 +17704,7 @@ static void pdf_test_decode_single_filter_with_params(const uint8_t *input, size
     result->temporary_peak     = ctx.temporary_peak;
     result->scan_incomplete    = ctx.scan_incomplete;
     result->dont_cache         = map->dont_cache_flag;
+    result->scan_incomplete_reason = ctx.scan_incomplete_reason;
 
     if (temporary_reserved != 0)
         cli_scan_release_temporary(&ctx, temporary_reserved);
@@ -20006,6 +20008,29 @@ START_TEST(test_pdf_invalid_asciihex_after_prefix_is_fail_visible)
     ck_assert_uint_eq(result.temporary_bytes, sizeof(encoded));
     ck_assert(result.scan_incomplete);
     ck_assert(result.dont_cache);
+    ck_assert_int_eq(memcmp(result.output, encoded, sizeof(encoded)), 0);
+
+    free(result.output);
+}
+END_TEST
+
+START_TEST(test_pdf_runlength_missing_end_marker_is_fail_visible)
+{
+    static const uint8_t encoded[] = {0U, 'R'};
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(encoded, sizeof(encoded), sizeof(encoded), OBJ_FILTER_RL,
+                                  0, &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert_uint_eq(result.written, sizeof(encoded));
+    ck_assert_uint_eq(result.output_size, sizeof(encoded));
+    ck_assert_uint_eq(result.output_offset, sizeof(encoded));
+    ck_assert_uint_eq(result.temporary_reserved, sizeof(encoded));
+    ck_assert_uint_eq(result.temporary_bytes, sizeof(encoded));
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+    ck_assert_str_eq(result.scan_incomplete_reason,
+                     "PDF RunLength stream did not reach the end marker");
     ck_assert_int_eq(memcmp(result.output, encoded, sizeof(encoded)), 0);
 
     free(result.output);
@@ -62345,6 +62370,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_runlength_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_runlength_stream_quota_failure_rolls_back_output);
     tcase_add_test(tc_cl, test_pdf_truncated_runlength_after_prefix_is_fail_visible);
+    tcase_add_test(tc_cl, test_pdf_runlength_missing_end_marker_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_asciihex_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_asciihex_stream_quota_failure_rolls_back_output);
     tcase_add_test(tc_cl, test_pdf_invalid_asciihex_after_prefix_is_fail_visible);

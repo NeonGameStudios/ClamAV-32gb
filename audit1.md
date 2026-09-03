@@ -22201,3 +22201,21 @@ manifest record the boundary. Current-source production-GCC compilation and
 linked execution, complete HFS+ catalog/attribute/resource corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.
+
+## PDF RunLength end-marker admission — 2026-09-02
+
+Both bounded and retained legacy PDF RunLength decoders previously published a
+decoded packet prefix as successful when the input ended without the required
+128 EOD marker. A stream-length boundary is not an authoritative end of a
+RunLength sequence, so the unmarked suffix was not fully validated.
+
+The decoders now require the EOD marker before flushing or publishing decoded
+output. Missing markers return `CL_EPARSE`, preserve the raw fallback as the
+visible child, and mark the confirmed PDF layer incomplete and non-cacheable.
+`test_pdf_runlength_missing_end_marker_is_fail_visible` covers a complete
+packet followed by EOF and checks the exact diagnostic and raw fallback.
+Source guards and the capability manifest record both decoder boundaries.
+Current-source production-GCC compilation and linked execution, complete
+PDF/filter corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

@@ -1512,6 +1512,7 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
     uint32_t length  = token->length;
     uint32_t offset  = 0;
     int rc           = CL_SUCCESS;
+    bool found_eod   = false;
 
     UNUSEDPARAM(obj);
 
@@ -1598,8 +1599,15 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
             /* end of data */
             cli_dbgmsg("cli_pdf: end-of-stream marker @ offset " STDu32 " (%zu bytes remaining)\n",
                        offset, token->length - offset);
+            found_eod = true;
             break;
         }
+    }
+
+    if (rc == CL_SUCCESS && !found_eod) {
+        cli_mark_scan_incomplete(pdf->ctx,
+                                 "PDF RunLength stream did not reach the end marker");
+        rc = CL_EFORMAT;
     }
 
     if (rc == CL_SUCCESS) {
@@ -2479,6 +2487,8 @@ static cl_error_t pdf_stream_rldecode_reader(struct pdf_struct *pdf,
     off_t output_start;
     uint64_t reservation_start = 0;
     cl_error_t status           = CL_SUCCESS;
+    bool found_eod              = false;
+    bool missing_eod            = false;
 
     if (reader == NULL || bytes_scanned == NULL)
         return CL_ENULLARG;
@@ -2513,8 +2523,13 @@ static cl_error_t pdf_stream_rldecode_reader(struct pdf_struct *pdf,
         status = pdf_stream_reader_get_byte(reader, &control, &at_eof);
         if (status != CL_SUCCESS)
             break;
-        if (at_eof)
+        if (at_eof) {
+            if (!found_eod) {
+                missing_eod = true;
+                status = CL_EPARSE;
+            }
             break;
+        }
         if (control < 128) {
             bool complete;
 
@@ -2542,8 +2557,7 @@ static cl_error_t pdf_stream_rldecode_reader(struct pdf_struct *pdf,
             memset(repeated, value, output_length);
             output = repeated;
         } else {
-            /* The legacy decoder accepts a complete packet sequence without
-             * an end marker and ignores bytes after an observed marker. */
+            found_eod = true;
             break;
         }
 
@@ -2555,6 +2569,11 @@ static cl_error_t pdf_stream_rldecode_reader(struct pdf_struct *pdf,
             break;
     }
 
+    if (status == CL_SUCCESS && !found_eod) {
+        cli_mark_scan_incomplete(pdf->ctx,
+                                 "PDF RunLength stream did not reach the end marker");
+        status = CL_EPARSE;
+    }
     if (status == CL_SUCCESS)
         status = pdf_stream_output_flush(pdf, fout, output_buffer, &output_buffered, decoded,
                                          "PDF streamed RunLength output exceeded configured scan limits");
@@ -2574,8 +2593,10 @@ static cl_error_t pdf_stream_rldecode_reader(struct pdf_struct *pdf,
             return rollback_status;
     }
 
-    if (status == CL_EPARSE)
-        cli_mark_scan_incomplete(pdf->ctx, "PDF RunLength stream ended within an encoded packet");
+    if (status == CL_EPARSE && !pdf->ctx->scan_incomplete)
+        cli_mark_scan_incomplete(pdf->ctx,
+                                 missing_eod ? "PDF RunLength stream did not reach the end marker"
+                                             : "PDF RunLength stream ended within an encoded packet");
 
     return status;
 }

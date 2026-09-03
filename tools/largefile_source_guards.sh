@@ -3628,6 +3628,8 @@ contains unit_tests/check_clamav.c 'test_pdf_streaming_flate_accepts_native_inpu
 contains unit_tests/check_clamav.c 'test_pdf_runlength_stream_is_chunked_and_quota_accounted'
 contains unit_tests/check_clamav.c 'test_pdf_runlength_stream_quota_failure_rolls_back_output'
 contains unit_tests/check_clamav.c 'test_pdf_truncated_runlength_after_prefix_is_fail_visible'
+contains unit_tests/check_clamav.c 'test_pdf_runlength_missing_end_marker_is_fail_visible'
+contains libclamav/pdfdecode.c 'PDF RunLength stream did not reach the end marker'
 contains unit_tests/check_clamav.c 'test_pdf_streaming_runlength_accepts_native_input_width'
 contains unit_tests/check_clamav.c 'test_pdf_asciihex_stream_is_chunked_and_quota_accounted'
 contains unit_tests/check_clamav.c 'test_pdf_asciihex_stream_quota_failure_rolls_back_output'
