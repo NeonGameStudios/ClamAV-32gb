@@ -27,6 +27,13 @@
 
 struct cli_ctx_tag;
 
+/* Convert a Petite image RVA plus a signed adjustment to a zero-based window
+ * in the reconstructed buffer without forming an out-of-object intermediate
+ * pointer. */
+int cli_petite_rva_window_offset(uint32_t base_rva, uint32_t target_rva,
+                                 int64_t adjustment, size_t available,
+                                 size_t needed, size_t *offset);
+
 int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize, struct cli_ctx_tag *);
 
 #endif

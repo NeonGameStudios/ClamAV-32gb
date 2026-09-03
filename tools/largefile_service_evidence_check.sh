@@ -97,6 +97,16 @@ grep -Fx 'service_runtime_components_unchanged=pass' "$summary" >/dev/null 2>&1 
     fail 'service evidence has no runtime-component immutability marker'
 grep -Fx 'service_interpreters_unchanged=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no ELF-interpreter immutability marker'
+grep -Fx 'clamd_parallel_clients=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no parallel-client pass marker'
+grep -Fx 'parallel_worker_count=1' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence does not prove the parallel-client test used one worker'
+grep -Fx 'parallel_client_count=4' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence does not prove four parallel clients were exercised'
+grep -Fx 'parallel_test_max_queue=8' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence does not identify the parallel-client stress queue'
+grep -Fx 'parallel_queue=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no parallel queue pass marker'
 
 identity_field()
 {

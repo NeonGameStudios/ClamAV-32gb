@@ -1215,7 +1215,7 @@ printf 'edge_clamdscan_instream=pass\n' >> "$out/service-summary.txt"
 # configuration is restored to the release profile (MaxThreads=1, MaxQueue=2).
 stop_service
 start_service "$edge_db" 1 8
-multi_dir="$out/logs/clamd-multiworker"
+multi_dir="$out/logs/clamd-parallel-client"
 mkdir -p "$multi_dir"
 multi_pids=
 worker=1
@@ -1223,7 +1223,7 @@ while [ "$worker" -le 4 ]; do
         multi_log="$multi_dir/worker-$worker.log"
         multi_time="$multi_dir/worker-$worker.time"
         multi_status_file="$multi_dir/worker-$worker.status"
-        multi_report="$out/reports/clamd-multiworker-$worker.jsonl"
+        multi_report="$out/reports/clamd-parallel-client-$worker.jsonl"
         (
             status=0
             "/usr/bin/time" -f '%e %M' -o "$multi_time" \
@@ -1258,36 +1258,37 @@ while [ "$worker" -le 4 ]; do
     multi_log="$multi_dir/worker-$worker.log"
     multi_time="$multi_dir/worker-$worker.time"
     multi_status_file="$multi_dir/worker-$worker.status"
-    multi_report="$out/reports/clamd-multiworker-$worker.jsonl"
+    multi_report="$out/reports/clamd-parallel-client-$worker.jsonl"
     multi_status=$(sed -n '1p' "$multi_status_file" 2>/dev/null || true)
     oracle_load edge "$edge_file"
     oracle_status=$multi_status
-    if ! check_oracle_output "clamd-multiworker-$worker" "$multi_log" "$multi_report" yes no service "$edge_file"; then
-        echo "clamd multi-worker request $worker failed" >&2
+    if ! check_oracle_output "clamd-parallel-client-$worker" "$multi_log" "$multi_report" yes no service "$edge_file"; then
+        echo "clamd parallel-client request $worker failed" >&2
         exit 1
     fi
     multi_elapsed=$(awk 'NF == 2 && $1 ~ /^[0-9]+([.][0-9]+)?$/ && $2 ~ /^[0-9]+$/ { print $1 }' "$multi_time")
     multi_rss=$(awk 'NF == 2 && $1 ~ /^[0-9]+([.][0-9]+)?$/ && $2 ~ /^[0-9]+$/ { print $2 }' "$multi_time")
     if [ -z "$multi_elapsed" ] || [ -z "$multi_rss" ]; then
-        echo "clamd multi-worker request $worker has malformed timing/RSS evidence" >&2
+        echo "clamd parallel-client request $worker has malformed timing/RSS evidence" >&2
         exit 1
     fi
     if ! awk -v elapsed="$multi_elapsed" -v budget="$latency_budget_s" 'BEGIN { exit !(elapsed <= budget) }'; then
-        echo "clamd multi-worker request $worker exceeded latency budget" >&2
+        echo "clamd parallel-client request $worker exceeded latency budget" >&2
         exit 1
     fi
     if [ "$multi_rss" -gt "$rss_budget_kb" ]; then
-        echo "clamd multi-worker client RSS exceeded budget: $multi_rss > $rss_budget_kb" >&2
+        echo "clamd parallel-client RSS exceeded budget: $multi_rss > $rss_budget_kb" >&2
         exit 1
     fi
-    printf 'clamd_multiworker_%s_elapsed_s=%s\n' "$worker" "$multi_elapsed" >> "$out/service-summary.txt"
-    printf 'clamd_multiworker_%s_peak_rss_kb=%s\n' "$worker" "$multi_rss" >> "$out/service-summary.txt"
+    printf 'clamd_parallel_client_%s_elapsed_s=%s\n' "$worker" "$multi_elapsed" >> "$out/service-summary.txt"
+    printf 'clamd_parallel_client_%s_peak_rss_kb=%s\n' "$worker" "$multi_rss" >> "$out/service-summary.txt"
     worker=$((worker + 1))
 done
-printf 'clamd_multiworker_count=4\n' >> "$out/service-summary.txt"
-printf 'clamd_multiworker=pass\n' >> "$out/service-summary.txt"
+printf 'clamd_parallel_client_count=4\n' >> "$out/service-summary.txt"
+printf 'clamd_parallel_clients=pass\n' >> "$out/service-summary.txt"
 printf 'parallel_worker_count=1\n' >> "$out/service-summary.txt"
 printf 'parallel_client_count=4\n' >> "$out/service-summary.txt"
+printf 'parallel_test_max_queue=8\n' >> "$out/service-summary.txt"
 printf 'parallel_queue=pass\n' >> "$out/service-summary.txt"
 
 # Do not leave the stress queue setting in the service artifact.  The

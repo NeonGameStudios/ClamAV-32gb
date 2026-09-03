@@ -136,7 +136,7 @@ def expected_workloads() -> dict[str, tuple[str, str, bool]]:
     for label in ("edge_contscan", "edge_multiscan", "edge_allmatch", "edge_fildes", "edge_instream"):
         expected[label] = ("service", "edge", False)
     for worker in (1, 2, 3, 4):
-        expected[f"clamd-multiworker-{worker}"] = ("service", "edge", False)
+        expected[f"clamd-parallel-client-{worker}"] = ("service", "edge", False)
     expected["milter-exact-edge"] = ("milter", "-", False)
     return expected
 

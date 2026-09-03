@@ -414,6 +414,36 @@ linked execution, complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 EGG/parser-release qualification remain required.
 
+## Petite reconstructed-buffer RVA admission — 2026-09-03
+
+The Petite decoder still initialized `adjbuf` as `buf - minrva` before it had
+validated that the image RVA was representable relative to the reconstructed
+buffer. Its packed-section copies, import walk, source/destination setup, and
+strip probes could also form adjusted pointers before containment. The decoder
+now converts image coordinates through `cli_petite_rva_window_offset()` and
+uses zero-based buffer-window helpers for signed back-copy and strip probes;
+the old pre-buffer intermediate pointer is gone, and oversized back-copy
+lengths are rejected before subtraction or copying. The focused
+`test_pe_petite_rva_window_offset_rejects_invalid_window` covers lower,
+adjusted, high-RVA, endpoint, and signed-adjustment boundaries. Source guards
+and the capability manifest bind the implementation. Current-source
+production-GCC compilation and linked malformed/high-coordinate Petite
+execution, complete PE/unpacker corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+PE/parser-release qualification remain required.
+
+## Parallel-client service evidence vocabulary — 2026-09-03
+
+The service gate already exercised four simultaneous `clamdscan` clients with
+`MaxThreads=1`; its stress queue is temporary and the final artifact restores
+`MaxThreads=1` and `MaxQueue=2`. The evidence labels nevertheless called the
+requests “multiworker” while separately recording one worker, which made the
+service contract ambiguous. The labels now identify parallel clients, and the
+post-run verifier requires explicit one-worker, four-client, stress-queue, and
+pass markers. This is a qualification-contract correction, not evidence that
+four daemon workers are supported. The real service, production-CVD, exact
+32-GiB milter, resource, sanitizer, and Sonic1 runs remain release gates.
+
 ## PE FSG v2 relative-window admission — 2026-09-03
 
 The FSG v2 unpacker formed a pointer from `src + (newedx - section_rva)`

@@ -58,14 +58,96 @@
 #include "others.h"
 #include "petite.h"
 
+int cli_petite_rva_window_offset(uint32_t base_rva, uint32_t target_rva,
+                                 int64_t adjustment, size_t available,
+                                 size_t needed, size_t *offset)
+{
+    int64_t adjusted;
+    uint64_t relative;
+
+    if (offset == NULL)
+        return -1;
+
+    if ((adjustment > 0 &&
+         (uint64_t)adjustment > (uint64_t)INT64_MAX - target_rva) ||
+        (adjustment < 0 && adjustment < INT64_MIN + (int64_t)target_rva))
+        return -1;
+
+    adjusted = (int64_t)target_rva + adjustment;
+    if (adjusted < 0 || (uint64_t)adjusted > UINT32_MAX ||
+        (uint64_t)adjusted < base_rva)
+        return -1;
+
+    relative = (uint64_t)adjusted - base_rva;
+    if (relative > SIZE_MAX || relative > available ||
+        needed > available - (size_t)relative)
+        return -1;
+
+    *offset = (size_t)relative;
+    return 0;
+}
+
+static char *petite_rva_window(char *buf, uint32_t base_rva, uint32_t target_rva,
+                               int64_t adjustment, size_t available, size_t needed)
+{
+    size_t offset;
+
+    if (buf == NULL || cli_petite_rva_window_offset(base_rva, target_rva,
+                                                     adjustment, available,
+                                                     needed, &offset) != 0)
+        return NULL;
+
+    return buf + offset;
+}
+
+static char *petite_buffer_window(char *buf, size_t available, size_t offset,
+                                  size_t needed)
+{
+    if (buf == NULL || offset > available || needed > available - offset)
+        return NULL;
+
+    return buf + offset;
+}
+
+static char *petite_adjusted_buffer_window(char *buf, size_t available, char *base,
+                                           int64_t adjustment, size_t needed)
+{
+    size_t base_offset;
+    size_t offset;
+
+    if (buf == NULL || base == NULL || base < buf || base > buf + available)
+        return NULL;
+    base_offset = (size_t)(base - buf);
+    if (adjustment < 0) {
+        uint64_t magnitude = (uint64_t)(-(adjustment + 1)) + 1U;
+
+        if (magnitude > base_offset)
+            return NULL;
+        offset = base_offset - (size_t)magnitude;
+    } else {
+        uint64_t forward = (uint64_t)adjustment;
+
+        if (forward > available - base_offset)
+            return NULL;
+        offset = base_offset + (size_t)forward;
+    }
+
+    return petite_buffer_window(buf, available, offset, needed);
+}
+
 static int doubledl(char **scur, uint8_t *mydlptr, char *buffer, uint32_t buffersize)
 {
+    if (scur == NULL || mydlptr == NULL || buffer == NULL || buffersize == 0)
+        return -1;
+
     unsigned char mydl  = *mydlptr;
     unsigned char olddl = mydl;
 
     mydl *= 2;
     if (!(olddl & 0x7f)) {
-        if (*scur < buffer || *scur >= buffer + buffersize - 1)
+        if (*scur == NULL || *scur < buffer ||
+            *scur >= buffer + buffersize ||
+            (size_t)(*scur - buffer) >= (size_t)buffersize - 1U)
             return -1;
         olddl = **scur;
         mydl  = olddl * 2 + 1;
@@ -95,13 +177,15 @@ static int petite_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
 
 int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize, cli_ctx *ctx)
 {
-    char *adjbuf     = buf - minrva;
     char *packed     = NULL;
     uint32_t thisrva = 0, bottom = 0, enc_ep = 0, irva = 0, workdone = 0, grown = 0x355, skew = 0x35;
     int j = 0, oob, mangled = 0, check4resources = 0;
     uint32_t ticks = 0;
     struct cli_exe_section *usects = NULL;
     void *tmpsct                   = NULL;
+
+    if (buf == NULL || sections == NULL || sectcount == 0 || bufsz == 0)
+        return 1;
 
     /*
      * -] The real thing [-
@@ -115,12 +199,17 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
      */
 
     if (version == 2)
-        packed = adjbuf + sections[sectcount - 1].rva + 0x1b8;
+        packed = petite_rva_window(buf, minrva, sections[sectcount - 1].rva,
+                                   0x1b8, bufsz, 4);
     if (version == 1) {
-        packed = adjbuf + sections[sectcount - 1].rva + 0x178;
+        packed = petite_rva_window(buf, minrva, sections[sectcount - 1].rva,
+                                   0x178, bufsz, 4);
         grown  = 0x323; /* My name is Harry potter */
         skew   = 0x34;
     }
+
+    if (packed == NULL)
+        return 1;
 
     if (ctx != NULL && cli_checktimelimit(ctx) != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "Petite decompression reached the configured time limit");
@@ -190,8 +279,13 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
             if (enc_ep) {
                 uint32_t virtaddr = pep + 5 + Imagebase, tmpep;
                 int rndm = 0, dummy = 1;
-                char *thunk = adjbuf + irva;
+                char *thunk = petite_rva_window(buf, minrva, irva, 0, bufsz, 4);
                 char *imports;
+
+                if (thunk == NULL) {
+                    free(usects);
+                    return 1;
+                }
 
                 if (version == 2) { /* 2.2 onley */
 
@@ -208,7 +302,13 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                             break;
                         }
 
-                        imports = adjbuf + cli_readint32(thunk);
+                        imports = petite_rva_window(buf, minrva,
+                                                    cli_readint32(thunk), 0,
+                                                    bufsz, 4);
+                        if (imports == NULL) {
+                            free(usects);
+                            return 1;
+                        }
                         thunk += 4;
                         dummy = 0;
 
@@ -254,13 +354,19 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
             for (t = 0; t < j; t++) {
                 usects[t].raw = (t > 0) ? (usects[t - 1].raw + usects[t - 1].rsz) : 0;
                 if (usects[t].rsz != 0) {
-                    if (CLI_ISCONTAINED(buf, bufsz, buf + usects[t].raw, usects[t].rsz)) {
-                        memmove(buf + usects[t].raw, adjbuf + usects[t].rva, usects[t].rsz);
-                    } else {
-                        cli_dbgmsg("Petite: Skipping section %d, Raw: %x, RSize:%x\n", t, usects[t].raw, usects[t].rsz);
-                        usects[t].raw = t > 0 ? usects[t - 1].raw : 0;
-                        usects[t].rsz = 0;
+                    char *destination = petite_buffer_window(buf, bufsz,
+                                                              usects[t].raw,
+                                                              usects[t].rsz);
+                    char *source = petite_rva_window(buf, minrva,
+                                                     usects[t].rva, 0, bufsz,
+                                                     usects[t].rsz);
+
+                    if (destination == NULL || source == NULL) {
+                        cli_dbgmsg("Petite: Invalid section window %d, Raw: %x, RSize:%x\n", t, usects[t].raw, usects[t].rsz);
+                        free(usects);
+                        return 1;
                     }
+                    memmove(destination, source, usects[t].rsz);
                 }
             }
 
@@ -302,17 +408,29 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
             }
             bottom += 4;
 
-            ssrc = adjbuf + cli_readint32(packed + 4) - (size - 1) * 4;
-            ddst = adjbuf + cli_readint32(packed + 8) - (size - 1) * 4;
+            if (size == 0 || (size_t)size > SIZE_MAX / 4U) {
+                if (usects)
+                    free(usects);
+                return 1;
+            }
+            {
+                size_t copy_size = (size_t)size * 4U;
+                int64_t copy_adjustment = -(int64_t)(copy_size - 4U);
 
-            if (!CLI_ISCONTAINED(buf, bufsz, ssrc, size * 4) || !CLI_ISCONTAINED(buf, bufsz, ddst, size * 4)) {
+                ssrc = petite_rva_window(buf, minrva, cli_readint32(packed + 4),
+                                          copy_adjustment, bufsz, copy_size);
+                ddst = petite_rva_window(buf, minrva, cli_readint32(packed + 8),
+                                          copy_adjustment, bufsz, copy_size);
+            }
+
+            if (ssrc == NULL || ddst == NULL) {
                 if (usects)
                     free(usects);
                 return 1;
             }
 
             /* Copy packed data to the end of the current packed section */
-            memmove(ddst, ssrc, size * 4);
+            memmove(ddst, ssrc, (size_t)size * 4U);
             packed += 0x0c;
         } else {
             uint32_t check1, check2;
@@ -359,8 +477,8 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                 continue;
             }
 
-            ssrc = adjbuf + srva;
-            ddst = adjbuf + thisrva;
+            ssrc = petite_rva_window(buf, minrva, srva, 0, bufsz, 1);
+            ddst = petite_rva_window(buf, minrva, thisrva, 0, bufsz, 1);
 
             /* Last petite section (unpacked 1st) could contain unpacked data
              * (eg the icon): let's fix the rva
@@ -404,7 +522,7 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
              * func to get called instead... ehehe very smart ;)
              */
 
-            if (!CLI_ISCONTAINED(buf, bufsz, ssrc, 1) || !CLI_ISCONTAINED(buf, bufsz, ddst, 1)) {
+            if (ssrc == NULL || ddst == NULL) {
                 free(usects);
                 return 1;
             }
@@ -509,18 +627,29 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                         backsize += 2;
                     }
                     backsize += addsize;
-                    size -= backsize;
-                    if (!CLI_ISCONTAINED(buf, bufsz, ddst, backsize) || !CLI_ISCONTAINED(buf, bufsz, ddst + backbytes, backsize)) {
+                    if ((uint64_t)backsize > (uint64_t)size) {
                         free(usects);
                         return 1;
                     }
-                    while (backsize--) {
-                        if (petite_checktimelimit(ctx, &ticks)) {
+                    size -= backsize;
+                    {
+                        char *backref = petite_adjusted_buffer_window(
+                            buf, bufsz, ddst, (int64_t)backbytes, backsize);
+
+                        if (!CLI_ISCONTAINED(buf, bufsz, ddst, backsize) ||
+                            backref == NULL) {
                             free(usects);
                             return 1;
                         }
-                        *ddst = *(ddst + backbytes);
-                        ddst++;
+                        while (backsize--) {
+                            if (petite_checktimelimit(ctx, &ticks)) {
+                                free(usects);
+                                return 1;
+                            }
+                            *ddst = *backref;
+                            ddst++;
+                            backref++;
+                        }
                     }
                     backbytes = 0;
                     backsize  = 0;
@@ -536,34 +665,45 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                 uint32_t reloc;
 
                 /* LONG MAGIC = 33C05E64 8B188B1B 8D63D65D */
-                if (usects[j - 1].rsz > grown &&
-                    CLI_ISCONTAINED(buf, bufsz, ddst - grown + 5 + 0x4f, 8) &&
-                    cli_readint32(ddst - grown + 5 + 0x4f) == 0x645ec033 &&
-                    cli_readint32(ddst - grown + 5 + 0x4f + 4) == 0x1b8b188b) {
+                char *petite_magic = petite_adjusted_buffer_window(
+                    buf, bufsz, ddst, -(int64_t)grown + 5 + 0x4f, 8);
+
+                if (usects[j - 1].rsz > grown && petite_magic != NULL &&
+                    cli_readint32(petite_magic) == 0x645ec033 &&
+                    cli_readint32(petite_magic + 4) == 0x1b8b188b) {
                     reloc       = 0;
                     strippetite = 1;
                 }
+                petite_magic = petite_adjusted_buffer_window(
+                    buf, bufsz, ddst, -(int64_t)grown + 5 + 0x4f - skew, 8);
                 if (!strippetite &&
                     usects[j - 1].rsz > grown + skew &&
-                    CLI_ISCONTAINED(buf, bufsz, ddst - grown + 5 + 0x4f - skew, 8) &&
-                    cli_readint32(ddst - grown + 5 + 0x4f - skew) == 0x645ec033 &&
-                    cli_readint32(ddst - grown + 5 + 0x4f + 4 - skew) == 0x1b8b188b) {
+                    petite_magic != NULL &&
+                    cli_readint32(petite_magic) == 0x645ec033 &&
+                    cli_readint32(petite_magic + 4) == 0x1b8b188b) {
                     reloc       = skew; /* If the original exe had a .reloc were skewed */
                     strippetite = 1;
                 }
 
-                if (strippetite && CLI_ISCONTAINED(buf, bufsz, ddst - grown + 0x0f - 8 - reloc, 8)) {
+                petite_magic = petite_adjusted_buffer_window(
+                    buf, bufsz, ddst,
+                    -(int64_t)grown + 0x0f - 8 - (int64_t)reloc, 8);
+                if (strippetite && petite_magic != NULL) {
                     uint32_t test1, test2;
 
                     /* REMINDER: DON'T BPX IN HERE U DUMBASS!!!!!!!!!!!!!!!!!!!!!!!! */
-                    test1 = cli_readint32(ddst - grown + 0x0f - 8 - reloc) ^ 0x9d6661aa;
-                    test2 = cli_readint32(ddst - grown + 0x0f - 4 - reloc) ^ 0xe908c483;
+                    test1 = cli_readint32(petite_magic) ^ 0x9d6661aa;
+                    test2 = cli_readint32(petite_magic + 4) ^ 0xe908c483;
 
                     cli_dbgmsg("Petite: Found petite code in sect%d(%x). Let's strip it.\n", j - 1, usects[j - 1].rva);
-                    if (test1 == test2 && CLI_ISCONTAINED(buf, bufsz, ddst - grown + 0x0f - reloc, 0x1c0 - 0x0f + 4)) {
-                        irva    = cli_readint32(ddst - grown + 0x121 - reloc);
-                        enc_ep  = cli_readint32(ddst - grown + 0x0f - reloc) ^ test1;
-                        mangled = ((uint32_t)cli_readint32(ddst - grown + 0x1c0 - reloc) != 0x90909090); /* FIXME: Magic's too short??? */
+                    petite_magic = petite_adjusted_buffer_window(
+                        buf, bufsz, ddst,
+                        -(int64_t)grown + 0x0f - (int64_t)reloc,
+                        0x1c0 - 0x0f + 4);
+                    if (test1 == test2 && petite_magic != NULL) {
+                        irva    = cli_readint32(petite_magic + 0x112);
+                        enc_ep  = cli_readint32(petite_magic) ^ test1;
+                        mangled = ((uint32_t)cli_readint32(petite_magic + 0x1b1) != 0x90909090); /* FIXME: Magic's too short??? */
                         cli_dbgmsg("Petite: Encrypted EP: %x | Array of imports: %x\n", enc_ep, irva);
                     }
                     usects[j - 1].rsz -= grown + reloc;

@@ -13888,3 +13888,24 @@ qualification remain open.
   source guards, and the `upx-decoder-status` capability evidence. Add linked
   malformed-UPX execution, complete PE/UPX corpus, sanitizer, and release
   qualification before closure.
+
+## Petite reconstructed-buffer RVA admission — 2026-09-03
+
+- Keep Petite image coordinates in subtraction-form zero-based windows until
+  after containment admission; remove the `buf - minrva` intermediate pointer
+  and reject adjusted-coordinate overflow, lower-than-base targets, clipped
+  packed copies, and wrapped back-copy/strip probes before pointer formation.
+- Retain `cli_petite_rva_window_offset()`,
+  `test_pe_petite_rva_window_offset_rejects_invalid_window`, its registration,
+  source guards, and the `petite-rva-window-admission` capability evidence.
+  Add current-source production-GCC and linked malformed/high-coordinate
+  Petite execution, complete PE/unpacker corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final PE/parser-release qualification before closure.
+
+## Parallel-client service evidence vocabulary — 2026-09-03
+
+- Keep the clamd service stress test explicit: four simultaneous clients,
+  one daemon worker, a temporary queue of eight, and a restored release
+  configuration of `MaxThreads=1`/`MaxQueue=2`; evidence must carry and verify
+  each value rather than using a “multiworker” label.
