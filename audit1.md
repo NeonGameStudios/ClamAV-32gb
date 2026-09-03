@@ -675,6 +675,29 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## NsPack table-size and back-reference admission — 2026-09-03
+
+The legacy NsPack decoder computed its attacker-derived arithmetic table size
+with signed shifts and formed a previous-output pointer from
+`unpacked_so_far - backbytes` before proving that the back-reference was in
+the produced output. A high shift could invoke undefined behavior or produce
+a wrapped allocation size, while a malformed back-reference could form an
+out-of-object pointer before `CLI_ISCONTAINED()` had a chance to reject it.
+
+`cli_nspack_table_size()` now performs the table-entry and byte-size
+calculation in `uint64_t`, rejects shifts outside the representable 32-bit
+domain, and enforces `CLI_MAX_ALLOCATION` before allocation. `very_real_unpack()`
+validates the same table shape, replaces the signed mask shifts, and checks
+back-reference/output spans with integer offsets before indexing the
+destination. `test_pe_nspack_table_size_rejects_invalid_shift` covers valid
+and exact allocation boundaries, invalid shifts, and null output; source
+guards and the `nspack-table-size-and-backreference-admission` capability row
+bind the changes. Current-source production-GCC compilation and linked
+malformed/high-coordinate NsPack execution, complete PE/unpacker corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## SIS 9.x physical field boundary — 2026-09-03
 
 SIS 9.x field admission previously checked native-size arithmetic but did not

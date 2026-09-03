@@ -76,6 +76,7 @@
 #include "aspack.h"
 #include "petite.h"
 #include "upack.h"
+#include "unsp.h"
 #include "yc.h"
 #include "wwunpack.h"
 #include "elf.h"
@@ -49601,6 +49602,20 @@ START_TEST(test_pe_aspack_entry_window_offset_rejects_invalid_window)
 }
 END_TEST
 
+START_TEST(test_pe_nspack_table_size_rejects_invalid_shift)
+{
+    size_t bytes;
+
+    ck_assert_int_eq(cli_nspack_table_size(0, &bytes), CL_SUCCESS);
+    ck_assert_uint_eq(bytes, (0x736U * sizeof(uint16_t)));
+    ck_assert_int_eq(cli_nspack_table_size(19, &bytes), CL_SUCCESS);
+    ck_assert_int_eq(cli_nspack_table_size(20, &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_nspack_table_size(32, &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_nspack_table_size(UINT8_MAX, &bytes), CL_ERESOURCE);
+    ck_assert_int_eq(cli_nspack_table_size(0, NULL), CL_EARG);
+}
+END_TEST
+
 static void assert_pe_unpack_section_read_failure(const char *file, const char *reason)
 {
     struct cl_engine *scan_engine;
@@ -62180,6 +62195,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe_map, test_pespin_entry_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pe_upx_relative_window_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pe_aspack_init_array_step_rejects_invalid_multiplier);
+    tcase_add_test(tc_pe_map, test_pe_nspack_table_size_rejects_invalid_shift);
     suite_add_tcase(s, tc_pe);
     tcase_add_checked_fixture(tc_pe, cl_setup, cl_teardown);
     tcase_add_test(tc_pe, test_pe_short_entrypoint_skips_legacy_path_fail_visible);

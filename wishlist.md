@@ -4089,6 +4089,21 @@ final parser/release qualification.
   x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
   parser-family, and release qualification before closure.
 
+## NsPack table-size and back-reference admission — 2026-09-03
+
+- Keep NsPack table sizing in wide arithmetic with a checked shift domain and
+  the individual-allocation ceiling before allocation. Require every
+  back-reference and output span to pass integer zero-based bounds before
+  forming destination pointers, preserving explicit incomplete behavior for
+  malformed confirmed packers.
+- Retain `cli_nspack_table_size()`,
+  `test_pe_nspack_table_size_rejects_invalid_shift`, its registration, source
+  guards, and the `nspack-table-size-and-backreference-admission` capability
+  evidence. Add current-source production-GCC and linked malformed/high-
+  coordinate NsPack execution, complete corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  parser-family, and release qualification before closure.
+
 ## MEW section-table product admission — 2026-08-29
 
 - Keep non-LZMA MEW rebuilt section-table growth behind

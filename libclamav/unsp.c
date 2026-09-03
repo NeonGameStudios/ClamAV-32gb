@@ -118,11 +118,40 @@ nsp1:00435A5A                 push    8000h
 #include "execs.h"
 #include "unsp.h"
 
+cl_error_t cli_nspack_table_size(uint8_t shift, size_t *table_size)
+{
+    uint64_t entries;
+    uint64_t bytes;
+
+    if (table_size == NULL)
+        return CL_EARG;
+    if (shift >= 32)
+        return CL_ERESOURCE;
+
+    entries = (UINT64_C(0x300) << shift) + UINT64_C(0x736);
+    bytes   = entries * sizeof(uint16_t);
+    if (bytes > (uint64_t)SIZE_MAX || bytes > (uint64_t)CLI_MAX_ALLOCATION)
+        return CL_ERESOURCE;
+
+    *table_size = (size_t)bytes;
+    return CL_SUCCESS;
+}
+
+static int nspack_shift_mask(uint32_t shift, uint32_t *mask)
+{
+    if (mask == NULL || shift >= 32)
+        return -1;
+
+    *mask = (UINT32_C(1) << shift) - 1;
+    return 0;
+}
+
 /* real_unpack(start_of_stuff, dest, malloc, free); */
 uint32_t unspack(const char *start_of_stuff, char *dest, cli_ctx *ctx, uint32_t rva, uint32_t base, uint32_t ep, int file)
 {
     uint8_t c = *start_of_stuff;
-    uint32_t i, firstbyte, tre, allocsz, tablesz, dsize, ssize;
+    uint32_t i, firstbyte, tre, allocsz, dsize, ssize;
+    size_t tablesz;
     uint16_t *table;
     char *dst       = dest;
     const char *src = start_of_stuff + 0xd;
@@ -149,12 +178,16 @@ uint32_t unspack(const char *start_of_stuff, char *dest, cli_ctx *ctx, uint32_t 
     tre     = c;
     i       = allocsz;
     c       = (tre + i) & 0xff;
-    tablesz = ((0x300 << c) + 0x736) * sizeof(uint16_t);
+    if (cli_nspack_table_size(c, &tablesz) != CL_SUCCESS) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "NsPack table size is invalid or exceeds allocation limits");
+        return 1;
+    }
 
     if (cli_checklimits("nspack", ctx, tablesz, 0, 0) != CL_CLEAN)
         return 1; /* Should be ~15KB, if it's so big it's prolly just not nspacked */
 
-    cli_dbgmsg("unsp: table size = %d\n", tablesz);
+    cli_dbgmsg("unsp: table size = %zu\n", tablesz);
     if (!(table = cli_max_malloc(tablesz))) {
         cli_dbgmsg("unspack: Unable to allocate memory for table\n");
         return 1;
@@ -167,7 +200,7 @@ uint32_t unspack(const char *start_of_stuff, char *dest, cli_ctx *ctx, uint32_t 
         return 1;
     }
 
-    tre = very_real_unpack(table, tablesz, tre, allocsz, firstbyte, src, ssize, dst, dsize);
+    tre = very_real_unpack(table, (uint32_t)tablesz, tre, allocsz, firstbyte, src, ssize, dst, dsize);
     free(table);
     if (tre) return 1;
 
@@ -181,7 +214,9 @@ uint32_t unspack(const char *start_of_stuff, char *dest, cli_ctx *ctx, uint32_t 
 uint32_t very_real_unpack(uint16_t *table, uint32_t tablesz, uint32_t tre, uint32_t allocsz, uint32_t firstbyte, const char *src, uint32_t ssize, char *dst, uint32_t dsize)
 {
     struct UNSP read_struct;
-    uint32_t i = (0x300 << ((allocsz + tre) & 0xff)) + 0x736;
+    uint8_t table_shift = (uint8_t)(allocsz + tre);
+    size_t expected_tablesz;
+    uint32_t i;
 
     uint32_t previous_bit         = 0;
     uint32_t unpacked_so_far      = 0;
@@ -191,11 +226,17 @@ uint32_t very_real_unpack(uint16_t *table, uint32_t tablesz, uint32_t tre, uint3
     uint32_t old_old_oldbackbytes = 1;
 
     uint32_t damian = 0;
-    uint32_t put    = (1 << (allocsz & 0xff)) - 1;
+    uint32_t put;
 
     uint32_t bielle = 0;
 
-    firstbyte = (1 << (firstbyte & 0xff)) - 1;
+    if (cli_nspack_table_size(table_shift, &expected_tablesz) != CL_SUCCESS ||
+        expected_tablesz != (size_t)tablesz ||
+        nspack_shift_mask(allocsz & 0xff, &put) < 0 ||
+        nspack_shift_mask(firstbyte & 0xff, &firstbyte) < 0)
+        return 2;
+
+    i = (uint32_t)(expected_tablesz / sizeof(uint16_t));
 
     if (tablesz < i * sizeof(uint16_t)) return 2;
 
@@ -225,6 +266,7 @@ uint32_t very_real_unpack(uint16_t *table, uint32_t tablesz, uint32_t tre, uint3
         uint32_t temp = damian;
 
         if (read_struct.error) return 1; /* checked once per mainloop, keeps the code readable and it's still safe */
+        if (unpacked_so_far >= dsize) return 1;
 
         if (!getbit_from_table(&table[(damian << 4) + backsize], &read_struct)) { /* no_mainbit */
 
@@ -246,7 +288,7 @@ uint32_t very_real_unpack(uint16_t *table, uint32_t tablesz, uint32_t tre, uint3
 
             /* 44847E */
             if (previous_bit) {
-                if (!CLI_ISCONTAINED(dst, dsize, &dst[unpacked_so_far - backbytes], 1)) return 1;
+                if (backbytes > unpacked_so_far || unpacked_so_far >= dsize) return 1;
                 ssize        = (ssize & 0xffffff00) | (uint8_t)dst[unpacked_so_far - backbytes]; /* FIXME! ssize is not static */
                 bielle       = get_100_bits_from_tablesize(&table[tpos + 0x736], &read_struct, ssize);
                 previous_bit = 0;
@@ -357,11 +399,12 @@ uint32_t very_real_unpack(uint16_t *table, uint32_t tablesz, uint32_t tre, uint3
             if (!backbytes) return 0;                       /* very_real_unpack_end */
             if (backbytes > unpacked_so_far) return bielle; /* FIXME: WTF?! */
 
+            if (backsize > UINT32_MAX - 2) return 1;
             backsize += 2;
 
-            if (!CLI_ISCONTAINED(dst, dsize, &dst[unpacked_so_far], backsize) ||
-                !CLI_ISCONTAINED(dst, dsize, &dst[unpacked_so_far - backbytes], backsize)) {
-                cli_dbgmsg("%p %x %p %x\n", dst, dsize, &dst[unpacked_so_far], backsize);
+            if (unpacked_so_far > dsize || backsize > dsize - unpacked_so_far ||
+                backsize > dsize - (unpacked_so_far - backbytes)) {
+                cli_dbgmsg("%p %x output offset %u span %u\n", dst, dsize, unpacked_so_far, backsize);
                 return 1;
             }
 

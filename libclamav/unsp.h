@@ -37,6 +37,7 @@ struct UNSP {
 };
 
 uint32_t unspack(const char *, char *, cli_ctx *, uint32_t, uint32_t, uint32_t, int);
+cl_error_t cli_nspack_table_size(uint8_t shift, size_t *table_size);
 uint32_t very_real_unpack(uint16_t *, uint32_t, uint32_t, uint32_t, uint32_t, const char *, uint32_t, char *, uint32_t);
 uint32_t get_byte(struct UNSP *);
 int getbit_from_table(uint16_t *, struct UNSP *);
