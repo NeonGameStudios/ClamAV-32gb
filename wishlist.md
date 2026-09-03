@@ -14084,3 +14084,29 @@ qualification before closure.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final MIME/parser-release
   qualification before closure.
+
+## Six-finding reconciliation — 2026-09-03
+
+- Keep the service proof tied to the actual run: preserve and verify the
+  `parallel-client-clamd.conf` artifact (`MaxThreads=1`, `MaxQueue=8`,
+  `AlertExceedsMax=yes`) for four simultaneous clients, then seal the final
+  release configuration as `MaxThreads=1`, `MaxQueue=2`.
+- Keep the release gate's unsupported IDs external to candidate manifests and
+  reject relabeling of a required parser or matcher. Every qualified row must
+  retain a unique capability binding, current source-manifest hash, safe proof
+  path, and matching proof hash.
+- Keep milter exact-edge evidence explicit: 32-GiB message limit, 64-GiB
+  clamd logical budget, deterministic tail signature/offset, completion,
+  skipped-operation count, and fixed stream digest. Current production-CVD,
+  sanitizer, materialized-large-file, resource, service, and Sonic1 evidence
+  remains required.
+- Keep EOCD-confirmed malformed ZIP/ZIP64 metadata fail-visible and prevent
+  local-header fallback after central metadata has been claimed.
+- Do not promote bounded controls to qualification for MIME, OneNote, PE
+  unpackers, RAR, 7-Zip, ZIP, PDF, bytecode, logical matching, or YARA until
+  current-source linked corpus, sanitizer, resource, service, materialized,
+  and Sonic1 evidence is complete. The current 588-row manifest remains at
+  0 qualified and 569 release blockers.
+- Keep historical support-document sections labeled as evidence snapshots;
+  the current status header and final requirement-by-requirement PLAN.md audit
+  remain authoritative.
