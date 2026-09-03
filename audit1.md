@@ -15,6 +15,20 @@ production-GCC compilation and linked execution, complete MIME/fileblob
 corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
 resource, and final PLAN.md qualification remain open.
 
+## PE high-32-bit header offset arithmetic — 2026-09-03
+
+Embedded PE candidates whose header begins near the 4-GiB boundary could have
+their `peinfo->offset + e_lfanew` sum evaluated in 32-bit arithmetic before
+the fmap read. The wrapped cursor could reject a valid PE or inspect an
+earlier location. PE header admission now computes the DOS `e_lfanew`, NT
+header, and optional-header cursors with checked native-width arithmetic. The
+callback-backed high-offset regression uses a valid PE fixture at
+`UINT32_MAX - 0x40` and requires successful parsing without incomplete state;
+source guards pin the helper, diagnostic, and test. Current-source
+production-GCC execution, complete PE/embedded-PE/unpacker corpus, sanitizer,
+production CVD/service, materialized-large-file, Sonic1, resource, and final
+PLAN.md qualification remain open.
+
 ## XAR checksum declaration admission — 2026-09-03
 
 The XAR TOC walker previously treated an explicitly present checksum with an

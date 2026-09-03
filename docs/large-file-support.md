@@ -8,8 +8,8 @@ gate passes.
 ## Current qualification boundary — 2026-09-03
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 569 capability rows, with
-0 qualified rows and 550 release-blocking bounded, pending, or required-
+certificate. At the current audit point it contains 570 capability rows, with
+0 qualified rows and 551 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical
 entries below preserve engineering evidence and open work; they do not
 substitute for current-source linked execution,
@@ -32,6 +32,14 @@ nested scanning. Omitted optional checksum elements remain permitted. The
 focused regression covers unsupported style and invalid digest length; full
 XAR checksum/corpus, sanitizer, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final PLAN.md qualification remain open.
+
+PE header admission now computes the DOS `e_lfanew`, NT-header, and
+optional-header cursors with checked native-width arithmetic. This prevents a
+candidate beginning near the 4-GiB boundary from wrapping
+`peinfo->offset + e_lfanew` into an earlier fmap location. The focused
+callback-backed regression requires a valid high-offset PE header to parse
+without incomplete state; full PE/embedded-PE/unpacker qualification remains
+open.
 
 The bounded PDF ASCIIHex reader now requires its `>` end marker. A stream that
 ends first returns `CL_EPARSE`, rolls back decoded output, preserves raw

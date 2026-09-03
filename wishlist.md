@@ -11,6 +11,18 @@
   execution, complete MIME/fileblob corpus, sanitizer, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final PLAN.md qualification.
 
+## PE high-32-bit header offset arithmetic — 2026-09-03
+
+- Keep PE header cursor arithmetic checked in native-width coordinates when a
+  candidate begins near the 4-GiB boundary; `peinfo->offset + e_lfanew` must
+  never wrap before fmap reads.
+- Retain the callback-backed
+  `test_pe_header_accepts_high_32bit_header_offset` regression and source
+  guards. Add current-source production-GCC linked execution, complete
+  PE/embedded-PE/unpacker corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and
+  final PLAN.md qualification.
+
 ## XAR checksum declaration admission — 2026-09-03
 
 - Keep an explicitly present XAR archived or extracted checksum fail-visible:

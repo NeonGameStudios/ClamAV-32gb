@@ -134,6 +134,15 @@ static uint64_t cli_pe_align_up_u64(uint64_t value, uint32_t alignment)
     return remainder ? value + alignment - remainder : value;
 }
 
+static int cli_pe_add_u64_to_size(uint64_t left, uint64_t right, size_t *result)
+{
+    if (result == NULL || left > SIZE_MAX || right > SIZE_MAX - left)
+        return -1;
+
+    *result = (size_t)(left + right);
+    return 0;
+}
+
 static cl_error_t cli_pe_cleanup_temp(cli_ctx *ctx, int *fd, char **tempfile,
                                       cl_error_t status)
 {
@@ -5332,7 +5341,8 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     unsigned int err;
     uint32_t salign, falign;
     size_t fsize;
-    ssize_t at;
+    size_t at;
+    size_t nt_header_offset;
     uint32_t is_dll = 0;
     uint32_t is_exe = 0;
     int native      = 0;
@@ -5400,8 +5410,15 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
+    if (cli_pe_add_u64_to_size((uint64_t)peinfo->offset,
+                               UINT64_C(58) + sizeof(e_magic), &at) < 0) {
+        cli_mark_scan_incomplete(ctx, "PE e_lfanew coordinate overflowed");
+        ret = CL_EPARSE;
+        goto done;
+    }
+
     ret = pe_header_readn_full(ctx, map, &(peinfo->e_lfanew),
-                               peinfo->offset + 58 + sizeof(e_magic),
+                               at,
                                sizeof(peinfo->e_lfanew), CL_EFORMAT,
                                "PE e_lfanew field could not be read completely");
     if (ret != CL_SUCCESS) {
@@ -5421,8 +5438,16 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
+    if (cli_pe_add_u64_to_size((uint64_t)peinfo->offset,
+                               (uint64_t)peinfo->e_lfanew,
+                               &nt_header_offset) < 0) {
+        cli_mark_scan_incomplete(ctx, "PE NT header coordinate overflowed");
+        ret = CL_EPARSE;
+        goto done;
+    }
+
     ret = pe_header_readn_full(ctx, map, &(peinfo->file_hdr),
-                               peinfo->offset + peinfo->e_lfanew,
+                               nt_header_offset,
                                sizeof(struct pe_image_file_hdr), CL_ERROR,
                                "PE NT file header could not be read completely");
     if (ret != CL_SUCCESS) {
@@ -5634,7 +5659,12 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
-    at = peinfo->offset + peinfo->e_lfanew + sizeof(struct pe_image_file_hdr);
+    if (cli_pe_add_u64_to_size((uint64_t)nt_header_offset,
+                               sizeof(struct pe_image_file_hdr), &at) < 0) {
+        cli_mark_scan_incomplete(ctx, "PE optional-header coordinate overflowed");
+        ret = CL_EPARSE;
+        goto done;
+    }
     ret = pe_header_readn_full(ctx, map, &(peinfo->pe_opt.opt32), at,
                                sizeof(struct pe_image_optional_hdr32), CL_EFORMAT,
                                "PE optional header could not be read completely");
