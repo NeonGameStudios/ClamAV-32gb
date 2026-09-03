@@ -190,19 +190,31 @@ cl_error_t cli_pespin_output_size_check(uint64_t output_size)
     return CL_SUCCESS;
 }
 
+int cli_pespin_window_offset(size_t base, size_t available, size_t relative,
+                             size_t needed, size_t *offset)
+{
+    size_t absolute;
+
+    if (offset == NULL || base > available || relative > available - base)
+        return -1;
+
+    absolute = base + relative;
+    if (needed > available - absolute)
+        return -1;
+
+    *offset = absolute;
+    return 0;
+}
+
 int cli_pespin_entry_offset(uint32_t section_rva, uint32_t entry_rva, size_t section_size, size_t *offset)
 {
     size_t relative;
 
-    if (offset == NULL || section_size < 0xe5 || entry_rva < section_rva)
+    if (entry_rva < section_rva)
         return -1;
 
     relative = (size_t)(entry_rva - section_rva);
-    if (relative > section_size - 0xe5)
-        return -1;
-
-    *offset = relative;
-    return 0;
+    return cli_pespin_window_offset(0, section_size, relative, 0xe5, offset);
 }
 
 int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, uint32_t nep, int desc, cli_ctx *ctx)
@@ -211,14 +223,15 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
     char **sects;
     uint64_t blobsz = 0;
     int j;
-    size_t ep_offset, ep_src_offset;
+    size_t ep_offset, ep_src_offset, key_offset;
     uint32_t key32, bitmap, bitman;
     uint32_t len;
+    uint32_t sub_size;
     uint8_t key8;
 
     cli_dbgmsg("in unspin\n");
 
-    if (src == NULL || sections == NULL || ssize <= 0 || sectcnt < 0 ||
+    if (src == NULL || sections == NULL || ssize <= 0 || sectcnt < 0 || sectcnt > 32 ||
         (size_t)sections[sectcnt].raw > (size_t)ssize ||
         (size_t)sections[sectcnt].rsz > (size_t)ssize - sections[sectcnt].raw ||
         cli_pespin_entry_offset(sections[sectcnt].rva, nep, sections[sectcnt].rsz, &ep_offset) < 0) {
@@ -275,7 +288,8 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
         curr--;
     }
 
-    if (!CLI_ISCONTAINED_0_TO(sections[sectcnt].rsz, ep_offset + 0x3217, 4)) {
+    if (cli_pespin_window_offset(ep_offset, sections[sectcnt].rsz, 0x3217, 4,
+                                 &key_offset) < 0) {
         free(spinned);
         cli_dbgmsg("spin: key out of bounds, giving up\n");
         return 1;
@@ -303,12 +317,13 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
         curr++;
     }
 
-    len = ssize - cli_readint32(ep + 0x429); /* sub size, value */
-    if (len >= (uint32_t)ssize) {
+    sub_size = cli_readint32(ep + 0x429); /* sub size, value */
+    if (sub_size > (uint32_t)ssize) {
         free(spinned);
         cli_dbgmsg("spin: crc out of bounds, giving up\n");
         return 1;
     }
+    len = (uint32_t)ssize - sub_size;
     key32 = cli_readint32(ep + 0x3217) - summit(src, len);
 
     memcpy(src + sections[sectcnt].raw, spinned, sections[sectcnt].rsz);
@@ -316,11 +331,12 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
     ep_src_offset = (size_t)sections[sectcnt].raw + ep_offset;
     ep            = src + ep_src_offset;
 
-    if (!CLI_ISCONTAINED_0_TO((size_t)ssize, ep_src_offset + 0x3207, 4)) { /* this one holds all ep based checks */
+    if (cli_pespin_window_offset(ep_src_offset, (size_t)ssize, 0x3207, 4,
+                                 &key_offset) < 0) { /* this one holds all ep based checks */
         cli_dbgmsg("spin: key out of bounds, giving up\n");
         return 1;
     }
-    bitmap = cli_readint32(ep + 0x3207);
+    bitmap = cli_readint32(src + key_offset);
     cli_dbgmsg("spin: Key32 is %x - XORbitmap is %x\n", key32, bitmap);
 
     cli_dbgmsg("spin: Decrypting sects (xor)\n");
@@ -506,7 +522,7 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
                 break;
         }
 
-        if (j != sectcnt && ((bitman & (1 << j)) == 0)) { /* FIXME: not really sure either the res sect is lamed or just compressed, but this'll save some major headaches */
+        if (j != sectcnt && j < 32 && ((bitman & (UINT32_C(1) << (unsigned)j)) == 0)) { /* FIXME: not really sure either the res sect is lamed or just compressed, but this'll save some major headaches */
             cli_dbgmsg("spin: Resources (sect%d) appear to be compressed\n\tuncompressed offset %x, len %x\n\tcompressed offset %x, len %x\n", j, sections[j].rva, key32 - sections[j].rva, key32, sections[j].vsz - (key32 - sections[j].rva));
 
             if ((curr = (char *)cli_max_malloc(sections[j].vsz)) != NULL) {
@@ -520,7 +536,7 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
                     blobsz += sections[j].rsz;
                 } else {
                     sects[j] = curr;
-                    bitman |= 1 << j;
+                    bitman |= UINT32_C(1) << (unsigned)j;
                     cli_dbgmsg("spin: Resources grown\n");
                     blobsz += sections[j].vsz;
                 }

@@ -299,6 +299,20 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## PEspin entry and section-window admission — 2026-09-03
+
+PEspin’s entry/key coordinate checks relied on offset-plus-constant
+expressions and its 32-bit compression bitmap was used with signed integer
+shifts for arbitrary section counts. The parser now uses subtraction-form
+native-size window admission for the packed and reconstructed entry metadata,
+rejects section counts that cannot be represented by the bitmap, validates the
+CRC sub-size explicitly, and uses unsigned resource-section masks. The direct
+window regression and source guards record the boundary. Current-source
+production-GCC compilation and linked malformed/high-coordinate PEspin
+execution, complete PE/unpacker corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## HWP3 paragraph end-marker completion — 2026-09-03
 
 HWP3 paragraph traversal previously returned `CL_SUCCESS` when the final

@@ -49716,6 +49716,12 @@ START_TEST(test_pespin_entry_offset_rejects_invalid_window)
 {
     size_t offset = SIZE_MAX;
 
+    ck_assert_int_eq(cli_pespin_window_offset(10U, 64U, 5U, 17U, &offset), 0);
+    ck_assert_uint_eq(offset, 15U);
+    ck_assert_int_eq(cli_pespin_window_offset(65U, 64U, 0U, 1U, &offset), -1);
+    ck_assert_int_eq(cli_pespin_window_offset(10U, 64U, 55U, 1U, &offset), -1);
+    ck_assert_int_eq(cli_pespin_window_offset(SIZE_MAX - 1U, SIZE_MAX, 1U, 1U, &offset), -1);
+    ck_assert_int_eq(cli_pespin_window_offset(0U, 64U, 0U, 1U, NULL), -1);
     ck_assert_int_eq(cli_pespin_entry_offset(100, 99, 0xe5, &offset), -1);
     ck_assert_int_eq(cli_pespin_entry_offset(100, 100, 0xe4, &offset), -1);
     ck_assert_int_eq(cli_pespin_entry_offset(100, 100, 0xe5, &offset), 0);

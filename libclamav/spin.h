@@ -27,6 +27,8 @@
 
 int unspin(char *, int, struct cli_exe_section *, int, uint32_t, int, cli_ctx *);
 int cli_pespin_check_limits(cli_ctx *, const struct cli_exe_section *, int, uint32_t);
+int cli_pespin_window_offset(size_t base, size_t available, size_t relative,
+                             size_t needed, size_t *offset);
 int cli_pespin_entry_offset(uint32_t section_rva, uint32_t entry_rva, size_t section_size, size_t *offset);
 cl_error_t cli_pespin_output_size_check(uint64_t);
 

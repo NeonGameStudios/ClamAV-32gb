@@ -13454,6 +13454,20 @@ qualification remain open.
   service, materialized-large-file, Sonic1, resource, and parser/release
   qualification before closure.
 
+## PEspin entry and section-window admission — 2026-09-03
+
+- Keep PEspin packed-entry and reconstructed-entry metadata behind
+  subtraction-form native-size window checks, reject section counts wider than
+  the 32-bit compression bitmap, validate CRC sub-size arithmetic explicitly,
+  and use unsigned section-bit masks.
+- Retain `cli_pespin_window_offset`,
+  `test_pespin_entry_offset_rejects_invalid_window`, its registrations, and
+  source guards. Add current-source production-GCC and linked
+  malformed/high-coordinate PEspin execution, complete PE/unpacker corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final PE/parser-release
+  qualification before closure.
+
 ## Authenticode ASN.1 map-hash status — 2026-09-02
 
 - Keep `map_hash_by_name()` and all Authenticode ASN.1 hash consumers returning
