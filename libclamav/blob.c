@@ -946,6 +946,19 @@ cl_error_t fileblobScan(fileblob *fb)
     cl_error_t rc;
     STATBUF sb;
 
+    if (fb == NULL)
+        return CL_ENULLARG;
+
+    /* MIME body spools defer the active scan context while they are being
+     * built, retaining it only as temporary_ctx so early matcher work cannot
+     * consume stateful matcher input. Rebind that owner before reporting an
+     * incomplete spool or starting the authoritative scan; otherwise a
+     * direct fileblobScan() caller could observe the stored error without
+     * sticky incomplete state, or a complete deferred spool could be treated
+     * as clean when no scan context was rebound. */
+    if (fb->ctx == NULL && fb->temporary_ctx != NULL)
+        fb->ctx = fb->temporary_ctx;
+
     if (fb->isInfected)
         return CL_VIRUS;
     if (fb->isIncomplete) {
@@ -960,9 +973,13 @@ cl_error_t fileblobScan(fileblob *fb)
         return CL_ENULLARG; /* there is no CL_UNKNOWN */
     }
     if (fb->ctx == NULL) {
-        /* fileblobSetCTX hasn't been called */
+        /* A scan without an owning context cannot produce a trustworthy
+         * clean result. Formatting-only callers must not invoke this scan
+         * entry point without binding a context first. */
         cli_dbgmsg("fileblobScan, ctx == NULL\n");
-        return CL_CLEAN; /* there is no CL_UNKNOWN */
+        fileblobMarkIncompleteStatus(fb, CL_ENULLARG,
+                                     "fileblob scan context is unavailable");
+        return CL_ENULLARG;
     }
 
     if (fflush(fb->fp) != 0 || lseek(fb->fd, 0, SEEK_SET) == (off_t)-1 || FSTAT(fb->fd, &sb) != 0 || sb.st_size < 0) {

@@ -1,5 +1,16 @@
 # Wishlist
 
+## Deferred fileblob scan context — 2026-09-03
+
+- Keep `fileblobScan()` fail-visible for deferred MIME spools: adopt a
+  retained `temporary_ctx` before status checks, preserve sticky incomplete
+  state and the stored operational error, and reject genuinely context-free
+  scans with `CL_ENULLARG` rather than returning clean.
+- Retain `test_fileblob_deferred_context_scan_is_fail_visible`, its source
+  guards, and capability evidence. Add current-source production-GCC linked
+  execution, complete MIME/fileblob corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final PLAN.md qualification.
+
 ## XAR checksum declaration admission — 2026-09-03
 
 - Keep an explicitly present XAR archived or extracted checksum fail-visible:

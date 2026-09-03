@@ -3484,6 +3484,51 @@ START_TEST(test_fileblob_scan_errors_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_fileblob_deferred_context_scan_is_fail_visible)
+{
+    struct cl_engine *engine;
+    cli_ctx ctx;
+    fileblob *fb;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    fb = fileblobCreate();
+    ck_assert_ptr_nonnull(fb);
+    fileblobSetCTX(fb, &ctx);
+    fileblobSetFilename(fb, tmpdir, "deferred-context-scan");
+    ck_assert_ptr_nonnull(fb->fp);
+
+    /* This is the deferred ownership state used by MIME body spools. */
+    fb->temporary_ctx     = fb->ctx;
+    fb->ctx               = NULL;
+    fb->isIncomplete      = 1;
+    fb->incomplete_status = CL_EWRITE;
+
+    ck_assert_int_eq(fileblobScan(fb), CL_EWRITE);
+    ck_assert_ptr_eq(fb->ctx, &ctx);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "fileblob materialization was incomplete");
+
+    fileblobDestructiveDestroy(fb);
+
+    fb = fileblobCreate();
+    ck_assert_ptr_nonnull(fb);
+    fileblobSetFilename(fb, tmpdir, "context-free-scan");
+    ck_assert_ptr_nonnull(fb->fp);
+    ck_assert_int_eq(fileblobScan(NULL), CL_ENULLARG);
+    ck_assert_int_eq(fileblobScan(fb), CL_ENULLARG);
+    ck_assert(fb->isIncomplete);
+    fileblobDestructiveDestroy(fb);
+
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_fileblob_output_creation_status_is_fail_visible)
 {
     struct cl_engine *engine;
@@ -62697,6 +62742,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_blob_allocation_boundaries);
     tcase_add_test(tc_cl, test_fileblob_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_scan_errors_are_fail_visible);
+    tcase_add_test(tc_cl, test_fileblob_deferred_context_scan_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_output_creation_status_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_cleanup_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_add_data_without_engine_is_fail_visible);

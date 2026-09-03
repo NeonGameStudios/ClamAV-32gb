@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## Deferred fileblob scan context — 2026-09-03
+
+MIME body spools retain their active scan owner in `temporary_ctx` while
+building the disk-backed representation. `fileblobScan()` previously looked
+only at `ctx`, so a direct scan of an incomplete deferred spool could return
+its stored error without marking the owning scan context incomplete; a
+complete deferred spool could also be treated as clean if the caller failed
+to rebind it. The scan entry now adopts `temporary_ctx` before status checks
+and rejects a genuinely context-free scan with `CL_ENULLARG` instead of a
+clean result. `test_fileblob_deferred_context_scan_is_fail_visible` covers
+the deferred owner and stored write error with source guards. Current-source
+production-GCC compilation and linked execution, complete MIME/fileblob
+corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final PLAN.md qualification remain open.
+
 ## XAR checksum declaration admission — 2026-09-03
 
 The XAR TOC walker previously treated an explicitly present checksum with an
