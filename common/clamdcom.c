@@ -1074,6 +1074,8 @@ static int scan_report_json_u64_value(struct json_object *object, const char *na
 int scan_report_json_metadata(const char *json, uint32_t json_length,
                               cl_scan_completion_t *completion_out,
                               uint64_t *root_size_out,
+                              uint64_t *logical_bytes_out,
+                              uint64_t *max_scan_size_out,
                               uint64_t *skipped_operations_out,
                               uint64_t *last_alert_offset_out,
                               int *last_alert_offset_valid_out)
@@ -1083,7 +1085,8 @@ int scan_report_json_metadata(const char *json, uint32_t json_length,
     struct json_object *completion_object = NULL;
     int64_t version;
 
-    if (!json || !completion_out || !root_size_out || !skipped_operations_out ||
+    if (!json || !completion_out || !root_size_out || !logical_bytes_out ||
+        !max_scan_size_out || !skipped_operations_out ||
         !last_alert_offset_out || !last_alert_offset_valid_out || json_length == 0)
         return -1;
 
@@ -1102,6 +1105,8 @@ int scan_report_json_metadata(const char *json, uint32_t json_length,
         !json_object_is_type(completion_object, json_type_string) ||
         scan_report_completion_from_name(json_object_get_string(completion_object), completion_out) < 0 ||
         scan_report_json_u64_value(object, "root_size", root_size_out) < 0 ||
+        scan_report_json_u64_value(object, "logical_bytes", logical_bytes_out) < 0 ||
+        scan_report_json_u64_value(object, "max_scan_size", max_scan_size_out) < 0 ||
         scan_report_json_u64_value(object, "skipped_operations", skipped_operations_out) < 0) {
         json_object_put(object);
         return -1;

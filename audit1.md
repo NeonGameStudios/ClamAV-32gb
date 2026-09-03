@@ -14,11 +14,13 @@ This closes both the status-waiver and generic-evidence loopholes. The current
 manifest remains far from release-ready: it has no qualified rows and still
 contains hundreds of bounded or pending requirements.
 
-The milter exact-edge harness now uses the 64-GiB logical scan budget and
-validates structured report completion, exact root size, exact alert offset,
-the expected infection name, and absence of limit/materialization heuristics;
-the report transport exposes those metadata fields to the milter. The test
-also records a deterministic SHA-256 of the complete transmitted stream.
+The milter exact-edge harness now binds the structured report's
+`logical_bytes` to the exact 32-GiB root, requires the effective
+`max_scan_size` to be 64 GiB, validates completion and exact alert offset,
+checks the expected infection name and absence of limit/materialization
+heuristics, and records a deterministic SHA-256 of the complete transmitted
+stream. The report transport rejects over-budget logical accounting before
+the milter can produce a verdict.
 
 ZIP callers now preserve EOCD confirmation from the central-directory search.
 When malformed EOCD/ZIP64 metadata is encountered, `cli_unzip()` and
@@ -29,6 +31,17 @@ local member hidden behind an impossible EOCD comment length.
 These repairs improve fail-closed behavior but do not close the remaining
 parser-family, production-CVD, sanitizer, materialized-large-file, Sonic1,
 resource, service-parity, and final PLAN.md qualification gates.
+
+The next parser-family audit found no safe OneNote status change to make in
+this batch. The legacy OneNote extractor is reader-backed and fail-visible;
+the modern `onenote_parser` API still requires a borrowed whole-file slice, so
+the scanner explicitly returns `CL_ERESOURCE` above its 256 MiB parser cap
+instead of staging and mapping an unbounded input. `CL_TYPE_ONENOTE` therefore
+remains pending until a reader-backed modern parser or an explicitly accepted
+unsupported capability is qualified. The RAR and 7-Zip review likewise found
+bounded staging/output and explicit decoder-error paths, but their complete
+corpus, sanitizer, production-CVD/service, materialized, Sonic1, and resource
+evidence gates remain open.
 
 ## MBR extended-chain extent admission — 2026-09-02
 

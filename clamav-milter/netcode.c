@@ -403,6 +403,8 @@ int nc_recv_scan_report(int s, struct nc_scan_report *report)
         cl_error_t frame_status = CL_ERROR;
         cl_scan_completion_t frame_completion;
         uint64_t frame_root_size;
+        uint64_t frame_logical_bytes;
+        uint64_t frame_max_scan_size;
         uint64_t frame_skipped_operations;
         uint64_t frame_last_alert_offset;
         int frame_last_alert_offset_valid;
@@ -425,9 +427,15 @@ int nc_recv_scan_report(int s, struct nc_scan_report *report)
             return -1;
         }
         if (scan_report_json_metadata(json, json_length, &frame_completion,
-                                      &frame_root_size, &frame_skipped_operations,
+                                      &frame_root_size, &frame_logical_bytes,
+                                      &frame_max_scan_size, &frame_skipped_operations,
                                       &frame_last_alert_offset,
                                       &frame_last_alert_offset_valid) < 0) {
+            free(json);
+            free(frame_alert);
+            return -1;
+        }
+        if (frame_max_scan_size != 0 && frame_logical_bytes > frame_max_scan_size) {
             free(json);
             free(frame_alert);
             return -1;
@@ -436,6 +444,8 @@ int nc_recv_scan_report(int s, struct nc_scan_report *report)
         received = 1;
         report->completion                 = frame_completion;
         report->root_size                  = frame_root_size;
+        report->logical_bytes              = frame_logical_bytes;
+        report->max_scan_size              = frame_max_scan_size;
         report->skipped_operations         = frame_skipped_operations;
         report->last_alert_offset          = frame_last_alert_offset;
         report->last_alert_offset_valid   = frame_last_alert_offset_valid;

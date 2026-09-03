@@ -55,6 +55,7 @@ REPORT_FIELDS = (
 )
 ROLES = {"production", "materialized", "expansion", "edge"}
 KINDS = {"cli", "service", "report", "milter"}
+MAX_LOGICAL_BYTES = 64 * 1024 * 1024 * 1024
 
 
 def fail(message: str) -> None:
@@ -187,6 +188,10 @@ def validate_report(report: dict, label: str, oracle_row: tuple) -> None:
             fail(f"{label} report field {field} is not a non-negative integer")
     if report["root_size"] != expected_size:
         fail(f"{label} report root size does not match the oracle")
+    if report.get("max_scan_size") != MAX_LOGICAL_BYTES:
+        fail(f"{label} report max scan size is not the certified 64-GiB logical budget")
+    if report["logical_bytes"] > report["max_scan_size"]:
+        fail(f"{label} report exceeds its declared logical-byte budget")
     last_alert = report.get("last_alert")
     if expected_signature == "-":
         if last_alert not in (None, "") or report.get("verdict") not in (0, 1):
@@ -301,16 +306,21 @@ def main(argv: list[str]) -> int:
                 r"limit_bytes=(\d+) result=r "
                 r"signature=Milter\.Protocol\.Test offset=(\d+) sha256=([0-9a-f]{64}) "
                 r"completion=DETECTION_TERMINATED root_size=34359738368 "
+                r"logical_bytes=(\d+) max_scan_size=68719476736 "
                 r"skipped_operations=(\d+) last_alert_offset=(\d+)",
                 text,
             )
+            if exact_wire is None:
+                fail("milter workload log does not prove the exact-edge rejection")
             if (
-                exact_wire is None
-                or exact_wire.group(1) != "34359738316"
+                exact_wire.group(1) != "34359738316"
                 or exact_wire.group(2) != "34359738368"
                 or exact_wire.group(3) != "34359738368"
                 or exact_wire.group(4) != "34359738349"
-                or exact_wire.group(7) != "34359738349"
+                or exact_wire.group(6) != "34359738368"
+                or exact_wire.group(7) == ""
+                or exact_wire.group(8) != "34359738349"
+                or int(exact_wire.group(6)) > MAX_LOGICAL_BYTES
             ):
                 fail("milter workload log does not prove the exact-edge rejection")
             continue

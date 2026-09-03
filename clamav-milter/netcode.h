@@ -40,6 +40,8 @@ struct nc_scan_report {
     char *alert;
     cl_scan_completion_t completion;
     uint64_t root_size;
+    uint64_t logical_bytes;
+    uint64_t max_scan_size;
     uint64_t skipped_operations;
     uint64_t last_alert_offset;
     int last_alert_offset_valid;

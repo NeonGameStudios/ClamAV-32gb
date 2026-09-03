@@ -25,8 +25,10 @@ hash-verified binding artifact; generic shared logs are not sufficient.
 The ZIP implementation now treats EOCD-confirmed malformed EOCD/ZIP64
 metadata as incomplete and non-cacheable rather than falling back to local
 headers. The milter exact-edge harness records the expected tail signature,
-offset, root size, completion state, skipped-operation count, and transmitted
-stream digest; these are qualification inputs, not yet release certification.
+offset, root size, exact logical-byte count, effective 64-GiB scan budget,
+completion state, skipped-operation count, and transmitted stream digest; the
+bridge rejects over-budget logical accounting. These are qualification inputs,
+not yet release certification.
 
 ## MBR extended-chain extent admission — 2026-09-02
 

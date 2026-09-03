@@ -10,14 +10,20 @@
   unique capability binding with a current source-manifest hash and a
   hash-verified, non-symlinked proof artifact.
 - Keep milter exact-edge evidence tied to the 64-GiB logical budget, exact
-  signature/offset/root-size/completion metadata, and a complete-stream
-  digest. Detection-terminated is acceptable only when the expected tail
-  detection is independently proven; clean scans still require COMPLETE.
+  signature/offset/root-size/completion metadata, with `logical_bytes` equal
+  to the exact 32-GiB root and effective `max_scan_size` equal to 64 GiB, and
+  a complete-stream digest. Detection-terminated is acceptable only when the
+  expected tail detection is independently proven; clean scans still require
+  COMPLETE.
 - Keep EOCD-confirmed malformed ZIP/ZIP64 metadata fail-visible and
   non-cacheable; never fall back to local headers after confirmation.
 - Complete the remaining parser, ingress, production-CVD, sanitizer,
   materialized-large-file, Sonic1, resource, service-parity, and final
   requirement-by-requirement PLAN.md qualification before release claims.
+- Keep OneNote modern whole-input parsing explicitly bounded at 256 MiB until
+  a reader-backed parser exists; the legacy reader path remains fail-visible,
+  but `CL_TYPE_ONENOTE` is still pending qualification. RAR and 7-Zip remain
+  pending their complete corpus and release evidence.
 
 ## MBR extended-chain extent admission — 2026-09-02
 

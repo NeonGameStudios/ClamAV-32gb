@@ -102,6 +102,8 @@ int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
 int scan_report_json_metadata(const char *json, uint32_t json_length,
                               cl_scan_completion_t *completion_out,
                               uint64_t *root_size_out,
+                              uint64_t *logical_bytes_out,
+                              uint64_t *max_scan_size_out,
                               uint64_t *skipped_operations_out,
                               uint64_t *last_alert_offset_out,
                               int *last_alert_offset_valid_out);

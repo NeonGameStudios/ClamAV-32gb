@@ -415,20 +415,24 @@ def main():
                 )
             report_metadata = re.search(
                 r"Structured clamd report: completion=DETECTION_TERMINATED "
-                r"root_size={} skipped_operations=(\d+) last_alert_offset={}".format(
+                r"root_size={} logical_bytes=(\d+) max_scan_size=68719476736 "
+                r"skipped_operations=(\d+) last_alert_offset={}".format(
                     message_size, expected_offset
                 ),
                 milter_text,
             )
             if report_metadata is None:
                 raise RuntimeError("milter log does not prove the exact root size and detection completion")
-            skipped_operations = report_metadata.group(1)
+            logical_bytes = report_metadata.group(1)
+            skipped_operations = report_metadata.group(2)
+            if int(logical_bytes) != message_size or int(logical_bytes) > 64 * 1024 * 1024 * 1024:
+                raise RuntimeError("milter exact-edge logical-byte accounting or budget was invalid")
             if "infected by Milter.Protocol.Test" not in milter_text:
                 raise RuntimeError("milter log does not prove the expected infection name")
             if "MailMaterialization" in milter_text or "Limits.Exceeded" in milter_text:
                 raise RuntimeError("milter exact-edge result was accompanied by a limit/materialization heuristic")
             print(
-                "milter manual wire: body_bytes={} message_bytes={} limit_bytes={} result={} signature={} offset={} sha256={} completion=DETECTION_TERMINATED root_size={} skipped_operations={} last_alert_offset={} (extra database: {})".format(
+                "milter manual wire: body_bytes={} message_bytes={} limit_bytes={} result={} signature={} offset={} sha256={} completion=DETECTION_TERMINATED root_size={} logical_bytes={} max_scan_size=68719476736 skipped_operations={} last_alert_offset={} (extra database: {})".format(
                     sent,
                     message_size,
                     max_file_size,
@@ -437,6 +441,7 @@ def main():
                     expected_offset,
                     stream_sha256,
                     message_size,
+                    logical_bytes,
                     skipped_operations,
                     expected_offset,
                     extra_database or "none",

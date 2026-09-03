@@ -413,17 +413,23 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     if (scan_report.last_alert_offset_valid) {
         logg(LOGG_DEBUG,
              "Structured clamd report: completion=%s root_size=%" PRIu64
+             " logical_bytes=%" PRIu64 " max_scan_size=%" PRIu64
              " skipped_operations=%" PRIu64 " last_alert_offset=%" PRIu64 "\n",
              scan_report_completion_name(scan_report.completion),
              scan_report.root_size,
+             scan_report.logical_bytes,
+             scan_report.max_scan_size,
              scan_report.skipped_operations,
              scan_report.last_alert_offset);
     } else {
         logg(LOGG_DEBUG,
              "Structured clamd report: completion=%s root_size=%" PRIu64
+             " logical_bytes=%" PRIu64 " max_scan_size=%" PRIu64
              " skipped_operations=%" PRIu64 "\n",
              scan_report_completion_name(scan_report.completion),
              scan_report.root_size,
+             scan_report.logical_bytes,
+             scan_report.max_scan_size,
              scan_report.skipped_operations);
     }
 

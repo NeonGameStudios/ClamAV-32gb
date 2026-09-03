@@ -655,6 +655,10 @@ for field in (
         raise SystemExit(f"structured report field {field} is not a non-negative integer")
 if report["root_size"] != int(expected_size):
     raise SystemExit("structured report root size does not match oracle")
+if report.get("max_scan_size") != 68719476736:
+    raise SystemExit("structured report max scan size is not the certified 64-GiB logical budget")
+if report["logical_bytes"] > report["max_scan_size"]:
+    raise SystemExit("structured report exceeds its declared logical-byte budget")
 last_alert = report.get("last_alert")
 if expected_signature == "-":
     if last_alert not in (None, ""):
