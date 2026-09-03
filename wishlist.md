@@ -13470,6 +13470,17 @@ qualification remain open.
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification before closure.
 
+## Sigtool CVD hash status — 2026-09-02
+
+- Keep sigtool CVD metadata generation fail-visible for per-file and metadata
+  self-digest read, cl_update_hash(), and cl_finish_hash() failures; reject
+  file sizes that cannot fit the CVD metadata field before emitting a digest.
+  Retain the sigtool-cvd-hash-status capability evidence and source guards;
+  add current-source production-GCC and linked sigtool execution, complete
+  CVD/signature corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final parser/release
+  qualification before closure.
+
 ## XZ checksum-update status — 2026-09-02
 
 - Make XZ block and stream-index SHA-256 hash initialization, update, and

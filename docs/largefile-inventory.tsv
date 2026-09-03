@@ -6424,13 +6424,13 @@ fixed-width-integer	libfreshclam/libfreshclam_internal.h	64	extern uint32_t g_ma
 fixed-width-integer	libfreshclam/libfreshclam_internal.h	65	extern uint32_t g_connectTimeout;
 fixed-width-integer	libfreshclam/libfreshclam_internal.h	66	extern uint32_t g_requestTimeout;
 fixed-width-integer	libfreshclam/libfreshclam_internal.h	68	extern uint32_t g_bCompressLocalDatabase;
-fixed-width-integer	sigtool/sigtool.c	1371	    sprintf(header + strlen(header), ":" STDu64, (uint64_t)timet);
-fixed-width-integer	sigtool/sigtool.c	1489	    sprintf(header + strlen(header), ":" STDu64, (uint64_t)timet);
-fixed-width-integer	sigtool/sigtool.c	1617	    uint32_t dboptions          = 0;
-fixed-width-integer	sigtool/sigtool.c	1674	    uint32_t dboptions          = 0;
-fixed-width-integer	sigtool/sigtool.c	2831	    uint16_t *str16;
-fixed-width-integer	sigtool/sigtool.c	885	    uint32_t cvd_version     = 0;
-fixed-width-integer	sigtool/sigtool.c	929	        sign_file_name = calloc(1, strlen(dir) + 1 + strlen(cvd_name) + 1 + (3 * sizeof(uint32_t) + 2) + 1 + strlen(cvd_extension) + strlen(".sign") + 1);
+fixed-width-integer	sigtool/sigtool.c	1419	    sprintf(header + strlen(header), ":" STDu64, (uint64_t)timet);
+fixed-width-integer	sigtool/sigtool.c	1537	    sprintf(header + strlen(header), ":" STDu64, (uint64_t)timet);
+fixed-width-integer	sigtool/sigtool.c	1665	    uint32_t dboptions          = 0;
+fixed-width-integer	sigtool/sigtool.c	1722	    uint32_t dboptions          = 0;
+fixed-width-integer	sigtool/sigtool.c	2879	    uint16_t *str16;
+fixed-width-integer	sigtool/sigtool.c	933	    uint32_t cvd_version     = 0;
+fixed-width-integer	sigtool/sigtool.c	977	        sign_file_name = calloc(1, strlen(dir) + 1 + strlen(cvd_name) + 1 + (3 * sizeof(uint32_t) + 2) + 1 + strlen(cvd_extension) + strlen(".sign") + 1);
 fixed-width-integer	sigtool/vba.c	187	static void output_token67(uint16_t token)
 fixed-width-integer	sigtool/vba.c	538	static void output_token73(uint16_t token)
 fixed-width-integer	sigtool/vba.c	54	    uint16_t token;
@@ -18942,124 +18942,127 @@ native-width-integer	libfreshclam/libfreshclam_internal.h	89	    int *bUpdated);
 native-width-integer	libfreshclam/libfreshclam_internal.h	94	    int logerr,
 native-width-integer	libfreshclam/libfreshclam_internal.h	95	    int *signo,
 native-width-integer	libfreshclam/libfreshclam_internal.h	97	    int *bUpdated);
-native-width-integer	sigtool/sigtool.c	1070	static int verify(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	1072	    int ret              = -1;
-native-width-integer	sigtool/sigtool.c	1138	static int build(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	1140	    int ret, bc = 0, hy = 0;
-native-width-integer	sigtool/sigtool.c	1141	    size_t bytes;
-native-width-integer	sigtool/sigtool.c	1142	    unsigned int i, sigs = 0, oldsigs = 0, entries = 0, version, real_header, fl, maxentries;
-native-width-integer	sigtool/sigtool.c	1155	    unsigned int dblist2cnt = 0;
-native-width-integer	sigtool/sigtool.c	1158	    unsigned int dboptions = 0;
-native-width-integer	sigtool/sigtool.c	124	static char *getdbname(const char *str, char *dst, int dstlen)
-native-width-integer	sigtool/sigtool.c	126	    int len = strlen(str);
-native-width-integer	sigtool/sigtool.c	1347	    fl = (unsigned int)(optget(opts, "flevel")->numarg);
-native-width-integer	sigtool/sigtool.c	144	static int hexdump(void)
-native-width-integer	sigtool/sigtool.c	147	    int bytes;
-native-width-integer	sigtool/sigtool.c	1612	static int unpack(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	165	static int hashpe(const char *filename, unsigned int class, cli_hash_type_t type)
-native-width-integer	sigtool/sigtool.c	1668	static int cvdinfo(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	167	    int status = -1;
-native-width-integer	sigtool/sigtool.c	1672	    int ret;
-native-width-integer	sigtool/sigtool.c	1731	static int listdb(const struct optstruct *opts, const char *filename, const regex_t *regex);
-native-width-integer	sigtool/sigtool.c	1733	static int listdir(const struct optstruct *opts, const char *dirname, const regex_t *regex)
-native-width-integer	sigtool/sigtool.c	174	    int fd                         = -1;
-native-width-integer	sigtool/sigtool.c	1793	static int listdb(const struct optstruct *opts, const char *filename, const regex_t *regex)
-native-width-integer	sigtool/sigtool.c	1798	    unsigned int line = 0;
-native-width-integer	sigtool/sigtool.c	1990	static int listsigs(const struct optstruct *opts, int mode)
-native-width-integer	sigtool/sigtool.c	1992	    int ret;
-native-width-integer	sigtool/sigtool.c	2071	    int ret             = -1;
-native-width-integer	sigtool/sigtool.c	2093	    int fd                   = -1;
-native-width-integer	sigtool/sigtool.c	2096	    unsigned long int blocks = 0;
-native-width-integer	sigtool/sigtool.c	2129	static int vba_callback(const unsigned char *const metaString, const size_t metaStringLen, void *context)
-native-width-integer	sigtool/sigtool.c	2132	    size_t i = 0;
-native-width-integer	sigtool/sigtool.c	2153	static int vbadump(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	2155	    int ret = -1;
-native-width-integer	sigtool/sigtool.c	2234	static int comparesha(const char *diff)
-native-width-integer	sigtool/sigtool.c	2239	    int ret = 0, tokens_count;
-native-width-integer	sigtool/sigtool.c	2299	static int rundiff(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	2301	    int ret;
-native-width-integer	sigtool/sigtool.c	2355	static int maxlinelen(const char *file)
-native-width-integer	sigtool/sigtool.c	2357	    int fd, bytes, n = 0, nmax = 0, i;
-native-width-integer	sigtool/sigtool.c	2385	static int compare(const char *oldpath, const char *newpath, FILE *diff)
-native-width-integer	sigtool/sigtool.c	2389	    unsigned int oline = 0, tline, found, i, badxchg = 0;
-native-width-integer	sigtool/sigtool.c	2390	    int l1 = 0, l2;
-native-width-integer	sigtool/sigtool.c	2391	    long opos;
-native-width-integer	sigtool/sigtool.c	2549	static int compareone(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	2558	static int dircopy(const char *src, const char *dest)
-native-width-integer	sigtool/sigtool.c	2598	static int verifydiff(const struct optstruct *opts, const char *diff, const char *cvd, const char *incdir)
-native-width-integer	sigtool/sigtool.c	2602	    int ret = -1;
-native-width-integer	sigtool/sigtool.c	2724	static void matchsig(char *sig, const char *offset, int fd)
-native-width-integer	sigtool/sigtool.c	2728	    unsigned int matches           = 0;
-native-width-integer	sigtool/sigtool.c	2800	            mprintf(LOGG_INFO, " %u", (unsigned int)res->offset);
-native-width-integer	sigtool/sigtool.c	2829	static char *decodehexstr(const char *hex, unsigned int *dlen)
-native-width-integer	sigtool/sigtool.c	2833	    unsigned int i, p = 0, wildcard = 0, len = strlen(hex) / 2;
-native-width-integer	sigtool/sigtool.c	2886	    int level = 0;
-native-width-integer	sigtool/sigtool.c	2902	static char *decodehexspecial(const char *hex, unsigned int *dlen)
-native-width-integer	sigtool/sigtool.c	2905	    unsigned int len = 0, hlen, negative;
-native-width-integer	sigtool/sigtool.c	2906	    int level;
-native-width-integer	sigtool/sigtool.c	296	static int hashsig(const struct optstruct *opts, unsigned int class, cli_hash_type_t type)
-native-width-integer	sigtool/sigtool.c	299	    unsigned int i;
-native-width-integer	sigtool/sigtool.c	311	                        mprintf(LOGG_INFO, "%s:%u:%s\n", hash, (unsigned int)sb.st_size, basename(opts->filename[i]));
-native-width-integer	sigtool/sigtool.c	3120	static int decodehex(const char *hexsig)
-native-width-integer	sigtool/sigtool.c	3123	    int asterisk = 0;
-native-width-integer	sigtool/sigtool.c	3124	    unsigned int i, j, hexlen, dlen, parts = 0;
-native-width-integer	sigtool/sigtool.c	3125	    int mindist = 0, maxdist = 0, error = 0;
-native-width-integer	sigtool/sigtool.c	3126	    ssize_t bytes_written;
-native-width-integer	sigtool/sigtool.c	3132	        size_t tlen = wild - hexsig, rlen = 0, clen;
-native-width-integer	sigtool/sigtool.c	3359	static int decodesigmod(const char *sigmod)
-native-width-integer	sigtool/sigtool.c	3361	    size_t i;
-native-width-integer	sigtool/sigtool.c	3389	static int decodecdb(char **tokens)
-native-width-integer	sigtool/sigtool.c	3391	    int sz = 0;
-native-width-integer	sigtool/sigtool.c	340	static int fuzzy_img_file(char *filename)
-native-width-integer	sigtool/sigtool.c	342	    int status = -1;
-native-width-integer	sigtool/sigtool.c	344	    int target_fd                   = -1;
-native-width-integer	sigtool/sigtool.c	350	    ssize_t bytes_read;
-native-width-integer	sigtool/sigtool.c	3500	            sz    = (int)strtol(tokens[8], NULL, 16);
-native-width-integer	sigtool/sigtool.c	3513	static int decodeftm(char **tokens, int tokens_count)
-native-width-integer	sigtool/sigtool.c	3530	static int decodesig(char *sig, int fd)
-native-width-integer	sigtool/sigtool.c	3534	    int tokens_count, subtokens_count, subsigs, i, bc = 0;
-native-width-integer	sigtool/sigtool.c	3612	            long ftmsigtype;
-native-width-integer	sigtool/sigtool.c	364	    if (NULL == (mem = malloc((size_t)st.st_size))) {
-native-width-integer	sigtool/sigtool.c	365	        mprintf(LOGG_ERROR, "%s: Malloc failed, buffer size: %zu\n", basename(filename), (size_t)st.st_size);
-native-width-integer	sigtool/sigtool.c	369	    bytes_read = read(target_fd, mem, (size_t)st.st_size);
-native-width-integer	sigtool/sigtool.c	3703	static int decodesigs(void)
-native-width-integer	sigtool/sigtool.c	3718	static int testsigs(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	3722	    int ret = 0, fd;
-native-width-integer	sigtool/sigtool.c	375	    if (bytes_read < (ssize_t)st.st_size) {
-native-width-integer	sigtool/sigtool.c	3757	static int diffdirs(const char *old, const char *new, const char *patch)
-native-width-integer	sigtool/sigtool.c	380	    if (!fuzzy_hash_calculate_image(mem, (size_t)st.st_size, hash.hash, 8, &fuzzy_hash_calc_error)) {
-native-width-integer	sigtool/sigtool.c	3831	static int makediff(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	3835	    unsigned int oldver, newver;
-native-width-integer	sigtool/sigtool.c	3836	    int ret;
-native-width-integer	sigtool/sigtool.c	3911	static int dumpcerts(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	3913	    int status     = -1;
-native-width-integer	sigtool/sigtool.c	3919	    int fd                         = -1;
-native-width-integer	sigtool/sigtool.c	412	static int fuzzy_img(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	414	    int status = 0;
-native-width-integer	sigtool/sigtool.c	415	    int ret;
-native-width-integer	sigtool/sigtool.c	417	    size_t i;
-native-width-integer	sigtool/sigtool.c	4175	int main(int argc, char **argv)
-native-width-integer	sigtool/sigtool.c	4177	    int ret;
-native-width-integer	sigtool/sigtool.c	438	static cli_ctx *convenience_ctx(int fd, const char *filepath)
-native-width-integer	sigtool/sigtool.c	578	static int htmlnorm(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	580	    int fd;
-native-width-integer	sigtool/sigtool.c	601	static int asciinorm(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	606	    size_t map_off;
-native-width-integer	sigtool/sigtool.c	608	    int fd, ofd;
-native-width-integer	sigtool/sigtool.c	652	        size_t written;
-native-width-integer	sigtool/sigtool.c	674	static int utf16decode(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	678	    int fd1, fd2, bytes;
-native-width-integer	sigtool/sigtool.c	724	static char *sha2_256_file(const char *file, unsigned int *size)
-native-width-integer	sigtool/sigtool.c	727	    unsigned int i, bytes;
-native-width-integer	sigtool/sigtool.c	761	static int writeinfo(const char *dbname, const char *builder, const char *header, const struct optstruct *opts, char *const *dblist2, unsigned int dblist2cnt)
-native-width-integer	sigtool/sigtool.c	764	    unsigned int i, bytes;
-native-width-integer	sigtool/sigtool.c	82	    unsigned int count;
-native-width-integer	sigtool/sigtool.c	846	static int diffdirs(const char *old, const char *new, const char *patch);
-native-width-integer	sigtool/sigtool.c	847	static int verifydiff(const struct optstruct *opts, const char *diff, const char *cvd, const char *incdir);
-native-width-integer	sigtool/sigtool.c	849	static int qcompare(const void *a, const void *b)
-native-width-integer	sigtool/sigtool.c	965	static int sign(const struct optstruct *opts)
-native-width-integer	sigtool/sigtool.c	967	    int ret = -1;
-native-width-integer	sigtool/sigtool.c	976	    size_t certs_count = 0;
+native-width-integer	sigtool/sigtool.c	1013	static int sign(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	1015	    int ret = -1;
+native-width-integer	sigtool/sigtool.c	1024	    size_t certs_count = 0;
+native-width-integer	sigtool/sigtool.c	1118	static int verify(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	1120	    int ret              = -1;
+native-width-integer	sigtool/sigtool.c	1186	static int build(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	1188	    int ret, bc = 0, hy = 0;
+native-width-integer	sigtool/sigtool.c	1189	    size_t bytes;
+native-width-integer	sigtool/sigtool.c	1190	    unsigned int i, sigs = 0, oldsigs = 0, entries = 0, version, real_header, fl, maxentries;
+native-width-integer	sigtool/sigtool.c	1203	    unsigned int dblist2cnt = 0;
+native-width-integer	sigtool/sigtool.c	1206	    unsigned int dboptions = 0;
+native-width-integer	sigtool/sigtool.c	125	static char *getdbname(const char *str, char *dst, int dstlen)
+native-width-integer	sigtool/sigtool.c	127	    int len = strlen(str);
+native-width-integer	sigtool/sigtool.c	1395	    fl = (unsigned int)(optget(opts, "flevel")->numarg);
+native-width-integer	sigtool/sigtool.c	145	static int hexdump(void)
+native-width-integer	sigtool/sigtool.c	148	    int bytes;
+native-width-integer	sigtool/sigtool.c	166	static int hashpe(const char *filename, unsigned int class, cli_hash_type_t type)
+native-width-integer	sigtool/sigtool.c	1660	static int unpack(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	168	    int status = -1;
+native-width-integer	sigtool/sigtool.c	1716	static int cvdinfo(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	1720	    int ret;
+native-width-integer	sigtool/sigtool.c	175	    int fd                         = -1;
+native-width-integer	sigtool/sigtool.c	1779	static int listdb(const struct optstruct *opts, const char *filename, const regex_t *regex);
+native-width-integer	sigtool/sigtool.c	1781	static int listdir(const struct optstruct *opts, const char *dirname, const regex_t *regex)
+native-width-integer	sigtool/sigtool.c	1841	static int listdb(const struct optstruct *opts, const char *filename, const regex_t *regex)
+native-width-integer	sigtool/sigtool.c	1846	    unsigned int line = 0;
+native-width-integer	sigtool/sigtool.c	2038	static int listsigs(const struct optstruct *opts, int mode)
+native-width-integer	sigtool/sigtool.c	2040	    int ret;
+native-width-integer	sigtool/sigtool.c	2119	    int ret             = -1;
+native-width-integer	sigtool/sigtool.c	2141	    int fd                   = -1;
+native-width-integer	sigtool/sigtool.c	2144	    unsigned long int blocks = 0;
+native-width-integer	sigtool/sigtool.c	2177	static int vba_callback(const unsigned char *const metaString, const size_t metaStringLen, void *context)
+native-width-integer	sigtool/sigtool.c	2180	    size_t i = 0;
+native-width-integer	sigtool/sigtool.c	2201	static int vbadump(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	2203	    int ret = -1;
+native-width-integer	sigtool/sigtool.c	2282	static int comparesha(const char *diff)
+native-width-integer	sigtool/sigtool.c	2287	    int ret = 0, tokens_count;
+native-width-integer	sigtool/sigtool.c	2347	static int rundiff(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	2349	    int ret;
+native-width-integer	sigtool/sigtool.c	2403	static int maxlinelen(const char *file)
+native-width-integer	sigtool/sigtool.c	2405	    int fd, bytes, n = 0, nmax = 0, i;
+native-width-integer	sigtool/sigtool.c	2433	static int compare(const char *oldpath, const char *newpath, FILE *diff)
+native-width-integer	sigtool/sigtool.c	2437	    unsigned int oline = 0, tline, found, i, badxchg = 0;
+native-width-integer	sigtool/sigtool.c	2438	    int l1 = 0, l2;
+native-width-integer	sigtool/sigtool.c	2439	    long opos;
+native-width-integer	sigtool/sigtool.c	2597	static int compareone(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	2606	static int dircopy(const char *src, const char *dest)
+native-width-integer	sigtool/sigtool.c	2646	static int verifydiff(const struct optstruct *opts, const char *diff, const char *cvd, const char *incdir)
+native-width-integer	sigtool/sigtool.c	2650	    int ret = -1;
+native-width-integer	sigtool/sigtool.c	2772	static void matchsig(char *sig, const char *offset, int fd)
+native-width-integer	sigtool/sigtool.c	2776	    unsigned int matches           = 0;
+native-width-integer	sigtool/sigtool.c	2848	            mprintf(LOGG_INFO, " %u", (unsigned int)res->offset);
+native-width-integer	sigtool/sigtool.c	2877	static char *decodehexstr(const char *hex, unsigned int *dlen)
+native-width-integer	sigtool/sigtool.c	2881	    unsigned int i, p = 0, wildcard = 0, len = strlen(hex) / 2;
+native-width-integer	sigtool/sigtool.c	2934	    int level = 0;
+native-width-integer	sigtool/sigtool.c	2950	static char *decodehexspecial(const char *hex, unsigned int *dlen)
+native-width-integer	sigtool/sigtool.c	2953	    unsigned int len = 0, hlen, negative;
+native-width-integer	sigtool/sigtool.c	2954	    int level;
+native-width-integer	sigtool/sigtool.c	297	static int hashsig(const struct optstruct *opts, unsigned int class, cli_hash_type_t type)
+native-width-integer	sigtool/sigtool.c	300	    unsigned int i;
+native-width-integer	sigtool/sigtool.c	312	                        mprintf(LOGG_INFO, "%s:%u:%s\n", hash, (unsigned int)sb.st_size, basename(opts->filename[i]));
+native-width-integer	sigtool/sigtool.c	3168	static int decodehex(const char *hexsig)
+native-width-integer	sigtool/sigtool.c	3171	    int asterisk = 0;
+native-width-integer	sigtool/sigtool.c	3172	    unsigned int i, j, hexlen, dlen, parts = 0;
+native-width-integer	sigtool/sigtool.c	3173	    int mindist = 0, maxdist = 0, error = 0;
+native-width-integer	sigtool/sigtool.c	3174	    ssize_t bytes_written;
+native-width-integer	sigtool/sigtool.c	3180	        size_t tlen = wild - hexsig, rlen = 0, clen;
+native-width-integer	sigtool/sigtool.c	3407	static int decodesigmod(const char *sigmod)
+native-width-integer	sigtool/sigtool.c	3409	    size_t i;
+native-width-integer	sigtool/sigtool.c	341	static int fuzzy_img_file(char *filename)
+native-width-integer	sigtool/sigtool.c	343	    int status = -1;
+native-width-integer	sigtool/sigtool.c	3437	static int decodecdb(char **tokens)
+native-width-integer	sigtool/sigtool.c	3439	    int sz = 0;
+native-width-integer	sigtool/sigtool.c	345	    int target_fd                   = -1;
+native-width-integer	sigtool/sigtool.c	351	    ssize_t bytes_read;
+native-width-integer	sigtool/sigtool.c	3548	            sz    = (int)strtol(tokens[8], NULL, 16);
+native-width-integer	sigtool/sigtool.c	3561	static int decodeftm(char **tokens, int tokens_count)
+native-width-integer	sigtool/sigtool.c	3578	static int decodesig(char *sig, int fd)
+native-width-integer	sigtool/sigtool.c	3582	    int tokens_count, subtokens_count, subsigs, i, bc = 0;
+native-width-integer	sigtool/sigtool.c	365	    if (NULL == (mem = malloc((size_t)st.st_size))) {
+native-width-integer	sigtool/sigtool.c	366	        mprintf(LOGG_ERROR, "%s: Malloc failed, buffer size: %zu\n", basename(filename), (size_t)st.st_size);
+native-width-integer	sigtool/sigtool.c	3660	            long ftmsigtype;
+native-width-integer	sigtool/sigtool.c	370	    bytes_read = read(target_fd, mem, (size_t)st.st_size);
+native-width-integer	sigtool/sigtool.c	3751	static int decodesigs(void)
+native-width-integer	sigtool/sigtool.c	376	    if (bytes_read < (ssize_t)st.st_size) {
+native-width-integer	sigtool/sigtool.c	3766	static int testsigs(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	3770	    int ret = 0, fd;
+native-width-integer	sigtool/sigtool.c	3805	static int diffdirs(const char *old, const char *new, const char *patch)
+native-width-integer	sigtool/sigtool.c	381	    if (!fuzzy_hash_calculate_image(mem, (size_t)st.st_size, hash.hash, 8, &fuzzy_hash_calc_error)) {
+native-width-integer	sigtool/sigtool.c	3879	static int makediff(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	3883	    unsigned int oldver, newver;
+native-width-integer	sigtool/sigtool.c	3884	    int ret;
+native-width-integer	sigtool/sigtool.c	3959	static int dumpcerts(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	3961	    int status     = -1;
+native-width-integer	sigtool/sigtool.c	3967	    int fd                         = -1;
+native-width-integer	sigtool/sigtool.c	413	static int fuzzy_img(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	415	    int status = 0;
+native-width-integer	sigtool/sigtool.c	416	    int ret;
+native-width-integer	sigtool/sigtool.c	418	    size_t i;
+native-width-integer	sigtool/sigtool.c	4223	int main(int argc, char **argv)
+native-width-integer	sigtool/sigtool.c	4225	    int ret;
+native-width-integer	sigtool/sigtool.c	439	static cli_ctx *convenience_ctx(int fd, const char *filepath)
+native-width-integer	sigtool/sigtool.c	579	static int htmlnorm(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	581	    int fd;
+native-width-integer	sigtool/sigtool.c	602	static int asciinorm(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	607	    size_t map_off;
+native-width-integer	sigtool/sigtool.c	609	    int fd, ofd;
+native-width-integer	sigtool/sigtool.c	653	        size_t written;
+native-width-integer	sigtool/sigtool.c	675	static int utf16decode(const struct optstruct *opts)
+native-width-integer	sigtool/sigtool.c	679	    int fd1, fd2, bytes;
+native-width-integer	sigtool/sigtool.c	725	static char *sha2_256_file(const char *file, unsigned int *size)
+native-width-integer	sigtool/sigtool.c	728	    unsigned int i;
+native-width-integer	sigtool/sigtool.c	729	    size_t bytes;
+native-width-integer	sigtool/sigtool.c	753	            if (bytes > (size_t)UINT_MAX - *size) {
+native-width-integer	sigtool/sigtool.c	759	            *size += (unsigned int)bytes;
+native-width-integer	sigtool/sigtool.c	791	static int writeinfo(const char *dbname, const char *builder, const char *header, const struct optstruct *opts, char *const *dblist2, unsigned int dblist2cnt)
+native-width-integer	sigtool/sigtool.c	794	    unsigned int i, bytes;
+native-width-integer	sigtool/sigtool.c	83	    unsigned int count;
+native-width-integer	sigtool/sigtool.c	894	static int diffdirs(const char *old, const char *new, const char *patch);
+native-width-integer	sigtool/sigtool.c	895	static int verifydiff(const struct optstruct *opts, const char *diff, const char *cvd, const char *incdir);
+native-width-integer	sigtool/sigtool.c	897	static int qcompare(const void *a, const void *b)
 native-width-integer	sigtool/vba.c	189	    int i;
 native-width-integer	sigtool/vba.c	540	    int i;
 native-width-integer	sigtool/vba.c	60	static char *get_unicode_name(char *name, int size)
@@ -22648,6 +22651,7 @@ boundary-constant	libclammspack/test/md5.h	54	# ifndef UINT_MAX
 boundary-constant	libclammspack/test/md5.h	55	#  define UINT_MAX UINT_MAX_32_BITS
 boundary-constant	libclammspack/test/md5.h	58	# if UINT_MAX == UINT_MAX_32_BITS
 boundary-constant	libclammspack/test/md5.h	64	#   if ULONG_MAX == UINT_MAX_32_BITS
+boundary-constant	sigtool/sigtool.c	753	            if (bytes > (size_t)UINT_MAX - *size) {
 boundary-constant	unit_tests/check_bytecode.c	1125	    bcctx->written = UINT32_MAX;
 boundary-constant	unit_tests/check_bytecode.c	1317	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_bytecode.c	1364	                         BC_FORMAT_LEVEL, BC_V1_API_COUNT + 1U, UINT_MAX),
@@ -23172,13 +23176,13 @@ quantity-parser	libfreshclam/libfreshclam.c	575	    recordTime = atoi(reply_toke
 quantity-parser	libfreshclam/libfreshclam_internal.c	2098	            newVersion = atoi(verStrDnsPrimary);
 quantity-parser	libfreshclam/libfreshclam_internal.c	2125	                    recordTime = atoi(recordTimeStr);
 quantity-parser	libfreshclam/libfreshclam_internal.c	2134	                            newVersion = atoi(verStrDnsExtra);
-quantity-parser	sigtool/sigtool.c	3280	                if (!cli_isnumber(pt) || (mindist = maxdist = atoi(pt)) < 0) {
-quantity-parser	sigtool/sigtool.c	3286	                    if (!cli_isnumber(n) || (mindist = atoi(n)) < 0) {
-quantity-parser	sigtool/sigtool.c	3295	                    if (!cli_isnumber(n) || (maxdist = atoi(n)) < 0) {
-quantity-parser	sigtool/sigtool.c	3470	        mprintf(LOGG_INFO, "%s\n", (atoi(tokens[6]) ? "YES" : "NO"));
-quantity-parser	sigtool/sigtool.c	3500	            sz    = (int)strtol(tokens[8], NULL, 16);
-quantity-parser	sigtool/sigtool.c	3614	            ftmsigtype = strtol(tokens[0], &end, 10);
-quantity-parser	sigtool/sigtool.c	3635	        switch (atoi(tokens[1])) {
+quantity-parser	sigtool/sigtool.c	3328	                if (!cli_isnumber(pt) || (mindist = maxdist = atoi(pt)) < 0) {
+quantity-parser	sigtool/sigtool.c	3334	                    if (!cli_isnumber(n) || (mindist = atoi(n)) < 0) {
+quantity-parser	sigtool/sigtool.c	3343	                    if (!cli_isnumber(n) || (maxdist = atoi(n)) < 0) {
+quantity-parser	sigtool/sigtool.c	3518	        mprintf(LOGG_INFO, "%s\n", (atoi(tokens[6]) ? "YES" : "NO"));
+quantity-parser	sigtool/sigtool.c	3548	            sz    = (int)strtol(tokens[8], NULL, 16);
+quantity-parser	sigtool/sigtool.c	3662	            ftmsigtype = strtol(tokens[0], &end, 10);
+quantity-parser	sigtool/sigtool.c	3683	        switch (atoi(tokens[1])) {
 quantity-parser	unit_tests/check_clamav.c	62956	        int timeout = atoi(user_timeout);
 quantity-parser	unit_tests/check_clamd.c	116	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 quantity-parser	unit_tests/check_clamd.c	968	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
@@ -25551,50 +25555,50 @@ format-width	libfreshclam/libfreshclam_internal.c	644	            logg(LOGG_ERRO
 format-width	libfreshclam/libfreshclam_internal.c	651	                logg(LOGG_ERROR, "create_curl_handle: Failed to set CURLOPT_LOW_SPEED_LIMIT  (%u)!\n", minimumSpeed);
 format-width	libfreshclam/libfreshclam_internal.c	715	        logg(LOGG_DEBUG, "Using proxy: %s:%u\n", g_proxyServer, g_proxyPort);
 format-width	libfreshclam/libfreshclam_internal.c	721	            logg(LOGG_ERROR, "create_curl_handle: Failed to set CURLOPT_PROXYPORT (%u)!\n", g_proxyPort);
-format-width	sigtool/sigtool.c	1273	            mprintf(LOGG_WARNING, "build: Signatures in %s db files: %u, loaded by libclamav: %u\n", dbname, entries, sigs);
-format-width	sigtool/sigtool.c	1320	        if (scanf("%u", &version) == EOF) {
-format-width	sigtool/sigtool.c	1327	    mprintf(LOGG_INFO, "Total sigs: %u\n", sigs);
-format-width	sigtool/sigtool.c	1329	        mprintf(LOGG_INFO, "New sigs: %u\n", sigs - oldsigs);
-format-width	sigtool/sigtool.c	1337	    strftime(smbuff, sizeof(smbuff), "%d %b %Y %H-%M %z", brokent);
-format-width	sigtool/sigtool.c	1341	    sprintf(header + strlen(header), ":%u:", version);
-format-width	sigtool/sigtool.c	1344	    sprintf(header + strlen(header), "%u:", sigs);
-format-width	sigtool/sigtool.c	1348	    sprintf(header + strlen(header), "%u:", fl);
-format-width	sigtool/sigtool.c	1575	    snprintf(patch, sizeof(patch), "%s-%u.script", dbname, version);
-format-width	sigtool/sigtool.c	1690	    mprintf(LOGG_INFO, "Version: %u\n", cvd->version);
-format-width	sigtool/sigtool.c	1691	    mprintf(LOGG_INFO, "Signatures: %u\n", cvd->sigs);
-format-width	sigtool/sigtool.c	1692	    mprintf(LOGG_INFO, "Functionality level: %u\n", cvd->fl);
-format-width	sigtool/sigtool.c	1873	                mprintf(LOGG_ERROR, "listdb: Malformed pattern line %u (file %s)\n", line, filename);
+format-width	sigtool/sigtool.c	1321	            mprintf(LOGG_WARNING, "build: Signatures in %s db files: %u, loaded by libclamav: %u\n", dbname, entries, sigs);
+format-width	sigtool/sigtool.c	1368	        if (scanf("%u", &version) == EOF) {
+format-width	sigtool/sigtool.c	1375	    mprintf(LOGG_INFO, "Total sigs: %u\n", sigs);
+format-width	sigtool/sigtool.c	1377	        mprintf(LOGG_INFO, "New sigs: %u\n", sigs - oldsigs);
+format-width	sigtool/sigtool.c	1385	    strftime(smbuff, sizeof(smbuff), "%d %b %Y %H-%M %z", brokent);
+format-width	sigtool/sigtool.c	1389	    sprintf(header + strlen(header), ":%u:", version);
+format-width	sigtool/sigtool.c	1392	    sprintf(header + strlen(header), "%u:", sigs);
+format-width	sigtool/sigtool.c	1396	    sprintf(header + strlen(header), "%u:", fl);
+format-width	sigtool/sigtool.c	1623	    snprintf(patch, sizeof(patch), "%s-%u.script", dbname, version);
+format-width	sigtool/sigtool.c	1738	    mprintf(LOGG_INFO, "Version: %u\n", cvd->version);
+format-width	sigtool/sigtool.c	1739	    mprintf(LOGG_INFO, "Signatures: %u\n", cvd->sigs);
+format-width	sigtool/sigtool.c	1740	    mprintf(LOGG_INFO, "Functionality level: %u\n", cvd->fl);
 format-width	sigtool/sigtool.c	1921	                mprintf(LOGG_ERROR, "listdb: Malformed pattern line %u (file %s)\n", line, filename);
-format-width	sigtool/sigtool.c	1954	                mprintf(LOGG_ERROR, "listdb: Malformed pattern line %u (file %s)\n", line, filename);
-format-width	sigtool/sigtool.c	2434	        fprintf(diff, "#LSIZE %u\n", l1 + 32);
-format-width	sigtool/sigtool.c	2493	                            fprintf(diff, "DEL %u %s\n", oline + i, tbuff);
-format-width	sigtool/sigtool.c	2507	                        fprintf(diff, "XCHG %u %s %s\n", oline, obuff, nbuff);
-format-width	sigtool/sigtool.c	252	            mprintf(LOGG_ERROR, "hashpe: unknown classification(%u) for pe hash!\n", class);
-format-width	sigtool/sigtool.c	2526	                fprintf(diff, "DEL %u %s\n", oline, obuff);
-format-width	sigtool/sigtool.c	270	            mprintf(LOGG_ERROR, "hashpe: Other error %d inside cli_genhash_pe.\n", ret);
-format-width	sigtool/sigtool.c	2797	        mprintf(LOGG_INFO, "MATCH: ** YES%s ** (%u %s:", offset ? "/CHECK OFFSET" : "", matches, matches > 1 ? "matches at offsets" : "match at offset");
-format-width	sigtool/sigtool.c	2800	            mprintf(LOGG_INFO, " %u", (unsigned int)res->offset);
-format-width	sigtool/sigtool.c	2866	                    mprintf(LOGG_ERROR, "decodehexstr: Unknown wildcard (0x%x@%u)\n", str16[i] & CLI_MATCH_WILDCARD, i);
-format-width	sigtool/sigtool.c	311	                        mprintf(LOGG_INFO, "%s:%u:%s\n", hash, (unsigned int)sb.st_size, basename(opts->filename[i]));
-format-width	sigtool/sigtool.c	3236	                    mprintf(LOGG_INFO, "{WILDCARD_ANY_STRING(LENGTH==%u)}", mindist);
-format-width	sigtool/sigtool.c	3238	                    mprintf(LOGG_INFO, "{WILDCARD_ANY_STRING(LENGTH>=%u&&<=%u)}", mindist, maxdist);
-format-width	sigtool/sigtool.c	3240	                mprintf(LOGG_INFO, "{WILDCARD_ANY_STRING(LENGTH>=%u)}", mindist);
-format-width	sigtool/sigtool.c	3242	                mprintf(LOGG_INFO, "{WILDCARD_ANY_STRING(LENGTH<=%u)}", maxdist);
-format-width	sigtool/sigtool.c	3325	                mprintf(LOGG_ERROR, "Can't extract part %u of partial signature\n", i);
-format-width	sigtool/sigtool.c	3505	                mprintf(LOGG_INFO, "CRC SUM: %d\n", sz);
-format-width	sigtool/sigtool.c	3566	            mprintf(LOGG_ERROR, "decodesig: The number of subsignatures (==%u) doesn't match the IDs in the logical expression (==%u)\n", tokens_count - 3, subsigs);
-format-width	sigtool/sigtool.c	3573	                mprintf(LOGG_INFO, " * SUBSIG ID %d\n", i);
-format-width	sigtool/sigtool.c	3621	            mprintf(LOGG_INFO, "TOKENS COUNT: %u\n", tokens_count);
-format-width	sigtool/sigtool.c	365	        mprintf(LOGG_ERROR, "%s: Malloc failed, buffer size: %zu\n", basename(filename), (size_t)st.st_size);
-format-width	sigtool/sigtool.c	3858	        mprintf(LOGG_ERROR, "makediff: The old CVD must be %u\n", newver - 1);
-format-width	sigtool/sigtool.c	3886	    snprintf(name, sizeof(name), "%s-%u.script", getdbname(opts->filename[0], dbname, sizeof(dbname)), newver);
-format-width	sigtool/sigtool.c	4010	            mprintf(LOGG_ERROR, "dumpcerts: Other error %d inside cli_check_auth_header.\n", ret);
-format-width	sigtool/sigtool.c	4097	    mprintf(LOGG_INFO, "                                           Default: %u\n", cl_retflevel());
-format-width	sigtool/sigtool.c	625	        mprintf(LOGG_ERROR, "fmap: Could not map fd %d\n", fd);
-format-width	sigtool/sigtool.c	632	        mprintf(LOGG_ERROR, "asciinorm: File size of %zu too large\n", map->len);
-format-width	sigtool/sigtool.c	795	            if (fprintf(fh, "%s:%u:%s\n", dblist2[i], bytes, pt) < 0) {
-format-width	sigtool/sigtool.c	813	                if (fprintf(fh, "%s:%u:%s\n", dbfile, bytes, pt) < 0) {
-format-width	sigtool/sigtool.c	935	        sprintf(sign_file_name, "%s/%s-%u.%s.sign", dir, cvd_name, cvd_version, cvd_extension);
+format-width	sigtool/sigtool.c	1969	                mprintf(LOGG_ERROR, "listdb: Malformed pattern line %u (file %s)\n", line, filename);
+format-width	sigtool/sigtool.c	2002	                mprintf(LOGG_ERROR, "listdb: Malformed pattern line %u (file %s)\n", line, filename);
+format-width	sigtool/sigtool.c	2482	        fprintf(diff, "#LSIZE %u\n", l1 + 32);
+format-width	sigtool/sigtool.c	253	            mprintf(LOGG_ERROR, "hashpe: unknown classification(%u) for pe hash!\n", class);
+format-width	sigtool/sigtool.c	2541	                            fprintf(diff, "DEL %u %s\n", oline + i, tbuff);
+format-width	sigtool/sigtool.c	2555	                        fprintf(diff, "XCHG %u %s %s\n", oline, obuff, nbuff);
+format-width	sigtool/sigtool.c	2574	                fprintf(diff, "DEL %u %s\n", oline, obuff);
+format-width	sigtool/sigtool.c	271	            mprintf(LOGG_ERROR, "hashpe: Other error %d inside cli_genhash_pe.\n", ret);
+format-width	sigtool/sigtool.c	2845	        mprintf(LOGG_INFO, "MATCH: ** YES%s ** (%u %s:", offset ? "/CHECK OFFSET" : "", matches, matches > 1 ? "matches at offsets" : "match at offset");
+format-width	sigtool/sigtool.c	2848	            mprintf(LOGG_INFO, " %u", (unsigned int)res->offset);
+format-width	sigtool/sigtool.c	2914	                    mprintf(LOGG_ERROR, "decodehexstr: Unknown wildcard (0x%x@%u)\n", str16[i] & CLI_MATCH_WILDCARD, i);
+format-width	sigtool/sigtool.c	312	                        mprintf(LOGG_INFO, "%s:%u:%s\n", hash, (unsigned int)sb.st_size, basename(opts->filename[i]));
+format-width	sigtool/sigtool.c	3284	                    mprintf(LOGG_INFO, "{WILDCARD_ANY_STRING(LENGTH==%u)}", mindist);
+format-width	sigtool/sigtool.c	3286	                    mprintf(LOGG_INFO, "{WILDCARD_ANY_STRING(LENGTH>=%u&&<=%u)}", mindist, maxdist);
+format-width	sigtool/sigtool.c	3288	                mprintf(LOGG_INFO, "{WILDCARD_ANY_STRING(LENGTH>=%u)}", mindist);
+format-width	sigtool/sigtool.c	3290	                mprintf(LOGG_INFO, "{WILDCARD_ANY_STRING(LENGTH<=%u)}", maxdist);
+format-width	sigtool/sigtool.c	3373	                mprintf(LOGG_ERROR, "Can't extract part %u of partial signature\n", i);
+format-width	sigtool/sigtool.c	3553	                mprintf(LOGG_INFO, "CRC SUM: %d\n", sz);
+format-width	sigtool/sigtool.c	3614	            mprintf(LOGG_ERROR, "decodesig: The number of subsignatures (==%u) doesn't match the IDs in the logical expression (==%u)\n", tokens_count - 3, subsigs);
+format-width	sigtool/sigtool.c	3621	                mprintf(LOGG_INFO, " * SUBSIG ID %d\n", i);
+format-width	sigtool/sigtool.c	366	        mprintf(LOGG_ERROR, "%s: Malloc failed, buffer size: %zu\n", basename(filename), (size_t)st.st_size);
+format-width	sigtool/sigtool.c	3669	            mprintf(LOGG_INFO, "TOKENS COUNT: %u\n", tokens_count);
+format-width	sigtool/sigtool.c	3906	        mprintf(LOGG_ERROR, "makediff: The old CVD must be %u\n", newver - 1);
+format-width	sigtool/sigtool.c	3934	    snprintf(name, sizeof(name), "%s-%u.script", getdbname(opts->filename[0], dbname, sizeof(dbname)), newver);
+format-width	sigtool/sigtool.c	4058	            mprintf(LOGG_ERROR, "dumpcerts: Other error %d inside cli_check_auth_header.\n", ret);
+format-width	sigtool/sigtool.c	4145	    mprintf(LOGG_INFO, "                                           Default: %u\n", cl_retflevel());
+format-width	sigtool/sigtool.c	626	        mprintf(LOGG_ERROR, "fmap: Could not map fd %d\n", fd);
+format-width	sigtool/sigtool.c	633	        mprintf(LOGG_ERROR, "asciinorm: File size of %zu too large\n", map->len);
+format-width	sigtool/sigtool.c	825	            if (fprintf(fh, "%s:%u:%s\n", dblist2[i], bytes, pt) < 0) {
+format-width	sigtool/sigtool.c	843	                if (fprintf(fh, "%s:%u:%s\n", dbfile, bytes, pt) < 0) {
+format-width	sigtool/sigtool.c	983	        sprintf(sign_file_name, "%s/%s-%u.%s.sign", dir, cvd_name, cvd_version, cvd_extension);
 format-width	sigtool/vba.c	924	                printf("\n%d", int_val);
 format-width	sigtool/vba.c	940	                printf(" %d", int_val);
 format-width	unit_tests/check_bytecode.c	1431	                      "truncated bytecode header prefix of %zu bytes was accepted",
@@ -37934,127 +37938,128 @@ offset-size-arithmetic	libfreshclam/libfreshclam_internal.c	898	    urlLen = str
 offset-size-arithmetic	libfreshclam/libfreshclam_internal.c	974	        if (NULL == (temp = curl_slist_append(slist, "Cache-Control: no-cache"))) { // Necessary?
 offset-size-arithmetic	libfreshclam/libfreshclam_internal.c	975	            logg(LOGG_ERROR, "remote_cvdhead: Failed to append \"Cache-Control: no-cache\" header to custom curl header list.\n");
 offset-size-arithmetic	libfreshclam/libfreshclam_internal.h	102	#endif // __LIBFRESHCLAM_INTERNAL_H
-offset-size-arithmetic	sigtool/sigtool.c	1023	        certs = realloc(certs, certs_count * sizeof(char *));
-offset-size-arithmetic	sigtool/sigtool.c	1034	    if (optget(opts, "append")->enabled) {
-offset-size-arithmetic	sigtool/sigtool.c	1222	                        dblist2 = (char **)realloc(dblist2, (dblist2cnt + 1) * sizeof(char *));
-offset-size-arithmetic	sigtool/sigtool.c	1241	                qsort(dblist2, dblist2cnt, sizeof(char *), qcompare);
-offset-size-arithmetic	sigtool/sigtool.c	1249	                dblist2 = (char **)realloc(dblist2, (dblist2cnt + 1) * sizeof(char *));
-offset-size-arithmetic	sigtool/sigtool.c	1288	        if (cli_strbcasestr(opts->filename[0], ".cvd") || cli_strbcasestr(opts->filename[0], ".cld") || cli_strbcasestr(opts->filename[0], ".cud")) {
-offset-size-arithmetic	sigtool/sigtool.c	129	        len -= 4;
-offset-size-arithmetic	sigtool/sigtool.c	1290	            olddb[sizeof(olddb) - 1] = '\0';
-offset-size-arithmetic	sigtool/sigtool.c	132	        strncpy(dst, str, MIN(dstlen - 1, len));
-offset-size-arithmetic	sigtool/sigtool.c	133	        dst[MIN(dstlen - 1, len)] = 0;
-offset-size-arithmetic	sigtool/sigtool.c	1337	    strftime(smbuff, sizeof(smbuff), "%d %b %Y %H-%M %z", brokent);
-offset-size-arithmetic	sigtool/sigtool.c	135	        dst = (char *)malloc(len + 1);
-offset-size-arithmetic	sigtool/sigtool.c	1357	        builder[sizeof(builder) - 1] = '\0';
-offset-size-arithmetic	sigtool/sigtool.c	138	        strncpy(dst, str, len - 4);
-offset-size-arithmetic	sigtool/sigtool.c	139	        dst[MIN(dstlen - 1, len - 4)] = 0;
-offset-size-arithmetic	sigtool/sigtool.c	1459	        mprintf(LOGG_INFO, "The tar.gz MD5 starts with 00, which will fail to verify in ClamAV 1.1 -> 1.4: %s\n", pt);
-offset-size-arithmetic	sigtool/sigtool.c	1492	    while (strlen(header) < sizeof(header) - 1)
-offset-size-arithmetic	sigtool/sigtool.c	1559	    olddb[sizeof(olddb) - 1] = '\0';
-offset-size-arithmetic	sigtool/sigtool.c	1575	    snprintf(patch, sizeof(patch), "%s-%u.script", dbname, version);
-offset-size-arithmetic	sigtool/sigtool.c	1624	        snprintf(name, sizeof(name), "%s" PATHSEP "%s.cvd", localdbdir ? localdbdir : dbdir, optget(opts, "unpack-current")->strarg);
-offset-size-arithmetic	sigtool/sigtool.c	1626	            snprintf(name, sizeof(name), "%s" PATHSEP "%s.cld", localdbdir ? localdbdir : dbdir, optget(opts, "unpack-current")->strarg);
-offset-size-arithmetic	sigtool/sigtool.c	1637	        name[sizeof(name) - 1] = '\0';
-offset-size-arithmetic	sigtool/sigtool.c	1731	static int listdb(const struct optstruct *opts, const char *filename, const regex_t *regex);
-offset-size-arithmetic	sigtool/sigtool.c	1770	                dbfile = (char *)malloc(strlen(dent->d_name) + strlen(dirname) + 2);
-offset-size-arithmetic	sigtool/sigtool.c	1793	static int listdb(const struct optstruct *opts, const char *filename, const regex_t *regex)
-offset-size-arithmetic	sigtool/sigtool.c	1796	    char *buffer, *pt, *start, *dir;
-offset-size-arithmetic	sigtool/sigtool.c	1849	    if (!(dbname = strrchr(filename, *pathsep))) {
-offset-size-arithmetic	sigtool/sigtool.c	1857	    if (cli_strbcasestr(filename, ".db")) { /* old style database */
-offset-size-arithmetic	sigtool/sigtool.c	1904	    } else if (cli_strbcasestr(filename, ".hdb") || cli_strbcasestr(filename, ".hdu") || cli_strbcasestr(filename, ".mdb") || cli_strbcasestr(filename, ".mdu") || cli_strbcasestr(filename, ".hsb") || cli_strbcasestr(filename, ".hsu") || cli_strbcasestr(filename, ".msb") || cli_strbcasestr(filename, ".msu") || cli_strbcasestr(filename, ".imp")) { /* hash database */
-offset-size-arithmetic	sigtool/sigtool.c	2090	static void scanfile(const char *filename, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
-offset-size-arithmetic	sigtool/sigtool.c	2112	    if ((fd = safe_open(filename, O_RDONLY | O_BINARY)) == -1) {
-offset-size-arithmetic	sigtool/sigtool.c	2129	static int vba_callback(const unsigned char *const metaString, const size_t metaStringLen, void *context)
-offset-size-arithmetic	sigtool/sigtool.c	2197	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxfilesize\n");
-offset-size-arithmetic	sigtool/sigtool.c	2199	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxscansize\n");
-offset-size-arithmetic	sigtool/sigtool.c	2217	    filename = optget(opts, "vba")->strarg;
-offset-size-arithmetic	sigtool/sigtool.c	2219	        filename = optget(opts, "vba-hex")->strarg;
-offset-size-arithmetic	sigtool/sigtool.c	222	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
-offset-size-arithmetic	sigtool/sigtool.c	2265	    if (!fgets(buff, sizeof(buff), fh) || strncmp(buff, "ClamAV-VDB", 10)) {
-offset-size-arithmetic	sigtool/sigtool.c	231	    ctx.recursion_stack[ctx.recursion_level].size = new_map->len;
-offset-size-arithmetic	sigtool/sigtool.c	2355	static int maxlinelen(const char *file)
-offset-size-arithmetic	sigtool/sigtool.c	243	    /* Send to PE-specific hasher */
-offset-size-arithmetic	sigtool/sigtool.c	2582	            snprintf(spath, sizeof(spath), "%s" PATHSEP "%s", src, dent->d_name);
-offset-size-arithmetic	sigtool/sigtool.c	2583	            snprintf(dpath, sizeof(dpath), "%s" PATHSEP "%s", dest, dent->d_name);
-offset-size-arithmetic	sigtool/sigtool.c	2774	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
-offset-size-arithmetic	sigtool/sigtool.c	2783	    ctx.recursion_stack[ctx.recursion_level].size = new_map->len;
-offset-size-arithmetic	sigtool/sigtool.c	2796	        /* TODO: check offsets automatically */
-offset-size-arithmetic	sigtool/sigtool.c	2797	        mprintf(LOGG_INFO, "MATCH: ** YES%s ** (%u %s:", offset ? "/CHECK OFFSET" : "", matches, matches > 1 ? "matches at offsets" : "match at offset");
-offset-size-arithmetic	sigtool/sigtool.c	2833	    unsigned int i, p = 0, wildcard = 0, len = strlen(hex) / 2;
-offset-size-arithmetic	sigtool/sigtool.c	2843	    decoded = calloc(len + 1 + wildcard * 32, sizeof(char));
-offset-size-arithmetic	sigtool/sigtool.c	2883	inline static char *get_paren_end(char *hexstr)
-offset-size-arithmetic	sigtool/sigtool.c	2904	    char *pt, *start, *hexcpy, *decoded, *h, *e, *c, op, lop;
-offset-size-arithmetic	sigtool/sigtool.c	2922	        buff = calloc(strlen(hex) + 512, sizeof(char));
-offset-size-arithmetic	sigtool/sigtool.c	2951	            len += hlen;
-offset-size-arithmetic	sigtool/sigtool.c	2961	            *start++ = 0;
-offset-size-arithmetic	sigtool/sigtool.c	2972	                        len += sprintf(buff + len, "{NOT_BOUNDARY_RIGHT}");
-offset-size-arithmetic	sigtool/sigtool.c	2974	                        len += sprintf(buff + len, "{BOUNDARY_RIGHT}");
-offset-size-arithmetic	sigtool/sigtool.c	2978	                        len += sprintf(buff + len, "{NOT_BOUNDARY_LEFT}");
-offset-size-arithmetic	sigtool/sigtool.c	2980	                        len += sprintf(buff + len, "{BOUNDARY_LEFT}");
-offset-size-arithmetic	sigtool/sigtool.c	2986	                        len += sprintf(buff + len, "{NOT_LINE_MARKER_RIGHT}");
-offset-size-arithmetic	sigtool/sigtool.c	2988	                        len += sprintf(buff + len, "{LINE_MARKER_RIGHT}");
-offset-size-arithmetic	sigtool/sigtool.c	2992	                        len += sprintf(buff + len, "{NOT_LINE_MARKER_LEFT}");
-offset-size-arithmetic	sigtool/sigtool.c	2994	                        len += sprintf(buff + len, "{LINE_MARKER_LEFT}");
-offset-size-arithmetic	sigtool/sigtool.c	3000	                        len += sprintf(buff + len, "{NOT_WORD_MARKER_RIGHT}");
-offset-size-arithmetic	sigtool/sigtool.c	3002	                        len += sprintf(buff + len, "{WORD_MARKER_RIGHT}");
-offset-size-arithmetic	sigtool/sigtool.c	3006	                        len += sprintf(buff + len, "{NOT_WORD_MARKER_LEFT}");
-offset-size-arithmetic	sigtool/sigtool.c	3008	                        len += sprintf(buff + len, "{WORD_MARKER_LEFT}");
-offset-size-arithmetic	sigtool/sigtool.c	3021	                    len += sprintf(buff + len, "{EXCLUDING_STRING_ALTERNATIVE:");
-offset-size-arithmetic	sigtool/sigtool.c	3023	                    len += sprintf(buff + len, "{STRING_ALTERNATIVE:");
-offset-size-arithmetic	sigtool/sigtool.c	304	            if (CLAMSTAT(opts->filename[i], &sb) == -1) {
-offset-size-arithmetic	sigtool/sigtool.c	3047	                    memcpy(&buff[len], c, strlen(h) / 2);
-offset-size-arithmetic	sigtool/sigtool.c	3048	                    len += strlen(h) / 2;
-offset-size-arithmetic	sigtool/sigtool.c	3063	                                len += sprintf(buff + len, "{EXCLUDING_STRING_ALTERNATIVE:");
-offset-size-arithmetic	sigtool/sigtool.c	3065	                                len += sprintf(buff + len, "{STRING_ALTERNATIVE:");
-offset-size-arithmetic	sigtool/sigtool.c	3070	                            buff[len++] = '}';
-offset-size-arithmetic	sigtool/sigtool.c	3074	                            buff[len++] = '|';
-offset-size-arithmetic	sigtool/sigtool.c	3088	                memcpy(&buff[len], c, strlen(h) / 2);
-offset-size-arithmetic	sigtool/sigtool.c	3089	                len += strlen(h) / 2;
-offset-size-arithmetic	sigtool/sigtool.c	3092	                buff[len++] = '}';
-offset-size-arithmetic	sigtool/sigtool.c	311	                        mprintf(LOGG_INFO, "%s:%u:%s\n", hash, (unsigned int)sb.st_size, basename(opts->filename[i]));
-offset-size-arithmetic	sigtool/sigtool.c	3110	            len += hlen;
-offset-size-arithmetic	sigtool/sigtool.c	3122	    char *pt, *hexcpy, *start, *n, *decoded, *wild;
-offset-size-arithmetic	sigtool/sigtool.c	3130	        /* ^offset:trigger-logic/regex/options$ */
-offset-size-arithmetic	sigtool/sigtool.c	3131	        char *trigger, *regex, *regex_end, *cflags;
-offset-size-arithmetic	sigtool/sigtool.c	3132	        size_t tlen = wild - hexsig, rlen = 0, clen;
-offset-size-arithmetic	sigtool/sigtool.c	3140	        /* locate end of regex for options start, locate options length */
-offset-size-arithmetic	sigtool/sigtool.c	3141	        if ((regex_end = strchr(wild + 1, '/')) == NULL) {
-offset-size-arithmetic	sigtool/sigtool.c	3147	        for (i = tlen + 1; i < hexlen; i++) {
-offset-size-arithmetic	sigtool/sigtool.c	3149	                rlen = i - tlen - 1;
-offset-size-arithmetic	sigtool/sigtool.c	3158	        clen = hexlen - tlen - rlen - 2; /* 2 from regex boundaries '/' */
-offset-size-arithmetic	sigtool/sigtool.c	3161	        trigger = calloc(tlen + 1, sizeof(char));
-offset-size-arithmetic	sigtool/sigtool.c	3170	        regex = calloc(rlen + 1, sizeof(char));
-offset-size-arithmetic	sigtool/sigtool.c	3176	        strncpy(regex, hexsig + tlen + 1, rlen);
-offset-size-arithmetic	sigtool/sigtool.c	3181	            cflags = calloc(clen + 1, sizeof(char));
-offset-size-arithmetic	sigtool/sigtool.c	3188	            strncpy(cflags, hexsig + tlen + rlen + 2, clen);
-offset-size-arithmetic	sigtool/sigtool.c	3222	                        pt       = start + j;
-offset-size-arithmetic	sigtool/sigtool.c	3225	                    if (start[j] == '*') {
-offset-size-arithmetic	sigtool/sigtool.c	3227	                        pt       = start + j;
-offset-size-arithmetic	sigtool/sigtool.c	3272	            *start++ = 0;
-offset-size-arithmetic	sigtool/sigtool.c	352	    if ((target_fd = open(filename, O_RDONLY)) == -1) {
-offset-size-arithmetic	sigtool/sigtool.c	3551	        if (strlen(tokens[0]) && strstr(tokens[0], ".{") && tokens[0][strlen(tokens[0]) - 1] == '}')
-offset-size-arithmetic	sigtool/sigtool.c	3615	            if (end == tokens[0] + 1 && (ftmsigtype == 0 || ftmsigtype == 1 || ftmsigtype == 4))
-offset-size-arithmetic	sigtool/sigtool.c	3791	            snprintf(path, sizeof(path), "%s" PATHSEP "%s", old, dent->d_name);
-offset-size-arithmetic	sigtool/sigtool.c	3816	            snprintf(path, sizeof(path), "%s" PATHSEP "%s", new, dent->d_name);
-offset-size-arithmetic	sigtool/sigtool.c	3886	    snprintf(name, sizeof(name), "%s-%u.script", getdbname(opts->filename[0], dbname, sizeof(dbname)), newver);
-offset-size-arithmetic	sigtool/sigtool.c	3925	    filename = optget(opts, "print-certs")->strarg;
-offset-size-arithmetic	sigtool/sigtool.c	3979	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
-offset-size-arithmetic	sigtool/sigtool.c	3988	    ctx.recursion_stack[ctx.recursion_level].size = new_map->len;
-offset-size-arithmetic	sigtool/sigtool.c	4281	            // build() returns CL_ELAST_ERROR the hash starts with 00. This will fail to verify with ClamAV 1.1 -> 1.4.
-offset-size-arithmetic	sigtool/sigtool.c	4319	            if (CLAMSTAT(opts->filename[0], &sb) == -1) {
-offset-size-arithmetic	sigtool/sigtool.c	487	    ctx->recursion_stack_size = ctx->engine->max_recursion_level;
-offset-size-arithmetic	sigtool/sigtool.c	488	    ctx->recursion_stack      = calloc(sizeof(cli_scan_layer_t), ctx->recursion_stack_size);
-offset-size-arithmetic	sigtool/sigtool.c	497	    ctx->recursion_stack[ctx->recursion_level].size = new_map->len;
-offset-size-arithmetic	sigtool/sigtool.c	632	        mprintf(LOGG_ERROR, "asciinorm: File size of %zu too large\n", map->len);
-offset-size-arithmetic	sigtool/sigtool.c	651	    while (map_off != map->len) {
-offset-size-arithmetic	sigtool/sigtool.c	654	        map_off += written;
-offset-size-arithmetic	sigtool/sigtool.c	656	        if (write(ofd, norm_buff, state.out_pos) == -1) {
-offset-size-arithmetic	sigtool/sigtool.c	686	    newname = malloc(strlen(fname) + 7);
-offset-size-arithmetic	sigtool/sigtool.c	704	            if (write(fd2, decoded, strlen(decoded)) == -1) {
-offset-size-arithmetic	sigtool/sigtool.c	746	            *size += bytes;
-offset-size-arithmetic	sigtool/sigtool.c	929	        sign_file_name = calloc(1, strlen(dir) + 1 + strlen(cvd_name) + 1 + (3 * sizeof(uint32_t) + 2) + 1 + strlen(cvd_extension) + strlen(".sign") + 1);
-offset-size-arithmetic	sigtool/sigtool.c	938	        sign_file_name = malloc(strlen(target) + strlen(".sign") + 1);
+offset-size-arithmetic	sigtool/sigtool.c	1071	        certs = realloc(certs, certs_count * sizeof(char *));
+offset-size-arithmetic	sigtool/sigtool.c	1082	    if (optget(opts, "append")->enabled) {
+offset-size-arithmetic	sigtool/sigtool.c	1270	                        dblist2 = (char **)realloc(dblist2, (dblist2cnt + 1) * sizeof(char *));
+offset-size-arithmetic	sigtool/sigtool.c	1289	                qsort(dblist2, dblist2cnt, sizeof(char *), qcompare);
+offset-size-arithmetic	sigtool/sigtool.c	1297	                dblist2 = (char **)realloc(dblist2, (dblist2cnt + 1) * sizeof(char *));
+offset-size-arithmetic	sigtool/sigtool.c	130	        len -= 4;
+offset-size-arithmetic	sigtool/sigtool.c	133	        strncpy(dst, str, MIN(dstlen - 1, len));
+offset-size-arithmetic	sigtool/sigtool.c	1336	        if (cli_strbcasestr(opts->filename[0], ".cvd") || cli_strbcasestr(opts->filename[0], ".cld") || cli_strbcasestr(opts->filename[0], ".cud")) {
+offset-size-arithmetic	sigtool/sigtool.c	1338	            olddb[sizeof(olddb) - 1] = '\0';
+offset-size-arithmetic	sigtool/sigtool.c	134	        dst[MIN(dstlen - 1, len)] = 0;
+offset-size-arithmetic	sigtool/sigtool.c	136	        dst = (char *)malloc(len + 1);
+offset-size-arithmetic	sigtool/sigtool.c	1385	    strftime(smbuff, sizeof(smbuff), "%d %b %Y %H-%M %z", brokent);
+offset-size-arithmetic	sigtool/sigtool.c	139	        strncpy(dst, str, len - 4);
+offset-size-arithmetic	sigtool/sigtool.c	140	        dst[MIN(dstlen - 1, len - 4)] = 0;
+offset-size-arithmetic	sigtool/sigtool.c	1405	        builder[sizeof(builder) - 1] = '\0';
+offset-size-arithmetic	sigtool/sigtool.c	1507	        mprintf(LOGG_INFO, "The tar.gz MD5 starts with 00, which will fail to verify in ClamAV 1.1 -> 1.4: %s\n", pt);
+offset-size-arithmetic	sigtool/sigtool.c	1540	    while (strlen(header) < sizeof(header) - 1)
+offset-size-arithmetic	sigtool/sigtool.c	1607	    olddb[sizeof(olddb) - 1] = '\0';
+offset-size-arithmetic	sigtool/sigtool.c	1623	    snprintf(patch, sizeof(patch), "%s-%u.script", dbname, version);
+offset-size-arithmetic	sigtool/sigtool.c	1672	        snprintf(name, sizeof(name), "%s" PATHSEP "%s.cvd", localdbdir ? localdbdir : dbdir, optget(opts, "unpack-current")->strarg);
+offset-size-arithmetic	sigtool/sigtool.c	1674	            snprintf(name, sizeof(name), "%s" PATHSEP "%s.cld", localdbdir ? localdbdir : dbdir, optget(opts, "unpack-current")->strarg);
+offset-size-arithmetic	sigtool/sigtool.c	1685	        name[sizeof(name) - 1] = '\0';
+offset-size-arithmetic	sigtool/sigtool.c	1779	static int listdb(const struct optstruct *opts, const char *filename, const regex_t *regex);
+offset-size-arithmetic	sigtool/sigtool.c	1818	                dbfile = (char *)malloc(strlen(dent->d_name) + strlen(dirname) + 2);
+offset-size-arithmetic	sigtool/sigtool.c	1841	static int listdb(const struct optstruct *opts, const char *filename, const regex_t *regex)
+offset-size-arithmetic	sigtool/sigtool.c	1844	    char *buffer, *pt, *start, *dir;
+offset-size-arithmetic	sigtool/sigtool.c	1897	    if (!(dbname = strrchr(filename, *pathsep))) {
+offset-size-arithmetic	sigtool/sigtool.c	1905	    if (cli_strbcasestr(filename, ".db")) { /* old style database */
+offset-size-arithmetic	sigtool/sigtool.c	1952	    } else if (cli_strbcasestr(filename, ".hdb") || cli_strbcasestr(filename, ".hdu") || cli_strbcasestr(filename, ".mdb") || cli_strbcasestr(filename, ".mdu") || cli_strbcasestr(filename, ".hsb") || cli_strbcasestr(filename, ".hsu") || cli_strbcasestr(filename, ".msb") || cli_strbcasestr(filename, ".msu") || cli_strbcasestr(filename, ".imp")) { /* hash database */
+offset-size-arithmetic	sigtool/sigtool.c	2138	static void scanfile(const char *filename, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
+offset-size-arithmetic	sigtool/sigtool.c	2160	    if ((fd = safe_open(filename, O_RDONLY | O_BINARY)) == -1) {
+offset-size-arithmetic	sigtool/sigtool.c	2177	static int vba_callback(const unsigned char *const metaString, const size_t metaStringLen, void *context)
+offset-size-arithmetic	sigtool/sigtool.c	223	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
+offset-size-arithmetic	sigtool/sigtool.c	2245	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxfilesize\n");
+offset-size-arithmetic	sigtool/sigtool.c	2247	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxscansize\n");
+offset-size-arithmetic	sigtool/sigtool.c	2265	    filename = optget(opts, "vba")->strarg;
+offset-size-arithmetic	sigtool/sigtool.c	2267	        filename = optget(opts, "vba-hex")->strarg;
+offset-size-arithmetic	sigtool/sigtool.c	2313	    if (!fgets(buff, sizeof(buff), fh) || strncmp(buff, "ClamAV-VDB", 10)) {
+offset-size-arithmetic	sigtool/sigtool.c	232	    ctx.recursion_stack[ctx.recursion_level].size = new_map->len;
+offset-size-arithmetic	sigtool/sigtool.c	2403	static int maxlinelen(const char *file)
+offset-size-arithmetic	sigtool/sigtool.c	244	    /* Send to PE-specific hasher */
+offset-size-arithmetic	sigtool/sigtool.c	2630	            snprintf(spath, sizeof(spath), "%s" PATHSEP "%s", src, dent->d_name);
+offset-size-arithmetic	sigtool/sigtool.c	2631	            snprintf(dpath, sizeof(dpath), "%s" PATHSEP "%s", dest, dent->d_name);
+offset-size-arithmetic	sigtool/sigtool.c	2822	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
+offset-size-arithmetic	sigtool/sigtool.c	2831	    ctx.recursion_stack[ctx.recursion_level].size = new_map->len;
+offset-size-arithmetic	sigtool/sigtool.c	2844	        /* TODO: check offsets automatically */
+offset-size-arithmetic	sigtool/sigtool.c	2845	        mprintf(LOGG_INFO, "MATCH: ** YES%s ** (%u %s:", offset ? "/CHECK OFFSET" : "", matches, matches > 1 ? "matches at offsets" : "match at offset");
+offset-size-arithmetic	sigtool/sigtool.c	2881	    unsigned int i, p = 0, wildcard = 0, len = strlen(hex) / 2;
+offset-size-arithmetic	sigtool/sigtool.c	2891	    decoded = calloc(len + 1 + wildcard * 32, sizeof(char));
+offset-size-arithmetic	sigtool/sigtool.c	2931	inline static char *get_paren_end(char *hexstr)
+offset-size-arithmetic	sigtool/sigtool.c	2952	    char *pt, *start, *hexcpy, *decoded, *h, *e, *c, op, lop;
+offset-size-arithmetic	sigtool/sigtool.c	2970	        buff = calloc(strlen(hex) + 512, sizeof(char));
+offset-size-arithmetic	sigtool/sigtool.c	2999	            len += hlen;
+offset-size-arithmetic	sigtool/sigtool.c	3009	            *start++ = 0;
+offset-size-arithmetic	sigtool/sigtool.c	3020	                        len += sprintf(buff + len, "{NOT_BOUNDARY_RIGHT}");
+offset-size-arithmetic	sigtool/sigtool.c	3022	                        len += sprintf(buff + len, "{BOUNDARY_RIGHT}");
+offset-size-arithmetic	sigtool/sigtool.c	3026	                        len += sprintf(buff + len, "{NOT_BOUNDARY_LEFT}");
+offset-size-arithmetic	sigtool/sigtool.c	3028	                        len += sprintf(buff + len, "{BOUNDARY_LEFT}");
+offset-size-arithmetic	sigtool/sigtool.c	3034	                        len += sprintf(buff + len, "{NOT_LINE_MARKER_RIGHT}");
+offset-size-arithmetic	sigtool/sigtool.c	3036	                        len += sprintf(buff + len, "{LINE_MARKER_RIGHT}");
+offset-size-arithmetic	sigtool/sigtool.c	3040	                        len += sprintf(buff + len, "{NOT_LINE_MARKER_LEFT}");
+offset-size-arithmetic	sigtool/sigtool.c	3042	                        len += sprintf(buff + len, "{LINE_MARKER_LEFT}");
+offset-size-arithmetic	sigtool/sigtool.c	3048	                        len += sprintf(buff + len, "{NOT_WORD_MARKER_RIGHT}");
+offset-size-arithmetic	sigtool/sigtool.c	305	            if (CLAMSTAT(opts->filename[i], &sb) == -1) {
+offset-size-arithmetic	sigtool/sigtool.c	3050	                        len += sprintf(buff + len, "{WORD_MARKER_RIGHT}");
+offset-size-arithmetic	sigtool/sigtool.c	3054	                        len += sprintf(buff + len, "{NOT_WORD_MARKER_LEFT}");
+offset-size-arithmetic	sigtool/sigtool.c	3056	                        len += sprintf(buff + len, "{WORD_MARKER_LEFT}");
+offset-size-arithmetic	sigtool/sigtool.c	3069	                    len += sprintf(buff + len, "{EXCLUDING_STRING_ALTERNATIVE:");
+offset-size-arithmetic	sigtool/sigtool.c	3071	                    len += sprintf(buff + len, "{STRING_ALTERNATIVE:");
+offset-size-arithmetic	sigtool/sigtool.c	3095	                    memcpy(&buff[len], c, strlen(h) / 2);
+offset-size-arithmetic	sigtool/sigtool.c	3096	                    len += strlen(h) / 2;
+offset-size-arithmetic	sigtool/sigtool.c	3111	                                len += sprintf(buff + len, "{EXCLUDING_STRING_ALTERNATIVE:");
+offset-size-arithmetic	sigtool/sigtool.c	3113	                                len += sprintf(buff + len, "{STRING_ALTERNATIVE:");
+offset-size-arithmetic	sigtool/sigtool.c	3118	                            buff[len++] = '}';
+offset-size-arithmetic	sigtool/sigtool.c	312	                        mprintf(LOGG_INFO, "%s:%u:%s\n", hash, (unsigned int)sb.st_size, basename(opts->filename[i]));
+offset-size-arithmetic	sigtool/sigtool.c	3122	                            buff[len++] = '|';
+offset-size-arithmetic	sigtool/sigtool.c	3136	                memcpy(&buff[len], c, strlen(h) / 2);
+offset-size-arithmetic	sigtool/sigtool.c	3137	                len += strlen(h) / 2;
+offset-size-arithmetic	sigtool/sigtool.c	3140	                buff[len++] = '}';
+offset-size-arithmetic	sigtool/sigtool.c	3158	            len += hlen;
+offset-size-arithmetic	sigtool/sigtool.c	3170	    char *pt, *hexcpy, *start, *n, *decoded, *wild;
+offset-size-arithmetic	sigtool/sigtool.c	3178	        /* ^offset:trigger-logic/regex/options$ */
+offset-size-arithmetic	sigtool/sigtool.c	3179	        char *trigger, *regex, *regex_end, *cflags;
+offset-size-arithmetic	sigtool/sigtool.c	3180	        size_t tlen = wild - hexsig, rlen = 0, clen;
+offset-size-arithmetic	sigtool/sigtool.c	3188	        /* locate end of regex for options start, locate options length */
+offset-size-arithmetic	sigtool/sigtool.c	3189	        if ((regex_end = strchr(wild + 1, '/')) == NULL) {
+offset-size-arithmetic	sigtool/sigtool.c	3195	        for (i = tlen + 1; i < hexlen; i++) {
+offset-size-arithmetic	sigtool/sigtool.c	3197	                rlen = i - tlen - 1;
+offset-size-arithmetic	sigtool/sigtool.c	3206	        clen = hexlen - tlen - rlen - 2; /* 2 from regex boundaries '/' */
+offset-size-arithmetic	sigtool/sigtool.c	3209	        trigger = calloc(tlen + 1, sizeof(char));
+offset-size-arithmetic	sigtool/sigtool.c	3218	        regex = calloc(rlen + 1, sizeof(char));
+offset-size-arithmetic	sigtool/sigtool.c	3224	        strncpy(regex, hexsig + tlen + 1, rlen);
+offset-size-arithmetic	sigtool/sigtool.c	3229	            cflags = calloc(clen + 1, sizeof(char));
+offset-size-arithmetic	sigtool/sigtool.c	3236	            strncpy(cflags, hexsig + tlen + rlen + 2, clen);
+offset-size-arithmetic	sigtool/sigtool.c	3270	                        pt       = start + j;
+offset-size-arithmetic	sigtool/sigtool.c	3273	                    if (start[j] == '*') {
+offset-size-arithmetic	sigtool/sigtool.c	3275	                        pt       = start + j;
+offset-size-arithmetic	sigtool/sigtool.c	3320	            *start++ = 0;
+offset-size-arithmetic	sigtool/sigtool.c	353	    if ((target_fd = open(filename, O_RDONLY)) == -1) {
+offset-size-arithmetic	sigtool/sigtool.c	3599	        if (strlen(tokens[0]) && strstr(tokens[0], ".{") && tokens[0][strlen(tokens[0]) - 1] == '}')
+offset-size-arithmetic	sigtool/sigtool.c	3663	            if (end == tokens[0] + 1 && (ftmsigtype == 0 || ftmsigtype == 1 || ftmsigtype == 4))
+offset-size-arithmetic	sigtool/sigtool.c	3839	            snprintf(path, sizeof(path), "%s" PATHSEP "%s", old, dent->d_name);
+offset-size-arithmetic	sigtool/sigtool.c	3864	            snprintf(path, sizeof(path), "%s" PATHSEP "%s", new, dent->d_name);
+offset-size-arithmetic	sigtool/sigtool.c	3934	    snprintf(name, sizeof(name), "%s-%u.script", getdbname(opts->filename[0], dbname, sizeof(dbname)), newver);
+offset-size-arithmetic	sigtool/sigtool.c	3973	    filename = optget(opts, "print-certs")->strarg;
+offset-size-arithmetic	sigtool/sigtool.c	4027	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
+offset-size-arithmetic	sigtool/sigtool.c	4036	    ctx.recursion_stack[ctx.recursion_level].size = new_map->len;
+offset-size-arithmetic	sigtool/sigtool.c	4329	            // build() returns CL_ELAST_ERROR the hash starts with 00. This will fail to verify with ClamAV 1.1 -> 1.4.
+offset-size-arithmetic	sigtool/sigtool.c	4367	            if (CLAMSTAT(opts->filename[0], &sb) == -1) {
+offset-size-arithmetic	sigtool/sigtool.c	488	    ctx->recursion_stack_size = ctx->engine->max_recursion_level;
+offset-size-arithmetic	sigtool/sigtool.c	489	    ctx->recursion_stack      = calloc(sizeof(cli_scan_layer_t), ctx->recursion_stack_size);
+offset-size-arithmetic	sigtool/sigtool.c	498	    ctx->recursion_stack[ctx->recursion_level].size = new_map->len;
+offset-size-arithmetic	sigtool/sigtool.c	633	        mprintf(LOGG_ERROR, "asciinorm: File size of %zu too large\n", map->len);
+offset-size-arithmetic	sigtool/sigtool.c	652	    while (map_off != map->len) {
+offset-size-arithmetic	sigtool/sigtool.c	655	        map_off += written;
+offset-size-arithmetic	sigtool/sigtool.c	657	        if (write(ofd, norm_buff, state.out_pos) == -1) {
+offset-size-arithmetic	sigtool/sigtool.c	687	    newname = malloc(strlen(fname) + 7);
+offset-size-arithmetic	sigtool/sigtool.c	705	            if (write(fd2, decoded, strlen(decoded)) == -1) {
+offset-size-arithmetic	sigtool/sigtool.c	753	            if (bytes > (size_t)UINT_MAX - *size) {
+offset-size-arithmetic	sigtool/sigtool.c	759	            *size += (unsigned int)bytes;
+offset-size-arithmetic	sigtool/sigtool.c	977	        sign_file_name = calloc(1, strlen(dir) + 1 + strlen(cvd_name) + 1 + (3 * sizeof(uint32_t) + 2) + 1 + strlen(cvd_extension) + strlen(".sign") + 1);
+offset-size-arithmetic	sigtool/sigtool.c	986	        sign_file_name = malloc(strlen(target) + strlen(".sign") + 1);
 offset-size-arithmetic	sigtool/vba.c	69	    newname = (char *)malloc(size * 2);
 offset-size-arithmetic	sigtool/vba.c	790	static void print_hex_buff(unsigned char *start, unsigned char *end, int hex_output)
 offset-size-arithmetic	sigtool/vba.c	798	        start++;
@@ -41736,8 +41741,8 @@ large-file-option	libclamav/scanners.c	1601	            cli_mark_scan_incomplete
 large-file-option	libclamav/scanners.c	7470	     * MaxScanSize/MaxFiles accounting here. */
 large-file-option	libclamav/spin.c	174	                cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFileSize", CL_EMAXSIZE);
 large-file-option	libclamav_rust/src/util.rs	124	    b"Heuristics.Limits.Exceeded.MaxScanSize\0";
-large-file-option	sigtool/sigtool.c	2196	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL))
-large-file-option	sigtool/sigtool.c	2198	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL))
+large-file-option	sigtool/sigtool.c	2244	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL))
+large-file-option	sigtool/sigtool.c	2246	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL))
 large-file-option	unit_tests/check_bytecode.c	1052	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
 large-file-option	unit_tests/check_bytecode.c	1053	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, CLI_MAX_LOGICAL_SCAN_SIZE), CL_SUCCESS);
 large-file-option	unit_tests/check_clamav.c	10560	    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_SCANSIZE, 1), CL_SUCCESS);

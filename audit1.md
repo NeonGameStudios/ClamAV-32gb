@@ -22305,6 +22305,23 @@ signed CVD/CLD/CUD and standalone signature corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.
 
+## Sigtool CVD hash status — 2026-09-02
+
+The sigtool CVD metadata builder previously ignored file-read, hash-update,
+and hash-finalization failures while producing per-member SHA-256 values and
+the metadata digest used for signing. It could therefore emit release metadata
+from a partial digest, and its unsigned size field could wrap above the CVD
+representation limit. The file helper now checks update, ferror(), and
+finalization status, bounds the reported size, and rejects close failures
+before returning a digest. The metadata self-digest path applies the same
+update/read/finalization checks before requesting a signature.
+
+Source guards and the capability manifest record the utility boundary.
+Current-source production-GCC compilation and linked sigtool execution,
+complete CVD/signature corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## PE import hash-update status — 2026-09-02
 
 The PE import-name hash pass previously discarded every `cl_update_hash()`

@@ -38,6 +38,7 @@
 #include <dirent.h>
 #include <ctype.h>
 #include <libgen.h>
+#include <limits.h>
 
 #ifndef _WIN32
 #include <sys/resource.h>
@@ -724,7 +725,8 @@ static int utf16decode(const struct optstruct *opts)
 static char *sha2_256_file(const char *file, unsigned int *size)
 {
     FILE *fh;
-    unsigned int i, bytes;
+    unsigned int i;
+    size_t bytes;
     unsigned char digest[32], buffer[FILEBUFF];
     char *sha;
     void *ctx;
@@ -741,11 +743,35 @@ static char *sha2_256_file(const char *file, unsigned int *size)
     if (size)
         *size = 0;
     while ((bytes = fread(buffer, 1, sizeof(buffer), fh))) {
-        cl_update_hash(ctx, buffer, bytes);
-        if (size)
-            *size += bytes;
+        if (cl_update_hash(ctx, buffer, bytes) != 0) {
+            mprintf(LOGG_ERROR, "sha2_256_file: Can't update SHA2-256 for %s\n", file);
+            cl_hash_destroy(ctx);
+            fclose(fh);
+            return NULL;
+        }
+        if (size) {
+            if (bytes > (size_t)UINT_MAX - *size) {
+                mprintf(LOGG_ERROR, "sha2_256_file: File size exceeds the CVD metadata limit for %s\n", file);
+                cl_hash_destroy(ctx);
+                fclose(fh);
+                return NULL;
+            }
+            *size += (unsigned int)bytes;
+        }
     }
-    cl_finish_hash(ctx, digest);
+    if (ferror(fh)) {
+        mprintf(LOGG_ERROR, "sha2_256_file: Can't read %s\n", file);
+        cl_hash_destroy(ctx);
+        fclose(fh);
+        return NULL;
+    }
+    if (cl_finish_hash(ctx, digest) != 0) {
+        mprintf(LOGG_ERROR, "sha2_256_file: Can't finalize SHA2-256 for %s\n", file);
+        ctx = NULL;
+        fclose(fh);
+        return NULL;
+    }
+    ctx = NULL;
     sha = (char *)malloc(65);
     if (!sha) {
         fclose(fh);
@@ -754,7 +780,11 @@ static char *sha2_256_file(const char *file, unsigned int *size)
     for (i = 0; i < 32; i++)
         sprintf(sha + i * 2, "%02x", digest[i]);
 
-    fclose(fh);
+    if (fclose(fh) != 0) {
+        mprintf(LOGG_ERROR, "sha2_256_file: Can't close %s\n", file);
+        free(sha);
+        return NULL;
+    }
     return sha;
 }
 
@@ -828,9 +858,27 @@ static int writeinfo(const char *dbname, const char *builder, const char *header
             return -1;
         }
 
-        while ((bytes = fread(buffer, 1, sizeof(buffer), fh)))
-            cl_update_hash(ctx, buffer, bytes);
-        cl_finish_hash(ctx, digest);
+        while ((bytes = fread(buffer, 1, sizeof(buffer), fh))) {
+            if (cl_update_hash(ctx, buffer, bytes) != 0) {
+                mprintf(LOGG_ERROR, "writeinfo: Can't update metadata SHA2-256\n");
+                cl_hash_destroy(ctx);
+                fclose(fh);
+                return -1;
+            }
+        }
+        if (ferror(fh)) {
+            mprintf(LOGG_ERROR, "writeinfo: Can't read metadata for SHA2-256\n");
+            cl_hash_destroy(ctx);
+            fclose(fh);
+            return -1;
+        }
+        if (cl_finish_hash(ctx, digest) != 0) {
+            mprintf(LOGG_ERROR, "writeinfo: Can't finalize metadata SHA2-256\n");
+            ctx = NULL;
+            fclose(fh);
+            return -1;
+        }
+        ctx = NULL;
         if (!(pt = cli_getdsig(optget(opts, "server")->strarg, builder, digest, 32, 3))) {
             mprintf(LOGG_ERROR, "writeinfo: Can't get digital signature from remote server\n");
             fclose(fh);
