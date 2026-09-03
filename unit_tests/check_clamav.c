@@ -15594,6 +15594,75 @@ START_TEST(test_zip_masked_sfx_central_extent_and_read_failure)
 }
 END_TEST
 
+START_TEST(test_zip_masked_sfx_confirmed_malformed_zip64_is_fail_visible)
+{
+    static const uint8_t input[] = "masked-sfx-zip64";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+    size_t central_offset;
+    size_t eocd_offset;
+    size_t locator_offset;
+    size_t zip_size;
+    bool central_directory;
+    cl_error_t ret;
+
+    archive = zip_stream_central_masked_archive(input, sizeof(input) - 1U,
+                                                sizeof(input) - 1U,
+                                                ZIP_TEST_METHOD_STORED,
+                                                (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                                &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    ck_assert_uint_ge(archive_length, 22U + 20U);
+    eocd_offset   = archive_length - 22U;
+    central_offset = cli_readint32(archive + eocd_offset + 16U);
+    locator_offset = eocd_offset - 20U;
+
+    /* Force ZIP64 interpretation, then provide a locator whose referenced
+     * in-range record is actually the ordinary central header.  The EOCD is
+     * therefore a confirmed catalogue attempt, but its ZIP64 metadata is
+     * malformed; SFX admission must not fall back to the local-only path. */
+    zip_stream_write_u16(archive + eocd_offset + 10U, UINT16_MAX);
+    zip_stream_write_u32(archive + eocd_offset + 12U, UINT32_MAX);
+    zip_stream_write_u32(archive + eocd_offset + 16U, UINT32_MAX);
+    zip_stream_write_u32(archive + locator_offset, 0x07064b50U);
+    zip_stream_write_u64(archive + locator_offset + 8U, (uint64_t)central_offset);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_ZIPSFX;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+    zip_size                 = 0;
+    central_directory        = false;
+
+    ret = cli_unzip_single_header_check(&ctx, 0, &zip_size, &central_directory);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_uint_eq(zip_size, 0U);
+    ck_assert(!central_directory);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ZIP SFX end-of-central-directory structure is malformed");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(archive);
+}
+END_TEST
+
 struct zip_sfx_layer_state {
     bool saw_central_directory_layer;
 };
@@ -48124,7 +48193,16 @@ END_TEST
 START_TEST(test_pe_upx_relative_window_offset_rejects_invalid_window)
 {
     size_t offset = SIZE_MAX;
+    uint32_t aligned = 0;
 
+    ck_assert_int_eq(cli_upx_align_up_u32(0x1000U, 0x1000U, &aligned), 0);
+    ck_assert_uint_eq(aligned, 0x1000U);
+    ck_assert_int_eq(cli_upx_align_up_u32(0x1001U, 0x1000U, &aligned), 0);
+    ck_assert_uint_eq(aligned, 0x2000U);
+    ck_assert_int_eq(cli_upx_align_up_u32(UINT32_MAX, 0x1000U, &aligned), -1);
+    ck_assert_int_eq(cli_upx_align_up_u32(1U, 0, &aligned), 0);
+    ck_assert_uint_eq(aligned, 1U);
+    ck_assert_int_eq(cli_upx_align_up_u32(1U, 1U, NULL), -1);
     ck_assert_int_eq(cli_upx_relative_window_offset(100, 99, 32, 0, 1, &offset), -1);
     ck_assert_int_eq(cli_upx_relative_window_offset(100, 101, 32, -2, 1, &offset), -1);
     ck_assert_int_eq(cli_upx_relative_window_offset(100, 120, 32, -2, 2, &offset), 0);
@@ -62749,6 +62827,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_candidate_is_not_confirmed);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_central_extent_and_read_failure);
+    tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_confirmed_malformed_zip64_is_fail_visible);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_reaches_exact_child_matcher);
     suite_add_tcase(s, tc_zip_map);
     tcase_add_test(tc_zip_map, test_zip_missing_map_is_fail_visible);

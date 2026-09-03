@@ -414,6 +414,33 @@ linked execution, complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 EGG/parser-release qualification remain required.
 
+## ZIP-SFX confirmed ZIP64 metadata — 2026-09-03
+
+The masked ZIP-SFX admission path already distinguishes an unconfirmed
+local-only magic hit from an EOCD-confirmed archive. A confirmed malformed
+EOCD/ZIP64 locator must remain incomplete and non-cacheable; it must not be
+silently downgraded to the local-header-only path. The current-source suite
+now registers `test_zip_masked_sfx_confirmed_malformed_zip64_is_fail_visible`
+for an in-range locator whose referenced record is not a ZIP64 EOCD. Current
+source relink/execution of this regression, full ZIP/SFX corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
+## UPX reconstructed-output admission — 2026-09-03
+
+The legacy UPX rebuild path still had unchecked alignment arithmetic, pointer
+walks through the import table, source-copy extents, and the slack-backed
+destination capacity. A malformed reconstructed PE could therefore exercise
+out-of-range pointer formation or make a rebuild appear successful after an
+overflowed size calculation. The path now uses checked zero-based offsets for
+the import scan, checked 32-bit alignment, bounded section-table discovery,
+and source/destination copy admission. The direct alignment regression and
+source guards record the arithmetic contract. Current-source production-GCC
+compilation and linked malformed/high-coordinate UPX execution, complete
+PE/UPX corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Upack reconstructed-coordinate admission — 2026-09-03
 
 Upack previously formed reconstructed-buffer pointers directly from attacker-

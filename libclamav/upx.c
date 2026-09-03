@@ -60,7 +60,25 @@
 #include "lzma_iface.h"
 
 #define PEALIGN(o, a) (((a)) ? (((o) / (a)) * (a)) : (o))
-#define PESALIGN(o, a) (((a)) ? (((o) / (a) + ((o) % (a) != 0)) * (a)) : (o))
+
+int cli_upx_align_up_u32(uint32_t value, uint32_t alignment, uint32_t *aligned)
+{
+    uint32_t remainder;
+
+    if (aligned == NULL)
+        return -1;
+    if (alignment == 0) {
+        *aligned = value;
+        return 0;
+    }
+
+    remainder = value % alignment;
+    if (remainder && value > UINT32_MAX - (alignment - remainder))
+        return -1;
+
+    *aligned = value + (alignment - remainder) * (remainder != 0);
+    return 0;
+}
 
 int cli_upx_relative_window_offset(uint32_t section_rva, uint32_t target_rva,
                                    size_t available, int64_t adjustment,
@@ -150,19 +168,28 @@ static int upx_checktimelimit(struct cli_ctx_tag *ctx, uint32_t *ticks)
 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\
 "
 
-static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, unsigned int *sectcnt)
+static char *checkpe(char *dst, uint32_t dsize, size_t pehdr_offset,
+                     uint32_t *valign, unsigned int *sectcnt)
 {
+    char *pehdr;
     char *sections;
-    if (!CLI_ISCONTAINED(dst, dsize, pehdr, 0xf8)) return NULL;
+    size_t sections_offset;
+
+    if (dst == NULL || valign == NULL || sectcnt == NULL || pehdr_offset > dsize ||
+        dsize - pehdr_offset < 0xf8)
+        return NULL;
+
+    pehdr = dst + pehdr_offset;
 
     if (cli_readint32(pehdr) != 0x4550) return NULL;
 
     if (!(*valign = cli_readint32(pehdr + 0x38))) return NULL;
 
     sections = pehdr + 0xf8;
+    sections_offset = pehdr_offset + 0xf8;
     if (!(*sectcnt = (unsigned char)pehdr[6] + (unsigned char)pehdr[7] * 256)) return NULL;
 
-    if (!CLI_ISCONTAINED(dst, dsize, sections, *sectcnt * 0x28)) return NULL;
+    if (*sectcnt > (dsize - sections_offset) / 0x28) return NULL;
 
     return sections;
 }
@@ -171,17 +198,24 @@ static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, u
 
 static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend, struct cli_ctx_tag *ctx)
 {
-    char *imports, *sections = NULL, *pehdr = NULL, *newbuf;
+    char *sections = NULL, *pehdr = NULL, *newbuf;
     unsigned int sectcnt = 0, upd = 1;
     uint32_t realstuffsz = 0, valign = 0;
     uint32_t foffset = 0xd0 + 0xf8;
     uint32_t ticks = 0;
     uint32_t vsize, urva;
     uint32_t offset1, offset2, offset3;
-    size_t ep_offset, candidate_offset;
+    size_t ep_offset, candidate_offset, pehdr_offset = SIZE_MAX;
+    size_t output_capacity;
 
-    if ((dst == NULL) || (src == NULL))
-        return 0;
+    if ((dst == NULL) || (src == NULL) || (dsize == NULL) || (magic == NULL))
+        return -1;
+
+    if ((size_t)*dsize > SIZE_MAX - 8192U)
+        return -1;
+    if (dend > *dsize)
+        return -1;
+    output_capacity = (size_t)*dsize + 8192U;
 
     if (upx_checktimelimit(ctx, &ticks))
         return -1;
@@ -189,7 +223,7 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
     if (cli_upx_relative_window_offset(upx1, ep, ssize, 0, 0, &ep_offset) < 0)
         return -1;
 
-    while ((valign = magic[sectcnt++])) {
+    while (sectcnt < 4 && (valign = magic[sectcnt++])) {
         if (cli_upx_relative_window_offset(upx1, ep, ssize, (int64_t)valign - 2, 2,
                                            &candidate_offset) == 0 &&
             src[candidate_offset] == '\x8d' && /* lea edi, ...                  */
@@ -224,56 +258,82 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
             cli_dbgmsg("UPX: wrong realstuff size\n");
             /* fallback and eventually craft */
         } else {
-            imports = dst + realstuffsz;
-
-            pehdr = imports;
-            while (CLI_ISCONTAINED(dst, *dsize, pehdr, 8) && cli_readint32(pehdr)) {
+            pehdr_offset = realstuffsz;
+            while (CLI_ISCONTAINED_0_TO(*dsize, pehdr_offset, 8) &&
+                   cli_readint32(dst + pehdr_offset)) {
                 if (upx_checktimelimit(ctx, &ticks))
                     return -1;
-                pehdr += 8;
-                while (CLI_ISCONTAINED(dst, *dsize, pehdr, 2) && *pehdr) {
+                pehdr_offset += 8;
+                while (CLI_ISCONTAINED_0_TO(*dsize, pehdr_offset, 1) &&
+                       dst[pehdr_offset]) {
                     if (upx_checktimelimit(ctx, &ticks))
                         return -1;
-                    pehdr++;
-                    while (CLI_ISCONTAINED(dst, *dsize, pehdr, 2) && *pehdr) {
-                        if (upx_checktimelimit(ctx, &ticks))
-                            return -1;
-                        pehdr++;
-                    }
-                    pehdr++;
+                    pehdr_offset++;
                 }
-                pehdr++;
+                if (pehdr_offset >= *dsize) {
+                    pehdr_offset = SIZE_MAX;
+                    break;
+                }
+                pehdr_offset++;
+                while (CLI_ISCONTAINED_0_TO(*dsize, pehdr_offset, 1) &&
+                       dst[pehdr_offset]) {
+                    if (upx_checktimelimit(ctx, &ticks))
+                        return -1;
+                    pehdr_offset++;
+                }
+                if (pehdr_offset >= *dsize) {
+                    pehdr_offset = SIZE_MAX;
+                    break;
+                }
+                pehdr_offset++;
             }
 
-            pehdr += 4;
-            if (!(sections = checkpe(dst, *dsize, pehdr, &valign, &sectcnt))) pehdr = NULL;
+            if (pehdr_offset != SIZE_MAX &&
+                CLI_ISCONTAINED_0_TO(*dsize, pehdr_offset, 4)) {
+                pehdr_offset += 4;
+                sections = checkpe(dst, *dsize, pehdr_offset, &valign, &sectcnt);
+                if (sections != NULL)
+                    pehdr = dst + pehdr_offset;
+            }
         }
     }
 
     if (!pehdr && dend > 0xf8 + 0x28) {
         cli_dbgmsg("UPX: no luck - scanning for PE\n");
-        pehdr = &dst[dend - 0xf8 - 0x28];
-        while (pehdr > dst) {
+        pehdr_offset = dend - 0xf8 - 0x28;
+        while (pehdr_offset > 0) {
             if (upx_checktimelimit(ctx, &ticks))
                 return -1;
-            if ((sections = checkpe(dst, *dsize, pehdr, &valign, &sectcnt)))
+            if ((sections = checkpe(dst, *dsize, pehdr_offset, &valign, &sectcnt))) {
+                pehdr = dst + pehdr_offset;
                 break;
-            pehdr--;
+            }
+            pehdr_offset--;
         }
-        if (!(realstuffsz = pehdr - dst)) pehdr = NULL;
+        if (!pehdr)
+            pehdr_offset = SIZE_MAX;
+        else
+            realstuffsz = (uint32_t)pehdr_offset;
     }
 
     if (!pehdr) {
-        uint32_t rebsz = PESALIGN(dend, 0x1000);
+        uint32_t rebsz;
+
         cli_dbgmsg("UPX: no luck - brutally crafting a reasonable PE\n");
-        if (!(newbuf = (char *)cli_max_calloc(rebsz + 0x200, sizeof(char)))) {
+        if (cli_upx_align_up_u32(dend, 0x1000, &rebsz) < 0 ||
+            rebsz > UINT32_MAX - 0x200U ||
+            (size_t)rebsz + 0x200U > output_capacity) {
+            cli_dbgmsg("UPX: crafted PE size is out of bounds\n");
+            return -1;
+        }
+        if (!(newbuf = (char *)cli_max_calloc((size_t)rebsz + 0x200U, sizeof(char)))) {
             cli_dbgmsg("UPX: malloc failed - giving up rebuild\n");
             return -1;
         }
         memcpy(newbuf, HEADERS, 0xd0);
         memcpy(newbuf + 0xd0, FAKEPE, 0x120);
         memcpy(newbuf + 0x200, dst, dend);
-        memcpy(dst, newbuf, dend + 0x200);
+        memcpy(dst, newbuf, (size_t)dend + 0x200U);
         free(newbuf);
         cli_writeint32(dst + 0xd0 + 0x50, rebsz + 0x1000);
         cli_writeint32(dst + 0xd0 + 0x100, rebsz);
@@ -285,13 +345,19 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
 
     if (!sections)
         sectcnt = 0;
-    foffset = PESALIGN(foffset + 0x28 * sectcnt, valign);
+    {
+        size_t header_size = (size_t)foffset + (size_t)0x28U * sectcnt;
+        if (header_size > UINT32_MAX ||
+            cli_upx_align_up_u32((uint32_t)header_size, valign, &foffset) < 0)
+            return -1;
+    }
 
     for (upd = 0; upd < sectcnt; upd++) {
         if (upx_checktimelimit(ctx, &ticks))
             return -1;
-        vsize = PESALIGN((uint32_t)cli_readint32(sections + 8), valign);
-        urva  = PEALIGN((uint32_t)cli_readint32(sections + 12), valign);
+        if (cli_upx_align_up_u32((uint32_t)cli_readint32(sections + 8), valign, &vsize) < 0)
+            return -1;
+        urva = PEALIGN((uint32_t)cli_readint32(sections + 12), valign);
 
         /* Within bounds ? */
         if (!CLI_ISCONTAINED(upx0, realstuffsz, urva, vsize)) {
@@ -303,7 +369,7 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
         cli_writeint32(sections + 12, urva);
         cli_writeint32(sections + 16, vsize);
         cli_writeint32(sections + 20, foffset);
-        if (foffset + vsize < foffset) {
+        if (vsize > UINT32_MAX - foffset) {
             /* Integer overflow */
             return -1;
         }
@@ -315,6 +381,8 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
     cli_writeint32(pehdr + 8, 0x4d414c43);
     cli_writeint32(pehdr + 0x3c, valign);
 
+    if ((size_t)foffset > output_capacity)
+        return -1;
     if (!(newbuf = (char *)cli_max_calloc(foffset, sizeof(char)))) {
         cli_dbgmsg("UPX: malloc failed - giving up rebuild\n");
         return -1;
@@ -324,6 +392,8 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
     memcpy(newbuf + 0xd0, pehdr, 0xf8 + 0x28 * sectcnt);
     sections = pehdr + 0xf8;
     for (upd = 0; upd < sectcnt; upd++) {
+        size_t source_offset;
+
         if (upx_checktimelimit(ctx, &ticks)) {
             free(newbuf);
             return -1;
@@ -340,14 +410,19 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
             free(newbuf);
             return -1;
         }
-        memcpy(newbuf + offset1, dst + offset3 - upx0, offset2);
+        source_offset = (size_t)(offset3 - upx0);
+        if (offset2 > (size_t)*dsize - source_offset) {
+            free(newbuf);
+            return -1;
+        }
+        memcpy(newbuf + offset1, dst + source_offset, offset2);
         sections += 0x28;
     }
 
     /* CBA restoring the imports they'll look different from the originals anyway... */
     /* ...and yeap i miss the icon too :P */
 
-    if (foffset > *dsize + 8192) {
+    if ((size_t)foffset > output_capacity) {
         cli_dbgmsg("UPX: wrong raw size - giving up rebuild\n");
         free(newbuf);
         return -1;

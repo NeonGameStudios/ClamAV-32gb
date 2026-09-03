@@ -13921,6 +13921,30 @@ qualification remain open.
   `mew-reconstructed-coordinate-admission` capability evidence. Add linked
   malformed/high-coordinate MEW execution, complete PE/unpacker corpus,
   sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final PE/parser-release
+qualification before closure.
+
+## ZIP-SFX confirmed ZIP64 metadata — 2026-09-03
+
+- Retain the confirmed-central distinction for masked ZIP-SFX candidates:
+  malformed EOCD/ZIP64 locator metadata must return `CL_EPARSE`, mark the
+  layer incomplete/non-cacheable, and never fall back to local-only scanning.
+- Retain `test_zip_masked_sfx_confirmed_malformed_zip64_is_fail_visible`, its
+  registration and source guard. Add current-source relink/execution, full
+  ZIP/SFX corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification before closure.
+
+## UPX reconstructed-output admission — 2026-09-03
+
+- Keep UPX import-table walks in checked zero-based offsets, validate aligned
+  reconstructed section sizes and all source/destination copy extents, and
+  reject crafted-PE sizes that exceed the allocated output slack.
+- Retain `cli_upx_align_up_u32`,
+  `test_pe_upx_relative_window_offset_rejects_invalid_window`, its
+  registrations, and source guards. Add current-source production-GCC and
+  linked malformed/high-coordinate UPX execution, complete PE/UPX corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final PE/parser-release
   qualification before closure.
 
