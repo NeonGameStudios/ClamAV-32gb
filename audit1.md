@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## Deliberate unsupported release allowlist — 2026-09-03
+
+The release gate previously accepted any row whose kind was changed to
+`unsupported`, allowing a required parser or matcher to bypass the release
+blocker. The shared `tools/largefile_unsupported_allowlist.sh` control now
+maintains an explicit first-release exclusion list and is enforced by both
+the authoritative manifest validator and candidate release-readiness gate.
+The release-readiness regression accepts a real native-Windows exclusion and
+rejects a relabelled `CL_TYPE_PDF` row. Non-excluded rows still require their
+own qualified evidence; the overall manifest remains release-blocked.
+
 ## Bytecode ABI entry-point admission — 2026-09-03
 
 The legacy and ABI-v2 bytecode API still had several direct context and

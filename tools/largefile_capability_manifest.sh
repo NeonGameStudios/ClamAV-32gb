@@ -14,6 +14,11 @@ if [ ! -f "$manifest" ]; then
     exit 1
 fi
 
+. "$root/tools/largefile_unsupported_allowlist.sh"
+if ! largefile_validate_unsupported_kind_rows "$manifest"; then
+    exit 1
+fi
+
 awk -F '\t' '
     NR == 1 {
         if (NF != 5 || $1 != "kind" || $2 != "id" || $3 != "status" ||
@@ -95,8 +100,7 @@ for id in $required_features; do
     fi
 done
 
-required_unsupported='macos-first-release aarch64-first-release autoit-ea05-output-over-4g bytecode-v1-over-4g egg-compat-member-over-1g egg-legacy-string-metadata-over-1g elf-legacy-metadata-over-4g legacy-callback-over-1g image-fuzzy-over-contiguous-limit pe32plus-legacy-x86-analysis pdf-stream-over-1g vba-callback-over-1g vba-project-directory-without-file-mapping'
-for id in $required_unsupported; do
+for id in $largefile_required_unsupported_ids; do
     if ! awk -F '\t' -v wanted_id="$id" \
         '$1 == "unsupported" && $2 == wanted_id && $3 == "unsupported" { found = 1 } END { exit !found }' "$manifest"; then
         echo "capability manifest is missing deliberate unsupported feature ${id}" >&2

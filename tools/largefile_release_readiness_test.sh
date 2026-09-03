@@ -50,7 +50,7 @@ expect_rejected()
     write_header
     printf 'library\tpath\tqualified\tlibclamav/scanners.c\trelease_evidence=test:%s source_manifest_sha256=%s\n' \
         "$work/evidence" "$source_manifest_sha256"
-    printf 'unsupported\tlegacy\tunsupported\tlegacy.c\texplicit incomplete\n'
+    printf 'unsupported\tnative-windows-memory-scan\tunsupported\tCMakeLists.txt\texplicit incomplete\n'
 } > "$work/ready.tsv"
 
 "$gate" --manifest "$work/ready.tsv" > "$work/ready.out"
@@ -62,7 +62,7 @@ grep -F 'release_readiness=test-manifest-pass' "$work/ready.out" >/dev/null
         "$work/evidence" "$source_manifest_sha256"
     printf 'library\tother\tqualified\tlibclamav/others.c\trelease_evidence=test:%s source_manifest_sha256=%s\n' \
         "$work/evidence" "$source_manifest_sha256"
-    printf 'unsupported\tlegacy\tunsupported\tlegacy.c\texplicit incomplete\n'
+    printf 'unsupported\tnative-windows-memory-scan\tunsupported\tCMakeLists.txt\texplicit incomplete\n'
 } > "$work/reused-evidence.tsv"
 expect_rejected 'generic evidence reused for a different capability' \
     'no unique valid binding for library:other' "$work/reused-evidence.tsv"
@@ -108,9 +108,17 @@ expect_rejected 'an unknown capability kind' 'invalid capability kind' "$work/in
 
 {
     write_header
-    printf 'unsupported\tlegacy\tpending\tsource.c\trelease evidence required\n'
+    printf 'unsupported\tnative-windows-memory-scan\tpending\tsource.c\trelease evidence required\n'
 } > "$work/invalid-unsupported.tsv"
 expect_rejected 'a pending deliberate-unsupported capability' 'invalid unsupported capability status' "$work/invalid-unsupported.tsv"
+
+{
+    write_header
+    printf 'unsupported\tCL_TYPE_PDF\tunsupported\tsource.c\trelease evidence not required\n'
+} > "$work/relabelled-unsupported.tsv"
+expect_rejected 'a required parser relabelled as deliberate unsupported' \
+    'unapproved deliberate unsupported capability CL_TYPE_PDF' \
+    "$work/relabelled-unsupported.tsv"
 
 {
     write_header

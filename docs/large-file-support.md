@@ -8,10 +8,11 @@ gate passes.
 ## Current qualification boundary — 2026-09-03
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 562 capability rows, with
-0 qualified rows and 543 release-blocking bounded, pending, or required-
-unsupported rows (including 7 required rows marked unsupported). Historical entries below preserve engineering evidence and
-open work; they do not substitute for current-source linked execution,
+certificate. At the current audit point it contains 565 capability rows, with
+0 qualified rows and 546 release-blocking bounded, pending, or required-
+unsupported rows (including 7 required rows marked unsupported). Historical
+entries below preserve engineering evidence and open work; they do not
+substitute for current-source linked execution,
 production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
 resource measurements, service parity, or the final requirement-by-requirement
 PLAN.md completion audit.
@@ -92,6 +93,21 @@ offset, root size, exact logical-byte count, effective 64-GiB scan budget,
 completion state, skipped-operation count, and transmitted stream digest; the
 bridge rejects over-budget logical accounting. These are qualification inputs,
 not yet release certification.
+
+The deliberate-unsupported release allowlist is now maintained separately from
+candidate manifests and is enforced by both the manifest validator and the
+release-readiness gate. A required parser or matcher cannot become release
+clean by changing its row kind to `unsupported`; only explicitly listed
+first-release exclusions are accepted. The control regression covers both a
+real exclusion and a relabelled `CL_TYPE_PDF` row.
+
+The direct MBR helper now rejects a null caller buffer before fixed-record
+pointer arithmetic, with a registered fail-visible regression. Confirmed
+7-Zip completion now reconciles both clean aggregate statuses against sticky
+incomplete state, including valid empty archives, preserving `CL_EPARSE` and
+cache taint. These changes are bounded control evidence and do not replace
+the remaining production, corpus, sanitizer, Sonic1, service-parity, or
+requirement-by-requirement PLAN.md gates.
 
 ## MBR extended-chain extent admission — 2026-09-02
 

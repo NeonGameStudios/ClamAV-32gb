@@ -1,5 +1,16 @@
 # Wishlist
 
+## Deliberate unsupported release allowlist — 2026-09-03
+
+- Keep the first-release unsupported set explicit and outside candidate
+  manifests. Both validators must reject a `kind=unsupported` row whose ID is
+  not on that fixed list, so changing a required parser or matcher kind cannot
+  bypass release qualification.
+- Retain the native-Windows acceptance and relabelled `CL_TYPE_PDF` rejection
+  regressions, source guards, and capability evidence. Continue requiring
+  independent qualified evidence for every non-excluded capability before
+  release.
+
 ## Bytecode ABI entry-point admission — 2026-09-03
 
 - Keep legacy and ABI-v2 bytecode entry points fail-visible when context,

@@ -38,6 +38,11 @@ done
     exit 2
 }
 
+. "$root/tools/largefile_unsupported_allowlist.sh"
+if ! largefile_validate_unsupported_kind_rows "$manifest"; then
+    exit 2
+fi
+
 if [ "$authoritative" -eq 1 ]; then
     sh "$root/tools/largefile_capability_manifest.sh" >/dev/null
 fi
