@@ -166,6 +166,7 @@ extern int __real_BZ2_bzDecompressEnd(bz_stream *strm);
 extern int __real_nsis_BZ2_bzDecompressEnd(nsis_bzstream *strm);
 extern int __real_adc_decompressEnd(adc_stream *strm);
 extern int __real_cli_LzmaInit(struct CLI_LZMA *lz, uint64_t usize);
+extern int __real_cli_LzmaDecode(struct CLI_LZMA *lz);
 extern void __real_cli_LzmaShutdown(struct CLI_LZMA *lz);
 int clamav_test_force_swf_decoder_init;
 int clamav_test_force_swf_zlib_decoder_end;
@@ -192,6 +193,8 @@ int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
 int clamav_test_force_egg_lzma_decoder_init;
 int clamav_test_force_upx_lzma_decoder_init;
+int clamav_test_force_upx_lzma_decoder_decode;
+size_t clamav_test_observed_upx_lzma_input;
 int clamav_test_lzma_shutdown_calls;
 int clamav_test_force_cli_readn_status;
 size_t clamav_test_force_cli_readn_count;
@@ -382,6 +385,16 @@ int __wrap_cli_LzmaInit(struct CLI_LZMA *lz, uint64_t usize)
         return LZMA_RESULT_DATA_ERROR;
     }
     return __real_cli_LzmaInit(lz, usize);
+}
+
+int __wrap_cli_LzmaDecode(struct CLI_LZMA *lz)
+{
+    if (clamav_test_force_upx_lzma_decoder_decode) {
+        clamav_test_force_upx_lzma_decoder_decode = 0;
+        clamav_test_observed_upx_lzma_input       = lz ? lz->avail_in : SIZE_MAX;
+        return LZMA_RESULT_DATA_ERROR;
+    }
+    return __real_cli_LzmaDecode(lz);
 }
 
 void __wrap_cli_LzmaShutdown(struct CLI_LZMA *lz)
@@ -47566,6 +47579,20 @@ START_TEST(test_pe_upx_lzma_decoder_init_failure_is_fail_visible)
     ck_assert_int_eq(clamav_test_force_upx_lzma_decoder_init, 0);
 }
 END_TEST
+
+START_TEST(test_pe_upx_lzma_input_window_excludes_wrapper_prefix)
+{
+    const char input[5] = {0, 0, 0, 0, 0};
+    char output[1]       = {0};
+    uint32_t dsize       = sizeof(output);
+
+    clamav_test_observed_upx_lzma_input       = SIZE_MAX;
+    clamav_test_force_upx_lzma_decoder_decode = 1;
+    ck_assert_int_eq(upx_inflatelzma(input, sizeof(input), output, &dsize, 0, 0, 0, 0x20003, NULL), -1);
+    ck_assert_int_eq(clamav_test_force_upx_lzma_decoder_decode, 0);
+    ck_assert_uint_eq(clamav_test_observed_upx_lzma_input, sizeof(input) - 2U);
+}
+END_TEST
 #endif
 
 START_TEST(test_pe_corpus_detects_embedded_mz)
@@ -61215,6 +61242,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe, test_pe_public_api_read_failure_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_pe, test_pe_upx_lzma_decoder_init_failure_is_fail_visible);
+    tcase_add_test(tc_pe, test_pe_upx_lzma_input_window_excludes_wrapper_prefix);
 #endif
     suite_add_tcase(s, tc_pe_corpus);
     tcase_add_checked_fixture(tc_pe_corpus, cl_setup, cl_teardown);
@@ -62720,6 +62748,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_heuristic_read_failures_are_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_pe_upx_lzma_decoder_init_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_upx_lzma_input_window_excludes_wrapper_prefix);
 #endif
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pe_rawaddr_preserves_native_coordinate);

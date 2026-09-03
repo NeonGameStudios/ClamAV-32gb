@@ -204,6 +204,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=nsis_BZ2_bzDecompressEnd"
         "-Wl,--wrap=adc_decompressEnd"
         "-Wl,--wrap=cli_LzmaInit"
+        "-Wl,--wrap=cli_LzmaDecode"
         "-Wl,--wrap=cli_LzmaShutdown"
         "-Wl,--wrap=closedir"
         "-Wl,--wrap=readdir"

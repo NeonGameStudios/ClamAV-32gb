@@ -8,13 +8,19 @@ gate passes.
 ## Current qualification boundary — 2026-09-03
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 551 capability rows, with
-0 qualified rows and 532 release-blocking bounded, pending, or required-
+certificate. At the current audit point it contains 553 capability rows, with
+0 qualified rows and 534 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical entries below preserve engineering evidence and
 open work; they do not substitute for current-source linked execution,
 production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
 resource measurements, service parity, or the final requirement-by-requirement
 PLAN.md completion audit.
+
+The UPX LZMA unpacker now rejects sections too short for its two-byte wrapper
+and gives the decoder only the remaining `ssize - 2` payload window. The
+linker-injected input-window regression and source guard cover this boundary;
+the legacy contiguous unpacker remains a bounded, non-qualified path above
+its individual-allocation ceiling.
 
 The certified service profile is one worker with a two-request queue and
 explicit `AlertExceedsMax yes`. The parallel-client stress workload uses four

@@ -20,6 +20,10 @@
 - Complete the remaining parser, ingress, production-CVD, sanitizer,
   materialized-large-file, Sonic1, resource, service-parity, and final
   requirement-by-requirement PLAN.md qualification before release claims.
+- Keep UPX LZMA input bounded to the payload after its two-byte wrapper:
+  reject sections too short for the prefix and pass exactly `ssize - 2` to the
+  decoder. Retain the input-window regression and source guard; the legacy
+  contiguous UPX path still needs its broader parser and release qualification.
 - Keep OneNote modern whole-input parsing explicitly bounded at 256 MiB until
   a reader-backed parser exists; the legacy reader path remains fail-visible,
   but `CL_TYPE_ONENOTE` is still pending qualification. RAR and 7-Zip remain

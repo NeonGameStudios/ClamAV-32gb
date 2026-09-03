@@ -655,13 +655,21 @@ int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize,
     uint8_t pb = (properties >> 16) & 0xff;
     if (lc >= 9 || lp >= 5 || pb >= 5)
         return -1;
+    /* The UPX LZMA wrapper reserves the first two bytes before the raw
+     * payload.  Reject a section without that prefix before allocating the
+     * decoder state. */
+    if (ssize <= 2)
+        return -1;
 
     *fake_lzmahdr = lc + 9 * (5 * pb + lp);
     l.next_in     = fake_lzmahdr;
     l.avail_in    = 5;
     if (cli_LzmaInit(&l, *dsize) != LZMA_RESULT_OK)
         return -1;
-    l.avail_in  = ssize;
+    /* Keep the decoder's advertised window aligned with the advanced pointer;
+     * otherwise a truncated section can make it read two bytes beyond the
+     * bounded fmap window. */
+    l.avail_in  = (SizeT)(ssize - 2U);
     l.avail_out = *dsize;
     l.next_in   = (unsigned char *)src + 2;
     l.next_out  = (unsigned char *)dst;

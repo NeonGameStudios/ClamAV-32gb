@@ -32,6 +32,18 @@ These repairs improve fail-closed behavior but do not close the remaining
 parser-family, production-CVD, sanitizer, materialized-large-file, Sonic1,
 resource, service-parity, and final PLAN.md qualification gates.
 
+## UPX LZMA input-window admission — 2026-09-03
+
+The UPX LZMA unpacker advanced its input pointer past the two-byte wrapper
+prefix but advertised the complete section length to the decoder. A truncated
+or adversarial section could therefore expose a decoder read window two bytes
+past the bounded section. The path now rejects sections of two bytes or less
+and advertises exactly `ssize - 2` bytes. A linker-injected regression observes
+the decoder's input window before execution, and source guards pin both the
+minimum-size check and subtraction. This closes an unpacker boundary bug; it
+does not convert the legacy contiguous UPX implementation into a 32-GiB
+qualified parser.
+
 The next parser-family audit found no safe OneNote status change to make in
 this batch. The legacy OneNote extractor is reader-backed and fail-visible;
 the modern `onenote_parser` API still requires a borrowed whole-file slice, so
