@@ -472,6 +472,8 @@ static bool pdf_test_fail_object_table_realloc;
 static bool scan_report_test_fail_allocation;
 static unsigned int scan_report_test_allocation_failures;
 static int mspack_test_fail_next_allocation;
+static size_t pe_test_fail_nspack_dest_size;
+static unsigned int pe_test_fail_nspack_dest_failures;
 int htmlnorm_test_fail_next_malloc;
 int htmlnorm_test_fail_next_realloc;
 #endif
@@ -48554,6 +48556,7 @@ START_TEST(test_pe_nspack_loader_read_failure_is_fail_visible)
     size_t ep;
     size_t entry_metadata_offset;
     unsigned int err = 0;
+    uint32_t nspack_output_size;
     int fd;
 
     snprintf(file_path, sizeof(file_path), "%s/input/pe_allmatch/test.exe", SRCDIR);
@@ -48598,6 +48601,7 @@ START_TEST(test_pe_nspack_loader_read_failure_is_fail_visible)
                                         map->len, peinfo.hdr_size);
     ck_assert_int_eq(err, 0);
     memcpy(original_entry, data + ep, sizeof(original_entry));
+    nspack_output_size = peinfo.sections[0].vsz;
 
     data[ep] = '\xe9';
     cli_writeint32(data + ep + 1U, 0);
@@ -48655,6 +48659,54 @@ START_TEST(test_pe_nspack_loader_read_failure_is_fail_visible)
 
     pe_nspack_read_failure_offset = SIZE_MAX;
     cl_fmap_close(map);
+
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+    /* Reach the confirmed NsPack output allocation with a synthetic loader
+     * record. The production path must not continue to the bytecode hook as
+     * if the recognized unpacker had not been attempted. */
+    {
+        ck_assert((size_t)st.st_size >= 20U);
+        size_t nspack_metadata_offset = (size_t)st.st_size - 20U;
+
+        ck_assert(nspack_metadata_offset > ep);
+        ck_assert(nspack_metadata_offset - ep <= UINT32_MAX);
+        ck_assert(nspack_output_size != 0U);
+        memcpy(data + ep, nspack_entry, sizeof(nspack_entry));
+        cli_writeint32(data + ep + 17U, 0x50U);
+        cli_writeint32(data + ep - 4U, (uint32_t)(nspack_metadata_offset - ep));
+        memset(data + nspack_metadata_offset, 0, 20U);
+        cli_writeint32(data + nspack_metadata_offset, 1U);
+        cli_writeint32(data + nspack_metadata_offset + 5U, 0x100U);
+        cli_writeint32(data + nspack_metadata_offset + 9U, nspack_output_size);
+
+        map = cl_fmap_open_memory(data, (size_t)st.st_size);
+        ck_assert_ptr_nonnull(map);
+        memset(&layer, 0, sizeof(layer));
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine               = scan_engine;
+        ctx.dconf                = scan_engine->dconf;
+        ctx.options              = &options;
+        ctx.fmap                 = map;
+        ctx.this_layer_tmpdir    = tmpdir;
+        ctx.recursion_stack      = &layer;
+        ctx.recursion_stack_size = 1;
+        layer.fmap               = map;
+
+        pe_test_fail_nspack_dest_size     = nspack_output_size;
+        pe_test_fail_nspack_dest_failures = 0;
+        ret                               = cli_scanpe(&ctx);
+        pe_test_fail_nspack_dest_size     = 0;
+
+        ck_assert_int_eq(ret, CL_EMEM);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason,
+                         "PE NsPack output buffer could not be allocated");
+        ck_assert(map->dont_cache_flag);
+        ck_assert_uint_eq(pe_test_fail_nspack_dest_failures, 1U);
+        cl_fmap_close(map);
+    }
+#endif
+
     cl_engine_free(scan_engine);
     free(data);
 }
@@ -49931,6 +49983,11 @@ extern void *__real_realloc(void *ptr, size_t size);
 
 void *__wrap_malloc(size_t size)
 {
+    if (pe_test_fail_nspack_dest_size != 0U && size == pe_test_fail_nspack_dest_size) {
+        pe_test_fail_nspack_dest_size = 0;
+        pe_test_fail_nspack_dest_failures++;
+        return NULL;
+    }
     if (mspack_test_fail_next_allocation) {
         mspack_test_fail_next_allocation = 0;
         return NULL;

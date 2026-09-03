@@ -1,5 +1,22 @@
 # Wishlist
 
+## Bytecode runner argument validation — 2026-09-03
+
+- Keep `cli_bytecode_run()` argument validation ahead of all context
+  dereferences, including the bytecode set, context, and selected function.
+- Retain the direct null-dispatch regression and source guard; add current
+  legacy/JIT linked execution, sanitizer, complete YARA/bytecode corpus,
+  service, materialized-large-file, Sonic1, resource, and final qualification.
+
+## NsPack output allocation status — 2026-09-03
+
+- Keep confirmed NsPack destination-allocation failures fail-visible as
+  `CL_EMEM` with an explicit incomplete reason and cache taint; do not break
+  into later PE hooks after a recognized unpacker has begun.
+- Retain the linker-injected allocation regression and source guards. Add
+  current-source PE packer corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final qualification.
+
 ## PDF object-table rollback — 2026-09-03
 
 - Keep PDF object-table publication transactional: grow the table before

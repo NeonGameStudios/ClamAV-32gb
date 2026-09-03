@@ -8,8 +8,8 @@ gate passes.
 ## Current qualification boundary — 2026-09-03
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 554 capability rows, with
-0 qualified rows and 535 release-blocking bounded, pending, or required-
+certificate. At the current audit point it contains 556 capability rows, with
+0 qualified rows and 537 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical entries below preserve engineering evidence and
 open work; they do not substitute for current-source linked execution,
 production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
@@ -21,6 +21,19 @@ and gives the decoder only the remaining `ssize - 2` payload window. The
 linker-injected input-window regression and source guard cover this boundary;
 the legacy contiguous unpacker remains a bounded, non-qualified path above
 its individual-allocation ceiling.
+
+The confirmed NsPack path now treats destination-buffer allocation failure as
+an explicit `CL_EMEM` incomplete result with cache taint instead of breaking
+into later PE hooks. The linker-injected regression covers this recognized
+unpacker allocation boundary; production-linked PE corpus, sanitizer,
+service, materialized-large-file, Sonic1, resource, and final qualification
+remain open.
+
+The bytecode runner now validates its bytecode set and execution context before
+reading context state, so a null dispatch call returns `CL_ENULLARG` instead
+of dereferencing through the validation boundary. The direct regression covers
+that API contract; full legacy/JIT bytecode and YARA qualification remains
+open.
 
 The certified service profile is one worker with a two-request queue and
 explicit `AlertExceedsMax yes`. The parallel-client stress workload uses four

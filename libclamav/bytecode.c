@@ -2527,10 +2527,11 @@ cl_error_t cli_bytecode_run(const struct cli_all_bc *bcs, const struct cli_bc *b
     cli_events_t *jit_ev = NULL, *interp_ev = NULL;
 
     bool test_mode = 0;
-    cli_ctx *cctx  = (cli_ctx *)ctx->ctx;
+    cli_ctx *cctx;
 
-    if (!ctx || !ctx->bc || !ctx->func)
+    if (!bcs || !ctx || !ctx->bc || !ctx->func)
         return CL_ENULLARG;
+    cctx = (cli_ctx *)ctx->ctx;
     if (ctx->numParams && (!ctx->values || !ctx->operands))
         return CL_ENULLARG;
 

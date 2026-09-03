@@ -1802,6 +1802,7 @@ START_TEST(test_bytecode_lsig_rejects_invalid_dispatch_arguments)
 
     /* Invalid dispatch metadata must be rejected before all_bcs[bc_idx - 1]
      * can perform pointer arithmetic on a null or out-of-range base. */
+    ck_assert_int_eq(cli_bytecode_run(NULL, NULL, NULL), CL_ENULLARG);
     ck_assert_int_eq(cli_bytecode_runlsig(&cctx, NULL, NULL, 0, NULL, NULL, NULL), CL_ENULLARG);
     ck_assert_int_eq(cli_bytecode_runlsig(&cctx, NULL, &bcs, 0, NULL, NULL, NULL), CL_ENULLARG);
 }

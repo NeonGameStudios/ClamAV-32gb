@@ -5153,7 +5153,9 @@ int cli_scanpe(cli_ctx *ctx)
 
         if (!(dest = cli_max_malloc(dsize))) {
             cli_errmsg("cli_scanpe: NsPack: Unable to allocate memory for dest %u\n", dsize);
-            break;
+            cli_mark_scan_incomplete(ctx, "PE NsPack output buffer could not be allocated");
+            cli_exe_info_destroy(peinfo);
+            return CL_EMEM;
         }
         /* memset(dest, 0xfc, dsize); */
 

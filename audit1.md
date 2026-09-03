@@ -1,5 +1,27 @@
 # Independent read-only audit of audit.md
 
+## Bytecode runner argument validation — 2026-09-03
+
+`cli_bytecode_run()` read `ctx->ctx` before checking whether its context was
+non-null. The entry point now validates the bytecode set, context, and
+selected function before accessing context state, and returns `CL_ENULLARG`
+for invalid dispatch arguments. The bytecode unit regression covers the null
+call directly. Production-linked legacy/JIT execution, sanitizer, complete
+bytecode/YARA corpus, service, materialized-large-file, Sonic1, resource, and
+final release qualification remain open.
+
+## NsPack output allocation status — 2026-09-03
+
+The confirmed legacy NsPack path previously broke out when its declared
+unpacked-output buffer could not be allocated. That bypassed the common
+recognized-unpacker failure handling and could let later PE hooks make the
+layer appear clean. The path now marks the layer incomplete, returns
+`CL_EMEM`, and preserves non-cacheability. A linker-injected regression
+constructs the confirmed loader metadata and fails exactly the destination
+allocation. Production-linked execution, sanitizer, complete PE packer
+corpus, service, materialized-large-file, Sonic1, resource, and final
+release qualification remain open.
+
 ## PDF object-table allocation rollback — 2026-09-03
 
 The PDF direct and object-stream object finders incremented `pdf->nobjs`
