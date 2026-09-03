@@ -23070,3 +23070,18 @@ code-length regression bind the change. Current-source production-GCC
 compilation and linked execution, complete ARJ/ARJ-SFX corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final ARJ/parser-release qualification remain required.
+
+## MIME argument field-span admission — 2026-09-03
+
+The unquoted MIME argument parser computed a same-string field length by
+converting both pointers to `size_t` and subtracting them. That is undefined
+in the C object model and can miscompute the allocation or copy span on a
+platform where pointer representations or address ordering do not match the
+assumption.
+
+The parser now uses defined pointer subtraction within the original string
+object before adding the terminator byte. The source guard records the old
+integer-pointer conversion as forbidden. Current-source production-GCC
+compilation and linked MIME/mbox execution, complete MIME corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final MIME/parser-release qualification remain required.

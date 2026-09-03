@@ -14072,3 +14072,15 @@ qualification before closure.
   production-GCC and linked execution, complete ARJ/ARJ-SFX corpus, sanitizer,
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final ARJ/parser-release qualification before closure.
+
+## MIME argument field-span admission — 2026-09-03
+
+- Keep unquoted MIME argument field lengths as defined same-array pointer
+  subtraction before the terminator-inclusive allocation/copy, and do not
+  convert the source pointers independently to `size_t` before subtraction.
+- Retain the corrected source guard and the
+  `mime-argument-field-span-admission` capability evidence. Add current-source
+  production-GCC and linked MIME/mbox execution, complete MIME corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final MIME/parser-release
+  qualification before closure.

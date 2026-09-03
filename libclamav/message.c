@@ -927,7 +927,7 @@ void messageAddArguments(message *m, const char *s)
             while ((*string != '\0') && !isspace(*string))
                 string++;
 
-            len   = (size_t)string - (size_t)key + 1;
+            len   = (size_t)(string - key) + 1;
             field = cli_max_malloc(len);
 
             if (field) {

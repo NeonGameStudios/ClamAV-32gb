@@ -13127,7 +13127,7 @@ native-width-integer	libclamav/message.c	84	static int simil(const char *str1, c
 native-width-integer	libclamav/message.c	86	static int messageCopyBodySpool(message *m, fileblob *out);
 native-width-integer	libclamav/message.c	88	cl_error_t cli_message_table_size(size_t count, size_t element_size, size_t *bytes)
 native-width-integer	libclamav/message.c	916	            size_t len;
-native-width-integer	libclamav/message.c	930	            len   = (size_t)string - (size_t)key + 1;
+native-width-integer	libclamav/message.c	930	            len   = (size_t)(string - key) + 1;
 native-width-integer	libclamav/message.c	94	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
 native-width-integer	libclamav/message.c	947	messageGetArgument(const message *m, size_t arg)
 native-width-integer	libclamav/message.c	968	    size_t i;
@@ -32222,7 +32222,7 @@ offset-size-arithmetic	libclamav/message.c	80	static void *messageExport(message
 offset-size-arithmetic	libclamav/message.c	88	cl_error_t cli_message_table_size(size_t count, size_t element_size, size_t *bytes)
 offset-size-arithmetic	libclamav/message.c	905	            datasz = strlen(kcopy) + strlen(data) + 2;
 offset-size-arithmetic	libclamav/message.c	906	            field  = cli_max_realloc(kcopy, strlen(kcopy) + strlen(data) + 2);
-offset-size-arithmetic	libclamav/message.c	930	            len   = (size_t)string - (size_t)key + 1;
+offset-size-arithmetic	libclamav/message.c	930	            len   = (size_t)(string - key) + 1;
 offset-size-arithmetic	libclamav/message.c	934	                memcpy(field, key, len - 1);
 offset-size-arithmetic	libclamav/message.c	935	                field[len - 1] = '\0';
 offset-size-arithmetic	libclamav/message.c	94	        count > (size_t)CLI_MAX_ALLOCATION / element_size)
