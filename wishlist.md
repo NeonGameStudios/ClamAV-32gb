@@ -13795,3 +13795,16 @@ qualification remain open.
   corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification before closure.
+
+## EGG final-member skip status — 2026-09-03
+
+- Preserve `CL_BREAK` from `cli_egg_skip_file()` when a skipped member is the
+  final archive member; the encrypted/header-unknown and directory scanner
+  callers must terminate normally on that value while retaining any prior
+  incomplete status.
+- Retain `test_egg_skip_last_member_reports_archive_end`, its registration and
+  source guards, and the `egg-skip-last-member-status` capability evidence.
+  Add current-source production-GCC and linked execution, complete EGG/SFX
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final EGG/parser-release
+  qualification before closure.

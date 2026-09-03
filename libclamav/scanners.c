@@ -1506,6 +1506,8 @@ cl_error_t cli_scanegg(cli_ctx *ctx)
                 incomplete_status = CL_EUNPACK;
 
                 status = cli_egg_skip_file(hArchive);
+                if (status == CL_BREAK)
+                    break;
                 if (CL_SUCCESS != status) {
                     /* Failed to skip!  Break extraction loop. */
                     cli_dbgmsg("EGG: Failed to skip file. EGG archive extraction has failed.\n");
@@ -1549,6 +1551,8 @@ cl_error_t cli_scanegg(cli_ctx *ctx)
                 cli_dbgmsg("EGG: Found directory. Skipping to next file.\n");
 
                 status = cli_egg_skip_file(hArchive);
+                if (status == CL_BREAK)
+                    break;
                 if (CL_SUCCESS != status) {
                     /* Failed to skip!  Break extraction loop. */
                     cli_dbgmsg("EGG: Failed to skip directory. EGG archive extraction has failed.\n");
@@ -1570,6 +1574,8 @@ cl_error_t cli_scanegg(cli_ctx *ctx)
                 incomplete_status = CL_EUNPACK;
 
                 status = cli_egg_skip_file(hArchive);
+                if (status == CL_BREAK)
+                    break;
                 if (CL_SUCCESS != status) {
                     /* Failed to skip!  Break extraction loop. */
                     cli_dbgmsg("EGG: Failed to skip file. EGG archive extraction has failed.\n");

@@ -22672,3 +22672,18 @@ update and exported-generator boundaries. Current-source production-GCC
 compilation and linked execution, complete PE/import corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.
+
+## EGG final-member skip status — 2026-09-03
+
+`cli_egg_skip_file()` detected that a skipped member was the final archive
+member, set `CL_BREAK`, and then unconditionally overwrote that result with
+`CL_SUCCESS`. The scanner therefore could not distinguish a normal end of
+archive from a skipped member with another member still available. The helper
+now preserves `CL_BREAK`, and the three scanner callers treat that value as a
+normal archive-loop termination while retaining prior encrypted-member
+incomplete state. `test_egg_skip_last_member_reports_archive_end` uses a valid
+one-file archive to verify the direct API result and the subsequent end-of-
+archive peek. Current-source production-GCC compilation and linked execution,
+complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+EGG/parser-release qualification remain required.

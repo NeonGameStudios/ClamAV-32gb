@@ -3599,11 +3599,11 @@ cl_error_t cli_egg_skip_file(void* hArchive)
     handle->fileExtractionIndex += 1;
     if (handle->fileExtractionIndex >= handle->nFiles) {
         status = CL_BREAK;
+    } else {
+        status = CL_SUCCESS;
     }
 
     cli_dbgmsg("cli_egg_skip_file: File skipped.\n");
-
-    status = CL_SUCCESS;
 done:
     return status;
 }

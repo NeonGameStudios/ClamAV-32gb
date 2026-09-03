@@ -174,7 +174,8 @@ cl_error_t cli_egg_extract_file_stream(
  * This is useful to skip things like directories, encrypted files, or file that are too large.
  *
  * @param hArchive          An open EGG archive handle from cli_egg_open()
- * @return cl_error_t   CL_SUCCESS if success.
+ * @return cl_error_t   CL_SUCCESS if the next member remains available,
+ *                      CL_BREAK when this skips the final member.
  */
 cl_error_t cli_egg_skip_file(void* hArchive);
 

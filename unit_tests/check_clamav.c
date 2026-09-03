@@ -36493,6 +36493,66 @@ START_TEST(test_egg_archive_index_read_failure_preserves_status)
 }
 END_TEST
 
+START_TEST(test_egg_skip_last_member_reports_archive_end)
+{
+    uint8_t archive[64];
+    size_t offset = 0;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    cl_egg_metadata metadata;
+
+    memset(archive, 0, sizeof(archive));
+    zip_stream_write_u32(archive + offset, 0x41474745U); /* EGG_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u16(archive + offset, 0x0100U);
+    offset += 2;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U); /* archive EOFARC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x0A8590E3U); /* FILE_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u64(archive + offset, 0U); /* empty file */
+    offset += 8;
+    zip_stream_write_u32(archive + offset, 0x0A8591ACU); /* FILENAME_HEADER_MAGIC */
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, 8U);
+    offset += 2;
+    memcpy(archive + offset, "test.txt", 8U);
+    offset += 8;
+    zip_stream_write_u32(archive + offset, 0x08E28222U); /* file EOFARC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U); /* archive EOFARC */
+    offset += 4;
+
+    map = cl_fmap_open_memory(archive, offset);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_SUCCESS);
+    ck_assert_ptr_nonnull(handle);
+    ck_assert_ptr_null(comments);
+    ck_assert_uint_eq(ncomments, 0U);
+
+    memset(&metadata, 0, sizeof(metadata));
+    ck_assert_int_eq(cli_egg_peek_file_header(handle, &metadata), CL_SUCCESS);
+    ck_assert_ptr_nonnull(metadata.filename);
+    free(metadata.filename);
+    metadata.filename = NULL;
+
+    ck_assert_int_eq(cli_egg_skip_file(handle), CL_BREAK);
+    ck_assert_int_eq(cli_egg_peek_file_header(handle, &metadata), CL_BREAK);
+
+    cli_egg_close(handle);
+    cl_fmap_close(map);
+}
+END_TEST
+
 typedef struct {
     uint8_t *buffer;
     size_t capacity;
@@ -62042,6 +62102,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_egg_map, test_egg_archive_header_fields_are_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_extra_field_range_classes_are_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_archive_index_read_failure_preserves_status);
+    tcase_add_test(tc_egg_map, test_egg_skip_last_member_reports_archive_end);
     tcase_add_test(tc_egg_map, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_metadata_index_respects_contiguous_limit);
     tcase_add_test(tc_egg_map, test_egg_oversized_skippable_extra_fields_are_bounded);
@@ -63108,6 +63169,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_7z_bcj2_pack_position_overflow_is_rejected);
     tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
+    tcase_add_test(tc_cl, test_egg_skip_last_member_reports_archive_end);
     tcase_add_test(tc_cl, test_egg_fixed_header_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_egg_extra_field_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_egg_time_limit_is_fail_visible);
