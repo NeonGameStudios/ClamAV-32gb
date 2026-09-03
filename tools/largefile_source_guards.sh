@@ -6403,6 +6403,19 @@ contains libclamav/packlibs.c 'FSG decompression reached the configured time lim
 contains libclamav/fsg.c 'cli_unfsg_ctx'
 contains libclamav/packlibs.c 'MEW decompression reached the configured time limit'
 contains libclamav/mew.c 'unmew_ctx'
+contains libclamav/packlibs.h 'cli_pack_length_step(uint32_t value, uint32_t bit, uint32_t *next)'
+contains libclamav/packlibs.c 'int cli_pack_length_step(uint32_t value, uint32_t bit, uint32_t *next)'
+contains libclamav/packlibs.c 'pack_backbytes_step'
+contains libclamav/packlibs.c 'pack_backref_window'
+count_at_least libclamav/packlibs.c 'cli_pack_length_step(backsize' 4
+count_at_least libclamav/packlibs.c 'cli_pack_length_step(myecx_backsize' 4
+not_contains libclamav/packlibs.c 'backsize = backsize * 2 +'
+not_contains libclamav/packlibs.c 'myecx_backsize = myecx_backsize * 2 +'
+not_contains libclamav/packlibs.c 'CLI_ISCONTAINED(dest, dsize, cdst - backbytes'
+not_contains libclamav/packlibs.c 'CLI_ISCONTAINED(dest, dsize, cdst - myeax_backbytes'
+contains unit_tests/check_clamav.c 'test_pe_pack_length_step_rejects_overflow'
+count_at_least unit_tests/check_clamav.c 'tcase_add_test(tc_pe_map, test_pe_pack_length_step_rejects_overflow)' 1
+count_at_least unit_tests/check_clamav.c 'tcase_add_test(tc_cl, test_pe_pack_length_step_rejects_overflow)' 1
 contains libclamav/mew.c 'MEW LZMA decompression reached the configured time limit'
 contains libclamav/mew.h 'struct cli_ctx_tag *ctx'
 contains libclamav/petite.c 'Petite decompression reached the configured time limit'

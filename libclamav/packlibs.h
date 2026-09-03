@@ -29,6 +29,8 @@
 #include "clamav-types.h"
 #include "rebuildpe.h"
 
+int cli_pack_length_step(uint32_t value, uint32_t bit, uint32_t *next);
+
 int cli_unfsg(const char *, char *, int, int, const char **, char **);
 int cli_unfsg_ctx(const char *, char *, int, int, const char **, char **, struct cli_ctx_tag *);
 

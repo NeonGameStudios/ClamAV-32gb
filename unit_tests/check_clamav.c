@@ -73,6 +73,7 @@
 #include "spin.h"
 #include "upx.h"
 #include "mew.h"
+#include "packlibs.h"
 #include "aspack.h"
 #include "petite.h"
 #include "upack.h"
@@ -49509,6 +49510,30 @@ START_TEST(test_pe_petite_length_step_rejects_overflow)
 }
 END_TEST
 
+START_TEST(test_pe_pack_length_step_rejects_overflow)
+{
+    char source[1] = {0};
+    char dest[1]   = {0};
+    const char *endsrc;
+    char *enddst;
+    uint32_t next = UINT32_MAX;
+
+    ck_assert_int_eq(cli_pack_length_step(0, 0, &next), 0);
+    ck_assert_uint_eq(next, 0U);
+    ck_assert_int_eq(cli_pack_length_step(UINT32_MAX / 2, 1, &next), 0);
+    ck_assert_uint_eq(next, UINT32_MAX);
+    ck_assert_int_eq(cli_pack_length_step(UINT32_MAX / 2 + 1U, 0, &next), -1);
+    ck_assert_int_eq(cli_pack_length_step(UINT32_MAX, 0, &next), -1);
+    ck_assert_int_eq(cli_pack_length_step(0, 2, &next), -1);
+    ck_assert_int_eq(cli_pack_length_step(0, 0, NULL), -1);
+    ck_assert_int_eq(cli_unfsg_ctx(NULL, dest, 1, 1, NULL, NULL, NULL), -1);
+    ck_assert_int_eq(cli_unfsg_ctx(source, NULL, 1, 1, NULL, NULL, NULL), -1);
+    ck_assert_int_eq(unmew_ctx(NULL, dest, 1, 1, &endsrc, &enddst, NULL), -1);
+    ck_assert_int_eq(unmew_ctx(source, dest, 0, 1, &endsrc, &enddst, NULL), -1);
+    ck_assert_int_eq(unmew_ctx(source, dest, 1, 1, NULL, &enddst, NULL), -1);
+}
+END_TEST
+
 START_TEST(test_pe_upack_rva_window_offset_rejects_invalid_window)
 {
     size_t offset = SIZE_MAX;
@@ -62221,6 +62246,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe_map, test_pe_relative_window_offset_rejects_underflow);
     tcase_add_test(tc_pe_map, test_pe_petite_rva_window_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pe_petite_length_step_rejects_overflow);
+    tcase_add_test(tc_pe_map, test_pe_pack_length_step_rejects_overflow);
     tcase_add_test(tc_pe_map, test_pe_upack_rva_window_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pe_yc_adjusted_window_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pe_wwpack_source_window_offset_rejects_invalid_window);
@@ -63796,6 +63822,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_relative_window_offset_rejects_underflow);
     tcase_add_test(tc_cl, test_pe_petite_rva_window_offset_rejects_invalid_window);
     tcase_add_test(tc_cl, test_pe_petite_length_step_rejects_overflow);
+    tcase_add_test(tc_cl, test_pe_pack_length_step_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_upack_rva_window_offset_rejects_invalid_window);
     tcase_add_test(tc_cl, test_pe_yc_adjusted_window_offset_rejects_invalid_window);
     tcase_add_test(tc_cl, test_pe_wwpack_source_window_offset_rejects_invalid_window);

@@ -14046,3 +14046,18 @@ qualification before closure.
   corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final PE/parser-release
   qualification before closure.
+
+## Packlibs FSG/MEW back-reference admission — 2026-09-03
+
+- Keep common FSG and MEW back-reference length doubling, fixed adjustments,
+  and distance reconstruction checked for `uint32_t` overflow before use.
+  Validate reconstructed output/source spans by integer offsets before forming
+  `cdst - backbytes` or `cdst - myeax_backbytes`, and reject null or
+  non-positive direct decoder arguments.
+- Retain `cli_pack_length_step()`,
+  `test_pe_pack_length_step_rejects_overflow`, its registrations and source
+  guards, and the `packlibs-backreference-admission` capability evidence. Add
+  current-source production-GCC and linked FSG/MEW execution, complete
+  PE/packer corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final PE/parser-release
+  qualification before closure.

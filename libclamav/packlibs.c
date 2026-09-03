@@ -46,6 +46,43 @@ static int doubledl(const char **scur, uint8_t *mydlptr, const char *buffer, uin
     return (olddl >> 7) & 1;
 }
 
+int cli_pack_length_step(uint32_t value, uint32_t bit, uint32_t *next)
+{
+    if (next == NULL || bit > 1 || value > (UINT32_MAX - bit) / 2)
+        return -1;
+
+    *next = value * 2 + bit;
+    return 0;
+}
+
+static int pack_backbytes_step(uint32_t low, uint32_t length, uint32_t *backbytes)
+{
+    if (backbytes == NULL || length == 0 || length - 1 > (UINT32_MAX - low) / 0x100U)
+        return -1;
+
+    *backbytes = low + (length - 1) * 0x100U;
+    return 0;
+}
+
+static int pack_backref_window(const char *dest, size_t dsize, const char *cdst,
+                               uint32_t backbytes, uint32_t backsize)
+{
+    size_t output_offset;
+
+    if (dest == NULL || cdst == NULL || cdst < dest)
+        return -1;
+
+    output_offset = (size_t)(cdst - dest);
+    if (output_offset > dsize || (size_t)backbytes > output_offset)
+        return -1;
+
+    if ((size_t)backsize > dsize - output_offset ||
+        (size_t)backsize > dsize - (output_offset - (size_t)backbytes))
+        return -1;
+
+    return 0;
+}
+
 static int fsg_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
 {
     if (ctx == NULL)
@@ -73,7 +110,7 @@ int cli_unfsg_ctx(const char *source, char *dest, int ssize, int dsize, const ch
     char *cdst       = dest;
     int oob, lostbit = 1;
 
-    if (ssize <= 0 || dsize <= 0) return -1;
+    if (source == NULL || dest == NULL || ssize <= 0 || dsize <= 0) return -1;
     if (ctx != NULL && cli_checktimelimit(ctx) != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "FSG decompression reached the configured time limit");
         return -1;
@@ -119,11 +156,14 @@ int cli_unfsg_ctx(const char *source, char *dest, int ssize, int dsize, const ch
                     if (csrc >= source + ssize)
                         return -1;
                     backbytes = *(unsigned char *)csrc;
-                    backsize  = backsize * 2 + (backbytes & 1);
+                    if (cli_pack_length_step(backsize, backbytes & 1, &backsize) == -1)
+                        return -1;
                     backbytes = (backbytes & 0xff) >> 1;
                     csrc++;
                     if (!backbytes)
                         break;
+                    if (backsize > UINT32_MAX - 2)
+                        return -1;
                     backsize += 2;
                     oldback = backbytes;
                     lostbit = 0;
@@ -136,7 +176,8 @@ int cli_unfsg_ctx(const char *source, char *dest, int ssize, int dsize, const ch
                         return -1;
                     if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                         return -1;
-                    backsize = backsize * 2 + oob;
+                    if (cli_pack_length_step(backsize, (uint32_t)oob, &backsize) == -1)
+                        return -1;
                     if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                         return -1;
                 } while (oob);
@@ -150,7 +191,8 @@ int cli_unfsg_ctx(const char *source, char *dest, int ssize, int dsize, const ch
                             return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
-                        backsize = backsize * 2 + oob;
+                        if (cli_pack_length_step(backsize, (uint32_t)oob, &backsize) == -1)
+                            return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
                     } while (oob);
@@ -161,7 +203,8 @@ int cli_unfsg_ctx(const char *source, char *dest, int ssize, int dsize, const ch
                     if (csrc >= source + ssize)
                         return -1;
                     backbytes = *(unsigned char *)csrc;
-                    backbytes += (backsize - 1) << 8;
+                    if (pack_backbytes_step(backbytes, backsize, &backbytes) == -1)
+                        return -1;
                     backsize = 1;
                     csrc++;
                     do {
@@ -169,23 +212,33 @@ int cli_unfsg_ctx(const char *source, char *dest, int ssize, int dsize, const ch
                             return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
-                        backsize = backsize * 2 + oob;
+                        if (cli_pack_length_step(backsize, (uint32_t)oob, &backsize) == -1)
+                            return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
                     } while (oob);
 
-                    if (backbytes >= 0x7d00)
+                    if (backbytes >= 0x7d00) {
+                        if (backsize == UINT32_MAX)
+                            return -1;
                         backsize++;
-                    if (backbytes >= 0x500)
+                    }
+                    if (backbytes >= 0x500) {
+                        if (backsize == UINT32_MAX)
+                            return -1;
                         backsize++;
-                    if (backbytes <= 0x7f)
+                    }
+                    if (backbytes <= 0x7f) {
+                        if (backsize > UINT32_MAX - 2)
+                            return -1;
                         backsize += 2;
+                    }
 
                     oldback = backbytes;
                 }
                 lostbit = 0;
             }
-            if (!CLI_ISCONTAINED(dest, dsize, cdst, backsize) || !CLI_ISCONTAINED(dest, dsize, cdst - backbytes, backsize))
+            if (pack_backref_window(dest, (size_t)dsize, cdst, backbytes, backsize) == -1)
                 return -1;
             while (backsize--) {
                 if (fsg_checktimelimit(ctx, &ticks))
@@ -240,6 +293,8 @@ int unmew_ctx(const char *source, char *dest, int ssize, int dsize, const char *
     char *cdst       = dest;
     int oob, lostbit = 1;
 
+    if (source == NULL || dest == NULL || endsrc == NULL || enddst == NULL || ssize <= 0 || dsize <= 0)
+        return -1;
     if (ctx != NULL && cli_checktimelimit(ctx) != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "MEW decompression reached the configured time limit");
         return -1;
@@ -286,13 +341,16 @@ int unmew_ctx(const char *source, char *dest, int ssize, int dsize, const char *
                     if (csrc >= source + ssize)
                         return -1;
                     myeax_backbytes = *(unsigned char *)csrc;
-                    myecx_backsize  = myecx_backsize * 2 + (myeax_backbytes & 1);
+                    if (cli_pack_length_step(myecx_backsize, myeax_backbytes & 1, &myecx_backsize) == -1)
+                        return -1;
                     myeax_backbytes = (myeax_backbytes & 0xff) >> 1;
                     csrc++;
                     if (!myeax_backbytes) {
                         /* cli_dbgmsg("\nBREAK \n"); */
                         break;
                     }
+                    if (myecx_backsize > UINT32_MAX - 2)
+                        return -1;
                     myecx_backsize += 2;
                     oldback = myeax_backbytes;
                     lostbit = 0;
@@ -305,7 +363,8 @@ int unmew_ctx(const char *source, char *dest, int ssize, int dsize, const char *
                         return -1;
                     if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                         return -1;
-                    myecx_backsize = myecx_backsize * 2 + oob;
+                    if (cli_pack_length_step(myecx_backsize, (uint32_t)oob, &myecx_backsize) == -1)
+                        return -1;
                     if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                         return -1;
                 } while (oob);
@@ -319,7 +378,8 @@ int unmew_ctx(const char *source, char *dest, int ssize, int dsize, const char *
                             return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
-                        myecx_backsize = myecx_backsize * 2 + oob;
+                        if (cli_pack_length_step(myecx_backsize, (uint32_t)oob, &myecx_backsize) == -1)
+                            return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
                     } while (oob);
@@ -330,7 +390,8 @@ int unmew_ctx(const char *source, char *dest, int ssize, int dsize, const char *
                     if (csrc >= source + ssize)
                         return -1;
                     myeax_backbytes = *(unsigned char *)csrc;
-                    myeax_backbytes += (myecx_backsize - 1) << 8;
+                    if (pack_backbytes_step(myeax_backbytes, myecx_backsize, &myeax_backbytes) == -1)
+                        return -1;
                     myecx_backsize = 1;
                     csrc++;
                     do {
@@ -338,27 +399,34 @@ int unmew_ctx(const char *source, char *dest, int ssize, int dsize, const char *
                             return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
-                        myecx_backsize = myecx_backsize * 2 + oob;
+                        if (cli_pack_length_step(myecx_backsize, (uint32_t)oob, &myecx_backsize) == -1)
+                            return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
                     } while (oob);
 
-                    if (myeax_backbytes >= 0x7d00)
+                    if (myeax_backbytes >= 0x7d00) {
+                        if (myecx_backsize == UINT32_MAX)
+                            return -1;
                         myecx_backsize++;
-                    if (myeax_backbytes >= 0x500)
+                    }
+                    if (myeax_backbytes >= 0x500) {
+                        if (myecx_backsize == UINT32_MAX)
+                            return -1;
                         myecx_backsize++;
-                    if (myeax_backbytes <= 0x7f)
+                    }
+                    if (myeax_backbytes <= 0x7f) {
+                        if (myecx_backsize > UINT32_MAX - 2)
+                            return -1;
                         myecx_backsize += 2;
+                    }
 
                     oldback = myeax_backbytes;
                 }
                 lostbit = 0;
             }
-            if (!CLI_ISCONTAINED(dest, dsize, cdst, myecx_backsize) || !CLI_ISCONTAINED(dest, dsize, cdst - myeax_backbytes, myecx_backsize)) {
-                cli_dbgmsg("MEW: rete: %p %d %p %d %d || %p %d %p %d %d\n", dest, dsize, cdst, myecx_backsize,
-                           CLI_ISCONTAINED(dest, dsize, cdst, myecx_backsize),
-                           dest, dsize, cdst - myeax_backbytes, myecx_backsize,
-                           CLI_ISCONTAINED(dest, dsize, cdst - myeax_backbytes, myecx_backsize));
+            if (pack_backref_window(dest, (size_t)dsize, cdst, myeax_backbytes, myecx_backsize) == -1) {
+                cli_dbgmsg("MEW: back-reference window is outside the reconstructed output\n");
                 return -1;
             }
             while (myecx_backsize--) {

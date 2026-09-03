@@ -23035,3 +23035,22 @@ archive peek. Current-source production-GCC compilation and linked execution,
 complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 EGG/parser-release qualification remain required.
+
+## Packlibs FSG/MEW back-reference admission — 2026-09-03
+
+The shared FSG and MEW decoders previously doubled attacker-controlled
+back-reference lengths in `uint32_t`, reconstructed long distances with a
+wrapping shift/addition, and formed `cdst - backbytes` before proving that the
+source span was in the reconstructed output. The MEW entry point also
+dereferenced null or non-positive direct-call buffers before its later checks.
+
+Both decoders now use `cli_pack_length_step()` for every variable-length
+doubling, check the fixed length adjustments and distance reconstruction with
+overflow-safe arithmetic, validate output/source spans as integer offsets, and
+reject invalid direct-call arguments before pointer use. The focused
+`test_pe_pack_length_step_rejects_overflow` regression is registered in the PE
+map and public API cases, and source guards pin the checked paths and remove
+the old pre-admission pointer expressions. Current-source production-GCC
+compilation and linked FSG/MEW execution, complete PE/packer corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final PE/parser-release qualification remain required.
