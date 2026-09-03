@@ -841,6 +841,8 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
     struct cli_exe_section *section = NULL;
     uint32_t vma                    = base + vadd;
     uint32_t size_sum               = ssize + dsize;
+    size_t source_offset;
+    size_t destination_offset;
 
     /* Guard against integer overflows */
     if (base + vadd < base) {
@@ -860,22 +862,36 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
         return -1;
     }
 
-    /* Ensure that off + required data exists within buffer */
-    if (!CLI_ISCONTAINED(src, size_sum, src + off, 12)) {
+    /* off is relative to the compressed section, which begins after the
+     * reconstructed destination prefix. Keep it zero-based until after the
+     * complete loader window has been admitted. */
+    if (cli_pe_relative_window_offset(0, off, ssize, 12, &source_offset) != 0 ||
+        (size_t)dsize > (size_t)size_sum ||
+        source_offset > (size_t)size_sum - dsize ||
+        source_offset + dsize > (size_t)size_sum - 12U) {
         cli_dbgmsg("MEW: Data reference exceeds size of provided buffer.\n");
         return -1;
     }
 
-    source = src + dsize + off;
+    source = src + dsize + source_offset;
     lesi   = source + 12;
 
     entry_point = cli_readint32(source + 4);
     newedi      = cli_readint32(source + 8);
-    ledi        = src + (newedi - vma);
-    loc_ds      = size_sum - (newedi - vma);
+    if (cli_pe_relative_window_offset(vma, newedi, size_sum, 0,
+                                      &destination_offset) != 0) {
+        cli_dbgmsg("MEW: Destination reference precedes the reconstructed section or exceeds its size.\n");
+        return -1;
+    }
+    ledi   = src + destination_offset;
+    loc_ds = size_sum - destination_offset;
 
     i = 0;
-    loc_ss -= 12;
+    if (loc_ss < 12U || off > loc_ss - 12U) {
+        cli_dbgmsg("MEW: Loader offset exceeds the compressed section.\n");
+        return -1;
+    }
+    loc_ss -= 12U;
     loc_ss -= off;
     while (1) {
         if (cli_checktimelimit(ctx) != CL_SUCCESS) {
@@ -903,11 +919,20 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
         }
 
         /* XXX */
-        loc_ss -= (f1 + 4 - lesi);
+        if (f1 + 4 < lesi || (size_t)(f1 + 4 - lesi) > loc_ss) {
+            free(section);
+            return -1;
+        }
+        loc_ss -= (uint32_t)(f1 + 4 - lesi);
         lesi = f1 + 4;
 
-        ledi   = src + (cli_readint32(f1) - vma);
-        loc_ds = size_sum - (cli_readint32(f1) - vma);
+        if (cli_pe_relative_window_offset(vma, cli_readint32(f1), size_sum, 0,
+                                          &destination_offset) != 0) {
+            free(section);
+            return -1;
+        }
+        ledi   = src + destination_offset;
+        loc_ds = size_sum - destination_offset;
 
         if (!uselzma) {
             uint32_t val = PESALIGN(f2 - src, 0x1000);
@@ -936,6 +961,10 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
             section[0].raw     = 0;
             section[0].rva     = vadd;
             section[i + 1].raw = val;
+            if (val > UINT32_MAX - vadd) {
+                free(section);
+                return -1;
+            }
             section[i + 1].rva = val + vadd;
             section[i].rsz = section[i].vsz = ((i) ? (val - section[i].raw) : val);
 
@@ -944,7 +973,7 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
              * must validate that sections do not intersect with source
              * or, in other words, exceed the specified size of destination
              */
-            if (section[i].raw + section[i].rsz > dsize) {
+            if (section[i].raw > dsize || section[i].rsz > dsize - section[i].raw) {
                 cli_dbgmsg("MEW: Section %i [%d, %d] exceeds destination size %u\n",
                            i, section[i].raw, section[i].raw + section[i].rsz, dsize);
                 free(section);
@@ -959,22 +988,27 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
 
     /* LZMA stuff */
     if (uselzma) {
+        char *lzma_tag;
+
         free(section);
 
         /* put everything in one section */
         i = 1;
-        if (!CLI_ISCONTAINED(src, size_sum, src + uselzma + 8, 1)) {
+        if (uselzma > UINT32_MAX - 8U ||
+            cli_pe_relative_window_offset(0, uselzma + 8U, size_sum, 1,
+                                          &destination_offset) != 0) {
             cli_dbgmsg("MEW: couldn't access lzma 'special' tag\n");
             return -1;
         }
+        lzma_tag = src + destination_offset;
         /* 0x50 -> push eax */
-        cli_dbgmsg("MEW: lzma %swas used, unpacking\n", (*(src + uselzma + 8) == '\x50') ? "special " : "");
+        cli_dbgmsg("MEW: lzma %swas used, unpacking\n", (*lzma_tag == '\x50') ? "special " : "");
         if (!CLI_ISCONTAINED(src, size_sum, f1 + 4, 20 + 4 + 5)) {
             cli_dbgmsg("MEW: lzma initialization data not available!\n");
             return -1;
         }
 
-        if (mew_lzma(src, f1 + 4, size_sum, vma, *(src + uselzma + 8) == '\x50', ctx)) {
+        if (mew_lzma(src, f1 + 4, size_sum, vma, *lzma_tag == '\x50', ctx)) {
             return -1;
         }
         loc_ds = PESALIGN(loc_ds, 0x1000);
@@ -989,7 +1023,8 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
         section[0].rva = vadd;
         section[0].rsz = section[0].vsz = dsize;
     }
-    if (!cli_rebuildpe_align_ctx(ctx, src, section, i, base, entry_point - base, 0, 0, filedesc, 0x1000)) {
+    if (entry_point < base ||
+        !cli_rebuildpe_align_ctx(ctx, src, section, i, base, entry_point - base, 0, 0, filedesc, 0x1000)) {
         cli_dbgmsg("MEW: Rebuilding failed\n");
         free(section);
         return -1;

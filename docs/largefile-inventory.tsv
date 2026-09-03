@@ -3587,7 +3587,8 @@ fixed-width-integer	libclamav/mew.c	833	    uint32_t entry_point, newedi, loc_ds
 fixed-width-integer	libclamav/mew.c	842	    uint32_t vma                    = base + vadd;
 fixed-width-integer	libclamav/mew.c	843	    uint32_t size_sum               = ssize + dsize;
 fixed-width-integer	libclamav/mew.c	91	        old_edx was 'uint32_t *' before and in mew_lzma there was
-fixed-width-integer	libclamav/mew.c	913	            uint32_t val = PESALIGN(f2 - src, 0x1000);
+fixed-width-integer	libclamav/mew.c	926	        loc_ss -= (uint32_t)(f1 + 4 - lesi);
+fixed-width-integer	libclamav/mew.c	938	            uint32_t val = PESALIGN(f2 - src, 0x1000);
 fixed-width-integer	libclamav/mew.c	94	        uint32_t loc_esi, loc_edi;
 fixed-width-integer	libclamav/mew.h	37	    uint32_t p1, p2;
 fixed-width-integer	libclamav/mew.h	39	    uint32_t ticks;
@@ -13019,12 +13020,18 @@ native-width-integer	libclamav/mew.c	829	 * @return int 		Returns -1 on failure,
 native-width-integer	libclamav/mew.c	831	int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc, cli_ctx *ctx)
 native-width-integer	libclamav/mew.c	839	    int i;
 native-width-integer	libclamav/mew.c	840	    size_t section_bytes;
-native-width-integer	libclamav/mew.c	847	        cli_dbgmsg("MEW: base (%08x) + PE section RVA (%08x) exceeds max size of unsigned int (%08x)\n",
-native-width-integer	libclamav/mew.c	852	        cli_dbgmsg("MEW: section size (%08x) + diff size (%08x) exceeds max size of unsigned int (%08x)\n",
-native-width-integer	libclamav/mew.c	856	    if (((size_t)(src + off) < (size_t)(src)) ||
-native-width-integer	libclamav/mew.c	857	        ((size_t)(src + off) < (size_t)(off))) {
-native-width-integer	libclamav/mew.c	859	                   (size_t)src, (size_t)off, SIZE_MAX);
-native-width-integer	libclamav/mew.c	922	            if (cli_mew_section_table_size((size_t)i + 2, &section_bytes) != CL_SUCCESS) {
+native-width-integer	libclamav/mew.c	844	    size_t source_offset;
+native-width-integer	libclamav/mew.c	845	    size_t destination_offset;
+native-width-integer	libclamav/mew.c	849	        cli_dbgmsg("MEW: base (%08x) + PE section RVA (%08x) exceeds max size of unsigned int (%08x)\n",
+native-width-integer	libclamav/mew.c	854	        cli_dbgmsg("MEW: section size (%08x) + diff size (%08x) exceeds max size of unsigned int (%08x)\n",
+native-width-integer	libclamav/mew.c	858	    if (((size_t)(src + off) < (size_t)(src)) ||
+native-width-integer	libclamav/mew.c	859	        ((size_t)(src + off) < (size_t)(off))) {
+native-width-integer	libclamav/mew.c	861	                   (size_t)src, (size_t)off, SIZE_MAX);
+native-width-integer	libclamav/mew.c	869	        (size_t)dsize > (size_t)size_sum ||
+native-width-integer	libclamav/mew.c	870	        source_offset > (size_t)size_sum - dsize ||
+native-width-integer	libclamav/mew.c	871	        source_offset + dsize > (size_t)size_sum - 12U) {
+native-width-integer	libclamav/mew.c	922	        if (f1 + 4 < lesi || (size_t)(f1 + 4 - lesi) > loc_ss) {
+native-width-integer	libclamav/mew.c	947	            if (cli_mew_section_table_size((size_t)i + 2, &section_bytes) != CL_SUCCESS) {
 native-width-integer	libclamav/mew.h	42	int mew_lzma(char *, const char *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
 native-width-integer	libclamav/mew.h	44	cl_error_t cli_mew_section_table_size(size_t section_count, size_t *bytes);
 native-width-integer	libclamav/mew.h	49	int unmew11(char *, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, int, int, struct cli_ctx_tag *);
@@ -22675,9 +22682,11 @@ boundary-constant	libclamav/message.c	1144	                if (m->numberOfEncTyp
 boundary-constant	libclamav/message.c	694	    if (m->numberOfArguments == SIZE_MAX) {
 boundary-constant	libclamav/message.c	93	    if (count > SIZE_MAX / element_size ||
 boundary-constant	libclamav/mew.c	810	    if (section_count > SIZE_MAX / sizeof(struct cli_exe_section) ||
-boundary-constant	libclamav/mew.c	848	                   base, vadd, UINT32_MAX);
-boundary-constant	libclamav/mew.c	853	                   ssize, dsize, UINT32_MAX);
-boundary-constant	libclamav/mew.c	859	                   (size_t)src, (size_t)off, SIZE_MAX);
+boundary-constant	libclamav/mew.c	850	                   base, vadd, UINT32_MAX);
+boundary-constant	libclamav/mew.c	855	                   ssize, dsize, UINT32_MAX);
+boundary-constant	libclamav/mew.c	861	                   (size_t)src, (size_t)off, SIZE_MAX);
+boundary-constant	libclamav/mew.c	964	            if (val > UINT32_MAX - vadd) {
+boundary-constant	libclamav/mew.c	997	        if (uselzma > UINT32_MAX - 8U ||
 boundary-constant	libclamav/mpool.c	627	    if (!size || size > SIZE_MAX - FRAG_OVERHEAD ||
 boundary-constant	libclamav/mpool.c	628	        size + FRAG_OVERHEAD > SIZE_MAX - (align - 1)) {
 boundary-constant	libclamav/mpool.c	734	    if (!nmemb || !size || nmemb > SIZE_MAX / size)
@@ -24827,8 +24836,8 @@ format-width	libclamav/message.c	2982	                    cli_errmsg("email mess
 format-width	libclamav/message.c	3137	    cli_dbgmsg("messageDedup reclaimed %lu bytes\n", (unsigned long)saved);
 format-width	libclamav/message.c	567	                    cli_dbgmsg("Unknown MIME type \"%s\" - guessing as %s (%d%% certainty)\n",
 format-width	libclamav/message.c	985	        cli_dbgmsg("messageFindArgument: compare %lu bytes of %s with %s\n",
-format-width	libclamav/mew.c	887	        cli_dbgmsg("MEW unpacking section %d (%p->%p)\n", i, lesi, ledi);
-format-width	libclamav/mew.c	948	                cli_dbgmsg("MEW: Section %i [%d, %d] exceeds destination size %u\n",
+format-width	libclamav/mew.c	903	        cli_dbgmsg("MEW unpacking section %d (%p->%p)\n", i, lesi, ledi);
+format-width	libclamav/mew.c	977	                cli_dbgmsg("MEW: Section %i [%d, %d] exceeds destination size %u\n",
 format-width	libclamav/mpool.c	483	    spam("Map created @%p->%p - size %lu out of %lu - voidptr=%lu\n", mpool_p, (char *)mpool_p + mp.u.mpm.size, (unsigned long)mp.u.mpm.usize, (unsigned long)mp.u.mpm.size, (unsigned long)SIZEOF_VOID_P);
 format-width	libclamav/mpool.c	556	    spam("Map flushed @%p, in use: %lu\n", mp, (unsigned long)used);
 format-width	libclamav/mpool.c	611	    spam("malloc @%p size %lu (%s) origsize %lu overhead %lu\n", f, (unsigned long)realneed, dbg, (unsigned long)size, (unsigned long)(needed - size));
@@ -31898,6 +31907,8 @@ offset-size-arithmetic	libclamav/message.h	81	void messageSetDispositionType(mes
 offset-size-arithmetic	libclamav/message.h	82	const char *messageGetDispositionType(const message *m);
 offset-size-arithmetic	libclamav/message.h	86	char *messageGetFilename(const message *m);
 offset-size-arithmetic	libclamav/message.h	87	int messageHasFilename(const message *m);
+offset-size-arithmetic	libclamav/mew.c	1006	        if (!CLI_ISCONTAINED(src, size_sum, f1 + 4, 20 + 4 + 5)) {
+offset-size-arithmetic	libclamav/mew.c	1011	        if (mew_lzma(src, f1 + 4, size_sum, vma, *lzma_tag == '\x50', ctx)) {
 offset-size-arithmetic	libclamav/mew.c	128	    if (!CLI_ISCONTAINED(src, size, *old_ecx, 4) || !CLI_ISCONTAINED(src, size, p->p0, 1))
 offset-size-arithmetic	libclamav/mew.c	315	                if (!CLI_ISCONTAINED(src, size, p->p0, 1))
 offset-size-arithmetic	libclamav/mew.c	368	int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, uint32_t special, cli_ctx *ctx)
@@ -31914,21 +31925,21 @@ offset-size-arithmetic	libclamav/mew.c	689	                if (!CLI_ISCONTAINED(
 offset-size-arithmetic	libclamav/mew.c	805	cl_error_t cli_mew_section_table_size(size_t section_count, size_t *bytes)
 offset-size-arithmetic	libclamav/mew.c	831	int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc, cli_ctx *ctx)
 offset-size-arithmetic	libclamav/mew.c	843	    uint32_t size_sum               = ssize + dsize;
-offset-size-arithmetic	libclamav/mew.c	851	    if (ssize + dsize < ssize) {
-offset-size-arithmetic	libclamav/mew.c	852	        cli_dbgmsg("MEW: section size (%08x) + diff size (%08x) exceeds max size of unsigned int (%08x)\n",
-offset-size-arithmetic	libclamav/mew.c	856	    if (((size_t)(src + off) < (size_t)(src)) ||
-offset-size-arithmetic	libclamav/mew.c	857	        ((size_t)(src + off) < (size_t)(off))) {
-offset-size-arithmetic	libclamav/mew.c	863	    /* Ensure that off + required data exists within buffer */
-offset-size-arithmetic	libclamav/mew.c	864	    if (!CLI_ISCONTAINED(src, size_sum, src + off, 12)) {
-offset-size-arithmetic	libclamav/mew.c	869	    source = src + dsize + off;
-offset-size-arithmetic	libclamav/mew.c	875	    loc_ds      = size_sum - (newedi - vma);
-offset-size-arithmetic	libclamav/mew.c	910	        loc_ds = size_sum - (cli_readint32(f1) - vma);
-offset-size-arithmetic	libclamav/mew.c	922	            if (cli_mew_section_table_size((size_t)i + 2, &section_bytes) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/mew.c	947	            if (section[i].raw + section[i].rsz > dsize) {
-offset-size-arithmetic	libclamav/mew.c	949	                           i, section[i].raw, section[i].raw + section[i].rsz, dsize);
-offset-size-arithmetic	libclamav/mew.c	966	        if (!CLI_ISCONTAINED(src, size_sum, src + uselzma + 8, 1)) {
-offset-size-arithmetic	libclamav/mew.c	972	        if (!CLI_ISCONTAINED(src, size_sum, f1 + 4, 20 + 4 + 5)) {
-offset-size-arithmetic	libclamav/mew.c	977	        if (mew_lzma(src, f1 + 4, size_sum, vma, *(src + uselzma + 8) == '\x50', ctx)) {
+offset-size-arithmetic	libclamav/mew.c	853	    if (ssize + dsize < ssize) {
+offset-size-arithmetic	libclamav/mew.c	854	        cli_dbgmsg("MEW: section size (%08x) + diff size (%08x) exceeds max size of unsigned int (%08x)\n",
+offset-size-arithmetic	libclamav/mew.c	858	    if (((size_t)(src + off) < (size_t)(src)) ||
+offset-size-arithmetic	libclamav/mew.c	859	        ((size_t)(src + off) < (size_t)(off))) {
+offset-size-arithmetic	libclamav/mew.c	870	        source_offset > (size_t)size_sum - dsize ||
+offset-size-arithmetic	libclamav/mew.c	871	        source_offset + dsize > (size_t)size_sum - 12U) {
+offset-size-arithmetic	libclamav/mew.c	876	    source = src + dsize + source_offset;
+offset-size-arithmetic	libclamav/mew.c	887	    loc_ds = size_sum - destination_offset;
+offset-size-arithmetic	libclamav/mew.c	890	    if (loc_ss < 12U || off > loc_ss - 12U) {
+offset-size-arithmetic	libclamav/mew.c	922	        if (f1 + 4 < lesi || (size_t)(f1 + 4 - lesi) > loc_ss) {
+offset-size-arithmetic	libclamav/mew.c	935	        loc_ds = size_sum - destination_offset;
+offset-size-arithmetic	libclamav/mew.c	947	            if (cli_mew_section_table_size((size_t)i + 2, &section_bytes) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/mew.c	976	            if (section[i].raw > dsize || section[i].rsz > dsize - section[i].raw) {
+offset-size-arithmetic	libclamav/mew.c	978	                           i, section[i].raw, section[i].raw + section[i].rsz, dsize);
+offset-size-arithmetic	libclamav/mew.c	998	            cli_pe_relative_window_offset(0, uselzma + 8U, size_sum, 1,
 offset-size-arithmetic	libclamav/mew.h	44	cl_error_t cli_mew_section_table_size(size_t section_count, size_t *bytes);
 offset-size-arithmetic	libclamav/mpool.c	371	#define FRAGSBITS (sizeof(fragsz) / sizeof(fragsz[0]))
 offset-size-arithmetic	libclamav/mpool.c	406	static size_t align_to_pagesize(struct MP *mp, size_t size)

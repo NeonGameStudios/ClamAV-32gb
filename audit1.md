@@ -444,6 +444,22 @@ pass markers. This is a qualification-contract correction, not evidence that
 four daemon workers are supported. The real service, production-CVD, exact
 32-GiB milter, resource, sanitizer, and Sonic1 runs remain release gates.
 
+## MEW reconstructed-coordinate admission — 2026-09-03
+
+The MEW unpacker validated a loader window at `src + off` even though the
+actual compressed source begins at `src + dsize + off`, and it formed
+`src + (newedi - vma)` before rejecting a destination address below the
+reconstructed section base. The path now admits the loader offset against the
+compressed-section extent, validates the combined source-prefix range, converts
+the destination through `cli_pe_relative_window_offset()`, checks each next
+section destination the same way, bounds the LZMA tag and entry-point bridge,
+and preserves the existing fail-visible unpacker return. Source guards and the
+capability manifest bind the changes. Current-source production-GCC
+compilation and linked malformed/high-coordinate MEW execution, complete
+PE/unpacker corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final PE/parser-release
+qualification remain required.
+
 ## PE FSG v2 relative-window admission — 2026-09-03
 
 The FSG v2 unpacker formed a pointer from `src + (newedx - section_rva)`

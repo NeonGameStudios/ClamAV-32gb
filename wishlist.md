@@ -13909,3 +13909,17 @@ qualification remain open.
   one daemon worker, a temporary queue of eight, and a restored release
   configuration of `MaxThreads=1`/`MaxQueue=2`; evidence must carry and verify
   each value rather than using a “multiworker” label.
+
+## MEW reconstructed-coordinate admission — 2026-09-03
+
+- Keep the MEW loader source and reconstructed destination in zero-based
+  native-width windows until after containment admission; the loader offset is
+  relative to the compressed section after the destination prefix, and
+  `newedi < vma` or an invalid next-section destination must fail before
+  pointer formation.
+- Retain the MEW coordinate source guards and the
+  `mew-reconstructed-coordinate-admission` capability evidence. Add linked
+  malformed/high-coordinate MEW execution, complete PE/unpacker corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final PE/parser-release
+  qualification before closure.
