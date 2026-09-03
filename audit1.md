@@ -15,6 +15,20 @@ production-GCC compilation and linked execution, complete MIME/fileblob
 corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
 resource, and final PLAN.md qualification remain open.
 
+## Legacy PDF ASCIIHex end-marker admission — 2026-09-03
+
+The legacy PDF filter token path used for encrypted object streams accepted a
+complete ASCIIHex prefix at stream EOF without requiring the format's `>` end
+marker. That could publish and scan a decoded prefix as if the confirmed
+filtered stream had completed. The legacy decoder now tracks whitespace and
+nibbles incrementally, requires the EOD marker, pads only a valid final nibble,
+and preserves exact raw fallback with sticky incomplete/non-cacheable state on
+failure. The regression forces the encrypted/object-stream compatibility path
+and checks `CL_EPARSE`, raw fallback, the exact diagnostic, and temporary
+accounting; current-source production-GCC execution, complete PDF/filter
+corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final PLAN.md qualification remain open.
+
 ## PE high-32-bit header offset arithmetic — 2026-09-03
 
 Embedded PE candidates whose header begins near the 4-GiB boundary could have

@@ -8,8 +8,8 @@ gate passes.
 ## Current qualification boundary — 2026-09-03
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 570 capability rows, with
-0 qualified rows and 551 release-blocking bounded, pending, or required-
+certificate. At the current audit point it contains 571 capability rows, with
+0 qualified rows and 552 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical
 entries below preserve engineering evidence and open work; they do not
 substitute for current-source linked execution,
@@ -40,6 +40,12 @@ candidate beginning near the 4-GiB boundary from wrapping
 callback-backed regression requires a valid high-offset PE header to parse
 without incomplete state; full PE/embedded-PE/unpacker qualification remains
 open.
+
+The legacy PDF filter path used for encrypted object streams now requires the
+ASCIIHex `>` EOD marker as well. EOF before the marker returns `CL_EPARSE`,
+preserves the raw fallback, and marks the confirmed stream incomplete and
+non-cacheable; the focused regression exercises that compatibility path. Full
+PDF/filter qualification remains open.
 
 The bounded PDF ASCIIHex reader now requires its `>` end marker. A stream that
 ends first returns `CL_EPARSE`, rolls back decoded output, preserves raw

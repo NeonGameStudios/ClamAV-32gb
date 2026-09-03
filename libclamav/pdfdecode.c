@@ -3451,6 +3451,8 @@ static cl_error_t filter_asciihexdecode(struct pdf_struct *pdf, struct pdf_obj *
     const uint8_t *content = (uint8_t *)token->content;
     size_t length          = token->length;
     size_t i, j;
+    int high_nibble        = -1;
+    bool found_eod         = false;
     cl_error_t rc = CL_SUCCESS;
 
     if (!(decoded = (uint8_t *)cli_max_calloc(length / 2 + 1, sizeof(uint8_t)))) {
@@ -3459,27 +3461,47 @@ static cl_error_t filter_asciihexdecode(struct pdf_struct *pdf, struct pdf_obj *
         return CL_EMEM;
     }
 
-    for (i = 0, j = 0; i + 1 < length; i++) {
+    for (i = 0, j = 0; i < length; i++) {
         if (pdf_checktimelimit(pdf, "PDF ASCIIHex traversal reached the configured time limit") != CL_SUCCESS) {
             rc = CL_ETIMEOUT;
             break;
         }
-        if (content[i] == ' ')
+        if (pdf_is_whitespace(content[i]))
             continue;
 
-        if (content[i] == '>')
-            break;
-
-        if (cli_hex2str_to((const char *)content + i, (char *)decoded + j, 2) == -1) {
-            if (length - i < 4)
-                continue;
-
-            rc = CL_EFORMAT;
+        if (content[i] == '>') {
+            found_eod = true;
             break;
         }
 
-        i++;
-        j++;
+        /* Keep whitespace between the two nibbles from changing the byte
+         * boundary. The pending high nibble is padded only after a valid EOD
+         * marker is observed. */
+        {
+            int nibble = pdf_asciihex_nibble(content[i]);
+
+            if (nibble < 0) {
+                rc = CL_EFORMAT;
+                break;
+            }
+
+            if (high_nibble < 0) {
+                high_nibble = nibble;
+                continue;
+            }
+
+            decoded[j++] = (uint8_t)((high_nibble << 4) | nibble);
+            high_nibble = -1;
+        }
+    }
+
+    if (rc == CL_SUCCESS && found_eod && high_nibble >= 0)
+        decoded[j++] = (uint8_t)(high_nibble << 4);
+
+    if (rc == CL_SUCCESS && !found_eod) {
+        cli_mark_scan_incomplete(pdf->ctx,
+                                 "PDF ASCIIHex stream did not reach the end marker");
+        rc = CL_EFORMAT;
     }
 
     if (rc == CL_SUCCESS) {
@@ -3493,6 +3515,10 @@ static cl_error_t filter_asciihexdecode(struct pdf_struct *pdf, struct pdf_obj *
     } else {
         if (!(obj->flags & ((1 << OBJ_IMAGE) | (1 << OBJ_TRUNCATED))))
             pdfobj_flag(pdf, obj, BAD_ASCIIDECODE);
+
+        if (rc == CL_EFORMAT && !pdf->ctx->scan_incomplete)
+            cli_mark_scan_incomplete(pdf->ctx,
+                                     "PDF ASCIIHex stream contained an invalid byte");
 
         cli_dbgmsg("cli_pdf: error occurred parsing byte %zu of %zu\n",
                    i, token->length);

@@ -1,5 +1,14 @@
 # Wishlist
 
+## Legacy PDF ASCIIHex end-marker admission — 2026-09-03
+
+- Keep the encrypted/object-stream compatibility decoder fail-visible when
+  ASCIIHex input ends before `>`. Retain incremental whitespace/nibble parsing,
+  exact raw fallback, sticky incomplete/non-cacheable state, the regression,
+  and source guard; complete current-source linked PDF/filter corpus,
+  sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final PLAN.md qualification remain required.
+
 ## Deferred fileblob scan context — 2026-09-03
 
 - Keep `fileblobScan()` fail-visible for deferred MIME spools: adopt a

@@ -20273,6 +20273,93 @@ START_TEST(test_pdf_invalid_asciihex_after_prefix_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_legacy_asciihex_missing_end_marker_is_fail_visible)
+{
+    static const uint8_t decoded[] = "21 0 << /Type /Catalog >>";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct objstm_struct objstm;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_ctx ctx;
+    fmap_t *map;
+    struct stat output_stat;
+    uint8_t *encoded;
+    size_t encoded_size;
+    char *path = NULL;
+    int fd = -1;
+    cl_error_t status = CL_SUCCESS;
+    size_t written;
+    uint64_t temporary_reserved = 0;
+
+    encoded = pdf_test_asciihex_encode(decoded, sizeof(decoded) - 1U,
+                                       &encoded_size);
+    ck_assert_ptr_nonnull(encoded);
+    ck_assert(encoded_size > 1U && encoded[encoded_size - 1U] == '>');
+
+    memset(&options, 0, sizeof(options));
+    memset(&objstm, 0, sizeof(objstm));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+
+    map = cl_fmap_open_memory(encoded, encoded_size - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine             = scan_engine;
+    ctx.dconf              = scan_engine->dconf;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+    pdf.ctx                = &ctx;
+    pdf.temporary_reserved = &temporary_reserved;
+    pdf.flags              = 1U << ENCRYPTED_PDF;
+    obj.numfilters         = 1U;
+    obj.filterlist[0]      = OBJ_FILTER_AH;
+    objstm.first            = 5U;
+    objstm.n                = 1U;
+
+    written = pdf_decodestream(&pdf, &obj, NULL, (const char *)encoded,
+                               encoded_size - 1U, 0, fd, &status, &objstm);
+    ck_assert_int_eq(status, CL_EPARSE);
+    ck_assert_uint_eq(written, encoded_size - 1U);
+    ck_assert_uint_eq(objstm.streambuf_len, 0U);
+    ck_assert(!objstm.streambuf);
+    ck_assert_int_eq(fstat(fd, &output_stat), 0);
+    ck_assert_uint_eq((size_t)output_stat.st_size, encoded_size - 1U);
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    {
+        uint8_t *raw = malloc(encoded_size - 1U);
+        ck_assert_ptr_nonnull(raw);
+        ck_assert_uint_eq(cli_readn(fd, raw, encoded_size - 1U),
+                          encoded_size - 1U);
+        ck_assert_int_eq(memcmp(raw, encoded, encoded_size - 1U), 0);
+        free(raw);
+    }
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PDF ASCIIHex stream did not reach the end marker");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_uint_eq(temporary_reserved, encoded_size - 1U);
+    ck_assert_uint_eq(ctx.temporary_bytes, encoded_size - 1U);
+
+    cli_scan_release_temporary(&ctx, temporary_reserved);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0U);
+    close(fd);
+    cli_unlink(path);
+    free(path);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(encoded);
+}
+END_TEST
+
 START_TEST(test_pdf_runlength_missing_end_marker_is_fail_visible)
 {
     static const uint8_t encoded[] = {0U, 'R'};
