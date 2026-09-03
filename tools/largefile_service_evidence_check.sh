@@ -61,6 +61,7 @@ runtime_component_artifacts=$out/provenance/service-runtime-component-artifacts.
 runtime_component_hashes=$out/provenance/service-runtime-component-hashes-before.txt
 runtime_component_hashes_after=$out/provenance/service-runtime-component-hashes-after.txt
 loaded_dependencies=$out/provenance/service-loaded-dependencies.txt
+parallel_profile=$out/provenance/parallel-client-clamd.conf
 checksum_manifest=$out/SHA256SUMS
 
 for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_results" \
@@ -69,7 +70,8 @@ for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_
     "$interpreter_records" "$interpreter_records_after" \
     "$dependency_hashes" "$dependency_hashes_after" \
     "$runtime_component_artifacts" "$runtime_component_hashes" \
-    "$runtime_component_hashes_after" "$loaded_dependencies" "$checksum_manifest"; do
+    "$runtime_component_hashes_after" "$loaded_dependencies" "$parallel_profile" \
+    "$checksum_manifest"; do
     [ -s "$required" ] || fail "missing service evidence: $required"
 done
 [ -d "$runtime_component_dir" ] || fail 'service runtime component directory is missing'
@@ -105,6 +107,8 @@ grep -Fx 'parallel_client_count=4' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence does not prove four parallel clients were exercised'
 grep -Fx 'parallel_test_max_queue=8' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence does not identify the parallel-client stress queue'
+grep -Fx 'parallel_profile=provenance/parallel-client-clamd.conf' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence does not bind the parallel-client stress profile'
 grep -Fx 'parallel_queue=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no parallel queue pass marker'
 
@@ -197,6 +201,18 @@ configured_alert_exceeds_max=$(awk '$1 == "AlertExceedsMax" { count++; value = $
     fail 'service configuration has no unique AlertExceedsMax entry'
 [ "$configured_alert_exceeds_max" = yes ] ||
     fail 'service configuration AlertExceedsMax is not enabled'
+parallel_profile_max_threads=$(awk '$1 == "MaxThreads" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$parallel_profile") ||
+    fail 'parallel-client stress profile has no unique MaxThreads entry'
+[ "$parallel_profile_max_threads" = 1 ] ||
+    fail 'parallel-client stress profile is outside the certified single-worker profile'
+parallel_profile_max_queue=$(awk '$1 == "MaxQueue" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$parallel_profile") ||
+    fail 'parallel-client stress profile has no unique MaxQueue entry'
+[ "$parallel_profile_max_queue" = 8 ] ||
+    fail 'parallel-client stress profile does not use the declared eight-entry queue'
+parallel_profile_alert=$(awk '$1 == "AlertExceedsMax" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$parallel_profile") ||
+    fail 'parallel-client stress profile has no unique AlertExceedsMax entry'
+[ "$parallel_profile_alert" = yes ] ||
+    fail 'parallel-client stress profile does not enable AlertExceedsMax'
 
 is_hash "$source_commit" || fail 'service source commit is not a 40- or 64-character hash'
 is_hash "$source_tree" || fail 'service source tree is not a 40- or 64-character hash'

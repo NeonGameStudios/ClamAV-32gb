@@ -122,6 +122,7 @@ service_runtime_component_hashes_before=$out/provenance/service-runtime-componen
 service_runtime_component_hashes_after=$out/provenance/service-runtime-component-hashes-after.txt
 service_loaded_dependencies=$out/provenance/service-loaded-dependencies.txt
 service_build_identity=$out/provenance/service-build-identity.txt
+service_parallel_profile=$out/provenance/parallel-client-clamd.conf
 
 if [ ! -s "$service_cmake_cache" ] || [ ! -s "$service_compile_commands" ]; then
     echo "service qualification requires CMakeCache.txt and compile_commands.json in $build_dir" >&2
@@ -1215,6 +1216,31 @@ printf 'edge_clamdscan_instream=pass\n' >> "$out/service-summary.txt"
 # configuration is restored to the release profile (MaxThreads=1, MaxQueue=2).
 stop_service
 start_service "$edge_db" 1 8
+cp "$config" "$service_parallel_profile"
+parallel_profile_max_threads=$(awk '$1 == "MaxThreads" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$service_parallel_profile") || {
+    echo 'parallel-client stress profile has no unique MaxThreads entry' >&2
+    exit 1
+}
+[ "$parallel_profile_max_threads" = 1 ] || {
+    echo 'parallel-client stress profile is not single-worker' >&2
+    exit 1
+}
+parallel_profile_max_queue=$(awk '$1 == "MaxQueue" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$service_parallel_profile") || {
+    echo 'parallel-client stress profile has no unique MaxQueue entry' >&2
+    exit 1
+}
+[ "$parallel_profile_max_queue" = 8 ] || {
+    echo 'parallel-client stress profile does not use the declared eight-entry queue' >&2
+    exit 1
+}
+parallel_profile_alert=$(awk '$1 == "AlertExceedsMax" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$service_parallel_profile") || {
+    echo 'parallel-client stress profile has no unique AlertExceedsMax entry' >&2
+    exit 1
+}
+[ "$parallel_profile_alert" = yes ] || {
+    echo 'parallel-client stress profile does not enable AlertExceedsMax' >&2
+    exit 1
+}
 multi_dir="$out/logs/clamd-parallel-client"
 mkdir -p "$multi_dir"
 multi_pids=
@@ -1289,6 +1315,7 @@ printf 'clamd_parallel_clients=pass\n' >> "$out/service-summary.txt"
 printf 'parallel_worker_count=1\n' >> "$out/service-summary.txt"
 printf 'parallel_client_count=4\n' >> "$out/service-summary.txt"
 printf 'parallel_test_max_queue=8\n' >> "$out/service-summary.txt"
+printf 'parallel_profile=provenance/parallel-client-clamd.conf\n' >> "$out/service-summary.txt"
 printf 'parallel_queue=pass\n' >> "$out/service-summary.txt"
 
 # Do not leave the stress queue setting in the service artifact.  The

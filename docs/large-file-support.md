@@ -17,6 +17,36 @@ production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
 resource measurements, service parity, or the final requirement-by-requirement
 PLAN.md completion audit.
 
+## Audit finding reconciliation — 2026-09-03
+
+The latest branch audit identified six risks. Findings 1–4 are now addressed
+as control and fail-closed behavior: the service evidence preserves the actual
+four-client stress profile in a separately verified artifact proving one
+daemon worker and an eight-entry stress queue, then verifies the sealed
+one-worker/two-entry release configuration; the release gate uses an external
+allowlist and rejects required parser relabeling; the milter exact-edge run
+binds the 32-GiB message limit separately from clamd's 64-GiB logical budget
+and checks the deterministic tail signature, offset, completion, skip count,
+and stream digest; and EOCD-confirmed malformed ZIP/ZIP64 metadata cannot fall
+back to local-header scanning.
+
+Finding 5 remains the principal implementation gap, not a closed defect. The
+manifest still reports 588 rows with 0 qualified, 143 bounded, 419 pending,
+and 26 deliberate unsupported rows; 569 rows remain release-blocking under
+the current gate. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
+bytecode, logical matching, and YARA still require complete current-source
+production-linked execution, sanitizer evidence, corpus breadth, and the
+shared resource/completion contract before their bounded control regressions
+can become qualification.
+
+Finding 6 is resolved for status communication but not for release
+qualification: historical sections below are evidence snapshots tied to their
+named runs and explicitly do not override this current header. No historical
+claim of an exact-edge, one-worker, or parser-family pass is a release
+certificate. Sonic1 materialized large-file runs, production CVDs, sanitizer
+results, resource measurements, service parity, release-default activation,
+and the final requirement-by-requirement PLAN.md audit remain open.
+
 The current branch is therefore materially not on the release-certification
 side of the plan: 143 rows are bounded, 419 remain pending, and 26 are
 explicitly unsupported. The remaining parser work, current-source

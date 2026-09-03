@@ -26,6 +26,7 @@ import time
 
 DEFAULT_MAX_FILE_SIZE = 256
 EXACT_EDGE_FILE_SIZE = 32 * 1024 * 1024 * 1024
+CERTIFIED_MAX_SCAN_SIZE = 64 * 1024 * 1024 * 1024
 MARKER = bytes.fromhex("434c414d41562d4d494c5445522d5445535400")
 MILTER_WIRE_HEADERS = (
     b"From clamav-milter\n",
@@ -272,6 +273,19 @@ def stop_process(process, graceful_signal=None):
         process.wait(timeout=10)
 
 
+def require_config_value(path, key, expected):
+    """Require one exact configuration value in an evidence-producing run."""
+    matches = []
+    for line in path.read_text(errors="replace").splitlines():
+        fields = line.split()
+        if fields and fields[0] == key:
+            matches.append(fields[1:] if len(fields) > 1 else [])
+    if len(matches) != 1 or matches[0] != [expected]:
+        raise RuntimeError(
+            "{} must contain exactly '{} {}'".format(path, key, expected)
+        )
+
+
 def main():
     clamd = os.environ.get("CLAMD")
     milter = os.environ.get("CLAMAV_MILTER")
@@ -287,6 +301,8 @@ def main():
             raise RuntimeError("MILTER_WIRE_LIMIT_BYTES must be between 256 and 34359738368")
     else:
         max_file_size = EXACT_EDGE_FILE_SIZE if exact_edge else DEFAULT_MAX_FILE_SIZE
+    if exact_edge and max_file_size != EXACT_EDGE_FILE_SIZE:
+        raise RuntimeError("MILTER_EXACT_EDGE requires the literal 32-GiB message limit")
     manual_wire = exact_edge or wire_limit is not None
     chunk_size = int(os.environ.get("MILTER_WIRE_CHUNK_BYTES", 32 * 1024))
     # Keep the payload below libmilter's maximum frame once the protocol
@@ -393,6 +409,12 @@ def main():
             ]
         )
     )
+    require_config_value(clamd_config, "MaxThreads", "1")
+    require_config_value(clamd_config, "MaxQueue", "2")
+    require_config_value(clamd_config, "MaxFileSize", "32G")
+    require_config_value(clamd_config, "MaxScanSize", "64G")
+    require_config_value(clamd_config, "AlertExceedsMax", "yes")
+    require_config_value(milter_config, "MaxFileSize", str(max_file_size))
 
     environment = os.environ.copy()
     clamd_process = None
@@ -435,7 +457,10 @@ def main():
             expected_offset = message_size - len(MARKER)
             clamd_text = clamd_log.read_text(errors="replace")
             milter_text = milter_log.read_text(errors="replace")
-            if "signature Milter.Protocol.Test matched at {}".format(expected_offset) not in clamd_text:
+            signature_matches = re.findall(
+                r"signature Milter\.Protocol\.Test matched at ([0-9]+)", clamd_text
+            )
+            if signature_matches != [str(expected_offset)]:
                 raise RuntimeError(
                     "clamd log does not prove the expected tail signature offset {}".format(expected_offset)
                 )
@@ -451,7 +476,7 @@ def main():
                 raise RuntimeError("milter log does not prove the exact root size and detection completion")
             logical_bytes = report_metadata.group(1)
             skipped_operations = report_metadata.group(2)
-            if int(logical_bytes) != message_size or int(logical_bytes) > 64 * 1024 * 1024 * 1024:
+            if int(logical_bytes) != message_size or int(logical_bytes) > CERTIFIED_MAX_SCAN_SIZE:
                 raise RuntimeError("milter exact-edge logical-byte accounting or budget was invalid")
             if "infected by Milter.Protocol.Test" not in milter_text:
                 raise RuntimeError("milter log does not prove the expected infection name")

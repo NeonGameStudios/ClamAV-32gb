@@ -325,6 +325,7 @@ def main(argv: list[str]) -> int:
                 or exact_wire.group(7) == ""
                 or exact_wire.group(8) != "34359738349"
                 or int(exact_wire.group(6)) > MAX_LOGICAL_BYTES
+                or int(exact_wire.group(7)) < 0
             ):
                 fail("milter workload log does not prove the exact-edge rejection")
             if exact_wire.group(5) != MILTER_EXACT_STREAM_SHA256:

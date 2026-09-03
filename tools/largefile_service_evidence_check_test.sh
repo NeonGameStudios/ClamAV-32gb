@@ -45,6 +45,9 @@ source_manifest_sha256=$(sha256sum "$out/provenance/source-manifest.txt" | awk '
 source_commit=$source_manifest_sha256
 source_tree=$source_manifest_sha256
 printf 'MaxThreads 1\nMaxQueue 2\nMaxScanTime 14400000\nAlertExceedsMax yes\n' > "$out/clamd.conf"
+printf 'MaxThreads 1\nMaxQueue 8\nMaxScanTime 14400000\nAlertExceedsMax yes\n' > \
+    "$out/provenance/parallel-client-clamd.conf"
+parallel_profile=$out/provenance/parallel-client-clamd.conf
 printf 'CMAKE_HOME_DIRECTORY:INTERNAL=%s\n' "$root" > "$out/provenance/CMakeCache.txt"
 printf 'CLAMAV_SOURCE_COMMIT:INTERNAL=%s\n' "$source_commit" >> "$out/provenance/CMakeCache.txt"
 printf 'CLAMAV_SOURCE_MANIFEST_SHA256:INTERNAL=%s\n' "$source_manifest_sha256" >> "$out/provenance/CMakeCache.txt"
@@ -226,6 +229,7 @@ loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 
     printf 'parallel_worker_count=1\n'
     printf 'parallel_client_count=4\n'
     printf 'parallel_test_max_queue=8\n'
+    printf 'parallel_profile=provenance/parallel-client-clamd.conf\n'
     printf 'parallel_queue=pass\n'
     printf 'service_build_identity=pass\n'
     printf 'service_qualification=pass\n'
@@ -294,6 +298,16 @@ if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/nu
 fi
 mv "$tmp/loaded-dependencies.good" "$loaded_dependencies"
 mv "$tmp/service-build-identity.loader-good" "$out/provenance/service-build-identity.txt"
+write_checksum_manifest
+
+cp "$parallel_profile" "$tmp/parallel-profile.good"
+sed 's/^MaxThreads 1$/MaxThreads 4/' "$tmp/parallel-profile.good" > "$parallel_profile"
+write_checksum_manifest
+if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted a multi-worker parallel stress profile' >&2
+    exit 1
+fi
+mv "$tmp/parallel-profile.good" "$parallel_profile"
 write_checksum_manifest
 
 wrong_interpreter=$(CDPATH= cd -- "$tmp" && pwd)/ld-linux-other-synthetic.so

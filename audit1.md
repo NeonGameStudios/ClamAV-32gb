@@ -23085,3 +23085,39 @@ integer-pointer conversion as forbidden. Current-source production-GCC
 compilation and linked MIME/mbox execution, complete MIME corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final MIME/parser-release qualification remain required.
+
+## Six-finding reconciliation — 2026-09-03
+
+The current branch audit's service contradiction is closed by preserving the
+actual parallel stress configuration as `provenance/parallel-client-clamd.conf`.
+The artifact is independently checked for `MaxThreads=1`, `MaxQueue=8`, and
+`AlertExceedsMax=yes`; the final sealed service configuration remains
+`MaxThreads=1` and `MaxQueue=2`. Four simultaneous clients are therefore
+client concurrency, not four daemon workers.
+
+The release gate is also fail-closed against relabeling. Its unsupported set
+comes from `tools/largefile_unsupported_allowlist.sh`, not the candidate
+manifest, and the release-readiness regression rejects a required parser
+changed to `kind=unsupported`. Qualified rows additionally require an exact
+capability binding, source-manifest hash, proof path, and proof hash.
+
+The milter finding is resolved at the harness/verifier layer: the exact-edge
+run distinguishes the 32-GiB milter message limit from clamd's 64-GiB logical
+scan budget and requires the deterministic tail signature, exact offset,
+`DETECTION_TERMINATED` completion, recorded skipped-operation count, and the
+fixed stream SHA-256. These remain bounded evidence until a current production
+CVD/service run and Sonic1 materialized run exist.
+
+The malformed ZIP/ZIP64 finding is closed fail-closed: once EOCD metadata is
+seen, malformed central metadata returns an incomplete parse result and never
+falls back to local-only scanning. The registered regression is
+`test_zip_masked_sfx_confirmed_malformed_zip64_is_fail_visible`.
+
+The remaining parser-family finding is not being relabeled as complete. The
+manifest currently has 588 rows, 0 qualified, 143 bounded, 419 pending, and
+569 release-blocking rows. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
+bytecode, logical, and YARA still need current-source production-linked,
+sanitizer, corpus, resource, service, materialized-large-file, and Sonic1
+evidence. Historical wording is subordinate to the current status header in
+`docs/large-file-support.md`; the branch is not release-qualified and the
+final PLAN.md requirement audit remains open.
