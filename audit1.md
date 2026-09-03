@@ -490,6 +490,26 @@ complete PE/UPX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 PE/parser-release qualification remain required.
 
+## Aspack entry and block-coordinate admission — 2026-09-03
+
+`unaspack()` formed its block-table pointer and several entry-relative decoder
+metadata pointers as `image + ep + constant` before proving the sums were in
+the reconstructed image. Its block loop also evaluated `image + block_rva`
+inside `CLI_ISCONTAINED`, allowing a malformed block RVA to reach pointer
+arithmetic before rejection.
+
+`cli_aspack_entry_window_offset()` now performs subtraction-form zero-based
+admission for the block table, initialization, the complete `0x72`-byte
+decoder metadata window, fix-up, and original-entry windows. Block extents are
+checked with `CLI_ISCONTAINED_0_TO()` before forming the block pointer, and
+next-record lookahead advances only within checked table coordinates. The focused
+`test_pe_aspack_entry_window_offset_rejects_invalid_window` regression covers
+entry/adjustment overflow, exact-end rejection, a high native-width coordinate,
+and a null output pointer. Current-source production-GCC compilation and
+linked malformed-Aspack execution, complete Aspack/PE corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final PE/parser-release qualification remain required.
+
 ## SIS 9.x physical field boundary — 2026-09-03
 
 SIS 9.x field admission previously checked native-size arithmetic but did not

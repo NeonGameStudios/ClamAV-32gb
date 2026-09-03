@@ -101,6 +101,25 @@ cl_error_t cli_aspack_block_buffer_size(uint32_t block_size, size_t *buffer_size
     return CL_SUCCESS;
 }
 
+int cli_aspack_entry_window_offset(uint32_t entry_offset, uint32_t adjustment,
+                                   size_t available, size_t needed, size_t *offset)
+{
+    size_t base;
+
+    if (offset == NULL)
+        return -1;
+
+    base = (size_t)entry_offset;
+    if (base > available || (size_t)adjustment > available - base)
+        return -1;
+
+    *offset = base + (size_t)adjustment;
+    if (needed > available - *offset)
+        return -1;
+
+    return 0;
+}
+
 static inline int readstream(struct ASPK *stream)
 {
     while (stream->bitpos >= 8) {
@@ -404,8 +423,10 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
     uint32_t i = 0, j = 0;
     uint8_t *blocks    = NULL, *wrkbuf;
     uint32_t block_rva = 1, block_size;
+    int table_error = 0;
     size_t block_buffer_size;
     struct cli_exe_section *outsects;
+    size_t blocks_offset_in_image, init_offset, comp_offset, wrkbuf_offset_in_image, oep_offset_in_image;
 
     uint32_t blocks_offset, stream_init_multiplier_offset, comp_block_offset, wrkbuf_offset, oep_offset;
 
@@ -439,7 +460,17 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
             return 0;
     }
 
-    blocks = image + ep + blocks_offset;
+    if (image == NULL || sections == NULL || sectcount == 0 ||
+        cli_aspack_entry_window_offset(ep, blocks_offset, size, 8, &blocks_offset_in_image) < 0 ||
+        cli_aspack_entry_window_offset(ep, comp_block_offset, size, 0x72, &comp_offset) < 0 ||
+        cli_aspack_entry_window_offset(ep, wrkbuf_offset, size, 1, &wrkbuf_offset_in_image) < 0 ||
+        cli_aspack_entry_window_offset(ep, oep_offset, size, 4, &oep_offset_in_image) < 0) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "Aspack entry metadata window is invalid");
+        return 0;
+    }
+
+    blocks = image + blocks_offset_in_image;
 
     if (!(wrkbuf = calloc(0x1800, sizeof(uint8_t)))) {
         cli_dbgmsg("Aspack: Unable to allocate dictionary\n");
@@ -458,8 +489,9 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
 
     for (i = 0; i < 58; i++) {
         stream.init_array[i] = j;
-        if (ep + i + stream_init_multiplier_offset < size) {
-            j += (1 << image[ep + i + stream_init_multiplier_offset]);
+        if (cli_aspack_entry_window_offset(ep, stream_init_multiplier_offset, size, 0, &init_offset) == 0 &&
+            i < size - init_offset) {
+            j += (1 << image[init_offset + i]);
         }
     }
 
@@ -467,7 +499,7 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
     memset(stream.array2, 0, sizeof(stream.array2));
 
     i = 0;
-    while (CLI_ISCONTAINED(image, size, blocks, 8) && (block_rva = cli_readint32(blocks)) && (block_size = cli_readint32(blocks + 4)) && CLI_ISCONTAINED(image, size, image + block_rva, block_size)) {
+    while (CLI_ISCONTAINED(image, size, blocks, 8) && (block_rva = cli_readint32(blocks)) && (block_size = cli_readint32(blocks + 4)) && CLI_ISCONTAINED_0_TO(size, block_rva, block_size)) {
 
         if (aspack_checktimelimit(&stream))
             break;
@@ -489,7 +521,7 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
 
         memcpy(wrkbuf, image + block_rva, block_size);
 
-        if (!decomp_block(&stream, block_size, &image[ep + comp_block_offset], image + block_rva)) {
+        if (!decomp_block(&stream, block_size, &image[comp_offset], image + block_rva)) {
             cli_dbgmsg("Aspack: decomp_block failed\n");
             free(wrkbuf);
             break;
@@ -503,7 +535,7 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
                 uint8_t curbyte = image[block_rva + i];
                 if (curbyte == 0xe8 || curbyte == 0xe9) {
                     wrkbuf = &image[block_rva + i + 1];
-                    if (*wrkbuf == image[ep + wrkbuf_offset]) {
+                    if (*wrkbuf == image[wrkbuf_offset_in_image]) {
                         uint32_t target = cli_readint32(wrkbuf) & 0xffffff00;
                         CLI_ROL(target, 0x18);
                         cli_writeint32(wrkbuf, target - i);
@@ -514,21 +546,43 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
             }
         }
         if (version == ASPACK_VER_212) {
+            if ((size_t)(blocks - image) > (size_t)size - 8U) {
+                table_error = 1;
+                break;
+            }
             blocks += 8;
         } else {
+            if (size < 12U || (size_t)(blocks - image) > (size_t)size - 12U) {
+                table_error = 1;
+                break;
+            }
             blocks += 12;
+            if (!CLI_ISCONTAINED(image, size, blocks, 8)) {
+                table_error = 1;
+                break;
+            }
             block_size = cli_readint32(blocks + 4);
             while (!((block_size + 0x10e) & 0xffffffff)) {
+                if ((size_t)(blocks - image) > (size_t)size - 12U) {
+                    table_error = 1;
+                    break;
+                }
                 blocks += 12;
+                if (!CLI_ISCONTAINED(image, size, blocks, 8)) {
+                    table_error = 1;
+                    break;
+                }
                 block_size = cli_readint32(blocks + 4);
             }
+            if (table_error)
+                break;
         }
     }
 
     cli_dbgmsg("Aspack: leaving loop all uncompressed\n");
 
     free(stream.dict_helper[0].starts);
-    if (block_rva) {
+    if (block_rva || table_error) {
         cli_dbgmsg("Aspack: unpacking failure\n");
         return 0;
     }
@@ -554,7 +608,7 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
         outsects[i].rsz = outsects[i].vsz;
     }
 
-    if (!cli_rebuildpe_ctx(ctx, (char *)image, outsects, sectcount, base, cli_readint32(image + ep + oep_offset), 0, 0, f)) {
+    if (!cli_rebuildpe_ctx(ctx, (char *)image, outsects, sectcount, base, cli_readint32(image + oep_offset_in_image), 0, 0, f)) {
         cli_dbgmsg("Aspack: rebuild failed\n");
         if (cli_checktimelimit(ctx) != CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "Aspack fallback output reached the configured time limit");

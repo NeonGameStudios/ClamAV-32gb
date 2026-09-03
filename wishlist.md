@@ -4061,6 +4061,19 @@ final parser/release qualification.
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, parser-family, and release qualification remain open.
 
+## Aspack entry and block-coordinate admission — 2026-09-03
+
+- Keep Aspack block-table, decoder, fix-up, and original-entry pointers behind
+  subtraction-form zero-based admission. Require block extents to pass
+  `CLI_ISCONTAINED_0_TO()` before forming `image + block_rva`; malformed or
+  wrapped `ep + constant` coordinates must fail visibly, and block-table
+  lookahead must not read a truncated next record.
+- Retain `cli_aspack_entry_window_offset()`,
+  `test_pe_aspack_entry_window_offset_rejects_invalid_window`, its registration,
+  source guards, and the extended `aspack-block-buffer-size` capability
+  evidence. Add linked malformed-Aspack execution, complete corpus, sanitizer,
+  and release qualification before closure.
+
 ## MEW section-table product admission — 2026-08-29
 
 - Keep non-LZMA MEW rebuilt section-table growth behind
