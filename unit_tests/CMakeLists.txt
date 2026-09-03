@@ -193,6 +193,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=fgets"
         "-Wl,--wrap=fread"
         "-Wl,--wrap=cli_readn"
+        "-Wl,--wrap=cl_update_hash"
         "-Wl,--wrap=cl_finish_hash"
         "-Wl,--wrap=inflateInit_"
         "-Wl,--wrap=inflateInit2_"

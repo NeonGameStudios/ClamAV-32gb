@@ -150,7 +150,7 @@ extern int clamav_test_fail_ferror;
 extern int clamav_test_fail_fgets;
 extern int clamav_test_fail_fread;
 extern size_t __real_cli_readn(int fd, void *buff, size_t count);
-extern int clamav_test_fail_finish_hash;
+extern int clamav_test_fail_update_hash, clamav_test_fail_finish_hash;
 extern int clamav_test_finish_hash_calls_before_failure;
 extern int clamav_test_fail_closedir;
 extern int clamav_test_fail_readdir;
@@ -60593,6 +60593,72 @@ START_TEST(test_zip_confirmed_central_structure_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_xar_hash_update_failure_is_fail_visible)
+{
+    static const uint8_t toc[] =
+        "<?xml version=\"1.0\"?><xar><toc><file><data>"
+        "<offset>0</offset><length>3</length><size>3</size>"
+        "<archived-checksum style=\"sha1\">3c01bdbb26f358bab27f267924aa2c9a03fcfdb</archived-checksum>"
+        "</data></file></toc></xar>";
+    static const uint8_t member[] = {'A', 'B', 'C'};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cli_ctx ctx;
+    cli_scan_layer_t layers[2];
+    uint8_t *data;
+    size_t data_length;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    data = realloc(data, data_length + sizeof(member));
+    ck_assert_ptr_nonnull(data);
+    memcpy(data + data_length, member, sizeof(member));
+    data_length += sizeof(member);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    memset(layers, 0, sizeof(layers));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_XAR;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
+
+    /* The checksum is valid, so ignoring cl_update_hash() would make this
+     * complete cleanly after the child-scan handoff. */
+    clamav_test_fail_update_hash = 1;
+    xar_test_bypass_child_scan   = 1;
+    ret = cli_scanxar(&ctx);
+    xar_test_bypass_child_scan   = 0;
+    clamav_test_fail_update_hash = 0;
+
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "XAR archived checksum could not be updated completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+#endif
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -62143,6 +62209,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xar, test_xar_checksum_mismatch_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_xar, test_xar_hash_finalization_failure_is_fail_visible);
+    tcase_add_test(tc_xar, test_xar_hash_update_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_xar, test_xar_compressed_member_read_failure_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_unsupported_encoding_is_fail_visible);

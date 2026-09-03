@@ -22240,3 +22240,23 @@ Current-source production-GCC compilation and linked execution, complete
 OLE/VBA corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+## XAR checksum-update status — 2026-09-02
+
+The XAR checksum helper previously discarded the return value from
+`cl_update_hash()`. A cryptographic update failure could therefore leave a
+partial digest while extraction and nested scanning continued as though the
+checksum stream were complete.
+
+`xar_hash_update()` now returns `CL_EREAD`, marks the recognized XAR layer
+incomplete and non-cacheable, and stops output publication or decoder handoff
+when archived or extracted checksum updates fail. The focused
+`test_xar_hash_update_failure_is_fail_visible` regression injects an update
+failure for a valid archived SHA-1 member and requires the exact diagnostic,
+non-success result, and cache taint. Source guards and the capability manifest
+record the new propagation boundary.
+
+Current-source production-GCC compilation and linked execution, complete XAR
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

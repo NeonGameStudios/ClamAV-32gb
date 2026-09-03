@@ -13215,6 +13215,7 @@ qualification remain open.
   production-linked, sanitizer, certified Linux x86-64, production-CVD/
   service, materialized-large-file, Sonic1, resource, and parser/release
   qualification before closure.
+
 ## VBA compressed-stream short-read classification — 2026-09-02
 
 - Keep complete temporary VBA token and literal reads classified as
@@ -13495,3 +13496,15 @@ qualification remain open.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification before closure.
+
+## XAR checksum-update status — 2026-09-02
+
+- Propagate `cl_update_hash()` failures through archived and extracted XAR
+  checksum paths as `CL_EREAD`, mark the recognized layer incomplete and
+  non-cacheable, and stop publication or nested scanning after the failed
+  update. Retain `test_xar_hash_update_failure_is_fail_visible`, its
+  registration, linker wrapper, source guards, and the expanded
+  `xar-hash-finalization-status` capability evidence. Add current-source
+  production-GCC and linked execution, complete XAR corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification before closure.

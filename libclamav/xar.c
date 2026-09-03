@@ -840,18 +840,24 @@ static bool xar_hash_is_requested(int hash)
     return hash == XAR_CKSUM_SHA1 || hash == XAR_CKSUM_MD5;
 }
 
-static void xar_hash_update(void *hash_ctx, void *data, unsigned long size, int hash)
+static cl_error_t xar_hash_update(void *hash_ctx, const void *data, size_t size, int hash,
+                                  cli_ctx *ctx, const char *reason)
 {
     if (!hash_ctx || !data || !size)
-        return;
+        return CL_SUCCESS;
 
     switch (hash) {
         case XAR_CKSUM_NONE:
         case XAR_CKSUM_OTHER:
-            return;
+            return CL_SUCCESS;
     }
 
-    cl_update_hash(hash_ctx, data, size);
+    if (cl_update_hash(hash_ctx, data, size) != 0) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return CL_EREAD;
+    }
+
+    return CL_SUCCESS;
 }
 
 static cl_error_t xar_hash_final(void *hash_ctx, void *result, int hash, cli_ctx *ctx, const char *reason)
@@ -1293,8 +1299,12 @@ int cli_scanxar(cli_ctx *ctx)
                             break;
                         }
 
-                        if (e_hash_ctx != NULL)
-                            xar_hash_update(e_hash_ctx, buff, produced, e_hash);
+                        if (e_hash_ctx != NULL) {
+                            rc = xar_hash_update(e_hash_ctx, buff, produced, e_hash, ctx,
+                                                 "XAR extracted checksum could not be updated completely");
+                            if (rc != CL_SUCCESS)
+                                break;
+                        }
 
                         if ((rc = xar_write_output(ctx, fd, buff, produced, &member_reserved,
                                                    "XAR gzip member exceeds temporary storage limits",
@@ -1312,8 +1322,9 @@ int cli_scanxar(cli_ctx *ctx)
                     } while (strm.avail_in != 0 || strm.avail_out == 0);
 
                     avail_in -= strm.avail_in;
-                    if (a_hash_ctx != NULL)
-                        xar_hash_update(a_hash_ctx, next_in, avail_in, a_hash);
+                    if (rc == CL_SUCCESS && a_hash_ctx != NULL)
+                        rc = xar_hash_update(a_hash_ctx, next_in, avail_in, a_hash, ctx,
+                                             "XAR archived checksum could not be updated completely");
 
                     if (rc != CL_SUCCESS)
                         break;
@@ -1393,8 +1404,14 @@ int cli_scanxar(cli_ctx *ctx)
                 lz.next_in  = blockp;
                 lz.avail_in = CLI_LZMA_HDR_SIZE;
 
-                if (a_hash_ctx != NULL)
-                    xar_hash_update(a_hash_ctx, blockp, CLI_LZMA_HDR_SIZE, a_hash);
+                if (a_hash_ctx != NULL) {
+                    rc = xar_hash_update(a_hash_ctx, blockp, CLI_LZMA_HDR_SIZE, a_hash, ctx,
+                                         "XAR archived checksum could not be updated completely");
+                    if (rc != CL_SUCCESS) {
+                        __lzma_wrap_free(NULL, buff);
+                        goto exit_tmpfile;
+                    }
+                }
 
                 lret = cli_LzmaInit(&lz, 0);
                 if (lret != LZMA_RESULT_OK) {
@@ -1457,10 +1474,18 @@ int cli_scanxar(cli_ctx *ctx)
                                    "avail_in %llu, avail_out %llu.\n",
                                    (long long unsigned)avail_in, (long long unsigned)avail_out);
 
-                    if (a_hash_ctx != NULL)
-                        xar_hash_update(a_hash_ctx, next_in, in_consumed, a_hash);
-                    if (e_hash_ctx != NULL)
-                        xar_hash_update(e_hash_ctx, buff, avail_out, e_hash);
+                    if (a_hash_ctx != NULL) {
+                        rc = xar_hash_update(a_hash_ctx, next_in, in_consumed, a_hash, ctx,
+                                             "XAR archived checksum could not be updated completely");
+                        if (rc != CL_SUCCESS)
+                            break;
+                    }
+                    if (e_hash_ctx != NULL) {
+                        rc = xar_hash_update(e_hash_ctx, buff, avail_out, e_hash, ctx,
+                                             "XAR extracted checksum could not be updated completely");
+                        if (rc != CL_SUCCESS)
+                            break;
+                    }
 
                     if (in_consumed == 0 && avail_out == 0 && lret != LZMA_STREAM_END) {
                         cli_mark_scan_incomplete(ctx, "XAR LZMA decoder made no progress");
@@ -1541,8 +1566,12 @@ int cli_scanxar(cli_ctx *ctx)
                             rc = CL_EREAD;
                             goto exit_tmpfile;
                         }
-                        if (a_hash_ctx != NULL)
-                            xar_hash_update(a_hash_ctx, copy_buffer, writelen, a_hash);
+                        if (a_hash_ctx != NULL) {
+                            rc = xar_hash_update(a_hash_ctx, copy_buffer, writelen, a_hash, ctx,
+                                                 "XAR archived checksum could not be updated completely");
+                            if (rc != CL_SUCCESS)
+                                goto exit_tmpfile;
+                        }
                         if ((rc = xar_write_output(ctx, fd, copy_buffer, writelen, &member_reserved,
                                                    "XAR member exceeds temporary storage limits",
                                                    "XAR member output reached the configured time limit",
