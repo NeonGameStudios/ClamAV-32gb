@@ -41,9 +41,70 @@
 
 #define DO_HEURISTIC 1
 
+int cli_yc_adjusted_window_offset(uint32_t base_offset, int32_t adjustment,
+                                  size_t available, size_t needed,
+                                  size_t *offset)
+{
+    int64_t adjusted;
+
+    if (offset == NULL)
+        return -1;
+
+    adjusted = (int64_t)base_offset + adjustment;
+    if (adjusted < 0 || (uint64_t)adjusted > available ||
+        needed > available - (size_t)adjusted)
+        return -1;
+
+    *offset = (size_t)adjusted;
+    return 0;
+}
+
+static char *yc_buffer_window(char *buf, size_t available, size_t offset, size_t needed)
+{
+    if (buf == NULL || offset > available || needed > available - offset)
+        return NULL;
+
+    return buf + offset;
+}
+
+static char *yc_section_window(char *buf, size_t available, size_t section_offset,
+                               int32_t adjustment, size_t needed)
+{
+    size_t offset;
+
+    if (section_offset > UINT32_MAX ||
+        cli_yc_adjusted_window_offset((uint32_t)section_offset, adjustment,
+                                      available, needed, &offset) != 0)
+        return NULL;
+
+    return buf + offset;
+}
+
+static int yc_parse_failure(cli_ctx *ctx, const char *reason)
+{
+    cli_mark_scan_incomplete(ctx, reason);
+    return CL_EPARSE;
+}
+
 static int yc_bounds_check(cli_ctx *ctx, char *base, unsigned int filesize, char *offset, unsigned int bound)
 {
-    if ((unsigned int)((offset + bound) - base) > filesize) {
+    uintptr_t base_address;
+    uintptr_t offset_address;
+    size_t relative;
+
+    if (base == NULL || offset == NULL) {
+        cli_dbgmsg("yC: Bounds check assertion.\n");
+#if DO_HEURISTIC
+        cli_append_potentially_unwanted(ctx, "Heuristics.BoundsCheck");
+#endif
+        return 1;
+    }
+
+    base_address   = (uintptr_t)base;
+    offset_address = (uintptr_t)offset;
+    if (offset_address < base_address ||
+        (relative = (size_t)(offset_address - base_address)) > (size_t)filesize ||
+        (size_t)bound > (size_t)filesize - relative) {
         cli_dbgmsg("yC: Bounds check assertion.\n");
 #if DO_HEURISTIC
         cli_append_potentially_unwanted(ctx, "Heuristics.BoundsCheck");
@@ -240,12 +301,35 @@ static int yc_poly_emulator(cli_ctx *ctx, char *base, unsigned int filesize, cha
 
 int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_section *sections, unsigned int sectcount, uint32_t peoffset, int desc, uint32_t ecx, int16_t offset)
 {
-    uint32_t ycsect = sections[sectcount].raw + offset;
+    size_t ycsect;
+    size_t sname_offset;
+    size_t section_table_size;
+    size_t pe_header_size;
     unsigned int i;
-    struct pe_image_file_hdr *pe = (struct pe_image_file_hdr *)(fbuf + peoffset);
-    char *sname                  = (char *)pe + EC16(pe->SizeOfOptionalHeader) + 0x18;
+    struct pe_image_file_hdr *pe;
+    char *sname;
     uint32_t max_emu;
     unsigned int ofilesize = filesize;
+
+    if (fbuf == NULL || sections == NULL || filesize == 0 ||
+        cli_yc_adjusted_window_offset(sections[sectcount].raw, offset, filesize, 0, &ycsect) != 0 ||
+        peoffset > (size_t)filesize || sizeof(struct pe_image_file_hdr) > (size_t)filesize - peoffset)
+        return yc_parse_failure(ctx, "yC section or PE header coordinate is outside the input buffer");
+
+    pe = (struct pe_image_file_hdr *)(fbuf + peoffset);
+    pe_header_size = sizeof(struct pe_image_file_hdr) + EC16(pe->SizeOfOptionalHeader);
+    if (EC16(pe->SizeOfOptionalHeader) < 0x70 ||
+        pe_header_size < sizeof(struct pe_image_file_hdr) ||
+        pe_header_size > (size_t)filesize - peoffset ||
+        0x18 > (size_t)filesize - peoffset - pe_header_size)
+        return yc_parse_failure(ctx, "yC PE optional-header window is outside the input buffer");
+    sname_offset = peoffset + pe_header_size + 0x18;
+    if ((size_t)sectcount > SIZE_MAX / 0x28 ||
+        (section_table_size = (size_t)sectcount * 0x28) > (size_t)filesize - sname_offset)
+        return yc_parse_failure(ctx, "yC section-table window is outside the input buffer");
+    sname = yc_buffer_window(fbuf, filesize, sname_offset, section_table_size);
+    if (sname == NULL)
+        return yc_parse_failure(ctx, "yC section-table pointer is outside the input buffer");
     /*
 
   First layer (decryptor of the section decryptor) in last section
@@ -261,14 +345,23 @@ int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_s
         cli_mark_scan_incomplete(ctx, "yC emulation reached the configured time limit");
         return CL_ETIMEOUT;
     }
-    switch (yc_poly_emulator(ctx, fbuf, filesize, fbuf + ycsect + 0x93, fbuf + ycsect + 0xc6, ecx, ecx)) {
-        case 2:
-            return CL_VIRUS;
-        case 1:
-            return CL_EUNPACK;
-        case 3:
-            return CL_ETIMEOUT;
+    {
+        char *decryptor = yc_section_window(fbuf, filesize, ycsect, 0x93, 0x30);
+        char *code      = yc_section_window(fbuf, filesize, ycsect, 0xc6, ecx);
+
+        if (decryptor == NULL || code == NULL)
+            return yc_parse_failure(ctx, "yC decryptor or code window is outside the input buffer");
+        switch (yc_poly_emulator(ctx, fbuf, filesize, decryptor, code, ecx, ecx)) {
+            case 2:
+                return CL_VIRUS;
+            case 1:
+                return CL_EUNPACK;
+            case 3:
+                return CL_ETIMEOUT;
+        }
     }
+    if (sections[sectcount].ursz > filesize)
+        return yc_parse_failure(ctx, "yC output truncation would underflow the output size");
     filesize -= sections[sectcount].ursz;
 
     /*
@@ -283,7 +376,12 @@ int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_s
 
     /* Loop through all sections and decrypt them... */
     for (i = 0; i < sectcount; i++) {
-        uint32_t name = (uint32_t)cli_readint32(sname + i * 0x28);
+        char *section_name = yc_buffer_window(sname, section_table_size, (size_t)i * 0x28, 4);
+        uint32_t name;
+
+        if (section_name == NULL)
+            return yc_parse_failure(ctx, "yC section-name window is outside the input buffer");
+        name = (uint32_t)cli_readint32(section_name);
 
         if (cli_checktimelimit(ctx) != CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "yC section emulation reached the configured time limit");
@@ -300,23 +398,29 @@ int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_s
             name == 0x6164692E ||     /* .ida */
             name == 0x736C742E ||     /* .tls */
             (name & 0xffff) == 0x4379 /* yC */
-            ) continue;
+        ) continue;
         cli_dbgmsg("yC: decrypting sect%d\n", i);
+        if (sections[i].raw > filesize || sections[i].ursz > filesize - sections[i].raw)
+            return yc_parse_failure(ctx, "yC section raw coordinate or emulation window is outside the output buffer");
         max_emu = filesize - sections[i].raw;
-        if (max_emu > filesize) {
-            cli_dbgmsg("yC: bad emulation length limit %u\n", max_emu);
-            return 1;
-        }
-        switch (yc_poly_emulator(ctx, fbuf, ofilesize, fbuf + ycsect + (offset == -0x18 ? 0x3ea : 0x457),
-                                 fbuf + sections[i].raw,
-                                 sections[i].ursz,
-                                 max_emu)) {
-            case 2:
-                return CL_VIRUS;
-            case 1:
-                return CL_EUNPACK;
-            case 3:
-                return CL_ETIMEOUT;
+        {
+            char *decryptor = yc_section_window(fbuf, ofilesize, ycsect,
+                                                 offset == -0x18 ? 0x3ea : 0x457, 0x30);
+            char *code      = yc_buffer_window(fbuf, ofilesize, sections[i].raw, sections[i].ursz);
+
+            if (decryptor == NULL || code == NULL)
+                return yc_parse_failure(ctx, "yC section decryptor or input window is outside the input buffer");
+            if (sections[i].ursz > max_emu)
+                return yc_parse_failure(ctx, "yC section emulation would stop before decrypting the complete section");
+            switch (yc_poly_emulator(ctx, fbuf, ofilesize, decryptor, code,
+                                     sections[i].ursz, max_emu)) {
+                case 2:
+                    return CL_VIRUS;
+                case 1:
+                    return CL_EUNPACK;
+                case 3:
+                    return CL_ETIMEOUT;
+            }
         }
     }
 
@@ -328,7 +432,13 @@ int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_s
 
     /* OEP resolving */
     /* OEP = DWORD PTR [ Start of yC section+ A0F] */
-    cli_writeint32((char *)pe + sizeof(struct pe_image_file_hdr) + 16, cli_readint32(fbuf + ycsect + 0xa0f));
+    {
+        char *oep = yc_section_window(fbuf, ofilesize, ycsect, 0xa0f, 4);
+
+        if (oep == NULL)
+            return yc_parse_failure(ctx, "yC original entry-point value is outside the output buffer");
+        cli_writeint32((char *)pe + sizeof(struct pe_image_file_hdr) + 16, cli_readint32(oep));
+    }
 
     /* Fix SizeOfImage */
     cli_writeint32((char *)pe + sizeof(struct pe_image_file_hdr) + 0x38, cli_readint32((char *)pe + sizeof(struct pe_image_file_hdr) + 0x38) - sections[sectcount].vsz);

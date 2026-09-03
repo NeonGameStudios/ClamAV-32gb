@@ -13936,3 +13936,16 @@ qualification remain open.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final PE/parser-release
   qualification before closure.
+
+## yC bounded section and emulator admission — 2026-09-03
+
+- Keep yC bounds checks in integer distance form; reject signed section-offset
+  underflow, clipped PE/section/decryptor/code windows, raw-size subtraction
+  underflow, and any section that would be silently truncated by `max_emu`.
+  Retain `cli_yc_adjusted_window_offset()`,
+  `test_pe_yc_adjusted_window_offset_rejects_invalid_window`, its
+  registrations, and source guards. Add current-source production-GCC and
+  linked malformed/high-coordinate yC execution, complete PE/unpacker corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final PE/parser-release
+  qualification before closure.

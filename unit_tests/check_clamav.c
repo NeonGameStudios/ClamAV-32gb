@@ -76,6 +76,7 @@
 #include "aspack.h"
 #include "petite.h"
 #include "upack.h"
+#include "yc.h"
 #include "elf.h"
 #include "dmg.h"
 #include "adc.h"
@@ -49432,6 +49433,21 @@ START_TEST(test_pe_upack_rva_window_offset_rejects_invalid_window)
 }
 END_TEST
 
+START_TEST(test_pe_yc_adjusted_window_offset_rejects_invalid_window)
+{
+    size_t offset = SIZE_MAX;
+
+    ck_assert_int_eq(cli_yc_adjusted_window_offset(100, -101, 132, 1, &offset), -1);
+    ck_assert_int_eq(cli_yc_adjusted_window_offset(100, -1, 132, 1, &offset), 0);
+    ck_assert_uint_eq(offset, 99U);
+    ck_assert_int_eq(cli_yc_adjusted_window_offset(100, 0, 132, 33, &offset), -1);
+    ck_assert_int_eq(cli_yc_adjusted_window_offset(100, 32, 133, 1, &offset), 0);
+    ck_assert_uint_eq(offset, 132U);
+    ck_assert_int_eq(cli_yc_adjusted_window_offset(UINT32_MAX, 1, UINT32_MAX, 1, &offset), -1);
+    ck_assert_int_eq(cli_yc_adjusted_window_offset(100, 0, 32, 1, NULL), -1);
+}
+END_TEST
+
 START_TEST(test_pe_mew_section_table_size_rejects_overflow)
 {
     size_t bytes;
@@ -62042,6 +62058,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe_map, test_pe_relative_window_offset_rejects_underflow);
     tcase_add_test(tc_pe_map, test_pe_petite_rva_window_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pe_upack_rva_window_offset_rejects_invalid_window);
+    tcase_add_test(tc_pe_map, test_pe_yc_adjusted_window_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pespin_entry_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pe_upx_relative_window_offset_rejects_invalid_window);
     suite_add_tcase(s, tc_pe);
@@ -63610,6 +63627,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_relative_window_offset_rejects_underflow);
     tcase_add_test(tc_cl, test_pe_petite_rva_window_offset_rejects_invalid_window);
     tcase_add_test(tc_cl, test_pe_upack_rva_window_offset_rejects_invalid_window);
+    tcase_add_test(tc_cl, test_pe_yc_adjusted_window_offset_rejects_invalid_window);
     tcase_add_test(tc_cl, test_pe_upx_relative_window_offset_rejects_invalid_window);
     tcase_add_test(tc_cl, test_pe_mew_section_table_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_aspack_block_buffer_size_rejects_overflow);

@@ -26,6 +26,12 @@
 #include "execs.h"
 #include "clamav-types.h"
 
+/* Convert a yC section file offset plus a signed variant adjustment into a
+ * bounded zero-based input window. */
+int cli_yc_adjusted_window_offset(uint32_t base_offset, int32_t adjustment,
+                                  size_t available, size_t needed,
+                                  size_t *offset);
+
 int yc_decrypt(cli_ctx *, char *, unsigned int, struct cli_exe_section *, unsigned int, uint32_t, int, uint32_t, int16_t);
 
 #endif

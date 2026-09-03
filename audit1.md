@@ -432,6 +432,26 @@ Upack execution, complete PE/unpacker corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
 final PE/parser-release qualification remain required.
 
+## yC bounded section and emulator admission — 2026-09-03
+
+The yC bounds helper previously formed `offset + bound` before checking the
+result, and the section RVA plus the signed variant offset and raw-size
+subtraction could wrap before the emulator received its windows. A section
+whose requested length exceeded `max_emu` could also be silently truncated.
+The path now checks integer pointer distances, admits the yC section and PE
+metadata through bounded windows, preserves the full decryptor/code windows,
+rejects underflowed output sizing, and fails visibly when a section would not
+be fully emulated.
+
+`test_pe_yc_adjusted_window_offset_rejects_invalid_window` covers signed
+underflow, endpoint, clipped-window, and high-coordinate boundaries. Source
+guards and the capability manifest bind the new admission and fail-visible
+truncation check. Current-source production-GCC compilation and linked
+malformed/high-coordinate yC execution, complete PE/unpacker corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final PE/parser-release
+qualification remain required.
+
 ## Petite reconstructed-buffer RVA admission — 2026-09-03
 
 The Petite decoder still initialized `adjbuf` as `buf - minrva` before it had
