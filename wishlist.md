@@ -13854,3 +13854,11 @@ qualification remain open.
   form an out-of-object intermediate pointer. Retain the FSG, Upack, Petite,
   WWPack, and Aspack source guards and extend linked malformed/high-coordinate
   regression coverage before release closure.
+
+## PEspin entry and section-pointer admission — 2026-09-03
+
+- Keep `unspin()` entry and section pointers behind native-width containment
+  checks; malformed section bases, raw ranges, and `nep < rva` must fail before
+  pointer formation. Retain `cli_pespin_entry_offset()` and its focused
+  regression, the PEspin source guards, and add linked malformed
+  candidate, sanitizer, complete corpus, and release evidence before closure.

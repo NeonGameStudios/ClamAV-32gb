@@ -190,17 +190,41 @@ cl_error_t cli_pespin_output_size_check(uint64_t output_size)
     return CL_SUCCESS;
 }
 
+int cli_pespin_entry_offset(uint32_t section_rva, uint32_t entry_rva, size_t section_size, size_t *offset)
+{
+    size_t relative;
+
+    if (offset == NULL || section_size < 0xe5 || entry_rva < section_rva)
+        return -1;
+
+    relative = (size_t)(entry_rva - section_rva);
+    if (relative > section_size - 0xe5)
+        return -1;
+
+    *offset = relative;
+    return 0;
+}
+
 int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, uint32_t nep, int desc, cli_ctx *ctx)
 {
     char *curr, *emu, *ep, *spinned;
     char **sects;
     uint64_t blobsz = 0;
     int j;
+    size_t ep_offset, ep_src_offset;
     uint32_t key32, bitmap, bitman;
     uint32_t len;
     uint8_t key8;
 
     cli_dbgmsg("in unspin\n");
+
+    if (src == NULL || sections == NULL || ssize <= 0 || sectcnt < 0 ||
+        (size_t)sections[sectcnt].raw > (size_t)ssize ||
+        (size_t)sections[sectcnt].rsz > (size_t)ssize - sections[sectcnt].raw ||
+        cli_pespin_entry_offset(sections[sectcnt].rva, nep, sections[sectcnt].rsz, &ep_offset) < 0) {
+        cli_mark_scan_incomplete(ctx, "PEspin entry-point window is outside the packed section");
+        return 1;
+    }
 
     if ((spinned = (char *)cli_max_malloc(sections[sectcnt].rsz)) == NULL) {
         cli_dbgmsg("spin: Unable to allocate memory for spinned\n");
@@ -208,7 +232,7 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
     }
 
     memcpy(spinned, src + sections[sectcnt].raw, sections[sectcnt].rsz);
-    ep = spinned + nep - sections[sectcnt].rva;
+    ep       = spinned + ep_offset;
 
     curr = ep + 0xdb;
     if (*curr != '\xbb') {
@@ -251,7 +275,7 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
         curr--;
     }
 
-    if (!CLI_ISCONTAINED(spinned, sections[sectcnt].rsz, ep + 0x3217, 4)) {
+    if (!CLI_ISCONTAINED_0_TO(sections[sectcnt].rsz, ep_offset + 0x3217, 4)) {
         free(spinned);
         cli_dbgmsg("spin: key out of bounds, giving up\n");
         return 1;
@@ -289,9 +313,10 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
 
     memcpy(src + sections[sectcnt].raw, spinned, sections[sectcnt].rsz);
     free(spinned);                                                  /* done CRC'ing - can have a dirty buffer now */
-    ep = src + nep + sections[sectcnt].raw - sections[sectcnt].rva; /* Fix the helper */
+    ep_src_offset = (size_t)sections[sectcnt].raw + ep_offset;
+    ep            = src + ep_src_offset;
 
-    if (!CLI_ISCONTAINED(src, ssize, ep + 0x3207, 4)) { /* this one holds all ep based checks */
+    if (!CLI_ISCONTAINED_0_TO((size_t)ssize, ep_src_offset + 0x3207, 4)) { /* this one holds all ep based checks */
         cli_dbgmsg("spin: key out of bounds, giving up\n");
         return 1;
     }
@@ -303,13 +328,14 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
 
         if (bitmap & 1) {
             uint32_t size   = sections[j].rsz;
-            char *ptr       = src + sections[j].raw;
+            char *ptr;
             uint32_t keydup = key32;
 
-            if (!CLI_ISCONTAINED(src, ssize, ptr, size)) {
+            if (!CLI_ISCONTAINED_0_TO((size_t)ssize, sections[j].raw, size)) {
                 cli_dbgmsg("spin: sect %d out of file, giving up\n", j);
                 return 1; /* FIXME: Already checked in pe.c? */
             }
+            ptr = src + sections[j].raw;
 
             while (size--) {
                 if (!(keydup & 1)) {
@@ -383,12 +409,12 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
         if (bitmap & 1) {
             uint32_t notthesamelen = sections[j].rsz;
 
-            emu = src + sections[j].raw;
-
-            if (!CLI_ISCONTAINED(src, ssize, curr, 0x24)) { /* section bounds already checked twice now */
+            if (!CLI_ISCONTAINED_0_TO((size_t)ssize, sections[j].raw, notthesamelen) ||
+                !CLI_ISCONTAINED(src, ssize, curr, 0x24)) { /* section bounds already checked twice now */
                 cli_dbgmsg("spin: poly1 emucode is out of file?\n");
                 return 1;
             }
+            emu = src + sections[j].raw;
 
             while (notthesamelen) {
                 int xcfailure = 0;
@@ -424,6 +450,12 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
     len = 0;
     for (j = 0; j < sectcnt; j++) {
         if (bitmap & 1) {
+            if (!CLI_ISCONTAINED_0_TO((size_t)ssize, sections[j].raw, sections[j].rsz)) {
+                cli_mark_scan_incomplete(ctx, "PEspin compressed section is outside the packed input");
+                cli_dbgmsg("spin: compressed section is out of file\n");
+                len = 1;
+                break;
+            }
             if ((sects[j] = (char *)cli_max_malloc(sections[j].vsz)) == NULL) {
                 cli_dbgmsg("spin: malloc(%u) failed\n", sections[j].vsz);
                 len = 1;
@@ -437,6 +469,12 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
                 cli_dbgmsg("spin: Unpack failure\n");
             }
         } else {
+            if (!CLI_ISCONTAINED_0_TO((size_t)ssize, sections[j].raw, sections[j].rsz)) {
+                cli_mark_scan_incomplete(ctx, "PEspin uncompressed section is outside the packed input");
+                cli_dbgmsg("spin: uncompressed section is out of file\n");
+                len = 1;
+                break;
+            }
             blobsz += sections[j].rsz;
             sects[j] = src + sections[j].raw;
             cli_dbgmsg("spin: Not growing sect%d\n", j);
@@ -462,7 +500,9 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
         /*    len = cli_readint32(ep+0x2fc8); -- Using vsizes instead */
 
         for (j = 0; j < sectcnt; j++) {
-            if (sections[j].rva <= key32 && key32 - sections[j].rva < sections[j].vsz && CLI_ISCONTAINED(src + sections[j].raw, sections[j].rsz, src + sections[j].raw, key32 - sections[j].rva))
+            if (sections[j].rva <= key32 && key32 - sections[j].rva < sections[j].vsz &&
+                CLI_ISCONTAINED_0_TO((size_t)ssize, sections[j].raw, sections[j].rsz) &&
+                CLI_ISCONTAINED_0_TO(sections[j].rsz, 0, key32 - sections[j].rva))
                 break;
         }
 

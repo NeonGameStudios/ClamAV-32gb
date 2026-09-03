@@ -448,6 +448,27 @@ execution, complete PE/unpacker corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 PE/parser-release qualification remain required.
 
+## PEspin entry and section-pointer admission — 2026-09-03
+
+`unspin()` formed its copied-section entry pointer from `nep - rva` before
+checking either coordinate, then formed several `src + raw` pointers before
+containment. A malformed PEspin candidate could therefore reach undefined
+pointer arithmetic before the decoder rejected it. The path now requires a
+valid source section, admits the entry window before pointer formation, uses a
+native `ep_src_offset`, and checks every reconstructed section range through
+zero-based containment before forming section pointers. The reusable
+`cli_pespin_entry_offset()` helper and
+`test_pespin_entry_offset_rejects_invalid_window` bind the underflow,
+minimum-window, end-window, and high-RVA cases. Current-source
+production-GCC compilation and linked malformed-PEspin execution, complete
+PE/unpacker corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
+Invalid later PEspin section ranges also now route through its existing cleanup
+path, so malformed reconstruction cannot leak earlier section buffers while
+returning a private decoder failure.
+
 ## SIS 9.x physical field boundary — 2026-09-03
 
 SIS 9.x field admission previously checked native-size arithmetic but did not

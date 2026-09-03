@@ -49526,6 +49526,21 @@ START_TEST(test_pespin_output_size_check_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pespin_entry_offset_rejects_invalid_window)
+{
+    size_t offset = SIZE_MAX;
+
+    ck_assert_int_eq(cli_pespin_entry_offset(100, 99, 0xe5, &offset), -1);
+    ck_assert_int_eq(cli_pespin_entry_offset(100, 100, 0xe4, &offset), -1);
+    ck_assert_int_eq(cli_pespin_entry_offset(100, 100, 0xe5, &offset), 0);
+    ck_assert_uint_eq(offset, 0);
+    ck_assert_int_eq(cli_pespin_entry_offset(100, 200, 0xe5, &offset), -1);
+    ck_assert_int_eq(cli_pespin_entry_offset(UINT32_MAX - 100, UINT32_MAX - 1, 0x200, &offset), 0);
+    ck_assert_uint_eq(offset, 99);
+    ck_assert_int_eq(cli_pespin_entry_offset(100, 100, 0xe5, NULL), -1);
+}
+END_TEST
+
 static void mspack_test_write_u16(uint8_t *dst, uint16_t value)
 {
     dst[0] = (uint8_t)value;
@@ -61949,6 +61964,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe_map, test_pe_metadata_helpers_reject_invalid_contexts);
     tcase_add_test(tc_pe_map, test_pe_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_pe_map, test_pe_relative_window_offset_rejects_underflow);
+    tcase_add_test(tc_pe_map, test_pespin_entry_offset_rejects_invalid_window);
     suite_add_tcase(s, tc_pe);
     tcase_add_checked_fixture(tc_pe, cl_setup, cl_teardown);
     tcase_add_test(tc_pe, test_pe_short_entrypoint_skips_legacy_path_fail_visible);
@@ -63519,6 +63535,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_upx_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pespin_limit_accounting_is_fail_visible);
     tcase_add_test(tc_cl, test_pespin_output_size_check_is_fail_visible);
+    tcase_add_test(tc_cl, test_pespin_entry_offset_rejects_invalid_window);
     tcase_add_test(tc_cl, test_ole2_member_limit_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_script_normalization_time_limit_is_fail_visible);
