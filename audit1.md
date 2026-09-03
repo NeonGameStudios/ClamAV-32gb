@@ -23054,3 +23054,19 @@ the old pre-admission pointer expressions. Current-source production-GCC
 compilation and linked FSG/MEW execution, complete PE/packer corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final PE/parser-release qualification remain required.
+
+## ARJ Huffman table-root admission — 2026-09-03
+
+The ARJ Huffman table builder incremented `count[bitlen[i]]` without
+initializing the zero-length bucket. Malformed code-length data containing a
+zero could therefore read uninitialized stack state even though zero-length
+symbols are intentionally skipped later. The indirect-table path also formed
+`&table[k >> jutbits]` without an explicit table-root admission check.
+
+The builder now initializes `count[0]` and rejects an indirect root index at or
+beyond the fixed table before pointer formation, preserving the existing
+malformed-code-length failure status. The source guards and existing invalid
+code-length regression bind the change. Current-source production-GCC
+compilation and linked execution, complete ARJ/ARJ-SFX corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final ARJ/parser-release qualification remain required.

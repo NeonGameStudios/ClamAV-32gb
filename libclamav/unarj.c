@@ -384,6 +384,7 @@ static cl_error_t make_table(arj_decode_t *decode_data, int nchar, unsigned char
     unsigned short count[17], weight[17], start[18], *p;
     unsigned int i, k, len, ch, jutbits, avail, nextcode, mask;
 
+    count[0] = 0;
     for (i = 1; i <= 16; i++) {
         count[i] = 0;
     }
@@ -455,6 +456,11 @@ static cl_error_t make_table(arj_decode_t *decode_data, int nchar, unsigned char
                 table[i] = ch;
             }
         } else {
+            if ((size_t)(k >> jutbits) >= (size_t)tablesize) {
+                cli_dbgmsg("UNARJ: bounds exceeded\n");
+                decode_data->status = CL_EUNPACK;
+                return CL_EUNPACK;
+            }
             p = &table[k >> jutbits];
             i = len - tablebits;
             while (i != 0) {

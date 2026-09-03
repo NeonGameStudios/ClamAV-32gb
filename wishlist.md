@@ -14061,3 +14061,14 @@ qualification before closure.
   PE/packer corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final PE/parser-release
   qualification before closure.
+
+## ARJ Huffman table-root admission — 2026-09-03
+
+- Keep the zero-length ARJ Huffman code bucket initialized before counting
+  malformed code lengths, and validate the indirect table root index against
+  the fixed table before forming `&table[k >> jutbits]`.
+- Retain the ARJ invalid-code-length regression and source guards, and the
+  `arj-huffman-table-root-admission` capability evidence. Add current-source
+  production-GCC and linked execution, complete ARJ/ARJ-SFX corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final ARJ/parser-release qualification before closure.
