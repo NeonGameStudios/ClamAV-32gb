@@ -4092,10 +4092,11 @@ final parser/release qualification.
 ## NsPack table-size and back-reference admission — 2026-09-03
 
 - Keep NsPack table sizing in wide arithmetic with a checked shift domain and
-  the individual-allocation ceiling before allocation. Require every
-  back-reference and output span to pass integer zero-based bounds before
-  forming destination pointers, preserving explicit incomplete behavior for
-  malformed confirmed packers.
+  the individual-allocation ceiling before allocation. Route every decoder
+  table lookup through checked zero-based offsets, reject invalid `tre` shifts
+  before C shift expressions, and require every back-reference and output span
+  to pass integer bounds before forming destination pointers, preserving
+  explicit incomplete behavior for malformed confirmed packers.
 - Retain `cli_nspack_table_size()`,
   `test_pe_nspack_table_size_rejects_invalid_shift`, its registration, source
   guards, and the `nspack-table-size-and-backreference-admission` capability

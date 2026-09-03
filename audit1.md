@@ -687,12 +687,16 @@ out-of-object pointer before `CLI_ISCONTAINED()` had a chance to reject it.
 `cli_nspack_table_size()` now performs the table-entry and byte-size
 calculation in `uint64_t`, rejects shifts outside the representable 32-bit
 domain, and enforces `CLI_MAX_ALLOCATION` before allocation. `very_real_unpack()`
-validates the same table shape, replaces the signed mask shifts, and checks
-back-reference/output spans with integer offsets before indexing the
-destination. `test_pe_nspack_table_size_rejects_invalid_shift` covers valid
-and exact allocation boundaries, invalid shifts, and null output; source
-guards and the `nspack-table-size-and-backreference-admission` capability row
-bind the changes. Current-source production-GCC compilation and linked
+validates the same table shape, replaces the signed mask shifts, routes decoder
+lookups through checked table offsets, and checks back-reference/output spans
+with integer offsets before indexing the destination. The `tre` shift domain
+is also rejected before it can reach a C shift expression.
+`test_pe_nspack_table_size_rejects_invalid_shift` and
+`test_pe_nspack_table_offset_rejects_out_of_range` cover valid and exact
+allocation boundaries, invalid shifts, table-index admission, and null
+outputs; source guards and the
+`nspack-table-size-and-backreference-admission` capability row bind the
+changes. Current-source production-GCC compilation and linked
 malformed/high-coordinate NsPack execution, complete PE/unpacker corpus,
 sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release

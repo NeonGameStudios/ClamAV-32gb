@@ -49616,6 +49616,22 @@ START_TEST(test_pe_nspack_table_size_rejects_invalid_shift)
 }
 END_TEST
 
+START_TEST(test_pe_nspack_table_offset_rejects_out_of_range)
+{
+    size_t byte_offset = SIZE_MAX;
+
+    ck_assert_int_eq(cli_nspack_table_offset(0, 0, &byte_offset), -1);
+    ck_assert_int_eq(cli_nspack_table_offset(sizeof(uint16_t), 0, &byte_offset), 0);
+    ck_assert_uint_eq(byte_offset, 0U);
+    ck_assert_int_eq(cli_nspack_table_offset(2 * sizeof(uint16_t), 1, &byte_offset), 0);
+    ck_assert_uint_eq(byte_offset, sizeof(uint16_t));
+    ck_assert_int_eq(cli_nspack_table_offset(2 * sizeof(uint16_t), 2, &byte_offset), -1);
+    ck_assert_int_eq(cli_nspack_table_offset(SIZE_MAX, 0, &byte_offset), -1);
+    ck_assert_int_eq(cli_nspack_table_offset(2 * sizeof(uint16_t), UINT64_MAX, &byte_offset), -1);
+    ck_assert_int_eq(cli_nspack_table_offset(2 * sizeof(uint16_t), 0, NULL), -1);
+}
+END_TEST
+
 static void assert_pe_unpack_section_read_failure(const char *file, const char *reason)
 {
     struct cl_engine *scan_engine;
@@ -62196,6 +62212,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe_map, test_pe_upx_relative_window_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pe_aspack_init_array_step_rejects_invalid_multiplier);
     tcase_add_test(tc_pe_map, test_pe_nspack_table_size_rejects_invalid_shift);
+    tcase_add_test(tc_pe_map, test_pe_nspack_table_offset_rejects_out_of_range);
     suite_add_tcase(s, tc_pe);
     tcase_add_checked_fixture(tc_pe, cl_setup, cl_teardown);
     tcase_add_test(tc_pe, test_pe_short_entrypoint_skips_legacy_path_fail_visible);

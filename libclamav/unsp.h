@@ -38,14 +38,9 @@ struct UNSP {
 
 uint32_t unspack(const char *, char *, cli_ctx *, uint32_t, uint32_t, uint32_t, int);
 cl_error_t cli_nspack_table_size(uint8_t shift, size_t *table_size);
+int cli_nspack_table_offset(size_t table_size, uint64_t index, size_t *byte_offset);
 uint32_t very_real_unpack(uint16_t *, uint32_t, uint32_t, uint32_t, uint32_t, const char *, uint32_t, char *, uint32_t);
 uint32_t get_byte(struct UNSP *);
-int getbit_from_table(uint16_t *, struct UNSP *);
-uint32_t get_100_bits_from_tablesize(uint16_t *, struct UNSP *, uint32_t);
-uint32_t get_100_bits_from_table(uint16_t *, struct UNSP *);
-uint32_t get_n_bits_from_table(uint16_t *, uint32_t, struct UNSP *);
-uint32_t get_n_bits_from_tablesize(uint16_t *, struct UNSP *, uint32_t);
-uint32_t get_bb(uint16_t *, uint32_t, struct UNSP *);
 uint32_t get_bitmap(struct UNSP *, uint32_t);
 
 #endif
