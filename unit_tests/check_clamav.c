@@ -60657,6 +60657,54 @@ START_TEST(test_xar_hash_update_failure_is_fail_visible)
     free(data);
 }
 END_TEST
+
+START_TEST(test_xz_hash_update_failure_is_fail_visible)
+{
+    static const uint8_t archive[] = {
+        0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00, 0x00, 0x04,
+        0xe6, 0xd6, 0xb4, 0x46, 0x02, 0x00, 0x21, 0x01,
+        0x16, 0x00, 0x00, 0x00, 0x74, 0x2f, 0xe5,
+        0xa3, 0x01, 0x00, 0x0c, 0x78, 0x7a, 0x2d, 0x6c,
+        0x69, 0x6d, 0x69, 0x74, 0x2d, 0x74, 0x65, 0x73,
+        0x74, 0x00, 0x00, 0x00, 0x00, 0x6f, 0xc7, 0xf2, 0xf6,
+        0xa5, 0x44, 0x03, 0x64, 0x00, 0x01, 0x25, 0x0d,
+        0x71, 0x19, 0xc4, 0xb6, 0x1f, 0xb6, 0xf3, 0x7d,
+        0x01, 0x00, 0x00, 0x00, 0x04, 0x59, 0x5a};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    clamav_test_fail_update_hash = 1;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_XZ", NULL);
+    clamav_test_fail_update_hash = 0;
+
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
 #endif
 
 static Suite *test_cl_suite(void)
@@ -61746,6 +61794,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xz, test_xz_truncated_stream_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_xz, test_xz_hash_finalization_failure_is_fail_visible);
+    tcase_add_test(tc_xz, test_xz_hash_update_failure_is_fail_visible);
 #endif
     suite_add_tcase(s, tc_xz_corpus);
     tcase_add_checked_fixture(tc_xz_corpus, cl_setup, cl_teardown);

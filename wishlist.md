@@ -13470,6 +13470,18 @@ qualification remain open.
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   Sonic1, resource, and final parser/release qualification before closure.
 
+## XZ checksum-update status — 2026-09-02
+
+- Make XZ block and stream-index SHA-256 hash initialization, update, and
+  finalization failures fail-visible before decompressed child publication;
+  keep decoder errors ahead of stale finished-status signals. Retain
+  `test_xz_hash_update_failure_is_fail_visible`, its registration, source
+  guards, and the expanded `xz-hash-finalization-status` capability evidence.
+  Add current-source production-GCC and linked execution, complete XZ corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification before closure.
+
 ## PDF RunLength end-marker admission — 2026-09-02
 
 - Require both bounded and legacy PDF RunLength decoders to observe the 128

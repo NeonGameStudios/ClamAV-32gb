@@ -50,6 +50,7 @@ unsigned XzFlags_GetCheckSize(CXzStreamFlags f)
 void XzCheck_Init(CXzCheck *p, int mode)
 {
   p->mode = mode;
+  p->sha = NULL;
   switch (mode)
   {
     case XZ_CHECK_CRC32: p->crc = CRC_INIT_VAL; break;
@@ -60,17 +61,20 @@ void XzCheck_Init(CXzCheck *p, int mode)
   }
 }
 
-void XzCheck_Update(CXzCheck *p, const void *data, size_t size)
+int XzCheck_Update(CXzCheck *p, const void *data, size_t size)
 {
   switch (p->mode)
   {
     case XZ_CHECK_CRC32: p->crc = CrcUpdate(p->crc, data, size); break;
     case XZ_CHECK_CRC64: p->crc64 = Crc64Update(p->crc64, data, size); break;
     case XZ_CHECK_SHA256:
-        if ((p->sha))
-            cl_update_hash(p->sha, (void *)data, size);
+        if (!(p->sha) || cl_update_hash(p->sha, data, size) != 0)
+            return -1;
         break;
+    default:
+        return -1;
   }
+  return 0;
 }
 
 int XzCheck_Final(CXzCheck *p, Byte *digest)
@@ -90,7 +94,7 @@ int XzCheck_Final(CXzCheck *p, Byte *digest)
     }
     case XZ_CHECK_SHA256:
       if (!(p->sha))
-          return 0;
+          return -1;
 
       if (cl_finish_hash(p->sha, digest) != 0) {
           p->sha = NULL;

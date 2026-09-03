@@ -22260,3 +22260,24 @@ Current-source production-GCC compilation and linked execution, complete XAR
 corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+## XZ checksum-update status — 2026-09-02
+
+The vendored XZ decoder previously ignored SHA-256 `cl_update_hash()` failures
+for both block checks and the stream-index digest. A failed update could leave
+the decoder with a partial checksum while a finished-status signal still
+allowed the outer scanner to publish or scan decompressed output.
+
+The XZ checksum helpers now return and propagate update failures as decoder
+errors, destroy the failed index-hash context, reject hash initialization or
+finalization gaps, and make `cli_XzDecode()` prioritize a decoder error over a
+stale finished status. The focused
+`test_xz_hash_update_failure_is_fail_visible` regression injects a valid XZ
+stream-index hash update failure and requires the public non-clean result,
+cleared verdict, and non-cacheable fmap. Source guards and the capability
+manifest record the expanded boundary.
+
+Current-source production-GCC compilation and linked execution, complete XZ
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

@@ -38,6 +38,18 @@ SRes BraState_SetProps(void *pp, const Byte *props, size_t propSize, ISzAlloc *a
 void BraState_Init(void *pp);
 SRes BraState_SetFromMethod(IStateCoder *p, UInt64 id, ISzAlloc *alloc);
 
+static int XzSha_Update(void **sha, const void *data, size_t size)
+{
+  if (!sha || !*sha || cl_update_hash(*sha, data, size) != 0) {
+    if (sha && *sha) {
+      cl_hash_destroy(*sha);
+      *sha = NULL;
+    }
+    return -1;
+  }
+  return 0;
+}
+
 unsigned Xz_ReadVarInt(const Byte *p, size_t maxSize, UInt64 *value)
 {
   int i, limit;
@@ -611,6 +623,8 @@ SRes XzUnpacker_Create(CXzUnpacker *p, ISzAlloc *alloc)
   p->numStreams = 0;
   p->numBlocks = 0;
   p->padSize = 0;
+  p->sha = NULL;
+  p->check.sha = NULL;
   return SZ_OK;
 }
 
@@ -648,7 +662,8 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
       }
 
       res = MixCoder_Code(&p->decoder, dest, &destLen2, src, &srcLen2, False, finishMode, status);
-      XzCheck_Update(&p->check, dest, destLen2);
+      if (XzCheck_Update(&p->check, dest, destLen2) != 0)
+        return SZ_ERROR_CRC;
 
       (*srcLen) += srcLen2;
       src += srcLen2;
@@ -665,8 +680,8 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
         Byte temp[32];
         unsigned num = Xz_WriteVarInt(temp, p->packSize + p->blockHeaderSize + XzFlags_GetCheckSize(p->streamFlags));
         num += Xz_WriteVarInt(temp + num, p->unpackSize);
-        if ((p->sha))
-            cl_update_hash(p->sha, temp, num);
+        if ((p->sha) && XzSha_Update(&p->sha, temp, num) != 0)
+          return SZ_ERROR_CRC;
         p->indexSize += num;
         p->numBlocks++;
 
@@ -702,6 +717,8 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
           RINOK(Xz_ParseHeader(&p->streamFlags, p->buf));
           p->state = XZ_STATE_BLOCK_HEADER;
           p->sha = cl_hash_init("sha2-256");
+          if (!(p->sha))
+            return SZ_ERROR_MEM;
           p->indexSize = 0;
           p->numBlocks = 0;
           p->pos = 0;
@@ -726,6 +743,8 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
                     return SZ_ERROR_CRC;
                 }
                 p->sha = cl_hash_init("sha2-256");
+                if (!(p->sha))
+                  return SZ_ERROR_MEM;
             }
             p->crc = CrcUpdate(CRC_INIT_VAL, p->buf, p->indexPreSize);
             p->state = XZ_STATE_STREAM_INDEX;
@@ -809,8 +828,8 @@ SRes XzUnpacker_Code(CXzUnpacker *p, Byte *dest, SizeT *destLen,
             if (srcRem > cur)
               srcRem = (SizeT)cur;
             p->crc = CrcUpdate(p->crc, src, srcRem);
-            if ((p->sha))
-                cl_update_hash(p->sha, (void *)src, srcRem);
+            if ((p->sha) && XzSha_Update(&p->sha, src, srcRem) != 0)
+              return SZ_ERROR_CRC;
             (*srcLen) += srcRem;
             src += srcRem;
             p->indexPos += srcRem;

@@ -85,7 +85,7 @@ typedef struct
 } CXzCheck;
 
 void XzCheck_Init(CXzCheck *p, int mode);
-void XzCheck_Update(CXzCheck *p, const void *data, size_t size);
+int XzCheck_Update(CXzCheck *p, const void *data, size_t size);
 int XzCheck_Final(CXzCheck *p, Byte *digest);
 
 typedef UInt16 CXzStreamFlags;
