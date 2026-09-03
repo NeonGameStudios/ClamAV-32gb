@@ -29743,6 +29743,12 @@ START_TEST(test_mbr_partition_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbr_check_rejects_null_buffer)
+{
+    ck_assert_int_eq(cli_mbr_check(NULL, MBR_SECTOR_SIZE, MBR_SECTOR_SIZE), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_mbr_type_confirmation_read_failure_is_fail_visible)
 {
     uint8_t data[1024] = {0};
@@ -61873,6 +61879,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gpt_corpus, test_gpt_corpus_detects_embedded_mz);
     suite_add_tcase(s, tc_mbr);
     tcase_add_checked_fixture(tc_mbr, cl_setup, cl_teardown);
+    tcase_add_test(tc_mbr, test_mbr_check_rejects_null_buffer);
     tcase_add_test(tc_mbr, test_mbr_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_type_confirmation_read_failure_is_fail_visible);
     tcase_add_test(tc_mbr, test_mbr_partition_limit_is_fail_visible);

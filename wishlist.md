@@ -127,6 +127,15 @@ signature qualification remain required.
   production-CVD/service, materialized-large-file, Sonic1, resource, and final
   parser/release qualification before closure.
 
+## MBR direct buffer admission — 2026-09-03
+
+- Keep `cli_mbr_check()` rejecting a null caller buffer with `CL_ENULLARG`
+  before its fixed boot-record offset is applied. Retain
+  `test_mbr_check_rejects_null_buffer`, its source guards, and the capability
+  evidence. Add current-source linked execution, sanitizer, complete
+  partition-image corpus, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification before closure.
+
 ## TNEF debug-message read status — 2026-09-02
 
 - Keep the optional CL_DEBUG TNEF message-metadata path distinguishing an

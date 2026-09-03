@@ -147,6 +147,10 @@ cl_error_t cli_mbr_check(const unsigned char *buff, size_t len, size_t maplen)
     size_t mbr_base   = 0;
     size_t sectorsize = 512;
 
+    if (buff == NULL) {
+        return CL_ENULLARG;
+    }
+
     if (len < sectorsize) {
         return CL_EFORMAT;
     }

@@ -185,6 +185,18 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## MBR direct buffer admission — 2026-09-03
+
+The legacy `cli_mbr_check()` helper accepted a caller-provided buffer and
+checked only its length before adding the fixed boot-record offset. A direct
+caller supplying `NULL` with a sufficiently large length could therefore
+dereference a null pointer before MBR classification. The helper now returns
+`CL_ENULLARG` before pointer arithmetic, and
+`test_mbr_check_rejects_null_buffer` is registered in the MBR TCase and pinned
+by the large-file source guards. This closes the direct helper boundary; MBR
+parser-family, production-linked, sanitizer, materialized-large-file, Sonic1,
+resource, service, and final release qualification remain open.
+
 ## TNEF debug-message read status — 2026-09-02
 
 The optional CL_DEBUG TNEF message-metadata path previously collapsed an
