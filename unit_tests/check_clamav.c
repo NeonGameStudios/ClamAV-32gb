@@ -468,6 +468,7 @@ off_t __wrap_lseek(int fd, off_t offset, int whence)
 static bool pdf_test_output_window_allocation_active;
 static bool pdf_test_fail_output_window_allocation;
 static unsigned int pdf_test_output_window_allocation_failures;
+static bool pdf_test_fail_object_table_realloc;
 static bool scan_report_test_fail_allocation;
 static unsigned int scan_report_test_allocation_failures;
 static int mspack_test_fail_next_allocation;
@@ -19614,6 +19615,42 @@ START_TEST(test_pdf_object_stream_pair_bounds_are_fail_visible)
     ck_assert_int_eq(pdf_find_and_parse_objs_in_objstm(&pdf, &objstm), CL_EFORMAT);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+START_TEST(test_pdf_object_table_realloc_failure_rolls_back)
+{
+    static const char input[] = "1 0 obj\n<<>>\nendobj\n";
+    static char streambuf[] = "21 0 << /Type /Catalog >>";
+    struct pdf_struct pdf;
+    struct objstm_struct objstm;
+    struct pdf_obj *obj_found = (struct pdf_obj *)(uintptr_t)1U;
+
+    memset(&pdf, 0, sizeof(pdf));
+    pdf.map  = input;
+    pdf.size = sizeof(input) - 1U;
+
+    pdf_test_fail_object_table_realloc = true;
+    ck_assert_int_eq(pdf_findobj(&pdf), CL_EMEM);
+    ck_assert_uint_eq(pdf.nobjs, 0U);
+    ck_assert_ptr_null(pdf.objs);
+
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&objstm, 0, sizeof(objstm));
+    objstm.first        = 5U;
+    objstm.current_pair = 0U;
+    objstm.n             = 1U;
+    objstm.streambuf     = streambuf;
+    objstm.streambuf_len = sizeof(streambuf) - 1U;
+
+    pdf_test_fail_object_table_realloc = true;
+    ck_assert_int_eq(pdf_findobj_in_objstm(&pdf, &objstm, &obj_found), CL_EMEM);
+    ck_assert_ptr_null(obj_found);
+    ck_assert_uint_eq(pdf.nobjs, 0U);
+    ck_assert_ptr_null(pdf.objs);
+    ck_assert_uint_eq(objstm.nobjs_found, 0U);
+}
+END_TEST
+#endif
 
 START_TEST(test_pdf_object_stream_quota_failure_has_no_backing)
 {
@@ -49925,6 +49962,10 @@ void *__wrap_calloc(size_t nmemb, size_t size)
 
 void *__wrap_realloc(void *ptr, size_t size)
 {
+    if (pdf_test_fail_object_table_realloc) {
+        pdf_test_fail_object_table_realloc = false;
+        return NULL;
+    }
     if (htmlnorm_test_fail_next_realloc) {
         htmlnorm_test_fail_next_realloc = 0;
         return NULL;
@@ -62748,6 +62789,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_flate_object_stream_uses_file_backing);
     tcase_add_test(tc_cl, test_pdf_malformed_object_stream_retains_backing);
     tcase_add_test(tc_cl, test_pdf_object_stream_pair_bounds_are_fail_visible);
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+    tcase_add_test(tc_cl, test_pdf_object_table_realloc_failure_rolls_back);
+#endif
     tcase_add_test(tc_cl, test_pdf_object_stream_quota_failure_has_no_backing);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_pdf_encrypted_stream_write_failure_rolls_back);

@@ -1,5 +1,15 @@
 # Wishlist
 
+## PDF object-table rollback — 2026-09-03
+
+- Keep PDF object-table publication transactional: grow the table before
+  publishing `pdf->nobjs`, restore `objstm->nobjs_found` after insertion
+  failure, and preserve explicit incomplete state for allocation failures.
+  Retain `test_pdf_object_table_realloc_failure_rolls_back` and source guards;
+  production-linked execution, sanitizer, full PDF corpus, service,
+  materialized-large-file, Sonic1, resource, and final qualification remain
+  required.
+
 ## Matcher hash initialization evidence — 2026-09-03
 
 The raw matcher now marks a required hash-context initialization failure

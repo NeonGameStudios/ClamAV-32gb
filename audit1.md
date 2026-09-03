@@ -1,5 +1,18 @@
 # Independent read-only audit of audit.md
 
+## PDF object-table allocation rollback — 2026-09-03
+
+The PDF direct and object-stream object finders incremented `pdf->nobjs`
+before growing the object-pointer table. A failed reallocation could therefore
+make cleanup write through a null or stale table, or retain a count containing
+an uninitialized slot. The current source allocates/grows first, publishes the
+count only after success, restores `nobjs_found` on object-stream failure, and
+marks object/table allocation failures incomplete. The linker-injected
+`test_pdf_object_table_realloc_failure_rolls_back` regression covers both
+insertion paths and verifies `CL_EMEM`, no published objects, and reset state.
+Production-GCC relink/execution, sanitizer, complete PDF corpus, service,
+materialized-large-file, Sonic1, and final release qualification remain open.
+
 ## Raw matcher hash-context initialization — 2026-09-03
 
 `cli_scan_fmap()` previously returned `CL_EARG` when a required HDB/FP hash

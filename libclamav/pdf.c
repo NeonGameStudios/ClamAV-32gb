@@ -733,6 +733,9 @@ int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, 
 {
     cl_error_t status   = CL_EPARSE;
     struct pdf_obj *obj = NULL;
+    struct pdf_obj **new_objs;
+    size_t old_nobjs_found = 0;
+    size_t new_count;
     unsigned long objid = 0, objoff = 0;
     long temp_long         = 0;
     const char *index      = NULL;
@@ -745,6 +748,8 @@ int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, 
         cli_warnmsg("pdf_findobj_in_objstm: invalid arguments\n");
         return CL_EARG;
     }
+
+    old_nobjs_found = objstm->nobjs_found;
 
     if (pdf->nobjs >= MAX_PDF_OBJECTS) {
         pdf->flags |= 1 << BAD_PDF_TOOMANYOBJS;
@@ -762,6 +767,8 @@ int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, 
     obj = calloc(sizeof(struct pdf_obj), 1);
     if (!obj) {
         cli_warnmsg("pdf_findobj_in_objstm: out of memory finding objects in stream\n");
+        if (pdf->ctx != NULL)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF object-stream object could not be allocated");
         status = CL_EMEM;
         goto done;
     }
@@ -909,12 +916,27 @@ int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, 
         obj->size = objstm->streambuf_len - obj->start;
     }
 
-    /* Success! Add the object to the list of all objects found. */
-    pdf->nobjs++;
-    CLI_MAX_REALLOC_OR_GOTO_DONE(pdf->objs, sizeof(struct pdf_obj *) * pdf->nobjs,
-                                 cli_warnmsg("pdf_findobj_in_objstm: out of memory finding objects in stream\n"),
-                                 status = CL_EMEM);
-    pdf->objs[pdf->nobjs - 1] = obj;
+    /* Success! Add the object to the list of all objects found. Publish the
+     * count only after the table has been grown; a failed reallocation must
+     * not leave cleanup indexing an uninitialized slot. */
+    new_count = pdf->nobjs + 1U;
+    if (new_count < pdf->nobjs || new_count > SIZE_MAX / sizeof(*pdf->objs)) {
+        cli_warnmsg("pdf_findobj_in_objstm: out of memory finding objects in stream\n");
+        if (pdf->ctx != NULL)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF object table could not be grown");
+        status = CL_EMEM;
+        goto done;
+    }
+    new_objs = cli_max_realloc(pdf->objs, sizeof(*pdf->objs) * new_count);
+    if (new_objs == NULL) {
+        cli_warnmsg("pdf_findobj_in_objstm: out of memory finding objects in stream\n");
+        if (pdf->ctx != NULL)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF object table could not be grown");
+        status = CL_EMEM;
+        goto done;
+    }
+    pdf->objs = new_objs;
+    pdf->objs[pdf->nobjs++] = obj;
 
     *obj_found = obj;
 
@@ -922,6 +944,7 @@ int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, 
 
 done:
     if (CL_SUCCESS != status) {
+        objstm->nobjs_found = old_nobjs_found;
         if (NULL != obj) {
             free(obj);
         }
@@ -964,7 +987,10 @@ cl_error_t pdf_findobj(struct pdf_struct *pdf)
     const char *endobj_begin = NULL, *endobj_end = NULL;
 
     struct pdf_obj *obj = NULL;
+    struct pdf_obj **new_objs;
     size_t bytesleft;
+    size_t new_count;
+    bool obj_in_table = false;
     cl_error_t search_status;
     unsigned long genid, objid;
     long temp_long;
@@ -976,15 +1002,26 @@ cl_error_t pdf_findobj(struct pdf_struct *pdf)
         status = CL_BREAK;
         goto done;
     }
-    pdf->nobjs++;
-    CLI_MAX_REALLOC_OR_GOTO_DONE(pdf->objs, sizeof(struct pdf_obj *) * pdf->nobjs, status = CL_EMEM);
-
     obj = malloc(sizeof(struct pdf_obj));
     if (!obj) {
+        if (pdf->ctx != NULL)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF object could not be allocated");
         status = CL_EMEM;
         goto done;
     }
-    pdf->objs[pdf->nobjs - 1] = obj;
+
+    new_count = pdf->nobjs + 1U;
+    if (new_count < pdf->nobjs || new_count > SIZE_MAX / sizeof(*pdf->objs) ||
+        (new_objs = cli_max_realloc(pdf->objs, sizeof(*pdf->objs) * new_count)) == NULL) {
+        if (pdf->ctx != NULL)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF object table could not be grown");
+        status = CL_EMEM;
+        goto done;
+    }
+    pdf->objs             = new_objs;
+    pdf->objs[pdf->nobjs] = obj;
+    pdf->nobjs            = new_count;
+    obj_in_table          = true;
 
     memset(obj, 0, sizeof(*obj));
 
@@ -1173,8 +1210,10 @@ done:
     } else {
         /* Remove the unused obj reference from our list of objects found */
         /* No need to realloc pdf->objs back down.  It won't leak. */
-        pdf->objs[pdf->nobjs - 1] = NULL;
-        pdf->nobjs--;
+        if (obj_in_table) {
+            pdf->objs[pdf->nobjs - 1] = NULL;
+            pdf->nobjs--;
+        }
 
         /* Free up the obj struct. */
         if (NULL != obj)
