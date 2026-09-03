@@ -22161,3 +22161,23 @@ Current-source production-GCC compilation, production-linked execution,
 complete concatenated-GZip corpus, sanitizer evidence, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
+## UPX decoder result contract audit — 2026-09-02
+
+The UPX LZMA path treated a failed `cli_LzmaInit()` as return value `0`, and
+accepted any nonnegative `cli_LzmaDecode()` result as a complete decoder. The
+PE caller uses nonnegative values to admit rebuilt output, so initialization
+failure or an unfinished LZMA stream could be handed off as a successful
+unpack. The common `pefromupx()` helper also returned `0` or `1` for several
+allocation, section-bound, arithmetic, and copy-coordinate failures, which
+had the same ambiguity at its `>= 0` callers.
+
+UPX LZMA now requires `LZMA_STREAM_END`; decoder/rebuild failures return
+`-1`, copy extents use subtraction-based bounds, and the confirmed PE UPX
+branch records `CL_EUNPACK` plus sticky incomplete state when every decoder
+fails. `test_pe_upx_lzma_decoder_init_failure_is_fail_visible` injects the
+production initialization failure and verifies the negative contract, with
+source guards and a capability row recording the boundary. Current-source
+production-GCC compilation and linked execution, complete PE/UPX corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, and final parser/release qualification
+remain open.

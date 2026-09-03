@@ -227,7 +227,7 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
         cli_dbgmsg("UPX: no luck - brutally crafting a reasonable PE\n");
         if (!(newbuf = (char *)cli_max_calloc(rebsz + 0x200, sizeof(char)))) {
             cli_dbgmsg("UPX: malloc failed - giving up rebuild\n");
-            return 0;
+            return -1;
         }
         memcpy(newbuf, HEADERS, 0xd0);
         memcpy(newbuf + 0xd0, FAKEPE, 0x120);
@@ -255,7 +255,7 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
         /* Within bounds ? */
         if (!CLI_ISCONTAINED(upx0, realstuffsz, urva, vsize)) {
             cli_dbgmsg("UPX: Sect %d out of bounds - giving up rebuild\n", upd);
-            return 0;
+            return -1;
         }
 
         cli_writeint32(sections + 8, vsize);
@@ -264,7 +264,7 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
         cli_writeint32(sections + 20, foffset);
         if (foffset + vsize < foffset) {
             /* Integer overflow */
-            return 0;
+            return -1;
         }
         foffset += vsize;
 
@@ -276,7 +276,7 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
 
     if (!(newbuf = (char *)cli_max_calloc(foffset, sizeof(char)))) {
         cli_dbgmsg("UPX: malloc failed - giving up rebuild\n");
-        return 0;
+        return -1;
     }
 
     memcpy(newbuf, HEADERS, 0xd0);
@@ -289,15 +289,15 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
         }
         offset1 = (uint32_t)cli_readint32(sections + 20);
         offset2 = (uint32_t)cli_readint32(sections + 16);
-        if (offset1 > foffset || offset2 > foffset || offset1 + offset2 > foffset) {
+        if (offset1 > foffset || offset2 > foffset - offset1) {
             free(newbuf);
-            return 1;
+            return -1;
         }
 
         offset3 = (uint32_t)cli_readint32(sections + 12);
         if (offset3 - upx0 > *dsize) {
             free(newbuf);
-            return 1;
+            return -1;
         }
         memcpy(newbuf + offset1, dst + offset3 - upx0, offset2);
         sections += 0x28;
@@ -309,7 +309,7 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
     if (foffset > *dsize + 8192) {
         cli_dbgmsg("UPX: wrong raw size - giving up rebuild\n");
         free(newbuf);
-        return 0;
+        return -1;
     }
     memcpy(dst, newbuf, foffset);
     *dsize = foffset;
@@ -660,13 +660,13 @@ int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize,
     l.next_in     = fake_lzmahdr;
     l.avail_in    = 5;
     if (cli_LzmaInit(&l, *dsize) != LZMA_RESULT_OK)
-        return 0;
+        return -1;
     l.avail_in  = ssize;
     l.avail_out = *dsize;
     l.next_in   = (unsigned char *)src + 2;
     l.next_out  = (unsigned char *)dst;
 
-    if (cli_LzmaDecode(&l) == LZMA_RESULT_DATA_ERROR) {
+    if (cli_LzmaDecode(&l) != LZMA_STREAM_END) {
         /*     __asm__ __volatile__("int3"); */
         cli_LzmaShutdown(&l);
         return -1;

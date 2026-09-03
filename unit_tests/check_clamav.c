@@ -191,6 +191,7 @@ int clamav_test_force_bzip_concat_decoder_init;
 int clamav_test_force_xar_lzma_decoder_init;
 int clamav_test_force_hfsplus_decoder_init;
 int clamav_test_force_egg_lzma_decoder_init;
+int clamav_test_force_upx_lzma_decoder_init;
 int clamav_test_lzma_shutdown_calls;
 int clamav_test_force_cli_readn_status;
 size_t clamav_test_force_cli_readn_count;
@@ -368,6 +369,10 @@ int __wrap_adc_decompressEnd(adc_stream *strm)
 
 int __wrap_cli_LzmaInit(struct CLI_LZMA *lz, uint64_t usize)
 {
+    if (clamav_test_force_upx_lzma_decoder_init) {
+        clamav_test_force_upx_lzma_decoder_init = 0;
+        return LZMA_RESULT_DATA_ERROR;
+    }
     if (clamav_test_force_xar_lzma_decoder_init) {
         clamav_test_force_xar_lzma_decoder_init = 0;
         return LZMA_RESULT_DATA_ERROR;
@@ -47526,6 +47531,18 @@ START_TEST(test_pe_public_api_read_failure_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_pe_upx_lzma_decoder_init_failure_is_fail_visible)
+{
+    uint32_t dsize = 1;
+
+    clamav_test_force_upx_lzma_decoder_init = 1;
+    ck_assert_int_eq(upx_inflatelzma(NULL, 0, NULL, &dsize, 0, 0, 0, 0x20003, NULL), -1);
+    ck_assert_int_eq(clamav_test_force_upx_lzma_decoder_init, 0);
+}
+END_TEST
+#endif
+
 START_TEST(test_pe_corpus_detects_embedded_mz)
 {
     static const char *const executables[] = {"clam-fsg.exe", "clam-upx.exe"};
@@ -60857,6 +60874,9 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_pe, test_pe_missing_map_is_fail_visible);
     tcase_add_test(tc_pe, test_pe_public_api_read_failure_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_pe, test_pe_upx_lzma_decoder_init_failure_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_pe_corpus);
     tcase_add_checked_fixture(tc_pe_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_pe_corpus, test_pe_corpus_detects_embedded_mz);
@@ -62354,6 +62374,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_heuristic_read_failures_are_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_pe_upx_lzma_decoder_init_failure_is_fail_visible);
+#endif
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pe_rawaddr_preserves_native_coordinate);
     tcase_add_test(tc_cl, test_pe_header_preserves_unsigned_high_bit_section_fields);

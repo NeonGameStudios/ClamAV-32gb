@@ -4609,6 +4609,8 @@ int cli_scanpe(cli_ctx *ctx)
 
         if (!upx_success) {
             cli_dbgmsg("cli_scanpe: UPX: All decompressors failed\n");
+            cli_mark_scan_incomplete(ctx, "PE UPX decompressor did not complete");
+            ret = cli_merge_scan_status(ret, CL_EUNPACK);
             free(dest);
         }
     }

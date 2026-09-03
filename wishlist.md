@@ -13442,3 +13442,16 @@ qualification remain open.
   execution, production CVD/service, sanitizer, certified Linux x86-64,
   materialized-large-file, Sonic1, resource, and final CVD/release
   qualification before closure.
+## UPX decoder result contract — 2026-09-02
+
+- Keep confirmed UPX LZMA admission fail-visible: decoder initialization must
+  return a negative failure, decoding must reach `LZMA_STREAM_END`, and
+  allocation, section-bound, arithmetic, and copy-coordinate rebuild failures
+  must not be interpreted as successful unpacking. Mark a confirmed UPX path
+  incomplete when every decoder fails.
+- Retain `test_pe_upx_lzma_decoder_init_failure_is_fail_visible`, its
+  registration and source guards, and the `upx-decoder-status` capability
+  evidence. Add current-source production-GCC and linked execution, complete
+  PE/UPX corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final PE/release
+  qualification before closure.
