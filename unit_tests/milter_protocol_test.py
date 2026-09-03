@@ -27,6 +27,11 @@ import time
 DEFAULT_MAX_FILE_SIZE = 256
 EXACT_EDGE_FILE_SIZE = 32 * 1024 * 1024 * 1024
 MARKER = bytes.fromhex("434c414d41562d4d494c5445522d5445535400")
+MILTER_WIRE_HEADERS = (
+    b"From clamav-milter\n",
+    b"Subject: protocol integration\r\n",
+    b"\r\n",
+)
 DATABASE_SUFFIXES = {
     ".cdb",
     ".crtdb",
@@ -175,6 +180,23 @@ def send_body_chunk(sock, protocol, body):
         raise RuntimeError("unexpected body action: {!r}".format(command))
 
 
+def expected_exact_stream_sha256(body_size, marker, fill_byte):
+    """Hash the deterministic logical message independently of socket chunking."""
+    if body_size < len(marker):
+        raise RuntimeError("exact-edge body is shorter than the marker")
+    stream_hash = hashlib.sha256()
+    for header in MILTER_WIRE_HEADERS:
+        stream_hash.update(header)
+    filler = bytes([fill_byte]) * (1024 * 1024)
+    remaining = body_size - len(marker)
+    while remaining:
+        length = min(remaining, len(filler))
+        stream_hash.update(filler[:length])
+        remaining -= length
+    stream_hash.update(marker)
+    return stream_hash.hexdigest()
+
+
 def run_exact_edge_case(milter_socket, body_size, marker, chunk_size, fill_byte):
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.settimeout(300)
@@ -186,9 +208,8 @@ def run_exact_edge_case(milter_socket, body_size, marker, chunk_size, fill_byte)
 
         filler = bytes([fill_byte]) * chunk_size
         stream_hash = hashlib.sha256()
-        stream_hash.update(b"From clamav-milter\n")
-        stream_hash.update(b"Subject: protocol integration\r\n")
-        stream_hash.update(b"\r\n")
+        for header in MILTER_WIRE_HEADERS:
+            stream_hash.update(header)
         remaining = body_size - len(marker)
         sent = 0
         next_report = 256 * 1024 * 1024
@@ -405,6 +426,11 @@ def main():
             )
             if sent != body_size:
                 raise RuntimeError("exact-edge body byte count mismatch: {} != {}".format(sent, body_size))
+            expected_stream_sha256 = expected_exact_stream_sha256(body_size, MARKER, fill_byte)
+            if stream_sha256 != expected_stream_sha256:
+                raise RuntimeError(
+                    "milter exact-edge stream digest did not match deterministic wire oracle"
+                )
             message_size = sent + before_body
             expected_offset = message_size - len(MARKER)
             clamd_text = clamd_log.read_text(errors="replace")

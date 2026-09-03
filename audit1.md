@@ -1,5 +1,17 @@
 # Independent read-only audit of audit.md
 
+## Milter deterministic stream digest — 2026-09-03
+
+The exact-edge milter harness previously printed a SHA-256 without checking
+that it matched an independently derived expected stream. It now hashes the
+fixed headers, repeated `0x5a` body filler, and tail marker through a separate
+chunking-independent oracle before accepting the run. The post-run service
+verifier binds the recorded digest to the deterministic 32-GiB fixture
+(`7ec57c684966d38ba3db215be49cffa732317898dc8868439be681ba6ed6d50e`), and
+the synthetic evidence regression uses that exact value. This closes the
+digest-proof gap; current production-CVD/service, sanitizer, materialized
+large-file, Sonic1, resource, and final PLAN.md qualification remain open.
+
 ## Historical release wording cleanup — 2026-09-03
 
 The status report contained a historical release-candidate label that could be

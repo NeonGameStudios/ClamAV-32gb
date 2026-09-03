@@ -8,8 +8,8 @@ gate passes.
 ## Current qualification boundary — 2026-09-03
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 565 capability rows, with
-0 qualified rows and 546 release-blocking bounded, pending, or required-
+certificate. At the current audit point it contains 566 capability rows, with
+0 qualified rows and 547 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical
 entries below preserve engineering evidence and open work; they do not
 substitute for current-source linked execution,
@@ -90,9 +90,11 @@ The ZIP implementation now treats EOCD-confirmed malformed EOCD/ZIP64
 metadata as incomplete and non-cacheable rather than falling back to local
 headers. The milter exact-edge harness records the expected tail signature,
 offset, root size, exact logical-byte count, effective 64-GiB scan budget,
-completion state, skipped-operation count, and transmitted stream digest; the
-bridge rejects over-budget logical accounting. These are qualification inputs,
-not yet release certification.
+completion state, skipped-operation count, and transmitted stream digest. The
+independent harness oracle and post-run verifier now require the exact
+SHA-256 `7ec57c684966d38ba3db215be49cffa732317898dc8868439be681ba6ed6d50e`
+for the deterministic 32-GiB fixture; the bridge rejects over-budget logical
+accounting. These are qualification inputs, not yet release certification.
 
 The deliberate-unsupported release allowlist is now maintained separately from
 candidate manifests and is enforced by both the manifest validator and the

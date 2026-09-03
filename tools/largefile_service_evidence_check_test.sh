@@ -174,7 +174,7 @@ for label in $workload_labels; do
         "$label" "$kind" "$role" "$workload_input" "$log_rel" "$report_rel" \
         "$workload_status" "$check_offset" >> "$workload_results"
 done
-printf 'milter manual wire: body_bytes=34359738316 message_bytes=34359738368 limit_bytes=34359738368 result=r signature=Milter.Protocol.Test offset=34359738349 sha256=0000000000000000000000000000000000000000000000000000000000000000 completion=DETECTION_TERMINATED root_size=34359738368 logical_bytes=34359738368 max_scan_size=68719476736 skipped_operations=1 last_alert_offset=34359738349\n' > \
+printf 'milter manual wire: body_bytes=34359738316 message_bytes=34359738368 limit_bytes=34359738368 result=r signature=Milter.Protocol.Test offset=34359738349 sha256=7ec57c684966d38ba3db215be49cffa732317898dc8868439be681ba6ed6d50e completion=DETECTION_TERMINATED root_size=34359738368 logical_bytes=34359738368 max_scan_size=68719476736 skipped_operations=1 last_alert_offset=34359738349\n' > \
     "$out/logs/milter-exact-edge.log"
 printf 'milter-exact-edge\tmilter\t-\t-\tlogs/milter-exact-edge.log\t-\t0\tno\n' >> "$workload_results"
 
@@ -253,6 +253,16 @@ write_checksum_manifest()
             done
     ) > "$out/SHA256SUMS"
 }
+
+cp "$out/logs/milter-exact-edge.log" "$tmp/milter-exact-edge.good"
+sed 's/7ec57c684966d38ba3db215be49cffa732317898dc8868439be681ba6ed6d50e/0000000000000000000000000000000000000000000000000000000000000000/' \
+    "$tmp/milter-exact-edge.good" > "$out/logs/milter-exact-edge.log"
+write_checksum_manifest
+if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted a non-oracle milter stream digest' >&2
+    exit 1
+fi
+cp "$tmp/milter-exact-edge.good" "$out/logs/milter-exact-edge.log"
 
 cp "$loaded_dependencies" "$tmp/loaded-dependencies.good"
 cp "$out/provenance/service-build-identity.txt" "$tmp/service-build-identity.loader-good"

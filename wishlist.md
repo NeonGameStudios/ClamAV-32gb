@@ -1,5 +1,14 @@
 # Wishlist
 
+## Milter deterministic stream digest — 2026-09-03
+
+- Keep the exact-edge milter evidence bound to the independent logical-stream
+  oracle and the fixed SHA-256
+  `7ec57c684966d38ba3db215be49cffa732317898dc8868439be681ba6ed6d50e`.
+  Preserve the post-run verifier and regression fixture; still obtain current
+  production-CVD/service, sanitizer, materialized-large-file, Sonic1,
+  resource, and final PLAN.md qualification.
+
 ## Historical release wording cleanup — 2026-09-03
 
 - Keep historical status sections explicitly bound to their named commits and

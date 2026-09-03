@@ -56,6 +56,10 @@ REPORT_FIELDS = (
 ROLES = {"production", "materialized", "expansion", "edge"}
 KINDS = {"cli", "service", "report", "milter"}
 MAX_LOGICAL_BYTES = 64 * 1024 * 1024 * 1024
+# This is the SHA-256 of the exact official milter fixture: the three fixed
+# headers, 32 GiB minus the marker of byte 0x5a ('Z'), and MARKER. The
+# independent harness oracle derives the same value without materializing it.
+MILTER_EXACT_STREAM_SHA256 = "7ec57c684966d38ba3db215be49cffa732317898dc8868439be681ba6ed6d50e"
 
 
 def fail(message: str) -> None:
@@ -323,6 +327,8 @@ def main(argv: list[str]) -> int:
                 or int(exact_wire.group(6)) > MAX_LOGICAL_BYTES
             ):
                 fail("milter workload log does not prove the exact-edge rejection")
+            if exact_wire.group(5) != MILTER_EXACT_STREAM_SHA256:
+                fail("milter workload log does not prove the deterministic transmitted stream digest")
             continue
 
         if role not in ROLES:
