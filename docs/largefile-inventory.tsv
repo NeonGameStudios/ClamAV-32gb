@@ -6990,7 +6990,7 @@ fixed-width-integer	unit_tests/check_clamav.c	43362	    offset += sizeof(uint32_
 fixed-width-integer	unit_tests/check_clamav.c	43430	    uint64_t temporary_reserved = 0;
 fixed-width-integer	unit_tests/check_clamav.c	43433	    uint32_t module_hash_count = 0;
 fixed-width-integer	unit_tests/check_clamav.c	4353	    uint64_t scanned;
-fixed-width-integer	unit_tests/check_clamav.c	43561	    uint64_t output_size = UINT64_MAX;
+fixed-width-integer	unit_tests/check_clamav.c	43561	    uint64_t output_size = UINT64_MAX; size_t legacy_size = SIZE_MAX, i;
 fixed-width-integer	unit_tests/check_clamav.c	43596	    uint64_t output_size = UINT64_MAX;
 fixed-width-integer	unit_tests/check_clamav.c	43621	    uint64_t output_size = UINT64_MAX;
 fixed-width-integer	unit_tests/check_clamav.c	43646	    uint64_t output_size = UINT64_MAX;
@@ -16491,7 +16491,7 @@ native-width-integer	libclamav/vba_extract.c	2288	    if (lseek(fd, offset, SEEK
 native-width-integer	libclamav/vba_extract.c	2289	        lseek(fd, 3, SEEK_CUR) == (off_t)-1) /* 1byte ?? , 2byte length ?? */
 native-width-integer	libclamav/vba_extract.c	2297	            unsigned int winpos = (unsigned int)(pos % VBA_COMPRESSION_WINDOW);
 native-width-integer	libclamav/vba_extract.c	2357	    if (read_result == (size_t)-1)
-native-width-integer	libclamav/vba_extract.c	2361	                              (size_t)(pos % VBA_COMPRESSION_WINDOW), &produced);
+native-width-integer	libclamav/vba_extract.c	2361	                              (size_t)(pos - produced), &produced);
 native-width-integer	libclamav/vba_extract.c	2374	static cl_error_t vba_blob_write(const unsigned char *data, size_t data_size, void *context)
 native-width-integer	libclamav/vba_extract.c	2382	cli_vba_inflate(int fd, off_t offset, size_t *size)
 native-width-integer	libclamav/vba_extract.c	2404	        *size = (size_t)output_size;
@@ -20610,8 +20610,8 @@ native-width-integer	unit_tests/check_clamav.c	43431	    int output_fd = -1;
 native-width-integer	unit_tests/check_clamav.c	43432	    int has_macros = 0;
 native-width-integer	unit_tests/check_clamav.c	43434	    int fd;
 native-width-integer	unit_tests/check_clamav.c	4354	    unsigned long legacy_scanned;
-native-width-integer	unit_tests/check_clamav.c	43562	    size_t legacy_size   = SIZE_MAX;
-native-width-integer	unit_tests/check_clamav.c	43564	    int fd;
+native-width-integer	unit_tests/check_clamav.c	43561	    uint64_t output_size = UINT64_MAX; size_t legacy_size = SIZE_MAX, i;
+native-width-integer	unit_tests/check_clamav.c	43562	    char path[PATH_MAX]; int fd;
 native-width-integer	unit_tests/check_clamav.c	43598	    int fd;
 native-width-integer	unit_tests/check_clamav.c	436	        return (off_t)-1;
 native-width-integer	unit_tests/check_clamav.c	43623	    int fd;
@@ -22851,7 +22851,7 @@ boundary-constant	unit_tests/check_clamav.c	42415	    ole2_block_failure_length 
 boundary-constant	unit_tests/check_clamav.c	4251	    sigs = UINT_MAX - 1U;
 boundary-constant	unit_tests/check_clamav.c	4254	    ck_assert_uint_eq(sigs, UINT_MAX - 1U);
 boundary-constant	unit_tests/check_clamav.c	42707	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	43562	    size_t legacy_size   = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	43561	    uint64_t output_size = UINT64_MAX; size_t legacy_size = SIZE_MAX, i;
 boundary-constant	unit_tests/check_clamav.c	43693	#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	4378	    legacy_scanned = ULONG_MAX;
 boundary-constant	unit_tests/check_clamav.c	43930	    size_t size = SIZE_MAX;
@@ -25699,7 +25699,7 @@ format-width	unit_tests/check_clamav.c	4174	    snprintf(file_path, sizeof(file_
 format-width	unit_tests/check_clamav.c	4175	    snprintf(dir_path, sizeof(dir_path), "/tmp/clamav-largefile-signatures-%ld.d", (long)getpid());
 format-width	unit_tests/check_clamav.c	43099	    ck_assert_msg(ret == CL_ECREAT, "OLE2 materialization returned %d", ret);
 format-width	unit_tests/check_clamav.c	43307	    ck_assert_msg(output.maximum_write <= 4, "split UTF-8 conversion emitted %zu bytes at once", output.maximum_write);
-format-width	unit_tests/check_clamav.c	43579	                  "VBA inflater emitted %zu bytes at once", output.maximum_write);
+format-width	unit_tests/check_clamav.c	43572	    ck_assert_msg(output.maximum_write <= 4096U, "VBA inflater emitted %zu bytes at once", output.maximum_write);
 format-width	unit_tests/check_clamav.c	44675	    ck_assert_msg(ret == CL_CLEAN, "valid split DMG Base64 returned %d", ret);
 format-width	unit_tests/check_clamav.c	44684	    ck_assert_msg(ret != CL_CLEAN && ret != CL_VIRUS, "invalid-alphabet DMG Base64 returned %d", ret);
 format-width	unit_tests/check_clamav.c	44693	    ck_assert_msg(ret != CL_CLEAN && ret != CL_VIRUS, "misplaced-padding DMG Base64 returned %d", ret);
@@ -35892,6 +35892,7 @@ offset-size-arithmetic	libclamav/vba_extract.c	2326	                        srcp
 offset-size-arithmetic	libclamav/vba_extract.c	2327	                        buffer[pos++ % VBA_COMPRESSION_WINDOW] = buffer[srcpos];
 offset-size-arithmetic	libclamav/vba_extract.c	2345	                    pos++;
 offset-size-arithmetic	libclamav/vba_extract.c	2357	    if (read_result == (size_t)-1)
+offset-size-arithmetic	libclamav/vba_extract.c	2361	                              (size_t)(pos - produced), &produced);
 offset-size-arithmetic	libclamav/vba_extract.c	2374	static cl_error_t vba_blob_write(const unsigned char *data, size_t data_size, void *context)
 offset-size-arithmetic	libclamav/vba_extract.c	2382	cli_vba_inflate(int fd, off_t offset, size_t *size)
 offset-size-arithmetic	libclamav/vba_extract.c	2428	        len -= todo;
@@ -39811,7 +39812,7 @@ offset-size-arithmetic	unit_tests/check_clamav.c	43487	    snprintf(project_path
 offset-size-arithmetic	unit_tests/check_clamav.c	43488	    snprintf(module_path, sizeof(module_path), "%s/%s_1", tmpdir, module_hash);
 offset-size-arithmetic	unit_tests/check_clamav.c	43506	    engine.maxfilesize      = 1024U * 1024U;
 offset-size-arithmetic	unit_tests/check_clamav.c	43507	    engine.maxtemporarysize = 1024U * 1024U;
-offset-size-arithmetic	unit_tests/check_clamav.c	43566	    snprintf(path, sizeof(path), "%s/vba-inflate-stream", tmpdir);
+offset-size-arithmetic	unit_tests/check_clamav.c	43564	    snprintf(path, sizeof(path), "%s/vba-inflate-stream", tmpdir);
 offset-size-arithmetic	unit_tests/check_clamav.c	436	        return (off_t)-1;
 offset-size-arithmetic	unit_tests/check_clamav.c	43600	    snprintf(path, sizeof(path), "%s/vba-inflate-invalid-backreference", tmpdir);
 offset-size-arithmetic	unit_tests/check_clamav.c	43625	    snprintf(path, sizeof(path), "%s/vba-inflate-truncated-literal", tmpdir);

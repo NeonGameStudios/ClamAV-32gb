@@ -43255,7 +43255,7 @@ END_TEST
 
 #ifndef _WIN32
 struct vba_bounded_test_output {
-    unsigned char data[256];
+    unsigned char data[4096];
     size_t data_size;
     size_t writes;
     size_t maximum_write;
@@ -43551,41 +43551,41 @@ START_TEST(test_vba_callback_materialized_read_status_is_fail_visible)
 END_TEST
 #endif
 
-START_TEST(test_vba_inflate_stream_matches_legacy_output)
+START_TEST(test_vba_inflate_stream_matches_legacy_output_and_flushes_exact_final_window)
 {
-    static const unsigned char compressed[] = {
-        0x01, 0x00, 0x00, 0x00, 'A', 'b', 'C', '_', ' ', '\r', '\n', 'Z'};
+    static const unsigned char compressed[] = {0x01, 0x00, 0x00, 0x00, 'A', 'b', 'C', '_', ' ', '\r', '\n', 'Z'};
     static const unsigned char expected[] = {'A', 'b', 'C', '_', ' ', '\r', '\n', 'Z'};
+    unsigned char exact[3 + (4096 / 8) + 4096], expected_exact[4096];
     struct vba_bounded_test_output output;
     unsigned char *legacy;
-    uint64_t output_size = UINT64_MAX;
-    size_t legacy_size   = SIZE_MAX;
-    char path[PATH_MAX];
-    int fd;
+    uint64_t output_size = UINT64_MAX; size_t legacy_size = SIZE_MAX, i;
+    char path[PATH_MAX]; int fd;
 
     snprintf(path, sizeof(path), "%s/vba-inflate-stream", tmpdir);
     fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
     ck_assert_int_ne(fd, -1);
     ck_assert_uint_eq(cli_writen(fd, compressed, sizeof(compressed)), sizeof(compressed));
-
     memset(&output, 0, sizeof(output));
-    ck_assert_int_eq(cli_vba_inflate_stream(fd, 0, vba_bounded_test_write,
-                                            &output, &output_size),
-                     CL_SUCCESS);
-    ck_assert_uint_eq(output_size, sizeof(expected));
-    ck_assert_uint_eq(output.data_size, sizeof(expected));
+    ck_assert_int_eq(cli_vba_inflate_stream(fd, 0, vba_bounded_test_write, &output, &output_size), CL_SUCCESS);
+    ck_assert_uint_eq(output_size, sizeof(expected)); ck_assert_uint_eq(output.data_size, sizeof(expected));
     ck_assert_mem_eq(output.data, expected, sizeof(expected));
-    ck_assert_msg(output.maximum_write <= 4096U,
-                  "VBA inflater emitted %zu bytes at once", output.maximum_write);
-
+    ck_assert_msg(output.maximum_write <= 4096U, "VBA inflater emitted %zu bytes at once", output.maximum_write);
     legacy = cli_vba_inflate(fd, 0, &legacy_size);
-    ck_assert_ptr_nonnull(legacy);
-    ck_assert_uint_eq(legacy_size, sizeof(expected));
-    ck_assert_mem_eq(legacy, output.data, legacy_size);
-    free(legacy);
+    ck_assert_ptr_nonnull(legacy); ck_assert_uint_eq(legacy_size, sizeof(expected));
+    ck_assert_mem_eq(legacy, output.data, legacy_size); free(legacy); close(fd);
 
-    close(fd);
-    unlink(path);
+    /* Flags are interleaved with the eight literals they announce. */
+    memset(exact, 'A', sizeof(exact)); memset(expected_exact, 'A', sizeof(expected_exact));
+    exact[0] = 0x01; exact[1] = exact[2] = 0;
+    for (i = 3; i < sizeof(exact); i += 9) exact[i] = 0;
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, exact, sizeof(exact)), sizeof(exact));
+    memset(&output, 0, sizeof(output));
+    ck_assert_int_eq(cli_vba_inflate_stream(fd, 0, vba_bounded_test_write, &output, &output_size), CL_SUCCESS);
+    ck_assert_uint_eq(output_size, sizeof(expected_exact)); ck_assert_uint_eq(output.data_size, sizeof(expected_exact));
+    ck_assert_mem_eq(output.data, expected_exact, sizeof(expected_exact)); ck_assert_uint_eq(output.maximum_write, 4096);
+    close(fd); unlink(path);
 }
 END_TEST
 
@@ -62335,7 +62335,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_codepage_utf8_stream_preserves_split_sequences);
     tcase_add_test(tc_cl, test_codepage_utf8_stream_rejects_invalid_sequence);
     tcase_add_test(tc_cl, test_codepage_stream_preserves_iconv_state);
-    tcase_add_test(tc_cl, test_vba_inflate_stream_matches_legacy_output);
+    tcase_add_test(tc_cl, test_vba_inflate_stream_matches_legacy_output_and_flushes_exact_final_window);
     tcase_add_test(tc_cl, test_vba_inflate_stream_rejects_initial_backreference);
     tcase_add_test(tc_cl, test_vba_inflate_stream_rejects_truncated_literal);
     tcase_add_test(tc_cl, test_vba_inflate_stream_rejects_truncated_token);

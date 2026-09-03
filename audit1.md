@@ -22219,3 +22219,24 @@ Current-source production-GCC compilation and linked execution, complete
 PDF/filter corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
+
+## VBA exact-final-window flush — 2026-09-02
+
+The bounded VBA inflater could return success after a valid compressed chunk
+decoded exactly one 4 KiB history window but ended at EOF without a following
+chunk header. The normal full-window flush occurs while reading the next
+header, while the final flush used pos modulo VBA_COMPRESSION_WINDOW; at an
+exact boundary that published zero bytes and silently dropped the complete
+module chunk.
+
+The final flush now emits the decoded bytes still outstanding relative to the
+already-delivered count, including an exact 4 KiB final window. The focused
+test_vba_inflate_stream_matches_legacy_output_and_flushes_exact_final_window
+fixture uses 4096 interleaved literal bytes with no following chunk header and
+requires all bytes to be delivered with a successful status. Source guards and
+the vba-module-stream capability evidence record the boundary.
+
+Current-source production-GCC compilation and linked execution, complete
+OLE/VBA corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.

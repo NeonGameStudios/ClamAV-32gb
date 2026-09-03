@@ -13482,3 +13482,16 @@ qualification remain open.
   complete PDF/filter corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, Sonic1, resource, and final
   parser/release qualification before closure.
+
+## VBA exact-final-window flush — 2026-09-02
+
+- Keep the bounded VBA inflater's final flush based on decoded bytes not yet
+  delivered, so a valid 4 KiB final chunk ending at EOF cannot return clean
+  while publishing zero bytes. Retain
+  `test_vba_inflate_stream_matches_legacy_output_and_flushes_exact_final_window`,
+  its registration and source guards, and the `vba-module-stream` capability
+  evidence. Add
+  current-source production-GCC and linked execution, complete OLE/VBA corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification before closure.

@@ -2358,7 +2358,7 @@ cl_error_t cli_vba_inflate_stream(int fd, off_t offset, cli_vba_inflate_write_cb
         return CL_EREAD;
 
     status = vba_inflate_emit(write_cb, write_context, buffer,
-                              (size_t)(pos % VBA_COMPRESSION_WINDOW), &produced);
+                              (size_t)(pos - produced), &produced);
     if (status != CL_SUCCESS)
         return status;
 
