@@ -1,13 +1,14 @@
 # ClamAV 32 GiB Development and Validation Status
 
-## Current qualification warning — 2026-08-24
+## Current qualification warning — 2026-09-03
 
 This branch is not release-qualified. The current manifest records 0
-qualified, 34 source-bounded, 122 pending, and 23 deliberately unsupported
-capabilities; all 76 enabled parser rows still require release evidence. The
-August 14–18 “current-head” statements below are historical and remain bound
-to their named commits and manifests. Sonic1 was unreachable by SSH on
-2026-08-24, so none of the latest PDF or admission work has current-source
+qualified, 141 bounded, 398 pending, and 26 unsupported capabilities; 546 rows
+remain release-blocking, including 7 required rows marked unsupported, and all
+80 enabled parser rows still require release evidence. The August 14–18
+“current-head” statements below are historical and remain bound to their named
+commits and manifests. Sonic1 was unreachable by SSH on 2026-09-03, so none of
+the latest PDF or admission work has current-source
 Linux x86-64 production evidence. The working tree now fails certified daemon
 startup when `RLIMIT_FSIZE` cannot accommodate one maximum-sized ingress, or
 when staging is on tmpfs/ramfs; focused local
@@ -23,9 +24,11 @@ reference format-8-only interfaces, and `clambc` initializes native matcher
 offsets. Exact, allocation-free scan-option queries now reject partial and
 embedded-NUL names. Focused GCC and ASan/UBSan checks pass, and the loader
 format-isolation regression compiles; independently compiled format-8
-interpreter/JIT and Sonic1 production-bytecode evidence remain open.
+interpreter/JIT and Sonic1 production-bytecode evidence remain open. The
+release gate now uses a fixed shared allowlist for deliberate unsupported rows,
+so a required parser or matcher cannot bypass qualification by relabelling.
 
-**Status date:** 2026-08-14
+**Status date:** 2026-09-03
 
 ## Latest current-head rebinding and Sonic1 evidence — 2026-08-18
 

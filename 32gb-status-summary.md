@@ -1,12 +1,15 @@
 # Brief 32 GiB Status Summary
 
-## Current qualification snapshot — 2026-08-24
+## Current qualification snapshot — 2026-09-03
 
 The current branch is **not release-qualified**. The authoritative capability
-manifest has 179 entries: 0 qualified, 34 source-bounded, 122 pending, and 23
-deliberately unsupported. All 76 enabled parser rows remain blocked on release
+manifest has 565 entries: 0 qualified, 141 bounded, 398 pending, and 26
+unsupported. It reports 546 release-blocking rows, including 7 required rows
+marked unsupported, and all 80 enabled parser rows remain blocked on release
 evidence. `tools/largefile_release_readiness.sh` reports this distinction and
-fails unless every supported row is explicitly `qualified`.
+fails unless every non-excluded row is independently qualified. The release
+gate also rejects relabelling a required parser or matcher as a deliberate
+unsupported row through its fixed shared allowlist.
 
 Local Linux ARM64 GCC evidence now covers the latest PDF crypt dictionaries,
 DecodeParms semantics, bounded-spool rollback, and all five bounded-filter
@@ -16,8 +19,8 @@ adds fail-closed daemon checks for `RLIMIT_FSIZE` and disk-backed temporary
 staging, and enforces the certified one-worker profile, with deterministic GCC
 and ASan/UBSan policy evidence. Nested v1/v2 cgroup membership and ancestor
 headroom are resolved rather than assuming hierarchy-root limits; current-source
-x86-64 daemon startup remains unqualified. Sonic1 resolved but its
-SSH port timed out on 2026-08-24, so no current-source remote command ran.
+x86-64 daemon startup remains unqualified. Sonic1 remains unreachable at its
+SSH port on 2026-09-03, so no current-source remote command ran.
 Bytecode v1/v2 search now preserves split signatures across 4 KiB windows,
 including above 4 GiB; the loader enforces format-8-only APIs/globals and
 `clambc` supplies native test offsets. Exact bytecode scan-option queries are
