@@ -44,7 +44,7 @@ printf 'synthetic source manifest\n' > "$out/provenance/source-manifest.txt"
 source_manifest_sha256=$(sha256sum "$out/provenance/source-manifest.txt" | awk '{ print $1 }')
 source_commit=$source_manifest_sha256
 source_tree=$source_manifest_sha256
-printf 'MaxScanTime 14400000\n' > "$out/clamd.conf"
+printf 'MaxThreads 1\nMaxQueue 2\nMaxScanTime 14400000\nAlertExceedsMax yes\n' > "$out/clamd.conf"
 printf 'CMAKE_HOME_DIRECTORY:INTERNAL=%s\n' "$root" > "$out/provenance/CMakeCache.txt"
 printf 'CLAMAV_SOURCE_COMMIT:INTERNAL=%s\n' "$source_commit" >> "$out/provenance/CMakeCache.txt"
 printf 'CLAMAV_SOURCE_MANIFEST_SHA256:INTERNAL=%s\n' "$source_manifest_sha256" >> "$out/provenance/CMakeCache.txt"
@@ -174,7 +174,7 @@ for label in $workload_labels; do
         "$label" "$kind" "$role" "$workload_input" "$log_rel" "$report_rel" \
         "$workload_status" "$check_offset" >> "$workload_results"
 done
-printf 'milter manual wire: body_bytes=1 message_bytes=1 limit_bytes=34359738368 result=r chunk_bytes=1 fill_byte=65\n' > \
+printf 'milter manual wire: body_bytes=34359738316 message_bytes=34359738368 limit_bytes=34359738368 result=r signature=Milter.Protocol.Test offset=34359738349 sha256=0000000000000000000000000000000000000000000000000000000000000000 completion=DETECTION_TERMINATED root_size=34359738368 skipped_operations=1 last_alert_offset=34359738349\n' > \
     "$out/logs/milter-exact-edge.log"
 printf 'milter-exact-edge\tmilter\t-\t-\tlogs/milter-exact-edge.log\t-\t0\tno\n' >> "$workload_results"
 

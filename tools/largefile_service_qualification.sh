@@ -811,6 +811,7 @@ write_config()
         printf 'PCREMaxFileSize 32G\n'
         printf 'StreamMaxLength 32G\n'
         printf 'MaxScanTime %s\n' "$max_scan_time_ms"
+        printf 'AlertExceedsMax yes\n'
         printf 'MaxRecursion 17\n'
         printf 'MaxFiles 10000\n'
         # Keep worker contention visible in the daemon log. The serial queue
@@ -1204,13 +1205,12 @@ printf 'edge_clamdscan_fildes=pass\n' >> "$out/service-summary.txt"
 run_service_scan edge edge_instream "$edge_file" --stream
 printf 'edge_clamdscan_instream=pass\n' >> "$out/service-summary.txt"
 
-# Exercise MaxThreads=4 with four simultaneous clamdscan clients. This is a
-# separate explicit service profile from the certified one-worker/2-queue
-# profile above. These are independent requests to the same daemon, not four
-# standalone clamscan processes, so the evidence covers the service
-# worker/queue path directly.
+# Exercise four simultaneous clamdscan clients against the certified single
+# worker. This deliberately uses a larger temporary queue only to keep all
+# clients admitted while the one worker drains them; the final evidence
+# configuration is restored to the release profile (MaxThreads=1, MaxQueue=2).
 stop_service
-start_service "$edge_db" 4 8
+start_service "$edge_db" 1 8
 multi_dir="$out/logs/clamd-multiworker"
 mkdir -p "$multi_dir"
 multi_pids=
@@ -1282,6 +1282,15 @@ while [ "$worker" -le 4 ]; do
 done
 printf 'clamd_multiworker_count=4\n' >> "$out/service-summary.txt"
 printf 'clamd_multiworker=pass\n' >> "$out/service-summary.txt"
+printf 'parallel_worker_count=1\n' >> "$out/service-summary.txt"
+printf 'parallel_client_count=4\n' >> "$out/service-summary.txt"
+printf 'parallel_queue=pass\n' >> "$out/service-summary.txt"
+
+# Do not leave the stress queue setting in the service artifact.  The
+# configuration consumed by the evidence verifier and release gate must be
+# exactly the certified one-worker/two-queue profile.
+stop_service
+write_config "$edge_db" 1 2
 
 for elapsed_file in "$out"/logs/*.elapsed; do
     if ! awk -v budget="$latency_budget_s" '{ if ($1 > budget) exit 1 }' "$elapsed_file"; then

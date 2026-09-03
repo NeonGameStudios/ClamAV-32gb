@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include <libmilter/mfapi.h>
 
@@ -349,12 +350,9 @@ sfsistat clamfi_abort(SMFICTX *ctx)
 sfsistat clamfi_eom(SMFICTX *ctx)
 {
     struct CLAMFI *cf;
+    struct nc_scan_report scan_report;
     char *reply = NULL;
     int len, ret;
-    int infected   = 0;
-    int incomplete = 0;
-    cl_error_t report_status = CL_SUCCESS;
-    char *alert    = NULL;
     unsigned int crcpt;
 
     if (!(cf = (struct CLAMFI *)smfi_getpriv(ctx)))
@@ -401,15 +399,32 @@ sfsistat clamfi_eom(SMFICTX *ctx)
         }
     }
 
-    if (nc_recv_scan_report(cf->main, &infected, &incomplete, &report_status, &alert) < 0) {
+    if (nc_recv_scan_report(cf->main, &scan_report) < 0) {
         logg(LOGG_ERROR, "No valid structured report from clamd\n");
-        free(alert);
+        nc_scan_report_free(&scan_report);
         if (cf->local)
             close(cf->alt);
         cf->alt = -1;
         nullify(ctx, cf, CF_MAIN);
         free(cf);
         return FailAction;
+    }
+
+    if (scan_report.last_alert_offset_valid) {
+        logg(LOGG_DEBUG,
+             "Structured clamd report: completion=%s root_size=%" PRIu64
+             " skipped_operations=%" PRIu64 " last_alert_offset=%" PRIu64 "\n",
+             scan_report_completion_name(scan_report.completion),
+             scan_report.root_size,
+             scan_report.skipped_operations,
+             scan_report.last_alert_offset);
+    } else {
+        logg(LOGG_DEBUG,
+             "Structured clamd report: completion=%s root_size=%" PRIu64
+             " skipped_operations=%" PRIu64 "\n",
+             scan_report_completion_name(scan_report.completion),
+             scan_report.root_size,
+             scan_report.skipped_operations);
     }
 
     if (cf->local)
@@ -420,10 +435,10 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     /* Detection takes precedence over an incomplete sibling report, matching
      * the library and clamd structured-report contract.  A non-detection
      * incomplete result must never be treated as a clean milter action. */
-    if (incomplete && !infected) {
+    if (scan_report.incomplete && !scan_report.infected) {
         logg(LOGG_ERROR, "Structured clamd report is incomplete (%s); refusing clean verdict\n",
-             cl_strerror(report_status));
-        free(alert);
+             cl_strerror(scan_report.status));
+        nc_scan_report_free(&scan_report);
         nullify(ctx, cf, CF_MAIN);
         free(cf);
         return FailAction;
@@ -432,17 +447,17 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     /* Keep the existing milter logging/action code while normalizing the
      * structured result into its two legacy branches. The actual report was
      * already validated by nc_recv_scan_report(). */
-    if (infected && alert && *alert) {
-        size_t reply_size = strlen(alert) + sizeof("stream:  FOUND\n");
+    if (scan_report.infected && scan_report.alert && *scan_report.alert) {
+        size_t reply_size = strlen(scan_report.alert) + sizeof("stream:  FOUND\n");
         reply             = (char *)malloc(reply_size);
         if (reply)
-            snprintf(reply, reply_size, "stream: %s FOUND\n", alert);
-    } else if (infected)
+            snprintf(reply, reply_size, "stream: %s FOUND\n", scan_report.alert);
+    } else if (scan_report.infected)
         reply = strdup("stream: structured clamd report FOUND\n");
     else
         reply = strdup("stream: OK\n");
     if (!reply) {
-        free(alert);
+        nc_scan_report_free(&scan_report);
         nullify(ctx, cf, CF_MAIN);
         free(cf);
         return FailAction;
@@ -480,8 +495,8 @@ sfsistat clamfi_eom(SMFICTX *ctx)
         if ((loginfected & (LOGINF_BASIC | LOGINF_FULL)) || addxvirus || rejectfmt || viraction) {
             char *vir = NULL;
 
-            if (alert && *alert) {
-                vir = alert;
+            if (scan_report.alert && *scan_report.alert) {
+                vir = scan_report.alert;
             } else {
                 reply[len - 7] = '\0';
                 vir            = strrchr(reply, ' ');
@@ -590,7 +605,7 @@ sfsistat clamfi_eom(SMFICTX *ctx)
 
     nullify(ctx, cf, CF_MAIN);
     free(cf);
-    free(alert);
+    nc_scan_report_free(&scan_report);
     free(reply);
     return ret;
 }

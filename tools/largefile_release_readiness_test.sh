@@ -24,6 +24,14 @@ hash_fixture()
 mkdir -p "$work/evidence/provenance"
 printf 'synthetic release source manifest\n' > "$work/evidence/provenance/source-manifest.txt"
 source_manifest_sha256=$(hash_fixture "$work/evidence/provenance/source-manifest.txt")
+mkdir -p "$work/evidence/proof"
+printf 'capability-specific synthetic proof\n' > "$work/evidence/proof/library-path.txt"
+proof_sha256=$(hash_fixture "$work/evidence/proof/library-path.txt")
+printf 'kind\tid\tstatus\tsource_manifest_sha256\tproof\tproof_sha256\n' \
+    > "$work/evidence/provenance/capability-bindings.tsv"
+printf 'library\tpath\tqualified\t%s\tproof/library-path.txt\t%s\n' \
+    "$source_manifest_sha256" "$proof_sha256" \
+    >> "$work/evidence/provenance/capability-bindings.tsv"
 
 expect_rejected()
 {
@@ -48,7 +56,18 @@ expect_rejected()
 "$gate" --manifest "$work/ready.tsv" > "$work/ready.out"
 grep -F 'release_readiness=test-manifest-pass' "$work/ready.out" >/dev/null
 
-for blocked_status in bounded pending; do
+{
+    write_header
+    printf 'library\tpath\tqualified\tlibclamav/scanners.c\trelease_evidence=test:%s source_manifest_sha256=%s\n' \
+        "$work/evidence" "$source_manifest_sha256"
+    printf 'library\tother\tqualified\tlibclamav/others.c\trelease_evidence=test:%s source_manifest_sha256=%s\n' \
+        "$work/evidence" "$source_manifest_sha256"
+    printf 'unsupported\tlegacy\tunsupported\tlegacy.c\texplicit incomplete\n'
+} > "$work/reused-evidence.tsv"
+expect_rejected 'generic evidence reused for a different capability' \
+    'no unique valid binding for library:other' "$work/reused-evidence.tsv"
+
+for blocked_status in bounded pending unsupported; do
     {
         write_header
         printf 'parser\tCL_TYPE_PDF\t%s\tlibclamav/pdf.c\trelease evidence required\n' "$blocked_status"
@@ -59,7 +78,11 @@ for blocked_status in bounded pending; do
         exit 1
     fi
     grep -F 'release_readiness=blocked' "$work/blocked.out" >/dev/null
-    grep -F "$blocked_status" "$work/blocked.err" >/dev/null
+    if [ "$blocked_status" = unsupported ]; then
+        grep -F 'unsupported required capability' "$work/blocked.err" >/dev/null
+    else
+        grep -F "$blocked_status" "$work/blocked.err" >/dev/null
+    fi
     if "$gate" --manifest "$work/blocked.tsv" --status > "$work/status.out"; then
         echo "release gate status mode accepted a $blocked_status capability" >&2
         exit 1

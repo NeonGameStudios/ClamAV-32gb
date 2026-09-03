@@ -336,6 +336,54 @@ START_TEST(test_scan_report_json_alert_extracts_detection_name)
 }
 END_TEST
 
+START_TEST(test_scan_report_json_metadata_binds_completion_and_boundaries)
+{
+    static const char report[] =
+        "{\"version\":1,\"status\":0,\"verdict\":2,"
+        "\"completion\":\"DETECTION_TERMINATED\",\"root_size\":34359738368,"
+        "\"skipped_operations\":3,\"last_alert_offset\":34359738349}";
+    static const char missing_root[] =
+        "{\"version\":1,\"status\":0,\"verdict\":0,"
+        "\"completion\":\"COMPLETE\",\"skipped_operations\":0}";
+    static const char out_of_range_alert[] =
+        "{\"version\":1,\"status\":1,\"verdict\":2,"
+        "\"completion\":\"DETECTION_TERMINATED\",\"root_size\":10,"
+        "\"skipped_operations\":0,\"last_alert_offset\":11}";
+    cl_scan_completion_t completion = CL_SCAN_COMPLETION_COMPLETE;
+    uint64_t root_size = 0;
+    uint64_t skipped_operations = 0;
+    uint64_t last_alert_offset = 0;
+    int last_alert_offset_valid = 0;
+
+    ck_assert_int_eq(scan_report_json_metadata(report, (uint32_t)strlen(report),
+                                               &completion, &root_size,
+                                               &skipped_operations,
+                                               &last_alert_offset,
+                                               &last_alert_offset_valid),
+                     0);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
+    ck_assert_uint_eq(root_size, UINT64_C(34359738368));
+    ck_assert_uint_eq(skipped_operations, UINT64_C(3));
+    ck_assert_uint_eq(last_alert_offset, UINT64_C(34359738349));
+    ck_assert_int_eq(last_alert_offset_valid, 1);
+    ck_assert_str_eq(scan_report_completion_name(completion), "DETECTION_TERMINATED");
+
+    ck_assert_int_eq(scan_report_json_metadata(missing_root, (uint32_t)strlen(missing_root),
+                                               &completion, &root_size,
+                                               &skipped_operations,
+                                               &last_alert_offset,
+                                               &last_alert_offset_valid),
+                     -1);
+    ck_assert_int_eq(scan_report_json_metadata(out_of_range_alert,
+                                               (uint32_t)strlen(out_of_range_alert),
+                                               &completion, &root_size,
+                                               &skipped_operations,
+                                               &last_alert_offset,
+                                               &last_alert_offset_valid),
+                     -1);
+}
+END_TEST
+
 #ifndef _WIN32
 START_TEST(test_scan_report_frames_are_bounded_and_fragment_safe)
 {
@@ -2113,6 +2161,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_scan_report_fallback_completion_classes);
     tcase_add_test(tc_parser, test_scan_report_json_status_rejects_contradictory_reports);
     tcase_add_test(tc_parser, test_scan_report_json_alert_extracts_detection_name);
+    tcase_add_test(tc_parser, test_scan_report_json_metadata_binds_completion_and_boundaries);
 #ifndef _WIN32
     tcase_add_test(tc_parser, test_scan_report_frames_are_bounded_and_fragment_safe);
 #endif

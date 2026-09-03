@@ -3312,6 +3312,7 @@ cl_error_t cli_unzip(cli_ctx *ctx)
     size_t i;
     bool scan_incomplete_before_index = false;
     bool deferred_index_incomplete    = false;
+    bool eocd_seen                    = false;
     cl_error_t deferred_index_result  = CL_SUCCESS;
 
     cli_dbgmsg("in cli_unzip\n");
@@ -3343,7 +3344,7 @@ cl_error_t cli_unzip(cli_ctx *ctx)
         fsize,
         &coff,
         NULL,
-        NULL);
+        &eocd_seen);
     if (CL_SUCCESS == ret) {
         cli_dbgmsg("cli_unzip: central directory header offset: 0x%zx\n", coff);
 
@@ -3401,6 +3402,14 @@ cl_error_t cli_unzip(cli_ctx *ctx)
          * available.  Preserve that operational result instead of falling
          * back to local-header discovery and hiding it as a format error. */
         status = ret;
+        goto done;
+    } else if (eocd_seen) {
+        /* An EOCD signature confirms that this is an attempted ZIP
+         * catalogue. Do not reinterpret malformed EOCD/ZIP64 metadata as a
+         * local-header-only archive: that would silently skip the confirmed
+         * structure and could produce a false clean result. */
+        cli_mark_scan_incomplete(ctx, "ZIP end-of-central-directory structure is malformed");
+        status = CL_EPARSE;
         goto done;
     } else {
         cli_dbgmsg("cli_unzip: central directory header not found, must rely purely on local file headers\n");
@@ -3697,6 +3706,7 @@ cl_error_t unzip_search(cli_ctx *ctx, struct zip_requests *requests)
     size_t file_count = 0;
     size_t coff       = 0;
     uint32_t toval    = 0;
+    bool eocd_seen    = false;
 
     size_t file_record_size = 0;
 
@@ -3724,7 +3734,7 @@ cl_error_t unzip_search(cli_ctx *ctx, struct zip_requests *requests)
         ctx->fmap->len,
         &coff,
         NULL,
-        NULL);
+        &eocd_seen);
     if (CL_SUCCESS == ret) {
         size_t central_file_header_offset = coff;
         cli_dbgmsg("unzip_search: central directory header offset: 0x%zx\n", central_file_header_offset);
@@ -3792,6 +3802,10 @@ cl_error_t unzip_search(cli_ctx *ctx, struct zip_requests *requests)
         } while (1);
     } else if (CL_ETIMEOUT == ret || CL_BREAK == ret) {
         status = ret;
+        goto done;
+    } else if (eocd_seen) {
+        cli_mark_scan_incomplete(ctx, "ZIP end-of-central-directory structure is malformed");
+        status = CL_EPARSE;
         goto done;
     } else {
         cli_dbgmsg("unzip_search: Cannot locate central directory. unzip_search failed.\n");

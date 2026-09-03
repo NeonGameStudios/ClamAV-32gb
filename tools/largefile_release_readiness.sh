@@ -59,6 +59,86 @@ filter_release_control()
     awk 'length($0) >= 67 && substr($0, 67) != "docs/largefile-capabilities.tsv"' "$1"
 }
 
+verify_capability_binding()
+{
+    evidence_directory=$1
+    expected_kind=$2
+    expected_id=$3
+    expected_source_hash=$4
+    binding_file=$evidence_directory/provenance/capability-bindings.tsv
+
+    [ -f "$binding_file" ] || {
+        echo "qualified release evidence has no capability binding manifest: $binding_file" >&2
+        return 1
+    }
+
+    binding=$(awk -F '\t' -v wanted_kind="$expected_kind" -v wanted_id="$expected_id" '
+        NR == 1 {
+            if (NF != 6 || $1 != "kind" || $2 != "id" || $3 != "status" ||
+                $4 != "source_manifest_sha256" || $5 != "proof" || $6 != "proof_sha256")
+                invalid = 1
+            next
+        }
+        {
+            if (NF != 6 || $1 == "" || $2 == "" || $3 == "" || $4 == "" || $5 == "" || $6 == "") {
+                invalid = 1
+                next
+            }
+            if ($3 != "qualified" || length($4) != 64 || $4 !~ /^[0-9a-f]+$/ ||
+                length($6) != 64 || $6 !~ /^[0-9a-f]+$/) {
+                invalid = 1
+            }
+            key = $1 SUBSEP $2
+            seen_key[key] = seen_key[key] + 1
+            if (seen_key[key] > 1)
+                invalid = 1
+            seen_proof[$5] = seen_proof[$5] + 1
+            if (seen_proof[$5] > 1)
+                invalid = 1
+            if ($1 == wanted_kind && $2 == wanted_id) {
+                matches++
+                record = $4 "\t" $5 "\t" $6
+            }
+        }
+    END {
+        if (invalid || matches != 1)
+            exit 1
+        print record
+    }
+    ' "$binding_file") || {
+        echo "qualified release evidence has no unique valid binding for ${expected_kind}:${expected_id}" >&2
+        return 1
+    }
+
+    binding_tab=$(printf '\t')
+    binding_source_hash=
+    proof=
+    proof_hash=
+    IFS="$binding_tab" read -r binding_source_hash proof proof_hash <<EOF
+$binding
+EOF
+    [ "$binding_source_hash" = "$expected_source_hash" ] || {
+        echo "qualified release evidence binding source hash does not match for ${expected_kind}:${expected_id}" >&2
+        return 1
+    }
+    case "$proof" in
+        ''|/*|.|..|../*|*/../*|*/..|*/.|*/..)
+            echo "qualified release evidence proof path is unsafe for ${expected_kind}:${expected_id}" >&2
+            return 1
+            ;;
+    esac
+    proof_path=$evidence_directory/$proof
+    [ -f "$proof_path" ] && [ ! -L "$proof_path" ] || {
+        echo "qualified release evidence proof is missing or symlinked for ${expected_kind}:${expected_id}: $proof" >&2
+        return 1
+    }
+    actual_proof_hash=$(hash_file "$proof_path") || return 1
+    [ "$actual_proof_hash" = "$proof_hash" ] || {
+        echo "qualified release evidence proof hash does not match for ${expected_kind}:${expected_id}" >&2
+        return 1
+    }
+}
+
 verify_qualified_evidence()
 {
     records=$(mktemp "${TMPDIR:-/tmp}/clamav-release-records.XXXXXX")
@@ -87,7 +167,7 @@ verify_qualified_evidence()
                 else if (tokens[idx] ~ /^release_build=/)
                     build = substr(tokens[idx], length("release_build=") + 1)
             }
-            print evidence "\t" source_hash "\t" build
+            print $1 "\t" $2 "\t" evidence "\t" source_hash "\t" build
         }
     ' "$manifest" > "$records"
     LC_ALL=C sort -u "$records" > "$unique_records"
@@ -98,7 +178,7 @@ verify_qualified_evidence()
     fi
 
     tab=$(printf '\t')
-    while IFS="$tab" read -r evidence_token expected_hash release_build; do
+    while IFS="$tab" read -r capability_kind capability_id evidence_token expected_hash release_build; do
         [ -n "$evidence_token" ] || continue
         evidence_type=${evidence_token%%:*}
         evidence_directory=${evidence_token#*:}
@@ -123,6 +203,8 @@ verify_qualified_evidence()
             echo "qualified release evidence source manifest hash does not match: $evidence_directory" >&2
             return 1
         }
+        verify_capability_binding "$evidence_directory" "$capability_kind" \
+            "$capability_id" "$expected_hash"
 
         case "$evidence_type" in
             runtime)
@@ -237,9 +319,12 @@ summary=$(awk -F '\t' '
         }
         total++
         status[$3]++
-        if ($3 == "bounded" || $3 == "pending")
+        if ($3 == "bounded" || $3 == "pending" ||
+            ($3 == "unsupported" && $1 != "unsupported"))
             blocked++
-        if ($1 == "parser" && $3 != "qualified" && $3 != "unsupported")
+        if ($3 == "unsupported" && $1 != "unsupported")
+            unsupported_required++
+        if ($1 == "parser" && $3 != "qualified")
             parser_blocked++
     }
     END {
@@ -250,6 +335,7 @@ summary=$(awk -F '\t' '
         printf "capability_bounded=%d\n", status["bounded"]
         printf "capability_pending=%d\n", status["pending"]
         printf "capability_unsupported=%d\n", status["unsupported"]
+        printf "capability_unsupported_required=%d\n", unsupported_required
         printf "capability_blocked=%d\n", blocked
         printf "parser_blocked=%d\n", parser_blocked
     }
@@ -261,7 +347,13 @@ blocked=$(printf '%s\n' "$summary" | sed -n 's/^capability_blocked=//p')
 if [ "$blocked" -ne 0 ]; then
     echo 'release_readiness=blocked'
     if [ "$status_only" -eq 0 ]; then
-        awk -F '\t' 'NR > 1 && ($3 == "bounded" || $3 == "pending") { print $1 "\t" $2 "\t" $3 }' "$manifest" >&2
+        awk -F '\t' 'NR > 1 && ($3 == "bounded" || $3 == "pending" ||
+            ($3 == "unsupported" && $1 != "unsupported")) {
+                if ($3 == "unsupported" && $1 != "unsupported")
+                    print "unsupported required capability\t" $1 "\t" $2
+                else
+                    print $1 "\t" $2 "\t" $3
+            }' "$manifest" >&2
     fi
     exit 1
 else

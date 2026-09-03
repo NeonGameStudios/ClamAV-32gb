@@ -296,10 +296,21 @@ def main(argv: list[str]) -> int:
             if input_path != "-" or report_path != "-" or status != 0:
                 fail("milter workload record is not a successful no-report record")
             text = log.read_text(encoding="utf-8", errors="replace")
+            exact_wire = re.search(
+                r"milter manual wire: body_bytes=(\d+) message_bytes=(\d+) "
+                r"limit_bytes=(\d+) result=r "
+                r"signature=Milter\.Protocol\.Test offset=(\d+) sha256=([0-9a-f]{64}) "
+                r"completion=DETECTION_TERMINATED root_size=34359738368 "
+                r"skipped_operations=(\d+) last_alert_offset=(\d+)",
+                text,
+            )
             if (
-                "milter manual wire:" not in text
-                or "limit_bytes=34359738368" not in text
-                or "result=r" not in text
+                exact_wire is None
+                or exact_wire.group(1) != "34359738316"
+                or exact_wire.group(2) != "34359738368"
+                or exact_wire.group(3) != "34359738368"
+                or exact_wire.group(4) != "34359738349"
+                or exact_wire.group(7) != "34359738349"
             ):
                 fail("milter workload log does not prove the exact-edge rejection")
             continue

@@ -99,4 +99,11 @@ int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *t
 int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete,
                             cl_error_t *status_out);
 int scan_report_json_alert(const char *json, uint32_t json_length, char **alert);
+int scan_report_json_metadata(const char *json, uint32_t json_length,
+                              cl_scan_completion_t *completion_out,
+                              uint64_t *root_size_out,
+                              uint64_t *skipped_operations_out,
+                              uint64_t *last_alert_offset_out,
+                              int *last_alert_offset_valid_out);
+const char *scan_report_completion_name(cl_scan_completion_t completion);
 #endif

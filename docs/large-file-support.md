@@ -1,7 +1,32 @@
 # ClamAV Large-File Support
 
-Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
-pending
+Status: Implementation and qualification in progress; not release-qualified.
+Current evidence is capability-scoped and must be bound to the current source
+and build manifests. No production release claim is made until every PLAN.md
+gate passes.
+
+## Current qualification boundary — 2026-09-03
+
+The authoritative capability manifest is a coverage contract, not a release
+certificate. At the current audit point it contains 551 capability rows, with
+0 qualified rows and 532 release-blocking bounded, pending, or required-
+unsupported rows (including 7 required rows marked unsupported). Historical entries below preserve engineering evidence and
+open work; they do not substitute for current-source linked execution,
+production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
+resource measurements, service parity, or the final requirement-by-requirement
+PLAN.md completion audit.
+
+The certified service profile is one worker with a two-request queue and
+explicit `AlertExceedsMax yes`. The parallel-client stress workload uses four
+simultaneous clients against that single worker and restores the release
+configuration before evidence is sealed. Qualified release evidence must include a capability-specific,
+hash-verified binding artifact; generic shared logs are not sufficient.
+
+The ZIP implementation now treats EOCD-confirmed malformed EOCD/ZIP64
+metadata as incomplete and non-cacheable rather than falling back to local
+headers. The milter exact-edge harness records the expected tail signature,
+offset, root size, completion state, skipped-operation count, and transmitted
+stream digest; these are qualification inputs, not yet release certification.
 
 ## MBR extended-chain extent admission — 2026-09-02
 

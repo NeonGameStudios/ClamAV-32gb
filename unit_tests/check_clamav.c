@@ -7484,8 +7484,8 @@ START_TEST(test_authenticode_post_container_parse_failure_is_fail_visible)
 
     /* The first embedded certificate's TBSCertificate begins 174 bytes into
      * the PKCS#7 payload and spans 965 bytes. This fails the mapped TBS digest
-     * after structural parsing and exercises the map_hash_by_name() CL_EREAD
-     * propagation path. */
+     * after structural parsing and exercises the map_hash_by_name() CL_EREAD propagation
+     * path. */
     fail_offset = (size_t)peinfo.dirs[4].VirtualAddress + sizeof(struct pe_certificate_hdr) + 174U;
     ck_assert_msg(fail_offset <= map->len && 965U <= map->len - fail_offset,
                   "signed PE fixture is too short for the TBS hash probe");
@@ -60593,6 +60593,66 @@ START_TEST(test_zip_confirmed_central_structure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_zip_malformed_eocd_does_not_fallback_to_local_header)
+{
+    static const uint8_t input[] = "malformed EOCD must not hide a local member";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+    size_t eocd_offset;
+    cl_error_t ret;
+
+    archive = zip_stream_central_archive(
+        input, sizeof(input) - 1U, sizeof(input) - 1U,
+        ZIP_TEST_METHOD_STORED,
+        (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+        &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    ck_assert(archive_length >= 22U);
+    eocd_offset = archive_length - 22U;
+    /* Keep the local header and payload valid while making the confirmed
+     * EOCD's variable-length tail impossible to contain. */
+    zip_stream_write_u16(archive + eocd_offset + 20U, UINT16_MAX);
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cli_initroots(engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine               = engine;
+    ctx.dconf                = engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_ZIP;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+
+    ret = cli_unzip(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ZIP end-of-central-directory structure is malformed");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(archive);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_xar_hash_update_failure_is_fail_visible)
 {
@@ -61793,6 +61853,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_zip, test_zip_deflate_decoder_finalization_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_zip, test_zip_confirmed_central_structure_is_fail_visible);
+    tcase_add_test(tc_zip, test_zip_malformed_eocd_does_not_fallback_to_local_header);
     tcase_add_test(tc_zip, test_zip_central_directory_resolves_masked_local_values);
     tcase_add_test(tc_zip, test_zip_central_filename_read_failure_is_fail_visible);
     tcase_add_test(tc_zip, test_zip_central_header_read_failure_is_fail_visible);

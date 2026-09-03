@@ -12,7 +12,9 @@ MILTER_WIRE_FILL_BYTE selects the repeated body byte.
 """
 
 import os
+import hashlib
 from pathlib import Path
+import re
 import shutil
 import signal
 import socket
@@ -183,6 +185,10 @@ def run_exact_edge_case(milter_socket, body_size, marker, chunk_size, fill_byte)
             raise RuntimeError("exact-edge body is shorter than the marker")
 
         filler = bytes([fill_byte]) * chunk_size
+        stream_hash = hashlib.sha256()
+        stream_hash.update(b"From clamav-milter\n")
+        stream_hash.update(b"Subject: protocol integration\r\n")
+        stream_hash.update(b"\r\n")
         remaining = body_size - len(marker)
         sent = 0
         next_report = 256 * 1024 * 1024
@@ -190,6 +196,7 @@ def run_exact_edge_case(milter_socket, body_size, marker, chunk_size, fill_byte)
             while remaining:
                 length = min(remaining, len(filler))
                 send_body_chunk(sock, protocol, filler[:length])
+                stream_hash.update(filler[:length])
                 remaining -= length
                 sent += length
                 if sent >= next_report:
@@ -197,6 +204,7 @@ def run_exact_edge_case(milter_socket, body_size, marker, chunk_size, fill_byte)
                     next_report += 256 * 1024 * 1024
 
             send_body_chunk(sock, protocol, marker)
+            stream_hash.update(marker)
         except BrokenPipeError as error:
             raise RuntimeError("milter socket broke after {} body bytes: {}".format(sent, error)) from error
 
@@ -208,7 +216,7 @@ def run_exact_edge_case(milter_socket, body_size, marker, chunk_size, fill_byte)
                 if command != "r":
                     raise RuntimeError("unexpected exact-edge final action: {!r}".format(command))
                 send(sock, "Q")
-                return sent, command
+                return sent, command, stream_hash.hexdigest()
     finally:
         sock.close()
 
@@ -321,12 +329,16 @@ def main():
                 "DisableCache yes",
                 "ConcurrentDatabaseReload no",
                 "MaxThreads 1",
-                "MaxQueue 4",
+                "MaxQueue 2",
                 "ReadTimeout {}".format(read_timeout),
                 "CommandReadTimeout {}".format(command_read_timeout),
                 "MaxScanTime {}".format(max_scan_time_ms),
                 "MaxFileSize 32G",
-                "MaxScanSize 32G",
+                "MaxScanSize 64G",
+                "MaxMatcherWork 256G",
+                "MaxTemporarySize 64G",
+                "MaxContiguousSize 32G",
+                "PCREMaxFileSize 32G",
                 "StreamMaxLength 32G",
                 "AlertExceedsMax yes",
                 "",
@@ -350,6 +362,8 @@ def main():
                 "LogFileUnlock yes",
                 "LogTime yes",
                 "LogVerbose yes",
+                "LogInfected Basic",
+                "LogClean Basic",
                 "OnFail Defer",
                 "OnClean Accept",
                 "OnInfected Reject",
@@ -386,12 +400,46 @@ def main():
         before_body = len(b"From clamav-milter\n") + len(b"Subject: protocol integration\r\n") + 2
         if manual_wire:
             body_size = max_file_size - before_body
-            sent, result = run_exact_edge_case(milter_socket, body_size, MARKER, chunk_size, fill_byte)
+            sent, result, stream_sha256 = run_exact_edge_case(
+                milter_socket, body_size, MARKER, chunk_size, fill_byte
+            )
             if sent != body_size:
                 raise RuntimeError("exact-edge body byte count mismatch: {} != {}".format(sent, body_size))
+            message_size = sent + before_body
+            expected_offset = message_size - len(MARKER)
+            clamd_text = clamd_log.read_text(errors="replace")
+            milter_text = milter_log.read_text(errors="replace")
+            if "signature Milter.Protocol.Test matched at {}".format(expected_offset) not in clamd_text:
+                raise RuntimeError(
+                    "clamd log does not prove the expected tail signature offset {}".format(expected_offset)
+                )
+            report_metadata = re.search(
+                r"Structured clamd report: completion=DETECTION_TERMINATED "
+                r"root_size={} skipped_operations=(\d+) last_alert_offset={}".format(
+                    message_size, expected_offset
+                ),
+                milter_text,
+            )
+            if report_metadata is None:
+                raise RuntimeError("milter log does not prove the exact root size and detection completion")
+            skipped_operations = report_metadata.group(1)
+            if "infected by Milter.Protocol.Test" not in milter_text:
+                raise RuntimeError("milter log does not prove the expected infection name")
+            if "MailMaterialization" in milter_text or "Limits.Exceeded" in milter_text:
+                raise RuntimeError("milter exact-edge result was accompanied by a limit/materialization heuristic")
             print(
-                "milter manual wire: body_bytes={} message_bytes={} limit_bytes={} result={} chunk_bytes={} fill_byte={} (extra database: {})".format(
-                    sent, sent + before_body, max_file_size, result, chunk_size, fill_byte, extra_database or "none"
+                "milter manual wire: body_bytes={} message_bytes={} limit_bytes={} result={} signature={} offset={} sha256={} completion=DETECTION_TERMINATED root_size={} skipped_operations={} last_alert_offset={} (extra database: {})".format(
+                    sent,
+                    message_size,
+                    max_file_size,
+                    result,
+                    "Milter.Protocol.Test",
+                    expected_offset,
+                    stream_sha256,
+                    message_size,
+                    skipped_operations,
+                    expected_offset,
+                    extra_database or "none",
                 )
             )
         else:

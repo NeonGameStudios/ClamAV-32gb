@@ -1015,6 +1015,114 @@ invalid:
     return -1;
 }
 
+const char *scan_report_completion_name(cl_scan_completion_t completion)
+{
+    switch (completion) {
+        case CL_SCAN_COMPLETION_COMPLETE:
+            return "COMPLETE";
+        case CL_SCAN_COMPLETION_DETECTION_TERMINATED:
+            return "DETECTION_TERMINATED";
+        case CL_SCAN_COMPLETION_LIMIT_INCOMPLETE:
+            return "LIMIT_INCOMPLETE";
+        case CL_SCAN_COMPLETION_UNSUPPORTED:
+            return "UNSUPPORTED";
+        case CL_SCAN_COMPLETION_MALFORMED_CONFIRMED:
+            return "MALFORMED_CONFIRMED";
+        case CL_SCAN_COMPLETION_RESOURCE_FAILURE:
+            return "RESOURCE_FAILURE";
+        case CL_SCAN_COMPLETION_APPLICATION_ABORT:
+            return "APPLICATION_ABORT";
+        default:
+            return NULL;
+    }
+}
+
+static int scan_report_completion_from_name(const char *name, cl_scan_completion_t *completion_out)
+{
+    cl_scan_completion_t completion;
+
+    if (!name || !completion_out)
+        return -1;
+    for (completion = CL_SCAN_COMPLETION_COMPLETE;
+         completion <= CL_SCAN_COMPLETION_APPLICATION_ABORT;
+         completion++) {
+        const char *expected = scan_report_completion_name(completion);
+        if (expected && strcmp(name, expected) == 0) {
+            *completion_out = completion;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+static int scan_report_json_u64_value(struct json_object *object, const char *name, uint64_t *value_out)
+{
+    struct json_object *value_object = NULL;
+    int64_t value;
+
+    if (!object || !name || !value_out ||
+        !json_object_object_get_ex(object, name, &value_object) ||
+        !json_object_is_type(value_object, json_type_int))
+        return -1;
+    value = json_object_get_int64(value_object);
+    if (value < 0)
+        return -1;
+    *value_out = (uint64_t)value;
+    return 0;
+}
+
+int scan_report_json_metadata(const char *json, uint32_t json_length,
+                              cl_scan_completion_t *completion_out,
+                              uint64_t *root_size_out,
+                              uint64_t *skipped_operations_out,
+                              uint64_t *last_alert_offset_out,
+                              int *last_alert_offset_valid_out)
+{
+    struct json_object *object;
+    struct json_object *version_object = NULL;
+    struct json_object *completion_object = NULL;
+    int64_t version;
+
+    if (!json || !completion_out || !root_size_out || !skipped_operations_out ||
+        !last_alert_offset_out || !last_alert_offset_valid_out || json_length == 0)
+        return -1;
+
+    *last_alert_offset_out       = 0;
+    *last_alert_offset_valid_out = 0;
+    object = report_json_parse_object(json, json_length);
+    if (!object ||
+        !json_object_object_get_ex(object, "version", &version_object) ||
+        !json_object_is_type(version_object, json_type_int)) {
+        json_object_put(object);
+        return -1;
+    }
+    version = json_object_get_int64(version_object);
+    if (version != 1 ||
+        !json_object_object_get_ex(object, "completion", &completion_object) ||
+        !json_object_is_type(completion_object, json_type_string) ||
+        scan_report_completion_from_name(json_object_get_string(completion_object), completion_out) < 0 ||
+        scan_report_json_u64_value(object, "root_size", root_size_out) < 0 ||
+        scan_report_json_u64_value(object, "skipped_operations", skipped_operations_out) < 0) {
+        json_object_put(object);
+        return -1;
+    }
+
+    if (json_object_object_get_ex(object, "last_alert_offset", &completion_object)) {
+        if (scan_report_json_u64_value(object, "last_alert_offset", last_alert_offset_out) < 0) {
+            json_object_put(object);
+            return -1;
+        }
+        if (*last_alert_offset_out > *root_size_out) {
+            json_object_put(object);
+            return -1;
+        }
+        *last_alert_offset_valid_out = 1;
+    }
+
+    json_object_put(object);
+    return 0;
+}
+
 int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
 {
     struct json_object *object;

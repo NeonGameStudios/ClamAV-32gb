@@ -375,18 +375,25 @@ static int nc_recv_scan_report_frame(int s, char **json, uint32_t *json_length, 
     return 1;
 }
 
-int nc_recv_scan_report(int s, int *infected, int *incomplete, cl_error_t *status_out, char **alert)
+void nc_scan_report_free(struct nc_scan_report *report)
+{
+    if (report) {
+        free(report->alert);
+        report->alert = NULL;
+    }
+}
+
+int nc_recv_scan_report(int s, struct nc_scan_report *report)
 {
     int terminated = 0;
     int received   = 0;
 
-    if (!infected || !incomplete || !status_out || !alert)
+    if (!report)
         return -1;
 
-    *infected   = 0;
-    *incomplete = 0;
-    *status_out = CL_SUCCESS;
-    *alert      = NULL;
+    memset(report, 0, sizeof(*report));
+    report->status     = CL_SUCCESS;
+    report->completion = CL_SCAN_COMPLETION_APPLICATION_ABORT;
 
     while (!terminated) {
         char *json           = NULL;
@@ -394,6 +401,11 @@ int nc_recv_scan_report(int s, int *infected, int *incomplete, cl_error_t *statu
         int frame_infected   = 0;
         int frame_incomplete = 0;
         cl_error_t frame_status = CL_ERROR;
+        cl_scan_completion_t frame_completion;
+        uint64_t frame_root_size;
+        uint64_t frame_skipped_operations;
+        uint64_t frame_last_alert_offset;
+        int frame_last_alert_offset_valid;
         char *frame_alert    = NULL;
         int frame;
 
@@ -412,21 +424,34 @@ int nc_recv_scan_report(int s, int *infected, int *incomplete, cl_error_t *statu
             free(frame_alert);
             return -1;
         }
+        if (scan_report_json_metadata(json, json_length, &frame_completion,
+                                      &frame_root_size, &frame_skipped_operations,
+                                      &frame_last_alert_offset,
+                                      &frame_last_alert_offset_valid) < 0) {
+            free(json);
+            free(frame_alert);
+            return -1;
+        }
 
         received = 1;
+        report->completion                 = frame_completion;
+        report->root_size                  = frame_root_size;
+        report->skipped_operations         = frame_skipped_operations;
+        report->last_alert_offset          = frame_last_alert_offset;
+        report->last_alert_offset_valid   = frame_last_alert_offset_valid;
         if (frame_infected) {
-            *infected = 1;
-            *status_out = CL_VIRUS;
+            report->infected = 1;
+            report->status   = CL_VIRUS;
             if (frame_alert) {
-                free(*alert);
-                *alert      = frame_alert;
+                free(report->alert);
+                report->alert = frame_alert;
                 frame_alert = NULL;
             }
         } else if (frame_incomplete) {
-            *incomplete = 1;
-            if (!*infected &&
-                (*status_out == CL_SUCCESS || *status_out == CL_ERROR || *status_out == CL_EPARSE))
-                *status_out = frame_status;
+            report->incomplete = 1;
+            if (!report->infected &&
+                (report->status == CL_SUCCESS || report->status == CL_ERROR || report->status == CL_EPARSE))
+                report->status = frame_status;
         }
         free(frame_alert);
         free(json);

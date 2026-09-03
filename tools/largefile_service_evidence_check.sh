@@ -175,6 +175,18 @@ configured_max_scan_time=$(awk '$1 == "MaxScanTime" { count++; value = $2 } END 
     fail 'service configuration has no unique MaxScanTime entry'
 [ "$configured_max_scan_time" = "$max_scan_time_ms" ] ||
     fail 'service configuration MaxScanTime does not match service identity'
+configured_max_threads=$(awk '$1 == "MaxThreads" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$config") ||
+    fail 'service configuration has no unique MaxThreads entry'
+[ "$configured_max_threads" = 1 ] ||
+    fail 'service configuration MaxThreads is outside the certified single-worker profile'
+configured_max_queue=$(awk '$1 == "MaxQueue" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$config") ||
+    fail 'service configuration has no unique MaxQueue entry'
+[ "$configured_max_queue" = 2 ] ||
+    fail 'service configuration MaxQueue is outside the certified release profile'
+configured_alert_exceeds_max=$(awk '$1 == "AlertExceedsMax" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$config") ||
+    fail 'service configuration has no unique AlertExceedsMax entry'
+[ "$configured_alert_exceeds_max" = yes ] ||
+    fail 'service configuration AlertExceedsMax is not enabled'
 
 is_hash "$source_commit" || fail 'service source commit is not a 40- or 64-character hash'
 is_hash "$source_tree" || fail 'service source tree is not a 40- or 64-character hash'

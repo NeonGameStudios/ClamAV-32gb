@@ -1,5 +1,35 @@
 # Independent read-only audit of audit.md
 
+## Qualification-gate and confirmed-ZIP audit follow-up — 2026-09-03
+
+The service qualification stress workload now starts four simultaneous
+clients against one certified worker and restores `MaxThreads=1` and
+`MaxQueue=2` before the service artifact is finalized. The service evidence
+checker verifies those two settings instead of trusting only summary markers.
+
+The release gate now treats `unsupported` on any required non-`unsupported`
+row as release-blocking, and it requires each qualified row to name a unique
+capability binding whose source-manifest hash and proof artifact hash verify.
+This closes both the status-waiver and generic-evidence loopholes. The current
+manifest remains far from release-ready: it has no qualified rows and still
+contains hundreds of bounded or pending requirements.
+
+The milter exact-edge harness now uses the 64-GiB logical scan budget and
+validates structured report completion, exact root size, exact alert offset,
+the expected infection name, and absence of limit/materialization heuristics;
+the report transport exposes those metadata fields to the milter. The test
+also records a deterministic SHA-256 of the complete transmitted stream.
+
+ZIP callers now preserve EOCD confirmation from the central-directory search.
+When malformed EOCD/ZIP64 metadata is encountered, `cli_unzip()` and
+`unzip_search()` mark the confirmed layer incomplete and non-cacheable rather
+than replaying local-header discovery. A focused regression covers a valid
+local member hidden behind an impossible EOCD comment length.
+
+These repairs improve fail-closed behavior but do not close the remaining
+parser-family, production-CVD, sanitizer, materialized-large-file, Sonic1,
+resource, service-parity, and final PLAN.md qualification gates.
+
 ## MBR extended-chain extent admission — 2026-09-02
 
 The MBR parser previously validated each linked EBR only against the whole
