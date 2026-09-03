@@ -13838,7 +13838,8 @@ qualification remain open.
 
 - Keep FSG v2 target-RVA conversion subtraction-form and validate the complete
   requested window before forming a pointer; malformed lower-than-section
-  targets must not exercise wrapped pointer arithmetic.
+  targets or high-RVA function-table lookups must not exercise wrapped pointer
+  arithmetic.
 - Retain `test_pe_relative_window_offset_rejects_underflow`, its registration
   and source guards, and the `pe-relative-window-offset-admission` capability
   evidence. Add current-source production-GCC and linked malformed-FSG

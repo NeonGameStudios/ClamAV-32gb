@@ -4230,12 +4230,13 @@ int cli_scanpe(cli_ctx *ctx)
             break;
         }
 
-        if (!CLI_ISCONTAINED(peinfo->sections[i + 1].rva, peinfo->sections[i + 1].rsz, newebx, 16)) {
+        if (cli_pe_relative_window_offset(peinfo->sections[i + 1].rva, newebx,
+                                           ssize, 16, &dst_offset) < 0) {
             cli_dbgmsg("cli_scanpe: FSG: Array of functions out of bounds\n");
             break;
         }
 
-        newedx = cli_readint32(newebx + 12 - peinfo->sections[i + 1].rva + src) - EC32(peinfo->pe_opt.opt32.ImageBase);
+        newedx = cli_readint32(src + dst_offset + 12) - EC32(peinfo->pe_opt.opt32.ImageBase);
         cli_dbgmsg("cli_scanpe: FSG: found old EP @%x\n", newedx);
 
         if (cli_pe_add_u32(ssize, peinfo->sections[i + 1].rva, &fsg_input_size) < 0 || fsg_input_size < newesi) {

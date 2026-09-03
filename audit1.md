@@ -422,10 +422,13 @@ section base. A malformed signature-shaped PE could therefore exercise
 unsigned-underflow pointer arithmetic before the intended bounds rejection.
 The path now converts the relative coordinate through
 `cli_pe_relative_window_offset()`, which validates the lower bound and the
-complete requested window before pointer formation. The focused regression
+complete requested window before pointer formation. The same conversion now
+protects the FSG function-table lookup, avoiding a 32-bit `newebx + 12` wrap
+near the top of the RVA space. The focused regression
 `test_pe_relative_window_offset_rejects_underflow` covers underflow, exact-end,
-and window-size boundaries; source guards and the capability manifest bind the
-change. Current-source production-GCC compilation and linked malformed-FSG
+high-RVA conversion, and window-size boundaries; source guards and the
+capability manifest bind the change. Current-source production-GCC compilation
+and linked malformed-FSG
 execution, sanitizer, certified Linux x86-64, complete PE/unpacker corpus,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.

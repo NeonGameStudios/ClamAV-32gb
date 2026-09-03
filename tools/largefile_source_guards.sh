@@ -6422,6 +6422,7 @@ contains unit_tests/check_clamav.c 'test_pe_header_preserves_unsigned_high_bit_s
 contains libclamav/pe.c 'static int cli_pe_add_u64_to_size'
 contains libclamav/pe.c 'PE NT header coordinate overflowed'
 contains libclamav/pe.c 'cli_pe_relative_window_offset(peinfo->sections[i + 1].rva, newedx'
+contains libclamav/pe.c 'cli_pe_relative_window_offset(peinfo->sections[i + 1].rva, newebx'
 contains libclamav/pe.c 'target_rva < section_rva'
 contains libclamav/pe.h 'cli_pe_relative_window_offset'
 contains unit_tests/check_clamav.c 'test_pe_relative_window_offset_rejects_underflow'

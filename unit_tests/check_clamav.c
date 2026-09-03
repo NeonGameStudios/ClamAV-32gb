@@ -49363,6 +49363,8 @@ START_TEST(test_pe_relative_window_offset_rejects_underflow)
     ck_assert_int_eq(cli_pe_relative_window_offset(100, 132, 32, 1, &offset), -1);
     ck_assert_int_eq(cli_pe_relative_window_offset(100, 131, 32, 2, &offset), 0);
     ck_assert_uint_eq(offset, 31);
+    ck_assert_int_eq(cli_pe_relative_window_offset(UINT32_MAX - 100, UINT32_MAX - 4, 200, 16, &offset), 0);
+    ck_assert_uint_eq(offset, 96);
     ck_assert_int_eq(cli_pe_relative_window_offset(100, 100, 32, 32, &offset), 0);
     ck_assert_uint_eq(offset, 0);
     ck_assert_int_eq(cli_pe_relative_window_offset(100, 100, 32, 33, &offset), -1);
