@@ -159,6 +159,7 @@ extern int clamav_test_short_write;
 extern size_t clamav_test_short_write_count;
 extern int __real_inflateInit_(z_streamp strm, const char *version, int stream_size);
 extern int __real_inflateInit2_(z_streamp strm, int windowBits, const char *version, int stream_size);
+extern int __real_inflateReset(z_streamp strm);
 extern int __real_inflateEnd(z_streamp strm);
 extern int __real_BZ2_bzDecompressInit(bz_stream *strm, int blockSize100k, int verbosity);
 extern int __real_BZ2_bzDecompressEnd(bz_stream *strm);
@@ -173,6 +174,7 @@ int clamav_test_force_xar_member_decoder_end;
 int clamav_test_force_xar_toc_decoder_end;
 int clamav_test_force_ishield_cab_decoder_end;
 int clamav_test_force_gzip_decoder_end;
+int clamav_test_force_gzip_decoder_reset;
 int clamav_test_force_zip_inflate_decoder_end;
 int clamav_test_force_pdf_flatedecode_decoder_end;
 int clamav_test_force_ppt_decoder_end;
@@ -286,6 +288,18 @@ int __wrap_inflateEnd(z_streamp strm)
     if (clamav_test_force_xar_toc_decoder_end > 0) {
         clamav_test_force_xar_toc_decoder_end--;
         if (clamav_test_force_xar_toc_decoder_end == 0)
+            return Z_STREAM_ERROR;
+    }
+    return ret;
+}
+
+int __wrap_inflateReset(z_streamp strm)
+{
+    int ret = __real_inflateReset(strm);
+
+    if (clamav_test_force_gzip_decoder_reset > 0) {
+        clamav_test_force_gzip_decoder_reset--;
+        if (clamav_test_force_gzip_decoder_reset == 0)
             return Z_STREAM_ERROR;
     }
     return ret;
@@ -10447,6 +10461,68 @@ START_TEST(test_gzip_decoder_finalization_failure_is_fail_visible)
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
     free(gzip);
+}
+END_TEST
+#endif
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_gzip_decoder_reset_failure_is_fail_visible)
+{
+    static const uint8_t first_input[]  = "GZip first member";
+    static const uint8_t second_input[] = "GZip second member";
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    uint8_t *first;
+    uint8_t *second;
+    uint8_t *gzip;
+    size_t first_length;
+    size_t second_length;
+    size_t gzip_length;
+    fmap_t *map;
+    cl_error_t ret;
+
+    first  = gzip_stream(first_input, sizeof(first_input) - 1U, &first_length);
+    second = gzip_stream(second_input, sizeof(second_input) - 1U, &second_length);
+    ck_assert_ptr_nonnull(first);
+    ck_assert_ptr_nonnull(second);
+    ck_assert_msg(first_length <= SIZE_MAX - second_length,
+                  "GZip concatenated fixture length overflow");
+    gzip_length = first_length + second_length;
+    gzip        = malloc(gzip_length);
+    ck_assert_ptr_nonnull(gzip);
+    memcpy(gzip, first, first_length);
+    memcpy(gzip + first_length, second, second_length);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(gzip, gzip_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    clamav_test_force_gzip_decoder_reset = 1;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_GZ", NULL);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_force_gzip_decoder_reset, 0);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(gzip);
+    free(second);
+    free(first);
 }
 END_TEST
 #endif
@@ -61722,6 +61798,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_bz_core, test_gzip_input_read_failure_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_bz_core, test_gzip_decoder_finalization_failure_is_fail_visible);
+    tcase_add_test(tc_bz_core, test_gzip_decoder_reset_failure_is_fail_visible);
     tcase_add_test(tc_bz_core, test_bzip_decoder_finalization_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_bz_core, test_bzip_corpus_detects_embedded_mz);

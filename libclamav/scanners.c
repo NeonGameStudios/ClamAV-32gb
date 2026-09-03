@@ -2333,9 +2333,15 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
             }
             outsize = next_outsize;
             if (inf == Z_STREAM_END) {
+                if (inflateReset(&z) != Z_OK) {
+                    cli_dbgmsg("GZip: decoder reset failed; refusing to scan partial output.\n");
+                    cli_mark_scan_incomplete(ctx, "GZip decoder could not be reset between members");
+                    decode_status = CL_EUNPACK;
+                    at            = map->len;
+                    break;
+                }
                 stream_complete = true;
                 at -= z.avail_in;
-                inflateReset(&z);
                 break;
             } else if (inf != Z_OK && inf != Z_BUF_ERROR) {
                 cli_dbgmsg("GZip: decoder stopped before stream completion; refusing partial output.\n");

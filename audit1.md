@@ -22126,3 +22126,22 @@ Current-source production-GCC compilation, production-linked execution,
 interpreter/JIT coverage, sanitizer evidence, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 matcher/release qualification remain required.
+## Concatenated GZip decoder reset status — 2026-09-02
+
+The bounded GZip scanner previously ignored the return value of
+`inflateReset()` after a member reached `Z_STREAM_END`. A reset failure could
+leave the loop attempting to process a later member with an invalid decoder
+state, while already-written partial output remained eligible for nested scan
+publication.
+
+The concatenated-member path now treats a failed reset as `CL_EUNPACK`, records
+the exact incomplete reason, stops further input processing, and leaves the
+temporary output unpublished. `test_gzip_decoder_reset_failure_is_fail_visible`
+uses two valid concatenated members and a wrapped reset failure to require the
+non-clean result, cleared verdict output, and fmap cache taint. The source
+guard, test registration, and capability row are updated.
+
+Current-source production-GCC compilation, production-linked execution,
+complete concatenated-GZip corpus, sanitizer evidence, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.

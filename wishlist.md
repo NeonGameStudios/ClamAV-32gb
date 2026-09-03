@@ -13419,3 +13419,15 @@ qualification remain open.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final matcher/release
   qualification before closure.
+## Concatenated GZip decoder reset status — 2026-09-02
+
+- Keep concatenated GZip member transitions fail-visible: a failed
+  `inflateReset()` must return `CL_EUNPACK`, mark the confirmed layer
+  incomplete and non-cacheable, stop further member processing, and prevent
+  partial output publication.
+- Retain `test_gzip_decoder_reset_failure_is_fail_visible`, its wrapped reset
+  hook, registration and source guards, and the `gzip-decoder-reset-status`
+  capability evidence. Add current-source production-GCC and linked
+  execution, complete concatenated-GZip corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final parser/release qualification before closure.
