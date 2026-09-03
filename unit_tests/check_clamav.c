@@ -152,6 +152,8 @@ extern int clamav_test_fail_fread;
 extern size_t __real_cli_readn(int fd, void *buff, size_t count);
 extern int clamav_test_fail_update_hash, clamav_test_fail_finish_hash;
 extern int clamav_test_finish_hash_calls_before_failure;
+extern void *__real_cl_hash_init(const char *alg);
+int clamav_test_fail_hash_init;
 extern int clamav_test_fail_closedir;
 extern int clamav_test_fail_readdir;
 extern int clamav_test_fail_stat;
@@ -219,6 +221,16 @@ size_t __wrap_cli_readn(int fd, void *buff, size_t count)
     }
 
     return ret;
+}
+
+void *__wrap_cl_hash_init(const char *alg)
+{
+    if (clamav_test_fail_hash_init) {
+        clamav_test_fail_hash_init = 0;
+        return NULL;
+    }
+
+    return __real_cl_hash_init(alg);
 }
 
 int __wrap_inflateInit_(z_streamp strm, const char *version, int stream_size)
@@ -7711,6 +7723,70 @@ START_TEST(test_raw_matcher_hash_finalization_failure_is_fail_visible)
     ck_assert_ptr_null(last_alert);
     ck_assert(map->dont_cache_flag);
 
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    ck_assert_int_eq(unlink(signature_path), 0);
+}
+END_TEST
+
+START_TEST(test_raw_matcher_hash_initialization_failure_is_fail_visible)
+{
+    static const char signature[] =
+        "b09a8ae0c407e2e0b7603c9c7d11cbcc:31:Raw-Matcher-Hash-Initialization\n";
+    static const uint8_t input[] = "raw matcher hash initialization";
+    char signature_path[PATH_MAX];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_scan_report_t *report = NULL;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    const char *reason = NULL;
+    cl_scan_completion_t completion;
+    cl_scan_report_metrics_t metrics;
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t report_status;
+    cl_error_t ret;
+    unsigned int sigs = 0;
+    fmap_t *map;
+    int fd;
+
+    snprintf(signature_path, sizeof(signature_path), "%s/raw-matcher-hash-init-%ld.hdb", tmpdir, (long)getpid());
+    fd = open(signature_path, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0600);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(write(fd, signature, sizeof(signature) - 1U), (ssize_t)(sizeof(signature) - 1U));
+    ck_assert_int_eq(close(fd), 0);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_str(scan_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_UNSIGNED), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    memset(&options, 0, sizeof(options));
+
+    clamav_test_fail_hash_init = 1;
+    ret = cl_scanmap_ex2(map, "raw-matcher-hash-init", &verdict, &last_alert, &scanned,
+                         scan_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL, &report);
+    clamav_test_fail_hash_init = 0;
+
+    ck_assert_int_eq(ret, CL_EARG);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_EARG);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_RESOURCE_FAILURE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "raw matcher hash context could not be initialized");
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_uint_eq(metrics.skipped_operations, 1);
+    ck_assert(map->dont_cache_flag);
+
+    cl_scan_report_free(report);
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
     ck_assert_int_eq(unlink(signature_path), 0);
@@ -63026,6 +63102,7 @@ static Suite *test_cl_suite(void)
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl_scan, test_fmap_hash_finalization_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_raw_matcher_hash_finalization_failure_is_fail_visible);
+    tcase_add_test(tc_cl_scan, test_raw_matcher_hash_initialization_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl_scan, test_pe_overlay_range_preserves_native_size);
 

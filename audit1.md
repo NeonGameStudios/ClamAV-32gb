@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Raw matcher hash-context initialization — 2026-09-03
+
+`cli_scan_fmap()` previously returned `CL_EARG` when a required HDB/FP hash
+context could not be initialized, but did not set the scan's sticky incomplete
+reason or taint the fmap cache. The result was non-clean, yet structured report
+consumers could not distinguish this required matcher setup failure from an
+unspecified resource error and saw no skipped operation. The current source
+marks `raw matcher hash context could not be initialized`, sets
+`dont_cache_flag`, preserves `CL_EARG`, and adds a linker-injected production
+path regression asserting the reason, resource-failure completion, reset public
+outputs, and cache taint. Production-GCC relink/execution, sanitizer, full
+signature corpus, service, materialized-large-file, Sonic1, and final release
+qualification remain open.
+
 ## Qualification-gate and confirmed-ZIP audit follow-up — 2026-09-03
 
 The service qualification stress workload now starts four simultaneous

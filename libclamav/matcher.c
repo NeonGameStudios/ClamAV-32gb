@@ -2014,6 +2014,8 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
                 hashctx[hash_type] = cl_hash_init(hash_name);
                 if (NULL == hashctx[hash_type]) {
                     cli_errmsg("cli_scan_fmap: Error initializing %s hash context\n", hash_name);
+                    cli_mark_scan_incomplete(ctx, "raw matcher hash context could not be initialized");
+                    ctx->fmap->dont_cache_flag = 1;
                     ret = CL_EARG;
                     goto done;
                 }

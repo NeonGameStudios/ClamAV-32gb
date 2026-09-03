@@ -1,5 +1,13 @@
 # Wishlist
 
+## Matcher hash initialization evidence — 2026-09-03
+
+The raw matcher now marks a required hash-context initialization failure
+incomplete and non-cacheable while retaining its existing `CL_EARG` status.
+The new production-link fault regression checks the structured reason and
+resource-failure completion. Current-source production execution and complete
+signature qualification remain required.
+
 ## Qualification gate and exact-edge follow-up — 2026-09-03
 
 - Keep the service contention proof at four simultaneous clients against the
