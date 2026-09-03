@@ -652,7 +652,7 @@ pub unsafe extern "C" fn cvd_open(
         return std::ptr::null_mut();
     }
 
-    let cvd_file_path_str = validate_str_param_null!(cvd_file_path_str);
+    let cvd_file_path_str = validate_str_param_null!(cvd_file_path_str, err=err);
     let cvd_file_path = match Path::new(cvd_file_path_str).canonicalize() {
         Ok(p) => p,
         Err(e) => {
@@ -1030,6 +1030,22 @@ mod tests {
             #[cfg(windows)]
             assert!(cvd_get_file_handle(std::ptr::null()).is_null());
         }
+    }
+
+    #[test]
+    fn cvd_open_null_path_populates_error_output() {
+        let mut error: *mut FFIError = std::ptr::null_mut();
+
+        let result = unsafe { cvd_open(std::ptr::null(), &mut error) };
+
+        assert!(result.is_null());
+        assert!(!error.is_null());
+        let message = unsafe { CStr::from_ptr(crate::ffi_util::ffierror_fmt(error)) }
+            .to_str()
+            .unwrap()
+            .to_owned();
+        unsafe { crate::ffi_util::ffierror_free(error) };
+        assert!(message.contains("cvd_file_path_str"));
     }
 
     #[test]

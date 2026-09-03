@@ -19940,6 +19940,22 @@ OpenSSL development discovery, and the full C ABI, production-CVD/service,
 sanitizer, materialized-large-file, Sonic1, and final release qualification
 remain open.
 
+## CVD open error-channel audit — 2026-09-02
+
+`cvd_open()` used the pointer-returning `validate_str_param_null!` macro for
+its path. That macro returned `NULL` for a null or invalid-UTF-8 path without
+creating an `FFIError`; production C callers immediately pass the output to
+`ffierror_fmt()`, whose contract requires a non-null error object. A malformed
+call could therefore assert instead of producing a structured failure.
+
+The macro now has an error-aware pointer-returning arm, and `cvd_open()` uses
+it so both invalid path forms populate the caller's error output before
+returning `NULL`. `cvd_open_null_path_populates_error_output` formats and frees
+the returned error, covering the previously missing non-null-error receiver
+case. The capability row and source guards record this boundary; current
+Rust/C ABI execution, production-CVD/service, sanitizer, materialized-large-
+file, Sonic1, and final release qualification remain open.
+
 ## OLE2 allocation-table and extraction-output admission — 2026-08-30
 
 The OLE2 sector-chain helpers could treat a BAT index equal to the declared

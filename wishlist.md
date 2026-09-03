@@ -13431,3 +13431,14 @@ qualification remain open.
   execution, complete concatenated-GZip corpus, sanitizer, certified Linux
   x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
   and final parser/release qualification before closure.
+
+## CVD open error-channel admission — 2026-09-02
+
+- Keep `cvd_open()` fail-visible for null and invalid-UTF-8 path pointers when
+  the caller supplies a valid error receiver. Populate an `FFIError` before
+  returning `NULL`, so production C callers can safely format the failure.
+- Retain `cvd_open_null_path_populates_error_output`, its source guard, and the
+  `production-cvd-api-boundary` capability evidence. Add current Rust/C ABI
+  execution, production CVD/service, sanitizer, certified Linux x86-64,
+  materialized-large-file, Sonic1, resource, and final CVD/release
+  qualification before closure.

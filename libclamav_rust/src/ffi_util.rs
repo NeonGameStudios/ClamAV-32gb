@@ -408,6 +408,26 @@ macro_rules! validate_optional_str_param {
 /// ```
 #[macro_export]
 macro_rules! validate_str_param_null {
+    ($ptr:ident, err=$err_out:ident) => {
+        if $ptr.is_null() {
+            warn!("{} is NULL", stringify!($ptr));
+            *$err_out = Box::into_raw(Box::new(
+                crate::ffi_util::Error::NullParameter(stringify!($ptr).to_string()).into(),
+            ));
+            return std::ptr::null_mut();
+        } else {
+            #[allow(unused_unsafe)]
+            match unsafe { CStr::from_ptr($ptr) }.to_str() {
+                Err(e) => {
+                    warn!("{} is not valid unicode: {}", stringify!($ptr), e);
+                    *$err_out = Box::into_raw(Box::new(e.into()));
+                    return std::ptr::null_mut();
+                }
+                Ok(s) => s,
+            }
+        }
+    };
+
     ($ptr:ident) => {
         if $ptr.is_null() {
             warn!("{} is NULL", stringify!($ptr));
