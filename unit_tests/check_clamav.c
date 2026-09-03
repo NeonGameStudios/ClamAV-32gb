@@ -33389,6 +33389,42 @@ START_TEST(test_hwp3_truncated_paragraph_content_is_parse_error)
 }
 END_TEST
 
+START_TEST(test_hwp3_paragraph_without_end_marker_is_parse_error)
+{
+    enum {
+        HWP3_CONTENT_OFFSET   = 30 + 128 + 1008,
+        HWP3_PARAGRAPH_OFFSET = HWP3_CONTENT_OFFSET + (7 * 2) + 2,
+        HWP3_CONTENT_START    = HWP3_PARAGRAPH_OFFSET + 230
+    };
+    uint8_t data[HWP3_CONTENT_START + 2] = {0};
+    cli_ctx ctx;
+    cli_scan_layer_t layer;
+    struct cl_scan_options options;
+    fmap_t *map;
+
+    /* One complete normal-character code unit reaches EOF without the
+     * required paragraph terminator. This must not be accepted as a clean
+     * paragraph merely because the final code unit itself was readable. */
+    data[HWP3_PARAGRAPH_OFFSET + 1] = 1;
+    data[HWP3_CONTENT_START]         = 0x41;
+    map                              = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&options, 0, sizeof(options));
+    ctx.fmap    = map;
+    ctx.options = &options;
+    hwp3_test_attach_root_layer(&ctx, &layer, map);
+
+    ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "HWP3 paragraph did not contain an end marker");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hwp3_paragraph_content_read_failure_is_fail_visible)
 {
     enum {
@@ -63131,6 +63167,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_truncated_font_table_is_parse_error);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_paragraph_header_is_parse_error);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_paragraph_content_is_parse_error);
+    tcase_add_test(tc_hwp3, test_hwp3_paragraph_without_end_marker_is_parse_error);
     tcase_add_test(tc_hwp3, test_hwp3_paragraph_content_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_character_style_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_information_header_is_parse_error);

@@ -5478,6 +5478,8 @@ contains unit_tests/check_clamav.c 'test_hwp3_truncated_document_info_is_parse_e
 contains unit_tests/check_clamav.c 'test_hwp3_truncated_font_table_is_parse_error'
 contains unit_tests/check_clamav.c 'test_hwp3_truncated_paragraph_header_is_parse_error'
 contains unit_tests/check_clamav.c 'test_hwp3_truncated_paragraph_content_is_parse_error'
+contains libclamav/hwp.c 'HWP3 paragraph did not contain an end marker'
+contains unit_tests/check_clamav.c 'test_hwp3_paragraph_without_end_marker_is_parse_error'
 contains unit_tests/check_clamav.c 'test_hwp3_paragraph_content_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hwp3_character_style_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hwp3_truncated_information_header_is_parse_error'

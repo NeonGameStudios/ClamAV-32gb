@@ -13808,3 +13808,16 @@ qualification remain open.
   corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final EGG/parser-release
   qualification before closure.
+
+## HWP3 paragraph end-marker completion — 2026-09-03
+
+- Require HWP3 paragraph traversal to observe its terminator before returning
+  success. A complete-width final UTF-16 character at EOF must return
+  `CL_EPARSE`, preserve sticky incomplete/cache-taint state, and not be treated
+  as a completed paragraph.
+- Retain `test_hwp3_paragraph_without_end_marker_is_parse_error`, its source
+  guards, and the `hwp3-paragraph-end-marker` capability evidence. Add
+  current-source production-GCC and linked execution, complete HWP3 corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final HWP3/parser-release
+  qualification before closure.

@@ -1837,6 +1837,11 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
         }
     }
 
+    if (!term) {
+        cli_mark_scan_incomplete(ctx, "HWP3 paragraph did not contain an end marker");
+        return CL_EPARSE;
+    }
+
     hwp3_debug("HWP3.x: end recursion level: %d\n", level);
 
     (*roffset) = offset;

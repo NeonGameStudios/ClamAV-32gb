@@ -299,6 +299,28 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## HWP3 paragraph end-marker completion — 2026-09-03
+
+HWP3 paragraph traversal previously returned `CL_SUCCESS` when the final
+normal-character code unit ended exactly at the fmap boundary without the
+required paragraph terminator. The outer paragraph loop often exposed this as
+a later header failure, but the paragraph parser itself had already published a
+successful completion boundary and nested paragraph paths could observe the
+same fail-open behavior.
+
+The parser now requires `term` before returning success, marks the HWP3 layer
+incomplete and non-cacheable, and returns `CL_EPARSE` with the exact
+`HWP3 paragraph did not contain an end marker` diagnostic. The focused
+`test_hwp3_paragraph_without_end_marker_is_parse_error` regression uses a
+readable final UTF-16 code unit with no terminator and asserts the public
+status, sticky state, and cache taint. Source guards and the capability
+manifest record the boundary.
+
+Current-source production-GCC compilation and linked execution, complete HWP3
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## MBR direct buffer admission — 2026-09-03
 
 The legacy `cli_mbr_check()` helper accepted a caller-provided buffer and
