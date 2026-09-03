@@ -400,6 +400,8 @@ static inline const void *fmap_need_offstr(fmap_t *m, size_t at, size_t len_hint
  */
 static inline const void *fmap_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
 {
+    if (m == NULL || m->gets == NULL || dst == NULL || at == NULL || max_len == 0)
+        return NULL;
     return m->gets(m, dst, at, max_len);
 }
 

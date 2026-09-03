@@ -63,6 +63,8 @@ contains libclamav/matcher.c 'logical signature HandlerType recursion stack is u
 contains unit_tests/check_matchers.c 'test_logical_handler_rejects_missing_recursion_stack'
 contains libclamav/matcher.c 'matcher recursion stack is unavailable'
 contains unit_tests/check_matchers.c 'matcher recursion stack is unavailable'
+contains libclamav/fmap.h 'if (m == NULL || m->gets == NULL || dst == NULL || at == NULL || max_len == 0)'
+contains unit_tests/check_clamav.c 'fmap_gets(NULL, output, &at, sizeof(output))'
 contains libclamav/fmap.h 'fmap_get_hash_ctx(fmap_t *map, uint8_t **hash, cli_hash_type_t type, struct cli_ctx_tag *ctx)'
 contains libclamav/fmap.h 'static inline size_t fmap_readn_full'
 contains libclamav/fmap.c 'cl_error_t fmap_get_hash_ctx(fmap_t *map, unsigned char **hash, cli_hash_type_t type, cli_ctx *ctx)'

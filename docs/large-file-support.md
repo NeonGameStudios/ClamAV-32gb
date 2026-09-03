@@ -8,8 +8,8 @@ gate passes.
 ## Current qualification boundary — 2026-09-03
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 558 capability rows, with
-0 qualified rows and 539 release-blocking bounded, pending, or required-
+certificate. At the current audit point it contains 559 capability rows, with
+0 qualified rows and 540 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical entries below preserve engineering evidence and
 open work; they do not substitute for current-source linked execution,
 production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
@@ -40,6 +40,13 @@ qualification remain open.
 downstream matcher paths can read current-layer state, returning `CL_ENULLARG`
 with sticky incomplete state and cache taint. The invalid-context regression
 covers the entry-point boundary; linked matcher corpus, sanitizer, service,
+materialized-large-file, Sonic1, resource, and final qualification remain
+open.
+
+The `fmap_gets()` line-reader wrapper now validates its map, callback,
+destination, offset pointer, and destination size before dispatch, returning
+`NULL` for invalid arguments. The direct fmap regression covers the boundary;
+linked fmap/line-oriented parser corpus, sanitizer, service,
 materialized-large-file, Sonic1, resource, and final qualification remain
 open.
 

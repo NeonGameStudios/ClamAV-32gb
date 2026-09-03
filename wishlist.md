@@ -1,5 +1,13 @@
 # Wishlist
 
+## fmap_gets argument validation — 2026-09-03
+
+- Keep the `fmap_gets()` wrapper fail-safe for null maps/callbacks,
+  destination/offset pointers, and zero-sized destinations. Retain the
+  direct regression/source guard; add current linked fmap/line-parser corpus,
+  sanitizer, service, materialized-large-file, Sonic1, resource, and final
+  qualification.
+
 ## Matcher fmap recursion-stack admission — 2026-09-03
 
 - Keep `cli_scan_fmap()` behind a valid recursion-stack check so all

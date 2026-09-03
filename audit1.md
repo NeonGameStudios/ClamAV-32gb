@@ -1,5 +1,15 @@
 # Independent read-only audit of audit.md
 
+## fmap_gets argument validation — 2026-09-03
+
+The `fmap_gets()` inline wrapper previously dereferenced its map and line-reader
+callback before validating the map, callback, destination, offset pointer, or
+destination size. It now returns `NULL` for invalid arguments before dispatch;
+the existing wrapped-range regression covers the boundary. Current-source
+production-GCC/linked fmap and line-oriented parser execution, sanitizer,
+service, materialized-large-file, Sonic1, resource, and final release
+qualification remain open.
+
 ## Matcher fmap recursion-stack admission — 2026-09-03
 
 `cli_scan_fmap()` previously checked only the engine and fmap before entering

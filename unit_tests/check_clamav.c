@@ -16557,8 +16557,14 @@ START_TEST(test_fmap_rejects_wrapped_nested_ranges)
     char output[8];
     size_t at;
 
+    at = 0;
+    ck_assert_ptr_null(fmap_gets(NULL, output, &at, sizeof(output)));
     map = cl_fmap_open_memory("01234567", 8);
     ck_assert_ptr_nonnull(map);
+
+    ck_assert_ptr_null(fmap_gets(map, NULL, &at, sizeof(output)));
+    ck_assert_ptr_null(fmap_gets(map, output, NULL, sizeof(output)));
+    ck_assert_ptr_null(fmap_gets(map, output, &at, 0));
 
     /* A nested offset plus a caller offset must never wrap back into the
      * beginning of the original map. */
