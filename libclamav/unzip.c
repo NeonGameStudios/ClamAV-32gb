@@ -130,7 +130,15 @@ static const void *zip_need_off_status(fmap_t *map, size_t offset, size_t length
     if (!status)
         return NULL;
 
-    if (!map || offset > map->len || length > map->len - offset) {
+    if (!map) {
+        *status = CL_EPARSE;
+        return NULL;
+    }
+    if (map->need == NULL) {
+        *status = CL_EREAD;
+        return NULL;
+    }
+    if (offset > map->len || length > map->len - offset) {
         *status = CL_EPARSE;
         return NULL;
     }

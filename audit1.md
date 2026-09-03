@@ -1,5 +1,16 @@
 # Independent read-only audit of audit.md
 
+## ZIP helper map-reader admission — 2026-09-03
+
+The ZIP-specific `zip_need_off_status()` helper previously validated the
+requested range but called `map->need` without checking that the backing
+reader callback existed. It now classifies a missing callback as `CL_EREAD`
+and preserves malformed-range classification as `CL_EPARSE`; the ZIP map
+regression verifies the sticky incomplete, non-cacheable result. Current
+source production-GCC/linked ZIP execution, full archive corpus, sanitizer,
+service, materialized-large-file, Sonic1, resource, and final release
+qualification remain open.
+
 ## fmap core-wrapper argument validation — 2026-09-03
 
 The core fmap inline wrappers now reject null maps or callbacks before

@@ -8,8 +8,8 @@ gate passes.
 ## Current qualification boundary — 2026-09-03
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 559 capability rows, with
-0 qualified rows and 540 release-blocking bounded, pending, or required-
+certificate. At the current audit point it contains 561 capability rows, with
+0 qualified rows and 542 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical entries below preserve engineering evidence and
 open work; they do not substitute for current-source linked execution,
 production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
@@ -56,6 +56,13 @@ The wrapped-range regression covers the invalid-argument boundaries while
 preserving the existing EOF/read-error distinctions; current linked fmap and
 affected-parser execution, sanitizer, service, materialized-large-file,
 Sonic1, resource, and final qualification remain open.
+
+The ZIP-specific `zip_need_off_status()` helper now treats a missing backing
+reader callback as `CL_EREAD` instead of dereferencing it, while malformed
+ranges remain `CL_EPARSE`. The ZIP map regression covers the sticky
+incomplete, non-cacheable result; current linked ZIP execution, full archive
+corpus, sanitizer, service, materialized-large-file, Sonic1, resource, and
+final qualification remain open.
 
 The bytecode runner now validates its bytecode set and execution context before
 reading context state, so a null dispatch call returns `CL_ENULLARG` instead

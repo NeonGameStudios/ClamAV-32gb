@@ -1,5 +1,13 @@
 # Wishlist
 
+## ZIP helper map-reader admission — 2026-09-03
+
+- Keep `zip_need_off_status()` fail-visible when a ZIP fmap has no backing
+  reader callback, preserving `CL_EREAD` for the operational boundary and
+  `CL_EPARSE` for invalid ranges. Retain the ZIP map regression/source guard
+  and add current linked ZIP corpus, sanitizer, service,
+  materialized-large-file, Sonic1, resource, and final qualification.
+
 ## fmap core-wrapper argument validation — 2026-09-03
 
 - Keep core fmap wrappers fail-safe for null maps/callbacks and null pointer

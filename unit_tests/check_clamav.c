@@ -60612,6 +60612,41 @@ START_TEST(test_zip_scan_entries_require_engine)
 }
 END_TEST
 
+START_TEST(test_zip_missing_map_reader_is_fail_visible)
+{
+    static const uint8_t input[] = "ZIP map reader failure";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+
+    archive = zip_stream_central_archive(input, sizeof(input) - 1U,
+                                         sizeof(input) - 1U,
+                                         ZIP_TEST_METHOD_STORED,
+                                         (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                         &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    map->need = NULL;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_unzip(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ZIP end-of-central-directory record could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(archive);
+}
+END_TEST
+
 START_TEST(test_7z_scan_entry_requires_engine)
 {
     static const uint8_t input[] = {0};
@@ -62093,6 +62128,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_zip_map);
     tcase_add_test(tc_zip_map, test_zip_missing_map_is_fail_visible);
     tcase_add_test(tc_zip_map, test_zip_scan_entries_require_engine);
+    tcase_add_test(tc_zip_map, test_zip_missing_map_reader_is_fail_visible);
     suite_add_tcase(s, tc_mspack_map);
     tcase_add_checked_fixture(tc_mspack_map, cl_setup, cl_teardown);
     tcase_add_test(tc_mspack_map, test_mspack_missing_map_is_fail_visible);
