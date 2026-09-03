@@ -1,5 +1,12 @@
 # Wishlist
 
+## Historical release wording cleanup — 2026-09-03
+
+- Keep historical status sections explicitly bound to their named commits and
+  label them as evidence snapshots, not release candidates or current release
+  candidates. The current qualification header must remain the authoritative
+  status until the full PLAN.md audit and release gates pass.
+
 ## Deliberate unsupported release allowlist — 2026-09-03
 
 - Keep the first-release unsupported set explicit and outside candidate

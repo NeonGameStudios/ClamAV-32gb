@@ -2185,11 +2185,12 @@ concurrency, and private clamd FILDES checks. The original 2 GiB coordinate
 ceiling is no longer the limiting factor in the validated native raw path, and
 observed scanner RSS is bounded rather than proportional to input length.
 
-The appropriate status is **review-ready 32 GiB raw-scan release candidate,
-with bounded fail-visible mail handling, not yet production-certified**. The
-raw-file path is strongly evidenced, and large milter wires now complete with
-an explicit mail-materialization limit rather than proportional RSS growth.
-The remaining work is production database and adversarial deep-parser resource
+At that historical checkpoint, the raw-file path was a bounded 32 GiB scan
+candidate with fail-visible mail handling; it was not production-certified and
+must not be read as a current release claim. The raw-file path was strongly
+evidenced, and large milter wires completed with an explicit
+mail-materialization limit rather than proportional RSS growth. The remaining
+work was production database and adversarial deep-parser resource
 qualification, deciding whether to replace the cap with streaming/spooling
 deep mail analysis, and externally attested release execution.
 

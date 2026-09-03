@@ -1,5 +1,13 @@
 # Independent read-only audit of audit.md
 
+## Historical release wording cleanup — 2026-09-03
+
+The status report contained a historical release-candidate label that could be
+mistaken for a current release claim. It now describes that
+checkpoint as a bounded raw-scan candidate explicitly tied to its historical
+commit, while the current header remains authoritative: the branch is not
+release-qualified and its manifest has zero qualified rows.
+
 ## Deliberate unsupported release allowlist — 2026-09-03
 
 The release gate previously accepted any row whose kind was changed to
