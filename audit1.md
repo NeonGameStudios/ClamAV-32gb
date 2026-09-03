@@ -22181,3 +22181,23 @@ production-GCC compilation and linked execution, complete PE/UPX corpus,
 sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, and final parser/release qualification
 remain open.
+
+## HFS+ catalog name-span admission — 2026-09-02
+
+The HFS+ catalog walker read `nameLength` from a confirmed catalog key but
+silently skipped conversion whenever a nonzero name length extended beyond the
+key's declared bytes. It then continued to the file-record type and could
+inspect or publish a record whose key was malformed. The valid empty-name case
+remains allowed.
+
+The walker now checks the UTF-16BE span before conversion and returns
+`CL_EFORMAT` with `HFS+ catalog name is malformed`, sticky incomplete state,
+and fmap cache taint when the span is truncated. Conversion failures are also
+sticky and preserve their specific status, mapping the unsupported-converter
+`CL_BREAK` sentinel to `CL_EPARSE`. The registered
+`test_hfsplus_catalog_name_boundary_is_fail_visible` fixture covers a
+nonzero-length name with no name bytes; source guards and the capability
+manifest record the boundary. Current-source production-GCC compilation and
+linked execution, complete HFS+ catalog/attribute/resource corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final parser/release qualification remain required.

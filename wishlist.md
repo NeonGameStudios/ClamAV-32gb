@@ -13455,3 +13455,16 @@ qualification remain open.
   PE/UPX corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final PE/release
   qualification before closure.
+
+## HFS+ catalog name-span admission — 2026-09-02
+
+- Keep confirmed HFS+ catalog keys fail-visible when a nonzero UTF-16BE
+  `nameLength` exceeds the key's declared bytes; return `CL_EFORMAT`, mark
+  the layer incomplete and non-cacheable, and do not dispatch the malformed
+  record. Preserve valid zero-length names and specific converter failures.
+- Retain `test_hfsplus_catalog_name_boundary_is_fail_visible`, its
+  registration and source guards, and the `hfsplus-catalog-name-admission`
+  capability evidence. Add current-source production-GCC and linked
+  execution, complete HFS+ catalog/attribute/resource corpus, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  Sonic1, resource, and final parser/release qualification before closure.
