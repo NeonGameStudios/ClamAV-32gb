@@ -511,10 +511,12 @@ static int xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cksu
         return CL_EFORMAT;
 
     style = xmlTextReaderGetAttribute(reader, (const xmlChar *)"style");
-    *hash = XAR_CKSUM_NONE;
+    *cksum = NULL;
+    *hash  = XAR_CKSUM_NONE;
     if (style == NULL) {
         cli_dbgmsg("cli_scaxar: xmlTextReaderGetAttribute no style attribute "
                    "for checksum element\n");
+        return CL_EFORMAT;
     } else {
         cli_dbgmsg("cli_scanxar: checksum algorithm is %s.\n", style);
         if (0 == xmlStrcasecmp(style, (const xmlChar *)"sha1")) {
@@ -524,6 +526,8 @@ static int xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cksu
         } else {
             cli_dbgmsg("cli_scanxar: checksum algorithm %s is unsupported.\n", style);
             *hash = XAR_CKSUM_OTHER;
+            xmlFree(style);
+            return CL_EUNPACK;
         }
     }
     if (style != NULL)
@@ -543,14 +547,16 @@ static int xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cksu
             } else {
                 cli_dbgmsg("cli_scanxar: checksum type is unknown or length is invalid.\n");
                 *hash  = XAR_CKSUM_OTHER;
-                *cksum = NULL;
+                return CL_EFORMAT;
             }
         } else {
-            *cksum = NULL;
             cli_dbgmsg("cli_scanxar: xmlTextReaderConstValue() returns NULL for checksum value.\n");
+            return CL_EFORMAT;
         }
-    } else
+    } else {
         cli_dbgmsg("cli_scanxar: No text for XML checksum element.\n");
+        return CL_EFORMAT;
+    }
 
     return CL_SUCCESS;
 }
@@ -618,7 +624,11 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
                 cli_dbgmsg("cli_scanxar: <archived-checksum>:\n");
                 rc = xar_get_checksum_values(reader, a_cksum, a_hash);
                 if (rc != CL_SUCCESS) {
-                    cli_mark_scan_incomplete(ctx, "XAR archived checksum value could not be allocated");
+                    cli_mark_scan_incomplete(ctx, rc == CL_EMEM
+                                                       ? "XAR archived checksum value could not be allocated"
+                                                       : rc == CL_EUNPACK
+                                                           ? "XAR archived checksum algorithm is unsupported"
+                                                           : "XAR archived checksum declaration is malformed");
                     return rc;
                 }
 
@@ -628,7 +638,11 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
                 cli_dbgmsg("cli_scanxar: <extracted-checksum>:\n");
                 rc = xar_get_checksum_values(reader, e_cksum, e_hash);
                 if (rc != CL_SUCCESS) {
-                    cli_mark_scan_incomplete(ctx, "XAR extracted checksum value could not be allocated");
+                    cli_mark_scan_incomplete(ctx, rc == CL_EMEM
+                                                       ? "XAR extracted checksum value could not be allocated"
+                                                       : rc == CL_EUNPACK
+                                                           ? "XAR extracted checksum algorithm is unsupported"
+                                                           : "XAR extracted checksum declaration is malformed");
                     return rc;
                 }
 

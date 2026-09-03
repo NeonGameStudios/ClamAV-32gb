@@ -24,6 +24,15 @@ and preserves `CL_EREAD` for an in-range backing-read failure. Its individual
 non-release-qualified boundary; the focused resource regression is control
 evidence, not parser-family qualification.
 
+Explicit XAR archived and extracted checksum declarations now require a
+supported SHA-1 or MD5 style and an exact digest value. Unsupported styles
+return `CL_EUNPACK`; malformed or incomplete declarations return `CL_EFORMAT`,
+with sticky incomplete state and cache taint before member extraction or
+nested scanning. Omitted optional checksum elements remain permitted. The
+focused regression covers unsupported style and invalid digest length; full
+XAR checksum/corpus, sanitizer, production-CVD/service, materialized-large-file,
+Sonic1, resource, and final PLAN.md qualification remain open.
+
 The bounded PDF ASCIIHex reader now requires its `>` end marker. A stream that
 ends first returns `CL_EPARSE`, rolls back decoded output, preserves raw
 fallback visibility, and marks the confirmed layer incomplete and

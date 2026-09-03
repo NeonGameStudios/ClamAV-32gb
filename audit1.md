@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## XAR checksum declaration admission — 2026-09-03
+
+The XAR TOC walker previously treated an explicitly present checksum with an
+unsupported algorithm, invalid digest length, missing style, or missing text
+as an absent checksum. The archive could therefore complete after skipping a
+declared integrity check. The checksum helper now preserves optional omission
+semantics but returns `CL_EUNPACK` for unsupported algorithms and `CL_EFORMAT`
+for malformed declarations; the owning XAR layer is marked incomplete and
+non-cacheable before member extraction or nested scanning. The registered
+regression covers unsupported style and invalid digest length with exact
+status/reason assertions, and source guards pin both call sites. Current-source
+production-GCC execution, complete XAR checksum/corpus, sanitizer, production
+CVD/service, materialized-large-file, Sonic1, resource, and final PLAN.md
+qualification remain open.
+
 ## Fuzzy-image contiguous admission — 2026-09-03
 
 The optional fuzzy-image matcher mapped its entire image subject without

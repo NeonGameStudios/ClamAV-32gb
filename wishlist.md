@@ -1,5 +1,18 @@
 # Wishlist
 
+## XAR checksum declaration admission — 2026-09-03
+
+- Keep an explicitly present XAR archived or extracted checksum fail-visible:
+  unsupported algorithms must return `CL_EUNPACK`, malformed or incomplete
+  declarations must return `CL_EFORMAT`, and the confirmed layer must remain
+  sticky-incomplete and non-cacheable before extraction or nested scanning.
+  Omitted optional checksum elements remain allowed.
+- Retain `test_xar_checksum_declaration_is_fail_visible`, exact diagnostics,
+  source guards, and capability evidence. Add current-source production-GCC
+  linked execution, complete XAR checksum/corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final PLAN.md qualification.
+
 ## Fuzzy-image contiguous admission — 2026-09-03
 
 - Keep the optional fuzzy-image matcher behind the 1-GiB individual
