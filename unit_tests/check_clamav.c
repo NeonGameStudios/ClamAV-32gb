@@ -16556,15 +16556,25 @@ START_TEST(test_fmap_rejects_wrapped_nested_ranges)
     cl_fmap_t *map;
     char output[8];
     size_t at;
+    size_t lenout;
 
     at = 0;
     ck_assert_ptr_null(fmap_gets(NULL, output, &at, sizeof(output)));
+    ck_assert_ptr_null(fmap_need_off(NULL, 0, 1));
+    ck_assert_ptr_null(fmap_need_off_once(NULL, 0, 1));
+    ck_assert_ptr_null(fmap_need_ptr_once(NULL, output, sizeof(output)));
+    ck_assert_ptr_null(fmap_need_offstr(NULL, 0, 1));
+    ck_assert_ptr_null(fmap_need_off_once_len(NULL, 0, 1, &lenout));
+    ck_assert_int_eq(fmap_readn(NULL, output, 0, sizeof(output)), (size_t)-1);
     map = cl_fmap_open_memory("01234567", 8);
     ck_assert_ptr_nonnull(map);
 
     ck_assert_ptr_null(fmap_gets(map, NULL, &at, sizeof(output)));
     ck_assert_ptr_null(fmap_gets(map, output, NULL, sizeof(output)));
     ck_assert_ptr_null(fmap_gets(map, output, &at, 0));
+    ck_assert_ptr_null(fmap_need_ptr_once(map, NULL, sizeof(output)));
+    ck_assert_ptr_null(fmap_need_off_once_len(map, 0, 1, NULL));
+    ck_assert_int_eq(fmap_readn(map, NULL, 0, sizeof(output)), (size_t)-1);
 
     /* A nested offset plus a caller offset must never wrap back into the
      * beginning of the original map. */

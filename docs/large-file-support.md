@@ -50,6 +50,13 @@ linked fmap/line-oriented parser corpus, sanitizer, service,
 materialized-large-file, Sonic1, resource, and final qualification remain
 open.
 
+The core fmap wrappers now reject null maps or callbacks before dispatch and
+reject null pointer arguments before pointer-offset arithmetic or copying.
+The wrapped-range regression covers the invalid-argument boundaries while
+preserving the existing EOF/read-error distinctions; current linked fmap and
+affected-parser execution, sanitizer, service, materialized-large-file,
+Sonic1, resource, and final qualification remain open.
+
 The bytecode runner now validates its bytecode set and execution context before
 reading context state, so a null dispatch call returns `CL_ENULLARG` instead
 of dereferencing through the validation boundary. The direct regression covers

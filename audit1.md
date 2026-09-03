@@ -1,5 +1,15 @@
 # Independent read-only audit of audit.md
 
+## fmap core-wrapper argument validation — 2026-09-03
+
+The core fmap inline wrappers now reject null maps or callbacks before
+dispatch, reject null pointers before pointer-offset arithmetic or copying,
+and preserve the existing EOF/read-error distinctions for `fmap_readn()` and
+`fmap_need_off_once_len()`. The wrapped-range regression now exercises these
+invalid arguments. Current-source production-GCC/linked fmap and all affected
+parser execution, sanitizer, service, materialized-large-file, Sonic1,
+resource, and final release qualification remain open.
+
 ## fmap_gets argument validation — 2026-09-03
 
 The `fmap_gets()` inline wrapper previously dereferenced its map and line-reader

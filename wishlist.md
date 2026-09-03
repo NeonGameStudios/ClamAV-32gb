@@ -1,5 +1,13 @@
 # Wishlist
 
+## fmap core-wrapper argument validation — 2026-09-03
+
+- Keep core fmap wrappers fail-safe for null maps/callbacks and null pointer
+  arguments, including before `fmap_ptr2off()` and `memcpy()`. Retain the
+  direct regression/source guard and add current linked fmap/affected-parser
+  corpus, sanitizer, service, materialized-large-file, Sonic1, resource, and
+  final qualification.
+
 ## fmap_gets argument validation — 2026-09-03
 
 - Keep the `fmap_gets()` wrapper fail-safe for null maps/callbacks,

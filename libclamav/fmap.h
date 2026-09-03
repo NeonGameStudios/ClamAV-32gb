@@ -171,6 +171,8 @@ void free_duplicate_fmap(cl_fmap_t *map);
  */
 static inline void fmap_free(fmap_t *m)
 {
+    if (m == NULL || m->unmap == NULL)
+        return;
     m->unmap(m);
 }
 
@@ -190,6 +192,8 @@ static inline void fmap_free(fmap_t *m)
  */
 static inline const void *fmap_need_off(fmap_t *m, size_t at, size_t len)
 {
+    if (m == NULL || m->need == NULL)
+        return NULL;
     return m->need(m, at, len, 1);
 }
 
@@ -208,6 +212,8 @@ static inline const void *fmap_need_off(fmap_t *m, size_t at, size_t len)
  */
 static inline const void *fmap_need_off_once(fmap_t *m, size_t at, size_t len)
 {
+    if (m == NULL || m->need == NULL)
+        return NULL;
     return m->need(m, at, len, 0);
 }
 
@@ -246,6 +252,8 @@ static inline size_t fmap_ptr2off(const fmap_t *m, const void *ptr)
  */
 static inline const void *fmap_need_ptr(fmap_t *m, const void *ptr, size_t len)
 {
+    if (m == NULL || m->need == NULL || ptr == NULL)
+        return NULL;
     return m->need(m, fmap_ptr2off(m, ptr), len, 1);
 }
 
@@ -264,6 +272,8 @@ static inline const void *fmap_need_ptr(fmap_t *m, const void *ptr, size_t len)
  */
 static inline const void *fmap_need_ptr_once(fmap_t *m, const void *ptr, size_t len)
 {
+    if (m == NULL || m->need == NULL || ptr == NULL)
+        return NULL;
     return m->need(m, fmap_ptr2off(m, ptr), len, 0);
 }
 
@@ -279,6 +289,8 @@ static inline const void *fmap_need_ptr_once(fmap_t *m, const void *ptr, size_t 
  */
 static inline void fmap_unneed_off(fmap_t *m, size_t at, size_t len)
 {
+    if (m == NULL || m->unneed_off == NULL)
+        return;
     m->unneed_off(m, at, len);
 }
 
@@ -294,6 +306,8 @@ static inline void fmap_unneed_off(fmap_t *m, size_t at, size_t len)
  */
 static inline void fmap_unneed_ptr(fmap_t *m, const void *ptr, size_t len)
 {
+    if (m == NULL || m->unneed_off == NULL || ptr == NULL)
+        return;
     fmap_unneed_off(m, fmap_ptr2off(m, ptr), len);
 }
 
@@ -323,9 +337,13 @@ static inline size_t fmap_readn(fmap_t *m, void *dst, size_t at, size_t len)
 {
     const void *src;
 
+    if (m == NULL || m->need == NULL)
+        return (size_t)-1;
     if (at == m->len || !len)
         return 0;
     if (at > m->len)
+        return (size_t)-1;
+    if (dst == NULL)
         return (size_t)-1;
     if (len > m->len - at)
         len = m->len - at;
@@ -366,6 +384,8 @@ static inline size_t fmap_readn_full(fmap_t *m, void *dst, size_t at, size_t len
  */
 static inline const void *fmap_need_str(fmap_t *m, const void *ptr, size_t len_hint)
 {
+    if (m == NULL || m->need_offstr == NULL || ptr == NULL)
+        return NULL;
     return m->need_offstr(m, fmap_ptr2off(m, ptr), len_hint);
 }
 
@@ -381,6 +401,8 @@ static inline const void *fmap_need_str(fmap_t *m, const void *ptr, size_t len_h
  */
 static inline const void *fmap_need_offstr(fmap_t *m, size_t at, size_t len_hint)
 {
+    if (m == NULL || m->need_offstr == NULL)
+        return NULL;
     return m->need_offstr(m, at, len_hint);
 }
 
@@ -420,8 +442,13 @@ static inline const void *fmap_gets(fmap_t *m, char *dst, size_t *at, size_t max
 static inline const void *fmap_need_off_once_len(fmap_t *m, size_t at, size_t len, size_t *lenout)
 {
     const void *p;
+
+    if (lenout == NULL)
+        return NULL;
+    *lenout = 0;
+    if (m == NULL || m->need == NULL)
+        return NULL;
     if (at >= m->len) {
-        *lenout = 0;
         return NULL; /* EOF, not read error */
     }
     if (len > m->len - at)
@@ -454,7 +481,7 @@ static inline const void *fmap_need_offstr_once_status(fmap_t *m, size_t at, siz
         return NULL;
     *status = CL_EPARSE;
 
-    if (m == NULL) {
+    if (m == NULL || m->need == NULL) {
         *status = CL_ENULLARG;
         return NULL;
     }
@@ -507,6 +534,8 @@ static inline const void *fmap_need_offstr_once_status(fmap_t *m, size_t at, siz
  */
 static inline const void *fmap_need_ptr_once_len(fmap_t *m, const void *ptr, size_t len, size_t *lenout)
 {
+    if (m == NULL || m->need == NULL || ptr == NULL || lenout == NULL)
+        return NULL;
     return fmap_need_off_once_len(m, fmap_ptr2off(m, ptr), len, lenout);
 }
 
