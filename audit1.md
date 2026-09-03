@@ -414,6 +414,24 @@ linked execution, complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 EGG/parser-release qualification remain required.
 
+## Upack reconstructed-coordinate admission — 2026-09-03
+
+Upack previously formed reconstructed-buffer pointers directly from attacker-
+controlled image RVAs, entry-point jump displacements, and fix-up coordinates;
+the alternate path also subtracted a decoder-state distance before validating
+the resulting pointer. The entry path now converts these coordinates through
+bounded zero-based or signed-adjusted windows, rejects clipped and wrapped
+output ranges, and constrains decoder-state-derived LZMA tables, backward
+copies, initial state/output windows, and call-fixup sites before pointer use.
+
+`test_pe_upack_rva_window_offset_rejects_invalid_window` covers lower-than-base,
+signed-adjustment, high-RVA, endpoint, and null-output cases. Source guards
+and the capability manifest bind the helper and fail-closed conversions.
+Current-source production-GCC compilation and linked malformed/high-coordinate
+Upack execution, complete PE/unpacker corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
+final PE/parser-release qualification remain required.
+
 ## Petite reconstructed-buffer RVA admission — 2026-09-03
 
 The Petite decoder still initialized `adjbuf` as `buf - minrva` before it had

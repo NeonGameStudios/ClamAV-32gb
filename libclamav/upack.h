@@ -30,6 +30,12 @@
 
 struct cli_ctx_tag;
 
+/* Convert a Upack image coordinate plus a signed instruction displacement to
+ * a bounded zero-based window in the reconstructed buffer. */
+int cli_upack_rva_window_offset(uint32_t base_rva, uint32_t target_rva,
+                                int64_t adjustment, size_t available,
+                                size_t needed, size_t *offset);
+
 int unupack(int, char *, uint32_t, char *, uint32_t, uint32_t, uint32_t, uint32_t, int, struct cli_ctx_tag *);
 
 #endif

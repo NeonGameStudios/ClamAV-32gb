@@ -722,6 +722,27 @@ int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, 
 
 /* UPack lzma */
 
+static char *mew_upack_buffer_window(char *buf, uint32_t available, char *base,
+                                     uint64_t offset, size_t needed)
+{
+    uintptr_t buf_address;
+    uintptr_t base_address;
+    size_t base_offset;
+
+    if (buf == NULL || base == NULL)
+        return NULL;
+    buf_address  = (uintptr_t)buf;
+    base_address = (uintptr_t)base;
+    if (base_address < buf_address || base_address - buf_address > available)
+        return NULL;
+    base_offset = (size_t)(base_address - buf_address);
+    if (offset > (size_t)available - base_offset ||
+        needed > (size_t)available - base_offset - (size_t)offset)
+        return NULL;
+
+    return buf + base_offset + (size_t)offset;
+}
+
 /* compare with 486248 */
 uint32_t lzma_upack_esi_00(struct lzmastate *p, char *old_ecx, char *bb, uint32_t bl)
 {
@@ -766,8 +787,13 @@ uint32_t lzma_upack_esi_50(struct lzmastate *p, uint32_t old_eax, uint32_t old_e
 {
     uint32_t loc_eax = old_eax, ret;
 
+    if (p == NULL || old_edx == NULL || old_ebp == NULL || retval == NULL || bs == NULL || bl == 0)
+        return 0xffffffff;
+
     do {
-        *old_edx = old_ebp + (loc_eax << 2);
+        *old_edx = mew_upack_buffer_window(bs, bl, old_ebp, (uint64_t)loc_eax * 4, 4);
+        if (*old_edx == NULL)
+            return 0xffffffff;
         if ((ret = lzma_upack_esi_00(p, *old_edx, bs, bl)) == 0xffffffff)
             return 0xffffffff;
         loc_eax += loc_eax;
@@ -782,12 +808,21 @@ uint32_t lzma_upack_esi_54(struct lzmastate *p, uint32_t old_eax, uint32_t *old_
 {
     uint32_t ret, loc_eax = old_eax;
 
+    if (p == NULL || old_ecx == NULL || old_edx == NULL || retval == NULL || bs == NULL || bl == 0 || *old_edx == NULL)
+        return 0xffffffff;
+
     *old_ecx = ((*old_ecx) & 0xffffff00) | 8;
     ret      = lzma_upack_esi_00(p, *old_edx, bs, bl);
-    *old_edx = ((*old_edx) + 4);
+    if (ret == 0xffffffff)
+        return 0xffffffff;
+    *old_edx = mew_upack_buffer_window(bs, bl, *old_edx, 4, 4);
+    if (*old_edx == NULL)
+        return 0xffffffff;
     loc_eax  = (loc_eax & 0xffffff00) | 1;
     if (ret) {
         ret = lzma_upack_esi_00(p, *old_edx, bs, bl);
+        if (ret == 0xffffffff)
+            return 0xffffffff;
         loc_eax |= 8; /* mov al, 9 */
         if (ret) {
             *old_ecx <<= 5;
@@ -795,8 +830,15 @@ uint32_t lzma_upack_esi_54(struct lzmastate *p, uint32_t old_eax, uint32_t *old_
         }
     }
     ret = loc_eax;
-    if (lzma_upack_esi_50(p, 1, *old_ecx, old_edx, *old_edx + (loc_eax << 2), &loc_eax, bs, bl) == 0xffffffff)
-        return 0xffffffff;
+    {
+        char *probability_table = mew_upack_buffer_window(bs, bl, *old_edx,
+                                                           (uint64_t)loc_eax * 4, 4);
+
+        if (probability_table == NULL ||
+            lzma_upack_esi_50(p, 1, *old_ecx, old_edx, probability_table,
+                              &loc_eax, bs, bl) == 0xffffffff)
+            return 0xffffffff;
+    }
 
     *retval = ret + loc_eax;
     return 0;

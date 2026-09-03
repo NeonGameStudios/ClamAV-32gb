@@ -57,6 +57,89 @@ enum { UPACK_399,
        UPACK_0151477,
        UPACK_0297729 };
 
+int cli_upack_rva_window_offset(uint32_t base_rva, uint32_t target_rva,
+                                int64_t adjustment, size_t available,
+                                size_t needed, size_t *offset)
+{
+    int64_t adjusted;
+    uint64_t relative;
+
+    if (offset == NULL)
+        return -1;
+
+    if ((adjustment > 0 &&
+         (uint64_t)adjustment > (uint64_t)INT64_MAX - target_rva) ||
+        (adjustment < 0 && adjustment < INT64_MIN + (int64_t)target_rva))
+        return -1;
+
+    adjusted = (int64_t)target_rva + adjustment;
+    if (adjusted < 0 || (uint64_t)adjusted > UINT32_MAX ||
+        (uint64_t)adjusted < base_rva)
+        return -1;
+
+    relative = (uint64_t)adjusted - base_rva;
+    if (relative > SIZE_MAX || relative > available ||
+        needed > available - (size_t)relative)
+        return -1;
+
+    *offset = (size_t)relative;
+    return 0;
+}
+
+static char *upack_rva_window(char *buf, uint32_t base_rva, uint32_t target_rva,
+                              int64_t adjustment, size_t available, size_t needed)
+{
+    size_t offset;
+
+    if (buf == NULL || cli_upack_rva_window_offset(base_rva, target_rva,
+                                                    adjustment, available,
+                                                    needed, &offset) != 0)
+        return NULL;
+
+    return buf + offset;
+}
+
+static char *upack_buffer_window(char *buf, size_t available, size_t offset,
+                                 size_t needed)
+{
+    if (buf == NULL || offset > available || needed > available - offset)
+        return NULL;
+
+    return buf + offset;
+}
+
+static char *upack_adjusted_buffer_window(char *buf, size_t available, char *base,
+                                          int64_t adjustment, size_t needed)
+{
+    size_t base_offset;
+    size_t offset;
+    uintptr_t buf_address;
+    uintptr_t base_address;
+
+    if (buf == NULL || base == NULL)
+        return NULL;
+    buf_address  = (uintptr_t)buf;
+    base_address = (uintptr_t)base;
+    if (base_address < buf_address || base_address - buf_address > available)
+        return NULL;
+    base_offset = (size_t)(base_address - buf_address);
+    if (adjustment < 0) {
+        uint64_t magnitude = (uint64_t)(-(adjustment + 1)) + 1U;
+
+        if (magnitude > base_offset)
+            return NULL;
+        offset = base_offset - (size_t)magnitude;
+    } else {
+        uint64_t forward = (uint64_t)adjustment;
+
+        if (forward > available - base_offset)
+            return NULL;
+        offset = base_offset + (size_t)forward;
+    }
+
+    return upack_buffer_window(buf, available, offset, needed);
+}
+
 static int upack_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
 {
     if (ctx == NULL)
@@ -81,8 +164,12 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
     char *loc_esi = NULL, *loc_edi = NULL, *loc_ebx = NULL, *end_edi = NULL, *save_edi = NULL, *alvalue = NULL;
     char *paddr = NULL, *pushed_esi = NULL, *save2 = NULL;
     uint32_t save1, save3, loc_ecx, count, shlsize, original_ep, ret, loc_ebx_u;
+    uint64_t shl_offset;
     struct cli_exe_section section;
     int upack_version = UPACK_399;
+
+    if (dest == NULL || buff == NULL || dsize == 0)
+        return -1;
 
     /* buff [168 bytes] doesn't have to be checked, since it was checked in pe.c */
     if (upack) {
@@ -91,38 +178,51 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
         /* dummy characteristics ;/ */
         if (buff[5] == '\xff' && buff[6] == '\x36')
             upack_version = UPACK_0297729;
-        loc_esi = dest + (cli_readint32(buff + 1) - vma);
+        loc_esi = upack_rva_window(dest, vma, cli_readint32(buff + 1), 0, dsize, 12);
 
-        if (!CLI_ISCONTAINED(dest, dsize, loc_esi, 12))
+        if (loc_esi == NULL)
             return -1;
         original_ep = cli_readint32(loc_esi);
         loc_esi += 4;
         /*cli_readint32(loc_esi);*/
         loc_esi += 4;
 
+        if (original_ep < vma)
+            return -1;
         original_ep -= vma;
         cli_dbgmsg("Upack: EP: %08x original:  %08X || %08x\n", ep, original_ep, cli_readint32(loc_esi - 8));
 
         if (upack_version == UPACK_399) {
             /* jmp 1 */
-            loc_edi = dest + (cli_readint32(loc_esi) - vma);
-            if (!CLI_ISCONTAINED(dest, dsize, dest + ep + 0xa, 2) || dest[ep + 0xa] != '\xeb')
+            loc_edi = upack_rva_window(dest, vma, cli_readint32(loc_esi), 0, dsize, 0);
+            alvalue = upack_buffer_window(dest, dsize, ep, 0xa + 2);
+            if (loc_edi == NULL || alvalue == NULL || alvalue[0xa] != '\xeb')
                 return -1;
-            loc_esi = dest + *(dest + ep + 0xb) + ep + 0xc;
+            loc_esi = upack_rva_window(dest, 0, ep, (int8_t)alvalue[0xb] + 0xc, dsize, 1);
+            if (loc_esi == NULL)
+                return -1;
 
             /* use this as a temp var */
             /* jmp 2 + 0xa */
-            alvalue = loc_esi + 0x1a;
-            if (!CLI_ISCONTAINED(dest, dsize, alvalue, 2) || *alvalue != '\xeb')
+            alvalue = upack_adjusted_buffer_window(dest, dsize, loc_esi, 0x1a, 2);
+            if (alvalue == NULL || *alvalue != '\xeb')
                 return -1;
             alvalue++;
-            alvalue += (*alvalue & 0xff) + 1 + 0xa;
+            alvalue = upack_adjusted_buffer_window(dest, dsize, alvalue,
+                                                   (int64_t)(*alvalue & 0xff) + 1 + 0xa, 1);
+            if (alvalue == NULL)
+                return -1;
             lngjmpoff = 8;
         } else {
-            if (!CLI_ISCONTAINED(dest, dsize, dest + ep + 7, 5) || dest[ep + 7] != '\xe9')
+            alvalue = upack_buffer_window(dest, dsize, ep, 7 + 5);
+            if (alvalue == NULL || alvalue[7] != '\xe9')
                 return -1;
-            loc_esi   = dest + cli_readint32(dest + ep + 8) + ep + 0xc;
-            alvalue   = loc_esi + 0x25;
+            loc_esi = upack_rva_window(dest, 0, ep, (int64_t)(int32_t)cli_readint32(alvalue + 8) + 0xc, dsize, 1);
+            if (loc_esi == NULL)
+                return -1;
+            alvalue = upack_adjusted_buffer_window(dest, dsize, loc_esi, 0x25, 1);
+            if (alvalue == NULL)
+                return -1;
             lngjmpoff = 10;
         }
 
@@ -131,48 +231,93 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
         alvalue++;
         count = *alvalue & 0xff;
 
-        if (!CLI_ISCONTAINED(dest, dsize, alvalue, lngjmpoff + 5) || *(alvalue + lngjmpoff) != '\xe9')
-            return -1;
+        {
+            char *long_jmp = upack_adjusted_buffer_window(dest, dsize, alvalue, lngjmpoff, 5);
+
+            if (long_jmp == NULL || *long_jmp != '\xe9')
+                return -1;
+            ret = cli_readint32(long_jmp + 1);
+        }
         /* use this as a temp to make a long jmp to head of unpacking proc */
-        shlsize = cli_readint32(alvalue + lngjmpoff + 1);
+        alvalue = upack_adjusted_buffer_window(dest, dsize, alvalue,
+                                               (int64_t)ret + lngjmpoff + 1 + 4 + 27,
+                                               1);
+        if (alvalue == NULL)
+            return -1;
+
+        shl_offset = ret;
         /* upack_399 + upack_0151477 */
-        if (upack_version == UPACK_399)
-            shlsize = shlsize + (loc_esi - dest) + *(loc_esi + 0x1b) + 0x1c + 0x018; /* read checked above */
-        else
+        if (upack_version == UPACK_399) {
+            char *jump_data = upack_adjusted_buffer_window(dest, dsize, loc_esi, 0x1b, 1);
+
+            if (jump_data == NULL)
+                return -1;
+            shl_offset += (size_t)(loc_esi - dest) + (size_t)(*jump_data & 0xff) + 0x1c + 0x018;
+        } else {
             /* there is no additional jump in upack_0297729 */
-            shlsize = shlsize + (loc_esi - dest) + 0x035;
+            shl_offset += (size_t)(loc_esi - dest) + 0x035;
+        }
+        if (shl_offset > UINT32_MAX)
+            return -1;
+        shlsize = (uint32_t)shl_offset;
         /* do the jump, 43 - point to jecxz */
-        alvalue = dest + shlsize + 43;
+        alvalue = upack_buffer_window(dest, dsize, (size_t)shlsize + 43, 1);
+        if (alvalue == NULL)
+            return -1;
 
         /* 0.39 */
         aljump = 8;
         shroff = 24;
-        if (!CLI_ISCONTAINED(dest, dsize, alvalue - 1, 2) || *(alvalue - 1) != '\xe3') {
+        {
+            char *jecxz = upack_adjusted_buffer_window(dest, dsize, alvalue, -1, 2);
+
+            if (jecxz == NULL || *jecxz != '\xe3') {
             /* in upack_0297729 and upack_0151477 jecxz is at offset: 46 */
-            alvalue = dest + shlsize + 46;
-            if (!CLI_ISCONTAINED(dest, dsize, alvalue - 1, 2) || *(alvalue - 1) != '\xe3')
-                return -1;
-            else {
-                if (upack_version != UPACK_0297729)
-                    upack_version = UPACK_0151477;
-                aljump = 7;
-                shroff = 26;
+                alvalue = upack_buffer_window(dest, dsize, (size_t)shlsize + 46, 1);
+                if (alvalue == NULL)
+                    return -1;
+                jecxz = upack_adjusted_buffer_window(dest, dsize, alvalue, -1, 2);
+                if (jecxz == NULL || *jecxz != '\xe3')
+                    return -1;
+                else {
+                    if (upack_version != UPACK_0297729)
+                        upack_version = UPACK_0151477;
+                    aljump = 7;
+                    shroff = 26;
+                }
             }
         }
         /* do jecxz */
-        alvalue += (*alvalue & 0xff) + 1;
+        alvalue = upack_adjusted_buffer_window(dest, dsize, alvalue,
+                                               (int64_t)(*alvalue & 0xff) + 1, 1);
+        if (alvalue == NULL)
+            return -1;
         /* is there a long jump ? */
-        if (!CLI_ISCONTAINED(dest, dsize, alvalue, aljump + 5) || *(alvalue + aljump) != '\xe9')
-            return -1;
+        {
+            char *long_jmp = upack_adjusted_buffer_window(dest, dsize, alvalue, aljump, 5);
+
+            if (long_jmp == NULL || *long_jmp != '\xe9')
+                return -1;
+            ret = cli_readint32(long_jmp + 1);
+        }
         /* do jmp, 1+4 - size of jmp instruction, aljump - instruction offset, 27 offset to cmp al,xx*/
-        ret = cli_readint32(alvalue + aljump + 1);
-        alvalue += ret + aljump + 1 + 4 + 27;
-        if (upack_version == UPACK_0297729)
-            alvalue += 2;
-        /* shr ebp */
-        if (!CLI_ISCONTAINED(dest, dsize, dest + shlsize + shroff, 3) || *(dest + shlsize + shroff) != '\xc1' || *(dest + shlsize + shroff + 1) != '\xed')
+        alvalue = upack_adjusted_buffer_window(dest, dsize, alvalue,
+                                               (int64_t)(int32_t)ret + aljump + 1 + 4 + 27,
+                                               1);
+        if (alvalue == NULL)
             return -1;
-        shlsize = (*(dest + shlsize + shroff + 2)) & 0xff;
+        if (upack_version == UPACK_0297729)
+            alvalue = upack_adjusted_buffer_window(dest, dsize, alvalue, 2, 1);
+        if (alvalue == NULL)
+            return -1;
+        /* shr ebp */
+        {
+            char *shr = upack_buffer_window(dest, dsize, (size_t)shlsize + shroff, 3);
+
+            if (shr == NULL || *shr != '\xc1' || *(shr + 1) != '\xed')
+                return -1;
+            shlsize = (*(shr + 2)) & 0xff;
+        }
         count *= 0x100;
         if (shlsize < 2 || shlsize > 8) {
             cli_dbgmsg("Upack: context bits out of bounds\n");
@@ -182,17 +327,26 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
         /* check if loc_esi + .. == 0xbe -> mov esi */
         /* upack_0297729 has mov esi, .. + mov edi, .., in upack_0151477 and upack_399 EDI has been already set before */
         if (upack_version == UPACK_0297729) {
-            if (!CLI_ISCONTAINED(dest, dsize, loc_esi + 6, 10) || *(loc_esi + 6) != '\xbe' || *(loc_esi + 11) != '\xbf')
+            char *movs = upack_adjusted_buffer_window(dest, dsize, loc_esi, 6, 10);
+            uint32_t movs_target;
+
+            if (movs == NULL || *movs != '\xbe' || *(movs + 5) != '\xbf')
                 return -1;
-            if ((uint32_t)cli_readint32(loc_esi + 7) < base || (uint32_t)cli_readint32(loc_esi + 7) > vma)
+            movs_target = cli_readint32(movs + 1);
+            if (movs_target < base || movs_target > vma)
                 return -1;
-            loc_edi = dest + (cli_readint32(loc_esi + 12) - vma);
-            loc_esi = dest + (cli_readint32(loc_esi + 7) - base);
+            loc_edi = upack_rva_window(dest, vma, cli_readint32(movs + 6), 0, dsize, 0);
+            loc_esi = upack_rva_window(dest, base, movs_target, 0, dsize, 0);
         } else {
-            if (!CLI_ISCONTAINED(dest, dsize, loc_esi + 7, 5) || *(loc_esi + 7) != '\xbe')
+            char *movs = upack_adjusted_buffer_window(dest, dsize, loc_esi, 7, 5);
+
+            if (movs == NULL || *movs != '\xbe')
                 return -1;
-            loc_esi = dest + (cli_readint32(loc_esi + 8) - vma);
+            loc_esi = upack_rva_window(dest, vma, cli_readint32(movs + 1), 0, dsize, 0);
         }
+
+        if (loc_esi == NULL || loc_edi == NULL)
+            return -1;
 
         if (upack_version == UPACK_0297729) {
             /* 0x16*4=0x58, 6longs*4 = 24, 0x64-last loc_esi read location */
@@ -209,8 +363,16 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
             for (j = 0; j < 0x27; j++, loc_esi += 4, loc_edi += 4)
                 cli_writeint32(loc_edi, cli_readint32(loc_esi));
         }
-        save3   = cli_readint32(loc_esi + 4);
-        paddr   = dest + ((uint32_t)cli_readint32(loc_edi - 4)) - vma;
+        save3 = cli_readint32(loc_esi + 4);
+        {
+            char *paddr_value = upack_adjusted_buffer_window(dest, dsize, loc_edi, -4, 4);
+
+            if (paddr_value == NULL)
+                return -1;
+            paddr = upack_rva_window(dest, vma, cli_readint32(paddr_value), 0, dsize, 0);
+        }
+        if (paddr == NULL)
+            return -1;
         loc_ebx = loc_edi;
         cli_writeint32(loc_edi, 0xffffffff);
         loc_edi += 4;
@@ -222,18 +384,20 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
         for (j = 0; (unsigned int)j < count; j++, loc_edi += 4)
             cli_writeint32(loc_edi, 0x400);
 
-        loc_edi = dest + cli_readint32(loc_esi + 0xc) - vma;
+        loc_edi = upack_rva_window(dest, vma, cli_readint32(loc_esi + 0xc), 0, dsize, 0);
         if (upack_version == UPACK_0297729)
-            loc_edi = dest + vma - base; /* XXX not enough samples provided to be sure of it! */
+            loc_edi = upack_rva_window(dest, base, vma, 0, dsize, 0); /* XXX not enough samples provided to be sure of it! */
+        if (loc_edi == NULL)
+            return -1;
 
         pushed_esi = loc_edi;
         if (upack_version == UPACK_0297729) {
-            end_edi = dest + cli_readint32(loc_esi + 0x64) - vma;
+            end_edi = upack_rva_window(dest, vma, cli_readint32(loc_esi + 0x64), 0, dsize, 0);
             save3   = cli_readint32(loc_esi + 0x40);
         } else {
-            end_edi = dest + cli_readint32(loc_esi + 0x34) - vma;
+            end_edi = upack_rva_window(dest, vma, cli_readint32(loc_esi + 0x34), 0, dsize, 0);
         }
-        if (loc_edi > end_edi) {
+        if (end_edi == NULL || loc_edi > end_edi) {
             cli_dbgmsg("Upack: loc_edi > end_edi breaks cli_rebuildpe() bb#11216\n");
             return -1;
         }
@@ -244,7 +408,6 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
         /* alternative begin */
     } else {
         int ep_jmp_offs, rep_stosd_count_offs, context_bits_offs;
-        loc_esi = dest + vma + ep;
         /* yet another dummy characteristics ;/ */
         if (buff[0] == '\xbe' && buff[5] == '\xad' && buff[6] == '\x8b' && buff[7] == '\xf8')
             upack_version = UPACK_11_12;
@@ -253,19 +416,28 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
             ep_jmp_offs          = 0x1a4;
             rep_stosd_count_offs = 0x1b;
             context_bits_offs    = 0x41;
-            alvalue              = loc_esi + 0x184;
         } else {
             ep_jmp_offs          = 0x217;
             rep_stosd_count_offs = 0x3a;
             context_bits_offs    = 0x5f;
-            alvalue              = loc_esi + 0x1c1;
         }
 
-        if (!CLI_ISCONTAINED(dest, dsize, loc_esi, ep_jmp_offs + 4))
+        loc_esi = upack_rva_window(dest, 0, vma, (int64_t)ep, dsize, ep_jmp_offs + 4);
+        if (loc_esi == NULL)
+            return -1;
+        alvalue = upack_adjusted_buffer_window(dest, dsize, loc_esi,
+                                               (upack_version == UPACK_11_12) ? 0x184 : 0x1c1,
+                                               1);
+        if (alvalue == NULL)
             return -1;
         save1       = cli_readint32(loc_esi + ep_jmp_offs);
-        original_ep = (loc_esi - dest) + ep_jmp_offs + 4;
-        original_ep += (int32_t)save1;
+        {
+            int64_t original_ep_value = (int64_t)(loc_esi - dest) + ep_jmp_offs + 4 + (int64_t)(int32_t)save1;
+
+            if (original_ep_value < 0 || (uint64_t)original_ep_value > UINT32_MAX)
+                return -1;
+            original_ep = (uint32_t)original_ep_value;
+        }
         cli_dbgmsg("Upack: EP: %08x original %08x\n", ep, original_ep);
 
         /* this are really ugly hacks,
@@ -288,15 +460,24 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
                 cli_dbgmsg("Upack: something's wrong, report back\n");
                 return -1; /* XXX XXX XXX XXX */
             }
-            loc_esi -= (loc_ecx - 2);
-            if (!CLI_ISCONTAINED(dest, dsize, loc_esi, 12))
+            if (loc_ecx < 2 || (loc_esi = upack_adjusted_buffer_window(dest, dsize, loc_esi,
+                                                                          -(int64_t)(loc_ecx - 2U), 12)) == NULL)
                 return -1;
 
             cli_dbgmsg("Upack: %p %p %08x %08x\n", loc_esi, dest, cli_readint32(loc_esi), base);
-            loc_ebx_u = loc_esi - (dest + cli_readint32(loc_esi) - base);
+            {
+                char *ebx_base = upack_rva_window(dest, base, cli_readint32(loc_esi), 0, dsize, 0);
+
+                if (ebx_base == NULL || ebx_base > loc_esi)
+                    return -1;
+                loc_ebx_u = (uint32_t)(loc_esi - ebx_base);
+            }
             cli_dbgmsg("Upack: EBX: %08x\n", loc_ebx_u);
             loc_esi += 4;
-            save2 = loc_edi = dest + cli_readint32(loc_esi) - base;
+            loc_edi = upack_rva_window(dest, base, cli_readint32(loc_esi), 0, dsize, 0);
+            if (loc_edi == NULL)
+                return -1;
+            save2 = loc_edi;
             cli_dbgmsg("Upack: DEST: %08x, %08x\n", cli_readint32(loc_esi), cli_readint32(loc_esi) - base);
             loc_esi += 4;
             /* 2vGiM: j is signed. Is that really what you want? Will it cause problems with the following checks?
@@ -312,6 +493,8 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
 
             if (((uint64_t)count + j) * 4 > UINT_MAX)
                 return -1;
+            if (loc_ecx > dsize / 4U)
+                return -1;
             if (!CLI_ISCONTAINED(dest, dsize, loc_esi, (j * 4)) || !CLI_ISCONTAINED(dest, dsize, loc_edi, ((j + count) * 4)))
                 return -1;
             for (; j--; loc_edi += 4, loc_esi += 4)
@@ -325,8 +508,10 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
              *  but I'm not sure if there is always 0xe and is always ebx =0
              */
             do {
-                loc_esi += loc_ebx_u;
-                loc_esi += 4;
+                loc_esi = upack_adjusted_buffer_window(dest, dsize, loc_esi,
+                                                       (int64_t)loc_ebx_u + 4, 1);
+                if (loc_esi == NULL)
+                    return -1;
             } while (--loc_ecx);
             if (!CLI_ISCONTAINED(dest, dsize, loc_esi, 4))
                 return -1;
@@ -336,47 +521,70 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
             for (j = 0; (uint32_t)j < count; j++, loc_edi += 4) /* checked above */
                 cli_writeint32(loc_edi, (save1));
 
-            if (!CLI_ISCONTAINED(dest, dsize, (loc_esi + 0x10), 4))
+            {
+                char *ebx_value = upack_adjusted_buffer_window(dest, dsize, loc_esi, 0x10, 4);
+
+                if (ebx_value == NULL)
+                    return -1;
+                cli_writeint32(ebx_value, (uint32_t)cli_readint32(ebx_value) + loc_ebx_u);
+            }
+            loc_ebx = upack_adjusted_buffer_window(dest, dsize, loc_esi, 0x14, 1);
+            if (loc_ebx == NULL)
                 return -1;
-            cli_writeint32(loc_esi + 0x10, (uint32_t)cli_readint32(loc_esi + 0x10) + loc_ebx_u);
-            loc_ebx = loc_esi + 0x14;
             loc_esi = save2;
             /* loc_ebx_u gets saved */
             /* checked above, (...save2, 8) */
-            save_edi = loc_edi = dest + ((uint32_t)cli_readint32(loc_esi) - base);
+            loc_edi = upack_rva_window(dest, base, cli_readint32(loc_esi), 0, dsize, 0);
+            if (loc_edi == NULL)
+                return -1;
+            save_edi = loc_edi;
             loc_esi += 4;
             cli_dbgmsg("Upack: before_fixing\n");
             /* fix values */
-            if (!CLI_ISCONTAINED(dest, dsize, loc_ebx - 4, (12 + 4 * 4)) || !CLI_ISCONTAINED(dest, dsize, loc_esi + 0x24, 4) || !CLI_ISCONTAINED(dest, dsize, loc_esi + 0x40, 4))
-                return -1;
+            {
+                char *ebx_header = upack_adjusted_buffer_window(dest, dsize, loc_ebx, -4, 12 + 4 * 4);
+                char *end_value = upack_adjusted_buffer_window(dest, dsize, loc_esi, 0x24, 4);
+                char *save_value = upack_adjusted_buffer_window(dest, dsize, loc_esi, 0x40, 4);
+
+                if (ebx_header == NULL || end_value == NULL || save_value == NULL)
+                    return -1;
+                paddr = upack_rva_window(dest, base, cli_readint32(ebx_header), 0, dsize, 0);
+                end_edi = upack_rva_window(dest, base, cli_readint32(end_value), 0, dsize, 0);
+                if (paddr == NULL || end_edi == NULL)
+                    return -1;
+                save1      = loc_ecx;
+                pushed_esi = loc_edi;
+                vma        = cli_readint32(loc_ebx);
+                cli_writeint32(loc_ebx, cli_readint32(loc_ebx + 4));
+                cli_writeint32(loc_ebx + 4, vma);
+            }
             for (j = 2; j < 6; j++) {
                 int32_t temp = cli_readint32(loc_ebx + (j << 2));
                 cli_writeint32(loc_ebx + (j << 2), temp);
             }
-            paddr      = dest + cli_readint32(loc_ebx - 4) - base;
-            save1      = loc_ecx;
-            pushed_esi = loc_edi;
-            end_edi    = dest + cli_readint32(loc_esi + 0x24) - base;
-            vma        = cli_readint32(loc_ebx);
-            cli_writeint32(loc_ebx, cli_readint32(loc_ebx + 4));
-            cli_writeint32((loc_ebx + 4), vma);
             /* Upack 1.1/1.2 is something between 0.39 2-section and 0.39 3-section */
         } else if (upack_version == UPACK_11_12) {
             cli_dbgmsg("Upack v 1.1/1.2\n");
-            loc_esi = dest + 0x148;                         /* always constant? */
-            loc_edi = dest + cli_readint32(loc_esi) - base; /* read checked above */
+            loc_esi = upack_buffer_window(dest, dsize, 0x148, 8); /* always constant? */
+            if (loc_esi == NULL)
+                return -1;
+            loc_edi = upack_rva_window(dest, base, cli_readint32(loc_esi), 0, dsize, 0);
+            if (loc_edi == NULL)
+                return -1;
             loc_esi += 4;
             save_edi = loc_edi;
             /* movsd */
-            paddr = dest + ((uint32_t)cli_readint32(loc_esi)) - base;
+            paddr = upack_rva_window(dest, base, cli_readint32(loc_esi), 0, dsize, 0);
+            if (paddr == NULL)
+                return -1;
             loc_esi += 4;
-            loc_edi += 4;
-            loc_ebx = loc_edi;
 
             if (((uint64_t)count + 6) * 4 > UINT_MAX)
                 return -1;
-            if (!CLI_ISCONTAINED(dest, dsize, loc_edi, ((6 + count) * 4)))
+            loc_edi = upack_adjusted_buffer_window(dest, dsize, loc_edi, 4, (6 + count) * 4);
+            if (loc_edi == NULL)
                 return -1;
+            loc_ebx = loc_edi;
             cli_writeint32(loc_edi, 0xffffffff);
             loc_edi += 4;
             cli_writeint32(loc_edi, 0);
@@ -387,14 +595,24 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
             for (j = 0; (uint32_t)j < count; j++, loc_edi += 4)
                 cli_writeint32(loc_edi, 0x400);
 
-            loc_edi    = dest + cli_readint32(loc_esi) - base; /* read checked above */
+            loc_edi = upack_rva_window(dest, base, cli_readint32(loc_esi), 0, dsize, 0);
+            if (loc_edi == NULL)
+                return -1;
             pushed_esi = loc_edi;
             loc_esi += 4;
             loc_ecx = 0;
 
             loc_esi += 4;
 
-            end_edi = dest + cli_readint32(loc_esi - 0x28) - base; /* read checked above */
+            {
+                char *end_value = upack_adjusted_buffer_window(dest, dsize, loc_esi, -0x28, 4);
+
+                if (end_value == NULL)
+                    return -1;
+                end_edi = upack_rva_window(dest, base, cli_readint32(end_value), 0, dsize, 0);
+            }
+            if (end_edi == NULL)
+                return -1;
             loc_esi = save_edi;
         }
         if (loc_edi > end_edi) {
@@ -404,10 +622,20 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
         cli_dbgmsg("Upack: data initialized, before upack lzma call!\n");
         if ((ret = (uint32_t)unupack399(dest, dsize, loc_ecx, loc_ebx, loc_ecx, loc_edi, end_edi, shlsize, paddr, ctx)) == 0xffffffff)
             return -1;
-        if (upack_version == UPACK_399)
-            save3 = cli_readint32(loc_esi + 0x40);
-        else if (upack_version == UPACK_11_12)
-            save3 = cli_readint32(dest + vma + ep + 0x174);
+        if (upack_version == UPACK_399) {
+            char *save_value = upack_adjusted_buffer_window(dest, dsize, loc_esi, 0x40, 4);
+
+            if (save_value == NULL)
+                return -1;
+            save3 = cli_readint32(save_value);
+        }
+        else if (upack_version == UPACK_11_12) {
+            char *save_value = upack_rva_window(dest, 0, vma, (int64_t)ep + 0x174, dsize, 4);
+
+            if (save_value == NULL)
+                return -1;
+            save3 = cli_readint32(save_value);
+        }
     }
 
     /* let's fix calls */
@@ -428,24 +656,32 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
             cli_mark_scan_incomplete(ctx, "Upack fix-up reached the configured time limit");
             return -1;
         }
-        if (!CLI_ISCONTAINED(dest, dsize, pushed_esi + loc_ecx, 1)) {
-            cli_dbgmsg("Upack: callfixerr %p %08x = %p, %p\n", dest, dsize, dest + dsize, pushed_esi + loc_ecx);
-            return -1;
-        }
-        if (pushed_esi[loc_ecx] == '\xe8' || pushed_esi[loc_ecx] == '\xe9') {
-            char *adr = (pushed_esi + loc_ecx + 1);
-            loc_ecx++;
-            if (!CLI_ISCONTAINED(dest, dsize, adr, 4)) {
-                cli_dbgmsg("Upack: callfixerr\n");
+        {
+            char *call_site = upack_adjusted_buffer_window(dest, dsize, pushed_esi, loc_ecx, 1);
+
+            if (call_site == NULL) {
+                cli_dbgmsg("Upack: callfixerr %p %08x = %p, %p\n", dest, dsize, dest + dsize, pushed_esi);
                 return -1;
             }
-            if ((cli_readint32(adr) & 0xff) != searchval)
+            if (*call_site != '\xe8' && *call_site != '\xe9') {
+                loc_ecx++;
                 continue;
-            cli_writeint32(adr, EC32(CE32((uint32_t)(cli_readint32(adr) & 0xffffff00))) - loc_ecx - 4);
-            loc_ecx += 4;
-            save3--;
-        } else
-            loc_ecx++;
+            }
+            {
+                char *adr = upack_adjusted_buffer_window(dest, dsize, call_site, 1, 4);
+
+                if (adr == NULL) {
+                    cli_dbgmsg("Upack: callfixerr\n");
+                    return -1;
+                }
+                loc_ecx++;
+                if ((cli_readint32(adr) & 0xff) != searchval)
+                    continue;
+                cli_writeint32(adr, EC32(CE32((uint32_t)(cli_readint32(adr) & 0xffffff00))) - loc_ecx - 4);
+                loc_ecx += 4;
+                save3--;
+            }
+        }
     }
 
     section.raw = 0;
@@ -455,12 +691,12 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
 
     /* bb#11282 - prevent dest+va/dest from passing an invalid dereference to cli_rebuildpe */
     /* check should trigger on broken PE files where the section exists outside of the file */
-    if ((!upack && ((va + section.rsz) > dsize)) || (upack && (section.rsz > dsize))) {
+    if ((!upack && upack_buffer_window(dest, dsize, va, section.rsz) == NULL) || (upack && (section.rsz > dsize))) {
         cli_dbgmsg("Upack: Rebuilt section exceeds allocated buffer; breaks cli_rebuildpe() bb#11282\n");
         return 0;
     }
 
-    if (!cli_rebuildpe_ctx(ctx, dest + (upack ? 0 : va), &section, 1, base, original_ep, 0, 0, file)) {
+    if (!cli_rebuildpe_ctx(ctx, upack ? dest : upack_buffer_window(dest, dsize, va, section.rsz), &section, 1, base, original_ep, 0, 0, file)) {
         cli_dbgmsg("Upack: Rebuilding failed\n");
         return 0;
     }
@@ -474,6 +710,15 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
     uint32_t state[6], temp_ebp;
     uint32_t ticks = 0;
     char *loc_edx, *loc_ebx = init_ebx, *loc_edi = init_edi, *loc_ebp8, *edi_copy;
+
+    if (bs == NULL || bl == 0 ||
+        upack_adjusted_buffer_window(bs, bl, init_ebx, 0, 24) == NULL ||
+        upack_adjusted_buffer_window(bs, bl, init_edi, 0, 0) == NULL ||
+        upack_adjusted_buffer_window(bs, bl, end_edi, 0, 0) == NULL ||
+        init_edi > end_edi ||
+        (paddr = upack_adjusted_buffer_window(bs, bl, paddr, 0, 4)) == NULL)
+        return -1;
+
     p.p0 = paddr;
     p.p1 = cli_readint32(init_ebx);
     p.p2 = cli_readint32(init_ebx + 4);
@@ -487,7 +732,10 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
         if (upack_checktimelimit(ctx, &ticks))
             return -1;
         loc_eax = eax_copy;
-        loc_edx = loc_ebx + (loc_eax << 2) + 0x58;
+        loc_edx = upack_adjusted_buffer_window(bs, bl, loc_ebx,
+                                               (int64_t)loc_eax * 4 + 0x58, 4);
+        if (loc_edx == NULL)
+            return -1;
 
         if ((ret = lzma_upack_esi_00(&p, loc_edx, bs, bl))) {
             /* loc_483927 */
@@ -496,7 +744,9 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
             loc_eax = (loc_eax & 0xffffff00) | (loc_al & 0xff);
             loc_ebp = state[2];
             loc_ecx = (loc_ecx & 0xffffff00) | 0x30;
-            loc_edx += loc_ecx;
+            loc_edx = upack_adjusted_buffer_window(bs, bl, loc_edx, loc_ecx, 4);
+            if (loc_edx == NULL)
+                return -1;
             /* *(uint32_t *)(loc_ebx + 14) = loc_ebp; ???? */
             if (!(ret = lzma_upack_esi_00(&p, loc_edx, bs, bl))) {
                 /* loc_48397c */
@@ -510,7 +760,9 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
                 state[4] = state[3];
                 state[3] = temp_ebp;
                 eax_copy = loc_eax;
-                loc_edx  = loc_ebx + 0xbc0;
+                loc_edx = upack_adjusted_buffer_window(bs, bl, loc_ebx, 0xbc0, 4);
+                if (loc_edx == NULL)
+                    return -1;
                 state[5] = loc_ebp;
                 if (lzma_upack_esi_54(&p, loc_eax, &loc_ecx, &loc_edx, &temp, bs, bl) == 0xffffffff)
                     return -1;
@@ -521,7 +773,10 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
                     loc_eax = loc_ecx;
                 loc_ecx = 0x40;
                 loc_eax <<= 6; /* ecx=0x40, mul cl */
-                loc_ebp8 = loc_ebx + ((loc_eax << 2) + 0x378);
+                loc_ebp8 = upack_adjusted_buffer_window(bs, bl, loc_ebx,
+                                                        (int64_t)loc_eax * 4 + 0x378, 4);
+                if (loc_ebp8 == NULL)
+                    return -1;
                 if (lzma_upack_esi_50(&p, 1, loc_ecx, &loc_edx, loc_ebp8, &loc_eax, bs, bl) == 0xffffffff)
                     return -1;
                 loc_ebp = loc_eax;
@@ -534,7 +789,10 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
                     loc_eax  = loc_ecx;
                     loc_ecx  = temp_ebp;
                     loc_ebp <<= (loc_ecx & 0xff);
-                    loc_edx = loc_ebx + (loc_ebp << 2) + 0x178;
+                    loc_edx = upack_adjusted_buffer_window(bs, bl, loc_ebx,
+                                                           (int64_t)loc_ebp * 4 + 0x178, 4);
+                    if (loc_edx == NULL)
+                        return -1;
                     if ((loc_ecx & 0xff) > 5) {
                         /* loc_4839c6 */
                         loc_ecx = (loc_ecx & 0xffffff00) | (((loc_ecx & 0xff) - 4) & 0xff);
@@ -565,7 +823,9 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
                         loc_ecx = (loc_ecx & 0xffffff00) | 4;
                         loc_eax <<= 4;
                         loc_ebp += loc_eax;
-                        loc_edx = loc_ebx + 0x18;
+                        loc_edx = upack_adjusted_buffer_window(bs, bl, loc_ebx, 0x18, 4);
+                        if (loc_edx == NULL)
+                            return -1;
                     }
                     /* loc4839f1 */
                     loc_eax = 1;
@@ -593,13 +853,19 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
                 loc_ecx = jakas_kopia;
             } else {
                 /* loc_48393a */
-                loc_edx += loc_ecx;
+                loc_edx = upack_adjusted_buffer_window(bs, bl, loc_edx, loc_ecx, 4);
+                if (loc_edx == NULL)
+                    return -1;
                 if ((ret = lzma_upack_esi_00(&p, loc_edx, bs, bl))) {
                     /* loc_483954 */
-                    loc_edx += 0x60;
+                    loc_edx = upack_adjusted_buffer_window(bs, bl, loc_edx, 0x60, 4);
+                    if (loc_edx == NULL)
+                        return -1;
                     if ((ret = lzma_upack_esi_00(&p, loc_edx, bs, bl))) {
                         /* loc_48395e */
-                        loc_edx += loc_ecx;
+                        loc_edx = upack_adjusted_buffer_window(bs, bl, loc_edx, loc_ecx, 4);
+                        if (loc_edx == NULL)
+                            return -1;
                         ret      = lzma_upack_esi_00(&p, loc_edx, bs, bl);
                         temp_ebp = loc_ebp;
                         loc_ebp  = state[4];
@@ -617,16 +883,21 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
                     }
                 } else {
                     /* loc_483940 */
-                    loc_edx += loc_ecx;
+                    loc_edx = upack_adjusted_buffer_window(bs, bl, loc_edx, loc_ecx, 4);
+                    if (loc_edx == NULL)
+                        return -1;
                     if ((ret = lzma_upack_esi_00(&p, loc_edx, bs, bl))) {
                     } else {
                         /* loc_483946 */
                         loc_eax |= 1;
                         eax_copy = loc_eax;
                         edi_copy = loc_edi;
-                        edi_copy -= state[2];
+                        edi_copy = upack_adjusted_buffer_window(bs, bl, edi_copy,
+                                                                 -(int64_t)state[2], 1);
+                        if (edi_copy == NULL)
+                            return -1;
                         loc_ecx = (loc_ecx & 0xffffff00) | 0x80;
-                        if (!CLI_ISCONTAINED(bs, bl, edi_copy, 1) || !CLI_ISCONTAINED(bs, bl, loc_edi, 1))
+                        if (!CLI_ISCONTAINED(bs, bl, loc_edi, 1))
                             return -1;
                         loc_al = (*(uint8_t *)edi_copy) & 0xff;
                         /* loc_483922 */
@@ -638,22 +909,35 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
                 }
                 /* loc_48396a */
                 eax_copy = loc_eax;
-                loc_edx  = loc_ebx + 0x778;
+                loc_edx = upack_adjusted_buffer_window(bs, bl, loc_ebx, 0x778, 4);
+                if (loc_edx == NULL)
+                    return -1;
                 if (lzma_upack_esi_54(&p, loc_eax, &loc_ecx, &loc_edx, &temp, bs, bl) == 0xffffffff)
                     return -1;
                 loc_eax = loc_ecx;
                 loc_ecx = temp;
             }
             /* loc_483a0b */
-            if (!CLI_ISCONTAINED(bs, bl, loc_edi, loc_ecx) || !CLI_ISCONTAINED(bs, bl, loc_edi - loc_ebp, loc_ecx + 1))
+            if (!CLI_ISCONTAINED(bs, bl, loc_edi, loc_ecx))
                 return -1;
             state[2] = loc_ebp;
             for (i = 0; i < loc_ecx; i++, loc_edi++) {
+                char *backref;
+
                 if (upack_checktimelimit(ctx, &ticks))
                     return -1;
-                *loc_edi = *(loc_edi - loc_ebp);
+                backref = upack_adjusted_buffer_window(bs, bl, loc_edi, -(int64_t)loc_ebp, 1);
+                if (backref == NULL)
+                    return -1;
+                *loc_edi = *backref;
             }
-            loc_eax = (loc_eax & 0xffffff00) | *(uint8_t *)(loc_edi - loc_ebp);
+            {
+                char *backref = upack_adjusted_buffer_window(bs, bl, loc_edi, -(int64_t)loc_ebp, 1);
+
+                if (backref == NULL)
+                    return -1;
+                loc_eax = (loc_eax & 0xffffff00) | *(uint8_t *)backref;
+            }
             loc_ecx = 0x80;
         } else {
             /* loc_4838d8 */
@@ -666,26 +950,37 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
             } while (loc_al >= 7);
             /* loc_4838e2 */
             eax_copy = loc_eax;
-            if (loc_edi > init_edi && loc_edi < bl + bs) {
-                loc_ebp = (*(uint8_t *)(loc_edi - 1)) >> shlsize;
+            if (loc_edi > init_edi) {
+                char *previous = upack_adjusted_buffer_window(bs, bl, loc_edi, -1, 1);
+
+                if (previous == NULL)
+                    return -1;
+                loc_ebp = (*(uint8_t *)previous) >> shlsize;
             } else {
                 loc_ebp = 0;
             }
             loc_ebp *= (int)0x300; /* XXX */
-            loc_ebp8 = loc_ebx + ((loc_ebp << 2) + 0x1008);
+            loc_ebp8 = upack_adjusted_buffer_window(bs, bl, loc_ebx,
+                                                    (int64_t)loc_ebp * 4 + 0x1008, 4);
+            if (loc_ebp8 == NULL)
+                return -1;
             /* XXX save edi */
             edi_copy = loc_edi;
 
             loc_eax = (loc_eax & 0xffffff00) | 1;
             if (loc_ecx) {
                 uint8_t loc_cl = loc_ecx & 0xff;
-                loc_edi -= state[2];
-                if (!CLI_ISCONTAINED(bs, bl, loc_edi, 1))
+                loc_edi = upack_adjusted_buffer_window(bs, bl, loc_edi,
+                                                       -(int64_t)state[2], 1);
+                if (loc_edi == NULL)
                     return -1;
                 do {
                     loc_eax = (loc_eax & 0xffff00ff) | ((*loc_edi & loc_cl) ? 0x200 : 0x100);
 
-                    loc_edx = loc_ebp8 + (loc_eax << 2);
+                    loc_edx = upack_adjusted_buffer_window(bs, bl, loc_ebp8,
+                                                           (int64_t)loc_eax * 4, 4);
+                    if (loc_edx == NULL)
+                        return -1;
                     ret     = lzma_upack_esi_00(&p, loc_edx, bs, bl);
                     loc_al  = loc_eax & 0xff;
                     loc_al += loc_al;

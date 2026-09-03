@@ -13923,3 +13923,16 @@ qualification remain open.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final PE/parser-release
   qualification before closure.
+
+## Upack reconstructed-coordinate admission — 2026-09-03
+
+- Keep Upack image RVAs, jump displacements, reconstructed destinations,
+  decoder-state windows, backward copies, and call-fixup sites behind bounded
+  zero-based or signed-adjusted admission before pointer formation. Retain
+  `cli_upack_rva_window_offset()`,
+  `test_pe_upack_rva_window_offset_rejects_invalid_window`, its registrations,
+  and source guards. Add current-source production-GCC and linked
+  malformed/high-coordinate Upack execution, complete PE/unpacker corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final PE/parser-release
+  qualification before closure.
