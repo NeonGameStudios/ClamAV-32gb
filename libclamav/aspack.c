@@ -101,6 +101,21 @@ cl_error_t cli_aspack_block_buffer_size(uint32_t block_size, size_t *buffer_size
     return CL_SUCCESS;
 }
 
+int cli_aspack_init_array_step(uint8_t multiplier, uint32_t current, uint32_t *next)
+{
+    uint32_t increment;
+
+    if (next == NULL || multiplier >= 32)
+        return -1;
+
+    increment = UINT32_C(1) << multiplier;
+    if (current > UINT32_MAX - increment)
+        return -1;
+
+    *next = current + increment;
+    return 0;
+}
+
 int cli_aspack_entry_window_offset(uint32_t entry_offset, uint32_t adjustment,
                                    size_t available, size_t needed, size_t *offset)
 {
@@ -491,8 +506,18 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
         stream.init_array[i] = j;
         if (cli_aspack_entry_window_offset(ep, stream_init_multiplier_offset, size, 0, &init_offset) == 0 &&
             i < size - init_offset) {
-            j += (1 << image[init_offset + i]);
+            if (cli_aspack_init_array_step(image[init_offset + i], j, &j) < 0) {
+                table_error = 1;
+                if (ctx)
+                    cli_mark_scan_incomplete(ctx, "Aspack stream-init multiplier is out of range or overflows");
+                break;
+            }
         }
+    }
+
+    if (table_error) {
+        free(stream.dict_helper[0].starts);
+        return 0;
     }
 
     memset(stream.array1, 0, sizeof(stream.array1));

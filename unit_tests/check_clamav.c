@@ -49568,6 +49568,23 @@ START_TEST(test_pe_aspack_block_buffer_size_rejects_overflow)
 }
 END_TEST
 
+START_TEST(test_pe_aspack_init_array_step_rejects_invalid_multiplier)
+{
+    uint32_t next = UINT32_MAX;
+
+    ck_assert_int_eq(cli_aspack_init_array_step(0, 7, &next), 0);
+    ck_assert_uint_eq(next, 8U);
+    ck_assert_int_eq(cli_aspack_init_array_step(31, 0, &next), 0);
+    ck_assert_uint_eq(next, UINT32_C(0x80000000));
+    ck_assert_int_eq(cli_aspack_init_array_step(31, UINT32_MAX - UINT32_C(0x80000000), &next), 0);
+    ck_assert_uint_eq(next, UINT32_MAX);
+    ck_assert_int_eq(cli_aspack_init_array_step(32, 0, &next), -1);
+    ck_assert_int_eq(cli_aspack_init_array_step(31, UINT32_MAX - UINT32_C(0x80000000) + 1U, &next), -1);
+    ck_assert_int_eq(cli_aspack_init_array_step(0, UINT32_MAX, &next), -1);
+    ck_assert_int_eq(cli_aspack_init_array_step(0, 0, NULL), -1);
+}
+END_TEST
+
 START_TEST(test_pe_aspack_entry_window_offset_rejects_invalid_window)
 {
     size_t offset = SIZE_MAX;
@@ -62162,6 +62179,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe_map, test_pe_wwpack_source_window_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pespin_entry_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pe_upx_relative_window_offset_rejects_invalid_window);
+    tcase_add_test(tc_pe_map, test_pe_aspack_init_array_step_rejects_invalid_multiplier);
     suite_add_tcase(s, tc_pe);
     tcase_add_checked_fixture(tc_pe, cl_setup, cl_teardown);
     tcase_add_test(tc_pe, test_pe_short_entrypoint_skips_legacy_path_fail_visible);

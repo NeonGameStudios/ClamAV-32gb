@@ -45,6 +45,7 @@ typedef enum aspack_version_tag {
 } aspack_version_t;
 
 cl_error_t cli_aspack_block_buffer_size(uint32_t block_size, size_t *buffer_size);
+int cli_aspack_init_array_step(uint8_t multiplier, uint32_t current, uint32_t *next);
 int cli_aspack_entry_window_offset(uint32_t entry_offset, uint32_t adjustment,
                                    size_t available, size_t needed, size_t *offset);
 

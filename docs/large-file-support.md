@@ -8,8 +8,8 @@ gate passes.
 ## Current qualification boundary — 2026-09-03
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 582 capability rows, with
-0 qualified rows and 563 release-blocking bounded, pending, or required-
+certificate. At the current audit point it contains 583 capability rows, with
+0 qualified rows and 564 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical
 entries below preserve engineering evidence and open work; they do not
 substitute for current-source linked execution,
@@ -18,7 +18,7 @@ resource measurements, service parity, or the final requirement-by-requirement
 PLAN.md completion audit.
 
 The current branch is therefore materially not on the release-certification
-side of the plan: 143 rows are bounded, 413 remain pending, and 26 are
+side of the plan: 143 rows are bounded, 414 remain pending, and 26 are
 explicitly unsupported. The remaining parser work, current-source
 production-linked execution, sanitizer runs, production CVDs, materialized
 exact-edge files, Sonic1 measurements, service parity, release-default

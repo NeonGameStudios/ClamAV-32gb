@@ -655,6 +655,26 @@ linked malformed-Aspack execution, complete Aspack/PE corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final PE/parser-release qualification remain required.
 
+## Aspack stream-init multiplier admission — 2026-09-03
+
+`unaspack()` previously shifted each attacker-controlled stream-init
+multiplier byte directly and accumulated the result in a `uint32_t`. A value
+of 32 or greater invoked an invalid C shift, and valid individual shifts could
+still wrap the cumulative dictionary offset before later decoder metadata was
+used. The helper `cli_aspack_init_array_step()` now rejects multipliers outside
+the representable 0..31 range and checks the addition in the unsigned domain.
+The confirmed unpacking path marks the scan incomplete and frees its
+dictionary allocation before any block-table or decoder traversal when the
+check fails. `test_pe_aspack_init_array_step_rejects_invalid_multiplier`
+covers valid 31-bit admission, the exact `UINT32_MAX` boundary, multiplier 32,
+cumulative overflow, and a null output pointer; source guards and the
+`aspack-init-array-step` capability row bind the implementation to this
+regression. Current-source production-GCC compilation and linked
+malformed/high-coordinate Aspack execution, complete Aspack/PE corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## SIS 9.x physical field boundary — 2026-09-03
 
 SIS 9.x field admission previously checked native-size arithmetic but did not
