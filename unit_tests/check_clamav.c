@@ -7482,20 +7482,20 @@ START_TEST(test_authenticode_post_container_parse_failure_is_fail_visible)
     security_offset = peinfo.dirs[4].VirtualAddress;
     security_size   = peinfo.dirs[4].Size;
 
-    /* The fixture's SPC_INDIRECT_DATA hash-algorithm SEQUENCE begins 117
-     * bytes into the PKCS#7 payload. This is after asn1_parse_mscat() has
-     * finished, so the injected six-byte read failure reaches the post-parser
-     * hash-container validation path. */
-    fail_offset = (size_t)peinfo.dirs[4].VirtualAddress + sizeof(struct pe_certificate_hdr) + 117U;
-    ck_assert_msg(fail_offset <= map->len && 6U <= map->len - fail_offset,
-                  "signed PE fixture is too short for the post-container probe");
+    /* The first embedded certificate's TBSCertificate begins 174 bytes into
+     * the PKCS#7 payload and spans 965 bytes. This fails the mapped TBS digest
+     * after structural parsing and exercises the map_hash_by_name() CL_EREAD
+     * propagation path. */
+    fail_offset = (size_t)peinfo.dirs[4].VirtualAddress + sizeof(struct pe_certificate_hdr) + 174U;
+    ck_assert_msg(fail_offset <= map->len && 965U <= map->len - fail_offset,
+                  "signed PE fixture is too short for the TBS hash probe");
     ck_assert_uint_eq(data[fail_offset], 0x30U);
 
     state.data        = data;
     state.data_length = (size_t)st.st_size;
     state.fail_at     = SIZE_MAX;
     state.fail_offset = fail_offset;
-    state.fail_length = 6U;
+    state.fail_length = 965U;
     state.fail_exact  = true;
     map->handle       = &state;
     map->need         = authenticode_hash_test_need;
@@ -7532,13 +7532,13 @@ START_TEST(test_authenticode_post_container_parse_failure_is_fail_visible)
     state.calls                = 0;
     state.fail_at              = SIZE_MAX;
     state.fail_offset          = fail_offset;
-    state.fail_length          = 6U;
+    state.fail_length          = 965U;
     state.fail_exact           = true;
 
     status = cli_check_auth_header(&ctx, &peinfo);
-    ck_assert_int_eq(status, CL_EPARSE);
+    ck_assert_int_eq(status, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "Authenticode signature could not be parsed completely");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Authenticode hash region could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     /* A confirmed security directory whose fixed certificate header cannot be

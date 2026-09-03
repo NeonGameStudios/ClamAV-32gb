@@ -644,6 +644,31 @@ production-linked execution, but Docker reported its container stopped on an
 overlay mount `no space left on device`; no host compiler or new software was
 substituted.
 
+## Authenticode ASN.1 map-hash status — 2026-09-02
+
+The internal `map_hash_by_name()` helper previously collapsed every mapped
+issuer, serial, certificate, and signed-message hash failure to boolean `1`
+and called `cli_hash_mapped_regions()` without a scan context. An in-range
+fmap read failure could therefore lose its `CL_EREAD` status and arrive at
+the confirmed Authenticode caller as an ordinary `CL_EPARSE` parse failure.
+The helper and its algorithm wrappers now return `cl_error_t`, pass the active
+scan context through the bounded mapped-region hasher, check finalization,
+and preserve the concrete operational status. Certificate, signer, and
+countersignature callers propagate non-parse failures before catalog trust or
+verification can continue.
+
+`test_authenticode_post_container_parse_failure_is_fail_visible` now also
+fails the first embedded certificate's complete TBS hash window after its
+ASN.1 structure has been parsed and requires `CL_EREAD`, the mapped-region
+diagnostic, and non-cacheability. The existing authenticated-attribute
+finalization case remains in the same regression. Source guards and the
+capability manifest record the boundary.
+
+Current-source production-GCC compilation and linked execution, complete
+Authenticode/PE corpus, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## Raw matcher hash finalization status — 2026-09-02
 
 The raw hash-signature matcher accumulated required digests and ignored the

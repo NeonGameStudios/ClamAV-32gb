@@ -466,12 +466,12 @@ fixed-width-integer	libclamav/arc4.c	34	    uint32_t *S;
 fixed-width-integer	libclamav/arc4.c	56	    uint32_t *S = &s->S[0];
 fixed-width-integer	libclamav/arc4.c	59	        uint32_t a, b;
 fixed-width-integer	libclamav/arc4.h	28	    uint32_t S[256];
-fixed-width-integer	libclamav/asn1.c	1145	static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *cmgr, const uint8_t *message, const unsigned int message_size, int64_t not_before, int64_t not_after, cli_ctx *scan_ctx)
-fixed-width-integer	libclamav/asn1.c	1322	                    int64_t sigdate; /* FIXME shall i use it?! */
-fixed-width-integer	libclamav/asn1.c	2399	cl_error_t cli_hash_mapped_regions(fmap_t *map, void *hash_ctx, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx)
-fixed-width-integer	libclamav/asn1.c	2401	    uint32_t i;
-fixed-width-integer	libclamav/asn1.c	2469	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx)
-fixed-width-integer	libclamav/asn1.c	537	static int asn1_get_time(fmap_t *map, const void **asn1data, unsigned int *size, int64_t *tm)
+fixed-width-integer	libclamav/asn1.c	1158	static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *cmgr, const uint8_t *message, const unsigned int message_size, int64_t not_before, int64_t not_after, cli_ctx *scan_ctx)
+fixed-width-integer	libclamav/asn1.c	1345	                    int64_t sigdate; /* FIXME shall i use it?! */
+fixed-width-integer	libclamav/asn1.c	2436	cl_error_t cli_hash_mapped_regions(fmap_t *map, void *hash_ctx, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx)
+fixed-width-integer	libclamav/asn1.c	2438	    uint32_t i;
+fixed-width-integer	libclamav/asn1.c	2506	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx)
+fixed-width-integer	libclamav/asn1.c	531	static int asn1_get_time(fmap_t *map, const void **asn1data, unsigned int *size, int64_t *tm)
 fixed-width-integer	libclamav/asn1.h	49	cl_error_t cli_hash_mapped_regions(fmap_t *map, void *hash_ctx, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx);
 fixed-width-integer	libclamav/asn1.h	52	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx);
 fixed-width-integer	libclamav/aspack.c	115	static uint32_t getdec(struct ASPK *stream, uint8_t which, int *err)
@@ -9831,84 +9831,84 @@ native-width-integer	libclamav/arc4.c	85	static int data[10*1024*1024];
 native-width-integer	libclamav/arc4.c	86	int main(void)
 native-width-integer	libclamav/arc4.c	90	    size_t i;
 native-width-integer	libclamav/arc4.h	33	void arc4_apply(struct arc4_state *s, uint8_t *data, size_t len);
-native-width-integer	libclamav/asn1.c	1115	            cli_dbgmsg("asn1_get_x509: signature too long\n");
-native-width-integer	libclamav/asn1.c	1145	static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *cmgr, const uint8_t *message, const unsigned int message_size, int64_t not_before, int64_t not_after, cli_ctx *scan_ctx)
-native-width-integer	libclamav/asn1.c	1151	    unsigned int dsize, attrs_size;
-native-width-integer	libclamav/asn1.c	1152	    unsigned int avail;
-native-width-integer	libclamav/asn1.c	1156	    unsigned int hashsize;
-native-width-integer	libclamav/asn1.c	1158	    int result;
-native-width-integer	libclamav/asn1.c	1247	            int content;
-native-width-integer	libclamav/asn1.c	1294	                    unsigned int backupSize = deep.size;
-native-width-integer	libclamav/asn1.c	1367	            cli_dbgmsg("asn1_parse_countersignature: countersignature encryptedDigest too long\n");
+native-width-integer	libclamav/asn1.c	1125	            cli_dbgmsg("asn1_get_x509: signature too long\n");
+native-width-integer	libclamav/asn1.c	1158	static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *cmgr, const uint8_t *message, const unsigned int message_size, int64_t not_before, int64_t not_after, cli_ctx *scan_ctx)
+native-width-integer	libclamav/asn1.c	1164	    unsigned int dsize, attrs_size;
+native-width-integer	libclamav/asn1.c	1165	    unsigned int avail;
+native-width-integer	libclamav/asn1.c	1169	    unsigned int hashsize;
+native-width-integer	libclamav/asn1.c	1171	    int result;
+native-width-integer	libclamav/asn1.c	1270	            int content;
+native-width-integer	libclamav/asn1.c	1317	                    unsigned int backupSize = deep.size;
 native-width-integer	libclamav/asn1.c	138	    unsigned int size;
-native-width-integer	libclamav/asn1.c	1388	            attrs_region.size   = (size_t)attrs_size - 1;
-native-width-integer	libclamav/asn1.c	1420	static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, crtmgr *cmgr, int embedded, const void **hashes, unsigned int *hashes_size, cli_ctx *ctx)
-native-width-integer	libclamav/asn1.c	1425	    unsigned int dsize, message_size, attrs_size;
-native-width-integer	libclamav/asn1.c	1429	    unsigned int hashsize;
+native-width-integer	libclamav/asn1.c	1390	            cli_dbgmsg("asn1_parse_countersignature: countersignature encryptedDigest too long\n");
+native-width-integer	libclamav/asn1.c	1411	            attrs_region.size   = (size_t)attrs_size - 1;
 native-width-integer	libclamav/asn1.c	143	static int map_raw(fmap_t *map, const void *data, unsigned int len, uint8_t raw[CRT_RAWMAXLEN])
-native-width-integer	libclamav/asn1.c	1434	    int result;
+native-width-integer	libclamav/asn1.c	1443	static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, crtmgr *cmgr, int embedded, const void **hashes, unsigned int *hashes_size, cli_ctx *ctx)
+native-width-integer	libclamav/asn1.c	1448	    unsigned int dsize, message_size, attrs_size;
 native-width-integer	libclamav/asn1.c	145	    unsigned int elen = MIN(len, CRT_RAWMAXLEN - 1);
-native-width-integer	libclamav/asn1.c	157	static int map_hash_by_name(fmap_t *map, const void *data, unsigned int len, uint8_t *digest, const char *hash_name)
-native-width-integer	libclamav/asn1.c	1596	                        int j;
-native-width-integer	libclamav/asn1.c	1624	                        cli_dbgmsg("  i: %s %lu->%lu %s%s%s\n", issuer, (unsigned long)x509->not_before, (unsigned long)x509->not_after, x509->codeSign ? "code " : "", x509->timeSign ? "time " : "", x509->certSign ? "cert " : "");
-native-width-integer	libclamav/asn1.c	1652	                     * match, we have a long-lived pointer that we can pass
-native-width-integer	libclamav/asn1.c	173	    region.size   = (size_t)len;
-native-width-integer	libclamav/asn1.c	185	static int map_sha2_512(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_512[SHA512_HASH_SIZE])
-native-width-integer	libclamav/asn1.c	1893	            int content;
-native-width-integer	libclamav/asn1.c	190	static int map_sha2_384(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_384[SHA384_HASH_SIZE])
-native-width-integer	libclamav/asn1.c	195	static int map_sha2_256(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_256[SHA256_HASH_SIZE])
-native-width-integer	libclamav/asn1.c	1988	            cli_dbgmsg("asn1_parse_mscat: encryptedDigest too long\n");
-native-width-integer	libclamav/asn1.c	200	static int map_sha1(fmap_t *map, const void *data, unsigned int len, uint8_t sha1[SHA1_HASH_SIZE])
-native-width-integer	libclamav/asn1.c	2016	            attrs_region.size   = (size_t)attrs_size - 1;
-native-width-integer	libclamav/asn1.c	205	static int map_md5(fmap_t *map, const void *data, unsigned int len, uint8_t *md5)
-native-width-integer	libclamav/asn1.c	2087	            int content;
-native-width-integer	libclamav/asn1.c	210	static int map_hash(fmap_t *map, const void *data, unsigned int len, uint8_t *out_hash, cli_crt_hashtype hashtype)
-native-width-integer	libclamav/asn1.c	2224	int asn1_load_mscat(fmap_t *map, struct cl_engine *engine)
-native-width-integer	libclamav/asn1.c	2227	    unsigned int size;
-native-width-integer	libclamav/asn1.c	2228	    unsigned int i;
-native-width-integer	libclamav/asn1.c	2276	            int hashed_obj_type;
-native-width-integer	libclamav/asn1.c	2279	            unsigned int hashsize;
-native-width-integer	libclamav/asn1.c	2419	        size_t at        = regions[i].offset;
-native-width-integer	libclamav/asn1.c	2420	        size_t remaining = regions[i].size;
-native-width-integer	libclamav/asn1.c	2424	            size_t chunk = MIN(remaining, (size_t)CLI_AUTHENTICODE_HASH_CHUNK_SIZE);
-native-width-integer	libclamav/asn1.c	2469	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx)
-native-width-integer	libclamav/asn1.c	2471	    unsigned int content_size;
-native-width-integer	libclamav/asn1.c	2475	    unsigned int hashsize;
-native-width-integer	libclamav/asn1.c	2478	    int ret;
-native-width-integer	libclamav/asn1.c	2480	    unsigned int i;
-native-width-integer	libclamav/asn1.c	2482	    cli_dbgmsg("in asn1_check_mscat (offset: %llu)\n", (long long unsigned)offset);
-native-width-integer	libclamav/asn1.c	259	static int asn1_get_obj(fmap_t *map, const void *asn1data, unsigned int *asn1len, struct cli_asn1 *obj)
-native-width-integer	libclamav/asn1.c	261	    unsigned int asn1_sz   = *asn1len;
-native-width-integer	libclamav/asn1.c	262	    unsigned int readbytes = MIN(6, asn1_sz), i;
-native-width-integer	libclamav/asn1.c	313	static int asn1_expect_objtype(fmap_t *map, const void *asn1data, unsigned int *asn1len, struct cli_asn1 *obj, uint8_t type)
-native-width-integer	libclamav/asn1.c	315	    int ret = asn1_get_obj(map, asn1data, asn1len, obj);
-native-width-integer	libclamav/asn1.c	325	static int asn1_expect_obj(fmap_t *map, const void **asn1data, unsigned int *asn1len, uint8_t type, unsigned int size, const void *content)
-native-width-integer	libclamav/asn1.c	328	    int ret = asn1_expect_objtype(map, *asn1data, asn1len, &obj, type);
-native-width-integer	libclamav/asn1.c	349	static int asn1_expect_algo(fmap_t *map, const void **asn1data, unsigned int *asn1len, unsigned int algo_size, const void *algo)
-native-width-integer	libclamav/asn1.c	352	    unsigned int avail;
-native-width-integer	libclamav/asn1.c	353	    int ret;
-native-width-integer	libclamav/asn1.c	378	    const unsigned int oid_bytes_len;
-native-width-integer	libclamav/asn1.c	379	    const int context[2];
-native-width-integer	libclamav/asn1.c	382	static const oid_alternative_t *asn1_expect_algo_multi(fmap_t *map, const void **asn1data, unsigned int *asn1len,
-native-width-integer	libclamav/asn1.c	383	                                                       const oid_alternative_t alts[], unsigned int alts_count)
-native-width-integer	libclamav/asn1.c	386	    unsigned int avail;
-native-width-integer	libclamav/asn1.c	387	    unsigned int i;
-native-width-integer	libclamav/asn1.c	443	static int asn1_expect_hash_algo(fmap_t *map, const void **asn1data, unsigned int *asn1len, cli_crt_hashtype *hashtype, unsigned int *hashsize)
-native-width-integer	libclamav/asn1.c	471	static int asn1_expect_rsa(fmap_t *map, const void **asn1data, unsigned int *asn1len, cli_crt_hashtype *hashtype)
-native-width-integer	libclamav/asn1.c	511	static int asn1_expect_list_member(fmap_t *map, const void **asn1data, unsigned int *asn1len)
-native-width-integer	libclamav/asn1.c	528	static int asn1_getnum(const char *s)
-native-width-integer	libclamav/asn1.c	537	static int asn1_get_time(fmap_t *map, const void **asn1data, unsigned int *size, int64_t *tm)
-native-width-integer	libclamav/asn1.c	540	    int ret = asn1_get_obj(map, *asn1data, size, &obj);
-native-width-integer	libclamav/asn1.c	541	    unsigned int len;
-native-width-integer	libclamav/asn1.c	544	    int n;
-native-width-integer	libclamav/asn1.c	651	static int asn1_get_rsa_pubkey(fmap_t *map, const void **asn1data, unsigned int *size, cli_crt *x509)
-native-width-integer	libclamav/asn1.c	654	    unsigned int avail, avail2;
-native-width-integer	libclamav/asn1.c	740	static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *crts)
-native-width-integer	libclamav/asn1.c	743	    unsigned int avail, tbssize, issuersize;
-native-width-integer	libclamav/asn1.c	748	    int ret = ASN1_GET_X509_UNRECOVERABLE_ERROR;
-native-width-integer	libclamav/asn1.c	749	    unsigned int version;
-native-width-integer	libclamav/asn1.c	895	                int have_key_usage = 0;
-native-width-integer	libclamav/asn1.c	896	                int have_ext_key   = 0;
+native-width-integer	libclamav/asn1.c	1452	    unsigned int hashsize;
+native-width-integer	libclamav/asn1.c	1457	    int result;
+native-width-integer	libclamav/asn1.c	157	static cl_error_t map_hash_by_name(fmap_t *map, const void *data, unsigned int len, uint8_t *digest, const char *hash_name, cli_ctx *ctx)
+native-width-integer	libclamav/asn1.c	1624	                        int j;
+native-width-integer	libclamav/asn1.c	1652	                        cli_dbgmsg("  i: %s %lu->%lu %s%s%s\n", issuer, (unsigned long)x509->not_before, (unsigned long)x509->not_after, x509->codeSign ? "code " : "", x509->timeSign ? "time " : "", x509->certSign ? "cert " : "");
+native-width-integer	libclamav/asn1.c	1680	                     * match, we have a long-lived pointer that we can pass
+native-width-integer	libclamav/asn1.c	174	    region.size   = (size_t)len;
+native-width-integer	libclamav/asn1.c	190	static cl_error_t map_sha2_512(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_512[SHA512_HASH_SIZE], cli_ctx *ctx)
+native-width-integer	libclamav/asn1.c	1927	            int content;
+native-width-integer	libclamav/asn1.c	195	static cl_error_t map_sha2_384(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_384[SHA384_HASH_SIZE], cli_ctx *ctx)
+native-width-integer	libclamav/asn1.c	200	static cl_error_t map_sha2_256(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_256[SHA256_HASH_SIZE], cli_ctx *ctx)
+native-width-integer	libclamav/asn1.c	2022	            cli_dbgmsg("asn1_parse_mscat: encryptedDigest too long\n");
+native-width-integer	libclamav/asn1.c	205	static cl_error_t map_sha1(fmap_t *map, const void *data, unsigned int len, uint8_t sha1[SHA1_HASH_SIZE], cli_ctx *ctx)
+native-width-integer	libclamav/asn1.c	2053	            attrs_region.size   = (size_t)attrs_size - 1;
+native-width-integer	libclamav/asn1.c	210	static cl_error_t map_md5(fmap_t *map, const void *data, unsigned int len, uint8_t *md5, cli_ctx *ctx)
+native-width-integer	libclamav/asn1.c	2124	            int content;
+native-width-integer	libclamav/asn1.c	215	static cl_error_t map_hash(fmap_t *map, const void *data, unsigned int len, uint8_t *out_hash, cli_crt_hashtype hashtype, cli_ctx *ctx)
+native-width-integer	libclamav/asn1.c	2261	int asn1_load_mscat(fmap_t *map, struct cl_engine *engine)
+native-width-integer	libclamav/asn1.c	2264	    unsigned int size;
+native-width-integer	libclamav/asn1.c	2265	    unsigned int i;
+native-width-integer	libclamav/asn1.c	2313	            int hashed_obj_type;
+native-width-integer	libclamav/asn1.c	2316	            unsigned int hashsize;
+native-width-integer	libclamav/asn1.c	2456	        size_t at        = regions[i].offset;
+native-width-integer	libclamav/asn1.c	2457	        size_t remaining = regions[i].size;
+native-width-integer	libclamav/asn1.c	2461	            size_t chunk = MIN(remaining, (size_t)CLI_AUTHENTICODE_HASH_CHUNK_SIZE);
+native-width-integer	libclamav/asn1.c	2506	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx)
+native-width-integer	libclamav/asn1.c	2508	    unsigned int content_size;
+native-width-integer	libclamav/asn1.c	2512	    unsigned int hashsize;
+native-width-integer	libclamav/asn1.c	2515	    int ret;
+native-width-integer	libclamav/asn1.c	2517	    unsigned int i;
+native-width-integer	libclamav/asn1.c	2519	    cli_dbgmsg("in asn1_check_mscat (offset: %llu)\n", (long long unsigned)offset);
+native-width-integer	libclamav/asn1.c	253	static int asn1_get_obj(fmap_t *map, const void *asn1data, unsigned int *asn1len, struct cli_asn1 *obj)
+native-width-integer	libclamav/asn1.c	255	    unsigned int asn1_sz   = *asn1len;
+native-width-integer	libclamav/asn1.c	256	    unsigned int readbytes = MIN(6, asn1_sz), i;
+native-width-integer	libclamav/asn1.c	307	static int asn1_expect_objtype(fmap_t *map, const void *asn1data, unsigned int *asn1len, struct cli_asn1 *obj, uint8_t type)
+native-width-integer	libclamav/asn1.c	309	    int ret = asn1_get_obj(map, asn1data, asn1len, obj);
+native-width-integer	libclamav/asn1.c	319	static int asn1_expect_obj(fmap_t *map, const void **asn1data, unsigned int *asn1len, uint8_t type, unsigned int size, const void *content)
+native-width-integer	libclamav/asn1.c	322	    int ret = asn1_expect_objtype(map, *asn1data, asn1len, &obj, type);
+native-width-integer	libclamav/asn1.c	343	static int asn1_expect_algo(fmap_t *map, const void **asn1data, unsigned int *asn1len, unsigned int algo_size, const void *algo)
+native-width-integer	libclamav/asn1.c	346	    unsigned int avail;
+native-width-integer	libclamav/asn1.c	347	    int ret;
+native-width-integer	libclamav/asn1.c	372	    const unsigned int oid_bytes_len;
+native-width-integer	libclamav/asn1.c	373	    const int context[2];
+native-width-integer	libclamav/asn1.c	376	static const oid_alternative_t *asn1_expect_algo_multi(fmap_t *map, const void **asn1data, unsigned int *asn1len,
+native-width-integer	libclamav/asn1.c	377	                                                       const oid_alternative_t alts[], unsigned int alts_count)
+native-width-integer	libclamav/asn1.c	380	    unsigned int avail;
+native-width-integer	libclamav/asn1.c	381	    unsigned int i;
+native-width-integer	libclamav/asn1.c	437	static int asn1_expect_hash_algo(fmap_t *map, const void **asn1data, unsigned int *asn1len, cli_crt_hashtype *hashtype, unsigned int *hashsize)
+native-width-integer	libclamav/asn1.c	465	static int asn1_expect_rsa(fmap_t *map, const void **asn1data, unsigned int *asn1len, cli_crt_hashtype *hashtype)
+native-width-integer	libclamav/asn1.c	505	static int asn1_expect_list_member(fmap_t *map, const void **asn1data, unsigned int *asn1len)
+native-width-integer	libclamav/asn1.c	522	static int asn1_getnum(const char *s)
+native-width-integer	libclamav/asn1.c	531	static int asn1_get_time(fmap_t *map, const void **asn1data, unsigned int *size, int64_t *tm)
+native-width-integer	libclamav/asn1.c	534	    int ret = asn1_get_obj(map, *asn1data, size, &obj);
+native-width-integer	libclamav/asn1.c	535	    unsigned int len;
+native-width-integer	libclamav/asn1.c	538	    int n;
+native-width-integer	libclamav/asn1.c	645	static int asn1_get_rsa_pubkey(fmap_t *map, const void **asn1data, unsigned int *size, cli_crt *x509)
+native-width-integer	libclamav/asn1.c	648	    unsigned int avail, avail2;
+native-width-integer	libclamav/asn1.c	734	static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *crts, cli_ctx *ctx, cl_error_t *hash_status)
+native-width-integer	libclamav/asn1.c	737	    unsigned int avail, tbssize, issuersize;
+native-width-integer	libclamav/asn1.c	742	    int ret = ASN1_GET_X509_UNRECOVERABLE_ERROR;
+native-width-integer	libclamav/asn1.c	744	    unsigned int version;
+native-width-integer	libclamav/asn1.c	901	                int have_key_usage = 0;
+native-width-integer	libclamav/asn1.c	902	                int have_ext_key   = 0;
 native-width-integer	libclamav/asn1.h	29	    size_t offset;
 native-width-integer	libclamav/asn1.h	30	    size_t size;
 native-width-integer	libclamav/asn1.h	51	int asn1_load_mscat(fmap_t *map, struct cl_engine *engine);
@@ -21432,7 +21432,7 @@ native-width-integer	unit_tests/check_clamav.c	7449	        ssize_t nread = read
 native-width-integer	unit_tests/check_clamav.c	7451	        offset += (size_t)nread;
 native-width-integer	unit_tests/check_clamav.c	7459	    map = cl_fmap_open_memory(data, (size_t)st.st_size);
 native-width-integer	unit_tests/check_clamav.c	747	        if (lseek(desc, 0, SEEK_SET) == (off_t)-1) {
-native-width-integer	unit_tests/check_clamav.c	7489	    fail_offset = (size_t)peinfo.dirs[4].VirtualAddress + sizeof(struct pe_certificate_hdr) + 117U;
+native-width-integer	unit_tests/check_clamav.c	7489	    fail_offset = (size_t)peinfo.dirs[4].VirtualAddress + sizeof(struct pe_certificate_hdr) + 174U;
 native-width-integer	unit_tests/check_clamav.c	7495	    state.data_length = (size_t)st.st_size;
 native-width-integer	unit_tests/check_clamav.c	752	                (nread == (ssize_t)sizeof(prefix) && memcmp(prefix, "MZP", sizeof(prefix)) == 0) ? 1 : -1;
 native-width-integer	unit_tests/check_clamav.c	753	            if (lseek(desc, 0, SEEK_SET) == (off_t)-1)
@@ -23686,29 +23686,29 @@ format-width	libclamav/apm.c	334	        cli_dbgmsg("Partition Count: %u\n", ape
 format-width	libclamav/apm.c	335	        cli_dbgmsg("Blocks: [%u, +%u), ([%zu, +%zu))\n",
 format-width	libclamav/apm.c	448	                           "[%u, %u]\n",
 format-width	libclamav/arc4.c	100		    printf("Bad result at %zu\n", i);
-format-width	libclamav/asn1.c	1029	                                    cli_dbgmsg("asn1_get_x509: wrong bool size in basic constraint %u\n", ext.size);
-format-width	libclamav/asn1.c	1175	            cli_dbgmsg("asn1_parse_countersignature: expected INTEGER of size 1, got size %u\n", deep.size);
-format-width	libclamav/asn1.c	1454	        /*     cli_dbgmsg("asn1_parse_mscat: found extra data after pkcs#7 %u\n", size); */
-format-width	libclamav/asn1.c	1518	            cli_dbgmsg("asn1_parse_mscat: unexpected ContentType for embedded mode %d\n", embedded);
-format-width	libclamav/asn1.c	1590	                cli_dbgmsg("asn1_parse_mscat: %u embedded certificates collected\n", newcerts.items);
-format-width	libclamav/asn1.c	1624	                        cli_dbgmsg("  i: %s %lu->%lu %s%s%s\n", issuer, (unsigned long)x509->not_before, (unsigned long)x509->not_after, x509->codeSign ? "code " : "", x509->timeSign ? "time " : "", x509->certSign ? "cert " : "");
-format-width	libclamav/asn1.c	1770	                    cli_dbgmsg("asn1_parse_mscat: %u certificates did not verify\n", newcerts.items);
-format-width	libclamav/asn1.c	1939	                    cli_dbgmsg("asn1_parse_mscat: unexpected ContentType for embedded mode %d (for authenticated attribute)\n", embedded);
-format-width	libclamav/asn1.c	1951	                    cli_dbgmsg("asn1_parse_mscat: messageDigest attribute has the wrong size (%u)\n", cobj.size);
-format-width	libclamav/asn1.c	2362	                cli_dbgmsg("asn1_load_mscat: bad hash size %u\n", tagval3.size);
-format-width	libclamav/asn1.c	2412	            cli_dbgmsg("cli_hash_mapped_regions: region %u is outside the mapped file\n", i);
-format-width	libclamav/asn1.c	2436	                cli_dbgmsg("cli_hash_mapped_regions: could not read region %u at offset %zu\n", i, at);
-format-width	libclamav/asn1.c	2442	                cli_dbgmsg("cli_hash_mapped_regions: digest update failed for region %u\n", i);
-format-width	libclamav/asn1.c	2482	    cli_dbgmsg("in asn1_check_mscat (offset: %llu)\n", (long long unsigned)offset);
-format-width	libclamav/asn1.c	332	        cli_dbgmsg("asn1_expect_obj: expected size %u, got %u\n", size, obj.size);
-format-width	libclamav/asn1.c	587	        cli_dbgmsg("asn1_get_time: invalid month %u\n", n);
-format-width	libclamav/asn1.c	595	        cli_dbgmsg("asn1_get_time: invalid day %u\n", n);
-format-width	libclamav/asn1.c	603	        cli_dbgmsg("asn1_get_time: invalid hour %u\n", n);
-format-width	libclamav/asn1.c	611	        cli_dbgmsg("asn1_get_time: invalid minute %u\n", n);
-format-width	libclamav/asn1.c	634	            cli_dbgmsg("asn1_get_time: invalid second %u\n", n);
-format-width	libclamav/asn1.c	697	        cli_dbgmsg("asn1_get_rsa_pubkey: modulus has got an unsupported length (%u)\n", obj.size * 8);
-format-width	libclamav/asn1.c	716	        cli_dbgmsg("asn1_get_rsa_pubkey: exponent has got an unsupported length (%u)\n", obj.size * 8);
-format-width	libclamav/asn1.c	933	                        cli_dbgmsg("asn1_get_x509: bad extension value type %u\n", value.type);
+format-width	libclamav/asn1.c	1035	                                    cli_dbgmsg("asn1_get_x509: wrong bool size in basic constraint %u\n", ext.size);
+format-width	libclamav/asn1.c	1189	            cli_dbgmsg("asn1_parse_countersignature: expected INTEGER of size 1, got size %u\n", deep.size);
+format-width	libclamav/asn1.c	1478	        /*     cli_dbgmsg("asn1_parse_mscat: found extra data after pkcs#7 %u\n", size); */
+format-width	libclamav/asn1.c	1542	            cli_dbgmsg("asn1_parse_mscat: unexpected ContentType for embedded mode %d\n", embedded);
+format-width	libclamav/asn1.c	1618	                cli_dbgmsg("asn1_parse_mscat: %u embedded certificates collected\n", newcerts.items);
+format-width	libclamav/asn1.c	1652	                        cli_dbgmsg("  i: %s %lu->%lu %s%s%s\n", issuer, (unsigned long)x509->not_before, (unsigned long)x509->not_after, x509->codeSign ? "code " : "", x509->timeSign ? "time " : "", x509->certSign ? "cert " : "");
+format-width	libclamav/asn1.c	1798	                    cli_dbgmsg("asn1_parse_mscat: %u certificates did not verify\n", newcerts.items);
+format-width	libclamav/asn1.c	1973	                    cli_dbgmsg("asn1_parse_mscat: unexpected ContentType for embedded mode %d (for authenticated attribute)\n", embedded);
+format-width	libclamav/asn1.c	1985	                    cli_dbgmsg("asn1_parse_mscat: messageDigest attribute has the wrong size (%u)\n", cobj.size);
+format-width	libclamav/asn1.c	2399	                cli_dbgmsg("asn1_load_mscat: bad hash size %u\n", tagval3.size);
+format-width	libclamav/asn1.c	2449	            cli_dbgmsg("cli_hash_mapped_regions: region %u is outside the mapped file\n", i);
+format-width	libclamav/asn1.c	2473	                cli_dbgmsg("cli_hash_mapped_regions: could not read region %u at offset %zu\n", i, at);
+format-width	libclamav/asn1.c	2479	                cli_dbgmsg("cli_hash_mapped_regions: digest update failed for region %u\n", i);
+format-width	libclamav/asn1.c	2519	    cli_dbgmsg("in asn1_check_mscat (offset: %llu)\n", (long long unsigned)offset);
+format-width	libclamav/asn1.c	326	        cli_dbgmsg("asn1_expect_obj: expected size %u, got %u\n", size, obj.size);
+format-width	libclamav/asn1.c	581	        cli_dbgmsg("asn1_get_time: invalid month %u\n", n);
+format-width	libclamav/asn1.c	589	        cli_dbgmsg("asn1_get_time: invalid day %u\n", n);
+format-width	libclamav/asn1.c	597	        cli_dbgmsg("asn1_get_time: invalid hour %u\n", n);
+format-width	libclamav/asn1.c	605	        cli_dbgmsg("asn1_get_time: invalid minute %u\n", n);
+format-width	libclamav/asn1.c	628	            cli_dbgmsg("asn1_get_time: invalid second %u\n", n);
+format-width	libclamav/asn1.c	691	        cli_dbgmsg("asn1_get_rsa_pubkey: modulus has got an unsupported length (%u)\n", obj.size * 8);
+format-width	libclamav/asn1.c	710	        cli_dbgmsg("asn1_get_rsa_pubkey: exponent has got an unsupported length (%u)\n", obj.size * 8);
+format-width	libclamav/asn1.c	939	                        cli_dbgmsg("asn1_get_x509: bad extension value type %u\n", value.type);
 format-width	libclamav/autoit.c	1122	    // cli_dbgmsg("In getbits, (size: %u, bits_avail: %u, UNP->cur_input: %u)\n", size, UNP->bits_avail, UNP->cur_input);
 format-width	libclamav/autoit.c	1126	            // cli_dbgmsg("cur_input: %u (size: %u)\n", UNP->cur_input, size);
 format-width	libclamav/autoit.c	1442	                cli_dbgmsg("autoit: decompression error after %u bytes  - partial file may exist\n", UNP.cur_output);
@@ -27388,116 +27388,120 @@ offset-size-arithmetic	libclamav/apm.h	68	/* 512(82)-byte driver descriptor map 
 offset-size-arithmetic	libclamav/apm.h	78	    /* zeroes fill remainder of sector (430 bytes in 512 sector size) */
 offset-size-arithmetic	libclamav/arc4.c	58	    while (len-- > 0) {
 offset-size-arithmetic	libclamav/arc4.c	93	    for (i=0;i<sizeof(testdata)/sizeof(testdata[0]);i++) {
-offset-size-arithmetic	libclamav/asn1.c	1095	        if (asn1_expect_rsa(map, &tbs.next, &crt.size, &hashtype2)) /* signature algo - Ex: sha1WithRSAEncryption */
-offset-size-arithmetic	libclamav/asn1.c	1110	        if (asn1_expect_objtype(map, tbs.next, &crt.size, &obj, ASN1_TYPE_BIT_STRING)) { /* signature */
-offset-size-arithmetic	libclamav/asn1.c	1145	static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *cmgr, const uint8_t *message, const unsigned int message_size, int64_t not_before, int64_t not_after, cli_ctx *scan_ctx)
-offset-size-arithmetic	libclamav/asn1.c	1197	        if (asn1_expect_objtype(map, asn1.content, &asn1.size, &deep, ASN1_TYPE_SEQUENCE)) { /* issuer */
-offset-size-arithmetic	libclamav/asn1.c	1207	        if (asn1_expect_objtype(map, deep.next, &asn1.size, &deep, ASN1_TYPE_INTEGER)) { /* serial */
+offset-size-arithmetic	libclamav/asn1.c	1105	        if (asn1_expect_rsa(map, &tbs.next, &crt.size, &hashtype2)) /* signature algo - Ex: sha1WithRSAEncryption */
+offset-size-arithmetic	libclamav/asn1.c	1120	        if (asn1_expect_objtype(map, tbs.next, &crt.size, &obj, ASN1_TYPE_BIT_STRING)) { /* signature */
+offset-size-arithmetic	libclamav/asn1.c	1158	static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *cmgr, const uint8_t *message, const unsigned int message_size, int64_t not_before, int64_t not_after, cli_ctx *scan_ctx)
+offset-size-arithmetic	libclamav/asn1.c	1211	        if (asn1_expect_objtype(map, asn1.content, &asn1.size, &deep, ASN1_TYPE_SEQUENCE)) { /* issuer */
+offset-size-arithmetic	libclamav/asn1.c	1224	        if (asn1_expect_objtype(map, deep.next, &asn1.size, &deep, ASN1_TYPE_INTEGER)) { /* serial */
 offset-size-arithmetic	libclamav/asn1.c	123	#define lenof(x) (sizeof((x)) - 1)
-offset-size-arithmetic	libclamav/asn1.c	1238	        attrs_size = (uint8_t *)(asn1.next) - attrs;
-offset-size-arithmetic	libclamav/asn1.c	1248	            if (asn1_expect_objtype(map, deep.next, &dsize, &deep, ASN1_TYPE_SEQUENCE)) { /* attribute */
-offset-size-arithmetic	libclamav/asn1.c	1253	            if (asn1_expect_objtype(map, deep.content, &deep.size, &deeper, ASN1_TYPE_OBJECT_ID)) { /* attribute type */
-offset-size-arithmetic	libclamav/asn1.c	1258	            if (deeper.size != lenof(OID_contentType)) /* lenof(contentType) = lenof(messageDigest) = lenof(signingTime) = 9 */
-offset-size-arithmetic	libclamav/asn1.c	1280	            if (asn1_expect_objtype(map, deeper.next, &deep.size, &deeper, ASN1_TYPE_SET)) { /* set - contents */
-offset-size-arithmetic	libclamav/asn1.c	1387	            attrs_region.offset = fmap_ptr2off(map, attrs + 1);
-offset-size-arithmetic	libclamav/asn1.c	1388	            attrs_region.size   = (size_t)attrs_size - 1;
-offset-size-arithmetic	libclamav/asn1.c	1420	static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, crtmgr *cmgr, int embedded, const void **hashes, unsigned int *hashes_size, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/asn1.c	1261	        attrs_size = (uint8_t *)(asn1.next) - attrs;
+offset-size-arithmetic	libclamav/asn1.c	1271	            if (asn1_expect_objtype(map, deep.next, &dsize, &deep, ASN1_TYPE_SEQUENCE)) { /* attribute */
+offset-size-arithmetic	libclamav/asn1.c	1276	            if (asn1_expect_objtype(map, deep.content, &deep.size, &deeper, ASN1_TYPE_OBJECT_ID)) { /* attribute type */
+offset-size-arithmetic	libclamav/asn1.c	1281	            if (deeper.size != lenof(OID_contentType)) /* lenof(contentType) = lenof(messageDigest) = lenof(signingTime) = 9 */
+offset-size-arithmetic	libclamav/asn1.c	1303	            if (asn1_expect_objtype(map, deeper.next, &deep.size, &deeper, ASN1_TYPE_SET)) { /* set - contents */
+offset-size-arithmetic	libclamav/asn1.c	1410	            attrs_region.offset = fmap_ptr2off(map, attrs + 1);
+offset-size-arithmetic	libclamav/asn1.c	1411	            attrs_region.size   = (size_t)attrs_size - 1;
 offset-size-arithmetic	libclamav/asn1.c	143	static int map_raw(fmap_t *map, const void *data, unsigned int len, uint8_t raw[CRT_RAWMAXLEN])
-offset-size-arithmetic	libclamav/asn1.c	1447	        if (asn1_expect_objtype(map, message, &size, &asn1, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE */
+offset-size-arithmetic	libclamav/asn1.c	1443	static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, crtmgr *cmgr, int embedded, const void **hashes, unsigned int *hashes_size, cli_ctx *ctx)
 offset-size-arithmetic	libclamav/asn1.c	145	    unsigned int elen = MIN(len, CRT_RAWMAXLEN - 1);
-offset-size-arithmetic	libclamav/asn1.c	1453	        /* if(size) { */
-offset-size-arithmetic	libclamav/asn1.c	1458	        if (asn1_expect_obj(map, &asn1.content, &size, ASN1_TYPE_OBJECT_ID, lenof(OID_signedData), OID_signedData)) { /* OBJECT 1.2.840.113549.1.7.2 - contentType = signedData */
-offset-size-arithmetic	libclamav/asn1.c	1462	        if (asn1_expect_objtype(map, asn1.content, &size, &asn1, 0xa0)) { /* [0] - content */
-offset-size-arithmetic	libclamav/asn1.c	1471	        if (asn1_expect_objtype(map, asn1.content, &size, &asn1, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE */
-offset-size-arithmetic	libclamav/asn1.c	1481	        if (asn1_expect_obj(map, &asn1.content, &size, ASN1_TYPE_INTEGER, 1, "\x01")) { /* INTEGER - VERSION 1 */
-offset-size-arithmetic	libclamav/asn1.c	1486	        if (asn1_expect_objtype(map, asn1.content, &size, &asn1, ASN1_TYPE_SET)) { /* SET OF DigestAlgorithmIdentifier */
-offset-size-arithmetic	libclamav/asn1.c	1506	        if (asn1_expect_objtype(map, asn1.next, &size, &asn1, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE - contentInfo */
-offset-size-arithmetic	libclamav/asn1.c	1561	        if (asn1_expect_objtype(map, asn1.next, &size, &asn1, 0xa0)) { /* certificates */
-offset-size-arithmetic	libclamav/asn1.c	157	static int map_hash_by_name(fmap_t *map, const void *data, unsigned int len, uint8_t *digest, const char *hash_name)
-offset-size-arithmetic	libclamav/asn1.c	1594	                        char raw_issuer[CRT_RAWMAXLEN * 2 + 1], raw_subject[CRT_RAWMAXLEN * 2 + 1], raw_serial[CRT_RAWMAXLEN * 3 + 1];
-offset-size-arithmetic	libclamav/asn1.c	1600	                        memset(raw_issuer, 0, CRT_RAWMAXLEN * 2 + 1);
-offset-size-arithmetic	libclamav/asn1.c	1601	                        memset(raw_subject, 0, CRT_RAWMAXLEN * 2 + 1);
-offset-size-arithmetic	libclamav/asn1.c	1602	                        memset(raw_serial, 0, CRT_RAWMAXLEN * 2 + 1);
-offset-size-arithmetic	libclamav/asn1.c	1604	                            sprintf(&raw_issuer[j * 2], "%02x", x509->raw_issuer[j + 1]);
-offset-size-arithmetic	libclamav/asn1.c	1606	                            sprintf(&raw_subject[j * 2], "%02x", x509->raw_subject[j + 1]);
-offset-size-arithmetic	libclamav/asn1.c	1608	                            sprintf(&raw_serial[j * 3], "%02x%c", x509->raw_serial[j + 1], (j != x509->raw_serial[0] - 1) ? ':' : '\0');
-offset-size-arithmetic	libclamav/asn1.c	1660	                            ret = cli_append_virus(ctx, crt->name ? crt->name : "(unnamed CRB rule)");
-offset-size-arithmetic	libclamav/asn1.c	1780	        if (asn1.type == 0xa1 && asn1_get_obj(map, asn1.next, &size, &asn1)) { /* crls - unused shouldn't be present */
-offset-size-arithmetic	libclamav/asn1.c	1802	        if (asn1_expect_obj(map, &asn1.content, &size, ASN1_TYPE_INTEGER, 1, "\x01")) { /* Version = 1 */
-offset-size-arithmetic	libclamav/asn1.c	1806	        if (asn1_expect_objtype(map, asn1.content, &size, &asn1, ASN1_TYPE_SEQUENCE)) { /* issuerAndSerialNumber */
-offset-size-arithmetic	libclamav/asn1.c	1813	        if (asn1_expect_objtype(map, asn1.content, &dsize, &deep, ASN1_TYPE_SEQUENCE)) { /* issuer */
-offset-size-arithmetic	libclamav/asn1.c	1848	        if (asn1_expect_objtype(map, deep.next, &dsize, &deep, ASN1_TYPE_INTEGER)) { /* serial */
-offset-size-arithmetic	libclamav/asn1.c	187	    return map_hash_by_name(map, data, len, sha2_512, "sha2-512");
-offset-size-arithmetic	libclamav/asn1.c	1878	        if (asn1_expect_objtype(map, asn1.next, &size, &asn1, 0xa0)) { /* authenticatedAttributes */
-offset-size-arithmetic	libclamav/asn1.c	1882	        attrs_size = (uint8_t *)(asn1.next) - attrs;
-offset-size-arithmetic	libclamav/asn1.c	1894	            if (asn1_expect_objtype(map, deep.next, &dsize, &deep, ASN1_TYPE_SEQUENCE)) { /* attribute */
-offset-size-arithmetic	libclamav/asn1.c	1899	            if (asn1_expect_objtype(map, deep.content, &deep.size, &deeper, ASN1_TYPE_OBJECT_ID)) { /* attribute type */
-offset-size-arithmetic	libclamav/asn1.c	1917	            if (asn1_expect_objtype(map, deeper.next, &deep.size, &deeper, ASN1_TYPE_SET)) { /* set - contents */
-offset-size-arithmetic	libclamav/asn1.c	192	    return map_hash_by_name(map, data, len, sha2_384, "sha2-384");
-offset-size-arithmetic	libclamav/asn1.c	1936	                    (!embedded && asn1_expect_obj(map, &deeper.content, &deeper.size, ASN1_TYPE_OBJECT_ID, lenof(OID_szOID_CTL), OID_szOID_CTL)) ||                         /* cat file */
-offset-size-arithmetic	libclamav/asn1.c	1937	                    (embedded && asn1_expect_obj(map, &deeper.content, &deeper.size, ASN1_TYPE_OBJECT_ID, lenof(OID_SPC_INDIRECT_DATA_OBJID), OID_SPC_INDIRECT_DATA_OBJID)) /* embedded cat */
-offset-size-arithmetic	libclamav/asn1.c	197	    return map_hash_by_name(map, data, len, sha2_256, "sha2-256");
-offset-size-arithmetic	libclamav/asn1.c	1976	        if (asn1_expect_algo(map, &asn1.next, &size, lenof(OID_rsaEncryption), OID_rsaEncryption)) { /* digestEncryptionAlgorithm == rsa */
-offset-size-arithmetic	libclamav/asn1.c	1981	        if (asn1_expect_objtype(map, asn1.next, &size, &asn1, ASN1_TYPE_OCTET_STRING)) { /* encryptedDigest */
-offset-size-arithmetic	libclamav/asn1.c	2015	            attrs_region.offset = fmap_ptr2off(map, attrs + 1);
-offset-size-arithmetic	libclamav/asn1.c	2016	            attrs_region.size   = (size_t)attrs_size - 1;
-offset-size-arithmetic	libclamav/asn1.c	205	static int map_md5(fmap_t *map, const void *data, unsigned int len, uint8_t *md5)
-offset-size-arithmetic	libclamav/asn1.c	2071	        if (size && asn1_expect_objtype(map, asn1.next, &size, &asn1, 0xa1)) { /* unauthenticatedAttributes */
-offset-size-arithmetic	libclamav/asn1.c	210	static int map_hash(fmap_t *map, const void *data, unsigned int len, uint8_t *out_hash, cli_crt_hashtype hashtype)
-offset-size-arithmetic	libclamav/asn1.c	2137	            if (asn1_expect_objtype(map, deeper.next, &deep.size, &deeper, ASN1_TYPE_SET)) { /* set - contents */
-offset-size-arithmetic	libclamav/asn1.c	2158	                countersignature_status = asn1_parse_countersignature(map, &deeper.content, &deeper.size, cmgr, message, message_size, x509->not_before, x509->not_after, ctx);
-offset-size-arithmetic	libclamav/asn1.c	2238	    if (CL_CLEAN != asn1_parse_mscat(engine, map, 0, map->len, &engine->cmgr, 0, &c.next, &size, NULL))
-offset-size-arithmetic	libclamav/asn1.c	2249	    if (asn1_expect_objtype(map, c.next, &size, &c, 0x4)) /* List ID */
-offset-size-arithmetic	libclamav/asn1.c	2251	    if (asn1_expect_objtype(map, c.next, &size, &c, 0x17)) /* Effective date - WTF?! */
-offset-size-arithmetic	libclamav/asn1.c	2254	    if (asn1_expect_list_member(map, &c.next, &size)) /* szOID_CATALOG_LIST_MEMBER or szOID_CATALOG_LIST_MEMBER2 */
-offset-size-arithmetic	libclamav/asn1.c	2256	    if (asn1_expect_objtype(map, c.next, &size, &c, ASN1_TYPE_SEQUENCE)) /* hashes here */
-offset-size-arithmetic	libclamav/asn1.c	2266	        if (asn1_expect_objtype(map, c.content, &c.size, &tag, ASN1_TYPE_OCTET_STRING)) /* TAG NAME */
-offset-size-arithmetic	libclamav/asn1.c	2268	        if (asn1_expect_objtype(map, tag.next, &c.size, &tag, ASN1_TYPE_SET)) /* set */
-offset-size-arithmetic	libclamav/asn1.c	2314	            if (asn1_expect_objtype(map, tagval2.content, &tagval2.size, &tagval3, ASN1_TYPE_OBJECT_ID)) /* shall have an obj 1.3.6.1.4.1.311.2.1.15 or 1.3.6.1.4.1.311.2.1.25 inside */
-offset-size-arithmetic	libclamav/asn1.c	2316	            if (tagval3.size != lenof(OID_SPC_PE_IMAGE_DATA_OBJID)) { /* lenof(OID_SPC_PE_IMAGE_DATA_OBJID) = lenof(OID_SPC_CAB_DATA_OBJID) = 10*/
-offset-size-arithmetic	libclamav/asn1.c	2377	                if (!(engine->hm_fp = MPOOL_CALLOC(engine->mempool, 1, sizeof(*(engine->hm_fp))))) {
-offset-size-arithmetic	libclamav/asn1.c	2410	         * offset + size addition without allowing a native-width wrap. */
-offset-size-arithmetic	libclamav/asn1.c	2411	        if (regions[i].offset > map->len || regions[i].size > map->len - regions[i].offset) {
-offset-size-arithmetic	libclamav/asn1.c	2469	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/asn1.c	259	static int asn1_get_obj(fmap_t *map, const void *asn1data, unsigned int *asn1len, struct cli_asn1 *obj)
-offset-size-arithmetic	libclamav/asn1.c	291	            obj->size <<= 8;
-offset-size-arithmetic	libclamav/asn1.c	292	            obj->size |= *data;
-offset-size-arithmetic	libclamav/asn1.c	309	    *asn1len = asn1_sz - obj->size;
-offset-size-arithmetic	libclamav/asn1.c	313	static int asn1_expect_objtype(fmap_t *map, const void *asn1data, unsigned int *asn1len, struct cli_asn1 *obj, uint8_t type)
-offset-size-arithmetic	libclamav/asn1.c	325	static int asn1_expect_obj(fmap_t *map, const void **asn1data, unsigned int *asn1len, uint8_t type, unsigned int size, const void *content)
-offset-size-arithmetic	libclamav/asn1.c	349	static int asn1_expect_algo(fmap_t *map, const void **asn1data, unsigned int *asn1len, unsigned int algo_size, const void *algo)
-offset-size-arithmetic	libclamav/asn1.c	354	    if ((ret = asn1_expect_objtype(map, *asn1data, asn1len, &obj, ASN1_TYPE_SEQUENCE))) /* SEQUENCE */
-offset-size-arithmetic	libclamav/asn1.c	359	    if ((ret = asn1_expect_obj(map, &obj.content, &avail, ASN1_TYPE_OBJECT_ID, algo_size, algo))) /* ALGO */
-offset-size-arithmetic	libclamav/asn1.c	390	    if (asn1_expect_objtype(map, *asn1data, asn1len, &obj, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE */
-offset-size-arithmetic	libclamav/asn1.c	415	        if (obj.size != oid_alt_ptr->oid_bytes_len) {
-offset-size-arithmetic	libclamav/asn1.c	443	static int asn1_expect_hash_algo(fmap_t *map, const void **asn1data, unsigned int *asn1len, cli_crt_hashtype *hashtype, unsigned int *hashsize)
-offset-size-arithmetic	libclamav/asn1.c	460	    ret = asn1_expect_algo_multi(map, asn1data, asn1len, alts, sizeof(alts) / sizeof(alts[0]));
-offset-size-arithmetic	libclamav/asn1.c	467	    *hashsize = ret->context[1];
-offset-size-arithmetic	libclamav/asn1.c	471	static int asn1_expect_rsa(fmap_t *map, const void **asn1data, unsigned int *asn1len, cli_crt_hashtype *hashtype)
-offset-size-arithmetic	libclamav/asn1.c	501	    ret = asn1_expect_algo_multi(map, asn1data, asn1len, alts, sizeof(alts) / sizeof(alts[0]));
-offset-size-arithmetic	libclamav/asn1.c	520	    ret = asn1_expect_algo_multi(map, asn1data, asn1len, alts, sizeof(alts) / sizeof(alts[0]));
-offset-size-arithmetic	libclamav/asn1.c	537	static int asn1_get_time(fmap_t *map, const void **asn1data, unsigned int *size, int64_t *tm)
-offset-size-arithmetic	libclamav/asn1.c	651	static int asn1_get_rsa_pubkey(fmap_t *map, const void **asn1data, unsigned int *size, cli_crt *x509)
-offset-size-arithmetic	libclamav/asn1.c	656	    if (asn1_expect_objtype(map, *asn1data, size, &obj, ASN1_TYPE_SEQUENCE)) /* subjectPublicKeyInfo */
-offset-size-arithmetic	libclamav/asn1.c	661	    if (asn1_expect_algo(map, &obj.content, &avail, lenof(OID_rsaEncryption), OID_rsaEncryption)) { /* rsaEncryption */
-offset-size-arithmetic	libclamav/asn1.c	672	    /* if(obj.size != 141 && obj.size != 271) /\* encoded len of 1024 and 2048 bit public keys *\/ */
-offset-size-arithmetic	libclamav/asn1.c	684	    avail       = obj.size - 1;
-offset-size-arithmetic	libclamav/asn1.c	696	    if (obj.size < 1024 / 8 || obj.size > 4096 / 8 + 1) {
-offset-size-arithmetic	libclamav/asn1.c	697	        cli_dbgmsg("asn1_get_rsa_pubkey: modulus has got an unsupported length (%u)\n", obj.size * 8);
-offset-size-arithmetic	libclamav/asn1.c	716	        cli_dbgmsg("asn1_get_rsa_pubkey: exponent has got an unsupported length (%u)\n", obj.size * 8);
-offset-size-arithmetic	libclamav/asn1.c	724	    if (!BN_bin2bn(obj.content, obj.size, x509->e))
-offset-size-arithmetic	libclamav/asn1.c	739	 * the case where asn1data and size are not suitable for continued use. */
-offset-size-arithmetic	libclamav/asn1.c	740	static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *crts)
-offset-size-arithmetic	libclamav/asn1.c	757	        if (asn1_expect_objtype(map, *asn1data, size, &crt, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE */
-offset-size-arithmetic	libclamav/asn1.c	768	        if (asn1_expect_objtype(map, crt.content, &crt.size, &tbs, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE - TBSCertificate */
-offset-size-arithmetic	libclamav/asn1.c	772	        tbssize = (uint8_t *)tbs.next - tbsdata;
-offset-size-arithmetic	libclamav/asn1.c	799	            if (asn1_expect_objtype(map, next, &tbs.size, &obj, ASN1_TYPE_INTEGER)) { /* serialNumber */
-offset-size-arithmetic	libclamav/asn1.c	827	        if (asn1_expect_rsa(map, &obj.next, &tbs.size, &hashtype1)) { /* algo - Ex: sha1WithRSAEncryption */
-offset-size-arithmetic	libclamav/asn1.c	832	        if (asn1_expect_objtype(map, obj.next, &tbs.size, &obj, ASN1_TYPE_SEQUENCE)) { /* issuer */
-offset-size-arithmetic	libclamav/asn1.c	839	        if (asn1_expect_objtype(map, obj.next, &tbs.size, &obj, ASN1_TYPE_SEQUENCE)) { /* validity */
-offset-size-arithmetic	libclamav/asn1.c	863	        if (asn1_expect_objtype(map, obj.next, &tbs.size, &obj, ASN1_TYPE_SEQUENCE)) { /* subject */
-offset-size-arithmetic	libclamav/asn1.c	871	        if (asn1_get_rsa_pubkey(map, &obj.next, &tbs.size, &x509)) { /* subjectPublicKeyInfo */
-offset-size-arithmetic	libclamav/asn1.c	963	                        if (keyusage[0] != 0x03 || keyusage[1] != value.size - 2 || keyusage[2] > 7) {
+offset-size-arithmetic	libclamav/asn1.c	1471	        if (asn1_expect_objtype(map, message, &size, &asn1, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE */
+offset-size-arithmetic	libclamav/asn1.c	1477	        /* if(size) { */
+offset-size-arithmetic	libclamav/asn1.c	1482	        if (asn1_expect_obj(map, &asn1.content, &size, ASN1_TYPE_OBJECT_ID, lenof(OID_signedData), OID_signedData)) { /* OBJECT 1.2.840.113549.1.7.2 - contentType = signedData */
+offset-size-arithmetic	libclamav/asn1.c	1486	        if (asn1_expect_objtype(map, asn1.content, &size, &asn1, 0xa0)) { /* [0] - content */
+offset-size-arithmetic	libclamav/asn1.c	1495	        if (asn1_expect_objtype(map, asn1.content, &size, &asn1, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE */
+offset-size-arithmetic	libclamav/asn1.c	1505	        if (asn1_expect_obj(map, &asn1.content, &size, ASN1_TYPE_INTEGER, 1, "\x01")) { /* INTEGER - VERSION 1 */
+offset-size-arithmetic	libclamav/asn1.c	1510	        if (asn1_expect_objtype(map, asn1.content, &size, &asn1, ASN1_TYPE_SET)) { /* SET OF DigestAlgorithmIdentifier */
+offset-size-arithmetic	libclamav/asn1.c	1530	        if (asn1_expect_objtype(map, asn1.next, &size, &asn1, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE - contentInfo */
+offset-size-arithmetic	libclamav/asn1.c	157	static cl_error_t map_hash_by_name(fmap_t *map, const void *data, unsigned int len, uint8_t *digest, const char *hash_name, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/asn1.c	1585	        if (asn1_expect_objtype(map, asn1.next, &size, &asn1, 0xa0)) { /* certificates */
+offset-size-arithmetic	libclamav/asn1.c	1622	                        char raw_issuer[CRT_RAWMAXLEN * 2 + 1], raw_subject[CRT_RAWMAXLEN * 2 + 1], raw_serial[CRT_RAWMAXLEN * 3 + 1];
+offset-size-arithmetic	libclamav/asn1.c	1628	                        memset(raw_issuer, 0, CRT_RAWMAXLEN * 2 + 1);
+offset-size-arithmetic	libclamav/asn1.c	1629	                        memset(raw_subject, 0, CRT_RAWMAXLEN * 2 + 1);
+offset-size-arithmetic	libclamav/asn1.c	1630	                        memset(raw_serial, 0, CRT_RAWMAXLEN * 2 + 1);
+offset-size-arithmetic	libclamav/asn1.c	1632	                            sprintf(&raw_issuer[j * 2], "%02x", x509->raw_issuer[j + 1]);
+offset-size-arithmetic	libclamav/asn1.c	1634	                            sprintf(&raw_subject[j * 2], "%02x", x509->raw_subject[j + 1]);
+offset-size-arithmetic	libclamav/asn1.c	1636	                            sprintf(&raw_serial[j * 3], "%02x%c", x509->raw_serial[j + 1], (j != x509->raw_serial[0] - 1) ? ':' : '\0');
+offset-size-arithmetic	libclamav/asn1.c	1688	                            ret = cli_append_virus(ctx, crt->name ? crt->name : "(unnamed CRB rule)");
+offset-size-arithmetic	libclamav/asn1.c	1808	        if (asn1.type == 0xa1 && asn1_get_obj(map, asn1.next, &size, &asn1)) { /* crls - unused shouldn't be present */
+offset-size-arithmetic	libclamav/asn1.c	1830	        if (asn1_expect_obj(map, &asn1.content, &size, ASN1_TYPE_INTEGER, 1, "\x01")) { /* Version = 1 */
+offset-size-arithmetic	libclamav/asn1.c	1834	        if (asn1_expect_objtype(map, asn1.content, &size, &asn1, ASN1_TYPE_SEQUENCE)) { /* issuerAndSerialNumber */
+offset-size-arithmetic	libclamav/asn1.c	1841	        if (asn1_expect_objtype(map, asn1.content, &dsize, &deep, ASN1_TYPE_SEQUENCE)) { /* issuer */
+offset-size-arithmetic	libclamav/asn1.c	1879	        if (asn1_expect_objtype(map, deep.next, &dsize, &deep, ASN1_TYPE_INTEGER)) { /* serial */
+offset-size-arithmetic	libclamav/asn1.c	190	static cl_error_t map_sha2_512(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_512[SHA512_HASH_SIZE], cli_ctx *ctx)
+offset-size-arithmetic	libclamav/asn1.c	1912	        if (asn1_expect_objtype(map, asn1.next, &size, &asn1, 0xa0)) { /* authenticatedAttributes */
+offset-size-arithmetic	libclamav/asn1.c	1916	        attrs_size = (uint8_t *)(asn1.next) - attrs;
+offset-size-arithmetic	libclamav/asn1.c	192	    return map_hash_by_name(map, data, len, sha2_512, "sha2-512", ctx);
+offset-size-arithmetic	libclamav/asn1.c	1928	            if (asn1_expect_objtype(map, deep.next, &dsize, &deep, ASN1_TYPE_SEQUENCE)) { /* attribute */
+offset-size-arithmetic	libclamav/asn1.c	1933	            if (asn1_expect_objtype(map, deep.content, &deep.size, &deeper, ASN1_TYPE_OBJECT_ID)) { /* attribute type */
+offset-size-arithmetic	libclamav/asn1.c	195	static cl_error_t map_sha2_384(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_384[SHA384_HASH_SIZE], cli_ctx *ctx)
+offset-size-arithmetic	libclamav/asn1.c	1951	            if (asn1_expect_objtype(map, deeper.next, &deep.size, &deeper, ASN1_TYPE_SET)) { /* set - contents */
+offset-size-arithmetic	libclamav/asn1.c	197	    return map_hash_by_name(map, data, len, sha2_384, "sha2-384", ctx);
+offset-size-arithmetic	libclamav/asn1.c	1970	                    (!embedded && asn1_expect_obj(map, &deeper.content, &deeper.size, ASN1_TYPE_OBJECT_ID, lenof(OID_szOID_CTL), OID_szOID_CTL)) ||                         /* cat file */
+offset-size-arithmetic	libclamav/asn1.c	1971	                    (embedded && asn1_expect_obj(map, &deeper.content, &deeper.size, ASN1_TYPE_OBJECT_ID, lenof(OID_SPC_INDIRECT_DATA_OBJID), OID_SPC_INDIRECT_DATA_OBJID)) /* embedded cat */
+offset-size-arithmetic	libclamav/asn1.c	200	static cl_error_t map_sha2_256(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_256[SHA256_HASH_SIZE], cli_ctx *ctx)
+offset-size-arithmetic	libclamav/asn1.c	2010	        if (asn1_expect_algo(map, &asn1.next, &size, lenof(OID_rsaEncryption), OID_rsaEncryption)) { /* digestEncryptionAlgorithm == rsa */
+offset-size-arithmetic	libclamav/asn1.c	2015	        if (asn1_expect_objtype(map, asn1.next, &size, &asn1, ASN1_TYPE_OCTET_STRING)) { /* encryptedDigest */
+offset-size-arithmetic	libclamav/asn1.c	202	    return map_hash_by_name(map, data, len, sha2_256, "sha2-256", ctx);
+offset-size-arithmetic	libclamav/asn1.c	205	static cl_error_t map_sha1(fmap_t *map, const void *data, unsigned int len, uint8_t sha1[SHA1_HASH_SIZE], cli_ctx *ctx)
+offset-size-arithmetic	libclamav/asn1.c	2052	            attrs_region.offset = fmap_ptr2off(map, attrs + 1);
+offset-size-arithmetic	libclamav/asn1.c	2053	            attrs_region.size   = (size_t)attrs_size - 1;
+offset-size-arithmetic	libclamav/asn1.c	210	static cl_error_t map_md5(fmap_t *map, const void *data, unsigned int len, uint8_t *md5, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/asn1.c	2108	        if (size && asn1_expect_objtype(map, asn1.next, &size, &asn1, 0xa1)) { /* unauthenticatedAttributes */
+offset-size-arithmetic	libclamav/asn1.c	215	static cl_error_t map_hash(fmap_t *map, const void *data, unsigned int len, uint8_t *out_hash, cli_crt_hashtype hashtype, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/asn1.c	2174	            if (asn1_expect_objtype(map, deeper.next, &deep.size, &deeper, ASN1_TYPE_SET)) { /* set - contents */
+offset-size-arithmetic	libclamav/asn1.c	2195	                countersignature_status = asn1_parse_countersignature(map, &deeper.content, &deeper.size, cmgr, message, message_size, x509->not_before, x509->not_after, ctx);
+offset-size-arithmetic	libclamav/asn1.c	2275	    if (CL_CLEAN != asn1_parse_mscat(engine, map, 0, map->len, &engine->cmgr, 0, &c.next, &size, NULL))
+offset-size-arithmetic	libclamav/asn1.c	2286	    if (asn1_expect_objtype(map, c.next, &size, &c, 0x4)) /* List ID */
+offset-size-arithmetic	libclamav/asn1.c	2288	    if (asn1_expect_objtype(map, c.next, &size, &c, 0x17)) /* Effective date - WTF?! */
+offset-size-arithmetic	libclamav/asn1.c	2291	    if (asn1_expect_list_member(map, &c.next, &size)) /* szOID_CATALOG_LIST_MEMBER or szOID_CATALOG_LIST_MEMBER2 */
+offset-size-arithmetic	libclamav/asn1.c	2293	    if (asn1_expect_objtype(map, c.next, &size, &c, ASN1_TYPE_SEQUENCE)) /* hashes here */
+offset-size-arithmetic	libclamav/asn1.c	2303	        if (asn1_expect_objtype(map, c.content, &c.size, &tag, ASN1_TYPE_OCTET_STRING)) /* TAG NAME */
+offset-size-arithmetic	libclamav/asn1.c	2305	        if (asn1_expect_objtype(map, tag.next, &c.size, &tag, ASN1_TYPE_SET)) /* set */
+offset-size-arithmetic	libclamav/asn1.c	2351	            if (asn1_expect_objtype(map, tagval2.content, &tagval2.size, &tagval3, ASN1_TYPE_OBJECT_ID)) /* shall have an obj 1.3.6.1.4.1.311.2.1.15 or 1.3.6.1.4.1.311.2.1.25 inside */
+offset-size-arithmetic	libclamav/asn1.c	2353	            if (tagval3.size != lenof(OID_SPC_PE_IMAGE_DATA_OBJID)) { /* lenof(OID_SPC_PE_IMAGE_DATA_OBJID) = lenof(OID_SPC_CAB_DATA_OBJID) = 10*/
+offset-size-arithmetic	libclamav/asn1.c	2414	                if (!(engine->hm_fp = MPOOL_CALLOC(engine->mempool, 1, sizeof(*(engine->hm_fp))))) {
+offset-size-arithmetic	libclamav/asn1.c	2447	         * offset + size addition without allowing a native-width wrap. */
+offset-size-arithmetic	libclamav/asn1.c	2448	        if (regions[i].offset > map->len || regions[i].size > map->len - regions[i].offset) {
+offset-size-arithmetic	libclamav/asn1.c	2506	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/asn1.c	253	static int asn1_get_obj(fmap_t *map, const void *asn1data, unsigned int *asn1len, struct cli_asn1 *obj)
+offset-size-arithmetic	libclamav/asn1.c	285	            obj->size <<= 8;
+offset-size-arithmetic	libclamav/asn1.c	286	            obj->size |= *data;
+offset-size-arithmetic	libclamav/asn1.c	303	    *asn1len = asn1_sz - obj->size;
+offset-size-arithmetic	libclamav/asn1.c	307	static int asn1_expect_objtype(fmap_t *map, const void *asn1data, unsigned int *asn1len, struct cli_asn1 *obj, uint8_t type)
+offset-size-arithmetic	libclamav/asn1.c	319	static int asn1_expect_obj(fmap_t *map, const void **asn1data, unsigned int *asn1len, uint8_t type, unsigned int size, const void *content)
+offset-size-arithmetic	libclamav/asn1.c	343	static int asn1_expect_algo(fmap_t *map, const void **asn1data, unsigned int *asn1len, unsigned int algo_size, const void *algo)
+offset-size-arithmetic	libclamav/asn1.c	348	    if ((ret = asn1_expect_objtype(map, *asn1data, asn1len, &obj, ASN1_TYPE_SEQUENCE))) /* SEQUENCE */
+offset-size-arithmetic	libclamav/asn1.c	353	    if ((ret = asn1_expect_obj(map, &obj.content, &avail, ASN1_TYPE_OBJECT_ID, algo_size, algo))) /* ALGO */
+offset-size-arithmetic	libclamav/asn1.c	384	    if (asn1_expect_objtype(map, *asn1data, asn1len, &obj, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE */
+offset-size-arithmetic	libclamav/asn1.c	409	        if (obj.size != oid_alt_ptr->oid_bytes_len) {
+offset-size-arithmetic	libclamav/asn1.c	437	static int asn1_expect_hash_algo(fmap_t *map, const void **asn1data, unsigned int *asn1len, cli_crt_hashtype *hashtype, unsigned int *hashsize)
+offset-size-arithmetic	libclamav/asn1.c	454	    ret = asn1_expect_algo_multi(map, asn1data, asn1len, alts, sizeof(alts) / sizeof(alts[0]));
+offset-size-arithmetic	libclamav/asn1.c	461	    *hashsize = ret->context[1];
+offset-size-arithmetic	libclamav/asn1.c	465	static int asn1_expect_rsa(fmap_t *map, const void **asn1data, unsigned int *asn1len, cli_crt_hashtype *hashtype)
+offset-size-arithmetic	libclamav/asn1.c	495	    ret = asn1_expect_algo_multi(map, asn1data, asn1len, alts, sizeof(alts) / sizeof(alts[0]));
+offset-size-arithmetic	libclamav/asn1.c	514	    ret = asn1_expect_algo_multi(map, asn1data, asn1len, alts, sizeof(alts) / sizeof(alts[0]));
+offset-size-arithmetic	libclamav/asn1.c	531	static int asn1_get_time(fmap_t *map, const void **asn1data, unsigned int *size, int64_t *tm)
+offset-size-arithmetic	libclamav/asn1.c	645	static int asn1_get_rsa_pubkey(fmap_t *map, const void **asn1data, unsigned int *size, cli_crt *x509)
+offset-size-arithmetic	libclamav/asn1.c	650	    if (asn1_expect_objtype(map, *asn1data, size, &obj, ASN1_TYPE_SEQUENCE)) /* subjectPublicKeyInfo */
+offset-size-arithmetic	libclamav/asn1.c	655	    if (asn1_expect_algo(map, &obj.content, &avail, lenof(OID_rsaEncryption), OID_rsaEncryption)) { /* rsaEncryption */
+offset-size-arithmetic	libclamav/asn1.c	666	    /* if(obj.size != 141 && obj.size != 271) /\* encoded len of 1024 and 2048 bit public keys *\/ */
+offset-size-arithmetic	libclamav/asn1.c	678	    avail       = obj.size - 1;
+offset-size-arithmetic	libclamav/asn1.c	690	    if (obj.size < 1024 / 8 || obj.size > 4096 / 8 + 1) {
+offset-size-arithmetic	libclamav/asn1.c	691	        cli_dbgmsg("asn1_get_rsa_pubkey: modulus has got an unsupported length (%u)\n", obj.size * 8);
+offset-size-arithmetic	libclamav/asn1.c	710	        cli_dbgmsg("asn1_get_rsa_pubkey: exponent has got an unsupported length (%u)\n", obj.size * 8);
+offset-size-arithmetic	libclamav/asn1.c	718	    if (!BN_bin2bn(obj.content, obj.size, x509->e))
+offset-size-arithmetic	libclamav/asn1.c	733	 * the case where asn1data and size are not suitable for continued use. */
+offset-size-arithmetic	libclamav/asn1.c	734	static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *crts, cli_ctx *ctx, cl_error_t *hash_status)
+offset-size-arithmetic	libclamav/asn1.c	755	        if (asn1_expect_objtype(map, *asn1data, size, &crt, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE */
+offset-size-arithmetic	libclamav/asn1.c	766	        if (asn1_expect_objtype(map, crt.content, &crt.size, &tbs, ASN1_TYPE_SEQUENCE)) { /* SEQUENCE - TBSCertificate */
+offset-size-arithmetic	libclamav/asn1.c	770	        tbssize = (uint8_t *)tbs.next - tbsdata;
+offset-size-arithmetic	libclamav/asn1.c	797	            if (asn1_expect_objtype(map, next, &tbs.size, &obj, ASN1_TYPE_INTEGER)) { /* serialNumber */
+offset-size-arithmetic	libclamav/asn1.c	829	        if (asn1_expect_rsa(map, &obj.next, &tbs.size, &hashtype1)) { /* algo - Ex: sha1WithRSAEncryption */
+offset-size-arithmetic	libclamav/asn1.c	834	        if (asn1_expect_objtype(map, obj.next, &tbs.size, &obj, ASN1_TYPE_SEQUENCE)) { /* issuer */
+offset-size-arithmetic	libclamav/asn1.c	841	        if (asn1_expect_objtype(map, obj.next, &tbs.size, &obj, ASN1_TYPE_SEQUENCE)) { /* validity */
+offset-size-arithmetic	libclamav/asn1.c	865	        if (asn1_expect_objtype(map, obj.next, &tbs.size, &obj, ASN1_TYPE_SEQUENCE)) { /* subject */
+offset-size-arithmetic	libclamav/asn1.c	877	        if (asn1_get_rsa_pubkey(map, &obj.next, &tbs.size, &x509)) { /* subjectPublicKeyInfo */
+offset-size-arithmetic	libclamav/asn1.c	969	                        if (keyusage[0] != 0x03 || keyusage[1] != value.size - 2 || keyusage[2] > 7) {
 offset-size-arithmetic	libclamav/asn1.h	52	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx);
 offset-size-arithmetic	libclamav/aspack.c	110	        stream->bitpos -= 8;
 offset-size-arithmetic	libclamav/aspack.c	130	        if (!(pos = stream->dict_helper[which].ends[ret >> 16]) || pos >= 24) return 0; /* 0<pos<24 */
@@ -40897,10 +40901,8 @@ offset-size-arithmetic	unit_tests/check_clamav.c	7449	        ssize_t nread = re
 offset-size-arithmetic	unit_tests/check_clamav.c	7451	        offset += (size_t)nread;
 offset-size-arithmetic	unit_tests/check_clamav.c	7464	    snprintf(trust_path, sizeof(trust_path), "%s/input/pe_allmatch/trust-sigs/Test.Sig.CRB.TrustCert.crb", SRCDIR);
 offset-size-arithmetic	unit_tests/check_clamav.c	747	        if (lseek(desc, 0, SEEK_SET) == (off_t)-1) {
-offset-size-arithmetic	unit_tests/check_clamav.c	7487	     * finished, so the injected six-byte read failure reaches the post-parser
-offset-size-arithmetic	unit_tests/check_clamav.c	7489	    fail_offset = (size_t)peinfo.dirs[4].VirtualAddress + sizeof(struct pe_certificate_hdr) + 117U;
-offset-size-arithmetic	unit_tests/check_clamav.c	7490	    ck_assert_msg(fail_offset <= map->len && 6U <= map->len - fail_offset,
-offset-size-arithmetic	unit_tests/check_clamav.c	7491	                  "signed PE fixture is too short for the post-container probe");
+offset-size-arithmetic	unit_tests/check_clamav.c	7489	    fail_offset = (size_t)peinfo.dirs[4].VirtualAddress + sizeof(struct pe_certificate_hdr) + 174U;
+offset-size-arithmetic	unit_tests/check_clamav.c	7490	    ck_assert_msg(fail_offset <= map->len && 965U <= map->len - fail_offset,
 offset-size-arithmetic	unit_tests/check_clamav.c	752	                (nread == (ssize_t)sizeof(prefix) && memcmp(prefix, "MZP", sizeof(prefix)) == 0) ? 1 : -1;
 offset-size-arithmetic	unit_tests/check_clamav.c	753	            if (lseek(desc, 0, SEEK_SET) == (off_t)-1)
 offset-size-arithmetic	unit_tests/check_clamav.c	7570	    peinfo.dirs[4].VirtualAddress = (uint32_t)(map->len - (sizeof(struct pe_certificate_hdr) - 1U));

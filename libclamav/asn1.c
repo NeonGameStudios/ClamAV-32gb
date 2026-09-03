@@ -154,87 +154,81 @@ static int map_raw(fmap_t *map, const void *data, unsigned int len, uint8_t raw[
     return 0;
 }
 
-static int map_hash_by_name(fmap_t *map, const void *data, unsigned int len, uint8_t *digest, const char *hash_name)
+static cl_error_t map_hash_by_name(fmap_t *map, const void *data, unsigned int len, uint8_t *digest, const char *hash_name, cli_ctx *ctx)
 {
     struct cli_mapped_region region;
     void *hash_ctx;
     cl_error_t status;
 
     if (NULL == map || NULL == data || NULL == digest || NULL == hash_name) {
-        return 1;
+        cli_mark_scan_incomplete(ctx, "Authenticode hash received invalid state");
+        return CL_EARG;
     }
 
     hash_ctx = cl_hash_init(hash_name);
     if (NULL == hash_ctx) {
-        return 1;
+        return CL_EPARSE;
     }
 
     region.offset = fmap_ptr2off(map, data);
     region.size   = (size_t)len;
-    status        = cli_hash_mapped_regions(map, hash_ctx, &region, 1, NULL);
+    status        = cli_hash_mapped_regions(map, hash_ctx, &region, 1, ctx);
     if (CL_SUCCESS != status) {
         cl_hash_destroy(hash_ctx);
-        return 1;
+        return status;
     }
 
-    if (cl_finish_hash(hash_ctx, digest) != 0)
-        return 1;
-    return 0;
+    if (cl_finish_hash(hash_ctx, digest) != 0) {
+        hash_ctx = NULL;
+        cli_mark_scan_incomplete(ctx, "Authenticode hash could not be finalized completely");
+        return CL_EREAD;
+    }
+    hash_ctx = NULL;
+    return CL_SUCCESS;
 }
 
-static int map_sha2_512(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_512[SHA512_HASH_SIZE])
+static cl_error_t map_sha2_512(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_512[SHA512_HASH_SIZE], cli_ctx *ctx)
 {
-    return map_hash_by_name(map, data, len, sha2_512, "sha2-512");
+    return map_hash_by_name(map, data, len, sha2_512, "sha2-512", ctx);
 }
 
-static int map_sha2_384(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_384[SHA384_HASH_SIZE])
+static cl_error_t map_sha2_384(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_384[SHA384_HASH_SIZE], cli_ctx *ctx)
 {
-    return map_hash_by_name(map, data, len, sha2_384, "sha2-384");
+    return map_hash_by_name(map, data, len, sha2_384, "sha2-384", ctx);
 }
 
-static int map_sha2_256(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_256[SHA256_HASH_SIZE])
+static cl_error_t map_sha2_256(fmap_t *map, const void *data, unsigned int len, uint8_t sha2_256[SHA256_HASH_SIZE], cli_ctx *ctx)
 {
-    return map_hash_by_name(map, data, len, sha2_256, "sha2-256");
+    return map_hash_by_name(map, data, len, sha2_256, "sha2-256", ctx);
 }
 
-static int map_sha1(fmap_t *map, const void *data, unsigned int len, uint8_t sha1[SHA1_HASH_SIZE])
+static cl_error_t map_sha1(fmap_t *map, const void *data, unsigned int len, uint8_t sha1[SHA1_HASH_SIZE], cli_ctx *ctx)
 {
-    return map_hash_by_name(map, data, len, sha1, "sha1");
+    return map_hash_by_name(map, data, len, sha1, "sha1", ctx);
 }
 
-static int map_md5(fmap_t *map, const void *data, unsigned int len, uint8_t *md5)
+static cl_error_t map_md5(fmap_t *map, const void *data, unsigned int len, uint8_t *md5, cli_ctx *ctx)
 {
-    return map_hash_by_name(map, data, len, md5, "md5");
+    return map_hash_by_name(map, data, len, md5, "md5", ctx);
 }
 
-static int map_hash(fmap_t *map, const void *data, unsigned int len, uint8_t *out_hash, cli_crt_hashtype hashtype)
+static cl_error_t map_hash(fmap_t *map, const void *data, unsigned int len, uint8_t *out_hash, cli_crt_hashtype hashtype, cli_ctx *ctx)
 {
 
     if (hashtype == CLI_SHA1RSA) {
-        if (map_sha1(map, data, len, out_hash)) {
-            return 1;
-        }
+        return map_sha1(map, data, len, out_hash, ctx);
     } else if (hashtype == CLI_MD5RSA) {
-        if (map_md5(map, data, len, out_hash)) {
-            return 1;
-        }
+        return map_md5(map, data, len, out_hash, ctx);
     } else if (hashtype == CLI_SHA256RSA) {
-        if (map_sha2_256(map, data, len, out_hash)) {
-            return 1;
-        }
+        return map_sha2_256(map, data, len, out_hash, ctx);
     } else if (hashtype == CLI_SHA384RSA) {
-        if (map_sha2_384(map, data, len, out_hash)) {
-            return 1;
-        }
+        return map_sha2_384(map, data, len, out_hash, ctx);
     } else if (hashtype == CLI_SHA512RSA) {
-        if (map_sha2_512(map, data, len, out_hash)) {
-            return 1;
-        }
+        return map_sha2_512(map, data, len, out_hash, ctx);
     } else {
         cli_dbgmsg("asn1_map_hash: unsupported hashtype\n");
-        return 1;
+        return CL_EPARSE;
     }
-    return 0;
 }
 
 static void *get_hash_ctx(cli_crt_hashtype hashtype)
@@ -737,7 +731,7 @@ static int asn1_get_rsa_pubkey(fmap_t *map, const void **asn1data, unsigned int 
  * certificate is encountered but asn1data and size are suitable for continued
  * signature parsing.  ASN1_GET_X509_UNRECOVERABLE_ERROR will be returned in
  * the case where asn1data and size are not suitable for continued use. */
-static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *crts)
+static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size, crtmgr *crts, cli_ctx *ctx, cl_error_t *hash_status)
 {
     struct cli_asn1 crt, tbs, obj;
     unsigned int avail, tbssize, issuersize;
@@ -746,7 +740,11 @@ static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size,
     const uint8_t *tbsdata;
     const void *next, *issuer;
     int ret = ASN1_GET_X509_UNRECOVERABLE_ERROR;
+    cl_error_t status;
     unsigned int version;
+
+    if (hash_status != NULL)
+        *hash_status = CL_SUCCESS;
 
     do {
         if (cli_crt_init(&x509) < 0) {
@@ -821,8 +819,12 @@ static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size,
 
         if (map_raw(map, obj.content, obj.size, x509.raw_serial))
             break;
-        if (map_sha1(map, obj.content, obj.size, x509.serial))
+        status = map_sha1(map, obj.content, obj.size, x509.serial, ctx);
+        if (CL_SUCCESS != status) {
+            if (hash_status != NULL)
+                *hash_status = status;
             break;
+        }
 
         if (asn1_expect_rsa(map, &obj.next, &tbs.size, &hashtype1)) { /* algo - Ex: sha1WithRSAEncryption */
             cli_dbgmsg("asn1_get_x509: unable to parse AlgorithmIdentifier\n");
@@ -866,8 +868,12 @@ static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size,
         }
         if (map_raw(map, obj.content, obj.size, x509.raw_subject))
             break;
-        if (map_sha1(map, obj.content, obj.size, x509.subject))
+        status = map_sha1(map, obj.content, obj.size, x509.subject, ctx);
+        if (CL_SUCCESS != status) {
+            if (hash_status != NULL)
+                *hash_status = status;
             break;
+        }
         if (asn1_get_rsa_pubkey(map, &obj.next, &tbs.size, &x509)) { /* subjectPublicKeyInfo */
             cli_dbgmsg("asn1_get_x509: failed to get RSA public key\n");
             break;
@@ -1089,8 +1095,12 @@ static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size,
 
         if (map_raw(map, issuer, issuersize, x509.raw_issuer))
             break;
-        if (map_sha1(map, issuer, issuersize, x509.issuer))
+        status = map_sha1(map, issuer, issuersize, x509.issuer, ctx);
+        if (CL_SUCCESS != status) {
+            if (hash_status != NULL)
+                *hash_status = status;
             break;
+        }
 
         if (asn1_expect_rsa(map, &tbs.next, &crt.size, &hashtype2)) /* signature algo - Ex: sha1WithRSAEncryption */
             break;
@@ -1128,8 +1138,11 @@ static int asn1_get_x509(fmap_t *map, const void **asn1data, unsigned int *size,
             break;
         }
 
-        if (map_hash(map, tbsdata, tbssize, x509.tbshash, x509.hashtype)) {
+        status = map_hash(map, tbsdata, tbssize, x509.tbshash, x509.hashtype, ctx);
+        if (CL_SUCCESS != status) {
             cli_dbgmsg("asn1_get_x509: Unsupported hashtype or hash computation failed\n");
+            if (hash_status != NULL)
+                *hash_status = status;
             break;
         }
 
@@ -1156,6 +1169,7 @@ static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data
     unsigned int hashsize;
     uint8_t md[MAX_HASH_SIZE];
     int result;
+    cl_error_t status;
     void *hash_ctx;
 
     do {
@@ -1199,8 +1213,11 @@ static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data
             break;
         }
         // Compute the hash of the issuer section
-        if (map_sha1(map, deep.content, deep.size, issuer)) {
+        status = map_sha1(map, deep.content, deep.size, issuer, scan_ctx);
+        if (CL_SUCCESS != status) {
             cli_dbgmsg("asn1_parse_countersignature: error in call to map_sha1 for counterSignature issuer\n");
+            if (CL_EPARSE != status)
+                return status;
             break;
         }
 
@@ -1210,8 +1227,11 @@ static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data
         }
 
         // Compute the hash of the serial INTEGER
-        if (map_sha1(map, deep.content, deep.size, serial)) {
+        status = map_sha1(map, deep.content, deep.size, serial, scan_ctx);
+        if (CL_SUCCESS != status) {
             cli_dbgmsg("asn1_parse_countersignature: error in call to map_sha1 for counterSignature serial\n");
+            if (CL_EPARSE != status)
+                return status;
             break;
         }
 
@@ -1225,8 +1245,11 @@ static cl_error_t asn1_parse_countersignature(fmap_t *map, const void **asn1data
             break;
         }
 
-        if (map_hash(map, message, message_size, md, hashtype)) {
+        status = map_hash(map, message, message_size, md, hashtype, scan_ctx);
+        if (CL_SUCCESS != status) {
             cli_dbgmsg("asn1_parse_countersignature: failed to map in message/compute countersignature hash\n");
+            if (CL_EPARSE != status)
+                return status;
             break;
         }
 
@@ -1432,6 +1455,7 @@ static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t
     cli_crt *x509;
     void *hash_ctx;
     int result;
+    cl_error_t status;
     cl_error_t ret = CL_EPARSE;
     char *mod      = NULL;
     char *exp      = NULL;
@@ -1568,7 +1592,11 @@ static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t
             crtmgr newcerts;
             crtmgr_init(&newcerts);
             while (dsize) {
-                result = asn1_get_x509(map, &asn1.content, &dsize, &newcerts);
+                cl_error_t cert_hash_status = CL_SUCCESS;
+
+                result = asn1_get_x509(map, &asn1.content, &dsize, &newcerts, ctx, &cert_hash_status);
+                if (CL_SUCCESS != cert_hash_status && CL_EPARSE != cert_hash_status)
+                    ret = cert_hash_status;
                 if (ASN1_GET_X509_UNRECOVERABLE_ERROR == result) {
                     dsize = 1;
                     break;
@@ -1840,8 +1868,11 @@ static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t
          *         OBJECT IDENTIFIER2.5.4.3commonName(X.520 DN component)
          *         PrintableString
          */
-        if (map_sha1(map, deep.content, deep.size, issuer)) {
+        status = map_sha1(map, deep.content, deep.size, issuer, ctx);
+        if (CL_SUCCESS != status) {
             cli_dbgmsg("asn1_parse_mscat: error in call to map_sha1 for issuer\n");
+            if (CL_EPARSE != status)
+                ret = status;
             break;
         }
 
@@ -1852,8 +1883,11 @@ static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t
 
         /* Make sure the serial INTEGER is mapped into memory and compute the
          * SHA1 of it so we can use this value in verification later on. */
-        if (map_sha1(map, deep.content, deep.size, serial)) {
+        status = map_sha1(map, deep.content, deep.size, serial, ctx);
+        if (CL_SUCCESS != status) {
             cli_dbgmsg("asn1_parse_mscat: error in call to map_sha1 for serial\n");
+            if (CL_EPARSE != status)
+                ret = status;
             break;
         }
         if (dsize) {
@@ -1989,8 +2023,11 @@ static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t
             break;
         }
 
-        if (map_hash(map, *hashes, *hashes_size, hash, hashtype)) {
+        status = map_hash(map, *hashes, *hashes_size, hash, hashtype, ctx);
+        if (CL_SUCCESS != status) {
             cli_dbgmsg("asn1_parse_mscat: failed to map in message/compute message digest\n");
+            if (CL_EPARSE != status)
+                ret = status;
             break;
         }
 

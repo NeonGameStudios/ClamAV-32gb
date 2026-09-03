@@ -13216,6 +13216,21 @@ qualification remain open.
   service, materialized-large-file, Sonic1, resource, and parser/release
   qualification before closure.
 
+## Authenticode ASN.1 map-hash status — 2026-09-02
+
+- Keep `map_hash_by_name()` and all Authenticode ASN.1 hash consumers returning
+  concrete `cl_error_t` statuses. Pass the scan context into bounded mapped
+  hashing so in-range read failures remain `CL_EREAD`, digest-update failures
+  remain fail-visible, finalization is checked, and certificate, signer, or
+  countersignature failures cannot fall through to catalog trust.
+- Retain the expanded map-read and authenticated-attribute finalization cases
+  in `test_authenticode_post_container_parse_failure_is_fail_visible`, its
+  source guards, and the `authenticode-hash-finalization-status` capability
+  evidence. Add current-source production-GCC and linked execution, complete
+  Authenticode/PE corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, Sonic1, resource, and final
+  parser/release qualification before closure.
+
 ## VBA compressed-stream short-read classification — 2026-09-02
 
 - Keep complete temporary VBA token and literal reads classified as
