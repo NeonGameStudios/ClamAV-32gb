@@ -13631,3 +13631,16 @@ This is focused current-source evidence, not complete SCRENC/HTML qualification.
 Complete SCRENC/HTML corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file/resource, Sonic1, and final
 parser/release evidence remain required.
+
+
+## Script and HTML-normalization current-source refresh — 2026-09-04
+
+The current-source production-linked GCC normalization matrix passes with zero
+failures and errors: `script` 1/1, `html` 13/13, and
+`text_encoding` 3/3. The HTML corpus fixture was materialized through the
+existing repository target and reaches the exact embedded child matcher.
+
+This is focused current-source evidence, not complete script/HTML
+qualification. Complete normalization corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file/resource, Sonic1, and
+final parser/release evidence remain required.
