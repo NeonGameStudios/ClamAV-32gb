@@ -1,5 +1,29 @@
 # Independent read-only audit of audit.md
 
+## ZIP/ZIP-SFX current-source focused audit — 2026-09-04
+
+The coherent authoritative current-source production-linked GCC build passes
+the focused archive matrix with zero failures and errors: `zip` 19/19,
+`zip_sfx` 5/5, and `zip_map` 3/3. The existing CMake fixture targets
+materialized `clam.zip`, `clam.split.oneseg.zip`, and `clam.bz2.zip` before the
+corpus run. Coverage includes local/central metadata, ZIP64 extras, data
+descriptors, bounded stored/deflate/BZip2/Implode/ZipCrypto paths, read and
+cleanup failures, max-files behavior, masked central-value resolution, and
+exact embedded-MZ matching. ZIP-SFX coverage includes weak local-only masked
+magic, confirmed central extent/read failures, malformed and short ZIP64
+EOCD/locator structures, central layer attributes, and exact child matching.
+
+This audit found and fixed a shared production callback defect: indicator
+append status merging normalized terminal alert-callback `CL_BREAK` and
+`CL_VERIFIED` decisions into clean when metadata status was clean, allowing a
+central-directory pass to invoke the callback again or continue toward
+extraction. Terminal callback decisions are now preserved while stronger
+metadata errors still win. This is focused current-source evidence, not final
+ZIP/ZIP-SFX or release certification: complete archive corpus breadth,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and requirement-by-requirement
+PLAN.md qualification remain open.
+
 ## XZ current-source focused audit — 2026-09-04
 
 The authoritative current-source production-linked GCC harness passes the

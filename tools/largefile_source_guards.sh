@@ -983,6 +983,8 @@ not_contains libclamav/scanners.c '(void)cli_trust_this_layer(ctx, "legacy file-
 not_contains libclamav/scanners.c '(void)cli_trust_this_layer(ctx, source);'
 not_contains libclamav/scanners.c '(void)cli_trust_this_layer(ctx, "legacy post-scan application callback");'
 contains libclamav/others.c 'if (CL_VERIFIED == status || CL_VIRUS != status)'
+contains libclamav/others.c 'Do not normalize terminal alert-callback decisions'
+contains libclamav/others.c 'if ((status == CL_BREAK || status == CL_VERIFIED) && metadata_status == CL_SUCCESS)'
 contains unit_tests/check_matchers.c 'test_fp_hash_read_failure_is_fail_visible'
 contains unit_tests/check_matchers.c 'owned_name = MPOOL_CALLOC(ctx.engine->mempool'
 contains unit_tests/check_matchers.c 'FalsePositiveHashReadFailure'

@@ -5,6 +5,26 @@ Current evidence is capability-scoped and must be bound to the current source
 and build manifests. No production release claim is made until every PLAN.md
 gate passes.
 
+## Current ZIP/ZIP-SFX focused audit — 2026-09-04
+
+The coherent authoritative current-source production-linked GCC build passes
+the focused archive matrix with zero failures and errors: `zip` 19/19,
+`zip_sfx` 5/5, and `zip_map` 3/3. CMake fixture targets materialized
+`clam.zip`, `clam.split.oneseg.zip`, and `clam.bz2.zip` before the corpus run.
+The matrix covers bounded local/central metadata, ZIP64 extras, data
+descriptors, stored/deflate/BZip2/Implode/ZipCrypto extraction, operational
+faults, max-files behavior, masked central-value resolution, weak local-only
+masked magic, confirmed malformed/short ZIP64 structures, central layer
+attributes, and exact embedded-MZ matching.
+
+The focused run found and fixed a shared callback-status defect: clean metadata
+merging could normalize terminal alert-callback `CL_BREAK` and `CL_VERIFIED`
+decisions, causing a central-directory pass to invoke the callback again or
+continue toward extraction. Those terminal decisions are now preserved while
+stronger metadata errors still win. These are focused current-source results;
+complete ZIP corpus breadth, parser-family qualification, and the remaining
+PLAN.md release gates are still open.
+
 ## Current XZ focused audit — 2026-09-04
 
 The authoritative current-source production-linked GCC harness passes the

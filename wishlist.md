@@ -1,5 +1,23 @@
 # Wishlist
 
+## ZIP/ZIP-SFX current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `zip` 19/19,
+  `zip_sfx` 5/5, and `zip_map` 3/3, with zero failures and errors. Materialize
+  `clam.zip`, `clam.split.oneseg.zip`, and `clam.bz2.zip` through their CMake
+  fixture targets before claiming corpus coverage.
+- Keep masked ZIP-SFX admission bounded to an EOCD/central record that points
+  to local-header offset zero. Preserve weak local-only rejection, malformed
+  and short ZIP64 fail-visible behavior, `LAYER_ATTRIBUTES_ZIP_CENTRAL`, and
+  the exact embedded-child matcher regression.
+- Preserve terminal alert-callback `CL_BREAK` and `CL_VERIFIED` decisions at
+  the indicator/metadata merge boundary; a clean metadata result must not
+  cause another central/local pass or extraction. Stronger metadata errors
+  must still take precedence.
+- Keep complete ZIP corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, resource, Sonic1, and final
+  PLAN.md qualification open.
+
 ## XZ current-source focused audit — 2026-09-04
 
 - Retain current-source production-linked GCC evidence at `xz` 4/4,

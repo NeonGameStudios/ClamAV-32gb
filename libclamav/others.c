@@ -2300,6 +2300,13 @@ done:
         free(location);
     }
 
+    /* Do not normalize terminal alert-callback decisions into a clean
+     * metadata result.  Central-directory parsers may call cli_matchmeta()
+     * more than once for one member; preserving these decisions prevents a
+     * break or trust response from reaching a second pass or extraction. */
+    if ((status == CL_BREAK || status == CL_VERIFIED) && metadata_status == CL_SUCCESS)
+        return status;
+
     return cli_merge_scan_status(status, metadata_status);
 }
 
