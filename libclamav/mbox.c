@@ -346,11 +346,9 @@ static int read_mime_spool_line(FILE *input, unsigned char *line, size_t line_ca
 
     *line_length = 0;
     while (used < line_capacity - 1) {
-        size_t wanted = line_capacity - 1 - used;
-        size_t got    = fread(line + used, 1, wanted, input);
-        unsigned char *newline;
+        int c = fgetc(input);
 
-        if (got == 0) {
+        if (c == EOF) {
             if (ferror(input))
                 return -1;
             if (used == 0)
@@ -358,16 +356,12 @@ static int read_mime_spool_line(FILE *input, unsigned char *line, size_t line_ca
             break;
         }
 
-        newline = (unsigned char *)memchr(line + used, '\n', got);
-        used += got;
-        if (newline != NULL) {
-            *line_length = (size_t)(newline - line) + 1;
+        line[used++] = (unsigned char)c;
+        if (c == '\n') {
+            *line_length    = used;
             line[*line_length] = '\0';
             return 1;
         }
-
-        if (got < wanted)
-            continue;
     }
 
     /* Match the bounded fgets() contract: an exact-capacity line is only
@@ -988,6 +982,10 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
     else if ((retcode == CL_SUCCESS || retcode == CL_EFORMAT || retcode == CL_EPARSE) &&
              mctx.message_failure_status != CL_SUCCESS)
         retcode = mctx.message_failure_status;
+    else if ((retcode == CL_SUCCESS || retcode == CL_EFORMAT || retcode == CL_EPARSE) &&
+             ctx->limit_exceeded && ctx->limit_exceeded_result != CL_SUCCESS &&
+             ctx->limit_exceeded_result != CL_VERIFIED)
+        retcode = ctx->limit_exceeded_result;
     else if ((retcode == CL_SUCCESS) && ctx->scan_incomplete)
         retcode = CL_EPARSE;
 
@@ -1188,12 +1186,17 @@ haveTooManyMIMEPartsPerMessage(size_t mimePartCnt, cli_ctx *ctx, mbox_status *rc
 {
 
     if (mimePartCnt >= HEURISTIC_EMAIL_MAX_MIME_PARTS_PER_MESSAGE) {
-        if (SCAN_HEURISTIC_EXCEEDS_MAX) {
-            cli_append_potentially_unwanted(ctx, "Heuristics.Limits.Exceeded.EmailMIMEPartsPerMessage");
+        if (SCAN_HEURISTIC_EXCEEDS_MAX)
             *rc = VIRUS;
-        }
+
+        /* Record the parser bound as a configured limit even when the
+         * optional heuristic alert is disabled or filtered. Otherwise a
+         * skipped MIME child is reported as generic unsupported work and the
+         * public API loses the exact limit outcome. */
         cli_mark_scan_incomplete(ctx,
                                  "MIME parser exceeded the configured MIME-part limit");
+        cli_append_potentially_unwanted_if_heur_exceedsmax(
+            ctx, "Heuristics.Limits.Exceeded.EmailMIMEPartsPerMessage", CL_EMAXFILES);
         if (*rc == OK)
             *rc = FAIL;
 

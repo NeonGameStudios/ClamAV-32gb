@@ -113,6 +113,8 @@ static bool arj_advance_offset(arj_metadata_t *metadata, size_t amount)
     return true;
 }
 
+static cl_error_t arj_reconcile_header_status(cli_ctx *ctx, cl_error_t status);
+
 cl_error_t cli_unarj_sfx_header_check(cli_ctx *ctx, size_t offset)
 {
     uint16_t header_size;
@@ -1483,6 +1485,8 @@ cl_error_t cli_unarj_open(fmap_t *map, const char *dirname, arj_metadata_t *meta
     ret = arj_read_main_header(metadata);
     if (ret != CL_SUCCESS) {
         cli_dbgmsg("cli_unarj_open: Failed to read main header\n");
+        if (ret == CL_EREAD && metadata->ctx != NULL)
+            cli_mark_scan_incomplete(metadata->ctx, "ARJ main header could not be read completely");
         return ret;
     }
     return CL_SUCCESS;

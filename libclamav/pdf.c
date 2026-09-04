@@ -182,24 +182,26 @@ static void pdf_record_object_id_metadata(struct pdf_struct *pdf,
                                           const char *array_name,
                                           uint32_t object_id)
 {
+    cli_ctx *ctx;
     json_object *pdfobj;
     json_object *objects;
     cl_error_t status;
 
-    if (!pdf || !pdf->ctx || !SCAN_COLLECT_METADATA ||
-        !pdf->ctx->this_layer_metadata_json)
+    if (!pdf || !(ctx = pdf->ctx) || !ctx->options ||
+        !(ctx->options->general & CL_SCAN_GENERAL_COLLECT_METADATA) ||
+        !ctx->this_layer_metadata_json)
         return;
 
-    pdfobj = cli_jsonobj(pdf->ctx->this_layer_metadata_json, "PDFStats");
+    pdfobj = cli_jsonobj(ctx->this_layer_metadata_json, "PDFStats");
     if (!pdfobj) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF derived-object metadata could not be recorded");
+        cli_mark_scan_incomplete(ctx, "PDF derived-object metadata could not be recorded");
         pdf->metadata_status = cli_merge_scan_status(pdf->metadata_status, CL_EMEM);
         return;
     }
 
     objects = cli_jsonarray(pdfobj, array_name);
     if (!objects) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF derived-object metadata could not be recorded");
+        cli_mark_scan_incomplete(ctx, "PDF derived-object metadata could not be recorded");
         pdf->metadata_status = cli_merge_scan_status(pdf->metadata_status, CL_EMEM);
         return;
     }
@@ -5280,12 +5282,14 @@ static void CCITTFaxDecode_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struc
 
 static void JBIG2Decode_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_action *act)
 {
+    cli_ctx *ctx;
+
     UNUSEDPARAM(act);
 
-    if (NULL == pdf || NULL == pdf->ctx || NULL == obj)
+    if (NULL == pdf || NULL == (ctx = pdf->ctx) || NULL == ctx->options || NULL == obj)
         return;
 
-    if (!(SCAN_COLLECT_METADATA))
+    if (!(ctx->options->general & CL_SCAN_GENERAL_COLLECT_METADATA))
         return;
 
     pdf_record_object_id_metadata(pdf, "JBIG2Objects", obj->id >> 8);
@@ -5748,6 +5752,7 @@ cleanup:
 
 static void Colors_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_action *act)
 {
+    cli_ctx *ctx;
     unsigned long ncolors;
     long temp_long;
     char *p1;
@@ -5756,10 +5761,10 @@ static void Colors_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfnam
 
     UNUSEDPARAM(act);
 
-    if (!(pdf) || !(pdf->ctx) || !(obj) || !(pdf->ctx->this_layer_metadata_json))
+    if (!(pdf) || !(ctx = pdf->ctx) || !(ctx->options) || !(obj) || !(ctx->this_layer_metadata_json))
         return;
 
-    if (!(SCAN_COLLECT_METADATA))
+    if (!(ctx->options->general & CL_SCAN_GENERAL_COLLECT_METADATA))
         return;
 
     objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
@@ -5767,7 +5772,7 @@ static void Colors_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfnam
 
     p1 = (char *)pdf_memstr_deadline(pdf, objstart, obj->size, "/Colors", 7, &search_status);
     if (CL_ETIMEOUT == search_status) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF /Colors search reached the configured time limit");
+        cli_mark_scan_incomplete(ctx, "PDF /Colors search reached the configured time limit");
         return;
     }
     if (!(p1))

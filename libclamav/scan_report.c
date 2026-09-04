@@ -8,6 +8,7 @@
 
 #include "scan_report.h"
 
+#include "clamav_rust.h"
 #include "others.h"
 
 #include <json.h>

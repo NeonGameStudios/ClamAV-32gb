@@ -70,6 +70,7 @@
 
 #include "egg.h"
 #include "entconv.h"
+#include "scanners.h"
 #include "str.h"
 
 #ifndef WCHAR

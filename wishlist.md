@@ -1,5 +1,49 @@
 # Wishlist
 
+## Current-source compile audit — 2026-09-04
+
+- Keep the current-source GCC build authoritative: the existing linked harness
+  may be stale and must not hide undeclared callback contexts or implicit
+  static declarations. Retain the PDF metadata-context guard and the ARJ
+  forward declaration.
+- The serial current-source production-GCC relink and focused MIME/PDF/ARJ
+  runs are complete; retain the pre-existing `uint8_t` overflow warning in
+  the test-fixture follow-up. Complete linked parser cases, sanitizer,
+  complete corpora, service parity, materialized-large-file, resource, Sonic1,
+  and final release qualification.
+
+## PDF metadata callback compile boundary — 2026-09-04
+
+- Keep PDF metadata callbacks bound to a checked owning `cli_ctx` and its
+  scan options before using the collection flag. Do not invoke the shared
+  `SCAN_COLLECT_METADATA` macro from a callback that has no local `ctx`.
+- Retain the `pdf-metadata-callback-context` capability row and source guards.
+  Complete current-source production-GCC linked PDF execution, full
+  PDF/filter corpus, sanitizer, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final release qualification.
+
+## MIME spool byte integrity and multipart limit status — 2026-09-04
+
+- Keep the disk-backed multipart reader length-aware and byte-preserving: it
+  must not discard bytes after a newline in a buffered read, and embedded NULs
+  must remain in the child stream. Keep the streaming multipart limit
+  fail-visible as `CL_EMAXFILES` with the descriptive configured-limit reason,
+  structured `LIMIT_INCOMPLETE` completion, and non-cacheable confirmed layer.
+- Retain the source guards, capability rows, and production-linked `mail`
+  16/16 result including exact nested-child detection. Complete MIME/mbox/MHTML
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final PLAN.md qualification.
+
+## ARJ current-source compile and direct-open status — 2026-09-04
+
+- Keep the ARJ SFX helper declaration explicit and make direct
+  `cli_unarj_open()` preserve an in-range `CL_EREAD` with sticky incomplete
+  state and cache taint after a confirmed main-header read failure.
+- Retain the source guards, capability rows, `arj_map` 8/8, and `arjsfx` 5/5
+  focused evidence. Complete ARJ/ARJ-SFX corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final PLAN.md qualification.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback
@@ -14157,7 +14201,7 @@ qualification before closure.
 - Do not promote bounded controls to qualification for MIME, OneNote, PE
   unpackers, RAR, 7-Zip, ZIP, PDF, bytecode, logical matching, or YARA until
   current-source linked corpus, sanitizer, resource, service, materialized,
-  and Sonic1 evidence is complete. The current 590-row manifest remains at
+  and Sonic1 evidence is complete. The current 597-row manifest remains at
   0 qualified and 576 release blockers.
 - Keep historical support-document sections labeled as evidence snapshots;
   the current status header and final requirement-by-requirement PLAN.md audit

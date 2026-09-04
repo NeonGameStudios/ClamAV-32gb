@@ -1,12 +1,72 @@
 # Independent read-only audit of audit.md
 
+## Current-source compile audit — 2026-09-04
+
+The first authoritative current-source relink was killed during parallel Rust
+compilation by the container memory limit. A serial retry then exposed two
+branch-tip C build defects that the existing stale linked harness could not
+see: PDF metadata callbacks invoked `SCAN_COLLECT_METADATA` without a local
+`ctx`, and ARJ-SFX header admission called `arj_reconcile_header_status()`
+before its static definition. The PDF callbacks now use checked owning-context
+and options pointers; ARJ now has a forward declaration. Both boundaries are
+source-guarded and recorded as pending capability rows. The serial
+current-source relink completed at 100% in the established Docker GCC
+environment; its only warning is the pre-existing test-fixture assignment of
+260 to a `uint8_t` at `check_clamav.c:28359`. This build completion does not
+replace the still-open linked, sanitizer, corpus, service, materialized-file,
+resource, Sonic1, and release gates.
+
+## PDF metadata callback compile boundary — 2026-09-04
+
+The current-source relink exposed a real build defect before any linked test
+could run: `pdf_record_object_id_metadata()`, `JBIG2Decode_cb()`, and
+`Colors_cb()` used the `SCAN_COLLECT_METADATA` macro without a local `ctx`,
+although those callbacks only retain `pdf->ctx`. GCC therefore rejected
+`pdf.c` with an undeclared-identifier error. The callbacks now bind a checked
+local context and scan-options pointer before testing the collection flag;
+this also makes absent callback options fail closed without dereferencing
+them. A dedicated source guard and pending capability row record the
+boundary. The authoritative production-linked PDF TCase now passes 22/22,
+including the derived-object and URI metadata fault injections; sanitizer,
+full corpus, production-CVD/service, materialized-large-file, resource, Sonic1,
+and release qualification remain open.
+
+## MIME spool byte integrity and multipart limit status — 2026-09-04
+
+The disk-backed multipart reader previously used a bulk `fread()` and then
+discarded bytes after the first newline in the buffer. That could remove the
+closing boundary or a nested child from the parser’s input, causing a valid
+embedded detection to disappear. The reader now consumes through the stdio
+buffer one byte at a time and returns an exact bounded span, retaining bytes
+after each boundary and embedded NULs. The streaming multipart limit path also
+records a descriptive incomplete reason and promotes the shared configured
+limit result to `CL_EMAXFILES` after its internal `FAIL`/`CL_EFORMAT` control
+flow. The authoritative production-linked `mail` TCase passes 16/16,
+including the exact nested `Mbox.Member.MZ.UNOFFICIAL` child detection and the
+structured `LIMIT_INCOMPLETE` multipart-limit report. Complete MIME/mbox/MHTML
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+remain required.
+
+## ARJ current-source compile and direct-open status — 2026-09-04
+
+The authoritative serial GCC relink exposed and fixed a missing forward
+declaration for the ARJ SFX sticky-status helper. The same current-source
+review found that direct `cli_unarj_open()` returned an in-range `CL_EREAD`
+without marking its already-confirmed layer incomplete and non-cacheable; it
+now records the exact main-header read diagnostic before returning. The
+current-source production-linked focused cases pass `arj_map` 8/8 and
+`arjsfx` 5/5. Complete ARJ/ARJ-SFX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of
 `largefile-roadmap-qualification`. The current-source static audit reports
-590 capability rows: 0 qualified, 143 bounded, 426 pending, and 21 explicitly
-unsupported, with 576
-release-blocking rows and all 80 enabled parser rows still blocked. The
+597 capability rows: 0 qualified, 143 bounded, 433 pending, and 21 explicitly
+unsupported, with 576 release-blocking rows. All 75 enabled parser rows
+remain blocked, alongside five explicitly unsupported parser entries. The
 following is the current requirement-by-requirement disposition of PLAN.md,
 not a release claim:
 
@@ -21842,15 +21902,14 @@ requirement-by-requirement release audit remain open.
 ## MIME/mbox current-source production-linked rerun — 2026-08-31
 
 The canonical `mbox.c`, `mbox.h`, `scanners.c`, and `check_clamav.c` sources
-were compared with the existing Docker production-linked GCC harness; all
-four SHA-256 digests matched exactly. After materializing the checked-in
-`clam.mail.xor` fixture through its repository CMake target, the focused
-`mail` TCase passes 13/13, including the MIME-part limit, line/header
-failure, mbox, uuencode, BinHex, and embedded-MZ regressions. The direct API
-and admission cases pass `mail_api` 2/2, `mail_map` 2/2, and `mail_partial`
-1/1. The MHTML TCase passes 4/4 when run with the explicit 60-second test
-timeout required for its 65 MiB streaming fixture; its default-timeout
-failure was a harness timeout, not a parser assertion.
+were transferred into the Docker production-linked GCC harness before
+relinking. After materializing the checked-in `clam.mail.xor` fixture through
+its repository CMake target, the focused `mail` TCase passes 16/16, including
+the MIME-part limit, exact mbox child detection, line/header failure,
+uuencode, BinHex, and embedded-MZ regressions. The direct API and admission
+cases pass `mail_api` 2/2, `mail_map` 2/2, and `mail_partial` 1/1. The MHTML
+TCase remains a separate streaming case requiring its explicit 60-second
+timeout.
 
 This is refreshed parser-path and corpus evidence, not final MIME/mbox
 qualification. Complete MIME/mbox/MHTML corpus breadth, current-head
@@ -21930,11 +21989,12 @@ The disk-backed multipart parser now counts each boundary with a native
 `size_t` counter and applies the existing per-message 1,024-part admission
 limit before queueing or scanning the part. This keeps streaming and legacy
 MIME behavior aligned and prevents `multipart/related` input from queuing an
-unbounded number of child spools. Reaching the limit returns `CL_EFORMAT`,
-marks the confirmed mail layer incomplete, and prevents clean caching. The
-canonical source was relinked in the existing production-linked GCC harness;
-the focused `mail` TCase passes 13/13, including the exact boundary regression
-and structured incomplete report assertions.
+unbounded number of child spools. Reaching the limit returns the configured
+`CL_EMAXFILES` result, records the descriptive MIME-part reason, marks the
+confirmed mail layer incomplete, and prevents clean caching. The current
+source was relinked in the production-linked GCC harness; the focused `mail`
+TCase passes 16/16, including the exact boundary regression and structured
+incomplete report assertions.
 
 This is parser-path evidence, not final release certification. Complete
 MIME/mbox/MHTML corpus, sanitizer, certified Linux x86-64,
@@ -23215,7 +23275,7 @@ falls back to local-only scanning. The registered regression is
 `test_zip_masked_sfx_confirmed_malformed_zip64_is_fail_visible`.
 
 The remaining parser-family finding is not being relabeled as complete. The
-manifest currently has 590 rows, 0 qualified, 143 bounded, 426 pending, and
+manifest currently has 597 rows, 0 qualified, 143 bounded, 433 pending, and
 576 release-blocking rows. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
 bytecode, logical, and YARA still need current-source production-linked,
 sanitizer, corpus, resource, service, materialized-large-file, and Sonic1
