@@ -1,5 +1,35 @@
 # Independent read-only audit of audit.md
 
+## Current PLAN.md requirement audit — 2026-09-04
+
+The authoritative checkout is clean at documentation commit
+`a494d05c55d3c87c76f38dc82ad962b845a1ef43`; the latest implementation commit
+is `130770f2debb3d3c2a7b2205e62af239e4fbf4eb` (`Harden 7-Zip PPMd input
+windows`). The current-source static audit reports 589 capability rows: 0
+qualified, 143 bounded, 425 pending, and 21 explicitly unsupported, with 575
+release-blocking rows and all 80 enabled parser rows still blocked. The
+following is the current requirement-by-requirement disposition of PLAN.md,
+not a release claim:
+
+| PLAN.md requirement | Current disposition | Authoritative evidence or blocking gap |
+| --- | --- | --- |
+| Baseline inventory and checked capability manifest | Partially implemented | `docs/largefile-inventory.tsv`, `docs/largefile-capabilities.tsv`, `tools/largefile_capability_manifest.sh`, and `tools/largefile_source_guards.sh` pass against the current checkout; the manifest remains a coverage contract, not qualification evidence. |
+| Shared logical/matcher/contiguous/temporary/file/recursion/time accounting | Partially implemented | The current source contains the shared ledgers, readers, spools, deadlines, and fail-visible status reconciliation; production-linked x86-64 execution, sanitizer evidence, and resource measurements for every enabled path remain open. |
+| Certified daemon startup and one-worker/two-entry service profile | Source and synthetic gate implemented; runtime qualification open | `clamd/largefile_admission.c` requires `MaxThreads=1`; `tools/largefile_service_qualification.sh` exercises two clients against `MaxQueue=2`; the verifier regression passes. A current-source production daemon run and Sonic1 resource evidence are still required. |
+| Common library/CLI/clamd/clamdscan/milter/on-access ingress contract | Partially implemented | Static guards and focused harnesses cover the contract, and the exact-edge milter proof is independently checked. Full current-source parity across every command family, production CVDs, materialized edge files, and on-access evidence remain open. |
+| Complete enabled parser, matcher, decoder, and bytecode coverage | Not complete | 80 parser rows, logical/YARA/bytecode matcher rows, and many parser-family rows remain pending or bounded. The pinned modern OneNote dependency only exposes `parse_section_buffer(&[u8])`; the scanner therefore returns `CL_ERESOURCE` above `FMap::WHOLE_INPUT_MAX` (256 MiB) rather than claiming reader-backed 32 GiB support. |
+| Fail-visible unsupported and malformed-layer behavior | Substantially implemented; qualification open | ZIP confirmed malformed-central fallback, milter digest/offset/completion checks, release allowlisting, and numerous parser fault paths are now guarded and regression-tested. These source fixes do not replace complete corpus, sanitizer, production-CVD, or materialized-large-file evidence. |
+| Release-default activation | Not started by design | `LARGE_FILE_DEFAULTS` and related build/feature rows remain pending; defaults must stay gated until the enabled-parser and ingress release blockers are closed. |
+| PLAN.md acceptance workload and final certification | Not complete | No current certified Linux x86-64 production-CVD/Sonic1 canary, full 32 GiB materialized parser matrix, four-hour/resource/RSS/temporary-peak record, or final requirement-by-requirement proof bundle exists for this checkout. The latest MCP-SSH check to Sonic1 timed out; this is an evidence gap, not a local implementation blocker. |
+
+Conclusion: the branch remains on track for incremental fail-closed hardening,
+but is not on track for an immediate production release. The critical path is
+now reader-backed conversion or explicitly accepted limits for the remaining
+whole-input/contiguous parser families, followed by current-source linked,
+sanitizer, production-CVD, materialized-file, service-parity, resource, and
+Sonic1 evidence. No row is being relabeled as qualified based solely on a
+historical result.
+
 ## Bytecode extracted-member logical double-charge — 2026-09-03
 
 `cli_bcapi_extract_new()` pre-incremented `scansize` and `scannedfiles` with

@@ -5,7 +5,7 @@ Current evidence is capability-scoped and must be bound to the current source
 and build manifests. No production release claim is made until every PLAN.md
 gate passes.
 
-## Current qualification boundary — 2026-09-03
+## Current qualification boundary — 2026-09-04
 
 The authoritative capability manifest is a coverage contract, not a release
 certificate. At the current audit point it contains 589 capability rows, with
@@ -15,7 +15,8 @@ entries below preserve engineering evidence and open work; they do not
 substitute for current-source linked execution,
 production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
 resource measurements, service parity, or the final requirement-by-requirement
-PLAN.md completion audit.
+PLAN.md completion audit. The dated requirement-level disposition is
+maintained in `audit1.md` under “Current PLAN.md requirement audit”.
 
 ## Scan-deadline initialization failure — 2026-09-03
 

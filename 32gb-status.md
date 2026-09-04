@@ -1,6 +1,6 @@
 # ClamAV 32 GiB Development and Validation Status
 
-## Current qualification warning — 2026-09-03
+## Current qualification warning — 2026-09-04
 
 This branch is not release-qualified. At the current audit point, the
 authoritative manifest records 589 rows: 0 qualified, 143 bounded, 425
@@ -32,7 +32,13 @@ The current source/build, production-CVD, sanitizer, materialized exact-edge,
 service-parity, and Sonic1 evidence required by PLAN.md is still missing;
 historical results below must not be read as current release qualification.
 
-**Status date:** 2026-09-03
+**Status date:** 2026-09-04
+
+The current implementation audit is anchored at
+`130770f2debb3d3c2a7b2205e62af239e4fbf4eb`; the latest documentation-only
+follow-up is `a494d05c55d3c87c76f38dc82ad962b845a1ef43`. The requirement-level
+disposition is recorded in `audit1.md` under “Current PLAN.md requirement
+audit”.
 
 ## Latest current-head rebinding and Sonic1 evidence — 2026-08-18
 

@@ -1,6 +1,6 @@
 # Brief 32 GiB Status Summary
 
-## Current qualification snapshot — 2026-09-03
+## Current qualification snapshot — 2026-09-04
 
 The current branch is **not release-qualified**. At the current audit point,
 the authoritative capability manifest has 589 entries: 0 qualified, 143
@@ -12,6 +12,11 @@ independently qualified. The release gate also rejects relabelling a required
 parser or matcher as a deliberate unsupported row through its fixed shared
 allowlist. Historical sections below remain evidence for their stated
 revisions and are not current-source release certification.
+
+The current requirement-level disposition is recorded in `audit1.md` under
+“Current PLAN.md requirement audit”. The latest implementation commit is
+`130770f2debb3d3c2a7b2205e62af239e4fbf4eb`; the subsequent documentation-only
+follow-up is `a494d05c55d3c87c76f38dc82ad962b845a1ef43`.
 
 Local Linux ARM64 GCC evidence now covers the latest PDF crypt dictionaries,
 DecodeParms semantics, bounded-spool rollback, and all five bounded-filter
