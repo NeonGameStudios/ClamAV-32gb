@@ -881,7 +881,7 @@ were `mbox.c` `39ab65b9035607edd3e3865c9d7f0ffaa596a53db3b0ebc39abd191d2b3256ed`
 `scanners.c`
 `ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
 `check_clamav.c`
-`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`, and
+`986791719cc477947a79b4e88927dab265a9c7ef202c9790b645dfcbf131d7ea`, and
 `unit_tests/CMakeLists.txt`
 `3e3de3b5c429656b051afda24a9d43b81f8afa3f20e6d4a3e5ba62fbeffe1f70`.
 
@@ -23803,7 +23803,7 @@ SHA-256 values were `libclamav_rust/src/scanners.rs`
 `e0f7b09dcc67ba897826c6fe6ff63eb85142695952f18b1f66bff362499c3c87`,
 `Cargo.toml` `949365e1f03b177e5d51adf177c889d38a857c9eaa6c5d30c63340bfa7d91b6b`,
 and `unit_tests/check_clamav.c`
-`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`.
+`986791719cc477947a79b4e88927dab265a9c7ef202c9790b645dfcbf131d7ea`.
 
 The focused production-linked cases pass `rust_lha` 10/10 and `rust_map` 2/2
 with zero failures and errors. Coverage includes initial and public-API read
@@ -23834,7 +23834,7 @@ were `macho.c`
 `scanners.c`
 `ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
 and `check_clamav.c`
-`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`.
+`986791719cc477947a79b4e88927dab265a9c7ef202c9790b645dfcbf131d7ea`.
 
 The focused cases pass with zero failures and errors: `macho` 12/12,
 `macho_map` 3/3, `macho_timeout` 2/2, `macho_sections` 1/1,
@@ -23896,7 +23896,7 @@ existing production-linked GCC harness. Exact SHA-256 values were `mbr.c`
 `scanners.c`
 `ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`, and
 `check_clamav.c`
-`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`.
+`986791719cc477947a79b4e88927dab265a9c7ef202c9790b645dfcbf131d7ea`.
 
 The focused cases pass with zero failures and errors: `mbr` 10/10,
 `partition_map` 5/5, and `mbr_corpus` 1/1. Coverage includes master and
@@ -23912,3 +23912,35 @@ was required for this refresh. This remains focused current-source evidence,
 not final partition-image qualification. Complete corpus, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, resource,
 Sonic1, and final PLAN.md qualification remain required.
+
+## MSPack current-source refresh — 2026-09-04
+
+The canonical MSPack source and test source were byte-identical to the copies
+used by the existing Docker production-linked GCC harness before relinking.
+The verified SHA-256 values are `libmspack.c`
+`6f688d8616f1014b1d47e3565c18677105ce29428e555050306bd2aa6e64b497`,
+`libmspack.h`
+`103a9476e8a54073344a504c32b7b3c20c31dc44decb96a928bf6b48b126bf12`,
+`scanners.c`
+`ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
+`check_clamav.c`
+`986791719cc477947a79b4e88927dab265a9c7ef202c9790b645dfcbf131d7ea`,
+and `unit_tests/CMakeLists.txt`
+`3e3de3b5c429656b051afda24a9d43b81f8afa3f20e6d4a3e5ba62fbeffe1f70`.
+
+The current-source focused cases pass with zero failures and errors:
+`mspack` 8/8 and `mspack_map` 8/8. Existing CMake targets materialized the
+checked-in `clam.cab` and `clam.chm` fixtures before the run. The matrix
+covers both parser entry points, missing-map/options admission, decoder
+read/seek/allocation/constructor faults, clipped requests, callback timeout,
+declared output and temporary limits, fixed-header truncation, and exact
+nested MZP detection after extraction and nested handoff.
+
+The only current fixture defect was a direct CAB clipped-read test that
+omitted `ctx.options`, so it returned `CL_ENULLARG` before exercising the
+intended decoder boundary. The fixture now supplies production-shaped options
+and the source guard records that contract. No MSPack production-code change
+was necessary. This remains focused evidence rather than family
+qualification: complete CAB/CHM and InstallShield corpus, full-C ABI parity,
+sanitizer, certified Linux x86-64, production-CVD/service, materialized
+large-file/resource, Sonic1, and final release evidence remain open.

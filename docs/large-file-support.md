@@ -5,6 +5,39 @@ Current evidence is capability-scoped and must be bound to the current source
 and build manifests. No production release claim is made until every PLAN.md
 gate passes.
 
+## Current MSPack CAB/CHM focused audit — 2026-09-04
+
+The canonical MSPack source and test source were synchronized into the
+existing Docker production-linked GCC harness and rebuilt coherently. The
+verified SHA-256 values are `libmspack.c`
+`6f688d8616f1014b1d47e3565c18677105ce29428e555050306bd2aa6e64b497`,
+`libmspack.h`
+`103a9476e8a54073344a504c32b7b3c20c31dc44decb96a928bf6b48b126bf12`,
+`scanners.c`
+`ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
+`check_clamav.c`
+`986791719cc477947a79b4e88927dab265a9c7ef202c9790b645dfcbf131d7ea`,
+and `unit_tests/CMakeLists.txt`
+`3e3de3b5c429656b051afda24a9d43b81f8afa3f20e6d4a3e5ba62fbeffe1f70`.
+
+The current-source production-linked GCC cases pass with zero failures and
+errors: `mspack` 8/8 and `mspack_map` 8/8. The run materialized the checked-in
+`clam.cab` and `clam.chm` fixtures through the existing CMake targets before
+testing. Coverage includes CAB/CHM missing-map and options admission,
+decoder read and clipped-read behavior, allocation and constructor faults,
+callback timeout, size and temporary admission, truncated fixed headers,
+declared-output validation, canonical timeout, and exact nested MZP detection
+after CAB/CHM extraction and handoff.
+
+The only current boundary defect was in the direct CAB test fixture: it
+omitted the required production `ctx.options` contract and therefore stopped
+at `CL_ENULLARG` before the intended clipped-read path. The fixture now sets
+the production options object and is source-guarded. No MSPack production-code
+change was required in this refresh. This is focused current-source evidence,
+not final CAB/CHM qualification. Complete CAB/CHM and InstallShield corpus,
+sanitizer, certified Linux x86-64, production-CVD/service, materialized
+large-file/resource, Sonic1, and final PLAN.md qualification remain required.
+
 ## Current LHA/LZH focused audit — 2026-09-04
 
 The canonical Rust scanner and LHA test source were transferred into the
@@ -13,7 +46,7 @@ The synchronized SHA-256 values are `scanners.rs`
 `e0f7b09dcc67ba897826c6fe6ff63eb85142695952f18b1f66bff362499c3c87`,
 `Cargo.toml` `949365e1f03b177e5d51adf177c889d38a857c9eaa6c5d30c63340bfa7d91b6b`,
 and `check_clamav.c`
-`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`.
+`986791719cc477947a79b4e88927dab265a9c7ef202c9790b645dfcbf131d7ea`.
 The current-source production-linked cases pass `rust_lha` 10/10 and
 `rust_map` 2/2, with zero failures and errors. The focused LHA case covers
 initial and public-API read failures, required zero termination, sticky
@@ -44,7 +77,7 @@ are `macho.c`
 `scanners.c`
 `ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
 and `check_clamav.c`
-`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`.
+`986791719cc477947a79b4e88927dab265a9c7ef202c9790b645dfcbf131d7ea`.
 The focused cases pass with zero failures and errors: `macho` 12/12,
 `macho_map` 3/3, `macho_timeout` 2/2, `macho_sections` 1/1,
 `macho_fat` 3/3, `macho_corpus` 2/2, `macho_unsupported` 2/2, and

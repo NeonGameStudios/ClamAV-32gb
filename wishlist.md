@@ -10650,6 +10650,23 @@ and Sonic1 qualification as release gates.
   production-CVD/service parity, and Sonic1 qualification before moving
   `CL_TYPE_MSCAB` or `CL_TYPE_MSCHM` beyond pending.
 
+## MSPack current-source refresh — 2026-09-04
+
+- The current-source production-linked GCC `mspack` TCase passes 8/8 and
+  `mspack_map` passes 8/8 with zero failures and errors after materializing
+  the checked-in `clam.cab` and `clam.chm` fixtures through the existing CMake
+  targets. Coverage includes decoder, admission, timeout, truncation, output,
+  and exact nested-MZP handoff boundaries for both CAB and CHM.
+- The only defect found in this refresh was a direct CAB clipped-read fixture
+  that omitted `ctx.options`, causing an early `CL_ENULLARG`; the fixture now
+  models the production options contract and has a source guard. No MSPack
+  production-code change was required.
+- Preserve the exact current-source/container hashes in the capability
+  manifest. Complete CAB/CHM and InstallShield corpus, full-C ABI-consistent
+  execution, sanitizer, certified Linux x86-64, materialized large-file and
+  resource measurements, production-CVD/service parity, Sonic1, and final
+  qualification remain open before changing either capability beyond pending.
+
 ## MSEXPAND current-source corpus qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `msexpand` TCase now

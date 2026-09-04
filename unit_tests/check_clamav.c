@@ -50793,6 +50793,7 @@ START_TEST(test_mspack_clipped_read_failure_is_truncation)
 {
     uint8_t data[37] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -50806,11 +50807,15 @@ START_TEST(test_mspack_clipped_read_failure_is_truncation)
     mspack_test_write_u16(data + 28, 1U);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     map->need  = mspack_clipped_read_failure;
-    ctx.engine = &engine;
+    ctx.engine  = &engine;
+    /* Direct CAB scan tests must model the production options contract. */
+    options.parse = ~0U;
+    ctx.options = &options;
     ctx.fmap   = map;
 
     /* The CAB header fits, but the first folder request starts at byte 36
