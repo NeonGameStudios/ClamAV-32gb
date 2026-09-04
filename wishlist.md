@@ -25,6 +25,19 @@ and final release qualification.
   production-CVD/service, materialized-large-file, resource, Sonic1, and
   final PLAN.md qualification open.
 
+## JPEG current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `jpeg_map` 14/14 and
+  `jpeg_corpus` 1/1, with zero failures and errors. The registered map case
+  covers admission, truncation, sticky incomplete state, timeout, direct and
+  public read failures, segment/exploit probes, Photoshop resource bounds,
+  and entropy completion/failure handling; the corpus case reaches the exact
+  nested MZ marker through a complete APP13 Photoshop resource fixture.
+- The previous 13/13 manifest count was stale; no JPEG production-code change
+  was needed. Keep full JPEG/image corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, resource, Sonic1, and
+  final PLAN.md qualification open.
+
 ## HWP3 current-source focused audit — 2026-09-04
 
 - Retain current-source production-linked GCC evidence at `hwp3` 27/27,

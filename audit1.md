@@ -43,6 +43,20 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, resource, Sonic1, and final PLAN.md qualification
 remain open.
 
+## JPEG current-source focused audit — 2026-09-04
+
+The source-synchronized production-linked GCC harness passes `jpeg_map` 14/14
+and `jpeg_corpus` 1/1, with zero failures and errors. The registered map case
+covers admission, truncation, sticky incomplete state, timeout, direct and
+public in-range read failures, segment and exploit probes, Photoshop resource
+bounds, and entropy completion/failure handling. The corpus case reaches the
+exact nested MZ marker through a complete APP13 Photoshop resource fixture.
+The manifest's earlier 13/13 count was stale; no JPEG production-code change
+was required in this refresh. This is focused current-source evidence, not
+complete JPEG/image qualification; full corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
+and final PLAN.md qualification remain open.
+
 ## HWP3 current-source focused audit — 2026-09-04
 
 The current HWP3 parser and test sources were verified against the existing
