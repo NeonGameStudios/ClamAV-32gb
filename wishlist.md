@@ -1,5 +1,19 @@
 # Wishlist
 
+## XAR current-source focused audit — 2026-09-04
+
+- Keep both XAR hash-fault fixtures valid before injecting
+  `cl_update_hash()`/`cl_finish_hash()` failures: the archived SHA-1 for `ABC`
+  is the complete 40-character value ending in `...fcdfb8`.
+- Retain current-source production-linked GCC evidence at `xar` 19/19,
+  `xar_metadata` 3/3, `xar_map` 3/3, `xar_corpus` 3/3, and `xar_subdoc` 1/1,
+  with zero failures and errors. The earlier `CL_EPARSE` results were fixture
+  admission failures, not hash-status propagation defects.
+- No XAR production-code change was needed in this audit. Keep complete XAR
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+  open.
+
 ## UUEncode current-source focused audit — 2026-09-04
 
 - Retain current-source production-linked GCC evidence at `uuencode_map` 5/5,

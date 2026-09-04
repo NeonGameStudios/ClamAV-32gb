@@ -703,6 +703,19 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## XAR current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC XAR run initially exposed two invalid
+hash-fault fixtures: each archived SHA-1 declaration had 39 hex characters,
+so the parser correctly returned `CL_EPARSE` before invoking the injected hash
+callback failure. After correcting both declarations to the 40-character
+SHA-1 of `ABC`, the focused suites pass `xar` 19/19, `xar_metadata` 3/3,
+`xar_map` 3/3, `xar_corpus` 3/3, and `xar_subdoc` 1/1 with zero failures and
+errors. No XAR production-code change was needed. This remains focused
+evidence, not final XAR or release certification; complete corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final PLAN.md qualification remain required.
+
 ## UUEncode current-source focused audit — 2026-09-04
 
 The current-source production-linked GCC harness passes `uuencode_map` 5/5,

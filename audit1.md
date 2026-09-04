@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## XAR current-source focused audit — 2026-09-04
+
+The coherent current-source production-linked GCC harness initially reported
+two XAR hash-fault failures as `CL_EPARSE` rather than the expected
+`CL_EREAD`. The parser was correctly rejecting the fixtures before hashing:
+both archived SHA-1 declarations contained 39 hex characters, not the
+required 40. After correcting them to the authoritative SHA-1 of `ABC`, the
+hash update/finalization fault paths are exercised and the focused suites pass
+`xar` 19/19, `xar_metadata` 3/3, `xar_map` 3/3, `xar_corpus` 3/3, and
+`xar_subdoc` 1/1 with zero failures and errors. No XAR production-code change
+was required in this refresh. This is focused current-source evidence, not
+complete XAR or release certification: complete corpus breadth, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and requirement-by-requirement PLAN.md qualification remain
+open.
+
 ## UUEncode current-source focused audit — 2026-09-04
 
 The coherent current-source production-linked GCC harness passes the isolated

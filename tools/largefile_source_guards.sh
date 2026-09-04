@@ -4827,6 +4827,7 @@ contains unit_tests/check_clamav.c 'test_xar_hash_finalization_failure_is_fail_v
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_xar, test_xar_hash_finalization_failure_is_fail_visible)'
 contains unit_tests/check_clamav.c 'test_xar_hash_update_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_xar, test_xar_hash_update_failure_is_fail_visible)'
+contains unit_tests/check_clamav.c '3c01bdbb26f358bab27f267924aa2c9a03fcfdb8</archived-checksum>'
 contains libclamav/xar.c 'XAR archived checksum context could not be allocated'
 contains libclamav/xar.c 'XAR extracted checksum context could not be allocated'
 contains libclamav/xar.c 'XAR temporary output reached the configured time limit'

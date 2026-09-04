@@ -29988,7 +29988,7 @@ START_TEST(test_xar_hash_finalization_failure_is_fail_visible)
     static const uint8_t toc[] =
         "<?xml version=\"1.0\"?><xar><toc><file><data>"
         "<offset>0</offset><length>3</length><size>3</size>"
-        "<archived-checksum style=\"sha1\">3c01bdbb26f358bab27f267924aa2c9a03fcfdb</archived-checksum>"
+        "<archived-checksum style=\"sha1\">3c01bdbb26f358bab27f267924aa2c9a03fcfdb8</archived-checksum>"
         "</data></file></toc></xar>";
     static const uint8_t member[] = {'A', 'B', 'C'};
     struct cl_scan_options options;
@@ -62341,7 +62341,7 @@ START_TEST(test_xar_hash_update_failure_is_fail_visible)
     static const uint8_t toc[] =
         "<?xml version=\"1.0\"?><xar><toc><file><data>"
         "<offset>0</offset><length>3</length><size>3</size>"
-        "<archived-checksum style=\"sha1\">3c01bdbb26f358bab27f267924aa2c9a03fcfdb</archived-checksum>"
+        "<archived-checksum style=\"sha1\">3c01bdbb26f358bab27f267924aa2c9a03fcfdb8</archived-checksum>"
         "</data></file></toc></xar>";
     static const uint8_t member[] = {'A', 'B', 'C'};
     struct cl_scan_options options;
