@@ -175,6 +175,23 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, resource, Sonic1, and final PLAN.md qualification
 remain required.
 
+## Current BZip2 and GZip focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `bz_map` 5/5, `bz_core`
+10/10, and `compressed_cleanup` 1/1. The coverage exercises truncation,
+in-range compressed-input read failures, GZip-only input failure, HTML input
+failure, legacy GZip fallback staging, decoder finalization/reset failures,
+concatenated BZip2 streams, and exact nested-marker corpus matches. Review of
+the current scanner found no additional safe production fix in this pass:
+BZip2 reinitializes only after `BZ_STREAM_END`, preserves unread input between
+members, refuses partial output, and both decoders apply checked
+output/temporary/deadline accounting and cleanup-status precedence.
+
+These are focused current-source results, not final BZip2/GZip qualification.
+Complete compressed corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
 and 21 deliberate unsupported rows; 576 rows remain release-blocking under

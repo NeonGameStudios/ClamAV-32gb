@@ -127,6 +127,21 @@
   materialized-large-file, resource, Sonic1, and final PLAN.md qualification
   open.
 
+## BZip2 and GZip current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `bz_map` 5/5,
+  `bz_core` 10/10, and `compressed_cleanup` 1/1. The cases cover truncation,
+  in-range compressed-input read failures, GZip-only input failure, HTML input
+  failure, legacy GZip fallback staging, decoder finalization/reset failures,
+  concatenated BZip2 streams, and exact nested-marker corpus matches.
+- The current scanner review found no additional safe production fix. Keep
+  BZip2 reinitialization gated on `BZ_STREAM_END`, unread-input preservation,
+  partial-output refusal, checked output/temporary/deadline accounting, and
+  cleanup-status precedence.
+- Keep complete compressed corpus breadth, full C/Rust ABI, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  resource, Sonic1, and final PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

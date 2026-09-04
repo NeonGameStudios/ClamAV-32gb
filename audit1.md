@@ -161,6 +161,24 @@ current-C-ABI execution, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, resource, Sonic1, and final
 requirement-by-requirement PLAN.md qualification remain open.
 
+## BZip2 and GZip current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `bz_map` 5/5, `bz_core`
+10/10, and `compressed_cleanup` 1/1. The BZip2/GZip coverage exercises
+truncation, in-range compressed-input read failures, GZip-only input failure,
+HTML input failure, legacy GZip fallback staging, decoder finalization and
+reset failures, concatenated BZip2 streams, and exact nested-marker corpus
+matches. The current scanner review found no additional safe production fix in
+this pass: BZip2 reinitializes only after `BZ_STREAM_END`, retains unread input
+between members, refuses partial output, and both decoders apply checked
+output/temporary/deadline accounting and cleanup-status precedence.
+
+This is focused current-source evidence, not final BZip2/GZip qualification.
+Complete compressed corpus breadth, full current-C-ABI execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
+remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of
