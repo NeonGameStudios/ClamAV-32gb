@@ -13657,3 +13657,17 @@ This is focused current-source evidence, not complete SIS qualification.
 Complete SIS corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file/resource, Sonic1, and final
 parser/release evidence remain required.
+
+
+## SWF current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC SWF matrix passes with zero failures
+and errors: `swf` 16/16, `swf_map` 3/3, `swf_api` 1/1, and
+`swf_corpus` 2/2. The corpus cases cover zlib-compressed CWS and direct FWS
+overlay streams whose decompressed or declared-boundary outputs reach exact
+fixed-offset child matchers.
+
+This is focused current-source evidence, not complete SWF qualification.
+Complete SWF corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file/resource, Sonic1, and final
+parser/release evidence remain required.

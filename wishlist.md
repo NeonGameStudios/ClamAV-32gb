@@ -14865,3 +14865,15 @@ qualification before closure.
   SIS corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file/resource, Sonic1, and final parser/release
   qualification remain open.
+
+
+## SWF current-source production-linked refresh — 2026-09-04
+
+- Record the current-source production-linked GCC results: `swf` 16/16,
+  `swf_map` 3/3, `swf_api` 1/1, and `swf_corpus` 2/2 with zero failures
+  and errors. The corpus covers compressed CWS and direct FWS overlay streams
+  reaching exact fixed-offset child matchers.
+- Keep this focused evidence separate from complete SWF qualification. Complete
+  SWF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file/resource, Sonic1, and final parser/release
+  qualification remain open.
