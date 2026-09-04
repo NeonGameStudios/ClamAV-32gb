@@ -14804,3 +14804,16 @@ qualification before closure.
   image qualification. Keep complete image corpus, sanitizer, certified Linux
   x86-64, production-CVD/service, materialized-large-file/resource, Sonic1,
   and final parser/release qualification open.
+
+
+## RIFF current-source production-linked refresh — 2026-09-04
+
+- Record the current-source production-linked GCC results: `riff` 9/9,
+  `riff_map` 1/1, and `riff_corpus` 1/1 with zero failures and errors,
+  covering null-context, missing-map, callback-read, malformed-boundary,
+  unaligned nested-LIST, timeout, sticky-completion, and exact nested-child
+  matching paths.
+- Keep this focused evidence separate from final RIFF qualification. Complete
+  RIFF/member corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file/resource, Sonic1, and final
+  parser/release qualification remain open.

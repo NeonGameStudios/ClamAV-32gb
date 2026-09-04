@@ -24142,3 +24142,17 @@ This is focused current-source evidence, not complete PNG/image qualification.
 Complete image corpus, sanitizer, certified Linux x86-64, materialized-large-
 file/resource, production-CVD/service, Sonic1, and final parser/release
 evidence remain open.
+
+
+## RIFF current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC RIFF matrix passes with zero failures
+and errors: `riff` 9/9, `riff_map` 1/1, and `riff_corpus` 1/1. The
+matrix includes null-context, missing-map, callback-read, malformed-boundary,
+unaligned nested-LIST, timeout, sticky-completion, and exact nested-child
+matching coverage.
+
+This is focused current-source evidence, not complete RIFF qualification.
+Complete RIFF/member corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file/resource, Sonic1, and final
+parser/release evidence remain open.
