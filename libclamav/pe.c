@@ -3333,7 +3333,12 @@ int cli_scanpe(cli_ctx *ctx)
     }
 
     if (SCAN_COLLECT_METADATA) {
+        /* A required PE metadata root must be admitted before parser work begins. */
         pe_json = get_pe_property(ctx);
+        if (!pe_json) {
+            cli_mark_scan_incomplete(ctx, "PE header metadata JSON could not be recorded");
+            return CL_EMEM;
+        }
     }
 
     map   = ctx->fmap;

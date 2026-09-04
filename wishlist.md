@@ -14656,3 +14656,19 @@ qualification before closure.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, resource, Sonic1, and final MBR/parser-release
   qualification before closure.
+
+## PE source-synchronized production-linked refresh — 2026-09-04
+
+- The current-source GCC production-linked matrix passes `pe` 16/16,
+  `pe_map` 18/18, `pe32plus_common` 8/8, and `pe_corpus` 1/1 with zero
+  failures and errors. Existing CMake targets materialized the checked-in
+  FSG and UPX fixtures before the corpus run; retain the exact source hashes
+  and source guards in the capability manifest.
+- Fix the production defect where `cli_scanpe()` ignored failure to create the
+  required `PE` metadata root before header parsing. It now returns `CL_EMEM`
+  with sticky incomplete/non-cacheable state. The import-item fault fixture
+  was also corrected to match production’s lowercase import-name normalization.
+- Complete PE/unpacker and executable corpus, full-C ABI parity, sanitizer,
+  certified Linux x86-64, materialized large-file/resource measurements,
+  production-CVD/service parity, Sonic1, and final parser/release
+  qualification before closure.

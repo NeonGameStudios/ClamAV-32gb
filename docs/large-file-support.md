@@ -5,6 +5,42 @@ Current evidence is capability-scoped and must be bound to the current source
 and build manifests. No production release claim is made until every PLAN.md
 gate passes.
 
+## Current PE focused audit — 2026-09-04
+
+The authoritative PE production and test sources were transferred into the
+existing Docker production-linked GCC harness and rebuilt coherently. The
+verified SHA-256 values are `pe.c`
+`410280fc5fc3e2104d9a029bb782d599cd8a71a5246a19764b9dbfedbabe8ee8`, `pe.h`
+`244a53a4bac2af3d2754603faedd023017c1407c9741d1237ef9b1255ee79d62`,
+`matcher.c`
+`6efc0fa01f7177204e1078f168f5a4b746aaaf2a2baa66f6e4a82235be6f8939`,
+`scanners.c`
+`ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
+`check_clamav.c`
+`90382b9d47b2608467729324dac593dc7bc3f231614b59b50daba0ae2c54d6f3`,
+and `unit_tests/CMakeLists.txt`
+`3e3de3b5c429656b051afda24a9d43b81f8afa3f20e6d4a3e5ba62fbeffe1f70`.
+
+The final current-source production-linked GCC matrix passes with zero
+failures and errors: `pe` 16/16, `pe_map` 18/18, `pe32plus_common` 8/8, and
+`pe_corpus` 1/1. Existing CMake targets materialized the checked-in
+`clam-fsg.exe` and `clam-upx.exe` fixtures before the corpus run. Coverage
+includes PE/PE32+ header and import metadata, JSON failure propagation,
+missing-map/options and public-API admission, native-width coordinates,
+resource/icon and unpacker boundaries, timeout and callback faults, and exact
+embedded-MZ detection after FSG/UPX extraction.
+
+This audit found one production defect: `cli_scanpe()` previously ignored a
+failed required `PE` metadata-root insertion before header parsing, allowing
+the scan to continue to a later unsupported result. It now marks the layer
+incomplete and returns `CL_EMEM`. The import-item fault fixture also had a
+case-sensitive trigger even though production normalizes import names to
+lowercase; that fixture is corrected and source-guarded. This is focused
+current-source evidence, not final PE qualification. Complete PE/unpacker and
+executable corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized large-file/resource, Sonic1, and final PLAN.md qualification
+remain required.
+
 ## Current MSPack CAB/CHM focused audit — 2026-09-04
 
 The canonical MSPack source and test source were synchronized into the

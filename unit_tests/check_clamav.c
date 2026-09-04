@@ -698,7 +698,8 @@ cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
         root_metadata_test_fail_hash = 0;
         return CL_EMEM;
     }
-    if (pe_test_fail_import_item && key == NULL && s && strcmp(s, "kernel32.TestFunction") == 0)
+    /* Import JSON names are normalized to lowercase before recording. */
+    if (pe_test_fail_import_item && key == NULL && s && strcmp(s, "kernel32.testfunction") == 0)
         return CL_EMEM;
     if (pe_test_fail_imphash && key && strcmp(key, "Imphash") == 0)
         return CL_EMEM;
