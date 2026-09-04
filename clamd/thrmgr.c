@@ -751,6 +751,7 @@ static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, i
 {
     int ret = TRUE;
     pthread_t thr_id;
+    int active;
 
     if (!threadpool) {
         return FALSE;
@@ -802,6 +803,17 @@ static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, i
         }
 
         items = threadpool->single_queue->item_count + threadpool->bulk_queue->item_count;
+        active = threadpool->thr_alive - threadpool->thr_idle;
+        if (active < 0)
+            active = 0;
+        /* Keep queue admission observable for the certified one-worker
+         * service profile. These counters are sampled while pool_mutex is
+         * held, immediately after the item is accepted, so a qualification
+         * run cannot claim contention merely because clients were launched
+         * concurrently. */
+        logg(LOGG_DEBUG_NV,
+             "THRMGR: dispatch accepted: active=%d queued=%d max_threads=%d max_queue=%d\n",
+             active, items, threadpool->thr_max, threadpool->queue_max);
         if ((threadpool->thr_idle < items) &&
             (threadpool->thr_alive < threadpool->thr_max)) {
             /* Start a new thread */

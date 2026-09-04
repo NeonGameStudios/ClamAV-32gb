@@ -179,6 +179,8 @@ for label in $workload_labels; do
 done
 printf 'milter manual wire: body_bytes=34359738316 message_bytes=34359738368 limit_bytes=34359738368 result=r signature=Milter.Protocol.Test offset=34359738349 sha256=7ec57c684966d38ba3db215be49cffa732317898dc8868439be681ba6ed6d50e completion=DETECTION_TERMINATED root_size=34359738368 logical_bytes=34359738368 max_scan_size=68719476736 skipped_operations=0 last_alert_offset=34359738349\n' > \
     "$out/logs/milter-exact-edge.log"
+printf 'THRMGR: dispatch accepted: active=1 queued=1 max_threads=1 max_queue=2\n' > \
+    "$out/logs/clamd-parallel-queue.log"
 printf 'milter-exact-edge\tmilter\t-\t-\tlogs/milter-exact-edge.log\t-\t0\tno\n' >> "$workload_results"
 
 cmake_cache_sha256=$(sha256sum "$out/provenance/CMakeCache.txt" | awk '{ print $1 }')
@@ -230,6 +232,8 @@ loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 
     printf 'parallel_client_count=2\n'
     printf 'parallel_test_max_queue=2\n'
     printf 'parallel_profile=provenance/parallel-client-clamd.conf\n'
+    printf 'parallel_queue_log=logs/clamd-parallel-queue.log\n'
+    printf 'parallel_queue_observation_count=1\n'
     printf 'parallel_queue=pass\n'
     printf 'service_build_identity=pass\n'
     printf 'service_qualification=pass\n'

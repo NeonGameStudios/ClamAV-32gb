@@ -181,9 +181,10 @@ sanitizer, service, materialized-large-file, Sonic1, resource, and final
 qualification remain open.
 
 The certified service profile is one worker with a two-request queue and
-explicit `AlertExceedsMax yes`. The parallel-client stress workload uses four
-simultaneous clients against that single worker and restores the release
-configuration before evidence is sealed. Qualified release evidence must include a capability-specific,
+explicit `AlertExceedsMax yes`. The parallel-client stress workload uses two
+simultaneous clients against that single worker, and the daemon must emit a
+thread-manager dispatch event showing an accepted queued item before evidence
+is sealed. Qualified release evidence must include a capability-specific,
 hash-verified binding artifact; generic shared logs are not sufficient.
 
 The ZIP implementation now treats EOCD-confirmed malformed EOCD/ZIP64
@@ -4755,12 +4756,19 @@ offset used to locate that PE must not be limited to 32 bits.
 
 ## Current ClamAV-32gb fork status
 
-The current fork implementation is anchored at commit
-`5becea1236d466ee21f9bd5d3bcd0595ebc1460b`; documentation and workflow
-follow-up is recorded separately at `4118580283da65f01cfa0822c848ac13568c1724`.
+The current fork implementation is anchored at the audit-point commit
+`9fa68c4172c23e3a8fb9c68b1fe205afcff3b975` on
+`largefile-roadmap-qualification`; documentation and workflow follow-up is
+recorded in the current source tree and must be revalidated after each new
+commit.
 The detailed current record is
 [`32gb-status.md`](../32gb-status.md), which supersedes the older baseline
 measurements and handoff wording below while retaining them as provenance.
+
+The following paragraphs are historical evidence snapshots from 2026-08-14,
+not current-source qualification records. They are retained for provenance
+only; the current status header above and a fresh requirement-by-requirement
+PLAN.md audit control release claims.
 
 Since the historical one-worker baseline, the fork has passed direct Release
 and ASan/UBSan raw-file validation through the exact 32 GiB boundary,
@@ -4857,8 +4865,8 @@ preserved outside the authoritative `out/` records. Evidence is preserved at
 `/work/evidence/cross-parser-limit-matrix-zip-release-20260814-run1` and
 `/work/evidence/cross-parser-limit-matrix-zip-sanitizer-20260814-run1`.
 
-The same cache-drop procedure passed synchronized two- and four-worker raw
-edge scans in both builds: all twelve clients detected the marker at the exact
+The historical cache-drop procedure passed synchronized two- and four-worker
+raw-edge scans in both builds: all twelve clients detected the marker at the exact
 engine offset, with zero temporary files and no sanitizer diagnostics. Summed
 per-worker peak RSS upper bounds were 200,828/272,796 KiB at two workers and
 402,616/543,280 KiB at four workers (Release/sanitizer). Evidence is preserved

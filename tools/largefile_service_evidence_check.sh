@@ -109,6 +109,38 @@ grep -Fx 'parallel_test_max_queue=2' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence does not identify the certified parallel-client queue'
 grep -Fx 'parallel_profile=provenance/parallel-client-clamd.conf' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence does not bind the parallel-client stress profile'
+parallel_queue_log_reference=$(awk -F= '
+    $1 == "parallel_queue_log" {
+        count++
+        value = substr($0, index($0, "=") + 1)
+    }
+    END {
+        if (count != 1)
+            exit 1
+        print value
+    }
+' "$summary") || fail 'service evidence has no unique parallel queue log reference'
+case "$parallel_queue_log_reference" in
+    logs/*|logs/*/*) ;;
+    *) fail 'service parallel queue log reference is outside the evidence logs' ;;
+esac
+parallel_queue_log=$out/$parallel_queue_log_reference
+[ -f "$parallel_queue_log" ] && [ ! -L "$parallel_queue_log" ] ||
+    fail 'service parallel queue log is missing or symlinked'
+grep -E 'THRMGR: dispatch accepted: (active=1 queued=1|active=0 queued=2) max_threads=1 max_queue=2' \
+    "$parallel_queue_log" >/dev/null 2>&1 ||
+    fail 'service evidence does not contain an accepted queued item for the one-worker profile'
+parallel_queue_observation_count=$(awk -F= '
+    $1 == "parallel_queue_observation_count" {
+        count++
+        value = $2
+    }
+    END {
+        if (count != 1 || value !~ /^[1-9][0-9]*$/)
+            exit 1
+        print value
+    }
+' "$summary") || fail 'service evidence has no valid parallel queue observation count'
 grep -Fx 'parallel_queue=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no parallel queue pass marker'
 

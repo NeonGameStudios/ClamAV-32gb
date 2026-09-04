@@ -10900,15 +10900,16 @@ oracle, sanitizer, RSS, latency, and temporary-space evidence remain open.
 
 ## Service serial-queue coverage — 2026-08-19
 
-The service qualification harness now uses the roadmap's certified
-`MaxThreads 1` / `MaxQueue 2` profile for the ordinary production, materialized,
-expansion, and exact-edge service requests. Before the multiworker check it
-submits two concurrent materialized-file requests and requires both exact
-oracle-bound structured reports plus a `THRMGR: contended, sleeping` daemon-log
-record. This prevents a fast fixture or two independent clients from silently
-being reported as proof of queue behavior. The harness then restarts clamd
-explicitly with `MaxThreads 4` / `MaxQueue 8` for the four-client worker
-qualification. Both profiles now explicitly set the 32-GiB file, contiguous,
+This historical entry is superseded by the current single-worker contention
+gate. The current service qualification harness uses the roadmap's certified
+`MaxThreads 1` / `MaxQueue 2` profile for ordinary production, materialized,
+expansion, exact-edge, and parallel-client requests. It submits two concurrent
+clients and requires both exact oracle-bound structured reports plus a
+thread-manager `dispatch accepted` log record showing a nonzero queued count.
+It does not restart clamd with a multi-worker profile; the former
+`MaxThreads 4` / `MaxQueue 8` four-client run is historical evidence only and
+must not be used for current qualification. Both profiles now explicitly set
+the 32-GiB file, contiguous,
 PCRE, 64-GiB logical, 256-GiB matcher-work, and 64-GiB temporary budgets rather
 than inheriting build defaults. The real production oracle, Linux/Sonic1
 execution, sanitizer, RSS, latency, temporary-space, and parser-family

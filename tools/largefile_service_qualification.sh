@@ -1279,6 +1279,18 @@ multi_worker_status=0
 for multi_pid in $multi_pids; do
     wait "$multi_pid" || multi_worker_status=1
 done
+parallel_service_log="$out/logs/clamd-$(basename "$edge_db").log"
+if [ ! -r "$parallel_service_log" ]; then
+    echo "clamd parallel-client log is missing: $parallel_service_log" >&2
+    exit 1
+fi
+parallel_queue_observation_count=$(grep -Ec \
+    'THRMGR: dispatch accepted: (active=1 queued=1|active=0 queued=2) max_threads=1 max_queue=2' \
+    "$parallel_service_log" || true)
+if [ "$parallel_queue_observation_count" -lt 1 ]; then
+    echo 'clamd parallel-client run did not observe an accepted queued item in the certified one-worker profile' >&2
+    exit 1
+fi
 client=1
 while [ "$client" -le 2 ]; do
     multi_log="$multi_dir/client-$client.log"
@@ -1316,6 +1328,8 @@ printf 'parallel_worker_count=1\n' >> "$out/service-summary.txt"
 printf 'parallel_client_count=2\n' >> "$out/service-summary.txt"
 printf 'parallel_test_max_queue=2\n' >> "$out/service-summary.txt"
 printf 'parallel_profile=provenance/parallel-client-clamd.conf\n' >> "$out/service-summary.txt"
+printf 'parallel_queue_log=logs/clamd-%s.log\n' "$(basename "$edge_db")" >> "$out/service-summary.txt"
+printf 'parallel_queue_observation_count=%s\n' "$parallel_queue_observation_count" >> "$out/service-summary.txt"
 printf 'parallel_queue=pass\n' >> "$out/service-summary.txt"
 
 # Stop the run only after the certified profile has been exercised. The

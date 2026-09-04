@@ -8272,8 +8272,8 @@ native-width-integer	clamd/tcpserver.c	64	    int num_fd;
 native-width-integer	clamd/tcpserver.c	74	        int i;
 native-width-integer	clamd/tcpserver.c	95	        t = realloc(sockets, sizeof(int) * (*nlsockets + 1));
 native-width-integer	clamd/tcpserver.h	27	int tcpserver(int **lsockets, unsigned int *nlsockets, char *ipaddr, const struct optstruct *opts);
-native-width-integer	clamd/thrmgr.c	1028	int thrmgr_group_need_terminate(jobgroup_t *group)
-native-width-integer	clamd/thrmgr.c	1030	    int ret;
+native-width-integer	clamd/thrmgr.c	1040	int thrmgr_group_need_terminate(jobgroup_t *group)
+native-width-integer	clamd/thrmgr.c	1042	    int ret;
 native-width-integer	clamd/thrmgr.c	165	static int print_queue(int f, work_queue_t *queue, struct timeval *tv_now)
 native-width-integer	clamd/thrmgr.c	167	    long umin = LONG_MAX, umax = 0, usum = 0;
 native-width-integer	clamd/thrmgr.c	169	    int write_error    = 0;
@@ -8293,20 +8293,21 @@ native-width-integer	clamd/thrmgr.c	683	    int job_completed = FALSE;
 native-width-integer	clamd/thrmgr.c	69	static int work_queue_add(work_queue_t *work_q, void *data)
 native-width-integer	clamd/thrmgr.c	750	static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, int bulk, int reserved)
 native-width-integer	clamd/thrmgr.c	752	    int ret = TRUE;
-native-width-integer	clamd/thrmgr.c	768	        int items;
-native-width-integer	clamd/thrmgr.c	826	int thrmgr_dispatch(threadpool_t *threadpool, void *user_data)
-native-width-integer	clamd/thrmgr.c	831	int thrmgr_group_dispatch(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk)
-native-width-integer	clamd/thrmgr.c	833	    int ret;
-native-width-integer	clamd/thrmgr.c	849	int thrmgr_group_dispatch_reserved(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk)
-native-width-integer	clamd/thrmgr.c	851	    int ret;
-native-width-integer	clamd/thrmgr.c	868	int thrmgr_try_reserve(threadpool_t *threadpool)
-native-width-integer	clamd/thrmgr.c	870	    int active;
-native-width-integer	clamd/thrmgr.c	871	    int queued;
-native-width-integer	clamd/thrmgr.c	872	    int ret = FALSE;
-native-width-integer	clamd/thrmgr.c	899	    int released = FALSE;
-native-width-integer	clamd/thrmgr.c	936	int thrmgr_group_finished(jobgroup_t *group, enum thrmgr_exit exitc)
-native-width-integer	clamd/thrmgr.c	938	    int ret = 0;
-native-width-integer	clamd/thrmgr.c	976	    int needexit = 0, needfree = 0;
+native-width-integer	clamd/thrmgr.c	754	    int active;
+native-width-integer	clamd/thrmgr.c	769	        int items;
+native-width-integer	clamd/thrmgr.c	838	int thrmgr_dispatch(threadpool_t *threadpool, void *user_data)
+native-width-integer	clamd/thrmgr.c	843	int thrmgr_group_dispatch(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk)
+native-width-integer	clamd/thrmgr.c	845	    int ret;
+native-width-integer	clamd/thrmgr.c	861	int thrmgr_group_dispatch_reserved(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk)
+native-width-integer	clamd/thrmgr.c	863	    int ret;
+native-width-integer	clamd/thrmgr.c	880	int thrmgr_try_reserve(threadpool_t *threadpool)
+native-width-integer	clamd/thrmgr.c	882	    int active;
+native-width-integer	clamd/thrmgr.c	883	    int queued;
+native-width-integer	clamd/thrmgr.c	884	    int ret = FALSE;
+native-width-integer	clamd/thrmgr.c	911	    int released = FALSE;
+native-width-integer	clamd/thrmgr.c	948	int thrmgr_group_finished(jobgroup_t *group, enum thrmgr_exit exitc)
+native-width-integer	clamd/thrmgr.c	950	    int ret = 0;
+native-width-integer	clamd/thrmgr.c	988	    int needexit = 0, needfree = 0;
 native-width-integer	clamd/thrmgr.h	107	threadpool_t *thrmgr_new(int max_threads, int idle_timeout, int max_queue, void (*handler)(void *));
 native-width-integer	clamd/thrmgr.h	110	int thrmgr_dispatch(threadpool_t *threadpool, void *user_data);
 native-width-integer	clamd/thrmgr.h	111	int thrmgr_group_dispatch(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk);
@@ -24089,6 +24090,7 @@ format-width	clamd/session.c	850	            if ((conn->group && mdprintf(desc, 
 format-width	clamd/tcpserver.c	108	    snprintf(port, sizeof(port), "%lld", optget(opts, "TCPSocket")->numarg);
 format-width	clamd/tcpserver.c	166	        snprintf(serv, sizeof(serv), "%u", (unsigned int)(optget(opts, "TCPSocket")->numarg));
 format-width	clamd/tcpserver.c	178	        logg(LOGG_INFO_NF, "TCP: Setting connection queue length to %d\n", backlog);
+format-width	clamd/thrmgr.c	1008	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
 format-width	clamd/thrmgr.c	193	        if (mdprintf(f, " (INVALID timestamps: %u)", invalids) < 0)
 format-width	clamd/thrmgr.c	196	        if (mdprintf(f, " (ERROR: %u != %u)", cnt + invalids,
 format-width	clamd/thrmgr.c	219	    STATS_MDPRINTF("POOLS: %u\n\n", cnt);
@@ -24097,13 +24099,13 @@ format-width	clamd/thrmgr.c	252	        STATS_MDPRINTF("QUEUE: %u items", pool->
 format-width	clamd/thrmgr.c	316	            STATS_MDPRINTF("MEMSTATS: heap %.3fM mmap %.3fM used %.3fM free %.3fM releasable %.3fM pools %u pools_used %.3fM pools_total %.3fM\n",
 format-width	clamd/thrmgr.c	320	            STATS_MDPRINTF("MEMSTATS: heap N/A mmap N/A used N/A free N/A releasable N/A pools %u pools_used %.3fM pools_total %.3fM\n",
 format-width	clamd/thrmgr.c	541	    logg(LOGG_INFO, "Set stacksize to %lu\n", (unsigned long int)stacksize);
-format-width	clamd/thrmgr.c	837	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	843	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	856	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	862	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	944	    logg(LOGG_DEBUG_NV, "THRMGR: group_finished: %p, %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	960	            logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
-format-width	clamd/thrmgr.c	996	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	815	             "THRMGR: dispatch accepted: active=%d queued=%d max_threads=%d max_queue=%d\n",
+format-width	clamd/thrmgr.c	849	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	855	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	868	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	874	        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	956	    logg(LOGG_DEBUG_NV, "THRMGR: group_finished: %p, %d\n", group, group->jobs);
+format-width	clamd/thrmgr.c	972	            logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
 format-width	clamdscan/clamdscan.c	185	        logg(LOGG_INFO, "Infected files: %d\n", infected);
 format-width	clamdscan/clamdscan.c	187	            logg(LOGG_INFO, "Total errors: %d\n", err);
 format-width	clamdscan/clamdscan.c	189	            logg(LOGG_INFO, "Not removed: %d\n", notremoved);
@@ -26813,7 +26815,7 @@ offset-size-arithmetic	clamd/tcpserver.c	163	            host[sizeof(host) - 1] 
 offset-size-arithmetic	clamd/tcpserver.c	166	        snprintf(serv, sizeof(serv), "%u", (unsigned int)(optget(opts, "TCPSocket")->numarg));
 offset-size-arithmetic	clamd/tcpserver.c	168	        if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
 offset-size-arithmetic	clamd/tcpserver.c	95	        t = realloc(sockets, sizeof(int) * (*nlsockets + 1));
-offset-size-arithmetic	clamd/thrmgr.c	1008	    group = malloc(sizeof(*group));
+offset-size-arithmetic	clamd/thrmgr.c	1020	    group = malloc(sizeof(*group));
 offset-size-arithmetic	clamd/thrmgr.c	123	    struct threadpool_list *new = malloc(sizeof(*new));
 offset-size-arithmetic	clamd/thrmgr.c	267	                           task->filename ? task->filename : "");
 offset-size-arithmetic	clamd/thrmgr.c	282	                    s = realloc((void *)seen, seen_cnt * sizeof(*seen));

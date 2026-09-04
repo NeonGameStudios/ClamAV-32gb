@@ -14112,7 +14112,8 @@ qualification before closure.
 
 - Keep the service proof tied to the actual run: preserve and verify the
   `parallel-client-clamd.conf` artifact (`MaxThreads=1`, `MaxQueue=2`,
-  `AlertExceedsMax=yes`) for the two simultaneous clients required by PLAN.md.
+  `AlertExceedsMax=yes`) for the two simultaneous clients required by PLAN.md,
+  and require a thread-manager dispatch event showing an accepted queued item.
 - Keep the release gate's unsupported IDs external to candidate manifests and
   reject relabeling of a required parser or matcher. Every qualified row must
   retain a unique capability binding, current source-manifest hash, safe proof
