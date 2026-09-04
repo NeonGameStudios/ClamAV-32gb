@@ -14719,3 +14719,19 @@ qualification before closure.
   full-C ABI parity, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized large-file/resource measurements, Sonic1, and final
   parser/release qualification remain required.
+
+## TAR current-source production-linked refresh — 2026-09-04
+
+- Retain the corrected current-source GCC results: `tar` 9/9,
+  `tar_corpus` 1/1, and `tar_member` 9/9 with zero failures and errors after
+  materializing `clam.tar.gz` and `clam.exe_and_mail.tar.gz` through the
+  existing repository CMake targets.
+- Retain the member boundaries for GNU base-256/PAX handoff, global/local PAX
+  scope, zero-length and skipped entries, EOF cleanup, in-range and end-of-map
+  member-data read failures, and end-of-map truncation, plus exact nested-MZP
+  corpus detection.
+- Keep these as focused current-source evidence rather than completion:
+  complete GNU base-256/PAX/member corpus, full-C ABI parity, sanitizer,
+  certified Linux x86-64, production-CVD/service,
+  materialized-large-file/resource, Sonic1, and final parser/release
+  qualification remain required.

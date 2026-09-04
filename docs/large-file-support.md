@@ -13502,3 +13502,19 @@ was needed. This is focused NSIS/SFX evidence, not complete family
 qualification. Complete NSIS/SFX corpus, full-C ABI parity, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file/
 resource, Sonic1, and final parser/release evidence remain required.
+
+## TAR current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC matrix passes with zero failures and
+errors: `tar` 9/9, `tar_corpus` 1/1, and `tar_member` 9/9. The checked-in
+`clam.tar.gz` and `clam.exe_and_mail.tar.gz` fixtures were materialized through
+the existing repository CMake targets. Coverage includes TAR admission and
+end-marker classification, GNU base-256 and PAX sizes, local/global PAX scope,
+zero-length and skipped entries, bounded member staging, EOF cleanup,
+fail-visible in-range and end-of-map reads, shared deadlines, and exact nested
+MZP corpus handoff.
+
+This is focused current-source evidence, not complete TAR qualification.
+Complete GNU base-256/PAX/member corpus, full-C ABI parity, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file/
+resource, Sonic1, and final parser/release evidence remain required.

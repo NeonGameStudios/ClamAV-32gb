@@ -24005,6 +24005,23 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file/resource, Sonic1, and final parser/release evidence
 remain open.
 
+## TAR current-source production-linked refresh — 2026-09-04
+
+The authoritative TAR scanner and unit-test source were rerun in the existing
+Docker production-linked GCC harness after materializing `clam.tar.gz` and
+`clam.exe_and_mail.tar.gz` through their repository CMake targets. The focused
+matrix passes with zero failures and errors: `tar` 9/9, `tar_corpus` 1/1, and
+`tar_member` 9/9. The member matrix covers GNU base-256 and PAX handoff,
+global/local PAX scope, zero-length and skipped entries, EOF cleanup,
+in-range and end-of-map member-data read failures, and end-of-map truncation;
+the corpus case reaches the exact offset-0 nested MZP matcher.
+
+This refresh also corrects the capability-manifest counts from the earlier
+8/8 focused record. TAR remains pending family qualification: complete GNU
+base-256/PAX/member corpus, full-C ABI parity, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file/resource, Sonic1,
+and final parser/release evidence remain open.
+
 ## MSEXPAND current-source production-linked refresh — 2026-09-04
 
 The authoritative MSEXPAND source and test source were present in the
