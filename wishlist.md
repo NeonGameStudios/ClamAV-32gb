@@ -55,6 +55,21 @@
   service, materialized-large-file, Sonic1, resource, and final PLAN.md
   qualification remain required.
 
+## ALZ current-source focused audit — 2026-09-04
+
+- The bounded ALZ reader, exact compressed-range checks, CRC validation,
+  output-size admission, temporary spool cleanup, metadata bridge, and shared
+  limits were reviewed without finding another safe production fix in this
+  pass.
+- Retain current-source production-linked GCC evidence at `rust_alz` 2/2 over
+  malformed member-CRC handling and the five materialized stored, deflate, and
+  BZip2 archives; the relinked shared `rust_map` case passes 2/2. Existing
+  isolated ALZ evidence remains 42/42 module tests and 139/139 locked
+  production-linked Rust tests.
+- Keep complete ALZ corpus breadth, full C/Rust ABI, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
+  and final PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

@@ -72,6 +72,24 @@ apply in this pass. Full BCJ2/archive corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
 and final PLAN.md qualification remain required.
 
+## ALZ current-source focused audit — 2026-09-04
+
+The ALZ Rust parser and scanner bridge were reviewed against the bounded
+reader, exact compressed-range, CRC, output-size, temporary-spool, cleanup,
+metadata, and shared-limit contracts. No additional safe production fix was
+identified in this pass. The current-source production-linked GCC cases pass
+`rust_alz` 2/2 over malformed member-CRC handling and the five materialized
+stored, deflate, and BZip2 archives; the shared `rust_map` case now passes 2/2
+after the current test binary was relinked and rerun. The isolated ALZ module
+suite remains documented at 42/42 and the locked production-linked Rust suite
+at 139/139.
+
+This is focused current-source evidence, not final ALZ qualification. Complete
+ALZ variant and malformed corpus breadth, current full-C-ABI execution,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and final requirement-by-
+requirement PLAN.md qualification remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of

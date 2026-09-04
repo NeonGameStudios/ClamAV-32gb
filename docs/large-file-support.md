@@ -95,6 +95,22 @@ corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, resource, Sonic1, and final PLAN.md qualification
 remain required.
 
+## Current ALZ focused audit — 2026-09-04
+
+The bounded ALZ reader, exact compressed-range checks, CRC validation,
+output-size admission, temporary-spool cleanup, metadata bridge, and shared
+limits were reviewed against the current source without finding another safe
+production fix in this pass. The production-linked GCC cases pass `rust_alz`
+2/2 over malformed member-CRC handling and the five materialized stored,
+deflate, and BZip2 archives; the relinked shared `rust_map` case passes 2/2.
+Existing isolated ALZ evidence remains 42/42 module tests and 139/139 locked
+production-linked Rust tests.
+
+These are focused current-source results, not final ALZ qualification. Complete
+ALZ corpus breadth, full C/Rust ABI, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
 and 21 deliberate unsupported rows; 576 rows remain release-blocking under
