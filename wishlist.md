@@ -14582,3 +14582,16 @@ qualification before closure.
   guards. The public linked run, complete MIME corpus, sanitizer, certified
   Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
   resource, and final PLAN.md qualification remain required.
+
+## LHA/LZH source-synchronized production-linked refresh — 2026-09-04
+
+- Keep the Rust LHA/LZH boundary fail-visible for callback reads, malformed
+  headers and terminators, unsupported methods, decoder output, allocation,
+  limits, and sticky incomplete state. The zero-member direct regression must
+  provide the format-required zero terminator explicitly; uninitialized test
+  bytes must not decide parser status.
+- Retain the 10/10 production-linked `rust_lha` result, 2/2 `rust_map` result,
+  exact nested PNG corpus detection, source hashes, and source guards. Add
+  complete variant corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, resource, Sonic1, and
+  final LHA/parser-release qualification before closure.
