@@ -205,6 +205,23 @@
   Linux x86-64, production-CVD/service, materialized-large-file, resource,
   Sonic1, and final PLAN.md qualification open.
 
+## ELF current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `elf` 4/4,
+  `elf_map` 17/17, and `elf_corpus` 1/1. Coverage includes header/program/
+  section admission, callback-versus-truncation classification, version and
+  header-size validation, metadata deadlines, native-width ELF32/ELF64
+  coordinates, table-cursor overflow, unpack-entry boundaries, and exact
+  embedded-MZ matching.
+- The native-coordinate ELF32 fixture now expects `CL_EPARSE` and verifies the
+  exact `ELF64 coordinates exceed the legacy 32-bit metadata ABI` diagnostic;
+  its legacy bridge is intentionally incomplete even though native metadata is
+  preserved. No additional safe ELF production fix was identified in this
+  pass.
+- Keep complete ELF/unpacker corpus breadth, full C/Rust ABI, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  resource, Sonic1, and final PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

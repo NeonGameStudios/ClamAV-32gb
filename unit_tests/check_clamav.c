@@ -53657,7 +53657,7 @@ START_TEST(test_elf32_table_coordinates_are_native_width)
     ctx.fmap = map;
 
     ret = cli_elfheader(&ctx, &exeinfo);
-    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert_uint_ge(state.max_offset,
                       state.section_offset + 2U * sizeof(struct elf_section_hdr32));
     ck_assert_uint_eq(exeinfo.ep64, (uint64_t)state.section_offset + 0x100U);
@@ -53666,6 +53666,8 @@ START_TEST(test_elf32_table_coordinates_are_native_width)
     ck_assert_uint_eq(exeinfo.sections64[1].raw, 0x2000);
     ck_assert_uint_eq(exeinfo.sections64[1].rva, 0x1000);
     ck_assert_uint_eq(exeinfo.sections64[1].rsz, 0x100);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ELF64 coordinates exceed the legacy 32-bit metadata ABI");
     ck_assert(ctx.scan_incomplete);
 
     cli_exe_info_destroy(&exeinfo);

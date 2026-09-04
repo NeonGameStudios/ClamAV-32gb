@@ -1325,6 +1325,23 @@ five-byte extra field. Complete EGG/SFX corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
 final parser/release qualification remain required.
 
+## Current ELF focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `elf` 4/4, `elf_map` 17/17,
+and `elf_corpus` 1/1. Coverage includes ELF header/program/section admission,
+callback-versus-truncation classification, version and header-size validation,
+metadata deadlines, native-width ELF32/ELF64 coordinates, table-cursor overflow,
+unpack-entry boundaries, and exact embedded-MZ matching.
+
+The relinked `elf` case exposed a stale expectation in the native-coordinate
+ELF32 fixture. Because the fixture deliberately sets the legacy 32-bit metadata
+bridge incomplete, `cli_elfheader()` must return `CL_EPARSE` while preserving
+the native metadata and exact sticky diagnostic. The focused assertion now
+matches that fail-visible contract. No additional safe ELF production fix was
+identified in this pass. Complete ELF/unpacker corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.
+
 ## BZip2/GZip materialized corpus refresh — 2026-08-31
 
 The canonical compressed scanner and unit-test sources were transferred into

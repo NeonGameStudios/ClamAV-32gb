@@ -260,6 +260,28 @@ certified Linux x86-64, production-CVD/service, materialized-large-file,
 resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
 remain open.
 
+## ELF current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `elf` 4/4, `elf_map`
+17/17, and `elf_corpus` 1/1. Coverage includes ELF header/program/section
+admission, callback-versus-truncation classification, version and header-size
+validation, metadata deadlines, native-width ELF32/ELF64 coordinates, table
+cursor overflow, unpack-entry boundaries, and the exact embedded-MZ corpus
+match.
+
+The relinked `elf` case exposed one stale assertion: the ELF32 native-coordinate
+fixture deliberately marks the legacy 32-bit metadata bridge incomplete, so
+the documented reconciliation contract requires `CL_EPARSE`, not the former
+`CL_SUCCESS`. The assertion now checks the exact sticky diagnostic. Review of
+the current ELF header, table traversal, native metadata, deadline, bytecode,
+and cleanup paths found no additional safe production fix in this pass.
+
+This is focused current-source evidence, not final ELF qualification. Complete
+ELF/unpacker corpus breadth, full current-C-ABI execution, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, resource,
+Sonic1, and final requirement-by-requirement PLAN.md qualification remain
+open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of
