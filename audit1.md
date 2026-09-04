@@ -304,6 +304,30 @@ Linux x86-64, production-CVD/service, materialized-large-file, resource,
 Sonic1, and final requirement-by-requirement PLAN.md qualification remain
 open.
 
+## GPT current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `gpt` 9/9,
+`partition_map` 5/5, and `gpt_corpus` 1/1. Coverage includes null and missing
+map/engine/options admission, protective-MBR and sector-size probe read
+failures, primary-table read failure not hidden by secondary fallback, invalid
+secondary headers, physical secondary-location validation, invalid and typed
+zero-start partition entries, sticky incomplete state, timeout boundaries, and
+exact nested partition child matching.
+
+The relinked `gpt` case exposed a stale typed-zero-start fixture: its primary
+partition table was checksummed but the identical secondary table was left
+empty, so current validation correctly reported a secondary-table mismatch
+first. The fixture now mirrors the table into LBA 4 and the invariant is
+source-guarded. Review of the current GPT header, table CRC, native-width LBA,
+intersection, deadline, and nested-scan paths found no additional safe
+production fix in this pass.
+
+This is focused current-source evidence, not final GPT qualification. Complete
+GPT/partition-image corpus breadth, full current-C-ABI execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
+remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of

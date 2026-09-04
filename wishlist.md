@@ -238,6 +238,24 @@
   Linux x86-64, production-CVD/service, materialized-large-file, resource,
   Sonic1, and final PLAN.md qualification open.
 
+## GPT current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `gpt` 9/9,
+  `partition_map` 5/5, and `gpt_corpus` 1/1. Coverage includes direct
+  admission, protective-MBR and sector-size probe failures, primary-table
+  read failure not hidden by secondary fallback, physical secondary-location
+  validation, invalid/typed-zero-start partitions, timeout, sticky completion,
+  and exact nested partition-child matching.
+- The typed-zero-start fixture now mirrors its checksummed primary partition
+  table into the secondary table at LBA 4; the source guard retains this
+  invariant so secondary validation cannot mask the intended partition-entry
+  assertion. No additional safe GPT production fix was identified in this
+  pass.
+- Keep complete GPT/partition-image corpus breadth, full C/Rust ABI, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
+  open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

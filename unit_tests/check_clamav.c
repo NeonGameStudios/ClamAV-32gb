@@ -33010,6 +33010,7 @@ START_TEST(test_gpt_typed_zero_length_partition_is_fail_visible)
     data[510] = 0x55;
     data[511] = 0xaa;
     table[0] = 1;
+    memcpy(data + 4 * 512, table, sizeof(struct gpt_partition_entry));
     table_crc = (uint32_t)crc32(0L, table, sizeof(struct gpt_partition_entry));
 
     memcpy(primary, GPT_SIGNATURE_STR, 8);

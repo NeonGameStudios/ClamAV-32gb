@@ -1360,6 +1360,24 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## Current GPT focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `gpt` 9/9,
+`partition_map` 5/5, and `gpt_corpus` 1/1. Coverage includes null and missing
+map/engine/options admission, protective-MBR and sector-size probe failures,
+primary-table read failure not hidden by secondary fallback, invalid secondary
+headers, physical secondary-location validation, invalid and typed zero-start
+partitions, timeout, sticky completion, and exact nested partition-child
+matching.
+
+The relinked `gpt` case found a stale typed-zero-start fixture: it checksummed
+the primary partition table but left the identical secondary table empty. The
+fixture now mirrors the table into LBA 4 and the invariant is source-guarded.
+No additional safe GPT parser change was identified. Complete GPT/partition-
+image corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## BZip2/GZip materialized corpus refresh — 2026-08-31
 
 The canonical compressed scanner and unit-test sources were transferred into
