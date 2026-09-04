@@ -14792,3 +14792,15 @@ qualification before closure.
   injection, certified Linux x86-64, production-CVD/service,
   materialized-large-file/resource, Sonic1, unsupported or mixed-chain, and
   final parser/release qualification open.
+
+
+## PNG current-source production-linked refresh — 2026-09-04
+
+- Retain the corrected current-source GCC results: `png` 9/9 and
+  `png_corpus` 1/1 with zero failures and errors, including the unaligned-IHDR
+  boundary and exact nested-MZP handoff after the materialized `logo.png`
+  fixture.
+- Treat this as the replacement for the older 8/8 focused count, not final
+  image qualification. Keep complete image corpus, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file/resource, Sonic1,
+  and final parser/release qualification open.

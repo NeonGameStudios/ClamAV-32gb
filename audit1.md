@@ -24129,3 +24129,16 @@ This is current GCC parser/map/corpus evidence, not final PDF qualification.
 Production/sanitizer scanner fault injection, Sonic1, materialized
 multi-gigabyte encrypted streams, unsupported or mixed chains, complete PDF
 /filter corpus, and final parser/release evidence remain open.
+
+
+## PNG current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC PNG matrix passes with zero failures
+and errors: `png` 9/9, including unaligned-IHDR and structural/chunk fault
+boundaries, and `png_corpus` 1/1 with exact nested MZP handoff after the
+materialized `logo.png` fixture. This corrects the older 8/8 focused count.
+
+This is focused current-source evidence, not complete PNG/image qualification.
+Complete image corpus, sanitizer, certified Linux x86-64, materialized-large-
+file/resource, production-CVD/service, Sonic1, and final parser/release
+evidence remain open.

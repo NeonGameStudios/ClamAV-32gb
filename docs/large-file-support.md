@@ -13577,3 +13577,16 @@ Complete PDF/filter corpus, production/sanitizer scanner fault injection,
 certified Linux x86-64, production-CVD/service, materialized-large-file/
 resource, Sonic1, unsupported or mixed chains, and final parser/release evidence
 remain required.
+
+
+## PNG current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC matrix passes with zero failures and
+errors: `png` 9/9, including the unaligned-IHDR and structural/chunk boundaries,
+and `png_corpus` 1/1 with exact nested-MZP handoff after the materialized
+`logo.png` fixture. This replaces the older 8/8 focused count.
+
+This is focused current-source evidence, not complete PNG/image qualification.
+Complete image corpus, sanitizer, certified Linux x86-64,
+materialized-large-file/resource, production-CVD/service, Sonic1, and final
+parser/release evidence remain required.
