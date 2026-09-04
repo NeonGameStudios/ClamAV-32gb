@@ -9049,7 +9049,11 @@ static cl_error_t scan_common(
             }
         } else {
             char buf[64];
-            cli_dbgmsg("scan_common: gettimeofday error: %s\n", cli_strerror(errno, buf, 64));
+            cli_errmsg("scan_common: gettimeofday error: %s; scan deadline could not be established\n",
+                       cli_strerror(errno, buf, 64));
+            cli_mark_scan_incomplete(&ctx, "scan deadline could not be established");
+            status = CL_ERESOURCE;
+            goto done;
         }
     }
 

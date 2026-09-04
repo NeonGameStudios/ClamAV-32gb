@@ -170,7 +170,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         CLAMAV_TEST_MSXML_READER_WRAP
         CLAMAV_TEST_7Z_EXTRACT_WRAP
         CLAMAV_TEST_BYTECODE_CONTEXT_WRAP
-        CLAMAV_TEST_BYTECODE_PREPARE_WRAP)
+        CLAMAV_TEST_BYTECODE_PREPARE_WRAP
+        CLAMAV_TEST_GETTIMEOFDAY_WRAP)
     target_link_options(check_clamav PRIVATE
         "-Wl,--wrap=mspack_create_cab_decompressor"
         "-Wl,--wrap=mspack_create_chm_decompressor"
@@ -217,7 +218,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=cli_magic_scan_desc_type_reserved"
         "-Wl,--wrap=cli_bytecode_context_alloc"
         "-Wl,--wrap=cli_bytecode_run"
-        "-Wl,--wrap=cli_bytecode_context_destroy")
+        "-Wl,--wrap=cli_bytecode_context_destroy"
+        "-Wl,--wrap=gettimeofday")
     if(HAVE_STAT64)
         target_link_options(check_clamav PRIVATE "-Wl,--wrap=stat64")
     endif()

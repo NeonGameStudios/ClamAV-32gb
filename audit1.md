@@ -1,5 +1,19 @@
 # Independent read-only audit of audit.md
 
+## Scan-deadline initialization failure — 2026-09-03
+
+The common scan entry previously logged and ignored a `gettimeofday()` failure
+while establishing `MaxScanTime`, leaving the zero-initialized deadline in
+place and allowing later deadline checks to become no-ops. The path now
+returns `CL_ERESOURCE`, marks the root scan incomplete and non-cacheable, and
+stops before parser work. The Linux static production-linked regression
+`test_scan_deadline_initialization_failure_is_fail_visible` injects the clock
+failure through the existing linker-wrapper harness and checks status,
+cleared outputs, and fmap cache taint; source guards and a dedicated pending
+manifest row bind the evidence. Full current-source, sanitizer, service,
+production-CVD, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain open.
+
 ## Deferred fileblob scan context — 2026-09-03
 
 MIME body spools retain their active scan owner in `temporary_ctx` while
@@ -23120,8 +23134,8 @@ falls back to local-only scanning. The registered regression is
 `test_zip_masked_sfx_confirmed_malformed_zip64_is_fail_visible`.
 
 The remaining parser-family finding is not being relabeled as complete. The
-manifest currently has 588 rows, 0 qualified, 143 bounded, 424 pending, and
-574 release-blocking rows. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
+manifest currently has 589 rows, 0 qualified, 143 bounded, 425 pending, and
+575 release-blocking rows. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
 bytecode, logical, and YARA still need current-source production-linked,
 sanitizer, corpus, resource, service, materialized-large-file, and Sonic1
 evidence. Historical wording is subordinate to the current status header in

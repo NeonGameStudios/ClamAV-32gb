@@ -1,5 +1,16 @@
 # Wishlist
 
+## Scan-deadline initialization failure — 2026-09-03
+
+- Keep a configured `MaxScanTime` fail-closed when `gettimeofday()` cannot
+  establish the deadline: return `CL_ERESOURCE`, mark the root incomplete and
+  non-cacheable, and stop before parser work rather than allowing an unset
+  deadline to bypass checks.
+- Retain the production-linked Linux static fault-injection regression,
+  source guards, and capability evidence. Complete current-source linked,
+  sanitizer, service, production-CVD, materialized-large-file, resource,
+  Sonic1, and final PLAN.md qualification remain required.
+
 ## Legacy PDF ASCIIHex end-marker admission — 2026-09-03
 
 - Keep the encrypted/object-stream compatibility decoder fail-visible when
@@ -14106,8 +14117,8 @@ qualification before closure.
 - Do not promote bounded controls to qualification for MIME, OneNote, PE
   unpackers, RAR, 7-Zip, ZIP, PDF, bytecode, logical matching, or YARA until
   current-source linked corpus, sanitizer, resource, service, materialized,
-  and Sonic1 evidence is complete. The current 588-row manifest remains at
-  0 qualified and 574 release blockers.
+  and Sonic1 evidence is complete. The current 589-row manifest remains at
+  0 qualified and 575 release blockers.
 - Keep historical support-document sections labeled as evidence snapshots;
   the current status header and final requirement-by-requirement PLAN.md audit
   remain authoritative.

@@ -15,6 +15,9 @@
 #include <json.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef _WIN32
+#include <sys/time.h>
+#endif
 #include <dirent.h>
 #include <zlib.h>
 #include <bzlib.h>
@@ -6315,6 +6318,51 @@ START_TEST(test_timeout_policy_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_GETTIMEOFDAY_WRAP
+START_TEST(test_scan_deadline_initialization_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "scan deadline initialization regression";
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = (const char *)(uintptr_t)1U;
+    uint64_t scanned = UINT64_MAX;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    g_engine->maxscantime = 1;
+    clamav_test_fail_gettimeofday = 1;
+    ret = cl_scanmap_ex2(map,
+                          "scan-deadline-initialization",
+                          &verdict,
+                          &last_alert,
+                          &scanned,
+                          g_engine,
+                          &options,
+                          NULL,
+                          NULL,
+                          NULL,
+                          NULL,
+                          NULL,
+                          NULL,
+                          NULL);
+
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert_uint_eq(scanned, 0U);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(clamav_test_fail_gettimeofday, 0);
+
+    g_engine->maxscantime = 0;
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_parser_error_statuses_are_fail_closed)
 {
     static const cl_error_t parser_errors[] = {
@@ -6593,6 +6641,22 @@ static void free_testfiles(void)
 }
 
 static int inited = 0;
+
+#ifdef CLAMAV_TEST_GETTIMEOFDAY_WRAP
+extern int __real_gettimeofday(struct timeval *tv, void *tz);
+static int clamav_test_fail_gettimeofday;
+
+int __wrap_gettimeofday(struct timeval *tv, void *tz)
+{
+    if (clamav_test_fail_gettimeofday) {
+        clamav_test_fail_gettimeofday = 0;
+        errno                          = EIO;
+        return -1;
+    }
+
+    return __real_gettimeofday(tv, tz);
+}
+#endif
 
 static void engine_setup(void)
 {
@@ -63471,6 +63535,9 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
+#ifdef CLAMAV_TEST_GETTIMEOFDAY_WRAP
+    tcase_add_test(tc_cl, test_scan_deadline_initialization_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_parser_error_statuses_are_fail_closed);
     tcase_add_test(tc_cl, test_sequential_parser_status_merge_is_fail_closed);
     tcase_add_test(tc_cl, test_fmap_ffi_layout);
