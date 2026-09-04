@@ -3,8 +3,8 @@
 ## Current qualification warning — 2026-09-04
 
 This branch is not release-qualified. At the current audit point, the
-authoritative manifest records 589 rows: 0 qualified, 143 bounded, 425
-pending, and 21 unsupported capabilities; 575 rows remain release-blocking,
+authoritative manifest records 590 rows: 0 qualified, 143 bounded, 426
+pending, and 21 unsupported capabilities; 576 rows remain release-blocking,
 including 7 required rows marked unsupported, and all 80 enabled parser rows
 still require release evidence. The August 14–18
 “current-head” statements below are historical and remain bound to their named
@@ -35,8 +35,7 @@ historical results below must not be read as current release qualification.
 **Status date:** 2026-09-04
 
 The current implementation audit is anchored at
-`130770f2debb3d3c2a7b2205e62af239e4fbf4eb`; the latest documentation-only
-follow-up is `a494d05c55d3c87c76f38dc82ad962b845a1ef43`. The requirement-level
+`139974d5`; the latest source and documentation commit. The requirement-level
 disposition is recorded in `audit1.md` under “Current PLAN.md requirement
 audit”.
 
