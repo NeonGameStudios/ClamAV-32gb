@@ -156,6 +156,22 @@
   Linux x86-64, production-CVD/service, materialized-large-file, resource,
   Sonic1, and final PLAN.md qualification open.
 
+## CPIO current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `cpio` 2/2,
+  `cpio_crc` 4/4, `cpio_numeric` 4/4, and `cpio_map` 7/7. The materialized
+  corpus reaches old-binary big-endian/little-endian, NEWC, and ODC fixtures;
+  CRC coverage includes exact nested matching, checksum mismatch/read failure,
+  and a tail match after multiple 64 KiB checksum windows.
+- Keep context/engine/options/map admission, header/member range/read failure,
+  malformed-name/numeric-field, impossible-next-header, timeout, and old
+  high-word-size coverage. No additional safe CPIO source fix was identified;
+  checksum and member traversal remain bounded, deadline-checked, and
+  fail-visible.
+- Keep complete CPIO corpus breadth, full C/Rust ABI, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, resource,
+  Sonic1, and final PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

@@ -208,6 +208,24 @@ Complete CAB/SFX corpus breadth, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, resource, Sonic1, and final
 PLAN.md qualification remain required.
 
+## Current CPIO focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `cpio` 2/2, `cpio_crc`
+4/4, `cpio_numeric` 4/4, and `cpio_map` 7/7. The materialized corpus reaches
+old-binary big-endian/little-endian, NEWC, and ODC fixtures; CRC coverage
+includes exact nested matching, checksum mismatch/read failure, and a tail
+signature after multiple 64 KiB checksum windows. Map and numeric coverage
+includes context/engine/options/map admission, header/member range and read
+failures, malformed or unterminated names and numeric fields, impossible next
+headers, timeout, zero name sizes, and old-format high-word size handling.
+Review found no additional safe CPIO source fix in this pass; checksum and
+member traversal remain bounded, deadline-checked, and fail-visible.
+
+These are focused current-source results, not final CPIO qualification.
+Complete CPIO corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
 and 21 deliberate unsupported rows; 576 rows remain release-blocking under

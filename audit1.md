@@ -196,6 +196,26 @@ certified Linux x86-64, production-CVD/service, materialized-large-file,
 resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
 remain open.
 
+## CPIO current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `cpio` 2/2,
+`cpio_crc` 4/4, `cpio_numeric` 4/4, and `cpio_map` 7/7. The materialized
+CPIO corpus reaches the old-binary big-endian, old-binary little-endian, NEWC,
+and ODC fixtures; the CRC cases cover exact nested matching, checksum
+mismatch/read failure, and a tail signature after multiple 64 KiB checksum
+windows. Map and numeric cases cover context/engine/options/map admission,
+header/member range and read failures, missing name terminators, impossible
+next headers, zero name sizes, strict fixed-width fields, and old-format
+high-word size handling. Review of the current CPIO parser found no additional
+safe production fix in this pass; checksum and member traversal remain
+bounded, deadline-checked, and fail-visible.
+
+This is focused current-source evidence, not final CPIO qualification.
+Complete CPIO corpus breadth, full current-C-ABI execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
+remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of
