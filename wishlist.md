@@ -14110,3 +14110,15 @@ qualification before closure.
 - Keep historical support-document sections labeled as evidence snapshots;
   the current status header and final requirement-by-requirement PLAN.md audit
   remain authoritative.
+
+## Ignored-type raw coverage correction — 2026-09-03
+
+- Keep recognized `CL_TYPE_IGNORED` layers explicitly incomplete and
+  non-cacheable when no detection is found, but run the mandatory outer raw
+  matcher before and after the no-op parser branch so unsupported legacy magic
+  cannot bypass malware signatures.
+- Retain `test_ignored_file_type_is_fail_visible` for the non-detecting
+  `CL_EPARSE` path and `test_ignored_file_type_still_runs_raw_matching` for
+  exact public-API detection. Full parser-family, production-CVD, sanitizer,
+  service, materialized-large-file, Sonic1, and release qualification remain
+  required.

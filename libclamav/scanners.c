@@ -7713,7 +7713,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         goto done;
     }
 
-    if (type != CL_TYPE_IGNORED && ctx->engine->sdb) {
+    if (ctx->engine->sdb) {
         /*
          * If self protection mechanism enabled, do the scanraw() scan first
          * before extracting with a file type parser.
@@ -8218,11 +8218,12 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
      * Embedded file type recognition may re-assign the current file as a new type, or
      * it may detect embedded files. E.g. ZIP entries in a PE file (i.e. self-extracting ZIP).
      */
-    /* The outer raw matcher is mandatory for every non-ignored layer. The
-     * legacy HTMLSKIPRAW configuration could otherwise suppress this pass
-     * after an enabled HTML parser had skipped or partially normalized the
-     * input, violating the fail-closed large-file scan contract. */
-    if ((type != CL_TYPE_IGNORED) && (!ctx->engine->sdb || typercg)) {
+    /* The outer raw matcher is mandatory for every recognized layer,
+     * including explicitly unsupported ignored types. The legacy HTMLSKIPRAW
+     * configuration could otherwise suppress this pass after an enabled
+     * parser had skipped or partially normalized the input, violating the
+     * fail-closed large-file scan contract. */
+    if (!ctx->engine->sdb || typercg) {
         uint8_t raw_typercg = typercg;
 
         /* SDB-enabled engines already performed the outer raw virus scan

@@ -23121,3 +23121,17 @@ sanitizer, corpus, resource, service, materialized-large-file, and Sonic1
 evidence. Historical wording is subordinate to the current status header in
 `docs/large-file-support.md`; the branch is not release-qualified and the
 final PLAN.md requirement audit remains open.
+
+## Ignored-type raw coverage correction — 2026-09-03
+
+The explicit `CL_TYPE_IGNORED` boundary correctly made recognized legacy
+formats incomplete and non-cacheable, but it also excluded them from both raw
+matcher passes. That violated PLAN.md's mandatory outer raw-scan contract and
+could bypass a malware signature on an otherwise unsupported ignored layer.
+The pre-parser and post-parser raw conditions now include ignored types. The
+public `test_ignored_file_type_still_runs_raw_matching` regression proves an
+exact marker is detected through an explicit `CL_TYPE_IGNORED` scan, while the
+existing non-detecting regression still requires `CL_EPARSE`, sticky
+incomplete state, and cache taint. Full parser-family, production-CVD,
+sanitizer, service, materialized-large-file, Sonic1, and release qualification
+remain open.

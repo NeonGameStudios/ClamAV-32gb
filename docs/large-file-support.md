@@ -54,6 +54,12 @@ production-linked execution, sanitizer runs, production CVDs, materialized
 exact-edge files, Sonic1 measurements, service parity, release-default
 activation, and the final PLAN.md audit are still required.
 
+The ignored-type boundary has also been corrected: recognized legacy
+`CL_TYPE_IGNORED` layers remain explicitly incomplete and non-cacheable when
+no detection is found, but the mandatory outer raw matcher now runs for them.
+The public raw-detection regression and the existing non-detecting failure
+regression cover both sides of that contract.
+
 The optional fuzzy-image matcher now charges its admitted full-image fmap
 window against `MaxContiguousSize`, releases that reservation on all exits,
 and preserves `CL_EREAD` for an in-range backing-read failure. Its individual

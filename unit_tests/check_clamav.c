@@ -23660,6 +23660,45 @@ START_TEST(test_ignored_file_type_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ignored_file_type_still_runs_raw_matching)
+{
+    static const unsigned char data[] = "ID3CLAMAV-IGNORED-RAW";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    uint64_t scanned       = 0;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Ignored.Raw",
+                         "434c414d41562d49474e4e4f5245442d524157", 0, 0, 0,
+                         "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_IGNORED", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Ignored.Raw.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_binhex_truncated_data_fork_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -63393,6 +63432,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cli_magic_scan_dir_rejects_missing_engine);
     tcase_add_test(tc_cl, test_cli_magic_scan_file_rejects_invalid_inputs);
     tcase_add_test(tc_cl, test_ignored_file_type_is_fail_visible);
+    tcase_add_test(tc_cl, test_ignored_file_type_still_runs_raw_matching);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_short_resource_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_output_temporary_limit_is_fail_visible);
