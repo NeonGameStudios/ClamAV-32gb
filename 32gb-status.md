@@ -35,7 +35,7 @@ historical results below must not be read as current release qualification.
 **Status date:** 2026-09-04
 
 The current implementation audit is anchored at
-`139974d5`; the latest source and documentation commit. The requirement-level
+`94bf0943`; the latest source and documentation commit. The requirement-level
 disposition is recorded in `audit1.md` under “Current PLAN.md requirement
 audit”.
 

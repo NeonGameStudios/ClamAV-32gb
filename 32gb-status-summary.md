@@ -15,7 +15,7 @@ revisions and are not current-source release certification.
 
 The current requirement-level disposition is recorded in `audit1.md` under
 “Current PLAN.md requirement audit”. The latest implementation commit is
-`139974d5`.
+`94bf0943`.
 
 Local Linux ARM64 GCC evidence now covers the latest PDF crypt dictionaries,
 DecodeParms semantics, bounded-spool rollback, and all five bounded-filter
