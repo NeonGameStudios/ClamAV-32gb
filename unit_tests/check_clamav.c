@@ -1703,7 +1703,9 @@ START_TEST(test_cl_scanfile)
     close(fd);
 
     cli_dbgmsg("scanning (scanfile) %s\n", file);
+    clamav_test_force_nsis_bzip_decoder_end = 1;
     ret = cl_scanfile(file, &virname, &scanned, g_engine, &options);
+    clamav_test_force_nsis_bzip_decoder_end = 0;
     cli_dbgmsg("scan end (scanfile) %s\n", file);
 
     if (!FALSE_NEGATIVE) {
@@ -38341,6 +38343,36 @@ START_TEST(test_nsis_sticky_incomplete_result_is_fail_visible)
 END_TEST
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
+static size_t nsis_test_pack_bzip_payload(uint8_t *output, size_t output_size,
+                                           const uint8_t *input, size_t input_size)
+{
+    size_t input_bit;
+    size_t output_bit = 0;
+
+    if (output == NULL || input == NULL || input_size > SIZE_MAX / 8 || output_size == 0)
+        return 0;
+
+    memset(output, 0, output_size);
+    /* Keep BZIP2's first block marker byte, then remove the five-byte
+     * block-header suffix, block CRC, and randomisation bit that NSIS omits. */
+    for (input_bit = 32; input_bit < 40 || input_bit >= 113; input_bit++) {
+        uint8_t bit;
+
+        if (input_bit >= input_size * 8)
+            break;
+        bit = (uint8_t)((input[input_bit / 8] >> (7U - (input_bit % 8U))) & 1U);
+        if (output_bit >= output_size * 8)
+            return 0;
+        if (bit)
+            output[output_bit / 8] |= (uint8_t)(1U << (7U - (output_bit % 8U)));
+        output_bit++;
+        if (input_bit == 39)
+            input_bit = 112;
+    }
+
+    return (output_bit + 7U) / 8U;
+}
+
 START_TEST(test_nsis_bzip_decoder_finalization_failure_is_fail_visible)
 {
     static const uint8_t child[64] = {'M', 'Z', 'P'};
@@ -38350,39 +38382,34 @@ START_TEST(test_nsis_bzip_decoder_finalization_failure_is_fail_visible)
     cli_ctx ctx;
     fmap_t *map;
     uint8_t *bzip;
+    uint8_t *packed;
     uint8_t *archive;
     unsigned int bzip_capacity;
     unsigned int bzip_length;
-    size_t raw_length;
+    size_t packed_length;
     size_t archive_length;
     cl_error_t ret;
 
     bzip_capacity = (unsigned int)(sizeof(child) + sizeof(child) / 100U + 601U);
     bzip          = malloc(bzip_capacity);
+    packed        = calloc(1, bzip_capacity);
     ck_assert_ptr_nonnull(bzip);
+    ck_assert_ptr_nonnull(packed);
     bzip_length = bzip_capacity;
     ck_assert_int_eq(BZ2_bzBuffToBuffCompress((char *)bzip, &bzip_length, (char *)child,
                                               (unsigned int)sizeof(child), 9, 0, 30),
                      BZ_OK);
-    ck_assert_msg(bzip_length > 4U && bzip[0] == 'B' && bzip[1] == 'Z' && bzip[2] == 'h',
+    ck_assert_msg(bzip_length > 10U && bzip[0] == 'B' && bzip[1] == 'Z' && bzip[2] == 'h',
                   "unexpected BZIP2 stream header");
-
-    raw_length     = bzip_length - 4U;
-    archive_length = 0x1cU + 4U + raw_length + 4U;
-    ck_assert_msg(archive_length <= UINT32_MAX, "NSIS fixture length is not representable");
-    archive = calloc(1, archive_length);
-    ck_assert_ptr_nonnull(archive);
-    cli_writeint32(archive, UINT32_C(0xdeadbeef));
-    memcpy(archive + 4, "NullsoftInst", 12);
-    cli_writeint32(archive + 0x14, 0x1c);
-    cli_writeint32(archive + 0x18, (uint32_t)archive_length);
-    cli_writeint32(archive + 0x1c, (uint32_t)raw_length | UINT32_C(0x80000000));
-    memcpy(archive + 0x20, bzip + 4, raw_length);
+    packed_length = nsis_test_pack_bzip_payload(packed, bzip_capacity, bzip, bzip_length);
+    ck_assert_msg(packed_length > 0, "could not pack BZIP2 stream into NSIS format");
+    /* The bundled decoder stops after the first end-marker byte and leaves
+     * the remaining packed end header and CRC bytes unconsumed. */
+    ck_assert_msg(packed_length > 9U, "packed BZIP2 stream has no decoder tail");
+    packed_length -= 9U;
 
     memset(&options, 0, sizeof(options));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
-    memset(layers, 0, sizeof(layers));
-    memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
@@ -38394,6 +38421,19 @@ START_TEST(test_nsis_bzip_decoder_finalization_failure_is_fail_visible)
                      CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
 
+    archive_length = 0x1cU + 4U + packed_length + 4U;
+    ck_assert_msg(archive_length <= UINT32_MAX, "NSIS fixture length is not representable");
+    archive = calloc(1, archive_length);
+    ck_assert_ptr_nonnull(archive);
+    cli_writeint32(archive, UINT32_C(0xdeadbeef));
+    memcpy(archive + 4, "NullsoftInst", 12);
+    cli_writeint32(archive + 0x14, 0x1c);
+    cli_writeint32(archive + 0x18, (uint32_t)archive_length);
+    cli_writeint32(archive + 0x1c, (uint32_t)packed_length | UINT32_C(0x80000000));
+    memcpy(archive + 0x20, packed, packed_length);
+
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(archive, archive_length);
     ck_assert_ptr_nonnull(map);
     layers[0].fmap           = map;
@@ -38407,9 +38447,9 @@ START_TEST(test_nsis_bzip_decoder_finalization_failure_is_fail_visible)
     ctx.this_layer_tmpdir    = tmpdir;
     ctx.recursion_stack      = layers;
     ctx.recursion_stack_size = 2;
-
     clamav_test_force_nsis_bzip_decoder_end = 1;
     ret = cli_scannulsft(&ctx, 0);
+    clamav_test_force_nsis_bzip_decoder_end = 0;
     ck_assert_int_eq(ret, CL_EUNPACK);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
@@ -38418,9 +38458,10 @@ START_TEST(test_nsis_bzip_decoder_finalization_failure_is_fail_visible)
     ck_assert_int_eq(clamav_test_force_nsis_bzip_decoder_end, 0);
 
     cl_fmap_close(map);
-    cl_engine_free(scan_engine);
     free(archive);
+    free(packed);
     free(bzip);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 #endif

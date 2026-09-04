@@ -13484,3 +13484,21 @@ nested MZ detection. This is focused decoder and dispatch evidence, not
 complete SZDD qualification. Full SZDD corpus, full-C ABI parity, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file/
 resource, Sonic1, and final parser/release evidence remain required.
+
+## NSIS current-source production-linked refresh — 2026-09-04
+
+The current-source GCC production-linked matrix passes with zero failures and
+errors: `nulsft` 8/8, `nulsft_map` 2/2, and `nulsft_corpus` 1/1. The existing
+CMake target materialized the checked-in `clam-nsis.exe` corpus fixture before
+the run.
+
+The BZIP2 finalization regression now constructs the NSIS-packed bitstream
+expected by the bundled decoder, reaches successful decompression, injects
+finalization failure, and requires `CL_EUNPACK`, the exact sticky cleanup
+reason, and fmap non-cacheability. The prior failure was a test-fixture format
+mismatch: standard BZIP2 block-header bytes were passed to the NSIS-specific
+decoder layout, so cleanup was never reached. No NSIS production parser change
+was needed. This is focused NSIS/SFX evidence, not complete family
+qualification. Complete NSIS/SFX corpus, full-C ABI parity, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file/
+resource, Sonic1, and final parser/release evidence remain required.

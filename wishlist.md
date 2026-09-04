@@ -2985,6 +2985,21 @@ final parser/release qualification remain open.
   production-CVD/service, materialized-large-file, Sonic1, and final
   parser/release qualification remain required.
 
+## NSIS current-source production-linked refresh — 2026-09-04
+
+- The current-source GCC production-linked matrix passes `nulsft` 8/8,
+  `nulsft_map` 2/2, and `nulsft_corpus` 1/1 with zero failures and errors
+  after CMake materialization of `clam-nsis.exe`.
+- The BZIP2 finalization regression now constructs the NSIS-packed bitstream
+  expected by the bundled decoder, reaches successful decompression, and
+  verifies injected `CL_EUNPACK`, the exact sticky cleanup reason, and fmap
+  non-cacheability. The prior failure was a test-fixture format mismatch, not
+  a required NSIS production-code change.
+- Complete NSIS/SFX corpus, full-C ABI parity, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized large-file/resource
+  measurements, Sonic1, and final parser/release qualification remain
+  required.
+
 ## UUEncode status and zero-length block admission — 2026-08-31
 
 - Keep `uudecodeFile()`'s private negative result in an integer at the direct
