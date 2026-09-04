@@ -23858,7 +23858,7 @@ falls back to local-only scanning. The registered regression is
 
 The remaining parser-family finding is not being relabeled as complete. The
 manifest currently has 597 rows, 0 qualified, 143 bounded, 433 pending, and
-576 release-blocking rows. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
+583 release-blocking rows. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
 bytecode, logical, and YARA still need current-source production-linked,
 sanitizer, corpus, resource, service, materialized-large-file, and Sonic1
 evidence. Historical wording is subordinate to the current status header in
