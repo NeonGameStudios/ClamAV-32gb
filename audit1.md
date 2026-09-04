@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## UUEncode current-source focused audit — 2026-09-04
+
+The coherent current-source production-linked GCC harness passes the isolated
+UUEncode and embedded-mail paths: `uuencode_map` 5/5, `uuencode_corpus` 1/1,
+`mail` 16/16, `mail_api` 4/4, `mail_partial` 1/1, and `mhtml` 5/5, all with
+zero failures and errors. The corpus case reaches the exact decoded child
+marker through `CL_TYPE_UUENCODED`; the direct map cases cover explicit-map
+binding, sticky incomplete results, missing engine/context/map, and empty
+output admission. The earlier manifest counts for the embedded MIME cases
+were stale and are refreshed here; no UUEncode production-code change was
+required in this audit. This is focused current-source evidence, not complete
+UUEncode/MIME or release certification: complete corpus breadth, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and requirement-by-requirement PLAN.md qualification remain
+open.
+
 ## UDF current-source focused audit — 2026-09-04
 
 The coherent current-source production-linked GCC harness initially exposed

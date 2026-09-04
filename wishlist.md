@@ -1,5 +1,20 @@
 # Wishlist
 
+## UUEncode current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `uuencode_map` 5/5,
+  `uuencode_corpus` 1/1, `mail` 16/16, `mail_api` 4/4, `mail_partial` 1/1,
+  and `mhtml` 5/5, with zero failures and errors. The corpus reaches the
+  exact decoded child marker through `CL_TYPE_UUENCODED`.
+- The direct map cases cover explicit-map cache binding, sticky incomplete
+  results, missing context/map/engine, empty output admission, and the
+  specific fileblob read/resource/create statuses. The previous embedded MIME
+  counts were stale; refresh the manifest and retain these current counts.
+- No UUEncode production-code change was needed in this audit. Keep complete
+  UUEncode/MIME corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, resource, Sonic1, and
+  final PLAN.md qualification open.
+
 ## UDF current-source focused audit — 2026-09-04
 
 - Retain current-source production-linked GCC evidence at `udf_map` 14/14 and

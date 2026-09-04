@@ -703,6 +703,20 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## UUEncode current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC harness passes `uuencode_map` 5/5,
+`uuencode_corpus` 1/1, `mail` 16/16, `mail_api` 4/4, `mail_partial` 1/1,
+and `mhtml` 5/5 with zero failures and errors. The corpus reaches the exact
+decoded child marker through `CL_TYPE_UUENCODED`, and direct map cases cover
+explicit-map binding, sticky incomplete results, missing context/map/engine,
+empty output admission, and required fileblob statuses. The prior embedded
+MIME counts were stale; no UUEncode production-code change was needed in this
+refresh. This remains focused evidence, not final UUEncode/MIME or release
+certification; complete corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 ## UDF current-source focused audit — 2026-09-04
 
 The current-source production-linked GCC UDF run exposed two evidence defects:
