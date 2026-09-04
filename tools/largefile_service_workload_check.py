@@ -135,8 +135,8 @@ def expected_workloads() -> dict[str, tuple[str, str, bool]]:
     expected["edge-clamdscan-stdin"] = ("service", "edge", False)
     for label in ("edge_contscan", "edge_multiscan", "edge_allmatch", "edge_fildes", "edge_instream"):
         expected[label] = ("service", "edge", False)
-    for worker in (1, 2, 3, 4):
-        expected[f"clamd-parallel-client-{worker}"] = ("service", "edge", False)
+    for client in (1, 2):
+        expected[f"clamd-parallel-client-{client}"] = ("service", "edge", False)
     expected["milter-exact-edge"] = ("milter", "-", False)
     return expected
 
@@ -322,7 +322,7 @@ def main(argv: list[str]) -> int:
                 or exact_wire.group(3) != "34359738368"
                 or exact_wire.group(4) != "34359738349"
                 or exact_wire.group(6) != "34359738368"
-                or exact_wire.group(7) == ""
+                or exact_wire.group(7) != "0"
                 or exact_wire.group(8) != "34359738349"
                 or int(exact_wire.group(6)) > MAX_LOGICAL_BYTES
                 or int(exact_wire.group(7)) < 0

@@ -231,17 +231,22 @@ qualification remain open.
 
 ## Qualification-gate and confirmed-ZIP audit follow-up — 2026-09-03
 
-The service qualification stress workload now starts four simultaneous
-clients against one certified worker and restores `MaxThreads=1` and
-`MaxQueue=2` before the service artifact is finalized. The service evidence
-checker verifies those two settings instead of trusting only summary markers.
+The service qualification stress workload now starts the two simultaneous
+clients required by PLAN.md against the actual certified one-worker,
+two-entry-queue profile. The captured service artifact is the configuration
+consumed by that run, and the service evidence checker verifies those settings
+instead of trusting only summary markers.
 
 The release gate now treats `unsupported` on any required non-`unsupported`
 row as release-blocking, and it requires each qualified row to name a unique
 capability binding whose source-manifest hash and proof artifact hash verify.
-This closes both the status-waiver and generic-evidence loopholes. The current
-manifest remains far from release-ready: it has no qualified rows and still
-contains hundreds of bounded or pending requirements.
+Proof artifacts must additionally self-identify the exact capability kind/ID,
+source hash, evidence type, and pass result; custom manifests are explicitly
+test-only. The former MIME, OneNote, PE-unpacker, PDF-residual, and
+XAR-residual allowlist entries are now pending work, not release waivers. This
+closes the status-waiver and generic-evidence loopholes. The current manifest
+remains far from release-ready: it has no qualified rows and still contains
+hundreds of bounded or pending requirements.
 
 The milter exact-edge harness now binds the structured report's
 `logical_bytes` to the exact 32-GiB root, requires the effective
@@ -533,15 +538,14 @@ PE/parser-release qualification remain required.
 
 ## Parallel-client service evidence vocabulary — 2026-09-03
 
-The service gate already exercised four simultaneous `clamdscan` clients with
-`MaxThreads=1`; its stress queue is temporary and the final artifact restores
-`MaxThreads=1` and `MaxQueue=2`. The evidence labels nevertheless called the
-requests “multiworker” while separately recording one worker, which made the
-service contract ambiguous. The labels now identify parallel clients, and the
-post-run verifier requires explicit one-worker, four-client, stress-queue, and
-pass markers. This is a qualification-contract correction, not evidence that
-four daemon workers are supported. The real service, production-CVD, exact
-32-GiB milter, resource, sanitizer, and Sonic1 runs remain release gates.
+The service gate now exercises two simultaneous `clamdscan` clients with
+`MaxThreads=1` and `MaxQueue=2`, exactly matching the PLAN.md contention
+requirement and the daemon admission profile. The evidence labels identify
+parallel clients, and the post-run verifier requires explicit one-worker,
+two-client, two-entry-queue, and pass markers. This is a qualification-contract
+correction, not evidence that multiple daemon workers are supported. The real
+service, production-CVD, exact-edge milter, resource, sanitizer, and Sonic1
+runs remain release gates.
 
 ## MEW reconstructed-coordinate admission — 2026-09-03
 
@@ -23090,16 +23094,18 @@ Sonic1, resource, and final MIME/parser-release qualification remain required.
 
 The current branch audit's service contradiction is closed by preserving the
 actual parallel stress configuration as `provenance/parallel-client-clamd.conf`.
-The artifact is independently checked for `MaxThreads=1`, `MaxQueue=8`, and
-`AlertExceedsMax=yes`; the final sealed service configuration remains
-`MaxThreads=1` and `MaxQueue=2`. Four simultaneous clients are therefore
-client concurrency, not four daemon workers.
+The artifact is independently checked for `MaxThreads=1`, `MaxQueue=2`, and
+`AlertExceedsMax=yes`; the two simultaneous clients are run against that same
+configuration, so the evidence cannot be satisfied by a temporary multi-entry
+stress profile or by merely rewriting a config after the run.
 
 The release gate is also fail-closed against relabeling. Its unsupported set
 comes from `tools/largefile_unsupported_allowlist.sh`, not the candidate
 manifest, and the release-readiness regression rejects a required parser
 changed to `kind=unsupported`. Qualified rows additionally require an exact
-capability binding, source-manifest hash, proof path, and proof hash.
+capability binding, source-manifest hash, safe proof path, proof hash, and
+self-bound proof metadata; custom candidate manifests are restricted to the
+explicit `--test-manifest` mode.
 
 The milter finding is resolved at the harness/verifier layer: the exact-edge
 run distinguishes the 32-GiB milter message limit from clamd's 64-GiB logical
@@ -23114,8 +23120,8 @@ falls back to local-only scanning. The registered regression is
 `test_zip_masked_sfx_confirmed_malformed_zip64_is_fail_visible`.
 
 The remaining parser-family finding is not being relabeled as complete. The
-manifest currently has 588 rows, 0 qualified, 143 bounded, 419 pending, and
-569 release-blocking rows. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
+manifest currently has 588 rows, 0 qualified, 143 bounded, 424 pending, and
+574 release-blocking rows. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
 bytecode, logical, and YARA still need current-source production-linked,
 sanitizer, corpus, resource, service, materialized-large-file, and Sonic1
 evidence. Historical wording is subordinate to the current status header in

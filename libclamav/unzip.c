@@ -3133,6 +3133,18 @@ static cl_error_t find_central_directory_header(
                 if (cli_readint32(zip64_eocd) != ZIP_MAGIC_ZIP64_END)
                     goto next_eocd;
 
+                /* The fixed ZIP64 EOCD fields occupy 56 bytes in total,
+                 * while the size field excludes the 12-byte signature/size
+                 * prefix.  Do not trust the fixed-field window unless the
+                 * record itself declares at least that much structure and
+                 * fits inside the containing map. */
+                if (cli_readint64(zip64_eocd + 4) < ZIP64_END_RECORD_SIZE - 12U ||
+                    (uint64_t)(ZIP64_END_RECORD_SIZE - 12U) >
+                        (uint64_t)(map->len - (size_t)zip64_offset - 12U) ||
+                    cli_readint64(zip64_eocd + 4) >
+                        (uint64_t)(map->len - (size_t)zip64_offset - 12U))
+                    goto next_eocd;
+
                 cd_size   = cli_readint64(zip64_eocd + 40);
                 cd_offset = cli_readint64(zip64_eocd + 48);
             }

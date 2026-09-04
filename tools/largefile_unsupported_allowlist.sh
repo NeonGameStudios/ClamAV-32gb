@@ -5,8 +5,8 @@
 # release-readiness validators; it is intentionally not derived from the
 # candidate manifest being validated.
 
-largefile_deliberate_unsupported_ids='native-windows-memory-scan macos-first-release aarch64-first-release autoit-ea05-output-over-4g bytecode-v1-over-4g elf-legacy-metadata-over-4g egg-compat-member-over-1g egg-legacy-string-metadata-over-1g legacy-callback-over-1g image-fuzzy-over-contiguous-limit onenote-modern-over-256m xar-subdocument-over-1g mail-legacy-materialization-over-64m pe32plus-legacy-x86-analysis pe-legacy-metadata-over-4g pe-unpacker-over-1g pdf-stream-over-1g vba-callback-over-1g vba-project-directory-without-file-mapping'
-largefile_required_unsupported_ids='macos-first-release aarch64-first-release autoit-ea05-output-over-4g bytecode-v1-over-4g egg-compat-member-over-1g egg-legacy-string-metadata-over-1g elf-legacy-metadata-over-4g legacy-callback-over-1g image-fuzzy-over-contiguous-limit pe32plus-legacy-x86-analysis pdf-stream-over-1g vba-callback-over-1g vba-project-directory-without-file-mapping'
+largefile_deliberate_unsupported_ids='native-windows-memory-scan macos-first-release aarch64-first-release autoit-ea05-output-over-4g bytecode-v1-over-4g elf-legacy-metadata-over-4g egg-compat-member-over-1g egg-legacy-string-metadata-over-1g legacy-callback-over-1g image-fuzzy-over-contiguous-limit pe32plus-legacy-x86-analysis pe-legacy-metadata-over-4g vba-callback-over-1g vba-project-directory-without-file-mapping'
+largefile_required_unsupported_ids='macos-first-release aarch64-first-release autoit-ea05-output-over-4g bytecode-v1-over-4g egg-compat-member-over-1g egg-legacy-string-metadata-over-1g elf-legacy-metadata-over-4g legacy-callback-over-1g image-fuzzy-over-contiguous-limit pe32plus-legacy-x86-analysis vba-callback-over-1g vba-project-directory-without-file-mapping'
 
 largefile_unsupported_id_is_allowed()
 {

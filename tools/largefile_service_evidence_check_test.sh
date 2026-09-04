@@ -45,7 +45,7 @@ source_manifest_sha256=$(sha256sum "$out/provenance/source-manifest.txt" | awk '
 source_commit=$source_manifest_sha256
 source_tree=$source_manifest_sha256
 printf 'MaxThreads 1\nMaxQueue 2\nMaxScanTime 14400000\nAlertExceedsMax yes\n' > "$out/clamd.conf"
-printf 'MaxThreads 1\nMaxQueue 8\nMaxScanTime 14400000\nAlertExceedsMax yes\n' > \
+printf 'MaxThreads 1\nMaxQueue 2\nMaxScanTime 14400000\nAlertExceedsMax yes\n' > \
     "$out/provenance/parallel-client-clamd.conf"
 parallel_profile=$out/provenance/parallel-client-clamd.conf
 printf 'CMAKE_HOME_DIRECTORY:INTERNAL=%s\n' "$root" > "$out/provenance/CMakeCache.txt"
@@ -116,7 +116,7 @@ printf 'label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n' > "$workl
 clean_report_json=$(printf '{"version":1,"completion":"COMPLETE","file_type":"CL_TYPE_DATA","status":0,"verdict":0,"root_size":%s,"logical_bytes":%s,"max_scan_size":68719476736,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
 detection_report_json=$(printf '{"version":1,"completion":"DETECTION_TERMINATED","file_type":"CL_TYPE_DATA","status":0,"verdict":2,"last_alert":"Synthetic.Detection","last_alert_offset":123,"root_size":%s,"logical_bytes":%s,"max_scan_size":68719476736,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
 report_json=$clean_report_json
-workload_labels='production_cvd_scanreport production_cvd_contscanreport production_cvd_multiscanreport production_cvd_allmatchscan production_cvd_fildesreport production_cvd_instreamreport production-clamscan clamd-serial-queue-1 clamd-serial-queue-2 production_cvd production_cvd_fildes production_cvd_instream materialized_warm materialized_cold parser_expansion edge-clamscan edge-clamscan-stdin edge-clamdscan-stdin edge_contscan edge_multiscan edge_allmatch edge_fildes edge_instream clamd-parallel-client-1 clamd-parallel-client-2 clamd-parallel-client-3 clamd-parallel-client-4'
+workload_labels='production_cvd_scanreport production_cvd_contscanreport production_cvd_multiscanreport production_cvd_allmatchscan production_cvd_fildesreport production_cvd_instreamreport production-clamscan clamd-serial-queue-1 clamd-serial-queue-2 production_cvd production_cvd_fildes production_cvd_instream materialized_warm materialized_cold parser_expansion edge-clamscan edge-clamscan-stdin edge-clamdscan-stdin edge_contscan edge_multiscan edge_allmatch edge_fildes edge_instream clamd-parallel-client-1 clamd-parallel-client-2'
 for label in $workload_labels; do
     case "$label" in
         production_cvd_scanreport|production_cvd_contscanreport|production_cvd_multiscanreport|production_cvd_allmatchscan|production_cvd_fildesreport|production_cvd_instreamreport)
@@ -177,7 +177,7 @@ for label in $workload_labels; do
         "$label" "$kind" "$role" "$workload_input" "$log_rel" "$report_rel" \
         "$workload_status" "$check_offset" >> "$workload_results"
 done
-printf 'milter manual wire: body_bytes=34359738316 message_bytes=34359738368 limit_bytes=34359738368 result=r signature=Milter.Protocol.Test offset=34359738349 sha256=7ec57c684966d38ba3db215be49cffa732317898dc8868439be681ba6ed6d50e completion=DETECTION_TERMINATED root_size=34359738368 logical_bytes=34359738368 max_scan_size=68719476736 skipped_operations=1 last_alert_offset=34359738349\n' > \
+printf 'milter manual wire: body_bytes=34359738316 message_bytes=34359738368 limit_bytes=34359738368 result=r signature=Milter.Protocol.Test offset=34359738349 sha256=7ec57c684966d38ba3db215be49cffa732317898dc8868439be681ba6ed6d50e completion=DETECTION_TERMINATED root_size=34359738368 logical_bytes=34359738368 max_scan_size=68719476736 skipped_operations=0 last_alert_offset=34359738349\n' > \
     "$out/logs/milter-exact-edge.log"
 printf 'milter-exact-edge\tmilter\t-\t-\tlogs/milter-exact-edge.log\t-\t0\tno\n' >> "$workload_results"
 
@@ -227,8 +227,8 @@ loaded_dependencies_sha256=$(sha256sum "$loaded_dependencies" | awk '{ print $1 
     printf 'service_interpreters_unchanged=pass\n'
     printf 'clamd_parallel_clients=pass\n'
     printf 'parallel_worker_count=1\n'
-    printf 'parallel_client_count=4\n'
-    printf 'parallel_test_max_queue=8\n'
+    printf 'parallel_client_count=2\n'
+    printf 'parallel_test_max_queue=2\n'
     printf 'parallel_profile=provenance/parallel-client-clamd.conf\n'
     printf 'parallel_queue=pass\n'
     printf 'service_build_identity=pass\n'
@@ -272,6 +272,16 @@ if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/nu
     exit 1
 fi
 cp "$tmp/milter-exact-edge.good" "$out/logs/milter-exact-edge.log"
+
+sed 's/skipped_operations=0/skipped_operations=1/' \
+    "$tmp/milter-exact-edge.good" > "$out/logs/milter-exact-edge.log"
+write_checksum_manifest
+if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted a milter workload with a skipped operation' >&2
+    exit 1
+fi
+cp "$tmp/milter-exact-edge.good" "$out/logs/milter-exact-edge.log"
+write_checksum_manifest
 
 cp "$loaded_dependencies" "$tmp/loaded-dependencies.good"
 cp "$out/provenance/service-build-identity.txt" "$tmp/service-build-identity.loader-good"

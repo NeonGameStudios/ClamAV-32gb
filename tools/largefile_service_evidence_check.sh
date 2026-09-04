@@ -103,10 +103,10 @@ grep -Fx 'clamd_parallel_clients=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no parallel-client pass marker'
 grep -Fx 'parallel_worker_count=1' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence does not prove the parallel-client test used one worker'
-grep -Fx 'parallel_client_count=4' "$summary" >/dev/null 2>&1 ||
-    fail 'service evidence does not prove four parallel clients were exercised'
-grep -Fx 'parallel_test_max_queue=8' "$summary" >/dev/null 2>&1 ||
-    fail 'service evidence does not identify the parallel-client stress queue'
+grep -Fx 'parallel_client_count=2' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence does not prove the two required parallel clients were exercised'
+grep -Fx 'parallel_test_max_queue=2' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence does not identify the certified parallel-client queue'
 grep -Fx 'parallel_profile=provenance/parallel-client-clamd.conf' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence does not bind the parallel-client stress profile'
 grep -Fx 'parallel_queue=pass' "$summary" >/dev/null 2>&1 ||
@@ -207,8 +207,8 @@ parallel_profile_max_threads=$(awk '$1 == "MaxThreads" { count++; value = $2 } E
     fail 'parallel-client stress profile is outside the certified single-worker profile'
 parallel_profile_max_queue=$(awk '$1 == "MaxQueue" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$parallel_profile") ||
     fail 'parallel-client stress profile has no unique MaxQueue entry'
-[ "$parallel_profile_max_queue" = 8 ] ||
-    fail 'parallel-client stress profile does not use the declared eight-entry queue'
+[ "$parallel_profile_max_queue" = 2 ] ||
+    fail 'parallel-client stress profile is outside the certified two-entry queue'
 parallel_profile_alert=$(awk '$1 == "AlertExceedsMax" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$parallel_profile") ||
     fail 'parallel-client stress profile has no unique AlertExceedsMax entry'
 [ "$parallel_profile_alert" = yes ] ||

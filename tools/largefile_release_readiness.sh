@@ -13,9 +13,9 @@ status_only=0
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
-        --manifest)
+        --test-manifest)
             [ "$#" -ge 2 ] || {
-                echo 'missing path after --manifest' >&2
+                echo 'missing path after --test-manifest' >&2
                 exit 2
             }
             manifest=$2
@@ -27,7 +27,7 @@ while [ "$#" -gt 0 ]; do
             shift
             ;;
         *)
-            echo "usage: $0 [--manifest PATH] [--status]" >&2
+            echo "usage: $0 [--test-manifest PATH] [--status]" >&2
             exit 2
             ;;
     esac
@@ -70,6 +70,7 @@ verify_capability_binding()
     expected_kind=$2
     expected_id=$3
     expected_source_hash=$4
+    expected_evidence_type=$5
     binding_file=$evidence_directory/provenance/capability-bindings.tsv
 
     [ -f "$binding_file" ] || {
@@ -142,6 +143,28 @@ EOF
         echo "qualified release evidence proof hash does not match for ${expected_kind}:${expected_id}" >&2
         return 1
     }
+
+    # A unique proof pathname and hash are not enough: a copied or generic
+    # artifact must identify the exact capability and evidence verifier it
+    # claims to qualify. Keep this binding metadata deliberately small and
+    # machine-readable so every verifier can produce it alongside its proof.
+    if ! awk -F '=' -v wanted_kind="$expected_kind" -v wanted_id="$expected_id" \
+        -v wanted_source="$expected_source_hash" -v wanted_type="$expected_evidence_type" '
+        $1 == "proof_format_version" && NF == 2 { version++; valid_version = ($2 == "1") }
+        $1 == "capability_kind" && NF == 2 { kind++; valid_kind = ($2 == wanted_kind) }
+        $1 == "capability_id" && NF == 2 { id++; valid_id = ($2 == wanted_id) }
+        $1 == "source_manifest_sha256" && NF == 2 { source++; valid_source = ($2 == wanted_source) }
+        $1 == "evidence_type" && NF == 2 { evidence++; valid_evidence = ($2 == wanted_type) }
+        $1 == "qualification_result" && NF == 2 { result++; valid_result = ($2 == "pass") }
+        END {
+            exit !(version == 1 && valid_version && kind == 1 && valid_kind &&
+                   id == 1 && valid_id && source == 1 && valid_source &&
+                   evidence == 1 && valid_evidence && result == 1 && valid_result)
+        }
+    ' "$proof_path"; then
+        echo "qualified release evidence proof is not self-bound to ${expected_evidence_type}:${expected_kind}:${expected_id}" >&2
+        return 1
+    fi
 }
 
 verify_qualified_evidence()
@@ -191,6 +214,13 @@ verify_qualified_evidence()
             echo "qualified release evidence has no verifier type: $evidence_token" >&2
             return 1
         }
+        case "$evidence_type" in
+            runtime|service|test) ;;
+            *)
+                echo "unknown qualified release evidence verifier: $evidence_type" >&2
+                return 1
+                ;;
+        esac
         case "$evidence_directory" in
             /*) ;;
             *)
@@ -209,7 +239,7 @@ verify_qualified_evidence()
             return 1
         }
         verify_capability_binding "$evidence_directory" "$capability_kind" \
-            "$capability_id" "$expected_hash"
+            "$capability_id" "$expected_hash" "$evidence_type"
 
         case "$evidence_type" in
             runtime)

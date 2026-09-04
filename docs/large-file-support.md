@@ -9,7 +9,7 @@ gate passes.
 
 The authoritative capability manifest is a coverage contract, not a release
 certificate. At the current audit point it contains 588 capability rows, with
-0 qualified rows and 569 release-blocking bounded, pending, or required-
+0 qualified rows and 574 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical
 entries below preserve engineering evidence and open work; they do not
 substitute for current-source linked execution,
@@ -21,9 +21,9 @@ PLAN.md completion audit.
 
 The latest branch audit identified six risks. Findings 1–4 are now addressed
 as control and fail-closed behavior: the service evidence preserves the actual
-four-client stress profile in a separately verified artifact proving one
-daemon worker and an eight-entry stress queue, then verifies the sealed
-one-worker/two-entry release configuration; the release gate uses an external
+two-client contention run in a separately verified artifact proving one daemon
+worker and the certified two-entry queue, with the same configuration consumed
+by the run and the verifier; the release gate uses an external
 allowlist and rejects required parser relabeling; the milter exact-edge run
 binds the 32-GiB message limit separately from clamd's 64-GiB logical budget
 and checks the deterministic tail signature, offset, completion, skip count,
@@ -31,8 +31,8 @@ and stream digest; and EOCD-confirmed malformed ZIP/ZIP64 metadata cannot fall
 back to local-header scanning.
 
 Finding 5 remains the principal implementation gap, not a closed defect. The
-manifest still reports 588 rows with 0 qualified, 143 bounded, 419 pending,
-and 26 deliberate unsupported rows; 569 rows remain release-blocking under
+manifest still reports 588 rows with 0 qualified, 143 bounded, 424 pending,
+and 21 deliberate unsupported rows; 574 rows remain release-blocking under
 the current gate. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
 bytecode, logical matching, and YARA still require complete current-source
 production-linked execution, sanitizer evidence, corpus breadth, and the
@@ -48,7 +48,7 @@ results, resource measurements, service parity, release-default activation,
 and the final requirement-by-requirement PLAN.md audit remain open.
 
 The current branch is therefore materially not on the release-certification
-side of the plan: 143 rows are bounded, 419 remain pending, and 26 are
+side of the plan: 143 rows are bounded, 424 remain pending, and 21 are
 explicitly unsupported. The remaining parser work, current-source
 production-linked execution, sanitizer runs, production CVDs, materialized
 exact-edge files, Sonic1 measurements, service parity, release-default
@@ -188,8 +188,13 @@ The deliberate-unsupported release allowlist is now maintained separately from
 candidate manifests and is enforced by both the manifest validator and the
 release-readiness gate. A required parser or matcher cannot become release
 clean by changing its row kind to `unsupported`; only explicitly listed
-first-release exclusions are accepted. The control regression covers both a
-real exclusion and a relabelled `CL_TYPE_PDF` row.
+first-release exclusions are accepted. The former MIME, OneNote, PE-unpacker,
+PDF-residual, and XAR-residual exceptions are pending work, not release
+waivers. Qualified proof artifacts must also carry self-describing exact
+capability kind/ID, source-manifest hash, evidence type, and pass metadata; a
+custom manifest is accepted only through the explicitly test-only
+`--test-manifest` mode. The control regression covers real exclusions,
+relabeling, and mismatched proof identity.
 
 The direct MBR helper now rejects a null caller buffer before fixed-record
 pointer arithmetic, with a registered fail-visible regression. Confirmed

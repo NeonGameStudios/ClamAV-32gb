@@ -25,7 +25,8 @@ mkdir -p "$work/evidence/provenance"
 printf 'synthetic release source manifest\n' > "$work/evidence/provenance/source-manifest.txt"
 source_manifest_sha256=$(hash_fixture "$work/evidence/provenance/source-manifest.txt")
 mkdir -p "$work/evidence/proof"
-printf 'capability-specific synthetic proof\n' > "$work/evidence/proof/library-path.txt"
+printf 'proof_format_version=1\ncapability_kind=library\ncapability_id=path\nsource_manifest_sha256=%s\nevidence_type=test\nqualification_result=pass\ncapability-specific synthetic proof\n' \
+    "$source_manifest_sha256" > "$work/evidence/proof/library-path.txt"
 proof_sha256=$(hash_fixture "$work/evidence/proof/library-path.txt")
 printf 'kind\tid\tstatus\tsource_manifest_sha256\tproof\tproof_sha256\n' \
     > "$work/evidence/provenance/capability-bindings.tsv"
@@ -39,12 +40,32 @@ expect_rejected()
     expected=$2
     candidate=$3
 
-    if "$gate" --manifest "$candidate" --status > "$work/rejected.out" 2> "$work/rejected.err"; then
+    if "$gate" --test-manifest "$candidate" --status > "$work/rejected.out" 2> "$work/rejected.err"; then
         echo "release gate accepted $label" >&2
         exit 1
     fi
     grep -F "$expected" "$work/rejected.err" >/dev/null
 }
+
+printf 'proof_format_version=1\ncapability_kind=library\ncapability_id=other\nsource_manifest_sha256=%s\nevidence_type=test\nqualification_result=pass\n' \
+    "$source_manifest_sha256" > "$work/evidence/proof/wrong-capability.txt"
+wrong_capability_proof_sha256=$(hash_fixture "$work/evidence/proof/wrong-capability.txt")
+cp "$work/evidence/provenance/capability-bindings.tsv" \
+    "$work/evidence/provenance/capability-bindings.good.tsv"
+{
+    printf 'kind\tid\tstatus\tsource_manifest_sha256\tproof\tproof_sha256\n'
+    printf 'library\tpath\tqualified\t%s\tproof/wrong-capability.txt\t%s\n' \
+        "$source_manifest_sha256" "$wrong_capability_proof_sha256"
+} > "$work/evidence/provenance/capability-bindings.tsv"
+{
+    write_header
+    printf 'library\tpath\tqualified\tlibclamav/scanners.c\trelease_evidence=test:%s source_manifest_sha256=%s\n' \
+        "$work/evidence" "$source_manifest_sha256"
+} > "$work/wrong-capability-binding.tsv"
+expect_rejected 'a proof bound to a different capability ID' \
+    'proof is not self-bound to test:library:path' "$work/wrong-capability-binding.tsv"
+mv "$work/evidence/provenance/capability-bindings.good.tsv" \
+    "$work/evidence/provenance/capability-bindings.tsv"
 
 {
     write_header
@@ -53,7 +74,7 @@ expect_rejected()
     printf 'unsupported\tnative-windows-memory-scan\tunsupported\tCMakeLists.txt\texplicit incomplete\n'
 } > "$work/ready.tsv"
 
-"$gate" --manifest "$work/ready.tsv" > "$work/ready.out"
+"$gate" --test-manifest "$work/ready.tsv" > "$work/ready.out"
 grep -F 'release_readiness=test-manifest-pass' "$work/ready.out" >/dev/null
 
 {
@@ -73,7 +94,7 @@ for blocked_status in bounded pending unsupported; do
         printf 'parser\tCL_TYPE_PDF\t%s\tlibclamav/pdf.c\trelease evidence required\n' "$blocked_status"
     } > "$work/blocked.tsv"
 
-    if "$gate" --manifest "$work/blocked.tsv" > "$work/blocked.out" 2> "$work/blocked.err"; then
+    if "$gate" --test-manifest "$work/blocked.tsv" > "$work/blocked.out" 2> "$work/blocked.err"; then
         echo "release gate accepted a $blocked_status capability" >&2
         exit 1
     fi
@@ -83,7 +104,7 @@ for blocked_status in bounded pending unsupported; do
     else
         grep -F "$blocked_status" "$work/blocked.err" >/dev/null
     fi
-    if "$gate" --manifest "$work/blocked.tsv" --status > "$work/status.out"; then
+    if "$gate" --test-manifest "$work/blocked.tsv" --status > "$work/status.out"; then
         echo "release gate status mode accepted a $blocked_status capability" >&2
         exit 1
     fi
@@ -95,7 +116,7 @@ done
     printf 'parser\tCL_TYPE_PDF\tunknown\tlibclamav/pdf.c\tinvalid\n'
 } > "$work/invalid.tsv"
 
-if "$gate" --manifest "$work/invalid.tsv" --status >/dev/null 2>&1; then
+if "$gate" --test-manifest "$work/invalid.tsv" --status >/dev/null 2>&1; then
     echo 'release gate accepted an unknown capability status' >&2
     exit 1
 fi
@@ -165,5 +186,11 @@ if "$gate" --unknown >/dev/null 2>&1; then
     echo 'release gate accepted an unknown option' >&2
     exit 1
 fi
+
+if "$gate" --manifest "$work/ready.tsv" >/dev/null 2> "$work/legacy-option.err"; then
+    echo 'release gate accepted the old synthetic-manifest option' >&2
+    exit 1
+fi
+grep -F 'usage:' "$work/legacy-option.err" >/dev/null
 
 echo 'large-file release readiness tests passed'

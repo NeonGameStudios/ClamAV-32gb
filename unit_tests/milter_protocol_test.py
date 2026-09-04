@@ -4,7 +4,7 @@
 
 The default wire fixture deliberately uses a small limit so the test remains
 fast and does not allocate a multi-gigabyte message.  Set MILTER_EXACT_EDGE=1
-for a manual, literal 32 GiB body transfer; that mode streams fixed-size
+for a manual, literal 32 GiB message transfer; that mode streams fixed-size
 chunks and is not part of the default CTest run.  The 4 GiB/32 GiB arithmetic
 and overflow boundaries remain covered by check_clamfi_quota.  For bounded
 diagnostics, MILTER_WIRE_LIMIT_BYTES can select a smaller manual limit and
@@ -478,6 +478,8 @@ def main():
             skipped_operations = report_metadata.group(2)
             if int(logical_bytes) != message_size or int(logical_bytes) > CERTIFIED_MAX_SCAN_SIZE:
                 raise RuntimeError("milter exact-edge logical-byte accounting or budget was invalid")
+            if int(skipped_operations) != 0:
+                raise RuntimeError("milter exact-edge scan skipped a required operation")
             if "infected by Milter.Protocol.Test" not in milter_text:
                 raise RuntimeError("milter log does not prove the expected infection name")
             if "MailMaterialization" in milter_text or "Limits.Exceeded" in milter_text:

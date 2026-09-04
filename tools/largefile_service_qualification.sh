@@ -1210,12 +1210,12 @@ printf 'edge_clamdscan_fildes=pass\n' >> "$out/service-summary.txt"
 run_service_scan edge edge_instream "$edge_file" --stream
 printf 'edge_clamdscan_instream=pass\n' >> "$out/service-summary.txt"
 
-# Exercise four simultaneous clamdscan clients against the certified single
-# worker. This deliberately uses a larger temporary queue only to keep all
-# clients admitted while the one worker drains them; the final evidence
-# configuration is restored to the release profile (MaxThreads=1, MaxQueue=2).
+# Exercise the two simultaneous clamdscan clients required by PLAN.md against
+# the actual certified single-worker/two-entry profile. The first request must
+# occupy the sole worker while the second remains queued; the configuration
+# copied into evidence is the configuration consumed by both requests.
 stop_service
-start_service "$edge_db" 1 8
+start_service "$edge_db" 1 2
 cp "$config" "$service_parallel_profile"
 parallel_profile_max_threads=$(awk '$1 == "MaxThreads" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$service_parallel_profile") || {
     echo 'parallel-client stress profile has no unique MaxThreads entry' >&2
@@ -1229,8 +1229,8 @@ parallel_profile_max_queue=$(awk '$1 == "MaxQueue" { count++; value = $2 } END {
     echo 'parallel-client stress profile has no unique MaxQueue entry' >&2
     exit 1
 }
-[ "$parallel_profile_max_queue" = 8 ] || {
-    echo 'parallel-client stress profile does not use the declared eight-entry queue' >&2
+[ "$parallel_profile_max_queue" = 2 ] || {
+    echo 'parallel-client stress profile is not the certified two-entry queue' >&2
     exit 1
 }
 parallel_profile_alert=$(awk '$1 == "AlertExceedsMax" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$service_parallel_profile") || {
@@ -1244,12 +1244,12 @@ parallel_profile_alert=$(awk '$1 == "AlertExceedsMax" { count++; value = $2 } EN
 multi_dir="$out/logs/clamd-parallel-client"
 mkdir -p "$multi_dir"
 multi_pids=
-worker=1
-while [ "$worker" -le 4 ]; do
-        multi_log="$multi_dir/worker-$worker.log"
-        multi_time="$multi_dir/worker-$worker.time"
-        multi_status_file="$multi_dir/worker-$worker.status"
-        multi_report="$out/reports/clamd-parallel-client-$worker.jsonl"
+client=1
+while [ "$client" -le 2 ]; do
+        multi_log="$multi_dir/client-$client.log"
+        multi_time="$multi_dir/client-$client.time"
+        multi_status_file="$multi_dir/client-$client.status"
+        multi_report="$out/reports/clamd-parallel-client-$client.jsonl"
         (
             status=0
             "/usr/bin/time" -f '%e %M' -o "$multi_time" \
@@ -1259,7 +1259,7 @@ while [ "$worker" -le 4 ]; do
         printf '%s\n' "$status" > "$multi_status_file"
     ) &
     multi_pids="$multi_pids $!"
-    worker=$((worker + 1))
+    client=$((client + 1))
 done
 multi_running=1
 while [ "$multi_running" -eq 1 ]; do
@@ -1279,50 +1279,49 @@ multi_worker_status=0
 for multi_pid in $multi_pids; do
     wait "$multi_pid" || multi_worker_status=1
 done
-worker=1
-while [ "$worker" -le 4 ]; do
-    multi_log="$multi_dir/worker-$worker.log"
-    multi_time="$multi_dir/worker-$worker.time"
-    multi_status_file="$multi_dir/worker-$worker.status"
-    multi_report="$out/reports/clamd-parallel-client-$worker.jsonl"
+client=1
+while [ "$client" -le 2 ]; do
+    multi_log="$multi_dir/client-$client.log"
+    multi_time="$multi_dir/client-$client.time"
+    multi_status_file="$multi_dir/client-$client.status"
+    multi_report="$out/reports/clamd-parallel-client-$client.jsonl"
     multi_status=$(sed -n '1p' "$multi_status_file" 2>/dev/null || true)
     oracle_load edge "$edge_file"
     oracle_status=$multi_status
-    if ! check_oracle_output "clamd-parallel-client-$worker" "$multi_log" "$multi_report" yes no service "$edge_file"; then
-        echo "clamd parallel-client request $worker failed" >&2
+    if ! check_oracle_output "clamd-parallel-client-$client" "$multi_log" "$multi_report" yes no service "$edge_file"; then
+        echo "clamd parallel-client request $client failed" >&2
         exit 1
     fi
     multi_elapsed=$(awk 'NF == 2 && $1 ~ /^[0-9]+([.][0-9]+)?$/ && $2 ~ /^[0-9]+$/ { print $1 }' "$multi_time")
     multi_rss=$(awk 'NF == 2 && $1 ~ /^[0-9]+([.][0-9]+)?$/ && $2 ~ /^[0-9]+$/ { print $2 }' "$multi_time")
     if [ -z "$multi_elapsed" ] || [ -z "$multi_rss" ]; then
-        echo "clamd parallel-client request $worker has malformed timing/RSS evidence" >&2
+        echo "clamd parallel-client request $client has malformed timing/RSS evidence" >&2
         exit 1
     fi
     if ! awk -v elapsed="$multi_elapsed" -v budget="$latency_budget_s" 'BEGIN { exit !(elapsed <= budget) }'; then
-        echo "clamd parallel-client request $worker exceeded latency budget" >&2
+        echo "clamd parallel-client request $client exceeded latency budget" >&2
         exit 1
     fi
     if [ "$multi_rss" -gt "$rss_budget_kb" ]; then
         echo "clamd parallel-client RSS exceeded budget: $multi_rss > $rss_budget_kb" >&2
         exit 1
     fi
-    printf 'clamd_parallel_client_%s_elapsed_s=%s\n' "$worker" "$multi_elapsed" >> "$out/service-summary.txt"
-    printf 'clamd_parallel_client_%s_peak_rss_kb=%s\n' "$worker" "$multi_rss" >> "$out/service-summary.txt"
-    worker=$((worker + 1))
+    printf 'clamd_parallel_client_%s_elapsed_s=%s\n' "$client" "$multi_elapsed" >> "$out/service-summary.txt"
+    printf 'clamd_parallel_client_%s_peak_rss_kb=%s\n' "$client" "$multi_rss" >> "$out/service-summary.txt"
+    client=$((client + 1))
 done
-printf 'clamd_parallel_client_count=4\n' >> "$out/service-summary.txt"
+printf 'clamd_parallel_client_count=2\n' >> "$out/service-summary.txt"
 printf 'clamd_parallel_clients=pass\n' >> "$out/service-summary.txt"
 printf 'parallel_worker_count=1\n' >> "$out/service-summary.txt"
-printf 'parallel_client_count=4\n' >> "$out/service-summary.txt"
-printf 'parallel_test_max_queue=8\n' >> "$out/service-summary.txt"
+printf 'parallel_client_count=2\n' >> "$out/service-summary.txt"
+printf 'parallel_test_max_queue=2\n' >> "$out/service-summary.txt"
 printf 'parallel_profile=provenance/parallel-client-clamd.conf\n' >> "$out/service-summary.txt"
 printf 'parallel_queue=pass\n' >> "$out/service-summary.txt"
 
-# Do not leave the stress queue setting in the service artifact.  The
-# configuration consumed by the evidence verifier and release gate must be
-# exactly the certified one-worker/two-queue profile.
+# Stop the run only after the certified profile has been exercised. The
+# configuration consumed by the evidence verifier and release gate is the same
+# one-worker/two-queue profile captured before the two-client test.
 stop_service
-write_config "$edge_db" 1 2
 
 for elapsed_file in "$out"/logs/*.elapsed; do
     if ! awk -v budget="$latency_budget_s" '{ if ($1 > budget) exit 1 }' "$elapsed_file"; then

@@ -179,9 +179,9 @@ signature qualification remain required.
 
 ## Qualification gate and exact-edge follow-up — 2026-09-03
 
-- Keep the service contention proof at four simultaneous clients against the
-  single-worker profile, and require the final evidence configuration to be
-  `MaxThreads=1` and `MaxQueue=2`.
+- Keep the service contention proof at two simultaneous clients against the
+  actual single-worker/two-entry-queue profile, and require the captured run
+  configuration to be `MaxThreads=1` and `MaxQueue=2`.
 - Keep release readiness blocked for every required row that is bounded,
   pending, or marked unsupported. Every future qualified row must carry a
   unique capability binding with a current source-manifest hash and a
@@ -13964,10 +13964,10 @@ qualification remain open.
 
 ## Parallel-client service evidence vocabulary — 2026-09-03
 
-- Keep the clamd service stress test explicit: four simultaneous clients,
-  one daemon worker, a temporary queue of eight, and a restored release
-  configuration of `MaxThreads=1`/`MaxQueue=2`; evidence must carry and verify
-  each value rather than using a “multiworker” label.
+- Keep the clamd service contention test explicit: two simultaneous clients,
+  one daemon worker, and the certified two-entry queue with
+  `MaxThreads=1`/`MaxQueue=2`; evidence must carry and verify the values from
+  the configuration actually used rather than using a “multiworker” label.
 
 ## MEW reconstructed-coordinate admission — 2026-09-03
 
@@ -14088,13 +14088,14 @@ qualification before closure.
 ## Six-finding reconciliation — 2026-09-03
 
 - Keep the service proof tied to the actual run: preserve and verify the
-  `parallel-client-clamd.conf` artifact (`MaxThreads=1`, `MaxQueue=8`,
-  `AlertExceedsMax=yes`) for four simultaneous clients, then seal the final
-  release configuration as `MaxThreads=1`, `MaxQueue=2`.
+  `parallel-client-clamd.conf` artifact (`MaxThreads=1`, `MaxQueue=2`,
+  `AlertExceedsMax=yes`) for the two simultaneous clients required by PLAN.md.
 - Keep the release gate's unsupported IDs external to candidate manifests and
   reject relabeling of a required parser or matcher. Every qualified row must
   retain a unique capability binding, current source-manifest hash, safe proof
-  path, and matching proof hash.
+  path, matching proof hash, and self-describing exact kind/ID, evidence type,
+  source hash, and pass metadata; synthetic manifests must use the explicit
+  test-only gate mode.
 - Keep milter exact-edge evidence explicit: 32-GiB message limit, 64-GiB
   clamd logical budget, deterministic tail signature/offset, completion,
   skipped-operation count, and fixed stream digest. Current production-CVD,
@@ -14106,7 +14107,7 @@ qualification before closure.
   unpackers, RAR, 7-Zip, ZIP, PDF, bytecode, logical matching, or YARA until
   current-source linked corpus, sanitizer, resource, service, materialized,
   and Sonic1 evidence is complete. The current 588-row manifest remains at
-  0 qualified and 569 release blockers.
+  0 qualified and 574 release blockers.
 - Keep historical support-document sections labeled as evidence snapshots;
   the current status header and final requirement-by-requirement PLAN.md audit
   remain authoritative.
