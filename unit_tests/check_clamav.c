@@ -30959,7 +30959,7 @@ START_TEST(test_mbr_ebr_outside_extent_is_fail_visible)
     uint8_t data[SECTOR_SIZE * DISK_SECTORS] = {0};
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
-    cli_scan_layer_t layer;
+    cli_scan_layer_t layers[2];
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -30988,7 +30988,7 @@ START_TEST(test_mbr_ebr_outside_extent_is_fail_visible)
     ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
 
-    memset(&layer, 0, sizeof(layer));
+    memset(layers, 0, sizeof(layers));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
@@ -30997,11 +30997,11 @@ START_TEST(test_mbr_ebr_outside_extent_is_fail_visible)
     ctx.fmap                 = map;
     ctx.dconf                = scan_engine->dconf;
     ctx.this_layer_tmpdir    = tmpdir;
-    ctx.recursion_stack      = &layer;
-    ctx.recursion_stack_size = 1;
-    layer.type               = CL_TYPE_MBR;
-    layer.size               = sizeof(data);
-    layer.fmap               = map;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_MBR;
+    layers[0].size           = sizeof(data);
+    layers[0].fmap           = map;
 
     ret = cli_scanmbr(&ctx, SECTOR_SIZE);
     ck_assert_int_eq(ret, CL_EFORMAT);

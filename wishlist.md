@@ -14610,3 +14610,17 @@ qualification before closure.
   directory fixture. Add complete executable/FAT corpus, sanitizer, certified
   Linux x86-64, production-CVD/service, materialized-large-file, resource,
   Sonic1, and final Mach-O/parser-release qualification before closure.
+
+## MBR source-synchronized production-linked refresh — 2026-09-04
+
+- Keep MBR and extended-partition traversal fail-visible for malformed
+  headers, in-range read failures, coordinate overflow, zero-length entries,
+  EBRs outside the declared extended extent, limits, timeout, and sticky
+  incomplete state. Preserve the exact partition-relative embedded-MZ handoff.
+- Retain the current-source linked results: `mbr` 10/10,
+  `partition_map` 5/5, and `mbr_corpus` 1/1. The EBR-containment fixture must
+  retain a two-entry root/child recursion stack because the valid direct scan
+  performs a bounded nested raw scan. Add complete partition-image corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, resource, Sonic1, and final MBR/parser-release
+  qualification before closure.

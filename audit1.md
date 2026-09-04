@@ -23773,7 +23773,7 @@ SHA-256 values were `libclamav_rust/src/scanners.rs`
 `e0f7b09dcc67ba897826c6fe6ff63eb85142695952f18b1f66bff362499c3c87`,
 `Cargo.toml` `949365e1f03b177e5d51adf177c889d38a857c9eaa6c5d30c63340bfa7d91b6b`,
 and `unit_tests/check_clamav.c`
-`4f33ee55a20c05ca876ff2a425d9dc285df0b3d0cf3e8b0f4cf8407af31b172f`.
+`a1ca5d2590549b8ded7a6be034cc72394890cd59eb947e194e649715a59ebc28`.
 
 The focused production-linked cases pass `rust_lha` 10/10 and `rust_map` 2/2
 with zero failures and errors. Coverage includes initial and public-API read
@@ -23804,7 +23804,7 @@ were `macho.c`
 `scanners.c`
 `ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
 and `check_clamav.c`
-`4f33ee55a20c05ca876ff2a425d9dc285df0b3d0cf3e8b0f4cf8407af31b172f`.
+`a1ca5d2590549b8ded7a6be034cc72394890cd59eb947e194e649715a59ebc28`.
 
 The focused cases pass with zero failures and errors: `macho` 12/12,
 `macho_map` 3/3, `macho_timeout` 2/2, `macho_sections` 1/1,
@@ -23851,3 +23851,34 @@ source and manifest guards still need the production-linked test execution;
 complete MIME corpus, sanitizer, certified Linux x86-64, production-CVD/
 service, materialized-large-file, Sonic1, resource, and final PLAN.md
 qualification remain required.
+qualification remain required.
+
+## MBR source-synchronized production-linked refresh — 2026-09-04
+
+The authoritative MBR/partition sources and test source were evaluated in the
+existing production-linked GCC harness. Exact SHA-256 values were `mbr.c`
+`0721cc9cf16b11f6332553fb7d1683327e7540a8e7bc330c1c9afb783d3b3df8`, `mbr.h`
+`acacb5424f4ed4a851a006879cc87df312d1553f663a79971e5180186a48121b`, `gpt.c`
+`716a858ca02323421dc21c77e2af42ed13a220d0837784638b8d1fc553168b69`, `gpt.h`
+`23e49229bb11a4552424ed13e07618025017edfd71accc62b501f53f177c5849`, `apm.c`
+`da6e04cf78bf5a2723806841386c3fda31f2754e5765f0c43ebcfdbc51661531`, `apm.h`
+`53c4ea9bb3f9903f0b4eea3265661b5c3bafed0093e68c5d7f0f1f75226dc466`,
+`scanners.c`
+`ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`, and
+`check_clamav.c`
+`a1ca5d2590549b8ded7a6be034cc72394890cd59eb947e194e649715a59ebc28`.
+
+The focused cases pass with zero failures and errors: `mbr` 10/10,
+`partition_map` 5/5, and `mbr_corpus` 1/1. Coverage includes master and
+extended-record reads, missing-map and engine/options admission, partition
+limits, zero-length entries, EBR containment, sticky completion, native-width
+coordinate overflow, timeout, and exact embedded-MZ partition matching.
+
+The initial EBR-containment failure was a fixture isolation defect: the direct
+scan performs a bounded nested raw scan, but the fixture supplied only a
+one-entry recursion stack. It now supplies a two-entry root/child stack, and
+the expected `CL_EFORMAT` boundary is reached. No MBR production-code change
+was required for this refresh. This remains focused current-source evidence,
+not final partition-image qualification. Complete corpus, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, resource,
+Sonic1, and final PLAN.md qualification remain required.

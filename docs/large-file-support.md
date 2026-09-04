@@ -13,7 +13,7 @@ The synchronized SHA-256 values are `scanners.rs`
 `e0f7b09dcc67ba897826c6fe6ff63eb85142695952f18b1f66bff362499c3c87`,
 `Cargo.toml` `949365e1f03b177e5d51adf177c889d38a857c9eaa6c5d30c63340bfa7d91b6b`,
 and `check_clamav.c`
-`4f33ee55a20c05ca876ff2a425d9dc285df0b3d0cf3e8b0f4cf8407af31b172f`.
+`a1ca5d2590549b8ded7a6be034cc72394890cd59eb947e194e649715a59ebc28`.
 The current-source production-linked cases pass `rust_lha` 10/10 and
 `rust_map` 2/2, with zero failures and errors. The focused LHA case covers
 initial and public-API read failures, required zero termination, sticky
@@ -44,7 +44,7 @@ are `macho.c`
 `scanners.c`
 `ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
 and `check_clamav.c`
-`4f33ee55a20c05ca876ff2a425d9dc285df0b3d0cf3e8b0f4cf8407af31b172f`.
+`a1ca5d2590549b8ded7a6be034cc72394890cd59eb947e194e649715a59ebc28`.
 The focused cases pass with zero failures and errors: `macho` 12/12,
 `macho_map` 3/3, `macho_timeout` 2/2, `macho_sections` 1/1,
 `macho_fat` 3/3, `macho_corpus` 2/2, `macho_unsupported` 2/2, and
