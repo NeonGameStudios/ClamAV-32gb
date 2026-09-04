@@ -2712,6 +2712,7 @@ contains unit_tests/check_clamav.c 'test_macho_native_metadata_preserves_64bit_s
 contains unit_tests/check_clamav.c 'ck_assert_int_eq(ret, CL_EPARSE);'
 contains libclamav/macho.c 'Mach-O universal-binary architecture range is outside the input map'
 contains unit_tests/check_clamav.c 'test_macho_unibin_member_range_is_fail_visible'
+contains unit_tests/check_clamav.c 'tcase_add_checked_fixture(tc_macho_fat, cl_setup, cl_teardown)'
 contains libclamav/macho.c 'Mach-O universal-binary architecture table is unsupported by the bounded parser'
 contains libclamav/macho.c 'fat_header.nfats == 0 || fat_header.nfats > 32'
 contains unit_tests/check_clamav.c 'test_macho_unibin_unsupported_architecture_count_is_fail_visible'

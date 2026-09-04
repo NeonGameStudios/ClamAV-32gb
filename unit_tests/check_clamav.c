@@ -63321,6 +63321,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_macho, test_macho_32bit_section_alignment_overflow_is_fail_visible);
     tcase_add_test(tc_macho, test_macho_32bit_entrypoint_coordinate_overflow_is_fail_visible);
     suite_add_tcase(s, tc_macho_fat);
+    tcase_add_checked_fixture(tc_macho_fat, cl_setup, cl_teardown);
     tcase_add_test(tc_macho_fat, test_macho_unibin_sticky_incomplete_result_is_fail_visible);
     tcase_add_test(tc_macho_fat, test_macho_unibin_member_must_follow_complete_table);
     tcase_add_test(tc_macho_fat, test_macho_unibin_empty_member_is_fail_visible);

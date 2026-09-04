@@ -23773,7 +23773,7 @@ SHA-256 values were `libclamav_rust/src/scanners.rs`
 `e0f7b09dcc67ba897826c6fe6ff63eb85142695952f18b1f66bff362499c3c87`,
 `Cargo.toml` `949365e1f03b177e5d51adf177c889d38a857c9eaa6c5d30c63340bfa7d91b6b`,
 and `unit_tests/check_clamav.c`
-`a933ddd83c6da9065ad9803bdf0e3eb5a56ae77ee404d0b8de5a5e43228eead5`.
+`4f33ee55a20c05ca876ff2a425d9dc285df0b3d0cf3e8b0f4cf8407af31b172f`.
 
 The focused production-linked cases pass `rust_lha` 10/10 and `rust_map` 2/2
 with zero failures and errors. Coverage includes initial and public-API read
@@ -23791,6 +23791,37 @@ Rust 1.97.1 release build remain recorded. This is focused current-source
 evidence, not final LHA/LZH qualification. Complete variant corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 resource, Sonic1, and final PLAN.md qualification remain required.
+
+## Mach-O source-synchronized production-linked refresh — 2026-09-04
+
+The authoritative Mach-O, matcher, scanner, and test sources were evaluated
+in the existing production-linked GCC harness. Their exact SHA-256 values
+were `macho.c`
+`41e140afdff652154ce43f895ebdb981385b9c16994745bfc9f8e68854f2341b`,
+`macho.h` `9f4bba627fa4bcb01e0c2f7eb9661f273cb55db7f1ff192bd057d5b76b03ff3c`,
+`matcher.c`
+`6efc0fa01f7177204e1078f168f5a4b746aaaf2a2baa66f6e4a82235be6f8939`,
+`scanners.c`
+`ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
+and `check_clamav.c`
+`4f33ee55a20c05ca876ff2a425d9dc285df0b3d0cf3e8b0f4cf8407af31b172f`.
+
+The focused cases pass with zero failures and errors: `macho` 12/12,
+`macho_map` 3/3, `macho_timeout` 2/2, `macho_sections` 1/1,
+`macho_fat` 3/3, `macho_corpus` 2/2, `macho_unsupported` 2/2, and
+`macho_boundary` 2/2. Coverage includes thin and universal-binary header and
+load-command boundaries, callback reads, timeout, sticky incomplete state,
+native-width metadata, section-count limits, architecture-count limits,
+member/table ranges, alignment, and exact embedded-MZ detection.
+
+The one initial `macho_fat` failure was a fixture isolation defect: its direct
+engine setup used the shared `tmpdir` without the `cl_setup` fixture. The
+TCase now installs the checked temporary-directory fixture, and the complete
+three-case run passes. No Mach-O production-code change was required for this
+refresh. This remains focused current-source evidence, not final Mach-O/FAT
+qualification. Complete executable corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
+and final PLAN.md qualification remain required.
 
 ## 7-Zip PPMd input-window initialization — 2026-09-03
 

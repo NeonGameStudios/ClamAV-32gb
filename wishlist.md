@@ -14595,3 +14595,18 @@ qualification before closure.
   complete variant corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file, resource, Sonic1, and
   final LHA/parser-release qualification before closure.
+
+## Mach-O source-synchronized production-linked refresh — 2026-09-04
+
+- Keep thin and universal Mach-O parsing fail-visible for malformed or
+  out-of-range headers, commands, sections, architecture records, callbacks,
+  timeouts, unsupported architecture counts, and sticky incomplete state.
+  Preserve the exact member-relative embedded-MZ handoff and native-width
+  metadata boundaries.
+- Retain the current-source linked results: `macho` 12/12,
+  `macho_map` 3/3, `macho_timeout` 2/2, `macho_sections` 1/1,
+  `macho_fat` 3/3, `macho_corpus` 2/2, `macho_unsupported` 2/2, and
+  `macho_boundary` 2/2. The FAT TCase must retain its checked temporary
+  directory fixture. Add complete executable/FAT corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, resource,
+  Sonic1, and final Mach-O/parser-release qualification before closure.
