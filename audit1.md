@@ -142,6 +142,25 @@ certified Linux x86-64, production-CVD/service, materialized-large-file,
 resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
 remain open.
 
+## Binary-data and BinHex current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `binary_data` 1/1 and
+`binhex_map` 15/15. The Binary-data case reaches an exact tail signature
+through the mandatory outer raw matcher on a 65,556-byte synthetic payload.
+The BinHex map case covers direct-entry context/options/map admission, empty
+and truncated streams, header-length preflight, timeout, data/resource
+boundaries, temporary quota, encoded-input read failure, cleanup, sticky
+completion, and the materialized nested-MZ corpus fixture. A source review of
+the BinHex decode, fork-transition, deadline, temporary-accounting, nested
+handoff, and cleanup paths found no additional safe production fix in this
+pass.
+
+This is focused current-source evidence, not final Binary-data or BinHex
+qualification. Complete raw-signature-family and BinHex corpus breadth, full
+current-C-ABI execution, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+requirement-by-requirement PLAN.md qualification remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of

@@ -111,6 +111,22 @@
   Linux x86-64, production-CVD/service, materialized-large-file, resource,
   Sonic1, and final PLAN.md qualification open.
 
+## Binary-data and BinHex current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `binary_data` 1/1
+  and `binhex_map` 15/15. Binary-data reaches an exact tail signature through
+  the mandatory outer raw matcher on the 65,556-byte synthetic payload.
+- The BinHex case covers context/options/map admission, empty and truncated
+  streams, header-length preflight, timeout, data/resource boundaries,
+  temporary quota, encoded-input read failure, cleanup, sticky completion, and
+  the materialized nested-MZ corpus fixture. No additional safe source fix was
+  identified in this review of decode, fork transitions, deadlines, temporary
+  accounting, nested handoff, and cleanup.
+- Keep complete raw-signature-family and BinHex corpus breadth, full C/Rust
+  ABI, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+  open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

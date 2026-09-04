@@ -157,6 +157,24 @@ Complete EA05/EA06 corpus breadth, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, resource, Sonic1, and final
 PLAN.md qualification remain required.
 
+## Current Binary-data and BinHex focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `binary_data` 1/1 and
+`binhex_map` 15/15. Binary-data reaches an exact tail signature through the
+mandatory outer raw matcher on a 65,556-byte synthetic payload. The BinHex
+case covers direct-entry context/options/map admission, empty and truncated
+streams, header-length preflight, timeout, data/resource boundaries, temporary
+quota, encoded-input read failure, cleanup, sticky completion, and the
+materialized nested-MZ corpus fixture. Review of the current BinHex decode,
+fork-transition, deadline, temporary-accounting, nested-handoff, and cleanup
+paths found no additional safe production fix in this pass.
+
+These are focused current-source results, not final Binary-data or BinHex
+qualification. Complete raw-signature-family and BinHex corpus breadth,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+remain required.
+
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
 and 21 deliberate unsupported rows; 576 rows remain release-blocking under
