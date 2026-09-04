@@ -52139,12 +52139,16 @@ END_TEST
 
 START_TEST(test_autoit_sfx_admission_reaches_nested_matcher)
 {
+    enum {
+        PE_OFFSET   = 0x400,
+        INPUT_SIZE  = 2048
+    };
     static const uint8_t autoit_signature[] = {
         0xa3, 0x48, 0x4b, 0xbe, 0x98, 0x6c, 0x4a, 0xa9,
         0x99, 0x4c, 0x53, 0x0a, 0x86, 0xd6, 0x48, 0x7d,
         0x41, 0x55, 0x33, 0x21, 0x45, 0x41, 0x30, 0x35
     };
-    uint8_t data[2U + sizeof(autoit_signature) + 16U] = {0};
+    uint8_t data[INPUT_SIZE] = {0};
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
     cl_verdict_t verdict;
@@ -52158,6 +52162,24 @@ START_TEST(test_autoit_sfx_admission_reaches_nested_matcher)
     data[0] = 'M';
     data[1] = 'Z';
     memcpy(data + 2, autoit_signature, sizeof(autoit_signature));
+    /* Keep the host a minimally parseable PE so truncated executable
+     * metadata cannot preempt the embedded AutoIt SFX admission. */
+    zip_stream_write_u32(data + 0x3c, PE_OFFSET);
+    zip_stream_write_u32(data + PE_OFFSET, 0x00004550U);
+    zip_stream_write_u16(data + PE_OFFSET + 4, 0x014cU);
+    zip_stream_write_u16(data + PE_OFFSET + 6, 1U);
+    zip_stream_write_u16(data + PE_OFFSET + 20, 0x00e0U);
+    zip_stream_write_u16(data + PE_OFFSET + 22, 0x0002U);
+    zip_stream_write_u16(data + PE_OFFSET + 24, 0x010bU);
+    zip_stream_write_u32(data + PE_OFFSET + 24 + 32, 0x1000U);
+    zip_stream_write_u32(data + PE_OFFSET + 24 + 36, 0x0200U);
+    zip_stream_write_u32(data + PE_OFFSET + 24 + 56, 0x2000U);
+    zip_stream_write_u32(data + PE_OFFSET + 24 + 60, 0x0600U);
+    zip_stream_write_u16(data + PE_OFFSET + 24 + 68, 2U);
+    memcpy(data + PE_OFFSET + 24 + 224, ".text", 5);
+    zip_stream_write_u32(data + PE_OFFSET + 24 + 224 + 8, 1U);
+    zip_stream_write_u32(data + PE_OFFSET + 24 + 224 + 12, 0x1000U);
+    zip_stream_write_u32(data + PE_OFFSET + 24 + 224 + 36, 0x60000020U);
 
     memset(&options, 0, sizeof(options));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
@@ -52176,7 +52198,7 @@ START_TEST(test_autoit_sfx_admission_reaches_nested_matcher)
     ck_assert_ptr_nonnull(map);
     verdict    = CL_VERDICT_STRONG_INDICATOR;
     last_alert = "stale";
-    scanned    = UINT64_MAX;
+    scanned    = 0;
 
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);

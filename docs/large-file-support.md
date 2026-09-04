@@ -141,6 +141,22 @@ ARJ/ARJ-SFX corpus breadth, full current-C-ABI execution, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, resource,
 Sonic1, and final PLAN.md qualification remain required.
 
+## Current AutoIt focused audit — 2026-09-04
+
+The AutoIt SFX regression fixture now uses a minimally parseable PE envelope
+around the prefixed MZ/EA05 payload. A two-byte MZ fixture was correctly
+classified as a truncated host by PE admission, so its incomplete result
+preempted nested AutoIt dispatch; that stale fixture did not demonstrate an
+AutoIt parser defect. The current-source production-linked GCC cases pass
+`autoit_map` 9/9, `autoit_corpus` 1/1, and `autoit_sfx` 1/1. The SFX case
+reaches the exact nested child matcher after AutoIt admission, and the corpus
+case covers generated EA05 stored/compressed and EA06 script fixtures.
+
+These are focused current-source results, not final AutoIt qualification.
+Complete EA05/EA06 corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
 and 21 deliberate unsupported rows; 576 rows remain release-blocking under

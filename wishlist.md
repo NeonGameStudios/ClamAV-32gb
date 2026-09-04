@@ -97,6 +97,20 @@
   x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
   and final PLAN.md qualification open.
 
+## AutoIt current-source focused audit — 2026-09-04
+
+- The AutoIt SFX fixture now contains a minimally parseable PE envelope around
+  the prefixed MZ/EA05 payload. This preserves the production PE admission
+  contract while allowing nested AutoIt admission to reach its exact child
+  matcher; the prior two-byte MZ fixture was preempted by the correctly
+  fail-visible truncated-host result.
+- Retain current-source production-linked GCC evidence at `autoit_map` 9/9,
+  `autoit_corpus` 1/1, and `autoit_sfx` 1/1. The corpus covers generated EA05
+  stored/compressed and EA06 script fixtures.
+- Keep complete EA05/EA06 corpus breadth, full C/Rust ABI, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, resource,
+  Sonic1, and final PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

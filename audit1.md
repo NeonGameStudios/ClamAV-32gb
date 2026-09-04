@@ -122,6 +122,26 @@ ARJ/ARJ-SFX corpus breadth, full current-C-ABI execution, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, resource,
 Sonic1, and final requirement-by-requirement PLAN.md qualification remain open.
 
+## AutoIt current-source focused audit — 2026-09-04
+
+The current-source AutoIt SFX regression initially used only a two-byte MZ
+prefix. The production PE admission path correctly treated that host as a
+truncated executable and its incomplete result preempted the nested AutoIt
+handoff; this was a stale fixture, not evidence that a malformed host should
+be admitted. The fixture now contains the same minimally parseable PE envelope
+used by the neighboring SFX admission coverage, while retaining the exact
+EA05 child marker after the MZ prefix. The current-source production-linked
+GCC cases pass `autoit_map` 9/9, `autoit_corpus` 1/1, and `autoit_sfx` 1/1.
+The SFX case reaches the exact nested child matcher only after AutoIt
+admission, and the corpus case covers the generated EA05 stored/compressed
+and EA06 script fixtures.
+
+This is focused current-source evidence, not final AutoIt qualification.
+Complete EA05/EA06 corpus breadth, full current-C-ABI execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
+remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of
