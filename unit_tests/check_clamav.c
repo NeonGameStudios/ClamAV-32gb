@@ -32070,8 +32070,10 @@ START_TEST(test_rust_lha_sticky_incomplete_result_is_fail_visible)
     cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
+    cl_error_t ret;
 
     build_lha_level0_header(archive, "-lhd-", 0, 0);
+    archive[60] = 0;
     memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
     memset(&layer, 0, sizeof(layer));
@@ -32088,7 +32090,10 @@ START_TEST(test_rust_lha_sticky_incomplete_result_is_fail_visible)
     ck_assert_ptr_nonnull(map);
     ctx.fmap   = map;
     layer.fmap = map;
-    ck_assert_int_eq(scan_lha_lzh(&ctx), CL_SUCCESS);
+    ret = scan_lha_lzh(&ctx);
+    ck_assert_msg(ret == CL_SUCCESS, "empty LHA direct scan returned %d (%s), incomplete=%d, reason=%s",
+                  ret, cl_strerror(ret), ctx.scan_incomplete,
+                  ctx.scan_incomplete_reason ? ctx.scan_incomplete_reason : "(none)");
     ck_assert(!ctx.scan_incomplete);
     ck_assert(!map->dont_cache_flag);
     fmap_free(map);

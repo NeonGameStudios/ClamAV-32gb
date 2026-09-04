@@ -5,6 +5,33 @@ Current evidence is capability-scoped and must be bound to the current source
 and build manifests. No production release claim is made until every PLAN.md
 gate passes.
 
+## Current LHA/LZH focused audit — 2026-09-04
+
+The canonical Rust scanner and LHA test source were transferred into the
+existing Docker production-linked GCC/Rust harness, then rebuilt coherently.
+The synchronized SHA-256 values are `scanners.rs`
+`e0f7b09dcc67ba897826c6fe6ff63eb85142695952f18b1f66bff362499c3c87`,
+`Cargo.toml` `949365e1f03b177e5d51adf177c889d38a857c9eaa6c5d30c63340bfa7d91b6b`,
+and `check_clamav.c`
+`a933ddd83c6da9065ad9803bdf0e3eb5a56ae77ee404d0b8de5a5e43228eead5`.
+The current-source production-linked cases pass `rust_lha` 10/10 and
+`rust_map` 2/2, with zero failures and errors. The focused LHA case covers
+initial and public-API read failures, required zero termination, sticky
+incomplete-result preservation, nonempty directory rejection, unsupported
+methods, zero-byte member `MaxFiles` accounting, bounded level-3 header
+allocation, truncated decoder output, and exact nested PNG detection across
+all 13 materialized LHA/LZH fixtures.
+
+The earlier direct sticky-test failure was a fixture-context defect: the test
+initialized only the 60-byte LHA header in a 61-byte archive and left the
+required terminator uninitialized. The fixture now explicitly sets byte 60 to
+zero. No LHA production-code change was required. The existing vendored
+decoder result (13/13 plus doctests) and Rust 1.97.1 release build remain
+recorded. This is focused current-source evidence, not final LHA/LZH
+qualification. Complete variant corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 ## Current ISO-9660 focused audit — 2026-09-04
 
 The canonical ISO parser, scanner, and unit-test sources were transferred into
