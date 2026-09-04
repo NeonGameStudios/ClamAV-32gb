@@ -25543,7 +25543,7 @@ START_TEST(test_jp2_time_limit_is_fail_visible)
     ret = cli_scanjp2(&ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "JP2 inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -62438,6 +62438,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_tnef = tcase_create("tnef");
     TCase *tc_tnef_map = tcase_create("tnef_map");
     TCase *tc_tnef_debug = tcase_create("tnef_debug");
+    TCase *tc_graphics = tcase_create("graphics");
     TCase *tc_graphics_map = tcase_create("graphics_map");
     TCase *tc_graphics_corpus = tcase_create("graphics_corpus");
     TCase *tc_graphics_api = tcase_create("graphics_api");
@@ -62749,6 +62750,17 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_mail_partial);
     tcase_add_checked_fixture(tc_mail_partial, cl_setup, cl_teardown);
     tcase_add_test(tc_mail_partial, test_partial_message_invalid_parameters_are_fail_visible);
+    suite_add_tcase(s, tc_graphics);
+    tcase_add_checked_fixture(tc_graphics, cl_setup, cl_teardown);
+    tcase_add_test(tc_graphics, test_graphics_bmp_truncated_header_is_fail_visible);
+    tcase_add_test(tc_graphics, test_bmp_missing_uncompressed_pixel_range_is_malformed);
+    tcase_add_test(tc_graphics, test_bmp_structural_admission_remains_incomplete);
+    tcase_add_test(tc_graphics, test_bmp_truncated_signature_is_parse_error);
+    tcase_add_test(tc_graphics, test_jp2_truncated_box_is_fail_visible);
+    tcase_add_test(tc_graphics, test_jp2_truncated_signature_is_parse_error);
+    tcase_add_test(tc_graphics, test_jp2_time_limit_is_fail_visible);
+    tcase_add_test(tc_graphics, test_jp2_structural_admission_remains_incomplete);
+    tcase_add_test(tc_graphics, test_generic_graphics_parser_is_explicitly_unsupported);
     suite_add_tcase(s, tc_graphics_map);
     tcase_add_test(tc_graphics_map, test_bmp_jp2_missing_maps_are_fail_visible);
     tcase_add_test(tc_graphics_map, test_media_parsers_reject_null_contexts);
@@ -63969,15 +63981,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_sis_file_record_cursor_out_of_range_is_parse_error);
     tcase_add_test(tc_cl, test_python_compiled_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_ai_model_parser_is_explicitly_unsupported);
-    tcase_add_test(tc_cl, test_graphics_bmp_truncated_header_is_fail_visible);
-    tcase_add_test(tc_cl, test_bmp_missing_uncompressed_pixel_range_is_malformed);
-    tcase_add_test(tc_cl, test_bmp_structural_admission_remains_incomplete);
-    tcase_add_test(tc_cl, test_bmp_truncated_signature_is_parse_error);
-    tcase_add_test(tc_cl, test_jp2_truncated_box_is_fail_visible);
-    tcase_add_test(tc_cl, test_jp2_truncated_signature_is_parse_error);
-    tcase_add_test(tc_cl, test_jp2_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_jp2_structural_admission_remains_incomplete);
-    tcase_add_test(tc_cl, test_generic_graphics_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_sis_truncated_compressed_member_is_fail_visible);
     tcase_add_test(tc_cl, test_sis9x_cursor_out_of_range_is_parse_error);
     tcase_add_test(tc_cl, test_sis9x_short_nested_field_is_fail_visible);

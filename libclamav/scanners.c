@@ -2105,7 +2105,6 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
     uint64_t input_reserved     = 0;
     int bytes = 0;
     bool stream_complete = false;
-    fmap_t *map          = ctx->fmap;
     char *tmpname        = NULL;
     char *source_tmpname = NULL;
     gzFile gz;
@@ -5865,8 +5864,6 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                 ((size_t)fpt->offset > last_offset)) {
 
                 bool type_has_been_handled = true;
-                bool ancestor_was_embedded = false;
-                size_t i;
 
                 last_offset = (size_t)fpt->offset;
 
@@ -6049,7 +6046,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // First check if actually a GPT, not MBR.
                                 cl_error_t iret = cli_mbr_check2(ctx, 0);
 
-                                if ((iret == CL_TYPE_GPT) && (DCONF_ARCH & ARCH_CONF_GPT)) {
+                                if ((iret == (cl_error_t)CL_TYPE_GPT) && (DCONF_ARCH & ARCH_CONF_GPT)) {
                                     // Reassign type of current layer based on what we discovered
                                     if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, CL_TYPE_GPT, true))) {
                                         cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
@@ -6072,7 +6069,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                         cli_dbgmsg("MBR signature found at " STDu64 "\n", (uint64_t)fpt->offset);
                                         nret = cli_merge_scan_status(nret, cli_scanmbr(ctx, 0));
                                     }
-                                } else if (iret != CL_EFORMAT && iret != CL_SUCCESS && iret != CL_TYPE_GPT) {
+                                } else if (iret != CL_EFORMAT && iret != CL_SUCCESS &&
+                                           iret != (cl_error_t)CL_TYPE_GPT) {
                                     /* A malformed MBR candidate is only a
                                      * rejected weak match.  Operational
                                      * failures, however, mean that the
@@ -6520,7 +6518,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                 case CL_TYPE_HTML:
                     if (cli_recursion_stack_get_type(ctx, -2) == CL_TYPE_AUTOIT) {
                         /* bb#11196 - autoit script file misclassified as HTML */
-                        ret = CL_TYPE_TEXT_ASCII;
+                        ret = (cl_error_t)CL_TYPE_TEXT_ASCII;
                     } else if (SCAN_PARSE_HTML &&
                                (type == CL_TYPE_TEXT_ASCII ||
                                 type == CL_TYPE_GIF) && /* Scan GIFs for embedded HTML/Javascript */
@@ -8034,9 +8032,9 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                  * 2000). Raw matching and optional fuzzy matching do not
                  * constitute complete inspection of the image layer. Keep a
                  * detection/terminal matcher result, but make a non-detecting
-                 * scan explicitly incomplete instead of returning clean. */
+                * scan explicitly incomplete instead of returning clean. */
                 cli_mark_scan_incomplete(ctx, "generic graphics parser is unsupported");
-                if (ret == CL_SUCCESS)
+                if (ret == CL_SUCCESS || ret == CL_EFORMAT)
                     ret = CL_EPARSE;
             }
             break;

@@ -4881,13 +4881,13 @@ fixed-width-integer	libclamav/scan_report.h	64	    uint64_t bytes);
 fixed-width-integer	libclamav/scan_report.h	68	    uint64_t bytes);
 fixed-width-integer	libclamav/scan_report.h	81	    uint64_t offset);
 fixed-width-integer	libclamav/scan_report.h	85	    uint64_t *offset_out);
-fixed-width-integer	libclamav/scanners.c	10031	    uint64_t scanned_out;
-fixed-width-integer	libclamav/scanners.c	10070	    uint64_t *scanned_out,
-fixed-width-integer	libclamav/scanners.c	10079	    uint64_t temporary_bytes_reserved,
-fixed-width-integer	libclamav/scanners.c	10179	    uint64_t *scanned_out,
-fixed-width-integer	libclamav/scanners.c	10188	    uint64_t temporary_bytes_reserved,
-fixed-width-integer	libclamav/scanners.c	10212	    uint64_t *scanned_out,
-fixed-width-integer	libclamav/scanners.c	10244	    uint64_t *scanned_out,
+fixed-width-integer	libclamav/scanners.c	10029	    uint64_t scanned_out;
+fixed-width-integer	libclamav/scanners.c	10068	    uint64_t *scanned_out,
+fixed-width-integer	libclamav/scanners.c	10077	    uint64_t temporary_bytes_reserved,
+fixed-width-integer	libclamav/scanners.c	10177	    uint64_t *scanned_out,
+fixed-width-integer	libclamav/scanners.c	10186	    uint64_t temporary_bytes_reserved,
+fixed-width-integer	libclamav/scanners.c	10210	    uint64_t *scanned_out,
+fixed-width-integer	libclamav/scanners.c	10242	    uint64_t *scanned_out,
 fixed-width-integer	libclamav/scanners.c	1030	        temporary_size = (uint64_t)ctx->fmap->len;
 fixed-width-integer	libclamav/scanners.c	1127	    uint64_t output_length         = 0;
 fixed-width-integer	libclamav/scanners.c	1200	    uint64_t reserved;
@@ -4917,145 +4917,145 @@ fixed-width-integer	libclamav/scanners.c	2103	    uint64_t outsize            = 
 fixed-width-integer	libclamav/scanners.c	2104	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/scanners.c	2105	    uint64_t input_reserved     = 0;
 fixed-width-integer	libclamav/scanners.c	215	cl_error_t cli_magic_scan_dir(const char *dir, cli_ctx *ctx, uint32_t attributes)
-fixed-width-integer	libclamav/scanners.c	2160	        if (outsize > UINT64_MAX - (uint64_t)bytes) {
-fixed-width-integer	libclamav/scanners.c	2169	                 ctx, &temporary_reserved, (uint64_t)bytes,
+fixed-width-integer	libclamav/scanners.c	2159	        if (outsize > UINT64_MAX - (uint64_t)bytes) {
+fixed-width-integer	libclamav/scanners.c	2168	                 ctx, &temporary_reserved, (uint64_t)bytes,
 fixed-width-integer	libclamav/scanners.c	220	static cl_error_t cli_magic_scan_dir_internal(const char *dir, cli_ctx *ctx, uint32_t attributes,
-fixed-width-integer	libclamav/scanners.c	2238	    uint64_t outsize            = 0;
-fixed-width-integer	libclamav/scanners.c	2239	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	2290	            uint64_t next_outsize;
-fixed-width-integer	libclamav/scanners.c	2309	            if (UINT64_MAX - outsize < (uint64_t)produced) {
-fixed-width-integer	libclamav/scanners.c	2315	            next_outsize = outsize + (uint64_t)produced;
-fixed-width-integer	libclamav/scanners.c	2321	                     ctx, &temporary_reserved, (uint64_t)produced,
-fixed-width-integer	libclamav/scanners.c	2413	    uint64_t size = 0;
-fixed-width-integer	libclamav/scanners.c	2421	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	2487	            uint64_t next_size;
-fixed-width-integer	libclamav/scanners.c	2489	            if (UINT64_MAX - size < (uint64_t)produced) {
-fixed-width-integer	libclamav/scanners.c	2494	            next_size = size + (uint64_t)produced;
-fixed-width-integer	libclamav/scanners.c	2498	                     ctx, &temporary_reserved, (uint64_t)produced,
-fixed-width-integer	libclamav/scanners.c	2589	    uint64_t size = 0;
-fixed-width-integer	libclamav/scanners.c	2595	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	2661	            uint64_t next_size;
-fixed-width-integer	libclamav/scanners.c	2667	            next_size = size + (uint64_t)towrite;
-fixed-width-integer	libclamav/scanners.c	2677	            ret = cli_reserve_temp_output(ctx, &temporary_reserved, (uint64_t)towrite,
-fixed-width-integer	libclamav/scanners.c	2727	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	2773	     * project to cli_scan_buff()'s legacy uint32_t length. This also keeps
-fixed-width-integer	libclamav/scanners.c	2909	    uint32_t hashcnt                 = 0;
-fixed-width-integer	libclamav/scanners.c	2917	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	3080	    uint32_t hashcnt = 0;
-fixed-width-integer	libclamav/scanners.c	3173	    uint32_t hashcnt = 0;
+fixed-width-integer	libclamav/scanners.c	2237	    uint64_t outsize            = 0;
+fixed-width-integer	libclamav/scanners.c	2238	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	2289	            uint64_t next_outsize;
+fixed-width-integer	libclamav/scanners.c	2308	            if (UINT64_MAX - outsize < (uint64_t)produced) {
+fixed-width-integer	libclamav/scanners.c	2314	            next_outsize = outsize + (uint64_t)produced;
+fixed-width-integer	libclamav/scanners.c	2320	                     ctx, &temporary_reserved, (uint64_t)produced,
+fixed-width-integer	libclamav/scanners.c	2412	    uint64_t size = 0;
+fixed-width-integer	libclamav/scanners.c	2420	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	2486	            uint64_t next_size;
+fixed-width-integer	libclamav/scanners.c	2488	            if (UINT64_MAX - size < (uint64_t)produced) {
+fixed-width-integer	libclamav/scanners.c	2493	            next_size = size + (uint64_t)produced;
+fixed-width-integer	libclamav/scanners.c	2497	                     ctx, &temporary_reserved, (uint64_t)produced,
+fixed-width-integer	libclamav/scanners.c	2588	    uint64_t size = 0;
+fixed-width-integer	libclamav/scanners.c	2594	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	2660	            uint64_t next_size;
+fixed-width-integer	libclamav/scanners.c	2666	            next_size = size + (uint64_t)towrite;
+fixed-width-integer	libclamav/scanners.c	2676	            ret = cli_reserve_temp_output(ctx, &temporary_reserved, (uint64_t)towrite,
+fixed-width-integer	libclamav/scanners.c	2726	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	2772	     * project to cli_scan_buff()'s legacy uint32_t length. This also keeps
+fixed-width-integer	libclamav/scanners.c	2908	    uint32_t hashcnt                 = 0;
+fixed-width-integer	libclamav/scanners.c	2916	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	3079	    uint32_t hashcnt = 0;
+fixed-width-integer	libclamav/scanners.c	3172	    uint32_t hashcnt = 0;
+fixed-width-integer	libclamav/scanners.c	3249	    uint32_t hashcnt = 0;
 fixed-width-integer	libclamav/scanners.c	325	static cl_error_t cli_magic_scan_dir_reserved(const char *dir, cli_ctx *ctx, uint32_t attributes)
-fixed-width-integer	libclamav/scanners.c	3250	    uint32_t hashcnt = 0;
-fixed-width-integer	libclamav/scanners.c	3257	    uint64_t ppt_temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	3566	    uint32_t hashcnt            = 0;
-fixed-width-integer	libclamav/scanners.c	4096	    uint64_t curr_len = map->len;
-fixed-width-integer	libclamav/scanners.c	4097	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	3256	    uint64_t ppt_temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	3565	    uint32_t hashcnt            = 0;
+fixed-width-integer	libclamav/scanners.c	4095	    uint64_t curr_len = map->len;
+fixed-width-integer	libclamav/scanners.c	4096	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/scanners.c	412	static cl_error_t cli_rar_write_comment(cli_ctx *ctx, int fd, const char *comment, uint32_t comment_size)
 fixed-width-integer	libclamav/scanners.c	414	    uint32_t offset = 0;
 fixed-width-integer	libclamav/scanners.c	417	        uint32_t remaining = comment_size - offset;
-fixed-width-integer	libclamav/scanners.c	4225	        if ((uint64_t)no_tags_stat.st_size > ctx->engine->maxhtmlnotags) {
+fixed-width-integer	libclamav/scanners.c	4224	        if ((uint64_t)no_tags_stat.st_size > ctx->engine->maxhtmlnotags) {
 fixed-width-integer	libclamav/scanners.c	427	        offset += (uint32_t)chunk;
-fixed-width-integer	libclamav/scanners.c	4314	    uint32_t codepoint;
-fixed-width-integer	libclamav/scanners.c	4315	    uint32_t minimum;
-fixed-width-integer	libclamav/scanners.c	4370	static cl_error_t text_emit_utf8(uint32_t codepoint, unsigned char *output,
-fixed-width-integer	libclamav/scanners.c	4412	    uint16_t *pending_high,
-fixed-width-integer	libclamav/scanners.c	4426	        uint16_t unit = little_endian
-fixed-width-integer	libclamav/scanners.c	4427	                            ? (uint16_t)((uint16_t)input[i] | ((uint16_t)input[i + 1] << 8))
-fixed-width-integer	libclamav/scanners.c	4428	                            : (uint16_t)(((uint16_t)input[i] << 8) | (uint16_t)input[i + 1]);
-fixed-width-integer	libclamav/scanners.c	4429	        uint32_t codepoint;
-fixed-width-integer	libclamav/scanners.c	4444	                        (((uint32_t)*pending_high - 0xd800U) << 10) +
-fixed-width-integer	libclamav/scanners.c	4445	                        ((uint32_t)unit - 0xdc00U);
-fixed-width-integer	libclamav/scanners.c	4479	    uint16_t pending_high = 0;
-fixed-width-integer	libclamav/scanners.c	4483	    uint64_t curr_len;
-fixed-width-integer	libclamav/scanners.c	4484	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	4591	                        ctx, &temporary_reserved, (uint64_t)written,
-fixed-width-integer	libclamav/scanners.c	4689	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	4690	    uint16_t pending_high       = 0;
+fixed-width-integer	libclamav/scanners.c	4313	    uint32_t codepoint;
+fixed-width-integer	libclamav/scanners.c	4314	    uint32_t minimum;
+fixed-width-integer	libclamav/scanners.c	4369	static cl_error_t text_emit_utf8(uint32_t codepoint, unsigned char *output,
+fixed-width-integer	libclamav/scanners.c	4411	    uint16_t *pending_high,
+fixed-width-integer	libclamav/scanners.c	4425	        uint16_t unit = little_endian
+fixed-width-integer	libclamav/scanners.c	4426	                            ? (uint16_t)((uint16_t)input[i] | ((uint16_t)input[i + 1] << 8))
+fixed-width-integer	libclamav/scanners.c	4427	                            : (uint16_t)(((uint16_t)input[i] << 8) | (uint16_t)input[i + 1]);
+fixed-width-integer	libclamav/scanners.c	4428	        uint32_t codepoint;
+fixed-width-integer	libclamav/scanners.c	4443	                        (((uint32_t)*pending_high - 0xd800U) << 10) +
+fixed-width-integer	libclamav/scanners.c	4444	                        ((uint32_t)unit - 0xdc00U);
+fixed-width-integer	libclamav/scanners.c	4478	    uint16_t pending_high = 0;
+fixed-width-integer	libclamav/scanners.c	4482	    uint64_t curr_len;
+fixed-width-integer	libclamav/scanners.c	4483	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	4590	                        ctx, &temporary_reserved, (uint64_t)written,
+fixed-width-integer	libclamav/scanners.c	4688	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	4689	    uint16_t pending_high       = 0;
 fixed-width-integer	libclamav/scanners.c	477	    uint32_t nEncryptedFilesFound = 0;
-fixed-width-integer	libclamav/scanners.c	4788	            ctx, &temporary_reserved, (uint64_t)decoded_len,
+fixed-width-integer	libclamav/scanners.c	4787	            ctx, &temporary_reserved, (uint64_t)decoded_len,
 fixed-width-integer	libclamav/scanners.c	482	    uint32_t comment_size = 0;
 fixed-width-integer	libclamav/scanners.c	488	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	5109	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	5179	    uint64_t outsize            = 0;
-fixed-width-integer	libclamav/scanners.c	5180	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/scanners.c	5233	        if (outsize > UINT64_MAX - (uint64_t)bread) {
-fixed-width-integer	libclamav/scanners.c	5238	        if ((ret = cli_checklimits("CryptFF", ctx, outsize + (uint64_t)bread, 0, 0)) != CL_SUCCESS)
-fixed-width-integer	libclamav/scanners.c	5240	        if ((ret = cli_reserve_temp_output(ctx, &temporary_reserved, (uint64_t)bread,
-fixed-width-integer	libclamav/scanners.c	5250	        outsize += (uint64_t)bread;
-fixed-width-integer	libclamav/scanners.c	5419	    uint64_t cc_count  = 0;
-fixed-width-integer	libclamav/scanners.c	5420	    uint64_t ssn_count = 0;
-fixed-width-integer	libclamav/scanners.c	5500	                uint64_t add = (uint64_t)cc_found;
-fixed-width-integer	libclamav/scanners.c	5511	                uint64_t add = (uint64_t)ssn_found;
-fixed-width-integer	libclamav/scanners.c	5581	static void get_thread_times(uint64_t *kt, uint64_t *ut)
-fixed-width-integer	libclamav/scanners.c	5600	        *kt         = ((uint64_t)1000000) * tbuf.tms_stime / tck;
-fixed-width-integer	libclamav/scanners.c	5601	        *ut         = ((uint64_t)1000000) * tbuf.tms_utime / tck;
-fixed-width-integer	libclamav/scanners.c	5610	    uint64_t kt, ut;
-fixed-width-integer	libclamav/scanners.c	5633	    uint64_t kt, ut;
-fixed-width-integer	libclamav/scanners.c	5727	    uint16_t header_type;
-fixed-width-integer	libclamav/scanners.c	5728	    uint16_t header_size;
-fixed-width-integer	libclamav/scanners.c	5729	    uint64_t remaining;
-fixed-width-integer	libclamav/scanners.c	5738	    remaining = (offset <= ctx->fmap->len) ? (uint64_t)(ctx->fmap->len - offset) : 0;
-fixed-width-integer	libclamav/scanners.c	5757	    if (header_size < 7 || (uint64_t)header_size > remaining - 7)
-fixed-width-integer	libclamav/scanners.c	5856	            if (fpt->offset < 0 || (uint64_t)fpt->offset >= (uint64_t)ctx->fmap->len) {
-fixed-width-integer	libclamav/scanners.c	5895	                                    cli_dbgmsg("MHTML signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	5917	                                    cli_dbgmsg("XDP signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	5939	                                    cli_dbgmsg("XML-WORD signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	5960	                                    cli_dbgmsg("XML-XL signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	5981	                                    cli_dbgmsg("XML-HWP signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	6001	                                    cli_dbgmsg("DMG signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	6020	                                    cli_dbgmsg("ISO signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	6037	                                    cli_dbgmsg("UDF signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	6061	                                        cli_dbgmsg("GPT signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	6072	                                        cli_dbgmsg("MBR signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	6103	                    cli_dbgmsg("%s signature found at " STDu64 "\n", cli_ftname(fpt->type), (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	6178	                                uint32_t zip_attributes        = LAYER_ATTRIBUTES_EMBEDDED;
-fixed-width-integer	libclamav/scanners.c	6416	                                uint32_t header_offset = 0;
-fixed-width-integer	libclamav/scanners.c	6418	                                if ((uint64_t)(ctx->fmap->len - fpt->offset) > ctx->engine->maxembeddedpe) {
-fixed-width-integer	libclamav/scanners.c	6425	                                if ((uint64_t)fpt->offset > UINT32_MAX) {
-fixed-width-integer	libclamav/scanners.c	6439	                                                    (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	6448	                                    header_offset = (uint32_t)fpt->offset;
-fixed-width-integer	libclamav/scanners.c	6474	                                cli_dbgmsg("*** Detected embedded PE file at " STDu64 " ***\n", (uint64_t)fpt->offset);
-fixed-width-integer	libclamav/scanners.c	6572	    int32_t stack_index;
-fixed-width-integer	libclamav/scanners.c	6587	    stack_index = (int32_t)ctx->recursion_level;
-fixed-width-integer	libclamav/scanners.c	6649	    uint32_t fmap_index = ctx->recursion_level; /* index of current file */
-fixed-width-integer	libclamav/scanners.c	7404	    uint32_t saved_general;
-fixed-width-integer	libclamav/scanners.c	7840	                uint32_t zip_attributes = ctx->recursion_stack[ctx->recursion_level].attributes;
+fixed-width-integer	libclamav/scanners.c	5108	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	5178	    uint64_t outsize            = 0;
+fixed-width-integer	libclamav/scanners.c	5179	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/scanners.c	5232	        if (outsize > UINT64_MAX - (uint64_t)bread) {
+fixed-width-integer	libclamav/scanners.c	5237	        if ((ret = cli_checklimits("CryptFF", ctx, outsize + (uint64_t)bread, 0, 0)) != CL_SUCCESS)
+fixed-width-integer	libclamav/scanners.c	5239	        if ((ret = cli_reserve_temp_output(ctx, &temporary_reserved, (uint64_t)bread,
+fixed-width-integer	libclamav/scanners.c	5249	        outsize += (uint64_t)bread;
+fixed-width-integer	libclamav/scanners.c	5418	    uint64_t cc_count  = 0;
+fixed-width-integer	libclamav/scanners.c	5419	    uint64_t ssn_count = 0;
+fixed-width-integer	libclamav/scanners.c	5499	                uint64_t add = (uint64_t)cc_found;
+fixed-width-integer	libclamav/scanners.c	5510	                uint64_t add = (uint64_t)ssn_found;
+fixed-width-integer	libclamav/scanners.c	5580	static void get_thread_times(uint64_t *kt, uint64_t *ut)
+fixed-width-integer	libclamav/scanners.c	5599	        *kt         = ((uint64_t)1000000) * tbuf.tms_stime / tck;
+fixed-width-integer	libclamav/scanners.c	5600	        *ut         = ((uint64_t)1000000) * tbuf.tms_utime / tck;
+fixed-width-integer	libclamav/scanners.c	5609	    uint64_t kt, ut;
+fixed-width-integer	libclamav/scanners.c	5632	    uint64_t kt, ut;
+fixed-width-integer	libclamav/scanners.c	5726	    uint16_t header_type;
+fixed-width-integer	libclamav/scanners.c	5727	    uint16_t header_size;
+fixed-width-integer	libclamav/scanners.c	5728	    uint64_t remaining;
+fixed-width-integer	libclamav/scanners.c	5737	    remaining = (offset <= ctx->fmap->len) ? (uint64_t)(ctx->fmap->len - offset) : 0;
+fixed-width-integer	libclamav/scanners.c	5756	    if (header_size < 7 || (uint64_t)header_size > remaining - 7)
+fixed-width-integer	libclamav/scanners.c	5855	            if (fpt->offset < 0 || (uint64_t)fpt->offset >= (uint64_t)ctx->fmap->len) {
+fixed-width-integer	libclamav/scanners.c	5892	                                    cli_dbgmsg("MHTML signature found at " STDu64 "\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	5914	                                    cli_dbgmsg("XDP signature found at " STDu64 "\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	5936	                                    cli_dbgmsg("XML-WORD signature found at " STDu64 "\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	5957	                                    cli_dbgmsg("XML-XL signature found at " STDu64 "\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	5978	                                    cli_dbgmsg("XML-HWP signature found at " STDu64 "\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	5998	                                    cli_dbgmsg("DMG signature found at " STDu64 "\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	6017	                                    cli_dbgmsg("ISO signature found at " STDu64 "\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	6034	                                    cli_dbgmsg("UDF signature found at " STDu64 "\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	6058	                                        cli_dbgmsg("GPT signature found at " STDu64 "\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	6069	                                        cli_dbgmsg("MBR signature found at " STDu64 "\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	6101	                    cli_dbgmsg("%s signature found at " STDu64 "\n", cli_ftname(fpt->type), (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	6176	                                uint32_t zip_attributes        = LAYER_ATTRIBUTES_EMBEDDED;
+fixed-width-integer	libclamav/scanners.c	6414	                                uint32_t header_offset = 0;
+fixed-width-integer	libclamav/scanners.c	6416	                                if ((uint64_t)(ctx->fmap->len - fpt->offset) > ctx->engine->maxembeddedpe) {
+fixed-width-integer	libclamav/scanners.c	6423	                                if ((uint64_t)fpt->offset > UINT32_MAX) {
+fixed-width-integer	libclamav/scanners.c	6437	                                                    (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	6446	                                    header_offset = (uint32_t)fpt->offset;
+fixed-width-integer	libclamav/scanners.c	6472	                                cli_dbgmsg("*** Detected embedded PE file at " STDu64 " ***\n", (uint64_t)fpt->offset);
+fixed-width-integer	libclamav/scanners.c	6570	    int32_t stack_index;
+fixed-width-integer	libclamav/scanners.c	6585	    stack_index = (int32_t)ctx->recursion_level;
+fixed-width-integer	libclamav/scanners.c	6647	    uint32_t fmap_index = ctx->recursion_level; /* index of current file */
+fixed-width-integer	libclamav/scanners.c	7402	    uint32_t saved_general;
+fixed-width-integer	libclamav/scanners.c	7838	                uint32_t zip_attributes = ctx->recursion_stack[ctx->recursion_level].attributes;
 fixed-width-integer	libclamav/scanners.c	793	                        (uint64_t)extracted_stat.st_size != metadata.unpack_size) {
-fixed-width-integer	libclamav/scanners.c	8215	        uint64_t curr_len = ctx->fmap->len;
-fixed-width-integer	libclamav/scanners.c	8495	static cl_error_t cli_preflight_child_size(cli_ctx *ctx, uint64_t size, uint32_t attributes, const char *who)
-fixed-width-integer	libclamav/scanners.c	8525	                                                    const char *name, uint32_t attributes,
-fixed-width-integer	libclamav/scanners.c	8532	    uint64_t child_size     = 0;
-fixed-width-integer	libclamav/scanners.c	8566	    child_size = (uint64_t)sb.st_size;
-fixed-width-integer	libclamav/scanners.c	8570	    if (child_size > (uint64_t)SIZE_MAX) {
-fixed-width-integer	libclamav/scanners.c	8639	                                    const char *name, uint32_t attributes)
-fixed-width-integer	libclamav/scanners.c	8645	                                             const char *name, uint32_t attributes)
-fixed-width-integer	libclamav/scanners.c	8650	cl_error_t cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
-fixed-width-integer	libclamav/scanners.c	8669	                                              cli_file_t type, const char *name, uint32_t attributes)
-fixed-width-integer	libclamav/scanners.c	8710	                                           cli_file_t type, const char *name, uint32_t attributes)
-fixed-width-integer	libclamav/scanners.c	8747	    ret = cli_preflight_child_size(ctx, (uint64_t)length, attributes, "cli_magic_scan_nested_fmap_type");
-fixed-width-integer	libclamav/scanners.c	8766	        uint64_t temporary_size = (uint64_t)length;
-fixed-width-integer	libclamav/scanners.c	8841	cl_error_t cli_magic_scan_buff(const void *buffer, size_t length, cli_ctx *ctx, const char *name, uint32_t attributes)
-fixed-width-integer	libclamav/scanners.c	8907	    uint64_t *scanned_out,
-fixed-width-integer	libclamav/scanners.c	8917	    uint64_t temporary_bytes_reserved)
-fixed-width-integer	libclamav/scanners.c	9048	            uint32_t secs  = ctx.engine->maxscantime / 1000;
-fixed-width-integer	libclamav/scanners.c	9049	            uint32_t usecs = (ctx.engine->maxscantime % 1000) * 1000;
-fixed-width-integer	libclamav/scanners.c	9197	        status = cli_jsonuint64(ctx.metadata_json, "FileSize", (uint64_t)ctx.fmap->len);
-fixed-width-integer	libclamav/scanners.c	9203	        status = cli_jsonuint64(ctx.metadata_json, "ObjectID", (uint64_t)ctx.recursion_stack[ctx.recursion_level].object_id);
-fixed-width-integer	libclamav/scanners.c	9490	    uint64_t scanned_out;
-fixed-width-integer	libclamav/scanners.c	9537	    uint64_t scanned_bytes;
-fixed-width-integer	libclamav/scanners.c	9579	    uint64_t *scanned_out,
-fixed-width-integer	libclamav/scanners.c	9588	    uint64_t temporary_bytes_reserved,
-fixed-width-integer	libclamav/scanners.c	9596	    uint64_t root_size;
-fixed-width-integer	libclamav/scanners.c	9636	    root_size = (uint64_t)sb.st_size;
-fixed-width-integer	libclamav/scanners.c	9731	    uint64_t *scanned_out,
-fixed-width-integer	libclamav/scanners.c	9765	    uint64_t *scanned_out,
+fixed-width-integer	libclamav/scanners.c	8213	        uint64_t curr_len = ctx->fmap->len;
+fixed-width-integer	libclamav/scanners.c	8493	static cl_error_t cli_preflight_child_size(cli_ctx *ctx, uint64_t size, uint32_t attributes, const char *who)
+fixed-width-integer	libclamav/scanners.c	8523	                                                    const char *name, uint32_t attributes,
+fixed-width-integer	libclamav/scanners.c	8530	    uint64_t child_size     = 0;
+fixed-width-integer	libclamav/scanners.c	8564	    child_size = (uint64_t)sb.st_size;
+fixed-width-integer	libclamav/scanners.c	8568	    if (child_size > (uint64_t)SIZE_MAX) {
+fixed-width-integer	libclamav/scanners.c	8637	                                    const char *name, uint32_t attributes)
+fixed-width-integer	libclamav/scanners.c	8643	                                             const char *name, uint32_t attributes)
+fixed-width-integer	libclamav/scanners.c	8648	cl_error_t cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
+fixed-width-integer	libclamav/scanners.c	8667	                                              cli_file_t type, const char *name, uint32_t attributes)
+fixed-width-integer	libclamav/scanners.c	8708	                                           cli_file_t type, const char *name, uint32_t attributes)
+fixed-width-integer	libclamav/scanners.c	8745	    ret = cli_preflight_child_size(ctx, (uint64_t)length, attributes, "cli_magic_scan_nested_fmap_type");
+fixed-width-integer	libclamav/scanners.c	8764	        uint64_t temporary_size = (uint64_t)length;
+fixed-width-integer	libclamav/scanners.c	8839	cl_error_t cli_magic_scan_buff(const void *buffer, size_t length, cli_ctx *ctx, const char *name, uint32_t attributes)
+fixed-width-integer	libclamav/scanners.c	8905	    uint64_t *scanned_out,
+fixed-width-integer	libclamav/scanners.c	8915	    uint64_t temporary_bytes_reserved)
+fixed-width-integer	libclamav/scanners.c	9046	            uint32_t secs  = ctx.engine->maxscantime / 1000;
+fixed-width-integer	libclamav/scanners.c	9047	            uint32_t usecs = (ctx.engine->maxscantime % 1000) * 1000;
+fixed-width-integer	libclamav/scanners.c	9195	        status = cli_jsonuint64(ctx.metadata_json, "FileSize", (uint64_t)ctx.fmap->len);
+fixed-width-integer	libclamav/scanners.c	9201	        status = cli_jsonuint64(ctx.metadata_json, "ObjectID", (uint64_t)ctx.recursion_stack[ctx.recursion_level].object_id);
+fixed-width-integer	libclamav/scanners.c	9488	    uint64_t scanned_out;
+fixed-width-integer	libclamav/scanners.c	9535	    uint64_t scanned_bytes;
+fixed-width-integer	libclamav/scanners.c	9577	    uint64_t *scanned_out,
+fixed-width-integer	libclamav/scanners.c	9586	    uint64_t temporary_bytes_reserved,
+fixed-width-integer	libclamav/scanners.c	9594	    uint64_t root_size;
+fixed-width-integer	libclamav/scanners.c	9634	    root_size = (uint64_t)sb.st_size;
+fixed-width-integer	libclamav/scanners.c	9729	    uint64_t *scanned_out,
+fixed-width-integer	libclamav/scanners.c	9763	    uint64_t *scanned_out,
 fixed-width-integer	libclamav/scanners.c	977	    uint64_t temporary_size = 0;
-fixed-width-integer	libclamav/scanners.c	9802	    uint64_t scanned_bytes;
-fixed-width-integer	libclamav/scanners.c	9844	    uint64_t *scanned_out,
-fixed-width-integer	libclamav/scanners.c	9886	    cli_scan_report_set_root_size(report, (uint64_t)map->len);
-fixed-width-integer	libclamav/scanners.c	9916	    uint64_t *scanned_out,
-fixed-width-integer	libclamav/scanners.c	9943	cl_error_t cli_magic_scan_file(const char *filename, cli_ctx *ctx, const char *original_name, uint32_t attributes)
+fixed-width-integer	libclamav/scanners.c	9800	    uint64_t scanned_bytes;
+fixed-width-integer	libclamav/scanners.c	9842	    uint64_t *scanned_out,
+fixed-width-integer	libclamav/scanners.c	9884	    cli_scan_report_set_root_size(report, (uint64_t)map->len);
+fixed-width-integer	libclamav/scanners.c	9914	    uint64_t *scanned_out,
+fixed-width-integer	libclamav/scanners.c	9941	cl_error_t cli_magic_scan_file(const char *filename, cli_ctx *ctx, const char *original_name, uint32_t attributes)
 fixed-width-integer	libclamav/scanners.c	995	        temporary_size = (uint64_t)ctx->fmap->len;
-fixed-width-integer	libclamav/scanners.c	9987	    uint64_t scanned_bytes;
+fixed-width-integer	libclamav/scanners.c	9985	    uint64_t scanned_bytes;
 fixed-width-integer	libclamav/scanners.h	101	    uint64_t *scanned_out,
 fixed-width-integer	libclamav/scanners.h	110	    uint64_t temporary_bytes_reserved,
 fixed-width-integer	libclamav/scanners.h	124	                               const char *name, uint32_t attributes);
@@ -7514,11 +7514,11 @@ fixed-width-integer	unit_tests/check_clamav.c	61954	                            
 fixed-width-integer	unit_tests/check_clamav.c	62115	            (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
 fixed-width-integer	unit_tests/check_clamav.c	62191	        (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
 fixed-width-integer	unit_tests/check_clamav.c	62316	    uint64_t scanned;
-fixed-width-integer	unit_tests/check_clamav.c	64663	static int32_t le_expected[4] = {0x01234567, 0x67012345, 0x45670123, 0x23456701};
-fixed-width-integer	unit_tests/check_clamav.c	64697	    int16_t value;
-fixed-width-integer	unit_tests/check_clamav.c	64715	    int32_t value = le_expected[_i & 3];
+fixed-width-integer	unit_tests/check_clamav.c	64666	static int32_t le_expected[4] = {0x01234567, 0x67012345, 0x45670123, 0x23456701};
+fixed-width-integer	unit_tests/check_clamav.c	64700	    int16_t value;
+fixed-width-integer	unit_tests/check_clamav.c	64718	    int32_t value = le_expected[_i & 3];
 fixed-width-integer	unit_tests/check_clamav.c	6514	    uint64_t scanned = UINT64_MAX;
-fixed-width-integer	unit_tests/check_clamav.c	65376	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
+fixed-width-integer	unit_tests/check_clamav.c	65379	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
 fixed-width-integer	unit_tests/check_clamav.c	7002	    uint32_t old_stats_flags = g_engine->dconf->stats;
 fixed-width-integer	unit_tests/check_clamav.c	7003	    uint32_t old_maxsamples;
 fixed-width-integer	unit_tests/check_clamav.c	7004	    uint32_t old_maxmem;
@@ -15676,11 +15676,11 @@ native-width-integer	libclamav/scan_report.c	68	    long long value;
 native-width-integer	libclamav/scan_report.c	836	    status = report_json_add_int(object, "version", (int)report->version);
 native-width-integer	libclamav/scan_report.c	839	    status = report_json_add_int(object, "status", (int)report->status);
 native-width-integer	libclamav/scan_report.c	845	    status = report_json_add_int(object, "verdict", (int)report->verdict);
-native-width-integer	libclamav/scanners.c	10009	            *scanned = (unsigned long int)scanned_bytes;
-native-width-integer	libclamav/scanners.c	10025	    unsigned long int *scanned,
-native-width-integer	libclamav/scanners.c	10053	            *scanned = (unsigned long int)scanned_out;
-native-width-integer	libclamav/scanners.c	10082	    int fd;
-native-width-integer	libclamav/scanners.c	10125	        int open_errno = errno;
+native-width-integer	libclamav/scanners.c	10007	            *scanned = (unsigned long int)scanned_bytes;
+native-width-integer	libclamav/scanners.c	10023	    unsigned long int *scanned,
+native-width-integer	libclamav/scanners.c	10051	            *scanned = (unsigned long int)scanned_out;
+native-width-integer	libclamav/scanners.c	10080	    int fd;
+native-width-integer	libclamav/scanners.c	10123	        int open_errno = errno;
 native-width-integer	libclamav/scanners.c	1077	static cl_error_t cli_egg_scanmetadata(cl_egg_metadata *metadata, cli_ctx *ctx, unsigned int files)
 native-width-integer	libclamav/scanners.c	1082	               metadata->filename, metadata->encrypted, (unsigned int)metadata->pack_size,
 native-width-integer	libclamav/scanners.c	1083	               (unsigned int)metadata->unpack_size,
@@ -15718,188 +15718,187 @@ native-width-integer	libclamav/scanners.c	2098	    int sourcefd = -1;
 native-width-integer	libclamav/scanners.c	2099	    int gzclose_ret;
 native-width-integer	libclamav/scanners.c	2100	    int gzerr = Z_OK;
 native-width-integer	libclamav/scanners.c	2106	    int bytes = 0;
-native-width-integer	libclamav/scanners.c	2172	        if ((decode_status = cli_write_temp_output(ctx, fd, buff, (size_t)bytes,
-native-width-integer	libclamav/scanners.c	2231	    int fd                   = -1;
-native-width-integer	libclamav/scanners.c	2237	    size_t at                   = 0;
-native-width-integer	libclamav/scanners.c	2267	        unsigned int bytes = MIN(map->len - at, map->pgsz);
-native-width-integer	libclamav/scanners.c	2270	            cli_dbgmsg("GZip: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
-native-width-integer	libclamav/scanners.c	2288	            int inf;
-native-width-integer	libclamav/scanners.c	2289	            size_t produced;
-native-width-integer	libclamav/scanners.c	2412	    int fd, rc;
-native-width-integer	libclamav/scanners.c	2416	    size_t off = 0;
-native-width-integer	libclamav/scanners.c	2417	    size_t avail;
-native-width-integer	libclamav/scanners.c	2466	            unsigned int before_avail_in  = strm.avail_in;
-native-width-integer	libclamav/scanners.c	2467	            unsigned int before_avail_out = strm.avail_out;
-native-width-integer	libclamav/scanners.c	2486	            size_t produced = sizeof(buf) - strm.avail_out;
-native-width-integer	libclamav/scanners.c	2522	                unsigned int avail_in   = strm.avail_in;
-native-width-integer	libclamav/scanners.c	2523	                int init_status;
-native-width-integer	libclamav/scanners.c	2588	    int fd, rc;
-native-width-integer	libclamav/scanners.c	2592	    size_t off = 0;
-native-width-integer	libclamav/scanners.c	2593	    size_t avail;
-native-width-integer	libclamav/scanners.c	2660	            size_t towrite = CLI_XZ_OBUF_SIZE - strm.avail_out;
-native-width-integer	libclamav/scanners.c	2724	    int ofd;
-native-width-integer	libclamav/scanners.c	2761	static cl_error_t vba_scandata(const unsigned char *data, size_t len, cli_ctx *ctx)
-native-width-integer	libclamav/scanners.c	2801	cl_error_t find_file(const char *filename, const char *dir, char *result, size_t result_size)
-native-width-integer	libclamav/scanners.c	2807	    size_t len;
-native-width-integer	libclamav/scanners.c	2905	static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, struct uniq *U, int *has_macros)
-native-width-integer	libclamav/scanners.c	2915	    int tempfd     = -1;
-native-width-integer	libclamav/scanners.c	2941	                cli_dbgmsg("cli_ole2_tempdir_scan_vba_new: Failed to read dir from %s, trying others (error: %s (%d))\n", path, cl_strerror(ret), (int)ret);
+native-width-integer	libclamav/scanners.c	2171	        if ((decode_status = cli_write_temp_output(ctx, fd, buff, (size_t)bytes,
+native-width-integer	libclamav/scanners.c	2230	    int fd                   = -1;
+native-width-integer	libclamav/scanners.c	2236	    size_t at                   = 0;
+native-width-integer	libclamav/scanners.c	2266	        unsigned int bytes = MIN(map->len - at, map->pgsz);
+native-width-integer	libclamav/scanners.c	2269	            cli_dbgmsg("GZip: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
+native-width-integer	libclamav/scanners.c	2287	            int inf;
+native-width-integer	libclamav/scanners.c	2288	            size_t produced;
+native-width-integer	libclamav/scanners.c	2411	    int fd, rc;
+native-width-integer	libclamav/scanners.c	2415	    size_t off = 0;
+native-width-integer	libclamav/scanners.c	2416	    size_t avail;
+native-width-integer	libclamav/scanners.c	2465	            unsigned int before_avail_in  = strm.avail_in;
+native-width-integer	libclamav/scanners.c	2466	            unsigned int before_avail_out = strm.avail_out;
+native-width-integer	libclamav/scanners.c	2485	            size_t produced = sizeof(buf) - strm.avail_out;
+native-width-integer	libclamav/scanners.c	2521	                unsigned int avail_in   = strm.avail_in;
+native-width-integer	libclamav/scanners.c	2522	                int init_status;
+native-width-integer	libclamav/scanners.c	2587	    int fd, rc;
+native-width-integer	libclamav/scanners.c	2591	    size_t off = 0;
+native-width-integer	libclamav/scanners.c	2592	    size_t avail;
+native-width-integer	libclamav/scanners.c	2659	            size_t towrite = CLI_XZ_OBUF_SIZE - strm.avail_out;
+native-width-integer	libclamav/scanners.c	2723	    int ofd;
+native-width-integer	libclamav/scanners.c	2760	static cl_error_t vba_scandata(const unsigned char *data, size_t len, cli_ctx *ctx)
+native-width-integer	libclamav/scanners.c	2800	cl_error_t find_file(const char *filename, const char *dir, char *result, size_t result_size)
+native-width-integer	libclamav/scanners.c	2806	    size_t len;
+native-width-integer	libclamav/scanners.c	2904	static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, struct uniq *U, int *has_macros)
+native-width-integer	libclamav/scanners.c	2914	    int tempfd     = -1;
+native-width-integer	libclamav/scanners.c	2940	                cli_dbgmsg("cli_ole2_tempdir_scan_vba_new: Failed to read dir from %s, trying others (error: %s (%d))\n", path, cl_strerror(ret), (int)ret);
 native-width-integer	libclamav/scanners.c	296	        int open_errno = errno;
-native-width-integer	libclamav/scanners.c	3088	        int fd = -1;
-native-width-integer	libclamav/scanners.c	3095	            int open_errno = errno;
-native-width-integer	libclamav/scanners.c	3124	        int fd = -1;
-native-width-integer	libclamav/scanners.c	3131	            int open_errno = errno;
-native-width-integer	libclamav/scanners.c	3176	    int fd = -1;
-native-width-integer	libclamav/scanners.c	3238	static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struct uniq *U, int *has_macros)
-native-width-integer	libclamav/scanners.c	3243	    int i, j;
-native-width-integer	libclamav/scanners.c	3244	    size_t data_len;
-native-width-integer	libclamav/scanners.c	3253	    int fd = -1;
-native-width-integer	libclamav/scanners.c	3255	    int proj_contents_fd      = -1;
-native-width-integer	libclamav/scanners.c	3287	            for (j = 1; (unsigned int)j <= vba_project->colls[i]; j++) {
+native-width-integer	libclamav/scanners.c	3087	        int fd = -1;
+native-width-integer	libclamav/scanners.c	3094	            int open_errno = errno;
+native-width-integer	libclamav/scanners.c	3123	        int fd = -1;
+native-width-integer	libclamav/scanners.c	3130	            int open_errno = errno;
+native-width-integer	libclamav/scanners.c	3175	    int fd = -1;
+native-width-integer	libclamav/scanners.c	3237	static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struct uniq *U, int *has_macros)
+native-width-integer	libclamav/scanners.c	3242	    int i, j;
+native-width-integer	libclamav/scanners.c	3243	    size_t data_len;
+native-width-integer	libclamav/scanners.c	3252	    int fd = -1;
+native-width-integer	libclamav/scanners.c	3254	    int proj_contents_fd      = -1;
+native-width-integer	libclamav/scanners.c	3286	            for (j = 1; (unsigned int)j <= vba_project->colls[i]; j++) {
 native-width-integer	libclamav/scanners.c	338	static cl_error_t cli_unrar_scanmetadata(unrar_metadata_t *metadata, cli_ctx *ctx, unsigned int files)
 native-width-integer	libclamav/scanners.c	343	               metadata->filename, metadata->crc, metadata->encrypted, (unsigned int)metadata->pack_size,
 native-width-integer	libclamav/scanners.c	344	               (unsigned int)metadata->unpack_size, metadata->method,
 native-width-integer	libclamav/scanners.c	345	               metadata->pack_size ? (unsigned int)(metadata->unpack_size / metadata->pack_size) : 0);
-native-width-integer	libclamav/scanners.c	3606	                    cli_dbgmsg("cli_ole2_tempdir_scan_for_xlm_and_images: An error occurred when parsing XLM BIFF temp file, trying the next file (error: %s (%d)).\n", cl_strerror(ret), (int)ret);
-native-width-integer	libclamav/scanners.c	4003	static bool is_url(const char *const str, size_t str_len)
-native-width-integer	libclamav/scanners.c	4006	    size_t i;
-native-width-integer	libclamav/scanners.c	4022	    int i = 0;
-native-width-integer	libclamav/scanners.c	4053	    for (i = 0; i < (int)form_data->count; i++) {
-native-width-integer	libclamav/scanners.c	4094	    int fd            = -1;
+native-width-integer	libclamav/scanners.c	3605	                    cli_dbgmsg("cli_ole2_tempdir_scan_for_xlm_and_images: An error occurred when parsing XLM BIFF temp file, trying the next file (error: %s (%d)).\n", cl_strerror(ret), (int)ret);
+native-width-integer	libclamav/scanners.c	4002	static bool is_url(const char *const str, size_t str_len)
+native-width-integer	libclamav/scanners.c	4005	    size_t i;
+native-width-integer	libclamav/scanners.c	4021	    int i = 0;
+native-width-integer	libclamav/scanners.c	4052	    for (i = 0; i < (int)form_data->count; i++) {
+native-width-integer	libclamav/scanners.c	4093	    int fd            = -1;
 native-width-integer	libclamav/scanners.c	412	static cl_error_t cli_rar_write_comment(cli_ctx *ctx, int fd, const char *comment, uint32_t comment_size)
-native-width-integer	libclamav/scanners.c	4177	        int open_errno = errno;
+native-width-integer	libclamav/scanners.c	4176	        int open_errno = errno;
 native-width-integer	libclamav/scanners.c	418	        size_t chunk       = (remaining > RAR_COMMENT_WRITE_CHUNK) ? RAR_COMMENT_WRITE_CHUNK : (size_t)remaining;
-native-width-integer	libclamav/scanners.c	4205	        int open_errno = errno;
-native-width-integer	libclamav/scanners.c	4250	        int open_errno = errno;
-native-width-integer	libclamav/scanners.c	4321	    size_t input_len,
-native-width-integer	libclamav/scanners.c	4325	    size_t i;
+native-width-integer	libclamav/scanners.c	4204	        int open_errno = errno;
+native-width-integer	libclamav/scanners.c	4249	        int open_errno = errno;
+native-width-integer	libclamav/scanners.c	4320	    size_t input_len,
+native-width-integer	libclamav/scanners.c	4324	    size_t i;
 native-width-integer	libclamav/scanners.c	433	static int cli_rar_progress_callback(void *opaque)
-native-width-integer	libclamav/scanners.c	4371	                                 size_t output_size, size_t *written)
-native-width-integer	libclamav/scanners.c	4373	    size_t needed;
-native-width-integer	libclamav/scanners.c	4408	    size_t input_len,
-native-width-integer	libclamav/scanners.c	4414	    size_t output_size,
-native-width-integer	libclamav/scanners.c	4415	    size_t *written)
-native-width-integer	libclamav/scanners.c	4417	    size_t i;
-native-width-integer	libclamav/scanners.c	4474	    int ofd       = -1;
-native-width-integer	libclamav/scanners.c	4477	    size_t at = 0;
-native-width-integer	libclamav/scanners.c	4478	    size_t normalize_len;
-native-width-integer	libclamav/scanners.c	4541	        size_t len;
-native-width-integer	libclamav/scanners.c	4551	            len = MIN(map->len - at, (size_t)SCRIPT_UTF16_INPUT_CHUNK);
-native-width-integer	libclamav/scanners.c	4587	            size_t written = state.out_pos;
-native-width-integer	libclamav/scanners.c	4618	        int empty = 0;
+native-width-integer	libclamav/scanners.c	4370	                                 size_t output_size, size_t *written)
+native-width-integer	libclamav/scanners.c	4372	    size_t needed;
+native-width-integer	libclamav/scanners.c	4407	    size_t input_len,
+native-width-integer	libclamav/scanners.c	4413	    size_t output_size,
+native-width-integer	libclamav/scanners.c	4414	    size_t *written)
+native-width-integer	libclamav/scanners.c	4416	    size_t i;
+native-width-integer	libclamav/scanners.c	4473	    int ofd       = -1;
+native-width-integer	libclamav/scanners.c	4476	    size_t at = 0;
+native-width-integer	libclamav/scanners.c	4477	    size_t normalize_len;
+native-width-integer	libclamav/scanners.c	4540	        size_t len;
+native-width-integer	libclamav/scanners.c	4550	            len = MIN(map->len - at, (size_t)SCRIPT_UTF16_INPUT_CHUNK);
+native-width-integer	libclamav/scanners.c	4586	            size_t written = state.out_pos;
+native-width-integer	libclamav/scanners.c	4617	        int empty = 0;
 native-width-integer	libclamav/scanners.c	468	static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
-native-width-integer	libclamav/scanners.c	4684	    int fd = -1;
-native-width-integer	libclamav/scanners.c	4685	    size_t bytes;
-native-width-integer	libclamav/scanners.c	4686	    size_t decoded_len;
-native-width-integer	libclamav/scanners.c	4687	    size_t at       = 0;
+native-width-integer	libclamav/scanners.c	4683	    int fd = -1;
+native-width-integer	libclamav/scanners.c	4684	    size_t bytes;
+native-width-integer	libclamav/scanners.c	4685	    size_t decoded_len;
+native-width-integer	libclamav/scanners.c	4686	    size_t at       = 0;
 native-width-integer	libclamav/scanners.c	475	    unsigned int file_count = 0;
-native-width-integer	libclamav/scanners.c	4762	        bytes = MIN(ctx->fmap->len - at, (size_t)SCRIPT_UTF16_INPUT_CHUNK);
-native-width-integer	libclamav/scanners.c	4861	    int has_vba,
-native-width-integer	libclamav/scanners.c	4862	    int has_xlm,
-native-width-integer	libclamav/scanners.c	4863	    int has_image)
-native-width-integer	libclamav/scanners.c	4868	    int has_macros    = 0;
+native-width-integer	libclamav/scanners.c	4761	        bytes = MIN(ctx->fmap->len - at, (size_t)SCRIPT_UTF16_INPUT_CHUNK);
+native-width-integer	libclamav/scanners.c	4860	    int has_vba,
+native-width-integer	libclamav/scanners.c	4861	    int has_xlm,
+native-width-integer	libclamav/scanners.c	4862	    int has_image)
+native-width-integer	libclamav/scanners.c	4867	    int has_macros    = 0;
 native-width-integer	libclamav/scanners.c	489	    int extracted_fd = -1;
-native-width-integer	libclamav/scanners.c	5017	    int has_vba        = 0;
-native-width-integer	libclamav/scanners.c	5018	    int has_xlm        = 0;
-native-width-integer	libclamav/scanners.c	5019	    int has_image      = 0;
-native-width-integer	libclamav/scanners.c	5077	static cl_error_t cli_scantar(cli_ctx *ctx, unsigned int posix)
-native-width-integer	libclamav/scanners.c	5157	    int check;
-native-width-integer	libclamav/scanners.c	5172	    int ndesc;
-native-width-integer	libclamav/scanners.c	5173	    unsigned int i;
-native-width-integer	libclamav/scanners.c	5177	    size_t pos;
-native-width-integer	libclamav/scanners.c	5178	    size_t bread;
-native-width-integer	libclamav/scanners.c	5278	static cl_error_t cli_scanpdf(cli_ctx *ctx, off_t offset)
+native-width-integer	libclamav/scanners.c	5016	    int has_vba        = 0;
+native-width-integer	libclamav/scanners.c	5017	    int has_xlm        = 0;
+native-width-integer	libclamav/scanners.c	5018	    int has_image      = 0;
+native-width-integer	libclamav/scanners.c	5076	static cl_error_t cli_scantar(cli_ctx *ctx, unsigned int posix)
+native-width-integer	libclamav/scanners.c	5156	    int check;
+native-width-integer	libclamav/scanners.c	5171	    int ndesc;
+native-width-integer	libclamav/scanners.c	5172	    unsigned int i;
+native-width-integer	libclamav/scanners.c	5176	    size_t pos;
+native-width-integer	libclamav/scanners.c	5177	    size_t bread;
+native-width-integer	libclamav/scanners.c	5277	static cl_error_t cli_scanpdf(cli_ctx *ctx, off_t offset)
 native-width-integer	libclamav/scanners.c	530	            int comment_fd = -1;
-native-width-integer	libclamav/scanners.c	5418	    size_t result          = 0;
-native-width-integer	libclamav/scanners.c	5423	    size_t pos = 0;
-native-width-integer	libclamav/scanners.c	5424	    int (*ccfunc)(const unsigned char *buffer, size_t length, int cc_only);
-native-width-integer	libclamav/scanners.c	5425	    int (*ssnfunc)(const unsigned char *buffer, size_t length);
-native-width-integer	libclamav/scanners.c	5485	        if (result == (size_t)-1) {
-native-width-integer	libclamav/scanners.c	5497	            int cc_found = ccfunc((const unsigned char *)buf, result,
-native-width-integer	libclamav/scanners.c	5509	            int ssn_found = ssnfunc((const unsigned char *)buf, result);
-native-width-integer	libclamav/scanners.c	5520	    if (result == (size_t)-1) {
-native-width-integer	libclamav/scanners.c	5528	        cli_dbgmsg("cli_scan_structured: %llu credit card numbers detected\n", (unsigned long long)cc_count);
-native-width-integer	libclamav/scanners.c	5541	        cli_dbgmsg("cli_scan_structured: %llu social security numbers detected\n", (unsigned long long)ssn_count);
-native-width-integer	libclamav/scanners.c	5666	static inline void perf_start(cli_ctx *ctx, int id)
-native-width-integer	libclamav/scanners.c	5671	static inline void perf_stop(cli_ctx *ctx, int id)
-native-width-integer	libclamav/scanners.c	5676	static inline void perf_nested_start(cli_ctx *ctx, int id, int nestedid)
-native-width-integer	libclamav/scanners.c	5681	static inline void perf_nested_stop(cli_ctx *ctx, int id, int nestedid)
-native-width-integer	libclamav/scanners.c	5691	static inline void perf_start(cli_ctx *ctx, int id)
-native-width-integer	libclamav/scanners.c	5696	static inline void perf_stop(cli_ctx *ctx, int id)
-native-width-integer	libclamav/scanners.c	5701	static inline void perf_nested_start(cli_ctx *ctx, int id, int nestedid)
-native-width-integer	libclamav/scanners.c	5707	static inline void perf_nested_stop(cli_ctx *ctx, int id, int nestedid)
-native-width-integer	libclamav/scanners.c	5723	cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset)
-native-width-integer	libclamav/scanners.c	5783	    unsigned int acmode               = AC_SCAN_VIR;
-native-width-integer	libclamav/scanners.c	5832	        size_t last_offset = 0;
-native-width-integer	libclamav/scanners.c	5865	                ((size_t)fpt->offset > last_offset)) {
-native-width-integer	libclamav/scanners.c	5869	                size_t i;
-native-width-integer	libclamav/scanners.c	5871	                last_offset = (size_t)fpt->offset;
-native-width-integer	libclamav/scanners.c	6176	                                size_t zip_size = 0;
-native-width-integer	libclamav/scanners.c	6214	                                size_t cab_size = 0;
-native-width-integer	libclamav/scanners.c	6245	                                size_t arj_size = 0;
-native-width-integer	libclamav/scanners.c	6316	                                off_t archive_offset = fpt->offset - 4;
-native-width-integer	libclamav/scanners.c	6329	                                    (size_t)archive_offset,
-native-width-integer	libclamav/scanners.c	6330	                                    ctx->fmap->len - (size_t)archive_offset,
-native-width-integer	libclamav/scanners.c	6478	                                unsigned int corrupted_input = ctx->corrupted_input;
-native-width-integer	libclamav/scanners.c	6648	    int fd              = -1;
-native-width-integer	libclamav/scanners.c	6653	    size_t file_size        = 0;
-native-width-integer	libclamav/scanners.c	6657	    size_t parent_file_size = 0;
-native-width-integer	libclamav/scanners.c	6812	    size_t image_size          = ctx->fmap->len;
-native-width-integer	libclamav/scanners.c	6921	    size_t type_index;
-native-width-integer	libclamav/scanners.c	6938	            size_t indicator_index;
-native-width-integer	libclamav/scanners.c	6939	            size_t count = evidence_num_indicators_type(ctx->this_layer_evidence, types[type_index]);
-native-width-integer	libclamav/scanners.c	7212	 * @brief Log a long string without truncating it through cli_dbgmsg().
-native-width-integer	libclamav/scanners.c	7218	    const size_t chunk_size = 4096;
-native-width-integer	libclamav/scanners.c	7219	    size_t len;
-native-width-integer	libclamav/scanners.c	7220	    size_t offset;
-native-width-integer	libclamav/scanners.c	7234	        size_t remaining    = len - offset;
-native-width-integer	libclamav/scanners.c	7235	        size_t chunk_len    = (remaining < chunk_size) ? remaining : chunk_size;
-native-width-integer	libclamav/scanners.c	7239	            chunk_len = (size_t)(newline - chunk) + 1;
-native-width-integer	libclamav/scanners.c	7240	            cli_dbgmsg("%.*s", (int)chunk_len, chunk);
-native-width-integer	libclamav/scanners.c	7242	            cli_dbgmsg("%.*s\n", (int)chunk_len, chunk);
-native-width-integer	libclamav/scanners.c	7633	                size_t i;
-native-width-integer	libclamav/scanners.c	7634	                size_t hash_len = cli_hash_len(hash_type);
-native-width-integer	libclamav/scanners.c	8286	                unsigned int corrupted_input = ctx->corrupted_input;
-native-width-integer	libclamav/scanners.c	8524	static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
-native-width-integer	libclamav/scanners.c	8568	    /* fmap_new() accepts a native size_t length. Do not narrow a valid
-native-width-integer	libclamav/scanners.c	8638	cl_error_t cli_magic_scan_desc_type(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
-native-width-integer	libclamav/scanners.c	8644	cl_error_t cli_magic_scan_desc_type_reserved(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
-native-width-integer	libclamav/scanners.c	8650	cl_error_t cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
-native-width-integer	libclamav/scanners.c	8666	 * @return int      CL_SUCCESS, or an error code.
-native-width-integer	libclamav/scanners.c	8668	static cl_error_t magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
-native-width-integer	libclamav/scanners.c	8709	cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
-native-width-integer	libclamav/scanners.c	8764	        int fd                  = -1;
-native-width-integer	libclamav/scanners.c	8765	        size_t copied           = 0;
-native-width-integer	libclamav/scanners.c	8789	            size_t chunk = MIN(sizeof(copybuf), length - copied);
-native-width-integer	libclamav/scanners.c	8790	            size_t nread;
-native-width-integer	libclamav/scanners.c	8841	cl_error_t cli_magic_scan_buff(const void *buffer, size_t length, cli_ctx *ctx, const char *name, uint32_t attributes)
-native-width-integer	libclamav/scanners.c	8928	    size_t new_temp_prefix_len;
-native-width-integer	libclamav/scanners.c	8935	    size_t num_potentially_unwanted_indicators = 0;
-native-width-integer	libclamav/scanners.c	8982	        size_t hash_string_len        = strlen(hash_hint);
+native-width-integer	libclamav/scanners.c	5417	    size_t result          = 0;
+native-width-integer	libclamav/scanners.c	5422	    size_t pos = 0;
+native-width-integer	libclamav/scanners.c	5423	    int (*ccfunc)(const unsigned char *buffer, size_t length, int cc_only);
+native-width-integer	libclamav/scanners.c	5424	    int (*ssnfunc)(const unsigned char *buffer, size_t length);
+native-width-integer	libclamav/scanners.c	5484	        if (result == (size_t)-1) {
+native-width-integer	libclamav/scanners.c	5496	            int cc_found = ccfunc((const unsigned char *)buf, result,
+native-width-integer	libclamav/scanners.c	5508	            int ssn_found = ssnfunc((const unsigned char *)buf, result);
+native-width-integer	libclamav/scanners.c	5519	    if (result == (size_t)-1) {
+native-width-integer	libclamav/scanners.c	5527	        cli_dbgmsg("cli_scan_structured: %llu credit card numbers detected\n", (unsigned long long)cc_count);
+native-width-integer	libclamav/scanners.c	5540	        cli_dbgmsg("cli_scan_structured: %llu social security numbers detected\n", (unsigned long long)ssn_count);
+native-width-integer	libclamav/scanners.c	5665	static inline void perf_start(cli_ctx *ctx, int id)
+native-width-integer	libclamav/scanners.c	5670	static inline void perf_stop(cli_ctx *ctx, int id)
+native-width-integer	libclamav/scanners.c	5675	static inline void perf_nested_start(cli_ctx *ctx, int id, int nestedid)
+native-width-integer	libclamav/scanners.c	5680	static inline void perf_nested_stop(cli_ctx *ctx, int id, int nestedid)
+native-width-integer	libclamav/scanners.c	5690	static inline void perf_start(cli_ctx *ctx, int id)
+native-width-integer	libclamav/scanners.c	5695	static inline void perf_stop(cli_ctx *ctx, int id)
+native-width-integer	libclamav/scanners.c	5700	static inline void perf_nested_start(cli_ctx *ctx, int id, int nestedid)
+native-width-integer	libclamav/scanners.c	5706	static inline void perf_nested_stop(cli_ctx *ctx, int id, int nestedid)
+native-width-integer	libclamav/scanners.c	5722	cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset)
+native-width-integer	libclamav/scanners.c	5782	    unsigned int acmode               = AC_SCAN_VIR;
+native-width-integer	libclamav/scanners.c	5831	        size_t last_offset = 0;
+native-width-integer	libclamav/scanners.c	5864	                ((size_t)fpt->offset > last_offset)) {
+native-width-integer	libclamav/scanners.c	5868	                last_offset = (size_t)fpt->offset;
+native-width-integer	libclamav/scanners.c	6174	                                size_t zip_size = 0;
+native-width-integer	libclamav/scanners.c	6212	                                size_t cab_size = 0;
+native-width-integer	libclamav/scanners.c	6243	                                size_t arj_size = 0;
+native-width-integer	libclamav/scanners.c	6314	                                off_t archive_offset = fpt->offset - 4;
+native-width-integer	libclamav/scanners.c	6327	                                    (size_t)archive_offset,
+native-width-integer	libclamav/scanners.c	6328	                                    ctx->fmap->len - (size_t)archive_offset,
+native-width-integer	libclamav/scanners.c	6476	                                unsigned int corrupted_input = ctx->corrupted_input;
+native-width-integer	libclamav/scanners.c	6646	    int fd              = -1;
+native-width-integer	libclamav/scanners.c	6651	    size_t file_size        = 0;
+native-width-integer	libclamav/scanners.c	6655	    size_t parent_file_size = 0;
+native-width-integer	libclamav/scanners.c	6810	    size_t image_size          = ctx->fmap->len;
+native-width-integer	libclamav/scanners.c	6919	    size_t type_index;
+native-width-integer	libclamav/scanners.c	6936	            size_t indicator_index;
+native-width-integer	libclamav/scanners.c	6937	            size_t count = evidence_num_indicators_type(ctx->this_layer_evidence, types[type_index]);
+native-width-integer	libclamav/scanners.c	7210	 * @brief Log a long string without truncating it through cli_dbgmsg().
+native-width-integer	libclamav/scanners.c	7216	    const size_t chunk_size = 4096;
+native-width-integer	libclamav/scanners.c	7217	    size_t len;
+native-width-integer	libclamav/scanners.c	7218	    size_t offset;
+native-width-integer	libclamav/scanners.c	7232	        size_t remaining    = len - offset;
+native-width-integer	libclamav/scanners.c	7233	        size_t chunk_len    = (remaining < chunk_size) ? remaining : chunk_size;
+native-width-integer	libclamav/scanners.c	7237	            chunk_len = (size_t)(newline - chunk) + 1;
+native-width-integer	libclamav/scanners.c	7238	            cli_dbgmsg("%.*s", (int)chunk_len, chunk);
+native-width-integer	libclamav/scanners.c	7240	            cli_dbgmsg("%.*s\n", (int)chunk_len, chunk);
+native-width-integer	libclamav/scanners.c	7631	                size_t i;
+native-width-integer	libclamav/scanners.c	7632	                size_t hash_len = cli_hash_len(hash_type);
+native-width-integer	libclamav/scanners.c	8284	                unsigned int corrupted_input = ctx->corrupted_input;
+native-width-integer	libclamav/scanners.c	8522	static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
+native-width-integer	libclamav/scanners.c	8566	    /* fmap_new() accepts a native size_t length. Do not narrow a valid
+native-width-integer	libclamav/scanners.c	8636	cl_error_t cli_magic_scan_desc_type(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
+native-width-integer	libclamav/scanners.c	8642	cl_error_t cli_magic_scan_desc_type_reserved(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
+native-width-integer	libclamav/scanners.c	8648	cl_error_t cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
+native-width-integer	libclamav/scanners.c	8664	 * @return int      CL_SUCCESS, or an error code.
+native-width-integer	libclamav/scanners.c	8666	static cl_error_t magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
+native-width-integer	libclamav/scanners.c	8707	cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
+native-width-integer	libclamav/scanners.c	8762	        int fd                  = -1;
+native-width-integer	libclamav/scanners.c	8763	        size_t copied           = 0;
+native-width-integer	libclamav/scanners.c	8787	            size_t chunk = MIN(sizeof(copybuf), length - copied);
+native-width-integer	libclamav/scanners.c	8788	            size_t nread;
+native-width-integer	libclamav/scanners.c	8839	cl_error_t cli_magic_scan_buff(const void *buffer, size_t length, cli_ctx *ctx, const char *name, uint32_t attributes)
+native-width-integer	libclamav/scanners.c	8926	    size_t new_temp_prefix_len;
+native-width-integer	libclamav/scanners.c	8933	    size_t num_potentially_unwanted_indicators = 0;
+native-width-integer	libclamav/scanners.c	8980	        size_t hash_string_len        = strlen(hash_hint);
+native-width-integer	libclamav/scanners.c	9249	            int fd        = -1;
 native-width-integer	libclamav/scanners.c	925	static cl_error_t cli_rar_stage_fmap(cli_ctx *ctx, char **tmpname, int *tmpfd)
-native-width-integer	libclamav/scanners.c	9251	            int fd        = -1;
 native-width-integer	libclamav/scanners.c	928	    size_t copied = 0;
-native-width-integer	libclamav/scanners.c	9292	            size_t i;
-native-width-integer	libclamav/scanners.c	9370	        size_t hash_len   = cli_hash_len(requested_hash_type);
-native-width-integer	libclamav/scanners.c	9384	                size_t i;
+native-width-integer	libclamav/scanners.c	9290	            size_t i;
+native-width-integer	libclamav/scanners.c	9368	        size_t hash_len   = cli_hash_len(requested_hash_type);
+native-width-integer	libclamav/scanners.c	9382	                size_t i;
 native-width-integer	libclamav/scanners.c	944	        size_t chunk = MIN(sizeof(buffer), ctx->fmap->len - copied);
 native-width-integer	libclamav/scanners.c	945	        size_t nread;
-native-width-integer	libclamav/scanners.c	9482	    int desc,
-native-width-integer	libclamav/scanners.c	9485	    unsigned long int *scanned,
-native-width-integer	libclamav/scanners.c	9514	            *scanned = (unsigned long int)(scanned_out / CL_COUNT_PRECISION);
-native-width-integer	libclamav/scanners.c	9528	    int desc,
-native-width-integer	libclamav/scanners.c	9531	    unsigned long int *scanned,
-native-width-integer	libclamav/scanners.c	9561	            *scanned = (unsigned long int)(scanned_bytes / CL_COUNT_PRECISION);
-native-width-integer	libclamav/scanners.c	9575	    int desc,
-native-width-integer	libclamav/scanners.c	9660	        preflight_map.len          = (size_t)root_size;
-native-width-integer	libclamav/scanners.c	9727	    int desc,
+native-width-integer	libclamav/scanners.c	9480	    int desc,
+native-width-integer	libclamav/scanners.c	9483	    unsigned long int *scanned,
+native-width-integer	libclamav/scanners.c	9512	            *scanned = (unsigned long int)(scanned_out / CL_COUNT_PRECISION);
+native-width-integer	libclamav/scanners.c	9526	    int desc,
+native-width-integer	libclamav/scanners.c	9529	    unsigned long int *scanned,
+native-width-integer	libclamav/scanners.c	9559	            *scanned = (unsigned long int)(scanned_bytes / CL_COUNT_PRECISION);
+native-width-integer	libclamav/scanners.c	9573	    int desc,
+native-width-integer	libclamav/scanners.c	9658	        preflight_map.len          = (size_t)root_size;
+native-width-integer	libclamav/scanners.c	9725	    int desc,
 native-width-integer	libclamav/scanners.c	973	    int fd               = -1;
+native-width-integer	libclamav/scanners.c	9759	    int desc,
 native-width-integer	libclamav/scanners.c	976	    int tmpfd               = -1;
-native-width-integer	libclamav/scanners.c	9761	    int desc,
-native-width-integer	libclamav/scanners.c	9796	    unsigned long int *scanned,
-native-width-integer	libclamav/scanners.c	9826	            *scanned = (unsigned long int)(scanned_bytes / CL_COUNT_PRECISION);
-native-width-integer	libclamav/scanners.c	9945	    int fd         = -1;
-native-width-integer	libclamav/scanners.c	9982	    unsigned long int *scanned,
+native-width-integer	libclamav/scanners.c	9794	    unsigned long int *scanned,
+native-width-integer	libclamav/scanners.c	9824	            *scanned = (unsigned long int)(scanned_bytes / CL_COUNT_PRECISION);
+native-width-integer	libclamav/scanners.c	9943	    int fd         = -1;
+native-width-integer	libclamav/scanners.c	9980	    unsigned long int *scanned,
 native-width-integer	libclamav/scanners.h	121	 * @return int          CL_SUCCESS, or an error code.
 native-width-integer	libclamav/scanners.h	123	cl_error_t cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx,
 native-width-integer	libclamav/scanners.h	132	cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset);
@@ -21921,41 +21920,41 @@ native-width-integer	unit_tests/check_clamav.c	62249	    size_t data_length;
 native-width-integer	unit_tests/check_clamav.c	62354	    unsigned int sigs = 0;
 native-width-integer	unit_tests/check_clamav.c	62364	    dbio.size    = (unsigned int)(sizeof(signature) - 1U);
 native-width-integer	unit_tests/check_clamav.c	6250	    unsigned int failure;
-native-width-integer	unit_tests/check_clamav.c	62600	    int expect         = expected_testfiles;
+native-width-integer	unit_tests/check_clamav.c	62601	    int expect         = expected_testfiles;
 native-width-integer	unit_tests/check_clamav.c	6346	    unsigned int failure;
-native-width-integer	unit_tests/check_clamav.c	64653	        int timeout = atoi(user_timeout);
-native-width-integer	unit_tests/check_clamav.c	64671	    size_t i;
-native-width-integer	unit_tests/check_clamav.c	64696	    size_t j;
-native-width-integer	unit_tests/check_clamav.c	64714	    size_t j;
-native-width-integer	unit_tests/check_clamav.c	64731	    size_t j;
-native-width-integer	unit_tests/check_clamav.c	64752	    int result;
-native-width-integer	unit_tests/check_clamav.c	64775	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
-native-width-integer	unit_tests/check_clamav.c	64790	    unsigned int signature_length        = 0;
-native-width-integer	unit_tests/check_clamav.c	64819	    int ret;
-native-width-integer	unit_tests/check_clamav.c	64848	    size_t hash_len = 0;
-native-width-integer	unit_tests/check_clamav.c	64849	    size_t expected_len = 0;
-native-width-integer	unit_tests/check_clamav.c	64850	    int fd;
-native-width-integer	unit_tests/check_clamav.c	64853	    ck_assert_int_gt(snprintf(path, sizeof(path), "%s/hash-file-fd-ex-%ld", tmpdir, (long)getpid()), 0);
-native-width-integer	unit_tests/check_clamav.c	64856	    ck_assert_int_eq(write(fd, content, sizeof(content) - 1U), (ssize_t)(sizeof(content) - 1U));
-native-width-integer	unit_tests/check_clamav.c	64919	    int i;
-native-width-integer	unit_tests/check_clamav.c	65203	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	65221	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	65239	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	65257	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	65276	    size_t utf8_size = SIZE_MAX;
-native-width-integer	unit_tests/check_clamav.c	65327	int open_testfile(const char *name, int flags)
-native-width-integer	unit_tests/check_clamav.c	65329	    int fd;
-native-width-integer	unit_tests/check_clamav.c	65342	void diff_file_mem(int fd, const char *ref, size_t len)
-native-width-integer	unit_tests/check_clamav.c	65345	    size_t p, reflen = len;
-native-width-integer	unit_tests/check_clamav.c	65368	void diff_files(int fd, int ref_fd)
-native-width-integer	unit_tests/check_clamav.c	65371	    ssize_t nread;
-native-width-integer	unit_tests/check_clamav.c	65372	    off_t siz = lseek(ref_fd, 0, SEEK_END);
+native-width-integer	unit_tests/check_clamav.c	64656	        int timeout = atoi(user_timeout);
+native-width-integer	unit_tests/check_clamav.c	64674	    size_t i;
+native-width-integer	unit_tests/check_clamav.c	64699	    size_t j;
+native-width-integer	unit_tests/check_clamav.c	64717	    size_t j;
+native-width-integer	unit_tests/check_clamav.c	64734	    size_t j;
+native-width-integer	unit_tests/check_clamav.c	64755	    int result;
+native-width-integer	unit_tests/check_clamav.c	64778	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
+native-width-integer	unit_tests/check_clamav.c	64793	    unsigned int signature_length        = 0;
+native-width-integer	unit_tests/check_clamav.c	64822	    int ret;
+native-width-integer	unit_tests/check_clamav.c	64851	    size_t hash_len = 0;
+native-width-integer	unit_tests/check_clamav.c	64852	    size_t expected_len = 0;
+native-width-integer	unit_tests/check_clamav.c	64853	    int fd;
+native-width-integer	unit_tests/check_clamav.c	64856	    ck_assert_int_gt(snprintf(path, sizeof(path), "%s/hash-file-fd-ex-%ld", tmpdir, (long)getpid()), 0);
+native-width-integer	unit_tests/check_clamav.c	64859	    ck_assert_int_eq(write(fd, content, sizeof(content) - 1U), (ssize_t)(sizeof(content) - 1U));
+native-width-integer	unit_tests/check_clamav.c	64922	    int i;
+native-width-integer	unit_tests/check_clamav.c	65206	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	65224	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	65242	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	65260	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	65279	    size_t utf8_size = SIZE_MAX;
+native-width-integer	unit_tests/check_clamav.c	65330	int open_testfile(const char *name, int flags)
+native-width-integer	unit_tests/check_clamav.c	65332	    int fd;
+native-width-integer	unit_tests/check_clamav.c	65345	void diff_file_mem(int fd, const char *ref, size_t len)
+native-width-integer	unit_tests/check_clamav.c	65348	    size_t p, reflen = len;
+native-width-integer	unit_tests/check_clamav.c	65371	void diff_files(int fd, int ref_fd)
+native-width-integer	unit_tests/check_clamav.c	65374	    ssize_t nread;
+native-width-integer	unit_tests/check_clamav.c	65375	    off_t siz = lseek(ref_fd, 0, SEEK_END);
 native-width-integer	unit_tests/check_clamav.c	654	cl_error_t __wrap_cli_jsonbool(json_object *obj, const char *key, int i)
-native-width-integer	unit_tests/check_clamav.c	65438	int main(int argc, char **argv)
-native-width-integer	unit_tests/check_clamav.c	65440	    int nf;
-native-width-integer	unit_tests/check_clamav.c	65596	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
-native-width-integer	unit_tests/check_clamav.c	65597	static size_t jpeg_entropy_largest_read;
-native-width-integer	unit_tests/check_clamav.c	65601	static const void *jpeg_entropy_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+native-width-integer	unit_tests/check_clamav.c	65441	int main(int argc, char **argv)
+native-width-integer	unit_tests/check_clamav.c	65443	    int nf;
+native-width-integer	unit_tests/check_clamav.c	65599	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
+native-width-integer	unit_tests/check_clamav.c	65600	static size_t jpeg_entropy_largest_read;
+native-width-integer	unit_tests/check_clamav.c	65604	static const void *jpeg_entropy_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 native-width-integer	unit_tests/check_clamav.c	6595	    size_t i;
 native-width-integer	unit_tests/check_clamav.c	6627	    int validated_fd          = -1;
 native-width-integer	unit_tests/check_clamav.c	6682	    int cwd_fd                = -1;
@@ -23184,25 +23183,25 @@ boundary-constant	libclamav/regex_list.c	379	            max = INT_MAX;
 boundary-constant	libclamav/regex_list.c	75	    if (count > SIZE_MAX / element_size ||
 boundary-constant	libclamav/regex_list.c	830	        if (n == SIZE_MAX ||
 boundary-constant	libclamav/regex_list.c	904	    if (matcher->regex_cnt == SIZE_MAX ||
-boundary-constant	libclamav/scanners.c	10005	        if (SIZEOF_LONG == 4 && scanned_bytes > UINT32_MAX) {
-boundary-constant	libclamav/scanners.c	10006	            cli_warnmsg("cl_scanfile_callback: scanned_bytes exceeds UINT32_MAX, setting to UINT32_MAX\n");
-boundary-constant	libclamav/scanners.c	10007	            *scanned = UINT32_MAX;
-boundary-constant	libclamav/scanners.c	10049	        if (SIZEOF_LONG == 4 && scanned_out > UINT32_MAX) {
-boundary-constant	libclamav/scanners.c	10050	            cli_warnmsg("cl_scanfile_callback: scanned_out exceeds UINT32_MAX, setting to UINT32_MAX\n");
-boundary-constant	libclamav/scanners.c	10051	            *scanned = UINT32_MAX;
-boundary-constant	libclamav/scanners.c	6425	                                if ((uint64_t)fpt->offset > UINT32_MAX) {
-boundary-constant	libclamav/scanners.c	8570	    if (child_size > (uint64_t)SIZE_MAX) {
-boundary-constant	libclamav/scanners.c	9510	            (scanned_out / CL_COUNT_PRECISION > UINT32_MAX)) {
-boundary-constant	libclamav/scanners.c	9511	            cli_warnmsg("cl_scanfile_callback: scanned_out exceeds UINT32_MAX, setting to UINT32_MAX\n");
-boundary-constant	libclamav/scanners.c	9512	            *scanned = UINT32_MAX;
-boundary-constant	libclamav/scanners.c	9557	            (scanned_bytes / CL_COUNT_PRECISION > UINT32_MAX)) {
-boundary-constant	libclamav/scanners.c	9558	            cli_warnmsg("cl_scanfile_callback: scanned_bytes exceeds UINT32_MAX, setting to UINT32_MAX\n");
-boundary-constant	libclamav/scanners.c	9559	            *scanned = UINT32_MAX;
-boundary-constant	libclamav/scanners.c	9639	    if (root_size > SIZE_MAX) {
-boundary-constant	libclamav/scanners.c	9653	        if (root_size > SIZE_MAX) {
-boundary-constant	libclamav/scanners.c	9822	            (scanned_bytes / CL_COUNT_PRECISION > UINT32_MAX)) {
-boundary-constant	libclamav/scanners.c	9823	            cli_warnmsg("cl_scanfile_callback: scanned_bytes exceeds UINT32_MAX, setting to UINT32_MAX\n");
-boundary-constant	libclamav/scanners.c	9824	            *scanned = UINT32_MAX;
+boundary-constant	libclamav/scanners.c	10003	        if (SIZEOF_LONG == 4 && scanned_bytes > UINT32_MAX) {
+boundary-constant	libclamav/scanners.c	10004	            cli_warnmsg("cl_scanfile_callback: scanned_bytes exceeds UINT32_MAX, setting to UINT32_MAX\n");
+boundary-constant	libclamav/scanners.c	10005	            *scanned = UINT32_MAX;
+boundary-constant	libclamav/scanners.c	10047	        if (SIZEOF_LONG == 4 && scanned_out > UINT32_MAX) {
+boundary-constant	libclamav/scanners.c	10048	            cli_warnmsg("cl_scanfile_callback: scanned_out exceeds UINT32_MAX, setting to UINT32_MAX\n");
+boundary-constant	libclamav/scanners.c	10049	            *scanned = UINT32_MAX;
+boundary-constant	libclamav/scanners.c	6423	                                if ((uint64_t)fpt->offset > UINT32_MAX) {
+boundary-constant	libclamav/scanners.c	8568	    if (child_size > (uint64_t)SIZE_MAX) {
+boundary-constant	libclamav/scanners.c	9508	            (scanned_out / CL_COUNT_PRECISION > UINT32_MAX)) {
+boundary-constant	libclamav/scanners.c	9509	            cli_warnmsg("cl_scanfile_callback: scanned_out exceeds UINT32_MAX, setting to UINT32_MAX\n");
+boundary-constant	libclamav/scanners.c	9510	            *scanned = UINT32_MAX;
+boundary-constant	libclamav/scanners.c	9555	            (scanned_bytes / CL_COUNT_PRECISION > UINT32_MAX)) {
+boundary-constant	libclamav/scanners.c	9556	            cli_warnmsg("cl_scanfile_callback: scanned_bytes exceeds UINT32_MAX, setting to UINT32_MAX\n");
+boundary-constant	libclamav/scanners.c	9557	            *scanned = UINT32_MAX;
+boundary-constant	libclamav/scanners.c	9637	    if (root_size > SIZE_MAX) {
+boundary-constant	libclamav/scanners.c	9651	        if (root_size > SIZE_MAX) {
+boundary-constant	libclamav/scanners.c	9820	            (scanned_bytes / CL_COUNT_PRECISION > UINT32_MAX)) {
+boundary-constant	libclamav/scanners.c	9821	            cli_warnmsg("cl_scanfile_callback: scanned_bytes exceeds UINT32_MAX, setting to UINT32_MAX\n");
+boundary-constant	libclamav/scanners.c	9822	            *scanned = UINT32_MAX;
 boundary-constant	libclamav/sis.c	1157	    if (field_start > SIZE_MAX - (size_t)*fsize) {
 boundary-constant	libclamav/sis.c	1197	            seekto > SIZE_MAX - s->pos || seekto > s->map->len - s->pos) {
 boundary-constant	libclamav/sis.c	1342	                            if ((size_t)len > SIZE_MAX - s->pos) {
@@ -23682,32 +23681,32 @@ boundary-constant	unit_tests/check_clamav.c	60704	    pe_icon_read_failure_offse
 boundary-constant	unit_tests/check_clamav.c	60961	    pe_icon_read_failure_offset = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	61017	    pe_icon_test_write_u32(data + 0x100, UINT32_MAX);
 boundary-constant	unit_tests/check_clamav.c	61101	    pe_icon_read_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	62453	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	62467	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	62668	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	62678	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	62765	#if !defined(_WIN32) && SIZE_MAX < UINT64_MAX
-boundary-constant	unit_tests/check_clamav.c	62818	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	62861	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	62885	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	63198	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	63228	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	63265	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	63569	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	63595	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	64190	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	64194	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	64221	#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	64302	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	64346	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	64351	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	64424	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	64436	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	64479	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	65276	    size_t utf8_size = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	65278	    ret = cli_codepage_to_utf8((char *)(uintptr_t)1, SIZE_MAX, CODEPAGE_ISO8859_1,
-boundary-constant	unit_tests/check_clamav.c	65596	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
-boundary-constant	unit_tests/check_clamav.c	65736	    jpeg_entropy_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	62454	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	62468	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	62669	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	62679	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	62777	#if !defined(_WIN32) && SIZE_MAX < UINT64_MAX
+boundary-constant	unit_tests/check_clamav.c	62830	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	62873	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	62897	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	63210	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	63240	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	63277	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	63581	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	63607	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	64193	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	64197	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	64224	#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	64305	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	64349	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	64354	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	64427	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	64439	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	64482	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	65279	    size_t utf8_size = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	65281	    ret = cli_codepage_to_utf8((char *)(uintptr_t)1, SIZE_MAX, CODEPAGE_ISO8859_1,
+boundary-constant	unit_tests/check_clamav.c	65599	static size_t jpeg_entropy_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	65739	    jpeg_entropy_failure_offset = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	6961	    size_t large_size = (size_t)UINT32_MAX + 1;
 boundary-constant	unit_tests/check_clamav.c	7005	    size_t large_size = (size_t)UINT32_MAX + 123;
 boundary-constant	unit_tests/check_clamav.c	7013	    intel->maxsamples = UINT32_MAX; intel->maxmem = UINT32_MAX;
@@ -23917,7 +23916,7 @@ quantity-parser	sigtool/sigtool.c	3518	        mprintf(LOGG_INFO, "%s\n", (atoi(
 quantity-parser	sigtool/sigtool.c	3548	            sz    = (int)strtol(tokens[8], NULL, 16);
 quantity-parser	sigtool/sigtool.c	3662	            ftmsigtype = strtol(tokens[0], &end, 10);
 quantity-parser	sigtool/sigtool.c	3683	        switch (atoi(tokens[1])) {
-quantity-parser	unit_tests/check_clamav.c	64653	        int timeout = atoi(user_timeout);
+quantity-parser	unit_tests/check_clamav.c	64656	        int timeout = atoi(user_timeout);
 quantity-parser	unit_tests/check_clamd.c	1024	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 quantity-parser	unit_tests/check_clamd.c	116	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 narrowing-cast	clamav-milter/clamfi.c	249	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
@@ -25799,87 +25798,87 @@ format-width	libclamav/scanners.c	1437	                snprintf(prefix, sizeof(p
 format-width	libclamav/scanners.c	1522	                cli_dbgmsg("EGG: Error (%u) reading file header!\n", egg_ret);
 format-width	libclamav/scanners.c	1673	    cli_dbgmsg("EGG: Exit code: %d\n", status);
 format-width	libclamav/scanners.c	1922	    cli_dbgmsg("ARJ: Exit code: %d\n", ret);
-format-width	libclamav/scanners.c	2181	        cli_dbgmsg("GZip: legacy decoder error %d: %s; refusing to scan partial output\n",
-format-width	libclamav/scanners.c	2191	        cli_dbgmsg("GZip: legacy decoder close failed: %d; refusing to scan partial output\n", gzclose_ret);
-format-width	libclamav/scanners.c	2247	        cli_dbgmsg("GZip: InflateInit failed: %d\n", ret);
-format-width	libclamav/scanners.c	2270	            cli_dbgmsg("GZip: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
-format-width	libclamav/scanners.c	2428	        cli_dbgmsg("Bzip: DecompressInit failed: %d\n", rc);
-format-width	libclamav/scanners.c	2479	            cli_dbgmsg("Bzip: decompress error: %d\n", rc);
-format-width	libclamav/scanners.c	2535	                    cli_dbgmsg("Bzip: concatenated stream could not be initialized: %d\n", init_status);
-format-width	libclamav/scanners.c	2608	        cli_errmsg("cli_scanxz: DecompressInit failed: %i\n", rc);
-format-width	libclamav/scanners.c	2650	            cli_dbgmsg("cli_scanxz: decompress error: %d\n", rc);
-format-width	libclamav/scanners.c	2920	        cli_dbgmsg("cli_ole2_tempdir_scan_vba_new: uniq_get('dir') failed with ret code (%d)!\n", ret);
-format-width	libclamav/scanners.c	2929	        snprintf(filename, sizeof(filename), "%s_%u", hash, hashcnt);
-format-width	libclamav/scanners.c	2941	                cli_dbgmsg("cli_ole2_tempdir_scan_vba_new: Failed to read dir from %s, trying others (error: %s (%d))\n", path, cl_strerror(ret), (int)ret);
-format-width	libclamav/scanners.c	3083	        cli_dbgmsg("cli_ole2_tempdir_scan_summary: uniq_get('_5_summaryinformation') failed with ret code (%d)!\n", ret);
-format-width	libclamav/scanners.c	3090	        snprintf(summary_filename, sizeof(summary_filename), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
-format-width	libclamav/scanners.c	3119	        cli_dbgmsg("cli_ole2_tempdir_scan_summary: uniq_get('_5_documentsummaryinformation') failed with ret code (%d)!\n", ret);
-format-width	libclamav/scanners.c	3126	        snprintf(summary_filename, sizeof(summary_filename), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
-format-width	libclamav/scanners.c	3180	        cli_dbgmsg("cli_ole2_tempdir_scan_embedded_ole10: uniq_get('_1_ole10native') failed with ret code (%d)!\n", ret);
-format-width	libclamav/scanners.c	3185	        snprintf(ole10_filename, sizeof(ole10_filename), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
-format-width	libclamav/scanners.c	3260	        cli_dbgmsg("cli_ole2_tempdir_scan_vba: uniq_get('_vba_project') failed with ret code (%d)!\n", status);
-format-width	libclamav/scanners.c	3264	        snprintf(vbaname, sizeof(vbaname), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
-format-width	libclamav/scanners.c	3288	                snprintf(vbaname, 1024, "%s" PATHSEP "%s_%u", vba_project->dir, vba_project->name[i], j);
-format-width	libclamav/scanners.c	3299	                cli_dbgmsg("cli_ole2_tempdir_scan_vba: Decompress VBA project '%s_%u'\n", vba_project->name[i], j);
-format-width	libclamav/scanners.c	3315	                            cli_warnmsg("WARNING: VBA project '%s_%u' cannot be dumped to file\n", vba_project->name[i], j);
-format-width	libclamav/scanners.c	3323	                            cli_warnmsg("WARNING: VBA project '%s_%u' failed to write to file\n", vba_project->name[i], j);
-format-width	libclamav/scanners.c	3333	                        cli_dbgmsg("cli_ole2_tempdir_scan_vba: VBA project '%s_%u' dumped to %s\n", vba_project->name[i], j, proj_contents_fname);
-format-width	libclamav/scanners.c	3361	        cli_dbgmsg("cli_ole2_tempdir_scan_vba: uniq_get('powerpoint document') failed with ret code (%d)!\n", status);
-format-width	libclamav/scanners.c	3365	        snprintf(vbaname, 1024, "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
+format-width	libclamav/scanners.c	2180	        cli_dbgmsg("GZip: legacy decoder error %d: %s; refusing to scan partial output\n",
+format-width	libclamav/scanners.c	2190	        cli_dbgmsg("GZip: legacy decoder close failed: %d; refusing to scan partial output\n", gzclose_ret);
+format-width	libclamav/scanners.c	2246	        cli_dbgmsg("GZip: InflateInit failed: %d\n", ret);
+format-width	libclamav/scanners.c	2269	            cli_dbgmsg("GZip: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
+format-width	libclamav/scanners.c	2427	        cli_dbgmsg("Bzip: DecompressInit failed: %d\n", rc);
+format-width	libclamav/scanners.c	2478	            cli_dbgmsg("Bzip: decompress error: %d\n", rc);
+format-width	libclamav/scanners.c	2534	                    cli_dbgmsg("Bzip: concatenated stream could not be initialized: %d\n", init_status);
+format-width	libclamav/scanners.c	2607	        cli_errmsg("cli_scanxz: DecompressInit failed: %i\n", rc);
+format-width	libclamav/scanners.c	2649	            cli_dbgmsg("cli_scanxz: decompress error: %d\n", rc);
+format-width	libclamav/scanners.c	2919	        cli_dbgmsg("cli_ole2_tempdir_scan_vba_new: uniq_get('dir') failed with ret code (%d)!\n", ret);
+format-width	libclamav/scanners.c	2928	        snprintf(filename, sizeof(filename), "%s_%u", hash, hashcnt);
+format-width	libclamav/scanners.c	2940	                cli_dbgmsg("cli_ole2_tempdir_scan_vba_new: Failed to read dir from %s, trying others (error: %s (%d))\n", path, cl_strerror(ret), (int)ret);
+format-width	libclamav/scanners.c	3082	        cli_dbgmsg("cli_ole2_tempdir_scan_summary: uniq_get('_5_summaryinformation') failed with ret code (%d)!\n", ret);
+format-width	libclamav/scanners.c	3089	        snprintf(summary_filename, sizeof(summary_filename), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
+format-width	libclamav/scanners.c	3118	        cli_dbgmsg("cli_ole2_tempdir_scan_summary: uniq_get('_5_documentsummaryinformation') failed with ret code (%d)!\n", ret);
+format-width	libclamav/scanners.c	3125	        snprintf(summary_filename, sizeof(summary_filename), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
+format-width	libclamav/scanners.c	3179	        cli_dbgmsg("cli_ole2_tempdir_scan_embedded_ole10: uniq_get('_1_ole10native') failed with ret code (%d)!\n", ret);
+format-width	libclamav/scanners.c	3184	        snprintf(ole10_filename, sizeof(ole10_filename), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
+format-width	libclamav/scanners.c	3259	        cli_dbgmsg("cli_ole2_tempdir_scan_vba: uniq_get('_vba_project') failed with ret code (%d)!\n", status);
+format-width	libclamav/scanners.c	3263	        snprintf(vbaname, sizeof(vbaname), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
+format-width	libclamav/scanners.c	3287	                snprintf(vbaname, 1024, "%s" PATHSEP "%s_%u", vba_project->dir, vba_project->name[i], j);
+format-width	libclamav/scanners.c	3298	                cli_dbgmsg("cli_ole2_tempdir_scan_vba: Decompress VBA project '%s_%u'\n", vba_project->name[i], j);
+format-width	libclamav/scanners.c	3314	                            cli_warnmsg("WARNING: VBA project '%s_%u' cannot be dumped to file\n", vba_project->name[i], j);
+format-width	libclamav/scanners.c	3322	                            cli_warnmsg("WARNING: VBA project '%s_%u' failed to write to file\n", vba_project->name[i], j);
+format-width	libclamav/scanners.c	3332	                        cli_dbgmsg("cli_ole2_tempdir_scan_vba: VBA project '%s_%u' dumped to %s\n", vba_project->name[i], j, proj_contents_fname);
+format-width	libclamav/scanners.c	3360	        cli_dbgmsg("cli_ole2_tempdir_scan_vba: uniq_get('powerpoint document') failed with ret code (%d)!\n", status);
+format-width	libclamav/scanners.c	3364	        snprintf(vbaname, 1024, "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
 format-width	libclamav/scanners.c	342	    cli_dbgmsg("RAR: %s, crc32: 0x%x, encrypted: %u, compressed: %u, normal: %u, method: %u, ratio: %u\n",
-format-width	libclamav/scanners.c	3422	        cli_dbgmsg("cli_ole2_tempdir_scan_vba: uniq_get('worddocument') failed with ret code (%d)!\n", status);
-format-width	libclamav/scanners.c	3426	        snprintf(vbaname, sizeof(vbaname), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
-format-width	libclamav/scanners.c	3467	            cli_dbgmsg("cli_ole2_tempdir_scan_vba: Decompress WM project macro:%d key:%d length:%d\n", i, vba_project->key[i], vba_project->length[i]);
-format-width	libclamav/scanners.c	3471	                cli_dbgmsg("cli_ole2_tempdir_scan_vba: WARNING: WM project '%s' macro %d decrypted to NULL\n", vba_project->name[i], i);
-format-width	libclamav/scanners.c	3574	            cli_dbgmsg("cli_ole2_tempdir_scan_for_xlm_and_images: uniq_get('%s') failed with ret code (%d)!\n", STR_BOOK, ret);
-format-width	libclamav/scanners.c	3580	        snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
-format-width	libclamav/scanners.c	3606	                    cli_dbgmsg("cli_ole2_tempdir_scan_for_xlm_and_images: An error occurred when parsing XLM BIFF temp file, trying the next file (error: %s (%d)).\n", cl_strerror(ret), (int)ret);
-format-width	libclamav/scanners.c	4523	        cli_dbgmsg("cli_scanscript: Unable to malloc %u bytes\n", SCANBUFF);
-format-width	libclamav/scanners.c	5225	            cli_dbgmsg("CryptFF: Can't read source at offset %zu\n", pos);
-format-width	libclamav/scanners.c	5246	            cli_dbgmsg("CryptFF: Can't write to descriptor %d\n", ndesc);
-format-width	libclamav/scanners.c	5528	        cli_dbgmsg("cli_scan_structured: %llu credit card numbers detected\n", (unsigned long long)cc_count);
-format-width	libclamav/scanners.c	5541	        cli_dbgmsg("cli_scan_structured: %llu social security numbers detected\n", (unsigned long long)ssn_count);
-format-width	libclamav/scanners.c	5655	            p += snprintf(p, pend - p, "%s: %d.%03ums, ", perf_events[i].name,
-format-width	libclamav/scanners.c	6189	                                    cli_dbgmsg("ZIP single header check failed: %s (%d)\n", cl_strerror(ret), ret);
-format-width	libclamav/scanners.c	6223	                                    cli_dbgmsg("CAB header check failed: %s (%d)\n", cl_strerror(ret), ret);
-format-width	libclamav/scanners.c	6255	                                    cli_dbgmsg("ARJ SFX pre-admission check failed: %s (%d)\n", cl_strerror(ret), ret);
+format-width	libclamav/scanners.c	3421	        cli_dbgmsg("cli_ole2_tempdir_scan_vba: uniq_get('worddocument') failed with ret code (%d)!\n", status);
+format-width	libclamav/scanners.c	3425	        snprintf(vbaname, sizeof(vbaname), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
+format-width	libclamav/scanners.c	3466	            cli_dbgmsg("cli_ole2_tempdir_scan_vba: Decompress WM project macro:%d key:%d length:%d\n", i, vba_project->key[i], vba_project->length[i]);
+format-width	libclamav/scanners.c	3470	                cli_dbgmsg("cli_ole2_tempdir_scan_vba: WARNING: WM project '%s' macro %d decrypted to NULL\n", vba_project->name[i], i);
+format-width	libclamav/scanners.c	3573	            cli_dbgmsg("cli_ole2_tempdir_scan_for_xlm_and_images: uniq_get('%s') failed with ret code (%d)!\n", STR_BOOK, ret);
+format-width	libclamav/scanners.c	3579	        snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
+format-width	libclamav/scanners.c	3605	                    cli_dbgmsg("cli_ole2_tempdir_scan_for_xlm_and_images: An error occurred when parsing XLM BIFF temp file, trying the next file (error: %s (%d)).\n", cl_strerror(ret), (int)ret);
+format-width	libclamav/scanners.c	4522	        cli_dbgmsg("cli_scanscript: Unable to malloc %u bytes\n", SCANBUFF);
+format-width	libclamav/scanners.c	5224	            cli_dbgmsg("CryptFF: Can't read source at offset %zu\n", pos);
+format-width	libclamav/scanners.c	5245	            cli_dbgmsg("CryptFF: Can't write to descriptor %d\n", ndesc);
+format-width	libclamav/scanners.c	5527	        cli_dbgmsg("cli_scan_structured: %llu credit card numbers detected\n", (unsigned long long)cc_count);
+format-width	libclamav/scanners.c	5540	        cli_dbgmsg("cli_scan_structured: %llu social security numbers detected\n", (unsigned long long)ssn_count);
+format-width	libclamav/scanners.c	5654	            p += snprintf(p, pend - p, "%s: %d.%03ums, ", perf_events[i].name,
+format-width	libclamav/scanners.c	6187	                                    cli_dbgmsg("ZIP single header check failed: %s (%d)\n", cl_strerror(ret), ret);
+format-width	libclamav/scanners.c	6221	                                    cli_dbgmsg("CAB header check failed: %s (%d)\n", cl_strerror(ret), ret);
+format-width	libclamav/scanners.c	6253	                                    cli_dbgmsg("ARJ SFX pre-admission check failed: %s (%d)\n", cl_strerror(ret), ret);
 format-width	libclamav/scanners.c	626	                cli_dbgmsg("RAR: Error (%u) reading file header!\n", unrar_ret);
-format-width	libclamav/scanners.c	6267	                                    cli_dbgmsg("ARJ header check failed: %s (%d)\n", cl_strerror(ret), ret);
-format-width	libclamav/scanners.c	6499	                            cli_dbgmsg("scanraw: Type %u not handled in fpt loop\n", fpt->type);
-format-width	libclamav/scanners.c	6743	            cli_warnmsg("dispatch_file_inspection_callback: preserving callback return code %d\n", status);
-format-width	libclamav/scanners.c	6800	                cli_warnmsg("dispatch_prescan_callback: preserving callback return code %d\n", status);
-format-width	libclamav/scanners.c	7052	            cli_dbgmsg("Descriptor[%d]: halting after file scan because: %s\n", fmap_fd(ctx->fmap), cl_strerror(result_in));
-format-width	libclamav/scanners.c	7063	        cli_dbgmsg("Descriptor[%d]: halting timed-out scan\n", fmap_fd(ctx->fmap));
-format-width	libclamav/scanners.c	7093	        cli_dbgmsg("Descriptor[%d]: continuing parent scan after nested recursion-limit skip\n", fmap_fd(ctx->fmap));
-format-width	libclamav/scanners.c	7102	        cli_dbgmsg("Descriptor[%d]: halting after a detection-visible configured limit\n", fmap_fd(ctx->fmap));
-format-width	libclamav/scanners.c	7114	        cli_dbgmsg("Descriptor[%d]: halting incomplete scan\n", fmap_fd(ctx->fmap));
-format-width	libclamav/scanners.c	7154	        cli_dbgmsg("Descriptor[%d]: halting application-requested or completed scan\n", fmap_fd(ctx->fmap));
-format-width	libclamav/scanners.c	7162	            cli_dbgmsg("Descriptor[%d]: halting after file scan because: %s\n", fmap_fd(ctx->fmap), cl_strerror(result_in));
-format-width	libclamav/scanners.c	7175	            cli_dbgmsg("Descriptor[%d]: halting after file scan because: %s\n", fmap_fd(ctx->fmap), cl_strerror(result_in));
-format-width	libclamav/scanners.c	7202	            cli_dbgmsg("Descriptor[%d]: Continuing after file scan resulted with: %s\n",
-format-width	libclamav/scanners.c	7503	        cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
-format-width	libclamav/scanners.c	7541	        cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
-format-width	libclamav/scanners.c	7570	        cli_dbgmsg("cli_magic_scan: cli_recursion_stack_change_type returned %d\n", ret);
-format-width	libclamav/scanners.c	7678	        cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
-format-width	libclamav/scanners.c	8387	        cli_dbgmsg("cli_magic_scan: POST_SCAN callback returned %d\n", ret);
-format-width	libclamav/scanners.c	8443	                cli_warnmsg("cli_magic_scan: preserving post-scan callback return code %d\n", callback_ret);
-format-width	libclamav/scanners.c	8463	    cli_dbgmsg("cli_magic_scan: returning %d %s\n", status, __AT__);
-format-width	libclamav/scanners.c	8552	    cli_dbgmsg("in cli_magic_scan_desc_type (recursion_level: %u/%u)\n", ctx->recursion_level, ctx->engine->max_recursion_level);
-format-width	libclamav/scanners.c	8555	        cli_errmsg("cli_magic_scan_desc_type: Can't fstat descriptor %d\n", desc);
-format-width	libclamav/scanners.c	8561	        cli_errmsg("cli_magic_scan_desc_type: Descriptor %d has an invalid negative size\n", desc);
-format-width	libclamav/scanners.c	8571	        cli_errmsg("cli_magic_scan_desc_type: Descriptor %d exceeds the native fmap size range\n", desc);
-format-width	libclamav/scanners.c	8674	    cli_dbgmsg("magic_scan_nested_fmap_type: [0, +%zu), [%zu, +%zu)\n",
-format-width	libclamav/scanners.c	8731	    cli_dbgmsg("cli_magic_scan_nested_fmap_type: [%zu, +%zu)\n", offset, length);
-format-width	libclamav/scanners.c	8735	        cli_warnmsg("cli_magic_scan_nested_fmap_type: explicit range [%zu, +%zu) is outside map length %zu\n",
-format-width	libclamav/scanners.c	8985	            cli_errmsg("scan_common: hash_hint provided, but its length (%zu) does not match the expected length for %s (%zu).\n",
-format-width	libclamav/scanners.c	9109	            strftime(new_temp_prefix, new_temp_prefix_len + 1, "%Y%m%d_%H%M%S-", &tm_struct);
-format-width	libclamav/scanners.c	9121	            strftime(new_temp_prefix, new_temp_prefix_len + 1, "%Y%m%d_%H%M%S-scantemp", &tm_struct);
+format-width	libclamav/scanners.c	6265	                                    cli_dbgmsg("ARJ header check failed: %s (%d)\n", cl_strerror(ret), ret);
+format-width	libclamav/scanners.c	6497	                            cli_dbgmsg("scanraw: Type %u not handled in fpt loop\n", fpt->type);
+format-width	libclamav/scanners.c	6741	            cli_warnmsg("dispatch_file_inspection_callback: preserving callback return code %d\n", status);
+format-width	libclamav/scanners.c	6798	                cli_warnmsg("dispatch_prescan_callback: preserving callback return code %d\n", status);
+format-width	libclamav/scanners.c	7050	            cli_dbgmsg("Descriptor[%d]: halting after file scan because: %s\n", fmap_fd(ctx->fmap), cl_strerror(result_in));
+format-width	libclamav/scanners.c	7061	        cli_dbgmsg("Descriptor[%d]: halting timed-out scan\n", fmap_fd(ctx->fmap));
+format-width	libclamav/scanners.c	7091	        cli_dbgmsg("Descriptor[%d]: continuing parent scan after nested recursion-limit skip\n", fmap_fd(ctx->fmap));
+format-width	libclamav/scanners.c	7100	        cli_dbgmsg("Descriptor[%d]: halting after a detection-visible configured limit\n", fmap_fd(ctx->fmap));
+format-width	libclamav/scanners.c	7112	        cli_dbgmsg("Descriptor[%d]: halting incomplete scan\n", fmap_fd(ctx->fmap));
+format-width	libclamav/scanners.c	7152	        cli_dbgmsg("Descriptor[%d]: halting application-requested or completed scan\n", fmap_fd(ctx->fmap));
+format-width	libclamav/scanners.c	7160	            cli_dbgmsg("Descriptor[%d]: halting after file scan because: %s\n", fmap_fd(ctx->fmap), cl_strerror(result_in));
+format-width	libclamav/scanners.c	7173	            cli_dbgmsg("Descriptor[%d]: halting after file scan because: %s\n", fmap_fd(ctx->fmap), cl_strerror(result_in));
+format-width	libclamav/scanners.c	7200	            cli_dbgmsg("Descriptor[%d]: Continuing after file scan resulted with: %s\n",
+format-width	libclamav/scanners.c	7501	        cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
+format-width	libclamav/scanners.c	7539	        cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
+format-width	libclamav/scanners.c	7568	        cli_dbgmsg("cli_magic_scan: cli_recursion_stack_change_type returned %d\n", ret);
+format-width	libclamav/scanners.c	7676	        cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
+format-width	libclamav/scanners.c	8385	        cli_dbgmsg("cli_magic_scan: POST_SCAN callback returned %d\n", ret);
+format-width	libclamav/scanners.c	8441	                cli_warnmsg("cli_magic_scan: preserving post-scan callback return code %d\n", callback_ret);
+format-width	libclamav/scanners.c	8461	    cli_dbgmsg("cli_magic_scan: returning %d %s\n", status, __AT__);
+format-width	libclamav/scanners.c	8550	    cli_dbgmsg("in cli_magic_scan_desc_type (recursion_level: %u/%u)\n", ctx->recursion_level, ctx->engine->max_recursion_level);
+format-width	libclamav/scanners.c	8553	        cli_errmsg("cli_magic_scan_desc_type: Can't fstat descriptor %d\n", desc);
+format-width	libclamav/scanners.c	8559	        cli_errmsg("cli_magic_scan_desc_type: Descriptor %d has an invalid negative size\n", desc);
+format-width	libclamav/scanners.c	8569	        cli_errmsg("cli_magic_scan_desc_type: Descriptor %d exceeds the native fmap size range\n", desc);
+format-width	libclamav/scanners.c	8672	    cli_dbgmsg("magic_scan_nested_fmap_type: [0, +%zu), [%zu, +%zu)\n",
+format-width	libclamav/scanners.c	8729	    cli_dbgmsg("cli_magic_scan_nested_fmap_type: [%zu, +%zu)\n", offset, length);
+format-width	libclamav/scanners.c	8733	        cli_warnmsg("cli_magic_scan_nested_fmap_type: explicit range [%zu, +%zu) is outside map length %zu\n",
+format-width	libclamav/scanners.c	8983	            cli_errmsg("scan_common: hash_hint provided, but its length (%zu) does not match the expected length for %s (%zu).\n",
+format-width	libclamav/scanners.c	9107	            strftime(new_temp_prefix, new_temp_prefix_len + 1, "%Y%m%d_%H%M%S-", &tm_struct);
+format-width	libclamav/scanners.c	9119	            strftime(new_temp_prefix, new_temp_prefix_len + 1, "%Y%m%d_%H%M%S-scantemp", &tm_struct);
 format-width	libclamav/scanners.c	920	    cli_dbgmsg("RAR: Exit code: %d\n", status);
-format-width	libclamav/scanners.c	9255	                cli_dbgmsg("scan_common: Can't create json properties file, ret = %i.\n", ret);
-format-width	libclamav/scanners.c	9380	                cli_errmsg("scan_common: fmap_get_hash failed: %d\n", ret);
-format-width	libclamav/scanners.c	9627	        cli_errmsg("cl_scandesc_callback: Can't fstat descriptor %d\n", desc);
-format-width	libclamav/scanners.c	9632	        cli_errmsg("cl_scandesc_callback: Descriptor %d has an invalid negative size\n", desc);
-format-width	libclamav/scanners.c	9640	        cli_errmsg("cl_scandesc_callback: Descriptor %d exceeds the native fmap size range\n", desc);
+format-width	libclamav/scanners.c	9253	                cli_dbgmsg("scan_common: Can't create json properties file, ret = %i.\n", ret);
+format-width	libclamav/scanners.c	9378	                cli_errmsg("scan_common: fmap_get_hash failed: %d\n", ret);
+format-width	libclamav/scanners.c	9625	        cli_errmsg("cl_scandesc_callback: Can't fstat descriptor %d\n", desc);
+format-width	libclamav/scanners.c	9630	        cli_errmsg("cl_scandesc_callback: Descriptor %d has an invalid negative size\n", desc);
+format-width	libclamav/scanners.c	9638	        cli_errmsg("cl_scandesc_callback: Descriptor %d exceeds the native fmap size range\n", desc);
 format-width	libclamav/sis.c	1181	            cli_dbgmsg("SIS: %d:Got %s(%x) field with size %x\n", s->level, sisfields[*field], *field, s->fsize[s->level]);
 format-width	libclamav/sis.c	1183	            cli_dbgmsg("SIS: %d:Got invalid(%x) field with size %x\n", s->level, *field, s->fsize[s->level]);
 format-width	libclamav/sis.c	1287	                cli_dbgmsg("SIS: %d:Got dataunit element with size %x\n", s->level, s->fsize[s->level]);
@@ -26473,16 +26472,16 @@ format-width	unit_tests/check_clamav.c	56474	                  "HWP3 embedded me
 format-width	unit_tests/check_clamav.c	56547	                  "HWPOLE2 embedded member was not scanned: %s (%d)",
 format-width	unit_tests/check_clamav.c	56816	                      "MSXML decoded member was not scanned as %s: %s (%d)",
 format-width	unit_tests/check_clamav.c	61659	    snprintf(output_dir, sizeof(output_dir), "%s/tar-open-failure-%ld", tmpdir, (long)getpid());
-format-width	unit_tests/check_clamav.c	64655	        printf("Using test case timeout of %d seconds set by user\n", timeout);
-format-width	unit_tests/check_clamav.c	64853	    ck_assert_int_gt(snprintf(path, sizeof(path), "%s/hash-file-fd-ex-%ld", tmpdir, (long)getpid()), 0);
-format-width	unit_tests/check_clamav.c	65348	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
-format-width	unit_tests/check_clamav.c	65350	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
-format-width	unit_tests/check_clamav.c	65361	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
-format-width	unit_tests/check_clamav.c	65364	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
-format-width	unit_tests/check_clamav.c	65380	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
-format-width	unit_tests/check_clamav.c	65424	                        "\tVersion from header: %u.%u.%u\n"
-format-width	unit_tests/check_clamav.c	65425	                        "\tVersion from library: %u.%u.%u\n"
-format-width	unit_tests/check_clamav.c	65674	                  "JPEG entropy traversal requested %zu bytes in one fmap read",
+format-width	unit_tests/check_clamav.c	64658	        printf("Using test case timeout of %d seconds set by user\n", timeout);
+format-width	unit_tests/check_clamav.c	64856	    ck_assert_int_gt(snprintf(path, sizeof(path), "%s/hash-file-fd-ex-%ld", tmpdir, (long)getpid()), 0);
+format-width	unit_tests/check_clamav.c	65351	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
+format-width	unit_tests/check_clamav.c	65353	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
+format-width	unit_tests/check_clamav.c	65364	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
+format-width	unit_tests/check_clamav.c	65367	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
+format-width	unit_tests/check_clamav.c	65383	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
+format-width	unit_tests/check_clamav.c	65427	                        "\tVersion from header: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	65428	                        "\tVersion from library: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	65677	                  "JPEG entropy traversal requested %zu bytes in one fmap read",
 format-width	unit_tests/check_clamav.c	6847	    ck_assert_msg(testfiles_n == expect, "testfiles: %d != %d", testfiles_n, expect);
 format-width	unit_tests/check_clamav.c	7041	    ck_assert_msg(i < testfiles_n, "%i < %i %s", i, testfiles_n, file);
 format-width	unit_tests/check_clamav.c	7262	                      "fmap aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
@@ -35249,213 +35248,213 @@ offset-size-arithmetic	libclamav/scanners.c	2057	            ret = cli_cleanup_c
 offset-size-arithmetic	libclamav/scanners.c	2070	            ret = cli_cleanup_compressed_temp(ctx, fd, *tmpname, ret, *temporary_reserved,
 offset-size-arithmetic	libclamav/scanners.c	2081	    if (lseek(*fd, 0, SEEK_SET) == (off_t)-1) {
 offset-size-arithmetic	libclamav/scanners.c	2083	        ret = cli_cleanup_compressed_temp(ctx, fd, *tmpname, CL_ESEEK, *temporary_reserved,
-offset-size-arithmetic	libclamav/scanners.c	2160	        if (outsize > UINT64_MAX - (uint64_t)bytes) {
-offset-size-arithmetic	libclamav/scanners.c	2165	        outsize += bytes;
-offset-size-arithmetic	libclamav/scanners.c	2267	        unsigned int bytes = MIN(map->len - at, map->pgsz);
-offset-size-arithmetic	libclamav/scanners.c	2308	            produced = sizeof(buff) - z.avail_out;
-offset-size-arithmetic	libclamav/scanners.c	2315	            next_outsize = outsize + (uint64_t)produced;
-offset-size-arithmetic	libclamav/scanners.c	2448	            strm.next_in  = (void *)fmap_need_off_once_len(ctx->fmap, off, FILEBUFF, &avail);
-offset-size-arithmetic	libclamav/scanners.c	2450	            off += avail;
-offset-size-arithmetic	libclamav/scanners.c	2452	                if (off < ctx->fmap->len) {
-offset-size-arithmetic	libclamav/scanners.c	2486	            size_t produced = sizeof(buf) - strm.avail_out;
-offset-size-arithmetic	libclamav/scanners.c	2494	            next_size = size + (uint64_t)produced;
-offset-size-arithmetic	libclamav/scanners.c	2520	            if (strm.avail_in != 0 || off < ctx->fmap->len) {
+offset-size-arithmetic	libclamav/scanners.c	2159	        if (outsize > UINT64_MAX - (uint64_t)bytes) {
+offset-size-arithmetic	libclamav/scanners.c	2164	        outsize += bytes;
+offset-size-arithmetic	libclamav/scanners.c	2266	        unsigned int bytes = MIN(map->len - at, map->pgsz);
+offset-size-arithmetic	libclamav/scanners.c	2307	            produced = sizeof(buff) - z.avail_out;
+offset-size-arithmetic	libclamav/scanners.c	2314	            next_outsize = outsize + (uint64_t)produced;
+offset-size-arithmetic	libclamav/scanners.c	2447	            strm.next_in  = (void *)fmap_need_off_once_len(ctx->fmap, off, FILEBUFF, &avail);
+offset-size-arithmetic	libclamav/scanners.c	2449	            off += avail;
+offset-size-arithmetic	libclamav/scanners.c	2451	                if (off < ctx->fmap->len) {
+offset-size-arithmetic	libclamav/scanners.c	2485	            size_t produced = sizeof(buf) - strm.avail_out;
+offset-size-arithmetic	libclamav/scanners.c	2493	            next_size = size + (uint64_t)produced;
+offset-size-arithmetic	libclamav/scanners.c	2519	            if (strm.avail_in != 0 || off < ctx->fmap->len) {
 offset-size-arithmetic	libclamav/scanners.c	253	                    fname = malloc(strlen(dir) + strlen(dent->d_name) + 2);
-offset-size-arithmetic	libclamav/scanners.c	2630	            strm.next_in  = (void *)fmap_need_off_once_len(ctx->fmap, off, CLI_XZ_IBUF_SIZE, &avail);
-offset-size-arithmetic	libclamav/scanners.c	2632	            off += avail;
-offset-size-arithmetic	libclamav/scanners.c	2634	                if (off < ctx->fmap->len) {
-offset-size-arithmetic	libclamav/scanners.c	2660	            size_t towrite = CLI_XZ_OBUF_SIZE - strm.avail_out;
-offset-size-arithmetic	libclamav/scanners.c	2662	            if (size > UINT64_MAX - towrite) {
-offset-size-arithmetic	libclamav/scanners.c	2667	            next_size = size + (uint64_t)towrite;
-offset-size-arithmetic	libclamav/scanners.c	2671	                cli_warnmsg("cli_scanxz: decompress file size exceeds limits - "
-offset-size-arithmetic	libclamav/scanners.c	2702	    if (strm.avail_in != 0 || off < ctx->fmap->len) {
-offset-size-arithmetic	libclamav/scanners.c	2761	static cl_error_t vba_scandata(const unsigned char *data, size_t len, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/scanners.c	2775	     * child fmap as the raw matcher. */
-offset-size-arithmetic	libclamav/scanners.c	2801	cl_error_t find_file(const char *filename, const char *dir, char *result, size_t result_size)
-offset-size-arithmetic	libclamav/scanners.c	2827	                    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s", dir, dent->d_name);
-offset-size-arithmetic	libclamav/scanners.c	2828	                    fullname[sizeof(fullname) - 1] = '\0';
-offset-size-arithmetic	libclamav/scanners.c	2841	                                len = MIN(strlen(dir) + 1, result_size);
-offset-size-arithmetic	libclamav/scanners.c	2843	                                result[len - 1] = '\0';
-offset-size-arithmetic	libclamav/scanners.c	2930	        filename[sizeof(filename) - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	2629	            strm.next_in  = (void *)fmap_need_off_once_len(ctx->fmap, off, CLI_XZ_IBUF_SIZE, &avail);
+offset-size-arithmetic	libclamav/scanners.c	2631	            off += avail;
+offset-size-arithmetic	libclamav/scanners.c	2633	                if (off < ctx->fmap->len) {
+offset-size-arithmetic	libclamav/scanners.c	2659	            size_t towrite = CLI_XZ_OBUF_SIZE - strm.avail_out;
+offset-size-arithmetic	libclamav/scanners.c	2661	            if (size > UINT64_MAX - towrite) {
+offset-size-arithmetic	libclamav/scanners.c	2666	            next_size = size + (uint64_t)towrite;
+offset-size-arithmetic	libclamav/scanners.c	2670	                cli_warnmsg("cli_scanxz: decompress file size exceeds limits - "
+offset-size-arithmetic	libclamav/scanners.c	2701	    if (strm.avail_in != 0 || off < ctx->fmap->len) {
+offset-size-arithmetic	libclamav/scanners.c	2760	static cl_error_t vba_scandata(const unsigned char *data, size_t len, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/scanners.c	2774	     * child fmap as the raw matcher. */
+offset-size-arithmetic	libclamav/scanners.c	2800	cl_error_t find_file(const char *filename, const char *dir, char *result, size_t result_size)
+offset-size-arithmetic	libclamav/scanners.c	2826	                    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s", dir, dent->d_name);
+offset-size-arithmetic	libclamav/scanners.c	2827	                    fullname[sizeof(fullname) - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	2840	                                len = MIN(strlen(dir) + 1, result_size);
+offset-size-arithmetic	libclamav/scanners.c	2842	                                result[len - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	2929	        filename[sizeof(filename) - 1] = '\0';
 offset-size-arithmetic	libclamav/scanners.c	301	         * parser as a required child and cannot disappear silently. */
-offset-size-arithmetic	libclamav/scanners.c	3091	        summary_filename[sizeof(summary_filename) - 1] = '\0';
-offset-size-arithmetic	libclamav/scanners.c	3127	        summary_filename[sizeof(summary_filename) - 1] = '\0';
-offset-size-arithmetic	libclamav/scanners.c	3186	        ole10_filename[sizeof(ole10_filename) - 1] = '\0';
-offset-size-arithmetic	libclamav/scanners.c	3192	        if (LSTAT(ole10_filename, &statbuf) == -1) {
-offset-size-arithmetic	libclamav/scanners.c	3265	        vbaname[sizeof(vbaname) - 1] = '\0';
-offset-size-arithmetic	libclamav/scanners.c	3289	                vbaname[sizeof(vbaname) - 1] = '\0';
-offset-size-arithmetic	libclamav/scanners.c	3366	        vbaname[sizeof(vbaname) - 1] = '\0';
-offset-size-arithmetic	libclamav/scanners.c	3427	        vbaname[sizeof(vbaname) - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	3090	        summary_filename[sizeof(summary_filename) - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	3126	        summary_filename[sizeof(summary_filename) - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	3185	        ole10_filename[sizeof(ole10_filename) - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	3191	        if (LSTAT(ole10_filename, &statbuf) == -1) {
+offset-size-arithmetic	libclamav/scanners.c	3264	        vbaname[sizeof(vbaname) - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	3288	                vbaname[sizeof(vbaname) - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	3365	        vbaname[sizeof(vbaname) - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	3426	        vbaname[sizeof(vbaname) - 1] = '\0';
 offset-size-arithmetic	libclamav/scanners.c	343	               metadata->filename, metadata->crc, metadata->encrypted, (unsigned int)metadata->pack_size,
 offset-size-arithmetic	libclamav/scanners.c	344	               (unsigned int)metadata->unpack_size, metadata->method,
 offset-size-arithmetic	libclamav/scanners.c	345	               metadata->pack_size ? (unsigned int)(metadata->unpack_size / metadata->pack_size) : 0);
-offset-size-arithmetic	libclamav/scanners.c	3467	            cli_dbgmsg("cli_ole2_tempdir_scan_vba: Decompress WM project macro:%d key:%d length:%d\n", i, vba_project->key[i], vba_project->length[i]);
-offset-size-arithmetic	libclamav/scanners.c	3469	            data = (unsigned char *)cli_wm_decrypt_macro(fd, vba_project->offset[i], vba_project->length[i], vba_project->key[i]);
+offset-size-arithmetic	libclamav/scanners.c	3466	            cli_dbgmsg("cli_ole2_tempdir_scan_vba: Decompress WM project macro:%d key:%d length:%d\n", i, vba_project->key[i], vba_project->length[i]);
+offset-size-arithmetic	libclamav/scanners.c	3468	            data = (unsigned char *)cli_wm_decrypt_macro(fd, vba_project->offset[i], vba_project->length[i], vba_project->key[i]);
 offset-size-arithmetic	libclamav/scanners.c	347	    status = cli_matchmeta(ctx, metadata->filename, metadata->pack_size, metadata->unpack_size,
-offset-size-arithmetic	libclamav/scanners.c	3572	    if (CL_SUCCESS != (ret = uniq_get(U, STR_WORKBOOK, sizeof(STR_WORKBOOK) - 1, &hash, &hashcnt))) {
-offset-size-arithmetic	libclamav/scanners.c	3573	        if (CL_SUCCESS != (ret = uniq_get(U, STR_BOOK, sizeof(STR_BOOK) - 1, &hash, &hashcnt))) {
-offset-size-arithmetic	libclamav/scanners.c	3581	        fullname[sizeof(fullname) - 1] = '\0';
-offset-size-arithmetic	libclamav/scanners.c	3666	    "com-eventbrite-attendee://",
-offset-size-arithmetic	libclamav/scanners.c	3767	    "lorawan://",
-offset-size-arithmetic	libclamav/scanners.c	3796	    "ms-getoffice://",
-offset-size-arithmetic	libclamav/scanners.c	3807	    "ms-officeapp://",
-offset-size-arithmetic	libclamav/scanners.c	4008	    for (i = 0; i < sizeof(URI_LIST) / sizeof(URI_LIST[0]); i++) {
-offset-size-arithmetic	libclamav/scanners.c	4035	        if (is_url((const char *)hrefs->value[i], strlen((const char *)hrefs->value[i]))) {
-offset-size-arithmetic	libclamav/scanners.c	4054	        if (is_url((const char *)form_data->urls[i], strlen((const char *)form_data->urls[i]))) {
-offset-size-arithmetic	libclamav/scanners.c	4096	    uint64_t curr_len = map->len;
-offset-size-arithmetic	libclamav/scanners.c	4109	    if (curr_len > ctx->engine->maxhtmlnormalize) {
-offset-size-arithmetic	libclamav/scanners.c	4162	    /* A failed HTML normalization must not be scanned as a complete layer. */
+offset-size-arithmetic	libclamav/scanners.c	3571	    if (CL_SUCCESS != (ret = uniq_get(U, STR_WORKBOOK, sizeof(STR_WORKBOOK) - 1, &hash, &hashcnt))) {
+offset-size-arithmetic	libclamav/scanners.c	3572	        if (CL_SUCCESS != (ret = uniq_get(U, STR_BOOK, sizeof(STR_BOOK) - 1, &hash, &hashcnt))) {
+offset-size-arithmetic	libclamav/scanners.c	3580	        fullname[sizeof(fullname) - 1] = '\0';
+offset-size-arithmetic	libclamav/scanners.c	3665	    "com-eventbrite-attendee://",
+offset-size-arithmetic	libclamav/scanners.c	3766	    "lorawan://",
+offset-size-arithmetic	libclamav/scanners.c	3795	    "ms-getoffice://",
+offset-size-arithmetic	libclamav/scanners.c	3806	    "ms-officeapp://",
+offset-size-arithmetic	libclamav/scanners.c	4007	    for (i = 0; i < sizeof(URI_LIST) / sizeof(URI_LIST[0]); i++) {
+offset-size-arithmetic	libclamav/scanners.c	4034	        if (is_url((const char *)hrefs->value[i], strlen((const char *)hrefs->value[i]))) {
+offset-size-arithmetic	libclamav/scanners.c	4053	        if (is_url((const char *)form_data->urls[i], strlen((const char *)form_data->urls[i]))) {
+offset-size-arithmetic	libclamav/scanners.c	4095	    uint64_t curr_len = map->len;
+offset-size-arithmetic	libclamav/scanners.c	4108	    if (curr_len > ctx->engine->maxhtmlnormalize) {
+offset-size-arithmetic	libclamav/scanners.c	4161	    /* A failed HTML normalization must not be scanned as a complete layer. */
 offset-size-arithmetic	libclamav/scanners.c	417	        uint32_t remaining = comment_size - offset;
-offset-size-arithmetic	libclamav/scanners.c	4225	        if ((uint64_t)no_tags_stat.st_size > ctx->engine->maxhtmlnotags) {
+offset-size-arithmetic	libclamav/scanners.c	4224	        if ((uint64_t)no_tags_stat.st_size > ctx->engine->maxhtmlnotags) {
 offset-size-arithmetic	libclamav/scanners.c	427	        offset += (uint32_t)chunk;
-offset-size-arithmetic	libclamav/scanners.c	4371	                                 size_t output_size, size_t *written)
-offset-size-arithmetic	libclamav/scanners.c	4384	    if (*written > output_size || needed > output_size - *written)
-offset-size-arithmetic	libclamav/scanners.c	4415	    size_t *written)
-offset-size-arithmetic	libclamav/scanners.c	4444	                        (((uint32_t)*pending_high - 0xd800U) << 10) +
-offset-size-arithmetic	libclamav/scanners.c	4498	    curr_len        = map->len;
-offset-size-arithmetic	libclamav/scanners.c	4509	    if (curr_len > ctx->engine->maxscriptnormalize) {
-offset-size-arithmetic	libclamav/scanners.c	4531	     * retain native-width offsets and run full-map PCRE/logical evaluation. */
-offset-size-arithmetic	libclamav/scanners.c	4551	            len = MIN(map->len - at, (size_t)SCRIPT_UTF16_INPUT_CHUNK);
-offset-size-arithmetic	libclamav/scanners.c	4553	            len = MIN(map->pgsz, map->len - at);
-offset-size-arithmetic	libclamav/scanners.c	4561	        final           = len == map->len - at;
-offset-size-arithmetic	libclamav/scanners.c	4586	        if (!buff || !len || normalize_len > state.out_len - state.out_pos) {
-offset-size-arithmetic	libclamav/scanners.c	4715	    buff = fmap_need_off_once(ctx->fmap, 0, 2U);
-offset-size-arithmetic	libclamav/scanners.c	4762	        bytes = MIN(ctx->fmap->len - at, (size_t)SCRIPT_UTF16_INPUT_CHUNK);
-offset-size-arithmetic	libclamav/scanners.c	4768	        if (!(buff = fmap_need_off_once(ctx->fmap, at, bytes))) {
-offset-size-arithmetic	libclamav/scanners.c	4774	        final  = bytes == ctx->fmap->len - at;
-offset-size-arithmetic	libclamav/scanners.c	4936	                    subdirectory = malloc(strlen(dir) + strlen(dent->d_name) + 2);
-offset-size-arithmetic	libclamav/scanners.c	5164	        ret = cli_append_potentially_unwanted(ctx, "Heuristics.Exploit.W32.MS05-002");
-offset-size-arithmetic	libclamav/scanners.c	5216	    while (pos < ctx->fmap->len) {
-offset-size-arithmetic	libclamav/scanners.c	5223	        src = fmap_need_off_once_len(ctx->fmap, pos, FILEBUFF, &bread);
-offset-size-arithmetic	libclamav/scanners.c	5233	        if (outsize > UINT64_MAX - (uint64_t)bread) {
-offset-size-arithmetic	libclamav/scanners.c	5238	        if ((ret = cli_checklimits("CryptFF", ctx, outsize + (uint64_t)bread, 0, 0)) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/scanners.c	5250	        outsize += (uint64_t)bread;
-offset-size-arithmetic	libclamav/scanners.c	5251	        pos += bread;
-offset-size-arithmetic	libclamav/scanners.c	5484	        result = fmap_readn(map, buf, pos, sizeof(buf) - 1);
-offset-size-arithmetic	libclamav/scanners.c	5485	        if (result == (size_t)-1) {
-offset-size-arithmetic	libclamav/scanners.c	5486	            bool request_in_range = pos <= map->len &&
-offset-size-arithmetic	libclamav/scanners.c	5487	                                    sizeof(buf) - 1 <= map->len - pos;
-offset-size-arithmetic	libclamav/scanners.c	5495	        pos += result;
-offset-size-arithmetic	libclamav/scanners.c	5520	    if (result == (size_t)-1) {
-offset-size-arithmetic	libclamav/scanners.c	5617	    for (i = 0; i < sizeof(perf_events) / sizeof(perf_events[0]); i++) {
-offset-size-arithmetic	libclamav/scanners.c	5622	    cli_event_time_start(ctx->perf, PERFT_SCAN);
-offset-size-arithmetic	libclamav/scanners.c	5641	    pend  = timestr + sizeof(timestr) - 1;
-offset-size-arithmetic	libclamav/scanners.c	5649	    for (i = 0; i < sizeof(perf_events) / sizeof(perf_events[0]); i++) {
-offset-size-arithmetic	libclamav/scanners.c	5655	            p += snprintf(p, pend - p, "%s: %d.%03ums, ", perf_events[i].name,
-offset-size-arithmetic	libclamav/scanners.c	5666	static inline void perf_start(cli_ctx *ctx, int id)
-offset-size-arithmetic	libclamav/scanners.c	5668	    cli_event_time_start(ctx->perf, id);
-offset-size-arithmetic	libclamav/scanners.c	5676	static inline void perf_nested_start(cli_ctx *ctx, int id, int nestedid)
-offset-size-arithmetic	libclamav/scanners.c	5678	    cli_event_time_nested_start(ctx->perf, id, nestedid);
-offset-size-arithmetic	libclamav/scanners.c	5691	static inline void perf_start(cli_ctx *ctx, int id)
-offset-size-arithmetic	libclamav/scanners.c	5701	static inline void perf_nested_start(cli_ctx *ctx, int id, int nestedid)
-offset-size-arithmetic	libclamav/scanners.c	5738	    remaining = (offset <= ctx->fmap->len) ? (uint64_t)(ctx->fmap->len - offset) : 0;
-offset-size-arithmetic	libclamav/scanners.c	5750	    header_size = cli_readint16(header + 12);
-offset-size-arithmetic	libclamav/scanners.c	5757	    if (header_size < 7 || (uint64_t)header_size > remaining - 7)
-offset-size-arithmetic	libclamav/scanners.c	5763	/* scanraw() mode that performs file-type recognition without repeating the
-offset-size-arithmetic	libclamav/scanners.c	5778	static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_file_t *dettype)
-offset-size-arithmetic	libclamav/scanners.c	5782	    struct cli_matched_type *ftoffset = NULL, *fpt;
-offset-size-arithmetic	libclamav/scanners.c	5807	        // Omit TNEF files because TNEF message attachments are raw / not compressed. Document and ZIP attachments would be likely to have double-extraction issues.
-offset-size-arithmetic	libclamav/scanners.c	5847	                cli_mark_scan_incomplete(ctx, "raw embedded-type dispatch reached the configured time limit");
-offset-size-arithmetic	libclamav/scanners.c	5856	            if (fpt->offset < 0 || (uint64_t)fpt->offset >= (uint64_t)ctx->fmap->len) {
-offset-size-arithmetic	libclamav/scanners.c	5857	                cli_mark_scan_incomplete(ctx, "raw embedded-type match offset is outside the input map");
-offset-size-arithmetic	libclamav/scanners.c	5865	                ((size_t)fpt->offset > last_offset)) {
-offset-size-arithmetic	libclamav/scanners.c	5871	                last_offset = (size_t)fpt->offset;
-offset-size-arithmetic	libclamav/scanners.c	6082	                                     * clean raw-only result. */
-offset-size-arithmetic	libclamav/scanners.c	6132	                                    ctx->fmap->len - fpt->offset,
-offset-size-arithmetic	libclamav/scanners.c	6159	                                    ctx->fmap->len - fpt->offset,
-offset-size-arithmetic	libclamav/scanners.c	6197	                                last_offset += zip_size - 1; // Note: size is definitely > 0 because header_check succeeded.
-offset-size-arithmetic	libclamav/scanners.c	6228	                                last_offset += cab_size - 1; // Note: size is definitely > 0 because header_check succeeded.
-offset-size-arithmetic	libclamav/scanners.c	6272	                                last_offset += arj_size - 1; // Note: size is definitely > 0 because header_check succeeded.
-offset-size-arithmetic	libclamav/scanners.c	6304	                                    ctx->fmap->len - fpt->offset,
-offset-size-arithmetic	libclamav/scanners.c	6316	                                off_t archive_offset = fpt->offset - 4;
-offset-size-arithmetic	libclamav/scanners.c	6330	                                    ctx->fmap->len - (size_t)archive_offset,
-offset-size-arithmetic	libclamav/scanners.c	6354	                                    ctx->fmap->len - fpt->offset,
-offset-size-arithmetic	libclamav/scanners.c	6378	                                    ctx->fmap->len - fpt->offset,
-offset-size-arithmetic	libclamav/scanners.c	6402	                                    ctx->fmap->len - fpt->offset,
-offset-size-arithmetic	libclamav/scanners.c	6418	                                if ((uint64_t)(ctx->fmap->len - fpt->offset) > ctx->engine->maxembeddedpe) {
-offset-size-arithmetic	libclamav/scanners.c	6428	                                     * embedded offset. Root the header-only check in a
-offset-size-arithmetic	libclamav/scanners.c	6435	                                                                   parent_map->len - fpt->offset,
-offset-size-arithmetic	libclamav/scanners.c	6448	                                    header_offset = (uint32_t)fpt->offset;
-offset-size-arithmetic	libclamav/scanners.c	6487	                                    ctx->fmap->len - fpt->offset,
-offset-size-arithmetic	libclamav/scanners.c	6499	                            cli_dbgmsg("scanraw: Type %u not handled in fpt loop\n", fpt->type);
-offset-size-arithmetic	libclamav/scanners.c	6504	            } // end if (fpt->offset > 0)
-offset-size-arithmetic	libclamav/scanners.c	6563	        ftoffset = ftoffset->next;
-offset-size-arithmetic	libclamav/scanners.c	6667	    CLI_MAX_CALLOC_OR_GOTO_DONE(ancestors, ctx->recursion_level + 1, sizeof(char *), status = CL_EMEM);
-offset-size-arithmetic	libclamav/scanners.c	6670	    file_size = fmap->len;
-offset-size-arithmetic	libclamav/scanners.c	6681	         * non-detecting result while allowing raw signatures to detect. */
-offset-size-arithmetic	libclamav/scanners.c	6687	    if (NULL == file_buffer || file_size != fmap->len) {
-offset-size-arithmetic	libclamav/scanners.c	6702	            parent_file_size = previous_fmap->len;
-offset-size-arithmetic	libclamav/scanners.c	6812	    size_t image_size          = ctx->fmap->len;
-offset-size-arithmetic	libclamav/scanners.c	6833	    offset = fmap_need_off(ctx->fmap, 0, image_size);
-offset-size-arithmetic	libclamav/scanners.c	6890	        fmap_unneed_off(ctx->fmap, 0, image_size);
-offset-size-arithmetic	libclamav/scanners.c	6937	        for (type_index = 0; type_index < sizeof(types) / sizeof(types[0]); type_index++) {
-offset-size-arithmetic	libclamav/scanners.c	6939	            size_t count = evidence_num_indicators_type(ctx->this_layer_evidence, types[type_index]);
-offset-size-arithmetic	libclamav/scanners.c	6949	                if ((NULL != name) && (0 == strncmp(name, prefix, sizeof(prefix) - 1))) {
+offset-size-arithmetic	libclamav/scanners.c	4370	                                 size_t output_size, size_t *written)
+offset-size-arithmetic	libclamav/scanners.c	4383	    if (*written > output_size || needed > output_size - *written)
+offset-size-arithmetic	libclamav/scanners.c	4414	    size_t *written)
+offset-size-arithmetic	libclamav/scanners.c	4443	                        (((uint32_t)*pending_high - 0xd800U) << 10) +
+offset-size-arithmetic	libclamav/scanners.c	4497	    curr_len        = map->len;
+offset-size-arithmetic	libclamav/scanners.c	4508	    if (curr_len > ctx->engine->maxscriptnormalize) {
+offset-size-arithmetic	libclamav/scanners.c	4530	     * retain native-width offsets and run full-map PCRE/logical evaluation. */
+offset-size-arithmetic	libclamav/scanners.c	4550	            len = MIN(map->len - at, (size_t)SCRIPT_UTF16_INPUT_CHUNK);
+offset-size-arithmetic	libclamav/scanners.c	4552	            len = MIN(map->pgsz, map->len - at);
+offset-size-arithmetic	libclamav/scanners.c	4560	        final           = len == map->len - at;
+offset-size-arithmetic	libclamav/scanners.c	4585	        if (!buff || !len || normalize_len > state.out_len - state.out_pos) {
+offset-size-arithmetic	libclamav/scanners.c	4714	    buff = fmap_need_off_once(ctx->fmap, 0, 2U);
+offset-size-arithmetic	libclamav/scanners.c	4761	        bytes = MIN(ctx->fmap->len - at, (size_t)SCRIPT_UTF16_INPUT_CHUNK);
+offset-size-arithmetic	libclamav/scanners.c	4767	        if (!(buff = fmap_need_off_once(ctx->fmap, at, bytes))) {
+offset-size-arithmetic	libclamav/scanners.c	4773	        final  = bytes == ctx->fmap->len - at;
+offset-size-arithmetic	libclamav/scanners.c	4935	                    subdirectory = malloc(strlen(dir) + strlen(dent->d_name) + 2);
+offset-size-arithmetic	libclamav/scanners.c	5163	        ret = cli_append_potentially_unwanted(ctx, "Heuristics.Exploit.W32.MS05-002");
+offset-size-arithmetic	libclamav/scanners.c	5215	    while (pos < ctx->fmap->len) {
+offset-size-arithmetic	libclamav/scanners.c	5222	        src = fmap_need_off_once_len(ctx->fmap, pos, FILEBUFF, &bread);
+offset-size-arithmetic	libclamav/scanners.c	5232	        if (outsize > UINT64_MAX - (uint64_t)bread) {
+offset-size-arithmetic	libclamav/scanners.c	5237	        if ((ret = cli_checklimits("CryptFF", ctx, outsize + (uint64_t)bread, 0, 0)) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/scanners.c	5249	        outsize += (uint64_t)bread;
+offset-size-arithmetic	libclamav/scanners.c	5250	        pos += bread;
+offset-size-arithmetic	libclamav/scanners.c	5483	        result = fmap_readn(map, buf, pos, sizeof(buf) - 1);
+offset-size-arithmetic	libclamav/scanners.c	5484	        if (result == (size_t)-1) {
+offset-size-arithmetic	libclamav/scanners.c	5485	            bool request_in_range = pos <= map->len &&
+offset-size-arithmetic	libclamav/scanners.c	5486	                                    sizeof(buf) - 1 <= map->len - pos;
+offset-size-arithmetic	libclamav/scanners.c	5494	        pos += result;
+offset-size-arithmetic	libclamav/scanners.c	5519	    if (result == (size_t)-1) {
+offset-size-arithmetic	libclamav/scanners.c	5616	    for (i = 0; i < sizeof(perf_events) / sizeof(perf_events[0]); i++) {
+offset-size-arithmetic	libclamav/scanners.c	5621	    cli_event_time_start(ctx->perf, PERFT_SCAN);
+offset-size-arithmetic	libclamav/scanners.c	5640	    pend  = timestr + sizeof(timestr) - 1;
+offset-size-arithmetic	libclamav/scanners.c	5648	    for (i = 0; i < sizeof(perf_events) / sizeof(perf_events[0]); i++) {
+offset-size-arithmetic	libclamav/scanners.c	5654	            p += snprintf(p, pend - p, "%s: %d.%03ums, ", perf_events[i].name,
+offset-size-arithmetic	libclamav/scanners.c	5665	static inline void perf_start(cli_ctx *ctx, int id)
+offset-size-arithmetic	libclamav/scanners.c	5667	    cli_event_time_start(ctx->perf, id);
+offset-size-arithmetic	libclamav/scanners.c	5675	static inline void perf_nested_start(cli_ctx *ctx, int id, int nestedid)
+offset-size-arithmetic	libclamav/scanners.c	5677	    cli_event_time_nested_start(ctx->perf, id, nestedid);
+offset-size-arithmetic	libclamav/scanners.c	5690	static inline void perf_start(cli_ctx *ctx, int id)
+offset-size-arithmetic	libclamav/scanners.c	5700	static inline void perf_nested_start(cli_ctx *ctx, int id, int nestedid)
+offset-size-arithmetic	libclamav/scanners.c	5737	    remaining = (offset <= ctx->fmap->len) ? (uint64_t)(ctx->fmap->len - offset) : 0;
+offset-size-arithmetic	libclamav/scanners.c	5749	    header_size = cli_readint16(header + 12);
+offset-size-arithmetic	libclamav/scanners.c	5756	    if (header_size < 7 || (uint64_t)header_size > remaining - 7)
+offset-size-arithmetic	libclamav/scanners.c	5762	/* scanraw() mode that performs file-type recognition without repeating the
+offset-size-arithmetic	libclamav/scanners.c	5777	static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_file_t *dettype)
+offset-size-arithmetic	libclamav/scanners.c	5781	    struct cli_matched_type *ftoffset = NULL, *fpt;
+offset-size-arithmetic	libclamav/scanners.c	5806	        // Omit TNEF files because TNEF message attachments are raw / not compressed. Document and ZIP attachments would be likely to have double-extraction issues.
+offset-size-arithmetic	libclamav/scanners.c	5846	                cli_mark_scan_incomplete(ctx, "raw embedded-type dispatch reached the configured time limit");
+offset-size-arithmetic	libclamav/scanners.c	5855	            if (fpt->offset < 0 || (uint64_t)fpt->offset >= (uint64_t)ctx->fmap->len) {
+offset-size-arithmetic	libclamav/scanners.c	5856	                cli_mark_scan_incomplete(ctx, "raw embedded-type match offset is outside the input map");
+offset-size-arithmetic	libclamav/scanners.c	5864	                ((size_t)fpt->offset > last_offset)) {
+offset-size-arithmetic	libclamav/scanners.c	5868	                last_offset = (size_t)fpt->offset;
+offset-size-arithmetic	libclamav/scanners.c	6080	                                     * clean raw-only result. */
+offset-size-arithmetic	libclamav/scanners.c	6130	                                    ctx->fmap->len - fpt->offset,
+offset-size-arithmetic	libclamav/scanners.c	6157	                                    ctx->fmap->len - fpt->offset,
+offset-size-arithmetic	libclamav/scanners.c	6195	                                last_offset += zip_size - 1; // Note: size is definitely > 0 because header_check succeeded.
+offset-size-arithmetic	libclamav/scanners.c	6226	                                last_offset += cab_size - 1; // Note: size is definitely > 0 because header_check succeeded.
+offset-size-arithmetic	libclamav/scanners.c	6270	                                last_offset += arj_size - 1; // Note: size is definitely > 0 because header_check succeeded.
+offset-size-arithmetic	libclamav/scanners.c	6302	                                    ctx->fmap->len - fpt->offset,
+offset-size-arithmetic	libclamav/scanners.c	6314	                                off_t archive_offset = fpt->offset - 4;
+offset-size-arithmetic	libclamav/scanners.c	6328	                                    ctx->fmap->len - (size_t)archive_offset,
+offset-size-arithmetic	libclamav/scanners.c	6352	                                    ctx->fmap->len - fpt->offset,
+offset-size-arithmetic	libclamav/scanners.c	6376	                                    ctx->fmap->len - fpt->offset,
+offset-size-arithmetic	libclamav/scanners.c	6400	                                    ctx->fmap->len - fpt->offset,
+offset-size-arithmetic	libclamav/scanners.c	6416	                                if ((uint64_t)(ctx->fmap->len - fpt->offset) > ctx->engine->maxembeddedpe) {
+offset-size-arithmetic	libclamav/scanners.c	6426	                                     * embedded offset. Root the header-only check in a
+offset-size-arithmetic	libclamav/scanners.c	6433	                                                                   parent_map->len - fpt->offset,
+offset-size-arithmetic	libclamav/scanners.c	6446	                                    header_offset = (uint32_t)fpt->offset;
+offset-size-arithmetic	libclamav/scanners.c	6485	                                    ctx->fmap->len - fpt->offset,
+offset-size-arithmetic	libclamav/scanners.c	6497	                            cli_dbgmsg("scanraw: Type %u not handled in fpt loop\n", fpt->type);
+offset-size-arithmetic	libclamav/scanners.c	6502	            } // end if (fpt->offset > 0)
+offset-size-arithmetic	libclamav/scanners.c	6561	        ftoffset = ftoffset->next;
+offset-size-arithmetic	libclamav/scanners.c	6665	    CLI_MAX_CALLOC_OR_GOTO_DONE(ancestors, ctx->recursion_level + 1, sizeof(char *), status = CL_EMEM);
+offset-size-arithmetic	libclamav/scanners.c	6668	    file_size = fmap->len;
+offset-size-arithmetic	libclamav/scanners.c	6679	         * non-detecting result while allowing raw signatures to detect. */
+offset-size-arithmetic	libclamav/scanners.c	6685	    if (NULL == file_buffer || file_size != fmap->len) {
+offset-size-arithmetic	libclamav/scanners.c	6700	            parent_file_size = previous_fmap->len;
+offset-size-arithmetic	libclamav/scanners.c	6810	    size_t image_size          = ctx->fmap->len;
+offset-size-arithmetic	libclamav/scanners.c	6831	    offset = fmap_need_off(ctx->fmap, 0, image_size);
+offset-size-arithmetic	libclamav/scanners.c	6888	        fmap_unneed_off(ctx->fmap, 0, image_size);
+offset-size-arithmetic	libclamav/scanners.c	6935	        for (type_index = 0; type_index < sizeof(types) / sizeof(types[0]); type_index++) {
+offset-size-arithmetic	libclamav/scanners.c	6937	            size_t count = evidence_num_indicators_type(ctx->this_layer_evidence, types[type_index]);
+offset-size-arithmetic	libclamav/scanners.c	6947	                if ((NULL != name) && (0 == strncmp(name, prefix, sizeof(prefix) - 1))) {
 offset-size-arithmetic	libclamav/scanners.c	710	                    (void)cli_basename(metadata.filename, strlen(metadata.filename), &filename_base, true /* posix_support_backslash_pathsep */);
-offset-size-arithmetic	libclamav/scanners.c	7152	     * aborts stop this layer without being exposed as an error. */
-offset-size-arithmetic	libclamav/scanners.c	7234	        size_t remaining    = len - offset;
-offset-size-arithmetic	libclamav/scanners.c	7239	            chunk_len = (size_t)(newline - chunk) + 1;
-offset-size-arithmetic	libclamav/scanners.c	7245	        offset += chunk_len;
-offset-size-arithmetic	libclamav/scanners.c	7547	     * bounded parser for its version-dependent code-object format. Keep raw
-offset-size-arithmetic	libclamav/scanners.c	7549	     * incomplete instead of presenting raw-only coverage as a clean deep scan. */
-offset-size-arithmetic	libclamav/scanners.c	7649	                hash_string[hash_len * 2] = 0;
-offset-size-arithmetic	libclamav/scanners.c	7680	        // This does mean, however, that we do not run the post-scan callback for layers that are cached.
-offset-size-arithmetic	libclamav/scanners.c	7684	    /* Save off the hook_lsig_matches */
-offset-size-arithmetic	libclamav/scanners.c	8212	    /* Disable type recognition for the raw scan for zip files larger than maxziptypercg */
-offset-size-arithmetic	libclamav/scanners.c	8215	        uint64_t curr_len = ctx->fmap->len;
-offset-size-arithmetic	libclamav/scanners.c	8216	        if (curr_len > ctx->engine->maxziptypercg) {
-offset-size-arithmetic	libclamav/scanners.c	8241	        cli_dbgmsg("cli_magic_scan: Performing raw scan to pattern match and/or detect embedded files\n");
-offset-size-arithmetic	libclamav/scanners.c	8392	     * Run the deprecated post-scan callback (if one exists) and provide the verdict for this layer.
-offset-size-arithmetic	libclamav/scanners.c	8407	        callback_ret = ctx->engine->cb_post_scan(fmap_fd(ctx->fmap), verdict_at_this_level, virusname, ctx->cb_ctx);
-offset-size-arithmetic	libclamav/scanners.c	8417	                trust_ret = cli_trust_this_layer(ctx, "legacy post-scan application callback");
-offset-size-arithmetic	libclamav/scanners.c	8419	                    cli_mark_scan_incomplete(ctx, "post-scan callback trust update failed");
-offset-size-arithmetic	libclamav/scanners.c	8432	                        cli_mark_scan_incomplete(ctx, "post-scan callback alert could not be recorded");
-offset-size-arithmetic	libclamav/scanners.c	8441	                cli_mark_scan_incomplete(ctx, "post-scan callback returned an unexpected status");
-offset-size-arithmetic	libclamav/scanners.c	8443	                cli_warnmsg("cli_magic_scan: preserving post-scan callback return code %d\n", callback_ret);
-offset-size-arithmetic	libclamav/scanners.c	8495	static cl_error_t cli_preflight_child_size(cli_ctx *ctx, uint64_t size, uint32_t attributes, const char *who)
-offset-size-arithmetic	libclamav/scanners.c	8502	     * admitted against the shared logical-size and file-count limits. */
-offset-size-arithmetic	libclamav/scanners.c	8656	 * @brief   Scan an offset/length into a file map.
-offset-size-arithmetic	libclamav/scanners.c	8668	static cl_error_t magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
-offset-size-arithmetic	libclamav/scanners.c	8709	cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
-offset-size-arithmetic	libclamav/scanners.c	8734	    if (offset > map->len || (explicit_length && (offset == map->len || length > map->len - offset))) {
-offset-size-arithmetic	libclamav/scanners.c	8736	                    offset, length, map->len);
-offset-size-arithmetic	libclamav/scanners.c	8742	        length = map->len - offset;
-offset-size-arithmetic	libclamav/scanners.c	8760	         * Write the offset + length section of the fmap to disk, and scan it.
-offset-size-arithmetic	libclamav/scanners.c	8789	            size_t chunk = MIN(sizeof(copybuf), length - copied);
-offset-size-arithmetic	libclamav/scanners.c	8796	            nread = fmap_readn(map, copybuf, offset + copied, chunk);
-offset-size-arithmetic	libclamav/scanners.c	8834	         * Just use nested map by scanning given fmap at offset + length.
-offset-size-arithmetic	libclamav/scanners.c	8841	cl_error_t cli_magic_scan_buff(const void *buffer, size_t length, cli_ctx *ctx, const char *name, uint32_t attributes)
-offset-size-arithmetic	libclamav/scanners.c	8969	        } else if ((8 == strlen(hash_alg) && (0 == strncmp(hash_alg, "sha2-256", 8) || (0 == strncmp(hash_alg, "SHA2-256", 8)))) ||
-offset-size-arithmetic	libclamav/scanners.c	8984	        if (hash_string_len != cli_hash_len(requested_hash_type) * 2) {
-offset-size-arithmetic	libclamav/scanners.c	8986	                       hash_string_len, hash_alg, cli_hash_len(requested_hash_type) * 2);
-offset-size-arithmetic	libclamav/scanners.c	9030	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
-offset-size-arithmetic	libclamav/scanners.c	9040	    ctx.recursion_stack[ctx.recursion_level].size = map->len;
-offset-size-arithmetic	libclamav/scanners.c	9099	            (CL_SUCCESS == cli_basename(ctx.target_filepath, strlen(ctx.target_filepath), &target_basename, true /* posix_support_backslash_pathsep */))) {
-offset-size-arithmetic	libclamav/scanners.c	9101	            new_temp_prefix_len = strlen("YYYYMMDD_HHMMSS-") + strlen(target_basename);
-offset-size-arithmetic	libclamav/scanners.c	9102	            new_temp_prefix     = cli_max_calloc(1, new_temp_prefix_len + 1);
-offset-size-arithmetic	libclamav/scanners.c	9109	            strftime(new_temp_prefix, new_temp_prefix_len + 1, "%Y%m%d_%H%M%S-", &tm_struct);
-offset-size-arithmetic	libclamav/scanners.c	9110	            strcpy(new_temp_prefix + strlen("YYYYMMDD_HHMMSS-"), target_basename);
-offset-size-arithmetic	libclamav/scanners.c	9113	            new_temp_prefix_len = strlen("YYYYMMDD_HHMMSS-scantemp");
-offset-size-arithmetic	libclamav/scanners.c	9114	            new_temp_prefix     = cli_max_calloc(1, new_temp_prefix_len + 1);
-offset-size-arithmetic	libclamav/scanners.c	9121	            strftime(new_temp_prefix, new_temp_prefix_len + 1, "%Y%m%d_%H%M%S-scantemp", &tm_struct);
-offset-size-arithmetic	libclamav/scanners.c	9371	        char *hash_string = malloc(hash_len * 2 + 1); // +1 for the null terminator
-offset-size-arithmetic	libclamav/scanners.c	9388	                hash_string[hash_len * 2] = 0;
+offset-size-arithmetic	libclamav/scanners.c	7150	     * aborts stop this layer without being exposed as an error. */
+offset-size-arithmetic	libclamav/scanners.c	7232	        size_t remaining    = len - offset;
+offset-size-arithmetic	libclamav/scanners.c	7237	            chunk_len = (size_t)(newline - chunk) + 1;
+offset-size-arithmetic	libclamav/scanners.c	7243	        offset += chunk_len;
+offset-size-arithmetic	libclamav/scanners.c	7545	     * bounded parser for its version-dependent code-object format. Keep raw
+offset-size-arithmetic	libclamav/scanners.c	7547	     * incomplete instead of presenting raw-only coverage as a clean deep scan. */
+offset-size-arithmetic	libclamav/scanners.c	7647	                hash_string[hash_len * 2] = 0;
+offset-size-arithmetic	libclamav/scanners.c	7678	        // This does mean, however, that we do not run the post-scan callback for layers that are cached.
+offset-size-arithmetic	libclamav/scanners.c	7682	    /* Save off the hook_lsig_matches */
+offset-size-arithmetic	libclamav/scanners.c	8210	    /* Disable type recognition for the raw scan for zip files larger than maxziptypercg */
+offset-size-arithmetic	libclamav/scanners.c	8213	        uint64_t curr_len = ctx->fmap->len;
+offset-size-arithmetic	libclamav/scanners.c	8214	        if (curr_len > ctx->engine->maxziptypercg) {
+offset-size-arithmetic	libclamav/scanners.c	8239	        cli_dbgmsg("cli_magic_scan: Performing raw scan to pattern match and/or detect embedded files\n");
+offset-size-arithmetic	libclamav/scanners.c	8390	     * Run the deprecated post-scan callback (if one exists) and provide the verdict for this layer.
+offset-size-arithmetic	libclamav/scanners.c	8405	        callback_ret = ctx->engine->cb_post_scan(fmap_fd(ctx->fmap), verdict_at_this_level, virusname, ctx->cb_ctx);
+offset-size-arithmetic	libclamav/scanners.c	8415	                trust_ret = cli_trust_this_layer(ctx, "legacy post-scan application callback");
+offset-size-arithmetic	libclamav/scanners.c	8417	                    cli_mark_scan_incomplete(ctx, "post-scan callback trust update failed");
+offset-size-arithmetic	libclamav/scanners.c	8430	                        cli_mark_scan_incomplete(ctx, "post-scan callback alert could not be recorded");
+offset-size-arithmetic	libclamav/scanners.c	8439	                cli_mark_scan_incomplete(ctx, "post-scan callback returned an unexpected status");
+offset-size-arithmetic	libclamav/scanners.c	8441	                cli_warnmsg("cli_magic_scan: preserving post-scan callback return code %d\n", callback_ret);
+offset-size-arithmetic	libclamav/scanners.c	8493	static cl_error_t cli_preflight_child_size(cli_ctx *ctx, uint64_t size, uint32_t attributes, const char *who)
+offset-size-arithmetic	libclamav/scanners.c	8500	     * admitted against the shared logical-size and file-count limits. */
+offset-size-arithmetic	libclamav/scanners.c	8654	 * @brief   Scan an offset/length into a file map.
+offset-size-arithmetic	libclamav/scanners.c	8666	static cl_error_t magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
+offset-size-arithmetic	libclamav/scanners.c	8707	cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
+offset-size-arithmetic	libclamav/scanners.c	8732	    if (offset > map->len || (explicit_length && (offset == map->len || length > map->len - offset))) {
+offset-size-arithmetic	libclamav/scanners.c	8734	                    offset, length, map->len);
+offset-size-arithmetic	libclamav/scanners.c	8740	        length = map->len - offset;
+offset-size-arithmetic	libclamav/scanners.c	8758	         * Write the offset + length section of the fmap to disk, and scan it.
+offset-size-arithmetic	libclamav/scanners.c	8787	            size_t chunk = MIN(sizeof(copybuf), length - copied);
+offset-size-arithmetic	libclamav/scanners.c	8794	            nread = fmap_readn(map, copybuf, offset + copied, chunk);
+offset-size-arithmetic	libclamav/scanners.c	8832	         * Just use nested map by scanning given fmap at offset + length.
+offset-size-arithmetic	libclamav/scanners.c	8839	cl_error_t cli_magic_scan_buff(const void *buffer, size_t length, cli_ctx *ctx, const char *name, uint32_t attributes)
+offset-size-arithmetic	libclamav/scanners.c	8967	        } else if ((8 == strlen(hash_alg) && (0 == strncmp(hash_alg, "sha2-256", 8) || (0 == strncmp(hash_alg, "SHA2-256", 8)))) ||
+offset-size-arithmetic	libclamav/scanners.c	8982	        if (hash_string_len != cli_hash_len(requested_hash_type) * 2) {
+offset-size-arithmetic	libclamav/scanners.c	8984	                       hash_string_len, hash_alg, cli_hash_len(requested_hash_type) * 2);
+offset-size-arithmetic	libclamav/scanners.c	9028	    ctx.recursion_stack_size = ctx.engine->max_recursion_level;
+offset-size-arithmetic	libclamav/scanners.c	9038	    ctx.recursion_stack[ctx.recursion_level].size = map->len;
+offset-size-arithmetic	libclamav/scanners.c	9097	            (CL_SUCCESS == cli_basename(ctx.target_filepath, strlen(ctx.target_filepath), &target_basename, true /* posix_support_backslash_pathsep */))) {
+offset-size-arithmetic	libclamav/scanners.c	9099	            new_temp_prefix_len = strlen("YYYYMMDD_HHMMSS-") + strlen(target_basename);
+offset-size-arithmetic	libclamav/scanners.c	9100	            new_temp_prefix     = cli_max_calloc(1, new_temp_prefix_len + 1);
+offset-size-arithmetic	libclamav/scanners.c	9107	            strftime(new_temp_prefix, new_temp_prefix_len + 1, "%Y%m%d_%H%M%S-", &tm_struct);
+offset-size-arithmetic	libclamav/scanners.c	9108	            strcpy(new_temp_prefix + strlen("YYYYMMDD_HHMMSS-"), target_basename);
+offset-size-arithmetic	libclamav/scanners.c	9111	            new_temp_prefix_len = strlen("YYYYMMDD_HHMMSS-scantemp");
+offset-size-arithmetic	libclamav/scanners.c	9112	            new_temp_prefix     = cli_max_calloc(1, new_temp_prefix_len + 1);
+offset-size-arithmetic	libclamav/scanners.c	9119	            strftime(new_temp_prefix, new_temp_prefix_len + 1, "%Y%m%d_%H%M%S-scantemp", &tm_struct);
+offset-size-arithmetic	libclamav/scanners.c	9369	        char *hash_string = malloc(hash_len * 2 + 1); // +1 for the null terminator
+offset-size-arithmetic	libclamav/scanners.c	9386	                hash_string[hash_len * 2] = 0;
 offset-size-arithmetic	libclamav/scanners.c	944	        size_t chunk = MIN(sizeof(buffer), ctx->fmap->len - copied);
-offset-size-arithmetic	libclamav/scanners.c	9510	            (scanned_out / CL_COUNT_PRECISION > UINT32_MAX)) {
-offset-size-arithmetic	libclamav/scanners.c	9514	            *scanned = (unsigned long int)(scanned_out / CL_COUNT_PRECISION);
-offset-size-arithmetic	libclamav/scanners.c	9557	            (scanned_bytes / CL_COUNT_PRECISION > UINT32_MAX)) {
-offset-size-arithmetic	libclamav/scanners.c	9561	            *scanned = (unsigned long int)(scanned_bytes / CL_COUNT_PRECISION);
-offset-size-arithmetic	libclamav/scanners.c	9649	    if ((engine->maxfilesize != 0 && root_size > engine->maxfilesize) ||
-offset-size-arithmetic	libclamav/scanners.c	9650	        (engine->maxscansize != 0 && root_size > engine->maxscansize)) {
-offset-size-arithmetic	libclamav/scanners.c	9687	        (void)cli_basename(filename, strlen(filename), &filename_base, true /* posix_support_backslash_pathsep */);
-offset-size-arithmetic	libclamav/scanners.c	9822	            (scanned_bytes / CL_COUNT_PRECISION > UINT32_MAX)) {
-offset-size-arithmetic	libclamav/scanners.c	9826	            *scanned = (unsigned long int)(scanned_bytes / CL_COUNT_PRECISION);
-offset-size-arithmetic	libclamav/scanners.c	9886	    cli_scan_report_set_root_size(report, (uint64_t)map->len);
-offset-size-arithmetic	libclamav/scanners.c	9888	    if (NULL != filename && map->name == NULL) {
-offset-size-arithmetic	libclamav/scanners.c	9890	        (void)cli_basename(filename, strlen(filename), &map->name, true /* posix_support_backslash_pathsep */);
+offset-size-arithmetic	libclamav/scanners.c	9508	            (scanned_out / CL_COUNT_PRECISION > UINT32_MAX)) {
+offset-size-arithmetic	libclamav/scanners.c	9512	            *scanned = (unsigned long int)(scanned_out / CL_COUNT_PRECISION);
+offset-size-arithmetic	libclamav/scanners.c	9555	            (scanned_bytes / CL_COUNT_PRECISION > UINT32_MAX)) {
+offset-size-arithmetic	libclamav/scanners.c	9559	            *scanned = (unsigned long int)(scanned_bytes / CL_COUNT_PRECISION);
+offset-size-arithmetic	libclamav/scanners.c	9647	    if ((engine->maxfilesize != 0 && root_size > engine->maxfilesize) ||
+offset-size-arithmetic	libclamav/scanners.c	9648	        (engine->maxscansize != 0 && root_size > engine->maxscansize)) {
+offset-size-arithmetic	libclamav/scanners.c	9685	        (void)cli_basename(filename, strlen(filename), &filename_base, true /* posix_support_backslash_pathsep */);
+offset-size-arithmetic	libclamav/scanners.c	9820	            (scanned_bytes / CL_COUNT_PRECISION > UINT32_MAX)) {
+offset-size-arithmetic	libclamav/scanners.c	9824	            *scanned = (unsigned long int)(scanned_bytes / CL_COUNT_PRECISION);
+offset-size-arithmetic	libclamav/scanners.c	9884	    cli_scan_report_set_root_size(report, (uint64_t)map->len);
+offset-size-arithmetic	libclamav/scanners.c	9886	    if (NULL != filename && map->name == NULL) {
+offset-size-arithmetic	libclamav/scanners.c	9888	        (void)cli_basename(filename, strlen(filename), &map->name, true /* posix_support_backslash_pathsep */);
 offset-size-arithmetic	libclamav/scanners.c	992	        (ctx->fmap->nested_offset > 0) || (ctx->fmap->len < ctx->fmap->real_len)) {
-offset-size-arithmetic	libclamav/scanners.c	9943	cl_error_t cli_magic_scan_file(const char *filename, cli_ctx *ctx, const char *original_name, uint32_t attributes)
-offset-size-arithmetic	libclamav/scanners.c	9948	    if (filename == NULL || ctx == NULL || ctx->engine == NULL)
+offset-size-arithmetic	libclamav/scanners.c	9941	cl_error_t cli_magic_scan_file(const char *filename, cli_ctx *ctx, const char *original_name, uint32_t attributes)
+offset-size-arithmetic	libclamav/scanners.c	9946	    if (filename == NULL || ctx == NULL || ctx->engine == NULL)
 offset-size-arithmetic	libclamav/scanners.c	995	        temporary_size = (uint64_t)ctx->fmap->len;
 offset-size-arithmetic	libclamav/scanners.h	191	 * @brief   Scan an offset/length into a file map.
 offset-size-arithmetic	libclamav/scanners.h	208	cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
@@ -41884,36 +41883,36 @@ offset-size-arithmetic	unit_tests/check_clamav.c	6262	        child_map  = cl_fm
 offset-size-arithmetic	unit_tests/check_clamav.c	6312	    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
 offset-size-arithmetic	unit_tests/check_clamav.c	6354	        parent_map     = cl_fmap_open_memory(parent_input, sizeof(parent_input) - 1U);
 offset-size-arithmetic	unit_tests/check_clamav.c	6355	        child_map      = cl_fmap_open_memory(child_input, sizeof(child_input) - 1U);
-offset-size-arithmetic	unit_tests/check_clamav.c	64673	    data  = malloc(sizeof(le_data) * DATA_REP);
-offset-size-arithmetic	unit_tests/check_clamav.c	64674	    data2 = malloc(sizeof(le_data) * DATA_REP);
-offset-size-arithmetic	unit_tests/check_clamav.c	64698	    /* read 2 bytes apart, start is not always aligned*/
-offset-size-arithmetic	unit_tests/check_clamav.c	64699	    for (j = _i; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
-offset-size-arithmetic	unit_tests/check_clamav.c	64704	    for (j = 0; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
-offset-size-arithmetic	unit_tests/check_clamav.c	64716	    /* read 4 bytes apart, start is not always aligned*/
-offset-size-arithmetic	unit_tests/check_clamav.c	64717	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	64722	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	64732	    /* write 4 bytes apart, start is not always aligned*/
-offset-size-arithmetic	unit_tests/check_clamav.c	64733	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	64676	    data  = malloc(sizeof(le_data) * DATA_REP);
+offset-size-arithmetic	unit_tests/check_clamav.c	64677	    data2 = malloc(sizeof(le_data) * DATA_REP);
+offset-size-arithmetic	unit_tests/check_clamav.c	64701	    /* read 2 bytes apart, start is not always aligned*/
+offset-size-arithmetic	unit_tests/check_clamav.c	64702	    for (j = _i; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
+offset-size-arithmetic	unit_tests/check_clamav.c	64707	    for (j = 0; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
+offset-size-arithmetic	unit_tests/check_clamav.c	64719	    /* read 4 bytes apart, start is not always aligned*/
+offset-size-arithmetic	unit_tests/check_clamav.c	64720	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	64725	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	64735	    /* write 4 bytes apart, start is not always aligned*/
 offset-size-arithmetic	unit_tests/check_clamav.c	64736	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	64740	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	64739	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
 offset-size-arithmetic	unit_tests/check_clamav.c	64743	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	64775	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
-offset-size-arithmetic	unit_tests/check_clamav.c	64793	    ck_assert_int_gt(snprintf(keypath, sizeof(keypath), "%s/input/signing/sign/signing-test.key", OBJDIR), 0);
-offset-size-arithmetic	unit_tests/check_clamav.c	64821	    ck_assert_int_gt(snprintf(certdir, sizeof(certdir), "%s/cert-chain", tmpdir), 0);
-offset-size-arithmetic	unit_tests/check_clamav.c	64853	    ck_assert_int_gt(snprintf(path, sizeof(path), "%s/hash-file-fd-ex-%ld", tmpdir, (long)getpid()), 0);
-offset-size-arithmetic	unit_tests/check_clamav.c	64856	    ck_assert_int_eq(write(fd, content, sizeof(content) - 1U), (ssize_t)(sizeof(content) - 1U));
-offset-size-arithmetic	unit_tests/check_clamav.c	64867	    ret = cl_hash_data_ex("sha2-256", content, sizeof(content) - 1U, &expected,
-offset-size-arithmetic	unit_tests/check_clamav.c	64924	    ck_assert_msg(!memcmp(h_sha2_256, res256[0], sizeof(h_sha2_256)), "sha2-256 test vector #1 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	64927	    ck_assert_msg(!memcmp(h_sha2_256, res256[1], sizeof(h_sha2_256)), "sha2-256 test vector #2 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	64935	    ck_assert_msg(!memcmp(h_sha2_256, res256[2], sizeof(h_sha2_256)), "sha2-256 test vector #3 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	65079	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
-offset-size-arithmetic	unit_tests/check_clamav.c	65086	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
+offset-size-arithmetic	unit_tests/check_clamav.c	64746	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	64778	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
+offset-size-arithmetic	unit_tests/check_clamav.c	64796	    ck_assert_int_gt(snprintf(keypath, sizeof(keypath), "%s/input/signing/sign/signing-test.key", OBJDIR), 0);
+offset-size-arithmetic	unit_tests/check_clamav.c	64824	    ck_assert_int_gt(snprintf(certdir, sizeof(certdir), "%s/cert-chain", tmpdir), 0);
+offset-size-arithmetic	unit_tests/check_clamav.c	64856	    ck_assert_int_gt(snprintf(path, sizeof(path), "%s/hash-file-fd-ex-%ld", tmpdir, (long)getpid()), 0);
+offset-size-arithmetic	unit_tests/check_clamav.c	64859	    ck_assert_int_eq(write(fd, content, sizeof(content) - 1U), (ssize_t)(sizeof(content) - 1U));
+offset-size-arithmetic	unit_tests/check_clamav.c	64870	    ret = cl_hash_data_ex("sha2-256", content, sizeof(content) - 1U, &expected,
+offset-size-arithmetic	unit_tests/check_clamav.c	64927	    ck_assert_msg(!memcmp(h_sha2_256, res256[0], sizeof(h_sha2_256)), "sha2-256 test vector #1 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	64930	    ck_assert_msg(!memcmp(h_sha2_256, res256[1], sizeof(h_sha2_256)), "sha2-256 test vector #2 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	64938	    ck_assert_msg(!memcmp(h_sha2_256, res256[2], sizeof(h_sha2_256)), "sha2-256 test vector #3 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	65082	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
+offset-size-arithmetic	unit_tests/check_clamav.c	65089	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
 offset-size-arithmetic	unit_tests/check_clamav.c	6518	    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
-offset-size-arithmetic	unit_tests/check_clamav.c	65332	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
-offset-size-arithmetic	unit_tests/check_clamav.c	65358	        len--;
-offset-size-arithmetic	unit_tests/check_clamav.c	65615	    if (len == 0 || at > map->len || len > map->len - at)
-offset-size-arithmetic	unit_tests/check_clamav.c	65652	    chunk_boundary[sizeof(chunk_boundary) - 2U] = 0xff;
-offset-size-arithmetic	unit_tests/check_clamav.c	65653	    chunk_boundary[sizeof(chunk_boundary) - 1U] = 0xd9;
+offset-size-arithmetic	unit_tests/check_clamav.c	65335	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
+offset-size-arithmetic	unit_tests/check_clamav.c	65361	        len--;
+offset-size-arithmetic	unit_tests/check_clamav.c	65618	    if (len == 0 || at > map->len || len > map->len - at)
+offset-size-arithmetic	unit_tests/check_clamav.c	65655	    chunk_boundary[sizeof(chunk_boundary) - 2U] = 0xff;
+offset-size-arithmetic	unit_tests/check_clamav.c	65656	    chunk_boundary[sizeof(chunk_boundary) - 1U] = 0xd9;
 offset-size-arithmetic	unit_tests/check_clamav.c	6605	    for (i = 0; i < sizeof(parser_errors) / sizeof(parser_errors[0]); i++) {
 offset-size-arithmetic	unit_tests/check_clamav.c	6839	        testfiles = cli_safer_realloc(testfiles, i * sizeof(*testfiles));
 offset-size-arithmetic	unit_tests/check_clamav.c	6896	    /* Keep the scan-API fixture independent of any process-level dynamic
@@ -42812,7 +42811,7 @@ large-file-option	libclamav/others.c	803	                cli_errmsg("MaxFileSize
 large-file-option	libclamav/scan_report.c	295	    report_get_engine_limit(engine, CL_ENGINE_MAX_FILESIZE, &report->limits.max_file_size);
 large-file-option	libclamav/scan_report.c	296	    report_get_engine_limit(engine, CL_ENGINE_MAX_SCANSIZE, &report->limits.max_scan_size);
 large-file-option	libclamav/scanners.c	1607	            cli_mark_scan_incomplete(ctx, "EGG archive inspection reached MaxScanSize");
-large-file-option	libclamav/scanners.c	7492	     * MaxScanSize/MaxFiles accounting here. */
+large-file-option	libclamav/scanners.c	7490	     * MaxScanSize/MaxFiles accounting here. */
 large-file-option	libclamav/spin.c	174	                cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFileSize", CL_EMAXSIZE);
 large-file-option	libclamav_rust/src/util.rs	124	    b"Heuristics.Limits.Exceeded.MaxScanSize\0";
 large-file-option	sigtool/sigtool.c	2244	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL))

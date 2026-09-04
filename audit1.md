@@ -328,6 +328,29 @@ certified Linux x86-64, production-CVD/service, materialized-large-file,
 resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
 remain open.
 
+## Graphics current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `graphics` 9/9,
+`graphics_map` 2/2, `graphics_api` 1/1, and `graphics_corpus` 1/1. The direct
+case covers BMP and JPEG-2000 truncation, structural-admission, deadline, and
+generic-unsupported boundaries; the map/API cases cover missing-map and
+null-context admission plus an in-range public callback read failure; the
+corpus case reaches an exact pixel-offset child marker through CL_TYPE_GRAPHICS.
+
+The direct regressions were moved out of the mixed `cl_api` TCase into a
+fixture-backed `graphics` case after that broad case proved contaminated by
+unrelated stale ABI failures. Review also found that the generic fallback
+marked the layer incomplete but returned `CL_EFORMAT` when both structural
+probes rejected input; it now normalizes that non-detecting result to
+`CL_EPARSE`, preserving detection and other terminal statuses. The current GCC
+relink is warning-clean at the touched scanner boundary.
+
+This is focused current-source evidence, not final Graphics qualification.
+Complete BMP/JPEG-2000/graphics corpus breadth, full current-C-ABI execution,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and final requirement-by-
+requirement PLAN.md qualification remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of

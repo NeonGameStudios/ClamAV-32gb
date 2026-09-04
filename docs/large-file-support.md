@@ -1378,6 +1378,23 @@ image corpus, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## Current Graphics focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `graphics` 9/9,
+`graphics_map` 2/2, `graphics_api` 1/1, and `graphics_corpus` 1/1. Coverage
+includes BMP/JPEG-2000 truncation, structural admission, timeout, and generic
+unsupported boundaries, plus missing-map/null-context admission, an in-range
+public callback read failure, and exact pixel-offset nested matching.
+
+The direct checks now run in a fixture-backed `graphics` TCase rather than the
+mixed `cl_api` case. Generic Graphics fallback now normalizes a non-detecting
+`CL_EFORMAT` from both structural probes to `CL_EPARSE` after marking the layer
+incomplete, while preserving detection and other terminal statuses. The
+current GCC relink is warning-clean at the touched scanner boundary. Complete
+BMP/JPEG-2000/graphics corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
+
 ## BZip2/GZip materialized corpus refresh — 2026-08-31
 
 The canonical compressed scanner and unit-test sources were transferred into

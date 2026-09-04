@@ -256,6 +256,23 @@
   resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
   open.
 
+## Graphics current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `graphics` 9/9,
+  `graphics_map` 2/2, `graphics_api` 1/1, and `graphics_corpus` 1/1. The
+  direct case covers BMP/JPEG-2000 truncation, structural-admission, timeout,
+  and explicit-unsupported results; map/API/corpus cases cover admission,
+  callback read failure, and exact pixel-offset child matching.
+- The direct regressions now run in a fixture-backed `graphics` TCase instead
+  of the mixed `cl_api` case. Generic Graphics fallback now converts a
+  non-detecting `CL_EFORMAT` from both structural probes to `CL_EPARSE` after
+  marking the layer incomplete, while preserving detections and terminal
+  statuses. The current GCC relink is warning-clean at this boundary.
+- Keep complete BMP/JPEG-2000/graphics corpus breadth, full C/Rust ABI,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, resource, Sonic1, and final requirement-by-
+  requirement PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback
