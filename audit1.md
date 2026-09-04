@@ -24005,6 +24005,23 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file/resource, Sonic1, and final parser/release evidence
 remain open.
 
+## OneNote current-source production-linked refresh — 2026-09-04
+
+The current-source GCC production-linked OneNote matrix passes with zero
+failures and errors: `rust_onenote` 2/2, `onenote` 2/2, and `rust_map` 2/2.
+After materializing the three checked-in OneNote fixtures through the existing
+CMake targets, the corpus path reaches the exact nested MZP matcher for each
+document.
+
+The deferred Rust 1.97.1 module-filter attempt now compiles the crate but its
+standalone test binary cannot link without production C engine symbols such as
+`cli_checktimelimit`, `cli_mark_scan_incomplete`, and logging/verification
+hooks. This is an isolated-harness limitation, not a OneNote parser result;
+no new filtered-module pass is claimed. Complete OneNote corpus, full-C ABI
+parity, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file/resource, Sonic1, and final parser/release evidence
+remain open.
+
 ## TAR current-source production-linked refresh — 2026-09-04
 
 The authoritative TAR scanner and unit-test source were rerun in the existing

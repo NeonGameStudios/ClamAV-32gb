@@ -13518,3 +13518,18 @@ This is focused current-source evidence, not complete TAR qualification.
 Complete GNU base-256/PAX/member corpus, full-C ABI parity, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file/
 resource, Sonic1, and final parser/release evidence remain required.
+
+## OneNote current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC matrix passes with zero failures and
+errors: `rust_onenote` 2/2, `onenote` 2/2, and `rust_map` 2/2. The three
+checked-in OneNote fixtures were materialized through existing CMake targets,
+and each reaches the exact nested MZP matcher.
+
+The Rust 1.97.1 module-filter rerun compiles the crate, but its standalone
+test binary cannot link without production C engine symbols such as
+`cli_checktimelimit` and `cli_mark_scan_incomplete`; no new filtered-module
+pass is claimed. This is an isolated-harness limitation, not a OneNote parser
+result. Complete OneNote corpus, full-C ABI parity, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file/resource, Sonic1, and
+final parser/release evidence remain required.
