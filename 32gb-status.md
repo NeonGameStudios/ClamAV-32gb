@@ -2,10 +2,11 @@
 
 ## Current qualification warning — 2026-09-03
 
-This branch is not release-qualified. The current manifest records 0
-qualified, 142 bounded, 399 pending, and 26 unsupported capabilities; 548 rows
-remain release-blocking, including 7 required rows marked unsupported, and all
-80 enabled parser rows still require release evidence. The August 14–18
+This branch is not release-qualified. At the current audit point, the
+authoritative manifest records 589 rows: 0 qualified, 143 bounded, 425
+pending, and 21 unsupported capabilities; 575 rows remain release-blocking,
+including 7 required rows marked unsupported, and all 80 enabled parser rows
+still require release evidence. The August 14–18
 “current-head” statements below are historical and remain bound to their named
 commits and manifests. Sonic1 was unreachable by SSH on 2026-09-03, so none of
 the latest PDF or admission work has current-source
@@ -27,6 +28,9 @@ format-isolation regression compiles; independently compiled format-8
 interpreter/JIT and Sonic1 production-bytecode evidence remain open. The
 release gate now uses a fixed shared allowlist for deliberate unsupported rows,
 so a required parser or matcher cannot bypass qualification by relabelling.
+The current source/build, production-CVD, sanitizer, materialized exact-edge,
+service-parity, and Sonic1 evidence required by PLAN.md is still missing;
+historical results below must not be read as current release qualification.
 
 **Status date:** 2026-09-03
 
