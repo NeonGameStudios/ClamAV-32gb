@@ -1,5 +1,31 @@
 # Wishlist
 
+## XZ current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `xz` 4/4,
+  `xz_trailing` 1/1, and `xz_corpus` 1/1, with zero failures and errors.
+- Preserve coverage for scan-size limiting, truncated streams, hash update and
+  finalization faults, concatenated/trailing-stream rejection, and exact
+  decompressed child matching after bounded temporary spooling.
+- No production-code change was needed in this refresh. Keep complete XZ
+  corpus breadth, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+  open.
+
+## HWPML/MSXML current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `hwpml` 2/2,
+  `hwpml_map` 4/4, `hwpml_corpus` 1/1, `msxml` 10/10, `msxml_map` 3/3, and
+  `msxml_corpus` 1/1, all with zero failures and errors.
+- Keep the exact decoded child-marker corpus coverage and direct map admission
+  coverage for missing context/map/engine/options. Preserve the fail-visible
+  coverage for truncation, callback reads, malformed Base64, sticky incomplete
+  state, bounded attributes, JSON metadata, and stream timeout.
+- No production-code change was needed in this refresh. Keep complete XML
+  corpus breadth, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+  open.
+
 ## XDP current-source focused audit — 2026-09-04
 
 - Keep the direct sticky-completion fixture bound to the compiled engine's

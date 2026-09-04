@@ -5,6 +5,32 @@ Current evidence is capability-scoped and must be bound to the current source
 and build manifests. No production release claim is made until every PLAN.md
 gate passes.
 
+## Current XZ focused audit — 2026-09-04
+
+The authoritative current-source production-linked GCC harness passes the
+focused XZ matrix with zero failures and errors: `xz` 4/4, `xz_trailing` 1/1,
+and `xz_corpus` 1/1. Coverage includes scan-size limiting, truncated-stream
+classification, hash update/finalization fault propagation,
+concatenated/trailing-stream rejection, and exact matching of a child marker
+after bounded decompression, temporary spooling, and nested scanning. No
+production-code change was required in this refresh. These results are
+focused decoder evidence only; complete XZ corpus breadth, parser-family
+qualification, and the remaining PLAN.md release gates are still open.
+
+## Current HWPML/MSXML focused audit — 2026-09-04
+
+The authoritative current-source production-linked GCC harness passes the XML
+parser matrix with zero failures and errors: `hwpml` 2/2, `hwpml_map` 4/4,
+`hwpml_corpus` 1/1, `msxml` 10/10, `msxml_map` 3/3, and `msxml_corpus` 1/1.
+The corpus cases use complete documents and exact decoded child-marker
+matching through public XML dispatch. Direct map cases cover missing context,
+map, engine, and options admission. Fault coverage includes truncation,
+callback read failure, malformed Base64, sticky incomplete state, bounded
+attributes, JSON metadata failures, and stream timeout. No production-code
+change was required in this refresh. These results are focused current-source
+evidence only; parser-family qualification and the remaining PLAN.md release
+gates are still open.
+
 ## Current PE focused audit — 2026-09-04
 
 The authoritative PE production and test sources were transferred into the

@@ -1,5 +1,36 @@
 # Independent read-only audit of audit.md
 
+## XZ current-source focused audit — 2026-09-04
+
+The authoritative current-source production-linked GCC harness passes the
+focused XZ matrix with zero failures and errors: `xz` 4/4,
+`xz_trailing` 1/1, and `xz_corpus` 1/1. The cases cover scan-size limiting,
+truncated-stream classification, hash finalization and update fault
+propagation, concatenated/trailing-stream rejection, and a complete valid XZ
+stream whose bounded decompressed output reaches an exact child matcher after
+temporary spooling and nested scanning. No production-code change was
+required in this current-source refresh. This is focused decoder evidence, not
+complete XZ or release certification: complete corpus breadth, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and requirement-by-requirement PLAN.md qualification remain
+open.
+
+## HWPML/MSXML current-source focused audit — 2026-09-04
+
+The authoritative current-source production-linked GCC harness passes the
+focused XML parser matrix with zero failures and errors: `hwpml` 2/2,
+`hwpml_map` 4/4, `hwpml_corpus` 1/1, `msxml` 10/10, `msxml_map` 3/3, and
+`msxml_corpus` 1/1. The corpus cases exercise complete HWPML and legacy MSXML
+documents through public dispatch and reach exact decoded child markers.
+Direct map cases cover null/missing context, map, engine, and options
+admission. The parser cases cover truncation, callback read failure, malformed
+Base64, sticky incomplete state, bounded attributes, JSON metadata faults, and
+stream timeout. No production-code change was required in this current-source
+refresh. This is focused evidence, not complete XML-parser or release
+certification: complete corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and
+requirement-by-requirement PLAN.md qualification remain open.
+
 ## XDP current-source focused audit — 2026-09-04
 
 The coherent current-source production-linked GCC harness initially exposed a
