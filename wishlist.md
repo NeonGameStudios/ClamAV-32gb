@@ -25,6 +25,18 @@
   x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
   and final PLAN.md qualification open.
 
+## HWPOLE2 current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `hwpole2_map` 5/5
+  and `hwpole2_corpus` 1/1. The map case covers null-context, missing-map,
+  missing-engine/options, pre-tainted clean completion, and public-API prefix
+  read admission; the corpus case reaches the exact nested child marker
+  through the materialized `clam.ppt` wrapper.
+- Keep the nested-fmap linker-wrapper guard and canonical/container equality.
+  Complete HWPOLE2/OLE2 corpus breadth, full C/Rust ABI, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, resource,
+  Sonic1, and final PLAN.md qualification open.
+
 ## PDF metadata callback compile boundary — 2026-09-04
 
 - Keep PDF metadata callbacks bound to a checked owning `cli_ctx` and its

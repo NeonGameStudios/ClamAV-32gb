@@ -24,6 +24,22 @@ HWP3/HWPML/OLE corpus, full C/Rust ABI, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, resource, Sonic1, and final
 PLAN.md qualification remain required.
 
+## Current HWPOLE2 focused audit — 2026-09-04
+
+Using the same source-synchronized Docker production-linked GCC harness, the
+current HWPOLE2 cases pass `hwpole2_map` 5/5 and `hwpole2_corpus` 1/1, with
+zero failures and errors. The map case covers null-context, missing-map,
+missing-engine/options, pre-tainted clean completion, and in-range public-API
+prefix-read admission; the corpus case reaches the exact nested
+`HWPOLE2.Member.MZ.UNOFFICIAL` marker through the materialized `clam.ppt`
+wrapper. The pre-tainted child handoff is isolated through the Linux static
+nested-fmap linker wrapper, matching HWPOLE2's actual call path.
+
+These are focused current-source results, not final HWPOLE2 qualification.
+Complete HWPOLE2/OLE2 corpus, full C/Rust ABI, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
+and final PLAN.md qualification remain required.
+
 ## Current qualification boundary — 2026-09-04
 
 The authoritative capability manifest is a coverage contract, not a release

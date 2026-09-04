@@ -772,7 +772,7 @@ extern cl_error_t __real_cli_magic_scan_nested_fmap_type(cl_fmap_t *, size_t, si
 cl_error_t __wrap_cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
                                                   cli_file_t type, const char *name, uint32_t attributes)
 {
-    if (hwp3_test_bypass_child_scan)
+    if (hwp3_test_bypass_child_scan || hwpole2_test_bypass_child_scan)
         return CL_SUCCESS;
 
     return __real_cli_magic_scan_nested_fmap_type(map, offset, length, ctx, type, name, attributes);
