@@ -45,6 +45,20 @@ linked execution, complete callback/ingress parity, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 PLAN.md qualification remain required.
 
+## MIME binary body byte preservation — 2026-09-04
+
+The disk-backed MIME body path previously used C-string length and line readers
+that silently discarded embedded NUL bytes before scanning ordinary and
+multipart raw bodies. The current source now carries an explicit body-line
+length, copies NUL bytes through `messageAddBytes()`, and uses a bounded
+byte-span reader for multipart spools; embedded NULs in headers and
+multipart-part headers fail visibly instead of being parsed from shortened
+strings. The guarded `test_mime_body_byte_span_preserves_embedded_nul` covers
+exact spool bytes and the source guards bind the new reader/API. Current-source
+linked MIME/mbox and multipart execution, complete binary MIME corpus,
+sanitizer, production-CVD, service, materialized-large-file, Sonic1, resource,
+and final PLAN.md qualification remain required.
+
 ## Bytecode extracted-member logical double-charge — 2026-09-03
 
 `cli_bcapi_extract_new()` pre-incremented `scansize` and `scannedfiles` with

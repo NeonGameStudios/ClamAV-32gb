@@ -375,12 +375,11 @@ int messageHasBodySpool(const message *m)
     return (m != NULL && m->body_spool != NULL) ? 1 : 0;
 }
 
-static int messageAddSpoolLine(message *m, const char *data)
+static int messageAddSpoolBytes(message *m, const unsigned char *data, size_t len)
 {
-    const unsigned char *line = (const unsigned char *)(data ? data : "");
-    size_t len                = data ? strlen(data) : 0;
+    const unsigned char *line = data ? data : (const unsigned char *)"";
 
-    if (m == NULL || m->body_spool == NULL)
+    if (m == NULL || m->body_spool == NULL || (len != 0 && data == NULL))
         return -1;
 
     if (messageCheckDeadline(m)) {
@@ -397,6 +396,12 @@ static int messageAddSpoolLine(message *m, const char *data)
     }
 
     return 1;
+}
+
+static int messageAddSpoolLine(message *m, const char *data)
+{
+    return messageAddSpoolBytes(m, (const unsigned char *)(data ? data : ""),
+                                data ? strlen(data) : 0);
 }
 
 /* Reserve bytes while the spool is being built, but defer the authoritative
@@ -1370,6 +1375,51 @@ int messageAddStr(message *m, const char *data)
         m->body_last->t_line = NULL;
 
     return 1;
+}
+
+/* Add one body line without treating its payload as a C string. The
+ * disk-backed representation is the authoritative path for raw MIME bodies;
+ * the legacy text list cannot represent embedded NUL bytes safely. A single
+ * LF is appended to retain the existing line-oriented spool format. */
+int messageAddBytes(message *m, const unsigned char *data, size_t len)
+{
+    char *copy;
+    int rc;
+
+    if (m == NULL || (len != 0 && data == NULL)) {
+        cli_errmsg("messageAddBytes: invalid arguments\n");
+        return -1;
+    }
+
+    if (m->body_spool)
+        return messageAddSpoolBytes(m, data, len);
+
+    if (len == 0)
+        return messageAddStr(m, NULL);
+
+    if (memchr(data, '\0', len) != NULL) {
+        messageMarkMaterializationFailure(
+            m, "MIME body with embedded NUL could not be materialized safely");
+        return -1;
+    }
+
+    if (len == SIZE_MAX) {
+        messageMarkMaterializationFailure(
+            m, "MIME body line length exceeded native representation");
+        return -1;
+    }
+
+    copy = (char *)malloc(len + 1);
+    if (copy == NULL) {
+        messageMarkMaterializationFailure(
+            m, "MIME body line could not be materialized completely");
+        return -1;
+    }
+    memcpy(copy, data, len);
+    copy[len] = '\0';
+    rc        = messageAddStr(m, copy);
+    free(copy);
+    return rc;
 }
 
 /*

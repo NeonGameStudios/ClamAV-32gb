@@ -13,6 +13,18 @@
   parity, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
   resource, and final PLAN.md qualification remain required.
 
+## MIME binary body byte preservation — 2026-09-04
+
+- Keep raw `binary`/`8bit` MIME body lines length-aware from fmap input through
+  the disk-backed spool, preserving embedded NUL bytes for ordinary and
+  multipart bodies. Treat embedded NULs in header lines as explicit incomplete
+  input instead of allowing C-string truncation to change MIME structure.
+- Retain `messageAddBytes()`, the bounded multipart spool reader, the focused
+  `test_mime_body_byte_span_preserves_embedded_nul` regression, and source
+  guards. Current-source linked MIME/mbox execution, complete binary MIME
+  corpus, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final PLAN.md qualification remain required.
+
 ## Bytecode extracted-member logical double-charge — 2026-09-03
 
 - Keep `cli_bcapi_extract_new()` free of a logical/file-count precharge:

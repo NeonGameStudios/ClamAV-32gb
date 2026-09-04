@@ -286,7 +286,8 @@ static char *rfc822comments(const char *in, char *out);
 static int rfc1341(mbox_ctx *mctx, message *m);
 static bool usefulHeader(int commandNumber, const char *cmd);
 static char *getline_from_mbox(char *buffer, size_t len, fmap_t *map, size_t *at, cli_ctx *ctx,
-                               cl_error_t *failure_status, bool reject_unterminated_line);
+                               size_t *line_length, cl_error_t *failure_status,
+                               bool reject_unterminated_line);
 static bool isBounceStart(mbox_ctx *mctx, const char *line);
 static mbox_status exportBinhexMessage(mbox_ctx *mctx, message *m);
 static int exportBounceMessage(mbox_ctx *ctx, text *start);
@@ -318,6 +319,75 @@ static bool hitLineFoldCnt(const char *const line, size_t *lineFoldCnt, cli_ctx 
 static bool haveTooManyHeaderBytes(size_t totalLen, cli_ctx *ctx, bool *heuristicFound);
 static bool haveTooManyEmailHeaders(size_t totalHeaderCnt, cli_ctx *ctx, bool *heuristicFound);
 static bool haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound);
+
+/* Return the body bytes in a line after removing the line terminator that
+ * getline_from_mbox() or the disk-backed spool supplied. This length-aware
+ * helper deliberately does not use strlen(): raw MIME bodies may contain
+ * embedded NUL bytes. */
+static size_t mbox_line_content_length(const unsigned char *line, size_t line_length)
+{
+    if (line == NULL)
+        return 0;
+
+    while (line_length != 0 &&
+           (line[line_length - 1] == '\n' || line[line_length - 1] == '\r'))
+        line_length--;
+
+    return line_length;
+}
+
+static int read_mime_spool_line(FILE *input, unsigned char *line, size_t line_capacity,
+                                size_t *line_length)
+{
+    size_t used = 0;
+
+    if (input == NULL || line == NULL || line_length == NULL || line_capacity < 2)
+        return -1;
+
+    *line_length = 0;
+    while (used < line_capacity - 1) {
+        size_t wanted = line_capacity - 1 - used;
+        size_t got    = fread(line + used, 1, wanted, input);
+        unsigned char *newline;
+
+        if (got == 0) {
+            if (ferror(input))
+                return -1;
+            if (used == 0)
+                return 0;
+            break;
+        }
+
+        newline = (unsigned char *)memchr(line + used, '\n', got);
+        used += got;
+        if (newline != NULL) {
+            *line_length = (size_t)(newline - line) + 1;
+            line[*line_length] = '\0';
+            return 1;
+        }
+
+        if (got < wanted)
+            continue;
+    }
+
+    /* Match the bounded fgets() contract: an exact-capacity line is only
+     * accepted when EOF follows it. A line ending beyond the buffer is a
+     * malformed/incomplete multipart representation, not a truncated body
+     * silently handed to the boundary parser. */
+    {
+        int next = fgetc(input);
+
+        if (next == EOF) {
+            if (ferror(input))
+                return -1;
+            *line_length     = used;
+            line[*line_length] = '\0';
+            return used == 0 ? 0 : 1;
+        }
+    }
+
+    return -2;
+}
 
 /* MIME parsing has several line-oriented paths that can otherwise spend a
  * long time in input, header, or part traversal without reaching a generic
@@ -515,6 +585,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
     char buffer[RFC2821LENGTH + 1];
     mbox_ctx mctx;
     size_t at   = 0;
+    size_t line_length;
     fmap_t *map = ctx->fmap;
 
     cli_dbgmsg("in mbox()\n");
@@ -532,6 +603,9 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         }
         return CL_CLEAN;
     }
+
+    line_length = mbox_line_content_length((const unsigned char *)buffer, strlen(buffer));
+    buffer[line_length] = '\0';
 
 #ifdef CL_THREAD_SAFE
     pthread_mutex_lock(&tables_mutex);
@@ -607,7 +681,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         messageSetCTX(m, ctx);
 
         do {
-            cli_chomp(buffer);
+            buffer[line_length] = '\0';
             /*if(lastLineWasEmpty && (strncmp(buffer, "From ", 5) == 0) && isalnum(buffer[5])) */
             if (lastLineWasEmpty && (strncmp(buffer, "From ", 5) == 0)) {
                 cli_dbgmsg("Deal with message number %d\n", messagenumber++);
@@ -693,10 +767,17 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
 
                 cli_dbgmsg("Finished processing message\n");
             } else {
-                lastLineWasEmpty = (bool)(buffer[0] == '\0');
+                lastLineWasEmpty = (bool)(line_length == 0);
             }
 
-            if (!headersParsed && buffer[0] == '\0') {
+            if (!headersParsed && memchr(buffer, '\0', line_length) != NULL) {
+                cli_mark_scan_incomplete(ctx,
+                                         "MIME header line contains an embedded NUL");
+                retcode = CL_EPARSE;
+                break;
+            }
+
+            if (!headersParsed && line_length == 0) {
                 bool heuristicFound = false;
 
                 /* Parse headers as soon as their separator arrives. This
@@ -758,12 +839,12 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                 }
             } else {
                 /* at this point, the \n has been removed */
-                if (messageAddStr(m, buffer) < 0) {
+                if (messageAddBytes(m, (const unsigned char *)buffer, line_length) < 0) {
                     break;
                 }
             }
         } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx,
-                                    &line_failure, !headersParsed) != NULL);
+                                    &line_length, &line_failure, !headersParsed) != NULL);
 
         if (retcode == CL_SUCCESS && line_failure != CL_SUCCESS)
             retcode = line_failure;
@@ -815,9 +896,12 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         /*
          * Ignore any blank lines at the top of the message
          */
-        while (strchr("\r\n", buffer[0]) &&
+        line_length = mbox_line_content_length((const unsigned char *)buffer, strlen(buffer));
+        buffer[line_length] = '\0';
+        while ((line_length == 0) &&
                (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx,
-                                  &line_failure, true) != NULL)) {
+                                  &line_length, &line_failure, true) != NULL)) {
+            buffer[line_length] = '\0';
             ;
         }
 
@@ -1164,6 +1248,7 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
     size_t totalHeaderBytes = 0;
     size_t totalHeaderCnt   = 0;
     size_t first_line_len;
+    size_t line_length;
 
     size_t lineFoldCnt = 0;
 
@@ -1191,18 +1276,26 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
         first_line_len++;
     memcpy(buffer, firstLine, first_line_len);
     buffer[first_line_len] = '\0';
+    line_length           = first_line_len;
     do {
         const char *line;
 
         if (mbox_check_deadline(ctx))
             break;
 
-        (void)cli_chomp(buffer);
+        buffer[line_length] = '\0';
 
-        if (buffer[0] == '\0')
+        if (line_length == 0)
             line = NULL;
         else
             line = buffer;
+
+        if (inHeader && memchr(buffer, '\0', line_length) != NULL) {
+            cli_mark_scan_incomplete(ctx,
+                                     "MIME header line contains an embedded NUL");
+            ret->isTruncated = true;
+            break;
+        }
 
         if (doContinueMultipleEmptyOptions(line, &lastWasOnlySemi)) {
             continue;
@@ -1491,13 +1584,13 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                 lastBodyLineWasBlank = false;
             }
 
-            if (messageAddStr(ret, line) < 0) {
+            if (messageAddBytes(ret, (const unsigned char *)line, line_length) < 0) {
                 ret->isTruncated = true;
                 break;
             }
         }
     } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, at, ctx,
-                               failure_status, inHeader) != NULL);
+                               &line_length, failure_status, inHeader) != NULL);
 
     err = 0;
 done:
@@ -2307,7 +2400,7 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
     size_t mime_part_count = 0;
     const char *main_subtype;
     bool is_related;
-    char line[4096];
+    unsigned char line[4096];
 
     if (mainMessage == NULL || mctx == NULL || mainMessage->body_spool == NULL)
         return FAIL;
@@ -2344,23 +2437,36 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
         goto done;
     }
 
-    while (fgets(line, sizeof(line), input) != NULL) {
-        size_t line_len = strlen(line);
+    for (;;) {
+        size_t line_len;
+        size_t content_len;
+        int read_status = read_mime_spool_line(input, line, sizeof(line), &line_len);
+        bool string_line;
+
+        if (read_status == 0)
+            break;
+        if (read_status < 0) {
+            if (read_status == -2)
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Multipart boundary line exceeded the streaming buffer");
+            else
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Multipart body spool read failed");
+            result = FAIL;
+            break;
+        }
 
         if (mbox_check_deadline(mctx->ctx)) {
             result = FAIL;
             break;
         }
 
-        if (line_len == sizeof(line) - 1 && line[line_len - 1] != '\n' && !feof(input)) {
-            cli_mark_scan_incomplete(mctx->ctx,
-                                     "Multipart boundary line exceeded the streaming buffer");
-            result = FAIL;
-            break;
-        }
-        cli_chomp(line);
+        content_len = mbox_line_content_length(line, line_len);
+        string_line = (memchr(line, '\0', content_len) == NULL);
+        if (string_line)
+            line[content_len] = '\0';
 
-        if (boundaryEnd(line, boundary)) {
+        if (string_line && boundaryEnd((const char *)line, boundary)) {
             mbox_status part_rc;
 
             if (headers != NULL) {
@@ -2393,7 +2499,7 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
             break;
         }
 
-        if (boundaryStart(line, boundary)) {
+        if (string_line && boundaryStart((const char *)line, boundary)) {
             mbox_status part_rc;
 
             /* Keep the streaming multipart path subject to the same
@@ -2454,13 +2560,19 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
             continue; /* MIME preamble. */
 
         if (headers != NULL) {
-            if (messageAddStr(headers, (line[0] == '\0') ? NULL : line) < 0) {
+            if (!string_line) {
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Multipart part header contains an embedded NUL");
+                result = FAIL;
+                break;
+            }
+            if (messageAddStr(headers, (content_len == 0) ? NULL : (const char *)line) < 0) {
                 cli_mark_scan_incomplete(mctx->ctx,
                                          "Multipart part headers could not be materialized");
                 result = FAIL;
                 break;
             }
-            if (line[0] == '\0') {
+            if (content_len == 0) {
                 bool heuristicFound = false;
                 message *parsed     = parseEmailHeaders(headers, mctx->rfc821Table,
                                                         &heuristicFound);
@@ -2484,7 +2596,9 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
                 }
                 part = parsed;
             }
-        } else if (part == NULL || messageAddStr(part, (line[0] == '\0') ? NULL : line) < 0) {
+        } else if (part == NULL ||
+                   messageAddBytes(part, (content_len == 0) ? NULL : line,
+                                   content_len) < 0) {
             cli_mark_scan_incomplete(mctx->ctx,
                                      "Multipart part body could not be spooled");
             result = FAIL;
@@ -5576,12 +5690,20 @@ usefulHeader(int commandNumber, const char *cmd)
  */
 static char *
 getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx,
-                  cl_error_t *failure_status, bool reject_unterminated_line)
+                  size_t *line_length, cl_error_t *failure_status,
+                  bool reject_unterminated_line)
 {
     const char *src, *cursrc;
     char *curbuf;
     size_t i;
+    size_t raw_length;
     bool line_terminated = false;
+
+    if (line_length == NULL) {
+        cli_mark_scan_incomplete(ctx, "MIME message line length output is unavailable");
+        return NULL;
+    }
+    *line_length = 0;
 
     if (mbox_check_deadline(ctx))
         return NULL;
@@ -5626,6 +5748,10 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
 
         switch ((c = *cursrc++)) {
             case '\0':
+                /* NUL is data in a valid binary/8bit MIME body, not a C
+                 * string terminator. The explicit line length below keeps it
+                 * distinguishable from the terminator we add after copying. */
+                *curbuf++ = c;
                 continue;
             case '\n':
                 *curbuf++ = '\n';
@@ -5650,7 +5776,8 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
         break;
     }
     *at += cursrc - src;
-    *curbuf = '\0';
+    raw_length = (size_t)(curbuf - buffer);
+    *curbuf    = '\0';
 
     if (!line_terminated && *at < map->len) {
         const char *next = fmap_need_off_once(map, *at, 1);
@@ -5666,6 +5793,9 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
             return NULL;
         }
     }
+
+    *line_length = mbox_line_content_length((const unsigned char *)buffer, raw_length);
+    buffer[*line_length] = '\0';
 
     return buffer;
 }

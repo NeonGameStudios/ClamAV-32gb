@@ -3776,6 +3776,43 @@ START_TEST(test_single_message_large_body_streams_without_alert)
 }
 END_TEST
 
+START_TEST(test_mime_body_byte_span_preserves_embedded_nul)
+{
+    static const unsigned char expected_body[] = {'M', 'I', 'M', 'E', 0, 'B', 'I', 'N'};
+    unsigned char actual_body[sizeof(expected_body) + 1];
+    struct cl_engine *engine;
+    cli_ctx ctx;
+    message *m;
+    fileblob *fb;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    m = messageCreate();
+    ck_assert_ptr_nonnull(m);
+    messageSetCTX(m, &ctx);
+    ck_assert_int_eq(messageBeginBodySpool(m), 0);
+    ck_assert_int_eq(messageAddBytes(m, expected_body, sizeof(expected_body)), 1);
+
+    fb = messageToFileblob(m, tmpdir, 1);
+    ck_assert_ptr_nonnull(fb);
+    ck_assert_int_eq(fflush(fb->fp), 0);
+    ck_assert_int_eq(fseek(fb->fp, 0, SEEK_SET), 0);
+    ck_assert_int_eq(fread(actual_body, 1, sizeof(actual_body), fb->fp), sizeof(actual_body));
+    ck_assert_msg(memcmp(actual_body, expected_body, sizeof(expected_body)) == 0,
+                  "MIME body spool changed an embedded NUL byte");
+    ck_assert_int_eq(actual_body[sizeof(expected_body)], '\n');
+    ck_assert_int_eq(fgetc(fb->fp), EOF);
+
+    fileblobDestructiveDestroy(fb);
+    messageDestroy(m);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_multipart_body_uses_streaming_spool)
 {
     char *path = create_streaming_multipart_fixture();
@@ -63742,6 +63779,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_fileblob_output_creation_status_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_cleanup_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_add_data_without_engine_is_fail_visible);
+    tcase_add_test(tc_cl, test_mime_body_byte_span_preserves_embedded_nul);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);
     tcase_add_test(tc_cl, test_engine_set_num_rejects_narrowing_and_negative_values);
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);

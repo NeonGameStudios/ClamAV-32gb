@@ -89,6 +89,8 @@ void messageSetEncoding(message *m, const char *enctype);
 encoding_type messageGetEncoding(const message *m);
 int messageAddLine(message *m, line_t *line);
 int messageAddStr(message *m, const char *data);
+/* Add one body line from an explicit byte span and append one LF. */
+int messageAddBytes(message *m, const unsigned char *data, size_t len);
 int messageBeginBodySpool(message *m);
 int messageHasBodySpool(const message *m);
 cl_error_t messageGetMaterializationStatus(const message *m);

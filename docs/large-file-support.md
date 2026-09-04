@@ -46,6 +46,18 @@ callback/ingress parity, current-source linked execution, sanitizer,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 PLAN.md qualification remain open.
 
+## MIME binary body byte preservation — 2026-09-04
+
+The disk-backed MIME body path now carries explicit line lengths through fmap
+input and copies ordinary raw body bytes with `messageAddBytes()`, preserving
+embedded NUL bytes instead of silently shortening C strings. Multipart spool
+parsing uses a bounded byte-span line reader; NUL-containing headers fail
+visibly as incomplete while raw multipart body lines remain byte-accurate. The
+focused spool regression and source guards pass. Current-source linked
+MIME/mbox and multipart execution, complete binary MIME corpus, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+PLAN.md qualification remain open.
+
 ## Scan-deadline initialization failure — 2026-09-03
 
 The common scan entry previously logged and ignored a `gettimeofday()` failure
