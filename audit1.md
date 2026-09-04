@@ -282,6 +282,28 @@ Linux x86-64, production-CVD/service, materialized-large-file, resource,
 Sonic1, and final requirement-by-requirement PLAN.md qualification remain
 open.
 
+## GIF current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `gif` 15/15, `gif_api`
+1/1, and `gif_corpus` 1/1. Coverage includes complete one-pixel parsing,
+invalid low/high LZW code sizes, injected minimum-code-size and public-API
+header read failures, exact missing-trailer classification, invalid versions,
+fixed Graphic Control/Plain Text/Application extension sizes, truncated screen
+descriptors and image data, sticky incomplete state, block timeout, null
+context, missing overlay maps, and exact nested overlay matching.
+
+The relinked `gif` case exposed a stale test-case registration: the fuzzy
+metadata regression used the shared `tmpdir` but `tc_gif` had no checked
+`cl_setup`/`cl_teardown` fixture. The fixture is now registered and guarded by
+`largefile_source_guards.sh`. Review of the current GIF parser and overlay
+handoff found no additional safe production fix in this pass.
+
+This is focused current-source evidence, not final GIF qualification. Complete
+GIF/image corpus breadth, full current-C-ABI execution, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, resource,
+Sonic1, and final requirement-by-requirement PLAN.md qualification remain
+open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of

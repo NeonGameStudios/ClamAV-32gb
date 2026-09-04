@@ -1342,6 +1342,24 @@ identified in this pass. Complete ELF/unpacker corpus, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
 resource, and final parser/release qualification remain required.
 
+## Current GIF focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `gif` 15/15, `gif_api`
+1/1, and `gif_corpus` 1/1. Coverage includes valid one-pixel parsing, invalid
+LZW minimum code sizes, injected direct and public-API read failures, exact
+missing-trailer classification, invalid versions, fixed Graphic Control/Plain
+Text/Application extension sizes, truncated screen/image data, sticky
+completion, timeout, null-context and missing-map admission, and exact nested
+overlay matching.
+
+The relinked `gif` case found that its fuzzy metadata regression used the
+shared `tmpdir` without a checked fixture on `tc_gif`; registering
+`cl_setup`/`cl_teardown` corrected the harness and is now source-guarded. No
+additional safe GIF parser change was identified. Complete GIF/image corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## BZip2/GZip materialized corpus refresh — 2026-08-31
 
 The canonical compressed scanner and unit-test sources were transferred into

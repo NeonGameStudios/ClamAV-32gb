@@ -222,6 +222,22 @@
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   resource, Sonic1, and final PLAN.md qualification open.
 
+## GIF current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `gif` 15/15,
+  `gif_api` 1/1, and `gif_corpus` 1/1. Coverage includes valid one-pixel
+  parsing, LZW code-size admission, injected parser/API read failures,
+  missing-trailer and invalid-version classification, fixed extension-size
+  validation, truncated screen/image data, sticky completion, timeout, null
+  context, missing overlay maps, and exact nested overlay matching.
+- The fuzzy metadata regression required the shared temporary-directory
+  fixture, but `tc_gif` lacked its checked `cl_setup`/`cl_teardown` setup. The
+  registration is fixed and source-guarded. No additional safe GIF production
+  fix was identified in this pass.
+- Keep complete GIF/image corpus breadth, full C/Rust ABI, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, resource,
+  Sonic1, and final PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

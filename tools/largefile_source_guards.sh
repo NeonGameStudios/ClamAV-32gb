@@ -3066,6 +3066,7 @@ contains libclamav/gif.c 'lzw_minimum_code_size < 2 || lzw_minimum_code_size > 8
 contains unit_tests/check_clamav.c 'test_gif_truncated_blocks_are_fail_visible'
 contains unit_tests/check_clamav.c 'test_gif_truncated_signature_is_fail_visible'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_gif, test_gif_truncated_signature_is_fail_visible)'
+contains unit_tests/check_clamav.c 'tcase_add_checked_fixture(tc_gif, cl_setup, cl_teardown)'
 contains unit_tests/check_clamav.c 'test_gif_invalid_version_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_gif_graphic_control_fields_are_validated'
 contains unit_tests/check_clamav.c 'test_gif_fixed_extension_block_sizes_are_validated'

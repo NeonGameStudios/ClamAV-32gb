@@ -62868,6 +62868,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_dmg);
     tcase_add_checked_fixture(tc_dmg, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_gif);
+    tcase_add_checked_fixture(tc_gif, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_gif_corpus);
     tcase_add_checked_fixture(tc_gif_corpus, cl_setup, cl_teardown);
     tcase_add_test(tc_gif_corpus, test_gif_corpus_detects_embedded_mz);
