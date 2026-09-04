@@ -58,6 +58,20 @@ int SzPpmdInputAccountingAllowed(UInt64 processed, size_t buffered, UInt64 limit
          buffered64 <= limit - processed;
 }
 
+int SzPpmdInputWindowSize(const Byte *begin, const Byte *cur,
+    const Byte *end, size_t *buffered)
+{
+  if (buffered == NULL)
+    return 0;
+  *buffered = 0;
+  if (begin == NULL || cur == NULL || end == NULL)
+    return begin == NULL && cur == NULL && end == NULL;
+  if (cur < begin || cur > end)
+    return 0;
+  *buffered = (size_t)(cur - begin);
+  return 1;
+}
+
 int SzDecoderInputProgressAllowed(UInt64 remaining, size_t available, size_t consumed)
 {
   UInt64 available64 = (UInt64)available;
@@ -72,11 +86,19 @@ int SzDecoderInputProgressAllowed(UInt64 remaining, size_t available, size_t con
 static Byte ReadByte(void *pp)
 {
   CByteInToLook *p = (CByteInToLook *)pp;
-  if (p->cur != p->end)
+  size_t size;
+
+  if (p == NULL)
+    return 0;
+  if (p->cur != NULL && p->end != NULL && p->cur != p->end)
     return *p->cur++;
   if (p->res == SZ_OK)
   {
-    size_t size = p->cur - p->begin;
+    if (!SzPpmdInputWindowSize(p->begin, p->cur, p->end, &size)) {
+      p->res = SZ_ERROR_DATA;
+      p->extra = True;
+      return 0;
+    }
     if (!SzPpmdInputAccountingAllowed(p->processed, size, p->limit)) {
       p->res = SZ_ERROR_DATA;
       p->extra = True;
@@ -87,6 +109,10 @@ static Byte ReadByte(void *pp)
       p->extra = True;
       return 0;
     }
+    if (p->inStream == NULL) {
+      p->res = SZ_ERROR_READ;
+      goto fail;
+    }
     p->res = p->inStream->Skip(p->inStream, size);
     if (p->res != SZ_OK) {
       p->extra = True;
@@ -96,11 +122,18 @@ static Byte ReadByte(void *pp)
     if (size > p->limit - p->processed)
       size = (size_t)(p->limit - p->processed);
     p->res = p->inStream->Look(p->inStream, (const void **)&p->begin, &size);
+    if (p->res != SZ_OK)
+      goto fail;
+    if (size != 0 && p->begin == NULL) {
+      p->res = SZ_ERROR_READ;
+      goto fail;
+    }
     p->cur = p->begin;
-    p->end = p->begin + size;
+    p->end = size != 0 ? p->begin + size : p->begin;
     if (size != 0)
       return *p->cur++;;
   }
+fail:
   p->extra = True;
   return 0;
 }
@@ -112,6 +145,7 @@ static SRes SzDecodePpmd(CSzCoderInfo *coder, UInt64 inSize, ILookInStream *inSt
   CByteInToLook s;
   SRes res = SZ_OK;
 
+  memset(&s, 0, sizeof(s));
   s.p.Read = ReadByte;
   s.inStream = inStream;
   s.begin = s.end = s.cur = NULL;
@@ -156,10 +190,15 @@ static SRes SzDecodePpmd(CSzCoderInfo *coder, UInt64 inSize, ILookInStream *inSt
       }
       if (i != outSize)
         res = (s.res != SZ_OK ? s.res : SZ_ERROR_DATA);
-      else if (!SzPpmdInputAccountingAllowed(s.processed, s.cur - s.begin, inSize) ||
-               s.processed + (UInt64)(s.cur - s.begin) != inSize ||
-               !Ppmd7z_RangeDec_IsFinishedOK(&rc))
-        res = SZ_ERROR_DATA;
+      else
+      {
+        size_t buffered;
+        if (!SzPpmdInputWindowSize(s.begin, s.cur, s.end, &buffered) ||
+            !SzPpmdInputAccountingAllowed(s.processed, buffered, inSize) ||
+            s.processed + (UInt64)buffered != inSize ||
+            !Ppmd7z_RangeDec_IsFinishedOK(&rc))
+          res = SZ_ERROR_DATA;
+      }
     }
   }
   Ppmd7_Free(&ppmd, allocMain);
@@ -551,6 +590,7 @@ static SRes SzDecodePpmdToStream(const CSzCoderInfo *coder, UInt64 inSize, UInt6
 
   if (outSize == 0)
     return SZ_OK;
+  memset(&s, 0, sizeof(s));
   s.p.Read = ReadByte;
   s.inStream = inStream;
   s.begin = s.end = s.cur = NULL;
@@ -594,11 +634,15 @@ static SRes SzDecodePpmdToStream(const CSzCoderInfo *coder, UInt64 inSize, UInt6
         remaining -= count;
       }
     }
-    if (res == SZ_OK && remaining == 0 &&
-        (!SzPpmdInputAccountingAllowed(s.processed, s.cur - s.begin, inSize) ||
-         s.processed + (UInt64)(s.cur - s.begin) != inSize ||
-         !Ppmd7z_RangeDec_IsFinishedOK(&rc)))
-      res = SZ_ERROR_DATA;
+    if (res == SZ_OK && remaining == 0)
+    {
+      size_t buffered;
+      if (!SzPpmdInputWindowSize(s.begin, s.cur, s.end, &buffered) ||
+          !SzPpmdInputAccountingAllowed(s.processed, buffered, inSize) ||
+          s.processed + (UInt64)buffered != inSize ||
+          !Ppmd7z_RangeDec_IsFinishedOK(&rc))
+        res = SZ_ERROR_DATA;
+    }
   }
   Ppmd7_Free(&ppmd, allocMain);
   return res;

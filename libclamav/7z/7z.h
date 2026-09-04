@@ -81,6 +81,8 @@ int SzFolder_FindBindPairForInStream(CSzFolder *p, UInt32 inStreamIndex);
 UInt32 SzFolder_GetNumOutStreams(CSzFolder *p);
 int SzSubStreamsSizeAllowed(UInt64 folderSize, UInt64 accumulatedSize, UInt64 nextSize);
 int SzPpmdInputAccountingAllowed(UInt64 processed, size_t buffered, UInt64 limit);
+int SzPpmdInputWindowSize(const Byte *begin, const Byte *cur, const Byte *end,
+    size_t *buffered);
 int SzDecoderInputProgressAllowed(UInt64 remaining, size_t available, size_t consumed);
 UInt64 SzFolder_GetUnpackSize(CSzFolder *p);
 

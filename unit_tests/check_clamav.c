@@ -35997,6 +35997,24 @@ START_TEST(test_7z_ppmd_input_accounting_is_bounded)
 }
 END_TEST
 
+START_TEST(test_7z_ppmd_input_window_is_fail_visible)
+{
+    Byte input[8] = {0};
+    size_t buffered = SIZE_MAX;
+
+    ck_assert(SzPpmdInputWindowSize(input, input + 3, input + sizeof(input),
+                                    &buffered));
+    ck_assert_uint_eq(buffered, 3);
+    ck_assert(SzPpmdInputWindowSize(NULL, NULL, NULL, &buffered));
+    ck_assert_uint_eq(buffered, 0);
+    ck_assert(!SzPpmdInputWindowSize(input, input + 5, input + 4, &buffered));
+    ck_assert_uint_eq(buffered, 0);
+    ck_assert(!SzPpmdInputWindowSize(NULL, NULL, input + sizeof(input), &buffered));
+    ck_assert_uint_eq(buffered, 0);
+    ck_assert(!SzPpmdInputWindowSize(input, input, input + sizeof(input), NULL));
+}
+END_TEST
+
 START_TEST(test_7z_decoder_input_progress_is_bounded)
 {
     ck_assert(SzDecoderInputProgressAllowed(0, 0, 0));
@@ -63018,6 +63036,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_7z, test_7z_dynbuf_growth_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_substream_size_overflow_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_ppmd_input_accounting_is_bounded);
+    tcase_add_test(tc_7z, test_7z_ppmd_input_window_is_fail_visible);
     tcase_add_test(tc_7z, test_7z_decoder_input_progress_is_bounded);
     tcase_add_test(tc_7z, test_7z_copy_decoder_rejects_overreported_lookahead);
     tcase_add_test(tc_7z, test_lzma_decoder_progress_is_bounded);

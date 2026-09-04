@@ -14169,3 +14169,16 @@ qualification before closure.
   sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final PE/parser/release
   qualification before closure.
+
+## 7-Zip PPMd input-window initialization — 2026-09-03
+
+- Keep both PPMd decode modes initializing their callback state and validating
+  buffered pointers before subtraction. Empty windows may be represented by
+  three null pointers, but partially null or reversed windows must become
+  explicit decoder failures.
+- Retain `SzPpmdInputWindowSize`,
+  `test_7z_ppmd_input_window_is_fail_visible`, and the source guards. Add
+  current-source production-GCC and linked execution, complete 7-Zip/BCJ2/PPMd
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final parser/release
+  qualification before closure.

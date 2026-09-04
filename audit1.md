@@ -336,6 +336,7 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+
 ## PEspin entry and section-window admission — 2026-09-03
 
 PEspin’s entry/key coordinate checks relied on offset-plus-constant
@@ -23207,3 +23208,15 @@ output cases. Current-source production-GCC compilation and linked malformed-
 UPX execution, complete PE/UPX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 PE/parser/release qualification remain required.
+
+## 7-Zip PPMd input-window initialization — 2026-09-03
+
+The PPMd adapter's first refill and completion paths could subtract null or
+invalid buffered pointers after an empty or malformed input window. The decoder
+now initializes both callback states, validates the buffered pointer window
+before subtraction, and treats a non-empty null lookahead as a read failure.
+`test_7z_ppmd_input_window_is_fail_visible` covers valid, empty, reversed, and
+partially null windows. Current-source production-GCC compilation and linked
+execution, complete 7-Zip/BCJ2/PPMd corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+parser/release qualification remain required.
