@@ -14147,3 +14147,11 @@ qualification before closure.
   exact public-API detection. Full parser-family, production-CVD, sanitizer,
   service, materialized-large-file, Sonic1, and release qualification remain
   required.
+
+## Logical-signature icon error propagation — 2026-09-03
+
+- Keep the logical icon branch fail-visible: only `CL_CLEAN` is a non-match;
+  parser, read, limit, timeout, and invalid-context results must propagate and
+  make the layer non-cacheable. Continue with production-linked, sanitizer,
+  complete-corpus, service, materialized-large-file, Sonic1, and release
+  qualification for the icon and logical-signature families.

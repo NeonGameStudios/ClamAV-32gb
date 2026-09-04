@@ -976,9 +976,15 @@ START_TEST(test_bytecode_api_rejects_invalid_contexts)
 {
     static const uint8_t text[] = "123";
     struct cli_bc_ctx bcctx;
+    struct cli_bc bc;
+    struct cli_pe_hook_data pedata;
+    cli_ctx scan_ctx;
     uint8_t buffer[1] = {0};
 
     memset(&bcctx, 0, sizeof(bcctx));
+    memset(&bc, 0, sizeof(bc));
+    memset(&pedata, 0, sizeof(pedata));
+    memset(&scan_ctx, 0, sizeof(scan_ctx));
 
     ck_assert_int_eq(cli_bcapi_seek(NULL, 0, SEEK_SET), -1);
     ck_assert_int_eq(cli_bcapi_seek64(NULL, 0, SEEK_SET), -1);
@@ -1008,6 +1014,18 @@ START_TEST(test_bytecode_api_rejects_invalid_contexts)
     ck_assert_uint_eq(cli_bcapi_disable_jit_if(NULL, NULL, 0, 0), UINT32_MAX);
     ck_assert_int_eq(cli_bcapi_memstr(NULL, text, sizeof(text) - 1, text, 1), -1);
     ck_assert_int_eq(cli_bcapi_version_compare(NULL, NULL, 1, text, sizeof(text) - 1), -1);
+    ck_assert_int_eq(cli_bcapi_matchicon(NULL, NULL, 0, NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_matchicon(&bcctx, NULL, 0, NULL, 0), -1);
+
+    bcctx.bc            = &bc;
+    bcctx.hooks.pedata = &pedata;
+    bcctx.ctx          = &scan_ctx;
+    pedata.ep          = 1;
+    ck_assert_int_eq(cli_bcapi_matchicon(&bcctx, NULL, 1, NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_matchicon(&bcctx, NULL, 0, NULL, 1), -1);
+    ck_assert_int_eq(cli_bcapi_matchicon(&bcctx, text, -1, NULL, 0), -1);
+    ck_assert_int_eq(cli_bcapi_matchicon(&bcctx, NULL, 0, text, -1), -1);
+
     ck_assert_uint_eq(cli_bcapi_debug_print_str_start(NULL, text, sizeof(text) - 1), UINT32_MAX);
     ck_assert_uint_eq(cli_bcapi_debug_print_str_nonl(NULL, text, sizeof(text) - 1), UINT32_MAX);
     ck_assert_uint_eq(cli_bcapi_check_platform(NULL, 0, 0, 0), 0);

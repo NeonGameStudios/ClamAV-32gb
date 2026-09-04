@@ -1032,12 +1032,18 @@ static cl_error_t matchicon(cli_ctx *ctx, struct cli_exe_info *exeinfo, const ch
 {
     icon_groupset iconset;
 
-    if (!ctx ||
-        !ctx->engine ||
+    if (!ctx || !exeinfo)
+        return CL_ENULLARG;
+
+    if (!ctx->engine || !ctx->dconf)
+        return CL_ENULLARG;
+
+    if (
         !ctx->engine->iconcheck ||
         !ctx->engine->iconcheck->group_counts[0] ||
         !ctx->engine->iconcheck->group_counts[1] ||
-        !exeinfo->res_addr) return CL_CLEAN;
+        !exeinfo->res_addr)
+        return CL_CLEAN;
 
     if (!(ctx->dconf->pe & PE_CONF_MATCHICON))
         return CL_CLEAN;
@@ -1054,6 +1060,12 @@ int32_t cli_bcapi_matchicon(struct cli_bc_ctx *ctx, const uint8_t *grp1, int32_t
     cl_error_t ret;
     char group1[128], group2[128];
     struct cli_exe_info info;
+
+    if (!ctx || !ctx->hooks.pedata || !ctx->bc || !ctx->ctx ||
+        (ctx->hooks.pedata->nsections && !ctx->sections) ||
+        grp1len < 0 || grp2len < 0 ||
+        (grp1len && !grp1) || (grp2len && !grp2))
+        return -1;
 
     // TODO This isn't a good check, since EP will be zero for DLLs and
     // (assuming pedata->ep is populated from exeinfo->pe) non-zero for
@@ -1337,8 +1349,16 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
             goto done;
         }
 
-        if (CL_VIRUS != matchicon(ctx, &target_info->exeinfo, ac_lsig->tdb.icongrp1, ac_lsig->tdb.icongrp2)) {
-            // No icon match!
+        cl_error_t icon_status = matchicon(ctx, &target_info->exeinfo,
+                                           ac_lsig->tdb.icongrp1,
+                                           ac_lsig->tdb.icongrp2);
+        if (CL_VIRUS != icon_status) {
+            if (CL_CLEAN != icon_status) {
+                cli_mark_scan_incomplete(ctx, "logical signature icon matching did not complete");
+                ctx->fmap->dont_cache_flag = 1;
+                status = icon_status;
+            }
+            // No icon match, or icon matching failed.
             goto done;
         }
     }

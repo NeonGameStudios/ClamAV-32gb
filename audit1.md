@@ -23174,3 +23174,20 @@ existing non-detecting regression still requires `CL_EPARSE`, sticky
 incomplete state, and cache taint. Full parser-family, production-CVD,
 sanitizer, service, materialized-large-file, Sonic1, and release qualification
 remain open.
+
+## Logical-signature icon failure propagation — 2026-09-03
+
+The logical-signature evaluator previously compared the icon matcher result
+only with `CL_VIRUS`; `CL_EREAD`, `CL_EPARSE`, `CL_EMAXSIZE`, timeout, and
+invalid-context results therefore fell through as ordinary non-matches. The
+evaluator now preserves every non-clean icon result, marks the containing
+layer incomplete and non-cacheable, and retains the existing clean behavior
+for a real non-match. The bytecode `matchicon` adapter also validates its
+context, PE hook data, section table, group pointers, and signed lengths before
+dereferencing or copying them. `test_logical_icon_failure_is_fail_visible`
+and the bytecode invalid-context regressions cover the new boundaries.
+
+Current-source production-linked logical/icon execution, the complete
+logical-signature and PE-icon corpus, sanitizer, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final matcher/release
+qualification remain required.

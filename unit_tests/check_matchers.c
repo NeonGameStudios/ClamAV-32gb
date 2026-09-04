@@ -1108,6 +1108,49 @@ START_TEST(test_logical_root_status_merge_preserves_incomplete_result)
 }
 END_TEST
 
+START_TEST(test_logical_icon_failure_is_fail_visible)
+{
+    static char logic[] = "0";
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    struct cli_target_info target_info;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    memset(&target_info, 0, sizeof(target_info));
+    lsig.id                       = 0;
+    lsig.type                     = CLI_LSIG_NORMAL;
+    lsig.u.logic                  = logic;
+    lsig.virname                 = (char *)"LogicalIconFailure";
+    lsig.tdb.subsigs              = 1;
+    lsig.tdb.icongrp1             = (char *)"icon-group";
+    lsigtable[0]                  = &lsig;
+    root.ac_lsigs                 = 1;
+    root.ac_lsigtable             = lsigtable;
+    target_info.status            = TARGET_PE;
+    target_info.exeinfo.res_addr  = 1;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    mdata.lsigcnt[0][0]      = 1;
+    ctx.dconf                 = NULL;
+    ctx.scan_incomplete       = false;
+    ctx.scan_incomplete_reason = NULL;
+    thefmap.dont_cache_flag   = 0;
+
+    ret = cli_exp_eval(&ctx, &root, &mdata, &target_info);
+    ck_assert_int_eq(ret, CL_ENULLARG);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(thefmap.dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "logical signature icon matching did not complete");
+
+    cli_ac_freedata(&mdata);
+}
+END_TEST
+
 START_TEST(test_logical_unknown_type_is_fail_visible)
 {
     struct cli_ac_lsig lsig;
@@ -2945,6 +2988,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_logical_bytecode_missing_entry_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_root_status_merge_preserves_incomplete_result);
+    tcase_add_test(tc_matchers, test_logical_icon_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_unknown_type_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_malformed_definition_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_out_of_range_expression_is_fail_visible);
