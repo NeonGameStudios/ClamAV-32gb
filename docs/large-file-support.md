@@ -226,6 +226,24 @@ Complete CPIO corpus breadth, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, resource, Sonic1, and final
 PLAN.md qualification remain required.
 
+## Current DMG focused audit — 2026-09-04
+
+The first current-source DMG run exposed stale direct-test setup: valid nested
+fixtures omitted `ctx.dconf`, so nested dispatch returned `CL_ENULLARG` before
+exercising DMG completion. The fixtures now bind the owning engine’s decision
+configuration. After relinking the current source, `dmg` passes 12/12 and
+`dmg_map` passes 12/12. Coverage includes strict Base64 and terminal-END
+validation, host-order stripe conversion, decoder finalization failures,
+materialized metadata read status, sticky completion, external-sort bounds,
+malformed/truncated metadata, trailer read failure, invalid trailer, and
+context/engine/options/map admission. Review found no additional safe DMG
+source fix in this pass.
+
+These are focused current-source results, not final DMG qualification.
+Complete DMG image corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
 and 21 deliberate unsupported rows; 576 rows remain release-blocking under

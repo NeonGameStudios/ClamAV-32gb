@@ -216,6 +216,26 @@ certified Linux x86-64, production-CVD/service, materialized-large-file,
 resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
 remain open.
 
+## DMG current-source focused audit — 2026-09-04
+
+The first current-source DMG run exposed stale direct-test setup: valid nested
+DMG fixtures omitted `ctx.dconf`, so nested dispatch returned `CL_ENULLARG`
+before exercising DMG completion. The fixtures now bind the owning engine’s
+decision configuration, consistent with the production nested-scan contract.
+After relinking the current source, `dmg` passes 12/12 and `dmg_map` passes
+12/12. These cases cover strict Base64 and terminal-END validation, host-order
+stripe conversion, decoder finalization failures, materialized metadata read
+status, sticky completion, external-sort bounds, malformed/truncated metadata,
+trailer read failure, invalid trailer, and context/engine/options/map
+admission. The current DMG source review found no additional safe production
+fix in this pass.
+
+This is focused current-source evidence, not final DMG qualification. Complete
+DMG image corpus breadth, full current-C-ABI execution, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, resource,
+Sonic1, and final requirement-by-requirement PLAN.md qualification remain
+open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of

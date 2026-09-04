@@ -172,6 +172,22 @@
   Linux x86-64, production-CVD/service, materialized-large-file, resource,
   Sonic1, and final PLAN.md qualification open.
 
+## DMG current-source focused audit — 2026-09-04
+
+- The first current-source DMG run exposed stale direct-test setup: valid
+  nested fixtures omitted `ctx.dconf`, so nested dispatch returned
+  `CL_ENULLARG` before exercising DMG completion. The fixtures now bind the
+  owning engine’s decision configuration.
+- Retain current-source production-linked GCC evidence at `dmg` 12/12 and
+  `dmg_map` 12/12. Coverage includes strict Base64/terminal-END validation,
+  host-order stripes, decoder finalization failures, metadata read status,
+  sticky completion, external-sort bounds, malformed/truncated metadata,
+  trailer failures, and context/engine/options/map admission.
+- No additional safe DMG source fix was identified. Keep complete DMG corpus,
+  full C/Rust ABI, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+  open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

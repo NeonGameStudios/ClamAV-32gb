@@ -45572,6 +45572,7 @@ static cl_error_t dmg_test_scan_data_body(const char *data_body, struct cl_engin
     map = cl_fmap_open_memory(image, image_length);
     ck_assert_ptr_nonnull(map);
     ctx.engine                 = engine;
+    ctx.dconf                  = engine->dconf;
     ctx.options                = &options;
     ctx.fmap                   = map;
     ctx.this_layer_tmpdir      = tmpdir;
@@ -45890,6 +45891,7 @@ START_TEST(test_dmg_in_memory_stripes_keep_host_order)
     map = cl_fmap_open_memory(image, image_length);
     ck_assert_ptr_nonnull(map);
     ctx.engine                 = engine;
+    ctx.dconf                  = engine->dconf;
     ctx.options                = &options;
     ctx.fmap                   = map;
     ctx.this_layer_tmpdir      = tmpdir;
@@ -45959,6 +45961,7 @@ static void dmg_test_decoder_finalization_failure(uint32_t stripe_type,
     map = cl_fmap_open_memory(image, image_length);
     ck_assert_ptr_nonnull(map);
     ctx.engine                 = engine;
+    ctx.dconf                  = engine->dconf;
     ctx.options                = &options;
     ctx.fmap                   = map;
     ctx.this_layer_tmpdir      = tmpdir;
@@ -46114,6 +46117,7 @@ START_TEST(test_dmg_sticky_incomplete_result_is_fail_visible)
     map = cl_fmap_open_memory(image, image_length);
     ck_assert_ptr_nonnull(map);
     ctx.engine                 = engine;
+    ctx.dconf                  = engine->dconf;
     ctx.options                = &options;
     ctx.fmap                   = map;
     ctx.this_layer_tmpdir      = tmpdir;
