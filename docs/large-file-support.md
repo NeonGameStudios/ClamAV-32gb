@@ -13685,3 +13685,16 @@ This is focused current-source evidence, not complete text-family
 qualification. Complete structured/text/normalization corpora, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file/
 resource, Sonic1, and final parser/release evidence remain required.
+
+
+## TIFF current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC TIFF matrix passes with zero failures
+and errors: `tiff` 11/11, `tiff_map` 2/2, `tiff_corpus` 1/1, and
+`tiff_large` 3/3. The large-file cases use aging-backed callback maps and
+cover classic/BigTIFF coordinates above 4 GiB without contiguous allocation.
+
+This is focused current-source evidence, not complete TIFF qualification.
+Complete TIFF/BigTIFF corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file/resource, Sonic1, and final
+parser/release evidence remain required.

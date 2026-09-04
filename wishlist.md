@@ -14890,3 +14890,15 @@ qualification before closure.
   Complete structured/text/normalization corpora, sanitizer, certified Linux
   x86-64, production-CVD/service, materialized-large-file/resource, Sonic1,
   and final parser/release qualification remain open.
+
+
+## TIFF current-source production-linked refresh — 2026-09-04
+
+- Record the current-source production-linked GCC results: `tiff` 11/11,
+  `tiff_map` 2/2, `tiff_corpus` 1/1, and `tiff_large` 3/3 with zero
+  failures and errors. Aging-backed callback maps cover classic/BigTIFF
+  coordinates above 4 GiB without contiguous allocation.
+- Keep this focused evidence separate from complete TIFF qualification. Complete
+  TIFF/BigTIFF corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file/resource, Sonic1, and final
+  parser/release qualification remain open.
