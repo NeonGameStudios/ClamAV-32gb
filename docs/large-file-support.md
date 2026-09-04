@@ -8,8 +8,8 @@ gate passes.
 ## Current qualification boundary — 2026-09-04
 
 The authoritative capability manifest is a coverage contract, not a release
-certificate. At the current audit point it contains 589 capability rows, with
-0 qualified rows and 575 release-blocking bounded, pending, or required-
+certificate. At the current audit point it contains 590 capability rows, with
+0 qualified rows and 576 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical
 entries below preserve engineering evidence and open work; they do not
 substitute for current-source linked execution,
@@ -17,6 +17,20 @@ production CVDs, sanitizer runs, materialized exact-edge files, Sonic1
 resource measurements, service parity, or the final requirement-by-requirement
 PLAN.md completion audit. The dated requirement-level disposition is
 maintained in `audit1.md` under “Current PLAN.md requirement audit”.
+
+## Monotonic scan-deadline enforcement — 2026-09-04
+
+Configured `MaxScanTime` enforcement now records a checked monotonic deadline
+in the common scan context. Bytecode watchdog calculations use the same
+remaining-time helper, so wall-clock rollback cannot extend a production scan.
+Clock-read failure during an active deadline check now returns `CL_ETIMEOUT`,
+marks the scan incomplete and non-cacheable, and preserves the exact
+fail-visible reason instead of silently disabling enforcement. The direct
+legacy timeval path remains available for focused parser contexts. Source,
+manifest, release-readiness, service-evidence, and injected regression gates
+pass; current-source linked execution, sanitizer, production-CVD/service,
+materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+remain open.
 
 ## Scan-deadline initialization failure — 2026-09-03
 
@@ -44,8 +58,8 @@ and stream digest; and EOCD-confirmed malformed ZIP/ZIP64 metadata cannot fall
 back to local-header scanning.
 
 Finding 5 remains the principal implementation gap, not a closed defect. The
-manifest still reports 589 rows with 0 qualified, 143 bounded, 425 pending,
-and 21 deliberate unsupported rows; 575 rows remain release-blocking under
+manifest still reports 590 rows with 0 qualified, 143 bounded, 426 pending,
+and 21 deliberate unsupported rows; 576 rows remain release-blocking under
 the current gate. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
 bytecode, logical matching, and YARA still require complete current-source
 production-linked execution, sanitizer evidence, corpus breadth, and the
@@ -61,7 +75,7 @@ results, resource measurements, service parity, release-default activation,
 and the final requirement-by-requirement PLAN.md audit remain open.
 
 The current branch is therefore materially not on the release-certification
-side of the plan: 143 rows are bounded, 425 remain pending, and 21 are
+side of the plan: 143 rows are bounded, 426 remain pending, and 21 are
 explicitly unsupported. The remaining parser work, current-source
 production-linked execution, sanitizer runs, production CVDs, materialized
 exact-edge files, Sonic1 measurements, service parity, release-default

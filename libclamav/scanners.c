@@ -6675,14 +6675,20 @@ static cl_error_t dispatch_file_inspection_callback(clcb_file_inspection cb, cli
      * ranges, so fail visibly here and direct applications to that API. */
     if (file_size > CLI_MAX_ALLOCATION) {
         cli_mark_scan_incomplete(ctx, "legacy file-inspection callback requires an oversized contiguous buffer");
-        status = CL_EPARSE;
+        /* The deprecated callback cannot inspect this layer, but its
+         * materialization failure is not a reason to suppress the mandatory
+         * outer raw matcher. Keep the sticky incomplete state as the final
+         * non-detecting result while allowing raw signatures to detect. */
+        status = CL_SUCCESS;
         goto done;
     }
 
     file_buffer = fmap_need_off_once_len(fmap, 0, file_size, &file_size);
     if (NULL == file_buffer || file_size != fmap->len) {
         cli_mark_scan_incomplete(ctx, "legacy file-inspection callback could not materialize the complete layer");
-        status = CL_EPARSE;
+        /* As above, raw matching remains authoritative for detections even
+         * though the legacy contiguous callback path was incomplete. */
+        status = CL_SUCCESS;
         goto done;
     }
 

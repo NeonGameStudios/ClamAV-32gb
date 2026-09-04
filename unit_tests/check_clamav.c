@@ -1282,6 +1282,69 @@ static cl_error_t unexpected_file_inspection_status(
     return CL_EREAD;
 }
 
+#if defined(ANONYMOUS_MAP) && !defined(_WIN32)
+struct large_file_inspection_pread_state {
+    const unsigned char *prefix;
+    size_t prefix_length;
+    size_t length;
+};
+
+static off_t large_file_inspection_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct large_file_inspection_pread_state *state = handle;
+    unsigned char *out                              = buf;
+    size_t position;
+    size_t chunk;
+
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+
+    position = (size_t)offset;
+    if (count > state->length - position)
+        count = state->length - position;
+
+    while (count > 0) {
+        if (position < state->prefix_length) {
+            chunk = MIN(count, state->prefix_length - position);
+            memcpy(out, state->prefix + position, chunk);
+        } else {
+            chunk = count;
+            memset(out, 0, chunk);
+        }
+        out += chunk;
+        position += chunk;
+        count -= chunk;
+    }
+
+    return (off_t)(position - (size_t)offset);
+}
+
+static cl_error_t successful_file_inspection_callback(
+    int fd,
+    const char *type,
+    const char **ancestors,
+    size_t parent_file_size,
+    const char *file_name,
+    size_t file_size,
+    const char *file_buffer,
+    uint32_t recursion_level,
+    uint32_t layer_attributes,
+    void *context)
+{
+    (void)fd;
+    (void)type;
+    (void)ancestors;
+    (void)parent_file_size;
+    (void)file_name;
+    (void)file_size;
+    (void)file_buffer;
+    (void)recursion_level;
+    (void)layer_attributes;
+    (void)context;
+    return CL_SUCCESS;
+}
+#endif
+
 static cl_error_t unexpected_pre_scan_status(int fd, const char *type, void *context)
 {
     (void)fd;
@@ -1377,6 +1440,64 @@ START_TEST(test_legacy_callback_errors_are_fail_visible)
     assert_legacy_callback_status_is_fail_visible(LEGACY_POST_SCAN_STATUS);
 }
 END_TEST
+
+#if defined(ANONYMOUS_MAP) && !defined(_WIN32)
+START_TEST(test_legacy_file_inspection_materialization_still_runs_raw_matching)
+{
+    static const unsigned char data[] =
+        "<html><body>CLAMAV-TEST-STRING-NOT-EICAR</body></html>";
+    const char *signature = SRCDIR PATHSEP "input" PATHSEP "other_sigs" PATHSEP
+                            "Clamav-Unit-Test-Signature.hdb";
+    struct large_file_inspection_pread_state state;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    uint64_t scanned       = 0;
+    unsigned int sigs      = 0;
+    cl_error_t ret;
+
+    if (sizeof(size_t) < sizeof(uint64_t))
+        return;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_load(signature, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1);
+    engine->maxfilesize = CLI_MAX_LARGE_FILESIZE;
+    engine->maxscansize  = CLI_MAX_LARGE_FILESIZE;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    memset(&state, 0, sizeof(state));
+    state.prefix        = data;
+    state.prefix_length = sizeof(data) - 1U;
+    state.length        = (size_t)CLI_MAX_ALLOCATION + 1U;
+    map                  = cl_fmap_open_handle(&state, 0, state.length,
+                                                large_file_inspection_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&options, 0, sizeof(options));
+    /* Keep parser work empty so the regression isolates the mandatory outer
+     * raw pass after the legacy callback's bounded-materialization refusal. */
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    cl_engine_set_clcb_file_inspection(engine, successful_file_inspection_callback);
+
+    ret = cl_scanmap_ex(map, "oversized-legacy-callback", &verdict, &last_alert, &scanned,
+                        engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+
+    cl_engine_set_clcb_file_inspection(engine, NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_str_eq(last_alert, "Clamav-Unit-Test-Signature.UNOFFICIAL");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+}
+END_TEST
+#endif
 
 static cl_error_t unexpected_scan_callback_status(cl_scan_layer_t *layer, void *context)
 {
@@ -63626,6 +63747,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
     tcase_add_test(tc_cl, test_legacy_callback_errors_are_fail_visible);
+#if defined(ANONYMOUS_MAP) && !defined(_WIN32)
+    tcase_add_test(tc_cl, test_legacy_file_inspection_materialization_still_runs_raw_matching);
+#endif
     tcase_add_test(tc_cl, test_scan_callback_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_virus_found_callback_without_engine_is_fail_visible);
     tcase_add_test(tc_cl, test_alert_callback_evidence_removal_failure_is_fail_visible);

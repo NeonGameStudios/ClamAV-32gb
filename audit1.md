@@ -29,6 +29,22 @@ sanitizer, production-CVD, materialized-file, service-parity, resource, and
 Sonic1 evidence. No row is being relabeled as qualified based solely on a
 historical result.
 
+## Legacy file-inspection callback raw fallback — 2026-09-04
+
+The deprecated file-inspection callback still cannot claim a contiguous
+whole-layer buffer above the individual allocation ceiling, so that feature
+remains explicitly unsupported and incomplete for oversized layers. Its
+materialization refusal now falls through to the mandatory outer raw matcher;
+the sticky incomplete state still makes a non-detecting result fail-visible
+and non-cacheable, while callback-requested trust/block and unexpected
+callback statuses retain their terminal behavior. The guarded
+`test_legacy_file_inspection_materialization_still_runs_raw_matching` uses a
+callback-backed `CLI_MAX_ALLOCATION + 1` fmap and an early raw signature to
+exercise the boundary without materializing the full layer. Current-source
+linked execution, complete callback/ingress parity, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+PLAN.md qualification remain required.
+
 ## Bytecode extracted-member logical double-charge — 2026-09-03
 
 `cli_bcapi_extract_new()` pre-incremented `scansize` and `scannedfiles` with
@@ -23185,8 +23201,8 @@ falls back to local-only scanning. The registered regression is
 `test_zip_masked_sfx_confirmed_malformed_zip64_is_fail_visible`.
 
 The remaining parser-family finding is not being relabeled as complete. The
-manifest currently has 589 rows, 0 qualified, 143 bounded, 425 pending, and
-575 release-blocking rows. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
+manifest currently has 590 rows, 0 qualified, 143 bounded, 426 pending, and
+576 release-blocking rows. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
 bytecode, logical, and YARA still need current-source production-linked,
 sanitizer, corpus, resource, service, materialized-large-file, and Sonic1
 evidence. Historical wording is subordinate to the current status header in

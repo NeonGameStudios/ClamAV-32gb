@@ -2034,6 +2034,8 @@ contains unit_tests/check_clamav.c 'test_fmap_release_unlocked_evicts_whole_subj
 contains libclamav/others.c 'cli_validate_pcre_maxfilesize'
 contains libclamav/others.c '*validated = (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE;'
 contains libclamav/scanners.c 'legacy file-inspection callback requires an oversized contiguous buffer'
+contains libclamav/scanners.c 'materialization failure is not a reason to suppress the mandatory'
+contains unit_tests/check_clamav.c 'test_legacy_file_inspection_materialization_still_runs_raw_matching'
 contains libclamav/scanners.c 'image fuzzy hash requires an oversized contiguous buffer'
 contains libclamav/scanners.c 'status = cli_scan_reserve_contiguous(ctx, image_size);'
 contains libclamav/scanners.c 'image fuzzy hash could not read the complete image'

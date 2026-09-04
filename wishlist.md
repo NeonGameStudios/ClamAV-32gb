@@ -1,5 +1,18 @@
 # Wishlist
 
+## Legacy file-inspection callback raw fallback — 2026-09-04
+
+- Keep an oversized or failed legacy whole-buffer file-inspection callback
+  explicitly incomplete and non-cacheable, but continue through the mandatory
+  outer raw matcher so a detection is not hidden by callback materialization
+  limits. Preserve terminal behavior for callback-requested trust/block and
+  unexpected callback statuses.
+- Retain
+  `test_legacy_file_inspection_materialization_still_runs_raw_matching` and
+  its source guard. Current-source linked execution, complete callback/ingress
+  parity, sanitizer, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final PLAN.md qualification remain required.
+
 ## Bytecode extracted-member logical double-charge — 2026-09-03
 
 - Keep `cli_bcapi_extract_new()` free of a logical/file-count precharge:
@@ -14132,8 +14145,8 @@ qualification before closure.
 - Do not promote bounded controls to qualification for MIME, OneNote, PE
   unpackers, RAR, 7-Zip, ZIP, PDF, bytecode, logical matching, or YARA until
   current-source linked corpus, sanitizer, resource, service, materialized,
-  and Sonic1 evidence is complete. The current 589-row manifest remains at
-  0 qualified and 575 release blockers.
+  and Sonic1 evidence is complete. The current 590-row manifest remains at
+  0 qualified and 576 release blockers.
 - Keep historical support-document sections labeled as evidence snapshots;
   the current status header and final requirement-by-requirement PLAN.md audit
   remain authoritative.
