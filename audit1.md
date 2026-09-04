@@ -63,6 +63,22 @@ certified Linux x86-64, production-CVD/service, materialized-large-file,
 resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
 remain open.
 
+## InstallShield current-source focused audit — 2026-09-04
+
+The source-synchronized Docker production-linked GCC harness passes
+`ishield_map` 4/4 and `ishield_sfx` 1/1, with zero failures and errors. The
+map case covers null-context, missing-map, missing-options, and sticky
+completion admission; the SFX case confirms a valid PE-backed InstallShield
+host reaches the exact nested child marker, while the unsigned-PE
+Authenticode-no-trust path remains `CL_EVERIFY` and does not block normal SFX
+admission.
+
+This is focused current-source evidence, not complete InstallShield
+qualification. Full MSI/legacy extraction corpus breadth, current full-C ABI
+execution, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and final
+requirement-by-requirement PLAN.md qualification remain open.
+
 ## PDF metadata callback compile boundary — 2026-09-04
 
 The current-source relink exposed a real build defect before any linked test

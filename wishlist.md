@@ -37,6 +37,17 @@
   Linux x86-64, production-CVD/service, materialized-large-file, resource,
   Sonic1, and final PLAN.md qualification open.
 
+## InstallShield current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `ishield_map` 4/4
+  and `ishield_sfx` 1/1. The map case covers null-context, missing-map,
+  missing-options, and sticky-completion admission; the SFX case reaches the
+  exact nested child marker through a valid PE-backed host and preserves
+  `CL_EVERIFY` for unsigned-PE Authenticode no-trust checks.
+- Keep complete MSI/legacy extraction corpus, full C/Rust ABI, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  resource, Sonic1, and final PLAN.md qualification open.
+
 ## PDF metadata callback compile boundary — 2026-09-04
 
 - Keep PDF metadata callbacks bound to a checked owning `cli_ctx` and its

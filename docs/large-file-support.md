@@ -40,6 +40,20 @@ Complete HWPOLE2/OLE2 corpus, full C/Rust ABI, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
 and final PLAN.md qualification remain required.
 
+## Current InstallShield focused audit — 2026-09-04
+
+The source-synchronized Docker production-linked GCC harness passes
+`ishield_map` 4/4 and `ishield_sfx` 1/1, with zero failures and errors. The
+map case covers null-context, missing-map, missing-options, and sticky
+completion admission; the SFX case confirms a valid PE-backed InstallShield
+host reaches the exact nested child marker. Unsigned-PE Authenticode no-trust
+checks remain `CL_EVERIFY`, so ordinary raw SFX admission continues.
+
+These are focused current-source results, not final InstallShield
+qualification. Full MSI/legacy extraction corpus, full C/Rust ABI, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final PLAN.md qualification remain required.
+
 ## Current qualification boundary — 2026-09-04
 
 The authoritative capability manifest is a coverage contract, not a release
