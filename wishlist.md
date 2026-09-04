@@ -13930,6 +13930,23 @@ qualification remain open.
   service, materialized-large-file, Sonic1, resource, and parser/release
   qualification before closure.
 
+## OLE2 current-source production-linked refresh — 2026-09-04
+
+- The authoritative current-source GCC production-linked matrix passes
+  `ole2` 24/24, `ole2_map` 7/7, and `ole2_xlm` 3/3 with zero failures and
+  errors.
+- The VBA metadata allocation regression now calls the shared internal
+  `cli_ole2_record_vba_metadata()` helper through the production-linked
+  `cli_jsonarray()` fault wrapper and requires `CL_EMEM`, the exact sticky
+  incomplete reason, and non-cacheability. The checked-in `clam.ole.doc` is
+  structurally truncated and `has_png_and_jpeg.xls` has no reliable VBA
+  project, so the unsuitable public-corpus attempt was replaced with this
+  deterministic shared-helper boundary test.
+- Keep this as focused evidence only. Complete OLE/VBA/XLM corpus, full-C ABI
+  parity, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized large-file/resource measurements, Sonic1, and final
+  parser/release qualification remain required.
+
 ## PEspin entry and section-window admission — 2026-09-03
 
 - Keep PEspin packed-entry and reconstructed-entry metadata behind

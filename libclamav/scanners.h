@@ -266,4 +266,11 @@ void emax_reached(cli_ctx *ctx);
  */
 void cli_mark_scan_incomplete(cli_ctx *ctx, const char *reason);
 
+/**
+ * @brief Record the common VBA metadata fields for an OLE2 layer.
+ *
+ * This is shared by the modern and legacy OLE2 VBA extraction paths.
+ */
+cl_error_t cli_ole2_record_vba_metadata(cli_ctx *ctx);
+
 #endif

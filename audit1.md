@@ -23979,3 +23979,28 @@ than PE qualification. Complete PE/unpacker and executable corpus, full-C ABI
 parity, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized large-file/resource, Sonic1, and final release evidence remain
 open.
+
+## OLE2 current-source production-linked refresh — 2026-09-04
+
+The authoritative OLE2 scanner, internal header, and unit-test source were
+rebuilt in the existing Docker production-linked GCC harness. The focused
+current-source matrix passes with zero failures and errors: `ole2` 24/24,
+`ole2_map` 7/7, and `ole2_xlm` 3/3.
+
+The VBA metadata allocation regression now exercises the shared internal
+`cli_ole2_record_vba_metadata()` helper directly through the same wrapped
+`cli_jsonarray()` failure used by the modern and legacy OLE2 extraction paths.
+It requires `CL_EMEM`, the exact sticky reason `OLE2 VBA language metadata
+could not be allocated`, and fmap non-cacheability. The earlier public-corpus
+attempt was rejected as unsuitable for this boundary: the checked-in
+`clam.ole.doc` is intentionally structurally truncated, while
+`has_png_and_jpeg.xls` has no reliable VBA project. The deterministic direct
+helper regression therefore tests the production failure contract without
+claiming a corpus result that does not reach the helper.
+
+This is focused current-source evidence, not OLE2 family qualification. The
+extraction logic is unchanged apart from making the shared helper explicit in
+the internal header. Complete OLE/VBA/XLM corpus, full-C ABI parity,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file/resource, Sonic1, and final parser/release evidence
+remain open.

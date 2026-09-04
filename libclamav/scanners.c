@@ -2870,7 +2870,7 @@ static void cli_ole2_note_vba_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
     *status = cli_merge_cleanup_status(*status, cleanup_status);
 }
 
-static cl_error_t cli_ole2_record_vba_metadata(cli_ctx *ctx)
+cl_error_t cli_ole2_record_vba_metadata(cli_ctx *ctx)
 {
     cl_error_t status;
     json_object *macro_languages;

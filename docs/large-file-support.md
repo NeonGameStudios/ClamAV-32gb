@@ -9827,6 +9827,30 @@ complete signature/evidence and trust-callback corpus, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
 resource, and final release qualification remain required.
 
+## OLE2 current-source production-linked refresh — 2026-09-04
+
+The authoritative OLE2 scanner, internal header, and unit-test source were
+rebuilt in the existing Docker production-linked GCC harness. The focused
+current-source matrix passes with zero failures and errors: `ole2` 24/24,
+`ole2_map` 7/7, and `ole2_xlm` 3/3.
+
+The VBA metadata allocation regression calls the shared internal
+`cli_ole2_record_vba_metadata()` helper through the production-linked
+`cli_jsonarray()` fault wrapper and requires `CL_EMEM`, the exact sticky
+incomplete reason `OLE2 VBA language metadata could not be allocated`, and
+fmap non-cacheability. The checked-in `clam.ole.doc` is intentionally
+structurally truncated and `has_png_and_jpeg.xls` has no reliable VBA
+project, so the public-corpus attempt was not suitable for this boundary; the
+direct helper test deterministically exercises the production failure
+contract used by both modern and legacy OLE2 paths.
+
+This is focused current-source evidence, not OLE2 family qualification. The
+extraction logic is unchanged apart from making the shared helper explicit in
+the internal header. Complete OLE/VBA/XLM corpus, full-C ABI parity,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file/resource, Sonic1, and final parser/release evidence
+remain required.
+
 ## Shared JSON object-property insertion failures — 2026-09-01
 
 The shared `cli_json` scalar helpers now propagate

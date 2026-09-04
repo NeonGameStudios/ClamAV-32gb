@@ -39817,6 +39817,7 @@ START_TEST(test_pdf_uri_metadata_record_failure_is_fail_visible)
     uint8_t *data;
     size_t data_size;
     cl_error_t ret;
+    int old_debug;
     int fd;
 
     snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/pdf/uri-and-ref.pdf", SRCDIR);
@@ -43151,70 +43152,41 @@ END_TEST
 
 START_TEST(test_ole2_vba_metadata_record_failure_is_fail_visible)
 {
-    char file_path[PATH_MAX];
-    struct cl_engine *scan_engine;
+    static const uint8_t input = 0;
+    struct cl_engine engine;
     struct cl_scan_options options;
-    struct stat sb;
-    cl_verdict_t verdict;
-    const char *last_alert;
-    uint64_t scanned;
+    cli_ctx ctx;
     fmap_t *map;
-    uint8_t *data;
-    size_t data_size;
     cl_error_t ret;
-    int fd;
 
-    snprintf(file_path, sizeof(file_path), "%s/input/clamav_hdb_scanfiles/clam.ole.doc", OBJDIR);
-    fd = open(file_path, O_RDONLY | O_BINARY);
-    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
-    ck_assert_int_eq(FSTAT(fd, &sb), 0);
-    ck_assert_msg(sb.st_size > 0 && (uintmax_t)sb.st_size <= SIZE_MAX,
-                  "invalid OLE2 VBA fixture: %s", file_path);
-    data_size = (size_t)sb.st_size;
-    data      = malloc(data_size);
-    ck_assert_ptr_nonnull(data);
-    ck_assert_int_eq(read(fd, data, data_size), (ssize_t)data_size);
-    ck_assert_int_eq(close(fd), 0);
-
+    memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
     options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
-    options.parse   = CL_SCAN_PARSE_OLE2;
-    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
-    scan_engine = cl_engine_new();
-    ck_assert_ptr_nonnull(scan_engine);
-    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
-    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
-
-    map = cl_fmap_open_memory(data, data_size);
+    map = cl_fmap_open_memory(&input, sizeof(input));
     ck_assert_ptr_nonnull(map);
-    verdict    = CL_VERDICT_NOTHING_FOUND;
-    last_alert = NULL;
-    scanned    = 0;
-    ret        = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
-                               scan_engine, &options, NULL, NULL, NULL, NULL,
-                               "CL_TYPE_MSOLE2", NULL);
-    ck_assert_msg(ret != CL_EMEM, "baseline OLE2 VBA scan failed with CL_EMEM");
-    cl_fmap_close(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                   = &engine;
+    ctx.options                  = &options;
+    ctx.fmap                     = map;
+    ctx.this_layer_metadata_json = json_object_new_object();
+    ck_assert_ptr_nonnull(ctx.this_layer_metadata_json);
+    ck_assert_int_eq(cli_ole2_record_vba_metadata(&ctx), CL_SUCCESS);
+    json_object_put(ctx.this_layer_metadata_json);
 
-    map = cl_fmap_open_memory(data, data_size);
-    ck_assert_ptr_nonnull(map);
+    ctx.this_layer_metadata_json = json_object_new_object();
+    ck_assert_ptr_nonnull(ctx.this_layer_metadata_json);
     ole2_test_fail_vba_metadata = 1;
-    verdict                     = CL_VERDICT_STRONG_INDICATOR;
-    last_alert                  = "stale";
-    scanned                     = UINT64_MAX;
-    ret                         = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
-                                                 scan_engine, &options, NULL, NULL, NULL, NULL,
-                                                 "CL_TYPE_MSOLE2", NULL);
+    ret                         = cli_ole2_record_vba_metadata(&ctx);
     ole2_test_fail_vba_metadata = 0;
 
     ck_assert_int_eq(ret, CL_EMEM);
-    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
-    ck_assert_ptr_null(last_alert);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "OLE2 VBA language metadata could not be allocated");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
-    free(data);
-    cl_engine_free(scan_engine);
+    json_object_put(ctx.this_layer_metadata_json);
 }
 END_TEST
 #endif
