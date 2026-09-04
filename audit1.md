@@ -24170,3 +24170,16 @@ This is focused current-source evidence, not complete RTF qualification.
 Complete RTF corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file/resource, Sonic1, and final
 parser/release evidence remain open.
+
+
+## SCRENC current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC SCRENC matrix passes with zero
+failures and errors: `screnc` 2/2 for public in-range read and temporary-limit
+failures. The dedicated `htmlnorm api` TCase passes 15/15, including SCRENC
+checksum/terminator, timeout, and temporary-limit decoder boundaries.
+
+This is focused current-source evidence, not complete SCRENC/HTML qualification.
+Complete SCRENC/HTML corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file/resource, Sonic1, and final
+parser/release evidence remain open.

@@ -14830,3 +14830,15 @@ qualification before closure.
   RTF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file/resource, Sonic1, and final parser/release
   qualification remain open.
+
+
+## SCRENC current-source production-linked refresh — 2026-09-04
+
+- Record the current-source production-linked GCC results: `screnc` 2/2 for
+  public in-range read and temporary-limit failures, and the dedicated
+  `htmlnorm api` TCase 15/15 including SCRENC checksum/terminator, timeout,
+  and temporary-limit decoder boundaries.
+- Keep this focused evidence separate from final SCRENC/HTML qualification.
+  Complete SCRENC/HTML corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file/resource, Sonic1, and final
+  parser/release qualification remain open.
