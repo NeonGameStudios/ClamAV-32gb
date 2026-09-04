@@ -4634,10 +4634,10 @@ int cli_scanpe(cli_ctx *ctx)
         if (cli_memstr(UPX_LZMA2, 20, epbuff + 0x2f, 20)) {
             uint32_t strictdsize = cli_readint32(epbuff + 0x21), skew = 0;
             if (ssize > 0x15 && epbuff[0] == '\x60' && epbuff[1] == '\xbe') {
-                // TODO Add EC32
-                skew = cli_readint32(epbuff + 2) - peinfo->sections[i + 1].rva - peinfo->pe_opt.opt32.ImageBase;
-                if (skew != 0x15)
-                    skew = 0;
+                (void)cli_upx_lzma_skew_offset(
+                    EC32(peinfo->pe_opt.opt32.ImageBase),
+                    peinfo->sections[i + 1].rva,
+                    cli_readint32(epbuff + 2), ssize, &skew);
             }
 
             if (strictdsize <= dsize)
@@ -4646,10 +4646,10 @@ int cli_scanpe(cli_ctx *ctx)
             uint32_t strictdsize = cli_readint32(epbuff + 0x2b), skew = 0;
             uint32_t properties = cli_readint32(epbuff + 0x41);
             if (ssize > 0x15 && epbuff[0] == '\x60' && epbuff[1] == '\xbe') {
-                // TODO Add EC32
-                skew = cli_readint32(epbuff + 2) - peinfo->sections[i + 1].rva - peinfo->pe_opt.opt32.ImageBase;
-                if (skew != 0x15)
-                    skew = 0;
+                (void)cli_upx_lzma_skew_offset(
+                    EC32(peinfo->pe_opt.opt32.ImageBase),
+                    peinfo->sections[i + 1].rva,
+                    cli_readint32(epbuff + 2), ssize, &skew);
             }
 
             if (strictdsize <= dsize)

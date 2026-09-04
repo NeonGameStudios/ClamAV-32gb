@@ -34,5 +34,8 @@ int cli_upx_align_up_u32(uint32_t value, uint32_t alignment, uint32_t *aligned);
 int cli_upx_relative_window_offset(uint32_t section_rva, uint32_t target_rva,
                                    size_t available, int64_t adjustment,
                                    size_t needed, size_t *offset);
+int cli_upx_lzma_skew_offset(uint32_t image_base, uint32_t section_rva,
+                             uint32_t target_va, size_t available,
+                             uint32_t *skew);
 
 #endif

@@ -23191,3 +23191,19 @@ Current-source production-linked logical/icon execution, the complete
 logical-signature and PE-icon corpus, sanitizer, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final matcher/release
 qualification remain required.
+
+## UPX LZMA wrapper-skew coordinate admission — 2026-09-03
+
+The UPX LZMA compatibility path still derived its optional 0x15-byte wrapper
+skew by subtracting the image base and section RVA in `uint32_t`. A wrapped
+value could therefore equal the only accepted skew and select a wrapper prefix
+that was not actually in the section window. `cli_upx_lzma_skew_offset()` now
+rejects an underflowing virtual address and performs section-relative admission
+with the existing checked native-width helper, so the accepted prefix cannot
+escape the available wrapper window. The focused
+`test_pe_upx_lzma_skew_rejects_wrapped_target` regression covers the valid
+wrapper, image-base underflow, lower-than-section, high-coordinate, and null
+output cases. Current-source production-GCC compilation and linked malformed-
+UPX execution, complete PE/UPX corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+PE/parser/release qualification remain required.

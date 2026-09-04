@@ -14155,3 +14155,17 @@ qualification before closure.
   make the layer non-cacheable. Continue with production-linked, sanitizer,
   complete-corpus, service, materialized-large-file, Sonic1, and release
   qualification for the icon and logical-signature families.
+
+## UPX LZMA wrapper-skew coordinate admission — 2026-09-03
+
+- Keep the optional UPX LZMA wrapper skew in checked section-relative
+  coordinates. Reject virtual-address/image-base underflow and
+  lower-than-section targets before the accepted `0x15` skew can be selected,
+  and keep the selected prefix inside the available section window.
+- Retain `cli_upx_lzma_skew_offset()`,
+  `test_pe_upx_lzma_skew_rejects_wrapped_target`, its registrations and source
+  guards, and the `upx-decoder-status` capability evidence. Add current-source
+  production-GCC and linked malformed-UPX execution, complete PE/UPX corpus,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, Sonic1, resource, and final PE/parser/release
+  qualification before closure.

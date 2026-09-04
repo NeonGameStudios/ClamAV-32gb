@@ -111,6 +111,30 @@ int cli_upx_relative_window_offset(uint32_t section_rva, uint32_t target_rva,
     return 0;
 }
 
+/* The LZMA wrapper stores a virtual address for its optional 0x15-byte
+ * wrapper prefix. Convert it to a section-relative coordinate before
+ * deciding whether the prefix is present; unsigned VA - image-base - RVA
+ * arithmetic can otherwise wrap into the one accepted skew value. */
+int cli_upx_lzma_skew_offset(uint32_t image_base, uint32_t section_rva,
+                             uint32_t target_va, size_t available,
+                             uint32_t *skew)
+{
+    size_t relative;
+
+    if (skew == NULL)
+        return -1;
+
+    *skew = 0;
+    if (target_va < image_base ||
+        cli_upx_relative_window_offset(section_rva, target_va - image_base,
+                                       available, 0, 0, &relative) < 0)
+        return 0;
+
+    if (relative == 0x15)
+        *skew = 0x15;
+    return 0;
+}
+
 /* UPX is a legacy, bounded-buffer decoder. Keep its context-free public
  * implementation, but checkpoint the shared scan deadline often enough that
  * hostile bitstreams cannot consume the entire scan budget in a tight loop. */

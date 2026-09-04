@@ -48411,6 +48411,37 @@ START_TEST(test_pe_upx_relative_window_offset_rejects_invalid_window)
 }
 END_TEST
 
+START_TEST(test_pe_upx_lzma_skew_rejects_wrapped_target)
+{
+    uint32_t skew = UINT32_MAX;
+
+    ck_assert_int_eq(cli_upx_lzma_skew_offset(0x00400000U, 0x1000U,
+                                              0x00401015U, 0x200U, &skew),
+                     0);
+    ck_assert_uint_eq(skew, 0x15U);
+
+    skew = UINT32_MAX;
+    ck_assert_int_eq(cli_upx_lzma_skew_offset(0x00400000U, 0x1000U,
+                                              0x003fffffU, 0x200U, &skew),
+                     0);
+    ck_assert_uint_eq(skew, 0U);
+
+    skew = UINT32_MAX;
+    ck_assert_int_eq(cli_upx_lzma_skew_offset(0x00400000U, 0x2000U,
+                                              0x00401015U, 0x200U, &skew),
+                     0);
+    ck_assert_uint_eq(skew, 0U);
+
+    skew = UINT32_MAX;
+    ck_assert_int_eq(cli_upx_lzma_skew_offset(UINT32_MAX - 0x0fffU, 0x1000U,
+                                              0x15U, 0x40U, &skew),
+                     0);
+    ck_assert_uint_eq(skew, 0U);
+
+    ck_assert_int_eq(cli_upx_lzma_skew_offset(0, 0, 0, 0, NULL), -1);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_pe_upx_lzma_decoder_init_failure_is_fail_visible)
 {
@@ -62443,6 +62474,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pe_map, test_pe_wwpack_source_window_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pespin_entry_offset_rejects_invalid_window);
     tcase_add_test(tc_pe_map, test_pe_upx_relative_window_offset_rejects_invalid_window);
+    tcase_add_test(tc_pe_map, test_pe_upx_lzma_skew_rejects_wrapped_target);
     tcase_add_test(tc_pe_map, test_pe_aspack_init_array_step_rejects_invalid_multiplier);
     tcase_add_test(tc_pe_map, test_pe_nspack_table_size_rejects_invalid_shift);
     tcase_add_test(tc_pe_map, test_pe_nspack_table_offset_rejects_out_of_range);
@@ -64023,6 +64055,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_yc_adjusted_window_offset_rejects_invalid_window);
     tcase_add_test(tc_cl, test_pe_wwpack_source_window_offset_rejects_invalid_window);
     tcase_add_test(tc_cl, test_pe_upx_relative_window_offset_rejects_invalid_window);
+    tcase_add_test(tc_cl, test_pe_upx_lzma_skew_rejects_wrapped_target);
     tcase_add_test(tc_cl, test_pe_mew_section_table_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_aspack_block_buffer_size_rejects_overflow);
     tcase_add_test(tc_cl, test_pe_aspack_entry_window_offset_rejects_invalid_window);
