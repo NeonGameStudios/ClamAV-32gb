@@ -16,6 +16,36 @@ was made explicit and the final relink is warning-clean. This build
 completion does not replace the still-open linked, sanitizer, corpus, service,
 resource, Sonic1, and release gates.
 
+## HWP3 current-source focused audit — 2026-09-04
+
+The current HWP3 parser and test sources were verified against the existing
+Docker build before relinking: `hwp.c`
+`6e094a5048e3f55dcacd3e9e87af3878cded21f812eb02b67ea9355d1df3e754`, `hwp.h`
+`7c6903cecbd4754b1065cd21159d603b8fed8b58b73c52272ea653a5028e80ad`,
+`scanners.c`
+`ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
+`check_clamav.c`
+`706c044fd7527f914c8edcfdf840e73f6b1a4e508315fb53d6d16214839bab7a`, and
+`unit_tests/CMakeLists.txt`
+`e00a485fe27365605571bd5319e42bab8b3ced05454a25dba77369ed16c96838`.
+The static production-linked GCC harness passes `hwp3` 27/27,
+`hwp3_map` 3/3, `hwp3_api` 1/1, and `hwp3_corpus` 1/1, with zero failures and
+errors.
+
+The two stale branch-tip failures were fixture-isolation defects: HWP3 uses
+`cli_magic_scan_nested_fmap_type()`, so the child bypass now wraps that exact
+entry point; and the decoder-finalization fixture now supplies a 67-byte
+structurally valid decompressed HWP3 content stream, allowing the injected
+`inflateEnd()` status to be observed. The direct suite therefore covers the
+sticky-incomplete and decoder-finalization contracts without weakening
+production parsing.
+
+This is focused current-source evidence, not complete HWP3 qualification.
+Full HWP3/HWPML/OLE corpus breadth, current full-C ABI execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
+remain open.
+
 ## PDF metadata callback compile boundary — 2026-09-04
 
 The current-source relink exposed a real build defect before any linked test

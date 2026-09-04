@@ -12,6 +12,19 @@
   complete corpora, service parity, materialized-large-file, resource, Sonic1,
   and final release qualification.
 
+## HWP3 current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `hwp3` 27/27,
+  `hwp3_map` 3/3, `hwp3_api` 1/1, and `hwp3_corpus` 1/1. The exact HWP3
+  nested-fmap child-scan entry point is now wrapped for direct fixture
+  isolation, and the decoder-finalization regression uses a structurally valid
+  67-byte decompressed HWP3 content stream so the injected `inflateEnd()`
+  failure is observable.
+- Keep the HWP3 source guards and canonical/container hash equality. Complete
+  HWP3/HWPML/OLE corpus breadth, full C/Rust ABI, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
+  and final PLAN.md qualification open.
+
 ## PDF metadata callback compile boundary — 2026-09-04
 
 - Keep PDF metadata callbacks bound to a checked owning `cli_ctx` and its

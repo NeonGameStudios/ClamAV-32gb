@@ -5,6 +5,25 @@ Current evidence is capability-scoped and must be bound to the current source
 and build manifests. No production release claim is made until every PLAN.md
 gate passes.
 
+## Current HWP3 focused audit — 2026-09-04
+
+The current HWP3 parser and test sources were hash-checked against the
+authoritative repository in the existing Docker build, then relinked with the
+production GCC static harness. The focused cases pass `hwp3` 27/27,
+`hwp3_map` 3/3, `hwp3_api` 1/1, and `hwp3_corpus` 1/1, with zero failures and
+errors.
+
+The branch-tip direct failures were stale fixture isolation rather than a
+production parser regression: HWP3 dispatches child content through
+`cli_magic_scan_nested_fmap_type()`, so the test bypass now wraps that exact
+entry point; the decoder-finalization fixture also uses a structurally valid
+67-byte decompressed HWP3 content stream, allowing the injected
+`inflateEnd()` failure to remain the terminal `CL_EUNPACK` result. These are
+focused current-source results, not final HWP3 qualification. Complete
+HWP3/HWPML/OLE corpus, full C/Rust ABI, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 ## Current qualification boundary — 2026-09-04
 
 The authoritative capability manifest is a coverage contract, not a release

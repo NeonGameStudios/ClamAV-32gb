@@ -766,6 +766,17 @@ SRes __wrap_SzArEx_ExtractToStreamEx(
 extern cl_error_t __real_cli_magic_scan_desc_type_reserved(int, const char *, cli_ctx *, cli_file_t,
                                                            const char *, uint32_t);
 extern cl_error_t __real_cli_magic_scan_desc(int, const char *, cli_ctx *, const char *, uint32_t);
+extern cl_error_t __real_cli_magic_scan_nested_fmap_type(cl_fmap_t *, size_t, size_t, cli_ctx *, cli_file_t,
+                                                         const char *, uint32_t);
+
+cl_error_t __wrap_cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t length, cli_ctx *ctx,
+                                                  cli_file_t type, const char *name, uint32_t attributes)
+{
+    if (hwp3_test_bypass_child_scan)
+        return CL_SUCCESS;
+
+    return __real_cli_magic_scan_nested_fmap_type(map, offset, length, ctx, type, name, attributes);
+}
 
 cl_error_t __wrap_cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx,
                                       const char *name, uint32_t attributes)
@@ -33398,6 +33409,9 @@ START_TEST(test_hwp3_sticky_incomplete_result_is_fail_visible)
     ctx.scan_incomplete_reason = "pre-existing HWP3 incomplete state";
     map->dont_cache_flag = true;
 
+    /* HWP3 hands embedded content through the nested-fmap path.  The linker
+     * wrapper above isolates this status reconciliation test from the full
+     * child scanner without requiring a complete dynamic configuration. */
     hwp3_test_bypass_child_scan = 1;
     ret = cli_scanhwp3(&ctx);
     hwp3_test_bypass_child_scan = 0;
@@ -34574,7 +34588,10 @@ START_TEST(test_hwp_decoder_finalization_failure_is_fail_visible)
     enum {
         HWP3_CONTENT_OFFSET = 30 + 128 + 1008
     };
-    static const uint8_t content[] = "HWP raw-deflate finalization failure";
+    /* Seven empty font entries, an empty style table, one empty paragraph,
+     * and a terminating information block.  This lets hwp3_cb complete so
+     * the injected inflateEnd() failure is the first terminal status. */
+    static const uint8_t content[67] = {0};
     uint8_t *compressed;
     size_t compressed_length;
     uint8_t *data;
