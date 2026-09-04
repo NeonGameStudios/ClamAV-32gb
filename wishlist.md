@@ -1,5 +1,17 @@
 # Wishlist
 
+## Bytecode extracted-member logical double-charge — 2026-09-03
+
+- Keep `cli_bcapi_extract_new()` free of a logical/file-count precharge:
+  `cli_magic_scan_desc_type_reserved()` and the child `cli_magic_scan()` path
+  must charge each extracted member exactly once, while the bytecode temporary
+  reservation remains held through the descriptor handoff.
+- Retain the production-linked static wrapper regression
+  `test_bytecode_extracted_member_is_not_precharged` and its source guards.
+  Current-source bytecode relink/execution, sanitizer, complete bytecode/YARA
+  corpus, production-CVD/service, materialized-large-file, Sonic1, resource,
+  and final PLAN.md qualification remain required.
+
 ## Scan-deadline initialization failure — 2026-09-03
 
 - Keep a configured `MaxScanTime` fail-closed when `gettimeofday()` cannot

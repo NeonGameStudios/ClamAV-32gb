@@ -732,6 +732,9 @@ extern SRes __real_SzArEx_ExtractToStreamEx(
 static int sevenzip_test_unsupported_after_write;
 static int sevenzip_test_injection_used;
 static int sevenzip_test_child_prefix_status;
+#ifdef CLAMAV_TEST_BYTECODE_EXTRACT_WRAP
+int clamav_test_bytecode_bypass_child_scan;
+#endif
 
 SRes __wrap_SzArEx_ExtractToStreamEx(
     const CSzArEx *archive,
@@ -780,6 +783,10 @@ cl_error_t __wrap_cli_magic_scan_desc_type_reserved(int desc, const char *filepa
         sis_test_bypass_child_scan || ole10_test_bypass_child_scan ||
         xar_test_bypass_child_scan)
         return CL_SUCCESS;
+#ifdef CLAMAV_TEST_BYTECODE_EXTRACT_WRAP
+    if (clamav_test_bytecode_bypass_child_scan)
+        return CL_SUCCESS;
+#endif
 
     if (type == CL_TYPE_ANY) {
         if (lseek(desc, 0, SEEK_SET) == (off_t)-1) {

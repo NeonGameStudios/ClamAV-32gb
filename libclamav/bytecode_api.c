@@ -870,7 +870,6 @@ int32_t cli_bcapi_extract_new(struct cli_bc_ctx *ctx, int32_t id)
 {
     cli_ctx *cctx;
     cl_error_t res;
-    cl_error_t limit_ret;
     bool discard_output;
 
     if (!ctx)
@@ -886,9 +885,10 @@ int32_t cli_bcapi_extract_new(struct cli_bc_ctx *ctx, int32_t id)
     if (!ctx->written)
         return 0;
     if (ctx->ctx) {
-        limit_ret = cli_updatelimits(ctx->ctx, ctx->written);
-        if (limit_ret != CL_SUCCESS)
-            return (int32_t)limit_ret;
+        /* The reserved descriptor handoff below enters cli_magic_scan(),
+         * which charges this extracted member exactly once as a child layer.
+         * Do not pre-charge it here: doing so consumed MaxScanSize and
+         * MaxFiles before the same member was admitted by the child scanner. */
         res = CL_SUCCESS;
     } else {
         cli_bcapi_mark_map_read_error(ctx, "Bytecode extracted output has no scan context");

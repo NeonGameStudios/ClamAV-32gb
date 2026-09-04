@@ -1,5 +1,23 @@
 # Independent read-only audit of audit.md
 
+## Bytecode extracted-member logical double-charge — 2026-09-03
+
+`cli_bcapi_extract_new()` pre-incremented `scansize` and `scannedfiles` with
+`cli_updatelimits()` before handing the same temporary descriptor to
+`cli_magic_scan_desc_type_reserved()`. The reserved descriptor path then
+entered `cli_magic_scan()`, whose child-layer admission charged the member a
+second time. This could exhaust `MaxScanSize` or `MaxFiles` early and could
+turn a valid bytecode extraction sequence into an incomplete result before
+the member was actually inspected. The precharge is removed; the child scan
+now owns the single logical/file-count charge, while the temporary reservation
+remains held through the handoff. The Linux static production-linked
+`test_bytecode_extracted_member_is_not_precharged` regression isolates the
+handoff and verifies that extraction does not advance logical bytes when the
+child scanner is bypassed; source guards pin the invariant and wrapper. Full
+current-source bytecode relink/execution, sanitizer, complete bytecode/YARA
+corpus, production-CVD/service, materialized-large-file, Sonic1, resource,
+and final PLAN.md qualification remain open.
+
 ## Scan-deadline initialization failure — 2026-09-03
 
 The common scan entry previously logged and ignored a `gettimeofday()` failure

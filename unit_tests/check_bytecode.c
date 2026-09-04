@@ -63,6 +63,10 @@ extern size_t clamav_test_short_write_count;
 extern int clamav_test_force_bytecode_bzip_decoder_end;
 #endif
 
+#ifdef CLAMAV_TEST_BYTECODE_EXTRACT_WRAP
+extern int clamav_test_bytecode_bypass_child_scan;
+#endif
+
 #ifdef CLAMAV_TEST_BYTECODE_PREPARE_WRAP
 extern cl_error_t __real_cli_bytecode_run(const struct cli_all_bc *bcs, const struct cli_bc *bc,
                                           struct cli_bc_ctx *ctx);
@@ -1252,6 +1256,48 @@ START_TEST(test_bytecode_output_write_failure_propagates_from_runner)
 END_TEST
 #endif
 
+#ifdef CLAMAV_TEST_BYTECODE_EXTRACT_WRAP
+START_TEST(test_bytecode_extracted_member_is_not_precharged)
+{
+    struct cl_engine *engine;
+    struct cli_bc_ctx *bcctx;
+    cli_ctx cctx;
+    uint8_t payload = 0x5a;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE,
+                                       CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE,
+                                       CLI_MAX_LOGICAL_SCAN_SIZE), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE,
+                                       8), CL_SUCCESS);
+
+    memset(&cctx, 0, sizeof(cctx));
+    cctx.engine = engine;
+    bcctx       = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+
+    ck_assert_int_eq(cli_bcapi_write(bcctx, &payload, sizeof(payload)),
+                     (int)sizeof(payload));
+    ck_assert_uint_eq(cctx.scansize, 0);
+    ck_assert_uint_eq(cctx.temporary_bytes, sizeof(payload));
+
+    /* The reserved-child wrapper isolates the extraction handoff. The real
+     * child scanner owns the one logical-byte charge in production. */
+    clamav_test_bytecode_bypass_child_scan = 1;
+    ck_assert_int_eq(cli_bcapi_extract_new(bcctx, 0), CL_SUCCESS);
+    clamav_test_bytecode_bypass_child_scan = 0;
+
+    ck_assert_uint_eq(cctx.scansize, 0);
+    ck_assert_uint_eq(cctx.temporary_bytes, 0);
+    cli_bytecode_context_destroy(bcctx);
+    cl_engine_free(engine);
+}
+END_TEST
+#endif
+
 START_TEST(test_bytecode_jsnorm_limit_failure_releases_input)
 {
     struct cl_engine *engine;
@@ -2410,6 +2456,9 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_api_rejects_invalid_contexts);
     tcase_add_test(tc_cli_read, test_bytecode_v1_coordinate_narrowing_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);
+#ifdef CLAMAV_TEST_BYTECODE_EXTRACT_WRAP
+    tcase_add_test(tc_cli_read, test_bytecode_extracted_member_is_not_precharged);
+#endif
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cli_read, test_bytecode_output_short_write_preserves_materialized_budget);
     tcase_add_test(tc_cli_read, test_bytecode_output_write_failure_propagates_from_runner);
