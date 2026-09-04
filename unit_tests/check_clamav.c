@@ -31371,6 +31371,8 @@ START_TEST(test_xdp_sticky_incomplete_result_is_fail_visible)
     map = cl_fmap_open_memory(data, sizeof(data) - 1U);
     ck_assert_ptr_nonnull(map);
     ctx.engine                 = engine;
+    /* Direct XDP fixtures must model production engine configuration. */
+    ctx.dconf                  = engine->dconf;
     ctx.options                = &options;
     ctx.fmap                   = map;
     ctx.this_layer_tmpdir      = tmpdir;

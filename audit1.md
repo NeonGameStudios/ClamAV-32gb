@@ -1,5 +1,20 @@
 # Independent read-only audit of audit.md
 
+## XDP current-source focused audit — 2026-09-04
+
+The coherent current-source production-linked GCC harness initially exposed a
+fixture-context defect in the XDP sticky-completion regression: the direct
+test supplied an engine but omitted its dynamic configuration pointer, so the
+child handoff correctly returned `CL_EARG` with “scan dynamic configuration is
+unavailable” before the clean control assertion. The fixture now binds
+`ctx.dconf` to the compiled engine. Focused runs pass `xdp` 3/3,
+`xdp_map` 5/5, and `xdp_corpus` 1/1 with zero failures and errors. No XDP
+production-code change was required. This is focused current-source evidence,
+not complete XDP/MSXML or release certification: complete corpus breadth,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and requirement-by-requirement
+PLAN.md qualification remain open.
+
 ## XAR current-source focused audit — 2026-09-04
 
 The coherent current-source production-linked GCC harness initially reported

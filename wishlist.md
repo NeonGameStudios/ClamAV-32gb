@@ -1,5 +1,18 @@
 # Wishlist
 
+## XDP current-source focused audit — 2026-09-04
+
+- Keep the direct sticky-completion fixture bound to the compiled engine's
+  dynamic configuration (`ctx.dconf = engine->dconf`) before exercising the
+  nested Base64 child handoff. Without it, the production path correctly
+  reports missing scan configuration instead of testing sticky completion.
+- Retain current-source production-linked GCC evidence at `xdp` 3/3,
+  `xdp_map` 5/5, and `xdp_corpus` 1/1, with zero failures and errors. No XDP
+  production-code change was needed in this audit.
+- Keep complete XDP/MSXML corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, resource, Sonic1, and
+  final PLAN.md qualification open.
+
 ## XAR current-source focused audit — 2026-09-04
 
 - Keep both XAR hash-fault fixtures valid before injecting

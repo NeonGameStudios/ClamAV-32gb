@@ -703,6 +703,19 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## XDP current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC XDP run initially found that the
+sticky-completion fixture omitted `ctx.dconf`, so the compiled engine could
+not supply dynamic scan configuration for the nested Base64 child handoff and
+the control scan returned `CL_EARG`. After binding the engine configuration,
+`xdp` passes 3/3, `xdp_map` 5/5, and `xdp_corpus` 1/1 with zero failures and
+errors. No XDP production-code change was needed. This remains focused
+evidence, not final XDP/MSXML or release certification; complete corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+remain required.
+
 ## XAR current-source focused audit — 2026-09-04
 
 The current-source production-linked GCC XAR run initially exposed two invalid
