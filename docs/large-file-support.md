@@ -5,6 +5,28 @@ Current evidence is capability-scoped and must be bound to the current source
 and build manifests. No production release claim is made until every PLAN.md
 gate passes.
 
+## Current ISO-9660 focused audit — 2026-09-04
+
+The canonical ISO parser, scanner, and unit-test sources were transferred into
+the existing Docker environment, then the production-linked GCC build was
+rebuilt coherently so no stale shared objects remained in the focused binary.
+The current-source harness passes `iso_map` 19/19 and `iso` 1/1, with zero
+failures and errors. The map result covers null-context, descriptor alignment
+and termination, callback-read failures, timeout, directory-record and Joliet
+name boundaries, coordinate/declared-volume limits, temporary-output status,
+and the public API path; the corpus result reaches nested PNG detection in both
+materialized standard and no-Joliet ISO fixtures.
+
+The four earlier direct failures were fixture-context defects: two omitted the
+required scan-options pointer, the direct Joliet case omitted the same pointer,
+and the temporary-output case omitted the root recursion layer required before
+`cli_matchmeta()`. The corrected fixtures now reach and preserve the intended
+`CL_EPARSE`, `CL_EREAD`, and `CL_ECREAT` contracts. This remains focused
+current-source evidence, not final ISO/Joliet qualification. Complete corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+remain required.
+
 ## Current HWP3 focused audit — 2026-09-04
 
 The current HWP3 parser and test sources were hash-checked against the

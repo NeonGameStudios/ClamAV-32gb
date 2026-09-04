@@ -28055,6 +28055,7 @@ START_TEST(test_iso_descriptor_alignment_is_fail_visible)
     };
     uint8_t data[ISO_LENGTH] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
@@ -28074,8 +28075,12 @@ START_TEST(test_iso_descriptor_alignment_is_fail_visible)
     memcpy(data + ISO_OFFSET + 2050, "CD001", 5);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
+    /* Direct ISO parser calls model the production options contract. */
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
     ctx.engine = &engine;
+    ctx.options = &options;
     map        = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
@@ -28185,6 +28190,7 @@ START_TEST(test_iso_volume_read_failure_is_fail_visible)
     uint8_t data[ISO_OFFSET + ISO_DESCRIPTOR_BYTES] = {0};
     struct iso_volume_read_failure_state state;
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
@@ -28200,8 +28206,11 @@ START_TEST(test_iso_volume_read_failure_is_fail_visible)
     ck_assert_ptr_nonnull(map);
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
     ctx.engine = &engine;
+    ctx.options = &options;
     ctx.fmap   = map;
 
     ck_assert_int_eq(cli_scaniso(&ctx, ISO_OFFSET), CL_EREAD);
@@ -28467,6 +28476,7 @@ START_TEST(test_iso_joliet_name_conversion_truncation_is_fail_visible)
     direct_layer.size = map->len;
     direct_layer.fmap = map;
     direct_ctx.engine            = scan_engine;
+    direct_ctx.options           = &options;
     direct_ctx.fmap              = map;
     direct_ctx.this_layer_tmpdir = tmpdir;
     direct_ctx.recursion_stack   = &direct_layer;
@@ -28754,6 +28764,7 @@ START_TEST(test_iso_temporary_output_creation_status_is_fail_visible)
     uint8_t data[ISO_LENGTH] = {0};
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
+    cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
 
@@ -28790,11 +28801,18 @@ START_TEST(test_iso_temporary_output_creation_status_is_fail_visible)
     ck_assert_ptr_nonnull(map);
 
     memset(&ctx, 0, sizeof(ctx));
+    memset(&layer, 0, sizeof(layer));
     ctx.engine            = scan_engine;
     ctx.dconf             = scan_engine->dconf;
     ctx.options           = &options;
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = "/definitely/nonexistent/clamav-iso-temp";
+    /* A direct ISO parser file walk must model the production root recursion layer. */
+    ctx.recursion_stack   = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type            = CL_TYPE_ISO9660;
+    layer.size            = map->len;
+    layer.fmap            = map;
 
     ck_assert_int_eq(cli_scaniso(&ctx, ISO_OFFSET), CL_ECREAT);
     ck_assert(ctx.scan_incomplete);

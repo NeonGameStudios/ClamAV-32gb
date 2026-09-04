@@ -16,6 +16,33 @@ was made explicit and the final relink is warning-clean. This build
 completion does not replace the still-open linked, sanitizer, corpus, service,
 resource, Sonic1, and release gates.
 
+## ISO-9660 current-source focused audit — 2026-09-04
+
+The canonical `iso9660.c`, `iso9660.h`, `scanners.c`, and `check_clamav.c`
+sources were transferred into the existing Docker environment and the full
+production-linked GCC build was rebuilt coherently after the earlier mixed
+object state was identified. The current canonical hashes are
+`iso9660.c` `52860582d39a62c82f15eb4ce7987213fc7e693bdaa65f337ab4eb5a74807a8c`,
+`iso9660.h`
+`1b9bc4b92e73503be555fa59e127159ca3c31a43d117ac00a40bed503b7f2d33`,
+`scanners.c`
+`ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`, and
+`check_clamav.c`
+`b557e420f43db288d86a7df34a146bb966e7ceeb853fa43360c8cd3856634254`.
+
+The current-source production-linked GCC harness passes `iso_map` 19/19 and
+`iso` 1/1, with zero failures and errors. The four pre-refresh direct
+failures were test-context defects, not parser status regressions:
+descriptor-alignment and volume-read fixtures omitted required scan options,
+the direct Joliet fixture omitted its options pointer, and the
+temporary-output fixture omitted the root recursion layer required by
+`cli_matchmeta()`. The corrected fixtures now exercise their intended
+`CL_EPARSE`, `CL_EREAD`, and `CL_ECREAT` contracts. This is focused
+current-source evidence, not complete ISO/Joliet qualification; full corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+remain open.
+
 ## HWP3 current-source focused audit — 2026-09-04
 
 The current HWP3 parser and test sources were verified against the existing

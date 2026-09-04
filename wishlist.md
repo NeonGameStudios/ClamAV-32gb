@@ -10,7 +10,20 @@
   runs are complete; the pre-existing `uint8_t` test-fixture conversion is
   explicit and the final relink is warning-clean. Complete linked parser cases, sanitizer,
   complete corpora, service parity, materialized-large-file, resource, Sonic1,
-  and final release qualification.
+and final release qualification.
+
+## ISO-9660 current-source focused audit — 2026-09-04
+
+- Retain the coherent current-source production-linked GCC result at
+  `iso_map` 19/19 and `iso` 1/1. The prior four failures were direct-fixture
+  omissions: missing scan options in descriptor/read cases, missing options in
+  the direct Joliet case, and a missing root recursion layer in the temporary
+  output case. The fixtures now model production context and preserve the
+  intended `CL_EPARSE`, `CL_EREAD`, and `CL_ECREAT` statuses.
+- Keep the canonical/container hash equality record and ISO source guards.
+  Complete ISO/Joliet corpus, full C ABI, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, resource, Sonic1, and
+  final PLAN.md qualification open.
 
 ## HWP3 current-source focused audit — 2026-09-04
 
