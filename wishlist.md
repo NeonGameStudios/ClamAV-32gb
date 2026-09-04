@@ -14184,3 +14184,14 @@ qualification before closure.
   corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file, Sonic1, resource, and final parser/release
   qualification before closure.
+
+## Monotonic scan-deadline enforcement — 2026-09-04
+
+- Keep production `MaxScanTime` on a monotonic deadline and route bytecode
+  watchdog admission through the same remaining-time helper. Preserve the
+  legacy timeval fixture path for direct parser callers, but keep clock-read
+  failures fail-visible with `CL_ETIMEOUT`, sticky incomplete state, and cache
+  taint. Retain `test_scan_deadline_check_failure_is_fail_visible` and the
+  source guards. Current-source linked, sanitizer, ingress/service,
+  production-CVD, materialized-large-file, Sonic1, resource, and final
+  PLAN.md qualification remain required.
