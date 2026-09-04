@@ -15017,3 +15017,33 @@ qualification before closure.
   TIFF/BigTIFF corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file/resource, Sonic1, and final
   parser/release qualification remain open.
+
+
+## TNEF/UDF/UUEncode current-source production-linked refresh — 2026-09-04
+
+- Record the current-source production-linked GCC results with zero failures
+  and errors: TNEF `tnef` 18/18, `tnef_map` 3/3, and `tnef_debug` 2/2; UDF
+  `udf_map` 14/14 and `udf_corpus` 1/1; and UUEncode `uuencode_map` 5/5 and
+  `uuencode_corpus` 1/1. These runs cover direct-entry admission,
+  fail-visible read/temporary/deadline boundaries, debug-dump status
+  propagation, and exact nested-child handoff where the focused corpus
+  fixtures provide one.
+- Keep this focused current-source evidence separate from complete
+  TNEF/UDF/UUEncode qualification. Complete parser-family corpora, sanitizer,
+  certified Linux x86-64, production-CVD/service,
+  materialized-large-file/resource, Sonic1, and final parser/release evidence
+  remain required.
+
+
+## XAR/XDP current-source production-linked refresh — 2026-09-04
+
+- Record the current-source production-linked GCC results with zero failures
+  and errors: XAR `xar` 19/19, `xar_metadata` 3/3, `xar_map` 3/3,
+  `xar_corpus` 3/3, and `xar_subdoc` 1/1; XDP `xdp` 3/3, `xdp_map` 5/5,
+  and `xdp_corpus` 1/1. The XAR result corrects stale manifest references
+  to the earlier `xar_map` 2/2 count. The corpus cases reach exact nested
+  child matchers after XAR member extraction and XDP Base64 decoding.
+- Keep this focused current-source evidence separate from complete XAR/XDP
+  qualification. Complete archive/XML corpora, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file/resource, Sonic1,
+  and final parser/release evidence remain required.
