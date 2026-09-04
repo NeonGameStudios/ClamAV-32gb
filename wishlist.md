@@ -14688,7 +14688,7 @@ qualification before closure.
   unpackers, RAR, 7-Zip, ZIP, PDF, bytecode, logical matching, or YARA until
   current-source linked corpus, sanitizer, resource, service, materialized,
   and Sonic1 evidence is complete. The current 597-row manifest remains at
-  0 qualified and 576 release blockers.
+  0 qualified and 583 release blockers.
 - Keep historical support-document sections labeled as evidence snapshots;
   the current status header and final requirement-by-requirement PLAN.md audit
   remain authoritative.

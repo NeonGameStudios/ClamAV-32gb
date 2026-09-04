@@ -3,9 +3,9 @@
 ## Current qualification snapshot — 2026-09-04
 
 The current branch is **not release-qualified**. At the current audit point,
-the authoritative capability manifest has 590 entries: 0 qualified, 143
-bounded, 426 pending, and 21 unsupported. It reports 576 release-blocking
-rows, including 7 required rows marked unsupported, and all 80 enabled parser
+the authoritative capability manifest has 597 entries: 0 qualified, 143
+bounded, 433 pending, and 21 unsupported. It reports 583 release-blocking
+rows, including 7 required rows marked unsupported, and all 75 enabled parser
 rows remain blocked on release evidence. `tools/largefile_release_readiness.sh`
 reports this distinction and fails unless every non-excluded row is
 independently qualified. The release gate also rejects relabelling a required
@@ -14,8 +14,8 @@ allowlist. Historical sections below remain evidence for their stated
 revisions and are not current-source release certification.
 
 The current requirement-level disposition is recorded in `audit1.md` under
-“Current PLAN.md requirement audit”. The latest implementation commit is
-`94bf0943`.
+“Current PLAN.md requirement audit”. The latest audited implementation commit
+is `80cd4218`.
 
 Local Linux ARM64 GCC evidence now covers the latest PDF crypt dictionaries,
 DecodeParms semantics, bounded-spool rollback, and all five bounded-filter

@@ -283,7 +283,7 @@ resource, Sonic1, and final PLAN.md qualification remain required.
 
 The authoritative capability manifest is a coverage contract, not a release
 certificate. At the current audit point it contains 597 capability rows, with
-0 qualified rows and 576 release-blocking bounded, pending, or required-
+0 qualified rows and 583 release-blocking bounded, pending, or required-
 unsupported rows (including 7 required rows marked unsupported). Historical
 entries below preserve engineering evidence and open work; they do not
 substitute for current-source linked execution,
@@ -520,7 +520,7 @@ PLAN.md qualification remain required.
 
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
-and 21 deliberate unsupported rows; 576 rows remain release-blocking under
+and 21 deliberate unsupported rows; 583 rows remain release-blocking under
 the current gate. MIME, OneNote, PE unpackers, RAR, 7-Zip, ZIP, PDF,
 bytecode, logical matching, and YARA still require complete current-source
 production-linked execution, sanitizer evidence, corpus breadth, and the

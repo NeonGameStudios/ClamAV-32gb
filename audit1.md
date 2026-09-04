@@ -617,7 +617,7 @@ remain open.
 The authoritative checkout is the current local tip of
 `largefile-roadmap-qualification`. The current-source static audit reports
 597 capability rows: 0 qualified, 143 bounded, 433 pending, and 21 explicitly
-unsupported, with 576 release-blocking rows. All 75 enabled parser rows
+unsupported, with 583 release-blocking rows. All 75 enabled parser rows
 remain blocked, alongside five explicitly unsupported parser entries. The
 following is the current requirement-by-requirement disposition of PLAN.md,
 not a release claim:
