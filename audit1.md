@@ -24081,3 +24081,20 @@ evidence, not complete family qualification. Complete NSIS/SFX corpus,
 full-C ABI parity, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file/resource, Sonic1, and final parser/release evidence
 remain open.
+
+
+## OOXML/MSXML current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC matrix passes with zero failures and
+errors: `ooxml_entry` 3/3, `ppt_entry` 9/9, `msxml` 10/10,
+`msxml_map` 3/3, `msxml_corpus` 1/1, `hwpml` 2/2, `hwpml_map` 4/4,
+and `hwpml_corpus` 1/1. The run covers invalid rooted PartName admission,
+OOXML metadata failure propagation, PowerPoint VBA entry boundaries, MSXML
+reader/streaming faults and deadlines, and exact decoded or Base64 nested
+marker handoff through the HWPML and MSXML corpus paths.
+
+This is focused current-source evidence rather than OOXML family completion.
+Complete OOXML ZIP-part/content-types/core-properties and Office/VBA corpus,
+full-C ABI parity, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file/resource, Sonic1, and final parser/release evidence
+remain open.

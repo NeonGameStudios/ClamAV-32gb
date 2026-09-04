@@ -14749,3 +14749,18 @@ qualification before closure.
   certified Linux x86-64, production-CVD/service,
   materialized-large-file/resource, Sonic1, and final parser/release
   qualification remain required.
+
+
+## OOXML/MSXML current-source production-linked refresh — 2026-09-04
+
+- Retain the current-source GCC production-linked results: `ooxml_entry` 3/3,
+  `ppt_entry` 9/9, `msxml` 10/10, `msxml_map` 3/3,
+  `msxml_corpus` 1/1, `hwpml` 2/2, `hwpml_map` 4/4, and
+  `hwpml_corpus` 1/1 with zero failures and errors.
+- Retain coverage for invalid rooted PartName admission, OOXML metadata failure
+  propagation, PowerPoint VBA boundaries, MSXML reader/streaming faults and
+  deadlines, and exact decoded/Base64 nested-marker handoff.
+- Keep complete OOXML Office/VBA corpus, full-C ABI parity, sanitizer,
+  certified Linux x86-64, production-CVD/service,
+  materialized-large-file/resource, Sonic1, and final parser/release
+  qualification open.
