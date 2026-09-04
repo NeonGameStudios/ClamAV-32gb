@@ -14220,3 +14220,14 @@ qualification before closure.
   source guards. Current-source linked, sanitizer, ingress/service,
   production-CVD, materialized-large-file, Sonic1, resource, and final
   PLAN.md qualification remain required.
+
+## MIME first-header embedded-NUL admission — 2026-09-04
+
+- Keep the initial MIME line on the bounded, length-aware reader and pass its
+  explicit byte length into `parseEmailFile()`. This prevents `strlen()` from
+  hiding an embedded NUL in the first header before the existing malformed
+  header check.
+- Retain `test_mbox_first_header_embedded_nul_is_fail_visible` and its source
+  guards. The public linked run, complete MIME corpus, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
+  resource, and final PLAN.md qualification remain required.

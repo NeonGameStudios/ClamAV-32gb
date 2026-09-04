@@ -41503,6 +41503,48 @@ START_TEST(test_mbox_public_api_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbox_first_header_embedded_nul_is_fail_visible)
+{
+    static const uint8_t input[] = {
+        'C', 'o', 'n', 't', 'e', 'n', 't', '-', 'T', 'y', 'p', 'e', ':', ' ',
+        't', 'e', 'x', 't', '/', 'p', 'l', 'a', 'i', 'n', 0, 'X', '\n',
+        '\n', 'b', 'o', 'd', 'y', '\n'
+    };
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_MAIL;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_MAIL", NULL);
+    ck_assert_msg(ret != CL_SUCCESS,
+                  "first MIME header embedded NUL was reduced to a clean result");
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_message_save_partial_output_creation_status_is_fail_visible)
 {
     struct cl_engine engine;
@@ -62630,6 +62672,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_mail_api);
     tcase_add_checked_fixture(tc_mail_api, cl_setup, cl_teardown);
     tcase_add_test(tc_mail_api, test_mbox_public_api_read_failure_is_fail_visible);
+    tcase_add_test(tc_mail_api, test_mbox_first_header_embedded_nul_is_fail_visible);
     tcase_add_test(tc_mail_api, test_message_save_partial_output_creation_status_is_fail_visible);
     tcase_add_test(tc_mail_api, test_mhtml_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_mail_map);
@@ -64048,6 +64091,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_uuencode_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_uuencode_attachment_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_mbox_first_header_embedded_nul_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_line_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_header_lookahead_read_failure_is_fail_visible);

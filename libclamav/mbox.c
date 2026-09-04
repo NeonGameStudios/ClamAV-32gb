@@ -267,7 +267,7 @@ static void mbox_record_fileblob_failure(mbox_ctx *mctx, const fileblob *fb,
 
 static int cli_parse_mbox(const char *dir, cli_ctx *ctx);
 static int scanFileblob(mbox_ctx *mctx, fileblob *fb);
-static message *parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821Table, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status);
+static message *parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821Table, const char *firstLine, size_t firstLineLength, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status);
 static message *parseEmailHeaders(message *m, const table_t *rfc821Table, bool *heuristicFound);
 static int parseEmailHeader(message *m, const char *line, const table_t *rfc821, cli_ctx *ctx, bool *heuristicFound);
 static cl_error_t parseMHTMLComment(const char *comment, cli_ctx *ctx, void *wrkjobj, void *cbdata);
@@ -593,19 +593,13 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
     if (mbox_check_deadline(ctx))
         return CL_ETIMEOUT;
 
-    if (!fmap_gets(map, buffer, &at, sizeof(buffer))) {
+    if (!getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx,
+                            &line_length, &line_failure, false)) {
         /* EOF at the end of the map is an empty message. A nonempty map that
          * could not yield its first line indicates an incomplete read or
          * invalid fmap range and must remain fail-visible. */
-        if (at < map->len) {
-            cli_mark_scan_incomplete(ctx, "MIME message input could not be read completely");
-            return CL_EREAD;
-        }
-        return CL_CLEAN;
+        return line_failure == CL_SUCCESS ? CL_CLEAN : line_failure;
     }
-
-    line_length = mbox_line_content_length((const unsigned char *)buffer, strlen(buffer));
-    buffer[line_length] = '\0';
 
 #ifdef CL_THREAD_SAFE
     pthread_mutex_lock(&tables_mutex);
@@ -914,7 +908,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         cl_error_t parse_status = CL_SUCCESS;
         body                = NULL;
         if (retcode == CL_SUCCESS) {
-            body = parseEmailFile(map, &at, rfc821, buffer, dir, ctx, &heuristicFound, &parse_status);
+            body = parseEmailFile(map, &at, rfc821, buffer, line_length, dir, ctx, &heuristicFound, &parse_status);
             if (heuristicFound) {
                 retcode = CL_VIRUS;
             } else if (parse_status != CL_SUCCESS) {
@@ -1233,7 +1227,7 @@ haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound)
  * handled ungracefully...
  */
 static message *
-parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status)
+parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *firstLine, size_t firstLineLength, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status)
 {
     bool inHeader     = true;
     bool bodyIsEmpty  = true;
@@ -1271,9 +1265,7 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
     CLI_CALLOC_OR_GOTO_DONE(head, 1, sizeof(ReadStruct));
     curr = head;
 
-    first_line_len = 0;
-    while (first_line_len < sizeof(buffer) - 1U && firstLine[first_line_len] != '\0')
-        first_line_len++;
+    first_line_len = MIN(firstLineLength, sizeof(buffer) - 1U);
     memcpy(buffer, firstLine, first_line_len);
     buffer[first_line_len] = '\0';
     line_length           = first_line_len;

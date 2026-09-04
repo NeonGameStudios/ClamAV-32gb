@@ -12951,3 +12951,16 @@ The focused injected-clock regression verifies this fail-closed boundary.
 This is source and focused-regression evidence only; current-source linked,
 sanitizer, ingress/service, production-CVD, materialized-large-file, Sonic1,
 resource, and final parser/release qualification remain required.
+
+## MIME first-header embedded-NUL admission — 2026-09-04
+
+The first MIME line now uses the same bounded, length-aware reader as later
+lines. Its explicit byte length is passed into `parseEmailFile()`, so an
+embedded NUL in the first header cannot be shortened by `strlen()` before the
+confirmed mail layer's existing malformed-header check. The
+`test_mbox_first_header_embedded_nul_is_fail_visible` regression is
+source-registered and requires a non-clean, non-cacheable public
+`CL_TYPE_MAIL` result. Production-linked execution, complete MIME corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final release qualification
+remain required.

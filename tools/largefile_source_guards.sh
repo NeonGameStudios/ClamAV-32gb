@@ -119,6 +119,8 @@ contains libclamav/message.c 'MIME body source spool could not be read completel
 contains libclamav/message.c 'int messageAddBytes(message *m, const unsigned char *data, size_t len)'
 contains libclamav/mbox.c 'embedded NUL bytes.'
 contains libclamav/mbox.c 'MIME header line contains an embedded NUL'
+contains libclamav/mbox.c 'size_t firstLineLength'
+contains unit_tests/check_clamav.c 'test_mbox_first_header_embedded_nul_is_fail_visible'
 contains libclamav/mbox.c 'read_mime_spool_line'
 contains unit_tests/check_clamav.c 'test_mime_body_byte_span_preserves_embedded_nul'
 contains libclamav/fmap.h 'fmap_need_offstr_once_status'
@@ -1906,7 +1908,7 @@ contains libclamav/mbox.c 'cli_mbox called with context missing detector configu
 contains libclamav/mbox.c 'if (ctx->engine == NULL)'
 contains libclamav/mbox.c 'if (ctx->options == NULL)'
 contains libclamav/mbox.c 'if (ctx->dconf == NULL)'
-contains libclamav/mbox.c "while (first_line_len < sizeof(buffer) - 1U && firstLine[first_line_len] != '\\0')"
+contains libclamav/mbox.c 'first_line_len = MIN(firstLineLength, sizeof(buffer) - 1U)'
 contains libclamav/mbox.c "buffer[first_line_len] = '\\0'"
 contains unit_tests/check_clamav.c 'test_mbox_initial_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_mbox_public_api_read_failure_is_fail_visible'

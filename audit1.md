@@ -23299,3 +23299,20 @@ partially null windows. Current-source production-GCC compilation and linked
 execution, complete 7-Zip/BCJ2/PPMd corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
+
+## MIME first-header embedded-NUL admission — 2026-09-04
+
+The first MIME line was still read through `fmap_gets()` and then measured with
+`strlen()`. An embedded NUL in that first header could therefore be shortened
+before `parseEmailFile()` inspected it, allowing a malformed confirmed mail
+layer to continue as if the header had ended at the NUL. The initial line now
+uses the same bounded, length-aware reader as subsequent lines, and the
+explicit first-line length is passed into `parseEmailFile()` so the existing
+header NUL check sees every byte before the terminator.
+
+`test_mbox_first_header_embedded_nul_is_fail_visible` is source-registered and
+requires a non-clean, non-cacheable public `CL_TYPE_MAIL` result. The current
+source and manifest guards still need the production-linked test execution;
+complete MIME corpus, sanitizer, certified Linux x86-64, production-CVD/
+service, materialized-large-file, Sonic1, resource, and final PLAN.md
+qualification remain required.
