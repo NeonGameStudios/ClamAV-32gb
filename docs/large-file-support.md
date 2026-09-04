@@ -703,6 +703,19 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## UDF current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC UDF run exposed two evidence defects:
+the anchor-sequence timeout fixture expected a parser-local reason instead of
+the shared `Heuristics.Limits.Exceeded.MaxScanTime`, and the allocation
+alignment fixture omitted the scan-options pointer required by production
+parser admission. After correcting the fixtures, `udf_map` passes 14/14 and
+`udf_corpus` passes 1/1 with zero failures or errors. No UDF production-code
+change was required. This is focused evidence, not final UDF or release
+certification; complete corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 ## TNEF attachment-blob admission — 2026-09-04
 
 TNEF now permits a newly created attachment `fileblob` to remain without a

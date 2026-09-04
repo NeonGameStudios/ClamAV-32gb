@@ -55471,7 +55471,7 @@ START_TEST(test_udf_anchor_descriptor_sequence_timeout_is_fail_visible)
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "UDF main descriptor sequence traversal reached the configured time limit");
+                     "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
     ck_assert(state.expired);
 
@@ -56284,6 +56284,7 @@ START_TEST(test_udf_allocation_descriptor_alignment_is_fail_visible)
         UDF_TEST_MALFORMED_ALLOC_LEN = 17
     };
     uint8_t *data;
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
@@ -56330,8 +56331,11 @@ START_TEST(test_udf_allocation_descriptor_alignment_is_fail_visible)
 
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
+    /* Direct UDF fixtures must model production parser-options admission. */
+    memset(&options, 0, sizeof(options));
     map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
     ck_assert_ptr_nonnull(map);
+    ctx.options = &options;
     ctx.engine = &engine;
     ctx.fmap   = map;
 

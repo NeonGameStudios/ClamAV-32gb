@@ -1,5 +1,21 @@
 # Independent read-only audit of audit.md
 
+## UDF current-source focused audit — 2026-09-04
+
+The coherent current-source production-linked GCC harness initially exposed
+two UDF evidence defects. The anchor-sequence timeout fixture still expected
+the parser-local reason even though the shared limit layer authoritatively
+records `Heuristics.Limits.Exceeded.MaxScanTime`; the allocation-descriptor
+alignment fixture omitted the required production scan-options pointer and
+therefore returned `CL_EARG` before reaching its alignment assertion. The
+fixtures now model production admission and the canonical timeout contract.
+The focused runs pass `udf_map` 14/14 and `udf_corpus` 1/1 with zero failures
+or errors. No UDF production-code change was required in this refresh. This
+is focused current-source evidence, not complete UDF or release
+certification: complete corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and
+requirement-by-requirement PLAN.md qualification remain open.
+
 ## TNEF attachment-blob admission — 2026-09-04
 
 The current-source production-linked GCC harness initially exposed a real TNEF

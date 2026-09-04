@@ -2814,6 +2814,8 @@ contains unit_tests/check_clamav.c 'test_udf_missing_file_set_descriptor_is_fail
 contains unit_tests/check_clamav.c 'test_udf_anchor_descriptor_sequence_timeout_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_udf_declared_information_length_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_udf_allocation_descriptor_alignment_is_fail_visible'
+contains unit_tests/check_clamav.c 'Direct UDF fixtures must model production parser-options admission.'
+contains unit_tests/check_clamav.c 'Heuristics.Limits.Exceeded.MaxScanTime'
 contains unit_tests/check_clamav.c 'test_udf_corpus_detects_embedded_mz'
 contains unit_tests/check_clamav.c 'A directory block may contain multiple variable-sized FIDs'
 contains unit_tests/check_clamav.c 'The FID ICB is the authoritative address of its File Entry'

@@ -1,5 +1,19 @@
 # Wishlist
 
+## UDF current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `udf_map` 14/14 and
+  `udf_corpus` 1/1. The timeout fixture now expects the canonical shared
+  `Heuristics.Limits.Exceeded.MaxScanTime` reason, and the alignment fixture
+  supplies the production-required scan-options pointer before testing the
+  malformed allocation-descriptor length.
+- No UDF production-code change was required in this refresh. Keep the source
+  guard for production-options fixture modeling and the canonical timeout
+  assertion.
+- Complete UDF corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, resource, Sonic1, and
+  final PLAN.md qualification open.
+
 ## TNEF attachment-blob admission — 2026-09-04
 
 - Keep newly created TNEF attachment blobs in the unbound state until
