@@ -24196,3 +24196,16 @@ This is focused current-source evidence, not complete script/HTML
 qualification. Complete normalization corpus, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file/resource, Sonic1, and
 final parser/release evidence remain open.
+
+
+## SIS current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC SIS matrix passes with zero failures
+and errors: `sis` 1/1 against materialized `clam.sis`,
+`sis_structure` 3/3, `sis_member` 1/1, and `sis_map` 3/3. The corpus
+case reaches the exact nested MZP matcher after compressed-member extraction.
+
+This is focused current-source evidence, not complete SIS qualification.
+Complete SIS corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file/resource, Sonic1, and final
+parser/release evidence remain open.
