@@ -4756,8 +4756,8 @@ offset used to locate that PE must not be limited to 32 bits.
 
 ## Current ClamAV-32gb fork status
 
-The current fork implementation is anchored at the audit-point commit
-`9fa68c4172c23e3a8fb9c68b1fe205afcff3b975` on
+The current fork implementation is anchored at the current audited commit
+`130770f2debb3d3c2a7b2205e62af239e4fbf4eb` on
 `largefile-roadmap-qualification`; documentation and workflow follow-up is
 recorded in the current source tree and must be revalidated after each new
 commit.
@@ -4865,12 +4865,16 @@ preserved outside the authoritative `out/` records. Evidence is preserved at
 `/work/evidence/cross-parser-limit-matrix-zip-release-20260814-run1` and
 `/work/evidence/cross-parser-limit-matrix-zip-sanitizer-20260814-run1`.
 
-The historical cache-drop procedure passed synchronized two- and four-worker
-raw-edge scans in both builds: all twelve clients detected the marker at the exact
-engine offset, with zero temporary files and no sanitizer diagnostics. Summed
-per-worker peak RSS upper bounds were 200,828/272,796 KiB at two workers and
-402,616/543,280 KiB at four workers (Release/sanitizer). Evidence is preserved
-at `/work/evidence/concurrency-2way-exact-edge-final-release-20260814`,
+The historical cache-drop procedure used synchronized two- and four-worker
+raw-edge scans in both builds: all twelve clients detected the marker at the
+exact engine offset, with zero temporary files and no sanitizer diagnostics.
+Summed per-worker peak RSS upper bounds were 200,828/272,796 KiB at two
+workers and 402,616/543,280 KiB at four workers (Release/sanitizer). This is
+historical concurrency evidence only. It predates and does not qualify the
+current certified service profile, which is one daemon worker with a two-entry
+queue and two simultaneous clients; the current service harness and its
+verifier are authoritative for that requirement. Evidence is preserved at
+`/work/evidence/concurrency-2way-exact-edge-final-release-20260814`,
 `/work/evidence/concurrency-2way-exact-edge-final-sanitizer-20260814`,
 `/work/evidence/concurrency-4way-exact-edge-final-release-20260814`, and
 `/work/evidence/concurrency-4way-exact-edge-final-sanitizer-20260814`.

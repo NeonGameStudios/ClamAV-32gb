@@ -13991,6 +13991,8 @@ qualification remain open.
   one daemon worker, and the certified two-entry queue with
   `MaxThreads=1`/`MaxQueue=2`; evidence must carry and verify the values from
   the configuration actually used rather than using a “multiworker” label.
+  Keep historical two-/four-worker measurements in the support document
+  explicitly marked as non-authoritative and superseded for this gate.
 
 ## MEW reconstructed-coordinate admission — 2026-09-03
 

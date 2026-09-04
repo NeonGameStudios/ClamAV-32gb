@@ -578,7 +578,9 @@ parallel clients, and the post-run verifier requires explicit one-worker,
 two-client, two-entry-queue, and pass markers. This is a qualification-contract
 correction, not evidence that multiple daemon workers are supported. The real
 service, production-CVD, exact-edge milter, resource, sanitizer, and Sonic1
-runs remain release gates.
+runs remain release gates. The historical support document's old two-/four-
+worker measurements are now explicitly labeled as non-authoritative evidence
+and cannot be mistaken for this current service profile.
 
 ## MEW reconstructed-coordinate admission — 2026-09-03
 
