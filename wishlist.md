@@ -14817,3 +14817,16 @@ qualification before closure.
   RIFF/member corpus, sanitizer, certified Linux x86-64,
   production-CVD/service, materialized-large-file/resource, Sonic1, and final
   parser/release qualification remain open.
+
+
+## RTF current-source production-linked refresh — 2026-09-04
+
+- Record the corrected current-source production-linked GCC results:
+  `rtf_map` 16/16 and `rtf` 1/1 with zero failures and errors. The direct
+  matrix now supplies production-shaped scan options for sticky completion, and
+  the corpus case reaches the exact embedded-MZ child alert through
+  materialized `clam.exe.rtf`.
+- Keep this focused evidence separate from final RTF qualification. Complete
+  RTF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file/resource, Sonic1, and final parser/release
+  qualification remain open.

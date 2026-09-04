@@ -12514,16 +12514,20 @@ END_TEST
 START_TEST(test_rtf_sticky_incomplete_result_is_fail_visible)
 {
     static const uint8_t valid_rtf[] = {'{', '\\', 'r', 't', 'f', '1', '}'};
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
 
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(valid_rtf, sizeof(valid_rtf));
     ck_assert_ptr_nonnull(map);
     engine.keeptmp             = 0;
     ctx.engine                 = &engine;
+    ctx.options                = &options;
     ctx.fmap                   = map;
     ctx.this_layer_tmpdir      = tmpdir;
     ctx.scan_incomplete        = true;

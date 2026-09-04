@@ -24156,3 +24156,17 @@ This is focused current-source evidence, not complete RIFF qualification.
 Complete RIFF/member corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file/resource, Sonic1, and final
 parser/release evidence remain open.
+
+
+## RTF current-source production-linked refresh — 2026-09-04
+
+The corrected current-source production-linked GCC RTF matrix passes with zero
+failures and errors: `rtf_map` 16/16 and `rtf` 1/1. The direct matrix now
+uses production-shaped scan options for the sticky-completion fixture, and the
+corpus case passes against the materialized `clam.exe.rtf` fixture with the
+exact embedded-MZ child alert.
+
+This is focused current-source evidence, not complete RTF qualification.
+Complete RTF corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file/resource, Sonic1, and final
+parser/release evidence remain open.
