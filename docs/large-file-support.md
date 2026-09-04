@@ -703,6 +703,19 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## TNEF attachment-blob admission — 2026-09-04
+
+TNEF now permits a newly created attachment `fileblob` to remain without a
+descriptor or pathname until `fileblobSetFilename()` assigns its temporary
+output. The prior early `fp`/`fullname` check rejected every fresh attachment
+before data copying, masking the intended `CL_EREAD`, `CL_ERESOURCE`, and
+`CL_ECREAT` statuses as `CL_EFORMAT`. The current-source production-linked GCC
+harness passes `tnef` 18/18, `tnef_map` 3/3, and `tnef_debug` 2/2, including the
+materialized `clam.tnef` exact-child corpus case. This is focused parser
+evidence, not final TNEF or release certification; complete corpus, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final PLAN.md qualification remain required.
+
 ## TNEF fileblob status reconciliation — 2026-09-02
 
 TNEF attachment handling now preserves the specific status retained by a

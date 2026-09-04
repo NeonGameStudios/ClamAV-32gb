@@ -88,6 +88,14 @@ static cl_error_t tnef_fileblob_status(const fileblob *fb)
     return fb->incomplete_status != CL_SUCCESS ? fb->incomplete_status : CL_ERESOURCE;
 }
 
+static int tnef_fileblob_ready(const fileblob *fb)
+{
+    if (fb == NULL || fb->isIncomplete)
+        return 0;
+
+    return fb->fp != NULL && fb->fullname != NULL;
+}
+
 int cli_tnef(const char *dir, cli_ctx *ctx)
 {
     uint32_t i32;
@@ -473,13 +481,13 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
                     return CL_EMEM;
                 }
                 fileblobSetCTX(*fbref, ctx);
-                if ((*fbref)->isIncomplete || (*fbref)->fp == NULL || (*fbref)->fullname == NULL) {
+                if ((*fbref)->isIncomplete) {
                     free(string);
                     return tnef_fileblob_status(*fbref);
                 }
             }
             fileblobSetFilename(*fbref, dir, string);
-            if ((*fbref)->isIncomplete || (*fbref)->fp == NULL || (*fbref)->fullname == NULL) {
+            if (!tnef_fileblob_ready(*fbref)) {
                 free(string);
                 return tnef_fileblob_status(*fbref);
             }
@@ -494,11 +502,11 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
                 }
             }
             fileblobSetCTX(*fbref, ctx);
-            if ((*fbref)->isIncomplete || (*fbref)->fp == NULL || (*fbref)->fullname == NULL)
+            if ((*fbref)->isIncomplete)
                 return tnef_fileblob_status(*fbref);
             if (fileblobGetFilename(*fbref) == NULL) {
                 fileblobSetFilename(*fbref, dir, "tnef");
-                if ((*fbref)->isIncomplete || (*fbref)->fp == NULL || (*fbref)->fullname == NULL)
+                if (!tnef_fileblob_ready(*fbref))
                     return tnef_fileblob_status(*fbref);
             }
             todo = length;

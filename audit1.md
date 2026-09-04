@@ -1,5 +1,22 @@
 # Independent read-only audit of audit.md
 
+## TNEF attachment-blob admission — 2026-09-04
+
+The current-source production-linked GCC harness initially exposed a real TNEF
+parser defect: a newly created attachment `fileblob` was rejected because it
+had no descriptor or pathname before `fileblobSetFilename()` had been called.
+That made ordinary attachment extraction return `CL_EFORMAT` and masked the
+intended `CL_EREAD`, `CL_ERESOURCE`, and `CL_ECREAT` failure contracts. TNEF
+now checks only the blob's actual incomplete state after binding its context,
+then assigns the temporary filename before validating descriptor/output
+admission. The focused current-source runs pass `tnef` 18/18,
+`tnef_map` 3/3, and `tnef_debug` 2/2; the materialized `clam.tnef` corpus
+case reaches the exact embedded MZ matcher. This is a production-linked
+parser fix and refreshed evidence, not final TNEF or release certification:
+complete corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and
+requirement-by-requirement PLAN.md qualification remain open.
+
 ## Current-source compile audit — 2026-09-04
 
 The first authoritative current-source relink was killed during parallel Rust

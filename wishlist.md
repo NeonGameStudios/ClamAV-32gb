@@ -1,5 +1,20 @@
 # Wishlist
 
+## TNEF attachment-blob admission — 2026-09-04
+
+- Keep newly created TNEF attachment blobs in the unbound state until
+  `fileblobSetFilename()` assigns their temporary output. The parser must not
+  treat the expected pre-filename `fp`/`fullname` absence as an immediate
+  resource failure.
+- Retain the current-source production-linked GCC evidence: `tnef` 18/18,
+  `tnef_map` 3/3, `tnef_debug` 2/2, and the materialized `clam.tnef` exact
+  nested-child matcher. The regression now proves the intended
+  `CL_EREAD`/`CL_ERESOURCE`/`CL_ECREAT` paths instead of masking them as
+  `CL_EFORMAT`.
+- Keep complete TNEF corpus breadth, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file, resource, Sonic1, and
+  final PLAN.md qualification open.
+
 ## Current-source compile audit — 2026-09-04
 
 - Keep the current-source GCC build authoritative: the existing linked harness
