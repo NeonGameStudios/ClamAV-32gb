@@ -192,6 +192,22 @@ Complete compressed corpus breadth, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, resource, Sonic1, and final
 PLAN.md qualification remain required.
 
+## Current CABSFX focused audit — 2026-09-04
+
+The current-source production-linked GCC `cabsfx` TCase passes 3/3. It covers
+valid prefixed CAB-SFX admission with exact nested-child matching, a confirmed
+header whose declared CAB extent exceeds the containing map, and an in-range
+fixed-header fmap callback failure. The malformed cases preserve distinct
+`CL_EPARSE` and `CL_EREAD` statuses, clear stale verdict state, mark the
+confirmed layer incomplete, and disable fmap caching. Review found no
+additional safe production fix in the CABSFX admission or libmspack handoff
+path during this pass.
+
+These are focused current-source results, not final CABSFX qualification.
+Complete CAB/SFX corpus breadth, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file, resource, Sonic1, and final
+PLAN.md qualification remain required.
+
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
 and 21 deliberate unsupported rows; 576 rows remain release-blocking under

@@ -179,6 +179,23 @@ certified Linux x86-64, production-CVD/service, materialized-large-file,
 resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
 remain open.
 
+## CABSFX current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC `cabsfx` TCase passes 3/3. It covers
+valid prefixed CAB-SFX admission with exact nested-child matching, a confirmed
+header whose declared CAB extent exceeds the containing map, and an in-range
+fixed-header fmap callback failure. The two malformed cases preserve their
+distinct `CL_EPARSE` and `CL_EREAD` statuses, clear stale verdict state, mark
+the confirmed layer incomplete, and disable fmap caching. Review found no
+additional safe production fix in the CABSFX admission or libmspack handoff
+path during this pass.
+
+This is focused current-source evidence, not final CABSFX qualification.
+Complete CAB/SFX corpus breadth, full current-C-ABI execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
+remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of

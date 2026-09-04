@@ -142,6 +142,20 @@
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   resource, Sonic1, and final PLAN.md qualification open.
 
+## CABSFX current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC `cabsfx` evidence at 3/3:
+  valid prefixed CAB-SFX admission with exact nested-child matching, a
+  confirmed extent beyond the containing map, and an in-range fixed-header
+  fmap callback failure.
+- Preserve the distinct `CL_EPARSE`/`CL_EREAD` outcomes, stale-verdict
+  clearing, incomplete-layer state, and cache taint for the two confirmed
+  failure cases. No additional safe source fix was identified in the CABSFX
+  admission or libmspack handoff path.
+- Keep complete CAB/SFX corpus breadth, full C/Rust ABI, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, resource,
+  Sonic1, and final PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback
