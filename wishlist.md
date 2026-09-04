@@ -273,6 +273,22 @@
   materialized-large-file, resource, Sonic1, and final requirement-by-
   requirement PLAN.md qualification open.
 
+## HTML current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `html` 13/13,
+  `bz_map` 5/5, and `text_encoding` 3/3. Coverage includes normalization and
+  generated-output limits, matcher-work accounting, HTML/script and UTF-16
+  read failures, deadline/cleanup behavior, URI metadata failure, and the
+  materialized RFC2397 corpus with exact nested MZP matching.
+- The HTML sticky-incomplete reconciliation now converts only clean statuses
+  to `CL_EPARSE`, preserving `CL_EMEM` and other stronger failures returned by
+  URI metadata recording. No additional safe HTML production fix was
+  identified in this pass.
+- Keep complete HTML/normalizer/script corpus breadth, full C/Rust ABI,
+  sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file, resource, Sonic1, and final requirement-by-
+  requirement PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

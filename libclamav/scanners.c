@@ -4160,7 +4160,9 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
 
     /* A failed HTML normalization must not be scanned as a complete layer. */
     if (ctx->scan_incomplete) {
-        status = CL_EPARSE;
+        /* Preserve a stronger parser or operational status from normalization. */
+        if (status == CL_SUCCESS || status == CL_CLEAN)
+            status = CL_EPARSE;
         goto done;
     }
 

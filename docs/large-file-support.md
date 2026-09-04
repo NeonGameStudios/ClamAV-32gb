@@ -1395,6 +1395,22 @@ BMP/JPEG-2000/graphics corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 parser/release qualification remain required.
 
+## Current HTML focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `html` 13/13,
+`bz_map` 5/5, and `text_encoding` 3/3. Coverage includes normalization and
+generated-output limits, matcher-work accounting, HTML/script and UTF-16 read
+failures, deadline/cleanup behavior, URI metadata recording failure, and the
+materialized RFC2397 corpus with exact nested MZP matching.
+
+The HTML sticky-incomplete branch now converts only clean statuses to
+`CL_EPARSE`; a URI metadata `CL_EMEM` or other stronger operational status is
+preserved while the layer remains incomplete and non-cacheable. No additional
+safe HTML parser change was identified. Complete HTML/normalizer/script corpus,
+sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, Sonic1, resource, and final parser/release
+qualification remain required.
+
 ## BZip2/GZip materialized corpus refresh — 2026-08-31
 
 The canonical compressed scanner and unit-test sources were transferred into

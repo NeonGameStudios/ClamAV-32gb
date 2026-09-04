@@ -351,6 +351,28 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, resource, Sonic1, and final requirement-by-
 requirement PLAN.md qualification remain open.
 
+## HTML current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `html` 13/13,
+`bz_map` 5/5, and `text_encoding` 3/3. The HTML case covers normalization
+and generated-output limits, matcher-work accounting, HTML/script input and
+UTF-16 read failures, shared-deadline behavior, cleanup close failures, URI
+metadata recording failures, and the materialized `clam.exe.html` RFC2397
+corpus with exact nested MZP matching.
+
+The relinked HTML case exposed a status-precedence defect: URI metadata
+recording returned `CL_EMEM`, but the post-normalization sticky-incomplete
+branch unconditionally flattened it to `CL_EPARSE`. That branch now converts
+only clean statuses, preserving stronger allocation and operational failures
+while retaining fail-visible incomplete state. No additional safe HTML
+normalizer or scanner fix was identified in this pass.
+
+This is focused current-source evidence, not final HTML qualification. Complete
+HTML/normalizer/script corpus breadth, full current-C-ABI execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
+remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of
