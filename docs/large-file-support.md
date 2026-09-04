@@ -32,6 +32,20 @@ pass; current-source linked execution, sanitizer, production-CVD/service,
 materialized-large-file, resource, Sonic1, and final PLAN.md qualification
 remain open.
 
+## Legacy file-inspection callback raw fallback — 2026-09-04
+
+The deprecated whole-buffer file-inspection callback remains explicitly
+unsupported for layers above the individual contiguous-allocation ceiling.
+When that callback cannot materialize the complete layer, the scanner now
+continues through the mandatory outer raw matcher while retaining sticky
+incomplete and non-cacheable state for a non-detecting result. Callback-
+requested trust/block and unexpected callback statuses remain terminal. The
+guarded callback-backed `CLI_MAX_ALLOCATION + 1` regression uses an early raw
+signature to verify detection without materializing the full layer. Full
+callback/ingress parity, current-source linked execution, sanitizer,
+production-CVD/service, materialized-large-file, Sonic1, resource, and final
+PLAN.md qualification remain open.
+
 ## Scan-deadline initialization failure — 2026-09-03
 
 The common scan entry previously logged and ignored a `gettimeofday()` failure
