@@ -24098,3 +24098,19 @@ Complete OOXML ZIP-part/content-types/core-properties and Office/VBA corpus,
 full-C ABI parity, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file/resource, Sonic1, and final parser/release evidence
 remain open.
+
+
+## HFS+ current-source production-linked refresh — 2026-09-04
+
+The HFS+ direct-parser fixtures were corrected to satisfy the production
+`ctx->options` admission guard; the prior failures were all pre-parser
+`CL_EARG`, not HFS+ parser failures. After rebuilding the Check binary from
+the authoritative source, the focused GCC matrix passes with zero failures and
+errors: `hfs_map` 25/25, `hfs_inline` 2/2, and `hfs_fork` 1/1. The timeout
+oracle now asserts the canonical shared `Heuristics.Limits.Exceeded.MaxScanTime`
+reason recorded by the deadline helper.
+
+No HFS+ production-code change was required in this refresh. Complete
+catalog/attribute/resource/ExtentOverflow corpus, full-C ABI parity, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file/
+resource, Sonic1, and final parser/release evidence remain open.

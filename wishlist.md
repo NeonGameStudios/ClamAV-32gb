@@ -14764,3 +14764,17 @@ qualification before closure.
   certified Linux x86-64, production-CVD/service,
   materialized-large-file/resource, Sonic1, and final parser/release
   qualification open.
+
+
+## HFS+ current-source production-linked refresh — 2026-09-04
+
+- Correct the HFS+ direct fixtures to supply production-shaped `ctx->options`
+  state after the parser’s options admission guard; the previous 16 failures
+  were pre-parser `CL_EARG` results, not HFS+ parser regressions.
+- Retain the rebuilt current-source GCC results: `hfs_map` 25/25,
+  `hfs_inline` 2/2, and `hfs_fork` 1/1 with zero failures and errors. Keep
+  the canonical shared timeout reason in the deadline oracle.
+- Keep complete HFS+ catalog/attribute/resource/ExtentOverflow corpus,
+  full-C ABI parity, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized-large-file/resource, Sonic1, and final parser/release
+  qualification open.

@@ -56956,6 +56956,15 @@ static void test_hfsplus_invalid_leaf(uint8_t *data, size_t offset)
     test_hfsplus_put_be16(data + offset + 4096 - 2, 0);
 }
 
+static void test_hfsplus_set_scan_options(cli_ctx *ctx)
+{
+    static struct cl_scan_options options;
+
+    /* Direct HFS+ fixtures must model production scan-options admission. */
+    memset(&options, 0, sizeof(options));
+    ctx->options = &options;
+}
+
 START_TEST(test_hfsplus_missing_map_is_fail_visible)
 {
     struct cl_engine engine;
@@ -57061,6 +57070,7 @@ START_TEST(test_hfsplus_sticky_incomplete_result_is_fail_visible)
     ctx.scan_incomplete_reason = "pre-existing HFS+ incomplete state";
     map->dont_cache_flag       = true;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -57147,8 +57157,8 @@ START_TEST(test_hfsplus_resource_map_uses_declared_offsets)
     ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
     ck_assert_int_eq(cli_hfsplus_seek_to_cmpf_resource(&ctx, fd, &resource_size), CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "HFS+ compressed resource type-table traversal reached the configured time limit");
+    /* cli_checktimelimit records the canonical shared timeout reason first. */
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
 
     /* A reference offset outside the bounded map must not fall through to a
      * cursor-relative read or expose unrelated bytes as a resource entry. */
@@ -57249,6 +57259,7 @@ START_TEST(test_hfsplus_declared_volume_boundary_is_fail_visible)
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -57306,6 +57317,7 @@ START_TEST(test_hfsplus_catalog_key_length_padding_is_fail_visible)
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -57363,6 +57375,7 @@ START_TEST(test_hfsplus_catalog_name_boundary_is_fail_visible)
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -57420,6 +57433,7 @@ START_TEST(test_hfsplus_catalog_leaf_chain_is_fail_visible)
     ctx.fmap                = map;
     ctx.this_layer_tmpdir   = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -57496,6 +57510,7 @@ START_TEST(test_hfsplus_attribute_leaf_chain_is_fail_visible)
     ctx.fmap                = map;
     ctx.this_layer_tmpdir   = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -57689,6 +57704,7 @@ START_TEST(test_hfsplus_declared_attributes_failure_is_fail_visible)
     ctx.engine = &engine;
     ctx.fmap   = map;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -57748,6 +57764,7 @@ START_TEST(test_hfsplus_temporary_directory_failure_is_fail_visible)
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = invalid_tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_ETMPDIR);
     ck_assert(ctx.scan_incomplete);
@@ -57798,6 +57815,7 @@ START_TEST(test_hfsplus_tree_header_read_failure_is_fail_visible)
     ctx.engine = &engine;
     ctx.fmap   = map;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
@@ -57825,6 +57843,7 @@ START_TEST(test_hfsplus_volume_header_read_failure_is_fail_visible)
     ctx.engine = &engine;
     ctx.fmap   = map;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
@@ -57879,6 +57898,7 @@ START_TEST(test_hfsplus_catalog_node_read_failure_is_fail_visible)
     ctx.engine = &engine;
     ctx.fmap   = map;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
@@ -57895,6 +57915,7 @@ START_TEST(test_hfsplus_catalog_node_read_failure_is_fail_visible)
     ctx.engine = &engine;
     ctx.fmap   = map;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -57958,6 +57979,7 @@ START_TEST(test_hfsplus_fork_read_failure_is_fail_visible)
     ctx.fmap                = map;
     ctx.this_layer_tmpdir   = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
@@ -57977,6 +57999,7 @@ START_TEST(test_hfsplus_fork_read_failure_is_fail_visible)
     ctx.fmap                = map;
     ctx.this_layer_tmpdir   = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -57993,6 +58016,7 @@ START_TEST(test_hfsplus_fork_read_failure_is_fail_visible)
     ctx.fmap               = map;
     ctx.this_layer_tmpdir  = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -58060,6 +58084,7 @@ START_TEST(test_hfsplus_attribute_tree_failure_is_fail_visible)
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -58141,6 +58166,7 @@ START_TEST(test_hfsplus_attribute_name_boundary_is_fail_visible)
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -58193,6 +58219,7 @@ START_TEST(test_hfsplus_catalog_size_accounting_is_fail_visible)
     ctx.fmap               = map;
     ctx.this_layer_tmpdir  = tmpdir;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -58217,6 +58244,7 @@ START_TEST(test_hfsplus_truncated_header_is_fail_visible)
     ctx.engine = &engine;
     ctx.fmap   = map;
 
+    test_hfsplus_set_scan_options(&ctx);
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);

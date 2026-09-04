@@ -13548,3 +13548,17 @@ This is focused current-source evidence, not complete OOXML qualification.
 Complete OOXML Office/VBA corpus, full-C ABI parity, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file/resource, Sonic1, and
 final parser/release evidence remain required.
+
+
+## HFS+ current-source production-linked refresh — 2026-09-04
+
+The HFS+ direct fixtures now supply production-shaped `ctx->options` state
+required by parser admission. After rebuilding from the authoritative source,
+the focused GCC matrix passes with zero failures and errors: `hfs_map` 25/25,
+`hfs_inline` 2/2, and `hfs_fork` 1/1. The deadline oracle retains the canonical
+shared `Heuristics.Limits.Exceeded.MaxScanTime` reason.
+
+No HFS+ production-code change was required. Complete HFS+ catalog/attribute/
+resource/ExtentOverflow corpus, full-C ABI parity, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file/resource, Sonic1, and
+final parser/release evidence remain required.
