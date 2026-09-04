@@ -83,6 +83,18 @@ and checks the deterministic tail signature, offset, completion, skip count,
 and stream digest; and EOCD-confirmed malformed ZIP/ZIP64 metadata cannot fall
 back to local-header scanning.
 
+## Current 7-Zip focused audit — 2026-09-04
+
+The authoritative current-source production-linked GCC cases pass `7z` 28/28,
+`7z_cleanup` 1/1, `7z_map` 4/4, `7z_sfx` 3/3, and `7z_sfx_corpus` 1/1,
+including exact nested-child matching through SFX admission. The bounded SDK
+seek, callback, FilesInfo, BCJ2, cleanup, and SFX paths were reviewed without
+finding a further safe production change in this pass. These are focused
+current-source results, not final 7-Zip qualification; complete BCJ2/archive
+corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized-large-file, resource, Sonic1, and final PLAN.md qualification
+remain required.
+
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
 and 21 deliberate unsupported rows; 576 rows remain release-blocking under
@@ -101,7 +113,7 @@ results, resource measurements, service parity, release-default activation,
 and the final requirement-by-requirement PLAN.md audit remain open.
 
 The current branch is therefore materially not on the release-certification
-side of the plan: 143 rows are bounded, 426 remain pending, and 21 are
+side of the plan: 143 rows are bounded, 433 remain pending, and 21 are
 explicitly unsupported. The remaining parser work, current-source
 production-linked execution, sanitizer runs, production CVDs, materialized
 exact-edge files, Sonic1 measurements, service parity, release-default

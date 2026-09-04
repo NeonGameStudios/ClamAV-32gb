@@ -7,8 +7,8 @@
   static declarations. Retain the PDF metadata-context guard and the ARJ
   forward declaration.
 - The serial current-source production-GCC relink and focused MIME/PDF/ARJ
-  runs are complete; retain the pre-existing `uint8_t` overflow warning in
-  the test-fixture follow-up. Complete linked parser cases, sanitizer,
+  runs are complete; the pre-existing `uint8_t` test-fixture conversion is
+  explicit and the final relink is warning-clean. Complete linked parser cases, sanitizer,
   complete corpora, service parity, materialized-large-file, resource, Sonic1,
   and final release qualification.
 
@@ -43,6 +43,17 @@
   focused evidence. Complete ARJ/ARJ-SFX corpus, sanitizer, certified Linux
   x86-64, production-CVD/service, materialized-large-file, Sonic1, resource,
   and final PLAN.md qualification.
+
+## 7-Zip current-source focused audit — 2026-09-04
+
+- Retain the current-source production-linked GCC evidence: `7z` 28/28,
+  `7z_cleanup` 1/1, `7z_map` 4/4, `7z_sfx` 3/3, and `7z_sfx_corpus` 1/1,
+  including exact nested-child matching through SFX admission.
+- No additional safe production change was identified in the bounded SDK seek,
+  callback, FilesInfo, BCJ2, cleanup, or SFX paths during this pass. Complete
+  BCJ2/archive corpus, sanitizer, certified Linux x86-64, production-CVD/
+  service, materialized-large-file, Sonic1, resource, and final PLAN.md
+  qualification remain required.
 
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 

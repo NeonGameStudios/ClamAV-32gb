@@ -11,9 +11,9 @@ before its static definition. The PDF callbacks now use checked owning-context
 and options pointers; ARJ now has a forward declaration. Both boundaries are
 source-guarded and recorded as pending capability rows. The serial
 current-source relink completed at 100% in the established Docker GCC
-environment; its only warning is the pre-existing test-fixture assignment of
-260 to a `uint8_t` at `check_clamav.c:28359`. This build completion does not
-replace the still-open linked, sanitizer, corpus, service, materialized-file,
+environment. The pre-existing test-fixture assignment of 260 to a `uint8_t`
+was made explicit and the final relink is warning-clean. This build
+completion does not replace the still-open linked, sanitizer, corpus, service,
 resource, Sonic1, and release gates.
 
 ## PDF metadata callback compile boundary — 2026-09-04
@@ -60,6 +60,18 @@ current-source production-linked focused cases pass `arj_map` 8/8 and
 production-CVD/service, materialized-large-file, resource, Sonic1, and final
 PLAN.md qualification remain required.
 
+## 7-Zip current-source focused audit — 2026-09-04
+
+The next pending parser family was rerun in the same authoritative Docker
+production-linked GCC harness after the current-source relink. The focused
+cases pass `7z` 28/28, `7z_cleanup` 1/1, `7z_map` 4/4, `7z_sfx` 3/3, and
+`7z_sfx_corpus` 1/1. The materialized SFX corpus reaches the exact nested
+child marker. Review of the bounded SDK seek, callback, FilesInfo, BCJ2,
+cleanup, and SFX admission paths found no additional safe production fix to
+apply in this pass. Full BCJ2/archive corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
+and final PLAN.md qualification remain required.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of
@@ -76,7 +88,7 @@ not a release claim:
 | Shared logical/matcher/contiguous/temporary/file/recursion/time accounting | Partially implemented | The current source contains the shared ledgers, readers, spools, deadlines, and fail-visible status reconciliation; production-linked x86-64 execution, sanitizer evidence, and resource measurements for every enabled path remain open. |
 | Certified daemon startup and one-worker/two-entry service profile | Source and synthetic gate implemented; runtime qualification open | `clamd/largefile_admission.c` requires `MaxThreads=1`; `tools/largefile_service_qualification.sh` exercises two clients against `MaxQueue=2`; the verifier regression passes. A current-source production daemon run and Sonic1 resource evidence are still required. |
 | Common library/CLI/clamd/clamdscan/milter/on-access ingress contract | Partially implemented | Static guards and focused harnesses cover the contract, and the exact-edge milter proof is independently checked. Full current-source parity across every command family, production CVDs, materialized edge files, and on-access evidence remain open. |
-| Complete enabled parser, matcher, decoder, and bytecode coverage | Not complete | 80 parser rows, logical/YARA/bytecode matcher rows, and many parser-family rows remain pending or bounded. The pinned modern OneNote dependency only exposes `parse_section_buffer(&[u8])`; the scanner therefore returns `CL_ERESOURCE` above `FMap::WHOLE_INPUT_MAX` (256 MiB) rather than claiming reader-backed 32 GiB support. |
+| Complete enabled parser, matcher, decoder, and bytecode coverage | Not complete | 75 enabled parser rows, five explicitly unsupported parser entries, logical/YARA/bytecode matcher rows, and many parser-family rows remain pending or bounded. The pinned modern OneNote dependency only exposes `parse_section_buffer(&[u8])`; the scanner therefore returns `CL_ERESOURCE` above `FMap::WHOLE_INPUT_MAX` (256 MiB) rather than claiming reader-backed 32 GiB support. |
 | Fail-visible unsupported and malformed-layer behavior | Substantially implemented; qualification open | ZIP confirmed malformed-central fallback, milter digest/offset/completion checks, release allowlisting, and numerous parser fault paths are now guarded and regression-tested. These source fixes do not replace complete corpus, sanitizer, production-CVD, or materialized-large-file evidence. |
 | Release-default activation | Not started by design | `LARGE_FILE_DEFAULTS` and related build/feature rows remain pending; defaults must stay gated until the enabled-parser and ingress release blockers are closed. |
 | PLAN.md acceptance workload and final certification | Not complete | No current certified Linux x86-64 production-CVD/Sonic1 canary, full 32 GiB materialized parser matrix, four-hour/resource/RSS/temporary-peak record, or final requirement-by-requirement proof bundle exists for this checkout. The latest MCP-SSH check to Sonic1 timed out; this is an evidence gap, not a local implementation blocker. |
