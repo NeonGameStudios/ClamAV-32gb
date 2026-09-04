@@ -14877,3 +14877,16 @@ qualification before closure.
   SWF corpus, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file/resource, Sonic1, and final parser/release
   qualification remain open.
+
+
+## Structured text and normalization current-source refresh — 2026-09-04
+
+- Record that the structured-data production fix re-taints the current and
+  parent fmaps when clean completion meets pre-existing incomplete state. The
+  current-source production-linked GCC results are `structured_map` 6/6,
+  `script` 1/1, `html` 13/13, and `text_encoding` 3/3 with zero failures
+  and errors.
+- Keep this focused evidence separate from complete text-family qualification.
+  Complete structured/text/normalization corpora, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file/resource, Sonic1,
+  and final parser/release qualification remain open.

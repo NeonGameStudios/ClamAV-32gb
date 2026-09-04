@@ -1705,6 +1705,7 @@ contains unit_tests/check_clamav.c 'test_structured_detector_clipped_read_failur
 contains libclamav/scanners.c 'Structured data detector reached the configured time limit'
 contains unit_tests/check_clamav.c 'test_structured_detector_time_limit_is_fail_visible'
 contains libclamav/scanners.c 'structured_reconcile_status(cli_ctx *ctx, cl_error_t status)'
+contains libclamav/scanners.c 'A pre-existing incomplete result still makes the current layer non-cacheable.'
 contains libclamav/scanners.c 'return structured_reconcile_status(ctx, CL_SUCCESS)'
 contains unit_tests/check_clamav.c 'test_structured_detector_sticky_incomplete_result_is_fail_visible'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_structured_map, test_structured_detector_sticky_incomplete_result_is_fail_visible)'

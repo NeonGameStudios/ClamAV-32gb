@@ -13671,3 +13671,17 @@ This is focused current-source evidence, not complete SWF qualification.
 Complete SWF corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file/resource, Sonic1, and final
 parser/release evidence remain required.
+
+
+## Structured text and normalization current-source refresh — 2026-09-04
+
+The structured-data production fix now re-taints the current and parent fmaps
+when clean completion is reconciled against pre-existing incomplete state. The
+current-source production-linked GCC matrix passes with zero failures and
+errors: `structured_map` 6/6, `script` 1/1, `html` 13/13, and
+`text_encoding` 3/3.
+
+This is focused current-source evidence, not complete text-family
+qualification. Complete structured/text/normalization corpora, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file/
+resource, Sonic1, and final parser/release evidence remain required.

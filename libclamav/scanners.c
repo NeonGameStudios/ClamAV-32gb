@@ -5406,8 +5406,11 @@ done:
 
 static cl_error_t structured_reconcile_status(cli_ctx *ctx, cl_error_t status)
 {
-    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete)
+    if (ctx != NULL && (status == CL_SUCCESS || status == CL_CLEAN) && ctx->scan_incomplete) {
+        /* A pre-existing incomplete result still makes the current layer non-cacheable. */
+        emax_reached(ctx);
         return CL_EPARSE;
+    }
 
     return status;
 }
