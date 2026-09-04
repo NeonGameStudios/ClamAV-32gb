@@ -13562,3 +13562,18 @@ No HFS+ production-code change was required. Complete HFS+ catalog/attribute/
 resource/ExtentOverflow corpus, full-C ABI parity, sanitizer, certified Linux
 x86-64, production-CVD/service, materialized-large-file/resource, Sonic1, and
 final parser/release evidence remain required.
+
+
+## PDF current-source production-linked refresh — 2026-09-04
+
+The current-source production-linked GCC matrix passes with zero failures and
+errors: `pdf` 22/22, `pdf_map` 7/7, and `pdf_corpus` 1/1 after materializing
+`clam.pdf` through the existing repository CMake target. This replaces the
+older 17/17 and 4/4 focused counts and retains exact offset-0 nested-MZP
+handoff after PDF extraction.
+
+This is focused GCC parser/map/corpus evidence, not complete PDF qualification.
+Complete PDF/filter corpus, production/sanitizer scanner fault injection,
+certified Linux x86-64, production-CVD/service, materialized-large-file/
+resource, Sonic1, unsupported or mixed chains, and final parser/release evidence
+remain required.

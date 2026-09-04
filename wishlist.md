@@ -14778,3 +14778,17 @@ qualification before closure.
   full-C ABI parity, sanitizer, certified Linux x86-64, production-CVD/service,
   materialized-large-file/resource, Sonic1, and final parser/release
   qualification open.
+
+
+## PDF current-source production-linked refresh — 2026-09-04
+
+- Retain the corrected current-source GCC results: `pdf` 22/22,
+  `pdf_map` 7/7, and `pdf_corpus` 1/1 with zero failures and errors after
+  materializing `clam.pdf` through the existing repository CMake target.
+- Retain the expanded parser/map boundaries and exact offset-0 nested-MZP
+  handoff; treat these as the replacement for the older 17/17 and 4/4 focused
+  counts.
+- Keep complete PDF/filter corpus, production/sanitizer scanner fault
+  injection, certified Linux x86-64, production-CVD/service,
+  materialized-large-file/resource, Sonic1, unsupported or mixed-chain, and
+  final parser/release qualification open.
