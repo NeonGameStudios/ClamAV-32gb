@@ -108,6 +108,20 @@ certified Linux x86-64, production-CVD/service, materialized-large-file,
 resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
 remain open.
 
+## ARJ current-source focused audit — 2026-09-04
+
+The current-source ARJ and ARJ-SFX paths were rerun after refreshing the
+header-read fixture. The production-linked GCC cases pass `arj` 14/14,
+`arj_compressed` 2/2, `arj_map` 8/8, and `arjsfx` 5/5. These cover current
+header/member read failures, truncation, timeout, CRC/output-size checks,
+limits, direct-entry admission, and prefixed SFX nested matching. No further
+safe production fix was identified in this pass.
+
+This is focused current-source evidence, not final ARJ qualification. Complete
+ARJ/ARJ-SFX corpus breadth, full current-C-ABI execution, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, resource,
+Sonic1, and final requirement-by-requirement PLAN.md qualification remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of

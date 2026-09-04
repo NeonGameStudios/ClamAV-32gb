@@ -47127,12 +47127,14 @@ START_TEST(test_arj_scan_header_read_failures_are_fail_visible)
 {
     uint8_t data[87];
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(data, 0, sizeof(data));
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     data[0] = 0x60;
     data[1] = 0xea;
@@ -47154,6 +47156,7 @@ START_TEST(test_arj_scan_header_read_failures_are_fail_visible)
     ck_assert_ptr_nonnull(map);
     map->need             = arj_targeted_read_failure;
     ctx.engine            = &engine;
+    ctx.options           = &options;
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
 

@@ -127,6 +127,20 @@ partition-image corpus breadth, full current-C-ABI execution, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 resource, Sonic1, and final PLAN.md qualification remain required.
 
+## Current ARJ focused audit — 2026-09-04
+
+The current-source ARJ and ARJ-SFX paths were rerun after refreshing the
+header-read fixture. The production-linked GCC cases pass `arj` 14/14,
+`arj_compressed` 2/2, `arj_map` 8/8, and `arjsfx` 5/5. These cover current
+header/member read failures, truncation, timeout, CRC/output-size checks,
+limits, direct-entry admission, and prefixed SFX nested matching. No further
+safe production fix was identified in this pass.
+
+These are focused current-source results, not final ARJ qualification. Complete
+ARJ/ARJ-SFX corpus breadth, full current-C-ABI execution, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file, resource,
+Sonic1, and final PLAN.md qualification remain required.
+
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
 and 21 deliberate unsupported rows; 576 rows remain release-blocking under

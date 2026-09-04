@@ -85,6 +85,18 @@
   certified Linux x86-64, production-CVD/service, materialized-large-file,
   resource, Sonic1, and final PLAN.md qualification open.
 
+## ARJ current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `arj` 14/14,
+  `arj_compressed` 2/2, `arj_map` 8/8, and `arjsfx` 5/5 after refreshing the
+  header-read fixture. The cases cover header/member read failures,
+  truncation, timeout, CRC/output-size checks, limits, direct admission, and
+  prefixed SFX nested matching.
+- No additional safe production fix was identified in this pass. Keep complete
+  ARJ/ARJ-SFX corpus breadth, full C/Rust ABI, sanitizer, certified Linux
+  x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
+  and final PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback
