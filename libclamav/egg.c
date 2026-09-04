@@ -1932,7 +1932,7 @@ cl_error_t cli_egg_sfx_header_check(cli_ctx *ctx, size_t offset)
 cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint32_t* nComments, cli_ctx* ctx)
 {
     cl_error_t status = CL_EPARSE;
-    cl_error_t retval;
+    cl_error_t retval = CL_SUCCESS;
     egg_handle* handle    = NULL;
     uint32_t magic        = 0;
     const uint8_t* index  = 0;

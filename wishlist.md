@@ -188,6 +188,23 @@
   materialized-large-file, resource, Sonic1, and final PLAN.md qualification
   open.
 
+## EGG/EGG-SFX current-source focused audit — 2026-09-04
+
+- Retain current-source production-linked GCC evidence at `egg_map` 12/12,
+  `egg_metadata` 1/1, and `egg_sfx` 3/3. Coverage includes direct scanner
+  admission, fixed-header/extra-field range classes, metadata-index limits,
+  bounded oversized fields, LZMA extraction, archive-header validation,
+  legacy extraction failures, stored-block CRC failure, codepage-932 metadata,
+  and exact nested SFX child matching.
+- Keep the deterministic `cli_egg_open_ex()` second-phase status
+  initialization. The valid empty-archive fixture now supplies distinct
+  archive-header and archive terminators, and the targeted extra-field read
+  failure points at the actual five-byte field. No additional safe EGG parser
+  fix was identified in this pass.
+- Keep complete EGG/SFX corpus breadth, full C/Rust ABI, sanitizer, certified
+  Linux x86-64, production-CVD/service, materialized-large-file, resource,
+  Sonic1, and final PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

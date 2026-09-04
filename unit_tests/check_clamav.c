@@ -36550,7 +36550,8 @@ START_TEST(test_egg_scan_entry_boundaries_are_fail_visible)
         0x00, 0x01,             /* EGG_HEADER_VERSION */
         0x01, 0x00, 0x00, 0x00, /* nonzero header id */
         0x00, 0x00, 0x00, 0x00, /* reserved */
-        0x22, 0x82, 0xe2, 0x08  /* EOFARC */
+        0x22, 0x82, 0xe2, 0x08, /* archive-header EOFARC */
+        0x22, 0x82, 0xe2, 0x08  /* archive EOFARC */
     };
     struct cl_engine engine;
     struct cl_scan_options options;
@@ -36902,6 +36903,7 @@ START_TEST(test_egg_extra_field_range_classes_are_fail_visible)
     archive_length = offset;
 
     memset(&engine, 0, sizeof(engine));
+    engine.maxcontiguoussize = CLI_DEFAULT_MAX_CONTIGUOUS_SIZE;
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(archive, archive_length);
     ck_assert_ptr_nonnull(map);

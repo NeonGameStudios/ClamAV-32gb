@@ -1306,19 +1306,24 @@ incomplete/non-cacheable state. Full HWP3/HWPML/OLE corpus, sanitizer,
 certified Linux x86-64, production-CVD/service, materialized-large-file,
 Sonic1, resource, and final parser/release qualification remain required.
 
-## Current EGG production-linked rerun — 2026-08-31
+## Current EGG production-linked rerun — 2026-09-04
 
 The canonical scanner, file-type, and unit-test sources were transferred into
 the existing Docker production-linked GCC harness and their SHA-256 hashes
 matched exactly. The current-source production-linked GCC harness passes
-`egg_map` 7/7,
-`egg_metadata` 1/1, and `egg_sfx` 2/2. The legacy contiguous extraction
-regression now returns `CL_EUNPACK` without publishing output for unsupported
-LZMA, rejects inconsistent block tables and null block entries, and preserves
-sticky incomplete/non-cacheable state for a supported stored-block CRC
-mismatch. Complete EGG/SFX corpus, sanitizer, certified Linux x86-64,
-production-CVD/service, materialized-large-file, Sonic1, resource, and final
-parser/release qualification remain required.
+`egg_map` 12/12, `egg_metadata` 1/1, and `egg_sfx` 3/3. The EGG map coverage
+includes direct scanner admission, fixed-header and extra-field range classes,
+metadata-index resource handling, bounded oversized fields, LZMA extraction,
+archive-header validation, legacy extraction failures, and stored-block CRC
+failure. The metadata and SFX cases reach exact nested child markers through
+bounded codepage conversion and prefixed EGG-SFX dispatch.
+
+The opener now initializes its second-phase status before the archive-index
+loop. The empty-archive fixture supplies distinct archive-header and archive
+terminators, and the targeted read-failure fixture points at the actual
+five-byte extra field. Complete EGG/SFX corpus, sanitizer, certified Linux
+x86-64, production-CVD/service, materialized-large-file, Sonic1, resource, and
+final parser/release qualification remain required.
 
 ## BZip2/GZip materialized corpus refresh — 2026-08-31
 

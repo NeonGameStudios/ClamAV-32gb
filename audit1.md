@@ -236,6 +236,30 @@ Linux x86-64, production-CVD/service, materialized-large-file, resource,
 Sonic1, and final requirement-by-requirement PLAN.md qualification remain
 open.
 
+## EGG/EGG-SFX current-source focused audit — 2026-09-04
+
+The current-source production-linked GCC cases pass `egg_map` 12/12,
+`egg_metadata` 1/1, and `egg_sfx` 3/3. The EGG map coverage includes direct
+scanner admission, fixed-header and extra-field truncation versus in-range
+callback failures, metadata-index resource handling, bounded oversized fields,
+LZMA extraction, archive-header validation, legacy extraction failures, and
+stored-block CRC failure. The metadata case reaches the exact codepage-932
+child marker, and the SFX case reaches an exact child marker through public map
+typing, prefixed EGG-SFX admission, bounded member streaming, and nested EGG
+dispatch.
+
+Review also found an uninitialized `cli_egg_open_ex()` second-phase status;
+the opener now initializes it deterministically. The empty-archive fixture was
+corrected to contain distinct archive-header and archive terminators, and the
+extra-field read-failure fixture now targets the actual five-byte field. No
+additional parser behavior change was identified in this pass.
+
+This is focused current-source evidence, not final EGG/EGG-SFX qualification.
+Complete EGG/SFX corpus breadth, full current-C-ABI execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
+remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of
