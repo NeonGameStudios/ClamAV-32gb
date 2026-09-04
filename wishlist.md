@@ -70,6 +70,21 @@
   x86-64, production-CVD/service, materialized-large-file, resource, Sonic1,
   and final PLAN.md qualification open.
 
+## APM current-source focused audit — 2026-09-04
+
+- The APM implementation was reviewed for fixed-width fields, checked native-
+  width coordinate conversion, declared table extents, partition-intersection
+  accounting, deadlines, nested handoff, and sticky completion; no additional
+  safe production fix was identified.
+- Three stale focused assertions were corrected: the truncated-driver fixture
+  now supplies the required options, and invalid/overflow coordinates expect
+  the current fail-visible `CL_EFORMAT` status. The current-source linked GCC
+  cases pass `apm` 8/8, `apm_map` 3/3, `apm_corpus` 1/1, and
+  `partition_map` 5/5.
+- Keep complete partition-image corpus breadth, full C/Rust ABI, sanitizer,
+  certified Linux x86-64, production-CVD/service, materialized-large-file,
+  resource, Sonic1, and final PLAN.md qualification open.
+
 ## Legacy file-inspection callback raw fallback — 2026-09-04
 
 - Keep an oversized or failed legacy whole-buffer file-inspection callback

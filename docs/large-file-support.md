@@ -111,6 +111,22 @@ ALZ corpus breadth, full C/Rust ABI, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, resource, Sonic1, and final
 PLAN.md qualification remain required.
 
+## Current APM focused audit — 2026-09-04
+
+The APM implementation was reviewed for fixed-width field handling, checked
+native-width coordinate conversion, declared table extents, partition
+intersection accounting, deadlines, nested handoff, and sticky completion.
+After correcting three stale focused assertions (one missing-options fixture
+and two legacy status codes), the current-source production-linked GCC cases
+pass `apm` 8/8, `apm_map` 3/3, `apm_corpus` 1/1, and `partition_map` 5/5.
+The corpus reaches the exact partition child matcher, while invalid/truncated
+coordinates remain fail-visible and non-cacheable.
+
+These are focused current-source results, not final APM qualification. Complete
+partition-image corpus breadth, full current-C-ABI execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final PLAN.md qualification remain required.
+
 Finding 5 remains the principal implementation gap, not a closed defect. The
 manifest now reports 597 rows with 0 qualified, 143 bounded, 433 pending,
 and 21 deliberate unsupported rows; 576 rows remain release-blocking under

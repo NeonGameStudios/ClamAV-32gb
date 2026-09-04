@@ -90,6 +90,24 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, resource, Sonic1, and final requirement-by-
 requirement PLAN.md qualification remain open.
 
+## APM current-source focused audit — 2026-09-04
+
+The APM implementation was reviewed for fixed-width field handling, checked
+native-width coordinate conversion, declared table extents, partition
+intersection accounting, deadlines, nested handoff, and sticky completion.
+No additional safe production fix was identified. After correcting three stale
+focused assertions (one missing-options fixture and two legacy status codes),
+the current-source production-linked GCC cases pass `apm` 8/8, `apm_map` 3/3,
+`apm_corpus` 1/1, and `partition_map` 5/5. The corpus reaches the exact
+partition child matcher, while invalid/truncated coordinates remain
+fail-visible and non-cacheable.
+
+This is focused current-source evidence, not final APM qualification. Complete
+partition-image corpus breadth, full current-C-ABI execution, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file,
+resource, Sonic1, and final requirement-by-requirement PLAN.md qualification
+remain open.
+
 ## Current PLAN.md requirement audit — 2026-09-04
 
 The authoritative checkout is the current local tip of

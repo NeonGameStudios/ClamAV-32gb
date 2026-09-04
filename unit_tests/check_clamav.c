@@ -32494,16 +32494,19 @@ START_TEST(test_apm_truncated_driver_map_is_format_error)
 {
     static const uint8_t data[] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     map->need = apm_truncated_driver_read_failure;
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
 
     ck_assert_int_eq(cli_scanapm(&ctx), CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
@@ -32572,7 +32575,7 @@ START_TEST(test_apm_invalid_partition_is_fail_visible)
     layer.fmap               = map;
 
     ret = cli_scanapm(&ctx);
-    ck_assert_int_eq(ret, CL_EMAXREC);
+    ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
@@ -32750,7 +32753,7 @@ START_TEST(test_apm_partition_coordinate_overflow_is_fail_visible)
     layer.fmap               = map;
 
     ret = cli_scanapm(&ctx);
-    ck_assert_int_eq(ret, CL_EMAXREC);
+    ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
