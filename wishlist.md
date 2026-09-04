@@ -14689,3 +14689,18 @@ qualification before closure.
   certified Linux x86-64, materialized large-file/resource measurements,
   production-CVD/service parity, Sonic1, and final parser/release
   qualification before closure.
+
+## MSEXPAND current-source production-linked refresh — 2026-09-04
+
+- The authoritative current-source GCC production-linked cases pass
+  `msexpand` 8/8 and `msexpand_map` 2/2 with zero failures and errors after
+  materializing the checked-in `clam.exe.szdd` fixture through its CMake
+  target.
+- Retain the fail-visible SZDD contracts for null/missing-map/engine
+  admission, invalid magic, truncated versus callback-failed headers,
+  declared-output and temporary limits, timeout, sticky completion, public
+  `CL_TYPE_MSSZDD` dispatch, decompression, and exact nested-MZ detection.
+- This is focused decoder and dispatch evidence only. Complete SZDD corpus,
+  full-C ABI parity, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized large-file/resource measurements, Sonic1, and final
+  parser/release qualification remain required.

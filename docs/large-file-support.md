@@ -13468,3 +13468,19 @@ source-registered and requires a non-clean, non-cacheable public
 sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final release qualification
 remain required.
+
+## MSEXPAND current-source production-linked refresh — 2026-09-04
+
+The authoritative MSEXPAND source and test source were present in the
+existing Docker production-linked GCC harness. After materializing the
+checked-in `clam.exe.szdd` fixture through its existing CMake target, the
+focused current-source GCC cases pass with zero failures and errors:
+`msexpand` 8/8 and `msexpand_map` 2/2.
+
+The matrix covers null-context, missing-map/engine, invalid magic, short-header
+versus in-range read failure, declared-output and temporary limits, timeout,
+sticky completion, public `CL_TYPE_MSSZDD` dispatch, decompression, and exact
+nested MZ detection. This is focused decoder and dispatch evidence, not
+complete SZDD qualification. Full SZDD corpus, full-C ABI parity, sanitizer,
+certified Linux x86-64, production-CVD/service, materialized-large-file/
+resource, Sonic1, and final parser/release evidence remain required.

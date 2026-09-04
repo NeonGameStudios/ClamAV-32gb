@@ -24004,3 +24004,27 @@ the internal header. Complete OLE/VBA/XLM corpus, full-C ABI parity,
 sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file/resource, Sonic1, and final parser/release evidence
 remain open.
+
+## MSEXPAND current-source production-linked refresh — 2026-09-04
+
+The authoritative MSEXPAND source and test source were present in the
+existing Docker production-linked GCC harness with matching SHA-256 values:
+`msexpand.c` `079139f581fcaa6c4a9be302028520986fa723dfd90514b710ab76feab5895ec`,
+`msexpand.h` `b4e2a52d04883c6f4106024f44543a1b9f8465e41519e1d3ad1cbdef91beae52`,
+`scanners.c` `c48d3c2532a2ddda61e4822f11cce9fa6cb6120122a3e952f579149bbe0a6730`,
+`check_clamav.c` `556c1d486200ee5d8e2f3ccf3f70c1aa76465319fb50f9b45afe6b7aa8e2bd81`,
+and `unit_tests/CMakeLists.txt`
+`3e3de3b5c429656b051afda24a9d43b81f8afa3f20e6d4a3e5ba62fbeffe1f70`.
+
+After materializing the checked-in `clam.exe.szdd` fixture through its
+existing CMake target, the focused current-source GCC cases pass with zero
+failures and errors: `msexpand` 8/8 and `msexpand_map` 2/2. The matrix covers
+null-context, missing-map/engine, invalid magic, short-header versus in-range
+read failure, declared-output and temporary limits, timeout, sticky
+completion, public `CL_TYPE_MSSZDD` dispatch, decompression, and exact nested
+MZ detection.
+
+This is focused decoder and dispatch evidence, not complete SZDD
+qualification. Full SZDD corpus, full-C ABI parity, sanitizer, certified
+Linux x86-64, production-CVD/service, materialized-large-file/resource,
+Sonic1, and final parser/release evidence remain open.
