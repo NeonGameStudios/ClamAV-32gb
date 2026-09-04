@@ -1679,6 +1679,127 @@ void cli_scan_release_temporary(cli_ctx *ctx, uint64_t bytes)
         ctx->temporary_bytes -= bytes;
 }
 
+static cl_error_t cli_scan_monotonic_now_ns(uint64_t *now_ns)
+{
+#if defined(CLOCK_MONOTONIC)
+    struct timespec now;
+
+    if (now_ns == NULL || clock_gettime(CLOCK_MONOTONIC, &now) != 0 ||
+        now.tv_sec < 0 || now.tv_nsec < 0 || now.tv_nsec >= 1000000000L ||
+        (uint64_t)now.tv_sec > (UINT64_MAX - (uint64_t)now.tv_nsec) / 1000000000U)
+        return CL_EREAD;
+
+    *now_ns = (uint64_t)now.tv_sec * 1000000000U + (uint64_t)now.tv_nsec;
+    return CL_SUCCESS;
+#else
+    UNUSEDPARAM(now_ns);
+    return CL_ERESOURCE;
+#endif
+}
+
+cl_error_t cli_scan_set_monotonic_deadline(cli_ctx *ctx, uint64_t milliseconds)
+{
+    uint64_t now_ns;
+    uint64_t duration_ns;
+
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (milliseconds > UINT64_MAX / 1000000U)
+        return CL_ERESOURCE;
+
+    if (cli_scan_monotonic_now_ns(&now_ns) != CL_SUCCESS)
+        return CL_ERESOURCE;
+    duration_ns = milliseconds * 1000000U;
+    if (now_ns > UINT64_MAX - duration_ns)
+        return CL_ERESOURCE;
+
+    ctx->monotonic_time_limit_ns  = now_ns + duration_ns;
+    ctx->monotonic_time_limit_set = true;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_scan_deadline_expired(cli_ctx *ctx)
+{
+    if (ctx == NULL)
+        return CL_ENULLARG;
+
+    ctx->abort_scan     = true;
+    ctx->scan_timed_out = true;
+    cli_append_potentially_unwanted_if_heur_exceedsmax(
+        ctx, "Heuristics.Limits.Exceeded.MaxScanTime", CL_ETIMEOUT);
+    return CL_ETIMEOUT;
+}
+
+static cl_error_t cli_scan_deadline_unreadable(cli_ctx *ctx)
+{
+    if (ctx == NULL)
+        return CL_ENULLARG;
+
+    ctx->abort_scan     = true;
+    ctx->scan_timed_out = true;
+    cli_mark_scan_incomplete(ctx, "scan deadline could not be checked");
+    return CL_ETIMEOUT;
+}
+
+cl_error_t cli_scan_time_remaining_ms(cli_ctx *ctx, uint32_t *remaining_ms)
+{
+    if (ctx == NULL || remaining_ms == NULL)
+        return CL_ENULLARG;
+
+    if (ctx->monotonic_time_limit_set) {
+        uint64_t now_ns;
+        uint64_t remaining_ns;
+
+        if (cli_scan_monotonic_now_ns(&now_ns) != CL_SUCCESS)
+            return cli_scan_deadline_unreadable(ctx);
+        if (now_ns >= ctx->monotonic_time_limit_ns)
+            return cli_scan_deadline_expired(ctx);
+
+        remaining_ns = ctx->monotonic_time_limit_ns - now_ns;
+        remaining_ns = (remaining_ns + 999999U) / 1000000U;
+        *remaining_ms = remaining_ns > UINT32_MAX ? UINT32_MAX : (uint32_t)remaining_ns;
+        if (*remaining_ms == 0)
+            *remaining_ms = 1;
+        return CL_SUCCESS;
+    }
+
+    /* Direct parser/unit callers historically seed time_limit themselves.
+     * Retain that compatibility path, but do not silently continue when the
+     * clock read needed to enforce it fails. Production scan_common() uses
+     * the monotonic deadline above. */
+    if (ctx->time_limit.tv_sec == 0) {
+        *remaining_ms = UINT32_MAX;
+        return CL_SUCCESS;
+    }
+
+    {
+        struct timeval now;
+        uint64_t seconds;
+        int64_t useconds;
+        uint64_t remaining;
+
+        if (gettimeofday(&now, NULL) != 0)
+            return cli_scan_deadline_unreadable(ctx);
+        if (now.tv_sec > ctx->time_limit.tv_sec ||
+            (now.tv_sec == ctx->time_limit.tv_sec &&
+             now.tv_usec >= ctx->time_limit.tv_usec))
+            return cli_scan_deadline_expired(ctx);
+
+        seconds   = (uint64_t)(ctx->time_limit.tv_sec - now.tv_sec);
+        useconds  = (int64_t)ctx->time_limit.tv_usec - now.tv_usec;
+        if (useconds < 0) {
+            seconds--;
+            useconds += 1000000;
+        }
+        remaining = seconds * 1000U + ((uint64_t)useconds + 999U) / 1000U;
+        *remaining_ms = remaining > UINT32_MAX ? UINT32_MAX : (uint32_t)remaining;
+        if (*remaining_ms == 0)
+            *remaining_ms = 1;
+    }
+
+    return CL_SUCCESS;
+}
+
 /**
  * @brief Check if we've exceeded the time limit.
  * If ctx is NULL, there can be no timelimit so just return success.
@@ -1688,32 +1809,13 @@ void cli_scan_release_temporary(cli_ctx *ctx, uint64_t bytes)
  */
 cl_error_t cli_checktimelimit(cli_ctx *ctx)
 {
-    cl_error_t ret = CL_SUCCESS;
+    uint32_t remaining_ms;
 
     if (NULL == ctx) {
-        goto done;
+        return CL_SUCCESS;
     }
 
-    if (ctx->time_limit.tv_sec != 0) {
-        struct timeval now;
-        if (gettimeofday(&now, NULL) == 0) {
-            if ((now.tv_sec > ctx->time_limit.tv_sec) ||
-                (now.tv_sec == ctx->time_limit.tv_sec && now.tv_usec > ctx->time_limit.tv_usec)) {
-                ret = CL_ETIMEOUT;
-            }
-        }
-    }
-
-    if (CL_ETIMEOUT == ret) {
-        /* Record the terminal cause before dispatching any heuristic callback. */
-        ctx->abort_scan     = true;
-        ctx->scan_timed_out = true;
-
-        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanTime", CL_ETIMEOUT);
-    }
-
-done:
-    return ret;
+    return cli_scan_time_remaining_ms(ctx, &remaining_ms);
 }
 
 char *cli_hashstream(FILE *fs, uint8_t *hash, cli_hash_type_t type)

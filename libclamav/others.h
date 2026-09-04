@@ -224,6 +224,8 @@ typedef struct cli_ctx_tag {
     const char *scan_incomplete_reason; /* First reason a required path was skipped. */
     cl_error_t limit_exceeded_result;   /* First configured-limit result, retained if an AlertExceedsMax callback filters its indicator. */
     cl_scan_report_t *report;           /* Optional structured report owned by the public *_ex2 caller. */
+    uint64_t monotonic_time_limit_ns;   /* Monotonic deadline for configured scan-time limits. */
+    bool monotonic_time_limit_set;      /* True when the monotonic deadline is authoritative. */
 } cli_ctx;
 
 #define STATS_ANON_UUID "5b585e8f-3be5-11e3-bf0b-18037319526c"
@@ -1232,6 +1234,8 @@ cl_error_t cli_scan_reserve_contiguous(cli_ctx *ctx, uint64_t bytes);
 void cli_scan_release_contiguous(cli_ctx *ctx, uint64_t bytes);
 cl_error_t cli_scan_reserve_temporary(cli_ctx *ctx, uint64_t bytes);
 void cli_scan_release_temporary(cli_ctx *ctx, uint64_t bytes);
+cl_error_t cli_scan_set_monotonic_deadline(cli_ctx *ctx, uint64_t milliseconds);
+cl_error_t cli_scan_time_remaining_ms(cli_ctx *ctx, uint32_t *remaining_ms);
 
 int cli_matchregex(const char *str, const char *regex);
 void cli_qsort(void *a, size_t n, size_t es, int (*cmp)(const void *, const void *));

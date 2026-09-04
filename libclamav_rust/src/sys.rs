@@ -722,6 +722,8 @@ pub struct cli_ctx_tag {
     pub scan_incomplete_reason: *const ::std::os::raw::c_char,
     pub limit_exceeded_result: cl_error_t,
     pub report: *mut cl_scan_report,
+    pub monotonic_time_limit_ns: u64,
+    pub monotonic_time_limit_set: bool,
 }
 pub type cli_ctx = cli_ctx_tag;
 #[repr(C)]

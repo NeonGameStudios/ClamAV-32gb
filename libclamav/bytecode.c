@@ -3984,37 +3984,16 @@ void cli_bytecode_context_setctx(struct cli_bc_ctx *ctx, void *cctx)
     timeout  = scan_ctx->engine->bytecode_timeout;
 
     /* Bytecode has its own watchdog, but it must never outlive the scan's
-     * configured wall-clock deadline. Round the remaining time upward to the
+     * configured scan deadline. Round the remaining time upward to the
      * next millisecond because the VM timeout is expressed in milliseconds;
      * the post-run callers still perform the authoritative deadline check. */
-    if (scan_ctx->time_limit.tv_sec != 0) {
-        struct timeval now;
+    if (scan_ctx->monotonic_time_limit_set || scan_ctx->time_limit.tv_sec != 0) {
+        uint32_t remaining_ms = 1;
 
-        if (gettimeofday(&now, NULL) == 0) {
-            uint64_t remaining_ms;
-
-            if ((now.tv_sec > scan_ctx->time_limit.tv_sec) ||
-                (now.tv_sec == scan_ctx->time_limit.tv_sec &&
-                 now.tv_usec >= scan_ctx->time_limit.tv_usec)) {
-                remaining_ms = 1;
-            } else {
-                uint64_t seconds = (uint64_t)(scan_ctx->time_limit.tv_sec - now.tv_sec);
-                int64_t useconds  = (int64_t)scan_ctx->time_limit.tv_usec - now.tv_usec;
-
-                if (useconds < 0) {
-                    seconds--;
-                    useconds += 1000000;
-                }
-                remaining_ms = seconds * 1000U + ((uint64_t)useconds + 999U) / 1000U;
-                if (remaining_ms == 0)
-                    remaining_ms = 1;
-            }
-
-            if (remaining_ms > UINT32_MAX)
-                remaining_ms = UINT32_MAX;
-            if (timeout == 0 || remaining_ms < timeout)
-                timeout = (uint32_t)remaining_ms;
-        }
+        if (cli_scan_time_remaining_ms(scan_ctx, &remaining_ms) != CL_SUCCESS)
+            remaining_ms = 1;
+        if (timeout == 0 || remaining_ms < timeout)
+            timeout = remaining_ms;
     }
 
     ctx->bytecode_timeout = timeout;

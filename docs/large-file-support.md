@@ -12899,3 +12899,15 @@ diagnostic, `CL_EMEM`, an empty `Heuristics` array, and fmap cache taint.
 Current-source execution, complete PE/packer corpus, sanitizer, certified
 Linux x86-64, production-CVD/service, materialized-large-file, Sonic1,
 resource, and final release qualification remain required.
+
+## Monotonic scan-deadline enforcement — 2026-09-04
+
+Production scan contexts now record `MaxScanTime` against a monotonic clock,
+preventing wall-clock rollback from extending a scan. The shared remaining-
+time helper is also used when sizing the bytecode watchdog. Legacy direct
+parser callers that seed the timeval field remain supported, but a clock read
+failure is now an explicit timeout with sticky incomplete/non-cacheable state.
+The focused injected-clock regression verifies this fail-closed boundary.
+This is source and focused-regression evidence only; current-source linked,
+sanitizer, ingress/service, production-CVD, materialized-large-file, Sonic1,
+resource, and final parser/release qualification remain required.

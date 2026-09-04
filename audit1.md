@@ -23241,6 +23241,24 @@ UPX execution, complete PE/UPX corpus, sanitizer, certified Linux x86-64,
 production-CVD/service, materialized-large-file, Sonic1, resource, and final
 PE/parser/release qualification remain required.
 
+## Monotonic scan-deadline enforcement — 2026-09-04
+
+The common scan entry now records a monotonic deadline whenever `MaxScanTime`
+is enabled, so wall-clock rollback cannot extend a production scan. Deadline
+checks use the monotonic deadline and the bytecode watchdog uses the same
+remaining-time calculation. Direct parser and unit callers that seed the
+legacy `time_limit` field retain that compatibility path, but an in-range
+clock read failure now aborts with `CL_ETIMEOUT`, marks the scan incomplete,
+and taints the fmap instead of silently disabling the limit. The new
+`test_scan_deadline_check_failure_is_fail_visible` regression injects the
+existing `gettimeofday()` failure wrapper and verifies the exact diagnostic,
+timeout state, and cache taint.
+
+Current-source production-GCC and linked execution, sanitizer, certified
+Linux x86-64, full ingress/service parity, production-CVD,
+materialized-large-file, Sonic1, resource, and final PLAN.md qualification
+remain required.
+
 ## 7-Zip PPMd input-window initialization — 2026-09-03
 
 The PPMd adapter's first refill and completion paths could subtract null or

@@ -83,7 +83,7 @@ mod ffi_layout_tests {
         assert_eq!(offset_of!(sys::cli_scan_layer, verdict), 80);
         assert_eq!(offset_of!(sys::cli_scan_layer, parent), 96);
 
-        assert_eq!(size_of::<sys::cli_ctx>(), 248);
+        assert_eq!(size_of::<sys::cli_ctx>(), 264);
         assert_eq!(align_of::<sys::cli_ctx>(), 8);
         assert_eq!(offset_of!(sys::cli_ctx, engine), 32);
         assert_eq!(offset_of!(sys::cli_ctx, scansize), 40);
@@ -99,5 +99,7 @@ mod ffi_layout_tests {
         assert_eq!(offset_of!(sys::cli_ctx, scan_incomplete_reason), 224);
         assert_eq!(offset_of!(sys::cli_ctx, limit_exceeded_result), 232);
         assert_eq!(offset_of!(sys::cli_ctx, report), 240);
+        assert_eq!(offset_of!(sys::cli_ctx, monotonic_time_limit_ns), 248);
+        assert_eq!(offset_of!(sys::cli_ctx, monotonic_time_limit_set), 256);
     }
 }

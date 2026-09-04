@@ -15,6 +15,7 @@
 #include <json.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>
 #ifndef _WIN32
 #include <sys/time.h>
 #endif
@@ -6325,6 +6326,22 @@ START_TEST(test_timeout_policy_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_scan_deadline_uses_monotonic_clock)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+#if defined(CLOCK_MONOTONIC)
+    ck_assert_int_eq(cli_scan_set_monotonic_deadline(&ctx, 60000), CL_SUCCESS);
+    /* A stale wall-clock deadline must not override the monotonic one. */
+    ctx.time_limit.tv_sec = 1;
+    ck_assert_int_eq(cli_checktimelimit(&ctx), CL_SUCCESS);
+#else
+    ck_assert_int_eq(cli_scan_set_monotonic_deadline(&ctx, 60000), CL_ERESOURCE);
+#endif
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_GETTIMEOFDAY_WRAP
 START_TEST(test_scan_deadline_initialization_failure_is_fail_visible)
 {
@@ -6366,6 +6383,41 @@ START_TEST(test_scan_deadline_initialization_failure_is_fail_visible)
 
     g_engine->maxscantime = 0;
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_scan_deadline_check_failure_is_fail_visible)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[1];
+    cli_ctx ctx;
+    fmap_t map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&map, 0, sizeof(map));
+    engine.maxscantime       = 1;
+    layers[0].fmap           = &map;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = &map;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 1;
+
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec++;
+    clamav_test_fail_gettimeofday = 1;
+
+    ck_assert_int_eq(cli_checktimelimit(&ctx), CL_ETIMEOUT);
+    ck_assert(ctx.abort_scan);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "scan deadline could not be checked");
+    ck_assert(map.dont_cache_flag);
+    ck_assert_int_eq(clamav_test_fail_gettimeofday, 0);
 }
 END_TEST
 #endif
@@ -63593,8 +63645,10 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
+    tcase_add_test(tc_cl, test_scan_deadline_uses_monotonic_clock);
 #ifdef CLAMAV_TEST_GETTIMEOFDAY_WRAP
     tcase_add_test(tc_cl, test_scan_deadline_initialization_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_scan_deadline_check_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_parser_error_statuses_are_fail_closed);
     tcase_add_test(tc_cl, test_sequential_parser_status_merge_is_fail_closed);

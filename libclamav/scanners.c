@@ -9055,6 +9055,13 @@ static cl_error_t scan_common(
             status = CL_ERESOURCE;
             goto done;
         }
+
+        if (cli_scan_set_monotonic_deadline(&ctx, ctx.engine->maxscantime) != CL_SUCCESS) {
+            cli_errmsg("scan_common: monotonic scan deadline could not be established\n");
+            cli_mark_scan_incomplete(&ctx, "monotonic scan deadline could not be established");
+            status = CL_ERESOURCE;
+            goto done;
+        }
     }
 
     if (filepath != NULL) {
