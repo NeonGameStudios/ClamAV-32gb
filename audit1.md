@@ -872,6 +872,36 @@ sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, Sonic1, resource, and final parser/release
 qualification remain required.
 
+## MIME source-synchronized production-linked refresh — 2026-09-04
+
+The canonical MIME sources were transferred into the existing Docker GCC
+harness and verified byte-identical before relinking. The final SHA-256 values
+were `mbox.c` `39ab65b9035607edd3e3865c9d7f0ffaa596a53db3b0ebc39abd191d2b3256ed`,
+`mbox.h` `ccb6d7ff4b7fdbd6bb89ad8a3cb980f88c807d6c612d6da962fa3ab4a8dc21e3`,
+`scanners.c`
+`ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
+`check_clamav.c`
+`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`, and
+`unit_tests/CMakeLists.txt`
+`3e3de3b5c429656b051afda24a9d43b81f8afa3f20e6d4a3e5ba62fbeffe1f70`.
+
+The focused production-linked cases pass with zero failures and errors:
+`mail` 16/16 after materializing the checked-in `clam.mail.xor` fixture,
+`mail_map` 2/2, `mail_api` 4/4, `mail_partial` 1/1, and `mhtml` 5/5 with the
+explicit 120-second timeout needed by the 65 MiB streaming fixture. Coverage
+includes the first-header embedded-NUL regression, in-range MIME read-failure
+propagation, public MAIL/MHTML dispatch, bounded comment XML, root HTML
+metadata failure, and disk-backed large-body streaming. The MHTML metadata
+regression uses the actual null-encoding JSON branch and its temporary fixture
+writes use the production `cli_writen()` loop, so short regular-file writes do
+not invalidate the qualification fixture.
+
+This is current-source parser-path and corpus evidence, not final MIME/mbox
+qualification. Complete MIME/MHTML corpus breadth, sanitizer, certified Linux
+x86-64, production-CVD/service parity, materialized-large-file resource
+measurements, Sonic1, and the final requirement-by-requirement PLAN.md audit
+remain open.
+
 
 ## PEspin entry and section-window admission — 2026-09-03
 
@@ -23773,7 +23803,7 @@ SHA-256 values were `libclamav_rust/src/scanners.rs`
 `e0f7b09dcc67ba897826c6fe6ff63eb85142695952f18b1f66bff362499c3c87`,
 `Cargo.toml` `949365e1f03b177e5d51adf177c889d38a857c9eaa6c5d30c63340bfa7d91b6b`,
 and `unit_tests/check_clamav.c`
-`a1ca5d2590549b8ded7a6be034cc72394890cd59eb947e194e649715a59ebc28`.
+`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`.
 
 The focused production-linked cases pass `rust_lha` 10/10 and `rust_map` 2/2
 with zero failures and errors. Coverage includes initial and public-API read
@@ -23804,7 +23834,7 @@ were `macho.c`
 `scanners.c`
 `ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
 and `check_clamav.c`
-`a1ca5d2590549b8ded7a6be034cc72394890cd59eb947e194e649715a59ebc28`.
+`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`.
 
 The focused cases pass with zero failures and errors: `macho` 12/12,
 `macho_map` 3/3, `macho_timeout` 2/2, `macho_sections` 1/1,
@@ -23866,7 +23896,7 @@ existing production-linked GCC harness. Exact SHA-256 values were `mbr.c`
 `scanners.c`
 `ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`, and
 `check_clamav.c`
-`a1ca5d2590549b8ded7a6be034cc72394890cd59eb947e194e649715a59ebc28`.
+`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`.
 
 The focused cases pass with zero failures and errors: `mbr` 10/10,
 `partition_map` 5/5, and `mbr_corpus` 1/1. Coverage includes master and

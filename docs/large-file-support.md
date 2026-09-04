@@ -13,7 +13,7 @@ The synchronized SHA-256 values are `scanners.rs`
 `e0f7b09dcc67ba897826c6fe6ff63eb85142695952f18b1f66bff362499c3c87`,
 `Cargo.toml` `949365e1f03b177e5d51adf177c889d38a857c9eaa6c5d30c63340bfa7d91b6b`,
 and `check_clamav.c`
-`a1ca5d2590549b8ded7a6be034cc72394890cd59eb947e194e649715a59ebc28`.
+`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`.
 The current-source production-linked cases pass `rust_lha` 10/10 and
 `rust_map` 2/2, with zero failures and errors. The focused LHA case covers
 initial and public-API read failures, required zero termination, sticky
@@ -44,7 +44,7 @@ are `macho.c`
 `scanners.c`
 `ee6c1d992ee7821785e95ac7a1bea378f7facab8e6cdcf1119ab9288477a8987`,
 and `check_clamav.c`
-`a1ca5d2590549b8ded7a6be034cc72394890cd59eb947e194e649715a59ebc28`.
+`01d91a8c14c720355ce95b0287aae2d7ba3c0206f79723c5411934099696abb1`.
 The focused cases pass with zero failures and errors: `macho` 12/12,
 `macho_map` 3/3, `macho_timeout` 2/2, `macho_sections` 1/1,
 `macho_fat` 3/3, `macho_corpus` 2/2, `macho_unsupported` 2/2, and
@@ -83,6 +83,23 @@ current-source evidence, not final ISO/Joliet qualification. Complete corpus,
 sanitizer, certified Linux x86-64, production-CVD/service,
 materialized-large-file, resource, Sonic1, and final PLAN.md qualification
 remain required.
+
+## MIME source-synchronized production-linked refresh — 2026-09-04
+
+The canonical MIME sources were copied into the existing production-linked GCC
+harness and their SHA-256 values matched before relinking. The focused current
+source cases pass: `mail` 16/16 (including the materialized `clam.mail`
+corpus), `mail_map` 2/2, `mail_api` 4/4, `mail_partial` 1/1, and `mhtml` 5/5.
+The MHTML case uses a 120-second test timeout for its 65 MiB streaming root.
+The evidence includes bounded first-line handling with embedded-NUL rejection,
+in-range read-failure visibility, MAIL/MHTML public dispatch, bounded MHTML
+comment metadata, root-HTML metadata failure propagation, and disk-backed
+large-body streaming.
+
+These are focused current-source and corpus results, not release certification.
+Complete MIME/MHTML corpus, sanitizer, certified Linux x86-64,
+production-CVD/service, materialized-large-file resource measurements, Sonic1,
+and final PLAN.md qualification remain required.
 
 ## Current JPEG focused audit — 2026-09-04
 

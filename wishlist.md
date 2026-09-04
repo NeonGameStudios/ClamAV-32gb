@@ -117,6 +117,21 @@ and final release qualification.
   service, materialized-large-file, Sonic1, resource, and final PLAN.md
   qualification remain required.
 
+## MIME source-synchronized production-linked refresh — 2026-09-04
+
+- Retain the final canonical-source hashes for `mbox.c`, `mbox.h`, `scanners.c`,
+  `check_clamav.c`, and `unit_tests/CMakeLists.txt` in the release evidence.
+- Retain the passing focused results: `mail` 16/16 with the materialized
+  `clam.mail` corpus, `mail_map` 2/2, `mail_api` 4/4, `mail_partial` 1/1, and
+  `mhtml` 5/5 with the explicit 120-second streaming-test timeout.
+- Keep the first-header embedded-NUL check, the `CL_EREAD` MAIL/MHTML public
+  API checks, and the null-encoding root-metadata fault injection registered
+  and source-guarded. Keep the MHTML large-fixture writes on `cli_writen()` so
+  short regular-file writes cannot produce a false fixture failure.
+- Add complete MIME/MHTML corpus, sanitizer, certified Linux x86-64,
+  production-CVD/service, materialized-large-file/resource, Sonic1, and final
+  requirement-by-requirement PLAN.md qualification before closure.
+
 ## ALZ current-source focused audit — 2026-09-04
 
 - The bounded ALZ reader, exact compressed-range checks, CRC validation,

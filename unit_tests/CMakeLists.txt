@@ -182,6 +182,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=cli_jsonarray"
         "-Wl,--wrap=cli_jsonbool"
         "-Wl,--wrap=cli_jsonint"
+        "-Wl,--wrap=cli_jsonnull"
         "-Wl,--wrap=cli_jsonuint64"
         "-Wl,--wrap=cli_jsonstr"
         "-Wl,--wrap=evidence_add_indicator"

@@ -884,7 +884,9 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         /*
          * Ignore any blank lines at the top of the message
          */
-        line_length = mbox_line_content_length((const unsigned char *)buffer, strlen(buffer));
+        /* Preserve the explicit byte length from the bounded line reader;
+         * strlen() would hide an embedded NUL in the first MIME header. */
+        line_length = mbox_line_content_length((const unsigned char *)buffer, line_length);
         buffer[line_length] = '\0';
         while ((line_length == 0) &&
                (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx,

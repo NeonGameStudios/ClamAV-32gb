@@ -502,6 +502,7 @@ extern bool __real_evidence_add_indicator(evidence_t evidence, const char *name,
 extern json_object *__real_cli_jsonarray(json_object *obj, const char *key);
 extern cl_error_t __real_cli_jsonbool(json_object *obj, const char *key, int i);
 extern cl_error_t __real_cli_jsonint(json_object *obj, const char *key, int32_t i);
+extern cl_error_t __real_cli_jsonnull(json_object *obj, const char *key);
 extern cl_error_t __real_cli_jsonuint64(json_object *obj, const char *key, uint64_t i);
 extern cl_error_t __real_cli_jsonstr(json_object *obj, const char *key, const char *s);
 static int hwp3_test_fail_font_counts;
@@ -664,6 +665,13 @@ cl_error_t __wrap_cli_jsonbool(json_object *obj, const char *key, int i)
     if (pe_test_fail_empty_section_metadata && key && strcmp(key, "HasEmptySection") == 0)
         return CL_EMEM;
     return __real_cli_jsonbool(obj, key, i);
+}
+
+cl_error_t __wrap_cli_jsonnull(json_object *obj, const char *key)
+{
+    if (mbox_test_fail_root_metadata && key && strcmp(key, "Encoding") == 0)
+        return CL_EMEM;
+    return __real_cli_jsonnull(obj, key);
 }
 
 cl_error_t __wrap_cli_jsonstr(json_object *obj, const char *key, const char *s)
@@ -1979,14 +1987,14 @@ static char *create_large_mhtml_fixture(void)
     block[sizeof(block) - 1] = '\n';
     ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
     ck_assert_ptr_nonnull(path);
-    ck_assert_int_eq(write(fd, header, sizeof(header) - 1), (ssize_t)(sizeof(header) - 1));
+    ck_assert_uint_eq(cli_writen(fd, header, sizeof(header) - 1), sizeof(header) - 1);
     while (body_bytes < target) {
         const size_t write_bytes = MIN(sizeof(block), target - body_bytes);
 
-        ck_assert_int_eq(write(fd, block, write_bytes), (ssize_t)write_bytes);
+        ck_assert_uint_eq(cli_writen(fd, block, write_bytes), write_bytes);
         body_bytes += write_bytes;
     }
-    ck_assert_int_eq(write(fd, trailer, sizeof(trailer) - 1), (ssize_t)(sizeof(trailer) - 1));
+    ck_assert_uint_eq(cli_writen(fd, trailer, sizeof(trailer) - 1), sizeof(trailer) - 1);
     ck_assert_int_eq(close(fd), 0);
 
     return path;
@@ -2017,14 +2025,14 @@ static char *create_mhtml_oversized_comment_fixture(void)
     memset(block, 'C', sizeof(block));
     ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
     ck_assert_ptr_nonnull(path);
-    ck_assert_int_eq(write(fd, header, sizeof(header) - 1), (ssize_t)(sizeof(header) - 1));
+    ck_assert_uint_eq(cli_writen(fd, header, sizeof(header) - 1), sizeof(header) - 1);
     while (comment_bytes < target) {
         const size_t write_bytes = MIN(sizeof(block), target - comment_bytes);
 
-        ck_assert_int_eq(write(fd, block, write_bytes), (ssize_t)write_bytes);
+        ck_assert_uint_eq(cli_writen(fd, block, write_bytes), write_bytes);
         comment_bytes += write_bytes;
     }
-    ck_assert_int_eq(write(fd, trailer, sizeof(trailer) - 1), (ssize_t)(sizeof(trailer) - 1));
+    ck_assert_uint_eq(cli_writen(fd, trailer, sizeof(trailer) - 1), sizeof(trailer) - 1);
     ck_assert_int_eq(close(fd), 0);
 
     return path;
@@ -2424,8 +2432,8 @@ START_TEST(test_mhtml_root_metadata_record_failure_is_fail_visible)
         "Content-Type: text/html; charset=UTF-8\n"
         "Content-Location: https://example.invalid/root.html\n"
         "\n"
-        "<html><head><meta charset=\"UTF-8\"></head>"
-        "<body>mhtml metadata regression</body></html>\n"
+        "<html><body><meta charset=\"UTF-8\"/>"
+        "mhtml metadata regression</body></html>\n"
         "--mhtml-metadata--\n";
     struct cl_scan_options options;
     cl_scan_report_t *report = NULL;
@@ -41544,7 +41552,7 @@ START_TEST(test_mbox_public_api_read_failure_is_fail_visible)
 
     map = cl_fmap_open_memory(input, sizeof(input) - 1U);
     ck_assert_ptr_nonnull(map);
-    map->gets     = fmap_gets_read_failure;
+    map->need     = fmap_readn_full_read_failure;
     verdict       = CL_VERDICT_STRONG_INDICATOR;
     last_alert    = "stale";
     scanned       = UINT64_MAX;
@@ -41652,7 +41660,7 @@ START_TEST(test_mhtml_public_api_read_failure_is_fail_visible)
 
     map = cl_fmap_open_memory(input, sizeof(input) - 1U);
     ck_assert_ptr_nonnull(map);
-    map->gets     = fmap_gets_read_failure;
+    map->need     = fmap_readn_full_read_failure;
     verdict       = CL_VERDICT_STRONG_INDICATOR;
     last_alert    = "stale";
     scanned       = UINT64_MAX;
