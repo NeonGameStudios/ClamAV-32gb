@@ -2,11 +2,10 @@
 
 ## Current PLAN.md requirement audit — 2026-09-04
 
-The authoritative checkout is clean at documentation commit
-`a494d05c55d3c87c76f38dc82ad962b845a1ef43`; the latest implementation commit
-is `130770f2debb3d3c2a7b2205e62af239e4fbf4eb` (`Harden 7-Zip PPMd input
-windows`). The current-source static audit reports 589 capability rows: 0
-qualified, 143 bounded, 425 pending, and 21 explicitly unsupported, with 575
+The authoritative checkout is the current local tip of
+`largefile-roadmap-qualification`. The current-source static audit reports
+590 capability rows: 0 qualified, 143 bounded, 426 pending, and 21 explicitly
+unsupported, with 576
 release-blocking rows and all 80 enabled parser rows still blocked. The
 following is the current requirement-by-requirement disposition of PLAN.md,
 not a release claim:
