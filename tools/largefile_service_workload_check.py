@@ -13,9 +13,13 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import os
 import re
+import stat
 import sys
 from pathlib import Path
+
+from largefile_service_oversize import validate_evidence as validate_oversize_evidence
 
 
 ORACLE_HEADER = [
@@ -54,8 +58,10 @@ REPORT_FIELDS = (
     "skipped_operations",
 )
 ROLES = {"production", "materialized", "expansion", "edge"}
-KINDS = {"cli", "service", "report", "milter"}
+KINDS = {"cli", "service", "report", "milter", "oversize"}
 MAX_LOGICAL_BYTES = 64 * 1024 * 1024 * 1024
+EXACT_EDGE_BYTES = 32 * 1024 * 1024 * 1024
+INPUT_ROLES = ("production", "materialized", "expansion", "edge")
 # This is the SHA-256 of the exact official milter fixture: the three fixed
 # headers, 32 GiB minus the marker of byte 0x5a ('Z'), and MARKER. The
 # independent harness oracle derives the same value without materializing it.
@@ -74,6 +80,25 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def validate_outcome(label: str, exit_code: int, completion: str, signature: str) -> None:
+    """Check the CLI outcome contract independently of an expected report.
+
+    Detection wins over earlier incomplete operations in scan_report.c. It may
+    therefore retain skipped operations, but must not be a clean/no-alert exit.
+    """
+    if completion == "COMPLETE":
+        valid = exit_code == 0 and signature == "-"
+    elif completion == "DETECTION_TERMINATED":
+        valid = exit_code == 1 and signature != "-"
+    elif completion in {"LIMIT_INCOMPLETE", "UNSUPPORTED", "MALFORMED_CONFIRMED",
+                        "RESOURCE_FAILURE", "APPLICATION_ABORT"}:
+        valid = exit_code == 2 and signature == "-"
+    else:
+        valid = False
+    if not valid:
+        fail(f"{label} has contradictory exit/completion/signature results")
+
+
 def load_oracle(path: Path) -> dict[str, tuple[int, str, int, str, str, str, str]]:
     with path.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.reader(stream, delimiter="\t"))
@@ -89,6 +114,7 @@ def load_oracle(path: Path) -> dict[str, tuple[int, str, int, str, str, str, str
             fail(f"qualification oracle duplicates role {role}")
         if not size.isdigit() or not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
             fail(f"qualification oracle has an invalid input binding for {role}")
+        validate_role_size(role, int(size))
         if exit_code not in {"0", "1", "2"}:
             fail(f"qualification oracle has an invalid exit for {role}")
         if completion not in {
@@ -107,6 +133,7 @@ def load_oracle(path: Path) -> dict[str, tuple[int, str, int, str, str, str, str
             fail(f"qualification oracle has an invalid offset binding for {role}")
         if not re.fullmatch(r"CL_TYPE_[A-Z0-9_]+", file_type):
             fail(f"qualification oracle has an invalid type binding for {role}")
+        validate_outcome(f"{role} oracle", int(exit_code), completion, signature)
         result[role] = (int(size), digest.lower(), int(exit_code), completion, signature, offset, file_type)
     if set(result) != ROLES:
         fail("qualification oracle does not contain exactly the four required roles")
@@ -138,6 +165,7 @@ def expected_workloads() -> dict[str, tuple[str, str, bool]]:
     for client in (1, 2):
         expected[f"clamd-parallel-client-{client}"] = ("service", "edge", False)
     expected["milter-exact-edge"] = ("milter", "-", False)
+    expected["oversize-fildesreport"] = ("oversize", "-", False)
     return expected
 
 
@@ -154,18 +182,88 @@ def evidence_path(out: Path, value: str, label: str, required: bool = True) -> P
     return candidate
 
 
-def input_binding(path_text: str, role: str, oracle: dict) -> None:
+def validate_role_size(role: str, size: int) -> None:
+    if role not in ROLES:
+        fail(f"workload has an invalid oracle role: {role}")
+    if role == "edge" and size != EXACT_EDGE_BYTES:
+        fail(f"edge input must be exactly {EXACT_EDGE_BYTES} bytes (32 GiB)")
+    if role == "materialized" and size == 0:
+        fail("materialized input must be nonempty")
+
+
+def input_layout(stream, role: str, info: os.stat_result) -> tuple[int | None, int | None]:
+    """Require filesystem-reported allocation and no reported holes.
+
+    This is a conservative filesystem admission policy, not a claim of unique
+    physical extents. Reflinks can share allocated data; SEEK_HOLE accuracy is
+    filesystem-dependent. Unsupported allocation queries fail qualification.
+    """
+    blocks = getattr(info, "st_blocks", None)
+    allocated = blocks * 512 if type(blocks) is int and blocks >= 0 else None
+    if role not in {"materialized", "edge"}:
+        return allocated, None
+    if allocated is None or allocated < info.st_size:
+        fail(f"{role} input is not fully allocated: {allocated} allocated bytes for {info.st_size} bytes")
+    if not hasattr(os, "SEEK_HOLE"):
+        fail(f"{role} input filesystem hole queries are unavailable")
+    try:
+        first_hole = os.lseek(stream.fileno(), 0, os.SEEK_HOLE)
+        stream.seek(0)
+    except OSError as error:
+        raise RuntimeError(f"{role} input filesystem hole query failed: {error}") from error
+    if first_hole != info.st_size:
+        fail(f"{role} input contains a reported hole at {first_hole}, before EOF {info.st_size}")
+    return allocated, first_hole
+
+
+def input_identity(info: os.stat_result) -> tuple:
+    # Reading can change atime. Size, ownership of the open inode, write times,
+    # and allocation must remain stable while binding the fixture.
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns,
+            info.st_ctime_ns, getattr(info, "st_blocks", None))
+
+
+def input_binding(path_text: str, role: str, oracle: dict) -> dict:
     if role not in ROLES:
         fail(f"workload has an invalid oracle role: {role}")
     path = Path(path_text)
-    if not path.is_file():
-        fail(f"workload input is not a regular file: {path}")
     expected_size, expected_hash, *_ = oracle[role]
-    actual_size = path.stat().st_size
-    if actual_size != expected_size:
-        fail(f"{role} input size changed: {actual_size} != {expected_size}")
-    if sha256(path) != expected_hash:
-        fail(f"{role} input SHA-256 changed: {path}")
+    validate_role_size(role, expected_size)
+    # O_NONBLOCK prevents a replaced fixture pathname from hanging on a FIFO.
+    descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+    with os.fdopen(descriptor, "rb") as stream:
+        before = os.fstat(stream.fileno())
+        if not stat.S_ISREG(before.st_mode):
+            fail(f"workload input is not a regular file: {path}")
+        if before.st_size != expected_size:
+            fail(f"{role} input size changed: {before.st_size} != {expected_size}")
+        allocated, first_hole = input_layout(stream, role, before)
+        digest = hashlib.sha256()
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+        if input_identity(before) != input_identity(os.fstat(stream.fileno())) or \
+                input_identity(before) != input_identity(path.stat()):
+            fail(f"{role} input changed while binding its contents: {path}")
+        if digest.hexdigest() != expected_hash:
+            fail(f"{role} input SHA-256 changed: {path}")
+    return {"input": str(path.resolve()), "size": before.st_size,
+            "sha256": digest.hexdigest(), "allocated_bytes": allocated,
+            "first_hole": first_hole}
+
+
+def input_evidence(out: Path) -> dict:
+    records = []
+    for phase in ("before", "after"):
+        path = out / f"provenance/service-inputs-{phase}.json"
+        with path.open(encoding="utf-8") as stream:
+            record = json.load(stream)
+        if not isinstance(record, dict) or record.get("version") != 1 or \
+                not isinstance(record.get("inputs"), dict) or set(record["inputs"]) != ROLES:
+            fail(f"service input {phase} evidence has an invalid schema")
+        records.append(record["inputs"])
+    if records[0] != records[1]:
+        fail("service input allocation/content evidence changed during qualification")
+    return records[0]
 
 
 def load_report(path: Path, label: str) -> dict:
@@ -180,6 +278,7 @@ def load_report(path: Path, label: str) -> dict:
 
 def validate_report(report: dict, label: str, oracle_row: tuple) -> None:
     expected_size, _, expected_exit, expected_completion, expected_signature, expected_offset, expected_type = oracle_row
+    validate_outcome(f"{label} oracle", expected_exit, expected_completion, expected_signature)
     if report.get("version") != 1:
         fail(f"{label} report schema version is not 1")
     if report.get("completion") != expected_completion:
@@ -210,8 +309,10 @@ def validate_report(report: dict, label: str, oracle_row: tuple) -> None:
         fail(f"{label} detection report does not carry a native-width alert offset")
     elif report["last_alert_offset"] != int(expected_offset):
         fail(f"{label} report alert offset does not exactly match the oracle")
-    if expected_exit in (0, 1) and report["status"] != 0:
-        fail(f"{label} report status is non-success for expected exit {expected_exit}")
+    if expected_completion == "DETECTION_TERMINATED" and report["status"] not in (0, 1):
+        fail(f"{label} report status is invalid for a detection")
+    elif expected_completion == "COMPLETE" and report["status"] != 0:
+        fail(f"{label} report status is non-success for expected clean exit")
     if expected_exit == 2 and report["status"] == 0:
         fail(f"{label} report status is clean for expected error exit 2")
     if expected_completion == "COMPLETE" and (
@@ -231,11 +332,16 @@ def validate_log(path: Path, label: str, oracle_row: tuple, check_offset: bool) 
         if "FOUND" in text:
             fail(f"{label} text log contains an unexpected detection")
         return
-    if expected_signature not in text or "FOUND" not in text:
+    # Match the actual signature field of a FOUND line, not a substring in a
+    # filename, a different signature, or an unrelated debug line.
+    escaped = re.escape(expected_signature)
+    if not expected_signature.endswith(".UNOFFICIAL"):
+        escaped += r"(?:\.UNOFFICIAL)?"
+    found = rf"^.*: {escaped}(?:\([0-9a-fA-F]+:[0-9]+\))? FOUND[ \t]*$"
+    if re.search(found, text, re.MULTILINE) is None:
         fail(f"{label} text log does not contain the expected detection")
     if check_offset and expected_offset != "-":
-        escaped = re.escape(expected_signature)
-        matches = re.findall(rf"signature {escaped}(?:\.UNOFFICIAL)? matched at ([0-9]+)", text)
+        matches = re.findall(rf"(?:^|[ \t])signature {escaped} matched at ([0-9]+)(?=[ \t\r\n]|$)", text, re.MULTILINE)
         if expected_offset not in matches:
             fail(f"{label} text log does not contain the expected match offset")
 
@@ -265,8 +371,16 @@ def validate_binding(out: Path, oracle_path: Path, workload_path: Path) -> None:
 
 
 def main(argv: list[str]) -> int:
+    if len(argv) == 6 and argv[0] == "--check-inputs":
+        oracle = load_oracle(Path(argv[1]))
+        records = {role: input_binding(path, role, oracle)
+                   for role, path in zip(INPUT_ROLES, argv[2:])}
+        print(json.dumps({"version": 1, "inputs": records}, sort_keys=True))
+        return 0
     if len(argv) != 1:
-        print("usage: largefile_service_workload_check.py SERVICE_OUTPUT", file=sys.stderr)
+        print("usage: largefile_service_workload_check.py SERVICE_OUTPUT\n"
+              "   or: largefile_service_workload_check.py --check-inputs ORACLE PRODUCTION MATERIALIZED EXPANSION EDGE",
+              file=sys.stderr)
         return 2
     out = Path(argv[0]).resolve()
     oracle_path = out / "provenance/qualification-oracle.tsv"
@@ -275,6 +389,7 @@ def main(argv: list[str]) -> int:
         fail("service workload evidence is missing its copied oracle or results manifest")
     oracle = load_oracle(oracle_path)
     validate_binding(out, oracle_path, workload_path)
+    inputs = input_evidence(out)
 
     with workload_path.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.reader(stream, delimiter="\t"))
@@ -300,6 +415,17 @@ def main(argv: list[str]) -> int:
         log = evidence_path(out, log_path, f"{label} log")
         if log is None:
             fail(f"{label} has no log path")
+
+        if kind == "oversize":
+            if input_path != "-" or status != 0:
+                fail("oversize workload must be a successful probe with a removed fixture")
+            evidence = evidence_path(out, report_path, f"{label} evidence")
+            if evidence is None:
+                fail("oversize workload has no rejection evidence")
+            if log.read_text(encoding="utf-8").strip():
+                fail("oversize workload emitted unexpected diagnostics")
+            validate_oversize_evidence(load_report(evidence, label))
+            continue
 
         if kind == "milter":
             if input_path != "-" or report_path != "-" or status != 0:
@@ -334,7 +460,8 @@ def main(argv: list[str]) -> int:
 
         if role not in ROLES:
             fail(f"service workload has an invalid role: {label}")
-        input_binding(input_path, role, oracle)
+        if input_binding(input_path, role, oracle) != inputs[role]:
+            fail(f"{label} input does not match its recorded allocation/content evidence")
         report = evidence_path(out, report_path, f"{label} report")
         if report is None:
             fail(f"{label} has no report path")

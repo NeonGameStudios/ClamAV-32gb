@@ -512,6 +512,19 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
         structured_report_note_status(scandata->conn, scandata->conn->structured_status);
     } else {
         ret = cl_scanfile_callback(scan_path, &virname, &scandata->scanned, scandata->engine, scandata->options, &context);
+
+        /* The legacy LibClamAV wrapper deliberately preserves configured
+         * limit errors such as CL_EMAXSIZE for its callers.  clamd's public
+         * AlertExceedsMax contract is different: a named limit heuristic is
+         * a detection response.  Promote only those named alerts here so the
+         * daemon emits the expected FOUND reply without changing the library
+         * wrapper's status contract. */
+        if (ret != CL_VIRUS && ret != CL_SUCCESS && virname != NULL &&
+            (scandata->options->heuristic & CL_SCAN_HEURISTIC_EXCEEDS_MAX) &&
+            strncmp(virname, "Heuristics.Limits.Exceeded.",
+                    sizeof("Heuristics.Limits.Exceeded.") - 1) == 0) {
+            ret = CL_VIRUS;
+        }
     }
     if (ret == CL_VIRUS)
         scandata->conn->structured_status = CL_VIRUS;

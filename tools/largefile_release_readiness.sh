@@ -45,6 +45,14 @@ fi
 
 if [ "$authoritative" -eq 1 ]; then
     sh "$root/tools/largefile_capability_manifest.sh" >/dev/null
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo 'authoritative readiness requires python3 for capability-case coverage validation' >&2
+        exit 2
+    fi
+    python3 -B "$root/tools/largefile_acceptance_cases.py" \
+        --manifest "$manifest" \
+        --map "$root/docs/largefile-capability-case-map.tsv" \
+        --check-map >/dev/null
 fi
 
 hash_file()
@@ -240,6 +248,59 @@ verify_qualified_evidence()
         }
         verify_capability_binding "$evidence_directory" "$capability_kind" \
             "$capability_id" "$expected_hash" "$evidence_type"
+
+        # On-access permission qualification is the only capability whose
+        # release proof must include real kernel permission events. A generic
+        # service or client record cannot prove fanotify allow/deny behavior;
+        # keep this check at the authoritative evidence boundary so missing
+        # privilege or observability remains a blocker.
+        if [ "$capability_kind" = on-access ] && [ "$capability_id" = permission ]; then
+            fanotify_proof=$evidence_directory/provenance/fanotify-permission-evidence.json
+            [ -f "$fanotify_proof" ] && [ ! -L "$fanotify_proof" ] || {
+                echo "qualified on-access evidence has no fanotify permission proof: $fanotify_proof" >&2
+                return 1
+            }
+            python3 -B "$root/tools/largefile_fanotify_evidence.py" \
+                "$fanotify_proof" --evidence-root "$evidence_directory" >/dev/null || {
+                echo "qualified on-access evidence has invalid fanotify permission proof: $fanotify_proof" >&2
+                return 1
+            }
+        fi
+
+        # PCRE's 40-GiB full-subject allowance and <12-GiB post-subject
+        # requirement are phase contracts, not metadata labels. Require the
+        # retained process-tree samples and exact-tail proof whenever the
+        # matcher row is promoted to qualified status.
+        if [ "$capability_kind" = matcher ] && [ "$capability_id" = pcre ]; then
+            pcre_phase_proof=$evidence_directory/provenance/pcre-rss-phase-evidence.json
+            [ -f "$pcre_phase_proof" ] && [ ! -L "$pcre_phase_proof" ] || {
+                echo "qualified PCRE evidence has no phase RSS proof: $pcre_phase_proof" >&2
+                return 1
+            }
+            python3 -B "$root/tools/largefile_pcre_phase_evidence.py" \
+                "$pcre_phase_proof" --evidence-root "$evidence_directory" >/dev/null || {
+                echo "qualified PCRE evidence has invalid phase RSS proof: $pcre_phase_proof" >&2
+                return 1
+            }
+        fi
+
+        if [ "$authoritative" -eq 1 ]; then
+            acceptance_records=$evidence_directory/provenance/acceptance-cases.tsv
+            [ -f "$acceptance_records" ] && [ ! -L "$acceptance_records" ] || {
+                echo "qualified release evidence has no capability-specific acceptance records: $acceptance_records" >&2
+                return 1
+            }
+            python3 -B "$root/tools/largefile_acceptance_cases.py" \
+                --manifest "$root/docs/largefile-capabilities.tsv" \
+                --map "$root/docs/largefile-capability-case-map.tsv" \
+                --records "$acceptance_records" \
+                --check-records \
+                --evidence-root "$evidence_directory" \
+                --require-capability "$capability_kind" "$capability_id" >/dev/null || {
+                echo "qualified release evidence lacks required cases for ${capability_kind}:${capability_id}" >&2
+                return 1
+            }
+        fi
 
         case "$evidence_type" in
             runtime)

@@ -93,6 +93,8 @@ require_sanitizer=${2:-no}
 levels=${3:-"1 2 4"}
 rss_budget_kb=$4
 fixed_rss_budget_kb=33554432
+fixed_pcre_rss_budget_kb=41943040
+fixed_post_pcre_rss_budget_kb=12582912
 fixed_min_available_kb=50331648
 fixed_max_temp_bytes=68719476736
 fixed_release_scan_time_ms=14400000
@@ -126,6 +128,11 @@ case "$out" in
         ;;
 esac
 
+python3 "$root/tools/largefile_boundary_corpus_check.py" "$out/corpus" >/dev/null || {
+    echo 'boundary corpus does not match its independent sparse fixture oracle' >&2
+    exit 1
+}
+
 case "$require_sanitizer" in
     yes|no) ;;
     *)
@@ -157,11 +164,14 @@ repository_tree=$out/provenance/repository-tree.txt
 repository_index=$out/provenance/repository-index.txt
 source_manifest=$out/provenance/source-manifest.txt
 build_source_manifest=$out/provenance/build-source-manifest.txt
+acceptance_records=$out/provenance/acceptance-cases.tsv
 for required in "$metadata" "$host_preflight" "$results" "$policy_log" \
     "$policy_stdin_log" "$policy_edge_stdin_log" "$cancellation_log" \
     "$manifest" "$scanner_copy" "$release_rust_library" "$cmake_cache" "$compile_commands" "$cargo_lock" \
     "$repository_metadata" "$repository_tree" "$repository_index" \
-    "$source_manifest" "$build_source_manifest" "$runtime_interpreter"; do
+    "$source_manifest" "$build_source_manifest" "$runtime_interpreter" \
+    "$acceptance_records" "$out/provenance/runtime-acceptance-oracle.tsv" \
+    "$out/provenance/runtime-process-status.tsv"; do
     if [ ! -s "$required" ]; then
         echo "missing runtime evidence: $required" >&2
         exit 1
@@ -346,9 +356,11 @@ for provenance_script in \
     largefile_runtime_evidence_check.sh \
     largefile_host_preflight.sh \
     largefile_boundary_corpus.sh \
+    largefile_boundary_corpus_check.py \
     largefile_bigtiff_fixture.py \
     largefile_poc.sh \
-    largefile_source_manifest.sh; do
+    largefile_source_manifest.sh \
+    largefile_runtime_acceptance_case_producer.py; do
     if [ ! -s "$out/provenance/$provenance_script" ]; then
         echo "missing verifier provenance script: $provenance_script" >&2
         exit 1
@@ -984,6 +996,18 @@ grep -F "rss_budget_kb=$rss_budget_kb" "$metadata" >/dev/null 2>&1 || {
     echo 'evidence RSS budget does not match the verifier budget' >&2
     exit 1
 }
+grep -Fx "pcre_rss_budget_kb=$fixed_pcre_rss_budget_kb" "$metadata" >/dev/null 2>&1 || {
+    echo 'evidence does not record the PLAN PCRE-phase RSS budget' >&2
+    exit 1
+}
+grep -Fx "post_pcre_rss_budget_kb=$fixed_post_pcre_rss_budget_kb" "$metadata" >/dev/null 2>&1 || {
+    echo 'evidence does not record the PLAN post-PCRE RSS budget' >&2
+    exit 1
+}
+grep -Fx 'rss_budget_contract=overall-stricter-than-pcre-phase' "$metadata" >/dev/null 2>&1 || {
+    echo 'evidence does not identify the stricter overall RSS subcase' >&2
+    exit 1
+}
 grep -Fx "min_available_kb=$fixed_min_available_kb" "$metadata" >/dev/null 2>&1 || {
     echo 'evidence does not use the fixed memory-headroom budget' >&2
     exit 1
@@ -1014,6 +1038,22 @@ grep -F 'policy_32g_plus_one=pass' "$metadata" >/dev/null 2>&1 || {
 }
 grep -F 'policy_32g_plus_one_stdin=pass' "$metadata" >/dev/null 2>&1 || {
     echo '32 GiB+1 stdin policy rejection did not pass' >&2
+    exit 1
+}
+grep -F 'policy_32g_plus_one_limit=pass' "$metadata" >/dev/null 2>&1 || {
+    echo '32 GiB+1 file limit-edge report did not pass' >&2
+    exit 1
+}
+grep -F 'policy_32g_plus_one_stdin_limit=pass' "$metadata" >/dev/null 2>&1 || {
+    echo '32 GiB+1 stdin limit-edge report did not pass' >&2
+    exit 1
+}
+grep -F 'clean_32g_head=pass' "$metadata" >/dev/null 2>&1 || {
+    echo 'exact 32 GiB file clean-edge scan did not pass' >&2
+    exit 1
+}
+grep -F 'clean_32g_head_stdin=pass' "$metadata" >/dev/null 2>&1 || {
+    echo 'exact 32 GiB stdin clean-edge scan did not pass' >&2
     exit 1
 }
 grep -F 'policy_32g_edge_stdin=pass' "$metadata" >/dev/null 2>&1 || {
@@ -1266,6 +1306,16 @@ done
 
 grep -E 'MaxFileSize|Max file size|exceeds the maximum file size' "$policy_log" >/dev/null 2>&1 || {
     echo 'policy log does not show the expected maximum-file-size rejection' >&2
+    exit 1
+}
+
+python3 -B "$root/tools/largefile_acceptance_cases.py" \
+    --manifest "$root/docs/largefile-capabilities.tsv" \
+    --map "$root/docs/largefile-capability-case-map.tsv" \
+    --records "$acceptance_records" \
+    --check-records \
+    --evidence-root "$out" >/dev/null || {
+    echo 'runtime capability acceptance-record schema verification failed' >&2
     exit 1
 }
 

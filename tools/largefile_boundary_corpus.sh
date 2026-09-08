@@ -8,6 +8,8 @@
 
 set -eu
 
+root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+
 if [ "$#" -ne 1 ]; then
     echo "usage: $0 OUTPUT_DIRECTORY" >&2
     exit 2
@@ -63,6 +65,11 @@ edge_marker=CLAMAV-LF-32G-EDGE
 truncate -s "$edge_size" "$edge_file"
 printf '%s' "$edge_marker" | dd of="$edge_file" bs=1 seek="$edge_offset" conv=notrunc >/dev/null 2>&1
 printf '%s\t%s\t%s\t%s\t%s\n' "${edge_label}.bin" "$edge_marker" "$edge_offset" "$edge_size" sparse-boundary >> "$manifest"
+
+# Do not let a malformed or truncated fixture become the scanner's oracle.
+# The checker reads only each marker window and independently verifies the
+# reviewed row set, logical size, sparse allocation, and marker bytes.
+python3 "$root/tools/largefile_boundary_corpus_check.py" "$out"
 
 echo "Generated sparse boundary corpus in $out"
 echo "Manifest: $manifest"

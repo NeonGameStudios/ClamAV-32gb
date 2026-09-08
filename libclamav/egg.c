@@ -387,7 +387,7 @@ static cl_error_t egg_checktimelimit(const egg_handle* handle)
 
     status = cli_checktimelimit(handle->ctx);
     if (status != CL_SUCCESS)
-        cli_mark_scan_incomplete(handle->ctx, "EGG traversal reached the configured time limit");
+        cli_mark_scan_incomplete_specific(handle->ctx, "EGG traversal reached the configured time limit");
 
     return status;
 }

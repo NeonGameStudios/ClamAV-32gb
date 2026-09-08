@@ -99,6 +99,11 @@ mkdir -p "$out/provenance"
 service_oracle_copy=$out/provenance/qualification-oracle.tsv
 service_workload_results=$out/provenance/service-workload-results.tsv
 cp "$oracle_manifest" "$service_oracle_copy"
+# Reject undersized edge inputs and sparse materialized fixtures before any
+# service is started. The same helper independently checks the final evidence.
+python3 "$root/tools/largefile_service_workload_check.py" --check-inputs \
+    "$service_oracle_copy" "$production_file" "$materialized_file" \
+    "$expansion_file" "$edge_file" > "$out/provenance/service-inputs-before.json"
 printf 'label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n' > \
     "$service_workload_results"
 
@@ -594,31 +599,22 @@ check_oracle_output()
         return 1
     fi
 
-    if [ "$expected_signature" = "-" ]; then
-        if grep -F 'FOUND' "$oracle_log" >/dev/null 2>&1; then
-            echo "$oracle_label produced an unexpected detection" >&2
-            return 1
-        fi
-    else
-        if ! grep -F "$expected_signature" "$oracle_log" >/dev/null 2>&1 ||
-            ! grep -F 'FOUND' "$oracle_log" >/dev/null 2>&1; then
-            echo "$oracle_label did not produce the expected signature oracle" >&2
-            return 1
-        fi
-        if [ "$oracle_check_offset" = yes ] && [ "$expected_offset" != "-" ]; then
-            oracle_actual_offset=$(awk \
-                -v signed="signature $expected_signature matched at " \
-                -v unsigned="signature $expected_signature.UNOFFICIAL matched at " '
-                (index($0, signed) || index($0, unsigned)) && match($0, /matched at [0-9][0-9]*/) {
-                    print substr($0, RSTART + 11, RLENGTH - 11)
-                    exit
-                }
-            ' "$oracle_log")
-            if [ "$oracle_actual_offset" != "$expected_offset" ]; then
-                echo "$oracle_label matched at ${oracle_actual_offset:-missing}; expected $expected_offset" >&2
-                return 1
-            fi
-        fi
+    # Reuse the post-run signature-field parser so producer and verifier
+    # cannot disagree about a substring or a name mentioned in a filename.
+    if ! python3 - "$root/tools" "$service_oracle_copy" "$oracle_role" \
+        "$oracle_label" "$oracle_log" "$oracle_check_offset" <<'PYLOG'
+from pathlib import Path
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from largefile_service_workload_check import load_oracle, validate_log
+
+oracle = load_oracle(Path(sys.argv[2]))
+validate_log(Path(sys.argv[5]), sys.argv[4], oracle[sys.argv[3]], sys.argv[6] == "yes")
+PYLOG
+    then
+        echo "$oracle_label did not produce the expected signature oracle" >&2
+        return 1
     fi
 
     if [ "$oracle_check_report" = yes ]; then
@@ -701,9 +697,15 @@ PY
 }
 
 rss_budget_kb=${CLAMAV_SERVICE_MAX_RSS_KB:-33554432}
+pcre_rss_budget_kb=41943040
+post_pcre_rss_budget_kb=12582912
 case "$rss_budget_kb" in
     ''|*[!0-9]*) echo 'CLAMAV_SERVICE_MAX_RSS_KB must be numeric' >&2; exit 2 ;;
 esac
+if [ "$rss_budget_kb" -gt "$pcre_rss_budget_kb" ]; then
+    echo 'CLAMAV_SERVICE_MAX_RSS_KB exceeds the PLAN PCRE-phase RSS ceiling' >&2
+    exit 2
+fi
 latency_budget_s=${CLAMAV_SERVICE_MAX_LATENCY_S:-14400}
 case "$latency_budget_s" in
     ''|*[!0-9]*) echo 'CLAMAV_SERVICE_MAX_LATENCY_S must be an integer number of seconds' >&2; exit 2 ;;
@@ -800,6 +802,7 @@ write_config()
     database=$1
     max_threads=$2
     max_queue=$3
+    alert_exceeds_max=${4:-yes}
     rm -f "$socket" "$pidfile"
     {
         printf 'DatabaseDirectory %s\n' "$database"
@@ -816,7 +819,7 @@ write_config()
         printf 'PCREMaxFileSize 32G\n'
         printf 'StreamMaxLength 32G\n'
         printf 'MaxScanTime %s\n' "$max_scan_time_ms"
-        printf 'AlertExceedsMax yes\n'
+        printf 'AlertExceedsMax %s\n' "$alert_exceeds_max"
         printf 'MaxRecursion 17\n'
         printf 'MaxFiles 10000\n'
         # Keep worker contention visible in the daemon log. The serial queue
@@ -827,7 +830,7 @@ write_config()
         printf 'LogVerbose yes\n'
         printf 'Foreground yes\n'
         if [ -n "${CLAMAV_CVD_CERTS_DIR:-}" ]; then
-            printf 'CVDCertsDir %s\n' "$CLAMAV_CVD_CERTS_DIR"
+            printf 'CVDCertsDirectory %s\n' "$CLAMAV_CVD_CERTS_DIR"
         fi
     } > "$config"
 }
@@ -837,7 +840,8 @@ start_service()
     database=$1
     max_threads=${2:-1}
     max_queue=${3:-2}
-    write_config "$database" "$max_threads" "$max_queue"
+    alert_exceeds_max=${4:-yes}
+    write_config "$database" "$max_threads" "$max_queue" "$alert_exceeds_max"
     "$build_dir/clamd/clamd" --config-file="$config" > "$out/logs/clamd-$(basename "$database").log" 2>&1 &
     service_pid=$!
     i=0
@@ -944,7 +948,7 @@ run_service_scan()
     scan_status=0
     "/usr/bin/time" -f '%e' -o "$out/logs/$scan_label.elapsed" \
         timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
-        "$build_dir/clamdscan/clamdscan" --no-summary --report-json="$scan_report" "$@" -c "$config" "$scan_file" > "$scan_log" 2>&1 &
+        "$build_dir/clamdscan/clamdscan" --infected --no-summary --report-json="$scan_report" "$@" -c "$config" "$scan_file" > "$scan_log" 2>&1 &
     scan_pid=$!
     while kill -0 "$scan_pid" 2>/dev/null; do
         measure_service_resources
@@ -975,7 +979,7 @@ run_service_stdin()
     (
         "/usr/bin/time" -f '%e' -o "$out/logs/$scan_label.elapsed" \
             sh -c 'cat "$1" | timeout --signal=TERM --kill-after=5 "$3" "$2" \
-                --no-summary --report-json="$4" -c "$5" -' sh \
+                --infected --no-summary --report-json="$4" -c "$5" -' sh \
                 "$edge_file" "$build_dir/clamdscan/clamdscan" "$service_timeout_s" \
                 "$scan_report" "$config"
     ) > "$scan_log" 2>&1 &
@@ -1055,7 +1059,7 @@ run_serial_queue()
         (
             status=0
             timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
-                "$build_dir/clamdscan/clamdscan" --no-summary \
+                "$build_dir/clamdscan/clamdscan" --infected --no-summary \
                 --stream --report-json="$queue_report" -c "$config" "$materialized_file" \
                 > "$queue_log" 2>&1 || status=$?
             printf '%s\n' "$status" > "$queue_status_file"
@@ -1148,6 +1152,31 @@ run_direct_report()
         "$report_log" "$report_path" "$report_status" no
     printf 'production_cvd_clamdscan_%s=pass\n' "$report_label" >> "$out/service-summary.txt"
 }
+
+# A separate negative control proves that size admission rejects 32 GiB + 1
+# with both AlertExceedsMax settings. Each probe creates and removes its own
+# sparse descriptor fixture; this is not materialized scan qualification.
+oversize_alert_off_report=$out/reports/oversize-fildesreport-alert-off.json
+oversize_alert_on_report=$out/reports/oversize-fildesreport-alert-on.json
+oversize_report=$out/reports/oversize-fildesreport.json
+oversize_log=$out/logs/oversize-fildesreport.log
+: > "$oversize_log"
+python3 "$root/tools/largefile_service_oversize.py" "$socket" \
+    "$oversize_alert_on_report" "$out/tmp" 60 on \
+    > "$out/logs/oversize-fildesreport-alert-on.log" 2>&1
+stop_service
+start_service "$production_db" 1 2 no
+python3 "$root/tools/largefile_service_oversize.py" "$socket" \
+    "$oversize_alert_off_report" "$out/tmp" 60 off \
+    > "$out/logs/oversize-fildesreport-alert-off.log" 2>&1
+stop_service
+start_service "$production_db" 1 2
+python3 "$root/tools/largefile_service_oversize.py" --combine \
+    "$oversize_report" "$oversize_alert_off_report" "$oversize_alert_on_report" \
+    > "$out/logs/oversize-fildesreport-combine.log" 2>&1
+record_workload oversize-fildesreport oversize - - \
+    "$oversize_log" "$oversize_report" 0 no
+printf 'oversize_fildesreport=pass\n' >> "$out/service-summary.txt"
 
 run_direct_report scanreport scan
 run_direct_report contscanreport contscan
@@ -1254,7 +1283,7 @@ while [ "$client" -le 2 ]; do
             status=0
             "/usr/bin/time" -f '%e %M' -o "$multi_time" \
                 timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
-            "$build_dir/clamdscan/clamdscan" --no-summary --report-json="$multi_report" -c "$config" "$edge_file" \
+            "$build_dir/clamdscan/clamdscan" --infected --no-summary --report-json="$multi_report" -c "$config" "$edge_file" \
                 > "$multi_log" 2>&1 || status=$?
         printf '%s\n' "$status" > "$multi_status_file"
     ) &
@@ -1363,6 +1392,10 @@ if [ "$service_peak_rss_kb" -gt "$rss_budget_kb" ]; then
     exit 1
 fi
 printf 'service_rss_peak_kb=%s\n' "$service_peak_rss_kb" >> "$out/service-summary.txt"
+printf 'rss_budget_kb=%s\n' "$rss_budget_kb" >> "$out/service-summary.txt"
+printf 'pcre_rss_budget_kb=%s\n' "$pcre_rss_budget_kb" >> "$out/service-summary.txt"
+printf 'post_pcre_rss_budget_kb=%s\n' "$post_pcre_rss_budget_kb" >> "$out/service-summary.txt"
+printf 'rss_budget_contract=overall-stricter-than-pcre-phase\n' >> "$out/service-summary.txt"
 
 stop_service
 if ! ctest --test-dir "$build_dir" --output-on-failure -R '^(clamav_milter_quota|clamav_milter_protocol)$' > "$out/logs/milter-ctest.log" 2>&1; then
@@ -1434,6 +1467,13 @@ printf 'service_timeout_s=%s\n' "$service_timeout_s" >> "$service_build_identity
 printf 'max_scan_time_ms=%s\n' "$max_scan_time_ms" >> "$out/service-summary.txt"
 printf 'service_timeout_s=%s\n' "$service_timeout_s" >> "$out/service-summary.txt"
 record_service_binary_hashes "$service_binary_hashes_after"
+python3 "$root/tools/largefile_service_workload_check.py" --check-inputs \
+    "$service_oracle_copy" "$production_file" "$materialized_file" \
+    "$expansion_file" "$edge_file" > "$out/provenance/service-inputs-after.json"
+if ! cmp -s "$out/provenance/service-inputs-before.json" "$out/provenance/service-inputs-after.json"; then
+    echo 'service input allocation/content evidence changed during qualification' >&2
+    exit 1
+fi
 if ! cmp -s "$service_binary_hashes_before" "$service_binary_hashes_after"; then
     echo 'service executable changed during qualification' >&2
     exit 1
@@ -1468,10 +1508,24 @@ printf 'service_runtime_components_unchanged=pass\n' >> "$out/service-summary.tx
 printf 'service_interpreters_unchanged=pass\n' >> "$out/service-summary.txt"
 printf 'service_build_identity=pass\n' >> "$out/service-summary.txt"
 printf 'service_qualification=pass\n' >> "$out/service-summary.txt"
+# Convert only explicitly mapped, already-validated service workloads into
+# capability-bound R04 records. Unmapped cases remain absent and therefore
+# continue to block authoritative release readiness.
+python3 "$root/tools/largefile_acceptance_case_producer.py" "$out" \
+    --manifest "$root/docs/largefile-capabilities.tsv" \
+    --map "$root/docs/largefile-capability-case-map.tsv"
 printf 'qualification_oracle=provenance/qualification-oracle.tsv\n' >> "$out/oracle-binding.txt"
 printf 'qualification_oracle_sha256=%s\n' \
     "$(sha256sum "$service_oracle_copy" | awk '{ print $1 }')" >> "$out/oracle-binding.txt"
 printf 'workload_results=provenance/service-workload-results.tsv\n' >> "$out/oracle-binding.txt"
 printf 'workload_results_sha256=%s\n' \
     "$(sha256sum "$service_workload_results" | awk '{ print $1 }')" >> "$out/oracle-binding.txt"
+(
+    cd "$out"
+    find . -type f ! -name SHA256SUMS -print |
+        LC_ALL=C sort |
+        while IFS= read -r evidence_file; do
+            sha256sum "$evidence_file"
+        done
+) > "$out/SHA256SUMS"
 echo "service qualification passed; evidence is in $out"

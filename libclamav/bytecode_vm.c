@@ -53,7 +53,10 @@ static int never_inline bcfail(const char *msg, long a, long b,
     return CL_EARG;
 }
 #else
-#define bcfail(msg, a, b, f, l) CL_EBYTECODE
+#define bcfail(msg, a, b, f, l)                                                                          \
+    (cli_dbgmsg("bytecode: check failed %s (%lx and %lx) at %s:%u\n",                   \
+                (msg), (unsigned long)(a), (unsigned long)(b), (f), (l)),                         \
+     CL_EBYTECODE)
 #endif
 
 #define CHECK_FUNCID(funcid)                                                                                          \
@@ -74,8 +77,6 @@ static int never_inline bcfail(const char *msg, long a, long b,
     } while (0)
 
 #else
-static inline int bcfail(const char *msg, long a, long b,
-                         const char *file, unsigned line) {}
 #define CHECK_FUNCID(x) ;
 #define CHECK_APIID(x) ;
 #define CHECK_EQ(a, b)
@@ -312,8 +313,11 @@ static always_inline struct stack_entry *pop_stack(struct stack *stack,
 #define uint_type(n) uint##n##_t
 #define READNfrom(maxBytes, from, x, n, p)   \
     CHECK_GT((maxBytes), (p) + (n / 8) - 1); \
-    CHECK_EQ((p) & (n / 8 - 1), 0);          \
-    x = *(uint_type(n) *)&(from)[(p)];       \
+    do {                                     \
+        uint_type(n) read_value;             \
+        memcpy(&read_value, &(from)[(p)], n / 8); \
+        (x) = read_value;                    \
+    } while (0);                             \
     TRACE_R(x)
 
 #define READN(x, n, p)                                                    \

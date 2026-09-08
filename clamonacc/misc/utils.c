@@ -26,6 +26,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <pthread.h>
@@ -154,10 +155,16 @@ char **onas_get_opt_list(const char *fname, int *num_entries, cl_error_t *err)
     STATBUF sb;
     char **opt_list = NULL;
     char **rlc_ptr  = NULL;
-    uint64_t len    = 0;
-    int32_t ret     = 0;
+    size_t len      = 0;
+    ssize_t ret     = 0;
 
+    if (NULL == fname || NULL == num_entries || NULL == err) {
+        if (NULL != err)
+            *err = CL_ENULLARG;
+        return NULL;
+    }
     *num_entries = 0;
+    *err         = CL_SUCCESS;
 
     opt_list = malloc(sizeof(char *));
     if (NULL == opt_list) {
@@ -177,8 +184,19 @@ char **onas_get_opt_list(const char *fname, int *num_entries, cl_error_t *err)
     }
 
     while ((ret = getline(opt_list + *num_entries, &len, opt_file)) != -1) {
+        size_t line_len = (size_t)ret;
 
-        opt_list[*num_entries][strlen(opt_list[*num_entries]) - 1] = '\0';
+        while (line_len > 0 &&
+               (opt_list[*num_entries][line_len - 1] == '\n' ||
+                opt_list[*num_entries][line_len - 1] == '\r')) {
+            opt_list[*num_entries][--line_len] = '\0';
+        }
+        if (line_len == 0) {
+            len = 0;
+            free(opt_list[*num_entries]);
+            opt_list[*num_entries] = NULL;
+            continue;
+        }
         errno                                                      = 0;
         if (0 != CLAMSTAT(opt_list[*num_entries], &sb)) {
             logg(LOGG_DEBUG, "ClamMisc: when parsing path list ... could not stat '%s' ... %s ... skipping\n", opt_list[*num_entries], strerror(errno));
@@ -212,7 +230,7 @@ char **onas_get_opt_list(const char *fname, int *num_entries, cl_error_t *err)
             opt_list[*num_entries] = NULL;
         } else {
             *err = CL_EMEM;
-            fclose(opt_file);
+    fclose(opt_file);
             free_opt_list(opt_list, *num_entries);
             return NULL;
         }
@@ -220,6 +238,16 @@ char **onas_get_opt_list(const char *fname, int *num_entries, cl_error_t *err)
         len = 0;
     }
 
+    if (ferror(opt_file)) {
+        logg(LOGG_ERROR, "ClamMisc: error while reading path list file `%s', %s\n",
+             fname, errno ? strerror(errno) : "read error");
+        free(opt_list[*num_entries]);
+        opt_list[*num_entries] = NULL;
+        fclose(opt_file);
+        *err = CL_EREAD;
+        free_opt_list(opt_list, *num_entries);
+        return NULL;
+    }
     opt_list[*num_entries] = NULL;
     fclose(opt_file);
     return opt_list;

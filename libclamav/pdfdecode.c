@@ -130,7 +130,7 @@ static cl_error_t pdf_checktimelimit(struct pdf_struct *pdf, const char *reason)
     cl_error_t status = cli_checktimelimit(ctx);
 
     if (status != CL_SUCCESS && ctx)
-        cli_mark_scan_incomplete(ctx, reason);
+        cli_mark_scan_incomplete_specific(ctx, reason);
 
     return status;
 }
@@ -843,6 +843,8 @@ size_t pdf_decodestream_with_params_array(
     struct pdf_token *token = NULL;
     size_t bytes_scanned    = 0;
     struct pdf_decode_params decode_params = {params, params_array};
+    bool chain_uses_lzw = false;
+    uint32_t filter_index;
 
     if (!status) {
         /* invalid args, and no way to pass back the status code */
@@ -873,6 +875,34 @@ size_t pdf_decodestream_with_params_array(
     *status = pdf_decode_params_validate(pdf, obj, &decode_params);
     if (*status != CL_SUCCESS)
         goto done;
+
+    for (filter_index = 0; filter_index < obj->numfilters; filter_index++) {
+        if (obj->filterlist[filter_index] == OBJ_FILTER_LZW) {
+            chain_uses_lzw = true;
+            break;
+        }
+    }
+
+    /* Multi-filter chains still use the legacy chain admission contract.  Do
+     * these intrinsic-width checks before constructing a reader: otherwise a
+     * deliberately oversized logical stream can reach configured scan-limit
+     * accounting (or a decoder) before its native boundary is reported.  A
+     * single streamed filter remains eligible for the bounded native-width
+     * path below. */
+    if (obj->numfilters > 1U && chain_uses_lzw && streamlen > UINT32_MAX) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF filtered stream exceeds the decoder's 32-bit input boundary");
+        *status = CL_ERESOURCE;
+        goto done;
+    }
+    if (obj->numfilters > 1U && chain_uses_lzw && streamlen > CLI_MAX_ALLOCATION) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF stream exceeds the individual allocation boundary");
+        *status = CL_ERESOURCE;
+        goto done;
+    }
 
     /* Decryptable streams use a fixed-memory reader and transactional output.
      * Implicit document decryption precedes every declared filter. An explicit

@@ -44,6 +44,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
@@ -68,6 +69,7 @@
 #include "getopt.h"
 #include "largefile_admission.h"
 #include "optparser.h"
+#include "output.h"
 #include "session.h"
 
 #ifdef CLAMAV_TEST_LARGEFILE_IO_WRAP
@@ -454,6 +456,102 @@ START_TEST(test_scan_report_frames_are_bounded_and_fragment_safe)
     ck_assert_ptr_null(json);
     close(pair[0]);
     close(pair[1]);
+}
+END_TEST
+#endif
+
+#ifndef _WIN32
+static void assert_dsreport_path_request_accepts_sendln_success(int scantype, const char *expected_command,
+                                                                const char *report, int expected_result)
+{
+    int pair[2];
+    pid_t child;
+    int child_status;
+    uint32_t frame_length;
+    uint32_t terminator = 0;
+    int infected = 0;
+    int incomplete = 0;
+    int errors = 0;
+
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, pair), 0);
+    child = fork();
+    ck_assert_msg(child >= 0, "fork() failed: %s", strerror(errno));
+    if (child == 0) {
+        char command[128];
+        ssize_t received;
+
+        close(pair[0]);
+        received = recv(pair[1], command, sizeof(command), 0);
+        if (received <= 0 || !memchr(command, '\0', (size_t)received) || strcmp(command, expected_command) != 0)
+            _exit(1);
+
+        frame_length = htonl((uint32_t)strlen(report));
+        if (send(pair[1], &frame_length, sizeof(frame_length), 0) != (ssize_t)sizeof(frame_length) ||
+            send(pair[1], report, strlen(report), 0) != (ssize_t)strlen(report) ||
+            send(pair[1], &terminator, sizeof(terminator), 0) != (ssize_t)sizeof(terminator))
+            _exit(1);
+        close(pair[1]);
+        _exit(0);
+    }
+
+    close(pair[1]);
+    ck_assert_int_eq(dsreport(pair[0], scantype, "/tmp/clamav-report-fixture", NULL, false, NULL, &infected,
+                              &incomplete, &errors, NULL), expected_result);
+    close(pair[0]);
+    ck_assert_int_eq(waitpid(child, &child_status, 0), child);
+    ck_assert(WIFEXITED(child_status));
+    ck_assert_int_eq(WEXITSTATUS(child_status), 0);
+    ck_assert_int_eq(infected, expected_result == 0 ? 1 : 0);
+    ck_assert_int_eq(incomplete, 0);
+    ck_assert_int_eq(errors, 0);
+}
+
+START_TEST(test_dsreport_path_request_accepts_sendln_success)
+{
+    static const struct {
+        int scantype;
+        const char *command;
+    } cases[] = {
+        {CONT, "zCONTSCANREPORT /tmp/clamav-report-fixture"},
+        {MULTI, "zMULTISCANREPORT /tmp/clamav-report-fixture"},
+        {ALLMATCH, "zALLMATCHSCANREPORT /tmp/clamav-report-fixture"},
+    };
+    static const char detection_report[] =
+        "{\"version\":1,\"status\":1,\"verdict\":2,\"completion\":\"DETECTION_TERMINATED\","
+        "\"last_alert\":\"Test.Detection\"}";
+    static const char missing_alert_report[] =
+        "{\"version\":1,\"status\":1,\"verdict\":2,\"completion\":\"DETECTION_TERMINATED\"}";
+    char log_path[] = "/tmp/clamav-dsreport-log-XXXXXX";
+    const char *old_logg_file = logg_file;
+    short old_mprintf_disabled = mprintf_disabled;
+    int log_fd = mkstemp(log_path);
+    FILE *log_stream;
+    char log_contents[2048];
+    size_t log_length;
+    size_t i;
+
+    close(log_fd);
+    logg_close();
+    logg_file = log_path;
+    mprintf_disabled = 1;
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        assert_dsreport_path_request_accepts_sendln_success(cases[i].scantype, cases[i].command,
+                                                            detection_report, 0);
+        assert_dsreport_path_request_accepts_sendln_success(cases[i].scantype, cases[i].command,
+                                                            missing_alert_report, -1);
+    }
+    logg_close();
+    log_stream = fopen(log_path, "rb");
+    ck_assert_ptr_nonnull(log_stream);
+    log_length = fread(log_contents, 1, sizeof(log_contents) - 1, log_stream);
+    ck_assert_int_eq(ferror(log_stream), 0);
+    fclose(log_stream);
+    log_contents[log_length] = '\0';
+    ck_assert_uint_eq((unsigned int)(strstr(log_contents, "/tmp/clamav-report-fixture: Test.Detection FOUND") != NULL), 1);
+    ck_assert_ptr_null(strstr(log_contents, "/tmp/clamav-report-fixture: FOUND"));
+    unlink(log_path);
+    logg_file = old_logg_file;
+    mprintf_disabled = old_mprintf_disabled;
 }
 END_TEST
 #endif
@@ -1121,6 +1219,41 @@ START_TEST(test_stream_client_rejects_over_limit)
 }
 END_TEST
 
+START_TEST(test_dsreport_stream_preserves_over_limit_fallback)
+{
+    struct optstruct stream_limit;
+    char path[] = "/tmp/clamav-dsreport-stream-limit-XXXXXX";
+    const char payload[] = "123456789";
+    int sockets[2];
+    int fd;
+    int infected = 0;
+    int incomplete = 0;
+    int errors = 0;
+    ssize_t received;
+
+    memset(&stream_limit, 0, sizeof(stream_limit));
+    stream_limit.name   = "StreamMaxLength";
+    stream_limit.numarg = 8;
+
+    fd = mkstemp(path);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq((int)write(fd, payload, sizeof(payload) - 1), (int)sizeof(payload) - 1);
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+    ck_assert_int_eq(dsreport(sockets[0], STREAM, path, NULL, false, NULL,
+                              &infected, &incomplete, &errors, &stream_limit),
+                     -(int)CL_EMAXSIZE);
+    received = recv(sockets[1], path, sizeof(path), MSG_DONTWAIT);
+    ck_assert_int_eq(received, -1);
+    ck_assert(errno == EAGAIN || errno == EWOULDBLOCK);
+
+    close(sockets[0]);
+    close(sockets[1]);
+    unlink(path);
+}
+END_TEST
+
 START_TEST(test_stream_client_rewinds_regular_input)
 {
     struct optstruct stream_limit;
@@ -1145,6 +1278,41 @@ START_TEST(test_stream_client_rewinds_regular_input)
     ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
 
     ck_assert_int_eq(send_stream_fd(sockets[0], fileno(regular), "rewind", &stream_limit), 1);
+    ck_assert_int_eq((int)recv(sockets[1], wire, sizeof(wire), MSG_WAITALL), (int)wire_length);
+    ck_assert_mem_eq(wire, "zINSTREAM", command_length);
+
+    memcpy(&network_length, wire + command_length, sizeof(network_length));
+    ck_assert_uint_eq(ntohl(network_length), frame_length);
+    ck_assert_mem_eq(wire + command_length + sizeof(network_length), payload, frame_length);
+
+    memcpy(&network_length, wire + command_length + sizeof(network_length) + frame_length,
+           sizeof(network_length));
+    ck_assert_uint_eq(network_length, 0);
+
+    close(sockets[0]);
+    close(sockets[1]);
+    fclose(regular);
+}
+END_TEST
+
+START_TEST(test_stream_client_uses_default_limit_without_options)
+{
+    int sockets[2];
+    FILE *regular;
+    const char payload[] = "stream-default-options";
+    const size_t command_length = sizeof("zINSTREAM");
+    const size_t frame_length   = sizeof(payload) - 1;
+    const size_t wire_length    = command_length + sizeof(uint32_t) + frame_length + sizeof(uint32_t);
+    unsigned char wire[sizeof("zINSTREAM") + sizeof(uint32_t) + sizeof(payload) - 1 + sizeof(uint32_t)];
+    uint32_t network_length;
+
+    regular = tmpfile();
+    ck_assert_ptr_nonnull(regular);
+    ck_assert_int_eq((int)fwrite(payload, 1, frame_length, regular), (int)frame_length);
+    ck_assert_int_eq(fflush(regular), 0);
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+    ck_assert_int_eq(send_stream_fd(sockets[0], fileno(regular), "default-options", NULL), 1);
     ck_assert_int_eq((int)recv(sockets[1], wire, sizeof(wire), MSG_WAITALL), (int)wire_length);
     ck_assert_mem_eq(wire, "zINSTREAM", command_length);
 
@@ -1221,6 +1389,8 @@ END_TEST
 START_TEST(test_fildes_client_rejects_over_limit)
 {
     struct optstruct file_limit;
+    cl_error_t failure_status = CL_SUCCESS;
+    uint64_t size_out = 0;
     int sockets[2];
     FILE *regular;
     const char over[]  = "123456789";
@@ -1234,6 +1404,11 @@ START_TEST(test_fildes_client_rejects_over_limit)
     ck_assert_ptr_nonnull(regular);
     ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
     ck_assert_int_eq(fflush(regular), 0);
+    ck_assert_int_eq(clamd_fdpass_size_preflight(
+                         fileno(regular), "regular-over-limit", &file_limit,
+                         &failure_status, &size_out), 0);
+    ck_assert_int_eq(failure_status, CL_EMAXSIZE);
+    ck_assert_uint_eq(size_out, sizeof(over) - 1);
     ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
     ck_assert_int_eq(send_fdpass_fd_checked(sockets[0], fileno(regular), "regular-over-limit", &file_limit), 0);
     close(sockets[0]);
@@ -2172,6 +2347,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_scan_report_json_metadata_binds_completion_and_boundaries);
 #ifndef _WIN32
     tcase_add_test(tc_parser, test_scan_report_frames_are_bounded_and_fragment_safe);
+    tcase_add_test(tc_parser, test_dsreport_path_request_accepts_sendln_success);
 #endif
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
     tcase_add_test(tc_parser, test_stream_limit_zero_selects_large_file_ceiling);
@@ -2200,7 +2376,9 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_client, test_dsresult_error_updates_error_counter);
 #endif
     tcase_add_test(tc_client, test_stream_client_rejects_over_limit);
+    tcase_add_test(tc_client, test_dsreport_stream_preserves_over_limit_fallback);
     tcase_add_test(tc_client, test_stream_client_rewinds_regular_input);
+    tcase_add_test(tc_client, test_stream_client_uses_default_limit_without_options);
     tcase_add_test(tc_client, test_stream_client_rejects_invalid_descriptor_before_command);
     tcase_add_test(tc_client, test_stream_client_rejects_read_error_before_terminator);
 #if defined(HAVE_FD_PASSING)
@@ -2247,6 +2425,8 @@ static Suite *test_clamd_suite(void)
 int main(int argc, char **argv)
 {
     int num_fds;
+    const char *run_suite;
+    const char *run_case;
 
     UNUSEDPARAM(argc);
     UNUSEDPARAM(argv);
@@ -2262,7 +2442,12 @@ int main(int argc, char **argv)
     Suite *s    = test_clamd_suite();
     SRunner *sr = srunner_create(s);
     srunner_set_log(sr, OBJDIR PATHSEP "test-clamd.log");
-    srunner_run_all(sr, CK_NORMAL);
+    run_suite = getenv("CK_RUN_SUITE");
+    run_case  = getenv("CK_RUN_CASE");
+    if (run_suite != NULL || run_case != NULL)
+        srunner_run(sr, run_suite, run_case, CK_NORMAL);
+    else
+        srunner_run_all(sr, CK_NORMAL);
     num_fds = srunner_ntests_failed(sr);
     srunner_free(sr);
     return (num_fds == 0) ? EXIT_SUCCESS : EXIT_FAILURE;

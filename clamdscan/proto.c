@@ -58,12 +58,14 @@
 // libclamav
 #include "clamav.h"
 #include "others.h"
+#include "scan_report.h"
 
 // common
 #include "actions.h"
 #include "output.h"
 #include "misc.h"
 #include "clamdcom.h"
+#include "optparser.h"
 
 #include "proto.h"
 #include "client.h"
@@ -179,7 +181,10 @@ static int ftw_chkpath(const char *path, struct cli_ftw_cbdata *data)
     return client_path_excluded(path, policy);
 }
 
-int clamdscan_write_client_failure_report(FILE *stream, const char *target, cl_error_t status)
+int clamdscan_write_client_failure_report_ex(FILE *stream, const char *target,
+                                             cl_error_t status, uint64_t root_size,
+                                             const cl_scan_report_limits_t *limits,
+                                             const char *file_type, const char *reason)
 {
     cl_scan_report_t *report = NULL;
     char *json              = NULL;
@@ -192,6 +197,8 @@ int clamdscan_write_client_failure_report(FILE *stream, const char *target, cl_e
         return -1;
     cli_scan_report_set_target(report, target);
     cli_scan_report_finish(report, NULL, status, CL_VERDICT_NOTHING_FOUND, NULL);
+    if (root_size != 0 || limits != NULL || file_type != NULL || reason != NULL)
+        cli_scan_report_set_fallback_details(report, root_size, limits, file_type, reason);
     if (cl_scan_report_to_json(report, &json) != CL_SUCCESS) {
         cl_scan_report_free(report);
         return -1;
@@ -203,6 +210,70 @@ int clamdscan_write_client_failure_report(FILE *stream, const char *target, cl_e
     free(json);
     cl_scan_report_free(report);
     return result;
+}
+
+int clamdscan_write_client_failure_report(FILE *stream, const char *target, cl_error_t status)
+{
+    return clamdscan_write_client_failure_report_ex(stream, target, status, 0, NULL, NULL, NULL);
+}
+
+static uint64_t clamdscan_option_u64(const struct optstruct *opts, const char *name)
+{
+    const struct optstruct *option;
+
+    if (opts == NULL || name == NULL)
+        return 0;
+    option = optget(opts, name);
+    if (option == NULL || option->numarg < 0)
+        return 0;
+    return (uint64_t)option->numarg;
+}
+
+static void clamdscan_report_limits(const struct optstruct *opts,
+                                    cl_scan_report_limits_t *limits)
+{
+    if (limits == NULL)
+        return;
+
+    memset(limits, 0, sizeof(*limits));
+    limits->max_file_size      = clamdscan_option_u64(opts, "MaxFileSize");
+    limits->max_scan_size      = clamdscan_option_u64(opts, "MaxScanSize");
+    limits->max_pcre_file_size = clamdscan_option_u64(opts, "PCREMaxFileSize");
+    limits->max_matcher_work   = clamdscan_option_u64(opts, "MaxMatcherWork");
+    limits->max_temporary_size  = clamdscan_option_u64(opts, "MaxTemporarySize");
+    limits->max_contiguous_size = clamdscan_option_u64(opts, "MaxContiguousSize");
+    limits->max_scan_time      = clamdscan_option_u64(opts, "MaxScanTime");
+    limits->max_files          = (uint32_t)clamdscan_option_u64(opts, "MaxFiles");
+    limits->max_recursion      = (uint32_t)clamdscan_option_u64(opts, "MaxRecursion");
+}
+
+/* IDSESSION sends stream and descriptor requests directly from
+ * parallel_callback(), so those requests do not pass through dsreport()'s
+ * known-size admission path. Recover the same limit classification when the
+ * low-level sender returns its historical soft-fail result, allowing report
+ * mode to retain the input size and configured limits. */
+static cl_error_t clamdscan_known_size_limit_status(const STATBUF *sb, int scantype)
+{
+    uint64_t limit = CLI_MAX_LARGE_FILESIZE;
+    const struct optstruct *option;
+
+    if (sb == NULL || sb->st_size < 0 || !S_ISREG(sb->st_mode))
+        return CL_SUCCESS;
+
+    if (scantype == STREAM) {
+        limit = clamd_stream_limit(clamdopts);
+    } else if (scantype == FILDES) {
+        option = optget(clamdopts, "MaxFileSize");
+        if (option != NULL && option->numarg > 0) {
+            limit = (uint64_t)option->numarg;
+            if (limit > CLI_MAX_LARGE_FILESIZE)
+                limit = CLI_MAX_LARGE_FILESIZE;
+        }
+    } else {
+        return CL_SUCCESS;
+    }
+
+    return (uint64_t)sb->st_size > limit ? CL_EMAXSIZE : CL_SUCCESS;
 }
 
 /* Used by serial_callback() */
@@ -235,10 +306,14 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
     bool report_target      = (reason == visit_file);
     bool report_written     = false;
     cl_error_t report_status = CL_SUCCESS;
+    uint64_t report_root_size = 0;
+    cl_scan_report_limits_t report_limits;
 
     action_source_init(&action_source);
 
-    UNUSEDPARAM(sb);
+    memset(&report_limits, 0, sizeof(report_limits));
+    if (sb != NULL && S_ISREG(sb->st_mode) && sb->st_size >= 0)
+        report_root_size = (uint64_t)sb->st_size;
 
     if (CL_SUCCESS != cli_realpath((const char *)path, &real_filter_path)) {
         logg(LOGG_DEBUG, "Failed to determine real filename of %s.\n", path);
@@ -322,9 +397,12 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
                        have_action_source, c->report_stream, &report_infected,
                        &report_incomplete, &c->errors, clamdopts);
         if (ret < 0) {
+            /* dsreport() owns only protocol processing; the callback owns
+             * the connection and must release it on every failure path. */
+            closesocket(sockd);
             c->errors++;
             c->printok = 0;
-            report_status = CL_ERROR;
+            report_status = (ret == -(int)CL_EMAXSIZE) ? CL_EMAXSIZE : CL_ERROR;
             status     = CL_BREAK;
             goto done;
         }
@@ -332,10 +410,6 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
         c->infected += report_infected;
         if (report_infected || report_incomplete)
             c->printok = 0;
-        if (report_infected)
-            logg(LOGG_INFO, "%s: FOUND\n", f);
-        else if (report_incomplete)
-            logg(LOGG_INFO, "%s: INCOMPLETE\n", f);
         closesocket(sockd);
         status = CL_SUCCESS;
         goto done;
@@ -356,7 +430,13 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
     status = CL_SUCCESS;
 done:
     if (c->report_stream && report_target && !report_written &&
-        clamdscan_write_client_failure_report(c->report_stream, f, report_status) != 0)
+        (report_status == CL_EMAXSIZE
+             ? (clamdscan_report_limits(clamdopts, &report_limits),
+                clamdscan_write_client_failure_report_ex(
+                    c->report_stream, f, report_status, report_root_size,
+                    &report_limits, "CL_TYPE_BINARY_DATA",
+                    "Heuristics.Limits.Exceeded.MaxFileSize"))
+             : clamdscan_write_client_failure_report(c->report_stream, f, report_status)) != 0)
         c->errors++;
     if (have_action_source) {
         action_source_close(&action_source);
@@ -458,6 +538,20 @@ static int report_json_id(const char *json, uint32_t length, unsigned int *id)
     return 0;
 }
 
+static int log_report_detection(const char *filename, const char *json, uint32_t json_length)
+{
+    char *alert = NULL;
+
+    if (scan_report_json_alert(json, json_length, &alert) < 0 || !alert || !*alert) {
+        logg(LOGG_ERROR, "%s: infected structured report has no exact alert name\n", filename);
+        free(alert);
+        return -1;
+    }
+    logg(LOGG_INFO, "%s: %s FOUND\n", filename, alert);
+    free(alert);
+    return 0;
+}
+
 static int dspreport(struct client_parallel_data *c)
 {
     char *json                 = NULL;
@@ -508,9 +602,12 @@ static int dspreport(struct client_parallel_data *c)
         return 1;
     }
     if (frame_infected) {
+        if (log_report_detection(filename, json, json_length) != 0) {
+            free(json);
+            return 1;
+        }
         c->infected++;
         c->printok = 0;
-        logg(LOGG_INFO, "%s: FOUND\n", filename);
         if (action && action_source)
             action(action_source);
     } else if (frame_incomplete) {
@@ -642,9 +739,14 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
     char *real_filter_path         = NULL;
     bool report_target             = (reason == visit_file);
     cl_error_t report_status       = CL_SUCCESS;
+    uint64_t report_root_size      = 0;
+    cl_scan_report_limits_t report_limits;
 
-    UNUSEDPARAM(sb);
     UNUSEDPARAM(path);
+
+    memset(&report_limits, 0, sizeof(report_limits));
+    if (sb != NULL && S_ISREG(sb->st_mode) && sb->st_size >= 0)
+        report_root_size = (uint64_t)sb->st_size;
 
     if (CL_SUCCESS != cli_realpath((const char *)filename, &real_filter_path)) {
         logg(LOGG_DEBUG, "Failed to determine real filename of %s.\n", filename);
@@ -775,7 +877,10 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
     if (res <= 0) {
         c->printok = 0;
         c->errors++;
-        report_status = res ? CL_ERROR : CL_EOPEN;
+        if (res == 0)
+            report_status = clamdscan_known_size_limit_status(sb, c->scantype);
+        if (report_status == CL_SUCCESS)
+            report_status = res ? CL_ERROR : CL_EOPEN;
         status = res ? CL_BREAK : CL_SUCCESS;
         goto done;
     }
@@ -804,9 +909,22 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
     status = CL_SUCCESS;
 
 done:
-    if (c->report_stream && report_target && NULL == cid &&
-        clamdscan_write_client_failure_report(c->report_stream, filename, report_status) != 0)
-        c->errors++;
+    if (c->report_stream && report_target && NULL == cid) {
+        int report_result;
+
+        if (report_status == CL_EMAXSIZE) {
+            clamdscan_report_limits(clamdopts, &report_limits);
+            report_result = clamdscan_write_client_failure_report_ex(
+                c->report_stream, filename, report_status, report_root_size,
+                &report_limits, "CL_TYPE_BINARY_DATA",
+                "Heuristics.Limits.Exceeded.MaxFileSize");
+        } else {
+            report_result = clamdscan_write_client_failure_report(
+                c->report_stream, filename, report_status);
+        }
+        if (report_result != 0)
+            c->errors++;
+    }
     if (NULL != action_source) {
         action_source_close(action_source);
         free(action_source);

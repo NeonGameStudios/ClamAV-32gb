@@ -320,6 +320,25 @@ def main():
     max_scan_time_ms = int(os.environ.get("MILTER_MAX_SCAN_TIME_MS", "600000"))
     if max_scan_time_ms <= 0 or max_scan_time_ms > 4294967295:
         raise RuntimeError("MILTER_MAX_SCAN_TIME_MS must be between 1 and 4294967295")
+    development_legacy_limits = os.environ.get("MILTER_DEVELOPMENT_LEGACY_LIMITS") == "1"
+    if development_legacy_limits:
+        clamd_file_limit = "100M"
+        clamd_scan_limit = "400M"
+        clamd_limit_lines = [
+            "MaxFileSize 100M",
+            "MaxScanSize 400M",
+            "PCREMaxFileSize 100M",
+            "StreamMaxLength 100M",
+        ]
+    else:
+        clamd_file_limit = "32G"
+        clamd_scan_limit = "64G"
+        clamd_limit_lines = [
+            "MaxFileSize 32G",
+            "MaxScanSize 64G",
+            "PCREMaxFileSize 32G",
+            "StreamMaxLength 32G",
+        ]
     test_root = os.environ.get("MILTER_TEST_ROOT", "/tmp")
     Path(test_root).mkdir(parents=True, exist_ok=True)
     root = Path(tempfile.mkdtemp(prefix="clamav-milter-", dir=test_root))
@@ -370,13 +389,12 @@ def main():
                 "ReadTimeout {}".format(read_timeout),
                 "CommandReadTimeout {}".format(command_read_timeout),
                 "MaxScanTime {}".format(max_scan_time_ms),
-                "MaxFileSize 32G",
-                "MaxScanSize 64G",
+            ]
+            + clamd_limit_lines
+            + [
                 "MaxMatcherWork 256G",
                 "MaxTemporarySize 64G",
                 "MaxContiguousSize 32G",
-                "PCREMaxFileSize 32G",
-                "StreamMaxLength 32G",
                 "AlertExceedsMax yes",
                 "",
             ]
@@ -411,8 +429,12 @@ def main():
     )
     require_config_value(clamd_config, "MaxThreads", "1")
     require_config_value(clamd_config, "MaxQueue", "2")
-    require_config_value(clamd_config, "MaxFileSize", "32G")
-    require_config_value(clamd_config, "MaxScanSize", "64G")
+    if development_legacy_limits:
+        require_config_value(clamd_config, "MaxFileSize", clamd_file_limit)
+        require_config_value(clamd_config, "MaxScanSize", clamd_scan_limit)
+    else:
+        require_config_value(clamd_config, "MaxFileSize", "32G")
+        require_config_value(clamd_config, "MaxScanSize", "64G")
     require_config_value(clamd_config, "AlertExceedsMax", "yes")
     require_config_value(milter_config, "MaxFileSize", str(max_file_size))
 

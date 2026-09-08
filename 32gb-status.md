@@ -1,12 +1,17 @@
 # ClamAV 32 GiB Development and Validation Status
 
-## Current qualification warning — 2026-09-04
+Start with the [short generated current snapshot](32gb-current-snapshot.md).
+The [September 5 qualification-tool follow-ups](docs/largefile-qualification-followups.md)
+cover result consistency, exact log signatures and the separate oversized-input probe.
+These changes remain development evidence; release qualification is still blocked.
+
+## Current qualification warning — 2026-09-05
 
 This branch is not release-qualified. At the current audit point, the
-authoritative manifest records 597 rows: 0 qualified, 143 bounded, 433
-pending, and 21 unsupported capabilities; 583 rows remain release-blocking,
-including 7 required rows marked unsupported, and all 75 enabled parser rows
-still require release evidence. The August 14–18
+authoritative manifest records 597 rows: 0 qualified, 143 bounded, 440
+pending, and 14 allowlisted unsupported capabilities; 583 rows remain
+release-blocking, with no required row classified as unsupported, and all 80
+parser rows still require release evidence. The August 14–18
 “current-head” statements below are historical and remain bound to their named
 commits and manifests. Sonic1 was unreachable by SSH on 2026-09-03, so none of
 the latest PDF or admission work has current-source
@@ -38,6 +43,15 @@ The current implementation audit is anchored at
 `80cd4218`; the latest audited implementation commit. The requirement-level
 disposition is recorded in `audit1.md` under “Current PLAN.md requirement
 audit”.
+
+## Working-tree service input policy — 2026-09-04
+
+The service gate now rejects incorrectly sized edge inputs and sparse or
+unverifiable materialized/edge inputs before service startup. Its before/after
+allocation/content records are also checked against the actual inputs by the
+post-run verifier. Linux focused controls and the service verifier regression
+pass; current-source production workloads and release qualification remain
+open. See [the input policy](docs/largefile-service-input-policy.md).
 
 ## Latest current-head rebinding and Sonic1 evidence — 2026-08-18
 

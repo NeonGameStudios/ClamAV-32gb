@@ -385,7 +385,7 @@ static cl_error_t cli_rar_error_to_scan_result(cl_unrar_error_t unrar_ret)
             return CL_SUCCESS;
         case UNRAR_ERR:
         default:
-            return CL_EFORMAT;
+            return CL_EPARSE; /* UNRAR_ERR is a generic malformed/incomplete backend result. */
     }
 }
 
@@ -2693,6 +2693,15 @@ static cl_error_t cli_scanxz(cli_ctx *ctx)
         }
     } while (XZ_STREAM_END != rc);
 
+    /* The bundled decoder accepts concatenated XZ streams and may consume
+     * them in one call.  This scanner handles one logical compressed member;
+     * reject a second stream instead of silently scanning a merged result. */
+    if (strm.state.numStreams != 1) {
+        cli_mark_scan_incomplete(ctx, "XZ input contained multiple streams");
+        ret = CL_EUNPACK;
+        goto xz_exit;
+    }
+
     /* A stream end does not prove that the containing XZ input is exhausted:
      * the decoder may leave a concatenated stream or trailing bytes in its
      * current input window, or the fmap may contain another window that was
@@ -4626,7 +4635,7 @@ static cl_error_t cli_scanscript(cli_ctx *ctx, cli_file_t input_type)
         if (NULL == new_map) {
             cli_dbgmsg("cli_scanscript: could not map file %s\n", tmpname);
             cli_mark_scan_incomplete(ctx, "Script normalized output could not be mapped for scanning");
-            ret = CL_EREAD;
+            ret = CL_EPARSE;
             goto done;
         }
     }
@@ -5827,7 +5836,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
     }
 
     perf_start(ctx, PERFT_RAW);
-    ret = cli_scan_fmap(ctx, type == CL_TYPE_TEXT_ASCII ? CL_TYPE_ANY : type, false, &ftoffset, acmode, NULL);
+    ret = cli_scan_fmap(ctx, (type == CL_TYPE_TEXT_ASCII || type == CL_TYPE_IGNORED) ? CL_TYPE_ANY : type, false, &ftoffset, acmode, NULL); /* Keep raw matching available for classifier-only ignored types. */
     perf_stop(ctx, PERFT_RAW);
 
     // In allmatch-mode, ret will never be CL_VIRUS, so ret may be used exclusively for file type detection and for terminal errors.
@@ -6572,7 +6581,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
 
 void emax_reached(cli_ctx *ctx)
 {
-    int32_t stack_index;
+    uint32_t stack_index;
 
     if (NULL == ctx) {
         return;
@@ -6584,19 +6593,25 @@ void emax_reached(cli_ctx *ctx)
     if (NULL != ctx->fmap)
         ctx->fmap->dont_cache_flag = true;
 
-    if (NULL == ctx->recursion_stack)
+    if (NULL == ctx->recursion_stack || ctx->recursion_stack_size == 0)
         return;
 
-    stack_index = (int32_t)ctx->recursion_level;
+    /* Failure reporting may be entered specifically because recursion_level
+     * is invalid. Mark every real parent without indexing that invalid level. */
+    stack_index = ctx->recursion_level;
+    if (stack_index >= ctx->recursion_stack_size)
+        stack_index = ctx->recursion_stack_size - 1;
 
-    while (stack_index >= 0) {
+    for (;;) {
         fmap_t *map = ctx->recursion_stack[stack_index].fmap;
 
         if (NULL != map) {
             map->dont_cache_flag = true;
         }
 
-        stack_index -= 1;
+        if (stack_index == 0)
+            break;
+        stack_index--;
     }
 
     cli_dbgmsg("emax_reached: marked parents as non cacheable\n");
@@ -6624,6 +6639,19 @@ void cli_mark_scan_incomplete(cli_ctx *ctx, const char *reason)
     ctx->scan_incomplete        = true;
     ctx->scan_incomplete_reason = reason;
     cli_warnmsg("Scan incomplete: %s\n", reason ? reason : "required inspection path was unavailable");
+}
+
+void cli_mark_scan_incomplete_specific(cli_ctx *ctx, const char *reason)
+{
+    if (ctx == NULL)
+        return;
+
+    if (ctx->scan_incomplete && ctx->scan_incomplete_reason != NULL &&
+        reason != NULL &&
+        strcmp(ctx->scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime") == 0)
+        ctx->scan_incomplete_reason = reason;
+
+    cli_mark_scan_incomplete(ctx, reason);
 }
 
 #define LINESTR(x) #x
@@ -7039,6 +7067,19 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
         goto done;
     }
 
+    /* A strong detection remains the public result when only its required
+     * metadata/report bookkeeping ran out of memory. The scan is still
+     * incomplete and non-cacheable; CL_EMEM remains visible in the report's
+     * incomplete reason. PUA-only outcomes retain the critical resource
+     * status because they are not equivalent to a confirmed detection. */
+    if (result_in == CL_EMEM && ctx->recursion_stack != NULL &&
+        ctx->recursion_level < ctx->recursion_stack_size &&
+        ctx->recursion_stack[ctx->recursion_level].verdict == CL_VERDICT_STRONG_INDICATOR) {
+        halt_scan   = true;
+        *result_out = CL_VIRUS;
+        goto done;
+    }
+
     /* Detections and critical I/O/resource failures retain precedence over
      * sticky policy state accumulated while unwinding the scan. */
     switch (result_in) {
@@ -7126,6 +7167,7 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
             case CL_EPARSE:
             case CL_EREAD:
             case CL_EUNPACK:
+            case CL_EARG:
             case CL_EOPEN:
             case CL_ECREAT:
             case CL_EACCES:
@@ -7484,11 +7526,6 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         goto early_ret;
     }
 
-    status = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan");
-    if (status != CL_SUCCESS) {
-        goto early_ret;
-    }
-
     /* Normalized and handler-retyped views inherit the current logical
      * object. Their bytes are charged by cli_scan_fmap() as matcher work;
      * only a real root or extracted/decompressed child consumes logical
@@ -7544,6 +7581,16 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
         goto early_ret;
     }
+
+    /* Known-size budget admission is intentionally earlier than parser
+     * configuration validation, while file typing is allowed to report a
+     * real input-read failure first. Admissible, successfully classified
+     * inputs still require a complete dynamic configuration before dispatch. */
+    status = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan");
+    if (status != CL_SUCCESS) {
+        goto early_ret;
+    }
+
     filetype = cli_ftname(type);
 
     /* Python bytecode is recognized by the magic table, but this fork has no
@@ -8548,10 +8595,6 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
     if (status != CL_SUCCESS)
         goto done;
 
-    status = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan_desc_type");
-    if (status != CL_SUCCESS)
-        goto done;
-
     cli_dbgmsg("in cli_magic_scan_desc_type (recursion_level: %u/%u)\n", ctx->recursion_level, ctx->engine->max_recursion_level);
 
     if (FSTAT(desc, &sb) == -1) {
@@ -8581,6 +8624,13 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
      * bitmap or reserves address space. The push below repeats the check as
      * an invariant, but it is deliberately too late to be the first gate. */
     status = cli_preflight_child_size(ctx, child_size, attributes, "cli_magic_scan_desc_type");
+    if (status != CL_SUCCESS)
+        goto done;
+
+    /* Preserve descriptor inspection and known-size admission failures before
+     * requiring parser configuration. A valid child then needs dconf before
+     * the child fmap is handed to parser dispatch. */
+    status = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan_desc_type");
     if (status != CL_SUCCESS)
         goto done;
 
@@ -8727,11 +8777,11 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
     if (ret != CL_SUCCESS)
         return ret;
 
+    cli_dbgmsg("cli_magic_scan_nested_fmap_type: [%zu, +%zu)\n", offset, length);
+
     ret = cli_magic_scan_validate_dconf(ctx, "cli_magic_scan_nested_fmap_type");
     if (ret != CL_SUCCESS)
         return ret;
-
-    cli_dbgmsg("cli_magic_scan_nested_fmap_type: [%zu, +%zu)\n", offset, length);
 
     explicit_length = (length != 0);
     if (offset > map->len || (explicit_length && (offset == map->len || length > map->len - offset))) {
@@ -8851,6 +8901,10 @@ cl_error_t cli_magic_scan_buff(const void *buffer, size_t length, cli_ctx *ctx, 
     }
 
     ret = cli_magic_scan_validate_options(ctx, "cli_magic_scan_buff");
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    ret = cli_magic_scan_validate_recursion_state(ctx, "cli_magic_scan_buff");
     if (ret != CL_SUCCESS)
         return ret;
 
@@ -9349,7 +9403,7 @@ static cl_error_t scan_common(
      * verdict from the remaining evidence, then reapply the incomplete-scan
      * policy so an ignored limit alert cannot turn skipped content into clean. */
     update_layer_verdict_from_evidence(&ctx);
-    if (ctx.scan_incomplete && (CL_EMEM != status) && (CL_ERROR != status)) {
+    if (ctx.scan_incomplete) {
         cl_error_t reconciled_status = status;
 
         (void)cli_scan_result_should_halt(&ctx, status, &reconciled_status);
@@ -9481,6 +9535,31 @@ done:
     return status;
 }
 
+static cl_error_t cli_legacy_scan_status(cl_error_t status,
+                                         cl_verdict_t verdict,
+                                         const char **virname)
+{
+    const char *alert = (virname != NULL) ? *virname : NULL;
+
+    if (verdict == CL_VERDICT_POTENTIALLY_UNWANTED && alert != NULL) {
+        if (strcmp(alert, "Heuristics.Limits.Exceeded.MaxFileSize") == 0 ||
+            strcmp(alert, "Heuristics.Limits.Exceeded.MaxScanSize") == 0)
+            return CL_EMAXSIZE;
+        if (strcmp(alert, "Heuristics.Limits.Exceeded.MaxFiles") == 0)
+            return CL_EMAXFILES;
+        if (strcmp(alert, "Heuristics.Limits.Exceeded.MaxRecursion") == 0)
+            return CL_EMAXREC;
+        if (strcmp(alert, "Heuristics.Limits.Exceeded.MaxScanTime") == 0)
+            return CL_ETIMEOUT;
+    }
+
+    if (verdict == CL_VERDICT_STRONG_INDICATOR ||
+        verdict == CL_VERDICT_POTENTIALLY_UNWANTED)
+        return CL_VIRUS;
+
+    return status;
+}
+
 cl_error_t cl_scandesc(
     int desc,
     const char *filename,
@@ -9518,11 +9597,7 @@ cl_error_t cl_scandesc(
         }
     }
 
-    if (verdict_out == CL_VERDICT_STRONG_INDICATOR || verdict_out == CL_VERDICT_POTENTIALLY_UNWANTED) {
-        // Reporting "CL_VIRUS" is more important than reporting an error,
-        // because... unfortunately we can only do one with this API.
-        status = CL_VIRUS;
-    }
+    status = cli_legacy_scan_status(status, verdict_out, virname);
 
     return status;
 }
@@ -9565,11 +9640,7 @@ cl_error_t cl_scandesc_callback(
         }
     }
 
-    if (verdict_out == CL_VERDICT_STRONG_INDICATOR || verdict_out == CL_VERDICT_POTENTIALLY_UNWANTED) {
-        // Reporting "CL_VIRUS" is more important than reporting an error,
-        // because... unfortunately we can only do one with this API.
-        status = CL_VIRUS;
-    }
+    status = cli_legacy_scan_status(status, verdict_out, virname);
 
     return status;
 }
@@ -9830,11 +9901,7 @@ cl_error_t cl_scanmap_callback(
         }
     }
 
-    if (verdict_out == CL_VERDICT_STRONG_INDICATOR || verdict_out == CL_VERDICT_POTENTIALLY_UNWANTED) {
-        // Reporting "CL_VIRUS" is more important than reporting an error,
-        // because... unfortunately we can only do one with this API.
-        status = CL_VIRUS;
-    }
+    status = cli_legacy_scan_status(status, verdict_out, virname);
 
     return status;
 }
@@ -10013,11 +10080,7 @@ cl_error_t cl_scanfile(
         }
     }
 
-    if (verdict_out == CL_VERDICT_STRONG_INDICATOR || verdict_out == CL_VERDICT_POTENTIALLY_UNWANTED) {
-        // Reporting "CL_VIRUS" is more important than reporting an error,
-        // because... unfortunately we can only do one with this API.
-        status = CL_VIRUS;
-    }
+    status = cli_legacy_scan_status(status, verdict_out, virname);
 
     return status;
 }
@@ -10057,11 +10120,7 @@ cl_error_t cl_scanfile_callback(
         }
     }
 
-    if (verdict_out == CL_VERDICT_STRONG_INDICATOR || verdict_out == CL_VERDICT_POTENTIALLY_UNWANTED) {
-        // Reporting "CL_VIRUS" is more important than reporting an error,
-        // because... unfortunately we can only do one with this API.
-        status = CL_VIRUS;
-    }
+    status = cli_legacy_scan_status(status, verdict_out, virname);
 
     return status;
 }

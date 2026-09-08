@@ -40,8 +40,8 @@
 // libclamav
 #include "clamav.h"
 #include "others.h"
-
 // common
+#include "clamdcom.h"
 #include "optparser.h"
 #include "output.h"
 

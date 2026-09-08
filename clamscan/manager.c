@@ -1117,7 +1117,20 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
             }
             unlink(filename);
             free(filename);
-            return ret == CL_SUCCESS ? CL_EMAXSIZE : ret;
+            /* The scanner API keeps the detailed library status in the
+             * structured report, but clamscan exposes 1 for a detection and
+             * 2 for every incomplete/error result.  This early stdin path
+             * used to leak CL_EMAXSIZE (24) to the shell, unlike scanfile().
+             * Preserve a real detection if the over-limit sentinel found one;
+             * otherwise let scanmanager() publish the CLI error status. */
+            if (verdict == CL_VERDICT_STRONG_INDICATOR ||
+                verdict == CL_VERDICT_POTENTIALLY_UNWANTED) {
+                info.files += 1;
+                info.ifiles += 1;
+                return 1;
+            }
+            info.errors++;
+            return 2;
         }
         fsize += bread;
         if (fwrite(buff, 1, bread, fs) < bread) {

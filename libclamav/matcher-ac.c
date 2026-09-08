@@ -2222,7 +2222,7 @@ cl_error_t cli_ac_scanbuff(
                             } else if (found && pt->partno == pt->parts) {
                                 if (pt->type) {
 
-                                    if (pt->type == CL_TYPE_IGNORED && (!pt->rtype || ftype == pt->rtype))
+                                    if (pt->type == CL_TYPE_IGNORED && (mode & AC_SCAN_FT) && !(mode & AC_SCAN_VIR) && (!pt->rtype || ftype == pt->rtype))
                                         return CL_TYPE_IGNORED;
 
                                     if ((pt->type > type || pt->type >= CL_TYPE_SFX || pt->type == CL_TYPE_MSEXE) &&
@@ -2351,7 +2351,7 @@ cl_error_t cli_ac_scanbuff(
 
                         } else { /* old type signature */
                             if (pt->type) {
-                                if (pt->type == CL_TYPE_IGNORED && (pt->rtype == CL_TYPE_ANY || ftype == pt->rtype))
+                                if (pt->type == CL_TYPE_IGNORED && (mode & AC_SCAN_FT) && !(mode & AC_SCAN_VIR) && (pt->rtype == CL_TYPE_ANY || ftype == pt->rtype))
                                     return CL_TYPE_IGNORED;
 
                                 if ((pt->type > type || pt->type >= CL_TYPE_SFX || pt->type == CL_TYPE_MSEXE) &&

@@ -565,10 +565,12 @@ impl Evidence {
         name: &str,
         indicator_type: IndicatorType,
     ) -> Result<(), Error> {
+        let mut removed = false;
+
         match indicator_type {
             IndicatorType::Strong => {
                 if let Some(metas) = self.strong.get_mut(name) {
-                    metas.pop();
+                    removed = metas.pop().is_some();
                     if metas.is_empty() {
                         self.strong.shift_remove(name);
                     }
@@ -577,7 +579,7 @@ impl Evidence {
 
             IndicatorType::PotentiallyUnwanted => {
                 if let Some(metas) = self.pua.get_mut(name) {
-                    metas.pop();
+                    removed = metas.pop().is_some();
                     if metas.is_empty() {
                         self.pua.shift_remove(name);
                     }
@@ -586,7 +588,7 @@ impl Evidence {
 
             IndicatorType::Weak => {
                 if let Some(metas) = self.weak.get_mut(name) {
-                    metas.pop();
+                    removed = metas.pop().is_some();
                     if metas.is_empty() {
                         self.weak.shift_remove(name);
                     }
@@ -594,7 +596,11 @@ impl Evidence {
             }
         }
 
-        Ok(())
+        if removed {
+            Ok(())
+        } else {
+            Err(Error::InvalidParameter("indicator was not present in evidence".to_string()))
+        }
     }
 }
 

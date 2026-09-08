@@ -92,6 +92,8 @@
 
 #define DCONF ctx->dconf->pe
 
+static void pe_mark_scan_incomplete_specific(cli_ctx *ctx, const char *reason);
+
 #define PE_IMAGE_DOS_SIGNATURE 0x5a4d     /* MZ */
 #define PE_IMAGE_DOS_SIGNATURE_OLD 0x4d5a /* ZM */
 #define PE_IMAGE_NT_SIGNATURE 0x00004550
@@ -2913,7 +2915,7 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
         buffer = fmap_need_off_once(map, offset, MIN(PE_MAXNAMESIZE, fsize - offset));
         if (buffer == NULL) {
             cli_dbgmsg("scan_pe: failed to read name for dll\n");
-            cli_mark_scan_incomplete(ctx, "PE imported DLL name could not be read completely");
+            pe_mark_scan_incomplete_specific(ctx, "PE imported DLL name could not be read completely");
             status = CL_EREAD;
             goto done;
         }
@@ -3188,6 +3190,18 @@ static cl_error_t add_section_info(cli_ctx *ctx, struct cli_exe_section *s)
     return CL_SUCCESS;
 }
 
+static void pe_mark_scan_incomplete_specific(cli_ctx *ctx, const char *reason)
+{
+    /* An optional overlay may have recorded a broad parse failure before the
+     * main PE passes run. A later PE operation has a more actionable reason,
+     * so let it replace that earlier background reason while retaining the
+     * sticky incomplete state and operation accounting. */
+    if (ctx != NULL && ctx->scan_incomplete && reason != NULL)
+        ctx->scan_incomplete_reason = reason;
+
+    cli_mark_scan_incomplete(ctx, reason);
+}
+
 static cl_error_t pe_readn_full(cli_ctx *ctx,
                                 fmap_t *map,
                                 void *destination,
@@ -3200,7 +3214,7 @@ static cl_error_t pe_readn_full(cli_ctx *ctx,
     if (read_length == length)
         return CL_SUCCESS;
 
-    cli_mark_scan_incomplete(ctx, reason);
+    pe_mark_scan_incomplete_specific(ctx, reason);
     return read_length == (size_t)-1 ? CL_EREAD : CL_EPARSE;
 }
 
@@ -3221,7 +3235,7 @@ static cl_error_t pe_header_readn_full(cli_ctx *ctx,
     if (read_length == length)
         return CL_SUCCESS;
     if (read_length == (size_t)-1) {
-        cli_mark_scan_incomplete(ctx, read_reason);
+        pe_mark_scan_incomplete_specific(ctx, read_reason);
         return CL_EREAD;
     }
     return short_status;
@@ -3238,14 +3252,14 @@ static const char *pe_need_window(cli_ctx *ctx,
     const char *window;
 
     if (offset > map->len || length > map->len - offset) {
-        cli_mark_scan_incomplete(ctx, range_reason);
+        pe_mark_scan_incomplete_specific(ctx, range_reason);
         *status = CL_EPARSE;
         return NULL;
     }
 
     window = fmap_need_off_once(map, offset, length);
     if (NULL == window) {
-        cli_mark_scan_incomplete(ctx, read_reason);
+        pe_mark_scan_incomplete_specific(ctx, read_reason);
         *status = CL_EREAD;
         return NULL;
     }
@@ -3267,7 +3281,7 @@ static const char *pe_need_tail_window(cli_ctx *ctx,
     uint64_t end = (uint64_t)raw + (uint64_t)size;
 
     if (end < tail_bytes || end - tail_bytes > SIZE_MAX) {
-        cli_mark_scan_incomplete(ctx, range_reason);
+        pe_mark_scan_incomplete_specific(ctx, range_reason);
         *status = CL_EPARSE;
         return NULL;
     }
@@ -3310,7 +3324,7 @@ int cli_scanpe(cli_ctx *ctx)
     do {                                                                            \
         cl_error_t json_status = (call);                                           \
         if (json_status != CL_SUCCESS) {                                           \
-            cli_mark_scan_incomplete(ctx, "PE packer metadata JSON could not be recorded"); \
+            pe_mark_scan_incomplete_specific(ctx, "PE packer metadata JSON could not be recorded"); \
             metadata_status = cli_merge_scan_status(metadata_status, json_status); \
         }                                                                           \
     } while (0)
@@ -3479,8 +3493,19 @@ int cli_scanpe(cli_ctx *ctx)
     if (peinfo->overlay_start && peinfo->overlay_size > 0) {
         ret = cli_scanishield(ctx, peinfo->overlay_start, peinfo->overlay_size);
         if (ret != CL_SUCCESS) {
-            cli_exe_info_destroy(peinfo);
-            return ret;
+            /* An overlay is optional.  A malformed InstallShield payload
+             * must not prevent the PE scanners from inspecting the main
+             * image, while resource and allocation failures remain
+             * fail-visible.  cli_scanishield() records parse failures in the
+             * scan context; keep the parser's sticky incomplete state while
+             * allowing a stronger result from the main image to win. */
+            if (ret == CL_VIRUS || ret == CL_VERIFIED || ret == CL_BREAK ||
+                ret == CL_EREAD || ret == CL_ETIMEOUT || ret == CL_EMEM ||
+                ret == CL_ERESOURCE) {
+                cli_exe_info_destroy(peinfo);
+                return ret;
+            }
+            ret = CL_SUCCESS;
         }
     }
 
@@ -3882,7 +3907,7 @@ int cli_scanpe(cli_ctx *ctx)
                 ret = cli_parseres_special(peinfo->dirs[2].VirtualAddress, peinfo->dirs[2].VirtualAddress, map, peinfo, fsize, 0, 0, &m, stats);
                 if (ret != CL_SUCCESS) {
                     if (ret == CL_EREAD)
-                        cli_mark_scan_incomplete(ctx, "PE Swizzor resource could not be read completely");
+                        pe_mark_scan_incomplete_specific(ctx, "PE Swizzor resource could not be read completely");
                     else
                         cli_mark_scan_incomplete(ctx, "PE Swizzor resource tree is malformed or out of range");
                     free(stats);
@@ -5163,14 +5188,14 @@ int cli_scanpe(cli_ctx *ctx)
         cli_dbgmsg("cli_scanpe: NsPack: Found *start_of_stuff @delta-%x\n", nowinldr);
 
         if (!(nbuff = fmap_need_off_once(map, rep - nowinldr, 4))) {
-            cli_mark_scan_incomplete(ctx, "PE NsPack loader metadata could not be read completely");
+            pe_mark_scan_incomplete_specific(ctx, "PE NsPack loader metadata could not be read completely");
             cli_exe_info_destroy(peinfo);
             return CL_EREAD;
         }
 
         start_of_stuff = rep + cli_readint32(nbuff);
         if (!(nbuff = fmap_need_off_once(map, start_of_stuff, 20))) {
-            cli_mark_scan_incomplete(ctx, "PE NsPack loader metadata could not be read completely");
+            pe_mark_scan_incomplete_specific(ctx, "PE NsPack loader metadata could not be read completely");
             cli_exe_info_destroy(peinfo);
             return CL_EREAD;
         }
@@ -5191,7 +5216,7 @@ int cli_scanpe(cli_ctx *ctx)
 
         if (!(dest = cli_max_malloc(dsize))) {
             cli_errmsg("cli_scanpe: NsPack: Unable to allocate memory for dest %u\n", dsize);
-            cli_mark_scan_incomplete(ctx, "PE NsPack output buffer could not be allocated");
+            pe_mark_scan_incomplete_specific(ctx, "PE NsPack output buffer could not be allocated");
             cli_exe_info_destroy(peinfo);
             return CL_EMEM;
         }
@@ -6678,7 +6703,7 @@ cl_error_t cli_check_auth_header(cli_ctx *ctx, struct cli_exe_info *peinfo)
     // the section hashes), bail out if we don't have any Authenticode hashes
     // loaded from .cat files. The value 2 in these calls is the sentinel value
     // for the 'PE' .cat Authenticode hash file type.
-    if (sec_dir_size < 8 &&
+    if (sec_dir_size == 0 &&
         !cli_hm_have_size(ctx->engine->hm_fp, CLI_HASH_SHA1, 2) &&
         !cli_hm_have_size(ctx->engine->hm_fp, CLI_HASH_SHA2_256, 2)) {
         /* No certificate or catalog hash is a lack of trust evidence, not an

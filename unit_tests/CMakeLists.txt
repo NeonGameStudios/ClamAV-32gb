@@ -163,6 +163,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
     target_compile_definitions(check_clamav PRIVATE
         CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP
         CLAMAV_TEST_FMAP_NEW_WRAP
+        CLAMAV_TEST_FFI_ERROR_WRAP
         CLAMAV_TEST_MALLOC_WRAP
         CLAMAV_TEST_JSON_WRAP
         CLAMAV_TEST_JS_IO_WRAP
@@ -177,6 +178,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=mspack_create_cab_decompressor"
         "-Wl,--wrap=mspack_create_chm_decompressor"
         "-Wl,--wrap=fmap_new"
+        "-Wl,--wrap=fmap_check_empty"
         "-Wl,--wrap=json_object_array_add"
         "-Wl,--wrap=json_object_object_add"
         "-Wl,--wrap=cli_jsonarray"
@@ -186,6 +188,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
         "-Wl,--wrap=cli_jsonuint64"
         "-Wl,--wrap=cli_jsonstr"
         "-Wl,--wrap=evidence_add_indicator"
+        "-Wl,--wrap=ffierror_free"
         "-Wl,--wrap=malloc"
         "-Wl,--wrap=calloc"
         "-Wl,--wrap=realloc"
@@ -232,8 +235,8 @@ ADD_CUSTOM_COMMAND(TARGET check_clamav POST_BUILD
 
 # The legacy signed CVD fixtures predate the strict TAR end-marker contract
 # and contain an obsolete DSIG metadata line.  Generate a deterministic
-# unsigned CUD for the public cl_load test while leaving signed verification
-# coverage on the original fixtures.
+# unsigned CUD for the public cl_load test while retaining signed-fixture
+# coverage through the strict malformed-archive rejection test.
 set(CVD_TEST_FIXTURE ${CMAKE_CURRENT_BINARY_DIR}/input/freshclam_testfiles/test-5-marker.cud)
 add_custom_command(
     OUTPUT ${CVD_TEST_FIXTURE}
@@ -245,6 +248,21 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/input/freshclam_testfiles/test-5.cvd)
 add_custom_target(tgt_cvd_test_fixture ALL DEPENDS ${CVD_TEST_FIXTURE})
 add_dependencies(check_clamav tgt_cvd_test_fixture)
+
+# The bytecode CVD fixture is also a legacy signed archive without the strict
+# TAR end marker.  Use the same deterministic unsigned conversion so the
+# bytecode loader tests exercise the current archive contract.
+set(BYTECODE_TEST_FIXTURE ${CMAKE_CURRENT_BINARY_DIR}/input/bytecode_sigs/bytecode.cud)
+add_custom_command(
+    OUTPUT ${BYTECODE_TEST_FIXTURE}
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/input/create_cvd_test_fixture.py
+            --input ${CMAKE_CURRENT_SOURCE_DIR}/input/bytecode_sigs/bytecode.cvd
+            --output ${BYTECODE_TEST_FIXTURE}
+    DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/input/create_cvd_test_fixture.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/input/bytecode_sigs/bytecode.cvd)
+add_custom_target(tgt_bytecode_test_fixture ALL DEPENDS ${BYTECODE_TEST_FIXTURE})
+add_dependencies(check_clamav tgt_bytecode_test_fixture)
 
 # This target intentionally does not link libmilter. It exercises the exact
 # arithmetic and zero-value policy used by clamav-milter even on builders
@@ -384,10 +402,19 @@ else()
     endif()
 endif()
 
+# Check's no-fork mode exposes an ARM64-only aggregate-suite crash after the
+# production-linked tests have started.  Forked Check execution isolates the
+# global test seams and passes the complete suite on that architecture. Keep
+# the historical no-fork mode on other platforms.
+set(CHECK_FORK_MODE no)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^[Aa][Aa][Rr][Cc][Hh]64$|^[Aa][Rr][Mm]64$")
+    set(CHECK_FORK_MODE yes)
+endif()
+
 set(ENVIRONMENT
     PYTHONTRACEMALLOC=1 VERSION=${PROJECT_VERSION}${VERSION_SUFFIX}
     SOURCE=${SOURCE} BUILD=${BUILD} TMP=${TMP}
-    CK_FORK=no
+    CK_FORK=${CHECK_FORK_MODE}
     CK_DEFAULT_TIMEOUT=300
     LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
     DYLD_LIBRARY_PATH=${LD_LIBRARY_PATH}
@@ -504,6 +531,22 @@ add_test(NAME largefile_source_guards
 add_test(NAME largefile_runtime_evidence_check
     COMMAND sh "${CMAKE_SOURCE_DIR}/tools/largefile_runtime_evidence_check_test.sh"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_acceptance_case_schema
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_acceptance_cases_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_development_acceptance_capture
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_development_acceptance_capture_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_clamscan_admission
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_clamscan_admission_test.py"
+        "$<TARGET_FILE:clamscan>" "${CMAKE_SOURCE_DIR}"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_clamd_report_protocol
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_clamd_report_protocol_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME largefile_zip_late_member
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/largefile_zip_late_member_test.py"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_test(NAME clamav_milter_quota COMMAND check_clamfi_quota)
 if(ENABLE_APP AND ENABLE_MILTER AND UNIX)
     add_test(NAME clamav_milter_protocol
@@ -518,6 +561,10 @@ set_tests_properties(
     largefile_poc_fail_closed
     largefile_source_guards
     largefile_runtime_evidence_check
+    largefile_acceptance_case_schema
+    largefile_development_acceptance_capture
+    largefile_clamd_report_protocol
+    largefile_zip_late_member
     clamav_milter_quota
     PROPERTIES
         LABELS "largefile;release-controls"

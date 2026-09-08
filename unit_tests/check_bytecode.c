@@ -547,15 +547,20 @@ END_TEST
 
 static void runload(const char *dbname, struct cl_engine *engine, unsigned signoexp)
 {
+    const char *root = strstr(dbname, ".cud") ? OBJDIR : SRCDIR;
     char *str;
     unsigned signo = 0;
+    unsigned options = CL_DB_STDOPT;
     int rc;
 
-    str = malloc(strlen(SRCDIR) + 1 + strlen(dbname) + 1);
+    str = malloc(strlen(root) + 1 + strlen(dbname) + 1);
     ck_assert_msg(!!str, "malloc");
-    sprintf(str, "%s" PATHSEP "%s", SRCDIR, dbname);
+    sprintf(str, "%s" PATHSEP "%s", root, dbname);
 
-    rc = cl_load(str, engine, &signo, CL_DB_STDOPT);
+    if (strstr(dbname, ".cud"))
+        options |= CL_DB_BYTECODE_UNSIGNED;
+
+    rc = cl_load(str, engine, &signo, options);
     ck_assert_msg(rc == CL_SUCCESS, "failed to load %s: %s\n",
                   str, cl_strerror(rc));
     ck_assert_msg(signo == signoexp, "different number of signatures loaded, expected %u, got %u\n",
@@ -574,7 +579,7 @@ START_TEST(test_load_bytecode_jit)
     engine = cl_engine_new();
     ck_assert_msg(!!engine, "failed to create engine\n");
 
-    runload("input" PATHSEP "bytecode_sigs" PATHSEP "bytecode.cvd", engine, 5);
+    runload("input" PATHSEP "bytecode_sigs" PATHSEP "bytecode.cud", engine, 5);
 
     cl_engine_free(engine);
 }
@@ -588,7 +593,7 @@ START_TEST(test_load_bytecode_int)
     engine->dconf->bytecode = BYTECODE_INTERPRETER;
     ck_assert_msg(!!engine, "failed to create engine\n");
 
-    runload("input" PATHSEP "bytecode_sigs" PATHSEP "bytecode.cvd", engine, 5);
+    runload("input" PATHSEP "bytecode_sigs" PATHSEP "bytecode.cud", engine, 5);
 
     cl_engine_free(engine);
 }
@@ -991,15 +996,15 @@ START_TEST(test_bytecode_api_rejects_invalid_contexts)
     ck_assert_uint_eq(cli_bcapi_debug_print_str(NULL, text, sizeof(text) - 1), UINT32_MAX);
     ck_assert_uint_eq(cli_bcapi_debug_print_uint(NULL, 0), UINT32_MAX);
     ck_assert_uint_eq(cli_bcapi_setvirusname(NULL, text, sizeof(text) - 1), UINT32_MAX);
-    ck_assert_int_eq(cli_bcapi_disasm_x86(NULL, NULL, 0), -1);
+    ck_assert_uint_eq(cli_bcapi_disasm_x86(NULL, NULL, 0), UINT32_MAX);
     ck_assert_int_eq(cli_bcapi_write(NULL, NULL, 0), -1);
     cli_bytecode_context_set_trace(NULL, 0, NULL, NULL, NULL, NULL);
-    ck_assert_int_eq(cli_bcapi_trace_scope(NULL, NULL, 0), -1);
-    ck_assert_int_eq(cli_bcapi_trace_directory(NULL, NULL, 0), -1);
-    ck_assert_int_eq(cli_bcapi_trace_source(NULL, NULL, 0), -1);
-    ck_assert_int_eq(cli_bcapi_trace_op(NULL, NULL, 0), -1);
-    ck_assert_int_eq(cli_bcapi_trace_value(NULL, NULL, 0), -1);
-    ck_assert_int_eq(cli_bcapi_trace_ptr(NULL, NULL, 0), -1);
+    ck_assert_uint_eq(cli_bcapi_trace_scope(NULL, NULL, 0), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_trace_directory(NULL, NULL, 0), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_trace_source(NULL, NULL, 0), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_trace_op(NULL, NULL, 0), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_trace_value(NULL, NULL, 0), UINT32_MAX);
+    ck_assert_uint_eq(cli_bcapi_trace_ptr(NULL, NULL, 0), UINT32_MAX);
     ck_assert_uint_eq(cli_bcapi_pe_rawaddr(NULL, 0), PE_INVALID_RVA);
     ck_assert_ptr_null(cli_bcapi_malloc(NULL, 1));
     ck_assert_int_eq(cli_bcapi_get_pe_section(NULL, NULL, 0), -1);
@@ -1355,6 +1360,66 @@ START_TEST(test_bytecode_jsnorm_limit_failure_releases_input)
     cl_fmap_close(map);
 
     cl_engine_free(engine);
+}
+END_TEST
+
+START_TEST(test_bytecode_buffer_pipe_initializes_map_ownership)
+{
+    const uint8_t input[] = {0x41, 0x42, 0x43};
+    struct cli_bc_ctx *bcctx;
+    struct bc_buffer *buffers;
+    fmap_t *map;
+    const uint8_t *data;
+    int32_t id;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
+
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_new_fromfile64(bcctx, 0), 0);
+    ck_assert_ptr_nonnull(cli_bcapi_buffer_pipe_read_get(bcctx, 0, 1));
+    ck_assert(bcctx->buffers[0].map_read_locked);
+
+    /* Reserve the next slot without publishing it and fill it with stale
+     * heap bytes. The constructor's same-size realloc must preserve those
+     * bytes, making uninitialized ownership deterministic on every allocator.
+     * Keep a live first slot to also check that table growth preserves it. */
+    buffers = realloc(bcctx->buffers, 2 * sizeof(*buffers));
+    ck_assert_ptr_nonnull(buffers);
+    bcctx->buffers = buffers;
+    memset(&buffers[1], 0xa5, sizeof(buffers[1]));
+
+    if (_i == 0)
+        id = cli_bcapi_buffer_pipe_new(bcctx, 8);
+    else if (_i == 1)
+        id = cli_bcapi_buffer_pipe_new_fromfile(bcctx, 1);
+    else
+        id = cli_bcapi_buffer_pipe_new_fromfile64(bcctx, 1);
+    ck_assert_int_eq(id, 1);
+    ck_assert_uint_eq(bcctx->nbuffers, 2);
+    ck_assert(!bcctx->buffers[id].map_read_locked);
+    ck_assert_ptr_null(bcctx->buffers[id].map_read_fmap);
+    ck_assert_uint_eq(bcctx->buffers[id].map_read_offset, 0);
+    ck_assert_uint_eq(bcctx->buffers[id].map_read_length, 0);
+    ck_assert(bcctx->buffers[0].map_read_locked);
+    ck_assert_ptr_eq(bcctx->buffers[0].map_read_fmap, map);
+
+    if (_i == 0) {
+        uint8_t *output = cli_bcapi_buffer_pipe_write_get(bcctx, id, 1);
+        ck_assert_ptr_nonnull(output);
+        output[0] = input[1];
+        ck_assert_int_eq(cli_bcapi_buffer_pipe_write_stopped(bcctx, id, 1), 0);
+    }
+    data = cli_bcapi_buffer_pipe_read_get(bcctx, id, 1);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_int_eq(data[0], input[1]);
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_read_stopped(bcctx, id, 1), 0);
+    ck_assert(!bcctx->buffers[id].map_read_locked);
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_done(bcctx, id), 0);
+    cli_bytecode_context_destroy(bcctx);
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -1831,6 +1896,13 @@ START_TEST(test_bytecode_large_map_hook_gates_only_applicable_bytecode)
     engine->hooks_cnt[hook_slot] = 1;
     engine->hooks[hook_slot][0]  = 0;
     bc = &engine->bcs.all_bcs[0];
+    /* Give the synthetic hook the minimum valid legacy bytecode shape so the
+     * admission check reaches the file-size gate instead of rejecting the
+     * deliberately incomplete test object as a null-argument error. */
+    bc->metadata.formatlevel = BC_FORMAT_LEVEL;
+    bc->num_func             = 1;
+    bc->funcs                = calloc(1, sizeof(*bc->funcs));
+    ck_assert_ptr_nonnull(bc->funcs);
 
     /* A logical hook whose signature did not match is equally inapplicable. */
     bc->lsig         = strdup("unit-test-logical-hook");
@@ -2063,7 +2135,7 @@ static void *thread(void *arg)
     /* run all cl_load at once, to maximize chance of a crash
      * in case of a race condition */
     pthread_barrier_wait(&barrier);
-    runload("input" PATHSEP "bytecode_sigs" PATHSEP "bytecode.cvd", engine, 5);
+    runload("input" PATHSEP "bytecode_sigs" PATHSEP "bytecode.cud", engine, 5);
     cl_engine_free(engine);
     return NULL;
 }
@@ -2079,9 +2151,9 @@ START_TEST(test_parallel_load)
     /* Check assertions use thread-local test state and must not be raised from
      * the worker threads below. Keep a missing checkout fixture as a visible
      * test failure, but report it on the test thread before creating workers. */
-    fixture = fopen(SRCDIR PATHSEP "input" PATHSEP "bytecode_sigs" PATHSEP "bytecode.cvd", "rb");
+    fixture = fopen(OBJDIR PATHSEP "input" PATHSEP "bytecode_sigs" PATHSEP "bytecode.cud", "rb");
     if (fixture == NULL) {
-        ck_abort_msg("missing bytecode fixture: %s", SRCDIR PATHSEP "input" PATHSEP "bytecode_sigs" PATHSEP "bytecode.cvd");
+        ck_abort_msg("missing bytecode fixture: %s", OBJDIR PATHSEP "input" PATHSEP "bytecode_sigs" PATHSEP "bytecode.cud");
         return;
     }
     fclose(fixture);
@@ -2456,6 +2528,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_arith, test_bytecode_lsig_rejects_invalid_dispatch_arguments);
     tcase_add_test(tc_cli_arith, test_bytecode_lsig_execution_failure_is_fail_visible);
     tcase_add_test(tc_cli_arith, test_bytecode_timeout_respects_scan_deadline);
+    tcase_add_loop_test(tc_cli_read, test_bytecode_buffer_pipe_initializes_map_ownership, 0, 3);
     tcase_add_test(tc_cli_read, test_bytecode_v2_uses_64bit_file_coordinates);
     tcase_add_test(tc_cli_read, test_bytecode_file_find_crosses_read_windows);
     tcase_add_test(tc_cli_read, test_bytecode_v2_interfaces_require_format8);

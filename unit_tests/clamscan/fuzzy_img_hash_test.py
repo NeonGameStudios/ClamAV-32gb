@@ -110,31 +110,32 @@ class TC(testcase.TestCase):
         self.verify_output(output.err, expected=expected_stderr)
         self.verify_output(output.out, unexpected=unexpected_stdout)
 
-    def test_sigs_bad_hamming(self):
-        self.step_name('Test Unsupported hamming distance')
+    def test_sigs_hamming_distance(self):
+        self.step_name('Test bounded hamming distance')
 
-        # Unsupported hamming distance
-        (TC.path_tmp / 'invalid-ham.ldb').write_text(
-            "logo.png.bad;Engine:150-255,Target:0;0;fuzzy_img#af2ad01ed42993c7#1\n"
+        # The image hash for the fixture is af2ad01ed42993c7.  Changing the
+        # least-significant bit of the first byte produces a one-bit match;
+        # changing two bits must remain outside a distance-one signature.
+        (TC.path_tmp / 'hamming.ldb').write_text(
+            "logo.png.one_bit_near;Engine:150-255,Target:0;0;fuzzy_img#ae2ad01ed42993c7#1\n"
+            "logo.png.two_bits_near;Engine:150-255,Target:0;0;fuzzy_img#ac2ad01ed42993c7#1\n"
         )
         command = '{valgrind} {valgrind_args} {clamscan} -d {path_db} {testfiles} --allmatch'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args, clamscan=TC.clamscan,
-            path_db=TC.path_tmp / 'invalid-ham.ldb',
+            path_db=TC.path_tmp / 'hamming.ldb',
             testfiles=TC.testfiles,
         )
         output = self.execute_command(command)
 
-        assert output.ec == 2  # error
+        assert output.ec == 1  # one matching signature is a virus
 
-        expected_stderr = [
-            'LibClamAV Error: Failed to load',
-            'Invalid hamming distance: 1',
+        expected_stdout = [
+            'logo.png.one_bit_near.UNOFFICIAL FOUND',
         ]
         unexpected_stdout = [
-            'logo.png.bad.UNOFFICIAL FOUND',
+            'logo.png.two_bits_near.UNOFFICIAL FOUND',
         ]
-        self.verify_output(output.err, expected=expected_stderr)
-        self.verify_output(output.out, unexpected=unexpected_stdout)
+        self.verify_output(output.out, expected=expected_stdout, unexpected=unexpected_stdout)
 
     def test_sigs_bad_algorithm(self):
         self.step_name('Test invalid fuzzy image hash algorithm')

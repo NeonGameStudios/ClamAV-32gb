@@ -26,6 +26,10 @@
 #include "misc.h"
 
 int clamdscan_write_client_failure_report(FILE *stream, const char *target, cl_error_t status);
+int clamdscan_write_client_failure_report_ex(FILE *stream, const char *target,
+                                             cl_error_t status, uint64_t root_size,
+                                             const cl_scan_report_limits_t *limits,
+                                             const char *file_type, const char *reason);
 int serial_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream);
 int parallel_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream);
 #endif

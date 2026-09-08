@@ -65,6 +65,21 @@ static void onas_handle_signals(void);
 static int startup_checks(struct onas_context *ctx);
 static struct onas_context *g_ctx = NULL;
 
+static void onas_stop_worker_threads(void)
+{
+    if (ddd_pid > 0) {
+        pthread_cancel(ddd_pid);
+        pthread_join(ddd_pid, NULL);
+        ddd_pid = 0;
+    }
+
+    if (scan_queue_pid > 0) {
+        pthread_cancel(scan_queue_pid);
+        pthread_join(scan_queue_pid, NULL);
+        scan_queue_pid = 0;
+    }
+}
+
 static void onas_clamonacc_exit(int sig)
 {
     mprintf(LOGG_DEBUG, "Clamonacc: onas_clamonacc_exit(), signal %d\n", sig);
@@ -73,25 +88,14 @@ static void onas_clamonacc_exit(int sig)
     }
 
     if (g_ctx) {
-        if (g_ctx->fan_fd) {
+        if (g_ctx->fan_fd >= 0) {
             close(g_ctx->fan_fd);
         }
-        g_ctx->fan_fd = 0;
+        g_ctx->fan_fd = -1;
     }
 
-    mprintf(LOGG_DEBUG, "Clamonacc: attempting to stop ddd thread ... \n");
-    if (ddd_pid > 0) {
-        pthread_cancel(ddd_pid);
-        pthread_join(ddd_pid, NULL);
-    }
-    ddd_pid = 0;
-
-    mprintf(LOGG_DEBUG, "Clamonacc: attempting to stop event consumer thread ...\n");
-    if (scan_queue_pid > 0) {
-        pthread_cancel(scan_queue_pid);
-        pthread_join(scan_queue_pid, NULL);
-    }
-    scan_queue_pid = 0;
+    mprintf(LOGG_DEBUG, "Clamonacc: attempting to stop worker threads ...\n");
+    onas_stop_worker_threads();
 
     mprintf(LOGG_INFO, "Clamonacc: stopped\n");
     onas_cleanup(g_ctx);
@@ -256,6 +260,7 @@ int main(int argc, char **argv)
 
 done:
     /* Clean up */
+    onas_stop_worker_threads();
     onas_cleanup(ctx);
     exit(ret);
 }
@@ -297,6 +302,7 @@ struct onas_context *onas_init_context(void)
     }
 
     memset(ctx, 0, sizeof(struct onas_context));
+    ctx->fan_fd = -1;
     return ctx;
 }
 
@@ -469,7 +475,13 @@ void onas_cleanup(struct onas_context *ctx)
 
 void onas_context_cleanup(struct onas_context *ctx)
 {
-    close(ctx->fan_fd);
+    if (NULL == ctx) {
+        return;
+    }
+    if (ctx->fan_fd >= 0) {
+        close(ctx->fan_fd);
+        ctx->fan_fd = -1;
+    }
     optfree((struct optstruct *)ctx->opts);
     optfree((struct optstruct *)ctx->clamdopts);
     ctx->opts      = NULL;

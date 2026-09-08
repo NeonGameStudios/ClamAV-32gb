@@ -1,5 +1,53 @@
 # Independent read-only audit of audit.md
 
+## Qualification-tool follow-ups — 2026-09-05
+
+The current working tree now rejects contradictory exit/completion/signature
+oracles and reports, preserving legitimate detection precedence after earlier
+skipped operations. Producer and post-run log checks share exact signature-field
+matching, including the optional .UNOFFICIAL suffix and exact debug offsets.
+The synthetic log controls use the actual input: signature FOUND shape.
+
+A mandatory oversize-fildesreport workload now generates a separate sparse
+32-GiB-plus-one descriptor and requires the specific MaxFileSize rejection,
+zero reported matcher/staging work, stable fixture metadata, cleanup and daemon
+health evidence. Its record cannot be omitted or replaced by an unrelated
+limit error. It remains an admission negative control, not the fully allocated
+release fixture or all-ingress qualification.
+
+The 46-line generated current snapshot uses authoritative readiness counts and
+shared exclusions, distinguishes 75 enabled parser rows from all 80 parser
+rows, and checks freshness against its recorded input hashes. Counts and
+capability dispositions are unchanged. See
+[the follow-up details](docs/largefile-qualification-followups.md) and
+[the current snapshot](32gb-current-snapshot.md).
+
+## Working-tree service input qualification controls — 2026-09-04
+
+The service gate previously accepted arbitrary caller-bound sizes for its edge
+role and did not verify materialization. It now shares a strict Python input
+checker between preflight and post-run verification: edge inputs must be
+34,359,738,368 bytes, materialized inputs must be nonempty, and both roles
+require sufficient reported allocation plus a SEEK_HOLE result at EOF.
+Unsupported allocation queries fail closed. One descriptor is used for
+allocation inspection and hashing, with identity/write-time checks to reject
+ordinary concurrent mutation or replacement.
+
+Versioned before/after input records retain size, hash, allocation and hole
+information. The independent verifier requires matching records and rechecks
+the actual inputs. Twenty-one focused Linux controls pass, including real
+written/sparse files, boundary values, mutation, unavailable queries and
+provenance tampering. The service-verifier controls pass with a disposable
+scaled copy for synthetic positive cases and an explicit rejection by the
+unmodified production CLI. No production bypass is provided.
+
+This implements a conservative filesystem-reported allocation policy, not
+proof of unique physical extents. It does not close actual materialized scans,
+the separate 32-GiB-plus-one rejection workload, parser-specific evidence,
+fanotify, PCRE memory, production-CVD or Sonic1 qualification. Existing
+capability statuses and blocker counts are unchanged. See
+[the detailed policy](docs/largefile-service-input-policy.md).
+
 ## ZIP/ZIP-SFX current-source focused audit — 2026-09-04
 
 The coherent authoritative current-source production-linked GCC build passes

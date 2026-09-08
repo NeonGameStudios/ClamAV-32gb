@@ -112,7 +112,7 @@ sis_checktimelimit(cli_ctx *ctx, const char *reason)
     cl_error_t status = cli_checktimelimit(ctx);
 
     if (status != CL_SUCCESS)
-        cli_mark_scan_incomplete(ctx, reason);
+        cli_mark_scan_incomplete_specific(ctx, reason);
 
     return status;
 }

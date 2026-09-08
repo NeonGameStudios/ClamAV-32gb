@@ -43,9 +43,13 @@ mkdir -p "$out/host-preflight" "$out/poc" "$out/concurrency/1" \
     "$out/concurrency/2" "$out/concurrency/4" \
     "$out/sanitizer/logs" "$out/artifacts/runtime-components" \
     "$out/artifacts/runtime-components-sanitizer" "$out/provenance"
+sh "$root/tools/largefile_boundary_corpus.sh" "$out/corpus" >/dev/null
 hash=$(printf '%064d' 0)
 printf '%064d  synthetic.c\n' 0 > "$out/provenance/source-manifest.txt"
 cp "$out/provenance/source-manifest.txt" "$out/provenance/build-source-manifest.txt"
+printf 'kind\tid\tcase_id\tsource_manifest_sha256\tbuild_identity_sha256\tconfig_sha256\tplatform\tfixture_role\tfixture_sha256\toracle_sha256\tdatabase_sha256\texit_code\tverdict\tcompletion\treason\talert_signature\talert_offset\tlogical_bytes\tmatcher_bytes\tcontiguous_bytes\ttemporary_bytes\tfiles_scanned\tmax_recursion_depth\telapsed_ms\tparser_operations\tdetector_operations\tskipped_operations\tsanitizer\tresource_phase\thealth\tcleanup\tartifacts\n' > "$out/provenance/acceptance-cases.tsv"
+printf 'label\tkind\tid\tinput\tlog\treport\texpected_size\texpected_exit\texpected_completion\texpected_signature\texpected_offset\n' > "$out/provenance/runtime-acceptance-oracle.tsv"
+printf 'label\tstatus\n' > "$out/provenance/runtime-process-status.tsv"
 source_manifest_hash=$(sha256sum "$out/provenance/source-manifest.txt" | awk '{ print $1 }')
 source_commit=$source_manifest_hash
 write_synthetic_elf()
@@ -91,9 +95,11 @@ for provenance_script in \
     largefile_runtime_evidence_check.sh \
     largefile_host_preflight.sh \
     largefile_boundary_corpus.sh \
+    largefile_boundary_corpus_check.py \
     largefile_bigtiff_fixture.py \
     largefile_poc.sh \
-    largefile_source_manifest.sh; do
+    largefile_source_manifest.sh \
+    largefile_runtime_acceptance_case_producer.py; do
     printf 'synthetic provenance for %s\n' "$provenance_script" > "$out/provenance/$provenance_script"
 done
 scanner_hash=$(sha256sum "$out/artifacts/clamscan" | awk '{ print $1 }')
@@ -137,6 +143,9 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'arch=x86_64\n'
     printf 'ELF 64-bit LSB pie executable, x86-64\n'
     printf 'rss_budget_kb=33554432\n'
+    printf 'pcre_rss_budget_kb=41943040\n'
+    printf 'post_pcre_rss_budget_kb=12582912\n'
+    printf 'rss_budget_contract=overall-stricter-than-pcre-phase\n'
     printf 'min_available_kb=50331648\n'
     printf 'max_temp_bytes=68719476736\n'
     printf 'max_scan_time_ms=14400000\n'
@@ -217,6 +226,10 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'temp_budget=pass\n'
     printf 'policy_32g_plus_one=pass\n'
     printf 'policy_32g_plus_one_stdin=pass\n'
+    printf 'policy_32g_plus_one_limit=pass\n'
+    printf 'policy_32g_plus_one_stdin_limit=pass\n'
+    printf 'clean_32g_head=pass\n'
+    printf 'clean_32g_head_stdin=pass\n'
     printf 'policy_32g_edge_stdin=pass\n'
     printf 'cancellation=pass status=124\n'
     printf 'bigtiff_sparse_fixture=pass size=4294967368 sha256=06b8d598efcbad2fe8cbaedb41c74ef3dcf442825f781cb919eace3ff3f85c1d\n'
@@ -300,6 +313,14 @@ refresh_manifest()
 
 refresh_manifest
 "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
+
+cp "$out/build-identity.txt" "$out/build-identity.with-phase-budgets"
+sed '/^post_pcre_rss_budget_kb=/d' "$out/build-identity.with-phase-budgets" > "$out/build-identity.txt"
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted missing post-PCRE phase budget' >&2
+    exit 1
+fi
+mv "$out/build-identity.with-phase-budgets" "$out/build-identity.txt"
 
 cp "$out/build-identity.txt" "$out/build-identity.with-bigtiff"
 grep -v '^bigtiff_sparse_fixture=pass ' "$out/build-identity.with-bigtiff" > "$out/build-identity.txt"

@@ -1,12 +1,21 @@
 # Brief 32 GiB Status Summary
 
-## Current qualification snapshot — 2026-09-04
+For step-by-step execution and bounded Luna 5.6 task prompts, start with the
+[execution roadmap](docs/32gb-luna-execution-roadmap.md). PLAN.md remains the
+authoritative release contract; the execution guide does not certify completion.
+
+Start with the [short generated current snapshot](32gb-current-snapshot.md).
+The [September 5 qualification-tool follow-ups](docs/largefile-qualification-followups.md)
+cover result consistency, exact log signatures and the separate oversized-input probe.
+These changes remain development evidence; release qualification is still blocked.
+
+## Current qualification snapshot — 2026-09-05
 
 The current branch is **not release-qualified**. At the current audit point,
 the authoritative capability manifest has 597 entries: 0 qualified, 143
-bounded, 433 pending, and 21 unsupported. It reports 583 release-blocking
-rows, including 7 required rows marked unsupported, and all 75 enabled parser
-rows remain blocked on release evidence. `tools/largefile_release_readiness.sh`
+bounded, 440 pending, and 14 allowlisted unsupported. It reports 583
+release-blocking rows, with no required row classified as unsupported, and all
+80 parser rows remain blocked on release evidence. `tools/largefile_release_readiness.sh`
 reports this distinction and fails unless every non-excluded row is
 independently qualified. The release gate also rejects relabelling a required
 parser or matcher as a deliberate unsupported row through its fixed shared
@@ -16,6 +25,17 @@ revisions and are not current-source release certification.
 The current requirement-level disposition is recorded in `audit1.md` under
 “Current PLAN.md requirement audit”. The latest audited implementation commit
 is `80cd4218`.
+
+## Working-tree qualification input checks — 2026-09-04
+
+Service qualification now requires an exact-32-GiB edge input and rejects
+materialized/edge inputs with insufficient filesystem-reported allocation or
+reported holes. Before/after allocation and content records are independently
+rechecked. The 21 focused controls pass on Linux, and the service verifier
+controls pass; these are lightweight gate tests, not materialized scan or
+release qualification. The manifest counts above remain unchanged. See
+[the service input policy](docs/largefile-service-input-policy.md) for the
+filesystem assumptions and remaining acceptance work.
 
 Local Linux ARM64 GCC evidence now covers the latest PDF crypt dictionaries,
 DecodeParms semantics, bounded-spool rollback, and all five bounded-filter

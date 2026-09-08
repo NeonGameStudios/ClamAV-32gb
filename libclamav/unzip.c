@@ -1698,6 +1698,17 @@ static cl_error_t parse_local_file_header(
     zip += LOCAL_HEADER_flen;
     bytes_remaining -= LOCAL_HEADER_flen;
 
+    /* The local extra field contributes to the member-data offset even when
+     * this header is not paired with a central record. Validate its complete
+     * range before metadata matching so a truncated local-only entry cannot
+     * reach cli_matchmeta() or be reported as an unrelated context failure. */
+    if (LOCAL_HEADER_elen > bytes_remaining) {
+        cli_dbgmsg("cli_unzip: local header - extra out of file\n");
+        cli_mark_scan_incomplete(ctx, "ZIP local extra field is outside the archive map");
+        status = CL_EPARSE;
+        goto done;
+    }
+
     if (central_header) {
         if (LOCAL_HEADER_method != CENTRAL_HEADER_method ||
             LOCAL_HEADER_flags != CENTRAL_HEADER_flags) {

@@ -46,6 +46,7 @@ oracle_binding=$out/oracle-binding.txt
 identity=$out/provenance/service-build-identity.txt
 qualification_oracle=$out/provenance/qualification-oracle.tsv
 workload_results=$out/provenance/service-workload-results.tsv
+acceptance_records=$out/provenance/acceptance-cases.tsv
 config=$out/clamd.conf
 source_manifest=$out/provenance/source-manifest.txt
 cmake_cache=$out/provenance/CMakeCache.txt
@@ -64,7 +65,7 @@ loaded_dependencies=$out/provenance/service-loaded-dependencies.txt
 parallel_profile=$out/provenance/parallel-client-clamd.conf
 checksum_manifest=$out/SHA256SUMS
 
-for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_results" \
+for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_results" "$acceptance_records" \
     "$identity" "$config" "$source_manifest" "$cmake_cache" \
     "$compile_commands" "$binary_before" "$binary_after" \
     "$interpreter_records" "$interpreter_records_after" \
@@ -91,6 +92,20 @@ grep -Fx 'service_qualification=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no qualification pass marker'
 grep -Fx 'service_resource_measurement_failed=0' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no clean resource-measurement marker'
+service_rss_budget_kb=$(awk -F= '$1 == "rss_budget_kb" { count++; value=$2 } END { if (count != 1) exit 1; print value }' "$summary") ||
+    fail 'service evidence has no unique overall RSS budget'
+pcre_rss_budget_kb=$(awk -F= '$1 == "pcre_rss_budget_kb" { count++; value=$2 } END { if (count != 1) exit 1; print value }' "$summary") ||
+    fail 'service evidence has no unique PCRE-phase RSS budget'
+post_pcre_rss_budget_kb=$(awk -F= '$1 == "post_pcre_rss_budget_kb" { count++; value=$2 } END { if (count != 1) exit 1; print value }' "$summary") ||
+    fail 'service evidence has no unique post-PCRE RSS budget'
+case "$service_rss_budget_kb:$pcre_rss_budget_kb:$post_pcre_rss_budget_kb" in
+    *[!0-9:]*|:*|*:) fail 'service RSS budgets are not canonical integers' ;;
+esac
+[ "$pcre_rss_budget_kb" = 41943040 ] || fail 'service evidence PCRE RSS budget does not match PLAN.md'
+[ "$post_pcre_rss_budget_kb" = 12582912 ] || fail 'service evidence post-PCRE RSS budget does not match PLAN.md'
+[ "$service_rss_budget_kb" -le "$pcre_rss_budget_kb" ] || fail 'service overall RSS budget exceeds the PCRE-phase ceiling'
+grep -Fx 'rss_budget_contract=overall-stricter-than-pcre-phase' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence does not identify the stricter overall RSS subcase'
 grep -Fx 'service_runtime_dependencies_unchanged=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no runtime-dependency immutability marker'
 grep -Fx 'service_runtime_loader_binding=pass' "$summary" >/dev/null 2>&1 ||
@@ -566,5 +581,13 @@ done < "$dependency_hashes"
 
 python3 "$root/tools/largefile_service_workload_check.py" "$out" ||
     fail 'service workload oracle/report verification failed'
+
+python3 -B "$root/tools/largefile_acceptance_cases.py" \
+    --manifest "$root/docs/largefile-capabilities.tsv" \
+    --map "$root/docs/largefile-capability-case-map.tsv" \
+    --records "$acceptance_records" \
+    --check-records \
+    --evidence-root "$out" >/dev/null ||
+    fail 'service capability acceptance-record schema verification failed'
 
 echo 'service runtime evidence passed'

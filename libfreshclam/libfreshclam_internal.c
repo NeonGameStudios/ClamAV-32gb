@@ -2009,6 +2009,12 @@ static fc_error_t buildcld(
         }
     }
 
+    if (tar_finish(fd, gzs) == -1) {
+        logg(LOGG_ERROR, "buildcld: Can't finish the TAR archive\n");
+        status = FC_EFAILEDUPDATE;
+        goto done;
+    }
+
     status = FC_SUCCESS;
 
 done:

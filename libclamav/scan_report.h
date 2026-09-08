@@ -50,6 +50,15 @@ void cli_scan_report_set_target(
     cl_scan_report_t *report,
     const char *target);
 
+/* Add the input and policy details for a client-side failure that happened
+ * before libclamav received a scan context. */
+void cli_scan_report_set_fallback_details(
+    cl_scan_report_t *report,
+    uint64_t root_size,
+    const cl_scan_report_limits_t *limits,
+    const char *file_type,
+    const char *reason);
+
 void cli_scan_report_note_logical(
     cl_scan_report_t *report,
     uint64_t bytes,

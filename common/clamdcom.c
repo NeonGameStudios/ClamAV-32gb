@@ -240,12 +240,19 @@ static int send_fdpass_fd_command(int sockd, int fd, const char *command)
  * MaxFileSize policy is available, use it; otherwise use the fork's hard
  * 32-GiB ceiling.  The daemon still rechecks the descriptor after receipt
  * because the file can change between these two observations. */
-static int fdpass_size_preflight(int fd, const char *display_filename,
-                                 const struct optstruct *clamdopts)
+int clamd_fdpass_size_preflight(int fd, const char *display_filename,
+                                const struct optstruct *clamdopts,
+                                cl_error_t *failure_status,
+                                uint64_t *size_out)
 {
     const struct optstruct *max_file_size;
     STATBUF sb;
     uint64_t limit = CLI_MAX_LARGE_FILESIZE;
+
+    if (failure_status)
+        *failure_status = CL_SUCCESS;
+    if (size_out)
+        *size_out = 0;
 
     if (fd < 0)
         return 0;
@@ -262,6 +269,8 @@ static int fdpass_size_preflight(int fd, const char *display_filename,
     if (FSTAT(fd, &sb) != 0) {
         logg(LOGG_ERROR, "%s: Failed to stat FILDES input: %s\n",
              display_filename ? display_filename : "FD", strerror(errno));
+        if (failure_status)
+            *failure_status = CL_ESTAT;
         return -1;
     }
     if (!S_ISREG(sb.st_mode)) {
@@ -272,16 +281,24 @@ static int fdpass_size_preflight(int fd, const char *display_filename,
             return 1;
         logg(LOGG_ERROR, "%s: FILDES input is not a regular file. ERROR\n",
              display_filename ? display_filename : "FD");
+        if (failure_status)
+            *failure_status = CL_EARG;
         return 0;
     }
     if (sb.st_size < 0) {
         logg(LOGG_ERROR, "%s: FILDES input has an invalid negative size. ERROR\n",
              display_filename ? display_filename : "FD");
+        if (failure_status)
+            *failure_status = CL_ESTAT;
         return -1;
     }
+    if (size_out)
+        *size_out = (uint64_t)sb.st_size;
     if ((uint64_t)sb.st_size > limit) {
         logg(LOGG_ERROR, "%s: File size exceeds MaxFileSize; refusing FILDES input. ERROR\n",
              display_filename ? display_filename : "FD");
+        if (failure_status)
+            *failure_status = CL_EMAXSIZE;
         return 0;
     }
     return 1;
@@ -290,7 +307,7 @@ static int fdpass_size_preflight(int fd, const char *display_filename,
 static int send_fdpass_fd_checked_common(int sockd, int fd, const char *display_filename,
                                          const struct optstruct *clamdopts, bool report)
 {
-    int preflight = fdpass_size_preflight(fd, display_filename, clamdopts);
+    int preflight = clamd_fdpass_size_preflight(fd, display_filename, clamdopts, NULL, NULL);
 
     if (preflight <= 0)
         return preflight;
@@ -407,6 +424,60 @@ int send_fdpass_report_checked(int sockd, const char *filename,
 }
 #endif
 
+/* A report client must distinguish a known-size stream admission refusal from
+ * a transport failure.  The stream sender keeps its historical 0 soft-fail
+ * result for direct callers, while dsreport() translates this preflight into
+ * a bounded LIMIT_INCOMPLETE fallback with the original input metadata. */
+static int clamd_stream_size_preflight(int fd, const char *display_filename,
+                                       const struct optstruct *clamdopts,
+                                       cl_error_t *failure_status,
+                                       uint64_t *size_out)
+{
+    STATBUF sb;
+    uint64_t limit;
+
+    if (failure_status)
+        *failure_status = CL_SUCCESS;
+    if (size_out)
+        *size_out = 0;
+
+    if (fd < 0)
+        return 0;
+
+    if (FSTAT(fd, &sb) != 0) {
+        logg(LOGG_ERROR, "%s: Failed to stat stream input: %s\n",
+             display_filename ? display_filename : "STDIN", strerror(errno));
+        if (failure_status)
+            *failure_status = CL_ESTAT;
+        return -1;
+    }
+
+    if (!S_ISREG(sb.st_mode))
+        return 1;
+
+    if (sb.st_size < 0) {
+        logg(LOGG_ERROR, "%s: Stream input has an invalid negative size. ERROR\n",
+             display_filename ? display_filename : "STDIN");
+        if (failure_status)
+            *failure_status = CL_ESTAT;
+        return -1;
+    }
+
+    if (size_out)
+        *size_out = (uint64_t)sb.st_size;
+
+    limit = clamd_stream_limit(clamdopts);
+    if ((uint64_t)sb.st_size > limit) {
+        logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
+             display_filename ? display_filename : "STDIN");
+        if (failure_status)
+            *failure_status = CL_EMAXSIZE;
+        return 0;
+    }
+
+    return 1;
+}
+
 /* Issues an INSTREAM-family command to clamd and streams the given file
  * Returns >0 on success, 0 soft fail, -1 hard fail */
 static int send_stream_fd_common(int sockd, int fd, const char *display_filename,
@@ -414,16 +485,12 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
 {
     uint32_t buf[BUFSIZ / sizeof(uint32_t)];
     ssize_t len;
-    const struct optstruct *stream_limit = optget(clamdopts, "StreamMaxLength");
     uint64_t todo;
     STATBUF sb;
 
     if (fd < 0) {
         return 0;
     }
-
-    if (NULL == stream_limit)
-        return -1;
 
     /* The public option contract treats zero as the bounded 32-GiB ceiling,
      * not as an unbounded or zero-byte stream. Keep the client-side
@@ -1171,6 +1238,69 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
     if (!infected || !incomplete || !errors)
         return -1;
 
+#ifdef HAVE_FD_PASSING
+    if (scantype == FILDES && clamdopts != NULL) {
+        int preflight_fd = -1;
+        bool close_preflight_fd = false;
+        cl_error_t preflight_status = CL_SUCCESS;
+        int preflight;
+
+        if (action_source != NULL) {
+            preflight_fd = action_source->scan_fd;
+        } else if (filename != NULL) {
+            preflight_fd = safe_open(filename, O_RDONLY | O_BINARY);
+            close_preflight_fd = (preflight_fd >= 0);
+        } else {
+            preflight_fd = 0;
+        }
+        if (preflight_fd < 0) {
+            if (close_preflight_fd)
+                close(preflight_fd);
+            return -1;
+        }
+        preflight = clamd_fdpass_size_preflight(
+            preflight_fd, display_filename, clamdopts, &preflight_status, NULL);
+        if (close_preflight_fd)
+            close(preflight_fd);
+        if (preflight == 0 && preflight_status == CL_EMAXSIZE)
+            return -(int)CL_EMAXSIZE;
+        if (preflight < 0)
+            return -1;
+    }
+#endif
+
+    if (scantype == STREAM) {
+        int preflight_fd = -1;
+        bool close_preflight_fd = false;
+        cl_error_t preflight_status = CL_SUCCESS;
+        int preflight;
+
+        if (action_source != NULL) {
+            preflight_fd = action_source->scan_fd;
+        } else if (filename != NULL) {
+            preflight_fd = safe_open(filename, O_RDONLY | O_BINARY);
+            close_preflight_fd = (preflight_fd >= 0);
+        } else {
+            preflight_fd = 0;
+        }
+        if (preflight_fd < 0) {
+            if (close_preflight_fd)
+                close(preflight_fd);
+            return -1;
+        }
+
+        preflight = clamd_stream_size_preflight(
+            preflight_fd, display_filename, clamdopts, &preflight_status, NULL);
+        if (close_preflight_fd)
+            close(preflight_fd);
+        if (preflight == 0 && preflight_status == CL_EMAXSIZE)
+            return -(int)CL_EMAXSIZE;
+        if (preflight < 0)
+            return -1;
+    }
+
+    /* sendln() returns zero on success; use a positive sentinel here because
+     * the shared report loop treats non-positive send results as failures. */
     switch (scantype) {
         case CONT:
             if (!filename)
@@ -1181,7 +1311,11 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
                 if (!command)
                     return -1;
                 snprintf(command, length, "zCONTSCANREPORT %s", filename);
-                sent = sendln(sockd, command, (unsigned int)length);
+                if (sendln(sockd, command, (unsigned int)length)) {
+                    free(command);
+                    return -1;
+                }
+                sent = 1;
                 free(command);
             }
             break;
@@ -1194,7 +1328,11 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
                 if (!command)
                     return -1;
                 snprintf(command, length, "zMULTISCANREPORT %s", filename);
-                sent = sendln(sockd, command, (unsigned int)length);
+                if (sendln(sockd, command, (unsigned int)length)) {
+                    free(command);
+                    return -1;
+                }
+                sent = 1;
                 free(command);
             }
             break;
@@ -1207,7 +1345,11 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
                 if (!command)
                     return -1;
                 snprintf(command, length, "zALLMATCHSCANREPORT %s", filename);
-                sent = sendln(sockd, command, (unsigned int)length);
+                if (sendln(sockd, command, (unsigned int)length)) {
+                    free(command);
+                    return -1;
+                }
+                sent = 1;
                 free(command);
             }
             break;
@@ -1227,8 +1369,14 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
             return -1;
     }
 
-    if (sent <= 0)
+    if (sent <= 0) {
+        /* Preserve a client-side known-size admission failure so the report
+         * caller can serialize LIMIT_INCOMPLETE instead of a generic
+         * transport/resource fallback. */
+        if (sent == -(int)CL_EMAXSIZE)
+            return sent;
         return -1;
+    }
 
     {
         int received = 0;
@@ -1239,15 +1387,19 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
             int frame_infected   = 0;
             int frame_incomplete = 0;
             cl_error_t frame_status = CL_ERROR;
+            char *frame_alert     = NULL;
 
             frame = recv_scan_report_frame(sockd, &json, &json_length, &terminated);
-            if (frame < 0)
+            if (frame < 0) {
+                logg(LOGG_ERROR, "Failed to receive structured scan report frame from clamd.\n");
                 return -1;
+            }
             if (terminated)
                 break;
             received = 1;
             if (scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete,
                                         &frame_status) < 0) {
+                logg(LOGG_ERROR, "Invalid structured scan report frame from clamd (%u bytes).\n", json_length);
                 free(json);
                 return -1;
             }
@@ -1258,7 +1410,21 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
                 return -1;
             }
             if (frame_infected) {
+                if (scan_report_json_alert(json, json_length, &frame_alert) < 0) {
+                    free(json);
+                    return -1;
+                }
+                if (!frame_alert || !*frame_alert) {
+                    logg(LOGG_ERROR,
+                         "%s: infected structured report has no exact alert name\n",
+                         display_filename ? display_filename : "stdin");
+                    free(frame_alert);
+                    free(json);
+                    return -1;
+                }
                 (*infected)++;
+                logg(LOGG_INFO, "%s: %s FOUND\n", display_filename ? display_filename : "stdin",
+                     frame_alert);
                 if (apply_action && action && action_source)
                     action((action_source_t *)action_source);
             } else if (frame_incomplete) {
@@ -1267,6 +1433,7 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
                 logg(LOGG_INFO, "%s: INCOMPLETE (%s)\n", display_filename ? display_filename : "stream",
                      cl_strerror(frame_status));
             }
+            free(frame_alert);
             free(json);
         }
 

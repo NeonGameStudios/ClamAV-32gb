@@ -2815,8 +2815,11 @@ static int cli_loadinfo(FILE *fs, struct cl_engine *engine, unsigned int options
 
     while (cli_dbgets(buffer, FILEBUFF, fs, dbio)) {
         line++;
-        if (!(options & CL_DB_UNSIGNED) && !strncmp(buffer, "DSIG:", 5)) {
-            dsig = 1;
+        if (!strncmp(buffer, "DSIG:", 5)) {
+            if (options & CL_DB_UNSIGNED)
+                break;
+
+            dsig        = 1;
             hash_status = cl_finish_hash(ctx, hash);
             ctx         = NULL;
             if (hash_status != 0) {

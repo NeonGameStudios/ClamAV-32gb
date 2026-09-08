@@ -1967,7 +1967,10 @@ cl_error_t cli_virus_found_cb(cli_ctx *ctx, const char *virname, bool is_potenti
             is_potentially_unwanted ? IndicatorType_PotentiallyUnwanted : IndicatorType_Strong,
             &remove_indicator_error);
         if (!remove_successful) {
-            cli_errmsg("cli_virus_found_cb: Failed to remove indicator from scan evidence: %s\n", ffierror_fmt(remove_indicator_error));
+            cli_errmsg("cli_virus_found_cb: Failed to remove indicator from scan evidence: %s\n",
+                       remove_indicator_error ? ffierror_fmt(remove_indicator_error) : "unspecified evidence error");
+            if (remove_indicator_error != NULL)
+                ffierror_free(remove_indicator_error);
             cli_mark_scan_incomplete(ctx, "alert callback evidence could not be updated");
             status = CL_ERROR;
             goto done;
@@ -2071,7 +2074,7 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
     uint64_t match_offset = 0;
     char *location = NULL;
 
-    if (!ctx || !virname || !ctx->recursion_stack ||
+    if (!ctx || !virname || !ctx->engine || !ctx->recursion_stack ||
         ctx->recursion_stack_size == 0 ||
         ctx->recursion_level >= ctx->recursion_stack_size) {
         return CL_ENULLARG;
@@ -2103,7 +2106,8 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
         match_offset,
         &add_indicator_error);
     if (!add_successful) {
-        cli_errmsg("Failed to add indicator to scan evidence: %s\n", ffierror_fmt(add_indicator_error));
+        cli_errmsg("Failed to add indicator to scan evidence: %s\n",
+                   add_indicator_error ? ffierror_fmt(add_indicator_error) : "unspecified evidence error");
         cli_mark_scan_incomplete(ctx, "indicator evidence could not be recorded");
         status = CL_ERROR;
         goto done;
@@ -2296,6 +2300,8 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
     }
 
 done:
+    if (add_indicator_error != NULL)
+        ffierror_free(add_indicator_error);
     if (NULL != location) {
         free(location);
     }
@@ -2312,7 +2318,8 @@ done:
 
 cl_error_t cli_append_potentially_unwanted(cli_ctx *ctx, const char *virname)
 {
-    if (!ctx || !virname) {
+    if (!ctx || !virname || !ctx->engine || !ctx->recursion_stack ||
+        ctx->recursion_stack_size == 0 || ctx->recursion_level >= ctx->recursion_stack_size) {
         return CL_ENULLARG;
     }
 
@@ -2327,7 +2334,8 @@ cl_error_t cli_append_virus(cli_ctx *ctx, const char *virname)
 {
     cl_error_t status;
 
-    if (!ctx || !virname) {
+    if (!ctx || !virname || !ctx->engine || !ctx->recursion_stack ||
+        ctx->recursion_stack_size == 0 || ctx->recursion_level >= ctx->recursion_stack_size) {
         return CL_ENULLARG;
     }
 

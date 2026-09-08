@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a marker-complete unsigned CUD from the legacy CVD test fixture."""
+"""Create a marker-complete unsigned CUD from a legacy CVD test fixture."""
 
 import argparse
 import gzip
@@ -8,7 +8,7 @@ import pathlib
 import tarfile
 
 
-def build_fixture(source_path: pathlib.Path, output_path: pathlib.Path) -> None:
+def build_fixture(source_path: pathlib.Path, output_path: pathlib.Path, strip_dsig: bool = True) -> None:
     source = source_path.read_bytes()
     if len(source) < 512 or not source[:11] == b"ClamAV-VDB:":
         raise ValueError("input is not a complete CVD fixture")
@@ -21,13 +21,18 @@ def build_fixture(source_path: pathlib.Path, output_path: pathlib.Path) -> None:
                 if not member.isfile():
                     raise ValueError(f"unsupported non-file CVD member: {member.name}")
                 data = source_tar.extractfile(member).read()
-                if member.name == "test.info":
+                if strip_dsig and member.name.endswith(".info"):
                     data = b"\n".join(
                         line for line in data.splitlines() if not line.startswith(b"DSIG:")
                     ) + b"\n"
 
                 output_member = tarfile.TarInfo(member.name)
-                output_member.mode = member.mode
+                # sigtool's --run-cdiff and --build tests mutate extracted
+                # database files.  Historical CVD members are often
+                # read-only, so generated unsigned test fixtures must grant
+                # the test owner write access while preserving other mode
+                # bits from the source archive.
+                output_member.mode = member.mode | 0o600
                 output_member.uid = member.uid
                 output_member.gid = member.gid
                 output_member.mtime = member.mtime
@@ -44,8 +49,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, type=pathlib.Path)
     parser.add_argument("--output", required=True, type=pathlib.Path)
+    parser.add_argument("--keep-dsig", action="store_true")
     args = parser.parse_args()
-    build_fixture(args.input, args.output)
+    build_fixture(args.input, args.output, strip_dsig=not args.keep_dsig)
 
 
 if __name__ == "__main__":

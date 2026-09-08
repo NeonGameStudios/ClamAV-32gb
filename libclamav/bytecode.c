@@ -520,7 +520,7 @@ static cl_error_t validate_type_layouts(struct cli_bc *bc)
                         top--;
                         continue;
                     }
-                    child = ty->containedTypes[frame->next++];
+                    child = ty->containedTypes[frame->next];
                     if (bytecode_type_index(bc, child, &child_index) &&
                         child_index >= NUM_STATIC_TYPES) {
                         if (state[child_index - NUM_STATIC_TYPES] == 1) {
@@ -548,6 +548,7 @@ static cl_error_t validate_type_layouts(struct cli_bc *bc)
                         goto malformed;
                     }
                     frame->size += child_size;
+                    frame->next++;
                     continue;
                 case DArrayType:
                     if (!ty->containedTypes || ty->numElements == 0) {
@@ -578,21 +579,22 @@ static cl_error_t validate_type_layouts(struct cli_bc *bc)
                                 continue;
                             }
                         }
-                        child_size = typesize(bc, child);
-                        if (!child_size ||
-                            (uint64_t)ty->numElements >
-                                CLI_MAX_ALLOCATION / child_size) {
-                            cli_errmsg("bytecode: array type %u exceeds the allocation limit\n",
-                                       frame->index + 65);
-                            goto malformed;
-                        }
-                        ty->size  = (uint32_t)((uint64_t)ty->numElements * child_size);
-                        ty->align = typealign(bc, child);
-                        if (!ty->align) {
-                            cli_errmsg("bytecode: array type %u has invalid alignment\n",
-                                       frame->index + 65);
-                            goto malformed;
-                        }
+                    }
+                    child       = ty->containedTypes[0];
+                    child_size  = typesize(bc, child);
+                    if (!child_size ||
+                        (uint64_t)ty->numElements >
+                            CLI_MAX_ALLOCATION / child_size) {
+                        cli_errmsg("bytecode: array type %u exceeds the allocation limit\n",
+                                   frame->index + 65);
+                        goto malformed;
+                    }
+                    ty->size  = (uint32_t)((uint64_t)ty->numElements * child_size);
+                    ty->align = typealign(bc, child);
+                    if (!ty->align) {
+                        cli_errmsg("bytecode: array type %u has invalid alignment\n",
+                                   frame->index + 65);
+                        goto malformed;
                     }
                     if (!ty->size) {
                         cli_errmsg("bytecode: array type %u has zero size\n",

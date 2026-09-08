@@ -1391,7 +1391,8 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
     int ofd              = -1;
     char *hash           = NULL;
     bitset_t *blk_bitset = NULL;
-    uint32_t cnt         = 0;
+    uint32_t cnt                = 0;
+    uint64_t temporary_reserved = 0;
 
     UNUSEDPARAM(handler_ctx);
 
@@ -1400,6 +1401,13 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
         ret = CL_SUCCESS;
         goto done;
     }
+
+    ret = cli_scan_reserve_temporary(ctx, prop->size);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "OLE2 VBA stream exceeds temporary storage limits");
+        goto done;
+    }
+    temporary_reserved = prop->size;
 
     if (prop->name_size > 64) {
         cli_dbgmsg("OLE2 [handler_writefile]: property name too long: %d\n", prop->name_size);
@@ -1550,6 +1558,8 @@ done:
     if (NULL != blk_bitset) {
         cli_bitset_free(blk_bitset);
     }
+    if (temporary_reserved != 0)
+        cli_scan_release_temporary(ctx, temporary_reserved);
 
     if (ret == CL_BREAK) {
         if (len == 0) {

@@ -35,6 +35,7 @@ else
 fi
 
 mkdir -p "$(dirname "$output")"
+output=$(CDPATH= cd -- "$(dirname "$output")" && pwd)/$(basename "$output")
 temporary="$output.tmp.$$"
 trap 'rm -f "$temporary"' EXIT HUP INT TERM
 
@@ -45,9 +46,26 @@ if command -v git >/dev/null 2>&1 &&
 fi
 
 if [ "$is_git_checkout" = yes ]; then
-    git -C "$root" ls-files | while IFS= read -r relative; do
+    # Include reviewed and untracked candidate files. A dirty checkout is not
+    # a qualification candidate, but excluding an untracked source/helper from
+    # the content identity would let a build use code the evidence manifest
+    # never named. The output and its temporary file are the only local files
+    # excluded here; generated dashboards remain narrowly excluded below.
+    git -C "$root" ls-files --cached --others --exclude-standard | while IFS= read -r relative; do
         [ -n "$relative" ] || continue
+        # Generated status dashboards and the coordinator's task ledger are
+        # external run metadata.  Keeping them out of the immutable source
+        # identity prevents a regenerated dashboard from participating in a
+        # source-manifest fixed point.  Executable code, build settings,
+        # fixtures, verifiers, and the capability manifest remain included.
+        case "$relative" in
+            32gb-current-snapshot.md|docs/largefile-task-ledger.md)
+                continue
+                ;;
+        esac
         file="$root/$relative"
+        [ "$file" = "$output" ] && continue
+        [ "$file" = "$temporary" ] && continue
         [ -f "$file" ] || continue
         printf '%s  %s\n' "$(hash_file "$file")" "$relative"
     done
@@ -64,6 +82,8 @@ else
         -not -name '*.tar.gz' \
         -not -name 'libnull.a' \
         -print | LC_ALL=C sort | while IFS= read -r file; do
+            [ "$file" = "$output" ] && continue
+            [ "$file" = "$temporary" ] && continue
             relative=${file#"$root"/}
             printf '%s  %s\n' "$(hash_file "$file")" "$relative"
         done

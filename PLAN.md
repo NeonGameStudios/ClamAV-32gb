@@ -1,5 +1,9 @@
 # ClamAV 32 GiB Full-Scan Completion Plan
 
+For step-by-step execution and bounded Luna 5.6 task prompts, start with the
+[execution roadmap](docs/32gb-luna-execution-roadmap.md). PLAN.md remains the
+authoritative release contract; the execution guide does not certify completion.
+
 ## Summary
 
 The fork is ClamAV 1.5.3 with a mostly C scanning engine in `libclamav`, several Rust parsers, and thin front ends for `clamscan`, `clamd`, `clamdscan`, milter, and on-access scanning. Those front ends largely converge on the same descriptor/fmap pipeline, so the existing 64-bit raw-scanning foundation is strong; the unfinished work is cumulative accounting, resource admission, complete parser coverage, and reliable proof of completeness.

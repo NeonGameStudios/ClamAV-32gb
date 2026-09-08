@@ -10,6 +10,8 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import subprocess
+import sys
 import unittest
 from functools import partial
 
@@ -19,6 +21,51 @@ import testcase
 
 os_platform = platform.platform()
 operating_system = os_platform.split('-')[0].lower()
+
+
+def _prepare_complete_cvd_fixture(source_path, output_path, signature_path, sigtool,
+                                  fixture_builder,
+                                  signing_key, signing_cert, intermediate_cert):
+    """Add the required tar end markers and sign a legacy CVD fixture."""
+    subprocess.run(
+        [
+            sys.executable,
+            str(fixture_builder),
+            '--input',
+            str(source_path),
+            '--output',
+            str(output_path),
+            '--keep-dsig',
+        ],
+        check=True,
+    )
+
+    signatures_before = set(output_path.parent.glob('*.cvd.sign'))
+    sign_result = subprocess.run(
+        [
+            str(sigtool),
+            '--sign',
+            str(output_path),
+            '--key',
+            str(signing_key),
+            '--cert',
+            str(signing_cert),
+            '--cert',
+            str(intermediate_cert),
+        ],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    if sign_result.returncode != 0:
+        raise RuntimeError('sigtool failed to sign fixture: {}'.format(sign_result.stdout))
+
+    signatures_after = set(output_path.parent.glob('*.cvd.sign'))
+    generated_signatures = signatures_after - signatures_before
+    if len(generated_signatures) != 1:
+        raise RuntimeError('sigtool did not produce exactly one CVD signature')
+    generated_signatures.pop().replace(signature_path)
 
 
 class TC(testcase.TestCase):
@@ -35,6 +82,30 @@ class TC(testcase.TestCase):
 
         TC.freshclam_pid = Path(TC.path_tmp, 'freshclam-test.pid')
         TC.freshclam_config = Path(TC.path_tmp, 'freshclam-test.conf')
+
+        # The historical CVD fixtures predate strict tar end-marker
+        # validation.  Keep those fixtures for negative coverage, but use
+        # marker-complete, freshly signed copies for positive full-download
+        # paths.
+        fixture_dir = TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles'
+        fixture_builder = TC.path_source / 'unit_tests' / 'input' / 'create_cvd_test_fixture.py'
+        signing_dir = TC.path_source / 'unit_tests' / 'input' / 'signing' / 'sign'
+        signing_key = TC.path_build / 'unit_tests' / 'input' / 'signing' / 'sign' / 'signing-test.key'
+        TC.complete_cvd = {}
+        for version in (5, 6):
+            complete_cvd = TC.path_tmp / 'complete-test-{}.cvd'.format(version)
+            complete_sign = TC.path_tmp / 'complete-test-{}.cvd.sign'.format(version)
+            _prepare_complete_cvd_fixture(
+                fixture_dir / 'test-{}.cvd'.format(version),
+                complete_cvd,
+                complete_sign,
+                TC.sigtool,
+                fixture_builder,
+                signing_key,
+                signing_dir / 'signing-test.crt',
+                signing_dir / 'intermediate-test.crt',
+            )
+            TC.complete_cvd[version] = (complete_cvd, complete_sign)
 
         TC.mock_mirror_port = 8001 # Chosen instead of 8000 because CVD-Update tool serves on 8000 by default.
                                    # TODO: Ideally we'd find an open port to use for these tests instead of crossing our fingers.
@@ -510,8 +581,9 @@ class TC(testcase.TestCase):
         shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-6.cvd'), str(TC.path_www / 'test.cvd.advertised'))
 
         # serve this CVD when requested instead of the advertised one
-        shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-6.cvd'), str(TC.path_www / 'test.cvd.served'))
-        shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-6.cvd.sign'), str(TC.path_www))
+        complete_cvd, complete_sign = TC.complete_cvd[6]
+        shutil.copy(str(complete_cvd), str(TC.path_www / 'test.cvd.served'))
+        shutil.copy(str(complete_sign), str(TC.path_www / 'test-6.cvd.sign'))
 
         # using these CDIFFs
         shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-4.cdiff'), str(TC.path_www))
@@ -601,8 +673,9 @@ class TC(testcase.TestCase):
             pass
 
         # Serve CVD 5 when test.cvd is requested instead of 6 (the advertised one). This should trigger an incremental update, starting a test-4.cvd + patches 5-6.
-        shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-5.cvd'), str(TC.path_www / 'test.cvd.served'))
-        shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-5.cvd.sign'), str(TC.path_www))
+        complete_cvd, complete_sign = TC.complete_cvd[5]
+        shutil.copy(str(complete_cvd), str(TC.path_www / 'test.cvd.served'))
+        shutil.copy(str(complete_sign), str(TC.path_www / 'test-5.cvd.sign'))
 
         # Serve the patches 5 - 6. Patch 4 should never be requested.
         shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-5.cdiff'), str(TC.path_www))

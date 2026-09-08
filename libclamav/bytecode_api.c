@@ -1095,13 +1095,13 @@ int32_t cli_bcapi_buffer_pipe_new(struct cli_bc_ctx *ctx, uint32_t size)
         free(data);
         return -1;
     }
-    ctx->buffers  = b;
-    ctx->nbuffers = n;
-    b             = &b[n - 1];
-
+    ctx->buffers = b;
+    b            = &b[n - 1];
+    /* New slots must not inherit stale fmap ownership from the heap. */
+    memset(b, 0, sizeof(*b));
     b->data         = data;
     b->size         = size;
-    b->write_cursor = b->read_cursor = 0;
+    ctx->nbuffers   = n;
     return n - 1;
 }
 
@@ -1126,15 +1126,12 @@ int32_t cli_bcapi_buffer_pipe_new_fromfile(struct cli_bc_ctx *ctx, uint32_t at)
     if (!b) {
         return -1;
     }
-    ctx->buffers  = b;
-    ctx->nbuffers = n;
-    b             = &b[n - 1];
-
+    ctx->buffers = b;
+    b            = &b[n - 1];
+    memset(b, 0, sizeof(*b));
     /* NULL data means read from file at pos read_cursor */
-    b->data         = NULL;
-    b->size         = 0;
-    b->read_cursor  = at;
-    b->write_cursor = 0;
+    b->read_cursor = at;
+    ctx->nbuffers  = n;
     return n - 1;
 }
 
@@ -1158,13 +1155,11 @@ int32_t cli_bcapi_buffer_pipe_new_fromfile64(struct cli_bc_ctx *ctx, uint64_t at
     b = cli_max_realloc(ctx->buffers, table_size);
     if (!b)
         return -1;
-    ctx->buffers    = b;
-    ctx->nbuffers   = n;
-    b               = &b[n - 1];
-    b->data         = NULL;
-    b->size         = 0;
-    b->read_cursor  = at;
-    b->write_cursor = 0;
+    ctx->buffers = b;
+    b            = &b[n - 1];
+    memset(b, 0, sizeof(*b));
+    b->read_cursor = at;
+    ctx->nbuffers  = n;
     return n - 1;
 }
 

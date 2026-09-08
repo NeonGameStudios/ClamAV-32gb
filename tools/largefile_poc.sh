@@ -17,6 +17,7 @@ manifest=$corpus/manifest.tsv
 sigdir=$out/db
 sigdb=$sigdir/largefile-poc.ndb
 logs=$out/logs
+reports=$out/reports
 tmp=$out/tmp
 results=$out/results.tsv
 max_scan_time_ms=${CLAMAV_MAX_SCAN_TIME_MS:-14400000}
@@ -50,7 +51,7 @@ if [ ! -f "$manifest" ]; then
     exit 2
 fi
 
-mkdir -p "$out" "$logs" "$tmp" "$sigdir"
+mkdir -p "$out" "$logs" "$reports" "$tmp" "$sigdir"
 : > "$sigdb"
 
 while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kind; do
@@ -93,6 +94,7 @@ while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kin
     input=$corpus/$file
     row_signature="LargeFile.POC.$(basename "$file" .bin)"
     log=$logs/$file.log
+    report=$reports/$file.jsonl
     work=$tmp/${file%.bin}
     mkdir -p "$work"
 
@@ -113,6 +115,7 @@ while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kin
                 --max-scantime="$max_scan_time_ms" \
                 --debug \
                 --no-summary \
+                --report-json="$report" \
                 --tempdir="$work" \
                 "$input" > "$log" 2>&1 &
             scan_pid=$!
@@ -124,6 +127,7 @@ while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kin
                 --max-scantime="$max_scan_time_ms" \
                 --debug \
                 --no-summary \
+                --report-json="$report" \
                 --tempdir="$work" \
                 "$input" > "$log" 2>&1 &
             scan_pid=$!
@@ -137,6 +141,7 @@ while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kin
                 --max-scantime="$max_scan_time_ms" \
                 --debug \
                 --no-summary \
+                --report-json="$report" \
                 --tempdir="$work" \
                 "$input" > "$log" 2>&1 &
             scan_pid=$!
@@ -148,6 +153,7 @@ while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kin
                 --max-scantime="$max_scan_time_ms" \
                 --debug \
                 --no-summary \
+                --report-json="$report" \
                 --tempdir="$work" \
                 "$input" > "$log" 2>&1 &
             scan_pid=$!

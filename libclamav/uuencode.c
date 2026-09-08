@@ -50,7 +50,7 @@ static cl_error_t uuencode_checktimelimit(cli_ctx *ctx, const char *reason)
     cl_error_t ret = cli_checktimelimit(ctx);
 
     if (ret != CL_SUCCESS)
-        cli_mark_scan_incomplete(ctx, reason);
+        cli_mark_scan_incomplete_specific(ctx, reason);
 
     return ret;
 }

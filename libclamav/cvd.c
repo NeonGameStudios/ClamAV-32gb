@@ -441,16 +441,28 @@ static int cli_cvd_parse_uint(const char *text, unsigned int *value)
     if (!text || !*text || !value)
         return 0;
 
-    for (cursor = (const unsigned char *)text; *cursor; cursor++) {
+    /* CVD headers are fixed-width and the final numeric field is commonly
+     * padded with spaces through the end of the 512-byte header block. */
+    while (*text == ' ')
+        text++;
+    if (!*text)
+        return 0;
+
+    cursor = (const unsigned char *)text;
+    while (*cursor >= '0' && *cursor <= '9') {
         unsigned int digit;
 
-        if (*cursor < '0' || *cursor > '9')
-            return 0;
         digit = (unsigned int)(*cursor - '0');
         if (parsed > (UINT_MAX - digit) / 10U)
             return 0;
         parsed = parsed * 10U + digit;
+        cursor++;
     }
+
+    while (*cursor == ' ')
+        cursor++;
+    if (*cursor != '\0')
+        return 0;
 
     *value = parsed;
     return 1;

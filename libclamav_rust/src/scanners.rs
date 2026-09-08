@@ -711,6 +711,26 @@ struct MappedInput {
     contiguous_reserved: u64,
 }
 
+#[cfg(not(test))]
+unsafe fn reserve_contiguous(ctx: *mut cli_ctx, bytes: u64) -> cl_error_t {
+    sys::cli_scan_reserve_contiguous(ctx, bytes)
+}
+
+#[cfg(test)]
+unsafe fn reserve_contiguous(ctx: *mut cli_ctx, bytes: u64) -> cl_error_t {
+    mapped_input_tests::test_cli_scan_reserve_contiguous(ctx, bytes)
+}
+
+#[cfg(not(test))]
+unsafe fn release_contiguous(ctx: *mut cli_ctx, bytes: u64) {
+    sys::cli_scan_release_contiguous(ctx, bytes);
+}
+
+#[cfg(test)]
+unsafe fn release_contiguous(ctx: *mut cli_ctx, bytes: u64) {
+    mapped_input_tests::test_cli_scan_release_contiguous(ctx, bytes);
+}
+
 impl MappedInput {
     unsafe fn new(ctx: *mut cli_ctx, fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
         if ctx.is_null() {
@@ -728,7 +748,7 @@ impl MappedInput {
             return Err(cl_error_t_CL_ERESOURCE);
         }
         let contiguous_reserved = u64::try_from(length).map_err(|_| cl_error_t_CL_ERESOURCE)?;
-        let status = sys::cli_scan_reserve_contiguous(ctx, contiguous_reserved);
+        let status = reserve_contiguous(ctx, contiguous_reserved);
         if status != cl_error_t_CL_SUCCESS {
             return Err(status);
         }
@@ -742,7 +762,7 @@ impl MappedInput {
             0,
         );
         if address == libc::MAP_FAILED {
-            sys::cli_scan_release_contiguous(ctx, contiguous_reserved);
+            release_contiguous(ctx, contiguous_reserved);
             return Err(cl_error_t_CL_EMEM);
         }
 
@@ -772,7 +792,7 @@ impl Drop for MappedInput {
         }
         if self.contiguous_reserved != 0 {
             unsafe {
-                sys::cli_scan_release_contiguous(self.ctx, self.contiguous_reserved);
+                release_contiguous(self.ctx, self.contiguous_reserved);
             }
             self.contiguous_reserved = 0;
         }
@@ -792,8 +812,10 @@ mod mapped_input_tests {
     static REJECT_RESERVATION: AtomicBool = AtomicBool::new(false);
     static TEST_LOCK: Mutex<()> = Mutex::new(());
 
-    #[no_mangle]
-    unsafe extern "C" fn cli_scan_reserve_contiguous(_ctx: *mut cli_ctx, bytes: u64) -> cl_error_t {
+    pub(super) unsafe fn test_cli_scan_reserve_contiguous(
+        _ctx: *mut cli_ctx,
+        bytes: u64,
+    ) -> cl_error_t {
         RESERVE_CALLS.fetch_add(1, Ordering::SeqCst);
         if REJECT_RESERVATION.load(Ordering::SeqCst) {
             return cl_error_t_CL_ERESOURCE;
@@ -802,8 +824,7 @@ mod mapped_input_tests {
         cl_error_t_CL_SUCCESS
     }
 
-    #[no_mangle]
-    unsafe extern "C" fn cli_scan_release_contiguous(_ctx: *mut cli_ctx, bytes: u64) {
+    pub(super) unsafe fn test_cli_scan_release_contiguous(_ctx: *mut cli_ctx, bytes: u64) {
         RELEASED.fetch_add(bytes, Ordering::SeqCst);
     }
 

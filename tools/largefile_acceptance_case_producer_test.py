@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+import csv
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+import largefile_acceptance_cases as acceptance_cases
+import largefile_acceptance_case_producer as producer
+
+
+class AcceptanceCaseProducerTests(unittest.TestCase):
+    def setUp(self):
+        self.work = tempfile.TemporaryDirectory(prefix="largefile-case-producer-")
+        self.addCleanup(self.work.cleanup)
+        self.root = Path(self.work.name)
+        self.out = self.root / "evidence"
+        (self.out / "provenance").mkdir(parents=True)
+        (self.out / "logs").mkdir()
+        (self.out / "reports").mkdir()
+        self.manifest = self.root / "manifest.tsv"
+        with self.manifest.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
+            writer.writerow(acceptance_cases.MANIFEST_HEADER)
+            writer.writerow(["clamscan", "file", "bounded", "clamscan/manager.c", "work"])
+        self.mapping = self.root / "map.tsv"
+        acceptance_cases.write_map(self.manifest, self.mapping)
+        for name, content in {
+            "source-manifest.txt": "source\n",
+            "service-build-identity.txt": "build\n",
+            "CMakeCache.txt": "cache\n",
+            "database-manifest-production-before.txt": "db-production\n",
+            "database-manifest-edge-before.txt": "db-edge\n",
+        }.items():
+            (self.out / "provenance" / name).write_text(content, encoding="utf-8")
+        (self.out / "service-summary.txt").write_text(
+            "service_qualification=pass\n"
+            "service_runtime_loader_binding=pass\n"
+            "service_temp_budget=pass\n"
+            "rss_budget_contract=overall-stricter-than-pcre-phase\n"
+            "rss_budget_kb=33554432\n"
+            "pcre_rss_budget_kb=41943040\n"
+            "post_pcre_rss_budget_kb=12582912\n"
+            "service_temp_budget_bytes=68719476736\n", encoding="utf-8")
+        oracle_hash = "a" * 64
+        (self.out / "provenance/qualification-oracle.tsv").write_text(
+            "role\texpected_size\texpected_sha256\texpected_exit\t"
+            "expected_completion\texpected_signature\texpected_offset\texpected_type\n"
+            + "\n".join([
+                f"production\t1\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_DATA",
+                f"materialized\t1\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_DATA",
+                f"expansion\t1\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_DATA",
+                f"edge\t34359738368\t{oracle_hash}\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t0\tCL_TYPE_DATA",
+            ]) + "\n", encoding="utf-8")
+        self.fixture = self.root / "fixture.bin"
+        self.fixture.write_bytes(b"x")
+        inputs = {role: {"input": str(self.fixture), "size": 1,
+                         "sha256": oracle_hash, "allocated_bytes": 512,
+                         "first_hole": None}
+                  for role in ("production", "materialized", "expansion", "edge")}
+        (self.out / "provenance/service-inputs-before.json").write_text(
+            json.dumps({"version": 1, "inputs": inputs}), encoding="utf-8")
+        (self.out / "provenance/service-workload-results.tsv").write_text(
+            "label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n"
+            f"production-clamscan\tcli\tproduction\t{self.fixture}\tlogs/production.log\t"
+            "reports/production.jsonl\t1\tyes\n", encoding="utf-8")
+        (self.out / "logs/production.log").write_text(
+            "fixture: Synthetic.Detection FOUND\n"
+            "signature Synthetic.Detection matched at 0\n", encoding="utf-8")
+        report = {
+            "version": 1, "status": 0, "verdict": 2,
+            "completion": "DETECTION_TERMINATED", "file_type": "CL_TYPE_DATA",
+            "root_size": 1, "logical_bytes": 1, "matcher_bytes": 1,
+            "contiguous_bytes": 0, "temporary_bytes": 0, "files_scanned": 1,
+            "max_recursion_depth": 0, "elapsed_ms": 1, "parser_operations": 1,
+            "detector_operations": 1, "skipped_operations": 0,
+            "max_scan_size": 68719476736, "last_alert": "Synthetic.Detection",
+            "last_alert_offset": 0, "reason": "Synthetic.Detection",
+        }
+        (self.out / "reports/production.jsonl").write_text(
+            json.dumps(report) + "\n", encoding="utf-8")
+
+    def test_producer_binds_real_report_and_hashes(self):
+        count = producer.produce(self.out, self.manifest, self.mapping)
+        self.assertEqual(count, 1)
+        self.assertEqual(
+            acceptance_cases.validate_records(
+                self.out / "provenance/acceptance-cases.tsv",
+                acceptance_cases.validate_map(self.manifest, self.mapping),
+                evidence_root=self.out,
+            ),
+            1,
+        )
+        with (self.out / "provenance/acceptance-cases.tsv").open(newline="", encoding="utf-8") as stream:
+            rows = list(csv.DictReader(stream, delimiter="\t"))
+        self.assertEqual(rows[0]["case_id"], "clamscan:file:detection-edge")
+        self.assertEqual(rows[0]["fixture_sha256"], "a" * 64)
+        self.assertEqual(rows[0]["alert_offset"], "0")
+        self.assertEqual(rows[0]["build_identity_sha256"], producer.sha256(self.out / "provenance/service-build-identity.txt"))
+
+        source_manifest = self.out / "provenance/source-manifest.txt"
+        source_manifest.write_text("tampered\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "source_manifest_sha256"):
+            acceptance_cases.validate_records(
+                self.out / "provenance/acceptance-cases.tsv",
+                acceptance_cases.validate_map(self.manifest, self.mapping),
+                evidence_root=self.out,
+            )
+
+    def test_unmapped_workload_is_not_relabelled(self):
+        path = self.out / "provenance/service-workload-results.tsv"
+        text = path.read_text(encoding="utf-8").replace("production-clamscan", "production_cvd")
+        path.write_text(text, encoding="utf-8")
+        self.assertEqual(producer.produce(self.out, self.manifest, self.mapping), 0)
+
+    def test_report_transport_success_binds_embedded_detection_exit(self):
+        with self.manifest.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
+            writer.writerow(acceptance_cases.MANIFEST_HEADER)
+            writer.writerow(["clamd", "SCANREPORT", "bounded", "clamd/session.c", "work"])
+        acceptance_cases.write_map(self.manifest, self.mapping)
+        path = self.out / "provenance/service-workload-results.tsv"
+        path.write_text(
+            "label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n"
+            f"production_cvd_scanreport\treport\tproduction\t{self.fixture}\t"
+            "logs/production.log\treports/production.jsonl\t0\tno\n",
+            encoding="utf-8",
+        )
+        count = producer.produce(self.out, self.manifest, self.mapping)
+        self.assertEqual(count, 1)
+        with (self.out / "provenance/acceptance-cases.tsv").open(
+            newline="", encoding="utf-8",
+        ) as stream:
+            row = next(csv.DictReader(stream, delimiter="\t"))
+        self.assertEqual(row["completion"], "DETECTION_TERMINATED")
+        self.assertEqual(row["exit_code"], "1")
+        self.assertEqual(row["case_id"], "clamd:SCANREPORT:detection-edge")
+        acceptance_cases.validate_records(
+            self.out / "provenance/acceptance-cases.tsv",
+            acceptance_cases.validate_map(self.manifest, self.mapping),
+            evidence_root=self.out,
+        )
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

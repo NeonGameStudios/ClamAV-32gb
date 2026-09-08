@@ -15,7 +15,7 @@ import struct
 import sys
 from pathlib import Path
 
-from largefile_service_workload_check import load_oracle as load_qualification_oracle
+from largefile_service_workload_check import load_oracle as load_qualification_oracle, validate_outcome
 
 
 MAX_FRAME = 16 * 1024 * 1024
@@ -110,6 +110,7 @@ def validate_report(report, oracle, mode, expected_size):
     expected_signature = oracle[5]
     expected_offset = oracle[6]
     expected_type = oracle[7]
+    validate_outcome(f"{mode} oracle", expected_exit, expected_completion, expected_signature)
     if expected_exit not in (0, 1, 2):
         fail(f"{mode} oracle has an unsupported expected exit status")
     if report.get("version") != 1:
@@ -140,8 +141,10 @@ def validate_report(report, oracle, mode, expected_size):
         fail(f"{mode} detection report does not carry a native-width alert offset")
     elif report["last_alert_offset"] != int(expected_offset):
         fail(f"{mode} report alert offset does not exactly match the oracle")
-    if expected_exit in (0, 1) and report["status"] != 0:
-        fail(f"{mode} report status is non-success for expected exit {expected_exit}")
+    if expected_completion == "DETECTION_TERMINATED" and report["status"] not in (0, 1):
+        fail(f"{mode} report status is invalid for a detection")
+    if expected_completion == "COMPLETE" and report["status"] != 0:
+        fail(f"{mode} report status is non-success for expected clean result")
     if expected_exit == 2 and report["status"] == 0:
         fail(f"{mode} report status is clean for expected error exit 2")
     if expected_completion == "COMPLETE":
@@ -223,6 +226,17 @@ def main(argv):
     finally:
         sock.close()
     validate_report(report, oracle, mode, expected_size)
+    target = report.get("target") or scan_file
+    completion = report.get("completion")
+    if completion == "DETECTION_TERMINATED":
+        alert = report.get("last_alert")
+        print(f"{target}: {alert} FOUND")
+        if isinstance(report.get("last_alert_offset"), int):
+            print(f"signature {alert} matched at {report['last_alert_offset']}")
+    elif completion == "COMPLETE":
+        print(f"{target}: OK")
+    else:
+        print(f"{target}: INCOMPLETE ({report.get('reason', 'unknown')})")
     with open(output_path, "w", encoding="utf-8") as stream:
         json.dump(report, stream, separators=(",", ":"), sort_keys=True)
         stream.write("\n")

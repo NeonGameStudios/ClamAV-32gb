@@ -84,6 +84,10 @@ int send_fdpass_fd_report_checked(int sockd, int fd, const char *display_filenam
                                   const struct optstruct *clamdopts);
 int send_fdpass_report_checked(int sockd, const char *filename,
                                const struct optstruct *clamdopts);
+int clamd_fdpass_size_preflight(int fd, const char *display_filename,
+                                const struct optstruct *clamdopts,
+                                cl_error_t *failure_status,
+                                uint64_t *size_out);
 #endif
 int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
 int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);

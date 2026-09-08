@@ -334,6 +334,24 @@ void cli_scan_report_set_target(
         report_replace_string(report, &report->target, target);
 }
 
+void cli_scan_report_set_fallback_details(
+    cl_scan_report_t *report,
+    uint64_t root_size,
+    const cl_scan_report_limits_t *limits,
+    const char *file_type,
+    const char *reason)
+{
+    if (NULL == report)
+        return;
+
+    report->metrics.root_size            = root_size;
+    report->metrics.skipped_operations  = 1;
+    if (NULL != limits)
+        report->limits = *limits;
+    report_replace_string(report, &report->file_type, file_type);
+    report_replace_string(report, &report->reason, reason);
+}
+
 void cli_scan_report_note_logical(
     cl_scan_report_t *report,
     uint64_t bytes,
@@ -541,7 +559,9 @@ void cli_scan_report_finish(
                    (status == CL_EMAXREC) ||
                    (ctx->limit_exceeded)) {
             report->completion = CL_SCAN_COMPLETION_LIMIT_INCOMPLETE;
-        } else if (report_status_is_operational_failure(status)) {
+        } else if (report_status_is_operational_failure(status) ||
+                   report_reason_contains(reason, "hash context could not be initialized") ||
+                   report_reason_contains(reason, "hash digest could not be initialized")) {
             report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
         } else if (report_reason_is_unsupported(reason)) {
             report->completion = CL_SCAN_COMPLETION_UNSUPPORTED;

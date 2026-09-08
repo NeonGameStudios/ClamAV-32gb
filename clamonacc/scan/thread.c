@@ -346,6 +346,11 @@ static cl_error_t onas_scan_thread_handle_file(struct onas_scan_event *event_dat
         return CL_ENULLARG;
     }
 
+    /* Keep the value passed to the scan/permission-response helper defined
+     * even when the path disappears between the kernel event and stat().
+     * The helper still sees b_scan cleared and must not submit this object,
+     * but passing an indeterminate STATBUF by value is undefined behavior. */
+    memset(&sb, 0, sizeof(sb));
     fres = CLAMSTAT(pathname, &sb);
     if (fres != 0) {
         err      = 1;

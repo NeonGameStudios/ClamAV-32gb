@@ -1480,6 +1480,13 @@ static int build(const struct optstruct *opts)
             }
         }
     }
+    if (tar_finish(-1, tar) == -1) {
+        mprintf(LOGG_ERROR, "build: Can't finish the TAR archive\n");
+        gzclose(tar);
+        unlink(tarfile);
+        free(tarfile);
+        return -1;
+    }
     gzclose(tar);
     FREE_LS(dblist2);
 

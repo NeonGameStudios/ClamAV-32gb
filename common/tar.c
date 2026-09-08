@@ -118,3 +118,16 @@ int tar_addfile(int fd, gzFile gzs, const char *file)
 
     return 0;
 }
+
+int tar_finish(int fd, gzFile gzs)
+{
+    unsigned char end[2 * TARBLK] = {0};
+
+    if (gzs)
+        return gzwrite(gzs, end, sizeof(end)) == (int)sizeof(end) ? 0 : -1;
+
+    if (fd < 0)
+        return -1;
+
+    return write(fd, end, sizeof(end)) == (ssize_t)sizeof(end) ? 0 : -1;
+}

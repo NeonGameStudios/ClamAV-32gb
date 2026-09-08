@@ -193,4 +193,46 @@ if "$gate" --manifest "$work/ready.tsv" >/dev/null 2> "$work/legacy-option.err";
 fi
 grep -F 'usage:' "$work/legacy-option.err" >/dev/null
 
+# A generic self-bound proof is not enough for on-access: the release gate
+# must require the retained Linux fanotify permission-event proof as well.
+mkdir -p "$work/onaccess-evidence/provenance" "$work/onaccess-evidence/proof"
+cp "$work/evidence/provenance/source-manifest.txt" \
+    "$work/onaccess-evidence/provenance/source-manifest.txt"
+onaccess_source_hash=$(hash_fixture "$work/onaccess-evidence/provenance/source-manifest.txt")
+printf 'proof_format_version=1\ncapability_kind=on-access\ncapability_id=permission\nsource_manifest_sha256=%s\nevidence_type=test\nqualification_result=pass\n' \
+    "$onaccess_source_hash" > "$work/onaccess-evidence/proof/onaccess.txt"
+onaccess_proof_hash=$(hash_fixture "$work/onaccess-evidence/proof/onaccess.txt")
+printf 'kind\tid\tstatus\tsource_manifest_sha256\tproof\tproof_sha256\n' \
+    > "$work/onaccess-evidence/provenance/capability-bindings.tsv"
+printf 'on-access\tpermission\tqualified\t%s\tproof/onaccess.txt\t%s\n' \
+    "$onaccess_source_hash" "$onaccess_proof_hash" \
+    >> "$work/onaccess-evidence/provenance/capability-bindings.tsv"
+{
+    write_header
+    printf 'on-access\tpermission\tqualified\tclamonacc/client/client.c\trelease_evidence=test:%s source_manifest_sha256=%s\n' \
+        "$work/onaccess-evidence" "$onaccess_source_hash"
+} > "$work/onaccess-missing-fanotify.tsv"
+expect_rejected 'on-access evidence without a fanotify permission proof' \
+    'has no fanotify permission proof' "$work/onaccess-missing-fanotify.tsv"
+
+{
+    write_header
+    mkdir -p "$work/pcre-evidence/provenance" "$work/pcre-evidence/proof"
+    cp "$work/evidence/provenance/source-manifest.txt" \
+        "$work/pcre-evidence/provenance/source-manifest.txt"
+    pcre_source_hash=$(hash_fixture "$work/pcre-evidence/provenance/source-manifest.txt")
+    printf 'proof_format_version=1\ncapability_kind=matcher\ncapability_id=pcre\nsource_manifest_sha256=%s\nevidence_type=test\nqualification_result=pass\n' \
+        "$pcre_source_hash" > "$work/pcre-evidence/proof/pcre.txt"
+    pcre_proof_hash=$(hash_fixture "$work/pcre-evidence/proof/pcre.txt")
+    printf 'kind\tid\tstatus\tsource_manifest_sha256\tproof\tproof_sha256\n' \
+        > "$work/pcre-evidence/provenance/capability-bindings.tsv"
+    printf 'matcher\tpcre\tqualified\t%s\tproof/pcre.txt\t%s\n' \
+        "$pcre_source_hash" "$pcre_proof_hash" \
+        >> "$work/pcre-evidence/provenance/capability-bindings.tsv"
+    printf 'matcher\tpcre\tqualified\tlibclamav/matcher-pcre.c\trelease_evidence=test:%s source_manifest_sha256=%s\n' \
+        "$work/pcre-evidence" "$pcre_source_hash"
+} > "$work/pcre-missing-phase.tsv"
+expect_rejected 'PCRE evidence without phase RSS proof' \
+    'has no phase RSS proof' "$work/pcre-missing-phase.tsv"
+
 echo 'large-file release readiness tests passed'

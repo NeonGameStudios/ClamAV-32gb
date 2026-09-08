@@ -53,6 +53,9 @@ class TC(testcase.TestCase):
         'clam-upack.exe',
         'clam.chm',
         'clam.ppt',
+        'clam-yc.exe',
+        'clam-mew.exe',
+        'clam_cache_emax.tgz',
     }
 
     @classmethod

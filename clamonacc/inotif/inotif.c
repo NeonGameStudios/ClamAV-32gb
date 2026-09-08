@@ -85,8 +85,34 @@ static void onas_ddd_exit(void *arg);
 static struct onas_ht *ddd_ht;
 static char **wdlt;
 static uint32_t wdlt_len;
-static int onas_in_fd;
+static int onas_in_fd = -1;
 extern pthread_t ddd_pid;
+
+static void onas_release_path_lists(char **include_list, int num_indirs, char **exclude_list, int num_exdirs)
+{
+    if (include_list) {
+        free_opt_list(include_list, num_indirs);
+    }
+    if (exclude_list) {
+        free_opt_list(exclude_list, num_exdirs);
+    }
+}
+
+static int onas_wait_for_inotify(void)
+{
+    fd_set rfds;
+    int ret;
+
+    do {
+        /* select() mutates the descriptor set; rebuild it for every wait so
+         * an idle period cannot leave the next wait watching no descriptors. */
+        FD_ZERO(&rfds);
+        FD_SET(onas_in_fd, &rfds);
+        ret = select(onas_in_fd + 1, &rfds, NULL, NULL, NULL);
+    } while (ret == -1 && errno == EINTR);
+
+    return ret;
+}
 
 static int onas_ddd_init_ht(uint32_t ht_size)
 {
@@ -119,17 +145,23 @@ static int onas_ddd_init_wdlt(uint64_t nwatches)
 static int onas_ddd_grow_wdlt(void)
 {
 
-    char **ptr = NULL;
+    char **ptr       = NULL;
+    size_t old_len   = wdlt_len;
+    size_t new_len   = old_len << 1;
 
-    ptr = (char **)cli_safer_realloc(wdlt, wdlt_len << 1);
+    if (new_len <= old_len || new_len > UINT32_MAX) {
+        return CL_EMEM;
+    }
+
+    ptr = (char **)cli_safer_realloc(wdlt, new_len * sizeof(char *));
     if (ptr) {
         wdlt = ptr;
-        memset(&ptr[wdlt_len], 0, sizeof(char *) * (wdlt_len - 1));
+        memset(&ptr[old_len], 0, sizeof(char *) * (new_len - old_len));
     } else {
         return CL_EMEM;
     }
 
-    wdlt_len <<= 1;
+    wdlt_len = (uint32_t)new_len;
 
     return CL_SUCCESS;
 }
@@ -165,7 +197,16 @@ int onas_ddd_init(uint64_t nwatches, size_t ht_size)
     if (ret) return ret;
 
     ret = onas_ddd_init_ht(ht_size);
-    if (ret) return ret;
+    if (ret) {
+        /* onas_ht_init() may have freed a partially-created table; discard
+         * the global handle and the watch table so the caller can safely
+         * perform one cleanup pass. */
+        ddd_ht = NULL;
+        free(wdlt);
+        wdlt     = NULL;
+        wdlt_len = 0;
+        return ret;
+    }
 
     return CL_SUCCESS;
 }
@@ -175,7 +216,7 @@ int onas_ddd_init(uint64_t nwatches, size_t ht_size)
  */
 static int onas_ddd_watch(const char *pathname, int fan_fd, uint64_t fan_mask, int in_fd, uint64_t in_mask)
 {
-    if (!pathname || fan_fd <= 0 || in_fd <= 0) return CL_ENULLARG;
+    if (!pathname || fan_fd < 0 || in_fd < 0) return CL_ENULLARG;
 
     int ret    = CL_SUCCESS;
     size_t len = strlen(pathname);
@@ -201,13 +242,14 @@ static int onas_ddd_watch(const char *pathname, int fan_fd, uint64_t fan_mask, i
 static int onas_ddd_watch_hierarchy(const char *pathname, size_t len, int fd, uint64_t mask, uint32_t type)
 {
 
-    if (!pathname || fd <= 0 || !type) return CL_ENULLARG;
+    if (!pathname || fd < 0 || !type) return CL_ENULLARG;
 
     if (type == (ONAS_IN | ONAS_FAN)) return CL_EARG;
 
     struct onas_hnode *hnode  = NULL;
     struct onas_element *elem = NULL;
     int wd                    = 0;
+    int ret                    = CL_SUCCESS;
 
     if (onas_ht_get(ddd_ht, pathname, len, &elem) != CL_SUCCESS) {
         logg(LOGG_ERROR, "ClamInotif: could not add element to hash table for %s\n", pathname);
@@ -224,7 +266,12 @@ static int onas_ddd_watch_hierarchy(const char *pathname, size_t len, int fd, ui
             return CL_EARG;
         }
         if ((uint32_t)wd >= wdlt_len) {
-            onas_ddd_grow_wdlt();
+            ret = onas_ddd_grow_wdlt();
+            if (ret != CL_SUCCESS) {
+                inotify_rm_watch(fd, wd);
+                logg(LOGG_ERROR, "ClamInotif: out of memory when growing watch descriptor lookup table\n");
+                return ret;
+            }
         }
 
         /* Link the hash node to the watch descriptor lookup table */
@@ -261,9 +308,11 @@ static int onas_ddd_watch_hierarchy(const char *pathname, size_t len, int fd, ui
         else
             snprintf(child_path, size, "%s/%s", hnode->pathname, curr->dirname);
 
-        if (onas_ddd_watch_hierarchy(child_path, strlen(child_path), fd, mask, type)) {
+        ret = onas_ddd_watch_hierarchy(child_path, strlen(child_path), fd, mask, type);
+        if (ret != CL_SUCCESS) {
             logg(LOGG_ERROR, "ClamInotif: issue when adding watch for %s\n", child_path);
-            return CL_EARG;
+            free(child_path);
+            return ret;
         }
         free(child_path);
     }
@@ -276,7 +325,7 @@ static int onas_ddd_watch_hierarchy(const char *pathname, size_t len, int fd, ui
  */
 static int onas_ddd_unwatch(const char *pathname, int fan_fd, int in_fd)
 {
-    if (!pathname || fan_fd <= 0 || in_fd <= 0) return CL_ENULLARG;
+    if (!pathname || fan_fd < 0 || in_fd < 0) return CL_ENULLARG;
 
     int ret    = CL_SUCCESS;
     size_t len = strlen(pathname);
@@ -301,7 +350,7 @@ static int onas_ddd_unwatch(const char *pathname, int fan_fd, int in_fd)
 static int onas_ddd_unwatch_hierarchy(const char *pathname, size_t len, int fd, uint32_t type)
 {
 
-    if (!pathname || fd <= 0 || !type) return CL_ENULLARG;
+    if (!pathname || fd < 0 || !type) return CL_ENULLARG;
 
     if (type == (ONAS_IN | ONAS_FAN)) return CL_EARG;
 
@@ -316,7 +365,7 @@ static int onas_ddd_unwatch_hierarchy(const char *pathname, size_t len, int fd, 
     if (type & ONAS_IN) {
         wd = hnode->wd;
 
-        if (!inotify_rm_watch(fd, wd) && errno != ENOENT) return CL_EARG;
+        if (inotify_rm_watch(fd, wd) < 0 && errno != ENOENT) return CL_EARG;
 
         /* Unlink the hash node from the watch descriptor lookup table */
         hnode->wd = 0;
@@ -345,8 +394,10 @@ static int onas_ddd_unwatch_hierarchy(const char *pathname, size_t len, int fd, 
         else
             snprintf(child_path, size, "%s/%s", hnode->pathname, curr->dirname);
 
-        onas_ddd_unwatch_hierarchy(child_path, strlen(child_path), fd, type);
+        int ret = onas_ddd_unwatch_hierarchy(child_path, strlen(child_path), fd, type);
         free(child_path);
+        if (ret != CL_SUCCESS)
+            return ret;
     }
 
     return CL_SUCCESS;
@@ -356,7 +407,7 @@ cl_error_t onas_enable_inotif_ddd(struct onas_context **ctx)
 {
 
     pthread_attr_t ddd_attr;
-    int32_t thread_started = 1;
+    int32_t thread_started = 0;
 
     if (!ctx || !*ctx) {
         logg(LOGG_ERROR, "ClamInotif: unable to start clamonacc. (bad context)\n");
@@ -364,16 +415,23 @@ cl_error_t onas_enable_inotif_ddd(struct onas_context **ctx)
     }
 
     if ((*ctx)->ddd_enabled) {
-        do {
-            if (pthread_attr_init(&ddd_attr)) break;
-            pthread_attr_setdetachstate(&ddd_attr, PTHREAD_CREATE_JOINABLE);
-            thread_started = pthread_create(&ddd_pid, &ddd_attr, onas_ddd_th, *ctx);
-        } while (0);
+        if (pthread_attr_init(&ddd_attr)) {
+            logg(LOGG_ERROR, "ClamInotif: unable to initialize DDD thread attributes\n");
+            return CL_ECREAT;
+        }
+        if (pthread_attr_setdetachstate(&ddd_attr, PTHREAD_CREATE_JOINABLE)) {
+            pthread_attr_destroy(&ddd_attr);
+            logg(LOGG_ERROR, "ClamInotif: unable to configure DDD thread attributes\n");
+            return CL_ECREAT;
+        }
+        thread_started = pthread_create(&ddd_pid, &ddd_attr, onas_ddd_th, *ctx);
+        pthread_attr_destroy(&ddd_attr);
     }
 
     if (0 != thread_started) {
         /* Failed to create thread */
         logg(LOGG_ERROR, "ClamInotif: Unable to start dynamic directory determination ... \n");
+        ddd_pid = 0;
         return CL_ECREAT;
     }
 
@@ -400,7 +458,6 @@ void *onas_ddd_th(void *arg)
     const struct optstruct *pt_tmpdir;
     const char *clamd_tmpdir;
     uint64_t in_mask = IN_ONLYDIR | IN_MOVE | IN_DELETE | IN_CREATE | IN_CLOSE_WRITE;
-    fd_set rfds;
     char buf[4096];
     ssize_t bread;
     const struct inotify_event *event;
@@ -408,7 +465,7 @@ void *onas_ddd_th(void *arg)
 
     char **include_list = NULL;
     char **exclude_list = NULL;
-    int num_exdirs, num_indirs;
+    int num_exdirs = 0, num_indirs = 0;
     cl_error_t err;
 
     /* ignore all signals */
@@ -432,12 +489,14 @@ void *onas_ddd_th(void *arg)
     onas_in_fd = inotify_init1(IN_NONBLOCK);
     if (onas_in_fd == -1) {
         logg(LOGG_ERROR, "ClamInotif: could not init inotify\n");
+        onas_ddd_exit(NULL);
         return NULL;
     }
 
     ret = onas_ddd_init(0, ONAS_DEFAULT_HT_SIZE);
     if (ret) {
         logg(LOGG_ERROR, "ClamInotif: failed to initialize DDD system\n");
+        onas_ddd_exit(NULL);
         return NULL;
     }
 
@@ -446,6 +505,7 @@ void *onas_ddd_th(void *arg)
 
     if (!optget(ctx->opts, "watch-list")->enabled && !optget(ctx->clamdopts, "OnAccessIncludePath")->enabled) {
         logg(LOGG_ERROR, "ClamInotif: Please specify at least one path with OnAccessIncludePath\n");
+        onas_ddd_exit(NULL);
         return NULL;
     }
 
@@ -477,6 +537,8 @@ void *onas_ddd_th(void *arg)
             if (onas_ht_get(ddd_ht, pt->strarg, strlen(pt->strarg), NULL) != CL_SUCCESS) {
                 if (onas_ht_add_hierarchy(ddd_ht, pt->strarg)) {
                     logg(LOGG_ERROR, "ClamInotif: can't include '%s'\n", pt->strarg);
+                    onas_release_path_lists(include_list, num_indirs, exclude_list, num_exdirs);
+                    onas_ddd_exit(NULL);
                     return NULL;
                 } else {
                     logg(LOGG_INFO, "ClamInotif: watching '%s' (and all sub-directories)\n", pt->strarg);
@@ -495,6 +557,8 @@ void *onas_ddd_th(void *arg)
         include_list = onas_get_opt_list(pt->strarg, &num_indirs, &err);
         if (NULL == include_list) {
             logg(LOGG_ERROR, "ClamInotif: could not parse include list (%s)\n", cl_strerror(err));
+            onas_release_path_lists(include_list, num_indirs, exclude_list, num_exdirs);
+            onas_ddd_exit(NULL);
             return NULL;
         }
 
@@ -504,7 +568,7 @@ void *onas_ddd_th(void *arg)
                 if (!strcmp(include_list[idx], "/")) {
                     logg(LOGG_ERROR, "ClamInotif: Not watching path '%s' while DDD is enabled\n", include_list[idx]);
                     logg(LOGG_ERROR, "ClamInotif: Please use the OnAccessMountPath option to watch '%s'\n", include_list[idx]);
-                    pt = (struct optstruct *)pt->nextarg;
+                    idx++;
                     continue;
                 }
 
@@ -512,12 +576,14 @@ void *onas_ddd_th(void *arg)
                     logg(LOGG_ERROR, "ClamInotif: Not watching path '%s'\n", include_list[idx]);
                     logg(LOGG_ERROR, "ClamInotif: ClamOnAcc should not watch the directory clamd is using for temp files\n");
                     logg(LOGG_ERROR, "ClamInotif: Consider setting TemporaryDirectory in clamd.conf to a different directory.\n");
-                    pt = (struct optstruct *)pt->nextarg;
+                    idx++;
                     continue;
                 }
 
                 if (onas_ht_add_hierarchy(ddd_ht, include_list[idx])) {
                     logg(LOGG_ERROR, "ClamInotif: can't include '%s'\n", include_list[idx]);
+                    onas_release_path_lists(include_list, num_indirs, exclude_list, num_exdirs);
+                    onas_ddd_exit(NULL);
                     return NULL;
                 } else {
                     logg(LOGG_INFO, "ClamInotif: watching '%s' (and all sub-directories)\n", include_list[idx]);
@@ -542,6 +608,8 @@ void *onas_ddd_th(void *arg)
                             if (onas_ht_rm_hierarchy(ddd_ht, oe->key, oe->klen, 0)) {
                                 logg(LOGG_ERROR, "ClamInotif: can't exclude '%s'\n", oe_key);
                                 free(oe_key);
+                                onas_release_path_lists(include_list, num_indirs, exclude_list, num_exdirs);
+                                onas_ddd_exit(NULL);
                                 return NULL;
                             } else {
                                 logg(LOGG_INFO, "ClamInotif: excluding '%s' (and all sub-directories)\n", oe_key);
@@ -565,6 +633,8 @@ void *onas_ddd_th(void *arg)
         exclude_list = onas_get_opt_list(pt->strarg, &num_exdirs, &err);
         if (NULL == exclude_list) {
             logg(LOGG_ERROR, "ClamInotif: could not parse exclude list (%s)\n", cl_strerror(err));
+            onas_release_path_lists(include_list, num_indirs, exclude_list, num_exdirs);
+            onas_ddd_exit(NULL);
             return NULL;
         }
 
@@ -573,6 +643,8 @@ void *onas_ddd_th(void *arg)
             if (onas_ht_get(ddd_ht, exclude_list[idx], strlen(exclude_list[idx]), NULL) == CL_SUCCESS) {
                 if (onas_ht_rm_hierarchy(ddd_ht, exclude_list[idx], strlen(exclude_list[idx]), 0)) {
                     logg(LOGG_ERROR, "ClamInotif: can't exclude '%s'\n", exclude_list[idx]);
+                    onas_release_path_lists(include_list, num_indirs, exclude_list, num_exdirs);
+                    onas_ddd_exit(NULL);
                     return NULL;
                 } else {
                     logg(LOGG_INFO, "ClamInotif: excluding '%s' (and all sub-directories)\n", exclude_list[idx]);
@@ -658,15 +730,19 @@ void *onas_ddd_th(void *arg)
         logg(LOGG_INFO, "ClamInotif: extra scanning on inotify events enabled\n");
     }
 
-    FD_ZERO(&rfds);
-    FD_SET(onas_in_fd, &rfds);
+    onas_release_path_lists(include_list, num_indirs, exclude_list, num_exdirs);
+    include_list = NULL;
+    exclude_list = NULL;
 
     pthread_cleanup_push(onas_ddd_exit, NULL);
 
     while (1) {
-        do {
-            ret = select(onas_in_fd + 1, &rfds, NULL, NULL, NULL);
-        } while (ret == -1 && errno == EINTR);
+        ret = onas_wait_for_inotify();
+        if (ret <= 0) {
+            logg(LOGG_ERROR, "ClamInotif: failed waiting for inotify input ... %s\n",
+                 ret == 0 ? "watch descriptor was not ready" : strerror(errno));
+            break;
+        }
 
         while ((bread = read(onas_in_fd, buf, sizeof(buf))) > 0) {
             pthread_testcancel();
@@ -679,7 +755,7 @@ void *onas_ddd_th(void *arg)
 
                 event = (const struct inotify_event *)p;
                 wd    = event->wd;
-                if (wd >= 0)
+                if (wd >= 0 && (uint32_t)wd < wdlt_len)
                     path = wdlt[wd];
                 else
                     path = NULL;
@@ -702,7 +778,7 @@ void *onas_ddd_th(void *arg)
                     char *child_path = (char *)malloc(size);
                     if (child_path == NULL) {
                         logg(LOGG_DEBUG, "ClamInotif: could not allocate space for child path ... aborting\n");
-                        return NULL;
+                        pthread_exit(NULL);
                     }
 
                     if (path[len - 1] == '/') {
@@ -837,11 +913,21 @@ static void onas_ddd_handle_extra_scanning(struct onas_context *ctx, const char 
     event_data = (struct onas_scan_event *)calloc(1, sizeof(struct onas_scan_event));
     if (NULL == event_data) {
         logg(LOGG_ERROR, "ClamInotif: could not allocate memory for event data struct\n");
+        return;
     }
 
     /* general mapping */
-    onas_map_context_info_to_event_data(ctx, &event_data);
+    if (CL_SUCCESS != onas_map_context_info_to_event_data(ctx, &event_data)) {
+        logg(LOGG_ERROR, "ClamInotif: could not map context to extra scan event\n");
+        free(event_data);
+        return;
+    }
     event_data->pathname = cli_safer_strdup(pathname);
+    if (NULL == event_data->pathname) {
+        logg(LOGG_ERROR, "ClamInotif: could not allocate extra scan pathname\n");
+        free(event_data);
+        return;
+    }
     event_data->bool_opts |= ONAS_SCTH_B_SCAN;
 
     /* inotify specific stuffs */
@@ -853,6 +939,8 @@ static void onas_ddd_handle_extra_scanning(struct onas_context *ctx, const char 
     /* feed consumer queue */
     if (CL_SUCCESS != onas_queue_event(event_data)) {
         logg(LOGG_ERROR, "ClamInotif: error occurred while feeding consumer queue extra event ... continuing ...\n");
+        free(event_data->pathname);
+        free(event_data);
         return;
     }
 
@@ -865,10 +953,10 @@ static void onas_ddd_exit(void *arg)
 
     logg(LOGG_DEBUG, "ClamInotif: onas_ddd_exit()\n");
 
-    if (onas_in_fd) {
+    if (onas_in_fd >= 0) {
         close(onas_in_fd);
     }
-    onas_in_fd = 0;
+    onas_in_fd = -1;
 
     if (ddd_ht) {
         onas_free_ht(ddd_ht);

@@ -529,9 +529,9 @@ fileblobReserveTemporary(fileblob *fb, cli_ctx *ctx, uint64_t bytes)
 {
     cl_error_t status;
 
-    if (fb == NULL || ctx == NULL)
+    if (fb == NULL || ctx == NULL) {
         return 0;
-
+    } else if (ctx->engine == NULL) { fileblobMarkIncompleteStatus(fb, CL_ENULLARG, "fileblob scan context has no owning engine"); return -1; }
     if (fb->temporary_ctx && fb->temporary_ctx != ctx)
         fileblobReleaseTemporary(fb);
 
@@ -931,7 +931,7 @@ void fileblobSetCTX(fileblob *fb, cli_ctx *ctx)
         return;
     }
 
-    fb->ctx = ctx;
+    fb->ctx = ctx; if (ctx->engine == NULL) { fileblobMarkIncompleteStatus(fb, CL_ENULLARG, "fileblob scan context has no owning engine"); return; }
     (void)fileblobReserveExistingTemporary(fb);
 }
 

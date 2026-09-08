@@ -25,6 +25,24 @@ class TC(testcase.TestCase):
     def setUpClass(cls):
         super(TC, cls).setUpClass()
 
+        # The repository's historical signed CVD fixtures intentionally lack
+        # the strict TAR end marker.  Keep their signed/diff coverage in the
+        # tests that need it, but use deterministic marker-complete unsigned
+        # CUDs for sigtool operations that must unpack a database.
+        fixture_builder = TC.path_source / 'unit_tests' / 'input' / 'create_cvd_test_fixture.py'
+        marker_dir = TC.path_tmp / 'marker_fixtures'
+        marker_dir.mkdir()
+        TC.marker_fixtures = {}
+        for fixture_name in ('test-1', 'test-6'):
+            source_fixture = TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / '{}.cvd'.format(fixture_name)
+            marker_fixture = marker_dir / '{}-marker.cud'.format(fixture_name)
+            subprocess.run(
+                [sys.executable, str(fixture_builder), '--input', str(source_fixture), '--output', str(marker_fixture)]
+                + (['--keep-dsig'] if fixture_name == 'test-1' else []),
+                check=True,
+            )
+            TC.marker_fixtures[fixture_name] = marker_fixture
+
         # Prepare a directory to host our test databases
         TC.path_www = TC.path_tmp / 'www'
         TC.path_www.mkdir()
@@ -96,7 +114,7 @@ class TC(testcase.TestCase):
 
         command = '{valgrind} {valgrind_args} {sigtool} --unpack {cvd}'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args, sigtool=TC.sigtool,
-            cvd=TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-1.cvd'
+            cvd=TC.marker_fixtures['test-1']
         )
         output = self.execute_command(command)
 
@@ -135,7 +153,7 @@ class TC(testcase.TestCase):
 
         command = '{valgrind} {valgrind_args} {sigtool} --unpack {cvd}'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args, sigtool=TC.sigtool,
-            cvd=TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-1.cvd'
+            cvd=TC.marker_fixtures['test-1']
         )
         output = self.execute_command(command)
 
@@ -226,23 +244,24 @@ class TC(testcase.TestCase):
 
         # Get two CVD's. The '.script' diff file will be placed in the same
         # directory as the CVD's, so we'll put them inour temp directory.
-        (TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles'/ 'test-5.cvd')
+        diff_dir = TC.path_tmp / 'diff_inputs'
+        diff_dir.mkdir()
         shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-5.cvd'),
-                    str(TC.path_tmp))
+                    str(diff_dir / 'test-5.cvd'))
         shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-5.cvd.sign'),
-                    str(TC.path_tmp))
+                    str(diff_dir / 'test-5.cvd.sign'))
         shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-6.cvd'),
-                    str(TC.path_tmp / 'test.cvd'))
+                    str(diff_dir / 'test.cvd'))
         shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-6.cvd.sign'),
-                    str(TC.path_tmp / 'test-6.cvd.sign'))
+                    str(diff_dir / 'test-6.cvd.sign'))
 
         # Run the diff command.
         self.log.warning('VG: {}'.format(os.getenv("VG")))
 
         command = '{valgrind} {valgrind_args} {sigtool} --diff {old_cvd} {new_cvd}'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args, sigtool=TC.sigtool,
-            old_cvd=TC.path_tmp / 'test-5.cvd',
-            new_cvd=TC.path_tmp / 'test.cvd'
+            old_cvd=diff_dir / 'test-5.cvd',
+            new_cvd=diff_dir / 'test.cvd'
         )
         output = self.execute_command(command)
 
@@ -263,17 +282,14 @@ class TC(testcase.TestCase):
 
         # Get a CVD.
         (TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles'/ 'test-5.cvd')
-        shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-6.cvd'),
-                    str(TC.path_tmp / 'test.cvd'))
-        shutil.copy(str(TC.path_source / 'unit_tests' / 'input' / 'freshclam_testfiles' / 'test-6.cvd.sign'),
-                    str(TC.path_tmp / 'test-6.cvd.sign'))
+        shutil.copy(str(TC.marker_fixtures['test-6']), str(TC.path_tmp / 'test.cud'))
 
         # Unpack it to the tmp directory.
         self.log.warning('VG: {}'.format(os.getenv("VG")))
 
         command = '{valgrind} {valgrind_args} {sigtool} --unpack {old_cvd} --debug'.format(
             valgrind=TC.valgrind, valgrind_args=TC.valgrind_args, sigtool=TC.sigtool,
-            old_cvd=TC.path_tmp / 'test.cvd'
+            old_cvd=TC.path_tmp / 'test.cud'
         )
         output = self.execute_command(command)
 
@@ -303,8 +319,8 @@ class TC(testcase.TestCase):
         assert output.ec == 0  # success
 
         expected_results = [
-            'Total sigs: 42',
-            'New sigs: 28',
+            'Total sigs: 29',
+            'New sigs: 15',
             'Created test.cud',
             'Generated diff file test-7.script',
             'Verification',

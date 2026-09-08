@@ -37,6 +37,8 @@ use transpose::transpose;
 
 use crate::{ffi_error, ffi_util::FFIError, rrf_call, sys, validate_str_param};
 
+const IMAGE_FUZZY_HASH_LEN: usize = 8;
+
 /// Error enumerates all possible errors returned by this library.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -117,7 +119,6 @@ pub struct FuzzyHashMap {
 pub struct FuzzyHashMeta {
     lsigid: u32,
     subsigid: u32,
-    #[cfg(feature = "not_ready")]
     hamming_distance: u32,
 }
 
@@ -161,10 +162,8 @@ pub unsafe extern "C" fn _fuzzy_hash_check(
         hex::encode(hash_bytes)
     );
 
-    if let Some(meta_vec) = hashmap.check(hash_bytes) {
-        for meta in meta_vec {
-            sys::lsig_increment_subsig_match(mdata, meta.lsigid, meta.subsigid);
-        }
+    for meta in hashmap.check(hash_bytes) {
+        sys::lsig_increment_subsig_match(mdata, meta.lsigid, meta.subsigid);
     }
 
     true
@@ -222,9 +221,27 @@ pub unsafe extern "C" fn _fuzzy_hash_calculate_image(
     if hash_out.is_null() {
         return ffi_error!(err = err, Error::NullParam("hash_out"));
     }
+    if hash_out_len < IMAGE_FUZZY_HASH_LEN {
+        return ffi_error!(
+            err = err,
+            Error::InvalidParameter(format!(
+                "hash_bytes output parameter too small to hold the hash: {} < {}",
+                hash_out_len, IMAGE_FUZZY_HASH_LEN
+            ))
+        );
+    }
 
     let buffer = if file_bytes.is_null() {
         return ffi_error!(err = err, Error::NullParam("file_bytes"));
+    } else if file_size > isize::MAX as usize {
+        return ffi_error!(
+            err = err,
+            Error::InvalidParameter(format!(
+                "file_bytes input is too large for a Rust slice: {} > {}",
+                file_size,
+                isize::MAX
+            ))
+        );
     } else {
         slice::from_raw_parts(file_bytes, file_size)
     };
@@ -235,7 +252,7 @@ pub unsafe extern "C" fn _fuzzy_hash_calculate_image(
         Err(error) => return ffi_error!(err = err, error),
     };
 
-    if hash_out_len < hash_bytes.len() {
+    if hash_bytes.len() > IMAGE_FUZZY_HASH_LEN || hash_out_len < hash_bytes.len() {
         return ffi_error!(
             err = err,
             Error::InvalidParameter(format!(
@@ -254,14 +271,43 @@ pub unsafe extern "C" fn _fuzzy_hash_calculate_image(
 impl FuzzyHashMap {
     /// Check for fuzzy hash matches.
     ///
-    /// In this initial version, we're just doing a simple hash lookup and the
-    /// hamming distance is not considered.
-    ///
-    /// TODO: In a future version, replace this with an implementation that can find
-    /// any hashes within the signature meta.hamming_distance.
-    pub fn check(&self, hash: [u8; 8]) -> Option<&Vec<FuzzyHashMeta>> {
-        let hash = FuzzyHash::Image(ImageFuzzyHash { bytes: hash });
-        self.hashmap.get(&hash)
+    /// The signature distance is the Hamming distance between the eight-byte
+    /// image hashes, measured in differing bits. Exact matches are looked up
+    /// directly; nonzero-distance signatures are checked against the
+    /// same bounded map without materializing image data or an unbounded
+    /// candidate table.
+    pub fn check(&self, hash: [u8; 8]) -> impl Iterator<Item = &FuzzyHashMeta> + '_ {
+        let exact_matches = self
+            .hashmap
+            .get(&FuzzyHash::Image(ImageFuzzyHash { bytes: hash }))
+            .into_iter()
+            .flat_map(|meta_vec| meta_vec.iter());
+
+        let nearby_matches = self
+            .hashmap
+            .iter()
+            .filter_map(move |(candidate, meta_vec)| {
+                let FuzzyHash::Image(candidate) = candidate;
+                if candidate.bytes == hash {
+                    return None;
+                }
+
+                let distance = candidate
+                    .bytes
+                    .iter()
+                    .zip(hash.iter())
+                    .map(|(candidate, actual)| (*candidate ^ *actual).count_ones())
+                    .sum::<u32>();
+
+                Some(
+                    meta_vec
+                        .iter()
+                        .filter(move |meta| distance <= meta.hamming_distance),
+                )
+            })
+            .flatten();
+
+        exact_matches.chain(nearby_matches)
     }
 
     /// Load a fuzzy hash subsignature
@@ -295,11 +341,12 @@ impl FuzzyHashMap {
             None => 0,
         };
 
-        // TODO: Support non-zero distance
-        if distance != 0 {
-            error!(
-            "Non-zero hamming distances for image fuzzy hashes are not supported in this version."
-        );
+        if hexsig_split.next().is_some() {
+            return Err(Error::Format);
+        }
+
+        let max_hamming_distance = (IMAGE_FUZZY_HASH_LEN * u8::BITS as usize) as u32;
+        if distance > max_hamming_distance {
             return Err(Error::InvalidHammingDistance(distance));
         }
 
@@ -315,7 +362,6 @@ impl FuzzyHashMap {
                 let meta: FuzzyHashMeta = FuzzyHashMeta {
                     lsigid: lsig_id,
                     subsigid: subsig_id,
-                    #[cfg(feature = "not_ready")]
                     hamming_distance: distance,
                 };
 
@@ -586,6 +632,15 @@ mod tests {
     }
 
     #[test]
+    fn fuzzy_hash_check_rejects_null_matcher_data() {
+        let hash = sys::image_fuzzy_hash { hash: [0; 8] };
+        let hashmap = fuzzy_hashmap_new();
+
+        assert!(!unsafe { _fuzzy_hash_check(hashmap, std::ptr::null_mut(), hash) });
+        fuzzy_hash_free_hashmap(hashmap);
+    }
+
+    #[test]
     fn fuzzy_hash_load_rejects_null_map_with_error() {
         let signature = CString::new("fuzzy_img#0000000000000000#0").expect("C string");
         let mut error: *mut FFIError = std::ptr::null_mut();
@@ -604,6 +659,80 @@ mod tests {
     }
 
     #[test]
+    fn fuzzy_hash_load_rejects_null_signature_with_error() {
+        let hashmap = fuzzy_hashmap_new();
+        let mut error: *mut FFIError = std::ptr::null_mut();
+
+        assert!(!unsafe {
+            _fuzzy_hash_load_subsignature(
+                hashmap,
+                std::ptr::null(),
+                0,
+                0,
+                &mut error,
+            )
+        });
+        assert!(!error.is_null());
+        unsafe { crate::ffi_util::ffierror_free(error) };
+        fuzzy_hash_free_hashmap(hashmap);
+    }
+
+    #[test]
+    fn fuzzy_hash_map_loads_and_finds_exact_image_hashes() {
+        let mut hashmap = FuzzyHashMap::default();
+
+        hashmap
+            .load_subsignature("fuzzy_img#0000000000000000#0", 17, 23)
+            .expect("valid image fuzzy signature");
+
+        let matches: Vec<_> = hashmap.check([0; 8]).collect();
+        assert!(!matches.is_empty(), "exact hash match");
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].lsigid, 17);
+        assert_eq!(matches[0].subsigid, 23);
+    }
+
+    #[test]
+    fn fuzzy_hash_map_matches_within_declared_hamming_distance() {
+        let mut hashmap = FuzzyHashMap::default();
+
+        hashmap
+            .load_subsignature("fuzzy_img#0000000000000000#1", 17, 23)
+            .expect("valid nonzero image fuzzy distance");
+
+        let one_bit: Vec<_> = hashmap
+            .check([1, 0, 0, 0, 0, 0, 0, 0])
+            .collect();
+        assert_eq!(one_bit.len(), 1);
+        assert_eq!(one_bit[0].lsigid, 17);
+        assert_eq!(one_bit[0].subsigid, 23);
+        assert!(hashmap
+            .check([3, 0, 0, 0, 0, 0, 0, 0])
+            .next()
+            .is_none());
+    }
+
+    #[test]
+    fn fuzzy_hash_map_rejects_distance_above_hash_width() {
+        let mut hashmap = FuzzyHashMap::default();
+
+        assert!(matches!(
+            hashmap.load_subsignature("fuzzy_img#0000000000000000#65", 17, 23),
+            Err(Error::InvalidHammingDistance(65))
+        ));
+    }
+
+    #[test]
+    fn fuzzy_hash_map_rejects_extra_signature_fields() {
+        let mut hashmap = FuzzyHashMap::default();
+
+        assert!(matches!(
+            hashmap.load_subsignature("fuzzy_img#0000000000000000#0#extra", 17, 23),
+            Err(Error::Format)
+        ));
+    }
+
+    #[test]
     fn fuzzy_hash_calculation_rejects_null_error_output() {
         let mut output = [0u8; 8];
 
@@ -616,5 +745,75 @@ mod tests {
                 std::ptr::null_mut(),
             )
         });
+    }
+
+    #[test]
+    fn fuzzy_hash_calculation_rejects_short_output_before_decoding() {
+        static VALID_IMAGE: &[u8] = &[
+            b'G', b'I', b'F', b'8', b'9', b'a',
+            0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+            0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+            0x02, 0x02, 0x44, 0x01, 0x00,
+            0x3b,
+        ];
+        let mut output = [0u8; IMAGE_FUZZY_HASH_LEN - 1];
+        let mut error: *mut FFIError = std::ptr::null_mut();
+
+        assert!(!unsafe {
+            _fuzzy_hash_calculate_image(
+                VALID_IMAGE.as_ptr(),
+                VALID_IMAGE.len(),
+                output.as_mut_ptr(),
+                output.len(),
+                &mut error,
+            )
+        });
+        assert!(!error.is_null());
+        unsafe { crate::ffi_util::ffierror_free(error) };
+    }
+
+    #[test]
+    fn fuzzy_hash_calculation_accepts_valid_image() {
+        static VALID_IMAGE: &[u8] = &[
+            b'G', b'I', b'F', b'8', b'9', b'a',
+            0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+            0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+            0x02, 0x02, 0x44, 0x01, 0x00,
+            0x3b,
+        ];
+        let mut output = [0u8; IMAGE_FUZZY_HASH_LEN];
+        let mut error: *mut FFIError = std::ptr::null_mut();
+
+        assert!(unsafe {
+            _fuzzy_hash_calculate_image(
+                VALID_IMAGE.as_ptr(),
+                VALID_IMAGE.len(),
+                output.as_mut_ptr(),
+                output.len(),
+                &mut error,
+            )
+        });
+        assert!(error.is_null());
+    }
+
+    #[test]
+    fn fuzzy_hash_calculation_rejects_invalid_image_with_error() {
+        let input = b"not an image";
+        let mut output = [0u8; IMAGE_FUZZY_HASH_LEN];
+        let mut error: *mut FFIError = std::ptr::null_mut();
+
+        assert!(!unsafe {
+            _fuzzy_hash_calculate_image(
+                input.as_ptr(),
+                input.len(),
+                output.as_mut_ptr(),
+                output.len(),
+                &mut error,
+            )
+        });
+        assert!(!error.is_null());
+        unsafe { crate::ffi_util::ffierror_free(error) };
     }
 }

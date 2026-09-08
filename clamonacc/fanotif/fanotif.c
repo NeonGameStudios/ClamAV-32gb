@@ -61,7 +61,23 @@
 
 extern pthread_t ddd_pid;
 extern pthread_t scan_queue_pid;
-static int onas_fan_fd;
+static int onas_fan_fd = -1;
+
+static int onas_wait_for_fanotify(int fan_fd)
+{
+    fd_set rfds;
+    int ret;
+
+    do {
+        /* select() mutates the descriptor set; rebuild it for every wait so
+         * an idle period cannot leave the next wait watching no descriptors. */
+        FD_ZERO(&rfds);
+        FD_SET(fan_fd, &rfds);
+        ret = select(fan_fd + 1, &rfds, NULL, NULL, NULL);
+    } while (ret == -1 && errno == EINTR);
+
+    return ret;
+}
 
 cl_error_t onas_setup_fanotif(struct onas_context **ctx)
 {
@@ -103,7 +119,7 @@ cl_error_t onas_setup_fanotif(struct onas_context **ctx)
     if ((pt = optget((*ctx)->clamdopts, "OnAccessMountPath"))->enabled) {
         while (pt) {
             if (fanotify_mark(onas_fan_fd, FAN_MARK_ADD | FAN_MARK_MOUNT, (*ctx)->fan_mask, (*ctx)->fan_fd, pt->strarg) != 0) {
-                logg(LOGG_ERROR, "ClamFanotif: can't include mountpoint '%s'\n", pt->strarg);
+                logg(LOGG_ERROR, "ClamFanotif: can't include mountpoint '%s': %s\n", pt->strarg, strerror(errno));
                 return CL_EARG;
             } else {
                 logg(LOGG_DEBUG, "ClamFanotif: recursively watching the mount point '%s'\n", pt->strarg);
@@ -125,7 +141,7 @@ cl_error_t onas_setup_fanotif(struct onas_context **ctx)
                 }
 
                 if (fanotify_mark(onas_fan_fd, FAN_MARK_ADD, (*ctx)->fan_mask, (*ctx)->fan_fd, pt->strarg) != 0) {
-                    logg(LOGG_ERROR, "ClamFanotif: can't include path '%s'\n", pt->strarg);
+                    logg(LOGG_ERROR, "ClamFanotif: can't include path '%s': %s\n", pt->strarg, strerror(errno));
                     return CL_EARG;
                 } else {
                     logg(LOGG_DEBUG, "ClamFanotif: watching directory '%s' (non-recursively)\n", pt->strarg);
@@ -154,7 +170,6 @@ int onas_fan_eloop(struct onas_context **ctx)
     int ret     = 0;
     int err_cnt = 0;
     short int scan;
-    fd_set rfds;
     char buf[4096];
     ssize_t bread;
     struct fanotify_event_metadata *fmd;
@@ -162,42 +177,46 @@ int onas_fan_eloop(struct onas_context **ctx)
     char fname[1024];
     int len, check;
 
-    FD_ZERO(&rfds);
-    FD_SET((*ctx)->fan_fd, &rfds);
-
     logg(LOGG_DEBUG, "ClamFanotif: starting fanotify event loop with process id (%d) ... \n", getpid());
-    do {
-        ret = select((*ctx)->fan_fd + 1, &rfds, NULL, NULL, NULL);
-    } while ((ret == -1 && errno == EINTR));
+    ret = onas_wait_for_fanotify((*ctx)->fan_fd);
+    if (ret <= 0) {
+        logg(LOGG_ERROR, "ClamFanotif: failed waiting for fanotify input ... %s\n",
+             ret == 0 ? "watch descriptor was not ready" : strerror(errno));
+        return 2;
+    }
 
     time_t start = time(NULL) - 30;
-    while (((bread = read((*ctx)->fan_fd, buf, sizeof(buf))) > 0) || (errno == EOVERFLOW || errno == EMFILE || errno == EACCES)) {
-        switch (errno) {
-            case EOVERFLOW:
-                if (time(NULL) - start >= 30) {
-                    logg(LOGG_DEBUG, "ClamFanotif: internal error (failed to read data) ... %s\n", strerror(errno));
-                    logg(LOGG_DEBUG, "ClamFanotif: file too large for fanotify ... recovering and continuing scans...\n");
-                    start = time(NULL);
-                }
-
-                errno = 0;
-                continue;
-            case EACCES:
-                logg(LOGG_DEBUG, "ClamFanotif: internal error (failed to read data) ... %s\n", strerror(errno));
-                logg(LOGG_DEBUG, "ClamFanotif: check your SELinux audit logs and consider adding an exception \
+    while (1) {
+        /* errno is only meaningful when read() returns a negative result.
+         * Clear it before each read so a recovered EOVERFLOW/EMFILE/EACCES
+         * cannot be mistaken for an error on the next successful batch. */
+        errno = 0;
+        bread = read((*ctx)->fan_fd, buf, sizeof(buf));
+        if (bread <= 0) {
+            if (bread < 0) {
+                switch (errno) {
+                    case EOVERFLOW:
+                        if (time(NULL) - start >= 30) {
+                            logg(LOGG_DEBUG, "ClamFanotif: internal error (failed to read data) ... %s\n", strerror(errno));
+                            logg(LOGG_DEBUG, "ClamFanotif: file too large for fanotify ... recovering and continuing scans...\n");
+                            start = time(NULL);
+                        }
+                        continue;
+                    case EACCES:
+                        logg(LOGG_DEBUG, "ClamFanotif: internal error (failed to read data) ... %s\n", strerror(errno));
+                        logg(LOGG_DEBUG, "ClamFanotif: check your SELinux audit logs and consider adding an exception \
 						... recovering and continuing scans...\n");
-
-                errno = 0;
-                continue;
-            case EMFILE:
-                logg(LOGG_DEBUG, "ClamFanotif: internal error (failed to read data) ... %s\n", strerror(errno));
-                logg(LOGG_DEBUG, "ClamFanotif: waiting for consumer thread to catch up then retrying ...\n");
-                sleep(3);
-
-                errno = 0;
-                continue;
-            default:
-                break;
+                        continue;
+                    case EMFILE:
+                        logg(LOGG_DEBUG, "ClamFanotif: internal error (failed to read data) ... %s\n", strerror(errno));
+                        logg(LOGG_DEBUG, "ClamFanotif: waiting for consumer thread to catch up then retrying ...\n");
+                        sleep(3);
+                        continue;
+                    default:
+                        break;
+                }
+            }
+            break;
         }
 
         fmd = (struct fanotify_event_metadata *)buf;
@@ -212,9 +231,11 @@ int onas_fan_eloop(struct onas_context **ctx)
                 errno = 0;
                 len   = readlink(proc_fd_fname, fname, sizeof(fname) - 1);
                 if (len == -1) {
+                    int readlink_errno = errno;
+
                     close(fmd->fd);
-                    logg(LOGG_ERROR, "ClamFanotif: internal error (readlink() failed), %d, %s\n", fmd->fd, strerror(errno));
-                    if (errno == EBADF) {
+                    logg(LOGG_ERROR, "ClamFanotif: internal error (readlink() failed), %d, %s\n", fmd->fd, strerror(readlink_errno));
+                    if (readlink_errno == EBADF) {
                         logg(LOGG_INFO, "ClamWorker: fd already closed ... recovering ...\n");
                         fmd = FAN_EVENT_NEXT(fmd, bread);
                         continue;
@@ -242,7 +263,12 @@ int onas_fan_eloop(struct onas_context **ctx)
                     }
 
                     /* general mapping */
-                    onas_map_context_info_to_event_data(*ctx, &event_data);
+                    if (CL_SUCCESS != onas_map_context_info_to_event_data(*ctx, &event_data)) {
+                        close(fmd->fd);
+                        free(event_data);
+                        logg(LOGG_ERROR, "ClamFanotif: could not map context into event data\n");
+                        return 2;
+                    }
                     scan ? event_data->bool_opts |= ONAS_SCTH_B_SCAN : scan;
 
                     /* fanotify specific stuffs */
@@ -308,9 +334,12 @@ int onas_fan_eloop(struct onas_context **ctx)
             }
             fmd = FAN_EVENT_NEXT(fmd, bread);
         }
-        do {
-            ret = select((*ctx)->fan_fd + 1, &rfds, NULL, NULL, NULL);
-        } while ((ret == -1 && errno == EINTR));
+        ret = onas_wait_for_fanotify((*ctx)->fan_fd);
+        if (ret <= 0) {
+            logg(LOGG_ERROR, "ClamFanotif: failed waiting for fanotify input ... %s\n",
+                 ret == 0 ? "watch descriptor was not ready" : strerror(errno));
+            return 2;
+        }
     }
 
     if (bread < 0) {

@@ -300,7 +300,7 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
             grp = fmap_need_off_once(map, raddr, 6);
             if (!grp) {
                 if ((uint64_t)raddr <= map->len && 6 <= map->len - (size_t)raddr) {
-                    cli_mark_scan_incomplete(ctx, "PE icon group header could not be read completely");
+                    cli_mark_scan_incomplete(ctx, "PE icon group resource could not be read completely");
                     return CL_EREAD;
                 }
                 return icon_parse_error(icon_env, NULL, "PE icon group data was outside the input map");

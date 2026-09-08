@@ -7,6 +7,11 @@
 # Usage:
 #   tools/largefile_runtime_gate.sh CLAMSCAN OUTPUT_DIRECTORY RSS_BUDGET_KB
 #
+# RSS_BUDGET_KB is an intentionally stricter overall workload bound (32 GiB)
+# than PLAN.md's PCRE-phase ceiling.  The phase budgets are recorded separately
+# so R13 can bind real PCRE/post-PCRE samples without confusing the stricter
+# whole-workload subcase with the full contract.
+#
 # Optional environment:
 #   CLAMAV_SANITIZER_CLAMSCAN  ASan/UBSan clamscan to run through the same POC
 #   CLAMAV_CONCURRENCY_LEVELS  whitespace-separated worker counts (default 1 2 4)
@@ -84,6 +89,8 @@ sanitizer_toolchain=${CLAMAV_SANITIZER_TOOLCHAIN:-not-set}
 sanitizer_rustflags=${CLAMAV_SANITIZER_RUSTFLAGS:-not-set}
 cvd_certs_dir=${CLAMAV_CVD_CERTS_DIR:-${CVD_CERTS_DIR:-}}
 fixed_rss_budget_kb=33554432
+fixed_pcre_rss_budget_kb=41943040
+fixed_post_pcre_rss_budget_kb=12582912
 fixed_min_available_kb=50331648
 fixed_max_temp_bytes=68719476736
 
@@ -95,6 +102,10 @@ case "$rss_budget_kb" in
 esac
 if [ "$rss_budget_kb" != "$fixed_rss_budget_kb" ]; then
     echo "release acceptance requires the fixed RSS budget of $fixed_rss_budget_kb KiB" >&2
+    exit 2
+fi
+if [ "$fixed_rss_budget_kb" -gt "$fixed_pcre_rss_budget_kb" ]; then
+    echo 'overall RSS subcase cannot exceed the PCRE-phase contract ceiling' >&2
     exit 2
 fi
 case "$require_sanitizer" in
@@ -434,9 +445,11 @@ for provenance_file in \
     largefile_runtime_evidence_check.sh \
     largefile_host_preflight.sh \
     largefile_boundary_corpus.sh \
+    largefile_boundary_corpus_check.py \
     largefile_bigtiff_fixture.py \
     largefile_poc.sh \
-    largefile_source_manifest.sh; do
+    largefile_source_manifest.sh \
+    largefile_runtime_acceptance_case_producer.py; do
     cp "$root/tools/$provenance_file" "$provenance/$provenance_file"
 done
 if [ -n "$sanitizer_clamscan" ]; then
@@ -796,6 +809,9 @@ metadata=$out/build-identity.txt
     printf 'uname='; uname -a
     printf 'arch='; uname -m
     printf 'rss_budget_kb=%s\n' "$rss_budget_kb"
+    printf 'pcre_rss_budget_kb=%s\n' "$fixed_pcre_rss_budget_kb"
+    printf 'post_pcre_rss_budget_kb=%s\n' "$fixed_post_pcre_rss_budget_kb"
+    printf 'rss_budget_contract=overall-stricter-than-pcre-phase\n'
     printf 'min_available_kb=%s\n' "$min_available_kb"
     printf 'max_temp_bytes=%s\n' "$CLAMAV_MAX_TEMP_BYTES"
     printf 'max_scan_time_ms=%s\n' "$max_scan_time_ms"
@@ -897,6 +913,17 @@ fi
 corpus=$out/corpus
 mkdir -p "$corpus"
 "$root/tools/largefile_boundary_corpus.sh" "$corpus" > "$out/corpus.log" 2>&1
+mkdir -p "$out/reports"
+runtime_acceptance_oracle=$provenance/runtime-acceptance-oracle.tsv
+runtime_process_status=$provenance/runtime-process-status.tsv
+printf 'label\tkind\tid\tinput\tlog\treport\texpected_size\texpected_exit\texpected_completion\texpected_signature\texpected_offset\n' > "$runtime_acceptance_oracle"
+printf 'label\tstatus\n' > "$runtime_process_status"
+printf 'clamscan:file:detection-edge\tclamscan\tfile\tcorpus/32g-edge.bin\tpoc/logs/32g-edge.bin.log\tpoc/reports/32g-edge.bin.jsonl\t34359738368\t1\tDETECTION_TERMINATED\tLargeFile.POC.32g-edge\t34359738304\n' >> "$runtime_acceptance_oracle"
+printf 'clamscan:stdin:detection-edge\tclamscan\tstdin\tcorpus/32g-edge.bin\t32g-edge-stdin.log\treports/32g-edge-stdin.jsonl\t34359738368\t1\tDETECTION_TERMINATED\tLargeFile.POC.32g-edge\t34359738304\n' >> "$runtime_acceptance_oracle"
+printf 'clamscan:file:clean-edge\tclamscan\tfile\tcorpus/32g-head.bin\t32g-head-clean.log\treports/32g-head-clean.jsonl\t34359738368\t0\tCOMPLETE\t-\t-\n' >> "$runtime_acceptance_oracle"
+printf 'clamscan:stdin:clean-edge\tclamscan\tstdin\tcorpus/32g-head.bin\t32g-head-stdin-clean.log\treports/32g-head-stdin-clean.jsonl\t34359738368\t0\tCOMPLETE\t-\t-\n' >> "$runtime_acceptance_oracle"
+printf 'clamscan:file:limit-edge\tclamscan\tfile\tcorpus/32g-plus-one.bin\t32g-plus-one-limit.log\treports/32g-plus-one-limit.jsonl\t34359738369\t2\tLIMIT_INCOMPLETE\t-\t-\n' >> "$runtime_acceptance_oracle"
+printf 'clamscan:stdin:limit-edge\tclamscan\tstdin\tcorpus/32g-plus-one.bin\t32g-plus-one-stdin-limit.log\treports/32g-plus-one-stdin-limit.jsonl\t34359738369\t2\tLIMIT_INCOMPLETE\t-\t-\n' >> "$runtime_acceptance_oracle"
 
 failures=0
 poc_out=$out/poc
@@ -957,6 +984,67 @@ else
     printf 'autoit_ea06_fixture=fail status=%s sha256=%s\n' "$autoit_status" "$autoit_fixture_sha256" >> "$metadata"
     failures=$((failures + 1))
 fi
+
+# Scan the exact 32-GiB sparse head fixture with a valid benign database. The
+# database contains a marker absent from the fixture, so a successful result
+# proves complete clean traversal rather than an empty database or a clean
+# prefix before a late signature.
+clean_db=$out/clean-db
+mkdir -p "$clean_db"
+printf 'Clean.NoMatch:0:*:deadbeef00\n' > "$clean_db/clean-no-match.ndb"
+clean_file_log=$out/32g-head-clean.log
+clean_file_report=$out/reports/32g-head-clean.jsonl
+clean_file_status=0
+mkdir -p "$poc_out/tmp/clean-file"
+"$runtime_clamscan" \
+    --database="$clean_db" \
+    --max-filesize=32G \
+    --max-scansize=32G \
+    --max-temporary-size=64G \
+    --max-contiguous-size=32G \
+    --pcre-max-filesize=32G \
+    --max-scantime="$max_scan_time_ms" \
+    --debug \
+    --no-summary \
+    --report-json="$clean_file_report" \
+    --tempdir="$poc_out/tmp/clean-file" \
+    "$corpus/32g-head.bin" > "$clean_file_log" 2>&1 || clean_file_status=$?
+if [ "$clean_file_status" -eq 0 ] &&
+    ! grep -F 'FOUND' "$clean_file_log" >/dev/null 2>&1 &&
+    grep -E '(^|[[:space:]])OK([[:space:]]|$)' "$clean_file_log" >/dev/null 2>&1; then
+    printf 'clean_32g_head=pass\n' >> "$metadata"
+else
+    printf 'clean_32g_head=fail status=%s\n' "$clean_file_status" >> "$metadata"
+    failures=$((failures + 1))
+fi
+
+clean_stdin_log=$out/32g-head-stdin-clean.log
+clean_stdin_report=$out/reports/32g-head-stdin-clean.jsonl
+clean_stdin_status=0
+mkdir -p "$poc_out/tmp/clean-stdin"
+"$runtime_clamscan" \
+    --database="$clean_db" \
+    --max-filesize=32G \
+    --max-scansize=32G \
+    --max-temporary-size=64G \
+    --max-contiguous-size=32G \
+    --pcre-max-filesize=32G \
+    --max-scantime="$max_scan_time_ms" \
+    --debug \
+    --no-summary \
+    --report-json="$clean_stdin_report" \
+    --tempdir="$poc_out/tmp/clean-stdin" \
+    - < "$corpus/32g-head.bin" > "$clean_stdin_log" 2>&1 || clean_stdin_status=$?
+if [ "$clean_stdin_status" -eq 0 ] &&
+    ! grep -F 'FOUND' "$clean_stdin_log" >/dev/null 2>&1 &&
+    grep -E '(^|[[:space:]])OK([[:space:]]|$)' "$clean_stdin_log" >/dev/null 2>&1; then
+    printf 'clean_32g_head_stdin=pass\n' >> "$metadata"
+else
+    printf 'clean_32g_head_stdin=fail status=%s\n' "$clean_stdin_status" >> "$metadata"
+    failures=$((failures + 1))
+fi
+printf 'clamscan:file:clean-edge\t%s\n' "$clean_file_status" >> "$runtime_process_status"
+printf 'clamscan:stdin:clean-edge\t%s\n' "$clean_stdin_status" >> "$runtime_process_status"
 
 # Exercise the production TIFF dispatcher with a sparse BigTIFF whose first
 # IFD and LONG8 value range are both above 4 GiB. The file remains only a few
@@ -1056,6 +1144,7 @@ fi
 # expected to produce a signature match.
 policy_file=$corpus/32g-plus-one.bin
 policy_log=$out/32g-plus-one.log
+policy_report=$out/reports/32g-plus-one.jsonl
 truncate -s 34359738369 "$policy_file"
 policy_status=0
 "$runtime_clamscan" \
@@ -1066,6 +1155,7 @@ policy_status=0
     --alert-exceeds-max \
     --debug \
     --no-summary \
+    --report-json="$policy_report" \
     "$policy_file" > "$policy_log" 2>&1 || policy_status=$?
 if [ "$policy_status" -eq 1 ] && grep -E 'MaxFileSize|Max file size|exceeds the maximum file size' "$policy_log" >/dev/null 2>&1; then
     printf 'policy_32g_plus_one=pass\n' >> "$metadata"
@@ -1078,6 +1168,7 @@ fi
 # front end must read through the boundary, reject the input, and never
 # report a clean prefix as OK.
 policy_stdin_log=$out/32g-plus-one-stdin.log
+policy_stdin_report=$out/reports/32g-plus-one-stdin.jsonl
 policy_stdin_status=0
 "$runtime_clamscan" \
     --database="$poc_out/db" \
@@ -1090,6 +1181,7 @@ policy_stdin_status=0
     --alert-exceeds-max \
     --debug \
     --no-summary \
+    --report-json="$policy_stdin_report" \
     - < "$policy_file" > "$policy_stdin_log" 2>&1 || policy_stdin_status=$?
 if [ "$policy_stdin_status" -eq 1 ] &&
     grep -E 'MaxFileSize|Max file size|exceeds the maximum file size|stdin exceeds MaxFileSize' \
@@ -1101,11 +1193,66 @@ else
     failures=$((failures + 1))
 fi
 
+# Repeat the same exact-size admission with AlertExceedsMax disabled. These
+# two structured reports are the independent R04 limit-edge cases; the
+# alert-enabled runs above remain separate policy-alert controls.
+policy_limit_log=$out/32g-plus-one-limit.log
+policy_limit_report=$out/reports/32g-plus-one-limit.jsonl
+policy_limit_status=0
+"$runtime_clamscan" \
+    --database="$poc_out/db" \
+    --max-filesize=32G \
+    --max-scansize=32G \
+    --max-scantime="$max_scan_time_ms" \
+    --alert-exceeds-max=no \
+    --debug \
+    --no-summary \
+    --report-json="$policy_limit_report" \
+    "$policy_file" > "$policy_limit_log" 2>&1 || policy_limit_status=$?
+if [ "$policy_limit_status" -eq 2 ] &&
+    grep -E 'MaxFileSize|Max file size|exceeds the maximum file size' "$policy_limit_log" >/dev/null 2>&1 &&
+    ! grep -E '(^|[[:space:]])OK([[:space:]]|$)' "$policy_limit_log" >/dev/null 2>&1; then
+    printf 'policy_32g_plus_one_limit=pass\n' >> "$metadata"
+else
+    printf 'policy_32g_plus_one_limit=fail status=%s\n' "$policy_limit_status" >> "$metadata"
+    failures=$((failures + 1))
+fi
+
+policy_stdin_limit_log=$out/32g-plus-one-stdin-limit.log
+policy_stdin_limit_report=$out/reports/32g-plus-one-stdin-limit.jsonl
+policy_stdin_limit_status=0
+"$runtime_clamscan" \
+    --database="$poc_out/db" \
+    --max-filesize=32G \
+    --max-scansize=32G \
+    --max-temporary-size=64G \
+    --max-contiguous-size=32G \
+    --pcre-max-filesize=32G \
+    --max-scantime="$max_scan_time_ms" \
+    --alert-exceeds-max=no \
+    --debug \
+    --no-summary \
+    --report-json="$policy_stdin_limit_report" \
+    - < "$policy_file" > "$policy_stdin_limit_log" 2>&1 || policy_stdin_limit_status=$?
+if [ "$policy_stdin_limit_status" -eq 2 ] &&
+    grep -E 'MaxFileSize|Max file size|exceeds the maximum file size|stdin exceeds MaxFileSize' \
+        "$policy_stdin_limit_log" >/dev/null 2>&1 &&
+    ! grep -E '(^|[[:space:]])OK([[:space:]]|$)' "$policy_stdin_limit_log" >/dev/null 2>&1; then
+    printf 'policy_32g_plus_one_stdin_limit=pass\n' >> "$metadata"
+else
+    printf 'policy_32g_plus_one_stdin_limit=fail status=%s\n' "$policy_stdin_limit_status" >> "$metadata"
+    failures=$((failures + 1))
+fi
+
+printf 'clamscan:file:limit-edge\t%s\n' "$policy_limit_status" >> "$runtime_process_status"
+printf 'clamscan:stdin:limit-edge\t%s\n' "$policy_stdin_limit_status" >> "$runtime_process_status"
+
 # The positive stdin boundary must also be exercised: an unknown-length
 # stream exactly 32 GiB long must reach the final marker and return the same
 # detection/offset as the path-based edge case.  Keep this separate from the
 # 32-GiB+1 rejection so a clean prefix cannot satisfy either policy check.
 edge_stdin_log=$out/32g-edge-stdin.log
+edge_stdin_report=$out/reports/32g-edge-stdin.jsonl
 edge_stdin_status=0
 mkdir -p "$poc_out/tmp/edge-stdin"
 "$runtime_clamscan" \
@@ -1118,6 +1265,7 @@ mkdir -p "$poc_out/tmp/edge-stdin"
     --max-scantime="$max_scan_time_ms" \
     --debug \
     --no-summary \
+    --report-json="$edge_stdin_report" \
     --tempdir="$poc_out/tmp/edge-stdin" \
     - < "$corpus/32g-edge.bin" > "$edge_stdin_log" 2>&1 || edge_stdin_status=$?
 if [ "$edge_stdin_status" -eq 1 ] &&
@@ -1130,6 +1278,7 @@ else
     printf 'policy_32g_edge_stdin=fail status=%s\n' "$edge_stdin_status" >> "$metadata"
     failures=$((failures + 1))
 fi
+printf 'clamscan:stdin:detection-edge\t%s\n' "$edge_stdin_status" >> "$runtime_process_status"
 
 concurrency_input=$corpus/$concurrency_file
 if [ ! -f "$concurrency_input" ]; then
@@ -1293,6 +1442,14 @@ fi
 
 printf 'runtime_gate=pass\n' >> "$metadata"
 printf 'evidence_manifest=SHA256SUMS\n' >> "$metadata"
+if ! python3 "$root/tools/largefile_runtime_acceptance_case_producer.py" "$out" \
+    --manifest "$root/docs/largefile-capabilities.tsv" \
+    --map "$root/docs/largefile-capability-case-map.tsv"; then
+    sed -i '/^runtime_gate=pass$/d; /^evidence_manifest=SHA256SUMS$/d' "$metadata"
+    printf 'runtime_gate=fail\n' >> "$metadata"
+    exit 1
+fi
+
 (
     cd "$out"
     find . -type f ! -path './corpus/*' ! -name SHA256SUMS -print |

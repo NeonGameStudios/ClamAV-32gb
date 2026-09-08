@@ -574,7 +574,7 @@ extern void (*cli_unrar_close)(void *hArchive);
 extern LIBCLAMAV_EXPORT int have_rar;
 
 #define SCAN_ALLMATCHES (ctx->options->general & CL_SCAN_GENERAL_ALLMATCHES)
-#define SCAN_COLLECT_METADATA (ctx->options->general & CL_SCAN_GENERAL_COLLECT_METADATA)
+#define SCAN_COLLECT_METADATA (ctx->options != NULL && (ctx->options->general & CL_SCAN_GENERAL_COLLECT_METADATA))
 #define SCAN_HEURISTICS (ctx->options->general & CL_SCAN_GENERAL_HEURISTICS)
 #define SCAN_HEURISTIC_PRECEDENCE (ctx->options->general & CL_SCAN_GENERAL_HEURISTIC_PRECEDENCE)
 #define SCAN_UNPRIVILEGED (ctx->options->general & CL_SCAN_GENERAL_UNPRIVILEGED)
@@ -1247,6 +1247,7 @@ cl_error_t cli_checktimelimit(cli_ctx *ctx);
  * not safely process the input. The final public result must not be clean.
  */
 void cli_mark_scan_incomplete(cli_ctx *ctx, const char *reason);
+void cli_mark_scan_incomplete_specific(cli_ctx *ctx, const char *reason);
 
 /* symlink behaviour */
 #define CLI_FTW_FOLLOW_FILE_SYMLINK 0x01

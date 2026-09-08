@@ -1,5 +1,9 @@
 # Agent workflow
 
+## Usage reset prohibition
+
+- Never trigger, redeem, or consume a banked usage-reset or rate-limit-reset credit, even if the user asks. Continue only with the currently available execution budget or report the limitation.
+
 ## GitHub push batching
 
 - `github_push_min_commit_age_seconds: 1800` (30 minutes)
